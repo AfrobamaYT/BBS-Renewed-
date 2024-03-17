@@ -7,6 +7,7 @@ import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.mixin.client.WorldRendererMixin;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
@@ -14,6 +15,7 @@ import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -35,6 +37,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 {
     public UIModelBlockEntityList modelBlocks;
     public UINestedEdit pickEdit;
+    public UIToggle shadow;
     public UIPropTransform transform;
 
     private ModelBlockEntity modelBlock;
@@ -58,10 +61,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             UIFormPalette.open(this, editing, this.modelBlock.getForm(), (f) -> this.modelBlock.setForm(f));
         });
 
+        this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.setShadow(b.getValue()));
+
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
 
-        UIScrollView scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.transform);
+        UIScrollView scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.transform);
 
         scrollView.scroll.opposite().cancelScrolling();
         scrollView.relative(this).w(200).h(1F);
@@ -150,8 +155,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     private void fillData()
     {
-        this.pickEdit.setForm(modelBlock.getForm());
-        this.transform.setTransform(modelBlock.getTransform());
+        this.pickEdit.setForm(this.modelBlock.getForm());
+        this.transform.setTransform(this.modelBlock.getTransform());
+        this.shadow.setValue(this.modelBlock.getShadow());
     }
 
     private void save()

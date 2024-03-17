@@ -31,6 +31,7 @@ public class ServerNetwork
             {
                 Form form = BBSMod.getForms().fromData(data);
                 MapType transform = (MapType) DataStorageUtils.readFromPacket(buf);
+                boolean shadow = buf.readBoolean();
 
                 server.execute(() ->
                 {
@@ -39,7 +40,7 @@ public class ServerNetwork
 
                     if (be instanceof ModelBlockEntity modelBlock)
                     {
-                        modelBlock.updateForm(form, transform, world);
+                        modelBlock.updateForm(form, transform, shadow, world);
                     }
                 });
             }

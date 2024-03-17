@@ -24,6 +24,7 @@ public class ModelBlockEntity extends BlockEntity
 {
     private Form form;
     private final Transform transform = new Transform();
+    private boolean shadow;
     private IEntity entity = new StubEntity();
 
     public ModelBlockEntity(BlockPos pos, BlockState state)
@@ -44,6 +45,16 @@ public class ModelBlockEntity extends BlockEntity
     public Transform getTransform()
     {
         return this.transform;
+    }
+
+    public boolean getShadow()
+    {
+        return this.shadow;
+    }
+
+    public void setShadow(boolean shadow)
+    {
+        this.shadow = shadow;
     }
 
     public void tick(World world, BlockPos pos, BlockState state)
@@ -76,6 +87,7 @@ public class ModelBlockEntity extends BlockEntity
         }
 
         DataStorageUtils.writeToNbtCompound(nbt, "Transform", this.transform.toData());
+        nbt.putBoolean("Shadow", this.shadow);
 
         super.writeNbt(nbt);
     }
@@ -100,13 +112,16 @@ public class ModelBlockEntity extends BlockEntity
             this.transform.fromData(baseType.asMap());
         }
 
+        this.shadow = nbt.getBoolean("Shadow");
+
         super.readNbt(nbt);
     }
 
-    public void updateForm(Form form, MapType transform, World world)
+    public void updateForm(Form form, MapType transform, boolean shadow, World world)
     {
         this.form = FormUtils.copy(form);
         this.transform.fromData(transform);
+        this.shadow = shadow;
 
         BlockPos pos = this.getPos();
         BlockState blockState = world.getBlockState(pos);

@@ -529,6 +529,7 @@ public class UIKeys
     public static final IKey WORLD_KEYS_CYCLE_PANELS = L10n.lang("bbs.ui.world.keys.cycle_panels");
 
     public static final IKey MODEL_BLOCKS_TITLE = L10n.lang("bbs.ui.model_blocks.title", "Model blocks", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey MODEL_BLOCKS_SHADOW = L10n.lang("bbs.ui.model_blocks.shadow", "Shadow", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey MODEL_BLOCKS_KEYS_MOVE_TO = L10n.lang("bbs.ui.model_blocks.keys.move_to", "Move to", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
     /* Utility */

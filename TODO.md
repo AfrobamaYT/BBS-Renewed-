@@ -29,6 +29,7 @@
   - [x] Add outline in 3d
   - [x] Add click picking
   - [x] Move to cursor (with ray tracing)
+  - [x] Model block shadows
 - [ ] More forms
   - [ ] Block form
   - [ ] Item form
