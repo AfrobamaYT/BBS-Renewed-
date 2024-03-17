@@ -55,6 +55,7 @@ public class ClientNetwork
         buf.writeBlockPos(pos);
         DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
         DataStorageUtils.writeToPacket(buf, modelBlock.getTransform().toData());
+        buf.writeBoolean(modelBlock.getShadow());
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_FORM_PACKET, buf);
     }

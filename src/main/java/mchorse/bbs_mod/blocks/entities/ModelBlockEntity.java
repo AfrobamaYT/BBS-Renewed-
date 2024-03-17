@@ -81,6 +81,8 @@ public class ModelBlockEntity extends BlockEntity
     @Override
     protected void writeNbt(NbtCompound nbt)
     {
+        super.writeNbt(nbt);
+
         if (this.form != null)
         {
             DataStorageUtils.writeToNbtCompound(nbt, "Form", FormUtils.toData(this.form));
@@ -88,13 +90,13 @@ public class ModelBlockEntity extends BlockEntity
 
         DataStorageUtils.writeToNbtCompound(nbt, "Transform", this.transform.toData());
         nbt.putBoolean("Shadow", this.shadow);
-
-        super.writeNbt(nbt);
     }
 
     @Override
     public void readNbt(NbtCompound nbt)
     {
+        super.readNbt(nbt);
+
         if (nbt.contains("Form"))
         {
             BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Form");
@@ -113,8 +115,6 @@ public class ModelBlockEntity extends BlockEntity
         }
 
         this.shadow = nbt.getBoolean("Shadow");
-
-        super.readNbt(nbt);
     }
 
     public void updateForm(Form form, MapType transform, boolean shadow, World world)
