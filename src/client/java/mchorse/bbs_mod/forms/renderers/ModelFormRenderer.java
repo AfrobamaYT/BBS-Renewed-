@@ -22,6 +22,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
@@ -35,6 +36,7 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
@@ -166,12 +168,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         newStack.push();
 
+        MatrixStackUtils.multiply(newStack, stack.peek().getPositionMatrix());
+
         if (ui)
         {
-            newStack.peek().getNormalMatrix().scale(1F, -1F, 1F);
+            newStack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
+            newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
-
-        MatrixStackUtils.multiply(newStack, stack.peek().getPositionMatrix());
 
         CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model);
         newStack.pop();
