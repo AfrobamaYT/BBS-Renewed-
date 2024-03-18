@@ -5,7 +5,7 @@
   - [ ] Body part rendering
   - [x] Extruded form rendering
     - [ ] Fix lack of diffuse lighting
-  - [ ] Fix label form rendering
+  - [x] Fix label form rendering
   - [ ] Fix particle form rendering
 - [x] Camera editor
   - [x] Apply roll
@@ -40,3 +40,7 @@ Core features:
 
 - [ ] Action system
 - [ ] Emoticons + S&B
+
+Useful user suggestions:
+
+- [ ] Sample lighting value at

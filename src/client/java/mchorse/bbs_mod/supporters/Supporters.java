@@ -49,7 +49,6 @@ public class Supporters
         this.add("泥土NT_black", "...");
         this.add("零雾〇五Fogg05");
         this.add("篝火工作室");
-        this.add("爱发电用户_SYwD^^^");
         this.add("0tt0258");
         this.add("凤天", "https://space.bilibili.com/22348510");
         this.add("暗影苦力怕", "https://space.bilibili.com/472637101", "...");
@@ -117,9 +116,6 @@ public class Supporters
         this.add("Jackey_lin", "...");
         this.add("snifferpond");
         this.add("Repeater");
-        this.add("爱发电用户_e9eaf^^^");
-        this.add("爱发电用户_10b4f^^^");
-        this.add("爱发电用户_cfaea^^^", "...");
         this.add("HeimNad");
         this.add("Minecraft地形师茶馆", "https://space.bilibili.com/3461578447915295");
         this.add("Jmol", "https://space.bilibili.com/108360657");
@@ -133,7 +129,6 @@ public class Supporters
         this.add("NotSafe", "https://www.youtube.com/@NotSafe/videos", "...");
         this.add("ItsLunaz");
         this.add("渣暴风StorM", "https://space.bilibili.com/186424629");
-        this.add("爱发电用户_WJku^^^");
         this.add("娱儿游", "https://space.bilibili.com/42973624");
         this.add("乐笑虾");
         this.add("瑭玟", "...", "...");
@@ -145,6 +140,7 @@ public class Supporters
         this.add("hao_yeah");
         this.add("Giftia", "https://space.bilibili.com/59624348", "...");
         this.add("Yu_Feng");
+        this.add("洛筠sama", "https://space.bilibili.com/2035820829");
     }
 
     private void add(String name)
