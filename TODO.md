@@ -3,7 +3,7 @@
   - [x] Model rendering
     - [x] Model aren't reloading
     - [x] Fix normals
-  - [ ] Body part rendering
+  - [x] Body part rendering
   - [x] Extruded form rendering
     - [ ] Fix lack of diffuse lighting
   - [x] Fix label form rendering

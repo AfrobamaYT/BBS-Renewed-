@@ -36,7 +36,6 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
@@ -270,7 +269,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
             }
 
-            // TODO: part.render(target, context);
+            renderBodyPart(part, context);
 
             context.stack.pop();
         }

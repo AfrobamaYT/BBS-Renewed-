@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -16,7 +17,28 @@ import java.util.Map;
 
 public abstract class FormRenderer <T extends Form>
 {
+    private static final IEntity DUMMY = new StubEntity();
+
     protected T form;
+
+    public static void renderBodyPart(BodyPart part, FormRenderingContext context)
+    {
+        IEntity oldEntity = context.entity;
+
+        context.entity = part.useTarget ? oldEntity : DUMMY;
+
+        if (part.getForm() != null && part.enabled)
+        {
+            context.stack.push();
+            MatrixStackUtils.applyTransform(context.stack, part.getTransform());
+
+            FormUtilsClient.render(part.getForm(), context);
+
+            context.stack.pop();
+        }
+
+        context.entity = oldEntity;
+    }
 
     public FormRenderer(T form)
     {
@@ -84,7 +106,7 @@ public abstract class FormRenderer <T extends Form>
     {
         for (BodyPart part : this.form.parts.getAll())
         {
-            // TODO: part.render(target, context);
+            renderBodyPart(part, context);
         }
     }
 

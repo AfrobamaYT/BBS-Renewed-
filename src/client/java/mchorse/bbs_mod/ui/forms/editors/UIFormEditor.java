@@ -89,6 +89,11 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
     public static UIForm createPanel(Form form)
     {
+        if (form == null)
+        {
+            return null;
+        }
+
         Supplier<UIForm> supplier = panels.get(form.getClass());
 
         return supplier == null ? null : supplier.get();
