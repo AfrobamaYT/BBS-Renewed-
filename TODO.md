@@ -1,6 +1,7 @@
 - [ ] Shaders for multi-link preview and subtitle renderer
 - [x] Form renderers
   - [x] Model rendering
+    - [x] Model aren't reloading
     - [x] Fix normals
   - [ ] Body part rendering
   - [x] Extruded form rendering
@@ -43,4 +44,4 @@ Core features:
 
 Useful user suggestions:
 
-- [ ] Sample lighting value at
+- [ ] Sample lighting value at (model block)

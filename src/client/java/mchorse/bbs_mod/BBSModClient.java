@@ -133,6 +133,7 @@ public class BBSModClient implements ClientModInitializer
         formCategories.setup();
         watchDog = new WatchDog(BBSMod.getAssetsFolder(), (runnable) -> schedule(runnable));
         watchDog.register(textures);
+        watchDog.register(models);
         watchDog.register(sounds);
         watchDog.start();
 
