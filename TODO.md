@@ -5,7 +5,7 @@
     - [x] Fix normals
   - [x] Body part rendering
   - [x] Extruded form rendering
-    - [ ] Fix lack of diffuse lighting
+    - [x] Fix lack of diffuse lighting
   - [x] Fix label form rendering
   - [ ] Fix particle form rendering
 - [x] Camera editor
@@ -41,6 +41,7 @@ Core features:
 
 - [ ] Action system
 - [ ] Emoticons + S&B
+- [ ] Metamorph
 
 Useful user suggestions:
 
