@@ -141,6 +141,8 @@ public class Supporters
         this.add("Giftia", "https://space.bilibili.com/59624348", "...");
         this.add("Yu_Feng");
         this.add("洛筠sama", "https://space.bilibili.com/2035820829");
+        this.add("小猪之最Thepig", "https://space.bilibili.com/381671770");
+        this.add("lkctrl");
     }
 
     private void add(String name)

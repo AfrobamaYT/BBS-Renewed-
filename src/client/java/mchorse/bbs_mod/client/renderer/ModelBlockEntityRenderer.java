@@ -84,7 +84,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             matrices.push();
             matrices.translate(0.5F + transform.translate.x,  transform.translate.y, 0.5F + transform.translate.z);
 
-            EntityRendererDispatcherInvoker.renderShadow(matrices, vertexConsumers, this.entity, opacity, tickDelta, entity.getWorld(), radius);
+            EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, vertexConsumers, this.entity, opacity, tickDelta, entity.getWorld(), radius);
 
             matrices.pop();
         }

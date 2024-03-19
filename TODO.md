@@ -45,3 +45,4 @@ Core features:
 Useful user suggestions:
 
 - [ ] Sample lighting value at (model block)
+- [ ] Add gizmos to model block
