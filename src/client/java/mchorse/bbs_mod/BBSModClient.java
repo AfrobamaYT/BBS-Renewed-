@@ -15,12 +15,10 @@ import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.UITestMenu;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
-import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.watchdog.WatchDog;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -33,16 +31,11 @@ import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.text.Text;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -60,7 +53,6 @@ public class BBSModClient implements ClientModInitializer
 
     private static UIDashboard dashboard;
 
-    private static List<Runnable> scheduledRunnables = new ArrayList<>();
     private static int _lastFramebufferSizeW;
     private static int _lastFramebufferSizeH;
 
@@ -111,11 +103,6 @@ public class BBSModClient implements ClientModInitializer
         return dashboard;
     }
 
-    public static void schedule(Runnable runnable)
-    {
-        scheduledRunnables.add(runnable);
-    }
-
     @Override
     public void onInitializeClient()
     {
@@ -131,7 +118,7 @@ public class BBSModClient implements ClientModInitializer
         models = new ModelManager(provider);
         formCategories = new FormCategories();
         formCategories.setup();
-        watchDog = new WatchDog(BBSMod.getAssetsFolder(), (runnable) -> schedule(runnable));
+        watchDog = new WatchDog(BBSMod.getAssetsFolder(), (runnable) -> MinecraftClient.getInstance().execute(runnable));
         watchDog.register(textures);
         watchDog.register(models);
         watchDog.register(sounds);
@@ -220,30 +207,8 @@ public class BBSModClient implements ClientModInitializer
 
             while (keyRecord.wasPressed())
             {
-                MinecraftClient mc = MinecraftClient.getInstance();
 
-                HitResult result = RayTracing.rayTraceEntity(mc.player, mc.world, mc.cameraEntity.getEyePos(), mc.cameraEntity.getRotationVec(0F), 64);
-
-                if (result != null && result.getType() != HitResult.Type.MISS)
-                {
-                    Vec3d pos = result.getPos();
-
-                    mc.world.addParticle(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 0D, 0D, 0D);
-                }
-                else
-                {
-                    mc.player.sendMessage(Text.literal("I guess you have missed, huh?"));
-                }
-
-                MinecraftClient.getInstance().setScreen(new UIScreen(Text.literal("Model renderer"), new UITestMenu()));
             }
-
-            for (Runnable runnable : scheduledRunnables)
-            {
-                runnable.run();
-            }
-
-            scheduledRunnables.clear();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->

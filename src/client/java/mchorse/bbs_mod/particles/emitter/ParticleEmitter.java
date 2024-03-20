@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.particles.emitter;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.Camera;
@@ -451,15 +452,6 @@ public class ParticleEmitter
         Texture texture = BBSModClient.getTextures().getTexture(this.texture == null ? this.scheme.texture : this.texture);
 
         RenderSystem.setShaderTexture(0, texture.id);
-    }
-
-    public void setupCameraProperties(net.minecraft.client.render.Camera camera)
-    {
-        this.cYaw = 180 - MathUtils.toDeg(camera.getYaw());
-        this.cPitch = MathUtils.toDeg(camera.getPitch());
-        this.cX = camera.getPos().x;
-        this.cY = camera.getPos().y;
-        this.cZ = camera.getPos().z;
     }
 
     public void setupCameraProperties(Camera camera)

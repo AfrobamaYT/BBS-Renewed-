@@ -19,9 +19,9 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
-import org.apache.commons.lang3.builder.Diff;
 import org.joml.Intersectiond;
 import org.joml.Matrix3d;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -214,6 +214,7 @@ public abstract class UIModelRenderer extends UIElement
         /* Drawing begins */
         Matrix4f oldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
         Matrix4f oldMV = new Matrix4f(RenderSystem.getModelViewMatrix());
+        Matrix3f oldInverse = new Matrix3f(RenderSystem.getInverseViewRotationMatrix());
 
         RenderSystem.setProjectionMatrix(this.camera.projection, VertexSorter.BY_Z);
 
@@ -224,6 +225,8 @@ public abstract class UIModelRenderer extends UIElement
         renderStack.loadIdentity();
         RenderSystem.applyModelViewMatrix();
         renderStack.pop();
+
+        RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.camera.view).invert());
 
         stack.push();
         MatrixStackUtils.multiply(stack, this.camera.view);
@@ -245,6 +248,7 @@ public abstract class UIModelRenderer extends UIElement
         /* Return back to orthographic projection */
         RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
         RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
+        RenderSystem.setInverseViewRotationMatrix(oldInverse);
 
         renderStack.push();
         renderStack.loadIdentity();

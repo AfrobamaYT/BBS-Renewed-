@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.ui.film.screenplay;
 
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.audio.ColorCode;
 import mchorse.bbs_mod.audio.SoundPlayer;
@@ -37,6 +36,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.math.MathUtils;
+import net.minecraft.client.MinecraftClient;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.File;
@@ -126,7 +126,7 @@ public class UIScreenplayEditor extends UIElement
         ElevenLabsAPI.generateStandard(context, UIFilmPanel.getVoiceLines().getFolder(), clips, (result) ->
         {
             /* Post runnable is necessary because callback is calling from non-main thread */
-            BBSModClient.schedule(() ->
+            MinecraftClient.getInstance().execute(() ->
             {
                 if (result.clip != null && result.status == ElevenLabsResult.Status.GENERATED)
                 {

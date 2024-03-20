@@ -5,6 +5,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
+import net.minecraft.client.MinecraftClient;
 
 import java.io.IOException;
 import java.util.Stack;
@@ -103,7 +104,7 @@ public class MultiLinkThread implements Runnable
 
                     Pixels pixels = TextureProcessor.process(location);
 
-                    BBSModClient.schedule(() ->
+                    MinecraftClient.getInstance().execute(() ->
                     {
                         texture.bind();
                         texture.uploadTexture(pixels);

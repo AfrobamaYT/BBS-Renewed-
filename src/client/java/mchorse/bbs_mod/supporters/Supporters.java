@@ -143,6 +143,9 @@ public class Supporters
         this.add("洛筠sama", "https://space.bilibili.com/2035820829");
         this.add("小猪之最Thepig", "https://space.bilibili.com/381671770");
         this.add("lkctrl");
+        this.add("飒爽师叔", "https://space.bilibili.com/22219285");
+        this.add("yeek");
+        this.add("mc47382");
     }
 
     private void add(String name)

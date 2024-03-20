@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSData;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -9,12 +10,12 @@ import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements ITickable
 {
@@ -84,15 +85,22 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
         if (emitter != null)
         {
-            Matrix4f matrix = context.stack.peek().getPositionMatrix();
-            Vector3d vector = new Vector3d().set(matrix.getTranslation(Vectors.TEMP_3F));
-
             this.updateTexture(context.getTransition());
-            vector.add(context.camera.position.x, context.camera.position.y, context.camera.position.z);
-            emitter.lastGlobal.set(vector);
-            emitter.rotation.set(matrix);
+
+            Matrix4f matrix = new Matrix4f(RenderSystem.getInverseViewRotationMatrix());
+            matrix.mul(context.stack.peek().getPositionMatrix());
+
+            Vector3d translation = new Vector3d(matrix.getTranslation(Vectors.TEMP_3F));
+            translation.add(context.camera.position.x, context.camera.position.y, context.camera.position.z);
+
+            context.stack.push();
+
+            emitter.lastGlobal.set(translation);
+            emitter.rotation.set(RenderSystem.getInverseViewRotationMatrix());
             emitter.setupCameraProperties(context.camera);
             emitter.render(context.stack, context.getTransition());
+
+            context.stack.pop();
         }
     }
 
