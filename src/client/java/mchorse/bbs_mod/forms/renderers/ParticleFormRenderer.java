@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements ITickable
 {
@@ -94,9 +93,11 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             translation.add(context.camera.position.x, context.camera.position.y, context.camera.position.z);
 
             context.stack.push();
+            context.stack.loadIdentity();
+            context.stack.multiplyPositionMatrix(new Matrix4f(RenderSystem.getInverseViewRotationMatrix()).invert());
 
             emitter.lastGlobal.set(translation);
-            emitter.rotation.set(RenderSystem.getInverseViewRotationMatrix());
+            emitter.rotation.set(matrix);
             emitter.setupCameraProperties(context.camera);
             emitter.render(context.stack, context.getTransition());
 

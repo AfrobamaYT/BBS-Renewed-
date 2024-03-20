@@ -7,7 +7,7 @@
   - [x] Extruded form rendering
     - [x] Fix lack of diffuse lighting
   - [x] Fix label form rendering
-  - [ ] Fix particle form rendering
+  - [x] Fix particle form rendering
 - [x] Camera editor
   - [x] Apply roll
   - [x] Apply FOV
