@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
@@ -15,6 +16,7 @@ public class FormRenderingContext
     public int light;
     public float transition;
     public final Camera camera = new Camera();
+    public StencilMap stencilMap;
 
     private FormRenderingContext()
     {}
@@ -25,6 +27,7 @@ public class FormRenderingContext
         context.stack = stack;
         context.light = light;
         context.transition = transition;
+        context.stencilMap = null;
 
         return context;
     }
@@ -47,8 +50,25 @@ public class FormRenderingContext
         return this;
     }
 
+    public FormRenderingContext stencilMap(StencilMap stencilMap)
+    {
+        this.stencilMap = stencilMap;
+
+        return this;
+    }
+
     public float getTransition()
     {
         return this.transition;
+    }
+
+    public boolean isPicking()
+    {
+        return this.stencilMap != null;
+    }
+
+    public int getPickingIndex()
+    {
+        return this.stencilMap == null ? -1 : this.stencilMap.objectIndex;
     }
 }

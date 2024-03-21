@@ -8,6 +8,7 @@ import mchorse.bbs_mod.graphics.Renderbuffer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.Pair;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -85,14 +86,6 @@ public class StencilFormFramebuffer
         }
     }
 
-    public void apply(UIContext context)
-    {
-        context.render.getStencil().setup();
-        // TODO: context.render.setShaders(context.render.getPickingShaders());
-
-        this.apply();
-    }
-
     public void apply()
     {
         this.framebuffer.applyClear();
@@ -128,15 +121,12 @@ public class StencilFormFramebuffer
         }
     }
 
-    public void unbind(UIContext context)
+    public void unbind(StencilMap map)
     {
         this.unbind();
 
         this.indexMap.clear();
-        this.indexMap.putAll(context.render.getStencil().indexMap);
-
-        // TODO: context.render.setShaders(null);
-        context.render.getStencil().reset();
+        this.indexMap.putAll(map.indexMap);
     }
 
     public void unbind()

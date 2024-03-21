@@ -19,17 +19,6 @@ public class Framebuffer
     private boolean deleteTextures;
     private boolean advancedClearing;
 
-    public static void renderToQuad(/* TODO: RenderingContext context, Shader shader */)
-    {
-        /* Requires VBOAttributes.VERTEX_2D shader */
-        /* VAOBuilder builder = null; // TODO: context.getVAO().setup(shader);
-
-        builder.begin();
-        builder.xy(-1, -1).xy(1, 1).xy(-1, 1);
-        builder.xy(1, -1).xy(1, 1).xy(-1, -1);
-        builder.render(); */
-    }
-
     public Framebuffer()
     {
         this.id = GL30.glGenFramebuffers();

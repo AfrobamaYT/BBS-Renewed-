@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories;
 
+import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
@@ -22,13 +25,13 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 
         UIProperty property = editor.properties.getProperty(keyframe);
         ModelForm form = (ModelForm) property.property.getForm();
-        /* TODO: CubicModel model = form.getModel();
+        CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
 
         if (model != null)
         {
             this.poseEditor.setPose(keyframe.getValue(), model.poseGroup);
             this.poseEditor.fillGroups(model.model.getAllGroupKeys());
-        } */
+        }
 
         this.add(this.poseEditor);
     }

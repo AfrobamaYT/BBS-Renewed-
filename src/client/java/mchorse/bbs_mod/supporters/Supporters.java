@@ -146,6 +146,7 @@ public class Supporters
         this.add("飒爽师叔", "https://space.bilibili.com/22219285");
         this.add("yeek");
         this.add("mc47382");
+        this.add("浪濤", "https://space.bilibili.com/289923315", "...");
     }
 
     private void add(String name)

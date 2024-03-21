@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.math.functions.limit.Min;
@@ -163,7 +164,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
 
         RenderSystem.setShaderTexture(0, texture.id);
-        RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+        RenderSystem.setShader(this.getShader(context,
+            GameRenderer::getRenderTypeEntityTranslucentCullProgram,
+            BBSShaders::getPickerBillboardProgram
+        ));
 
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
         builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(0F, 0F, 1F).next();

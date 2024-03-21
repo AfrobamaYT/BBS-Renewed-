@@ -8,12 +8,15 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
+import net.minecraft.client.gl.GlUniform;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public abstract class FormRenderer <T extends Form>
 {
@@ -59,21 +62,16 @@ public abstract class FormRenderer <T extends Form>
 
     public final void render(FormRenderingContext context)
     {
-        boolean isPicking = false; // TODO: context instanceof UIRenderingContext && ((UIRenderingContext) context).getStencil().picking;
+        boolean isPicking = context.stencilMap != null;
 
         context.stack.push();
         MatrixStackUtils.multiply(context.stack, this.form.transform.get(context.getTransition()).createMatrix());
-
-        if (isPicking)
-        {
-            // TODO: this.setupUniform((UIRenderingContext) context);
-        }
 
         this.render3D(context);
 
         if (isPicking)
         {
-            // TODO: this.handlePicking((UIRenderingContext) context);
+            this.updateStencilMap(context);
         }
 
         this.renderBodyParts(context);
@@ -81,23 +79,45 @@ public abstract class FormRenderer <T extends Form>
         context.stack.pop();
     }
 
-    /* TODO: protected void setupUniform(FormRenderingContext context)
+    protected Supplier<ShaderProgram> getShader(FormRenderingContext context, Supplier<ShaderProgram> normal, Supplier<ShaderProgram> picking)
     {
-        for (Shader shader : context.getShaders().getAll())
+        if (context.isPicking())
         {
-            Uniform pickerIndex = shader.getUniform("u_picker_index");
+            ShaderProgram shaderProgram = picking.get();
+            GlUniform target = shaderProgram.getUniform("Target");
 
-            if (pickerIndex instanceof UniformInt)
+            if (target != null)
             {
-                ((UniformInt) pickerIndex).set(context.getStencil().objectIndex);
+                target.set(context.getPickingIndex());
             }
+
+            return picking;
         }
+
+        return normal;
     }
 
-    protected void handlePicking(UIRenderingContext context)
+    protected ShaderProgram getShader(FormRenderingContext context, ShaderProgram normal, ShaderProgram picking)
     {
-        context.getStencil().addPicking(this.form);
-    } */
+        if (context.isPicking())
+        {
+            GlUniform target = picking.getUniform("Target");
+
+            if (target != null)
+            {
+                target.set(context.getPickingIndex());
+            }
+
+            return picking;
+        }
+
+        return normal;
+    }
+
+    protected void updateStencilMap(FormRenderingContext context)
+    {
+        context.stencilMap.addPicking(this.form);
+    }
 
     protected void render3D(FormRenderingContext context)
     {}

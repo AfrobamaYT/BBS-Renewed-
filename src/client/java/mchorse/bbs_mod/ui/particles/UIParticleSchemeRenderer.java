@@ -58,7 +58,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         this.emitter.setupCameraProperties(this.camera);
         this.emitter.rotation.identity();
 
-        this.emitter.render(context.batcher.getContext().getMatrices(), context.getTransition());
+        this.emitter.render(GameRenderer::getPositionColorTexLightmapProgram, context.batcher.getContext().getMatrices(), context.getTransition());
 
         ParticleComponentKillPlane plane = this.emitter.scheme.get(ParticleComponentKillPlane.class);
 

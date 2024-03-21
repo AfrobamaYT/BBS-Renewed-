@@ -15,6 +15,7 @@ import mchorse.bbs_mod.particles.components.IComponentParticleRender;
 import mchorse.bbs_mod.particles.components.IComponentParticleUpdate;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.math.MathUtils;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class ParticleEmitter
 {
@@ -402,7 +404,7 @@ public class ParticleEmitter
     /**
      * Render all the particles in this particle emitter
      */
-    public void render(MatrixStack stack, float transition)
+    public void render(Supplier<ShaderProgram> program, MatrixStack stack, float transition)
     {
         if (this.scheme == null)
         {
@@ -435,7 +437,7 @@ public class ParticleEmitter
                 }
             }
 
-            RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapProgram);
+            RenderSystem.setShader(program);
             RenderSystem.disableCull();
             BufferRenderer.drawWithGlobalProgram(builder.end());
             RenderSystem.enableCull();

@@ -16,6 +16,9 @@ public class BBSShaders
 {
     private static ShaderProgram extrudedProgram;
 
+    private static ShaderProgram pickerBillboard;
+    private static ShaderProgram pickerParticles;
+
     static
     {
         try
@@ -23,6 +26,9 @@ public class BBSShaders
             ResourceFactory factory = new ProxyResourceFactory(MinecraftClient.getInstance().getResourceManager());
 
             extrudedProgram = new ShaderProgram(factory, "extruded", VertexFormats.POSITION_TEXTURE_COLOR_NORMAL);
+
+            pickerBillboard = new ShaderProgram(factory, "picker_billboard", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            pickerParticles = new ShaderProgram(factory, "picker_particles", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
         }
         catch (IOException e)
         {
@@ -33,6 +39,16 @@ public class BBSShaders
     public static ShaderProgram getExtrudedProgram()
     {
         return extrudedProgram;
+    }
+
+    public static ShaderProgram getPickerBillboardProgram()
+    {
+        return pickerBillboard;
+    }
+
+    public static ShaderProgram getPickerParticlesProgram()
+    {
+        return pickerParticles;
     }
 
     private static class ProxyResourceFactory implements ResourceFactory

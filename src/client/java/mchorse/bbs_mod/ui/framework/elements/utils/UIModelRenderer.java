@@ -246,7 +246,7 @@ public abstract class UIModelRenderer extends UIElement
         stack.pop();
 
         /* Return back to orthographic projection */
-        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
         RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
         RenderSystem.setInverseViewRotationMatrix(oldInverse);
 

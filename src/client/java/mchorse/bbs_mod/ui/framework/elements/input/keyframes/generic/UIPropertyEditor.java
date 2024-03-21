@@ -17,7 +17,17 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIAnchorKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIBooleanKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIColorKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIFloatKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIIntegerKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UILinkKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIStringKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UITransformKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIVector4fKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -37,6 +47,8 @@ import java.util.Map;
 
 public class UIPropertyEditor extends UIElement
 {
+    private static final Map<IGenericKeyframeFactory, IUIKeyframeFactoryFactory> factories = new HashMap<>();
+
     public UIElement frameButtons;
     public UIToggle instant;
     public UITrackpad tick;
@@ -52,6 +64,32 @@ public class UIPropertyEditor extends UIElement
     private IAxisConverter converter;
 
     protected List<BaseValue> valueChannels = new ArrayList<>();
+
+    static
+    {
+        register(KeyframeFactories.ANCHOR, UIAnchorKeyframeFactory::new);
+        register(KeyframeFactories.BOOLEAN, UIBooleanKeyframeFactory::new);
+        register(KeyframeFactories.COLOR, UIColorKeyframeFactory::new);
+        register(KeyframeFactories.FLOAT, UIFloatKeyframeFactory::new);
+        register(KeyframeFactories.INTEGER, UIIntegerKeyframeFactory::new);
+        register(KeyframeFactories.LINK, UILinkKeyframeFactory::new);
+        register(KeyframeFactories.POSE, UIPoseKeyframeFactory::new);
+        register(KeyframeFactories.STRING, UIStringKeyframeFactory::new);
+        register(KeyframeFactories.TRANSFORM, UITransformKeyframeFactory::new);
+        register(KeyframeFactories.VECTOR4F, UIVector4fKeyframeFactory::new);
+    }
+
+    public static <T> void register(IGenericKeyframeFactory<T> clazz, IUIKeyframeFactoryFactory<T> factory)
+    {
+        factories.put(clazz, factory);
+    }
+
+    public static <T> UIKeyframeFactory createPanel(GenericKeyframe<T> keyframe, UIPropertyEditor editor)
+    {
+        IUIKeyframeFactoryFactory<T> factory = factories.get(keyframe.getFactory());
+
+        return factory == null ? null : factory.create(keyframe, editor);
+    }
 
     public UIPropertyEditor(IUIClipsDelegate delegate)
     {
@@ -420,7 +458,7 @@ public class UIPropertyEditor extends UIElement
             this.editor = null;
         }
 
-        this.editor = null; //TODO: frame.getFactory().createUI(frame, this);
+        this.editor = createPanel(frame, this);
 
         if (this.editor != null)
         {
@@ -503,5 +541,10 @@ public class UIPropertyEditor extends UIElement
         {
             this.factory = factory;
         }
+    }
+
+    public static interface IUIKeyframeFactoryFactory <T>
+    {
+        public UIKeyframeFactory<T> create(GenericKeyframe<T> keyframe, UIPropertyEditor editor);
     }
 }

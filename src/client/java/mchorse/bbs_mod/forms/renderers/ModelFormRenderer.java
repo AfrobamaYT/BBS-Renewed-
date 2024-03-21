@@ -212,21 +212,21 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-//    @Override
-//    protected void handlePicking(UIRenderingContext context)
-//    {
-//        CubicModel model = this.form.getModel();
-//
-//        if (model == null || model.model == null)
-//        {
-//            return;
-//        }
-//
-//        for (ModelGroup group : model.model.getOrderedGroups())
-//        {
-//            context.getStencil().addPicking(this.form, group.id);
-//        }
-//    }
+    @Override
+    protected void updateStencilMap(FormRenderingContext context)
+    {
+        CubicModel model = this.getModel();
+
+        if (model == null || model.model == null)
+        {
+            return;
+        }
+
+        for (ModelGroup group : model.model.getOrderedGroups())
+        {
+            context.stencilMap.addPicking(this.form, group.id);
+        }
+    }
 
     private void captureMatrices(CubicModel model)
     {

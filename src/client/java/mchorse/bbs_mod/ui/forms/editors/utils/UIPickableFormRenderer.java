@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.utils;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -9,9 +10,11 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.Pair;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -29,6 +32,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
     private boolean update;
 
     private StencilFormFramebuffer stencil = new StencilFormFramebuffer();
+    private StencilMap stencilMap = new StencilMap();
 
     public UIPickableFormRenderer(UIFormEditor formEditor)
     {
@@ -93,22 +97,26 @@ public class UIPickableFormRenderer extends UIFormRenderer
 
         this.renderAxes(context);
 
-        /* TODO: if (this.area.isInside(context))
+        if (this.area.isInside(context))
         {
-            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            GlStateManager._disableScissorTest();
 
-            this.stencil.apply(context);
-            FormUtilsClient.render(this.form, formContext);
+            this.stencilMap.setup();
+            this.stencil.apply();
+            FormUtilsClient.render(this.form, formContext.stencilMap(this.stencilMap));
 
             this.stencil.pickGUI(context, this.area);
-            this.stencil.unbind(context);
+            this.stencil.unbind(this.stencilMap);
+            this.stencilMap.reset();
 
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
+
+            GlStateManager._enableScissorTest();
         }
         else
         {
             this.stencil.clearPicking();
-        } */
+        }
     }
 
     private void renderAxes(UIContext context)
@@ -194,10 +202,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
         int w = texture.width;
         int h = texture.height;
 
-        /* TODO: Shader shader = context.render.getPickingShaders().get(VBOAttributes.VERTEX_UV_RGBA_2D);
-
-        CommonShaderAccess.setTarget(shader, index);
-        context.batcher.texturedBox(shader, texture, Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, 0, h, w, 0, w, h);
+        // context.batcher.texturedBox(texture.id, Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, 0, h, w, 0, w, h);
 
         if (pair != null)
         {
@@ -208,7 +213,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
                 label += " - " + pair.b;
             }
 
-            context.batcher.textCard(context.font, label, context.mouseX + 12, context.mouseY + 8);
-        } */
+            context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
+        }
     }
 }
