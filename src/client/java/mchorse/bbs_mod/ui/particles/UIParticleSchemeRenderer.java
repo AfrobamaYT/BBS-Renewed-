@@ -7,6 +7,7 @@ import mchorse.bbs_mod.particles.components.expiration.ParticleComponentKillPlan
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -58,7 +59,9 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         this.emitter.setupCameraProperties(this.camera);
         this.emitter.rotation.identity();
 
-        this.emitter.render(GameRenderer::getPositionColorTexLightmapProgram, context.batcher.getContext().getMatrices(), context.getTransition());
+        MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
+
+        this.emitter.render(GameRenderer::getParticleProgram, context.batcher.getContext().getMatrices(), context.getTransition());
 
         ParticleComponentKillPlane plane = this.emitter.scheme.get(ParticleComponentKillPlane.class);
 

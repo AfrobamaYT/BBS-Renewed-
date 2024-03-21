@@ -12,8 +12,9 @@ import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.LightType;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -49,8 +50,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
     private float u2;
     private float v2;
 
-    private int lx;
-    private int ly;
+    private int light;
 
     private Matrix4f transform = new Matrix4f();
     private Matrix4f rotation = new Matrix4f();
@@ -363,9 +363,9 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
     private void writeVertex(BufferBuilder builder, Matrix4f matrix, Vector4f vertex, float u, float v, Particle particle)
     {
         builder.vertex(matrix, vertex.x, vertex.y, vertex.z)
-            .color(particle.r, particle.g, particle.b, particle.a)
             .texture(u, v)
-            .light(this.lx, this.ly)
+            .color(particle.r, particle.g, particle.b, particle.a)
+            .light(this.light)
             .next();
     }
 
@@ -464,16 +464,15 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
         if (emitter == null || emitter.lit || emitter.world == null)
         {
-            this.lx = 0;
-            this.ly = 0;
+            this.light = LightmapTextureManager.pack(15, 15);
         }
         else
         {
             Vector3d pos = particle.getGlobalPosition(emitter);
             BlockPos blockPos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
+            int lightLevel = WorldRenderer.getLightmapCoordinates(emitter.world, blockPos);
 
-            this.lx = emitter.world.getLightLevel(LightType.SKY, blockPos);
-            this.ly = emitter.world.getLightLevel(LightType.BLOCK, blockPos);
+            this.light = lightLevel;
         }
     }
 

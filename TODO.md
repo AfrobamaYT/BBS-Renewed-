@@ -22,7 +22,7 @@
 - [x] Framebuffer picking
 - [ ] Particles
   - [ ] Collision
-  - [ ] Lighting
+  - [x] Lighting
   - [x] Rendering
 - [x] Setup watch dog
 - [x] Model blocks
@@ -47,3 +47,4 @@ Useful user suggestions:
 
 - [ ] Sample lighting value at (model block)
 - [ ] Add gizmos to model block
+- [ ] Kirah's suggestions model block screen

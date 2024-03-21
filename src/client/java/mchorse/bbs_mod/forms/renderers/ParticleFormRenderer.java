@@ -94,6 +94,8 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             Vector3d translation = new Vector3d(matrix.getTranslation(Vectors.TEMP_3F));
             translation.add(context.camera.position.x, context.camera.position.y, context.camera.position.z);
 
+            MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
+
             context.stack.push();
             context.stack.loadIdentity();
             context.stack.multiplyPositionMatrix(new Matrix4f(RenderSystem.getInverseViewRotationMatrix()).invert());
@@ -101,7 +103,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             emitter.lastGlobal.set(translation);
             emitter.rotation.set(matrix);
             emitter.setupCameraProperties(context.camera);
-            emitter.render(this.getShader(context, GameRenderer::getPositionColorTexLightmapProgram, BBSShaders::getPickerParticlesProgram), context.stack, context.getTransition());
+            emitter.render(this.getShader(context, GameRenderer::getParticleProgram, BBSShaders::getPickerParticlesProgram), context.stack, context.getTransition());
 
             context.stack.pop();
         }

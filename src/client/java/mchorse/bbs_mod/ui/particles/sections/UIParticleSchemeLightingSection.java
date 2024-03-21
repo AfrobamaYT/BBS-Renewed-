@@ -101,7 +101,19 @@ public class UIParticleSchemeLightingSection extends UIParticleSchemeSection
         });
         this.a.color(0xff1a1a1a).tooltip(UIKeys.SNOWSTORM_LIGHTING_ALPHA);
 
-        this.lighting = new UIToggle(UIKeys.SNOWSTORM_LIGHTING_LIGHTING, (b) -> this.editor.dirty());
+        this.lighting = new UIToggle(UIKeys.SNOWSTORM_LIGHTING_LIGHTING, (b) ->
+        {
+            if (b.getValue())
+            {
+                this.scheme.getOrCreate(ParticleComponentAppearanceLighting.class);
+            }
+            else
+            {
+                this.scheme.remove(ParticleComponentAppearanceLighting.class);
+            }
+
+            this.editor.dirty();
+        });
 
         this.gradientColor = new UIColor(this::setGradientColor).withAlpha();
         this.gradientEditor = new UIGradientEditor(this, this.gradientColor);

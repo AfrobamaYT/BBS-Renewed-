@@ -424,7 +424,7 @@ public class ParticleEmitter
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
             this.bindTexture();
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_TEXTURE_COLOR_LIGHT);
 
             for (Particle particle : this.particles)
             {
