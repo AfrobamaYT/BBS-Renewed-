@@ -32,10 +32,12 @@ public class CubicCubeRenderer implements ICubicRenderer
     protected Vector4f vertex = new Vector4f();
 
     private ModelVertex modelVertex = new ModelVertex();
+    private boolean picking;
 
-    public CubicCubeRenderer(int light)
+    public CubicCubeRenderer(int light, boolean picking)
     {
         this.light = light;
+        this.picking = picking;
     }
 
     public static void moveToPivot(MatrixStack stack, Vector3f pivot)
@@ -194,13 +196,20 @@ public class CubicCubeRenderer implements ICubicRenderer
         this.vertex.set(vertex.vertex.x, vertex.vertex.y, vertex.vertex.z, 1);
         stack.peek().getPositionMatrix().transform(this.vertex);
 
-        // POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL
         builder.vertex(this.vertex.x, this.vertex.y, this.vertex.z)
             .color(this.r, this.g, this.b, this.a)
             .texture(vertex.uv.x, vertex.uv.y)
-            .overlay(OverlayTexture.DEFAULT_UV)
-            .light(this.light)
-            .normal(this.normal.x, this.normal.y, this.normal.z)
-            .next();
+            .overlay(OverlayTexture.DEFAULT_UV);
+
+        if (this.picking)
+        {
+            builder.light(group.index, 0);
+        }
+        else
+        {
+            builder.light(this.light);
+        }
+
+        builder.normal(this.normal.x, this.normal.y, this.normal.z).next();
     }
 }

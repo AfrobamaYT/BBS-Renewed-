@@ -18,6 +18,7 @@ public class BBSShaders
 
     private static ShaderProgram pickerBillboard;
     private static ShaderProgram pickerParticles;
+    private static ShaderProgram pickerModels;
 
     static
     {
@@ -29,6 +30,7 @@ public class BBSShaders
 
             pickerBillboard = new ShaderProgram(factory, "picker_billboard", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
             pickerParticles = new ShaderProgram(factory, "picker_particles", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
+            pickerModels = new ShaderProgram(factory, "picker_models", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
         }
         catch (IOException e)
         {
@@ -49,6 +51,11 @@ public class BBSShaders
     public static ShaderProgram getPickerParticlesProgram()
     {
         return pickerParticles;
+    }
+
+    public static ShaderProgram getPickerModelsProgram()
+    {
+        return pickerModels;
     }
 
     private static class ProxyResourceFactory implements ResourceFactory

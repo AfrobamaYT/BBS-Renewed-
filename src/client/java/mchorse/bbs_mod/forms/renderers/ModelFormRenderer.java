@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
 import mchorse.bbs_mod.cubic.animation.Animator;
@@ -140,7 +141,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            this.renderModel(stack, model.model, LightmapTextureManager.pack(15, 15), color, true);
+            this.renderModel(stack, model.model, LightmapTextureManager.pack(15, 15), color, true, false);
 
             /* Render body parts */
             this.captureMatrices(model);
@@ -152,7 +153,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(MatrixStack stack, Model model, int light, Color color, boolean ui)
+    private void renderModel(MatrixStack stack, Model model, int light, Color color, boolean ui, boolean picking)
     {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
@@ -161,7 +162,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
-        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light);
+        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, picking);
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 
@@ -204,9 +205,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
 
             RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
-            RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+            RenderSystem.setShader(this.getShader(context,
+                GameRenderer::getRenderTypeEntityTranslucentCullProgram,
+                BBSShaders::getPickerModelsProgram));
 
-            this.renderModel(context.stack, model.model, context.light, color, false);
+            this.renderModel(context.stack, model.model, context.light, color, false, context.isPicking());
 
             this.captureMatrices(model);
         }
