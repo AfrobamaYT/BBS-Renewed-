@@ -16,6 +16,7 @@ public class BBSShaders
 {
     private static ShaderProgram extrudedProgram;
 
+    private static ShaderProgram pickerPreview;
     private static ShaderProgram pickerBillboard;
     private static ShaderProgram pickerParticles;
     private static ShaderProgram pickerModels;
@@ -28,6 +29,7 @@ public class BBSShaders
 
             extrudedProgram = new ShaderProgram(factory, "extruded", VertexFormats.POSITION_TEXTURE_COLOR_NORMAL);
 
+            pickerPreview = new ShaderProgram(factory, "picker_preview", VertexFormats.POSITION_TEXTURE_COLOR);
             pickerBillboard = new ShaderProgram(factory, "picker_billboard", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
             pickerParticles = new ShaderProgram(factory, "picker_particles", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
             pickerModels = new ShaderProgram(factory, "picker_models", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
@@ -41,6 +43,11 @@ public class BBSShaders
     public static ShaderProgram getExtrudedProgram()
     {
         return extrudedProgram;
+    }
+
+    public static ShaderProgram getPickerPreviewProgram()
+    {
+        return pickerPreview;
     }
 
     public static ShaderProgram getPickerBillboardProgram()

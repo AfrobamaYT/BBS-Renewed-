@@ -19,7 +19,7 @@
   - [ ] Form
   - [ ] Prev prev rotation
   - [ ] Animation data (sticks, trigger, extra)
-- [ ] Framebuffer picking
+- [x] Framebuffer picking
 - [ ] Particles
   - [ ] Collision
   - [ ] Lighting
