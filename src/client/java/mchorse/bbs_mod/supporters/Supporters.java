@@ -147,6 +147,11 @@ public class Supporters
         this.add("yeek");
         this.add("mc47382");
         this.add("浪濤", "https://space.bilibili.com/289923315", "...");
+        this.add("附魔粒子", "https://space.bilibili.com/455637223");
+        this.add("涅泪", "https://space.bilibili.com/326657199", "...");
+        this.add("冰林L", "https://space.bilibili.com/497979931");
+        this.add("问学巨酱", "https://space.bilibili.com/635615190");
+        this.add("慕华lingzi");
     }
 
     private void add(String name)

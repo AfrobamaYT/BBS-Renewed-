@@ -184,6 +184,7 @@ public class UIKeys
     public static final IKey FILM_GROUPS_RIGHT_STICK = L10n.lang("bbs.ui.film.groups.right_stick", "Right stick", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_GROUPS_TRIGGERS = L10n.lang("bbs.ui.film.groups.triggers", "Triggers", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor", "Open camera editor", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot", "Take a screenshot", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_OPEN_REPLAY_EDITOR = L10n.lang("bbs.ui.film.open_replay_editor", "Open replay editor", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor", "Open voice line editor", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add", "Add a replay here", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);

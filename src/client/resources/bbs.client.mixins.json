@@ -6,8 +6,9 @@
         "CameraMixin",
         "GameRendererMixin",
         "MouseMixin",
-        "WorldRendererMixin",
-        "EntityRendererDispatcherInvoker"
+        "WorldRendererAccessor",
+        "EntityRendererDispatcherInvoker",
+        "MinecraftClientMixin"
     ],
     "injectors": {
         "defaultRequire": 1

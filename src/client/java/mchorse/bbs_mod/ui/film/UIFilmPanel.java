@@ -16,6 +16,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -42,6 +43,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -55,6 +57,7 @@ import mchorse.bbs_mod.utils.undo.UndoManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.SimpleFramebuffer;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 
@@ -84,6 +87,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public UIIcon plause;
     public UIIcon record;
+    public UIIcon screenshot;
     public UIIcon openVideos;
     public UIIcon openCamera;
     public UIIcon openReplays;
@@ -144,6 +148,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
         this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), null));
         this.record.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD, Direction.LEFT);
+        this.screenshot = new UIIcon(Icons.CAMERA, (b) ->
+        {
+            ScreenshotRecorder recorder = BBSModClient.getScreenshotRecorder();
+            SimpleFramebuffer framebuffer = BBSModClient.getFramebuffer();
+
+            recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), framebuffer.getColorAttachment(), framebuffer.textureWidth, framebuffer.textureHeight);
+        });
+        this.screenshot.tooltip(UIKeys.FILM_SCREENSHOT, Direction.LEFT);
         this.openVideos = new UIIcon(Icons.FILM, (b) -> this.recorder.openMovies());
         this.openVideos.tooltip(UIKeys.CAMERA_TOOLTIPS_OPEN_VIDEOS, Direction.LEFT);
         this.openCamera = new UIIcon(Icons.FRUSTUM, (b) -> this.showPanel(this.cameraClips));
@@ -162,7 +174,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
         this.draggable.hoverOnly().relative(this.main).x(1F, -3).y(0.5F, -40).wh(6, 80);
 
-        this.iconBar.add(this.plause, this.record, this.openVideos, this.openCamera, this.openReplays, this.openScreenplay);
+        this.iconBar.add(this.plause, this.screenshot, this.record, this.openVideos, this.openCamera, this.openReplays, this.openScreenplay);
 
         /* Adding everything */
         UIRenderable renderable = new UIRenderable(this::renderIcons);
@@ -231,8 +243,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public Area getFramebufferArea(Area viewport)
     {
-        int width = this.texture.width; // BBSSettings.videoWidth.get();
-        int height = this.texture.height; // BBSSettings.videoHeight.get();
+        int width = BBSSettings.videoWidth.get(); // this.texture.width;
+        int height = BBSSettings.videoHeight.get(); // this.texture.height;
 
         Camera camera = new Camera();
 
@@ -808,12 +820,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.camera.copy(this.getWorldCamera());
         context.batcher.flush();
 
-        Texture framebuffer = this.texture;
         Area viewport = this.getViewportArea();
         Area area = this.getFramebufferArea(viewport);
 
-        viewport.render(context.batcher, Colors.A90);
-        context.batcher.texturedBox(framebuffer.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, framebuffer.height, framebuffer.width, 0, framebuffer.width, framebuffer.height);
+        viewport.render(context.batcher, Colors.A75);
+        context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
 
         /* Render rule of thirds */
         if (BBSSettings.editorRuleOfThirds.get())

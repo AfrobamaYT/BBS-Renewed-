@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.graphics.Draw;
-import mchorse.bbs_mod.mixin.client.WorldRendererMixin;
+import mchorse.bbs_mod.mixin.client.WorldRendererAccessor;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -124,7 +124,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         this.modelBlocks.clear();
 
-        ObjectArrayList<ChunkBuilder.BuiltChunk> chunks = ((WorldRendererMixin) MinecraftClient.getInstance().worldRenderer).getField_45616();
+        ObjectArrayList<ChunkBuilder.BuiltChunk> chunks = ((WorldRendererAccessor) MinecraftClient.getInstance().worldRenderer).getField_45616();
 
         for (ChunkBuilder.BuiltChunk chunk : chunks)
         {
