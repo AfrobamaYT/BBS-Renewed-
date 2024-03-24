@@ -120,6 +120,7 @@ public class BBSModClient implements ClientModInitializer
 
     public static void renderToFramebuffer()
     {
+        // TODO: Get it working if possible?
         if (!toggle)
         {
             return;
@@ -229,6 +230,14 @@ public class BBSModClient implements ClientModInitializer
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
             {
                 screen.renderInWorld(context);
+            }
+        });
+
+        WorldRenderEvents.LAST.register((context) ->
+        {
+            if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
+            {
+                screen.lastRender(context);
             }
         });
 

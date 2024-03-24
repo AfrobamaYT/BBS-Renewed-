@@ -824,7 +824,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         Area area = this.getFramebufferArea(viewport);
 
         viewport.render(context.batcher, Colors.A75);
-        context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+
+        if (texture != null)
+        {
+            context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+        }
 
         /* Render rule of thirds */
         if (BBSSettings.editorRuleOfThirds.get())

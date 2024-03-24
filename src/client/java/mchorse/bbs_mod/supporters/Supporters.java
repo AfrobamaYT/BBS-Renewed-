@@ -152,6 +152,11 @@ public class Supporters
         this.add("冰林L", "https://space.bilibili.com/497979931");
         this.add("问学巨酱", "https://space.bilibili.com/635615190");
         this.add("慕华lingzi");
+        this.add("靈音Nemloi");
+        this.add("风尘WD");
+        this.add("QingDame");
+        this.add("InmoNum");
+        this.add("akirashio");
     }
 
     private void add(String name)

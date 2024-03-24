@@ -14,6 +14,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -61,7 +62,15 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
         MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
 
-        this.emitter.render(GameRenderer::getParticleProgram, context.batcher.getContext().getMatrices(), context.getTransition());
+        MatrixStack stack = context.batcher.getContext().getMatrices();
+
+        stack.push();
+        stack.loadIdentity();
+        stack.multiplyPositionMatrix(new Matrix4f(RenderSystem.getInverseViewRotationMatrix()).invert());
+
+        this.emitter.render(GameRenderer::getParticleProgram, stack, context.getTransition());
+
+        stack.pop();
 
         ParticleComponentKillPlane plane = this.emitter.scheme.get(ParticleComponentKillPlane.class);
 
