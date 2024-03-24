@@ -241,7 +241,7 @@ public class Animator
         }
 
         this.prevX = target.getX();
-        this.prevZ = target.getY();
+        this.prevZ = target.getZ();
         this.prevMY = target.getVelocity().y;
 
         this.wasOnGround = target.isOnGround();
