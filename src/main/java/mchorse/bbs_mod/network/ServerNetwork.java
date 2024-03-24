@@ -62,12 +62,7 @@ public class ServerNetwork
 
             Morph.getMorph(player).form = FormUtils.copy(form);
 
-            sendMorph(player, player.getId(), form);
-
-            for (ServerPlayerEntity otherPlayer : PlayerLookup.tracking(player))
-            {
-                sendMorph(otherPlayer, player.getId(), form);
-            }
+            sendMorphToTracked(player, form);
         });
     }
 
@@ -84,6 +79,16 @@ public class ServerNetwork
         }
 
         ServerPlayNetworking.send(player, CLIENT_PLAYER_FORM, buf);
+    }
+
+    public static void sendMorphToTracked(ServerPlayerEntity player, Form form)
+    {
+        sendMorph(player, player.getId(), form);
+
+        for (ServerPlayerEntity otherPlayer : PlayerLookup.tracking(player))
+        {
+            sendMorph(otherPlayer, player.getId(), form);
+        }
     }
 
     public static void sendClickedModelBlock(ServerPlayerEntity player, BlockPos pos)

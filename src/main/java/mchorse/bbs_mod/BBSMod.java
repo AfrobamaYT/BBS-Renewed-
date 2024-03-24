@@ -1,5 +1,6 @@
 package mchorse.bbs_mod;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import mchorse.bbs_mod.blocks.ModelBlock;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -27,10 +28,13 @@ import mchorse.bbs_mod.camera.clips.overwrite.DollyClip;
 import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
+import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.forms.FormArchitect;
+import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
@@ -48,10 +52,8 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.factory.MapFactory;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -59,17 +61,17 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import org.apache.logging.log4j.core.jmx.Server;
 
 import java.io.File;
 import java.util.function.Consumer;
@@ -263,21 +265,48 @@ public class BBSMod implements ModInitializer
         /* Networking */
         ServerNetwork.setup();
 
-        /* Event listener */
-        ServerEntityEvents.ENTITY_LOAD.register((entity, world) ->
+        /* Commands */
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
         {
-            if (entity instanceof ServerPlayerEntity player)
-            {
-                Morph morph = Morph.getMorph(player);
+            dispatcher.register(
+                CommandManager.literal("bbs").requires((source) -> source.hasPermissionLevel(2)).then(CommandManager.literal("morph").then(
+                    CommandManager.argument("target", EntityArgumentType.player()).executes((source) ->
+                    {
+                        ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
 
-                ServerNetwork.sendMorph(player, player.getId(), morph.form);
+                        ServerNetwork.sendMorphToTracked(entity, null);
+                        Morph.getMorph(entity).form = FormUtils.copy(null);
 
-                for (ServerPlayerEntity otherPlayer : PlayerLookup.tracking(player))
-                {
-                    ServerNetwork.sendMorph(otherPlayer, player.getId(), morph.form);
-                }
-            }
+                        return 1;
+                    })
+                    .then(CommandManager.argument("morph", StringArgumentType.greedyString()).executes((source) ->
+                    {
+                        ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
+                        String morphData = StringArgumentType.getString(source, "morph");
+                        Form form = null;
+
+                        try
+                        {
+                            form = FormUtils.fromData(DataToString.mapFromString(morphData));
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+
+                            return -1;
+                        }
+
+                        ServerNetwork.sendMorphToTracked(entity, form);
+                        Morph.getMorph(entity).form = FormUtils.copy(form);
+
+                        return 1;
+                    })))
+                )
+            );
         });
+
+        /* Event listener */
+        registerEvents();
 
         /* Entities */
         FabricDefaultAttributeRegistry.register(ACTOR_ENTITY, ActorEntity.createActorAttributes());
@@ -285,6 +314,19 @@ public class BBSMod implements ModInitializer
         /* Blocks */
         Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "model"), MODEL_BLOCK);
         Registry.register(Registries.ITEM, new Identifier(MOD_ID, "model"), new BlockItem(MODEL_BLOCK, new Item.Settings()));
+    }
+
+    private void registerEvents()
+    {
+        ServerEntityEvents.ENTITY_LOAD.register((entity, world) ->
+        {
+            if (entity instanceof ServerPlayerEntity player)
+            {
+                Morph morph = Morph.getMorph(player);
+
+                ServerNetwork.sendMorphToTracked(player, morph.form);
+            }
+        });
     }
 
     public static Settings setupConfig(Icon icon, String id, File destination, Consumer<SettingsBuilder> registerer)
