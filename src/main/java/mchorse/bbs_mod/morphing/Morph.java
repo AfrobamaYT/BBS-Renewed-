@@ -9,24 +9,15 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 
-import java.lang.reflect.Field;
-
 public class Morph
 {
     public Form form;
 
     public static Morph getMorph(PlayerEntity entity)
     {
-        try
+        if (entity instanceof IMorphProvider provider)
         {
-            // TODO: DON'T USE REFLECTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            Field field = PlayerEntity.class.getDeclaredField("morph");
-
-            return  (Morph) field.get(entity);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+            return provider.getMorph();
         }
 
         return null;
