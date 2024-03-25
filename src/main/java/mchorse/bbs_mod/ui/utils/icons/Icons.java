@@ -151,6 +151,12 @@ public class Icons
     public static final Icon KEY = register(new Icon(ATLAS, "key", 224, 112));
     public static final Icon VOICE = register(new Icon(ATLAS, "voice", 240, 112));
 
+    public static final Icon TWITCH = register(new Icon(ATLAS, "twitch", 0, 128));
+    public static final Icon BILIBILI = register(new Icon(ATLAS, "bilibili", 16, 128));
+    public static final Icon TIKTOK = register(new Icon(ATLAS, "tiktok", 32, 128));
+    public static final Icon LINK = register(new Icon(ATLAS, "link", 48, 128));
+    public static final Icon USER = register(new Icon(ATLAS, "user", 64, 128));
+
     public static final Icon CHECKBOARD = register(new Icon(ATLAS, "checkboard", 0, 240));
     public static final Icon DISABLED = register(new Icon(ATLAS, "disabled", 16, 240));
     public static final Icon CURSOR = register(new Icon(ATLAS, "cursor", 32, 240));

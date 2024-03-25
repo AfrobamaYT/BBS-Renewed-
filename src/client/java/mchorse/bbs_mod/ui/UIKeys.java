@@ -533,6 +533,19 @@ public class UIKeys
     public static final IKey MODEL_BLOCKS_SHADOW = L10n.lang("bbs.ui.model_blocks.shadow", "Shadow", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey MODEL_BLOCKS_KEYS_MOVE_TO = L10n.lang("bbs.ui.model_blocks.keys.move_to", "Move to", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
+    public static final IKey SUPPORTERS_TITLE = L10n.lang("bbs.ui.supporters.title", "Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_INTRO = L10n.lang("bbs.ui.supporters.intro", "Hello there! My name is McHorse, and thank you for downloading BBS mod! If you're new to BBS mod, check out following resources!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_GRATITUDE = L10n.lang("bbs.ui.supporters.gratitude", "BBS mod is possible thanks to generous donations of my fans!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_CC = L10n.lang("bbs.ui.supporters.cc", "Content Creators", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_SUPER_SUPPORTERS = L10n.lang("bbs.ui.supporters.super_supporters", "Super Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_EARLY_ACCESS = L10n.lang("bbs.ui.supporters.early_access", "Early Access Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_TUTORIALS = L10n.lang("bbs.ui.supporters.tutorials", "Tutorials", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_TUTORIALS_LINK = L10n.lang("bbs.ui.supporters.tutorials", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_COMMUNITY = L10n.lang("bbs.ui.supporters.community", "Community", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_COMMUNITY_LINK = L10n.lang("bbs.ui.supporters.tutorials_link", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_WIKI = L10n.lang("bbs.ui.supporters.wiki", "Wiki", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_WIKI_LINK = L10n.lang("bbs.ui.supporters.wiki_link", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+
     /* Utility */
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_KEY = L10n.lang("studio.ui.language.editor.context.copy_key");
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_ORIGINAL = L10n.lang("studio.ui.language.editor.context.copy_original");

@@ -44,3 +44,8 @@ Useful user suggestions:
 - [ ] Sample lighting value at (model block)
 - [ ] Add gizmos to model block
 - [ ] Kirah's suggestions model block screen
+- [ ] Add gizmos to film editor
+
+Considerations:
+
+- [ ] Direction XYZ Snowstorm
