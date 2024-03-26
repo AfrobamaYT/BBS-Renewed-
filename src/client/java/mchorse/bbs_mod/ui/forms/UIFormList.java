@@ -10,12 +10,12 @@ import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.render.DiffuseLighting;
 
@@ -30,7 +30,7 @@ public class UIFormList extends UIElement
 
     public UIElement bar;
     public UITextbox search;
-    public UIButton edit;
+    public UIIcon edit;
     public UIIcon close;
 
     private UIFormCategory recent;
@@ -43,12 +43,12 @@ public class UIFormList extends UIElement
         this.forms = UI.scrollView(0, 0);
         this.bar = new UIElement();
         this.search = new UITextbox(100, this::search).placeholder(UIKeys.FORMS_LIST_SEARCH);
-        this.edit = new UIButton(UIKeys.FORMS_LIST_EDIT, this::edit);
+        this.edit = new UIIcon(Icons.EDIT, this::edit);
+        this.edit.tooltip(UIKeys.FORMS_LIST_EDIT, Direction.TOP);
         this.close = new UIIcon(Icons.CLOSE, this::close);
 
         this.forms.relative(this).full();
         this.bar.relative(this).x(10).y(1F, -30).w(1F, -20).h(20).row().height(20);
-        this.edit.w(80);
         this.close.w(20);
 
         this.bar.add(this.search, this.edit, this.close);
@@ -94,7 +94,7 @@ public class UIFormList extends UIElement
         }
     }
 
-    private void edit(UIButton b)
+    private void edit(UIIcon b)
     {
         this.palette.toggleEditor();
     }

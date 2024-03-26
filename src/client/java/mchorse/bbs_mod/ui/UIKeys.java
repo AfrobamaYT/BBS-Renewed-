@@ -536,6 +536,7 @@ public class UIKeys
     public static final IKey SUPPORTERS_TITLE = L10n.lang("bbs.ui.supporters.title", "Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_INTRO = L10n.lang("bbs.ui.supporters.intro", "Hello there! My name is McHorse, and thank you for downloading BBS mod! If you're new to BBS mod, check out following resources!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_GRATITUDE = L10n.lang("bbs.ui.supporters.gratitude", "BBS mod is possible thanks to generous donations of my fans!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_CALL_TO_ACTION = L10n.lang("bbs.ui.supporters.call_to_action", "If you would like to support BBS mod financially, consider donating me on Patreon!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_CC = L10n.lang("bbs.ui.supporters.cc", "Content Creators", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_SUPER_SUPPORTERS = L10n.lang("bbs.ui.supporters.super_supporters", "Super Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_EARLY_ACCESS = L10n.lang("bbs.ui.supporters.early_access", "Early Access Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
@@ -545,8 +546,11 @@ public class UIKeys
     public static final IKey SUPPORTERS_COMMUNITY_LINK = L10n.lang("bbs.ui.supporters.tutorials_link", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_WIKI = L10n.lang("bbs.ui.supporters.wiki", "Wiki", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_WIKI_LINK = L10n.lang("bbs.ui.supporters.wiki_link", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_DONATE = L10n.lang("bbs.ui.supporters.donate", "Donate on Patreon", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey SUPPORTERS_DONATE_LINK = L10n.lang("bbs.ui.supporters.donate_link", "https://www.patreon.com/McHorse", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
     public static final IKey MORPHING_TITLE = L10n.lang("bbs.ui.morphing.title", "Morphing", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey MORPHING_DEMORPH = L10n.lang("bbs.ui.morphing.demorph", "Demorph", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
     /* Utility */
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_KEY = L10n.lang("studio.ui.language.editor.context.copy_key");

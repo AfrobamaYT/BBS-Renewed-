@@ -46,10 +46,14 @@ public class UISupportersPanel extends UIDashboardPanel
         UIButton tutorials = new UIButton(UIKeys.SUPPORTERS_TUTORIALS, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_TUTORIALS_LINK.get()));
         UIButton community = new UIButton(UIKeys.SUPPORTERS_COMMUNITY, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_COMMUNITY_LINK.get()));
         UIButton wiki = new UIButton(UIKeys.SUPPORTERS_WIKI, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_WIKI_LINK.get()));
+        UIButton donate = new UIButton(UIKeys.SUPPORTERS_DONATE, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_DONATE_LINK.get()));
+
         Supplier<Integer> color = () -> BBSSettings.primaryColor(Colors.A50);
 
         column.add(new UIText().text(UIKeys.SUPPORTERS_INTRO).marginTop(20));
         column.add(UI.row(tutorials, community, wiki).marginBottom(12));
+        column.add(new UIText().text(UIKeys.SUPPORTERS_CALL_TO_ACTION));
+        column.add(donate.marginBottom(12));
         column.add(new UIText().text(UIKeys.SUPPORTERS_GRATITUDE));
         column.add(UI.label(UIKeys.SUPPORTERS_CC).background(color).marginTop(12).marginBottom(6));
         column.add(this.ccSupporters);

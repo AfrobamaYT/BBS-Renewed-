@@ -47,6 +47,7 @@ Useful user suggestions:
 - [ ] Add gizmos to model block
 - [ ] Kirah's suggestions model block screen
 - [ ] Add gizmos to film editor
+- [ ] Rethink keyframe addition and removal
 
 Considerations:
 
