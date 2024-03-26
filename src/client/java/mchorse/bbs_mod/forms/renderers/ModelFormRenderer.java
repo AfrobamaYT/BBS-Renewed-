@@ -63,6 +63,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         super(form);
     }
 
+    public Animator getAnimator()
+    {
+        return this.animator;
+    }
+
     public CubicModel getModel()
     {
         return getModel(this.form);

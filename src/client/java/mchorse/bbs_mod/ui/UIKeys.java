@@ -546,6 +546,8 @@ public class UIKeys
     public static final IKey SUPPORTERS_WIKI = L10n.lang("bbs.ui.supporters.wiki", "Wiki", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_WIKI_LINK = L10n.lang("bbs.ui.supporters.wiki_link", "...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
+    public static final IKey MORPHING_TITLE = L10n.lang("bbs.ui.morphing.title", "Morphing", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+
     /* Utility */
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_KEY = L10n.lang("studio.ui.language.editor.context.copy_key");
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_ORIGINAL = L10n.lang("studio.ui.language.editor.context.copy_original");

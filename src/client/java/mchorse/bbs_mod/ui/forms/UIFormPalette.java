@@ -19,6 +19,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
     public Consumer<Form> callback;
 
     private UIFormCategory lastSelected;
+    private boolean cantExit;
 
     public static UIFormPalette open(UIElement parent, boolean editing, Form form, Consumer<Form> callback)
     {
@@ -60,6 +61,14 @@ public class UIFormPalette extends UIElement implements IUIFormList
         this.eventPropagataion(EventPropagation.BLOCK_INSIDE).markContainer();
     }
 
+    public void cantExit()
+    {
+        this.cantExit = true;
+
+        this.list.close.removeFromParent();
+        this.eventPropagataion(EventPropagation.PASS);
+    }
+
     public UIFormPalette updatable()
     {
         this.editor.renderer.updatable();
@@ -80,7 +89,10 @@ public class UIFormPalette extends UIElement implements IUIFormList
     {
         if (!this.editor.isEditing())
         {
-            this.removeFromParent();
+            if (!this.cantExit)
+            {
+                this.removeFromParent();
+            }
         }
         else
         {
@@ -144,9 +156,11 @@ public class UIFormPalette extends UIElement implements IUIFormList
         if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
         {
             this.exit();
+
+            return !this.cantExit;
         }
 
-        return true;
+        return false;
     }
 
     @Override

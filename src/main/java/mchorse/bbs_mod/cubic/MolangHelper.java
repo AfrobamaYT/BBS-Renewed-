@@ -53,8 +53,8 @@ public class MolangHelper
             dx = target.getVelocity().x;
             dz = target.getVelocity().z;
             // TODO: yawSpeed = Interpolations.lerp(basic.prevRotation.z - basic.prevPrevRotationZ, basic.rotation.z - basic.prevRotation.z, transition);
-            headYaw = Math.toDegrees(yawHead - bodyYaw);
-            headPitch = Math.toDegrees(Interpolations.lerp(target.getPrevPitch(), target.getPitch(), transition));
+            headYaw = yawHead - bodyYaw;
+            headPitch = Interpolations.lerp(target.getPrevPitch(), target.getPitch(), transition);
             velocity = Math.sqrt(dx * dx + target.getVelocity().y * target.getVelocity().y + dz * dz);
 
             /* There is still a tiny bit of vertical velocity (gravity) when an

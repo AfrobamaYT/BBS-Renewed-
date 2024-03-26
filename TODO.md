@@ -27,17 +27,19 @@
   - [x] Add click picking
   - [x] Move to cursor (with ray tracing)
   - [x] Model block shadows
+  - [ ] Immersive editing
 - [ ] More forms
   - [ ] Block form
   - [ ] Item form
   - [ ] Structure form
 - [x] File drag and dropping
+- [x] Metamorph
+  - [ ] Morph picker
 
 Core features:
 
 - [ ] Action system
 - [ ] Emoticons + S&B
-- [ ] Metamorph
 
 Useful user suggestions:
 
@@ -49,3 +51,4 @@ Useful user suggestions:
 Considerations:
 
 - [ ] Direction XYZ Snowstorm
+- [ ] Benchbuster

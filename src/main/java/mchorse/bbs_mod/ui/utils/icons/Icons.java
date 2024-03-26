@@ -156,6 +156,7 @@ public class Icons
     public static final Icon TIKTOK = register(new Icon(ATLAS, "tiktok", 32, 128));
     public static final Icon LINK = register(new Icon(ATLAS, "link", 48, 128));
     public static final Icon USER = register(new Icon(ATLAS, "user", 64, 128));
+    public static final Icon MORPH = register(new Icon(ATLAS, "morph", 80, 128));
 
     public static final Icon CHECKBOARD = register(new Icon(ATLAS, "checkboard", 0, 240));
     public static final Icon DISABLED = register(new Icon(ATLAS, "disabled", 16, 240));

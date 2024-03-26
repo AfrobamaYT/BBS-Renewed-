@@ -93,4 +93,14 @@ public class ClientNetwork
     {
         ClientPlayNetworking.send(ServerNetwork.SERVER_RANDOM, PacketByteBufs.empty());
     }
+
+    public static void sendPlayerForm(Form form)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+        MapType mapType = FormUtils.toData(form);
+
+        DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_FORM, buf);
+    }
 }

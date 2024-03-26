@@ -25,6 +25,7 @@ public class ServerNetwork
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "server_model_block_form");
     public static final Identifier SERVER_RANDOM = new Identifier(BBSMod.MOD_ID, "server_random");
+    public static final Identifier SERVER_PLAYER_FORM = new Identifier(BBSMod.MOD_ID, "server_player_form");
 
     public static void setup()
     {
@@ -63,6 +64,28 @@ public class ServerNetwork
             Morph.getMorph(player).form = FormUtils.copy(form);
 
             sendMorphToTracked(player, form);
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_FORM, (server, player, handler, buf, responder) ->
+        {
+            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+            Form form = null;
+
+            try
+            {
+                form = BBSMod.getForms().fromData(data);
+            }
+            catch (Exception e)
+            {}
+
+            final Form finalForm = form;
+
+            server.execute(() ->
+            {
+                Morph.getMorph(player).form = FormUtils.copy(finalForm);
+
+                sendMorphToTracked(player, finalForm);
+            });
         });
     }
 
