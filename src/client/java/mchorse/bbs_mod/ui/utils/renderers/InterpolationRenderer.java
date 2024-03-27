@@ -31,7 +31,6 @@ public class InterpolationRenderer
         int w = 140;
         int h = 130;
 
-        /* TODO: matrix */
         FontRenderer font = context.batcher.getFont();
         TooltipStyle style = TooltipStyle.get();
         String tooltip = InterpolationUtils.getTooltip(interp).get();

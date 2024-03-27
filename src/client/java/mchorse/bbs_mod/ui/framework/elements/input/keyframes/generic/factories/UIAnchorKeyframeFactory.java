@@ -5,6 +5,8 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 
 public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.Anchor>
@@ -24,7 +26,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
 
     private void displayActors()
     {
-        /* TODO: this.getContext().replaceContextMenu((menu) ->
+        this.getContext().replaceContextMenu((menu) ->
         {
             UIFilmPanel panel = this.getPanel();
             int value = this.keyframe.getValue().actor;
@@ -33,7 +35,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
 
             for (int i = 0; i < panel.getController().entities.size(); i++)
             {
-                Entity entity = panel.getController().entities.get(i);
+                /* TODO: Entity entity = panel.getController().entities.get(i);
                 Form form = entity.get(FormComponent.class).form;
                 final int actor = i;
                 IKey label = IKey.raw(i + (form == null ? "" : " - " + form.getIdOrName()));
@@ -45,9 +47,9 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
                 else
                 {
                     menu.action(Icons.CLOSE, label, () -> this.setActor(actor));
-                }
+                } */
             }
-        }); */
+        });
     }
 
     private void displayAttachments()

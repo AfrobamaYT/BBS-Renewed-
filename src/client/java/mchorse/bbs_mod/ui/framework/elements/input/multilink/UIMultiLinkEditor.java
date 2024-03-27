@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.ui.framework.elements.input.multilink;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -12,14 +14,16 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.utils.UICanvasEditor;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
+import net.minecraft.client.gl.GlUniform;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.render.GameRenderer;
 
 public class UIMultiLinkEditor extends UICanvasEditor
 {
-    // TODO: public static Shader multiLinkShader;
-
     public UITexturePicker picker;
     public FilteredLink link;
 
@@ -219,31 +223,25 @@ public class UIMultiLinkEditor extends UICanvasEditor
                     context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.setA(Colors.RED, 0.25F));
                 }
 
-                /* TODO: Shader shader = context.render.getShaders().get(VBOAttributes.VERTEX_UV_RGBA_2D);
+                ShaderProgram shader = GameRenderer.getPositionTexColorProgram();
 
                 if (needsMultLinkShader)
                 {
-                    this.ensureShaderCreated(context.render);
+                    shader = BBSShaders.getMultilinkProgram();
 
-                    shader = multiLinkShader;
+                    GlUniform size = shader.getUniform("Size");
+                    GlUniform filters = shader.getUniform("Filters");
 
-                    CommonShaderAccess.setMultiLink(shader, ow, oh, child.pixelate, child.erase);
+                    size.set((float) ow, (float) oh);
+                    filters.set((float) child.pixelate, child.erase ? 1F : 0F, 0F, 0F);
                 }
 
-                context.render.getTextures().bind(Icons.ATLAS, 5);
-                texture.bind(0);
+                RenderSystem.setShaderTexture(3, context.render.getTextures().getTexture(Icons.ATLAS).id);
 
-                context.batcher.texturedBox(shader, texture, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height); */
+                final ShaderProgram finalProgram = shader;
+
+                context.batcher.texturedBox(() -> finalProgram, texture.id, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
             }
         }
-    }
-
-    private void ensureShaderCreated()
-    {
-        /* TODO: if (multiLinkShader == null)
-        {
-            multiLinkShader = new Shader(Link.assets("shaders/ui/vertex_uv_rgba_2d-multilink.glsl"), VBOAttributes.VERTEX_UV_RGBA_2D);
-            multiLinkShader.onInitialize(CommonShaderAccess::initializeTexture).attachUBO(context.getUBO(), "u_matrices");
-        } */
     }
 }

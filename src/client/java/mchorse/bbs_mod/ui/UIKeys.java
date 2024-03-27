@@ -248,6 +248,7 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_LABEL_SHADOW_OFFSET = L10n.lang("bbs.ui.forms.editors.label.shadow_offset");
     public static final IKey FORMS_EDITORS_LABEL_TITLE = L10n.lang("bbs.ui.forms.editors.label.title");
     public static final IKey FORMS_EDITORS_MODEL_POSE = L10n.lang("bbs.ui.forms.editors.model.pose");
+    public static final IKey FORMS_EDITORS_MODEL_ACTIONS = L10n.lang("bbs.ui.forms.editors.model.actions", "Actions", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FORMS_EDITOR_BONE = L10n.lang("bbs.ui.forms.editor.bone");
     public static final IKey FORMS_EDITOR_CONTEXT_ADD = L10n.lang("bbs.ui.forms.editor.context.add");
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");

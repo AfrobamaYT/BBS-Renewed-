@@ -14,6 +14,8 @@ import java.util.Optional;
 
 public class BBSShaders
 {
+    private static ShaderProgram multiLink;
+
     private static ShaderProgram extrudedProgram;
 
     private static ShaderProgram pickerPreview;
@@ -27,6 +29,8 @@ public class BBSShaders
         {
             ResourceFactory factory = new ProxyResourceFactory(MinecraftClient.getInstance().getResourceManager());
 
+            multiLink = new ShaderProgram(factory, "multilink", VertexFormats.POSITION_TEXTURE_COLOR);
+
             extrudedProgram = new ShaderProgram(factory, "extruded", VertexFormats.POSITION_TEXTURE_COLOR_NORMAL);
 
             pickerPreview = new ShaderProgram(factory, "picker_preview", VertexFormats.POSITION_TEXTURE_COLOR);
@@ -38,6 +42,11 @@ public class BBSShaders
         {
             e.printStackTrace();
         }
+    }
+
+    public static ShaderProgram getMultilinkProgram()
+    {
+        return multiLink;
     }
 
     public static ShaderProgram getExtrudedProgram()

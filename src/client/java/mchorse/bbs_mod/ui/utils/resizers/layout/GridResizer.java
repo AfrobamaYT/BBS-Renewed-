@@ -61,8 +61,6 @@ public class GridResizer extends AutomaticResizer
      * If you use this feature, make sure to resize the elements twice, as
      * the it needs parent's width, and it's not available on the first
      * layout resizing pass
-     *
-     * TODO: maybe fix it?
      */
     public GridResizer width(int width)
     {

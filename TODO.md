@@ -12,6 +12,8 @@
   - [x] Apply roll
   - [x] Apply FOV
 - [ ] Film controller
+  - [ ] Player controller
+  - [ ] Render actors
 - [ ] Video recording
   - [ ] Framebuffer resize
 - [ ] Entity selectors in EntityClip
@@ -34,7 +36,7 @@
   - [ ] Structure form
 - [x] File drag and dropping
 - [x] Metamorph
-  - [ ] Morph picker
+  - [x] Morph picker
 
 Core features:
 
@@ -53,3 +55,32 @@ Considerations:
 
 - [ ] Direction XYZ Snowstorm
 - [ ] Benchbuster
+
+### A couple of notes about film controller
+
+Key movement:
+
+    InputUtil.Key key = InputUtil.fromKeyCode(context.getKeyCode(), context.getScanCode());
+    
+    if (context.getKeyAction() == KeyAction.RELEASED)
+    {
+        KeyBinding.setKeyPressed(key, false);
+    }
+    else
+    {
+        KeyBinding.setKeyPressed(key, true);
+        KeyBinding.onKeyPressed(key);
+    }
+
+Mouse movement can be just pass the delta in: 
+
+    player.changeLookDirection(dX, dY)
+
+As for mouse button: 
+
+    KeyBinding.setKeyPressed(Type.MOUSE.createFromCode(button), bl);
+
+    if (!notReleased) 
+    {
+        KeyBinding.onKeyPressed(Type.MOUSE.createFromCode(button));
+    }

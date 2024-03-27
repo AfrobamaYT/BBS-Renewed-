@@ -19,13 +19,16 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.RayTracing;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.chunk.ChunkBuilder;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -179,6 +182,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         }
 
         return super.subMouseClicked(context);
+    }
+
+    @Override
+    protected boolean subKeyPressed(UIContext context)
+    {
+        return super.subKeyPressed(context);
     }
 
     @Override

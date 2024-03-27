@@ -73,7 +73,7 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
 
     private void resetAnimator()
     {
-        // TODO: this.form.resetAnimator();
+        ((ModelFormRenderer) FormUtilsClient.getRenderer(this.form)).resetAnimator();
     }
 
     private void pickAction(String key, boolean select)
@@ -134,7 +134,6 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
     {
         super.render(context);
 
-        /* TODO: Extract */
-        context.batcher.textShadow("Actions", this.actions.area.x, this.actions.area.y - 12);
+        context.batcher.textShadow(UIKeys.FORMS_EDITORS_MODEL_ACTIONS.get(), this.actions.area.x, this.actions.area.y - 12);
     }
 }

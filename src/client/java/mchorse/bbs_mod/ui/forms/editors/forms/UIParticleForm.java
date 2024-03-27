@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.ui.forms.editors.forms;
 
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
+import mchorse.bbs_mod.forms.renderers.ParticleFormRenderer;
+import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -19,12 +22,12 @@ public class UIParticleForm extends UIForm<ParticleForm>
         this.defaultPanel.options.prepend(new UIButton(UIKeys.FORMS_EDITORS_BILLBOARD_PICK_TEXTURE, (b) ->
         {
             Link texture = this.form.texture.get();
+            ParticleEmitter emitter = ((ParticleFormRenderer) FormUtilsClient.getRenderer(this.form)).getEmitter();
 
-            /* TODO: when form renderers come
-            if (this.form.getEmitter() != null && texture == null)
+            if (emitter != null && texture == null)
             {
-                texture = this.form.getEmitter().scheme.texture;
-            } */
+                texture = emitter.scheme.texture;
+            }
 
             UITexturePicker.open(this.defaultPanel, texture, (l) -> this.form.texture.set(l));
         }).marginBottom(6));
