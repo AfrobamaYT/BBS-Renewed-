@@ -8,13 +8,11 @@ import java.util.Map;
 
 public class StencilMap
 {
-    public boolean picking;
     public int objectIndex;
     public Map<Integer, Pair<Form, String>> indexMap = new HashMap<>();
 
     public void setup()
     {
-        this.picking = true;
         this.objectIndex = 1;
         this.indexMap.clear();
     }
@@ -28,10 +26,5 @@ public class StencilMap
     {
         this.indexMap.put(this.objectIndex, new Pair<>(form, bone));
         this.objectIndex += 1;
-    }
-
-    public void reset()
-    {
-        this.picking = false;
     }
 }

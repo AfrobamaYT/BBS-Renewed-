@@ -111,7 +111,6 @@ public class UIPickableFormRenderer extends UIFormRenderer
 
             this.stencil.pickGUI(context, this.area);
             this.stencil.unbind(this.stencilMap);
-            this.stencilMap.reset();
 
             MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
 

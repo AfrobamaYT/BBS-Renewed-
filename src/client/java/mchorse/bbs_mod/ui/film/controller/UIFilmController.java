@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -29,6 +30,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -48,6 +50,8 @@ import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.client.gl.GlUniform;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
@@ -89,14 +93,11 @@ public class UIFilmController extends UIElement
 
     /* Replay and group picking */
     private IEntity hoveredEntity;
-    private Camera stencilCamera = new Camera();
     private StencilFormFramebuffer stencil = new StencilFormFramebuffer();
+    private StencilMap stencilMap = new StencilMap();
 
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
-
-    private int lastX;
-    private int lastY;
 
     public UIFilmController(UIFilmPanel panel)
     {
@@ -769,10 +770,16 @@ public class UIFilmController extends UIElement
         int w = texture.width;
         int h = texture.height;
 
-        /* TODO: Shader shader = context.render.getPickingShaders().get(VBOAttributes.VERTEX_UV_RGBA_2D);
+        ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
+        GlUniform target = previewProgram.getUniform("Target");
 
-        CommonShaderAccess.setTarget(shader, index);
-        context.batcher.texturedBox(shader, texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
+        if (target != null)
+        {
+            target.set(index);
+        }
+
+        RenderSystem.enableBlend();
+        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
         if (pair != null)
         {
@@ -783,8 +790,8 @@ public class UIFilmController extends UIElement
                 label += " - " + pair.b;
             }
 
-            context.batcher.textCard(context.font, label, context.mouseX + 12, context.mouseY + 8);
-        } */
+            context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
+        }
     }
 
     public void renderFrame(WorldRenderContext context)
@@ -798,11 +805,11 @@ public class UIFilmController extends UIElement
                 continue;
             }
 
-            this.renderEntity(context, entity);
+            this.renderEntity(context, entity, null);
         }
 
         this.rayTraceEntity(context);
-        this.renderStencil(this.getContext());
+        this.renderStencil(context, this.getContext());
 
         Mouse mouse = MinecraftClient.getInstance().mouse;
         int x = (int) mouse.getX();
@@ -826,15 +833,21 @@ public class UIFilmController extends UIElement
         RenderSystem.disableDepthTest();
     }
 
-    private void renderEntity(WorldRenderContext context, IEntity entity)
+    private void renderEntity(WorldRenderContext context, IEntity entity, StencilMap map)
     {
         Form form = entity.getForm();
-        Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
-            .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
-        int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
 
         if (form != null)
         {
+            Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
+                .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
+            int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
+
+            FormRenderingContext formContext = FormRenderingContext
+                .set(entity, context.matrixStack(), light, context.tickDelta())
+                .camera(context.camera())
+                .stencilMap(map);
+
             AnchorProperty.Anchor value = form.anchor.get();
             AnchorProperty.Anchor last = form.anchor.getLast();
 
@@ -850,28 +863,20 @@ public class UIFilmController extends UIElement
 
                     context.matrixStack().push();
                     MatrixStackUtils.multiply(context.matrixStack(), Matrices.lerp(lastMatrix, matrix, factor));
-
-                    FormUtilsClient.render(
-                        form,
-                        FormRenderingContext.set(entity, context.matrixStack(), light, context.tickDelta()).camera(context.camera())
-                    );
+                    FormUtilsClient.render(form, formContext);
 
                     context.matrixStack().pop();
 
                     return;
                 }
             }
+
+            context.matrixStack().push();
+            MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+            FormUtilsClient.render(form, formContext);
+
+            context.matrixStack().pop();
         }
-
-        context.matrixStack().push();
-        MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
-
-        FormUtilsClient.render(
-            form,
-            FormRenderingContext.set(entity, context.matrixStack(), light, context.tickDelta()).camera(context.camera())
-        );
-
-        context.matrixStack().pop();
     }
 
     private Matrix4f getEntityMatrix(WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
@@ -979,9 +984,9 @@ public class UIFilmController extends UIElement
         }
     }
 
-    private void renderStencil(UIContext context)
+    private void renderStencil(WorldRenderContext renderContext, UIContext context)
     {
-        /* TODO: Area viewport = this.panel.getFramebufferViewport();
+        Area viewport = this.panel.getFramebufferViewport();
 
         if (!viewport.isInside(context) || this.controlled != null)
         {
@@ -990,36 +995,28 @@ public class UIFilmController extends UIElement
             return;
         }
 
-        Entity entity = this.getCurrentEntity();
+        IEntity entity = this.getCurrentEntity();
 
         if (entity == null)
         {
             return;
         }
 
-        Camera camera = context.render.getCamera();
-
         this.ensureStencilFramebuffer();
 
         Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
 
-        this.stencilCamera.copy(this.panel.getCamera());
-        this.stencilCamera.updatePerspectiveProjection(mainTexture.width, mainTexture.height);
-        context.render.getUBO().update(this.stencilCamera.projection, this.stencilCamera.view);
+        this.stencilMap.setup();
+        this.stencil.apply();
+        this.renderEntity(renderContext, entity, this.stencilMap);
 
-        this.stencil.apply(context);
-        context.render.setCamera(this.stencilCamera);
-        this.renderEntity(context.render, entity);
-        context.render.setCamera(camera);
-
-        Area area = this.panel.getFramebufferViewport();
-        int x = (int) ((context.mouseX - area.x) / (float) area.w * mainTexture.width);
-        int y = (int) ((1F - (context.mouseY - area.y) / (float) area.h) * mainTexture.height);
+        int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
+        int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
 
         this.stencil.pick(x, y);
-        this.stencil.unbind(context);
+        this.stencil.unbind(this.stencilMap);
 
-        context.render.getUBO().update(context.render.projection, Matrices.EMPTY_4F); */
+        MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
     }
 
     private void ensureStencilFramebuffer()
@@ -1034,14 +1031,5 @@ public class UIFilmController extends UIElement
         {
             this.stencil.resizeGUI(w, h);
         }
-    }
-
-    @Override
-    public void render(UIContext context)
-    {
-        super.render(context);
-
-        this.lastX = context.mouseX;
-        this.lastY = context.mouseY;
     }
 }
