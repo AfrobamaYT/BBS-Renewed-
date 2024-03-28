@@ -139,13 +139,13 @@ public class StubEntity implements IEntity
     @Override
     public double getY()
     {
-        return this.prevY;
+        return this.y;
     }
 
     @Override
     public double getPrevY()
     {
-        return this.y;
+        return this.prevY;
     }
 
     @Override
@@ -178,9 +178,6 @@ public class StubEntity implements IEntity
         this.x = x;
         this.y = y;
         this.z = z;
-        this.prevX = x;
-        this.prevY = y;
-        this.prevZ = z;
     }
 
     @Override
@@ -323,7 +320,7 @@ public class StubEntity implements IEntity
 
         return new AABB(
             this.getX() - w / 2, this.getY(), this.getZ() - w / 2,
-            this.getX() + w / 2, this.getY() + h, this.getZ() + w / 2
+            w, h, w
         );
     }
 

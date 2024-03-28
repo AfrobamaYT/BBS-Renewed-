@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -58,6 +59,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
+import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 
@@ -112,6 +114,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
 
     private Texture texture;
+    private Matrix4f lastView = new Matrix4f();
+    private Matrix4f lastProjection = new Matrix4f();
 
     public static VoiceLines getVoiceLines()
     {
@@ -818,6 +822,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         this.camera.copy(this.getWorldCamera());
+        this.camera.view.set(this.lastView);
+        this.camera.projection.set(this.lastProjection);
         context.batcher.flush();
 
         Area viewport = this.getViewportArea();
@@ -903,6 +909,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
         texture.unbind();
+
+        this.lastProjection.set(RenderSystem.getProjectionMatrix());
+        this.lastView.set(context.matrixStack().peek().getPositionMatrix());
     }
 
     /* IUICameraWorkDelegate implementation */

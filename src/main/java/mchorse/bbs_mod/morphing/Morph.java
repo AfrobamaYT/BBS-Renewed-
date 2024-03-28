@@ -31,6 +31,8 @@ public class Morph
 
     public void update()
     {
+        this.entity.update();
+
         if (this.form != null)
         {
             this.form.update(this.entity);

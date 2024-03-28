@@ -3,10 +3,8 @@ package mchorse.bbs_mod.camera;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Matrix4f;
-import org.joml.RayAabIntersection;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class Camera
 {
@@ -20,20 +18,6 @@ public class Camera
     public Vector3f rotation = new Vector3f();
 
     private Vector3f relative = new Vector3f();
-
-    public static Vector3f getMouseDirectionNormalized(Matrix4f projection, Matrix4f view, float mx, float my)
-    {
-        Matrix4f matrix4f = new Matrix4f(projection);
-
-        matrix4f.mul(view);
-        matrix4f.invert();
-
-        Vector4f forward = new Vector4f(mx, my, 0, 1);
-
-        matrix4f.transform(forward);
-
-        return new Vector3f(forward.x, forward.y, forward.z);
-    }
 
     public Camera()
     {
@@ -51,13 +35,6 @@ public class Camera
         this.far = far;
     }
 
-    public RayAabIntersection getMouseIntersection(int mx, int my)
-    {
-        Vector3f direction = this.getMouseDirection(mx, my);
-
-        return new RayAabIntersection((float) this.position.x, (float) this.position.y, (float) this.position.z, direction.x, direction.y, direction.z);
-    }
-
     public Vector3f getLookDirection()
     {
         return Matrices.rotation(this.rotation.x, MathUtils.PI - this.rotation.y);
@@ -65,22 +42,12 @@ public class Camera
 
     public Vector3f getMouseDirection(int mx, int my, int vx, int vy, int w, int h)
     {
-        return this.getMouseDirection(mx - vx, my - vy, w, h);
-    }
-
-    public Vector3f getMouseDirection(int mx, int my, int w, int h)
-    {
-        return this.getMouseDirection(mx / (float) w, 1 - my / (float) h);
-    }
-
-    public Vector3f getMouseDirection(float mx, float my)
-    {
-        return this.getMouseDirectionNormalized((mx - 0.5F) * 2F, (my - 0.5F) * 2F);
+        return CameraUtils.getMouseDirection(this.projection, this.view, mx, my, vx, vy, w, h);
     }
 
     public Vector3f getMouseDirectionNormalized(float mx, float my)
     {
-        return getMouseDirectionNormalized(this.projection, this.view, mx, my);
+        return CameraUtils.getMouseDirection(this.projection, this.view, mx, my);
     }
 
     public Vector3f getRelative(Vector3d vector)

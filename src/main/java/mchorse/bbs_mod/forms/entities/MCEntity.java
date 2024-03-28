@@ -164,9 +164,6 @@ public class MCEntity implements IEntity
     public void setPosition(double x, double y, double z)
     {
         this.mcEntity.setPosition(x, y, z);
-        this.setPrevX(x);
-        this.setPrevY(y);
-        this.setPrevZ(z);
     }
 
     @Override
@@ -335,7 +332,7 @@ public class MCEntity implements IEntity
 
         return new AABB(
             this.getX() - w / 2, this.getY(), this.getZ() - w / 2,
-            this.getX() + w / 2, this.getY() + h, this.getZ() + w / 2
+            w, h, w
         );
     }
 

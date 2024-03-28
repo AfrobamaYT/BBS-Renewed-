@@ -48,6 +48,7 @@ import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -93,6 +94,9 @@ public class UIFilmController extends UIElement
 
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
+
+    private int lastX;
+    private int lastY;
 
     public UIFilmController(UIFilmPanel panel)
     {
@@ -797,8 +801,6 @@ public class UIFilmController extends UIElement
             this.renderEntity(context, entity);
         }
 
-        RenderSystem.disableDepthTest();
-
         this.rayTraceEntity(context);
         this.renderStencil(this.getContext());
 
@@ -806,25 +808,22 @@ public class UIFilmController extends UIElement
         int x = (int) mouse.getX();
         int y = (int) mouse.getY();
 
-        if (this.canControl())
+        if (this.canControl() && !this.isMouseLookMode())
         {
-            float sensitivity = 400F;
+            /* Control sticks and triggers variables */
+            float sensitivity = 50F;
 
-            if (!this.isMouseLookMode())
-            {
-                /* Control sticks and triggers variables */
-                sensitivity = 50F;
+            float xx = (y - this.lastMouse.y) / sensitivity;
+            float yy = (x - this.lastMouse.x) / sensitivity;
 
-                float xx = (y - this.lastMouse.y) / sensitivity;
-                float yy = (x - this.lastMouse.x) / sensitivity;
-
-                this.mouseStick.add(xx, yy);
-                this.mouseStick.x = MathUtils.clamp(this.mouseStick.x, -1F, 1F);
-                this.mouseStick.y = MathUtils.clamp(this.mouseStick.y, -1F, 1F);
-            }
+            this.mouseStick.add(xx, yy);
+            this.mouseStick.x = MathUtils.clamp(this.mouseStick.x, -1F, 1F);
+            this.mouseStick.y = MathUtils.clamp(this.mouseStick.y, -1F, 1F);
         }
 
         this.lastMouse.set(x, y);
+
+        RenderSystem.disableDepthTest();
     }
 
     private void renderEntity(WorldRenderContext context, IEntity entity)
@@ -832,7 +831,7 @@ public class UIFilmController extends UIElement
         Form form = entity.getForm();
         Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
             .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
-        int light = entity.getWorld().getLightLevel(new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
+        int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
 
         if (form != null)
         {
@@ -971,7 +970,12 @@ public class UIFilmController extends UIElement
         {
             AABB aabb = this.hoveredEntity.getPickingHitbox();
 
-            Draw.renderBox(context.matrixStack(), aabb.x, aabb.y, aabb.z, aabb.w, aabb.h, aabb.d, 0F, 0.5F, 1F);
+            context.matrixStack().push();
+            context.matrixStack().translate(aabb.x - camera.position.x, aabb.y - camera.position.y, aabb.z - camera.position.z);
+
+            Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, aabb.w, aabb.h, aabb.d, 0F, 0.5F, 1F);
+
+            context.matrixStack().pop();
         }
     }
 
@@ -1030,5 +1034,14 @@ public class UIFilmController extends UIElement
         {
             this.stencil.resizeGUI(w, h);
         }
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        super.render(context);
+
+        this.lastX = context.mouseX;
+        this.lastY = context.mouseY;
     }
 }

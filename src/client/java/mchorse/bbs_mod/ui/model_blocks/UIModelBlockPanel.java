@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.model_blocks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.mixin.client.WorldRendererAccessor;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -19,16 +20,13 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
-import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.RayTracing;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.chunk.ChunkBuilder;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -201,17 +199,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         MinecraftClient mc = MinecraftClient.getInstance();
         double x = mc.mouse.getX();
         double y = mc.mouse.getY();
-        int w2 = (int) (mc.getWindow().getWidth() / 2F);
-        int h2 = (int) (mc.getWindow().getHeight() / 2F);
 
-        x = (x - w2) / w2;
-        y = (-y + h2) / h2;
-
-        this.mouseDirection.set(mchorse.bbs_mod.camera.Camera.getMouseDirectionNormalized(
+        this.mouseDirection.set(CameraUtils.getMouseDirection(
             RenderSystem.getProjectionMatrix(),
             context.matrixStack().peek().getPositionMatrix(),
-            (float) x, (float) y)
-        );
+            (int) x, (int) y, 0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight()
+        ));
         this.hovered = this.getClosestObject(new Vector3d(pos.x, pos.y, pos.z), this.mouseDirection);
 
         RenderSystem.enableDepthTest();
@@ -223,7 +216,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             context.matrixStack().push();
             context.matrixStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
 
-            if (this.hovered == entity)
+            if (this.hovered == entity || entity == this.modelBlock)
             {
                 Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
             }
