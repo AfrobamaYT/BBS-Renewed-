@@ -882,7 +882,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.renderInWorld(context);
 
-        this.controller.renderFrame();
+        this.controller.renderFrame(context);
     }
 
     @Override

@@ -51,6 +51,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private Animator animator;
     private long lastCheck;
+
     private IEntity entity = new StubEntity();
 
     public static CubicModel getModel(ModelForm form)

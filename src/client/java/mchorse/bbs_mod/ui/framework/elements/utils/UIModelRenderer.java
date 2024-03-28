@@ -34,11 +34,10 @@ import org.lwjgl.opengl.GL11;
  */
 public abstract class UIModelRenderer extends UIElement
 {
-    private static boolean rendering;
     private static Vector3d vec = new Vector3d();
     private static Matrix3d mat = new Matrix3d();
 
-    protected IEntity entity;
+    protected IEntity entity = new StubEntity();
 
     protected int timer;
     protected int dragging;
@@ -62,7 +61,6 @@ public abstract class UIModelRenderer extends UIElement
     {
         super();
 
-        this.entity = new StubEntity();
         this.reset();
     }
 

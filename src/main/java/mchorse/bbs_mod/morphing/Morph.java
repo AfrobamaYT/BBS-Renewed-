@@ -5,15 +5,21 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 
 public class Morph
 {
     public Form form;
+    public final MCEntity entity;
 
-    public static Morph getMorph(PlayerEntity entity)
+    public Morph(Entity entity)
+    {
+        this.entity = new MCEntity(entity);
+    }
+
+    public static Morph getMorph(Entity entity)
     {
         if (entity instanceof IMorphProvider provider)
         {
@@ -23,11 +29,11 @@ public class Morph
         return null;
     }
 
-    public void update(PlayerEntity entity)
+    public void update()
     {
         if (this.form != null)
         {
-            this.form.update(new MCEntity(entity));
+            this.form.update(this.entity);
         }
     }
 

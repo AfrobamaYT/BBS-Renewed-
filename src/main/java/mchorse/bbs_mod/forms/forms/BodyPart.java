@@ -26,6 +26,11 @@ public class BodyPart implements IMapSerializable
 
     private IEntity entity = new StubEntity();
 
+    public IEntity getEntity()
+    {
+        return this.entity;
+    }
+
     void setManager(BodyPartManager manager)
     {
         this.manager = manager;

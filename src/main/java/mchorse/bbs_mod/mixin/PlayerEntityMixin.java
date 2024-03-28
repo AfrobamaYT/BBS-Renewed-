@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity implements IMorphProvider
 {
-    public Morph morph = new Morph();
+    public Morph morph = new Morph(this);
 
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world)
     {
@@ -30,7 +30,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IMorphPr
     {
         super.baseTick();
 
-        this.morph.update((PlayerEntity) (Object) this);
+        this.morph.update();
     }
 
     @Override

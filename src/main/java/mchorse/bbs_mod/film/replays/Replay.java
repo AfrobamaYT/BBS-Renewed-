@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueForm;
@@ -27,12 +28,12 @@ public class Replay extends ValueGroup
         this.add(this.properties);
     }
 
-    public void applyFrame(int tick, LivingEntity actor)
+    public void applyFrame(int tick, IEntity actor)
     {
         this.applyFrame(tick, actor, null);
     }
 
-    public void applyFrame(int tick, LivingEntity actor, List<String> groups)
+    public void applyFrame(int tick, IEntity actor, List<String> groups)
     {
         this.keyframes.apply(tick, actor, groups);
     }

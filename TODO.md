@@ -1,4 +1,5 @@
-- [ ] Shaders for multi-link preview and subtitle renderer
+- [x] Shaders for multi-link preview
+- [ ] Shaders for subtitle renderer
 - [x] Form renderers
   - [x] Model rendering
     - [x] Model aren't reloading

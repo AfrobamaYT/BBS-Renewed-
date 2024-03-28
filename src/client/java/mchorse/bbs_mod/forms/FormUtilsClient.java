@@ -40,6 +40,11 @@ public class FormUtilsClient
 
     public static FormRenderer getRenderer(Form form)
     {
+        if (form == null)
+        {
+            return null;
+        }
+
         if (form.getRenderer() instanceof FormRenderer renderer)
         {
             return renderer;

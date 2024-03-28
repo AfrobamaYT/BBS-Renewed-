@@ -2,10 +2,10 @@ package mchorse.bbs_mod.ui.film.controller;
 
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.math.MathUtils;
-import net.minecraft.entity.Entity;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -66,17 +66,18 @@ public class OrbitFilmCameraController implements ICameraController
     @Override
     public void setup(Camera camera, float transition)
     {
-        Entity entity = this.controller.getCurrentEntity();
+        IEntity entity = this.controller.getCurrentEntity();
 
         if (entity != null)
         {
             Vector3d offset = new Vector3d(Matrices.rotation(this.rotation.x, this.rotation.y));
 
-            /* TODO: offset.mul(this.distance);
-            entity.basic.prevPosition.lerp(entity.basic.position, transition, camera.position);
+            offset.mul(this.distance);
+            camera.position.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ());
+            camera.position.lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
             camera.position.add(offset);
-            camera.position.add(0, entity.basic.hitbox.h / 2, 0);
-            camera.rotation.set(-this.rotation.x, -this.rotation.y, 0); */
+            camera.position.add(0, entity.getPickingHitbox().h / 2, 0);
+            camera.rotation.set(-this.rotation.x, -this.rotation.y, 0);
         }
     }
 

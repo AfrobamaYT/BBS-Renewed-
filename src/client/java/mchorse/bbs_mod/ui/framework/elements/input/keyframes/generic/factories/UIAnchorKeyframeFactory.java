@@ -1,13 +1,26 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories;
 
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.Anchor>
 {
@@ -35,8 +48,8 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
 
             for (int i = 0; i < panel.getController().entities.size(); i++)
             {
-                /* TODO: Entity entity = panel.getController().entities.get(i);
-                Form form = entity.get(FormComponent.class).form;
+                IEntity entity = panel.getController().entities.get(i);
+                Form form = entity.getForm();
                 final int actor = i;
                 IKey label = IKey.raw(i + (form == null ? "" : " - " + form.getIdOrName()));
 
@@ -47,14 +60,14 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
                 else
                 {
                     menu.action(Icons.CLOSE, label, () -> this.setActor(actor));
-                } */
+                }
             }
         });
     }
 
     private void displayAttachments()
     {
-        /* TODO: UIFilmPanel panel = this.getPanel();
+        UIFilmPanel panel = this.getPanel();
         int index = this.keyframe.getValue().actor;
 
         if (!CollectionUtils.inRange(panel.getController().entities, index))
@@ -62,8 +75,8 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
             return;
         }
 
-        Entity entity = panel.getController().entities.get(index);
-        Form form = entity.get(FormComponent.class).form;
+        IEntity entity = panel.getController().entities.get(index);
+        Form form = entity.getForm();
 
         if (form == null)
         {
@@ -73,7 +86,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
         Map<String, Matrix4f> map = new HashMap<>();
         MatrixStack stack = new MatrixStack();
 
-        form.getRenderer().collectMatrices(entity, stack, map, "", 0);
+        FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", 0);
 
         List<String> attachments = new ArrayList<>(map.keySet());
 
@@ -99,7 +112,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
                     menu.action(Icons.LIMB, IKey.raw(attachment), () -> this.setAttachment(attachment));
                 }
             }
-        }); */
+        });
     }
 
     private void setActor(int actor)

@@ -28,7 +28,7 @@ public class MorphRenderer
             matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
             FormUtilsClient.render(morph.form, FormRenderingContext
-                .set(new MCEntity(player), matrixStack, i, g)
+                .set(morph.entity, matrixStack, i, g)
                 .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 
             matrixStack.pop();

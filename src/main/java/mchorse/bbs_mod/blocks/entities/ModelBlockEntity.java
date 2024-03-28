@@ -32,6 +32,11 @@ public class ModelBlockEntity extends BlockEntity
         super(BBSMod.MODEL_BLOCK_ENTITY, pos, state);
     }
 
+    public IEntity getEntity()
+    {
+        return this.entity;
+    }
+
     public Form getForm()
     {
         return this.form;

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
@@ -7,8 +8,14 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
+import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
+import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
+import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -27,15 +34,24 @@ import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
+import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.math.MathUtils;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Mouse;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -46,19 +62,19 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class UIFilmController extends UIElement
 {
     public final UIFilmPanel panel;
 
-    public final List<Entity> entities = new ArrayList<>();
+    public final List<IEntity> entities = new ArrayList<>();
 
     /* Character control */
-    private Entity controlled;
-    private final Vector3f direction = new Vector3f();
-    private final Vector2f walkDirection = new Vector2f();
+    private IEntity controlled;
     private final Vector2i lastMouse = new Vector2i();
     private int mouseMode;
     private final Vector2f mouseStick = new Vector2f();
@@ -71,13 +87,12 @@ public class UIFilmController extends UIElement
     private BaseType recordingOld;
 
     /* Replay and group picking */
-    private Entity hoveredEntity;
+    private IEntity hoveredEntity;
     private Camera stencilCamera = new Camera();
     private StencilFormFramebuffer stencil = new StencilFormFramebuffer();
 
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
-    // TODO: private RayTraceResult result = new RayTraceResult();
 
     public UIFilmController(UIFilmPanel panel)
     {
@@ -94,18 +109,22 @@ public class UIFilmController extends UIElement
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, () -> this.setPov(this.pov + 1)).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
         {
-            /* TODO: Area area = this.panel.getFramebufferViewport();
-            RayTraceResult traceResult = new RayTraceResult();
+            Area area = this.panel.getFramebufferViewport();
             UIContext context = this.getContext();
-            World world = context.menu.bridge.get(IBridgeWorld.class).getWorld();
+            World world = MinecraftClient.getInstance().world;
             Camera camera = this.panel.getCamera();
 
-            RayTracer.trace(traceResult, world.chunks, camera.position, camera.getMouseDirection(context.mouseX, context.mouseY, area), 64F);
+            HitResult result = RayTracing.rayTrace(
+                world,
+                RayTracing.fromVector3d(camera.position),
+                RayTracing.fromVector3f(camera.getMouseDirection(context.mouseX, context.mouseY, area.x, area.y, area.w, area.h)),
+                64F
+            );
 
-            if (traceResult.type == RayTraceType.BLOCK)
+            if (result.getType() == HitResult.Type.BLOCK)
             {
-                this.panel.replays.moveReplay(traceResult.hit.x, traceResult.hit.y, traceResult.hit.z);
-            } */
+                this.panel.replays.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
+            }
         }).active(hasActor).category(category);
 
         this.noCulling();
@@ -138,7 +157,7 @@ public class UIFilmController extends UIElement
         return this.stencil;
     }
 
-    public Entity getCurrentEntity()
+    public IEntity getCurrentEntity()
     {
         int index = this.panel.replays.replays.getIndex();
 
@@ -176,9 +195,9 @@ public class UIFilmController extends UIElement
 
             if (index >= 0)
             {
-                /* TODO: PlayerComponent component = this.controlled.get(PlayerComponent.class);
+                float[] variables = this.controlled.getExtraVariables();
 
-                this.mouseStick.set(component.sticks[index * 2 + 1], component.sticks[index * 2]); */
+                this.mouseStick.set(variables[index * 2 + 1], variables[index * 2]);
             }
         }
     }
@@ -207,16 +226,21 @@ public class UIFilmController extends UIElement
         {
             for (Replay replay : film.replays.getList())
             {
-                /* TODO: World world = context.menu.bridge.get(IBridgeWorld.class).getWorld();
-                Entity entity = world.architect.create(Link.bbs("player"));
+                World world = MinecraftClient.getInstance().world;
+                IEntity entity = new StubEntity(world);
 
-                entity.setWorld(world);
-                entity.get(FormComponent.class).setForm(FormUtils.copy(replay.form.get()));
+                entity.setForm(FormUtils.copy(replay.form.get()));
                 replay.applyFrame(this.getTick(), entity);
-                entity.basic.prevPosition.set(entity.basic.position);
-                entity.basic.prevRotation.set(entity.basic.rotation);
+                entity.setPrevX(entity.getX());
+                entity.setPrevY(entity.getY());
+                entity.setPrevZ(entity.getZ());
 
-                this.entities.add(entity); */
+                entity.setPrevYaw(entity.getYaw());
+                entity.setPrevHeadYaw(entity.getHeadYaw());
+                entity.setPrevPitch(entity.getPitch());
+                entity.setPrevBodyYaw(entity.getBodyYaw());
+
+                this.entities.add(entity);
             }
         }
     }
@@ -233,8 +257,6 @@ public class UIFilmController extends UIElement
         {
             this.controlled = this.getCurrentEntity();
         }
-
-        this.walkDirection.set(0, 0);
 
         this.toggleMousePointer(this.controlled != null);
 
@@ -409,34 +431,15 @@ public class UIFilmController extends UIElement
         {
             int key = context.getKeyCode();
 
-            if (key == GLFW.GLFW_KEY_A || key == GLFW.GLFW_KEY_S || key == GLFW.GLFW_KEY_D || key == GLFW.GLFW_KEY_W)
-            {
-                this.walkDirection.set(
-                    Window.isKeyPressed(GLFW.GLFW_KEY_A) ? -1 : (Window.isKeyPressed(GLFW.GLFW_KEY_D) ? 1 : 0),
-                    Window.isKeyPressed(GLFW.GLFW_KEY_W) ? -1 : (Window.isKeyPressed(GLFW.GLFW_KEY_S) ? 1 : 0)
-                );
-
-                return true;
-            }
-            else if (key == GLFW.GLFW_KEY_LEFT_SHIFT)
-            {
-                this.controlled.setSneaking(Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT));
-
-                return true;
-            }
-            else if (context.isPressed(GLFW.GLFW_KEY_SPACE))
-            {
-                this.jump();
-
-                return true;
-            }
-            else if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
+            if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
             {
                 /* Switch mouse input mode */
                 this.setMouseMode(context.getKeyCode() - GLFW.GLFW_KEY_1);
 
                 return true;
             }
+
+            // TODO: Control the character
         }
 
         return super.subKeyPressed(context);
@@ -484,7 +487,7 @@ public class UIFilmController extends UIElement
 
     private void handleFirstThirdPerson(Camera camera, float transition, int mode)
     {
-        Entity controller = this.getCurrentEntity();
+        IEntity controller = this.getCurrentEntity();
 
         if (controller == null)
         {
@@ -496,14 +499,12 @@ public class UIFilmController extends UIElement
         float distance = this.orbit.getDistance();
         boolean back = mode == 2;
 
-        /* TODO: BasicComponent basic = controller.basic;
+        position.set(controller.getPrevX(), controller.getPrevY(), controller.getPrevZ());
+        position.lerp(new Vector3d(controller.getX(), controller.getY(), controller.getZ()), transition);
+        position.y += controller.getEyeHeight();
 
-        position.set(basic.prevPosition);
-        position.lerp(basic.position, transition);
-        position.y += basic.getEyeHeight();
-
-        rotation.set(basic.prevRotation);
-        rotation.lerp(basic.rotation, transition);
+        rotation.set(controller.getPrevPitch(), controller.getPrevHeadYaw(), 0);
+        rotation.lerp(new Vector3f(controller.getPitch(), controller.getHeadYaw(), 0), transition);
 
         camera.fov = BBSSettings.getFov();
 
@@ -516,37 +517,25 @@ public class UIFilmController extends UIElement
         }
 
         Vector3f rotate = Matrices.rotation(rotation.x * (back ? -1 : 1), (back ? 0F : MathUtils.PI) - rotation.y);
-        World world = this.panel.dashboard.bridge.get(IBridgeWorld.class).getWorld();
+        World world = MinecraftClient.getInstance().world;
 
-        RayTracer.trace(this.result, world.chunks, position, rotate, distance, true, (b) ->
+        HitResult result = RayTracing.rayTraceEntity(
+            world,
+            RayTracing.fromVector3d(position),
+            RayTracing.fromVector3f(rotate),
+            distance
+        );
+
+        if (result.getType() == HitResult.Type.BLOCK)
         {
-            IBlockVariant block = world.chunks.getBlock(b.block.x, b.block.y, b.block.z);
-
-            return block.getModel().opaque;
-        });
-
-        if (this.result.type == RayTraceType.BLOCK)
-        {
-            distance = (float) position.distance(this.result.hit) - 0.1F;
+            distance = (float) position.distance(result.getPos().x, result.getPos().y, result.getPos().z) - 0.1F;
         }
 
         rotate.mul(distance);
         position.add(rotate);
 
         camera.position.set(position);
-        camera.rotation.set(rotation.x * (back ? 1 : -1), rotation.y + (back ? 0 : MathUtils.PI), 0); */
-    }
-
-    private void jump()
-    {
-        Vec3d velocity = this.controlled.getVelocity();
-
-        this.controlled.setVelocity(
-            velocity.x * 1.2F,
-            this.controlled.isSneaking() ? 0.4F : 0.5F,
-            velocity.z * 1.2F
-        );
-        this.controlled.setOnGround(false);
+        camera.rotation.set(rotation.x * (back ? 1 : -1), rotation.y + (back ? 0 : MathUtils.PI), 0);
     }
 
     public void insertFrame()
@@ -569,10 +558,7 @@ public class UIFilmController extends UIElement
                 {
                     BaseValue.edit(replay.keyframes, (keyframes) ->
                     {
-                        if (this.getCurrentEntity() instanceof LivingEntity entity)
-                        {
-                            keyframes.record(this.getTick(), entity, groups);
-                        }
+                        keyframes.record(this.getTick(), this.getCurrentEntity(), groups);
                     });
                 }
             );
@@ -595,10 +581,7 @@ public class UIFilmController extends UIElement
 
             BaseValue.edit(replay.keyframes, (keyframes) ->
             {
-                if (this.getCurrentEntity() instanceof LivingEntity entity)
-                {
-                    keyframes.record(this.getTick(), entity, groups);
-                }
+                keyframes.record(this.getTick(), this.getCurrentEntity(), groups);
             });
 
             UIUtils.playClick();
@@ -653,67 +636,45 @@ public class UIFilmController extends UIElement
     {
         for (int i = 0; i < this.entities.size(); i++)
         {
+            IEntity entity = this.entities.get(i);
+
             if (context == null || !UIOverlay.has(context))
             {
-                // TODO: entity.update();
+                entity.update();
             }
 
-            if (this.entities.get(i) instanceof LivingEntity entity)
+            List<Replay> replays = film.replays.getList();
+
+            if (CollectionUtils.inRange(replays, i))
             {
-                List<Replay> replays = film.replays.getList();
+                Replay replay = replays.get(i);
+                int ticks = runner.ticks;
 
-                if (CollectionUtils.inRange(replays, i))
+                if (entity != this.controlled || (this.recording && this.recordingCountdown <= 0 && this.recordingGroups != null))
                 {
-                    Replay replay = replays.get(i);
-                    int ticks = runner.ticks;
-
-                    if (entity != this.controlled || (this.recording && this.recordingCountdown <= 0 && this.recordingGroups != null))
-                    {
-                        replay.applyFrame(ticks, entity, entity == this.controlled ? this.recordingGroups : null);
-                    }
-
-                    if (entity == this.controlled && this.recording && runner.isRunning())
-                    {
-                        replay.keyframes.record(ticks, entity, this.recordingGroups);
-                    }
-
-                    // TODO: replay.applyProperties(ticks, entity, runner.isRunning());
+                    replay.applyFrame(ticks, entity, entity == this.controlled ? this.recordingGroups : null);
                 }
+
+                if (entity == this.controlled && this.recording && runner.isRunning())
+                {
+                    replay.keyframes.record(ticks, entity, this.recordingGroups);
+                }
+
+                replay.applyProperties(ticks, entity.getForm(), runner.isRunning());
             }
         }
     }
 
     private void updateControls()
     {
-        Entity controller = this.controlled;
-        float moveX = this.walkDirection.x;
-        float moveZ = this.walkDirection.y;
-
-        if (moveZ != 0 || moveX != 0)
-        {
-            this.direction.set(moveX, 0, moveZ).normalize().mul(0.25F);
-
-            /* TODO: BasicComponent basic = controller.basic;
-
-            Matrices.rotate(this.direction, 0, -basic.rotation.y);
-            this.direction.mul((basic.sneak ? 0.33F : 1F) * (basic.grounded ? 1F : 0.05F));
-            this.direction.mul(basic.speed);
-
-            basic.velocity.x += this.direction.x;
-            basic.velocity.z += this.direction.z; */
-        }
+        IEntity controller = this.controlled;
 
         if (!this.isMouseLookMode())
         {
-            /* TODO: PlayerComponent component = controller.get(PlayerComponent.class);
+            int index = this.getMouseMode() - 1;
 
-            if (component != null)
-            {
-                int index = this.getMouseMode() - 1;
-
-                component.sticks[index * 2] = this.mouseStick.y;
-                component.sticks[index * 2 + 1] = this.mouseStick.x;
-            } */
+            controller.getExtraVariables()[index * 2] = this.mouseStick.y;
+            controller.getExtraVariables()[index * 2 + 1] = this.mouseStick.x;
         }
     }
 
@@ -822,9 +783,11 @@ public class UIFilmController extends UIElement
         } */
     }
 
-    public void renderFrame()
+    public void renderFrame(WorldRenderContext context)
     {
-        /* TODO: for (Entity entity : this.entities)
+        RenderSystem.enableDepthTest();
+
+        for (IEntity entity : this.entities)
         {
             if (this.getPovMode() == 1 && entity == getCurrentEntity() && this.orbit.enabled)
             {
@@ -834,39 +797,23 @@ public class UIFilmController extends UIElement
             this.renderEntity(context, entity);
         }
 
+        RenderSystem.disableDepthTest();
+
         this.rayTraceEntity(context);
         this.renderStencil(this.getContext());
 
-        MouseInput mouse = BBS.getEngine().mouse;
-        int x = mouse.x;
-        int y = mouse.y;
+        Mouse mouse = MinecraftClient.getInstance().mouse;
+        int x = (int) mouse.getX();
+        int y = (int) mouse.getY();
 
         if (this.canControl())
         {
             float sensitivity = 400F;
-            Entity controller = this.controlled;
 
-            if (this.isMouseLookMode())
-            {
-                /* Control head direction */
-                /* BasicComponent basic = controller.basic;
-
-                float xx = (y - this.lastMouse.y) / sensitivity;
-                float yy = (x - this.lastMouse.x) / sensitivity;
-
-                if (xx != 0 || yy != 0)
-                {
-                    basic.rotation.x += xx;
-                    basic.rotation.y += yy;
-                    basic.rotation.x = MathUtils.clamp(basic.rotation.x, -MathUtils.PI / 2, MathUtils.PI / 2);
-                    basic.prevRotation.x = basic.rotation.x;
-                    basic.prevRotation.y = basic.rotation.y;
-                }
-            }
-            else
+            if (!this.isMouseLookMode())
             {
                 /* Control sticks and triggers variables */
-                /* sensitivity = 50F;
+                sensitivity = 50F;
 
                 float xx = (y - this.lastMouse.y) / sensitivity;
                 float yy = (x - this.lastMouse.x) / sensitivity;
@@ -877,68 +824,74 @@ public class UIFilmController extends UIElement
             }
         }
 
-        this.lastMouse.set(x, y); */
+        this.lastMouse.set(x, y);
     }
 
-    private void renderEntity(Entity entity)
+    private void renderEntity(WorldRenderContext context, IEntity entity)
     {
-        /* TODO: FormComponent component = entity.get(FormComponent.class);
+        Form form = entity.getForm();
+        Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
+            .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
+        int light = entity.getWorld().getLightLevel(new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
 
-        if (component != null && component.form != null)
+        if (form != null)
         {
-            AnchorProperty.Anchor value = component.form.anchor.get();
-            AnchorProperty.Anchor last = component.form.anchor.getLast();
+            AnchorProperty.Anchor value = form.anchor.get();
+            AnchorProperty.Anchor last = form.anchor.getLast();
 
             if (value != null && last != null)
             {
-                Matrix4f defaultMatrix = entity.getMatrixForRenderWithRotation(context.getCamera(), context.getTransition());
+                Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta());
                 Matrix4f matrix = this.getEntityMatrix(context, value, defaultMatrix);
                 Matrix4f lastMatrix = this.getEntityMatrix(context, last, defaultMatrix);
 
                 if (matrix != null && lastMatrix != null && matrix != lastMatrix)
                 {
-                    float factor = component.form.anchor.getTweenFactorInterpolated(context.getTransition());
+                    float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
 
-                    context.stack.push();
-                    context.stack.multiply(Matrices.lerp(lastMatrix, matrix, factor));
+                    context.matrixStack().push();
+                    MatrixStackUtils.multiply(context.matrixStack(), Matrices.lerp(lastMatrix, matrix, factor));
 
-                    Vector3d position = Vectors.TEMP_3D.set(entity.basic.prevPosition).lerp(entity.basic.position, context.getTransition());
-                    Vector2f lighting = entity.world.getLighting(position.x, position.y + entity.basic.hitbox.h / 2, position.z);
+                    FormUtilsClient.render(
+                        form,
+                        FormRenderingContext.set(entity, context.matrixStack(), light, context.tickDelta()).camera(context.camera())
+                    );
 
-                    for (Shader shader : context.getShaders().getAll())
-                    {
-                        CommonShaderAccess.setLightMapCoords(shader, lighting.x, lighting.y);
-                    }
-
-                    component.form.getRenderer().render(entity, context);
-
-                    context.stack.pop();
+                    context.matrixStack().pop();
 
                     return;
                 }
             }
         }
 
-        entity.render(context); */
+        context.matrixStack().push();
+        MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+
+        FormUtilsClient.render(
+            form,
+            FormRenderingContext.set(entity, context.matrixStack(), light, context.tickDelta()).camera(context.camera())
+        );
+
+        context.matrixStack().pop();
     }
 
-    private Matrix4f getEntityMatrix(AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
+    private Matrix4f getEntityMatrix(WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
     {
-        /* TODO: int entityIndex = selector.actor;
+        int entityIndex = selector.actor;
 
         if (CollectionUtils.inRange(this.entities, entityIndex))
         {
-            Entity entity = this.entities.get(entityIndex);
-            Matrix4f basic = new Matrix4f(entity.getMatrixForRenderWithRotation(context.getCamera(), context.getTransition()));
+            IEntity entity = this.entities.get(entityIndex);
+            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
 
             Map<String, Matrix4f> map = new HashMap<>();
             MatrixStack stack = new MatrixStack();
 
-            FormComponent component = entity.get(FormComponent.class);
+            Form form = entity.getForm();
 
-            if (component.form != null)
+            if (form != null)
             {
-                component.form.getRenderer().collectMatrices(entity, stack, map, "", context.getTransition());
+                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", context.tickDelta());
 
                 Matrix4f matrix = map.get(selector.attachment);
 
@@ -951,14 +904,28 @@ public class UIFilmController extends UIElement
             return basic;
         }
 
-        return defaultMatrix; */
-
-        return Matrices.EMPTY_4F;
+        return defaultMatrix;
     }
 
-    private void rayTraceEntity()
+    private Matrix4f getMatrixForRenderWithRotation(IEntity entity, net.minecraft.client.render.Camera camera, float tickDelta)
     {
-        /* TODO: this.hoveredEntity = null;
+        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), tickDelta) - camera.getPos().x;
+        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), tickDelta) - camera.getPos().y;
+        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - camera.getPos().z;
+
+        Matrix4f matrix = new Matrix4f();
+
+        float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), tickDelta);
+
+        matrix.translate((float) x, (float) y, (float) z);
+        matrix.rotateY(-bodyYaw);
+
+        return matrix;
+    }
+
+    private void rayTraceEntity(WorldRenderContext context)
+    {
+        this.hoveredEntity = null;
 
         if (!Window.isAltPressed() || this.panel.recorder.isRecording())
         {
@@ -973,11 +940,11 @@ public class UIFilmController extends UIElement
             return;
         }
 
-        List<Entity> entities = new ArrayList<>();
+        List<IEntity> entities = new ArrayList<>();
         Camera camera = this.panel.getCamera();
-        Vector3f mouseDirection = camera.getMouseDirection(c.mouseX, c.mouseY, area);
+        Vector3f mouseDirection = camera.getMouseDirection(c.mouseX, c.mouseY, area.x, area.y, area.w, area.h);
 
-        for (Entity entity : this.entities)
+        for (IEntity entity : this.entities)
         {
             AABB aabb = entity.getPickingHitbox();
 
@@ -989,7 +956,13 @@ public class UIFilmController extends UIElement
 
         if (!entities.isEmpty())
         {
-            entities.sort((a, b) -> (int) (a.basic.position.distanceSquared(camera.position) - b.basic.position.distanceSquared(camera.position)));
+            entities.sort((a, b) ->
+            {
+                double distanceA = new Vector3d(a.getX(), a.getY(), a.getZ()).distance(camera.position);
+                double distanceB = new Vector3d(b.getX(), b.getY(), b.getZ()).distance(camera.position);
+
+                return (int) (distanceA - distanceB);
+            });
 
             this.hoveredEntity = entities.get(0);
         }
@@ -998,8 +971,8 @@ public class UIFilmController extends UIElement
         {
             AABB aabb = this.hoveredEntity.getPickingHitbox();
 
-            Draw.renderBox(context, aabb.x, aabb.y, aabb.z, aabb.w, aabb.h, aabb.d, 0F, 0.5F, 1F);
-        } */
+            Draw.renderBox(context.matrixStack(), aabb.x, aabb.y, aabb.z, aabb.w, aabb.h, aabb.d, 0F, 0.5F, 1F);
+        }
     }
 
     private void renderStencil(UIContext context)

@@ -2,7 +2,6 @@ package mchorse.bbs_mod.forms.renderers;
 
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -20,15 +19,13 @@ import java.util.function.Supplier;
 
 public abstract class FormRenderer <T extends Form>
 {
-    private static final IEntity DUMMY = new StubEntity();
-
     protected T form;
 
     public static void renderBodyPart(BodyPart part, FormRenderingContext context)
     {
         IEntity oldEntity = context.entity;
 
-        context.entity = part.useTarget ? oldEntity : DUMMY;
+        context.entity = part.useTarget ? oldEntity : part.getEntity();
 
         if (part.getForm() != null && part.enabled)
         {

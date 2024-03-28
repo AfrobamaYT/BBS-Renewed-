@@ -5,7 +5,6 @@ import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.math.Interpolations;
-import net.minecraft.entity.LivingEntity;
 
 public class MolangHelper
 {
@@ -52,7 +51,7 @@ public class MolangHelper
 
             dx = target.getVelocity().x;
             dz = target.getVelocity().z;
-            // TODO: yawSpeed = Interpolations.lerp(basic.prevRotation.z - basic.prevPrevRotationZ, basic.rotation.z - basic.prevRotation.z, transition);
+            yawSpeed = Interpolations.lerp(target.getPrevBodyYaw() - target.getPrevPrevBodyYaw(), target.getBodyYaw() - target.getPrevBodyYaw(), transition);
             headYaw = yawHead - bodyYaw;
             headPitch = Interpolations.lerp(target.getPrevPitch(), target.getPitch(), transition);
             velocity = Math.sqrt(dx * dx + target.getVelocity().y * target.getVelocity().y + dz * dz);
@@ -66,35 +65,19 @@ public class MolangHelper
 
             age = target.getAge() + transition;
 
-            if (false)
-            {
-                /* TODO: float[] prev = playerComponent.prevSticks;
-                float[] sticks = playerComponent.sticks;
+            float[] prev = target.getPrettyExtraVariables();
+            float[] sticks = target.getExtraVariables();
 
-                parser.setValue("joystick.l_x", Interpolations.lerp(prev[0], sticks[0], transition));
-                parser.setValue("joystick.l_y", Interpolations.lerp(prev[1], sticks[1], transition));
-                parser.setValue("joystick.r_x", Interpolations.lerp(prev[2], sticks[2], transition));
-                parser.setValue("joystick.r_y", Interpolations.lerp(prev[3], sticks[3], transition));
-                parser.setValue("joystick.l_trigger", Interpolations.lerp(prev[4], sticks[4], transition));
-                parser.setValue("joystick.r_trigger", Interpolations.lerp(prev[5], sticks[5], transition));
-                parser.setValue("extra1.x", Interpolations.lerp(prev[6], sticks[6], transition));
-                parser.setValue("extra1.y", Interpolations.lerp(prev[7], sticks[7], transition));
-                parser.setValue("extra2.x", Interpolations.lerp(prev[8], sticks[8], transition));
-                parser.setValue("extra2.y", Interpolations.lerp(prev[9], sticks[9], transition)); */
-            }
-            else
-            {
-                parser.setValue("joystick.l_x", 0);
-                parser.setValue("joystick.l_y", 0);
-                parser.setValue("joystick.r_x", 0);
-                parser.setValue("joystick.r_y", 0);
-                parser.setValue("joystick.l_trigger", 0);
-                parser.setValue("joystick.r_trigger", 0);
-                parser.setValue("extra1.x", 0);
-                parser.setValue("extra1.y", 0);
-                parser.setValue("extra2.x", 0);
-                parser.setValue("extra2.y", 0);
-            }
+            parser.setValue("joystick.l_x", Interpolations.lerp(prev[0], sticks[0], transition));
+            parser.setValue("joystick.l_y", Interpolations.lerp(prev[1], sticks[1], transition));
+            parser.setValue("joystick.r_x", Interpolations.lerp(prev[2], sticks[2], transition));
+            parser.setValue("joystick.r_y", Interpolations.lerp(prev[3], sticks[3], transition));
+            parser.setValue("joystick.l_trigger", Interpolations.lerp(prev[4], sticks[4], transition));
+            parser.setValue("joystick.r_trigger", Interpolations.lerp(prev[5], sticks[5], transition));
+            parser.setValue("extra1.x", Interpolations.lerp(prev[6], sticks[6], transition));
+            parser.setValue("extra1.y", Interpolations.lerp(prev[7], sticks[7], transition));
+            parser.setValue("extra2.x", Interpolations.lerp(prev[8], sticks[8], transition));
+            parser.setValue("extra2.y", Interpolations.lerp(prev[9], sticks[9], transition));
         }
         else
         {
