@@ -5,6 +5,7 @@ import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.math.MathUtils;
 
 public class MolangHelper
 {
@@ -65,7 +66,7 @@ public class MolangHelper
 
             age = target.getAge() + transition;
 
-            float[] prev = target.getPrettyExtraVariables();
+            float[] prev = target.getPrevExtraVariables();
             float[] sticks = target.getExtraVariables();
 
             parser.setValue("joystick.l_x", Interpolations.lerp(prev[0], sticks[0], transition));
@@ -97,7 +98,7 @@ public class MolangHelper
 
         parser.setValue("query.anim_time", frame / 20);
         parser.setValue("query.ground_speed", groundSpeed);
-        parser.setValue("query.yaw_speed", yawSpeed);
+        parser.setValue("query.yaw_speed", MathUtils.toRad((float) yawSpeed));
         parser.setValue("query.head_yaw", headYaw);
         parser.setValue("query.head_pitch", headPitch);
         parser.setValue("query.velocity", velocity);

@@ -12,6 +12,7 @@ import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
@@ -21,6 +22,7 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.mixin.client.MinecraftClientInvoker;
+import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
@@ -53,6 +55,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.InputUtil;
@@ -88,6 +91,8 @@ public class UIFilmController extends UIElement
     private final Vector2f mouseStick = new Vector2f();
 
     /* Recording state */
+    private IEntity previousEntity;
+    private Form playerForm;
     private int recordingTick;
     private boolean recording;
     private int recordingCountdown;
@@ -261,11 +266,32 @@ public class UIFilmController extends UIElement
     {
         if (this.controlled != null)
         {
+            if (this.previousEntity != null)
+            {
+                this.controlled.setForm(this.playerForm);
+
+                this.entities.set(this.entities.indexOf(this.controlled), this.previousEntity);
+                this.previousEntity = null;
+            }
+
             this.controlled = null;
         }
         else if (this.panel.replays.replays.isSelected())
         {
             this.controlled = this.getCurrentEntity();
+
+            if (this.controlled != null)
+            {
+                MCEntity player = Morph.getMorph(MinecraftClient.getInstance().player).entity;
+
+                this.playerForm = player.getForm();
+                this.previousEntity = this.controlled;
+
+                player.copy(this.controlled);
+                this.entities.set(this.entities.indexOf(this.controlled), player);
+
+                this.controlled = player;
+            }
         }
 
         this.toggleMousePointer(this.controlled != null);
@@ -382,8 +408,13 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            KeyBinding.setKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton), true);
-            KeyBinding.onKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton));
+            InputUtil.Key utilKey = InputUtil.Type.MOUSE.createFromCode(context.mouseButton);
+
+            if (this.canControlWithKeyboard(utilKey))
+            {
+                KeyBinding.setKeyPressed(utilKey, true);
+                KeyBinding.onKeyPressed(utilKey);
+            }
 
             return true;
         }
@@ -439,7 +470,12 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            KeyBinding.setKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton), false);
+            InputUtil.Key utilKey = InputUtil.Type.MOUSE.createFromCode(context.mouseButton);
+
+            if (this.canControlWithKeyboard(utilKey))
+            {
+                KeyBinding.setKeyPressed(utilKey, false);
+            }
 
             return true;
         }
@@ -466,23 +502,39 @@ public class UIFilmController extends UIElement
 
             InputUtil.Key utilKey = InputUtil.fromKeyCode(context.getKeyCode(), context.getScanCode());
 
-            if (context.getKeyAction() == KeyAction.RELEASED)
+            if (this.canControlWithKeyboard(utilKey))
             {
-                KeyBinding.setKeyPressed(utilKey, false);
-            }
-            else
-            {
-                KeyBinding.setKeyPressed(utilKey, true);
-                KeyBinding.onKeyPressed(utilKey);
-            }
+                if (context.getKeyAction() == KeyAction.RELEASED)
+                {
+                    KeyBinding.setKeyPressed(utilKey, false);
+                }
+                else
+                {
+                    KeyBinding.setKeyPressed(utilKey, true);
+                    KeyBinding.onKeyPressed(utilKey);
+                }
 
-            if (key != Keys.FILM_CONTROLLER_TOGGLE_CONTROL.getMainKey())
-            {
                 return true;
             }
         }
 
         return super.subKeyPressed(context);
+    }
+
+    private boolean canControlWithKeyboard(InputUtil.Key utilKey)
+    {
+        GameOptions options = MinecraftClient.getInstance().options;
+
+        return options.forwardKey.getDefaultKey() == utilKey
+            || options.backKey.getDefaultKey() == utilKey
+            || options.leftKey.getDefaultKey() == utilKey
+            || options.rightKey.getDefaultKey() == utilKey
+            || options.attackKey.getDefaultKey() == utilKey
+            || options.useKey.getDefaultKey() == utilKey
+            || options.sneakKey.getDefaultKey() == utilKey
+            || options.sprintKey.getDefaultKey() == utilKey
+            || options.dropKey.getDefaultKey() == utilKey
+            || options.jumpKey.getDefaultKey() == utilKey;
     }
 
     public void pickRecording()
@@ -546,6 +598,9 @@ public class UIFilmController extends UIElement
         rotation.set(controller.getPrevPitch(), controller.getPrevHeadYaw(), 0);
         rotation.lerp(new Vector3f(controller.getPitch(), controller.getHeadYaw(), 0), transition);
 
+        rotation.x = MathUtils.toRad(rotation.x);
+        rotation.y = MathUtils.toRad(rotation.y);
+
         camera.fov = BBSSettings.getFov();
 
         if (mode == 1)
@@ -556,7 +611,7 @@ public class UIFilmController extends UIElement
             return;
         }
 
-        Vector3f rotate = Matrices.rotation(rotation.x * (back ? -1 : 1), (back ? 0F : MathUtils.PI) - rotation.y);
+        Vector3f rotate = Matrices.rotation(rotation.x * (back ? 1 : -1), (back ? 0F : MathUtils.PI) - rotation.y);
         World world = MinecraftClient.getInstance().world;
 
         HitResult result = RayTracing.rayTraceEntity(
@@ -575,7 +630,7 @@ public class UIFilmController extends UIElement
         position.add(rotate);
 
         camera.position.set(position);
-        camera.rotation.set(rotation.x * (back ? 1 : -1), rotation.y + (back ? 0 : MathUtils.PI), 0);
+        camera.rotation.set(rotation.x * (back ? -1 : 1), rotation.y + (back ? 0 : MathUtils.PI), 0);
     }
 
     public void insertFrame()
@@ -694,7 +749,15 @@ public class UIFilmController extends UIElement
 
             if (context == null || !UIOverlay.has(context))
             {
-                entity.update();
+                if (!(entity instanceof MCEntity))
+                {
+                    entity.update();
+
+                    if (entity.getForm() != null)
+                    {
+                        entity.getForm().update(entity);
+                    }
+                }
             }
 
             List<Replay> replays = film.replays.getList();
@@ -873,7 +936,7 @@ public class UIFilmController extends UIElement
             else
             {
                 /* Control sticks and triggers variables */
-                float sensitivity = 50F;
+                float sensitivity = 100F;
 
                 float xx = (y - this.lastMouse.y) / sensitivity;
                 float yy = (x - this.lastMouse.x) / sensitivity;
@@ -978,7 +1041,7 @@ public class UIFilmController extends UIElement
         float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), tickDelta);
 
         matrix.translate((float) x, (float) y, (float) z);
-        matrix.rotateY(-bodyYaw);
+        matrix.rotateY(MathUtils.toRad(-bodyYaw));
 
         return matrix;
     }

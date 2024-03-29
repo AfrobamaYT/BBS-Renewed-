@@ -95,7 +95,7 @@ public class MCEntity implements IEntity
     }
 
     @Override
-    public double getFallDistance()
+    public float getFallDistance()
     {
         return this.mcEntity.fallDistance;
     }
@@ -313,13 +313,19 @@ public class MCEntity implements IEntity
     }
 
     @Override
+    public void setPrevPrevBodyYaw(float prevPrevBodyYaw)
+    {
+        this.prevPrevBodyYaw = prevPrevBodyYaw;
+    }
+
+    @Override
     public float[] getExtraVariables()
     {
         return this.extraVariables;
     }
 
     @Override
-    public float[] getPrettyExtraVariables()
+    public float[] getPrevExtraVariables()
     {
         return this.prevExtraVariables;
     }

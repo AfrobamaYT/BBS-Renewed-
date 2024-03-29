@@ -12,9 +12,10 @@
 - [x] Camera editor
   - [x] Apply roll
   - [x] Apply FOV
-- [ ] Film controller
-  - [ ] Player controller
-  - [ ] Render actors
+- [x] Film controller
+  - [x] Player controller
+  - [x] Render actors
+  - [ ] Shadow
 - [ ] Video recording
   - [ ] Framebuffer resize
 - [ ] Entity selectors in EntityClip
@@ -51,6 +52,7 @@ Useful user suggestions:
 - [ ] Kirah's suggestions model block screen
 - [ ] Add gizmos to film editor
 - [ ] Rethink keyframe addition and removal
+- [ ] Async model and texture loading
 
 Considerations:
 

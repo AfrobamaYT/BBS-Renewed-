@@ -28,9 +28,9 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IMorphPr
     @Override
     public void baseTick()
     {
-        super.baseTick();
-
         this.morph.update();
+
+        super.baseTick();
     }
 
     @Override

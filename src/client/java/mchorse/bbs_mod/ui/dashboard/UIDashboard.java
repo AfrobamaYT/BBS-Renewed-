@@ -34,6 +34,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.Perspective;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
@@ -148,6 +149,7 @@ public class UIDashboard extends UIBaseMenu
         }
 
         BBSModClient.getCameraController().add(this.camera);
+        MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
     }
 
     @Override

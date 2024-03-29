@@ -31,7 +31,7 @@ public interface IEntity
 
     public void setAge(int ticks);
 
-    public double getFallDistance();
+    public float getFallDistance();
 
     public void setFallDistance(float fallDistance);
 
@@ -95,11 +95,49 @@ public interface IEntity
 
     public void setPrevBodyYaw(float prevBodyYaw);
 
+    public void setPrevPrevBodyYaw(float prevPrevBodyYaw);
+
     public float[] getExtraVariables();
 
-    public float[] getPrettyExtraVariables();
+    public float[] getPrevExtraVariables();
 
     public AABB getPickingHitbox();
 
     public void update();
+
+    public default void copy(IEntity entity)
+    {
+        this.setForm(entity.getForm());
+
+        this.setSneaking(entity.isSneaking());
+        this.setOnGround(entity.isOnGround());
+        this.setFallDistance(entity.getFallDistance());
+
+        this.setPrevX(entity.getPrevX());
+        this.setPrevY(entity.getPrevY());
+        this.setPrevZ(entity.getPrevZ());
+        this.setPosition(entity.getX(), entity.getY(), entity.getZ());
+
+        this.setPrevYaw(entity.getPrevYaw());
+        this.setPrevHeadYaw(entity.getPrevHeadYaw());
+        this.setPrevPitch(entity.getPrevPitch());
+        this.setPrevBodyYaw(entity.getPrevBodyYaw());
+        this.setPrevPrevBodyYaw(entity.getPrevPrevBodyYaw());
+
+        this.setYaw(entity.getYaw());
+        this.setHeadYaw(entity.getHeadYaw());
+        this.setPitch(entity.getPitch());
+        this.setBodyYaw(entity.getBodyYaw());
+
+        this.setVelocity((float) entity.getVelocity().x, (float) entity.getVelocity().y, (float) entity.getVelocity().z);
+
+        float[] extraVariables = this.getExtraVariables();
+        float[] prevExtraVariables = this.getPrevExtraVariables();
+
+        for (int i = 0; i < extraVariables.length; i++)
+        {
+            extraVariables[i] = entity.getExtraVariables()[i];
+            prevExtraVariables[i] = entity.getPrevExtraVariables()[i];
+        }
+    }
 }
