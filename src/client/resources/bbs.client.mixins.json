@@ -8,7 +8,8 @@
         "MouseMixin",
         "WorldRendererAccessor",
         "EntityRendererDispatcherInvoker",
-        "PlayerEntityRendererMixin"
+        "PlayerEntityRendererMixin",
+        "MinecraftClientInvoker"
     ],
     "injectors": {
         "defaultRequire": 1

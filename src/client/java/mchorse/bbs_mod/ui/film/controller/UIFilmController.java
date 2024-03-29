@@ -20,6 +20,7 @@ import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.mixin.client.MinecraftClientInvoker;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
@@ -52,7 +53,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -137,13 +140,15 @@ public class UIFilmController extends UIElement
 
     private void toggleMousePointer(boolean disable)
     {
+        net.minecraft.client.util.Window window = MinecraftClient.getInstance().getWindow();
+
         if (disable)
         {
-            MinecraftClient.getInstance().mouse.lockCursor();
+            InputUtil.setCursorParameters(window.getHandle(), GLFW.GLFW_CURSOR_DISABLED, window.getWidth() / 2, window.getHeight() / 2);
         }
         else
         {
-            MinecraftClient.getInstance().mouse.unlockCursor();
+            InputUtil.setCursorParameters(window.getHandle(), GLFW.GLFW_CURSOR_NORMAL, window.getWidth() / 2, window.getHeight() / 2);
         }
     }
 
@@ -375,6 +380,14 @@ public class UIFilmController extends UIElement
     @Override
     protected boolean subMouseClicked(UIContext context)
     {
+        if (this.canControl())
+        {
+            KeyBinding.setKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton), true);
+            KeyBinding.onKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton));
+
+            return true;
+        }
+
         if (context.mouseButton == 0)
         {
             if (this.hoveredEntity != null)
@@ -424,6 +437,13 @@ public class UIFilmController extends UIElement
     @Override
     protected boolean subMouseReleased(UIContext context)
     {
+        if (this.canControl())
+        {
+            KeyBinding.setKeyPressed(InputUtil.Type.MOUSE.createFromCode(context.mouseButton), false);
+
+            return true;
+        }
+
         this.orbit.stop();
 
         return super.subMouseReleased(context);
@@ -444,7 +464,22 @@ public class UIFilmController extends UIElement
                 return true;
             }
 
-            // TODO: Control the character
+            InputUtil.Key utilKey = InputUtil.fromKeyCode(context.getKeyCode(), context.getScanCode());
+
+            if (context.getKeyAction() == KeyAction.RELEASED)
+            {
+                KeyBinding.setKeyPressed(utilKey, false);
+            }
+            else
+            {
+                KeyBinding.setKeyPressed(utilKey, true);
+                KeyBinding.onKeyPressed(utilKey);
+            }
+
+            if (key != Keys.FILM_CONTROLLER_TOGGLE_CONTROL.getMainKey())
+            {
+                return true;
+            }
         }
 
         return super.subKeyPressed(context);
@@ -613,6 +648,20 @@ public class UIFilmController extends UIElement
         if (this.canControl())
         {
             this.updateControls();
+        }
+
+        if (this.canControl())
+        {
+            MinecraftClientInvoker mc = (MinecraftClientInvoker) MinecraftClient.getInstance();
+            int attackCooldown = mc.bbs$getAttackCooldown();
+
+            mc.bbs$handleInputEvents();
+            mc.bbs$handleBlockBreaking(MinecraftClient.getInstance().options.attackKey.isPressed());
+
+            if (attackCooldown > 0)
+            {
+                mc.bbs$setAttackCooldown(attackCooldown - 1);
+            }
         }
     }
 
@@ -815,17 +864,24 @@ public class UIFilmController extends UIElement
         int x = (int) mouse.getX();
         int y = (int) mouse.getY();
 
-        if (this.canControl() && !this.isMouseLookMode())
+        if (this.canControl())
         {
-            /* Control sticks and triggers variables */
-            float sensitivity = 50F;
+            if (this.isMouseLookMode())
+            {
+                MinecraftClient.getInstance().player.changeLookDirection((x - this.lastMouse.x) / 2F, (y - this.lastMouse.y) / 2F);
+            }
+            else
+            {
+                /* Control sticks and triggers variables */
+                float sensitivity = 50F;
 
-            float xx = (y - this.lastMouse.y) / sensitivity;
-            float yy = (x - this.lastMouse.x) / sensitivity;
+                float xx = (y - this.lastMouse.y) / sensitivity;
+                float yy = (x - this.lastMouse.x) / sensitivity;
 
-            this.mouseStick.add(xx, yy);
-            this.mouseStick.x = MathUtils.clamp(this.mouseStick.x, -1F, 1F);
-            this.mouseStick.y = MathUtils.clamp(this.mouseStick.y, -1F, 1F);
+                this.mouseStick.add(xx, yy);
+                this.mouseStick.x = MathUtils.clamp(this.mouseStick.x, -1F, 1F);
+                this.mouseStick.y = MathUtils.clamp(this.mouseStick.y, -1F, 1F);
+            }
         }
 
         this.lastMouse.set(x, y);
