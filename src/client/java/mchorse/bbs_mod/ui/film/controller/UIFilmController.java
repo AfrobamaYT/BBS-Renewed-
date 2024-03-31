@@ -606,7 +606,7 @@ public class UIFilmController extends UIElement
         if (mode == 1)
         {
             camera.position.set(position);
-            camera.rotation.set(rotation.x, rotation.y, 0F);
+            camera.rotation.set(rotation.x, rotation.y + MathUtils.PI, 0F);
 
             return;
         }
