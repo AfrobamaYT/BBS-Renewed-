@@ -20,6 +20,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
 
     private UIFormCategory lastSelected;
     private boolean cantExit;
+    private boolean immersive;
 
     public static UIFormPalette open(UIElement parent, boolean editing, Form form, Consumer<Form> callback)
     {
@@ -67,6 +68,16 @@ public class UIFormPalette extends UIElement implements IUIFormList
 
         this.list.close.removeFromParent();
         this.eventPropagataion(EventPropagation.PASS);
+    }
+
+    public boolean isImmersive()
+    {
+        return this.immersive;
+    }
+
+    public void immersive()
+    {
+        this.immersive = true;
     }
 
     public UIFormPalette updatable()
@@ -166,7 +177,10 @@ public class UIFormPalette extends UIElement implements IUIFormList
     @Override
     public void render(UIContext context)
     {
-        this.area.render(context.batcher, Colors.A75);
+        if (!this.immersive || this.list.isVisible())
+        {
+            this.area.render(context.batcher, Colors.A75);
+        }
 
         super.render(context);
     }

@@ -53,6 +53,7 @@ public class UIDashboard extends UIBaseMenu
     public final OrbitCameraController camera = new OrbitCameraController(this.orbit, 5);
 
     private UISettingsOverlayPanel settingsPanel;
+    private Perspective lastPerspective = Perspective.FIRST_PERSON;
 
     public UIDashboard()
     {
@@ -142,6 +143,10 @@ public class UIDashboard extends UIBaseMenu
     {
         super.onOpen(oldMenu);
 
+        this.lastPerspective = MinecraftClient.getInstance().options.getPerspective();
+
+        MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
+
         if (oldMenu != this)
         {
             this.panels.open();
@@ -149,7 +154,6 @@ public class UIDashboard extends UIBaseMenu
         }
 
         BBSModClient.getCameraController().add(this.camera);
-        MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
     }
 
     @Override
@@ -164,6 +168,8 @@ public class UIDashboard extends UIBaseMenu
 
         this.orbit.reset();
         BBSModClient.getCameraController().remove(this.camera);
+
+        MinecraftClient.getInstance().options.setPerspective(this.lastPerspective);
     }
 
     @Override
