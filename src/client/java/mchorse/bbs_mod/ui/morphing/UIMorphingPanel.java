@@ -9,7 +9,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
-import mchorse.bbs_mod.ui.forms.immersive.ImmersiveCameraController;
+import mchorse.bbs_mod.ui.forms.immersive.ImmersiveMorphingCameraController;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
@@ -21,7 +21,7 @@ public class UIMorphingPanel extends UIDashboardPanel
     public UIFormPalette palette;
     public UIIcon demorph;
 
-    private ImmersiveCameraController controller;
+    private ImmersiveMorphingCameraController controller;
 
     public UIMorphingPanel(UIDashboard dashboard)
     {
@@ -44,7 +44,7 @@ public class UIMorphingPanel extends UIDashboardPanel
 
         this.add(this.palette);
 
-        this.controller = new ImmersiveCameraController(() -> this.palette.editor.isEditing() ? this.palette.editor.renderer : null);
+        this.controller = new ImmersiveMorphingCameraController(() -> this.palette.editor.isEditing() ? this.palette.editor.renderer : null);
     }
 
     private void setForm(Form form)

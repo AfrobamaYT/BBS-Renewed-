@@ -13,11 +13,11 @@ import org.joml.Vector3f;
 
 import java.util.function.Supplier;
 
-public class ImmersiveCameraController implements ICameraController
+public class ImmersiveMorphingCameraController implements ICameraController
 {
     private Supplier<UIModelRenderer> modelRenderer;
 
-    public ImmersiveCameraController(Supplier<UIModelRenderer> modelRenderer)
+    public ImmersiveMorphingCameraController(Supplier<UIModelRenderer> modelRenderer)
     {
         this.modelRenderer = modelRenderer;
     }
@@ -44,6 +44,8 @@ public class ImmersiveCameraController implements ICameraController
         }
         else
         {
+            renderer.setupPosition();
+
             Camera rendererCamera = renderer.camera;
 
             Vector3f rotate = Matrices.rotate(new Vector3f().set(rendererCamera.position), 0F, -bodyYaw);

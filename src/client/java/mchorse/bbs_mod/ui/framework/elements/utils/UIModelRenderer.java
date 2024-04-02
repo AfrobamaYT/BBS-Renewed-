@@ -56,12 +56,18 @@ public abstract class UIModelRenderer extends UIElement
     private float lastY;
 
     private long tick;
+    private Matrix4f transform = new Matrix4f();
 
     public UIModelRenderer()
     {
         super();
 
         this.reset();
+    }
+
+    public void setTransform(Matrix4f transform)
+    {
+        this.transform = transform;
     }
 
     public void setRotation(float yaw, float pitch)
@@ -206,7 +212,7 @@ public abstract class UIModelRenderer extends UIElement
 
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-        this.setupPosition(context);
+        this.setupPosition();
         this.setupViewport(context);
 
         /* Drawing begins */
@@ -229,6 +235,7 @@ public abstract class UIModelRenderer extends UIElement
         stack.push();
         MatrixStackUtils.multiply(stack, this.camera.view);
         stack.translate(-this.camera.position.x, -this.camera.position.y, -this.camera.position.z);
+        MatrixStackUtils.multiply(stack, this.transform);
 
         RenderSystem.setupLevelDiffuseLighting(new Vector3f(0, 0.85F, -1).normalize(), new Vector3f(0, 0.85F, 1).normalize(), this.camera.view);
 
@@ -255,9 +262,11 @@ public abstract class UIModelRenderer extends UIElement
         renderStack.pop();
 
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
+
+        this.processInputs(context);
     }
 
-    protected void setupPosition(UIContext context)
+    protected void processInputs(UIContext context)
     {
         int mouseX = context.mouseX;
         int mouseY = context.mouseY;
@@ -287,7 +296,10 @@ public abstract class UIModelRenderer extends UIElement
                 this.lastY = mouseY;
             }
         }
+    }
 
+    public void setupPosition()
+    {
         this.camera.position.set(this.pos);
 
         vec.set(0, 0, -this.distance);

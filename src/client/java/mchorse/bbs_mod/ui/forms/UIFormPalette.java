@@ -114,6 +114,8 @@ public class UIFormPalette extends UIElement implements IUIFormList
     @Override
     public void toggleEditor()
     {
+        this.events.emit(new UIToggleEditorEvent(this, !this.editor.isEditing()));
+
         if (!this.editor.isEditing())
         {
             Form form = this.list.getSelected();

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.model_blocks;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.graphics.Draw;
@@ -14,9 +15,12 @@ import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
+import mchorse.bbs_mod.ui.forms.UIToggleEditorEvent;
+import mchorse.bbs_mod.ui.forms.immersive.ImmersiveModelBlockCameraController;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.events.UIRemovedEvent;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -31,11 +35,13 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSupported
 {
+    public UIScrollView scrollView;
     public UIModelBlockEntityList modelBlocks;
     public UINestedEdit pickEdit;
     public UIToggle shadow;
@@ -44,6 +50,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     private ModelBlockEntity modelBlock;
     private ModelBlockEntity hovered;
     private Vector3f mouseDirection = new Vector3f();
+
+    private ImmersiveModelBlockCameraController cameraController;
 
     public UIModelBlockPanel(UIDashboard dashboard)
     {
@@ -59,7 +67,34 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.pickEdit = new UINestedEdit((editing) ->
         {
-            UIFormPalette.open(this, editing, this.modelBlock.getForm(), (f) -> this.modelBlock.setForm(f));
+            UIFormPalette palette = UIFormPalette.open(this, editing, this.modelBlock.getForm(), (f) -> this.modelBlock.setForm(f));
+
+            palette.immersive();
+            palette.editor.renderer.relative(dashboard.getRoot()).full();
+            palette.getEvents().register(UIToggleEditorEvent.class, (e) ->
+            {
+                if (e.editing)
+                {
+                    this.addCameraController(palette);
+                }
+                else
+                {
+                    this.removeCameraController();
+                }
+            });
+            palette.getEvents().register(UIRemovedEvent.class, (e) ->
+            {
+                this.scrollView.setVisible(true);
+            });
+
+            palette.resize();
+
+            if (editing)
+            {
+                this.addCameraController(palette);
+            }
+
+            this.scrollView.setVisible(false);
         });
 
         this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.setShadow(b.getValue()));
@@ -67,10 +102,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
 
-        UIScrollView scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.transform);
-
-        scrollView.scroll.opposite().cancelScrolling();
-        scrollView.relative(this).w(200).h(1F);
+        this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.transform);
+        this.scrollView.scroll.opposite().cancelScrolling();
+        this.scrollView.relative(this).w(200).h(1F);
 
         this.fill(null, false);
 
@@ -90,7 +124,33 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             }
         }).active(() -> this.modelBlock != null);
 
-        this.add(scrollView);
+        this.add(this.scrollView);
+    }
+
+    public ModelBlockEntity getModelBlock()
+    {
+        return this.modelBlock;
+    }
+
+    private void addCameraController(UIFormPalette palette)
+    {
+        if (this.cameraController == null)
+        {
+            this.cameraController = new ImmersiveModelBlockCameraController(palette.editor.renderer, this.modelBlock);
+
+            BBSModClient.getCameraController().add(this.cameraController);
+            palette.editor.renderer.setTransform(new Matrix4f(this.modelBlock.getTransform().createMatrix()));
+        }
+    }
+
+    private void removeCameraController()
+    {
+        if (this.cameraController != null)
+        {
+            BBSModClient.getCameraController().remove(this.cameraController);
+
+            this.cameraController = null;
+        }
     }
 
     @Override
@@ -119,6 +179,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         super.close();
 
         this.save();
+        this.removeCameraController();
     }
 
     private void updateList()

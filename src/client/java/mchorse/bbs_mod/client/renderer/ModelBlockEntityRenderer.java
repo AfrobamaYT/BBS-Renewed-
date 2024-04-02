@@ -5,10 +5,13 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
-import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.mixin.client.EntityRendererDispatcherInvoker;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.forms.UIFormPalette;
+import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
@@ -19,6 +22,8 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
+
+import java.util.List;
 
 public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity>
 {
@@ -57,7 +62,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
-        if (entity.getForm() != null)
+        if (entity.getForm() != null && this.canRender(entity))
         {
             RenderSystem.enableDepthTest();
             FormUtilsClient.render(entity.getForm(), FormRenderingContext
@@ -88,5 +93,25 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
             matrices.pop();
         }
+    }
+
+    private boolean canRender(ModelBlockEntity entity)
+    {
+        if (
+            MinecraftClient.getInstance().currentScreen instanceof UIScreen screen &&
+            screen.getMenu() instanceof UIDashboard dashboard
+        ) {
+            if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)
+            {
+                List<UIFormPalette> children = modelBlockPanel.getChildren(UIFormPalette.class);
+
+                if (!children.isEmpty() && children.get(0).editor.isEditing() && modelBlockPanel.getModelBlock() == entity)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
