@@ -26,6 +26,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.RayTracing;
+import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -38,6 +39,8 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
+
+import java.util.List;
 
 public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSupported
 {
@@ -139,7 +142,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             this.cameraController = new ImmersiveModelBlockCameraController(palette.editor.renderer, this.modelBlock);
 
             BBSModClient.getCameraController().add(this.cameraController);
-            palette.editor.renderer.setTransform(new Matrix4f(this.modelBlock.getTransform().createMatrix()));
+
+            Transform transform = this.modelBlock.getTransform().copy();
+            
+            transform.translate.set(0F, 0F, 0F);
+            palette.editor.renderer.setTransform(new Matrix4f(transform.createMatrix()));
         }
     }
 
@@ -274,19 +281,22 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             BlockPos blockPos = entity.getPos();
 
-            context.matrixStack().push();
-            context.matrixStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
-
-            if (this.hovered == entity || entity == this.modelBlock)
+            if (!this.isEditing(entity))
             {
-                Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
-            }
-            else
-            {
-                Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D);
-            }
+                context.matrixStack().push();
+                context.matrixStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
 
-            context.matrixStack().pop();
+                if (this.hovered == entity || entity == this.modelBlock)
+                {
+                    Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
+                }
+                else
+                {
+                    Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D);
+                }
+
+                context.matrixStack().pop();
+            }
         }
 
         RenderSystem.disableDepthTest();
@@ -325,5 +335,20 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         BlockPos pos = closest.getPos();
 
         return new AABB(pos.getX(), pos.getY(), pos.getZ(), 1D, 1D, 1D);
+    }
+
+    public boolean isEditing(ModelBlockEntity entity)
+    {
+        if (this.modelBlock == entity)
+        {
+            List<UIFormPalette> children = this.getChildren(UIFormPalette.class);
+
+            if (!children.isEmpty())
+            {
+                return children.get(0).editor.isEditing();
+            }
+        }
+
+        return false;
     }
 }

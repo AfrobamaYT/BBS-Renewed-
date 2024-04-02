@@ -9,7 +9,6 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.mixin.client.EntityRendererDispatcherInvoker;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
-import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -22,8 +21,6 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
-
-import java.util.List;
 
 public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity>
 {
@@ -103,12 +100,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         ) {
             if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)
             {
-                List<UIFormPalette> children = modelBlockPanel.getChildren(UIFormPalette.class);
-
-                if (!children.isEmpty() && children.get(0).editor.isEditing() && modelBlockPanel.getModelBlock() == entity)
-                {
-                    return false;
-                }
+                return !modelBlockPanel.isEditing(entity);
             }
         }
 
