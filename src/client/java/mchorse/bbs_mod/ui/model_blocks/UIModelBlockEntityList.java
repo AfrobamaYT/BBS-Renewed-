@@ -23,7 +23,7 @@ public class UIModelBlockEntityList extends UIList<ModelBlockEntity>
     protected String elementToString(UIContext context, int i, ModelBlockEntity element)
     {
         BlockPos pos = element.getPos();
-        Form form = element.getForm();
+        Form form = element.getProperties().getForm();
 
         String s = "(" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")";
 

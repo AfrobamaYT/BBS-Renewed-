@@ -21,7 +21,14 @@ public class FormUtils
 
     public static Form fromData(MapType data)
     {
-        return data == null ? null : BBSMod.getForms().fromData(data);
+        try
+        {
+            return data == null ? null : BBSMod.getForms().fromData(data);
+        }
+        catch (Exception e)
+        {}
+
+        return null;
     }
 
     public static MapType toData(Form form)

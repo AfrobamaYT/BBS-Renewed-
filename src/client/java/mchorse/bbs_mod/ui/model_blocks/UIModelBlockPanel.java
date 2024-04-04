@@ -70,7 +70,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.pickEdit = new UINestedEdit((editing) ->
         {
-            UIFormPalette palette = UIFormPalette.open(this, editing, this.modelBlock.getForm(), (f) -> this.modelBlock.setForm(f));
+            UIFormPalette palette = UIFormPalette.open(this, editing, this.modelBlock.getProperties().getForm(), (f) -> this.modelBlock.getProperties().setForm(f));
 
             palette.immersive();
             palette.editor.renderer.relative(dashboard.getRoot()).full();
@@ -100,7 +100,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             this.scrollView.setVisible(false);
         });
 
-        this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.setShadow(b.getValue()));
+        this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
 
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
@@ -122,7 +122,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                 Vec3d hit = blockHitResult.getPos();
                 BlockPos pos = this.modelBlock.getPos();
 
-                this.modelBlock.getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
+                this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
                 this.fillData();
             }
         }).active(() -> this.modelBlock != null);
@@ -143,7 +143,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
             BBSModClient.getCameraController().add(this.cameraController);
 
-            Transform transform = this.modelBlock.getTransform().copy();
+            Transform transform = this.modelBlock.getProperties().getTransform().copy();
 
             transform.translate.set(0F, 0F, 0F);
             palette.editor.renderer.setTransform(new Matrix4f(transform.createMatrix()));
@@ -224,9 +224,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     private void fillData()
     {
-        this.pickEdit.setForm(this.modelBlock.getForm());
-        this.transform.setTransform(this.modelBlock.getTransform());
-        this.shadow.setValue(this.modelBlock.getShadow());
+        ModelBlockEntity.Properties properties = this.modelBlock.getProperties();
+
+        this.pickEdit.setForm(properties.getForm());
+        this.transform.setTransform(properties.getTransform());
+        this.shadow.setValue(properties.getShadow());
     }
 
     private void save()

@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -40,7 +41,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
             item.expiration -= 1;
 
-            item.entity.getForm().update(item.formEntity);
+            item.entity.getProperties().getForm().update(item.formEntity);
         }
     }
 
@@ -49,19 +50,35 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
     {
         Item item = this.get(stack);
 
-        if (item != null && item.entity.getForm() != null)
+        if (item != null)
         {
-            item.expiration = 20;
+            ModelBlockEntity.Properties properties = item.entity.getProperties();
 
-            matrices.push();
-            matrices.translate(0.5F, 0F, 0.5F);
-            MatrixStackUtils.applyTransform(matrices, item.entity.getTransform());
+            if (properties.getForm() != null)
+            {
+                item.expiration = 20;
 
-            RenderSystem.enableDepthTest();
-            FormUtilsClient.render(item.entity.getForm(), FormRenderingContext.set(item.formEntity, matrices, light, MinecraftClient.getInstance().getTickDelta()));
-            RenderSystem.disableDepthTest();
+                Transform transform = properties.getTransform();
 
-            matrices.pop();
+                if (mode == ModelTransformationMode.GUI)
+                {
+                    transform = properties.getTransformInventory();
+                }
+                else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
+                {
+                    transform = properties.getTransformFirstPerson();
+                }
+
+                matrices.push();
+                matrices.translate(0.5F, 0F, 0.5F);
+                MatrixStackUtils.applyTransform(matrices, transform);
+
+                RenderSystem.enableDepthTest();
+                FormUtilsClient.render(properties.getForm(), FormRenderingContext.set(item.formEntity, matrices, light, MinecraftClient.getInstance().getTickDelta()));
+                RenderSystem.disableDepthTest();
+
+                matrices.pop();
+            }
         }
     }
 

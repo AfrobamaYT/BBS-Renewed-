@@ -2,6 +2,7 @@ package mchorse.bbs_mod.blocks.entities;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.DataStorageUtils;
+import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -22,9 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class ModelBlockEntity extends BlockEntity
 {
-    private Form form;
-    private final Transform transform = new Transform();
-    private boolean shadow;
+    private Properties properties = new Properties();
     private IEntity entity = new StubEntity();
 
     public ModelBlockEntity(BlockPos pos, BlockState state)
@@ -32,42 +31,19 @@ public class ModelBlockEntity extends BlockEntity
         super(BBSMod.MODEL_BLOCK_ENTITY, pos, state);
     }
 
+    public Properties getProperties()
+    {
+        return this.properties;
+    }
+
     public IEntity getEntity()
     {
         return this.entity;
     }
 
-    public Form getForm()
-    {
-        return this.form;
-    }
-
-    public void setForm(Form form)
-    {
-        this.form = form;
-    }
-
-    public Transform getTransform()
-    {
-        return this.transform;
-    }
-
-    public boolean getShadow()
-    {
-        return this.shadow;
-    }
-
-    public void setShadow(boolean shadow)
-    {
-        this.shadow = shadow;
-    }
-
     public void tick(World world, BlockPos pos, BlockState state)
     {
-        if (this.form != null)
-        {
-            this.form.update(this.entity);
-        }
+        this.properties.update(this.entity);
     }
 
     @Nullable
@@ -88,13 +64,7 @@ public class ModelBlockEntity extends BlockEntity
     {
         super.writeNbt(nbt);
 
-        if (this.form != null)
-        {
-            DataStorageUtils.writeToNbtCompound(nbt, "Form", FormUtils.toData(this.form));
-        }
-
-        DataStorageUtils.writeToNbtCompound(nbt, "Transform", this.transform.toData());
-        nbt.putBoolean("Shadow", this.shadow);
+        DataStorageUtils.writeToNbtCompound(nbt, "Properties", this.properties.toData());
     }
 
     @Override
@@ -102,35 +72,93 @@ public class ModelBlockEntity extends BlockEntity
     {
         super.readNbt(nbt);
 
-        if (nbt.contains("Form"))
-        {
-            BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Form");
-
-            if (baseType instanceof MapType)
-            {
-                this.form = BBSMod.getForms().fromData(baseType.asMap());
-            }
-        }
-
-        BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Transform");
+        BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Properties");
 
         if (baseType instanceof MapType)
         {
-            this.transform.fromData(baseType.asMap());
+            this.properties.fromData(baseType.asMap());
         }
-
-        this.shadow = nbt.getBoolean("Shadow");
     }
 
-    public void updateForm(Form form, MapType transform, boolean shadow, World world)
+    public void updateForm(MapType data, World world)
     {
-        this.form = FormUtils.copy(form);
-        this.transform.fromData(transform);
-        this.shadow = shadow;
+        this.properties.fromData(data);
 
         BlockPos pos = this.getPos();
         BlockState blockState = world.getBlockState(pos);
 
         world.updateListeners(pos, blockState, blockState, Block.NOTIFY_LISTENERS);
+    }
+
+    public static class Properties implements IMapSerializable
+    {
+        private Form form;
+        private final Transform transform = new Transform();
+        private final Transform transformInventory = new Transform();
+        private final Transform transformFirstPerson = new Transform();
+        private boolean shadow;
+
+        public Form getForm()
+        {
+            return this.form;
+        }
+
+        public void setForm(Form form)
+        {
+            this.form = form;
+        }
+
+        public Transform getTransform()
+        {
+            return this.transform;
+        }
+
+        public Transform getTransformInventory()
+        {
+            return this.transformInventory;
+        }
+
+        public Transform getTransformFirstPerson()
+        {
+            return this.transformFirstPerson;
+        }
+
+        public boolean getShadow()
+        {
+            return this.shadow;
+        }
+
+        public void setShadow(boolean shadow)
+        {
+            this.shadow = shadow;
+        }
+
+        @Override
+        public void fromData(MapType data)
+        {
+            this.form = FormUtils.fromData(data.getMap("form"));
+            this.transform.fromData(data.getMap("transform"));
+            this.transformInventory.fromData(data.getMap("transformInventory"));
+            this.transformFirstPerson.fromData(data.getMap("transformFirstPerson"));
+            this.shadow = data.getBool("shadow");
+        }
+
+        @Override
+        public void toData(MapType data)
+        {
+            data.put("form", FormUtils.toData(this.form));
+            data.put("transform", this.transform.toData());
+            data.put("transformInventory", this.transformInventory.toData());
+            data.put("transformFirstPerson", this.transformFirstPerson.toData());
+            data.putBool("shadow", this.shadow);
+        }
+
+        public void update(IEntity entity)
+        {
+            if (this.form != null)
+            {
+                this.form.update(entity);
+            }
+        }
     }
 }

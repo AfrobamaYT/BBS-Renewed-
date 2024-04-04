@@ -4,11 +4,8 @@ import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
-import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.MathUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.util.math.BlockPos;
-import org.joml.Vector3f;
 
 public class ImmersiveModelBlockCameraController implements ICameraController
 {
@@ -25,7 +22,7 @@ public class ImmersiveModelBlockCameraController implements ICameraController
     public void setup(Camera camera, float transition)
     {
         UIModelRenderer renderer = this.modelRenderer;
-        Transform transform = this.modelBlock.getTransform();
+        Transform transform = this.modelBlock.getProperties().getTransform();
 
         renderer.setupPosition();
 

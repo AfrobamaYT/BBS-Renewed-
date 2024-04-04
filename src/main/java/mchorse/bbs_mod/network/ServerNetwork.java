@@ -38,13 +38,10 @@ public class ServerNetwork
     private static void handleModelBlockFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
         BlockPos pos = buf.readBlockPos();
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
 
         try
         {
-            Form form = BBSMod.getForms().fromData(data);
-            MapType transform = (MapType) DataStorageUtils.readFromPacket(buf);
-            boolean shadow = buf.readBoolean();
+            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
 
             server.execute(() ->
             {
@@ -53,7 +50,7 @@ public class ServerNetwork
 
                 if (be instanceof ModelBlockEntity modelBlock)
                 {
-                    modelBlock.updateForm(form, transform, shadow, world);
+                    modelBlock.updateForm(data, world);
                 }
             });
         }

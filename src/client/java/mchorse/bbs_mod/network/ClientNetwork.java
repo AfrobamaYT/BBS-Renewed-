@@ -109,12 +109,9 @@ public class ClientNetwork
     public static void sendModelBlockForm(BlockPos pos, ModelBlockEntity modelBlock)
     {
         PacketByteBuf buf = PacketByteBufs.create();
-        MapType mapType = FormUtils.toData(modelBlock.getForm());
 
         buf.writeBlockPos(pos);
-        DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
-        DataStorageUtils.writeToPacket(buf, modelBlock.getTransform().toData());
-        buf.writeBoolean(modelBlock.getShadow());
+        DataStorageUtils.writeToPacket(buf, modelBlock.getProperties().toData());
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_FORM_PACKET, buf);
     }

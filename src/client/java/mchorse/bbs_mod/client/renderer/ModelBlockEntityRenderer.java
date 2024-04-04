@@ -37,7 +37,8 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             this.entity = new ActorEntity(BBSMod.ACTOR_ENTITY, null);
         }
 
-        Transform transform = entity.getTransform();
+        ModelBlockEntity.Properties properties = entity.getProperties();
+        Transform transform = properties.getTransform();
         BlockPos pos = entity.getPos();
 
         matrices.push();
@@ -59,10 +60,10 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
-        if (entity.getForm() != null && this.canRender(entity))
+        if (properties.getForm() != null && this.canRender(entity))
         {
             RenderSystem.enableDepthTest();
-            FormUtilsClient.render(entity.getForm(), FormRenderingContext
+            FormUtilsClient.render(properties.getForm(), FormRenderingContext
                 .set(entity.getEntity(), matrices, lightAbove, tickDelta)
                 .camera(camera));
             RenderSystem.disableDepthTest();
@@ -75,7 +76,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
         matrices.pop();
 
-        if (entity.getShadow())
+        if (properties.getShadow())
         {
             double distance = MinecraftClient.getInstance().getEntityRenderDispatcher().getSquaredDistanceToCamera(x, y, z);
             float radius = 0.5F;
