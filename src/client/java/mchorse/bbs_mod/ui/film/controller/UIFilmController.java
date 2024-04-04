@@ -7,6 +7,7 @@ import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -48,7 +49,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -59,7 +59,6 @@ import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -73,9 +72,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 public class UIFilmController extends UIElement
@@ -972,9 +969,9 @@ public class UIFilmController extends UIElement
 
             if (value != null && last != null)
             {
-                Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta());
-                Matrix4f matrix = this.getEntityMatrix(context, value, defaultMatrix);
-                Matrix4f lastMatrix = this.getEntityMatrix(context, last, defaultMatrix);
+                Matrix4f defaultMatrix = FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta());
+                Matrix4f matrix = FilmController.getEntityMatrix(this.entities, context, value, defaultMatrix);
+                Matrix4f lastMatrix = FilmController.getEntityMatrix(this.entities, context, last, defaultMatrix);
 
                 if (matrix != null && lastMatrix != null && matrix != lastMatrix)
                 {
@@ -991,59 +988,11 @@ public class UIFilmController extends UIElement
             }
 
             context.matrixStack().push();
-            MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+            MatrixStackUtils.multiply(context.matrixStack(), FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
 
             context.matrixStack().pop();
         }
-    }
-
-    private Matrix4f getEntityMatrix(WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
-    {
-        int entityIndex = selector.actor;
-
-        if (CollectionUtils.inRange(this.entities, entityIndex))
-        {
-            IEntity entity = this.entities.get(entityIndex);
-            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
-
-            Map<String, Matrix4f> map = new HashMap<>();
-            MatrixStack stack = new MatrixStack();
-
-            Form form = entity.getForm();
-
-            if (form != null)
-            {
-                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", context.tickDelta());
-
-                Matrix4f matrix = map.get(selector.attachment);
-
-                if (matrix != null)
-                {
-                    basic.mul(matrix);
-                }
-            }
-
-            return basic;
-        }
-
-        return defaultMatrix;
-    }
-
-    private Matrix4f getMatrixForRenderWithRotation(IEntity entity, net.minecraft.client.render.Camera camera, float tickDelta)
-    {
-        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), tickDelta) - camera.getPos().x;
-        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), tickDelta) - camera.getPos().y;
-        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - camera.getPos().z;
-
-        Matrix4f matrix = new Matrix4f();
-
-        float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), tickDelta);
-
-        matrix.translate((float) x, (float) y, (float) z);
-        matrix.rotateY(MathUtils.toRad(-bodyYaw));
-
-        return matrix;
     }
 
     private void rayTraceEntity(WorldRenderContext context)

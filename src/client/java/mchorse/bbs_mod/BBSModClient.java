@@ -8,6 +8,7 @@ import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
+import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.categories.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
@@ -55,14 +56,12 @@ public class BBSModClient implements ClientModInitializer
 
     private static SimpleFramebuffer framebuffer;
 
-    private static KeyBinding keyPlay;
-    private static KeyBinding keyRecord;
+    private static KeyBinding keyDashboard;
 
     private static UIDashboard dashboard;
 
+    private static Films films;
     private static CameraController cameraController = new CameraController();
-
-    private static boolean toggle;
 
     public static TextureManager getTextures()
     {
@@ -104,6 +103,11 @@ public class BBSModClient implements ClientModInitializer
         return cameraController;
     }
 
+    public static Films getFilms()
+    {
+        return films;
+    }
+
     public static SimpleFramebuffer getFramebuffer()
     {
         return framebuffer;
@@ -121,11 +125,6 @@ public class BBSModClient implements ClientModInitializer
 
     public static void renderToFramebuffer()
     {
-        if (!toggle)
-        {
-            return;
-        }
-
         MinecraftClient mc = MinecraftClient.getInstance();
 
         int windowWidth = mc.getWindow().getFramebufferWidth();
@@ -187,6 +186,7 @@ public class BBSModClient implements ClientModInitializer
         watchDog.register(sounds);
         watchDog.start();
         screenshotRecorder = new ScreenshotRecorder(BBSMod.getGamePath("screenshots"));
+        films = new Films();
 
         KeybindSettings.registerClasses();
 
@@ -211,18 +211,11 @@ public class BBSModClient implements ClientModInitializer
             .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825));
 
         /* Keybind shenanigans */
-        keyPlay = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".play",
+        keyDashboard = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + ".dashboard",
             InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_G,
-            "category." + BBSMod.MOD_ID + ".test"
-        ));
-
-        keyRecord = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".record",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
-            "category." + BBSMod.MOD_ID + ".test"
+            GLFW.GLFW_KEY_0,
+            "category." + BBSMod.MOD_ID + ".main"
         ));
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
@@ -239,6 +232,8 @@ public class BBSModClient implements ClientModInitializer
             {
                 screen.lastRender(context);
             }
+
+            films.render(context);
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
@@ -254,17 +249,11 @@ public class BBSModClient implements ClientModInitializer
             }
 
             cameraController.update();
+            films.update();
 
-            while (keyPlay.wasPressed())
+            while (keyDashboard.wasPressed())
             {
                 MinecraftClient.getInstance().setScreen(new UIScreen(Text.empty(), getDashboard()));
-            }
-
-            while (keyRecord.wasPressed())
-            {
-                toggle = !toggle;
-
-                ClientNetwork.sendRandom();
             }
         });
 

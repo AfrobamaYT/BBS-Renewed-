@@ -1,6 +1,5 @@
 package mchorse.bbs_mod;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import mchorse.bbs_mod.blocks.ModelBlock;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -28,13 +27,10 @@ import mchorse.bbs_mod.camera.clips.overwrite.DollyClip;
 import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.forms.FormArchitect;
-import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
-import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
@@ -61,7 +57,6 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
@@ -69,7 +64,6 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
@@ -266,44 +260,7 @@ public class BBSMod implements ModInitializer
         ServerNetwork.setup();
 
         /* Commands */
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-        {
-            dispatcher.register(
-                CommandManager.literal("bbs").requires((source) -> source.hasPermissionLevel(2)).then(CommandManager.literal("morph").then(
-                    CommandManager.argument("target", EntityArgumentType.player()).executes((source) ->
-                    {
-                        ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
-
-                        ServerNetwork.sendMorphToTracked(entity, null);
-                        Morph.getMorph(entity).form = FormUtils.copy(null);
-
-                        return 1;
-                    })
-                    .then(CommandManager.argument("morph", StringArgumentType.greedyString()).executes((source) ->
-                    {
-                        ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
-                        String morphData = StringArgumentType.getString(source, "morph");
-                        Form form = null;
-
-                        try
-                        {
-                            form = FormUtils.fromData(DataToString.mapFromString(morphData));
-                        }
-                        catch (Exception e)
-                        {
-                            e.printStackTrace();
-
-                            return -1;
-                        }
-
-                        ServerNetwork.sendMorphToTracked(entity, form);
-                        Morph.getMorph(entity).form = FormUtils.copy(form);
-
-                        return 1;
-                    })))
-                )
-            );
-        });
+        CommandRegistrationCallback.EVENT.register(BBSCommands::register);
 
         /* Event listener */
         registerEvents();

@@ -144,7 +144,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             BBSModClient.getCameraController().add(this.cameraController);
 
             Transform transform = this.modelBlock.getTransform().copy();
-            
+
             transform.translate.set(0F, 0F, 0F);
             palette.editor.renderer.setTransform(new Matrix4f(transform.createMatrix()));
         }

@@ -1,9 +1,12 @@
 package mchorse.bbs_mod.network;
 
+import mchorse.bbs_mod.BBSData;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
@@ -13,8 +16,8 @@ import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -23,59 +26,86 @@ public class ClientNetwork
 {
     public static void setup()
     {
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET, (client, handler, buf, responseSender) ->
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET, (client, handler, buf, responseSender) -> handleClientModelBlockPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM_PACKET, (client, handler, buf, responseSender) -> handlePlayerFormPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(buf));
+    }
+
+    /* Handlers */
+
+    private static void handleClientModelBlockPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        BlockPos pos = buf.readBlockPos();
+
+        client.execute(() ->
         {
-            BlockPos pos = buf.readBlockPos();
+            BlockEntity entity = client.world.getBlockEntity(pos);
 
-            client.execute(() ->
+            if (!(entity instanceof ModelBlockEntity))
             {
-                BlockEntity entity = client.world.getBlockEntity(pos);
-
-                if (!(entity instanceof ModelBlockEntity))
-                {
-                    return;
-                }
-
-                UIDashboard dashboard = BBSModClient.getDashboard();
-
-                if (!(client.currentScreen instanceof UIScreen) || ((UIScreen) client.currentScreen).getMenu() != dashboard)
-                {
-                    client.setScreen(new UIScreen(Text.empty(), dashboard));
-                }
-
-                UIModelBlockPanel panel = dashboard.getPanels().getPanel(UIModelBlockPanel.class);
-
-                dashboard.setPanel(panel);
-                panel.fill((ModelBlockEntity) entity, true);
-            });
-        });
-
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM, (client, handler, buf, responseSender) ->
-        {
-            int id = buf.readInt();
-            Form form = null;
-
-            if (buf.readBoolean())
-            {
-                form = FormUtils.fromData((MapType) DataStorageUtils.readFromPacket(buf));
+                return;
             }
 
-            final Form finalForm = form;
+            UIDashboard dashboard = BBSModClient.getDashboard();
 
-            client.execute(() ->
+            if (!(client.currentScreen instanceof UIScreen) || ((UIScreen) client.currentScreen).getMenu() != dashboard)
             {
-                Entity entity = client.world.getEntityById(id);
+                client.setScreen(new UIScreen(Text.empty(), dashboard));
+            }
 
-                if (entity instanceof PlayerEntity)
-                {
-                    Morph morph = Morph.getMorph((PlayerEntity) entity);
+            UIModelBlockPanel panel = dashboard.getPanels().getPanel(UIModelBlockPanel.class);
 
-                    morph.form = finalForm;
-                }
-            });
+            dashboard.setPanel(panel);
+            panel.fill((ModelBlockEntity) entity, true);
         });
     }
 
+    private static void handlePlayerFormPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        int id = buf.readInt();
+        Form form = null;
+
+        if (buf.readBoolean())
+        {
+            form = FormUtils.fromData((MapType) DataStorageUtils.readFromPacket(buf));
+        }
+
+        final Form finalForm = form;
+
+        client.execute(() ->
+        {
+            Entity entity = client.world.getEntityById(id);
+            Morph morph = Morph.getMorph(entity);
+
+            if (morph != null)
+            {
+                morph.form = finalForm;
+            }
+        });
+    }
+
+    private static void handlePlayFilmPacket(PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+        boolean withCamera = buf.readBoolean();
+
+        try
+        {
+            Film film = BBSData.getFilms().load(filmId);
+
+            if (withCamera)
+            {
+                BBSModClient.getCameraController().add(new PlayCameraController(film.camera));
+            }
+
+            BBSModClient.getFilms().addFilm(film);
+        }
+        catch (Exception e)
+        {}
+    }
+
+    /* API */
+    
     public static void sendModelBlockForm(BlockPos pos, ModelBlockEntity modelBlock)
     {
         PacketByteBuf buf = PacketByteBufs.create();
@@ -89,11 +119,6 @@ public class ClientNetwork
         ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_FORM_PACKET, buf);
     }
 
-    public static void sendRandom()
-    {
-        ClientPlayNetworking.send(ServerNetwork.SERVER_RANDOM, PacketByteBufs.empty());
-    }
-
     public static void sendPlayerForm(Form form)
     {
         PacketByteBuf buf = PacketByteBufs.create();
@@ -101,6 +126,6 @@ public class ClientNetwork
 
         DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
 
-        ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_FORM, buf);
+        ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_FORM_PACKET, buf);
     }
 }
