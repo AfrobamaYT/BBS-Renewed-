@@ -10,7 +10,12 @@ import mchorse.bbs_mod.particles.components.IComponentParticleUpdate;
 import mchorse.bbs_mod.particles.components.ParticleComponentBase;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import org.joml.Vector3d;
+
+import java.util.Collections;
 
 public class ParticleComponentMotionCollision extends ParticleComponentBase implements IComponentParticleUpdate
 {
@@ -85,10 +90,49 @@ public class ParticleComponentMotionCollision extends ParticleComponentBase impl
             double z = now.z - prev.z;
             boolean veryBig = Math.abs(x) > 10 || Math.abs(y) > 10 || Math.abs(z) > 10;
 
-            /* TODO; if (veryBig || emitter.world.chunks.getCell((int) now.x, (int) now.y, (int) now.z, false) == null)
+            if (veryBig)
             {
                 return;
-            } */
+            }
+
+            Box box = new Box(prev.x - r, prev.y - r, prev.z - r, prev.x + r, prev.y + r, prev.z + r);
+            Vec3d vec = Entity.adjustMovementForCollisions(null, new Vec3d(x, y, z), box, emitter.world, Collections.emptyList());
+
+            if (vec.x != x || vec.y != y || vec.z != z)
+            {
+                if (this.expireOnImpact)
+                {
+                    particle.dead = true;
+
+                    return;
+                }
+
+                if (particle.relativePosition)
+                {
+                    particle.relativePosition = false;
+                    particle.prevPosition.set(prev);
+                }
+
+                now.set(prev).add(vec.x, vec.y, vec.z);
+
+                if (vec.y != y)
+                {
+                    particle.accelerationFactor.y *= -this.bounciness;
+                }
+
+                if (vec.x != x)
+                {
+                    particle.accelerationFactor.x *= -this.bounciness;
+                }
+
+                if (vec.z != z)
+                {
+                    particle.accelerationFactor.z *= -this.bounciness;
+                }
+
+                particle.position.set(now);
+                particle.dragFactor += this.collisionDrag;
+            }
         }
     }
 

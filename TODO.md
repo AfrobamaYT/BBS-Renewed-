@@ -20,8 +20,8 @@
   - [ ] Framebuffer resize
 - [ ] Entity selectors in EntityClip
 - [x] Framebuffer picking
-- [ ] Particles
-  - [ ] Collision
+- [x] Particles
+  - [x] Collision
   - [x] Lighting
   - [x] Rendering
 - [x] Setup watch dog
@@ -31,7 +31,8 @@
   - [x] Add click picking
   - [x] Move to cursor (with ray tracing)
   - [x] Model block shadows
-  - [ ] Immersive editing
+  - [x] Immersive editing
+  - [ ] Display in hand
 - [ ] More forms
   - [ ] Block form
   - [ ] Item form
