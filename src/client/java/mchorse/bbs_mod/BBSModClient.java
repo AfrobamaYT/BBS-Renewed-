@@ -7,6 +7,7 @@ import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
+import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.categories.FormCategories;
@@ -28,6 +29,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
@@ -60,8 +62,9 @@ public class BBSModClient implements ClientModInitializer
 
     private static UIDashboard dashboard;
 
-    private static Films films;
     private static CameraController cameraController = new CameraController();
+    private static Films films;
+    private static ModelBlockItemRenderer modelBlockItemRenderer = new ModelBlockItemRenderer();
 
     public static TextureManager getTextures()
     {
@@ -250,6 +253,7 @@ public class BBSModClient implements ClientModInitializer
 
             cameraController.update();
             films.update();
+            modelBlockItemRenderer.update();
 
             while (keyDashboard.wasPressed())
             {
@@ -269,5 +273,7 @@ public class BBSModClient implements ClientModInitializer
         EntityRendererRegistry.register(BBSMod.ACTOR_ENTITY, ActorEntityRenderer::new);
 
         BlockEntityRendererFactories.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
+
+        BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
     }
 }

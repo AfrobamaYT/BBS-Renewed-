@@ -32,7 +32,7 @@
   - [x] Move to cursor (with ray tracing)
   - [x] Model block shadows
   - [x] Immersive editing
-  - [ ] Display in hand
+  - [x] Display in hand
 - [ ] More forms
   - [ ] Block form
   - [ ] Item form

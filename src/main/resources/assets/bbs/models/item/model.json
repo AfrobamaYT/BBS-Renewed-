@@ -1,3 +1,4 @@
 {
-    "parent": "bbs:block/model"
+    "parent": "minecraft:builtin/entity",
+    "gui_light": "front"
 }

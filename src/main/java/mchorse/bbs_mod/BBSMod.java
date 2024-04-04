@@ -93,8 +93,9 @@ public class BBSMod implements ModInitializer
     public static final EntityType<ActorEntity> ACTOR_ENTITY = Registry.register(
         Registries.ENTITY_TYPE,
         new Identifier(MOD_ID, "actor"),
-        FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ActorEntity::new).dimensions(EntityDimensions.fixed(0.6F, 1.8F)).build()
-    );
+        FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ActorEntity::new)
+            .dimensions(EntityDimensions.fixed(0.6F, 1.8F))
+            .build());
 
     public static final Block MODEL_BLOCK = new ModelBlock(FabricBlockSettings.create()
         .noBlockBreakParticles()
@@ -102,8 +103,9 @@ public class BBSMod implements ModInitializer
         .noCollision()
         .nonOpaque()
         .notSolid()
-        .strength(0F)
-    );
+        .strength(0F));
+
+    public static final BlockItem MODEL_BLOCK_ITEM = new BlockItem(MODEL_BLOCK, new Item.Settings());
 
     public static final BlockEntityType<ModelBlockEntity> MODEL_BLOCK_ENTITY = Registry.register(
         Registries.BLOCK_ENTITY_TYPE,
@@ -270,7 +272,7 @@ public class BBSMod implements ModInitializer
 
         /* Blocks */
         Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "model"), MODEL_BLOCK);
-        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "model"), new BlockItem(MODEL_BLOCK, new Item.Settings()));
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "model"), MODEL_BLOCK_ITEM);
     }
 
     private void registerEvents()
