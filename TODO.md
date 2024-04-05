@@ -54,6 +54,7 @@ Useful user suggestions:
 - [ ] Add gizmos to film editor
 - [ ] Rethink keyframe addition and removal
 - [ ] Async model and texture loading
+- [ ] Update model forms when models get reloaded
 
 Considerations:
 

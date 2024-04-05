@@ -94,6 +94,7 @@ public class ModelBlockEntity extends BlockEntity
     {
         private Form form;
         private final Transform transform = new Transform();
+        private final Transform transformThirdPerson = new Transform();
         private final Transform transformInventory = new Transform();
         private final Transform transformFirstPerson = new Transform();
         private boolean shadow;
@@ -111,6 +112,11 @@ public class ModelBlockEntity extends BlockEntity
         public Transform getTransform()
         {
             return this.transform;
+        }
+
+        public Transform getTransformThirdPerson()
+        {
+            return this.transformThirdPerson;
         }
 
         public Transform getTransformInventory()
@@ -138,6 +144,7 @@ public class ModelBlockEntity extends BlockEntity
         {
             this.form = FormUtils.fromData(data.getMap("form"));
             this.transform.fromData(data.getMap("transform"));
+            this.transformThirdPerson.fromData(data.getMap("transformThirdPerson"));
             this.transformInventory.fromData(data.getMap("transformInventory"));
             this.transformFirstPerson.fromData(data.getMap("transformFirstPerson"));
             this.shadow = data.getBool("shadow");
@@ -148,6 +155,7 @@ public class ModelBlockEntity extends BlockEntity
         {
             data.put("form", FormUtils.toData(this.form));
             data.put("transform", this.transform.toData());
+            data.put("transformThirdPerson", this.transformThirdPerson.toData());
             data.put("transformInventory", this.transformInventory.toData());
             data.put("transformFirstPerson", this.transformFirstPerson.toData());
             data.putBool("shadow", this.shadow);

@@ -16,6 +16,23 @@ public class UIScreen extends Screen implements IFileDropListener
     private UIBaseMenu menu;
     private UIRenderingContext context;
 
+    public static void open(UIBaseMenu menu)
+    {
+        MinecraftClient.getInstance().setScreen(new UIScreen(Text.empty(), menu));
+    }
+
+    public static UIBaseMenu getCurrentMenu()
+    {
+        Screen currentScreen = MinecraftClient.getInstance().currentScreen;
+
+        if (currentScreen instanceof UIScreen uiScreen)
+        {
+            return uiScreen.menu;
+        }
+
+        return null;
+    }
+
     public UIScreen(Text title, UIBaseMenu menu)
     {
         super(title);
@@ -73,7 +90,10 @@ public class UIScreen extends Screen implements IFileDropListener
 
         this.menu.onClose(null);
 
-        MinecraftClient.getInstance().options.hudHidden = false;
+        if (this.menu.canHideHUD())
+        {
+            MinecraftClient.getInstance().options.hudHidden = false;
+        }
     }
 
     @Override
@@ -83,7 +103,10 @@ public class UIScreen extends Screen implements IFileDropListener
 
         this.menu.onOpen(null);
 
-        MinecraftClient.getInstance().options.hudHidden = true;
+        if (this.menu.canHideHUD())
+        {
+            MinecraftClient.getInstance().options.hudHidden = true;
+        }
     }
 
     @Override

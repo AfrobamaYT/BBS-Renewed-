@@ -1,6 +1,7 @@
 {
     "block.bbs.model": "Model block",
 
-    "key.bbs.dashboard": "Open dashboard",
+    "key.bbs.dashboard": "Dashboard",
+    "key.bbs.block_editor": "Model Block Editor",
     "category.bbs.main": "BBS mod"
 }

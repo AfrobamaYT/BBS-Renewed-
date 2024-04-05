@@ -11,6 +11,7 @@ import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -19,7 +20,6 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public class ClientNetwork
@@ -46,11 +46,12 @@ public class ClientNetwork
                 return;
             }
 
+            UIBaseMenu menu = UIScreen.getCurrentMenu();
             UIDashboard dashboard = BBSModClient.getDashboard();
 
-            if (!(client.currentScreen instanceof UIScreen) || ((UIScreen) client.currentScreen).getMenu() != dashboard)
+            if (menu != dashboard)
             {
-                client.setScreen(new UIScreen(Text.empty(), dashboard));
+                UIScreen.open(dashboard);
             }
 
             UIModelBlockPanel panel = dashboard.getPanels().getPanel(UIModelBlockPanel.class);
@@ -124,5 +125,14 @@ public class ClientNetwork
         DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_FORM_PACKET, buf);
+    }
+
+    public static void sendModelBlockTransforms(MapType data)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        DataStorageUtils.writeToPacket(buf, data);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, buf);
     }
 }

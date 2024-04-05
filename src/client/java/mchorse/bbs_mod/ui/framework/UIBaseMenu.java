@@ -51,6 +51,11 @@ public abstract class UIBaseMenu
         return this.root;
     }
 
+    public boolean canHideHUD()
+    {
+        return true;
+    }
+
     public boolean canPause()
     {
         return true;

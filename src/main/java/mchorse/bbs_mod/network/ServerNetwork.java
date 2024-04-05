@@ -11,6 +11,8 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,11 +27,13 @@ public class ServerNetwork
     public static final Identifier CLIENT_PLAY_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "client_play_film");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "server_model_block_form");
+    public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "server_model_block_transforms");
     public static final Identifier SERVER_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "server_player_form");
 
     public static void setup()
     {
         ServerPlayNetworking.registerGlobalReceiver(SERVER_MODEL_BLOCK_FORM_PACKET, (server, player, handler, buf, responder) -> handleModelBlockFormPacket(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, (server, player, handler, buf, responder) -> handleModelBlockTransformsPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_FORM_PACKET, (server, player, handler, buf, responder) -> handlePlayerFormPacket(server, player, buf));
     }
 
@@ -52,6 +56,25 @@ public class ServerNetwork
                 {
                     modelBlock.updateForm(data, world);
                 }
+            });
+        }
+        catch (Exception e)
+        {}
+    }
+
+    private static void handleModelBlockTransformsPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        try
+        {
+            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+
+            server.execute(() ->
+            {
+                ItemStack stack = player.getEquippedStack(EquipmentSlot.MAINHAND).copy();
+
+                stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+
+                player.equipStack(EquipmentSlot.MAINHAND, stack);
             });
         }
         catch (Exception e)

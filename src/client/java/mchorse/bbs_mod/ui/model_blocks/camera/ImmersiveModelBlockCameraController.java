@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.ui.forms.immersive;
+package mchorse.bbs_mod.ui.model_blocks.camera;
 
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.Camera;

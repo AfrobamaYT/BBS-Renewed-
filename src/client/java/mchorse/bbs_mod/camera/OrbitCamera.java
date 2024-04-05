@@ -194,6 +194,11 @@ public class OrbitCamera
 
     public boolean scroll(int scroll)
     {
+        if (this.dragging >= 0)
+        {
+            return false;
+        }
+
         float distance = MathUtils.clamp(this.distance - Math.copySign(1F, scroll), 0, 100);
         boolean hasChanged = this.distance != distance;
 

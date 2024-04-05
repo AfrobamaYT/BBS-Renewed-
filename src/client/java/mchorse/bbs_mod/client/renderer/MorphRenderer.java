@@ -6,6 +6,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.math.Interpolations;
@@ -50,18 +51,15 @@ public class MorphRenderer
 
     private static boolean canRender()
     {
-        Screen currentScreen = MinecraftClient.getInstance().currentScreen;
+        UIBaseMenu menu = UIScreen.getCurrentMenu();
         
-        if (currentScreen instanceof UIScreen uiScreen)
+        if (menu instanceof UIDashboard dashboard)
         {
-            if (uiScreen.getMenu() instanceof UIDashboard dashboard)
-            {
-                UIDashboardPanel panel = dashboard.getPanels().panel;
+            UIDashboardPanel panel = dashboard.getPanels().panel;
 
-                if (panel instanceof UIMorphingPanel morphingPanel)
-                {
-                    return !morphingPanel.palette.editor.isEditing();
-                }
+            if (panel instanceof UIMorphingPanel morphingPanel)
+            {
+                return !morphingPanel.palette.editor.isEditing();
             }
         }
 

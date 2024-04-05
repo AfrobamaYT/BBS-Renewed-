@@ -9,6 +9,7 @@ public class UIOrbitCamera implements IUIElement
 {
     public OrbitCamera orbit = new OrbitCamera();
     private boolean control;
+    private boolean enabled;
 
     public boolean canControl()
     {
@@ -18,6 +19,11 @@ public class UIOrbitCamera implements IUIElement
     public void setControl(boolean control)
     {
         this.control = control;
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
     }
 
     public boolean animate(UIContext context)
@@ -82,7 +88,7 @@ public class UIOrbitCamera implements IUIElement
     @Override
     public boolean isEnabled()
     {
-        return true;
+        return this.enabled;
     }
 
     @Override

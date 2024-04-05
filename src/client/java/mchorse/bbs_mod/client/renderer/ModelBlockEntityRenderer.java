@@ -43,6 +43,12 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
         matrices.push();
         matrices.translate(0.5F, 0F, 0.5F);
+
+        if (MinecraftClient.getInstance().getDebugHud().shouldShowDebugHud())
+        {
+            Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
+        }
+
         MatrixStackUtils.multiply(matrices, transform.createMatrix());
 
         double x = pos.getX() + 0.5D + transform.translate.x;
@@ -67,11 +73,6 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
                 .set(entity.getEntity(), matrices, lightAbove, tickDelta)
                 .camera(camera));
             RenderSystem.disableDepthTest();
-        }
-
-        if (MinecraftClient.getInstance().getDebugHud().shouldShowDebugHud())
-        {
-            Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
         }
 
         matrices.pop();

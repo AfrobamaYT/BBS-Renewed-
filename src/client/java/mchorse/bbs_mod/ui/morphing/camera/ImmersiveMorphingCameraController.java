@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.ui.forms.immersive;
+package mchorse.bbs_mod.ui.morphing.camera;
 
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;

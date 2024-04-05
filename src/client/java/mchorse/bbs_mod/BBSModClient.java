@@ -20,6 +20,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
@@ -38,7 +39,9 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -59,6 +62,7 @@ public class BBSModClient implements ClientModInitializer
     private static SimpleFramebuffer framebuffer;
 
     private static KeyBinding keyDashboard;
+    private static KeyBinding keyModelBlockEditor;
 
     private static UIDashboard dashboard;
 
@@ -221,6 +225,13 @@ public class BBSModClient implements ClientModInitializer
             "category." + BBSMod.MOD_ID + ".main"
         ));
 
+        keyModelBlockEditor = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + ".block_editor",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_HOME,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
@@ -257,7 +268,22 @@ public class BBSModClient implements ClientModInitializer
 
             while (keyDashboard.wasPressed())
             {
-                MinecraftClient.getInstance().setScreen(new UIScreen(Text.empty(), getDashboard()));
+                UIScreen.open(getDashboard());
+            }
+
+            while (keyModelBlockEditor.wasPressed())
+            {
+                ItemStack stack = MinecraftClient.getInstance().player.getEquippedStack(EquipmentSlot.MAINHAND);
+
+                if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == BBSMod.MODEL_BLOCK)
+                {
+                    ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
+
+                    if (item != null)
+                    {
+                        UIScreen.open(new UIModelBlockEditorMenu(item));
+                    }
+                }
             }
         });
 

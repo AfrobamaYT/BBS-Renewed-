@@ -533,6 +533,9 @@ public class UIKeys
     public static final IKey MODEL_BLOCKS_TITLE = L10n.lang("bbs.ui.model_blocks.title", "Model blocks", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey MODEL_BLOCKS_SHADOW = L10n.lang("bbs.ui.model_blocks.shadow", "Shadow", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey MODEL_BLOCKS_KEYS_MOVE_TO = L10n.lang("bbs.ui.model_blocks.keys.move_to", "Move to", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey MODEL_BLOCKS_TRANSFORM_THIRD_PERSON = L10n.lang("bbs.ui.model_blocks.transform.third_person", "Third person transform", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey MODEL_BLOCKS_TRANSFORM_FIRST_PERSON = L10n.lang("bbs.ui.model_blocks.transform.first_person", "First person transform", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey MODEL_BLOCKS_TRANSFORM_INVENTORY = L10n.lang("bbs.ui.model_blocks.transform.inventory", "Inventory (GUI) transform", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
 
     public static final IKey SUPPORTERS_TITLE = L10n.lang("bbs.ui.supporters.title", "Supporters", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey SUPPORTERS_INTRO = L10n.lang("bbs.ui.supporters.intro", "Hello there! My name is McHorse, and thank you for downloading BBS mod! If you're new to BBS mod, check out following resources!", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);

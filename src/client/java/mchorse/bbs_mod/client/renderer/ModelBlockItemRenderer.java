@@ -58,7 +58,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
             {
                 item.expiration = 20;
 
-                Transform transform = properties.getTransform();
+                Transform transform = properties.getTransformThirdPerson();
 
                 if (mode == ModelTransformationMode.GUI)
                 {
@@ -67,6 +67,10 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
                 else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
                 {
                     transform = properties.getTransformFirstPerson();
+                }
+                else if (mode == ModelTransformationMode.GROUND)
+                {
+                    transform = properties.getTransform();
                 }
 
                 matrices.push();
@@ -82,7 +86,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         }
     }
 
-    private Item get(ItemStack stack)
+    public Item get(ItemStack stack)
     {
         if (this.map.containsKey(stack))
         {
@@ -106,7 +110,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         return item;
     }
 
-    class Item
+    public static class Item
     {
         public ModelBlockEntity entity;
         public IEntity formEntity;
