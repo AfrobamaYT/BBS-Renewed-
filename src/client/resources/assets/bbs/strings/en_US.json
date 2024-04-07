@@ -110,6 +110,8 @@
     "bbs.config.video.encoder_path-comment": "To record a video, you need to specify here a path to ffmpeg's binary (to ffmpeg or ffmpeg.exe file, depending on OS)",
     "bbs.config.video.height": "Video height",
     "bbs.config.video.height-comment": "Video height that will be recorded (as opposed to current window height)",
+    "bbs.config.video.frame_rate": "Frame rate",
+    "bbs.config.video.frame_rate-comment": "The frame rate at which video will be recorded",
     "bbs.config.video.title": "Video capturing",
     "bbs.config.video.tooltip": "Options regarding to video capturing",
     "bbs.config.video.width": "Video width",

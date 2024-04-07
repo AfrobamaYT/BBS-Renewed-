@@ -43,6 +43,7 @@ public class BBSSettings
     public static ValueString videoEncoderArguments;
     public static ValueInt videoWidth;
     public static ValueInt videoHeight;
+    public static ValueInt videoFrameRate;
 
     public static ValueInt duration;
     public static ValueBoolean editorLoop;
@@ -146,6 +147,7 @@ public class BBSSettings
         videoEncoderArguments = builder.getString("encoder_args", "-f rawvideo -pix_fmt bgr24 -s %WIDTH%x%HEIGHT% -r %FPS% -i - -vf vflip -c:v libx264 -preset ultrafast -tune zerolatency -qp 18 -pix_fmt yuv420p %NAME%.mp4");
         videoWidth = builder.getInt("width", 1920, 2, 1024 * 8);
         videoHeight = builder.getInt("height", 1080, 2, 1024 * 8);
+        videoFrameRate = builder.getInt("frame_rate", 60, 2, 1024 * 8);
 
         /* Camera editor */
         duration = builder.category("editor").getInt("duration", 30, 1, 1000);

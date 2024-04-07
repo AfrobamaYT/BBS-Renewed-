@@ -18,7 +18,7 @@
   - [ ] Shadow
 - [ ] Minema
   - [ ] Framebuffer resize
-  - [ ] Tick rate changing
+  - [x] Tick synchronization
   - [x] Video recording
 - [ ] Entity selectors in EntityClip
 - [x] Framebuffer picking

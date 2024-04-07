@@ -75,7 +75,7 @@ public class VideoRecorder
             Path path = Paths.get(this.movies.toString());
             String movieName = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
             String params = BBSSettings.videoEncoderArguments.get();
-            float frameRate = 60F;
+            float frameRate = (float) BBSSettings.videoFrameRate.get();
 
             params = params.replace("%WIDTH%", String.valueOf(width));
             params = params.replace("%HEIGHT%", String.valueOf(height));
