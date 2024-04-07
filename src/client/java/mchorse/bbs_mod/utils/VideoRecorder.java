@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.utils;
 
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -30,8 +29,13 @@ public class VideoRecorder
     private boolean recording;
 
     private ByteBuffer buffer;
-    private Texture texture;
+    private int textureId = -1;
+    private int textureWidth;
+    private int textureHeight;
     private int counter;
+
+    public int serverTicks;
+    public int lastServerTicks;
 
     public VideoRecorder(File movies)
     {
@@ -44,6 +48,11 @@ public class VideoRecorder
         return this.recording;
     }
 
+    public int getTextureId()
+    {
+        return this.textureId;
+    }
+
     public int getCounter()
     {
         return this.counter;
@@ -52,7 +61,7 @@ public class VideoRecorder
     /**
      * Start recording the video using ffmpeg
      */
-    public void startRecording(Texture texture)
+    public void startRecording(int textureId, int width, int height)
     {
         if (this.recording)
         {
@@ -60,10 +69,9 @@ public class VideoRecorder
         }
 
         this.counter = 0;
-        this.texture = texture;
-
-        int width = texture.width;
-        int height = texture.height;
+        this.textureId = textureId;
+        this.textureWidth = width;
+        this.textureHeight = height;
 
         if (this.buffer == null)
         {
@@ -106,6 +114,8 @@ public class VideoRecorder
         {
             e.printStackTrace();
         }
+
+        this.serverTicks = this.lastServerTicks = 0;
     }
 
     /**
@@ -118,7 +128,7 @@ public class VideoRecorder
             return;
         }
 
-        this.texture = null;
+        this.textureId = -1;
 
         if (this.buffer != null)
         {
@@ -152,6 +162,8 @@ public class VideoRecorder
         this.recording = false;
 
         UIUtils.playClick(0.5F);
+
+        this.serverTicks = this.lastServerTicks = 0;
     }
 
     /**
@@ -165,8 +177,8 @@ public class VideoRecorder
         }
 
         this.buffer.rewind();
-        this.texture.bind();
-        GL11.glGetTexImage(this.texture.target, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureId);
+        GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
         this.buffer.rewind();
 
         try
@@ -184,7 +196,7 @@ public class VideoRecorder
     /**
      * Toggle recording of the video
      */
-    public void toggleRecording(Texture texture)
+    public void toggleRecording(int textureId, int textureWidth, int textureHeight)
     {
         if (this.recording)
         {
@@ -192,7 +204,7 @@ public class VideoRecorder
         }
         else
         {
-            this.startRecording(texture);
+            this.startRecording(textureId, textureWidth, textureHeight);
         }
 
         UIUtils.playClick();

@@ -3,14 +3,16 @@ package mchorse.bbs_mod.ui.framework;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.world.World;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UIRenderingContext
 {
     public Batcher2D batcher;
+
+    private List<Runnable> runnables = new ArrayList<>();
 
     public UIRenderingContext(DrawContext context)
     {
@@ -19,23 +21,23 @@ public class UIRenderingContext
 
     /* Rendering context implementations */
 
-    public boolean isDebug()
-    {
-        return false;
-    }
-
-    public World getWorld()
-    {
-        return MinecraftClient.getInstance().world;
-    }
-
-    public TextRenderer getFont()
-    {
-        return MinecraftClient.getInstance().textRenderer;
-    }
-
     public TextureManager getTextures()
     {
         return BBSModClient.getTextures();
+    }
+
+    public void postRunnable(Runnable runnable)
+    {
+        this.runnables.add(runnable);
+    }
+
+    public void executeRunnables()
+    {
+        for (Runnable runnable : this.runnables)
+        {
+            runnable.run();
+        }
+
+        this.runnables.clear();
     }
 }

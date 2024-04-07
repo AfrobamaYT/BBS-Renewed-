@@ -150,7 +150,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Setup elements */
         this.plause = new UIIcon(Icons.PLAY, (b) -> this.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
-        this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), null));
+        this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), this.texture));
         this.record.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD, Direction.LEFT);
         this.screenshot = new UIIcon(Icons.CAMERA, (b) ->
         {
@@ -826,6 +826,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.camera.projection.set(this.lastProjection);
         context.batcher.flush();
 
+        Texture texture = this.texture;
         Area viewport = this.getViewportArea();
         Area area = this.getFramebufferArea(viewport);
 
@@ -896,19 +897,19 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.lastRender(context);
 
-        if (texture == null)
+        if (this.texture == null)
         {
-            texture = new Texture();
-            texture.setFormat(TextureFormat.RGB_U8);
-            texture.setFilter(GL11.GL_NEAREST);
+            this.texture = new Texture();
+            this.texture.setFormat(TextureFormat.RGB_U8);
+            this.texture.setFilter(GL11.GL_NEAREST);
         }
 
         Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
 
-        texture.bind();
-        texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
+        this.texture.bind();
+        this.texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
-        texture.unbind();
+        this.texture.unbind();
 
         this.lastProjection.set(RenderSystem.getProjectionMatrix());
         this.lastView.set(context.matrixStack().peek().getPositionMatrix());

@@ -13,8 +13,6 @@ import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.categories.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
-import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -48,7 +46,6 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.util.Collections;
@@ -67,7 +64,6 @@ public class BBSModClient implements ClientModInitializer
     private static VideoRecorder videoRecorder;
 
     private static SimpleFramebuffer framebuffer;
-    private static Texture texture;
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
@@ -277,29 +273,13 @@ public class BBSModClient implements ClientModInitializer
             {
                 Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
 
-                if (texture == null)
-                {
-                    texture = new Texture();
-                    texture.setFormat(TextureFormat.RGB_U8);
-                    texture.setFilter(GL11.GL_NEAREST);
-                }
-
-                texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
-                videoRecorder.toggleRecording(texture);
+                videoRecorder.toggleRecording(framebuffer.getColorAttachment(), framebuffer.textureWidth, framebuffer.textureHeight);
 
                 requestToggleRecording = false;
-
-                BBSRendering.serverTicks = BBSRendering.lastServerTicks = 0;
             }
 
             if (videoRecorder.isRecording())
             {
-                Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
-
-                texture.bind();
-                GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
-                texture.unbind();
-
                 videoRecorder.recordFrame();
             }
         });

@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.utils.VideoRecorder;
 import net.minecraft.server.integrated.IntegratedServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,15 +14,17 @@ public class IntegratedServerMixin
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     public void onTick(CallbackInfo info)
     {
-        if (BBSModClient.getVideoRecorder().isRecording())
+        VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
+
+        if (videoRecorder.isRecording())
         {
-            if (BBSRendering.lastServerTicks == BBSRendering.serverTicks)
+            if (videoRecorder.lastServerTicks == videoRecorder.serverTicks)
             {
                 info.cancel();
             }
             else
             {
-                BBSRendering.lastServerTicks = BBSRendering.serverTicks;
+                videoRecorder.lastServerTicks = videoRecorder.serverTicks;
             }
         }
     }

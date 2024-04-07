@@ -2,7 +2,7 @@ package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.utils.VideoRecorder;
 import net.minecraft.client.render.RenderTickCounter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,11 +25,11 @@ public class RenderTickCounterMixin
     @Inject(method = "beginRenderTick", at = @At("HEAD"), cancellable = true)
     public void onBeginRenderTick(long timeMillis, CallbackInfoReturnable<Integer> info)
     {
-        if (BBSModClient.getVideoRecorder().isRecording())
-        {
-            int counter = BBSModClient.getVideoRecorder().getCounter();
+        VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
 
-            if (counter == 0)
+        if (videoRecorder.isRecording())
+        {
+            if (videoRecorder.getCounter() == 0)
             {
                 this.tickDelta = 0;
             }
@@ -42,7 +42,7 @@ public class RenderTickCounterMixin
 
             this.tickDelta -= (float) i;
 
-            BBSRendering.serverTicks += i;
+            videoRecorder.serverTicks += i;
 
             info.setReturnValue(i);
         }

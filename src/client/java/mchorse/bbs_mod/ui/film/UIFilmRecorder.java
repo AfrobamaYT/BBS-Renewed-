@@ -1,8 +1,15 @@
 package mchorse.bbs_mod.ui.film;
 
-import mchorse.bbs_mod.graphics.Framebuffer;
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
+import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.utils.VideoRecorder;
 import org.lwjgl.glfw.GLFW;
 
 public class UIFilmRecorder extends UIElement
@@ -23,7 +30,7 @@ public class UIFilmRecorder extends UIElement
 
     public boolean isRecording()
     {
-        return false; // TODO: this.getRecorder().isRecording();
+        return getRecorder().isRecording();
     }
 
     private UIContext getUIContext()
@@ -31,9 +38,9 @@ public class UIFilmRecorder extends UIElement
         return this.editor.getContext();
     }
 
-    private Object getRecorder()
+    private VideoRecorder getRecorder()
     {
-        return null; // TODO: this.getUIContext().menu.bridge.get(IBridgeVideoScreenshot.class).getVideoRecorder();
+        return BBSModClient.getVideoRecorder();
     }
 
     private boolean isRunning()
@@ -43,12 +50,12 @@ public class UIFilmRecorder extends UIElement
 
     public void openMovies()
     {
-        // TODO: UIUtils.openFolder(this.getRecorder().movies);
+        UIUtils.openFolder(this.getRecorder().movies);
     }
 
-    public void startRecording(int duration, Framebuffer framebuffer)
+    public void startRecording(int duration, Texture texture)
     {
-        /* TODO: VideoRecorder recorder = this.getRecorder();
+        VideoRecorder recorder = this.getRecorder();
         UIContext context = this.getUIContext();
 
         if (this.isRunning() || recorder.isRecording() || duration <= 0)
@@ -60,7 +67,7 @@ public class UIFilmRecorder extends UIElement
 
         try
         {
-            recorder.startRecording(framebuffer.getMainTexture());
+            recorder.startRecording(texture.id, texture.width, texture.height);
         }
         catch (Exception e)
         {
@@ -73,14 +80,14 @@ public class UIFilmRecorder extends UIElement
         this.editor.togglePlayback();
         context.menu.main.setEnabled(false);
         context.menu.overlay.add(this);
-        context.menu.getRoot().add(this.exit); */
+        context.menu.getRoot().add(this.exit);
     }
 
     public void stop()
     {
         UIContext context = this.getUIContext();
 
-        /* TODO: context.render.postRunnable(this.exit::removeFromParent);
+        context.render.postRunnable(this.exit::removeFromParent);
 
         if (this.getRecorder().isRecording())
         {
@@ -97,7 +104,7 @@ public class UIFilmRecorder extends UIElement
 
             context.menu.main.setEnabled(true);
             context.render.postRunnable(this::removeFromParent);
-        } */
+        }
     }
 
     @Override
