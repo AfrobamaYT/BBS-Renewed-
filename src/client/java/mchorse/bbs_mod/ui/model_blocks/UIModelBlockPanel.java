@@ -1,12 +1,11 @@
 package mchorse.bbs_mod.ui.model_blocks;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.CameraUtils;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.Draw;
-import mchorse.bbs_mod.mixin.client.WorldRendererAccessor;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -28,10 +27,8 @@ import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -193,17 +190,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         this.modelBlocks.clear();
 
-        ObjectArrayList<ChunkBuilder.BuiltChunk> chunks = ((WorldRendererAccessor) MinecraftClient.getInstance().worldRenderer).getField_45616();
-
-        for (ChunkBuilder.BuiltChunk chunk : chunks)
+        for (ModelBlockEntity modelBlock : BBSRendering.capturedModelBlocks)
         {
-            for (BlockEntity entity : chunk.getData().getBlockEntities())
-            {
-                if (entity instanceof ModelBlockEntity modelBlock)
-                {
-                    this.modelBlocks.add(modelBlock);
-                }
-            }
+            this.modelBlocks.add(modelBlock);
         }
     }
 

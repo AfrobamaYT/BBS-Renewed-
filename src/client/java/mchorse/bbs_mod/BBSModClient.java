@@ -5,6 +5,7 @@ import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
@@ -290,6 +291,11 @@ public class BBSModClient implements ClientModInitializer
             dashboard = null;
         });
 
+        ClientTickEvents.START_CLIENT_TICK.register((client) ->
+        {
+            BBSRendering.startTick();
+        });
+
         ClientTickEvents.END_CLIENT_TICK.register((client) ->
         {
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
@@ -333,6 +339,8 @@ public class BBSModClient implements ClientModInitializer
         {
             watchDog.stop();
         });
+
+        BBSRendering.setup();
 
         /* Network */
         ClientNetwork.setup();

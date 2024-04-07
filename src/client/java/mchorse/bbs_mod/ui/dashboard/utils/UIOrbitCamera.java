@@ -9,7 +9,7 @@ public class UIOrbitCamera implements IUIElement
 {
     public OrbitCamera orbit = new OrbitCamera();
     private boolean control;
-    private boolean enabled;
+    private boolean enabled = true;
 
     public boolean canControl()
     {

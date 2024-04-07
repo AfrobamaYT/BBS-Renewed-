@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -43,6 +44,8 @@ public class ModelBlockEntity extends BlockEntity
 
     public void tick(World world, BlockPos pos, BlockState state)
     {
+        ModelBlockEntityUpdateCallback.EVENT.invoker().update(this);
+
         this.properties.update(this.entity);
     }
 

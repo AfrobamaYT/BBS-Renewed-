@@ -6,7 +6,6 @@
         "CameraMixin",
         "GameRendererMixin",
         "MouseMixin",
-        "WorldRendererAccessor",
         "EntityRendererDispatcherInvoker",
         "PlayerEntityRendererMixin",
         "MinecraftClientInvoker"
