@@ -5,9 +5,11 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.MinecraftClient;
 import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
@@ -141,6 +143,39 @@ public abstract class UITransform extends UIElement
     }
 
     public UITransform verticalCompact()
+    {
+        this.vertical = true;
+
+        for (UITrackpad trackpad : this.getChildren(UITrackpad.class))
+        {
+            trackpad.removeFromParent();
+        }
+
+        this.removeAll();
+        this.resetFlex().w(1F).column().stretch().vertical();
+
+        UIIcon translate = new UIIcon(Icons.ALL_DIRECTIONS, null);
+        UIIcon scale = new UIIcon(Icons.SCALE, null);
+        UIIcon rotate = new UIIcon(Icons.REFRESH, null);
+        UIIcon rotate2 = new UIIcon(Icons.REFRESH, null);
+
+        translate.disabledColor = scale.disabledColor = rotate.disabledColor = rotate2.disabledColor = Colors.WHITE;
+        translate.hoverColor = scale.hoverColor = rotate.hoverColor = rotate2.hoverColor = Colors.WHITE;
+
+        translate.tooltip(UIKeys.TRANSFORMS_TRANSLATE).setEnabled(false);
+        scale.tooltip(UIKeys.TRANSFORMS_SCALE).setEnabled(false);
+        rotate.tooltip(UIKeys.TRANSFORMS_ROTATE).setEnabled(false);
+        rotate2.tooltip(UIKeys.TRANSFORMS_ROTATE2).setEnabled(false);
+
+        this.add(UI.row(translate, this.tx, this.ty, this.tz));
+        this.add(UI.row(scale, this.sx, this.sy, this.sz));
+        this.add(UI.row(rotate, this.rx, this.ry, this.rz));
+        this.add(UI.row(rotate2, this.r2x, this.r2y, this.r2z));
+
+        return this;
+    }
+
+    public UITransform verticalCompactNoIcons()
     {
         this.vertical = true;
 

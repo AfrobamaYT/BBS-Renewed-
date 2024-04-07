@@ -157,6 +157,10 @@ public class Icons
     public static final Icon LINK = register(new Icon(ATLAS, "link", 48, 128));
     public static final Icon USER = register(new Icon(ATLAS, "user", 64, 128));
     public static final Icon MORPH = register(new Icon(ATLAS, "morph", 80, 128));
+    public static final Icon SCALE = register(new Icon(ATLAS, "scale", 96, 128));
+    public static final Icon X = register(new Icon(ATLAS, "x", 112, 128));
+    public static final Icon Y = register(new Icon(ATLAS, "y", 128, 128));
+    public static final Icon Z = register(new Icon(ATLAS, "z", 144, 128));
 
     public static final Icon CHECKBOARD = register(new Icon(ATLAS, "checkboard", 0, 240));
     public static final Icon DISABLED = register(new Icon(ATLAS, "disabled", 16, 240));

@@ -507,6 +507,7 @@ public class UIKeys
     public static final IKey TRANSFORMS_EDITING = L10n.lang("bbs.ui.transforms.editing", "Editing...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey TRANSFORMS_KEYS_CATEGORY = L10n.lang("bbs.ui.transforms.keys.category", "Transformations", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey TRANSFORMS_ROTATE = L10n.lang("bbs.ui.transforms.rotate");
+    public static final IKey TRANSFORMS_ROTATE2 = L10n.lang("bbs.ui.transforms.rotate2", "Rotate (2nd)", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey TRANSFORMS_SCALE = L10n.lang("bbs.ui.transforms.scale");
     public static final IKey TRANSFORMS_TRANSLATE = L10n.lang("bbs.ui.transforms.translate");
     public static final IKey VOICE_COLORS_OPEN = L10n.lang("bbs.ui.voice_colors.open", "Edit voice colors...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);

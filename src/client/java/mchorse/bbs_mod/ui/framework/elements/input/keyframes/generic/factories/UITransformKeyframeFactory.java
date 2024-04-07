@@ -14,7 +14,7 @@ public class UITransformKeyframeFactory extends UIKeyframeFactory<Transform>
         super(keyframe, editor);
 
         this.transform = new UIPropTransform(keyframe::setValue);
-        this.transform.verticalCompact();
+        this.transform.verticalCompactNoIcons();
         this.transform.setTransform(keyframe.getValue());
 
         this.add(this.transform);
