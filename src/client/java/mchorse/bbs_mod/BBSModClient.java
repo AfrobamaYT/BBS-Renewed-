@@ -12,6 +12,8 @@ import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.categories.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
+import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -24,6 +26,7 @@ import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
+import mchorse.bbs_mod.utils.VideoRecorder;
 import mchorse.bbs_mod.utils.watchdog.WatchDog;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -34,6 +37,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
@@ -43,6 +47,7 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.util.Collections;
@@ -58,11 +63,14 @@ public class BBSModClient implements ClientModInitializer
     private static FormCategories formCategories;
     private static WatchDog watchDog;
     private static ScreenshotRecorder screenshotRecorder;
+    private static VideoRecorder videoRecorder;
 
     private static SimpleFramebuffer framebuffer;
+    private static Texture texture;
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
+    private static KeyBinding keyToggleRecording;
 
     private static UIDashboard dashboard;
 
@@ -103,6 +111,11 @@ public class BBSModClient implements ClientModInitializer
     public static ScreenshotRecorder getScreenshotRecorder()
     {
         return screenshotRecorder;
+    }
+
+    public static VideoRecorder getVideoRecorder()
+    {
+        return videoRecorder;
     }
 
     public static CameraController getCameraController()
@@ -193,6 +206,7 @@ public class BBSModClient implements ClientModInitializer
         watchDog.register(sounds);
         watchDog.start();
         screenshotRecorder = new ScreenshotRecorder(BBSMod.getGamePath("screenshots"));
+        videoRecorder = new VideoRecorder(BBSMod.getGamePath("movies"));
         films = new Films();
 
         KeybindSettings.registerClasses();
@@ -232,6 +246,13 @@ public class BBSModClient implements ClientModInitializer
             "category." + BBSMod.MOD_ID + ".main"
         ));
 
+        keyToggleRecording = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + ".toggle_recording",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_F4,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
@@ -248,6 +269,20 @@ public class BBSModClient implements ClientModInitializer
             }
 
             films.render(context);
+
+            if (texture == null)
+            {
+                texture = new Texture();
+                texture.setFormat(TextureFormat.RGB_U8);
+                texture.setFilter(GL11.GL_NEAREST);
+            }
+
+            Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+
+            texture.bind();
+            texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
+            GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
+            texture.unbind();
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
@@ -285,6 +320,13 @@ public class BBSModClient implements ClientModInitializer
                     }
                 }
             }
+
+            while (keyToggleRecording.wasPressed())
+            {
+                videoRecorder.toggleRecording(texture);
+            }
+
+            videoRecorder.recordFrame();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->

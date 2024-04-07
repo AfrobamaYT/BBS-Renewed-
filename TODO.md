@@ -16,8 +16,10 @@
   - [x] Player controller
   - [x] Render actors
   - [ ] Shadow
-- [ ] Video recording
+- [ ] Minema
   - [ ] Framebuffer resize
+  - [ ] Tick rate changing
+  - [x] Video recording
 - [ ] Entity selectors in EntityClip
 - [x] Framebuffer picking
 - [x] Particles
