@@ -31,6 +31,7 @@ public class VideoRecorder
 
     private ByteBuffer buffer;
     private Texture texture;
+    private int counter;
 
     public VideoRecorder(File movies)
     {
@@ -43,6 +44,11 @@ public class VideoRecorder
         return this.recording;
     }
 
+    public int getCounter()
+    {
+        return this.counter;
+    }
+
     /**
      * Start recording the video using ffmpeg
      */
@@ -53,6 +59,7 @@ public class VideoRecorder
             return;
         }
 
+        this.counter = 0;
         this.texture = texture;
 
         int width = texture.width;
@@ -62,8 +69,6 @@ public class VideoRecorder
         {
             this.buffer = MemoryUtil.memAlloc(width * height * 3);
         }
-
-        // this.engine.toggleRealTime(false);
 
         try
         {
@@ -144,7 +149,6 @@ public class VideoRecorder
             e.printStackTrace();
         }
 
-        // this.engine.toggleRealTime(true);
         this.recording = false;
 
         UIUtils.playClick(0.5F);
@@ -174,7 +178,7 @@ public class VideoRecorder
             e.printStackTrace();
         }
 
-        // this.engine.nextFrame();
+        this.counter += 1;
     }
 
     /**

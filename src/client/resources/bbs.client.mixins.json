@@ -8,7 +8,9 @@
         "MouseMixin",
         "EntityRendererDispatcherInvoker",
         "PlayerEntityRendererMixin",
-        "MinecraftClientInvoker"
+        "MinecraftClientInvoker",
+        "RenderTickCounterMixin",
+        "IntegratedServerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

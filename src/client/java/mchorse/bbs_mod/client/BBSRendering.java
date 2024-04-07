@@ -13,6 +13,9 @@ public class BBSRendering
      */
     public static final Set<ModelBlockEntity> capturedModelBlocks = new HashSet<>();
 
+    public static int serverTicks;
+    public static int lastServerTicks;
+
     public static void startTick()
     {
         capturedModelBlocks.clear();

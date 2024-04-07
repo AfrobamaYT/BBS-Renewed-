@@ -79,6 +79,8 @@ public class BBSModClient implements ClientModInitializer
     private static Films films;
     private static ModelBlockItemRenderer modelBlockItemRenderer = new ModelBlockItemRenderer();
 
+    private static boolean requestToggleRecording;
+
     public static TextureManager getTextures()
     {
         return textures;
@@ -271,19 +273,35 @@ public class BBSModClient implements ClientModInitializer
 
             films.render(context);
 
-            if (texture == null)
+            if (requestToggleRecording)
             {
-                texture = new Texture();
-                texture.setFormat(TextureFormat.RGB_U8);
-                texture.setFilter(GL11.GL_NEAREST);
+                Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+
+                if (texture == null)
+                {
+                    texture = new Texture();
+                    texture.setFormat(TextureFormat.RGB_U8);
+                    texture.setFilter(GL11.GL_NEAREST);
+                }
+
+                texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
+                videoRecorder.toggleRecording(texture);
+
+                requestToggleRecording = false;
+
+                BBSRendering.serverTicks = BBSRendering.lastServerTicks = 0;
             }
 
-            Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+            if (videoRecorder.isRecording())
+            {
+                Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
 
-            texture.bind();
-            texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
-            GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
-            texture.unbind();
+                texture.bind();
+                GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
+                texture.unbind();
+
+                videoRecorder.recordFrame();
+            }
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
@@ -329,10 +347,8 @@ public class BBSModClient implements ClientModInitializer
 
             while (keyToggleRecording.wasPressed())
             {
-                videoRecorder.toggleRecording(texture);
+                requestToggleRecording = true;
             }
-
-            videoRecorder.recordFrame();
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->
