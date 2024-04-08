@@ -22,10 +22,8 @@ public class IntegratedServerMixin
             {
                 info.cancel();
             }
-            else
-            {
-                videoRecorder.lastServerTicks = videoRecorder.serverTicks;
-            }
+
+            videoRecorder.lastServerTicks = videoRecorder.serverTicks;
         }
     }
 }

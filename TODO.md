@@ -36,7 +36,7 @@
   - [x] Immersive editing
   - [x] Display in hand
 - [ ] More forms
-  - [ ] Block form
+  - [x] Block form
   - [ ] Item form
   - [ ] Structure form
 - [x] File drag and dropping
@@ -62,6 +62,10 @@ Considerations:
 
 - [ ] Direction XYZ Snowstorm
 - [ ] Benchbuster
+
+Epic features
+
+- [ ] Framebuffer form
 
 ### A couple of notes about film controller
 

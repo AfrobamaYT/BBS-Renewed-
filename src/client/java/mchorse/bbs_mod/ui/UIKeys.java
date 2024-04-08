@@ -241,14 +241,14 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR = L10n.lang("bbs.ui.forms.editors.label.anchor");
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR_LINES = L10n.lang("bbs.ui.forms.editors.label.anchor_lines");
     public static final IKey FORMS_EDITORS_LABEL_BACKGROUND = L10n.lang("bbs.ui.forms.editors.label.background");
-    public static final IKey FORMS_EDITORS_LABEL_FONT = L10n.lang("bbs.ui.forms.editors.label.font");
-    public static final IKey FORMS_EDITORS_LABEL_FONT_TITLE = L10n.lang("bbs.ui.forms.editors.label.font-title");
     public static final IKey FORMS_EDITORS_LABEL_LABEL = L10n.lang("bbs.ui.forms.editors.label.label");
     public static final IKey FORMS_EDITORS_LABEL_SHADOW_COLOR = L10n.lang("bbs.ui.forms.editors.label.shadow_color");
     public static final IKey FORMS_EDITORS_LABEL_SHADOW_OFFSET = L10n.lang("bbs.ui.forms.editors.label.shadow_offset");
     public static final IKey FORMS_EDITORS_LABEL_TITLE = L10n.lang("bbs.ui.forms.editors.label.title");
     public static final IKey FORMS_EDITORS_MODEL_POSE = L10n.lang("bbs.ui.forms.editors.model.pose");
     public static final IKey FORMS_EDITORS_MODEL_ACTIONS = L10n.lang("bbs.ui.forms.editors.model.actions", "Actions", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FORMS_EDITORS_BLOCK_TITLE = L10n.lang("bbs.ui.forms.editors.block.title", "Block", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FORMS_EDITORS_BLOCK_PROPERTIES = L10n.lang("bbs.ui.forms.editors.block.title", "Properties", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FORMS_EDITOR_BONE = L10n.lang("bbs.ui.forms.editor.bone");
     public static final IKey FORMS_EDITOR_CONTEXT_ADD = L10n.lang("bbs.ui.forms.editor.context.add");
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");
@@ -257,7 +257,6 @@ public class UIKeys
     public static final IKey FORMS_EDITOR_ENABLED = L10n.lang("bbs.ui.forms.editor.enabled");
     public static final IKey FORMS_EDITOR_FINISH = L10n.lang("bbs.ui.forms.editor.finish");
     public static final IKey FORMS_EDITOR_MODEL_PICK_TEXTURE = L10n.lang("bbs.ui.forms.editor.model.pick_texture");
-    public static final IKey FORMS_EDITOR_MODEL_STATIC_POSE = L10n.lang("bbs.ui.forms.editor.model.static_pose");
     public static final IKey FORMS_EDITOR_PICK_FORM = L10n.lang("bbs.ui.forms.editor.pick_form");
     public static final IKey FORMS_EDITOR_TOGGLE_TREE = L10n.lang("bbs.ui.forms.editor.toggle_tree");
     public static final IKey FORMS_EDITOR_USE_TARGET = L10n.lang("bbs.ui.forms.editor.use_target");

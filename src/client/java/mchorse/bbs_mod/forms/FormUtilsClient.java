@@ -1,12 +1,14 @@
 package mchorse.bbs_mod.forms;
 
 import mchorse.bbs_mod.forms.forms.BillboardForm;
+import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.forms.renderers.BillboardFormRenderer;
+import mchorse.bbs_mod.forms.renderers.BlockFormRenderer;
 import mchorse.bbs_mod.forms.renderers.ExtrudedFormRenderer;
 import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
@@ -31,6 +33,7 @@ public class FormUtilsClient
         register(LabelForm.class, LabelFormRenderer::new);
         register(ModelForm.class, ModelFormRenderer::new);
         register(ParticleForm.class, ParticleFormRenderer::new);
+        register(BlockForm.class, BlockFormRenderer::new);
     }
 
     private static <T extends Form> void register(Class<T> clazz, IFormRendererFactory<T> function)
