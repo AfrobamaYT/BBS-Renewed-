@@ -7,18 +7,18 @@ import net.minecraft.block.BlockState;
 
 public class UIBlockFormPanel extends UIFormPanel<BlockForm>
 {
-    public UIBlockStateEditor editor;
+    public UIBlockStateEditor stateEditor;
 
     public UIBlockFormPanel(UIForm editor)
     {
         super(editor);
 
-        this.editor = new UIBlockStateEditor((blockState) ->
+        this.stateEditor = new UIBlockStateEditor((blockState) ->
         {
             this.form.blockState.set(blockState);
         });
 
-        this.options.add(this.editor);
+        this.options.add(this.stateEditor);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class UIBlockFormPanel extends UIFormPanel<BlockForm>
 
         BlockState blockState = this.form.blockState.get();
 
-        this.editor.setBlockState(blockState);
-        this.editor.updateBlockList();
+        this.stateEditor.setBlockState(blockState);
+        this.stateEditor.updateBlockList();
     }
 }

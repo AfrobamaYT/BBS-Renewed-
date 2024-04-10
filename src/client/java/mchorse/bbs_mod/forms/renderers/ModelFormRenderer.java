@@ -46,13 +46,29 @@ import java.util.Map;
 
 public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITickable
 {
-    private Matrix4f uiMatrix = new Matrix4f();
+    private static Matrix4f uiMatrix = new Matrix4f();
+
     private Map<String, Matrix4f> bones = new HashMap<>();
 
     private Animator animator;
     private long lastCheck;
 
     private IEntity entity = new StubEntity();
+
+    public static Matrix4f getUIMatrix(UIContext context, int x1, int y1, int x2, int y2)
+    {
+        float scale = (y2 - y1) / 2.5F;
+        int x = x1 + (x2 - x1) / 2;
+        float y = y1 + (y2 - y1) * 0.85F;
+
+        uiMatrix.identity();
+        uiMatrix.translate(x, y, 40);
+        uiMatrix.scale(scale, -scale, scale);
+        uiMatrix.rotateX(MathUtils.PI / 8);
+        uiMatrix.rotateY(MathUtils.toRad(context.mouseX - (x1 + x2) / 2) + MathUtils.PI);
+
+        return uiMatrix;
+    }
 
     public static CubicModel getModel(ModelForm form)
     {
@@ -121,16 +137,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             stack.push();
 
-            float scale = (y2 - y1) / 2.5F;
-            int x = x1 + (x2 - x1) / 2;
-            float y = y1 + (y2 - y1) * 0.85F;
+            Matrix4f uiMatrix = getUIMatrix(context, x1, y1, x2, y2);
 
-            this.uiMatrix.identity();
-            this.uiMatrix.translate(x, y, 40);
-            this.uiMatrix.scale(scale, -scale, scale);
-            this.uiMatrix.rotateX(MathUtils.PI / 8);
-            this.uiMatrix.rotateY(MathUtils.toRad(context.mouseX - (x1 + x2) / 2) + MathUtils.PI);
-            this.uiMatrix.mul(this.form.transform.get(context.getTransition()).createMatrix());
+            uiMatrix.mul(this.form.transform.get(context.getTransition()).createMatrix());
 
             Link link = this.form.texture.get(context.getTransition());
             Link texture = link == null ? model.texture : link;
@@ -141,7 +150,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             this.animator.applyActions(null, model.model, context.getTransition());
             model.model.apply(this.getPose(context.getTransition()));
 
-            MatrixStackUtils.multiply(stack, this.uiMatrix);
+            MatrixStackUtils.multiply(stack, uiMatrix);
 
             RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);

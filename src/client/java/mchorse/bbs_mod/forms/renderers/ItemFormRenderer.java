@@ -4,19 +4,15 @@ import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
 public class ItemFormRenderer extends FormRenderer<ItemForm>
 {
-    private Matrix4f uiMatrix = new Matrix4f();
-
     public ItemFormRenderer(ItemForm form)
     {
         super(form);
@@ -28,24 +24,15 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
         MatrixStack matrices = context.batcher.getContext().getMatrices();
 
-        float scale = (y2 - y1) / 2.5F;
-        int x = x1 + (x2 - x1) / 2;
-        float y = y1 + (y2 - y1) * 0.85F;
-
-        this.uiMatrix.identity();
-        this.uiMatrix.translate(x, y, 40);
-        this.uiMatrix.scale(scale, -scale, scale);
-        this.uiMatrix.rotateX(MathUtils.PI / 8);
-        this.uiMatrix.rotateY(MathUtils.toRad(context.mouseX - (x1 + x2) / 2) + MathUtils.PI);
-        this.uiMatrix.mul(this.form.transform.get(context.getTransition()).createMatrix());
+        Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
         matrices.push();
-        MatrixStackUtils.multiply(matrices, this.uiMatrix);
+        MatrixStackUtils.multiply(matrices, uiMatrix);
 
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
         matrices.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
-        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), ModelTransformationMode.NONE, LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV, matrices, consumers, MinecraftClient.getInstance().world, 0);
+        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV, matrices, consumers, MinecraftClient.getInstance().world, 0);
         consumers.draw();
 
         matrices.pop();
@@ -58,7 +45,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         context.stack.push();
 
-        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), ModelTransformationMode.NONE, context.light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
+        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), context.light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
 
         context.stack.pop();
