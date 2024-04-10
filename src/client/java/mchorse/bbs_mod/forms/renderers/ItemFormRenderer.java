@@ -1,5 +1,9 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -7,7 +11,7 @@ import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
@@ -21,7 +25,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
     @Override
     public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
         MatrixStack matrices = context.batcher.getContext().getMatrices();
 
         Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
@@ -41,11 +45,23 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
     @Override
     protected void render3D(FormRenderingContext context)
     {
-        VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
+        int light = context.light;
 
         context.stack.push();
 
-        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), context.light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
+        if (context.isPicking())
+        {
+            consumers.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
+            {
+                this.setupTarget(context, BBSShaders.getPickerModelsProgram());
+                RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
+            });
+
+            light = 0;
+        }
+
+        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
 
         context.stack.pop();

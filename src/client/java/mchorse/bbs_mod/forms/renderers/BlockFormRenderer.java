@@ -1,5 +1,10 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -8,6 +13,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
@@ -42,12 +48,24 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
     @Override
     protected void render3D(FormRenderingContext context)
     {
-        VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
+        int light = context.light;
 
         context.stack.push();
         context.stack.translate(-0.5F, 0F, -0.5F);
 
-        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, context.light, OverlayTexture.DEFAULT_UV);
+        if (context.isPicking())
+        {
+            consumers.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
+            {
+                this.setupTarget(context, BBSShaders.getPickerModelsProgram());
+                RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
+            });
+
+            light = 0;
+        }
+
+        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, OverlayTexture.DEFAULT_UV);
         consumers.draw();
 
         context.stack.pop();

@@ -80,13 +80,7 @@ public abstract class FormRenderer <T extends Form>
     {
         if (context.isPicking())
         {
-            ShaderProgram shaderProgram = picking.get();
-            GlUniform target = shaderProgram.getUniform("Target");
-
-            if (target != null)
-            {
-                target.set(context.getPickingIndex());
-            }
+            this.setupTarget(context, picking.get());
 
             return picking;
         }
@@ -98,17 +92,22 @@ public abstract class FormRenderer <T extends Form>
     {
         if (context.isPicking())
         {
-            GlUniform target = picking.getUniform("Target");
-
-            if (target != null)
-            {
-                target.set(context.getPickingIndex());
-            }
+            this.setupTarget(context, picking);
 
             return picking;
         }
 
         return normal;
+    }
+
+    protected void setupTarget(FormRenderingContext context, ShaderProgram program)
+    {
+        GlUniform target = program.getUniform("Target");
+
+        if (target != null)
+        {
+            target.set(context.getPickingIndex());
+        }
     }
 
     protected void updateStencilMap(FormRenderingContext context)

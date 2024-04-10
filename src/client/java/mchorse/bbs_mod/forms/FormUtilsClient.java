@@ -27,6 +27,7 @@ import java.util.Map;
 public class FormUtilsClient
 {
     private static Map<Class, IFormRendererFactory> map = new HashMap<>();
+    private static CustomVertexConsumerProvider customVertexConsumerProvider = new CustomVertexConsumerProvider();
 
     static
     {
@@ -37,6 +38,11 @@ public class FormUtilsClient
         register(ParticleForm.class, ParticleFormRenderer::new);
         register(BlockForm.class, BlockFormRenderer::new);
         register(ItemForm.class, ItemFormRenderer::new);
+    }
+
+    public static CustomVertexConsumerProvider getProvider()
+    {
+        return customVertexConsumerProvider;
     }
 
     private static <T extends Form> void register(Class<T> clazz, IFormRendererFactory<T> function)
