@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
@@ -20,11 +21,11 @@ import mchorse.bbs_mod.ui.forms.editors.forms.UIBillboardForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIBlockForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIExtrudedForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
+import mchorse.bbs_mod.ui.forms.editors.forms.UIItemForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UILabelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIModelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIParticleForm;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIPickableFormRenderer;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -32,6 +33,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
+import mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -83,6 +85,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         register(ModelForm.class, UIModelForm::new);
         register(ParticleForm.class, UIParticleForm::new);
         register(BlockForm.class, UIBlockForm::new);
+        register(ItemForm.class, UIItemForm::new);
     }
 
     public static void register(Class clazz, Supplier<UIForm> supplier)
@@ -146,7 +149,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.bone.background().h(16 * 6);
 
         this.transform = new UIPropTransform();
-        this.transform.verticalCompact();
+        this.transform.verticalCompactNoIcons();
 
         this.editArea = new UIElement();
         this.editArea.relative(this).x(TREE_WIDTH).w(1F, -TREE_WIDTH).h(1F);
@@ -165,10 +168,18 @@ public class UIFormEditor extends UIElement implements IUIFormList
         });
         this.toggleSidebar.tooltip(UIKeys.FORMS_EDITOR_TOGGLE_TREE, Direction.RIGHT).relative(this.finish).y(-1F);
 
+        UIRenderable background = new UIRenderable((context) ->
+        {
+            if (this.formsArea.isVisible())
+            {
+                this.formsArea.area.render(context.batcher, Colors.A50);
+            }
+        });
+
         this.bodyPartData.add(this.pick, this.enabled, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(8), this.bone, this.transform.marginTop(8));
-        this.formsArea.add(this.forms, this.bodyPartData);
+        this.formsArea.add(background, this.forms, this.bodyPartData);
         this.editArea.add(this.finish, this.toggleSidebar);
-        this.add(this.formsArea, this.editArea);
+        this.add(this.editArea, this.formsArea);
     }
 
     public void pickFormFromRenderer(Pair<Form, String> pair)
@@ -407,16 +418,5 @@ public class UIFormEditor extends UIElement implements IUIFormList
         {
             this.callback.accept(form);
         }
-    }
-
-    @Override
-    public void render(UIContext context)
-    {
-        if (this.formsArea.isVisible())
-        {
-            this.formsArea.area.render(context.batcher, Colors.A50);
-        }
-
-        super.render(context);
     }
 }

@@ -17,6 +17,7 @@ public class KeyframeFactories
     public static final Vector4fKeyframeFactory VECTOR4F = new Vector4fKeyframeFactory();
     public static final AnchorKeyframeFactory ANCHOR = new AnchorKeyframeFactory();
     public static final BlockStateKeyframeFactory BLOCK_STATE = new BlockStateKeyframeFactory();
+    public static final ItemStackKeyframeFactory ITEM_STACK = new ItemStackKeyframeFactory();
 
     static
     {
@@ -31,5 +32,6 @@ public class KeyframeFactories
         FACTORIES.put("vector4f", VECTOR4F);
         FACTORIES.put("anchor", ANCHOR);
         FACTORIES.put("block_state", BLOCK_STATE);
+        FACTORIES.put("item_stack", ITEM_STACK);
     }
 }

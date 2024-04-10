@@ -6,11 +6,14 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
+import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import net.minecraft.block.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,15 +36,18 @@ public class FormCategories
         LabelForm label = new LabelForm();
         ExtrudedForm extruded = new ExtrudedForm();
         BlockForm block = new BlockForm();
+        ItemForm item = new ItemForm();
 
         billboard.texture.set(Link.assets("textures/error.png"));
         extruded.texture.set(Link.assets("textures/error.png"));
         block.blockState.set(Blocks.GRASS_BLOCK.getDefaultState());
+        item.stack.set(new ItemStack(Items.STICK));
 
         extra.forms.add(billboard);
         extra.forms.add(label);
         extra.forms.add(extruded);
         extra.forms.add(block);
+        extra.forms.add(item);
 
         this.categories.add(new RecentFormCategory());
         this.readUserCategories();

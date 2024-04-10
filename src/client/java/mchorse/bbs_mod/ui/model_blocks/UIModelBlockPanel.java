@@ -67,7 +67,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.pickEdit = new UINestedEdit((editing) ->
         {
-            UIFormPalette palette = UIFormPalette.open(this, editing, this.modelBlock.getProperties().getForm(), (f) -> this.modelBlock.getProperties().setForm(f));
+            UIFormPalette palette = UIFormPalette.open(this, editing, this.modelBlock.getProperties().getForm(), (f) ->
+            {
+                this.pickEdit.setForm(f);
+                this.modelBlock.getProperties().setForm(f);
+            });
 
             palette.immersive();
             palette.editor.renderer.relative(dashboard.getRoot()).full();
