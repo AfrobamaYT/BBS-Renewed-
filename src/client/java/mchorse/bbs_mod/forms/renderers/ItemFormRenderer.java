@@ -36,8 +36,10 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
         matrices.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
+        consumers.setUI(true);
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), LightmapTextureManager.MAX_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV, matrices, consumers, MinecraftClient.getInstance().world, 0);
         consumers.draw();
+        consumers.setUI(false);
 
         matrices.pop();
     }
@@ -63,6 +65,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
+        consumers.clearRunnables();
 
         context.stack.pop();
     }

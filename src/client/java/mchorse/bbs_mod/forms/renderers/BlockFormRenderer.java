@@ -27,7 +27,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
     @Override
     public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        VertexConsumerProvider.Immediate consumers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
         MatrixStack matrices = context.batcher.getContext().getMatrices();
 
         Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
@@ -39,8 +39,10 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
         matrices.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
+        consumers.setUI(true);
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), matrices, consumers, LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
         consumers.draw();
+        consumers.setUI(false);
 
         matrices.pop();
     }
@@ -67,6 +69,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, OverlayTexture.DEFAULT_UV);
         consumers.draw();
+        consumers.clearRunnables();
 
         context.stack.pop();
     }
