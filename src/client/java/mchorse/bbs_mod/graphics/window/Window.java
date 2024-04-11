@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW;
 public class Window
 {
     private static int verticalScroll;
+    private static long lastScroll;
 
     public static long getWindow()
     {
@@ -21,10 +22,16 @@ public class Window
     public static void setVerticalScroll(int scroll)
     {
         verticalScroll = scroll;
+        lastScroll = System.currentTimeMillis();
     }
 
     public static int getVerticalScroll()
     {
+        if (lastScroll + 5 < System.currentTimeMillis())
+        {
+            return 0;
+        }
+
         return verticalScroll;
     }
 
