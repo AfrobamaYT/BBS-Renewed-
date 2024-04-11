@@ -146,11 +146,11 @@ public class UIFilmController extends UIElement
 
         if (disable)
         {
-            InputUtil.setCursorParameters(window.getHandle(), GLFW.GLFW_CURSOR_DISABLED, window.getWidth() / 2, window.getHeight() / 2);
+            GLFW.glfwSetInputMode(window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
         }
         else
         {
-            InputUtil.setCursorParameters(window.getHandle(), GLFW.GLFW_CURSOR_NORMAL, window.getWidth() / 2, window.getHeight() / 2);
+            GLFW.glfwSetInputMode(window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         }
     }
 
@@ -928,7 +928,10 @@ public class UIFilmController extends UIElement
         {
             if (this.isMouseLookMode())
             {
-                MinecraftClient.getInstance().player.changeLookDirection((x - this.lastMouse.x) / 2F, (y - this.lastMouse.y) / 2F);
+                float cursorDeltaX = (x - this.lastMouse.x) / 2F;
+                float cursorDeltaY = (y - this.lastMouse.y) / 2F;
+
+                MinecraftClient.getInstance().player.changeLookDirection(cursorDeltaX, cursorDeltaY);
             }
             else
             {
