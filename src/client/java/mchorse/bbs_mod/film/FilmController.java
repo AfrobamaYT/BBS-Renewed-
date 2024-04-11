@@ -38,6 +38,54 @@ public class FilmController
     private int tick;
     private int duration;
 
+    public static Matrix4f getEntityMatrix(List<IEntity> entities, WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
+    {
+        int entityIndex = selector.actor;
+
+        if (CollectionUtils.inRange(entities, entityIndex))
+        {
+            IEntity entity = entities.get(entityIndex);
+            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+
+            Map<String, Matrix4f> map = new HashMap<>();
+            MatrixStack stack = new MatrixStack();
+
+            Form form = entity.getForm();
+
+            if (form != null)
+            {
+                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", context.tickDelta());
+
+                Matrix4f matrix = map.get(selector.attachment);
+
+                if (matrix != null)
+                {
+                    basic.mul(matrix);
+                }
+            }
+
+            return basic;
+        }
+
+        return defaultMatrix;
+    }
+
+    public static Matrix4f getMatrixForRenderWithRotation(IEntity entity, net.minecraft.client.render.Camera camera, float tickDelta)
+    {
+        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), tickDelta) - camera.getPos().x;
+        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), tickDelta) - camera.getPos().y;
+        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - camera.getPos().z;
+
+        Matrix4f matrix = new Matrix4f();
+
+        float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), tickDelta);
+
+        matrix.translate((float) x, (float) y, (float) z);
+        matrix.rotateY(MathUtils.toRad(-bodyYaw));
+
+        return matrix;
+    }
+
     public FilmController(Film film)
     {
         this.film = film;
@@ -132,7 +180,6 @@ public class FilmController
                     context.matrixStack().push();
                     MatrixStackUtils.multiply(context.matrixStack(), Matrices.lerp(lastMatrix, matrix, factor));
                     FormUtilsClient.render(form, formContext);
-
                     context.matrixStack().pop();
 
                     return;
@@ -142,56 +189,7 @@ public class FilmController
             context.matrixStack().push();
             MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
-
             context.matrixStack().pop();
         }
-    }
-
-    public static Matrix4f getEntityMatrix(List<IEntity> entities, WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
-    {
-        int entityIndex = selector.actor;
-
-        if (CollectionUtils.inRange(entities, entityIndex))
-        {
-            IEntity entity = entities.get(entityIndex);
-            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
-
-            Map<String, Matrix4f> map = new HashMap<>();
-            MatrixStack stack = new MatrixStack();
-
-            Form form = entity.getForm();
-
-            if (form != null)
-            {
-                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", context.tickDelta());
-
-                Matrix4f matrix = map.get(selector.attachment);
-
-                if (matrix != null)
-                {
-                    basic.mul(matrix);
-                }
-            }
-
-            return basic;
-        }
-
-        return defaultMatrix;
-    }
-
-    public static Matrix4f getMatrixForRenderWithRotation(IEntity entity, net.minecraft.client.render.Camera camera, float tickDelta)
-    {
-        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), tickDelta) - camera.getPos().x;
-        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), tickDelta) - camera.getPos().y;
-        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - camera.getPos().z;
-
-        Matrix4f matrix = new Matrix4f();
-
-        float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), tickDelta);
-
-        matrix.translate((float) x, (float) y, (float) z);
-        matrix.rotateY(MathUtils.toRad(-bodyYaw));
-
-        return matrix;
     }
 }

@@ -37,7 +37,7 @@
   - [x] Display in hand
 - [ ] More forms
   - [x] Block form
-  - [ ] Item form
+  - [x] Item form
   - [ ] Structure form
 - [x] File drag and dropping
 - [x] Metamorph
@@ -58,6 +58,7 @@ Useful user suggestions:
 - [ ] Async model and texture loading
 - [ ] Update model forms when models get reloaded
 - [ ] In-game mode of recording (like in Blockbuster mod)
+- [ ] Lighting option 
 
 Considerations:
 

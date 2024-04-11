@@ -23,6 +23,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.U
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIColorKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIFloatKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIIntegerKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIItemStackKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UILinkKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIPoseKeyframeFactory;
@@ -79,6 +80,7 @@ public class UIPropertyEditor extends UIElement
         register(KeyframeFactories.TRANSFORM, UITransformKeyframeFactory::new);
         register(KeyframeFactories.VECTOR4F, UIVector4fKeyframeFactory::new);
         register(KeyframeFactories.BLOCK_STATE, UIBlockStateKeyframeFactory::new);
+        register(KeyframeFactories.ITEM_STACK, UIItemStackKeyframeFactory::new);
     }
 
     public static <T> void register(IGenericKeyframeFactory<T> clazz, IUIKeyframeFactoryFactory<T> factory)

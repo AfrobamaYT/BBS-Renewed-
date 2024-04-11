@@ -29,6 +29,5 @@ public class UIBlockFormPanel extends UIFormPanel<BlockForm>
         BlockState blockState = this.form.blockState.get();
 
         this.stateEditor.setBlockState(blockState);
-        this.stateEditor.updateBlockList();
     }
 }

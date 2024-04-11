@@ -9,8 +9,11 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
 
@@ -30,7 +33,12 @@ public class UIBlockStateEditor extends UIElement
 
     static
     {
-        Registries.BLOCK.forEach((block) -> blockIDs.add(Registries.BLOCK.getId(block).toString()));
+        for (RegistryKey<Block> key : Registries.BLOCK.getKeys())
+        {
+            blockIDs.add(key.getValue().toString());
+        }
+
+        blockIDs.sort(String::compareToIgnoreCase);
     }
 
     public UIBlockStateEditor(Consumer<BlockState> callback)
@@ -46,13 +54,9 @@ public class UIBlockStateEditor extends UIElement
 
         this.add(this.blockList);
         this.add(this.properties);
-    }
 
-    public void updateBlockList()
-    {
         this.blockList.list.clear();
         this.blockList.list.add(blockIDs);
-        this.blockList.list.setCurrentScroll(Registries.BLOCK.getId(this.blockState.getBlock()).toString());
     }
 
     public void setBlockState(BlockState blockState)
@@ -60,6 +64,7 @@ public class UIBlockStateEditor extends UIElement
         this.blockState = blockState;
 
         this.fillPropertiesEditor(blockState);
+        this.blockList.list.setCurrentScroll(Registries.BLOCK.getId(blockState.getBlock()).toString());
     }
 
     private void setBlock(String blockID)

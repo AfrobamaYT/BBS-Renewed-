@@ -13,14 +13,10 @@ public class UIBlockStateKeyframeFactory extends UIKeyframeFactory<BlockState>
     {
         super(keyframe, editor);
 
-        this.editor = new UIBlockStateEditor((blockState) ->
-        {
-            keyframe.setValue(blockState);
-        });
+        this.editor = new UIBlockStateEditor(keyframe::setValue);
 
         this.add(this.editor);
 
         this.editor.setBlockState(keyframe.getValue());
-        this.editor.updateBlockList();
     }
 }
