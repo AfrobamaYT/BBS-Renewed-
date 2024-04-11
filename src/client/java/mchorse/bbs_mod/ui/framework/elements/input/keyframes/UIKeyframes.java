@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.graphics.line.Line;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
@@ -17,6 +18,13 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeEasing;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -781,6 +789,9 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         int h = (this.area.h - TOP_MARGIN) / sheetCount;
         int y = this.area.ey() - h * sheetCount;
 
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
+
         for (UISheet sheet : sheets)
         {
             COLOR.set(sheet.color, false);
@@ -797,6 +808,8 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
             int count = sheet.channel.getKeyframes().size();
             Keyframe prev = null;
 
+            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
             for (Keyframe frame : sheet.channel.getKeyframes())
             {
                 boolean isPointHover = this.isInside(this.toGraphX(frame.getTick()), y + h / 2, context.mouseX, context.mouseY);
@@ -806,16 +819,16 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                     isPointHover = isPointHover || this.getGrabbingArea(context).isInside(this.toGraphX(frame.getTick()), y + h / 2);
                 }
 
-                this.renderRect(context, this.toGraphX(frame.getTick()), y + h / 2, 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
 
                 if (frame.getInterpolation().isBezier() && index != count - 1)
                 {
-                    this.renderRect(context, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
+                    this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
                 }
 
                 if (prev != null && prev.getInterpolation().isBezier())
                 {
-                    this.renderRect(context, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
+                    this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
                 }
 
                 prev = frame;
@@ -827,21 +840,24 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
             for (Keyframe frame : sheet.channel.getKeyframes())
             {
-                this.renderRect(context, this.toGraphX(frame.getTick()), y + h / 2, 2, this.which == Selection.KEYFRAME && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 2, this.which == Selection.KEYFRAME && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
 
                 if (frame.getInterpolation().isBezier() && index != count - 1)
                 {
-                    this.renderRect(context, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 1, this.which == Selection.RIGHT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
+                    this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 1, this.which == Selection.RIGHT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
                 }
 
                 if (prev != null && prev.getInterpolation().isBezier())
                 {
-                    this.renderRect(context, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 1, this.which == Selection.LEFT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
+                    this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 1, this.which == Selection.LEFT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
                 }
 
                 prev = frame;
                 index++;
             }
+
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            BufferRenderer.drawWithGlobalProgram(builder.end());
 
             FontRenderer font = context.batcher.getFont();
             int lw = font.getWidth(sheet.title.get()) + 10;
@@ -944,9 +960,14 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
         lines.push(main).render(context.batcher, SolidColorLineRenderer.get(r, g, b, 0.65F));
 
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
+
         /* Draw points */
         index = 0;
         prev = null;
+
+        builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
         for (Keyframe frame : channel.getKeyframes())
         {
@@ -957,16 +978,16 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 isPointHover = isPointHover || this.getGrabbingArea(context).isInside(this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()));
             }
 
-            this.renderRect(context, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
+            this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
 
             if (frame.getInterpolation().isBezier() && index != count - 1)
             {
-                this.renderRect(context, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 3, Colors.WHITE);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 3, Colors.WHITE);
             }
 
             if (prev != null && prev.getInterpolation().isBezier())
             {
-                this.renderRect(context, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 3, Colors.WHITE);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 3, Colors.WHITE);
             }
 
             prev = frame;
@@ -980,21 +1001,24 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         {
             boolean has = sheet.selected.contains(index);
 
-            this.renderRect(context, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 2, has && this.which == Selection.KEYFRAME ? Colors.ACTIVE : 0);
+            this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 2, has && this.which == Selection.KEYFRAME ? Colors.ACTIVE : 0);
 
             if (frame.getInterpolation().isBezier() && index != count - 1)
             {
-                this.renderRect(context, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 2, has && this.which == Selection.RIGHT_HANDLE ? Colors.ACTIVE : 0);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 2, has && this.which == Selection.RIGHT_HANDLE ? Colors.ACTIVE : 0);
             }
 
             if (prev != null && prev.getInterpolation().isBezier())
             {
-                this.renderRect(context, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 2, has && this.which == Selection.LEFT_HANDLE ? Colors.ACTIVE : 0);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 2, has && this.which == Selection.LEFT_HANDLE ? Colors.ACTIVE : 0);
             }
 
             prev = frame;
             index++;
         }
+
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        BufferRenderer.drawWithGlobalProgram(builder.end());
 
         int y = this.area.y + TOP_MARGIN;
         int h = this.area.ey() - y;

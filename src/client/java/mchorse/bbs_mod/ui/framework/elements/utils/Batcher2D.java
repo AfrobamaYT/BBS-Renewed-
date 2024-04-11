@@ -111,6 +111,17 @@ public class Batcher2D
 
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
+        this.fillRect(builder, matrix4f, x, y, w, h, color1, color2, color3, color4);
+
+        RenderSystem.enableBlend();
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        BufferRenderer.drawWithGlobalProgram(builder.end());
+
+        this.context.draw();
+    }
+
+    public void fillRect(BufferBuilder builder, Matrix4f matrix4f, float x, float y, float w, float h, int color1, int color2, int color3, int color4)
+    {
         /* c1 ---- c2
          * |        |
          * c3 ---- c4 */
@@ -118,12 +129,6 @@ public class Batcher2D
         builder.vertex(matrix4f, x, y + h, 0).color(color3).next();
         builder.vertex(matrix4f, x + w, y + h, 0).color(color4).next();
         builder.vertex(matrix4f, x + w, y, 0).color(color2).next();
-
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-        BufferRenderer.drawWithGlobalProgram(builder.end());
-
-        this.context.draw();
     }
 
     public void dropShadow(int left, int top, int right, int bottom, int offset, int opaque, int shadow)

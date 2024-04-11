@@ -7,7 +7,7 @@
   - [x] Body part rendering
   - [x] Extruded form rendering
     - [x] Fix lack of diffuse lighting
-  - [x] Fix label form rendering
+  - [x] Fix label form renderingМнМ
   - [x] Fix particle form rendering
 - [x] Camera editor
   - [x] Apply roll
@@ -57,6 +57,7 @@ Useful user suggestions:
 - [ ] Rethink keyframe addition and removal
 - [ ] Async model and texture loading
 - [ ] Update model forms when models get reloaded
+- [ ] In-game mode of recording (like in Blockbuster mod)
 
 Considerations:
 

@@ -9,6 +9,8 @@ import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.utils.OS;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.render.BufferBuilder;
+import org.joml.Matrix4f;
 
 import java.util.function.Consumer;
 
@@ -349,11 +351,11 @@ public abstract class UIBaseKeyframes <T> extends UIElement
 
     protected abstract void renderGraph(UIContext context);
 
-    protected void renderRect(UIContext context, int x, int y, int offset, int c)
+    protected void renderRect(UIContext context, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         c = Colors.A100 | c;
 
-        context.batcher.box(x - offset, y - offset, x + offset, y + offset, c);
+        context.batcher.fillRect(builder, matrix, x - offset, y - offset, offset * 2, offset * 2, c, c, c, c);
     }
 
     /* Handling dragging */

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
@@ -18,6 +19,13 @@ import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.math.Interpolation;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -501,6 +509,9 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         int h = (this.area.h - TOP_MARGIN) / propertyCount;
         int y = this.area.ey() - h * propertyCount;
 
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
+
         for (UIProperty property : this.properties)
         {
             COLOR.set(property.color, false);
@@ -511,6 +522,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             line.add(this.area.x, y + h / 2);
             line.add(this.area.ex(), y + h / 2);
             line.render(context.batcher, SolidColorLineRenderer.get(COLOR.r, COLOR.g, COLOR.b, hover ? 1F : 0.45F));
+
+            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
             /* Draw points */
             int index = 0;
@@ -543,7 +556,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                     isPointHover = isPointHover || this.getGrabbingArea(context).isInside(this.toGraphX(frame.getTick()), y + h / 2);
                 }
 
-                this.renderRect(context, x1, y + h / 2, 3, property.hasSelected(index) || isPointHover ? Colors.WHITE : property.color);
+                this.renderRect(context, builder, matrix4f, x1, y + h / 2, 3, property.hasSelected(index) || isPointHover ? Colors.WHITE : property.color);
 
                 index++;
             }
@@ -554,10 +567,13 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             {
                 GenericKeyframe frame = (GenericKeyframe) object;
 
-                this.renderRect(context, this.toGraphX(frame.getTick()), y + h / 2, 2, property.hasSelected(index) ? Colors.ACTIVE : 0);
+                this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 2, property.hasSelected(index) ? Colors.ACTIVE : 0);
 
                 index++;
             }
+
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            BufferRenderer.drawWithGlobalProgram(builder.end());
 
             FontRenderer font = context.batcher.getFont();
             int lw = font.getWidth(property.title.get()) + 10;
