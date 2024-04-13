@@ -21,7 +21,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     }
 
     @Override
-    public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
+    public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         Link t = this.form.texture.get(context.getTransition());
 

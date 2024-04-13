@@ -18,7 +18,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.render.DiffuseLighting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +77,7 @@ public class UIFormCategory extends UIElement
                                 m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
                                 {
                                     formCategory.forms.add(FormUtils.copy(this.selected));
+                                    BBSModClient.getFormCategories().writeUserCategories();
                                 });
                             }
                         });
@@ -213,14 +213,10 @@ public class UIFormCategory extends UIElement
                 if (isSelected)
                 {
                     context.batcher.box(cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT, Colors.A50 | BBSSettings.primaryColor.get());
+                    context.batcher.outline(cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT, Colors.A50 | BBSSettings.primaryColor.get(), 2);
                 }
 
                 FormUtilsClient.renderUI(form, context, cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT);
-
-                if (isSelected)
-                {
-                    context.batcher.outline(cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT, Colors.A50 | BBSSettings.primaryColor.get(), 2);
-                }
 
                 context.batcher.unclip(context);
 

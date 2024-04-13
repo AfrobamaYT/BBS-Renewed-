@@ -5,8 +5,10 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;
@@ -55,7 +57,25 @@ public abstract class FormRenderer <T extends Form>
         return Collections.emptyList();
     }
 
-    public abstract void renderUI(UIContext context, int x1, int y1, int x2, int y2);
+    public final void renderUI(UIContext context, int x1, int y1, int x2, int y2)
+    {
+        this.renderInUI(context, x1, y1, x2, y2);
+
+        String name = this.form.name.get();
+
+        if (!name.isEmpty())
+        {
+            FontRenderer font = context.batcher.getFont();
+
+            name = font.limitToWidth(name, x2 - x1 - 3);
+
+            int w = font.getWidth(name);
+
+            context.batcher.textCard(name, (x2 + x1 - w) / 2, y1 + 6, Colors.WHITE, Colors.ACTIVE | Colors.A50);
+        }
+    }
+
+    protected abstract void renderInUI(UIContext context, int x1, int y1, int x2, int y2);
 
     public final void render(FormRenderingContext context)
     {

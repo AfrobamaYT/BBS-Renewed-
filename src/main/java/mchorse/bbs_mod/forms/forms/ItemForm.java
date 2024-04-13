@@ -4,6 +4,7 @@ import mchorse.bbs_mod.forms.properties.ItemStackProperty;
 import mchorse.bbs_mod.forms.properties.ModelTransformationModeProperty;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 
 public class ItemForm extends Form
 {
@@ -14,5 +15,11 @@ public class ItemForm extends Form
     {
         this.register(this.stack);
         this.register(this.modelTransform);
+    }
+
+    @Override
+    protected String getDefaultDisplayName()
+    {
+        return Registries.ITEM.getId(this.stack.get().getItem()).toString();
     }
 }

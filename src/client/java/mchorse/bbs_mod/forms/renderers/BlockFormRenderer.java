@@ -25,7 +25,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
     }
 
     @Override
-    public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
+    public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
         MatrixStack matrices = context.batcher.getContext().getMatrices();

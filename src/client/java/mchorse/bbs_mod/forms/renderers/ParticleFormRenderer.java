@@ -53,7 +53,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     }
 
     @Override
-    public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
+    public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         this.ensureEmitter(MinecraftClient.getInstance().world);
 

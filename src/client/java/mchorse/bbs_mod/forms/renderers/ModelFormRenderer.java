@@ -123,7 +123,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     }
 
     @Override
-    public void renderUI(UIContext context, int x1, int y1, int x2, int y2)
+    public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         context.batcher.flush();
 
