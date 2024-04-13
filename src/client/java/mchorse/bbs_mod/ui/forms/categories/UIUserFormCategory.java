@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.categories;
 
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.categories.FormCategory;
@@ -29,6 +30,7 @@ public class UIUserFormCategory extends UIFormCategory
                     (str) ->
                     {
                         this.getCategory().title = IKey.raw(str);
+                        BBSModClient.getFormCategories().writeUserCategories();
                     }
                 );
 
@@ -42,7 +44,11 @@ public class UIUserFormCategory extends UIFormCategory
                 MapType data = Window.getClipboardMap();
                 Form form = FormUtils.fromData(data);
 
-                menu.action(Icons.PASTE, UIKeys.FORMS_CATEGORIES_CONTEXT_PASTE_FORM, () -> this.category.forms.add(form));
+                menu.action(Icons.PASTE, UIKeys.FORMS_CATEGORIES_CONTEXT_PASTE_FORM, () ->
+                {
+                    this.category.forms.add(form);
+                    BBSModClient.getFormCategories().writeUserCategories();
+                });
             }
             catch (Exception e)
             {}
@@ -53,6 +59,7 @@ public class UIUserFormCategory extends UIFormCategory
                 {
                     this.category.forms.remove(this.selected);
                     this.select(null, false);
+                    BBSModClient.getFormCategories().writeUserCategories();
                 });
             }
         });

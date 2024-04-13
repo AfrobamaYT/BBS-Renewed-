@@ -55,6 +55,7 @@ public class UIFormCategory extends UIElement
 
                         formCategories.addUserCategory(new UserFormCategory(IKey.raw(str)));
                         list.setupForms(formCategories);
+                        BBSModClient.getFormCategories().writeUserCategories();
                     }
                 ));
             });
