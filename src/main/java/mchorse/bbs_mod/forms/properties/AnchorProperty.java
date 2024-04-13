@@ -18,6 +18,25 @@ public class AnchorProperty extends BaseTweenProperty<AnchorProperty.Anchor>
         public String attachment = "";
 
         @Override
+        public boolean equals(Object obj)
+        {
+            if (super.equals(obj))
+            {
+                return true;
+            }
+
+            if (obj instanceof Anchor)
+            {
+                Anchor anchor = (Anchor) obj;
+
+                return this.actor == anchor.actor
+                    && this.attachment.equals(anchor.attachment);
+            }
+
+            return false;
+        }
+
+        @Override
         public void fromData(MapType data)
         {
             this.actor = data.getInt("actor");

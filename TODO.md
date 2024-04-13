@@ -64,6 +64,7 @@ Considerations:
 
 - [ ] Direction XYZ Snowstorm
 - [ ] Benchbuster
+- [ ] Wave files cues (FunkyFight)
 
 Epic features
 
