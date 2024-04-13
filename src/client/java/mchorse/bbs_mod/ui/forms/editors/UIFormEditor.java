@@ -110,7 +110,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.palette = palette;
 
         this.formsArea = new UIElement();
-        this.formsArea.relative(this).w(TREE_WIDTH).h(1F);
+        this.formsArea.relative(this).x(20).w(TREE_WIDTH).h(1F);
 
         this.forms = new UIForms((l) -> this.pickForm(l.get(0)));
         this.forms.relative(this.formsArea).w(1F).h(0.5F);
@@ -152,7 +152,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.transform.verticalCompactNoIcons();
 
         this.editArea = new UIElement();
-        this.editArea.relative(this).x(TREE_WIDTH).w(1F, -TREE_WIDTH).h(1F);
+        this.editArea.relative(this).full();
 
         this.renderer = new UIPickableFormRenderer(this);
         this.renderer.relative(this.editArea).full();
@@ -197,17 +197,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
     {
         this.formsArea.toggleVisible();
         this.toggleSidebar.both(this.formsArea.isVisible() ? Icons.LEFTLOAD : Icons.RIGHTLOAD);
-
-        if (this.formsArea.isVisible())
-        {
-            this.editArea.x(TREE_WIDTH).w(1F, -TREE_WIDTH);
-        }
-        else
-        {
-            this.editArea.x(0).w(1F);
-        }
-
-        this.editArea.resize();
     }
 
     private void createFormContextMenu(ContextMenuManager menu)

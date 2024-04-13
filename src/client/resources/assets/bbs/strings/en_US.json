@@ -359,7 +359,7 @@
     "bbs.ui.forms.editor.model.pick_texture": "Pick a texture...",
     "bbs.ui.forms.editor.model.static_pose": "Static pose",
     "bbs.ui.forms.editors.general": "General",
-    "bbs.ui.forms.editors.actions.action": "Action",
+    "bbs.ui.forms.editors.actions.animations": "Animations",
     "bbs.ui.forms.editors.actions.fade": "Fade",
     "bbs.ui.forms.editors.actions.loops": "Loops",
     "bbs.ui.forms.editors.actions.speed": "Speed",

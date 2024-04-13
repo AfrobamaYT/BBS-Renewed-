@@ -215,7 +215,7 @@ public class UIKeys
     public static final IKey FORMS_CROP_RIGHT = L10n.lang("bbs.ui.forms.crop.right");
     public static final IKey FORMS_CROP_TITLE = L10n.lang("bbs.ui.forms.crop.title");
     public static final IKey FORMS_CROP_TOP = L10n.lang("bbs.ui.forms.crop.top");
-    public static final IKey FORMS_EDITORS_ACTIONS_ACTION = L10n.lang("bbs.ui.forms.editors.actions.action");
+    public static final IKey FORMS_EDITORS_ACTIONS_ANIMATIONS = L10n.lang("bbs.ui.forms.editors.actions.animations");
     public static final IKey FORMS_EDITORS_ACTIONS_FADE = L10n.lang("bbs.ui.forms.editors.actions.fade");
     public static final IKey FORMS_EDITORS_ACTIONS_LOOPS = L10n.lang("bbs.ui.forms.editors.actions.loops");
     public static final IKey FORMS_EDITORS_ACTIONS_SPEED = L10n.lang("bbs.ui.forms.editors.actions.speed");

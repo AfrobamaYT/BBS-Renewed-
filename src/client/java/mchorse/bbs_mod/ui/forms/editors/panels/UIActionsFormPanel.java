@@ -7,7 +7,6 @@ import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
@@ -18,7 +17,7 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
 {
     public UIStringList actions;
 
-    public UISearchList<String> pickAction;
+    public UISearchList<String> animations;
     public UIToggle loop;
     public UITrackpad speed;
     public UITrackpad fade;
@@ -31,15 +30,17 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
         super(editor);
 
         this.actions = new UIStringList((l) -> this.pickAction(l.get(0), false));
-        this.actions.background().relative(this).x(1F, -10).y(22).w(this.options.getFlex().getW() - 20).h(1F, -32).anchorX(1F);
+        this.actions.scroll.cancelScrolling();
+        this.actions.background().h(112);
 
-        this.pickAction = new UISearchList<>(new UIStringList((l) ->
+        this.animations = new UISearchList<>(new UIStringList((l) ->
         {
             this.action.name = l.get(0);
             this.resetAnimator();
         }));
-        this.pickAction.label(UIKeys.GENERAL_SEARCH).list.background();
-        this.pickAction.h(132);
+        this.animations.list.cancelScrollEdge();
+        this.animations.label(UIKeys.GENERAL_SEARCH).list.background();
+        this.animations.h(132);
         this.loop = new UIToggle(UIKeys.FORMS_EDITORS_ACTIONS_LOOPS, (b) ->
         {
             this.action.loop = b.getValue();
@@ -63,12 +64,11 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
         });
         this.tick.limit(0).integer();
 
-        this.options.add(this.loop, UI.label(UIKeys.FORMS_EDITORS_ACTIONS_ACTION).marginTop(8), this.pickAction);
-        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_SPEED).marginTop(8), this.speed);
-        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_FADE).marginTop(8), this.fade);
-        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_TICK).marginTop(8), this.tick);
-
-        this.add(this.actions);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_MODEL_ACTIONS), this.actions);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_ANIMATIONS).marginTop(6), this.animations, this.loop);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_SPEED).marginTop(6), this.speed);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_FADE).marginTop(6), this.fade);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ACTIONS_TICK).marginTop(6), this.tick);
     }
 
     private void resetAnimator()
@@ -89,7 +89,7 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
             config.actions.put(key, this.action);
         }
 
-        this.pickAction.list.setCurrentScroll(this.action.name);
+        this.animations.list.setCurrentScroll(this.action.name);
         this.loop.setValue(this.action.loop);
         this.speed.setValue(this.action.speed);
         this.fade.setValue(this.action.fade);
@@ -110,9 +110,9 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
 
         renderer.ensureAnimator();
 
-        this.pickAction.list.clear();
-        this.pickAction.list.add(renderer.getModel().animations.animations.keySet());
-        this.pickAction.list.sort();
+        this.animations.list.clear();
+        this.animations.list.add(renderer.getModel().animations.animations.keySet());
+        this.animations.list.sort();
 
         this.actions.clear();
         this.actions.add(renderer.getAnimator().getActions());
@@ -127,13 +127,5 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
         super.finishEdit();
 
         ActionsConfig.removeDefaultActions(this.form.actions.get().actions);
-    }
-
-    @Override
-    public void render(UIContext context)
-    {
-        super.render(context);
-
-        context.batcher.textShadow(UIKeys.FORMS_EDITORS_MODEL_ACTIONS.get(), this.actions.area.x, this.actions.area.y - 12);
     }
 }

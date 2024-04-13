@@ -39,7 +39,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
             UITexturePicker.open(this, link, (l) -> this.form.texture.set(l));
         });
 
-        this.options.add(this.pick, this.color, this.poseEditor.marginTop(8));
+        this.options.add(this.pick, this.color, this.poseEditor);
     }
 
     private void pickGroup(String group)

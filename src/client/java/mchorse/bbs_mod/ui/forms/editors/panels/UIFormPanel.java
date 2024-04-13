@@ -18,8 +18,8 @@ public abstract class UIFormPanel <T extends Form> extends UIElement
         this.editor = editor;
 
         this.options = UI.scrollView(5, 10);
-        this.options.scroll.cancelScrolling().opposite();
-        this.options.relative(this).w(160).h(1F);
+        this.options.scroll.cancelScrolling();
+        this.options.relative(this).x(1F, -160).w(160).h(1F);
 
         this.add(this.options);
     }
