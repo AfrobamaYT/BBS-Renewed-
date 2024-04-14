@@ -1,6 +1,5 @@
 package mchorse.bbs_mod;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
@@ -37,11 +36,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -62,8 +59,6 @@ public class BBSModClient implements ClientModInitializer
     private static WatchDog watchDog;
     private static ScreenshotRecorder screenshotRecorder;
     private static VideoRecorder videoRecorder;
-
-    private static SimpleFramebuffer framebuffer;
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
@@ -127,11 +122,6 @@ public class BBSModClient implements ClientModInitializer
         return films;
     }
 
-    public static SimpleFramebuffer getFramebuffer()
-    {
-        return framebuffer;
-    }
-
     public static UIDashboard getDashboard()
     {
         if (dashboard == null)
@@ -140,48 +130,6 @@ public class BBSModClient implements ClientModInitializer
         }
 
         return dashboard;
-    }
-
-    public static void renderToFramebuffer()
-    {
-        MinecraftClient mc = MinecraftClient.getInstance();
-
-        int windowWidth = mc.getWindow().getFramebufferWidth();
-        int windowHeight = mc.getWindow().getFramebufferHeight();
-
-        int width = BBSSettings.videoWidth.get();
-        int height = BBSSettings.videoHeight.get();
-
-        if (framebuffer == null)
-        {
-            framebuffer = new SimpleFramebuffer(width, height, true, MinecraftClient.IS_SYSTEM_MAC);
-        }
-
-        if (framebuffer.textureWidth != width || framebuffer.textureHeight != height)
-        {
-            framebuffer.resize(width, height, MinecraftClient.IS_SYSTEM_MAC);
-        }
-
-        /* Replace some global values */
-        mc.getWindow().setFramebufferWidth(width);
-        mc.getWindow().setFramebufferHeight(height);
-
-        /* Render world to texture */
-        framebuffer.beginWrite(true);
-
-        RenderSystem.getModelViewStack().push();
-        RenderSystem.getModelViewStack().loadIdentity();
-        RenderSystem.applyModelViewMatrix();
-
-        mc.gameRenderer.setRenderingPanorama(true);
-        mc.gameRenderer.renderWorld(mc.getTickDelta(), 0, new MatrixStack());
-        mc.gameRenderer.setRenderingPanorama(false);
-
-        framebuffer.endWrite();
-
-        /* Reset global stuff */
-        mc.getWindow().setFramebufferWidth(windowWidth);
-        mc.getWindow().setFramebufferHeight(windowHeight);
     }
 
     @Override
@@ -262,6 +210,8 @@ public class BBSModClient implements ClientModInitializer
 
         WorldRenderEvents.LAST.register((context) ->
         {
+            BBSRendering.onLastRender(context);
+
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
             {
                 screen.lastRender(context);
@@ -287,6 +237,7 @@ public class BBSModClient implements ClientModInitializer
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
         {
             dashboard = null;
+            films = new Films();
         });
 
         ClientTickEvents.START_CLIENT_TICK.register((client) ->

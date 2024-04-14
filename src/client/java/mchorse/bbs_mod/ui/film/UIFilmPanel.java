@@ -10,13 +10,13 @@ import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.ValueGroup;
@@ -60,7 +60,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -112,7 +111,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private FilmEditorUndo.KeyframeSelection cachedPropertiesSelection;
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
 
-    private Texture texture;
     private Matrix4f lastView = new Matrix4f();
     private Matrix4f lastProjection = new Matrix4f();
 
@@ -149,13 +147,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Setup elements */
         this.plause = new UIIcon(Icons.PLAY, (b) -> this.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
-        this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), this.texture));
+        this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), BBSRendering.getTexture()));
         this.record.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD, Direction.LEFT);
         this.screenshot = new UIIcon(Icons.CAMERA, (b) ->
         {
             ScreenshotRecorder recorder = BBSModClient.getScreenshotRecorder();
+            Texture texture = BBSRendering.getTexture();
 
-            recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), this.texture.id, this.texture.width, this.texture.height);
+            recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), texture.id, texture.width, texture.height);
         });
         this.screenshot.tooltip(UIKeys.FILM_SCREENSHOT, Direction.LEFT);
         this.openVideos = new UIIcon(Icons.FILM, (b) -> this.recorder.openMovies());
@@ -372,6 +371,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.appear();
 
+        BBSRendering.customSize = true;
+
         CameraController cameraController = this.getCameraController();
 
         this.fillData();
@@ -384,6 +385,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void close()
     {
         super.close();
+
+        BBSRendering.customSize = false;
 
         CameraController cameraController = this.getCameraController();
 
@@ -398,6 +401,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void disappear()
     {
         super.disappear();
+
+        BBSRendering.customSize = false;
 
         this.setFlight(false);
         this.getCameraController().remove(this.runner);
@@ -824,7 +829,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.camera.projection.set(this.lastProjection);
         context.batcher.flush();
 
-        Texture texture = this.texture;
+        Texture texture = BBSRendering.getTexture();
         Area viewport = this.getViewportArea();
         Area area = this.getFramebufferArea(viewport);
 
@@ -894,20 +899,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void lastRender(WorldRenderContext context)
     {
         super.lastRender(context);
-
-        if (this.texture == null)
-        {
-            this.texture = new Texture();
-            this.texture.setFormat(TextureFormat.RGB_U8);
-            this.texture.setFilter(GL11.GL_NEAREST);
-        }
-
-        Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
-
-        this.texture.bind();
-        this.texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
-        GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
-        this.texture.unbind();
 
         this.lastProjection.set(RenderSystem.getProjectionMatrix());
         this.lastView.set(context.matrixStack().peek().getPositionMatrix());

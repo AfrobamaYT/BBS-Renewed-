@@ -10,7 +10,8 @@
         "PlayerEntityRendererMixin",
         "MinecraftClientInvoker",
         "RenderTickCounterMixin",
-        "IntegratedServerMixin"
+        "IntegratedServerMixin",
+        "WindowMixin"
     ],
     "injectors": {
         "defaultRequire": 1

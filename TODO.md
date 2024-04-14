@@ -16,8 +16,8 @@
   - [x] Player controller
   - [x] Render actors
   - [ ] Shadow
-- [ ] Minema
-  - [ ] Framebuffer resize
+- [x] Minema
+  - [x] Framebuffer resize
   - [x] Tick synchronization
   - [x] Video recording
 - [ ] Entity selectors in EntityClip
@@ -64,7 +64,8 @@ Considerations:
 
 - [ ] Direction XYZ Snowstorm
 - [ ] Benchbuster
-- [ ] Wave files cues (FunkyFight)
+- [ ] Wave files cues
+- [ ] mp3/mp4 to wav via drag and dropping
 
 Epic features
 

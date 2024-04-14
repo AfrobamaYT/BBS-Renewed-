@@ -2,6 +2,7 @@ package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.controller.CameraController;
+import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
@@ -54,5 +55,17 @@ public class GameRendererMixin
 
             info.cancel();
         }
+    }
+
+    @Inject(method = "render(FJZ)V", at = @At("HEAD"))
+    public void onRender(CallbackInfo info)
+    {
+        BBSRendering.onWorldRenderBegin();
+    }
+
+    @Inject(method = "render(FJZ)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V", ordinal = 0))
+    public void beforeRenderGUI(CallbackInfo info)
+    {
+        BBSRendering.onWorldRenderEnd();
     }
 }
