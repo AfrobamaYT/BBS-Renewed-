@@ -58,7 +58,6 @@ import mchorse.bbs_mod.utils.undo.UndoManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
@@ -155,9 +154,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.screenshot = new UIIcon(Icons.CAMERA, (b) ->
         {
             ScreenshotRecorder recorder = BBSModClient.getScreenshotRecorder();
-            SimpleFramebuffer framebuffer = BBSModClient.getFramebuffer();
 
-            recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), framebuffer.getColorAttachment(), framebuffer.textureWidth, framebuffer.textureHeight);
+            recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), this.texture.id, this.texture.width, this.texture.height);
         });
         this.screenshot.tooltip(UIKeys.FILM_SCREENSHOT, Direction.LEFT);
         this.openVideos = new UIIcon(Icons.FILM, (b) -> this.recorder.openMovies());
