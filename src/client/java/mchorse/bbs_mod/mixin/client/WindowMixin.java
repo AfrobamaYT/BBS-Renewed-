@@ -36,7 +36,7 @@ public class WindowMixin
     @Inject(method = "getWidth", at = @At("HEAD"), cancellable = true)
     public void onGetWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue(BBSSettings.videoWidth.get());
         }
@@ -45,7 +45,7 @@ public class WindowMixin
     @Inject(method = "getHeight", at = @At("HEAD"), cancellable = true)
     public void onGetHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue(BBSSettings.videoHeight.get());
         }
@@ -54,7 +54,7 @@ public class WindowMixin
     @Inject(method = "getFramebufferWidth", at = @At("HEAD"), cancellable = true)
     public void onGetFramebufferWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue(BBSSettings.videoWidth.get());
         }
@@ -63,7 +63,7 @@ public class WindowMixin
     @Inject(method = "getFramebufferHeight", at = @At("HEAD"), cancellable = true)
     public void onGetFramebufferHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue(BBSSettings.videoHeight.get());
         }
@@ -72,7 +72,7 @@ public class WindowMixin
     @Inject(method = "getScaledWidth", at = @At("HEAD"), cancellable = true)
     public void onGetScaledWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue((int) (BBSSettings.videoWidth.get() / this.scaleFactor));
         }
@@ -81,7 +81,7 @@ public class WindowMixin
     @Inject(method = "getScaledHeight", at = @At("HEAD"), cancellable = true)
     public void onGetScaledHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.customSize && BBSRendering.renderingWorld)
+        if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
             info.setReturnValue((int) (BBSSettings.videoHeight.get() / this.scaleFactor));
         }

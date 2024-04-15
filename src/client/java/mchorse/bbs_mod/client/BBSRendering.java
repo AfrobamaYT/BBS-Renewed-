@@ -21,9 +21,27 @@ public class BBSRendering
     public static final Set<ModelBlockEntity> capturedModelBlocks = new HashSet<>();
 
     public static boolean renderingWorld;
-    public static boolean customSize;
+    private static boolean customSize;
 
     private static Texture texture;
+
+    public static boolean isCustomSize()
+    {
+        return customSize;
+    }
+
+    public static void setCustomSize(boolean customSize)
+    {
+        BBSRendering.customSize = customSize;
+
+        if (!customSize)
+        {
+            Framebuffer efb = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
+            Window window = MinecraftClient.getInstance().getWindow();
+
+            efb.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
+        }
+    }
 
     public static Texture getTexture()
     {
@@ -84,7 +102,7 @@ public class BBSRendering
         framebuffer.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
         framebuffer.beginWrite(true);
 
-        /* Debug preview: if (texture != null)
+        /* For preview: if (texture != null)
         {
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
 

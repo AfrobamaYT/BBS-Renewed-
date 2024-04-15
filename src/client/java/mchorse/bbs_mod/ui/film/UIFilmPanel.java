@@ -371,7 +371,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.appear();
 
-        BBSRendering.customSize = true;
+        BBSRendering.setCustomSize(true);
 
         CameraController cameraController = this.getCameraController();
 
@@ -386,7 +386,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.close();
 
-        BBSRendering.customSize = false;
+        BBSRendering.setCustomSize(false);
 
         CameraController cameraController = this.getCameraController();
 
@@ -402,7 +402,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.disappear();
 
-        BBSRendering.customSize = false;
+        BBSRendering.setCustomSize(false);
 
         this.setFlight(false);
         this.getCameraController().remove(this.runner);
