@@ -5,6 +5,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmController;
@@ -49,6 +50,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -59,6 +61,7 @@ import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -958,12 +961,13 @@ public class UIFilmController extends UIElement
 
         if (form != null)
         {
+            MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
             int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
 
             FormRenderingContext formContext = FormRenderingContext
-                .set(entity, context.matrixStack(), light, context.tickDelta())
+                .set(entity, stack, light, context.tickDelta())
                 .camera(context.camera())
                 .stencilMap(map);
 
@@ -980,21 +984,30 @@ public class UIFilmController extends UIElement
                 {
                     float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
 
-                    context.matrixStack().push();
-                    MatrixStackUtils.multiply(context.matrixStack(), Matrices.lerp(lastMatrix, matrix, factor));
+                    stack.push();
+                    MatrixStackUtils.multiply(stack, Matrices.lerp(lastMatrix, matrix, factor));
                     FormUtilsClient.render(form, formContext);
 
-                    context.matrixStack().pop();
+                    stack.pop();
 
                     return;
                 }
             }
 
-            context.matrixStack().push();
-            MatrixStackUtils.multiply(context.matrixStack(), FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+            stack.push();
+            MatrixStackUtils.multiply(stack, FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
 
-            context.matrixStack().pop();
+            if (map == null)
+            {
+                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
+                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
+                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
+
+                ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
+            }
+
+            stack.pop();
         }
     }
 

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -155,12 +156,13 @@ public class FilmController
 
         if (form != null)
         {
+            MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
             int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
 
             FormRenderingContext formContext = FormRenderingContext
-                .set(entity, context.matrixStack(), light, context.tickDelta())
+                .set(entity, stack, light, context.tickDelta())
                 .camera(context.camera())
                 .stencilMap(map);
 
@@ -177,19 +179,29 @@ public class FilmController
                 {
                     float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
 
-                    context.matrixStack().push();
-                    MatrixStackUtils.multiply(context.matrixStack(), Matrices.lerp(lastMatrix, matrix, factor));
+                    stack.push();
+                    MatrixStackUtils.multiply(stack, Matrices.lerp(lastMatrix, matrix, factor));
                     FormUtilsClient.render(form, formContext);
-                    context.matrixStack().pop();
+                    stack.pop();
 
                     return;
                 }
             }
 
-            context.matrixStack().push();
-            MatrixStackUtils.multiply(context.matrixStack(), getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+            stack.push();
+            MatrixStackUtils.multiply(stack, getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
-            context.matrixStack().pop();
+
+            if (map == null)
+            {
+                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
+                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
+                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
+
+                ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
+            }
+
+            stack.pop();
         }
     }
 }

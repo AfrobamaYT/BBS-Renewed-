@@ -6,14 +6,17 @@ and Missing Features. Here is the breakdown of these stages:
 ## BBS Studio Port
 
 This is the stage where I port majority of useful features from BBS Studio into a 
-Minecraft Fabric mod. Beside that, I'll also add any features that are essential to 
+Minecraft Fabric mod. Besides that, I'll also add any features that are essential to 
 the port (like model blocks, although that's also part of BBS Studio).
 
 Beside that, here is a list to finish:
 
-- [ ] Optimize keyframe editor rendering
+- [x] Optimize keyframe editor rendering
 - [ ] Clean up the UI
-- [ ] 
+- [ ] Finish remaining features
+  - [ ] Shaders for subtitle renderer
+  - [ ] Shadow for film controller
+- [ ] Implement proper data managers
 
 ## Old Core Adaptation
 
@@ -27,7 +30,10 @@ experience. Like following:
 - [ ] BB gun?
 - [ ] Vanilla integrations
   - [ ] Item holding
-  - [ ] Swimming animation
+  - [ ] Swimming
+  - [ ] Vanilla-like animator
+- [ ] Audio editor
+- [ ] Structure form
 
 ## Missing features
 
@@ -45,4 +51,31 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 
 - [ ] What is BBS mod
 - [ ] Obtain the mod and setup
-- [ ] 
+- [ ] Recording characters
+- [ ] Setting up cameras
+
+### Miscellaneous
+
+Useful user suggestions:
+
+- [ ] Sample lighting value at (model block)
+- [ ] Add gizmos to model block
+- [ ] Kirah's suggestions model block screen
+- [ ] Add gizmos to film editor
+- [ ] Rethink keyframe addition and removal
+- [ ] Async model and texture loading
+- [ ] Update model forms when models get reloaded
+- [ ] In-game mode of recording (like in Blockbuster mod)
+- [ ] Lighting option
+
+Considerations:
+
+- [ ] Direction XYZ Snowstorm
+- [ ] Benchbuster
+- [ ] Wave files cues
+- [ ] mp3/mp4 to wav via drag and dropping
+- [ ] Blockbench like interface (moving panels around)
+
+Epic features
+
+- [ ] Framebuffer form 

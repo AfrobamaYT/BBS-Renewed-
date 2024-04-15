@@ -20,11 +20,43 @@ import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 
 public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity>
 {
-    private ActorEntity entity;
+    private static ActorEntity entity;
+
+    public static void renderShadow(VertexConsumerProvider provider, MatrixStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz)
+    {
+        ClientWorld world = MinecraftClient.getInstance().world;
+
+        if (entity == null || entity.getWorld() != world)
+        {
+            entity = new ActorEntity(BBSMod.ACTOR_ENTITY, world);
+        }
+
+        entity.setPos(x, y, z);
+        entity.lastRenderX = x;
+        entity.lastRenderY = y;
+        entity.lastRenderZ = z;
+        entity.prevX = x;
+        entity.prevY = y;
+        entity.prevZ = z;
+
+        double distance = MinecraftClient.getInstance().getEntityRenderDispatcher().getSquaredDistanceToCamera(x, y, z);
+        float radius = 0.5F;
+        float opacity = 1F;
+
+        opacity = (float) (1D - distance / 256D * opacity);
+
+        matrices.push();
+        matrices.translate(tx, ty, tz);
+
+        EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, provider, entity, opacity, tickDelta, entity.getWorld(), radius);
+
+        matrices.pop();
+    }
 
     public ModelBlockEntityRenderer(BlockEntityRendererFactory.Context ctx)
     {}
@@ -32,11 +64,6 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     @Override
     public void render(ModelBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay)
     {
-        if (this.entity == null)
-        {
-            this.entity = new ActorEntity(BBSMod.ACTOR_ENTITY, null);
-        }
-
         ModelBlockEntity.Properties properties = entity.getProperties();
         Transform transform = properties.getTransform();
         BlockPos pos = entity.getPos();
@@ -50,19 +77,6 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         }
 
         MatrixStackUtils.multiply(matrices, transform.createMatrix());
-
-        double x = pos.getX() + 0.5D + transform.translate.x;
-        double y = pos.getY() + transform.translate.y;
-        double z = pos.getZ() + 0.5D + transform.translate.z;
-
-        this.entity.setPos(x, y, z);
-        this.entity.lastRenderX = x;
-        this.entity.lastRenderY = y;
-        this.entity.lastRenderZ = z;
-        this.entity.prevX = x;
-        this.entity.prevY = y;
-        this.entity.prevZ = z;
-
         int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
@@ -79,18 +93,14 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
         if (properties.getShadow())
         {
-            double distance = MinecraftClient.getInstance().getEntityRenderDispatcher().getSquaredDistanceToCamera(x, y, z);
-            float radius = 0.5F;
-            float opacity = 1F;
+            float tx = 0.5F + transform.translate.x;
+            float ty = transform.translate.y;
+            float tz = 0.5F + transform.translate.z;
+            double x = pos.getX() + tx;
+            double y = pos.getY() + ty;
+            double z = pos.getZ() + tz;
 
-            opacity = (float) (1D - distance / 256D * opacity);
-
-            matrices.push();
-            matrices.translate(0.5F + transform.translate.x,  transform.translate.y, 0.5F + transform.translate.z);
-
-            EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, vertexConsumers, this.entity, opacity, tickDelta, entity.getWorld(), radius);
-
-            matrices.pop();
+            renderShadow(vertexConsumers, matrices, tickDelta, x, y, z, tx, ty, tz);
         }
     }
 
