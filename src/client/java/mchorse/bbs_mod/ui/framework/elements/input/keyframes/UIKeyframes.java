@@ -51,6 +51,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         this.scaleY.inverse().anchor(0.5F);
     }
 
+    @Override
+    public boolean canScroll()
+    {
+        return this.current == null;
+    }
+
     public Scale getScaleY()
     {
         return this.scaleY;
@@ -454,9 +460,8 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
     private boolean pickKeyframeDopeSheet(UIContext context, int mouseX, int mouseY, boolean shift)
     {
         List<UISheet> sheets = this.getSheets();
-        int sheetCount = sheets.size();
-        int h = (this.area.h - TOP_MARGIN) / sheetCount;
-        int y = this.area.ey() - h * sheetCount;
+        int h = LANE_HEIGHT;
+        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
         boolean alt = Window.isAltPressed();
         boolean finished = false;
         boolean isMultiSelect = this.isMultipleSelected();
@@ -786,8 +791,10 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
             return;
         }
 
-        int h = (this.area.h - TOP_MARGIN) / sheetCount;
-        int y = this.area.ey() - h * sheetCount;
+        this.scroll.scrollSize = LANE_HEIGHT * sheetCount + TOP_MARGIN;
+
+        int h = LANE_HEIGHT;
+        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();

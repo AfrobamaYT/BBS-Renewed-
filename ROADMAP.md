@@ -16,6 +16,7 @@ Beside that, here is a list to finish:
 - [ ] Finish remaining features
   - [ ] Shaders for subtitle renderer
   - [x] Shadow for film controller
+  - [ ] Fix bundled models work incorrectly
 - [ ] Implement proper data managers
 - [x] Bring back language editor stuff
 - [x] Implement language picker thing
@@ -69,6 +70,7 @@ Useful user suggestions:
 - [ ] Update model forms when models get reloaded
 - [ ] In-game mode of recording (like in Blockbuster mod)
 - [ ] Lighting option
+- [ ] Model block hitbox
 
 Considerations:
 

@@ -256,6 +256,21 @@ public class UIReplaysEditor extends UIElement
         if (this.propertyEditor != null) this.propertyEditor.resetView();
     }
 
+    public void updateDuration()
+    {
+        int duration = this.film.camera.calculateDuration();
+
+        if (this.keyframeEditor != null)
+        {
+            this.keyframeEditor.keyframes.duration = duration;
+        }
+
+        if (this.propertyEditor != null)
+        {
+            this.propertyEditor.properties.duration = duration;
+        }
+    }
+
     public void pickForm(Form form, String bone)
     {
         String path = FormUtils.getPath(form);

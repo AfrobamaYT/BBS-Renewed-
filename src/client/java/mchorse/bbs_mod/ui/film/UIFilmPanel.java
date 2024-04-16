@@ -215,6 +215,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.screenplay.setVisible(false);
 
         element.setVisible(true);
+
+        if (this.replays == element)
+        {
+            this.replays.updateDuration();
+        }
     }
 
     public UIFilmController getController()

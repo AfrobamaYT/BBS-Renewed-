@@ -6,6 +6,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
+import mchorse.bbs_mod.ui.utils.ScrollArea;
 import mchorse.bbs_mod.utils.OS;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -16,6 +17,8 @@ import java.util.function.Consumer;
 
 public abstract class UIBaseKeyframes <T> extends UIElement
 {
+    public static final int LANE_HEIGHT = 16;
+
     public static final Color COLOR = new Color();
     public static final double MIN_ZOOM = 0.01D;
     public static final double MAX_ZOOM = 1000D;
@@ -59,6 +62,7 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     protected double lastT;
     protected double lastV;
 
+    protected ScrollArea scroll = new ScrollArea(this.area);
     protected Scale scaleX;
     protected IAxisConverter converter;
 
@@ -94,6 +98,11 @@ public abstract class UIBaseKeyframes <T> extends UIElement
         {
             this.callback.accept(current);
         }
+    }
+
+    public boolean canScroll()
+    {
+        return true;
     }
 
     /* Setters */
@@ -179,6 +188,11 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     @Override
     public boolean subMouseClicked(UIContext context)
     {
+        if (this.canScroll() && this.scroll.mouseClicked(context))
+        {
+            return true;
+        }
+
         int mouseX = context.mouseX;
         int mouseY = context.mouseY;
 
@@ -239,6 +253,13 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     @Override
     public boolean subMouseScrolled(UIContext context)
     {
+        if (this.canScroll() && Window.isAltPressed())
+        {
+            this.scroll.mouseScroll(context);
+
+            return true;
+        }
+
         if (this.area.isInside(context.mouseX, context.mouseY) && !this.scrolling)
         {
             int scroll = context.mouseWheel;
@@ -264,6 +285,7 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     @Override
     public boolean subMouseReleased(UIContext context)
     {
+        this.scroll.mouseReleased(context);
         this.resetMouseReleased(context);
 
         return super.subMouseReleased(context);
@@ -282,6 +304,8 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     @Override
     public void render(UIContext context)
     {
+        this.scroll.drag(context);
+
         this.handleMouse(context, context.mouseX, context.mouseY);
         this.renderBackground(context);
 
@@ -300,6 +324,11 @@ public abstract class UIBaseKeyframes <T> extends UIElement
         }
 
         context.batcher.unclip(context);
+
+        if (this.canScroll())
+        {
+            this.scroll.renderScrollbar(context.batcher);
+        }
 
         super.render(context);
     }

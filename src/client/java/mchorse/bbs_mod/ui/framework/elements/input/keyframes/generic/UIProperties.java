@@ -364,9 +364,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     @Override
     protected boolean pickKeyframe(UIContext context, int mouseX, int mouseY, boolean shift)
     {
-        int propertyCount = this.properties.size();
-        int h = (this.area.h - TOP_MARGIN) / propertyCount;
-        int y = this.area.ey() - h * propertyCount;
+        int h = LANE_HEIGHT;
+        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
         boolean alt = Window.isAltPressed();
         boolean finished = false;
         boolean isMultiSelect = this.isMultipleSelected();
@@ -506,8 +505,10 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             return;
         }
 
-        int h = (this.area.h - TOP_MARGIN) / propertyCount;
-        int y = this.area.ey() - h * propertyCount;
+        this.scroll.scrollSize = LANE_HEIGHT * propertyCount + TOP_MARGIN;
+
+        int h = LANE_HEIGHT;
+        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
