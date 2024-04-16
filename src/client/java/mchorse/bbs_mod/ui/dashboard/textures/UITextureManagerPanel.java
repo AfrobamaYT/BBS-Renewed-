@@ -105,6 +105,11 @@ public class UITextureManagerPanel extends UISidebarDashboardPanel
         this.overlay.textures.list.sort();
         this.overlay.textures.list.update();
 
+        if (map.containsKey(Icons.ATLAS))
+        {
+            this.link = Icons.ATLAS;
+        }
+
         if (this.link == null && !this.overlay.textures.list.getList().isEmpty())
         {
             this.link = this.overlay.textures.list.getList().get(0);

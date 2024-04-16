@@ -1161,7 +1161,7 @@ public class UIClips extends UIElement
 
         if (leftEdge > this.area.x)
         {
-            batcher.box(this.area.x, this.area.y, leftEdge, this.area.ey(), Colors.A75);
+            batcher.box(this.area.x, this.area.y, Math.min(leftEdge, this.area.ex()), this.area.ey(), Colors.A75);
         }
 
         area.render(batcher, Colors.A50);

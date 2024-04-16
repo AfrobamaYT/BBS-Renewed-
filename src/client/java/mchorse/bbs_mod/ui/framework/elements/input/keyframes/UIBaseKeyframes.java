@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.utils.ScrollArea;
 import mchorse.bbs_mod.utils.OS;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
 import org.joml.Matrix4f;
 
@@ -342,8 +343,15 @@ public abstract class UIBaseKeyframes <T> extends UIElement
             int leftBorder = this.toGraphX(0);
             int rightBorder = this.toGraphX(this.duration);
 
-            if (leftBorder > this.area.x) context.batcher.box(this.area.x, this.area.y, leftBorder, this.area.y + this.area.h, Colors.A50);
-            if (rightBorder < this.area.ex()) context.batcher.box(rightBorder, this.area.y, this.area.ex() , this.area.y + this.area.h, Colors.A50);
+            if (leftBorder > this.area.x)
+            {
+                context.batcher.box(this.area.x, this.area.y, Math.min(this.area.ex(), leftBorder), this.area.y + this.area.h, Colors.A50);
+            }
+
+            if (rightBorder < this.area.ex())
+            {
+                context.batcher.box(Math.max(this.area.x, rightBorder), this.area.y, this.area.ex() , this.area.y + this.area.h, Colors.A50);
+            }
         }
     }
 
