@@ -15,8 +15,10 @@ Beside that, here is a list to finish:
 - [ ] Clean up the UI
 - [ ] Finish remaining features
   - [ ] Shaders for subtitle renderer
-  - [ ] Shadow for film controller
+  - [x] Shadow for film controller
 - [ ] Implement proper data managers
+- [x] Bring back language editor stuff
+- [x] Implement language picker thing
 
 ## Old Core Adaptation
 

@@ -17,6 +17,7 @@ import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIScreen;
@@ -160,6 +161,11 @@ public class BBSModClient implements ClientModInitializer
 
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
         BBSData.load(BBSMod.getDataFolder());
+
+        BBSSettings.language.postCallback((v) ->
+        {
+            l10n.reload(((ValueLanguage) v).get(), BBSMod.getProvider());
+        });
 
         BBSSettings.tooltipStyle.modes(
             UIKeys.ENGINE_TOOLTIP_STYLE_LIGHT,

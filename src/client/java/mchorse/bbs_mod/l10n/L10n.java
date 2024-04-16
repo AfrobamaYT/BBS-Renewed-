@@ -10,10 +10,12 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.l10n.keys.LangKey;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.ui.utility.UILanguageEditorOverlayPanel;
 import mchorse.bbs_mod.ui.utils.Label;
 import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.Pair;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +61,8 @@ public class L10n
     {
         this.supportedLanguages = new ArrayList<>();
         this.supportedLanguages.addAll(Arrays.asList(
-            new Pair<>("English (en_US)", "en_US")
+            new Pair<>("English (en_US)", "en_US"),
+            new Pair<>("Русский (ru_RU)", "ru_RU")
         ));
         this.supportedLanguages.addAll(additionalLanguages);
     }
@@ -141,6 +144,29 @@ public class L10n
             {
                 System.err.println("Failed to load " + link + " language file!");
                 e.printStackTrace();
+            }
+        }
+
+        File export = UILanguageEditorOverlayPanel.getLangEditorFolder();
+        File[] files = export.listFiles();
+
+        if (files == null)
+        {
+            return;
+        }
+
+        for (File file : files)
+        {
+            if (file.isFile() && file.getName().endsWith(".json"))
+            {
+                try
+                {
+                    this.overwrite(DataToString.mapFromString(IOUtils.readText(file)));
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
             }
         }
     }
