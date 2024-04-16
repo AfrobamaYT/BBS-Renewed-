@@ -145,6 +145,8 @@ public class BBSModClient implements ClientModInitializer
         l10n.register((lang) -> Collections.singletonList(Link.assets("strings/" + lang + ".json")));
         l10n.reload();
 
+        File parentFile = BBSMod.getSettingsFolder().getParentFile();
+
         models = new ModelManager(provider);
         formCategories = new FormCategories();
         formCategories.setup();
@@ -153,8 +155,8 @@ public class BBSModClient implements ClientModInitializer
         watchDog.register(models);
         watchDog.register(sounds);
         watchDog.start();
-        screenshotRecorder = new ScreenshotRecorder(BBSMod.getGamePath("screenshots"));
-        videoRecorder = new VideoRecorder(BBSMod.getGamePath("movies"));
+        screenshotRecorder = new ScreenshotRecorder(new File(parentFile, "screenshots"));
+        videoRecorder = new VideoRecorder(new File(parentFile, "movies"));
         films = new Films();
 
         KeybindSettings.registerClasses();

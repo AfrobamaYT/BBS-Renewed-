@@ -185,6 +185,8 @@ public class UIKeys
     public static final IKey FILM_GROUPS_TRIGGERS = L10n.lang("bbs.ui.film.groups.triggers");
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor");
     public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot");
+    public static final IKey FILM_SCREENSHOT_TITLE = L10n.lang("bbs.ui.film.screenshot-title", "Screenshot was taken", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description", "Your screenshot was successfully taken! Click the icon on the right to open the folder...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_OPEN_REPLAY_EDITOR = L10n.lang("bbs.ui.film.open_replay_editor");
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor");
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");

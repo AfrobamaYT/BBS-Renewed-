@@ -40,6 +40,11 @@ public class ScreenshotRecorder
         this.screenshots.mkdirs();
     }
 
+    public File getScreenshots()
+    {
+        return this.screenshots;
+    }
+
     public void takeScreenshot(File output, Texture texture)
     {
         this.takeScreenshot(output, texture.id, texture.width, texture.height);

@@ -36,6 +36,7 @@ import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
@@ -155,6 +156,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             Texture texture = BBSRendering.getTexture();
 
             recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), texture.id, texture.width, texture.height);
+
+            UIMessageFolderOverlayPanel overlayPanel = new UIMessageFolderOverlayPanel(
+                UIKeys.FILM_SCREENSHOT_TITLE,
+                UIKeys.FILM_SCREENSHOT_DESCRIPTION,
+                recorder.getScreenshots()
+            );
+
+            UIOverlay.addOverlay(this.getContext(), overlayPanel);
         });
         this.screenshot.tooltip(UIKeys.FILM_SCREENSHOT, Direction.LEFT);
         this.openVideos = new UIIcon(Icons.FILM, (b) -> this.recorder.openMovies());
@@ -479,6 +488,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.plause.setEnabled(data != null);
         this.record.setEnabled(data != null);
+        this.screenshot.setEnabled(data != null);
         this.openCamera.setEnabled(data != null);
         this.openReplays.setEnabled(data != null);
         this.openScreenplay.setEnabled(data != null);
