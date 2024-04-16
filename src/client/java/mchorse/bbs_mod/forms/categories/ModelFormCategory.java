@@ -2,13 +2,16 @@ package mchorse.bbs_mod.forms.categories;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.DataPath;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ModelFormCategory extends FormCategory
 {
@@ -24,26 +27,23 @@ public class ModelFormCategory extends FormCategory
 
         this.forms.clear();
 
-        File folder = BBSMod.getAssetsPath("models");
+        List<Link> models = new ArrayList<>(BBSMod.getProvider().getLinksFromPath(Link.assets("models"), false));
 
-        folder.mkdirs();
+        models.sort((a, b) -> a.toString().compareToIgnoreCase(b.toString()));
 
-        File[] files = folder.listFiles();
-
-        if (files == null)
+        for (Link link : models)
         {
-            return;
-        }
+            DataPath dataPath = new DataPath(link.path);
 
-        for (File file : files)
-        {
-            if (file.isDirectory())
+            if (!dataPath.folder)
             {
-                ModelForm form = new ModelForm();
-
-                form.model.set(file.getName());
-                this.forms.add(form);
+                continue;
             }
+
+            ModelForm form = new ModelForm();
+
+            form.model.set(dataPath.getLast());
+            this.forms.add(form);
         }
     }
 

@@ -2,15 +2,17 @@ package mchorse.bbs_mod.resources.packs;
 
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.DataPath;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -20,9 +22,11 @@ public class InternalAssetsSourcePack implements ISourcePack
     private String internalPrefix;
     private Class clazz;
 
+    private List<String> zipCache = new ArrayList<>();
+
     public InternalAssetsSourcePack()
     {
-        this("assets", "assets/bbs", InternalAssetsSourcePack.class);
+        this("assets", "assets/bbs/assets", InternalAssetsSourcePack.class);
     }
 
     public InternalAssetsSourcePack(String prefix, String internalPrefix, Class clazz)
@@ -119,42 +123,58 @@ public class InternalAssetsSourcePack implements ISourcePack
 
     private void getLinksFromZipFile(File file, Link link, Collection<Link> links, boolean recursive)
     {
+        /**
+         * Zip files can be big sometimes, so there is no point to
+         * read the zip file every time...
+         */
         try (ZipFile zipFile = new ZipFile(file))
         {
-            this.handleLinksFromZipFile(link, zipFile, links, recursive);
+            if (this.zipCache.isEmpty())
+            {
+                Enumeration<? extends ZipEntry> it = zipFile.entries();
+
+                while (it.hasMoreElements())
+                {
+                    String name = it.nextElement().getName();
+
+                    if (name.startsWith(this.internalPrefix))
+                    {
+                        this.zipCache.add(name);
+                    }
+                }
+            }
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
+
+        this.handleLinksFromZipFile(link, links, recursive);
     }
 
-    private void handleLinksFromZipFile(Link link, ZipFile file, Collection<Link> links, boolean recursive)
+    private void handleLinksFromZipFile(Link link, Collection<Link> links, boolean recursive)
     {
-        Enumeration<? extends ZipEntry> it = file.entries();
+        DataPath assetsPath = new DataPath(this.internalPrefix + "/");
 
-        while (it.hasMoreElements())
+        for (String zipName : this.zipCache)
         {
-            String name = it.nextElement().getName();
-            String assets = this.internalPrefix + "/";
-            String path = assets + link.path;
+            DataPath zipPath = new DataPath(zipName);
+            DataPath fullPath = new DataPath(assetsPath + "/" + link.path);
 
-            if (name.startsWith(path))
+            if (!zipPath.equals(fullPath) && zipPath.startsWith(fullPath))
             {
-                String newPath = name.substring(assets.length());
-                String linkPath = link.path;
-
-                if (!link.path.endsWith("/"))
+                for (int i = 0; i < assetsPath.size(); i++)
                 {
-                    linkPath += "/";
+                    zipPath.strings.remove(0);
+                    fullPath.strings.remove(0);
                 }
 
-                if (!recursive && StringUtils.countMatches(newPath.substring(linkPath.length()), "/") == 0)
+                if (!recursive && zipPath.size() != fullPath.size() + 1)
                 {
                     continue;
                 }
 
-                links.add(new Link(this.prefix, newPath));
+                links.add(new Link(this.prefix, zipPath + (zipPath.folder ? "/" : "")));
             }
         }
     }
