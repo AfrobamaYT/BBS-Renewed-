@@ -185,8 +185,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     {
         List<UIProperty> properties = this.properties;
         int sheetCount = properties.size();
-        int h = (this.area.h - TOP_MARGIN) / sheetCount;
-        int i = (mouseY - (this.area.ey() - h * sheetCount)) / h;
+        int h = LANE_HEIGHT;
+        int i = (mouseY - (this.area.y + TOP_MARGIN - this.scroll.scroll)) / h;
 
         return i < 0 || i >= sheetCount ? null : properties.get(i);
     }
@@ -456,9 +456,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         {
             /* Multi select */
             Area area = this.getGrabbingArea(context);
-            int count = this.properties.size();
-            int h = (this.area.h - TOP_MARGIN) / count;
-            int y = this.area.ey() - h * count;
+            int h = LANE_HEIGHT;
+            int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
             int c = 0;
 
             for (UIProperty property : this.properties)
