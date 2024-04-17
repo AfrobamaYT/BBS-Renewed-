@@ -37,6 +37,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
@@ -45,6 +46,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.FFMpegUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -148,7 +150,22 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Setup elements */
         this.plause = new UIIcon(Icons.PLAY, (b) -> this.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
-        this.record = new UIIcon(Icons.SPHERE, (b) -> this.recorder.startRecording(this.data.camera.calculateDuration(), BBSRendering.getTexture()));
+        this.record = new UIIcon(Icons.SPHERE, (b) ->
+        {
+            if (!FFMpegUtils.checkFFMpeg())
+            {
+                UIMessageOverlayPanel panel = new UIMessageOverlayPanel(UIKeys.GENERAL_WARNING, UIKeys.GENERAL_FFMPEG_ERROR_DESCRIPTION);
+                UIIcon guide = new UIIcon(Icons.HELP, (bb) -> UIUtils.openWebLink(UIKeys.GENERAL_FFMPEG_ERROR_GUIDE_LINK.get()));
+
+                panel.icons.add(guide);
+
+                UIOverlay.addOverlay(this.getContext(), panel);
+
+                return;
+            }
+
+            this.recorder.startRecording(this.data.camera.calculateDuration(), BBSRendering.getTexture());
+        });
         this.record.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD, Direction.LEFT);
         this.screenshot = new UIIcon(Icons.CAMERA, (b) ->
         {

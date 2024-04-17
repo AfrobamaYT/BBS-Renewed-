@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
 
 import java.io.File;
@@ -8,6 +9,11 @@ import java.util.List;
 
 public class FFMpegUtils
 {
+    public static boolean checkFFMpeg()
+    {
+        return execute(BBSMod.getGameFolder(), "-version");
+    }
+
     public static boolean execute(File folder, String... arguments)
     {
         List<String> args = new ArrayList<String>();

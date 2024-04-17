@@ -286,6 +286,9 @@ public class UIKeys
     public static final IKey GENERAL_X = IKey.raw("X");
     public static final IKey GENERAL_Y = IKey.raw("Y");
     public static final IKey GENERAL_Z = IKey.raw("Z");
+    public static final IKey GENERAL_FFMPEG_ERROR_DESCRIPTION = L10n.lang("bbs.ui.ffmpeg.error-description", "ffmpeg wasn't set up, or wasn't found. Either setup the path to ffmpeg in BBS mod's settings or read the guide by clicking ? button.", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE = L10n.lang("bbs.ui.ffmpeg.error-guide", "Open guide in the browser", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE_LINK = L10n.lang("bbs.ui.ffmpeg.error-guide_link", "https://github.com/mchorse/minema/wiki/Setting-up-ffmpeg", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey GENERIC_KEYFRAMES_ANCHOR_PICK_ACTOR = L10n.lang("bbs.ui.generic_keyframes.anchor.pick_actor");
     public static final IKey GENERIC_KEYFRAMES_ANCHOR_PICK_ATTACHMENT = L10n.lang("bbs.ui.generic_keyframes.anchor.pick_attachment");
     public static final IKey GENERIC_KEYFRAMES_BOOLEAN_TRUE = L10n.lang("bbs.ui.generic_keyframes.boolean.true");

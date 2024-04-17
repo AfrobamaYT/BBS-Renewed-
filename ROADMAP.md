@@ -20,6 +20,7 @@ Beside that, here is a list to finish:
 - [ ] Implement proper data managers
 - [x] Bring back language editor stuff
 - [x] Implement language picker thing
+- [x] ffmpeg warning
 
 ## Old Core Adaptation
 
