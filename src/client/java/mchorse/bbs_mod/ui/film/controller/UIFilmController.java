@@ -997,13 +997,18 @@ public class UIFilmController extends UIElement
             stack.push();
             MatrixStackUtils.multiply(stack, FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
+            stack.pop();
+
+            stack.push();
 
             if (map == null)
             {
+                net.minecraft.client.render.Camera camera = context.camera();
                 double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
                 double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
                 double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
 
+                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
                 ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
             }
 

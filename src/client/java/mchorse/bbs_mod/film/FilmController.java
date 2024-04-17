@@ -18,6 +18,7 @@ import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
@@ -30,6 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TODO: Refactor with UIFilmController
+ */
 public class FilmController
 {
     public Film film;
@@ -191,13 +195,18 @@ public class FilmController
             stack.push();
             MatrixStackUtils.multiply(stack, getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
             FormUtilsClient.render(form, formContext);
+            stack.pop();
+
+            stack.push();
 
             if (map == null)
             {
+                Camera camera = context.camera();
                 double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
                 double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
                 double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
 
+                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
                 ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
             }
 
