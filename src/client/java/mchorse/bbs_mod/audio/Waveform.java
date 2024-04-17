@@ -19,6 +19,7 @@ public class Waveform
     private int w;
     private int h;
     private int pixelsPerSecond;
+    private float duration;
 
     public void generate(Wave data, List<ColorCode> colorCodes, int pixelsPerSecond, int height)
     {
@@ -143,6 +144,8 @@ public class Waveform
             this.average[i] = average;
             this.maximum[i] = maximum;
         }
+
+        this.duration = data.getDuration();
     }
 
     public void delete()
@@ -173,6 +176,11 @@ public class Waveform
     public int getHeight()
     {
         return this.h;
+    }
+
+    public float getDuration()
+    {
+        return this.duration;
     }
 
     public List<Texture> getSprites()

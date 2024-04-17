@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 public abstract class UIBaseKeyframes <T> extends UIElement
 {
+    public static final int TOP_MARGIN = 25;
     public static final int LANE_HEIGHT = 16;
 
     public static final Color COLOR = new Color();

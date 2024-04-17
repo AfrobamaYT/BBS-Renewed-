@@ -32,8 +32,6 @@ import java.util.function.Consumer;
 
 public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 {
-    public static final int TOP_MARGIN = 15;
-
     public Selection which = Selection.NOT_SELECTED;
     public List<UISheet> sheets = new ArrayList<>();
 
@@ -408,8 +406,14 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
         if (this.area.isInside(context) && context.mouseButton == 0 && sheetCount > 0)
         {
-            int h = (this.area.h - TOP_MARGIN) / sheetCount;
-            int y = this.area.ey() - h * sheetCount;
+            int h = LANE_HEIGHT;
+            int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
+
+            if (this.current != null)
+            {
+                h = this.area.h;
+                y = this.area.y;
+            }
 
             for (UISheet sheet : sheets)
             {

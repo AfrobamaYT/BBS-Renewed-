@@ -21,6 +21,9 @@ Beside that, here is a list to finish:
 - [x] Bring back language editor stuff
 - [x] Implement language picker thing
 - [x] ffmpeg warning
+- [ ] Fix keyframe stuff
+  - [x] Fix can't exit the keyframe graph editor
+  - [ ] Add forced duration to regular keyframes
 
 ## Old Core Adaptation
 

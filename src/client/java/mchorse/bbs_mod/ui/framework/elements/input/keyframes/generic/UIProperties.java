@@ -33,8 +33,6 @@ import java.util.function.Consumer;
 
 public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 {
-    public static final int TOP_MARGIN = 15;
-
     public boolean selected;
     public List<UIProperty> properties = new ArrayList<>();
 
@@ -538,6 +536,9 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
                 if (duration > 0)
                 {
+                    RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+                    BufferRenderer.drawWithGlobalProgram(builder.end());
+
                     int x2 = this.toGraphX(tick + duration);
                     int y1 = y + h / 2 - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
                     int color = property.hasSelected(index) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(property.color, 0.9F), 0.75F);
@@ -547,6 +548,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                     context.batcher.box(x1 + 1, y1, x2 - 1, y1 + 1, color);
 
                     forcedIndex += 1;
+
+                    builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
                 }
 
                 boolean isPointHover = this.isInside(this.toGraphX(frame.getTick()), y + h / 2, context.mouseX, context.mouseY);

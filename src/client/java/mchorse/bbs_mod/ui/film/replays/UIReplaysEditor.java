@@ -2,10 +2,12 @@ package mchorse.bbs_mod.ui.film.replays;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.audio.SoundPlayer;
+import mchorse.bbs_mod.audio.SoundBuffer;
 import mchorse.bbs_mod.audio.Waveform;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.CameraUtils;
+import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
@@ -36,6 +38,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
@@ -431,18 +434,23 @@ public class UIReplaysEditor extends UIElement
             scale = propertyEditor.properties.getScaleX();
         }
 
-        for (SoundPlayer file : BBSModClient.getSounds().getPlayers())
+        for (Clip clip : this.film.camera.get())
         {
-            Waveform wave = file.getBuffer().getWaveform();
-
-            if (wave != null && !file.isStopped())
+            if (clip instanceof AudioClip audioClip)
             {
-                float duration = file.getBuffer().getDuration();
+                SoundBuffer buffer = BBSModClient.getSounds().get(audioClip.audio.get(), true);
+                Waveform wave = buffer.getWaveform();
 
-                int x1 = (int) scale.to(0F);
-                int x2 = (int) scale.to(duration * 20);
+                if (wave != null)
+                {
+                    float offset = audioClip.tick.get();
+                    float duration = wave.getDuration();
 
-                wave.render(context.batcher, Colors.WHITE, x1, this.area.y + 16, x2 - x1, 20, 0F, duration);
+                    int x1 = (int) scale.to(offset);
+                    int x2 = (int) scale.to(offset + duration * 20);
+
+                    wave.render(context.batcher, Colors.WHITE, x1, this.keyframeEditor.area.y + 15, x2 - x1, 20, 0F, duration);
+                }
             }
         }
     }

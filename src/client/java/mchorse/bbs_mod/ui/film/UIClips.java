@@ -1267,15 +1267,7 @@ public class UIClips extends UIElement
             String value = TimeUtils.formatTime(j);
 
             context.batcher.box(xx, y, xx + 1, y + h, Colors.setA(Colors.WHITE, 0.2F));
-
-            float alpha = MathUtils.clamp(Math.abs(cursor - xx) / 20F - 0.25F, 0, 1);
-
-            if (alpha > 0)
-            {
-                int c = Colors.setA(Colors.WHITE, alpha);
-
-                context.batcher.textShadow(value, xx + 3, y + h - 2 - context.batcher.getFont().getHeight(), c);
-            }
+            context.batcher.textShadow(value, xx + 3, this.area.y + 4, Colors.WHITE);
         }
     }
 
