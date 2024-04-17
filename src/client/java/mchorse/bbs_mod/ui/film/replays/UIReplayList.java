@@ -101,7 +101,7 @@ public class UIReplayList extends UIList<Replay>
         replay.keyframes.bodyYaw.insert(0, yaw);
 
         this.update();
-        this.panel.replays.setReplay(replay);
+        this.panel.replayEditor.setReplay(replay);
         this.updateFilmEditor();
 
         this.openFormEditor(replay.form, false);
@@ -110,7 +110,7 @@ public class UIReplayList extends UIList<Replay>
     private void updateFilmEditor()
     {
         this.panel.getController().createEntities();
-        this.panel.replays.updateChannelsList();
+        this.panel.replayEditor.updateChannelsList();
     }
 
     private void dupeReplay()
@@ -127,7 +127,7 @@ public class UIReplayList extends UIList<Replay>
         replay.copy(currentFirst);
 
         this.update();
-        this.panel.replays.setReplay(replay);
+        this.panel.replayEditor.setReplay(replay);
         this.updateFilmEditor();
     }
 
@@ -147,7 +147,7 @@ public class UIReplayList extends UIList<Replay>
         index = MathUtils.clamp(index, 0, size - 1);
 
         this.update();
-        this.panel.replays.setReplay(size == 0 ? null : this.list.get(index));
+        this.panel.replayEditor.setReplay(size == 0 ? null : this.list.get(index));
         this.updateFilmEditor();
     }
 

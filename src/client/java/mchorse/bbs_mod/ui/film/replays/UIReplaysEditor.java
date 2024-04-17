@@ -26,6 +26,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
@@ -56,12 +57,12 @@ public class UIReplaysEditor extends UIElement
 {
     private static final Map<String, Integer> COLORS = new HashMap<>();
 
+    public UIReplaysOverlayPanel replays;
+    public UIIcon openReplays;
+    public UIIcon record;
     public UIIcon toggleKeyframes;
     public UIIcon toggleProperties;
-    public UIIcon record;
-    public UIIcon keyframe;
     public UIElement icons;
-    public UIReplayList replays;
 
     /* Keyframes */
     public UIElement keyframes;
@@ -101,27 +102,26 @@ public class UIReplaysEditor extends UIElement
     {
         this.filmPanel = filmPanel;
 
-        int w = 120;
-
+        this.replays = new UIReplaysOverlayPanel(filmPanel, this::setReplay);
+        this.openReplays = new UIIcon(Icons.EDITOR, (b) ->
+        {
+            UIOverlay.addOverlayLeft(this.getContext(), this.replays, 200);
+        });
+        this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE);
         this.record = new UIIcon(Icons.SPHERE, (b) -> this.filmPanel.getController().pickRecording());
         this.record.tooltip(UIKeys.FILM_REPLAY_RECORD);
-        this.keyframe = new UIIcon(Icons.KEY, (b) -> this.filmPanel.getController().insertFrame());
-        this.keyframe.tooltip(UIKeys.FILM_REPLAY_INSERT);
         this.toggleKeyframes = new UIIcon(Icons.GRAPH, (b) -> this.toggleProperties(false));
         this.toggleKeyframes.tooltip(UIKeys.FILM_REPLAY_ENTITY_KEYFRAMES);
         this.toggleProperties = new UIIcon(Icons.MORE, (b) -> this.toggleProperties(true));
         this.toggleProperties.tooltip(UIKeys.FILM_REPLAY_FORM_KEYFRAMES);
 
         this.keyframes = new UIElement();
-        this.keyframes.relative(this).x(w).w(1F, -w).h(1F);
+        this.keyframes.relative(this).y(20).w(1F).h(1F, -20);
 
-        this.replays = new UIReplayList((l) -> this.setReplay(l.get(0)), this.filmPanel);
-        this.replays.relative(this).y(20).w(w).h(1F, -20);
+        this.icons = UI.row(0, this.openReplays, this.record, this.toggleKeyframes, this.toggleProperties);
+        this.icons.relative(this.keyframes).y(-20).w(60).h(20);
 
-        this.icons = UI.row(0, this.record, this.keyframe, this.toggleKeyframes, this.toggleProperties);
-        this.icons.relative(this.replays).y(-20).w(60).h(20);
-
-        this.add(this.replays, this.icons, this.keyframes);
+        this.add(this.openReplays, this.keyframes, this.icons);
 
         this.markContainer();
     }
@@ -156,7 +156,7 @@ public class UIReplaysEditor extends UIElement
         {
             List<Replay> replays = film.replays.getList();
 
-            this.replays.setList(replays);
+            this.replays.replays.setList(replays);
             this.setReplay(replays.isEmpty() ? null : replays.get(0));
         }
     }
@@ -168,7 +168,7 @@ public class UIReplaysEditor extends UIElement
         this.keyframes.setVisible(replay != null);
         this.updateChannelsList();
 
-        this.replays.setCurrentScroll(replay);
+        this.replays.replays.setCurrentScroll(replay);
     }
 
     public void moveReplay(double x, double y, double z)
@@ -404,7 +404,7 @@ public class UIReplaysEditor extends UIElement
                     float pitch = camera.rotation.x;
                     float yaw = camera.rotation.y + MathUtils.PI;
 
-                    menu.action(Icons.ADD, UIKeys.FILM_REPLAY_CONTEXT_ADD, () -> this.replays.addReplay(vec, pitch, yaw));
+                    menu.action(Icons.ADD, UIKeys.FILM_REPLAY_CONTEXT_ADD, () -> this.replays.replays.addReplay(vec, pitch, yaw));
                     menu.action(Icons.POINTER, UIKeys.FILM_REPLAY_CONTEXT_MOVE_HERE, () -> this.moveReplay(vec.x, vec.y, vec.z));
                 });
 
@@ -450,7 +450,7 @@ public class UIReplaysEditor extends UIElement
     @Override
     public void render(UIContext context)
     {
-        context.batcher.box(this.icons.area.x, this.icons.area.y, this.replays.area.ex(), this.icons.area.ey(), Colors.CONTROL_BAR);
+        context.batcher.box(this.icons.area.x, this.icons.area.y, this.keyframes.area.ex(), this.icons.area.ey(), Colors.CONTROL_BAR);
 
         if (this.keyframeEditor != null && this.keyframeEditor.isVisible())
         {

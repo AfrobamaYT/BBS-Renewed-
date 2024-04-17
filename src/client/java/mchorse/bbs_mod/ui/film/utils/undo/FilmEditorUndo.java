@@ -42,7 +42,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         {
             this.panel = 2;
         }
-        else if (editor.replays.isVisible())
+        else if (editor.replayEditor.isVisible())
         {
             this.panel = 1;
         }
@@ -55,13 +55,13 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         this.cameraClips = new ClipsData(cameraClips);
         this.voiceLinesClips = new ClipsData(voiceLineClips);
 
-        this.keyframesBefore = this.keyframesAfter = editor.replays.keyframeEditor == null
+        this.keyframesBefore = this.keyframesAfter = editor.replayEditor.keyframeEditor == null
             ? new KeyframeSelection()
-            : editor.replays.keyframeEditor.keyframes.createSelection();
+            : editor.replayEditor.keyframeEditor.keyframes.createSelection();
 
-        this.propertiesBefore = this.propertiesAfter = editor.replays.propertyEditor == null
+        this.propertiesBefore = this.propertiesAfter = editor.replayEditor.propertyEditor == null
             ? new KeyframeSelection()
-            : editor.replays.propertyEditor.properties.createSelection();
+            : editor.replayEditor.propertyEditor.properties.createSelection();
     }
 
     public void selectedBefore(List<Integer> cameraClipsSelection, List<Integer> voiceLineSelection, KeyframeSelection keyframe, KeyframeSelection properties)

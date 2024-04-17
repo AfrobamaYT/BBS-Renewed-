@@ -193,8 +193,8 @@ public class UIKeys
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
     public static final IKey FILM_REPLAY_ENTITY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.entity_keyframes");
     public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
-    public static final IKey FILM_REPLAY_INSERT = L10n.lang("bbs.ui.film.replay.insert");
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
+    public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title", "Replays", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");
@@ -252,6 +252,7 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_BLOCK_TITLE = L10n.lang("bbs.ui.forms.editors.block.title");
     public static final IKey FORMS_EDITORS_BLOCK_PROPERTIES = L10n.lang("bbs.ui.forms.editors.block.title");
     public static final IKey FORMS_EDITORS_ITEM_TITLE = L10n.lang("bbs.ui.forms.editors.item.title");
+    public static final IKey FORMS_EDITORS_ITEM_TRANSFORMS = L10n.lang("bbs.ui.forms.editors.item.transforms", "Item transforms", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
     public static final IKey FORMS_EDITOR_BONE = L10n.lang("bbs.ui.forms.editor.bone");
     public static final IKey FORMS_EDITOR_CONTEXT_ADD = L10n.lang("bbs.ui.forms.editor.context.add");
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");

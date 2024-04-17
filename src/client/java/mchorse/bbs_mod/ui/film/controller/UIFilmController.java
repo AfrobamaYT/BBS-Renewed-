@@ -136,7 +136,7 @@ public class UIFilmController extends UIElement
 
             if (result.getType() == HitResult.Type.BLOCK)
             {
-                this.panel.replays.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
+                this.panel.replayEditor.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
             }
         }).active(hasActor).category(category);
 
@@ -164,7 +164,7 @@ public class UIFilmController extends UIElement
 
     private Replay getReplay()
     {
-        return this.panel.replays.replays.getCurrentFirst();
+        return this.panel.replayEditor.replays.replays.getCurrentFirst();
     }
 
     public StencilFormFramebuffer getStencil()
@@ -174,7 +174,7 @@ public class UIFilmController extends UIElement
 
     public IEntity getCurrentEntity()
     {
-        int index = this.panel.replays.replays.getIndex();
+        int index = this.panel.replayEditor.replays.replays.getIndex();
 
         if (CollectionUtils.inRange(this.entities, index))
         {
@@ -276,7 +276,7 @@ public class UIFilmController extends UIElement
 
             this.controlled = null;
         }
-        else if (this.panel.replays.replays.isSelected())
+        else if (this.panel.replayEditor.replays.replays.isSelected())
         {
             this.controlled = this.getCurrentEntity();
 
@@ -425,11 +425,11 @@ public class UIFilmController extends UIElement
             {
                 int index = this.entities.indexOf(this.hoveredEntity);
 
-                this.panel.replays.setReplay(this.panel.getData().replays.getList().get(index));
+                this.panel.replayEditor.setReplay(this.panel.getData().replays.getList().get(index));
 
-                if (!this.panel.replays.isVisible())
+                if (!this.panel.replayEditor.isVisible())
                 {
-                    this.panel.showPanel(this.panel.replays);
+                    this.panel.showPanel(this.panel.replayEditor);
                 }
 
                 return true;

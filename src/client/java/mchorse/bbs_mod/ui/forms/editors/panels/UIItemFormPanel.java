@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.UIItemStackEditor;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -39,7 +40,7 @@ public class UIItemFormPanel extends UIFormPanel<ItemForm>
 
         this.itemStackEditor = new UIItemStackEditor((itemStack) -> this.form.stack.set(itemStack.copy()));
 
-        this.options.add(UI.label(IKey.raw("Item transform")), this.modelTransform, this.itemStackEditor);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_ITEM_TRANSFORMS), this.modelTransform, this.itemStackEditor);
     }
 
     private void setModelTransform(ModelTransformationMode value)

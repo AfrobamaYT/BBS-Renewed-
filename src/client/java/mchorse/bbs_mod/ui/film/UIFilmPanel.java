@@ -84,7 +84,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIFilmRecorder recorder;
 
     public UIClipsPanel cameraClips;
-    public UIReplaysEditor replays;
+    public UIReplaysEditor replayEditor;
 
     public UIScreenplayEditor screenplay;
 
@@ -139,9 +139,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.recorder = new UIFilmRecorder(this);
 
-        this.replays = new UIReplaysEditor(this);
-        this.replays.relative(this.main).full();
-        this.replays.setVisible(false);
+        this.replayEditor = new UIReplaysEditor(this);
+        this.replayEditor.relative(this.main).full();
+        this.replayEditor.setVisible(false);
 
         this.screenplay = new UIScreenplayEditor(this);
         this.screenplay.relative(this.main).full();
@@ -157,6 +157,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 UIMessageOverlayPanel panel = new UIMessageOverlayPanel(UIKeys.GENERAL_WARNING, UIKeys.GENERAL_FFMPEG_ERROR_DESCRIPTION);
                 UIIcon guide = new UIIcon(Icons.HELP, (bb) -> UIUtils.openWebLink(UIKeys.GENERAL_FFMPEG_ERROR_GUIDE_LINK.get()));
 
+                guide.tooltip(UIKeys.GENERAL_FFMPEG_ERROR_GUIDE, Direction.LEFT);
                 panel.icons.add(guide);
 
                 UIOverlay.addOverlay(this.getContext(), panel);
@@ -187,7 +188,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openVideos.tooltip(UIKeys.CAMERA_TOOLTIPS_OPEN_VIDEOS, Direction.LEFT);
         this.openCamera = new UIIcon(Icons.FRUSTUM, (b) -> this.showPanel(this.cameraClips));
         this.openCamera.tooltip(UIKeys.FILM_OPEN_CAMERA_EDITOR, Direction.LEFT);
-        this.openReplays = new UIIcon(Icons.SCENE, (b) -> this.showPanel(this.replays));
+        this.openReplays = new UIIcon(Icons.SCENE, (b) -> this.showPanel(this.replayEditor));
         this.openReplays.tooltip(UIKeys.FILM_OPEN_REPLAY_EDITOR, Direction.LEFT);
         this.openScreenplay = new UIIcon(Icons.FILE, (b) -> this.showPanel(this.screenplay));
         this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
@@ -207,7 +208,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         UIRenderable renderable = new UIRenderable(this::renderIcons);
 
         this.editor.add(this.main, renderable);
-        this.main.add(this.cameraClips, this.replays, this.screenplay, this.draggable);
+        this.main.add(this.cameraClips, this.replayEditor, this.screenplay, this.draggable);
         this.add(this.controller);
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
@@ -237,14 +238,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void showPanel(UIElement element)
     {
         this.cameraClips.setVisible(false);
-        this.replays.setVisible(false);
+        this.replayEditor.setVisible(false);
         this.screenplay.setVisible(false);
 
         element.setVisible(true);
 
-        if (this.replays == element)
+        if (this.replayEditor == element)
         {
-            this.replays.updateDuration();
+            this.replayEditor.updateDuration();
         }
     }
 
@@ -513,7 +514,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.runner.setWork(data == null ? null : data.camera);
         this.cameraClips.clips.setClips(data == null ? null : data.camera);
-        this.replays.setFilm(data);
+        this.replayEditor.setFilm(data);
         this.cameraClips.pickClip(null);
 
         this.fillData();
@@ -534,16 +535,16 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (this.cachedKeyframeSelection == null)
         {
-            this.cachedKeyframeSelection = this.replays.keyframeEditor == null
+            this.cachedKeyframeSelection = this.replayEditor.keyframeEditor == null
                 ? new FilmEditorUndo.KeyframeSelection()
-                : this.replays.keyframeEditor.keyframes.createSelection();
+                : this.replayEditor.keyframeEditor.keyframes.createSelection();
         }
 
         if (this.cachedPropertiesSelection == null)
         {
-            this.cachedPropertiesSelection = this.replays.propertyEditor == null
+            this.cachedPropertiesSelection = this.replayEditor.propertyEditor == null
                 ? new FilmEditorUndo.KeyframeSelection()
-                : this.replays.propertyEditor.properties.createSelection();
+                : this.replayEditor.propertyEditor.properties.createSelection();
         }
 
         if (!this.cachedUndo.containsKey(baseValue))
@@ -625,7 +626,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             ValueChangeUndo change = (ValueChangeUndo) anotherUndo;
 
-            this.showPanel(change.panel == 1 ? this.replays : (change.panel == 2 ? this.screenplay : this.cameraClips));
+            this.showPanel(change.panel == 1 ? this.replayEditor : (change.panel == 2 ? this.screenplay : this.cameraClips));
 
             List<Integer> cameraSelection = change.cameraClips.getSelection(redo);
             List<Integer> voiceLineSelection = change.voiceLinesClips.getSelection(redo);
@@ -661,7 +662,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             this.setCursor(change.tick);
             this.controller.createEntities();
-            this.replays.handleUndo(change, redo);
+            this.replayEditor.handleUndo(change, redo);
         }
 
         this.cameraClips.handleUndo(undo, redo);
@@ -723,7 +724,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (area.isInside(context))
         {
-            return this.replays.clickViewport(context, area);
+            return this.replayEditor.clickViewport(context, area);
         }
 
         return super.subMouseClicked(context);
@@ -905,7 +906,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.controller.renderHUD(context, area);
 
-        if (this.replays.isVisible())
+        if (this.replayEditor.isVisible())
         {
             this.renderAudio(context, area);
         }
