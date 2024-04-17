@@ -10,7 +10,6 @@ import mchorse.bbs_mod.ui.utils.ScrollArea;
 import mchorse.bbs_mod.utils.OS;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
 import org.joml.Matrix4f;
 
@@ -183,6 +182,14 @@ public abstract class UIBaseKeyframes <T> extends UIElement
 
     protected void moveNoKeyframe(UIContext context, double x, double y)
     {}
+
+    @Override
+    public void resize()
+    {
+        super.resize();
+
+        this.scroll.clamp();
+    }
 
     /* Mouse input handling */
 

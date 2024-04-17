@@ -6,6 +6,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.ValueForm;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
@@ -25,6 +26,7 @@ import org.joml.Vector3d;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * This GUI is responsible for drawing replays available in the 
@@ -57,6 +59,17 @@ public class UIReplayList extends UIList<Replay>
                 }
             }
         });
+
+        Supplier<Boolean> active = () -> !this.getCurrent().isEmpty();
+
+        this.keys().register(Keys.FORMS_PICK, () ->
+        {
+            this.openFormEditor(this.getCurrentFirst().form, false);
+        }).active(active);
+        this.keys().register(Keys.FORMS_EDIT, () ->
+        {
+            this.openFormEditor(this.getCurrentFirst().form, true);
+        }).active(active);
     }
 
     private void openFormEditor(ValueForm form, boolean editing)
