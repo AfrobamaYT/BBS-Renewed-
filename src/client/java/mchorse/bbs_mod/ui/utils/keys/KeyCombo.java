@@ -3,16 +3,25 @@ package mchorse.bbs_mod.ui.utils.keys;
 import mchorse.bbs_mod.l10n.keys.IKey;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class KeyCombo
 {
+    private static Set<String> categoryKeys = new HashSet<>();
+
     public String id = "";
     public IKey label;
     public IKey category = IKey.EMPTY;
     public String categoryKey = "all";
     public boolean repeatable;
     public List<Integer> keys = new ArrayList<>();
+
+    public static Set<String> getCategoryKeys()
+    {
+        return categoryKeys;
+    }
 
     public KeyCombo(String id, IKey label, int... keys)
     {
@@ -55,6 +64,8 @@ public class KeyCombo
     public KeyCombo categoryKey(String categoryKey)
     {
         this.categoryKey = categoryKey;
+
+        categoryKeys.add(categoryKey);
 
         return this;
     }

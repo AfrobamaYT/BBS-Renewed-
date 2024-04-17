@@ -185,8 +185,8 @@ public class UIKeys
     public static final IKey FILM_GROUPS_TRIGGERS = L10n.lang("bbs.ui.film.groups.triggers");
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor");
     public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot");
-    public static final IKey FILM_SCREENSHOT_TITLE = L10n.lang("bbs.ui.film.screenshot-title", "Screenshot was taken", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
-    public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description", "Your screenshot was successfully taken! Click the icon on the right to open the folder...", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FILM_SCREENSHOT_TITLE = L10n.lang("bbs.ui.film.screenshot-title");
+    public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description");
     public static final IKey FILM_OPEN_REPLAY_EDITOR = L10n.lang("bbs.ui.film.open_replay_editor");
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor");
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");
@@ -194,7 +194,7 @@ public class UIKeys
     public static final IKey FILM_REPLAY_ENTITY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.entity_keyframes");
     public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
-    public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title", "Replays", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title");
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");
@@ -252,7 +252,7 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_BLOCK_TITLE = L10n.lang("bbs.ui.forms.editors.block.title");
     public static final IKey FORMS_EDITORS_BLOCK_PROPERTIES = L10n.lang("bbs.ui.forms.editors.block.title");
     public static final IKey FORMS_EDITORS_ITEM_TITLE = L10n.lang("bbs.ui.forms.editors.item.title");
-    public static final IKey FORMS_EDITORS_ITEM_TRANSFORMS = L10n.lang("bbs.ui.forms.editors.item.transforms", "Item transforms", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey FORMS_EDITORS_ITEM_TRANSFORMS = L10n.lang("bbs.ui.forms.editors.item.transforms");
     public static final IKey FORMS_EDITOR_BONE = L10n.lang("bbs.ui.forms.editor.bone");
     public static final IKey FORMS_EDITOR_CONTEXT_ADD = L10n.lang("bbs.ui.forms.editor.context.add");
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");
@@ -287,9 +287,9 @@ public class UIKeys
     public static final IKey GENERAL_X = IKey.raw("X");
     public static final IKey GENERAL_Y = IKey.raw("Y");
     public static final IKey GENERAL_Z = IKey.raw("Z");
-    public static final IKey GENERAL_FFMPEG_ERROR_DESCRIPTION = L10n.lang("bbs.ui.ffmpeg.error-description", "ffmpeg wasn't set up, or wasn't found. Either setup the path to ffmpeg in BBS mod's settings or read the guide by clicking ? button.", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
-    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE = L10n.lang("bbs.ui.ffmpeg.error-guide", "Open guide in the browser", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
-    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE_LINK = L10n.lang("bbs.ui.ffmpeg.error-guide_link", "https://github.com/mchorse/minema/wiki/Setting-up-ffmpeg", BLOCK_VARIANT_CONTEXT_INSERT_EMPTY);
+    public static final IKey GENERAL_FFMPEG_ERROR_DESCRIPTION = L10n.lang("bbs.ui.ffmpeg.error-description");
+    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE = L10n.lang("bbs.ui.ffmpeg.error-guide");
+    public static final IKey GENERAL_FFMPEG_ERROR_GUIDE_LINK = L10n.lang("bbs.ui.ffmpeg.error-guide_link");
     public static final IKey GENERIC_KEYFRAMES_ANCHOR_PICK_ACTOR = L10n.lang("bbs.ui.generic_keyframes.anchor.pick_actor");
     public static final IKey GENERIC_KEYFRAMES_ANCHOR_PICK_ATTACHMENT = L10n.lang("bbs.ui.generic_keyframes.anchor.pick_attachment");
     public static final IKey GENERIC_KEYFRAMES_BOOLEAN_TRUE = L10n.lang("bbs.ui.generic_keyframes.boolean.true");
@@ -606,4 +606,6 @@ public class UIKeys
     public static final KeyCollection C_INTERPOLATION_TIPS = new KeyCollection("interpolations.^-tooltip")
         .load(EnumUtils.getKeys(Interpolation.class, (i) -> i.key))
         .load(EnumUtils.getKeys(KeyframeInterpolation.class, (i) -> i.from(KeyframeEasing.IN).getKey()));
+    public static final KeyCollection C_KEYBIND_CATGORIES = new KeyCollection("keybinds.config.^.title");
+    public static final KeyCollection C_KEYBIND_CATGORIES_TOOLTIP = new KeyCollection("keybinds.config.^.tooltip");
 }

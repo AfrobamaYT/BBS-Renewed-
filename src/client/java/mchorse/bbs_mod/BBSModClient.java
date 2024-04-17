@@ -23,6 +23,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.VideoRecorder;
@@ -181,6 +182,9 @@ public class BBSModClient implements ClientModInitializer
             UIKeys.ENGINE_KEYSTROKES_POSITION_TOP_RIGHT,
             UIKeys.ENGINE_KEYSTROKES_POSITION_TOP_LEFT
         );
+
+        UIKeys.C_KEYBIND_CATGORIES.load(KeyCombo.getCategoryKeys());
+        UIKeys.C_KEYBIND_CATGORIES_TOOLTIP.load(KeyCombo.getCategoryKeys());
 
         /* Replace audio clip with client version that plays audio */
         BBSMod.getFactoryCameraClips()
