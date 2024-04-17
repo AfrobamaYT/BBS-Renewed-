@@ -198,6 +198,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             this.modelBlocks.add(modelBlock);
         }
+
+        this.fill(this.modelBlock, true);
     }
 
     public void fill(ModelBlockEntity modelBlock, boolean select)
@@ -208,6 +210,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             this.fillData();
         }
+
+        this.pickEdit.setVisible(modelBlock != null);
+        this.shadow.setVisible(modelBlock != null);
+        this.transform.setVisible(modelBlock != null);
 
         if (select)
         {
