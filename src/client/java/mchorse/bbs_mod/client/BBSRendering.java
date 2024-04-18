@@ -4,7 +4,6 @@ import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.util.Window;
@@ -95,6 +94,19 @@ public class BBSRendering
         }
 
         Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+
+        if (texture == null)
+        {
+            texture = new Texture();
+            texture.setFormat(TextureFormat.RGB_U8);
+            texture.setFilter(GL11.GL_NEAREST);
+        }
+
+        texture.bind();
+        texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
+        GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
+        texture.unbind();
+
         Window window = MinecraftClient.getInstance().getWindow();
 
         renderingWorld = false;
@@ -121,27 +133,5 @@ public class BBSRendering
 
             BufferRenderer.drawWithGlobalProgram(builder.end());
         } */
-    }
-
-    public static void onLastRender(WorldRenderContext context)
-    {
-        if (!customSize)
-        {
-            return;
-        }
-
-        Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
-
-        if (texture == null)
-        {
-            texture = new Texture();
-            texture.setFormat(TextureFormat.RGB_U8);
-            texture.setFilter(GL11.GL_NEAREST);
-        }
-
-        texture.bind();
-        texture.setSize(framebuffer.textureWidth, framebuffer.textureHeight);
-        GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
-        texture.unbind();
     }
 }

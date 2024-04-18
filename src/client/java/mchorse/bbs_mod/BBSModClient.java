@@ -222,8 +222,6 @@ public class BBSModClient implements ClientModInitializer
 
         WorldRenderEvents.LAST.register((context) ->
         {
-            BBSRendering.onLastRender(context);
-
             if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
             {
                 screen.lastRender(context);
