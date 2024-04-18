@@ -110,6 +110,12 @@ public class ActionPlayback
         this.fading = Fade.FINISHED;
     }
 
+    public void resetFade()
+    {
+        this.fade = 0;
+        this.fading = Fade.FINISHED;
+    }
+
     public int getFade()
     {
         return this.fade;

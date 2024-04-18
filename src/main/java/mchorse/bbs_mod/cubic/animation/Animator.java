@@ -5,7 +5,6 @@ import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import net.minecraft.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +73,13 @@ public class Animator
         this.land = this.createAction(this.land, actions.getConfig("land"), false);
         this.shoot = this.createAction(this.shoot, actions.getConfig("shoot"), true);
         this.consume = this.createAction(this.consume, actions.getConfig("consume"), true);
+
+        this.setActiveAction(this.idle);
+
+        if (this.idle != null)
+        {
+            this.idle.resetFade();
+        }
     }
 
     /**
@@ -130,7 +136,7 @@ public class Animator
         if (this.prevX == Float.MAX_VALUE)
         {
             this.prevX = target.getX();
-            this.prevZ = target.getY();
+            this.prevZ = target.getZ();
         }
 
         this.controlActions(target);

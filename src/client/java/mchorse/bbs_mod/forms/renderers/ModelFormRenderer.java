@@ -170,10 +170,16 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private void renderModel(MatrixStack stack, Model model, int light, Color color, boolean ui, boolean picking)
     {
+        CubicModel cubicModel = getModel();
+
+        if (!cubicModel.culling)
+        {
+            RenderSystem.disableCull();
+        }
+
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
         MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
-
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
@@ -195,8 +201,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         newStack.pop();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
-
         MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().disable();
+
+        if (!cubicModel.culling)
+        {
+            RenderSystem.enableCull();
+        }
     }
 
     @Override

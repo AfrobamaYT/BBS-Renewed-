@@ -77,6 +77,7 @@ Useful user suggestions:
 - [ ] In-game mode of recording (like in Blockbuster mod)
 - [ ] Lighting option
 - [ ] Model block hitbox
+- [ ] Add additional vertical mode camera
 
 Considerations:
 
