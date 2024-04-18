@@ -54,6 +54,11 @@ public class ModelFormCategory extends FormCategory
 
         category.context((menu) ->
         {
+            if (category.selected == null)
+            {
+                return;
+            }
+            
             menu.action(Icons.FOLDER, UIKeys.FORMS_CATEGORIES_CONTEXT_OPEN_MODEL_FOLDER, () ->
             {
                 ModelForm form = (ModelForm) category.selected;
