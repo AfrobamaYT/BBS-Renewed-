@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.forms.categories;
 
-import mchorse.bbs_mod.BBSData;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.ui.UIKeys;
 
@@ -18,7 +18,7 @@ public class ParticleFormCategory extends FormCategory
 
         this.forms.clear();
 
-        for (String key : BBSData.getParticles().getKeys())
+        for (String key : BBSModClient.getParticles().getKeys())
         {
             ParticleForm form = new ParticleForm();
 

@@ -15,6 +15,7 @@ import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.network.ClientNetwork;
+import mchorse.bbs_mod.particles.ParticleManager;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
@@ -61,6 +62,8 @@ public class BBSModClient implements ClientModInitializer
     private static WatchDog watchDog;
     private static ScreenshotRecorder screenshotRecorder;
     private static VideoRecorder videoRecorder;
+
+    private static ParticleManager particles;
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
@@ -114,6 +117,11 @@ public class BBSModClient implements ClientModInitializer
         return videoRecorder;
     }
 
+    public static ParticleManager getParticles()
+    {
+        return particles;
+    }
+
     public static CameraController getCameraController()
     {
         return cameraController;
@@ -160,10 +168,11 @@ public class BBSModClient implements ClientModInitializer
         videoRecorder = new VideoRecorder(new File(parentFile, "movies"));
         films = new Films();
 
+        particles = new ParticleManager(() -> new File(BBSMod.getDataFolder(), "particles"));
+
         KeybindSettings.registerClasses();
 
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
-        BBSData.load(BBSMod.getDataFolder());
 
         BBSSettings.language.postCallback((v) ->
         {

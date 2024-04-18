@@ -12,18 +12,20 @@ the port (like model blocks, although that's also part of BBS Studio).
 Beside that, here is a list to finish:
 
 - [x] Optimize keyframe editor rendering
-- [ ] Clean up the UI
+- [x] Clean up the UI
 - [ ] Finish remaining features
   - [ ] Shaders for subtitle renderer
   - [x] Shadow for film controller
   - [x] Fix bundled models work incorrectly
-- [ ] Implement proper data managers
+- [x] Implement proper data managers
 - [x] Bring back language editor stuff
 - [x] Implement language picker thing
 - [x] ffmpeg warning
 - [ ] Fix keyframe stuff
   - [x] Fix can't exit the keyframe graph editor
   - [ ] Add forced duration to regular keyframes
+- [ ] Check out player models
+- [ ] Make last undo unmergeable if 5 seconds passed or smth
 
 ## Old Core Adaptation
 

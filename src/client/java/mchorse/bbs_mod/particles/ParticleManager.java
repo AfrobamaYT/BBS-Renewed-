@@ -5,10 +5,11 @@ import mchorse.bbs_mod.utils.manager.BaseManager;
 import mchorse.bbs_mod.utils.manager.storage.JSONLikeStorage;
 
 import java.io.File;
+import java.util.function.Supplier;
 
 public class ParticleManager extends BaseManager<ParticleScheme>
 {
-    public ParticleManager(File folder)
+    public ParticleManager(Supplier<File> folder)
     {
         super(folder);
 

@@ -6,6 +6,7 @@ import mchorse.bbs_mod.utils.manager.storage.IDataStorage;
 import mchorse.bbs_mod.utils.manager.storage.JSONLikeStorage;
 
 import java.io.File;
+import java.util.function.Supplier;
 
 /**
  * Base JSON manager which loads and saves different data
@@ -15,7 +16,7 @@ public abstract class BaseManager <T extends ValueGroup> extends FolderManager<T
 {
     protected IDataStorage storage = new JSONLikeStorage();
 
-    public BaseManager(File folder)
+    public BaseManager(Supplier<File> folder)
     {
         super(folder);
     }

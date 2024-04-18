@@ -5,10 +5,11 @@ import mchorse.bbs_mod.utils.manager.BaseManager;
 import mchorse.bbs_mod.utils.manager.storage.CompressedDataStorage;
 
 import java.io.File;
+import java.util.function.Supplier;
 
 public class FilmManager extends BaseManager<Film>
 {
-    public FilmManager(File folder)
+    public FilmManager(Supplier<File> folder)
     {
         super(folder);
 

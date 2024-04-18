@@ -28,6 +28,7 @@ import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormArchitect;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.BlockForm;
@@ -52,6 +53,7 @@ import mchorse.bbs_mod.utils.factory.MapFactory;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -68,6 +70,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
 
 import java.io.File;
 import java.util.function.Consumer;
@@ -88,6 +91,9 @@ public class BBSMod implements ModInitializer
     /* Foundation services */
     private static SettingsManager settings;
     private static FormArchitect forms;
+
+    /* Data */
+    private static FilmManager films;
 
     private static MapFactory<Clip, ClipFactoryData> factoryCameraClips;
     private static MapFactory<Clip, ClipFactoryData> factoryScreenplayClips;
@@ -115,6 +121,7 @@ public class BBSMod implements ModInitializer
         FabricBlockEntityTypeBuilder.create(ModelBlockEntity::new, MODEL_BLOCK).build()
     );
 
+    private static File worldFolder;
 
     /**
      * Main folder, where all the other folders are located.
@@ -192,6 +199,11 @@ public class BBSMod implements ModInitializer
         return forms;
     }
 
+    public static FilmManager getFilms()
+    {
+        return films;
+    }
+
     public static MapFactory<Clip, ClipFactoryData> getFactoryCameraClips()
     {
         return factoryCameraClips;
@@ -227,6 +239,8 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("extruded"), ExtrudedForm.class, null)
             .register(Link.bbs("block"), BlockForm.class, null)
             .register(Link.bbs("item"), ItemForm.class, null);
+
+        films = new FilmManager(() -> new File(worldFolder, "bbs/films"));
 
         /* Register camera clips */
         factoryCameraClips = new MapFactory<Clip, ClipFactoryData>()
@@ -290,6 +304,8 @@ public class BBSMod implements ModInitializer
                 ServerNetwork.sendMorphToTracked(player, morph.form);
             }
         });
+
+        ServerLifecycleEvents.SERVER_STARTED.register((event) -> worldFolder = event.getSavePath(WorldSavePath.ROOT).toFile());
     }
 
     public static Settings setupConfig(Icon icon, String id, File destination, Consumer<SettingsBuilder> registerer)

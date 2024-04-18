@@ -330,7 +330,7 @@
     "bbs.ui.forms.categories.context.add_category": "Добавить категорию...",
     "bbs.ui.forms.categories.context.copy_form": "Скопировать форму",
     "bbs.ui.forms.categories.context.copy_to": "Скопировать в %s",
-    "bbs.ui.forms.categories.context.copy_to_category": "Скопироать в категорию...",
+    "bbs.ui.forms.categories.context.copy_to_category": "Скопировать в категорию...",
     "bbs.ui.forms.categories.context.open_model_form": "Открыть папку модели",
     "bbs.ui.forms.categories.context.paste_form": "Вставить форму",
     "bbs.ui.forms.categories.context.remove_form": "Удалить эту форму",

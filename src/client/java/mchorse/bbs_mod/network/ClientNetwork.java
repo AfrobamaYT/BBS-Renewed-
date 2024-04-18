@@ -1,10 +1,10 @@
 package mchorse.bbs_mod.network;
 
-import mchorse.bbs_mod.BBSData;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.data.DataStorageUtils;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -14,6 +14,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.entity.BlockEntity;
@@ -22,13 +23,21 @@ import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
 public class ClientNetwork
 {
+    private static int ids = 0;
+    private static Map<Integer, Consumer<BaseType>> callbacks = new HashMap<>();
+
     public static void setup()
     {
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET, (client, handler, buf, responseSender) -> handleClientModelBlockPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM_PACKET, (client, handler, buf, responseSender) -> handlePlayerFormPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
     }
 
     /* Handlers */
@@ -92,7 +101,7 @@ public class ClientNetwork
 
         try
         {
-            Film film = BBSData.getFilms().load(filmId);
+            Film film = null; // TODO: BBSData.getFilms().load(filmId);
 
             if (withCamera)
             {
@@ -103,6 +112,20 @@ public class ClientNetwork
         }
         catch (Exception e)
         {}
+    }
+
+    private static void handleManagerDataPacket(PacketByteBuf buf)
+    {
+        int callbackId = buf.readInt();
+        RepositoryOperation op = RepositoryOperation.values()[buf.readInt()];
+        BaseType data = DataStorageUtils.readFromPacket(buf);
+
+        Consumer<BaseType> callback = callbacks.remove(callbackId);
+
+        if (callback != null)
+        {
+            callback.accept(data);
+        }
     }
 
     /* API */
@@ -134,5 +157,26 @@ public class ClientNetwork
         DataStorageUtils.writeToPacket(buf, data);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, buf);
+    }
+
+    public static void sendManagerData(RepositoryOperation op, BaseType data, Consumer<BaseType> consumer)
+    {
+        int id = ids;
+
+        callbacks.put(id, consumer);
+        sendManagerData(id, op, data);
+
+        ids += 1;
+    }
+
+    public static void sendManagerData(int callbackId, RepositoryOperation op, BaseType data)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeInt(callbackId);
+        buf.writeInt(op.ordinal());
+        DataStorageUtils.writeToPacket(buf, data);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_MANAGER_DATA_PACKET, buf);
     }
 }

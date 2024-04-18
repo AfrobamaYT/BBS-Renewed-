@@ -14,7 +14,7 @@ import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.math.Interpolation;
 
-import java.util.List;
+import java.util.Collection;
 
 public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUDDashboardPanel
 {
@@ -59,7 +59,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
     public void requestData(String id)
     {
-        this.fill((T) this.getType().getManager().load(id));
+        this.getType().getRepository().load(id, (data) -> this.fill((T) data));
     }
 
     /* Data population */
@@ -78,7 +78,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     public void fillDefaultData(T data)
     {}
 
-    public void fillNames(List<String> names)
+    public void fillNames(Collection<String> names)
     {
         String value = this.data == null ? null : this.data.getId();
 
@@ -153,7 +153,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     public void forceSave()
     {
         this.preSave();
-        this.getType().getManager().save(this.data.getId(), this.data.toData().asMap());
+        this.getType().getRepository().save(this.data.getId(), this.data.toData().asMap());
     }
 
     protected void preSave()
