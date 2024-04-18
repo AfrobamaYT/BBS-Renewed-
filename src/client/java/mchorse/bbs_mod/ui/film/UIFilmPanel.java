@@ -48,6 +48,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.FFMpegUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
+import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -102,6 +103,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIDraggable draggable;
 
     private Camera camera = new Camera();
+    private Timer undoTimer = new Timer(1000);
 
     /* Entity control */
     private UIFilmController controller = new UIFilmController(this);
@@ -558,6 +560,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void submitUndo()
     {
+        if (this.undoTimer.checkReset())
+        {
+            this.markLastUndoNoMerging();
+        }
+
         if (this.cachedUndo.isEmpty())
         {
             return;
@@ -611,6 +618,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.cachedUndo.clear();
         this.cachedKeyframeSelection = this.cachedPropertiesSelection = null;
+
+        this.undoTimer.mark();
     }
 
     private void handleUndos(IUndo<ValueGroup> undo, boolean redo)

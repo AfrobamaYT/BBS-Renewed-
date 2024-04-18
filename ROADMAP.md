@@ -25,7 +25,7 @@ Beside that, here is a list to finish:
   - [x] Fix can't exit the keyframe graph editor
   - [ ] Add forced duration to regular keyframes
 - [ ] Check out player models
-- [ ] Make last undo unmergeable if 5 seconds passed or smth
+- [x] Make last undo unmergeable if 5 seconds passed or smth
 
 ## Old Core Adaptation
 
