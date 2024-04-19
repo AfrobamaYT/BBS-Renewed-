@@ -68,6 +68,7 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 
 Useful user suggestions:
 
+- [ ] Change entering keyframe tracks with context menu isntead of clicking on the left
 - [ ] Sample lighting value at (model block)
 - [ ] Add gizmos to model block
 - [ ] Kirah's suggestions model block screen

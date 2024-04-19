@@ -182,6 +182,11 @@ public class UIScreenplayEditor extends UIElement
             }
         }
 
+        if (map.isEmpty())
+        {
+            return;
+        }
+
         int totalBytes = (int) (total * map.values().iterator().next().byteRate);
         byte[] bytes = new byte[totalBytes + totalBytes % 2];
         ByteBuffer buffer = MemoryUtil.memAlloc(2);
