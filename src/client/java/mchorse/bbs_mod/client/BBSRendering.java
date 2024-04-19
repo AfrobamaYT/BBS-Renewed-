@@ -1,9 +1,15 @@
 package mchorse.bbs_mod.client;
 
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
+import mchorse.bbs_mod.ui.framework.UIScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.util.Window;
@@ -100,6 +106,16 @@ public class BBSRendering
             texture = new Texture();
             texture.setFormat(TextureFormat.RGB_U8);
             texture.setFilter(GL11.GL_NEAREST);
+        }
+
+        UIBaseMenu currentMenu = UIScreen.getCurrentMenu();
+
+        if (currentMenu instanceof UIDashboard dashboard)
+        {
+            if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
+            {
+                UISubtitleRenderer.renderSubtitles(currentMenu.context, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
+            }
         }
 
         texture.bind();

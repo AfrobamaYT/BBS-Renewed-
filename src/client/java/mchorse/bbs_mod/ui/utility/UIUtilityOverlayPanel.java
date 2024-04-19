@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.utility;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.l10n.L10nUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -78,6 +79,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         {
             this.print("Forcing chunk loader");
             // TODO: this.getContext().menu.bridge.get(IBridgeWorld.class).getWorld().chunks.buildChunks(BBS.getRender(), true);
+            BBSShaders.setup();
             this.close();
         });
         terrain.w(0).tooltip(UIKeys.UTILITY_RELOAD_TERRAIN);

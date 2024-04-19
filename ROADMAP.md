@@ -13,8 +13,8 @@ Beside that, here is a list to finish:
 
 - [x] Optimize keyframe editor rendering
 - [x] Clean up the UI
-- [ ] Finish remaining features
-  - [ ] Shaders for subtitle renderer
+- [x] Finish remaining features
+  - [x] Shaders for subtitle renderer
   - [x] Shadow for film controller
   - [x] Fix bundled models work incorrectly
 - [x] Implement proper data managers
@@ -68,6 +68,7 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 
 Useful user suggestions:
 
+- [ ] Bezier support for Blockbench models
 - [ ] Change entering keyframe tracks with context menu isntead of clicking on the left
 - [ ] Sample lighting value at (model block)
 - [ ] Add gizmos to model block

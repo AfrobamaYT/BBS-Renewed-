@@ -63,6 +63,7 @@ public class L10n
         this.supportedLanguages.addAll(Arrays.asList(
             new Pair<>("English (en_US)", "en_US"),
             new Pair<>("Русский (ru_RU)", "ru_RU"),
+            new Pair<>("Português (pt_BR)", "pt_BR"),
             new Pair<>("Українська (uk_UA)", "uk_UA")
         ));
         this.supportedLanguages.addAll(additionalLanguages);

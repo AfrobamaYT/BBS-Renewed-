@@ -15,6 +15,7 @@ import java.util.Optional;
 public class BBSShaders
 {
     private static ShaderProgram multiLink;
+    private static ShaderProgram subtitles;
 
     private static ShaderProgram extrudedProgram;
 
@@ -25,11 +26,27 @@ public class BBSShaders
 
     static
     {
+        setup();
+    }
+
+    public static void setup()
+    {
+        if (multiLink != null) multiLink.close();
+        if (subtitles != null) subtitles.close();
+
+        if (extrudedProgram != null) extrudedProgram.close();
+
+        if (pickerPreview != null) pickerPreview.close();
+        if (pickerBillboard != null) pickerBillboard.close();
+        if (pickerParticles != null) pickerParticles.close();
+        if (pickerModels != null) pickerModels.close();
+
         try
         {
             ResourceFactory factory = new ProxyResourceFactory(MinecraftClient.getInstance().getResourceManager());
 
             multiLink = new ShaderProgram(factory, "multilink", VertexFormats.POSITION_TEXTURE_COLOR);
+            subtitles = new ShaderProgram(factory, "subtitles", VertexFormats.POSITION_TEXTURE_COLOR);
 
             extrudedProgram = new ShaderProgram(factory, "extruded", VertexFormats.POSITION_TEXTURE_COLOR_NORMAL);
 
@@ -47,6 +64,11 @@ public class BBSShaders
     public static ShaderProgram getMultilinkProgram()
     {
         return multiLink;
+    }
+
+    public static ShaderProgram getSubtitlesProgram()
+    {
+        return subtitles;
     }
 
     public static ShaderProgram getExtrudedProgram()

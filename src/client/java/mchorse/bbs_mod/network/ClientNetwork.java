@@ -10,6 +10,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
@@ -101,14 +102,17 @@ public class ClientNetwork
 
         try
         {
-            Film film = null; // TODO: BBSData.getFilms().load(filmId);
-
-            if (withCamera)
+            ContentType.FILMS.getRepository().load(filmId, (data) ->
             {
-                BBSModClient.getCameraController().add(new PlayCameraController(film.camera));
-            }
+                Film film = (Film) data;
 
-            BBSModClient.getFilms().addFilm(film);
+                if (withCamera)
+                {
+                    BBSModClient.getCameraController().add(new PlayCameraController(film.camera));
+                }
+
+                BBSModClient.getFilms().addFilm(film);
+            });
         }
         catch (Exception e)
         {}
