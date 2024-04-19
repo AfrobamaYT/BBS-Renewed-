@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
 import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -74,7 +75,14 @@ public class UIReplayList extends UIList<Replay>
 
     private void openFormEditor(ValueForm form, boolean editing)
     {
-        UIFormPalette palette = UIFormPalette.open(this.panel.getParentContainer(), editing, form.get(), (f) ->
+        UIElement target = this.panel;
+
+        if (this.getRoot() != null)
+        {
+            target = this.getParentContainer();
+        }
+
+        UIFormPalette palette = UIFormPalette.open(target, editing, form.get(), (f) ->
         {
             form.set(f);
             this.updateFilmEditor();
