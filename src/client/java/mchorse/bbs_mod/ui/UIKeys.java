@@ -597,7 +597,8 @@ public class UIKeys
 
     /* Key collections */
     public static final KeyCollection C_CLIP = new KeyCollection("bbs.ui.camera.clips.^")
-        .load(BBSMod.getFactoryCameraClips().getStringKeys());
+        .load(BBSMod.getFactoryCameraClips().getStringKeys())
+        .load(BBSMod.getFactoryScreenplayClips().getStringKeys());
     public static final KeyCollection C_CURVE_TYPE = new KeyCollection("bbs.ui.snowstorm.curves.types.^")
         .load(EnumUtils.getKeys(ParticleCurveType.class, (c) -> c.id));
     public static final KeyCollection C_INTERPOLATION = new KeyCollection("interpolations.^")
