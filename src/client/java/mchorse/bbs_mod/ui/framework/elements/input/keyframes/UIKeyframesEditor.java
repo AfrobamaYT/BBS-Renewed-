@@ -94,6 +94,20 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
 
         this.context((menu) ->
         {
+            if (this.keyframes.isEditing())
+            {
+                menu.action(Icons.CLOSE, UIKeys.KEYFRAMES_CONTEXT_EXIT_TRACK, () -> this.keyframes.editSheet(null));
+            }
+            else
+            {
+                UISheet sheet = this.keyframes.getSheet(this.getContext().mouseY);
+
+                if (sheet != null)
+                {
+                    menu.action(Icons.EDIT, UIKeys.KEYFRAMES_CONTEXT_EDIT_TRACK.format(sheet.id), () -> this.keyframes.editSheet(sheet));
+                }
+            }
+
             menu.action(Icons.MAXIMIZE, UIKeys.KEYFRAMES_CONTEXT_MAXIMIZE, this::resetView);
             menu.action(Icons.FULLSCREEN, UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, this::selectAll);
             menu.action(Icons.MINIMIZE, UIKeys.KEYFRAMES_CONTEXT_SIMPLIFY, this::simplify);

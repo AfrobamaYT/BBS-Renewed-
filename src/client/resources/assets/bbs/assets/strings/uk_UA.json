@@ -140,6 +140,7 @@
     "bbs.ui.camera.clips.bbs:shake": "Тряска",
     "bbs.ui.camera.clips.bbs:subtitle": "Субтитри",
     "bbs.ui.camera.clips.bbs:translate": "Переміщення",
+    "bbs.ui.camera.clips.bbs:voice_line": "Голосова доріжка",
     "bbs.ui.camera.editor.keys.clips.deselect": "Прибрати виділення цього кліау",
     "bbs.ui.camera.editor.keys.clips.title": "Кліпи",
     "bbs.ui.camera.editor.keys.editor.jump_backward": "Стрибок назад",

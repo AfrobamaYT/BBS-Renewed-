@@ -11,7 +11,6 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
-import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
@@ -39,7 +38,6 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
     private List<UISheet> currentSheet = new ArrayList<>();
     private UISheet current;
-    private Area editArea = new Area();
 
     public UIKeyframes(Consumer<Keyframe> callback)
     {
@@ -58,6 +56,11 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
     public Scale getScaleY()
     {
         return this.scaleY;
+    }
+
+    public boolean isEditing()
+    {
+        return this.current != null;
     }
 
     public void editSheet(UISheet sheet)
@@ -397,48 +400,6 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
     }
 
     /* Mouse input handling */
-
-    @Override
-    public boolean subMouseClicked(UIContext context)
-    {
-        List<UISheet> sheets = this.getSheets();
-        int sheetCount = sheets.size();
-
-        if (this.area.isInside(context) && context.mouseButton == 0 && sheetCount > 0)
-        {
-            int h = LANE_HEIGHT;
-            int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
-
-            if (this.current != null)
-            {
-                h = this.area.h;
-                y = this.area.y;
-            }
-
-            for (UISheet sheet : sheets)
-            {
-                Area editArea = this.setupEditArea(y, h);
-
-                if (editArea.isInside(context))
-                {
-                    this.editSheet(this.current == null ? sheet : null);
-
-                    return true;
-                }
-
-                y += h;
-            }
-        }
-
-        return super.subMouseClicked(context);
-    }
-
-    private Area setupEditArea(int y, int h)
-    {
-        this.editArea.set(this.area.x, y, 10, h);
-
-        return this.editArea;
-    }
 
     @Override
     protected void duplicateKeyframe(UIContext context, int mouseX, int mouseY)
@@ -875,13 +836,6 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
             context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + h, sheet.color, Colors.A75 | sheet.color);
             context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw + 5, y + (h - font.getHeight()) / 2);
 
-            Area editArea = this.setupEditArea(y, h);
-
-            if (editArea.isInside(context))
-            {
-                context.batcher.icon(Icons.EDIT, Colors.WHITE, this.area.x + 4, y + h / 2, 0F, 0.5F);
-            }
-
             y += h;
         }
     }
@@ -1032,13 +986,6 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
         int y = this.area.y + TOP_MARGIN;
         int h = this.area.ey() - y;
-
-        Area editArea = this.setupEditArea(y, h);
-
-        if (editArea.isInside(context))
-        {
-            context.batcher.icon(Icons.CLOSE, Colors.WHITE, this.area.x + 4, y + h / 2, 0F, 0.5F);
-        }
     }
 
     /* Handling dragging */

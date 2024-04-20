@@ -26,7 +26,7 @@ Beside that, here is a list to finish:
   - [ ] Add forced duration to regular keyframes
 - [ ] Check out player models
 - [x] Make last undo unmergeable if 5 seconds passed or smth
-- [ ] Fix Iris bugs
+- [x] Fix Iris bugs
 
 ## Old Core Adaptation
 
