@@ -61,7 +61,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
     public UIScrollView bodyPartData;
 
     public UIButton pick;
-    public UIToggle enabled;
     public UIToggle useTarget;
     public UIStringList bone;
     public UIPropTransform transform;
@@ -132,11 +131,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
             });
         });
 
-        this.enabled = new UIToggle(UIKeys.FORMS_EDITOR_ENABLED, (b) ->
-        {
-            this.forms.getCurrentFirst().part.enabled = b.getValue();
-        });
-
         this.useTarget = new UIToggle(UIKeys.FORMS_EDITOR_USE_TARGET, (b) ->
         {
             this.forms.getCurrentFirst().part.useTarget = b.getValue();
@@ -176,7 +170,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
             }
         });
 
-        this.bodyPartData.add(this.pick, this.enabled, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(8), this.bone, this.transform.marginTop(8));
+        this.bodyPartData.add(this.pick, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(8), this.bone, this.transform.marginTop(8));
         this.formsArea.add(background, this.forms, this.bodyPartData);
         this.editArea.add(this.finish, this.toggleSidebar);
         this.add(this.editArea, this.formsArea);
@@ -265,7 +259,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
         if (entry.part != null)
         {
-            this.enabled.setValue(entry.part.enabled);
             this.useTarget.setValue(entry.part.useTarget);
             this.bone.clear();
             this.bone.add(FormUtilsClient.getBones(entry.form));

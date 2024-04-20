@@ -29,7 +29,7 @@ public abstract class FormRenderer <T extends Form>
 
         context.entity = part.useTarget ? oldEntity : part.getEntity();
 
-        if (part.getForm() != null && part.enabled)
+        if (part.getForm() != null)
         {
             context.stack.push();
             MatrixStackUtils.applyTransform(context.stack, part.getTransform());
@@ -79,6 +79,13 @@ public abstract class FormRenderer <T extends Form>
 
     public final void render(FormRenderingContext context)
     {
+        Boolean visible = this.form.visible.get(context.getTransition());
+
+        if (!visible)
+        {
+            return;
+        }
+
         boolean isPicking = context.stencilMap != null;
 
         context.stack.push();

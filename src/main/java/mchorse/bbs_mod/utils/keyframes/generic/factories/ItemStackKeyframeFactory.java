@@ -39,6 +39,6 @@ public class ItemStackKeyframeFactory implements IGenericKeyframeFactory<ItemSta
     @Override
     public ItemStack interpolate(ItemStack a, ItemStack b, IInterpolation interpolation, float x)
     {
-        return b;
+        return a;
     }
 }

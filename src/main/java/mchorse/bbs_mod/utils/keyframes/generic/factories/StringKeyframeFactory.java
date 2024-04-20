@@ -27,6 +27,6 @@ public class StringKeyframeFactory implements IGenericKeyframeFactory<String>
     @Override
     public String interpolate(String a, String b, IInterpolation interpolation, float x)
     {
-        return b;
+        return a;
     }
 }

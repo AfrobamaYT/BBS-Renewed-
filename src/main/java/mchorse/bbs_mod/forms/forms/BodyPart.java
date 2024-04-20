@@ -21,7 +21,6 @@ public class BodyPart implements IMapSerializable
     private Transform transform = new Transform();
 
     public String bone = "";
-    public boolean enabled = true;
     public boolean useTarget;
 
     private IEntity entity = new StubEntity();
@@ -92,7 +91,6 @@ public class BodyPart implements IMapSerializable
 
         this.transform.copy(part.transform);
         this.bone = part.bone;
-        this.enabled = part.enabled;
         this.useTarget = part.useTarget;
     }
 
@@ -111,7 +109,6 @@ public class BodyPart implements IMapSerializable
             return Objects.equals(this.form, bodyPart.form)
                 && Objects.equals(this.bone, bodyPart.bone)
                 && Objects.equals(this.transform, bodyPart.transform)
-                && this.enabled == bodyPart.enabled
                 && this.useTarget == bodyPart.useTarget;
         }
 
@@ -128,7 +125,6 @@ public class BodyPart implements IMapSerializable
 
         data.put("transform", this.transform.toData());
         data.putString("bone", this.bone);
-        data.putBool("enabled", this.enabled);
         data.putBool("useTarget", this.useTarget);
     }
 
@@ -142,7 +138,6 @@ public class BodyPart implements IMapSerializable
 
         this.transform.fromData(data.getMap("transform"));
         this.bone = data.getString("bone");
-        this.enabled = data.getBool("enabled");
         this.useTarget = data.getBool("useTarget");
     }
 }

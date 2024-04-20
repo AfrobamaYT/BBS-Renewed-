@@ -31,7 +31,7 @@ public class LinkKeyframeFactory implements IGenericKeyframeFactory<Link>
     {
         if (!this.canAnimate(a, b))
         {
-            return b;
+            return a;
         }
 
         Integer lastFrame = this.extractFrame(a.path);
@@ -44,7 +44,7 @@ public class LinkKeyframeFactory implements IGenericKeyframeFactory<Link>
             return new Link(b.source, this.replaceFrame(b.path, frame));
         }
 
-        return b;
+        return a;
     }
 
     private boolean canAnimate(Link a, Link b)

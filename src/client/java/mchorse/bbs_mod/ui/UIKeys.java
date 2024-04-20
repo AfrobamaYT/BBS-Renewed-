@@ -240,6 +240,7 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_GENERAL_HITBOX_HEIGHT = L10n.lang("bbs.ui.forms.editors.general.hitbox_height");
     public static final IKey FORMS_EDITORS_GENERAL_HITBOX_SNEAK_MULTIPLIER = L10n.lang("bbs.ui.forms.editors.general.hitbox_sneak_multiplier");
     public static final IKey FORMS_EDITORS_GENERAL_HITBOX_WIDTH = L10n.lang("bbs.ui.forms.editors.general.hitbox_width");
+    public static final IKey FORMS_EDITORS_GENERAL_VISIBLE = L10n.lang("bbs.ui.forms.editors.general.visible");
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR = L10n.lang("bbs.ui.forms.editors.label.anchor");
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR_LINES = L10n.lang("bbs.ui.forms.editors.label.anchor_lines");
     public static final IKey FORMS_EDITORS_LABEL_BACKGROUND = L10n.lang("bbs.ui.forms.editors.label.background");
@@ -258,7 +259,6 @@ public class UIKeys
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");
     public static final IKey FORMS_EDITOR_CONTEXT_PASTE = L10n.lang("bbs.ui.forms.editor.context.paste");
     public static final IKey FORMS_EDITOR_CONTEXT_REMOVE = L10n.lang("bbs.ui.forms.editor.context.remove");
-    public static final IKey FORMS_EDITOR_ENABLED = L10n.lang("bbs.ui.forms.editor.enabled");
     public static final IKey FORMS_EDITOR_FINISH = L10n.lang("bbs.ui.forms.editor.finish");
     public static final IKey FORMS_EDITOR_MODEL_PICK_TEXTURE = L10n.lang("bbs.ui.forms.editor.model.pick_texture");
     public static final IKey FORMS_EDITOR_PICK_FORM = L10n.lang("bbs.ui.forms.editor.pick_form");

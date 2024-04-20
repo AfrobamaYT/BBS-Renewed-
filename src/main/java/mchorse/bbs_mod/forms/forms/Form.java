@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormArchitect;
+import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.forms.properties.BooleanProperty;
@@ -11,7 +12,6 @@ import mchorse.bbs_mod.forms.properties.FloatProperty;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.properties.TransformProperty;
-import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.pose.Transform;
 
@@ -23,6 +23,7 @@ public abstract class Form implements IMapSerializable
 {
     private Form parent;
 
+    public final BooleanProperty visible = new BooleanProperty(this, "visible", true);
     public final StringProperty name = new StringProperty(this, "name", "");
     public final TransformProperty transform = new TransformProperty(this, "transform", new Transform());
     public final BodyPartManager parts = new BodyPartManager(this);
@@ -43,6 +44,7 @@ public abstract class Form implements IMapSerializable
     {
         this.name.cantAnimate();
 
+        this.register(this.visible);
         this.register(this.name);
         this.register(this.transform);
         this.register(this.anchor);

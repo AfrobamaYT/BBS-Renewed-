@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.utils.UI;
 
 public class UIGeneralFormPanel extends UIFormPanel
 {
+    public UIToggle visible;
     public UITextbox name;
     public UIPropTransform transform;
 
@@ -24,6 +25,7 @@ public class UIGeneralFormPanel extends UIFormPanel
     {
         super(editor);
 
+        this.visible = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_VISIBLE, (b) -> this.form.visible.set(b.getValue()));
         this.name = new UITextbox(120, (t) -> this.form.name.set(t));
 
         this.transform = new UIPropTransform();
@@ -39,7 +41,7 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hitboxEyeHeight = new UITrackpad((v) -> this.form.hitboxEyeHeight.set(v.floatValue()));
         this.hitboxEyeHeight.limit(0, 1);
 
-        this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY), this.name, this.transform.verticalCompact().marginTop(8));
+        this.options.add(this.visible, UI.label(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY), this.name, this.transform.verticalCompact().marginTop(8));
         this.options.add(this.hitbox.marginTop(12), UI.row(this.hitboxWidth, this.hitboxHeight));
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_SNEAK_MULTIPLIER), this.hitboxSneakMultiplier);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_EYE_HEIGHT), this.hitboxEyeHeight);
@@ -50,6 +52,7 @@ public class UIGeneralFormPanel extends UIFormPanel
     {
         super.startEdit(form);
 
+        this.visible.setValue(form.visible.get());
         this.name.setText(form.name.get());
         this.transform.setTransform(form.transform.get());
 

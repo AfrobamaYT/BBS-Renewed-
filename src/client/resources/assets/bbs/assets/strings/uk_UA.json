@@ -350,7 +350,6 @@
     "bbs.ui.forms.editor.context.copy": "Скопіювати цю частину тіла",
     "bbs.ui.forms.editor.context.paste": "Вставити цю частину тіла",
     "bbs.ui.forms.editor.context.remove": "Видалити цю частину тіла",
-    "bbs.ui.forms.editor.enabled": "Увімкнено",
     "bbs.ui.forms.editor.finish": "Завершити редагування",
     "bbs.ui.forms.editor.model.pick_texture": "Обрати текстуру...",
     "bbs.ui.forms.editor.pick_form": "Обрати форму...",
