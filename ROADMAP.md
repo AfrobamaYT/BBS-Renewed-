@@ -69,7 +69,6 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 Useful user suggestions:
 
 - [ ] Bezier support for Blockbench models
-- [ ] Change entering keyframe tracks with context menu isntead of clicking on the left
 - [ ] Sample lighting value at (model block)
 - [ ] Add gizmos to model block
 - [ ] Kirah's suggestions model block screen
@@ -81,6 +80,7 @@ Useful user suggestions:
 - [ ] Lighting option
 - [ ] Model block hitbox
 - [ ] Add additional vertical mode camera
+- [ ] Thumbnail of the form
 
 Considerations:
 
