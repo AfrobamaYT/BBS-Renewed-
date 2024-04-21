@@ -808,23 +808,23 @@ public class UIFilmController extends UIElement
             /* Render helpful guides for sticks and triggers controls */
             if (mode > 0)
             {
-                String label = "Left stick";
+                String label = UIKeys.FILM_GROUPS_LEFT_STICK.get();
 
                 if (mode == 2)
                 {
-                    label = "Right stick";
+                    label = UIKeys.FILM_GROUPS_RIGHT_STICK.get();
                 }
                 else if (mode == 3)
                 {
-                    label = "Triggers";
+                    label = UIKeys.FILM_GROUPS_TRIGGERS.get();
                 }
                 else if (mode == 4)
                 {
-                    label = "Extra 1";
+                    label = UIKeys.FILM_GROUPS_EXTRA_1.get();
                 }
                 else if (mode == 5)
                 {
-                    label = "Extra 2";
+                    label = UIKeys.FILM_GROUPS_EXTRA_2.get();
                 }
 
                 context.batcher.textCard(label, area.x + 5, area.ey() - 5 - font.getHeight(), Colors.WHITE, BBSSettings.primaryColor(Colors.A100));
@@ -853,7 +853,7 @@ public class UIFilmController extends UIElement
 
                 if (this.recordingCountdown <= 0)
                 {
-                    context.batcher.textCard(this.getTick() + " ticks", x + 3, y + 4, Colors.WHITE, Colors.A50);
+                    context.batcher.textCard(UIKeys.FILM_CONTROLLER_TICKS.format(this.getTick()).get(), x + 3, y + 4, Colors.WHITE, Colors.A50);
                 }
                 else
                 {
