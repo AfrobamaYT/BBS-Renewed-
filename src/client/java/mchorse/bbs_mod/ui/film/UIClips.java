@@ -36,7 +36,6 @@ import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.IFactory;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
@@ -458,12 +457,19 @@ public class UIClips extends UIElement
 
                     clip.fov.insert(0, 50);
 
-                    clip.x.copy(replay.keyframes.x);
-                    clip.y.copy(replay.keyframes.y);
-                    clip.z.copy(replay.keyframes.z);
+                    clip.x.copyKeyframes(replay.keyframes.x);
+                    clip.y.copyKeyframes(replay.keyframes.y);
+                    clip.z.copyKeyframes(replay.keyframes.z);
 
-                    this.copyKeyframes(clip.yaw, replay.keyframes.yaw);
-                    this.copyKeyframes(clip.pitch, replay.keyframes.pitch);
+                    clip.yaw.copyKeyframes(replay.keyframes.yaw);
+                    clip.pitch.copyKeyframes(replay.keyframes.pitch);
+
+                    for (Keyframe keyframe : clip.yaw.getKeyframes())
+                    {
+                        keyframe.setValue(180D + keyframe.getValue());
+                        keyframe.setLy(180F + keyframe.getLy());
+                        keyframe.setRy(180F + keyframe.getRy());
+                    }
 
                     int size = Math.max(
                         clip.x.getLength(),
@@ -480,22 +486,6 @@ public class UIClips extends UIElement
                 });
             }
         });
-    }
-
-    private void copyKeyframes(KeyframeChannel a, KeyframeChannel b)
-    {
-        for (Keyframe keyframe : b.getKeyframes())
-        {
-            Keyframe copy = keyframe.copy();
-
-            copy.setValue(Math.toDegrees(copy.getValue()));
-            copy.setLy(MathUtils.toDeg(copy.getLy()));
-            copy.setRy(MathUtils.toDeg(copy.getRy()));
-
-            a.getKeyframes().add(copy);
-        }
-
-        a.sort();
     }
 
     /**

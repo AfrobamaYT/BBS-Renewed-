@@ -16,7 +16,6 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeEasing;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSimplifier;
 import mchorse.bbs_mod.utils.math.MathUtils;
@@ -364,16 +363,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         {
             BaseValue.edit(sheet.channel, (channel) ->
             {
-                KeyframeChannel simplify = KeyframeSimplifier.simplify(channel);
-
-                channel.getKeyframes().clear();
-
-                for (Keyframe keyframe : simplify.getList())
-                {
-                    channel.add(keyframe);
-                }
-
-                channel.sync();
+                channel.copyKeyframes(KeyframeSimplifier.simplify(channel));
             });
         }
     }

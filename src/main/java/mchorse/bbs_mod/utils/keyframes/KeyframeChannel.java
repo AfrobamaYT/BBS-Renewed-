@@ -289,6 +289,18 @@ public class KeyframeChannel extends ValueList<Keyframe>
         this.postNotifyParent();
     }
 
+    public void copyKeyframes(KeyframeChannel x)
+    {
+        this.list.clear();
+
+        for (Keyframe keyframe : x.list)
+        {
+            this.list.add(keyframe.copy());
+        }
+
+        this.sort();
+    }
+
     @Override
     protected Keyframe create(String id)
     {
