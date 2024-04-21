@@ -229,9 +229,6 @@ public abstract class UIBaseMenu
     public void renderInWorld(WorldRenderContext context)
     {}
 
-    public void lastRender(WorldRenderContext context)
-    {}
-
     public static class UIRootElement extends UIElement implements IViewport
     {
         private UIContext context;

@@ -72,8 +72,8 @@ public class BBSModClient implements ClientModInitializer
     private static UIDashboard dashboard;
 
     private static CameraController cameraController = new CameraController();
-    private static Films films;
     private static ModelBlockItemRenderer modelBlockItemRenderer = new ModelBlockItemRenderer();
+    private static Films films;
 
     private static boolean requestToggleRecording;
 
@@ -221,23 +221,8 @@ public class BBSModClient implements ClientModInitializer
             "category." + BBSMod.MOD_ID + ".main"
         ));
 
-        WorldRenderEvents.AFTER_ENTITIES.register((context) ->
-        {
-            if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
-            {
-                screen.renderInWorld(context);
-            }
-        });
-
         WorldRenderEvents.LAST.register((context) ->
         {
-            if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
-            {
-                screen.lastRender(context);
-            }
-
-            films.render(context);
-
             if (requestToggleRecording)
             {
                 Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();

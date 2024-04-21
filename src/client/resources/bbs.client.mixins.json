@@ -11,7 +11,8 @@
         "MinecraftClientInvoker",
         "RenderTickCounterMixin",
         "IntegratedServerMixin",
-        "WindowMixin"
+        "WindowMixin",
+        "WorldRendererMixin"
     ],
     "injectors": {
         "defaultRequire": 1

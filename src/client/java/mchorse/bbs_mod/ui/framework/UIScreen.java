@@ -60,11 +60,6 @@ public class UIScreen extends Screen implements IFileDropListener
         this.menu.renderInWorld(context);
     }
 
-    public void lastRender(WorldRenderContext context)
-    {
-        this.menu.lastRender(context);
-    }
-
     @Override
     public void filesDragged(List<Path> paths)
     {

@@ -260,15 +260,4 @@ public class UIDashboard extends UIBaseMenu
             this.panels.panel.renderInWorld(context);
         }
     }
-
-    @Override
-    public void lastRender(WorldRenderContext context)
-    {
-        super.lastRender(context);
-
-        if (this.panels.panel != null)
-        {
-            this.panels.panel.lastRender(context);
-        }
-    }
 }
