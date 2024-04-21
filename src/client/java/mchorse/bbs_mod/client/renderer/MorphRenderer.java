@@ -11,7 +11,6 @@ import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
@@ -19,8 +18,15 @@ import net.minecraft.util.math.RotationAxis;
 
 public class MorphRenderer
 {
+    public static boolean hidePlayer = false;
+
     public static boolean renderPlayer(AbstractClientPlayerEntity player, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i)
     {
+        if (hidePlayer)
+        {
+            return true;
+        }
+
         Morph morph = Morph.getMorph(player);
 
         if (morph != null && morph.form != null)

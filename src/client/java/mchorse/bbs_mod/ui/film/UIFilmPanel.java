@@ -11,6 +11,7 @@ import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.renderer.MorphRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.VoiceLines;
@@ -406,6 +407,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super.appear();
 
         BBSRendering.setCustomSize(true);
+        MorphRenderer.hidePlayer = true;
 
         CameraController cameraController = this.getCameraController();
 
@@ -421,6 +423,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super.close();
 
         BBSRendering.setCustomSize(false);
+        MorphRenderer.hidePlayer = false;
 
         CameraController cameraController = this.getCameraController();
 
@@ -437,6 +440,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super.disappear();
 
         BBSRendering.setCustomSize(false);
+        MorphRenderer.hidePlayer = false;
 
         this.setFlight(false);
         this.getCameraController().remove(this.runner);
