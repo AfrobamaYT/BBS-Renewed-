@@ -749,6 +749,8 @@
     "interpolations.sine_out": "Sine Out",
     "interpolations.sine_out-tooltip": "",
     "keybinds.config.title": "UI keybinds",
+    "keybinds.config.all.title": "General",
+    "keybinds.config.all.tooltip": "Keybinds that are commonly used in BBS mod",
     "keybinds.config.camera.title": "Camera editor",
     "keybinds.config.camera.tooltip": "Keybinds that are available in the main dashboard's camera editor panel",
     "keybinds.config.dashboard.title": "Dashboard",

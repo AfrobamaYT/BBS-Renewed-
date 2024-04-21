@@ -14,7 +14,7 @@ public class KeyCombo
     public String id = "";
     public IKey label;
     public IKey category = IKey.EMPTY;
-    public String categoryKey = "all";
+    public String categoryKey;
     public boolean repeatable;
     public List<Integer> keys = new ArrayList<>();
 
@@ -28,6 +28,8 @@ public class KeyCombo
         this(label, keys);
 
         this.id = id;
+
+        this.categoryKey("all");
     }
 
     public KeyCombo(IKey label, int... keys)

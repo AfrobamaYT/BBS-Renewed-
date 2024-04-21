@@ -723,6 +723,8 @@
     "interpolations.sine_inout": "Синусоидальная In/out",
     "interpolations.sine_out": "Синусоидальная Out",
     "keybinds.config.title": "UI клавиши",
+    "keybinds.config.all.title": "Общие",
+    "keybinds.config.all.tooltip": "Часто используемые клавиши в ББС моде",
     "keybinds.config.camera.title": "Редактор камеры",
     "keybinds.config.camera.tooltip": "Клавиши редактора камеры который находится в основной панели",
     "keybinds.config.dashboard.title": "Главная панель",

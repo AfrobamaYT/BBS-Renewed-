@@ -28,6 +28,10 @@ Beside that, here is a list to finish:
 - [x] Make last undo unmergeable if 5 seconds passed or smth
 - [x] Fix Iris bugs
 
+There has to be also finished tutorial, and Wiki:
+
+- [ ] 
+
 ## Old Core Adaptation
 
 In this stage, I'll implement any missing features from my mods that are core 
@@ -81,6 +85,7 @@ Useful user suggestions:
 - [ ] Model block hitbox
 - [ ] Add additional vertical mode camera
 - [ ] Thumbnail of the form
+- [ ] Demorph key bind (in the world)
 
 Considerations:
 
