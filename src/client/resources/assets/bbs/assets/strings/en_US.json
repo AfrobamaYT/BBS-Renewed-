@@ -681,6 +681,8 @@
     "bbs.ui.voice_line.notification.missing_token": "You haven't specified a token in BBS' settings!",
     "bbs.ui.voice_line.notification.missing_voices": "Following voices in the screenplay are missing: %s",
     "bbs.ui.world.keys.cycle_panels": "Cycle panels",
+    "interpolations.constant": "Constant",
+    "interpolations.constant-tooltip": "",
     "interpolations.back_in": "Back In",
     "interpolations.back_in-tooltip": "",
     "interpolations.back_inout": "Back In/out",

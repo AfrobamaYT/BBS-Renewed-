@@ -677,6 +677,7 @@
     "bbs.ui.voice_line.notification.missing_token": "Вы не указали токен в настройках ББС!",
     "bbs.ui.voice_line.notification.missing_voices": "Данные голоса отсутсвуют в сценарие: %s",
     "bbs.ui.world.keys.cycle_panels": "Переключаться между моделями",
+    "interpolations.constant": "Постоянная",
     "interpolations.back_in": "Заскакивающая In",
     "interpolations.back_inout": "Заскакивающая In/Out",
     "interpolations.back_inout-tooltip": "Его можно использовать для раскачивания и естественного движения анимации.",

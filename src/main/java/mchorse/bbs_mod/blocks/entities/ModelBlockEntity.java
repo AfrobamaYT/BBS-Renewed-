@@ -9,7 +9,9 @@ import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
+import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -101,6 +103,19 @@ public class ModelBlockEntity extends BlockEntity
         private final Transform transformInventory = new Transform();
         private final Transform transformFirstPerson = new Transform();
         private boolean shadow;
+
+        public Properties()
+        {
+            BillboardForm billboard = new BillboardForm();
+
+            billboard.texture.set(Link.assets("textures/model_block.png"));
+            this.transform.translate.set(0F, 0.5F, 0F);
+            this.transformThirdPerson.translate.set(0F, 0.5F, 0F);
+            this.transformInventory.translate.set(0F, 0.5F, 0F);
+            this.transformFirstPerson.translate.set(0F, 0.5F, -0.25F);
+
+            this.form = billboard;
+        }
 
         public Form getForm()
         {

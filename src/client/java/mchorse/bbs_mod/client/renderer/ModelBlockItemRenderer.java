@@ -94,18 +94,17 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         }
 
         NbtCompound nbt = stack.getNbt();
-
-        if (nbt == null)
-        {
-            return null;
-        }
-
         ModelBlockEntity entity = new ModelBlockEntity(new BlockPos(0, 0, 0), BBSMod.MODEL_BLOCK.getDefaultState());
         Item item = new Item(entity);
 
-        entity.readNbt(nbt.getCompound("BlockEntityTag"));
-
         this.map.put(stack, item);
+
+        if (nbt == null)
+        {
+            return item;
+        }
+
+        entity.readNbt(nbt.getCompound("BlockEntityTag"));
 
         return item;
     }
