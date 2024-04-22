@@ -54,6 +54,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -66,11 +67,16 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
+import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
 import java.util.function.Consumer;
@@ -120,6 +126,27 @@ public class BBSMod implements ModInitializer
         new Identifier(MOD_ID, "model_block_entity"),
         FabricBlockEntityTypeBuilder.create(ModelBlockEntity::new, MODEL_BLOCK).build()
     );
+
+    public static final ItemGroup ITEM_GROUP = FabricItemGroup.builder()
+        .icon(() ->
+        {
+            ItemStack stack = new ItemStack(MODEL_BLOCK_ITEM);
+            ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ORIGIN, MODEL_BLOCK.getDefaultState());
+            NbtCompound nbt = new NbtCompound();
+            BillboardForm form = (BillboardForm) entity.getProperties().getForm();
+
+            form.texture.set(Link.assets("textures/icon.png"));
+
+            NbtCompound compound = entity.createNbtWithId();
+
+            nbt.put("BlockEntityTag", compound);
+            stack.setNbt(nbt);
+
+            return stack;
+        })
+        .displayName(Text.translatable("itemGroup.bbs.main"))
+        .entries((context, entries) -> entries.add(MODEL_BLOCK_ITEM))
+        .build();
 
     private static File worldFolder;
 
@@ -291,6 +318,8 @@ public class BBSMod implements ModInitializer
         /* Blocks */
         Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "model"), MODEL_BLOCK);
         Registry.register(Registries.ITEM, new Identifier(MOD_ID, "model"), MODEL_BLOCK_ITEM);
+
+        Registry.register(Registries.ITEM_GROUP, new Identifier(MOD_ID, "main"), ITEM_GROUP);
     }
 
     private void registerEvents()

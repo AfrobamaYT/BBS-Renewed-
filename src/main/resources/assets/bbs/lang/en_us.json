@@ -1,5 +1,6 @@
 {
     "block.bbs.model": "Model block",
+    "itemGroup.bbs.main": "BBS mod",
 
     "key.bbs.dashboard": "Dashboard",
     "key.bbs.block_editor": "Model Block Editor",

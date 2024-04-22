@@ -1,5 +1,6 @@
 {
     "block.bbs.model": "Блок-модель",
+    "itemGroup.bbs.main": "ББС мод",
 
     "key.bbs.dashboard": "Головна панель",
     "key.bbs.block_editor": "Редактор Блоку-моделі",
