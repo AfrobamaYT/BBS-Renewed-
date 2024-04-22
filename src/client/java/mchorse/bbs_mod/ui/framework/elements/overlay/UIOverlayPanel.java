@@ -27,6 +27,9 @@ public class UIOverlayPanel extends UIElement
     private int lastX;
     private int lastY;
 
+    private int initialOffsetX;
+    private int initialOffsetY;
+
     public UIOverlayPanel(IKey title)
     {
         super();
@@ -45,6 +48,12 @@ public class UIOverlayPanel extends UIElement
         this.add(this.title, this.icons, this.content);
 
         this.mouseEventPropagataion(EventPropagation.BLOCK_INSIDE);
+    }
+
+    public void setInitialOffset(int x, int y)
+    {
+        this.initialOffsetX = x;
+        this.initialOffsetY = y;
     }
 
     public void onClose(Consumer<UIOverlayCloseEvent> callback)
@@ -70,6 +79,16 @@ public class UIOverlayPanel extends UIElement
     {
         if (this.title.area.isInside(context))
         {
+            if (Window.isCtrlPressed())
+            {
+                this.flex.x.offset = this.initialOffsetX;
+                this.flex.y.offset = this.initialOffsetY;
+
+                this.getParent().resize();
+
+                return true;
+            }
+
             this.moving = true;
             this.lastX = context.mouseX;
             this.lastY = context.mouseY;

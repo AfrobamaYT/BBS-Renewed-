@@ -4,6 +4,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.ui.utils.resizers.Flex;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.GLFW;
@@ -79,12 +80,15 @@ public class UIOverlay extends UIElement
 
     public static void setupPanel(UIContext context, UIOverlay overlay, UIOverlayPanel panel)
     {
+        Flex flex = panel.getFlex();
         Vector2i offset = offsets.get(panel.getClass().getSimpleName());
+
+        panel.setInitialOffset(flex.x.offset, flex.y.offset);
 
         if (offset != null)
         {
-            panel.getFlex().x.offset = offset.x;
-            panel.getFlex().y.offset = offset.y;
+            flex.x.offset = offset.x;
+            flex.y.offset = offset.y;
         }
 
         overlay.relative(context.menu.overlay).full();
