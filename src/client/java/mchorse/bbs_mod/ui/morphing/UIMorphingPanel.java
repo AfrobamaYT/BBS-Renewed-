@@ -65,6 +65,7 @@ public class UIMorphingPanel extends UIDashboardPanel
 
         Morph morph = ((IMorphProvider) MinecraftClient.getInstance().player).getMorph();
 
+        this.palette.list.setupForms(BBSModClient.getFormCategories());
         this.palette.setSelected(morph.form);
 
         BBSModClient.getCameraController().add(this.controller);

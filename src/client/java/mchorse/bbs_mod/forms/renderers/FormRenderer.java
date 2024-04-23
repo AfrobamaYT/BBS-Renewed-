@@ -89,7 +89,7 @@ public abstract class FormRenderer <T extends Form>
         boolean isPicking = context.stencilMap != null;
 
         context.stack.push();
-        MatrixStackUtils.multiply(context.stack, this.form.transform.get(context.getTransition()).createMatrix());
+        MatrixStackUtils.applyTransform(context.stack, this.form.transform.get(context.getTransition()));
 
         this.render3D(context);
 
@@ -156,7 +156,7 @@ public abstract class FormRenderer <T extends Form>
     public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
         stack.push();
-        MatrixStackUtils.multiply(stack, this.form.transform.get(transition).createMatrix());
+        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
 
         matrices.put(prefix, new Matrix4f(stack.peek().getPositionMatrix()));
 
@@ -169,7 +169,7 @@ public abstract class FormRenderer <T extends Form>
             if (form != null)
             {
                 stack.push();
-                MatrixStackUtils.multiply(stack, part.getTransform().createMatrix());
+                MatrixStackUtils.applyTransform(stack, part.getTransform());
 
                 FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, matrices, StringUtils.combinePaths(prefix, String.valueOf(i)), transition);
 

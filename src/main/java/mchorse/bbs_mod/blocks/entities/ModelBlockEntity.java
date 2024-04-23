@@ -104,19 +104,6 @@ public class ModelBlockEntity extends BlockEntity
         private final Transform transformFirstPerson = new Transform();
         private boolean shadow;
 
-        public Properties()
-        {
-            BillboardForm billboard = new BillboardForm();
-
-            billboard.texture.set(Link.assets("textures/model_block.png"));
-            this.transform.translate.set(0F, 0.5F, 0F);
-            this.transformThirdPerson.translate.set(0F, 0.5F, 0.025F);
-            this.transformInventory.translate.set(0F, 0.5F, 0F);
-            this.transformFirstPerson.translate.set(0F, 0.5F, -0.25F);
-
-            this.form = billboard;
-        }
-
         public Form getForm()
         {
             return this.form;

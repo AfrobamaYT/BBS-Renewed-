@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -883,6 +884,7 @@ public class UIFilmController extends UIElement
         int h = texture.height;
 
         ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
+        Supplier<ShaderProgram> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
         GlUniform target = previewProgram.getUniform("Target");
 
         if (target != null)
@@ -891,7 +893,7 @@ public class UIFilmController extends UIElement
         }
 
         RenderSystem.enableBlend();
-        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(getPickerPreviewProgram, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
         if (pair != null)
         {
@@ -1075,6 +1077,11 @@ public class UIFilmController extends UIElement
 
     private void renderStencil(WorldRenderContext renderContext, UIContext context)
     {
+        if (BBSRendering.isIrisShadowPass())
+        {
+            return;
+        }
+
         Area viewport = this.panel.getFramebufferViewport();
 
         if (!viewport.isInside(context) || this.controlled != null)

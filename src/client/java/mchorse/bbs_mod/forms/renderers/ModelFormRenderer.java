@@ -309,7 +309,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
         stack.push();
-        MatrixStackUtils.multiply(stack, this.form.transform.get(transition).createMatrix());
+        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
 
         matrices.put(prefix, new Matrix4f(stack.peek().getPositionMatrix()));
 
@@ -357,7 +357,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                     stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
                 }
 
-                MatrixStackUtils.multiply(stack, part.getTransform().createMatrix());
+                MatrixStackUtils.applyTransform(stack, part.getTransform());
 
                 FormRenderer formRenderer = FormUtilsClient.getRenderer(form);
 

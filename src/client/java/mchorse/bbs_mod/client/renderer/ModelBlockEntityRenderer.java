@@ -76,7 +76,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
         }
 
-        MatrixStackUtils.multiply(matrices, transform.createMatrix());
+        MatrixStackUtils.applyTransform(matrices, transform);
         int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
         Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 

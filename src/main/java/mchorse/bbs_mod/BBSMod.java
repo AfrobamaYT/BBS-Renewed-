@@ -128,25 +128,36 @@ public class BBSMod implements ModInitializer
     );
 
     public static final ItemGroup ITEM_GROUP = FabricItemGroup.builder()
-        .icon(() ->
-        {
-            ItemStack stack = new ItemStack(MODEL_BLOCK_ITEM);
-            ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ORIGIN, MODEL_BLOCK.getDefaultState());
-            NbtCompound nbt = new NbtCompound();
-            BillboardForm form = (BillboardForm) entity.getProperties().getForm();
-
-            form.texture.set(Link.assets("textures/icon.png"));
-
-            NbtCompound compound = entity.createNbtWithId();
-
-            nbt.put("BlockEntityTag", compound);
-            stack.setNbt(nbt);
-
-            return stack;
-        })
+        .icon(() -> createModelBlockStack(Link.assets("textures/icon.png")))
         .displayName(Text.translatable("itemGroup.bbs.main"))
-        .entries((context, entries) -> entries.add(MODEL_BLOCK_ITEM))
+        .entries((context, entries) ->
+        {
+            entries.add(createModelBlockStack(Link.assets("textures/model_block.png")));
+        })
         .build();
+
+    private static ItemStack createModelBlockStack(Link texture)
+    {
+        ItemStack stack = new ItemStack(MODEL_BLOCK_ITEM);
+        ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ORIGIN, MODEL_BLOCK.getDefaultState());
+        NbtCompound nbt = new NbtCompound();
+        BillboardForm form = new BillboardForm();
+        ModelBlockEntity.Properties properties = entity.getProperties();
+
+        form.texture.set(texture);
+        properties.setForm(form);
+        properties.getTransform().translate.set(0F, 0.5F, 0F);
+        properties.getTransformThirdPerson().translate.set(0F, 0.5F, 0.025F);
+        properties.getTransformInventory().translate.set(0F, 0.5F, 0F);
+        properties.getTransformFirstPerson().translate.set(0F, 0.5F, -0.25F);
+
+        NbtCompound compound = entity.createNbtWithId();
+
+        nbt.put("BlockEntityTag", compound);
+        stack.setNbt(nbt);
+
+        return stack;
+    }
 
     private static File worldFolder;
 

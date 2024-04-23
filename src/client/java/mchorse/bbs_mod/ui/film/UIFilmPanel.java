@@ -938,8 +938,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.renderInWorld(context);
 
-        this.lastProjection.set(RenderSystem.getProjectionMatrix());
-        this.lastView.set(context.matrixStack().peek().getPositionMatrix());
+        if (!BBSRendering.isIrisShadowPass())
+        {
+            this.lastProjection.set(RenderSystem.getProjectionMatrix());
+            this.lastView.set(context.matrixStack().peek().getPositionMatrix());
+        }
+
         this.controller.renderFrame(context);
     }
 

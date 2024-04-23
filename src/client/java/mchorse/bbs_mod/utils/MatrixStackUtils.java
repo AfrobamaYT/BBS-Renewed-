@@ -19,7 +19,7 @@ public class MatrixStackUtils
         stack.multiply(RotationAxis.POSITIVE_Z.rotation(transform.rotate2.z));
         stack.multiply(RotationAxis.POSITIVE_Y.rotation(transform.rotate2.y));
         stack.multiply(RotationAxis.POSITIVE_X.rotation(transform.rotate2.x));
-        stack.scale(transform.scale.x, transform.scale.y, transform.scale.z);
+        stack.peek().getPositionMatrix().scale(transform.scale.x, transform.scale.y, transform.scale.z);
     }
 
     public static void multiply(MatrixStack stack, Matrix4f matrix)

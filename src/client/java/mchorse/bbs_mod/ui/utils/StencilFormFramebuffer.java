@@ -117,7 +117,7 @@ public class StencilFormFramebuffer
             int b = (int) (floats.get() * 255F);
             int a = (int) (floats.get() * 255F);
 
-            this.index = r;
+            this.index = a < 1F ? 0 : r;
         }
     }
 

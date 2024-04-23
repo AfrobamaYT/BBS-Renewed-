@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
@@ -10,9 +12,14 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.utils.IrisUtils;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.util.Window;
+import net.minecraft.client.util.math.MatrixStack;
 import org.lwjgl.opengl.GL11;
 
 import java.util.HashSet;
@@ -27,6 +34,8 @@ public class BBSRendering
 
     public static boolean renderingWorld;
     private static boolean customSize;
+
+    private static boolean iris;
 
     private static Texture texture;
 
@@ -60,6 +69,8 @@ public class BBSRendering
 
     public static void setup()
     {
+        iris = FabricLoader.getInstance().isModLoaded("iris");
+
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
         {
             if (entity.getWorld().isClient())
@@ -149,5 +160,52 @@ public class BBSRendering
 
             BufferRenderer.drawWithGlobalProgram(builder.end());
         } */
+    }
+
+    public static void onRenderChunkLayer(MatrixStack stack)
+    {
+        WorldRenderContextImpl worldRenderContext = new WorldRenderContextImpl();
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        worldRenderContext.prepare(
+            mc.worldRenderer, stack, mc.getTickDelta(), mc.getRenderTime(), false,
+            mc.gameRenderer.getCamera(), mc.gameRenderer, mc.gameRenderer.getLightmapTextureManager(),
+            RenderSystem.getProjectionMatrix(), mc.getBufferBuilders().getEntityVertexConsumers(), null, false, mc.world
+        );
+
+        if (isIrisShadersEnabled())
+        {
+            renderCoolStuff(worldRenderContext);
+        }
+    }
+
+    public static void renderCoolStuff(WorldRenderContext worldRenderContext)
+    {
+        if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
+        {
+            screen.renderInWorld(worldRenderContext);
+        }
+
+        BBSModClient.getFilms().render(worldRenderContext);
+    }
+
+    public static boolean isIrisShadersEnabled()
+    {
+        if (!iris)
+        {
+            return false;
+        }
+
+        return IrisUtils.isShaderPackEnabled();
+    }
+
+    public static boolean isIrisShadowPass()
+    {
+        if (!iris)
+        {
+            return false;
+        }
+
+        return IrisUtils.isShadowPass();
     }
 }

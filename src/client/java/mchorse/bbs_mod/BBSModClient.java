@@ -67,7 +67,7 @@ public class BBSModClient implements ClientModInitializer
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
-    private static KeyBinding keyToggleRecording;
+    /* private static KeyBinding keyToggleRecording; */
 
     private static UIDashboard dashboard;
 
@@ -214,12 +214,20 @@ public class BBSModClient implements ClientModInitializer
             "category." + BBSMod.MOD_ID + ".main"
         ));
 
-        keyToggleRecording = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        /* keyToggleRecording = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key." + BBSMod.MOD_ID + ".toggle_recording",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
             "category." + BBSMod.MOD_ID + ".main"
-        ));
+        )); */
+
+        WorldRenderEvents.AFTER_ENTITIES.register((context) ->
+        {
+            if (!BBSRendering.isIrisShadersEnabled())
+            {
+                BBSRendering.renderCoolStuff(context);
+            }
+        });
 
         WorldRenderEvents.LAST.register((context) ->
         {
@@ -280,10 +288,10 @@ public class BBSModClient implements ClientModInitializer
                 }
             }
 
-            while (keyToggleRecording.wasPressed())
+            /* while (keyToggleRecording.wasPressed())
             {
                 requestToggleRecording = true;
-            }
+            } */
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->
