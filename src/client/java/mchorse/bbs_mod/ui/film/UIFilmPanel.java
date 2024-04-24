@@ -117,8 +117,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private FilmEditorUndo.KeyframeSelection cachedPropertiesSelection;
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
 
-    private Matrix4f lastView = new Matrix4f();
-    private Matrix4f lastProjection = new Matrix4f();
+    public final Matrix4f lastView = new Matrix4f();
+    public final Matrix4f lastProjection = new Matrix4f();
 
     public static VoiceLines getVoiceLines()
     {

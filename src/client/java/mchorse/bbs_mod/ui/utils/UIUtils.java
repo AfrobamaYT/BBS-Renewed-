@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.utils;
 
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.OS;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.sound.SoundEvents;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -97,16 +97,7 @@ public class UIUtils
 
     public static void playClick(float pitch)
     {
-        SoundPlayer player = BBSModClient.getSounds().play(Link.assets("sounds/click.ogg"));
-
-        if (player != null)
-        {
-            player.setRelative(true);
-            player.setPosition(0, 0, 0);
-            player.setVolume(1F);
-            player.setPitch(pitch);
-            player.play();
-        }
+        MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, pitch));
     }
 
     public static KeyCombo createCombo(IKey label, int base, int index)

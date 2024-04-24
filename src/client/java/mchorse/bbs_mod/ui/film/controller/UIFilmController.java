@@ -1,10 +1,10 @@
 package mchorse.bbs_mod.ui.film.controller;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
-import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -66,12 +66,14 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,6 +109,8 @@ public class UIFilmController extends UIElement
 
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
+
+    private WorldRenderContext worldRenderContext;
 
     public UIFilmController(UIFilmPanel panel)
     {
@@ -872,6 +876,44 @@ public class UIFilmController extends UIElement
 
     private void renderPickingPreview(UIContext context, Area area)
     {
+        /* Cache the global stuff */
+        Matrix4f oldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
+        Matrix4f oldMV = new Matrix4f(RenderSystem.getModelViewMatrix());
+        Matrix3f oldInverse = new Matrix3f(RenderSystem.getInverseViewRotationMatrix());
+
+        RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorter.BY_Z);
+
+        MatrixStack renderStack = RenderSystem.getModelViewStack();
+        MatrixStack stack = context.render.batcher.getContext().getMatrices();
+
+        renderStack.push();
+        renderStack.loadIdentity();
+        RenderSystem.applyModelViewMatrix();
+        renderStack.pop();
+
+        /* Render the stencil */
+        MatrixStack worldStack = this.worldRenderContext.matrixStack();
+
+        worldStack.push();
+        worldStack.loadIdentity();
+        MatrixStackUtils.multiply(worldStack, this.panel.lastView);
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LESS);
+        this.renderStencil(this.worldRenderContext, this.getContext());
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        RenderSystem.disableDepthTest();
+        worldStack.pop();
+
+        /* Return back to orthographic projection */
+        RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
+        RenderSystem.setInverseViewRotationMatrix(oldInverse);
+
+        renderStack.push();
+        renderStack.loadIdentity();
+        MatrixStackUtils.multiply(stack, oldMV);
+        RenderSystem.applyModelViewMatrix();
+        renderStack.pop();
+
         if (!this.stencil.hasPicked())
         {
             return;
@@ -910,6 +952,8 @@ public class UIFilmController extends UIElement
 
     public void renderFrame(WorldRenderContext context)
     {
+        this.worldRenderContext = context;
+
         RenderSystem.enableDepthTest();
 
         for (IEntity entity : this.entities)
@@ -923,7 +967,6 @@ public class UIFilmController extends UIElement
         }
 
         this.rayTraceEntity(context);
-        this.renderStencil(context, this.getContext());
 
         Mouse mouse = MinecraftClient.getInstance().mouse;
         int x = (int) mouse.getX();
@@ -1077,11 +1120,6 @@ public class UIFilmController extends UIElement
 
     private void renderStencil(WorldRenderContext renderContext, UIContext context)
     {
-        if (BBSRendering.isIrisShadowPass())
-        {
-            return;
-        }
-
         Area viewport = this.panel.getFramebufferViewport();
 
         if (!viewport.isInside(context) || this.controlled != null)

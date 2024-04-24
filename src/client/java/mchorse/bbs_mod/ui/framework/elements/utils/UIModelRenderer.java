@@ -215,7 +215,7 @@ public abstract class UIModelRenderer extends UIElement
         this.setupPosition();
         this.setupViewport(context);
 
-        /* Drawing begins */
+        /* Cache the global stuff */
         Matrix4f oldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
         Matrix4f oldMV = new Matrix4f(RenderSystem.getModelViewMatrix());
         Matrix3f oldInverse = new Matrix3f(RenderSystem.getInverseViewRotationMatrix());
@@ -232,6 +232,7 @@ public abstract class UIModelRenderer extends UIElement
 
         RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.camera.view).invert());
 
+        /* Rendering begins... */
         stack.push();
         MatrixStackUtils.multiply(stack, this.camera.view);
         stack.translate(-this.camera.position.x, -this.camera.position.y, -this.camera.position.z);
