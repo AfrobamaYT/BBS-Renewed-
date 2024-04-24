@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
+import net.minecraft.entity.LimbAnimator;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -37,6 +38,8 @@ public class StubEntity implements IEntity
 
     private float[] extraVariables = new float[10];
     private float[] prevExtraVariables = new float[10];
+
+    private LimbAnimator limbAnimator = new LimbAnimator();
 
     public StubEntity(World world)
     {
@@ -348,5 +351,17 @@ public class StubEntity implements IEntity
         {
             this.prevExtraVariables[i] = this.extraVariables[i];
         }
+    }
+
+    @Override
+    public float getLimbPos(float tickDelta)
+    {
+        return this.limbAnimator.getPos(tickDelta);
+    }
+
+    @Override
+    public float getLimbSpeed(float tickDelta)
+    {
+        return this.limbAnimator.getSpeed(tickDelta);
     }
 }

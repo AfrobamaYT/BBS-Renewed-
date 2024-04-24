@@ -140,4 +140,8 @@ public interface IEntity
             prevExtraVariables[i] = entity.getPrevExtraVariables()[i];
         }
     }
+
+    public float getLimbPos(float tickDelta);
+
+    public float getLimbSpeed(float tickDelta);
 }

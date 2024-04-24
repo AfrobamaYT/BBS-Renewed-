@@ -44,6 +44,8 @@ public class MolangHelper
         double headPitch = 0;
         double velocity = 0;
         double age = 0;
+        float limbSwingAmount = 0;
+        float limbSwing = 0;
 
         if (target != null)
         {
@@ -56,6 +58,8 @@ public class MolangHelper
             headYaw = yawHead - bodyYaw;
             headPitch = Interpolations.lerp(target.getPrevPitch(), target.getPitch(), transition);
             velocity = Math.sqrt(dx * dx + target.getVelocity().y * target.getVelocity().y + dz * dz);
+            limbSwingAmount = target.getLimbPos(transition);
+            limbSwing = target.getLimbSpeed(transition);
 
             /* There is still a tiny bit of vertical velocity (gravity) when an
              * entity stands still, so set it to zero in that case */
@@ -102,6 +106,8 @@ public class MolangHelper
         parser.setValue("query.head_yaw", headYaw);
         parser.setValue("query.head_pitch", headPitch);
         parser.setValue("query.velocity", velocity);
+        parser.setValue("query.limb_swing", limbSwing);
+        parser.setValue("query.limb_swing_amount", limbSwingAmount);
         parser.setValue("query.age", age);
     }
 

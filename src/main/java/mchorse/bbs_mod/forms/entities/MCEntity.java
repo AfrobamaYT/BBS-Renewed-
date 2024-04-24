@@ -79,7 +79,12 @@ public class MCEntity implements IEntity
     @Override
     public boolean isPunching()
     {
-        return this.mcEntity instanceof LivingEntity ? ((LivingEntity) this.mcEntity).handSwingTicks >= 5 : false;
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.handSwingTicks == -1;
+        }
+
+        return false;
     }
 
     @Override
@@ -351,5 +356,27 @@ public class MCEntity implements IEntity
         {
             this.prevExtraVariables[i] = this.extraVariables[i];
         }
+    }
+
+    @Override
+    public float getLimbPos(float tickDelta)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.limbAnimator.getPos(tickDelta);
+        }
+
+        return 0;
+    }
+
+    @Override
+    public float getLimbSpeed(float tickDelta)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.limbAnimator.getSpeed(tickDelta);
+        }
+
+        return 0;
     }
 }
