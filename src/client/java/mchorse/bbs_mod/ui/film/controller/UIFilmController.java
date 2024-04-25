@@ -544,6 +544,11 @@ public class UIFilmController extends UIElement
 
     public void pickRecording()
     {
+        if (this.panel.replayEditor.getReplay() == null)
+        {
+            return;
+        }
+
         if (this.recording)
         {
             this.stopRecording();

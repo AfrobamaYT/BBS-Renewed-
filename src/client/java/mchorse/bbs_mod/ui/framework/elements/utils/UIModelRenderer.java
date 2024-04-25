@@ -245,6 +245,9 @@ public abstract class UIModelRenderer extends UIElement
         stack.pop();
 
         /* Return back to orthographic projection */
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
         MatrixStackUtils.restoreMatrices();
 
         RenderSystem.depthFunc(GL11.GL_ALWAYS);

@@ -164,6 +164,11 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
+    public Replay getReplay()
+    {
+        return this.replay;
+    }
+
     public void setReplay(Replay replay)
     {
         this.replay = replay;
@@ -172,6 +177,7 @@ public class UIReplaysEditor extends UIElement
         this.updateChannelsList();
 
         this.replays.replays.setCurrentScroll(replay);
+        this.record.setEnabled(replay != null);
     }
 
     public void moveReplay(double x, double y, double z)
