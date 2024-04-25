@@ -119,6 +119,7 @@ public class UIReplayList extends UIList<Replay>
 
         replay.keyframes.pitch.insert(0, pitch);
         replay.keyframes.yaw.insert(0, yaw);
+        replay.keyframes.headYaw.insert(0, yaw);
         replay.keyframes.bodyYaw.insert(0, yaw);
 
         this.update();

@@ -404,8 +404,8 @@ public class UIReplaysEditor extends UIElement
 
                 context.replaceContextMenu((menu) ->
                 {
-                    float pitch = camera.rotation.x;
-                    float yaw = camera.rotation.y + MathUtils.PI;
+                    float pitch = 0F;
+                    float yaw = MathUtils.toDeg(camera.rotation.y);
 
                     menu.action(Icons.ADD, UIKeys.FILM_REPLAY_CONTEXT_ADD, () -> this.replays.replays.addReplay(vec, pitch, yaw));
                     menu.action(Icons.POINTER, UIKeys.FILM_REPLAY_CONTEXT_MOVE_HERE, () -> this.moveReplay(vec.x, vec.y, vec.z));
