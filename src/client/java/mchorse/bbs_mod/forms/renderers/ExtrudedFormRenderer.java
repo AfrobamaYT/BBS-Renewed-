@@ -67,7 +67,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
             lightMap.enable();
 
-            RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntitySolidProgram, BBSShaders::getPickerBillboardProgram));
+            RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntityTranslucentCullProgram, BBSShaders::getPickerBillboardProgram));
 
             BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             Matrix4f matrix = context.stack.peek().getPositionMatrix();
@@ -88,7 +88,9 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                     .next();
             }
 
+            RenderSystem.enableBlend();
             BufferRenderer.drawWithGlobalProgram(buffer.end());
+            RenderSystem.disableBlend();
 
             lightMap.disable();
         }

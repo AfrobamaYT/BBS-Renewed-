@@ -80,6 +80,7 @@ Useful user suggestions:
 - [ ] Add additional vertical mode camera
 - [ ] Thumbnail of the form
 - [ ] Demorph key bind (in the world)
+- [ ] Add /bbs morph generation from a form
 
 Considerations:
 
