@@ -104,14 +104,17 @@ public class ClientNetwork
         {
             ContentType.FILMS.getRepository().load(filmId, (data) ->
             {
-                Film film = (Film) data;
-
-                if (withCamera)
+                MinecraftClient.getInstance().execute(() ->
                 {
-                    BBSModClient.getCameraController().add(new PlayCameraController(film.camera));
-                }
+                    Film film = (Film) data;
 
-                BBSModClient.getFilms().addFilm(film);
+                    if (withCamera)
+                    {
+                        BBSModClient.getCameraController().add(new PlayCameraController(film.camera));
+                    }
+
+                    BBSModClient.getFilms().addFilm(film);
+                });
             });
         }
         catch (Exception e)

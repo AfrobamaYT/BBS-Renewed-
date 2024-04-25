@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Films
 {
-    public List<FilmController> controllers = new ArrayList<FilmController>();
+    private List<FilmController> controllers = new ArrayList<FilmController>();
 
     public void addFilm(Film film)
     {
