@@ -6,6 +6,7 @@ import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -41,7 +42,12 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
             item.expiration -= 1;
 
-            item.entity.getProperties().getForm().update(item.formEntity);
+            Form form = item.entity.getProperties().getForm();
+
+            if (form != null)
+            {
+                form.update(item.formEntity);
+            }
         }
     }
 

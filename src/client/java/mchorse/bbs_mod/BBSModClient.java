@@ -259,14 +259,20 @@ public class BBSModClient implements ClientModInitializer
 
         ClientTickEvents.END_CLIENT_TICK.register((client) ->
         {
-            if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
+            MinecraftClient mc = MinecraftClient.getInstance();
+
+            if (mc.currentScreen instanceof UIScreen screen)
             {
                 screen.update();
             }
 
             cameraController.update();
             films.update();
-            modelBlockItemRenderer.update();
+
+            if (!mc.isPaused())
+            {
+                modelBlockItemRenderer.update();
+            }
 
             while (keyDashboard.wasPressed())
             {
@@ -275,7 +281,7 @@ public class BBSModClient implements ClientModInitializer
 
             while (keyModelBlockEditor.wasPressed())
             {
-                ItemStack stack = MinecraftClient.getInstance().player.getEquippedStack(EquipmentSlot.MAINHAND);
+                ItemStack stack = mc.player.getEquippedStack(EquipmentSlot.MAINHAND);
 
                 if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == BBSMod.MODEL_BLOCK)
                 {

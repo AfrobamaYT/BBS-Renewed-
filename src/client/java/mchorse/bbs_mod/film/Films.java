@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 
 import java.util.ArrayList;
@@ -21,9 +22,13 @@ public class Films
 
     public void render(WorldRenderContext context)
     {
+        RenderSystem.enableDepthTest();
+
         for (FilmController controller : this.controllers)
         {
             controller.render(context);
         }
+
+        RenderSystem.disableDepthTest();
     }
 }

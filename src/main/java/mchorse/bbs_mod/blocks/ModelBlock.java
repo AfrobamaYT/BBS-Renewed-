@@ -11,12 +11,15 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
 
 public class ModelBlock extends Block implements BlockEntityProvider
@@ -29,6 +32,25 @@ public class ModelBlock extends Block implements BlockEntityProvider
     public ModelBlock(Settings settings)
     {
         super(settings);
+    }
+
+    @Override
+    public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state)
+    {
+        BlockEntity entity = world.getBlockEntity(pos);
+
+        if (entity instanceof ModelBlockEntity modelBlock)
+        {
+            ItemStack stack = new ItemStack(this);
+            NbtCompound compound = new NbtCompound();
+
+            compound.put("BlockEntityTag", modelBlock.createNbtWithId());
+            stack.setNbt(compound);
+
+            return stack;
+        }
+
+        return super.getPickStack(world, pos, state);
     }
 
     @Override
