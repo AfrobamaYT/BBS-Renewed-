@@ -876,20 +876,14 @@ public class UIFilmController extends UIElement
 
     private void renderPickingPreview(UIContext context, Area area)
     {
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LESS);
+
         /* Cache the global stuff */
-        Matrix4f oldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
-        Matrix4f oldMV = new Matrix4f(RenderSystem.getModelViewMatrix());
-        Matrix3f oldInverse = new Matrix3f(RenderSystem.getInverseViewRotationMatrix());
+        MatrixStackUtils.cacheMatrices();
 
         RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorter.BY_Z);
-
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
-        MatrixStack stack = context.render.batcher.getContext().getMatrices();
-
-        renderStack.push();
-        renderStack.loadIdentity();
-        RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.panel.lastView).invert());
 
         /* Render the stencil */
         MatrixStack worldStack = this.worldRenderContext.matrixStack();
@@ -897,22 +891,14 @@ public class UIFilmController extends UIElement
         worldStack.push();
         worldStack.loadIdentity();
         MatrixStackUtils.multiply(worldStack, this.panel.lastView);
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_LESS);
         this.renderStencil(this.worldRenderContext, this.getContext());
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.disableDepthTest();
         worldStack.pop();
 
         /* Return back to orthographic projection */
-        RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
-        RenderSystem.setInverseViewRotationMatrix(oldInverse);
+        MatrixStackUtils.restoreMatrices();
 
-        renderStack.push();
-        renderStack.loadIdentity();
-        MatrixStackUtils.multiply(stack, oldMV);
-        RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        RenderSystem.disableDepthTest();
 
         if (!this.stencil.hasPicked())
         {

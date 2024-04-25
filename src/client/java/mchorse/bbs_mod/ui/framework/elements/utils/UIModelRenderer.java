@@ -208,28 +208,17 @@ public abstract class UIModelRenderer extends UIElement
      */
     private void renderModel(UIContext context)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
         this.setupPosition();
         this.setupViewport(context);
 
-        /* Cache the global stuff */
-        Matrix4f oldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
-        Matrix4f oldMV = new Matrix4f(RenderSystem.getModelViewMatrix());
-        Matrix3f oldInverse = new Matrix3f(RenderSystem.getInverseViewRotationMatrix());
-
-        RenderSystem.setProjectionMatrix(this.camera.projection, VertexSorter.BY_Z);
-
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
         MatrixStack stack = context.render.batcher.getContext().getMatrices();
 
-        renderStack.push();
-        renderStack.loadIdentity();
-        RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        /* Cache the global stuff */
+        MatrixStackUtils.cacheMatrices();
 
+        RenderSystem.setProjectionMatrix(this.camera.projection, VertexSorter.BY_Z);
         RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.camera.view).invert());
 
         /* Rendering begins... */
@@ -238,7 +227,11 @@ public abstract class UIModelRenderer extends UIElement
         stack.translate(-this.camera.position.x, -this.camera.position.y, -this.camera.position.z);
         MatrixStackUtils.multiply(stack, this.transform);
 
-        RenderSystem.setupLevelDiffuseLighting(new Vector3f(0, 0.85F, -1).normalize(), new Vector3f(0, 0.85F, 1).normalize(), this.camera.view);
+        RenderSystem.setupLevelDiffuseLighting(
+            new Vector3f(0, 0.85F, -1).normalize(),
+            new Vector3f(0, 0.85F, 1).normalize(),
+            this.camera.view
+        );
 
         if (this.grid)
         {
@@ -252,15 +245,7 @@ public abstract class UIModelRenderer extends UIElement
         stack.pop();
 
         /* Return back to orthographic projection */
-        RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
-        RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
-        RenderSystem.setInverseViewRotationMatrix(oldInverse);
-
-        renderStack.push();
-        renderStack.loadIdentity();
-        MatrixStackUtils.multiply(stack, oldMV);
-        RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        MatrixStackUtils.restoreMatrices();
 
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
