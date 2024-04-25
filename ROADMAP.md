@@ -81,6 +81,9 @@ Useful user suggestions:
 - [ ] Thumbnail of the form
 - [ ] Demorph key bind (in the world)
 - [ ] Add /bbs morph generation from a form
+- [ ] Flight mode speed
+- [ ] Change moving around to left click and mouse wheel button to fov and roll
+- [ ] Add button to toggle orbit mode, orbit perspective and make context menu for perspectives
 
 Considerations:
 

@@ -12,7 +12,8 @@
         "RenderTickCounterMixin",
         "IntegratedServerMixin",
         "WindowMixin",
-        "WorldRendererMixin"
+        "WorldRendererMixin",
+        "LanguageManagerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

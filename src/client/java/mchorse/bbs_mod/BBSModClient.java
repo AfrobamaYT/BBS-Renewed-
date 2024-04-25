@@ -186,10 +186,7 @@ public class BBSModClient implements ClientModInitializer
 
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
 
-        BBSSettings.language.postCallback((v) ->
-        {
-            l10n.reload(((ValueLanguage) v).get(), BBSMod.getProvider());
-        });
+        BBSSettings.language.postCallback((v) -> reloadLanguage(((ValueLanguage) v).get()));
 
         BBSSettings.tooltipStyle.modes(
             UIKeys.ENGINE_TOOLTIP_STYLE_LIGHT,
@@ -328,5 +325,15 @@ public class BBSModClient implements ClientModInitializer
         BlockEntityRendererFactories.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
+    }
+
+    public static void reloadLanguage(String language)
+    {
+        if (language.isEmpty())
+        {
+            language = MinecraftClient.getInstance().options.language;
+        }
+
+        l10n.reload(language, BBSMod.getProvider());
     }
 }

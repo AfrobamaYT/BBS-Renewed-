@@ -11,6 +11,6 @@ public class ValueLanguage extends ValueString
 {
     public ValueLanguage(String id)
     {
-        super(id, "en_US");
+        super(id, "");
     }
 }

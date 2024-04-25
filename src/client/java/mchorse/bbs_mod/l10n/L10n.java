@@ -29,7 +29,7 @@ import java.util.function.Function;
 
 public class L10n
 {
-    public static final String DEFAULT_LANGUAGE = "en_US";
+    public static final String DEFAULT_LANGUAGE = "";
 
     private Map<String, LangKey> strings = new HashMap<>();
     private Set<Function<String, List<Link>>> langFiles = new LinkedHashSet<>();
@@ -61,6 +61,7 @@ public class L10n
     {
         this.supportedLanguages = new ArrayList<>();
         this.supportedLanguages.addAll(Arrays.asList(
+            new Pair<>("Minecraft (auto)", ""),
             new Pair<>("中文 (zh_CN)", "zh_CN"),
             new Pair<>("中文 (繁体) (zh_CN)", "zh_TW"),
             new Pair<>("English (en_US)", "en_US"),
