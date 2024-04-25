@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework;
 
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -15,6 +16,8 @@ public class UIScreen extends Screen implements IFileDropListener
 {
     private UIBaseMenu menu;
     private UIRenderingContext context;
+
+    private int lastGuiScale;
 
     public static void open(UIBaseMenu menu)
     {
@@ -81,6 +84,9 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public void removed()
     {
+        MinecraftClient.getInstance().options.getGuiScale().setValue(this.lastGuiScale);
+        MinecraftClient.getInstance().onResolutionChanged();
+
         super.removed();
 
         this.menu.onClose(null);
@@ -94,6 +100,11 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public void onDisplayed()
     {
+        this.lastGuiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
+
+        MinecraftClient.getInstance().options.getGuiScale().setValue(BBSModClient.getGUIScale());
+        MinecraftClient.getInstance().onResolutionChanged();
+
         super.onDisplayed();
 
         this.menu.onOpen(null);

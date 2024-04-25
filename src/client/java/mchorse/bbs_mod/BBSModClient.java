@@ -142,6 +142,18 @@ public class BBSModClient implements ClientModInitializer
         return dashboard;
     }
 
+    public static int getGUIScale()
+    {
+        int scale = BBSSettings.userIntefaceScale.get();
+
+        if (scale == 0)
+        {
+            return MinecraftClient.getInstance().options.getGuiScale().getValue();
+        }
+
+        return scale;
+    }
+
     @Override
     public void onInitializeClient()
     {

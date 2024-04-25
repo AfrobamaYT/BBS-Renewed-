@@ -85,26 +85,9 @@ public class BBSSettings
         return primaryColor.get() | alpha;
     }
 
-    public static int getScale()
-    {
-        int scale = userIntefaceScale.get();
-
-        if (scale == 0)
-        {
-            return 2;
-        }
-
-        return scale;
-    }
-
     public static int getDefaultDuration()
     {
         return duration == null ? 30 : duration.get();
-    }
-
-    public static int transform(int value)
-    {
-        return value / getScale();
     }
 
     public static float getFov()

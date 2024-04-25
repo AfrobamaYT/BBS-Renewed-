@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.ui.utils;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.Framebuffer;
 import mchorse.bbs_mod.graphics.Renderbuffer;
@@ -70,7 +69,7 @@ public class StencilFormFramebuffer
 
     public void resizeGUI(int w, int h)
     {
-        this.resize(w, h, BBSSettings.getScale());
+        this.resize(w, h, BBSModClient.getGUIScale());
     }
 
     public void resize(int w, int h, int scale)
@@ -98,7 +97,7 @@ public class StencilFormFramebuffer
 
     public void pickGUI(int x, int y)
     {
-        int scale = BBSSettings.getScale();
+        int scale = BBSModClient.getGUIScale();
 
         this.pick(x * scale, y * scale);
     }
