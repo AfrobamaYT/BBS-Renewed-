@@ -4,7 +4,6 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
-import net.minecraft.client.gl.VertexBuffer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -145,28 +144,40 @@ public class TextureExtruder
     {
         List<Float> vertices = new ArrayList<>();
 
-        float p = 0.5F;
-        float n = -0.5F;
+        float px = 0.5F;
+        float py = 0.5F;
         float u1 = 0F;
         float v1 = 0F;
         float u2 = 1F;
         float v2 = 1F;
         float d = 0.5F / 16F;
 
+        if (pixels.width > pixels.height)
+        {
+            py = pixels.height / (float) pixels.width * 0.5F;
+        }
+        else if (pixels.height > pixels.width)
+        {
+            px = pixels.width / (float) pixels.height * 0.5F;
+        }
+
+        float nx = -px;
+        float ny = -py;
+
         fillTexturedNormalQuad(vertices,
-            p, n, d,
-            n, n, d,
-            n, p, d,
-            p, p, d,
+            px, ny, d,
+            nx, ny, d,
+            nx, py, d,
+            px, py, d,
             u1, v1, u2, v2,
             0F, 0F, 1F
         );
 
         fillTexturedNormalQuad(vertices,
-            n, n, -d,
-            p, n, -d,
-            p, p, -d,
-            n, p, -d,
+            nx, ny, -d,
+            px, ny, -d,
+            px, py, -d,
+            nx, py, -d,
             u2, v1, u1, v2,
             0F, 0F, -1F
         );
@@ -177,7 +188,7 @@ public class TextureExtruder
             {
                 if (this.hasPixel(pixels, i, j))
                 {
-                    this.generateNeighbors(pixels, vertices, i, j, i, j, d);
+                    this.generateNeighbors(pixels, vertices, px, py, i, j, d);
                 }
             }
         }
@@ -185,57 +196,59 @@ public class TextureExtruder
         return new CachedExtrudedData(fromList(vertices));
     }
 
-    private void generateNeighbors(Pixels pixels, List<Float> vertices, int i, int j, int x, int y, float d)
+    private void generateNeighbors(Pixels pixels, List<Float> vertices, float px, float py, int x, int y, float d)
     {
         float w = pixels.width;
         float h = pixels.height;
+        float sx = 1 / w * (px / 0.5F);
+        float sy = 1 / h * (py / 0.5F);
         float u = (x + 0.5F) / w;
         float v = (y + 0.5F) / h;
 
-        if (!this.hasPixel(pixels, x - 1, y) || i == 0)
+        if (!this.hasPixel(pixels, x - 1, y) || x == 0)
         {
             fillTexturedNormalQuad(vertices,
-                i / w - 0.5F, -(j + 1) / h + 0.5F, -d,
-                i / w - 0.5F, -j / h + 0.5F, -d,
-                i / w - 0.5F, -j / h + 0.5F, d,
-                i / w - 0.5F, -(j + 1) / h + 0.5F, d,
+                x * sx - px, -(y + 1) * sy + py, -d,
+                x * sx - px, -y * sy + py, -d,
+                x * sx - px, -y * sy + py, d,
+                x * sx - px, -(y + 1) * sy + py, d,
                 u, v, u, v,
                 -1F, 0F, 0F
             );
         }
 
-        if (!this.hasPixel(pixels, x + 1, y) || i == 15)
+        if (!this.hasPixel(pixels, x + 1, y) || x == w - 1)
         {
             fillTexturedNormalQuad(vertices,
-                (i + 1) / w - 0.5F, -(j + 1) / h + 0.5F, d,
-                (i + 1) / w - 0.5F, -j / h + 0.5F, d,
-                (i + 1) / w - 0.5F, -j / h + 0.5F, -d,
-                (i + 1) / w - 0.5F, -(j + 1) / h + 0.5F, -d,
+                (x + 1) * sx - px, -(y + 1) * sy + py, d,
+                (x + 1) * sx - px, -y * sy + py, d,
+                (x + 1) * sx - px, -y * sy + py, -d,
+                (x + 1) * sx - px, -(y + 1) * sy + py, -d,
                 u, v, u, v,
                 1F, 0F, 0F
             );
         }
 
-        if (!this.hasPixel(pixels, x, y - 1) || j == 0)
+        if (!this.hasPixel(pixels, x, y - 1) || y == 0)
         {
             fillTexturedNormalQuad(vertices,
-                (i + 1) / w - 0.5F, -j / h + 0.5F, d,
-                i / w - 0.5F, -j / h + 0.5F, d,
-                i / w - 0.5F, -j / h + 0.5F, -d,
-                (i + 1) / w - 0.5F, -j / h + 0.5F, -d,
+                (x + 1) * sx - px, -y * sy + py, d,
+                x * sx - px, -y * sy + py, d,
+                x * sx - px, -y * sy + py, -d,
+                (x + 1) * sx - px, -y * sy + py, -d,
                 u, v, u, v,
 
                 0F, 1F, 0F
             );
         }
 
-        if (!this.hasPixel(pixels, x, y + 1) || j == 15)
+        if (!this.hasPixel(pixels, x, y + 1) || y == h - 1)
         {
             fillTexturedNormalQuad(vertices,
-                (i + 1) / w - 0.5F, -(j + 1) / h + 0.5F, -d,
-                i / w - 0.5F, -(j + 1) / h + 0.5F, -d,
-                i / w - 0.5F, -(j + 1) / h + 0.5F, d,
-                (i + 1) / w - 0.5F, -(j + 1) / h + 0.5F, d,
+                (x + 1) * sx - px, -(y + 1) * sy + py, -d,
+                x * sx - px, -(y + 1) * sy + py, -d,
+                x * sx - px, -(y + 1) * sy + py, d,
+                (x + 1) * sx - px, -(y + 1) * sy + py, d,
                 u, v, u, v,
                 0F, -1F, 0F
             );
