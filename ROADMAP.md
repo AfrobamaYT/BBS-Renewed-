@@ -21,16 +21,10 @@ Beside that, here is a list to finish:
 - [x] Bring back language editor stuff
 - [x] Implement language picker thing
 - [x] ffmpeg warning
-- [ ] Fix keyframe stuff
-  - [x] Fix can't exit the keyframe graph editor
-  - [ ] Add forced duration to regular keyframes
-- [ ] Check out player models
+- [x] Fix can't exit the keyframe graph editor
+- [x] Check out player models
 - [x] Make last undo unmergeable if 5 seconds passed or smth
 - [x] Fix Iris bugs
-
-There has to be also finished tutorial, and Wiki:
-
-- [ ] 
 
 ## Old Core Adaptation
 

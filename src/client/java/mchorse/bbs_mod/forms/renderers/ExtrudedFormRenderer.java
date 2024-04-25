@@ -5,13 +5,22 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.graphics.texture.TextureExtruder;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.gl.VertexBuffer;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
 public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 {
@@ -49,29 +58,37 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     protected void render3D(FormRenderingContext context)
     {
         Link texture = this.form.texture.get(context.getTransition());
-        VertexBuffer vertexBuffer = BBSModClient.getTextures().getExtruder().get(texture);
+        TextureExtruder.CachedExtrudedData data = BBSModClient.getTextures().getExtruder().get(texture);
 
-        if (vertexBuffer != null)
+        if (data != null)
         {
             LightmapTextureManager lightMap = MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager();
-            ShaderProgram program = getShader(context, BBSShaders.getExtrudedProgram(), BBSShaders.getPickerBillboardProgram());
 
             RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
             lightMap.enable();
 
-            GlUniform lightmapUV = program.getUniform("LightmapUV");
+            RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntitySolidProgram, BBSShaders::getPickerBillboardProgram));
 
-            if (lightmapUV != null)
+            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+            Matrix4f matrix = context.stack.peek().getPositionMatrix();
+            Matrix3f normal = context.stack.peek().getNormalMatrix();
+
+            buffer.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+
+            for (int i = 0; i < data.getCount(); i++)
             {
-                lightmapUV.set(
-                    LightmapTextureManager.getBlockLightCoordinates(context.light),
-                    LightmapTextureManager.getSkyLightCoordinates(context.light)
-                );
+                int offset = i * 8;
+
+                buffer.vertex(matrix, data.data[offset], data.data[offset + 1], data.data[offset + 2])
+                    .color(1F, 1F, 1F, 1F)
+                    .texture(data.data[offset + 3], data.data[offset + 4])
+                    .overlay(OverlayTexture.DEFAULT_UV)
+                    .light(context.light)
+                    .normal(normal, data.data[offset + 5], data.data[offset + 6], data.data[offset + 7])
+                    .next();
             }
 
-            vertexBuffer.bind();
-            vertexBuffer.draw(context.stack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(), program);
-            VertexBuffer.unbind();
+            BufferRenderer.drawWithGlobalProgram(buffer.end());
 
             lightMap.disable();
         }
