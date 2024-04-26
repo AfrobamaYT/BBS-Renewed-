@@ -599,6 +599,7 @@
     "bbs.ui.supporters.super_supporters": "Супер-прихильники",
     "bbs.ui.supporters.title": "Прихильники",
     "bbs.ui.supporters.tutorials": "Посібники",
+    "bbs.ui.supporters.tutorials_link": "https://www.youtube.com/playlist?list=PLLnllO8nnzE-JIfqDQ5HnD7BN2V6tdbci",
     "bbs.ui.supporters.wiki": "Вікі",
     "bbs.ui.texture.editor.auto_size": "Автоматичний розмір",
     "bbs.ui.texture.editor.auto_size_tooltip": "При увімкненні буде використовуватись оригінальний розмір текстури, інакше використовуватимуть розмір вказаний нижче.",

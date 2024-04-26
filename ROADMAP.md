@@ -64,6 +64,11 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 
 ### Miscellaneous
 
+Bugs:
+
+- [ ] Reset camera when switching to another dimension
+- [ ] Save films somehwere when the server doesn't have BBS mod
+
 Useful user suggestions:
 
 - [ ] Bezier support for Blockbench models
@@ -84,6 +89,7 @@ Useful user suggestions:
 - [ ] Flight mode speed
 - [ ] Change moving around to left click and mouse wheel button to fov and roll
 - [ ] Add button to toggle orbit mode, orbit perspective and make context menu for perspectives
+- [ ] Add an icon when in orbit mode
 
 Considerations:
 
@@ -92,6 +98,7 @@ Considerations:
 - [ ] Wave files cues
 - [ ] mp3/mp4 to wav via drag and dropping
 - [ ] Blockbench like interface (moving panels around)
+- [ ] .geo.json + .animation.json import
 
 Epic features
 
