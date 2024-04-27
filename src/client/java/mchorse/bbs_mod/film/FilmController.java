@@ -149,10 +149,14 @@ public class FilmController
 
     public void render(WorldRenderContext context)
     {
+        RenderSystem.enableDepthTest();
+
         for (IEntity entity : this.entities)
         {
             this.renderEntity(context, entity, null);
         }
+
+        RenderSystem.disableDepthTest();
     }
 
     private void renderEntity(WorldRenderContext context, IEntity entity, StencilMap map)
@@ -161,8 +165,6 @@ public class FilmController
 
         if (form != null)
         {
-            RenderSystem.enableDepthTest();
-
             MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
@@ -191,8 +193,6 @@ public class FilmController
                     FormUtilsClient.render(form, formContext);
                     stack.pop();
 
-                    RenderSystem.disableDepthTest();
-
                     return;
                 }
             }
@@ -216,8 +216,6 @@ public class FilmController
             }
 
             stack.pop();
-
-            RenderSystem.disableDepthTest();
         }
     }
 }

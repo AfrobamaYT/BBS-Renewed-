@@ -68,5 +68,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         consumers.clearRunnables();
 
         context.stack.pop();
+
+        RenderSystem.enableDepthTest();
     }
 }

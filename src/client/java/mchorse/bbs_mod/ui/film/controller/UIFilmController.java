@@ -995,8 +995,6 @@ public class UIFilmController extends UIElement
 
         if (form != null)
         {
-            RenderSystem.enableDepthTest();
-
             MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
@@ -1049,8 +1047,6 @@ public class UIFilmController extends UIElement
             }
 
             stack.pop();
-
-            RenderSystem.enableDepthTest();
         }
     }
 

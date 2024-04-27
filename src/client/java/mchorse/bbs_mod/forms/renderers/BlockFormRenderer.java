@@ -72,5 +72,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         consumers.clearRunnables();
 
         context.stack.pop();
+
+        RenderSystem.enableDepthTest();
     }
 }
