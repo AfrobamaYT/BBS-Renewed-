@@ -160,11 +160,17 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             /* Render body parts */
             this.captureMatrices(model);
-            this.renderBodyParts(FormRenderingContext.set(this.entity, stack, 0, context.getTransition()));
 
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            stack.push();
+            stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
+            stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
+
+            this.renderBodyParts(FormRenderingContext.set(this.entity, stack, LightmapTextureManager.pack(15, 15), context.getTransition()).inUI());
 
             stack.pop();
+            stack.pop();
+
+            RenderSystem.depthFunc(GL11.GL_ALWAYS);
         }
     }
 
@@ -190,6 +196,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         newStack.push();
 
         MatrixStackUtils.multiply(newStack, stack.peek().getPositionMatrix());
+        newStack.peek().getNormalMatrix().set(stack.peek().getNormalMatrix());
 
         if (ui)
         {
