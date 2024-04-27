@@ -1,5 +1,8 @@
 package mchorse.bbs_mod.settings.values;
 
+import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.StringType;
+
 /**
  * Value language.
  *
@@ -12,5 +15,16 @@ public class ValueLanguage extends ValueString
     public ValueLanguage(String id)
     {
         super(id, "");
+    }
+
+    @Override
+    public void fromData(BaseType data)
+    {
+        if (BaseType.isString(data))
+        {
+            data = new StringType(data.asString().toLowerCase());
+        }
+
+        super.fromData(data);
     }
 }
