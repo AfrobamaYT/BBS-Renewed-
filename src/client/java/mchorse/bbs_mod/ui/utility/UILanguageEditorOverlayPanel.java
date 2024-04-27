@@ -11,6 +11,7 @@ import mchorse.bbs_mod.l10n.L10nUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.l10n.keys.LangKey;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
@@ -107,6 +108,8 @@ public class UILanguageEditorOverlayPanel extends UIOverlayPanel
         this.buildEditor();
         this.readMarkedStrings();
         this.updateCompletionLabel();
+
+        this.keys().register(Keys.SAVE, () -> this.save.clickItself());
     }
 
     public boolean hasMarked(String key)
