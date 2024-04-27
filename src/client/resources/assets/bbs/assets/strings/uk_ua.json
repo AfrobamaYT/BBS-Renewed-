@@ -101,7 +101,7 @@
     "bbs.config.tutorials.keystrokes_position": "Позиція клавіш",
     "bbs.config.tutorials.keystrokes_position-comment": "Дозволяє змінити кут в якому будуть з'являтись клавіші",
     "bbs.config.tutorials.mouse_buttons": "Кнопка миші",
-    "bbs.config.tutorials.mouse_buttons-comment": "Вмикає показ натискань на клавіші миші та прокрутку колеса миші. Це дуже корисно для навчальних відео якщо ви записуєте через мод Мінема та натискань миші не видно.",
+    "bbs.config.tutorials.mouse_buttons-comment": "Вмикає показ натискань на клавіші миші та прокрутку колеса миші",
     "bbs.config.tutorials.title": "Налаштування для навчальних відео",
     "bbs.config.tutorials.tooltip": "Ця категорія містить параметри, корисні для створення навчальних відео",
     "bbs.config.video.encoder_args": "Аргументи кодувальника",

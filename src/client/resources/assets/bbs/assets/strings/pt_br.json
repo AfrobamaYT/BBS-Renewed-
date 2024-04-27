@@ -95,7 +95,7 @@
     "bbs.config.tutorials.keystrokes_position": "Posição de Teclas",
     "bbs.config.tutorials.keystrokes_position-comment": "Permite alternar o canto de fila de teclas",
     "bbs.config.tutorials.mouse_buttons": "Botões do Mouse",
-    "bbs.config.tutorials.mouse_buttons-comment": "Ativa a rederização dos botões de mouse pressionados e da roda do mouse rolando. É muito util para tutoriais, se você estiver gravando no BBS o gravador de video e o cursor não serão visiveis",
+    "bbs.config.tutorials.mouse_buttons-comment": "Ativa a rederização dos botões de mouse pressionados e da roda do mouse rolando",
     "bbs.config.tutorials.title": "Opções de Tutoriais",
     "bbs.config.tutorials.tooltip": "Essa categoria fornece opções que poderã oser uteis para a criação de videos de tutoriais",
     "bbs.config.video.encoder_args": "Argumentos do Encoder",

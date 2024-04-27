@@ -103,7 +103,7 @@
     "bbs.config.tutorials.keystrokes_position": "Позиция клавиш",
     "bbs.config.tutorials.keystrokes_position-comment": "Позволяет изменить угол в котором будут появляться клавиши",
     "bbs.config.tutorials.mouse_buttons": "Кнопки мыши",
-    "bbs.config.tutorials.mouse_buttons-comment": "Включает показ нажатий на клавиши мыши и прокрутку колёсика мыши. Это очень полезно для туториалов когда Вы записываете через мод Минема и нажатия на кнопки мыши не видны",
+    "bbs.config.tutorials.mouse_buttons-comment": "Включает показ нажатий на клавиши мыши и прокрутку колёсика мыши",
     "bbs.config.tutorials.title": "Настройки для туториалов",
     "bbs.config.tutorials.tooltip": "В этой категории представлены параметры, полезные для создания обучающих видеороликов.",
     "bbs.config.video.encoder_args": "Параметры кодера",

@@ -103,7 +103,7 @@
     "bbs.config.tutorials.keystrokes_position": "按鍵提示位置",
     "bbs.config.tutorials.keystrokes_position-comment": "用於更改按鍵提示基線所處的角落",
     "bbs.config.tutorials.mouse_buttons": "鼠標按鈕",
-    "bbs.config.tutorials.mouse_buttons-comment": "啟用鼠標按鈕按下和鼠標滾輪滾動的渲染。在使用 BBS 的視頻錄製器錄製教程時非常有用，以顯示鼠標按鈕按下或滾輪滾動",
+    "bbs.config.tutorials.mouse_buttons-comment": "啟用鼠標按鈕按下和鼠標滾輪滾動的渲染。",
     "bbs.config.tutorials.title": "教程選項",
     "bbs.config.tutorials.tooltip": "此類別提供用於製作教程視頻的選項",
     "bbs.config.video.encoder_args": "編碼器參數",
