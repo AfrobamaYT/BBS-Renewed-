@@ -311,6 +311,8 @@
     "bbs.ui.film.screenshot-description": "Ваш скриншот был успешно сохранён. Нажмите на иконку справа чтобы открыть папку...",
     "bbs.ui.film.screenshot-title": "Скриншот был сохранён",
     "bbs.ui.film.title": "Фильмы",
+    "bbs.ui.film.teleport-title": "Телепортироваться",
+    "bbs.ui.film.teleport-description": "Вы кажеться слишком далеки от камеры. Если вы хотите телепортироваться, нажмите на иконку телепорта в правой боковой панели!",
     "bbs.ui.film.controller.insert_frame-description": "Выберите ключевую группу которую Вы хотите вставить:",
     "bbs.ui.film.controller.insert_frame-title": "Вставить ключевой кадр",
     "bbs.ui.film.controller.record-description": "Выберите ключевую группу котору вы хотите записать:",

@@ -291,6 +291,8 @@
     "bbs.ui.film.screenshot-description": "Sua captura de tela foi tirada com sucesso! Clique no ícone à direita para abrir a pasta...",
     "bbs.ui.film.screenshot-title": "A captura de tela foi tirada",
     "bbs.ui.film.title": "Filmes",
+    "bbs.ui.film.teleport-title": "Teletranportar",
+    "bbs.ui.film.teleport-description": "Isso parece que você está muito de longe de cena. Se você quiser se teletransportar para a câmera, clique o ícone de teletransporte na barra lateral direita!",
     "bbs.ui.forms.categories.add_category-description": "Digite o nome da categoria do formulário:",
     "bbs.ui.forms.categories.add_category-title": "Adicionar categoria",
     "bbs.ui.forms.categories.context.add_category": "Acionar categoria...",

@@ -36,7 +36,7 @@ public class UIKeys
     public static final IKey CAMERA_FLIGHT_FLIGHT_BACKWARD = L10n.lang("bbs.ui.camera.flight.backward");
     public static final IKey CAMERA_FLIGHT_FLIGHT_DOWN = L10n.lang("bbs.ui.camera.flight.down");
     public static final IKey CAMERA_FLIGHT_FLIGHT_FORWARD = L10n.lang("bbs.ui.camera.flight.forward");
-    public static final IKey CAMERA_FLIGHT_FLIGHT_LEFT = L10n.lang("bbs.ui.camera.flight.left");
+    public static final IKey CAMERA_FLIGHT_FLIGHT_LEFT = L10n.lang("bbs.ui.camera.flight.lt");
     public static final IKey CAMERA_FLIGHT_FLIGHT_PAN_LEFT = L10n.lang("bbs.ui.camera.flight.camera_left");
     public static final IKey CAMERA_FLIGHT_FLIGHT_PAN_RIGHT = L10n.lang("bbs.ui.camera.flight.camera_right");
     public static final IKey CAMERA_FLIGHT_FLIGHT_RIGHT = L10n.lang("bbs.ui.camera.flight.right");
@@ -196,6 +196,8 @@ public class UIKeys
     public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
     public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title");
+    public static final IKey FILM_TELEPORT_TITLE = L10n.lang("bbs.ui.film.teleport-title");
+    public static final IKey FILM_TELEPORT_DESCRIPTION = L10n.lang("bbs.ui.film.teleport-description");
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");

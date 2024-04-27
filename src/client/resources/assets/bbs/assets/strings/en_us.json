@@ -312,6 +312,8 @@
     "bbs.ui.film.screenshot-description": "Your screenshot was successfully taken! Click the icon on the right to open the folder...",
     "bbs.ui.film.screenshot-title": "Screenshot was taken",
     "bbs.ui.film.title": "Films",
+    "bbs.ui.film.teleport-title": "Teleport",
+    "bbs.ui.film.teleport-description": "It appears that you are too far away from the scene. If you want to teleport to camera, press teleport icon in the right sidebar!",
     "bbs.ui.film.controller.insert_frame-description": "Pick a keyframe group that you want to insert:",
     "bbs.ui.film.controller.insert_frame-title": "Insert keyframe",
     "bbs.ui.film.controller.record-description": "Pick a keyframe group that you want to record:",

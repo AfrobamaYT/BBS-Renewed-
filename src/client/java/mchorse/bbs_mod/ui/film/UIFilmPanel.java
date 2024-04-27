@@ -63,8 +63,11 @@ import mchorse.bbs_mod.utils.undo.UndoManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +94,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIScreenplayEditor screenplay;
 
     public UIIcon plause;
+    public UIIcon teleport;
     public UIIcon record;
     public UIIcon screenshot;
     public UIIcon openVideos;
@@ -105,6 +109,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private Camera camera = new Camera();
     private Timer undoTimer = new Timer(1000);
+    private boolean entered;
 
     /* Entity control */
     private UIFilmController controller = new UIFilmController(this);
@@ -153,6 +158,18 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Setup elements */
         this.plause = new UIIcon(Icons.PLAY, (b) -> this.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
+        this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
+        {
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            Vector3d cameraPos = this.camera.position;
+            String name = player.getGameProfile().getName();
+            double posX = Math.floor(cameraPos.x);
+            double posY = Math.floor(cameraPos.y);
+            double posZ = Math.floor(cameraPos.z);
+
+            player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
+        });
+        this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE, Direction.LEFT);
         this.record = new UIIcon(Icons.SPHERE, (b) ->
         {
             if (!FFMpegUtils.checkFFMpeg())
@@ -205,7 +222,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
         this.draggable.hoverOnly().relative(this.main).x(1F, -3).y(0.5F, -40).wh(6, 80);
 
-        this.iconBar.add(this.plause, this.screenshot, this.record, this.openVideos, this.openCamera, this.openReplays, this.openScreenplay);
+        this.iconBar.add(this.plause, this.teleport, this.screenshot, this.record, this.openVideos, this.openCamera, this.openReplays, this.openScreenplay);
 
         /* Adding everything */
         UIRenderable renderable = new UIRenderable(this::renderIcons);
@@ -525,6 +542,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.fillData();
         this.controller.createEntities();
+
+        this.entered = data != null;
     }
 
     private void handlePreValues(BaseValue baseValue)
@@ -764,6 +783,22 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.renderOverlays(context);
 
         super.render(context);
+
+        if (this.entered)
+        {
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            Vec3d pos = player.getPos();
+            Vector3d cameraPos = this.camera.position;
+            double distance = cameraPos.distance(pos.x, pos.y, pos.z);
+            int value = MinecraftClient.getInstance().options.getViewDistance().getValue();
+
+            if (distance > value * 12)
+            {
+                this.getContext().notify(UIKeys.FILM_TELEPORT_DESCRIPTION, Colors.RED | Colors.A100);
+            }
+
+            this.entered = false;
+        }
     }
 
     /**
