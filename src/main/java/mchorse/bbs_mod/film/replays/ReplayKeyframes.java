@@ -17,7 +17,7 @@ public class ReplayKeyframes extends ValueGroup
     public static final String GROUP_EXTRA1 = "extra1";
     public static final String GROUP_EXTRA2 = "extra2";
 
-    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "vX", "vY", "vZ");
+    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "vX", "vY", "vZ");
 
     public final KeyframeChannel x = new KeyframeChannel("x");
     public final KeyframeChannel y = new KeyframeChannel("y");
@@ -33,6 +33,7 @@ public class ReplayKeyframes extends ValueGroup
     public final KeyframeChannel bodyYaw = new KeyframeChannel("bodyYaw");
 
     public final KeyframeChannel sneaking = new KeyframeChannel("sneaking");
+    public final KeyframeChannel sprinting = new KeyframeChannel("sprinting");
     public final KeyframeChannel grounded = new KeyframeChannel("grounded");
     public final KeyframeChannel fall = new KeyframeChannel("fall");
 
@@ -64,6 +65,7 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.headYaw);
         this.add(this.bodyYaw);
         this.add(this.sneaking);
+        this.add(this.sprinting);
         this.add(this.grounded);
         this.add(this.fall);
         this.add(this.stickLeftX);
@@ -104,6 +106,7 @@ public class ReplayKeyframes extends ValueGroup
         }
 
         this.sneaking.insert(tick, entity.isSneaking() ? 1D : 0D);
+        this.sprinting.insert(tick, entity.isSprinting() ? 1D : 0D);
         this.grounded.insert(tick, entity.isOnGround() ? 1D : 0D);
 
         if (rotation)
@@ -177,8 +180,8 @@ public class ReplayKeyframes extends ValueGroup
         }
 
         /* Motion and fall distance */
-        boolean sneaking = this.sneaking.interpolate(tick) != 0D;
-        entity.setSneaking(sneaking);
+        entity.setSneaking(this.sneaking.interpolate(tick) != 0D);
+        entity.setSprinting(this.sprinting.interpolate(tick) != 0D);
         entity.setOnGround(this.grounded.interpolate(tick) != 0D);
 
         float[] sticks = entity.getExtraVariables();

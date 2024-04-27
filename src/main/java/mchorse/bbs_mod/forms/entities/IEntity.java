@@ -21,6 +21,10 @@ public interface IEntity
 
     public void setSneaking(boolean sneaking);
 
+    public boolean isSprinting();
+
+    public void setSprinting(boolean sprinting);
+
     public boolean isOnGround();
 
     public void setOnGround(boolean ground);
@@ -110,6 +114,7 @@ public interface IEntity
         this.setForm(entity.getForm());
 
         this.setSneaking(entity.isSneaking());
+        this.setSprinting(entity.isSprinting());
         this.setOnGround(entity.isOnGround());
         this.setFallDistance(entity.getFallDistance());
 

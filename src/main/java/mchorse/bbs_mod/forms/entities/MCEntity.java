@@ -65,6 +65,18 @@ public class MCEntity implements IEntity
     }
 
     @Override
+    public boolean isSprinting()
+    {
+        return this.mcEntity.isSprinting();
+    }
+
+    @Override
+    public void setSprinting(boolean sprinting)
+    {
+        this.mcEntity.setSprinting(sprinting);
+    }
+
+    @Override
     public boolean isOnGround()
     {
         return this.mcEntity.isOnGround();

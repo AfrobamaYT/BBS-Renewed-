@@ -13,6 +13,7 @@ public class StubEntity implements IEntity
 
     private Form form;
     private boolean sneaking;
+    private boolean sprinting;
     private boolean onGround = true;
     private float fallDistance;
 
@@ -77,6 +78,18 @@ public class StubEntity implements IEntity
     public void setSneaking(boolean sneaking)
     {
         this.sneaking = sneaking;
+    }
+
+    @Override
+    public boolean isSprinting()
+    {
+        return this.sprinting;
+    }
+
+    @Override
+    public void setSprinting(boolean sprinting)
+    {
+        this.sprinting = sprinting;
     }
 
     @Override

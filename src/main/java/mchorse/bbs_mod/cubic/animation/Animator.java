@@ -22,6 +22,7 @@ public class Animator
     /* Actions */
     public ActionPlayback idle;
     public ActionPlayback running;
+    public ActionPlayback sprinting;
     public ActionPlayback crouching;
     public ActionPlayback crouchingIdle;
     public ActionPlayback dying;
@@ -51,7 +52,7 @@ public class Animator
     public List<String> getActions()
     {
         return Arrays.asList(
-            "idle", "running", "crouching", "crouching_idle", "dying", "falling",
+            "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
             "swipe", "jump", "hurt", "land", "shoot", "consume"
         );
     }
@@ -62,6 +63,7 @@ public class Animator
 
         this.idle = this.createAction(this.idle, actions.getConfig("idle"), true);
         this.running = this.createAction(this.running, actions.getConfig("running"), true);
+        this.sprinting = this.createAction(this.sprinting, actions.getConfig("sprinting"), true);
         this.crouching = this.createAction(this.crouching, actions.getConfig("crouching"), true);
         this.crouchingIdle = this.createAction(this.crouchingIdle, actions.getConfig("crouching_idle"), true);
         this.dying = this.createAction(this.dying, actions.getConfig("dying"), false);
@@ -220,10 +222,10 @@ public class Animator
             {
                 this.setActiveAction(this.falling);
             }
-            /* else if (target.isSprinting() && this.sprinting != null)
+            else if (target.isSprinting() && this.sprinting != null)
             {
                 this.setActiveAction(this.sprinting);
-            } */
+            }
             else
             {
                 this.setActiveAction(!moves ? this.idle : this.running);
