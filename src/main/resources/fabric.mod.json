@@ -11,7 +11,7 @@
         "homepage": "https://www.patreon.com/McHorse"
     },
     "license": "ARR",
-    "icon": "assets/modid/icon.png",
+    "icon": "assets/bbs/icon.png",
     "environment": "*",
     "entrypoints": {
         "main": [
