@@ -7,7 +7,6 @@ import mchorse.bbs_mod.audio.Waveform;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
-import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
@@ -16,6 +15,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
@@ -444,7 +444,20 @@ public class UIReplaysEditor extends UIElement
         {
             if (clip instanceof AudioClip audioClip)
             {
-                SoundBuffer buffer = BBSModClient.getSounds().get(audioClip.audio.get(), true);
+                Link link = audioClip.audio.get();
+
+                if (link == null)
+                {
+                    continue;
+                }
+
+                SoundBuffer buffer = BBSModClient.getSounds().get(link, true);
+
+                if (buffer == null || buffer.getWaveform() == null)
+                {
+                    continue;
+                }
+
                 Waveform wave = buffer.getWaveform();
 
                 if (wave != null)
