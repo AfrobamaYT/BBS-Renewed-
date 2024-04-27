@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -160,6 +161,8 @@ public class FilmController
 
         if (form != null)
         {
+            RenderSystem.enableDepthTest();
+
             MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
@@ -188,6 +191,8 @@ public class FilmController
                     FormUtilsClient.render(form, formContext);
                     stack.pop();
 
+                    RenderSystem.disableDepthTest();
+
                     return;
                 }
             }
@@ -211,6 +216,8 @@ public class FilmController
             }
 
             stack.pop();
+
+            RenderSystem.disableDepthTest();
         }
     }
 }
