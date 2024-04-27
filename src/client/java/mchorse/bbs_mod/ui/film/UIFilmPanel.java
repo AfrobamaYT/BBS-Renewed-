@@ -478,6 +478,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     @Override
+    public boolean canToggleVisibility()
+    {
+        return false;
+    }
+
+    @Override
     public boolean canPause()
     {
         return false;

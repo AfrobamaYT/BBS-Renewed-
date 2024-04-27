@@ -21,6 +21,11 @@ public class UIDashboardPanel extends UIElement
         return true;
     }
 
+    public boolean canToggleVisibility()
+    {
+        return true;
+    }
+
     public boolean canPause()
     {
         return true;

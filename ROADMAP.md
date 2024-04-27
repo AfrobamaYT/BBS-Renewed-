@@ -92,6 +92,7 @@ Useful user suggestions:
 - [ ] Add an icon when in orbit mode
 - [ ] Add loop option to /bbs film play
 - [ ] Add /bbs film stop
+- [ ] Teleport to model block
 
 Considerations:
 
