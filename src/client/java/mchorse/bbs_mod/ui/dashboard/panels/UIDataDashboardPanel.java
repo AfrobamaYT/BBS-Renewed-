@@ -7,6 +7,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIDataOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -31,7 +32,12 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
         this.iconBar.add(this.saveIcon);
 
-        this.keys().register(Keys.SAVE, this.saveIcon::clickItself).active(() -> this.data != null);
+        /* A separate element is needed to make save keybind a more priority than other keybinds, because
+         * the keybinds are processed afterwards. */
+        UIElement savePlease = new UIElement().noCulling();
+
+        savePlease.keys().register(Keys.SAVE, this.saveIcon::clickItself).active(() -> this.data != null);
+        this.add(savePlease);
     }
 
     public T getData()
