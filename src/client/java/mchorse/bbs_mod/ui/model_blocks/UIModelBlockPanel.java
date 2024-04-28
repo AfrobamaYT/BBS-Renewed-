@@ -241,6 +241,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     @Override
     protected boolean subMouseClicked(UIContext context)
     {
+        if (super.subMouseClicked(context))
+        {
+            return true;
+        }
+
         if (this.hovered != null && context.mouseButton == 0)
         {
             this.fill(this.hovered, true);
@@ -248,7 +253,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             return true;
         }
 
-        return super.subMouseClicked(context);
+        return false;
     }
 
     @Override

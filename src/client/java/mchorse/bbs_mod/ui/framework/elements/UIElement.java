@@ -1088,7 +1088,10 @@ public class UIElement implements IUIElement
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseClicked(context)) return true;
+            if (element.isEnabled() && element.mouseClicked(context))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -1100,7 +1103,10 @@ public class UIElement implements IUIElement
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseScrolled(context)) return true;
+            if (element.isEnabled() && element.mouseScrolled(context))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -1112,7 +1118,10 @@ public class UIElement implements IUIElement
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseReleased(context)) return true;
+            if (element.isEnabled() && element.mouseReleased(context))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -1124,7 +1133,10 @@ public class UIElement implements IUIElement
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.keyPressed(context)) return true;
+            if (element.isEnabled() && element.keyPressed(context))
+            {
+                return true;
+            }
         }
 
         return false;

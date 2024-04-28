@@ -64,6 +64,9 @@ public class UIPoseEditor extends UIElement
         this.groups.add(groups);
         this.groups.sort();
 
+        this.fix.setVisible(!groups.isEmpty());
+        this.transform.setVisible(!groups.isEmpty());
+
         this.groups.setIndex(0);
         this.pickBone(this.groups.getCurrentFirst());
     }
@@ -90,8 +93,16 @@ public class UIPoseEditor extends UIElement
     {
         PoseTransform poseTransform = this.pose.get(bone);
 
-        this.fix.setValue(poseTransform.fix);
-        this.transform.setTransform(poseTransform);
+        if (poseTransform != null)
+        {
+            this.fix.setValue(poseTransform.fix);
+            this.transform.setTransform(poseTransform);
+        }
+        else
+        {
+            this.fix.setValue(0F);
+            this.transform.setTransform(null);
+        }
     }
 
     protected void setFix(PoseTransform transform, float value)

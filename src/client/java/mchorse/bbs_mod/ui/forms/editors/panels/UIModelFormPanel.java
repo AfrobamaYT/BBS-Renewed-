@@ -52,7 +52,9 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
     {
         super.startEdit(form);
 
-        this.poseEditor.setPose(form.pose.get(), ModelFormRenderer.getModel(this.form).poseGroup);
+        CubicModel model = ModelFormRenderer.getModel(this.form);
+
+        this.poseEditor.setPose(form.pose.get(), model == null ? this.form.model.get() : model.poseGroup);
         this.poseEditor.fillGroups(FormUtilsClient.getBones(this.form));
         this.color.setColor(form.color.get().getARGBColor());
     }

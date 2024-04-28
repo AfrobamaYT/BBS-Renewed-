@@ -130,7 +130,7 @@ public abstract class UIModelRenderer extends UIElement
             this.cachedPlaneIntersection = this.calculateOnPlane(context);
         }
 
-        return this.area.isInside(context);
+        return false;
     }
 
     @Override

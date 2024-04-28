@@ -95,6 +95,9 @@ Useful user suggestions:
 - [ ] Add /bbs film stop
 - [ ] Teleport to model block
 - [ ] Morph entity selectors 
+- [ ] Base form options for shadows (vanilla and iris)
+- [ ] Add color to extruded form
+- [ ] Add step interpolation / break down a segment into more
 
 Considerations:
 

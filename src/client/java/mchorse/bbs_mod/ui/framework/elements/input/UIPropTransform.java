@@ -6,6 +6,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.Timer;
@@ -33,9 +34,13 @@ public class UIPropTransform extends UITransform
     private int lastX;
     private Vector3f cache = new Vector3f();
     private Timer checker = new Timer(30);
+    
+    private UITransformHandler handler;
 
     public UIPropTransform()
-    {}
+    {
+        this.handler = new UITransformHandler(this);
+    }
 
     public UIPropTransform(Consumer<Transform> callback)
     {
@@ -74,13 +79,32 @@ public class UIPropTransform extends UITransform
 
     private void enableMode(int mode)
     {
+        UIContext context = this.getContext();
+
+        if (this.editing)
+        {
+            Axis[] values = Axis.values();
+
+            this.axis = values[MathUtils.cycler(this.axis.ordinal() + 1, 0, values.length - 1)];
+
+            this.getValue().set(this.cache);
+            this.submit();
+        }
+        else
+        {
+            this.axis = Axis.X;
+            this.lastX = context.mouseX;
+        }
+
         this.editing = true;
         this.mode = mode;
 
-        UIContext context = this.getContext();
-
-        this.lastX = context.mouseX;
         this.cache.set(this.getValue());
+
+        if (!this.handler.hasParent())
+        {
+            context.menu.overlay.add(this.handler);
+        }
     }
 
     private Vector3f getValue()
@@ -100,6 +124,11 @@ public class UIPropTransform extends UITransform
     private void disable()
     {
         this.editing = false;
+
+        if (this.handler.hasParent())
+        {
+            this.handler.removeFromParent();
+        }
     }
 
     @Override
@@ -136,33 +165,6 @@ public class UIPropTransform extends UITransform
         {
             this.callback.accept(this.transform);
         }
-    }
-
-    @Override
-    protected boolean subMouseClicked(UIContext context)
-    {
-        if (this.editing)
-        {
-            if (context.mouseButton == 0)
-            {
-                this.disable();
-                this.submit();
-                this.setTransform(this.transform);
-
-                return true;
-            }
-            else if (context.mouseButton == 1)
-            {
-                this.disable();
-                this.getValue().set(this.cache);
-                this.submit();
-                this.setTransform(this.transform);
-
-                return true;
-            }
-        }
-
-        return super.subMouseClicked(context);
     }
 
     @Override
@@ -255,6 +257,43 @@ public class UIPropTransform extends UITransform
             int y = this.area.my(font.getHeight());
 
             context.batcher.textCard(label, x, y, Colors.WHITE, BBSSettings.primaryColor(Colors.A50));
+        }
+    }
+
+    public static class UITransformHandler extends UIElement
+    {
+        private UIPropTransform transform;
+
+        public UITransformHandler(UIPropTransform transform)
+        {
+            this.transform = transform;
+        }
+
+        @Override
+        protected boolean subMouseClicked(UIContext context)
+        {
+            if (this.transform.editing)
+            {
+                if (context.mouseButton == 0)
+                {
+                    this.transform.disable();
+                    this.transform.submit();
+                    this.transform.setTransform(this.transform.transform);
+
+                    return true;
+                }
+                else if (context.mouseButton == 1)
+                {
+                    this.transform.disable();
+                    this.transform.getValue().set(this.transform.cache);
+                    this.transform.submit();
+                    this.transform.setTransform(this.transform.transform);
+
+                    return true;
+                }
+            }
+            
+            return super.subMouseClicked(context);
         }
     }
 }
