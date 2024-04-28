@@ -20,9 +20,10 @@ import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.WorldRenderer;
+import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -168,7 +169,11 @@ public class FilmController
             MatrixStack stack = context.matrixStack();
             Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
                 .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
-            int light = WorldRenderer.getLightmapCoordinates(entity.getWorld(), new BlockPos((int) position.x, (int) (position.y + 0.5D), (int) position.z));
+
+            BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
+            int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
+            int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
+            int light = LightmapTextureManager.pack(torch, sky);
 
             FormRenderingContext formContext = FormRenderingContext
                 .set(entity, stack, light, context.tickDelta())
