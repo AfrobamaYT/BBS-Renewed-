@@ -222,14 +222,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
         this.draggable.hoverOnly().relative(this.main).x(1F, -3).y(0.5F, -40).wh(6, 80);
 
-        this.iconBar.add(this.plause, this.teleport, this.screenshot, this.record, this.openVideos, this.openCamera, this.openReplays, this.openScreenplay);
+        this.iconBar.add(this.plause.marginTop(9), this.teleport, this.screenshot, this.record, this.openVideos, this.openCamera.marginTop(9), this.openReplays, this.openScreenplay);
 
         /* Adding everything */
-        UIRenderable renderable = new UIRenderable(this::renderIcons);
 
-        this.editor.add(this.main, renderable);
+        this.editor.add(this.main, new UIRenderable(this::renderIcons));
         this.main.add(this.cameraClips, this.replayEditor, this.screenplay, this.draggable);
-        this.add(this.controller);
+        this.add(this.controller, new UIRenderable(this::renderDividers));
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
         /* Register keybinds */
@@ -894,6 +893,15 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             context.batcher.icon(Icons.REFRESH, x, y);
         }
+    }
+
+    private void renderDividers(UIContext context)
+    {
+        Area a1 = this.saveIcon.area;
+        Area a2 = this.openVideos.area;
+
+        context.batcher.box(a1.x + 3, a1.ey() + 4, a1.ex() - 3, a1.ey() + 5, 0x22ffffff);
+        context.batcher.box(a2.x + 3, a2.ey() + 4, a2.ex() - 3, a2.ey() + 5, 0x22ffffff);
     }
 
     /**
