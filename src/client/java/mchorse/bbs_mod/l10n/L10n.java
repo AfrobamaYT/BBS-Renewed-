@@ -66,6 +66,7 @@ public class L10n
             new Pair<>("中文 (繁体) (zh_TW)", "zh_tw"),
             new Pair<>("English (en_US)", "en_us"),
             new Pair<>("Deutsch (de_DE)", "de_de"),
+            new Pair<>("Ελληνικά (el_GR)", "el_gr"),
             new Pair<>("Русский (ru_RU)", "ru_ru"),
             new Pair<>("Português (pt_BR)", "pt_br"),
             new Pair<>("Українська (uk_UA)", "uk_ua")
