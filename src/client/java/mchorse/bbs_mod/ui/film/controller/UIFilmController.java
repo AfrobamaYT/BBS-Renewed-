@@ -346,6 +346,14 @@ public class UIFilmController extends UIElement
             {
                 this.setMouseMode(3);
             }
+            else if (groups.contains(ReplayKeyframes.GROUP_EXTRA1))
+            {
+                this.setMouseMode(4);
+            }
+            else if (groups.contains(ReplayKeyframes.GROUP_EXTRA2))
+            {
+                this.setMouseMode(5);
+            }
         }
 
         if (this.controlled == null)
