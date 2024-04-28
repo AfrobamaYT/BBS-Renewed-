@@ -1,0 +1,8 @@
+{
+    "block.bbs.model": "Modell-Block",
+    "itemGroup.bbs.main": "BBS Mod",
+
+    "key.bbs.dashboard": "Dashboard",
+    "key.bbs.block_editor": "Modell-Block Editor",
+    "category.bbs.main": "BBS Mod"
+}

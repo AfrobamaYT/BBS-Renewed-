@@ -63,8 +63,9 @@ public class L10n
         this.supportedLanguages.addAll(Arrays.asList(
             new Pair<>("Minecraft (auto)", ""),
             new Pair<>("中文 (zh_CN)", "zh_cn"),
-            new Pair<>("中文 (繁体) (zh_CN)", "zh_tw"),
+            new Pair<>("中文 (繁体) (zh_TW)", "zh_tw"),
             new Pair<>("English (en_US)", "en_us"),
+            new Pair<>("Deutsch (de_DE)", "de_de"),
             new Pair<>("Русский (ru_RU)", "ru_ru"),
             new Pair<>("Português (pt_BR)", "pt_br"),
             new Pair<>("Українська (uk_UA)", "uk_ua")

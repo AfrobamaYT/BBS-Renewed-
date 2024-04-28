@@ -42,6 +42,7 @@ experience. Like following:
   - [ ] Vanilla-like animator
 - [ ] Audio editor
 - [ ] Structure form
+- [ ] Mob form
 
 ## Missing features
 
@@ -66,7 +67,7 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 
 Bugs:
 
-- [ ] Reset camera when switching to another dimension
+- [x] Reset camera when switching to another dimension
 - [ ] Save films somehwere when the server doesn't have BBS mod
 
 Useful user suggestions:
@@ -93,6 +94,7 @@ Useful user suggestions:
 - [ ] Add loop option to /bbs film play
 - [ ] Add /bbs film stop
 - [ ] Teleport to model block
+- [ ] Morph entity selectors 
 
 Considerations:
 

@@ -36,7 +36,7 @@ public class UIKeys
     public static final IKey CAMERA_FLIGHT_FLIGHT_BACKWARD = L10n.lang("bbs.ui.camera.flight.backward");
     public static final IKey CAMERA_FLIGHT_FLIGHT_DOWN = L10n.lang("bbs.ui.camera.flight.down");
     public static final IKey CAMERA_FLIGHT_FLIGHT_FORWARD = L10n.lang("bbs.ui.camera.flight.forward");
-    public static final IKey CAMERA_FLIGHT_FLIGHT_LEFT = L10n.lang("bbs.ui.camera.flight.lt");
+    public static final IKey CAMERA_FLIGHT_FLIGHT_LEFT = L10n.lang("bbs.ui.camera.flight.left");
     public static final IKey CAMERA_FLIGHT_FLIGHT_PAN_LEFT = L10n.lang("bbs.ui.camera.flight.camera_left");
     public static final IKey CAMERA_FLIGHT_FLIGHT_PAN_RIGHT = L10n.lang("bbs.ui.camera.flight.camera_right");
     public static final IKey CAMERA_FLIGHT_FLIGHT_RIGHT = L10n.lang("bbs.ui.camera.flight.right");
