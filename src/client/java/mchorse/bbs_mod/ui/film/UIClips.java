@@ -43,6 +43,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -1069,14 +1070,46 @@ public class UIClips extends UIElement
         else if (this.grabbing)
         {
             List<Clip> clips = this.getClipsFromSelection();
+            List<Clip> others = new ArrayList<>(this.clips.get());
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
+
+            /* Collect the rest of clips for collision */
+            Iterator<Clip> it = others.iterator();
+
+            while (it.hasNext())
+            {
+                if (clips.contains(it.next()))
+                {
+                    it.remove();
+                }
+            }
 
             /* Checking whether it's possible to move clips */
             for (Clip clip : clips)
             {
                 int newTick = clip.tick.get() + relativeX;
                 int newLayer = clip.layer.get() + relativeY;
+
+                /* Detect clips collisions */
+                for (Clip other : others)
+                {
+                    int otherLeft = other.tick.get();
+                    int otherRight = otherLeft + other.duration.get();
+
+                    int clipLeft = newTick;
+                    int clipRight = clipLeft + clip.duration.get();
+                    boolean intersect = clipLeft < otherRight && otherLeft < clipRight;
+
+                    if (intersect)
+                    {
+                        if (other.layer.get() == newLayer)
+                        {
+                            relativeX = 0;
+                            relativeY = 0;
+                        }
+                    }
+                }
 
                 if (newTick < 0)
                 {
