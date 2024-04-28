@@ -6,7 +6,6 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
 import mchorse.bbs_mod.cubic.animation.Animator;
-import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
@@ -40,6 +39,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +119,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public List<String> getBones()
     {
-        return new ArrayList<>(this.getModel().model.getAllGroupKeys());
+        CubicModel model = this.getModel();
+
+        return model == null ? Collections.emptyList() : new ArrayList<>(model.model.getAllGroupKeys());
     }
 
     @Override
@@ -156,7 +158,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            this.renderModel(stack, model.model, LightmapTextureManager.pack(15, 15), color, true, false);
+            this.renderModel(stack, model, LightmapTextureManager.pack(15, 15), color, true, false);
 
             /* Render body parts */
             this.captureMatrices(model);
@@ -174,11 +176,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(MatrixStack stack, Model model, int light, Color color, boolean ui, boolean picking)
+    private void renderModel(MatrixStack stack, CubicModel model, int light, Color color, boolean ui, boolean picking)
     {
-        CubicModel cubicModel = getModel();
-
-        if (!cubicModel.culling)
+        if (!model.culling)
         {
             RenderSystem.disableCull();
         }
@@ -204,13 +204,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
 
-        CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model);
+        CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
         newStack.pop();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
         MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().disable();
 
-        if (!cubicModel.culling)
+        if (!model.culling)
         {
             RenderSystem.enableCull();
         }
@@ -241,7 +241,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 GameRenderer::getRenderTypeEntityTranslucentCullProgram,
                 BBSShaders::getPickerModelsProgram));
 
-            this.renderModel(context.stack, model.model, context.light, color, false, context.isPicking());
+            this.renderModel(context.stack, model, context.light, color, false, context.isPicking());
 
             this.captureMatrices(model);
         }

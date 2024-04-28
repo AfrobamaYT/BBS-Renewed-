@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
+import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -110,9 +111,15 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
 
         renderer.ensureAnimator();
 
+        CubicModel model = renderer.getModel();
+
         this.animations.list.clear();
-        this.animations.list.add(renderer.getModel().animations.animations.keySet());
-        this.animations.list.sort();
+
+        if (model != null)
+        {
+            this.animations.list.add(model.animations.animations.keySet());
+            this.animations.list.sort();
+        }
 
         this.actions.clear();
         this.actions.add(renderer.getAnimator().getActions());
