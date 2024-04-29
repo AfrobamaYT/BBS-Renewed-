@@ -101,6 +101,8 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             context.light
         );
 
+        RenderSystem.enableDepthTest();
+
         MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw();
 
         this.renderShadow(context, x, y, w, h);
@@ -186,6 +188,8 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         }
 
         MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw();
+
+        RenderSystem.enableDepthTest();
 
         this.renderShadow(context, x, y, w, h);
     }
