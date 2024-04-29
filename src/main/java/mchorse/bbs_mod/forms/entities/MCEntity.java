@@ -351,7 +351,7 @@ public class MCEntity implements IEntity
     public AABB getPickingHitbox()
     {
         float w = this.mcEntity.getWidth();
-        float h = this.mcEntity.getWidth();
+        float h = this.mcEntity.getHeight();
 
         return new AABB(
             this.getX() - w / 2, this.getY(), this.getZ() - w / 2,
