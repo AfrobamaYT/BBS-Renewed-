@@ -199,7 +199,10 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
         if (current != null)
         {
-            menu.action(Icons.ADD, UIKeys.FORMS_EDITOR_CONTEXT_ADD, () -> this.addBodyPart(new BodyPart()));
+            if (current.getForm() != null)
+            {
+                menu.action(Icons.ADD, UIKeys.FORMS_EDITOR_CONTEXT_ADD, () -> this.addBodyPart(new BodyPart()));
+            }
 
             if (current.part != null)
             {
@@ -208,7 +211,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
             MapType data = Window.getClipboardMap("_FormEditorBodyPart");
 
-            if (data != null)
+            if (current.getForm() != null && data != null)
             {
                 menu.action(Icons.PASTE, UIKeys.FORMS_EDITOR_CONTEXT_PASTE, () -> this.pasteBodyPart(data));
             }
