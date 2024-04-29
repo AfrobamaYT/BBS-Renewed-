@@ -206,7 +206,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     {
         for (UIProperty property : this.properties)
         {
-            if (!property.selected.isEmpty())
+            if (property.hasSelected())
             {
                 return property;
             }
@@ -284,8 +284,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             }
         }
 
-        property.selected.clear();
-        property.selected.add(property.channel.insert(tick, value));
+        property.clearSelection();
+        property.addToSelection(property.channel.insert(tick, value));
         frame = this.getCurrent();
 
         if (oldTick != tick)
@@ -306,8 +306,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
         UIProperty current = this.getCurrentSheet();
 
-        current.channel.remove(current.selected.get(0));
-        current.selected.clear();
+        current.channel.remove(current.getSelected(0));
+        current.clearSelection();
 
         this.selected = false;
     }
@@ -379,7 +379,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
                 if (point)
                 {
-                    int key = property.selected.indexOf(index);
+                    int key = property.getSelection().indexOf(index);
 
                     if (!shift && key == -1 && !alt)
                     {
@@ -392,7 +392,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
                         if (key == -1)
                         {
-                            property.selected.add(index);
+                            property.addToSelection(index);
                             frame = isMultiSelect ? this.getCurrent() : frame;
                         }
                         else
@@ -440,7 +440,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                 /* Resort after dragging the tick thing */
                 for (UIProperty property : this.getProperties())
                 {
-                    if (!property.selected.isEmpty())
+                    if (property.hasSelected())
                     {
                         property.sort();
                     }
@@ -466,9 +466,9 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                 {
                     GenericKeyframe keyframe = (GenericKeyframe) object;
 
-                    if (area.isInside(this.toGraphX(keyframe.getTick()), y + h / 2) && !property.selected.contains(i))
+                    if (area.isInside(this.toGraphX(keyframe.getTick()), y + h / 2) && !property.getSelection().contains(i))
                     {
-                        property.selected.add(i);
+                        property.getSelection().add(i);
                         c++;
                     }
 
@@ -607,6 +607,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                 int dx = mouseX - this.lastX;
                 int xx = this.toGraphX(this.lastT);
 
+                System.out.println(dx);
+
                 x = this.fromGraphX(xx + dx);
             }
 
@@ -650,7 +652,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
         for (UIProperty property : properties)
         {
-            selection.selected.add(new ArrayList<>(property.selected));
+            selection.selected.add(new ArrayList<>(property.getSelection()));
         }
 
         if (keyframe != null)
@@ -688,7 +690,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         {
             if (CollectionUtils.inRange(selection.selected, i))
             {
-                properties.get(i).selected.addAll(selection.selected.get(i));
+                properties.get(i).getSelection().addAll(selection.selected.get(i));
             }
         }
 

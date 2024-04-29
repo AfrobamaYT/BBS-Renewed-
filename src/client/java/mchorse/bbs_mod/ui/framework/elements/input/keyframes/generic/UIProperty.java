@@ -17,7 +17,7 @@ public class UIProperty
     public IKey title;
     public int color;
     public GenericKeyframeChannel channel;
-    public List<Integer> selected = new ArrayList<>();
+    private List<Integer> selected = new ArrayList<>();
     public IFormProperty property;
 
     public UIProperty(String id, IKey title, int color, GenericKeyframeChannel channel, IFormProperty property)
@@ -27,6 +27,22 @@ public class UIProperty
         this.color = color;
         this.channel = channel;
         this.property = property;
+    }
+
+    public void addToSelection(int selected)
+    {
+        if (!this.selected.contains(selected))
+        {
+            this.selected.add(selected);
+        }
+    }
+
+    public void addToSelection(List<Integer> sheetSelection)
+    {
+        for (Integer integer : sheetSelection)
+        {
+            this.addToSelection(integer);
+        }
     }
 
     public void sort()
@@ -116,6 +132,11 @@ public class UIProperty
         return this.channel.get(this.selected.get(0));
     }
 
+    public boolean hasSelected()
+    {
+        return !this.selected.isEmpty();
+    }
+
     public boolean hasSelected(int i)
     {
         return this.selected.contains(i);
@@ -124,6 +145,21 @@ public class UIProperty
     public void clearSelection()
     {
         this.selected.clear();
+    }
+
+    public int getSelected(int i)
+    {
+        return this.selected.get(0);
+    }
+
+    public GenericKeyframe getSelectedKeyframe(int i)
+    {
+        return this.channel.get(this.selected.get(i));
+    }
+
+    public List<Integer> getSelection()
+    {
+        return this.selected;
     }
 
     public int getSelectedCount()

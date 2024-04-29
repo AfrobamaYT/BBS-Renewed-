@@ -310,9 +310,7 @@ public class UIPropertyEditor extends UIElement
 
                 for (int i = 0; i < c; i++)
                 {
-                    GenericKeyframe keyframe = property.channel.get(property.selected.get(i));
-
-                    list.add(keyframe.toData());
+                    list.add(property.getSelectedKeyframe(i).toData());
                 }
 
                 if (!list.isEmpty())
@@ -385,7 +383,7 @@ public class UIPropertyEditor extends UIElement
 
         for (GenericKeyframe select : toSelect)
         {
-            property.selected.add(property.channel.getKeyframes().indexOf(select));
+            property.addToSelection(property.channel.getKeyframes().indexOf(select));
         }
 
         this.properties.selected = true;
@@ -491,7 +489,7 @@ public class UIPropertyEditor extends UIElement
             {
                 if (object == frame)
                 {
-                    property.selected.add(i);
+                    property.addToSelection(i);
 
                     break main;
                 }
@@ -512,8 +510,8 @@ public class UIPropertyEditor extends UIElement
 
             if (sheetSelection != null)
             {
-                property.selected.clear();
-                property.selected.addAll(sheetSelection);
+                property.clearSelection();
+                property.addToSelection(sheetSelection);
             }
 
             if (i == selected.x)
