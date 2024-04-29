@@ -639,7 +639,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             this.undoManager.pushUndo(changeUndos.get(0));
         }
-        else
+        else if (!changeUndos.isEmpty())
         {
             this.undoManager.pushUndo(new CompoundUndo<>(changeUndos.toArray(new IUndo[0])));
         }

@@ -13,11 +13,6 @@ public class PathToKeyframeConverter implements IClipConverter<PathClip, Keyfram
     {
         int c = path.size();
 
-        if (c <= 1)
-        {
-            return null;
-        }
-
         long duration = path.duration.get();
         KeyframeClip keyframe = new KeyframeClip();
 
