@@ -62,10 +62,11 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
         if (data != null)
         {
-            LightmapTextureManager lightMap = MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager();
+            GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 
+            gameRenderer.getLightmapTextureManager().enable();
+            gameRenderer.getOverlayTexture().setupOverlayColor();
             RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
-            lightMap.enable();
 
             RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntityTranslucentCullProgram, BBSShaders::getPickerBillboardProgram));
 
@@ -92,7 +93,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             BufferRenderer.drawWithGlobalProgram(buffer.end());
             RenderSystem.disableBlend();
 
-            lightMap.disable();
+            gameRenderer.getLightmapTextureManager().disable();
+            gameRenderer.getOverlayTexture().teardownOverlayColor();
         }
     }
 }

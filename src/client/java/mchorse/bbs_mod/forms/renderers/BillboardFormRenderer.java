@@ -163,7 +163,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             context.stack.peek().getNormalMatrix().identity();
         }
 
-        MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
+        GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
+
+        gameRenderer.getLightmapTextureManager().enable();
+        gameRenderer.getOverlayTexture().setupOverlayColor();
 
         RenderSystem.setShaderTexture(0, texture.id);
         RenderSystem.setShader(this.getShader(context,
@@ -192,5 +195,8 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
+
+        gameRenderer.getLightmapTextureManager().disable();
+        gameRenderer.getOverlayTexture().teardownOverlayColor();
     }
 }

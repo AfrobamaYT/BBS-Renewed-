@@ -184,8 +184,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 
-        MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().enable();
+        gameRenderer.getLightmapTextureManager().enable();
+        gameRenderer.getOverlayTexture().setupOverlayColor();
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
@@ -208,7 +210,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         newStack.pop();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
-        MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager().disable();
+        gameRenderer.getLightmapTextureManager().disable();
+        gameRenderer.getOverlayTexture().teardownOverlayColor();
 
         if (!model.culling)
         {
