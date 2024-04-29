@@ -224,6 +224,5 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         BufferRenderer.drawWithGlobalProgram(builder.end());
         context.stack.pop();
-        RenderSystem.disableDepthTest();
     }
 }
