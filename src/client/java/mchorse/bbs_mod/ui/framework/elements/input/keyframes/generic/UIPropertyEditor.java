@@ -176,6 +176,7 @@ public class UIPropertyEditor extends UIElement
                 this.pasteKeyframes(keyframes, (long) offset, mouseY);
             }
         }).inside().category(category);
+        this.keys().register(Keys.DELETE, this::removeSelectedKeyframes).inside().category(category);
 
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this.interp::clickItself).category(category);
 

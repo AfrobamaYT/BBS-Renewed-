@@ -149,6 +149,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
                 this.pasteKeyframes(keyframes, (long) offset, mouseY);
             }
         }).inside().category(category);
+        this.keys().register(Keys.DELETE, this::removeSelectedKeyframes).inside().category(category);
 
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this::toggleInterpolation).category(category);
         this.easing.keys().register(Keys.KEYFRAMES_EASING, this::toggleEasing).category(category);
