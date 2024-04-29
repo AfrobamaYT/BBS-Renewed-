@@ -56,10 +56,10 @@ public class PoseManager
 
     private static File getPosesFile(String group)
     {
-        File poses = BBSMod.getSettingsPath("poses");
+        File poses = BBSMod.getAssetsPath("models/" + group + "/");
 
         poses.mkdirs();
 
-        return new File(poses, group + ".json");
+        return new File(poses, "poses.json");
     }
 }
