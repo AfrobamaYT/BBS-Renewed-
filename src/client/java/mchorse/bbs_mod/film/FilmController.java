@@ -46,7 +46,7 @@ public class FilmController
 
     public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), null, context.tickDelta());
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta());
     }
 
     public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition)
