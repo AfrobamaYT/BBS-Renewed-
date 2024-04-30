@@ -21,21 +21,20 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * TODO: Refactor with UIFilmController
- */
 public class FilmController
 {
     public Film film;
@@ -45,14 +44,120 @@ public class FilmController
     private int tick;
     private int duration;
 
-    public static Matrix4f getEntityMatrix(List<IEntity> entities, WorldRenderContext context, AnchorProperty.Anchor selector, Matrix4f defaultMatrix)
+    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map)
+    {
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), null, context.tickDelta());
+    }
+
+    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition)
+    {
+        Form form = entity.getForm();
+
+        if (form == null)
+        {
+            return;
+        }
+
+        Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
+                .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
+
+        BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
+        int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
+        int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
+        int light = LightmapTextureManager.pack(torch, sky);
+
+        FormRenderingContext formContext = FormRenderingContext
+                .set(entity, stack, light, transition)
+                .camera(camera)
+                .stencilMap(map);
+
+        AnchorProperty.Anchor value = form.anchor.get();
+        AnchorProperty.Anchor last = form.anchor.getLast();
+        Matrix4f target = null;
+        Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, camera, transition);
+        float opacity = 1F;
+
+        if (last == null)
+        {
+            AnchorProperty.Anchor current = value;
+
+            Matrix4f matrix = getEntityMatrix(entities, camera, current, defaultMatrix, transition);
+
+            if (matrix != defaultMatrix)
+            {
+                target = matrix;
+                opacity = 0F;
+            }
+        }
+        else if (value != null)
+        {
+            Matrix4f matrix = getEntityMatrix(entities, camera, value, defaultMatrix, transition);
+            Matrix4f lastMatrix = getEntityMatrix(entities, camera, last, defaultMatrix, transition);
+
+            if (matrix != lastMatrix)
+            {
+                float factor = form.anchor.getTweenFactorInterpolated(transition);
+
+                target = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
+                opacity = 1F - factor;
+            }
+        }
+
+        if (target != null)
+        {
+            stack.push();
+            MatrixStackUtils.multiply(stack, target);
+            FormUtilsClient.render(form, formContext);
+            stack.pop();
+
+            if (map == null && opacity > 0F)
+            {
+                Vector3f v = target.getTranslation(new Vector3f());
+                Vector3f v2 = defaultMatrix.getTranslation(new Vector3f());
+                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), transition);
+                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), transition);
+                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), transition);
+
+                x += v.x - v2.x;
+                y += v.y - v2.y;
+                z += v.z - v2.z;
+
+                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
+
+                ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, x, y, z, 0F, 0F, 0F, 0.5F, opacity);
+            }
+
+            return;
+        }
+
+        stack.push();
+        MatrixStackUtils.multiply(stack, defaultMatrix);
+        FormUtilsClient.render(form, formContext);
+        stack.pop();
+
+        stack.push();
+
+        if (map == null)
+        {
+            double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), transition);
+            double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), transition);
+            double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), transition);
+
+            stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
+            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, x, y, z, 0F, 0F, 0F);
+        }
+
+        stack.pop();
+    }
+
+    public static Matrix4f getEntityMatrix(List<IEntity> entities, Camera camera, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
     {
         int entityIndex = selector.actor;
 
         if (CollectionUtils.inRange(entities, entityIndex))
         {
             IEntity entity = entities.get(entityIndex);
-            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
+            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, camera, transition));
 
             Map<String, Matrix4f> map = new HashMap<>();
             MatrixStack stack = new MatrixStack();
@@ -61,7 +166,7 @@ public class FilmController
 
             if (form != null)
             {
-                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", context.tickDelta());
+                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", transition);
 
                 Matrix4f matrix = map.get(selector.attachment);
 
@@ -154,74 +259,9 @@ public class FilmController
 
         for (IEntity entity : this.entities)
         {
-            this.renderEntity(context, entity, null);
+            renderEntity(this.entities, context, entity, null);
         }
 
         RenderSystem.disableDepthTest();
-    }
-
-    private void renderEntity(WorldRenderContext context, IEntity entity, StencilMap map)
-    {
-        Form form = entity.getForm();
-
-        if (form != null)
-        {
-            MatrixStack stack = context.matrixStack();
-            Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
-                .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
-
-            BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
-            int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
-            int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
-            int light = LightmapTextureManager.pack(torch, sky);
-
-            FormRenderingContext formContext = FormRenderingContext
-                .set(entity, stack, light, context.tickDelta())
-                .camera(context.camera())
-                .stencilMap(map);
-
-            AnchorProperty.Anchor value = form.anchor.get();
-            AnchorProperty.Anchor last = form.anchor.getLast();
-
-            if (value != null && last != null)
-            {
-                Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta());
-                Matrix4f matrix = getEntityMatrix(this.entities, context, value, defaultMatrix);
-                Matrix4f lastMatrix = getEntityMatrix(this.entities, context, last, defaultMatrix);
-
-                if (matrix != null && lastMatrix != null && matrix != lastMatrix)
-                {
-                    float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
-                    Matrix4f lerp = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
-
-                    stack.push();
-                    MatrixStackUtils.multiply(stack, lerp);
-                    FormUtilsClient.render(form, formContext);
-                    stack.pop();
-
-                    return;
-                }
-            }
-
-            stack.push();
-            MatrixStackUtils.multiply(stack, getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
-            FormUtilsClient.render(form, formContext);
-            stack.pop();
-
-            stack.push();
-
-            if (map == null)
-            {
-                Camera camera = context.camera();
-                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
-                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
-                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
-
-                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
-                ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
-            }
-
-            stack.pop();
-        }
     }
 }

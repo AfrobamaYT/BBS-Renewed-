@@ -29,6 +29,11 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
     public static void renderShadow(VertexConsumerProvider provider, MatrixStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz)
     {
+        renderShadow(provider, matrices, tickDelta, x, y, z, tx, ty, tz, 0.5F, 1F);
+    }
+
+    public static void renderShadow(VertexConsumerProvider provider, MatrixStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz, float radius, float opacity)
+    {
         ClientWorld world = MinecraftClient.getInstance().world;
 
         if (entity == null || entity.getWorld() != world)
@@ -45,8 +50,6 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         entity.prevZ = z;
 
         double distance = MinecraftClient.getInstance().getEntityRenderDispatcher().getSquaredDistanceToCamera(x, y, z);
-        float radius = 0.5F;
-        float opacity = 1F;
 
         opacity = (float) (1D - distance / 256D * opacity);
 

@@ -6,20 +6,16 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSShaders;
-import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
-import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.forms.properties.AnchorProperty;
-import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -49,9 +45,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -60,16 +54,11 @@ import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -962,7 +951,7 @@ public class UIFilmController extends UIElement
                 continue;
             }
 
-            this.renderEntity(context, entity, null);
+            FilmController.renderEntity(this.entities, context, entity, null);
         }
 
         this.rayTraceEntity(context);
@@ -997,71 +986,6 @@ public class UIFilmController extends UIElement
         this.lastMouse.set(x, y);
 
         RenderSystem.disableDepthTest();
-    }
-
-    private void renderEntity(WorldRenderContext context, IEntity entity, StencilMap map)
-    {
-        Form form = entity.getForm();
-
-        if (form != null)
-        {
-            MatrixStack stack = context.matrixStack();
-            Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
-                .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), context.tickDelta());
-
-            BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
-            int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
-            int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
-            int light = LightmapTextureManager.pack(torch, sky);
-
-            FormRenderingContext formContext = FormRenderingContext
-                .set(entity, stack, light, context.tickDelta())
-                .camera(context.camera())
-                .stencilMap(map);
-
-            AnchorProperty.Anchor value = form.anchor.get();
-            AnchorProperty.Anchor last = form.anchor.getLast();
-
-            if (value != null && last != null)
-            {
-                Matrix4f defaultMatrix = FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta());
-                Matrix4f matrix = FilmController.getEntityMatrix(this.entities, context, value, defaultMatrix);
-                Matrix4f lastMatrix = FilmController.getEntityMatrix(this.entities, context, last, defaultMatrix);
-
-                if (matrix != null && lastMatrix != null && matrix != lastMatrix)
-                {
-                    float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
-                    Matrix4f lerp = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
-
-                    stack.push();
-                    MatrixStackUtils.multiply(stack, lerp);
-                    FormUtilsClient.render(form, formContext);
-                    stack.pop();
-
-                    return;
-                }
-            }
-
-            stack.push();
-            MatrixStackUtils.multiply(stack, FilmController.getMatrixForRenderWithRotation(entity, context.camera(), context.tickDelta()));
-            FormUtilsClient.render(form, formContext);
-            stack.pop();
-
-            stack.push();
-
-            if (map == null)
-            {
-                net.minecraft.client.render.Camera camera = context.camera();
-                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.tickDelta());
-                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.tickDelta());
-                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.tickDelta());
-
-                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
-                ModelBlockEntityRenderer.renderShadow(context.consumers(), stack, context.tickDelta(), x, y, z, 0F, 0F, 0F);
-            }
-
-            stack.pop();
-        }
     }
 
     private void rayTraceEntity(WorldRenderContext context)
@@ -1145,7 +1069,7 @@ public class UIFilmController extends UIElement
 
         this.stencilMap.setup();
         this.stencil.apply();
-        this.renderEntity(renderContext, entity, this.stencilMap);
+        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap);
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
         int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
