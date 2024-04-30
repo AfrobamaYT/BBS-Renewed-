@@ -1031,11 +1031,11 @@ public class UIFilmController extends UIElement
                 if (matrix != null && lastMatrix != null && matrix != lastMatrix)
                 {
                     float factor = form.anchor.getTweenFactorInterpolated(context.tickDelta());
+                    Matrix4f lerp = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
 
                     stack.push();
-                    MatrixStackUtils.multiply(stack, Matrices.lerp(lastMatrix, matrix, factor));
+                    MatrixStackUtils.multiply(stack, lerp);
                     FormUtilsClient.render(form, formContext);
-
                     stack.pop();
 
                     return;

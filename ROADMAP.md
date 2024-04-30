@@ -110,4 +110,5 @@ Considerations:
 
 Epic features
 
-- [ ] Framebuffer form 
+- [ ] Framebuffer form
+- [ ] Clip based actors
