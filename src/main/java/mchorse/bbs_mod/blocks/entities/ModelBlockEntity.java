@@ -93,6 +93,7 @@ public class ModelBlockEntity extends BlockEntity
         BlockState blockState = world.getBlockState(pos);
 
         world.updateListeners(pos, blockState, blockState, Block.NOTIFY_LISTENERS);
+        world.markDirty(pos);
     }
 
     public static class Properties implements IMapSerializable

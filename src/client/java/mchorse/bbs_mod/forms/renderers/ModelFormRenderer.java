@@ -183,6 +183,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.disableCull();
         }
 
+        RenderSystem.enableBlend();
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 
@@ -212,6 +213,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         BufferRenderer.drawWithGlobalProgram(builder.end());
         gameRenderer.getLightmapTextureManager().disable();
         gameRenderer.getOverlayTexture().teardownOverlayColor();
+        RenderSystem.disableBlend();
 
         if (!model.culling)
         {
