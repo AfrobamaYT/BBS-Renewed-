@@ -15,6 +15,12 @@ public class AudioClientClip extends AudioClip
     }
 
     @Override
+    public boolean isGlobal()
+    {
+        return true;
+    }
+
+    @Override
     public void shutdown(ClipContext context)
     {
         Link link = this.audio.get();
@@ -44,7 +50,7 @@ public class AudioClientClip extends AudioClip
             float tickTime = (context.relativeTick + context.transition) / 20F;
             float time = player.getPlaybackPosition();
 
-            if (tickTime >= player.getBuffer().getDuration())
+            if (tickTime >= player.getBuffer().getDuration() || context.relativeTick >= this.duration.get())
             {
                 if (!player.isStopped())
                 {
