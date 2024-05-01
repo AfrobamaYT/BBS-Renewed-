@@ -41,6 +41,11 @@ public class ContextMenuManager
 
     public ContextAction action(Icon icon, IKey label, int color, Runnable runnable)
     {
+        if (color == 0)
+        {
+            return action(icon, label, runnable);
+        }
+
         if (icon == null || label == null)
         {
             throw new IllegalStateException("Icon (" + icon + ") and/or label (" + label + ") is null!");

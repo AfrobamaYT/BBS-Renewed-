@@ -194,6 +194,10 @@ public class UIKeys
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
     public static final IKey FILM_REPLAY_ENTITY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.entity_keyframes");
     public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
+    public static final IKey FILM_REPLAY_ORBIT_ORBIT = L10n.lang("bbs.ui.film.replay.orbit.orbit");
+    public static final IKey FILM_REPLAY_ORBIT_FIRST_PERSON = L10n.lang("bbs.ui.film.replay.orbit.first_person");
+    public static final IKey FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT = L10n.lang("bbs.ui.film.replay.orbit.third_person_front");
+    public static final IKey FILM_REPLAY_ORBIT_THIRD_PERSON_BACK = L10n.lang("bbs.ui.film.replay.orbit.third_person_back");
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
     public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title");
     public static final IKey FILM_TELEPORT_TITLE = L10n.lang("bbs.ui.film.teleport-title");

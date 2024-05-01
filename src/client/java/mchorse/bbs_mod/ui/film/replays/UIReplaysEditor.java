@@ -65,6 +65,8 @@ public class UIReplaysEditor extends UIElement
     public UIIcon record;
     public UIIcon toggleKeyframes;
     public UIIcon toggleProperties;
+    public UIIcon toggleOrbitMode;
+    public UIIcon changeOrbitPerspectice;
     public UIElement icons;
 
     /* Keyframes */
@@ -117,11 +119,15 @@ public class UIReplaysEditor extends UIElement
         this.toggleKeyframes.tooltip(UIKeys.FILM_REPLAY_ENTITY_KEYFRAMES);
         this.toggleProperties = new UIIcon(Icons.MORE, (b) -> this.toggleProperties(true));
         this.toggleProperties.tooltip(UIKeys.FILM_REPLAY_FORM_KEYFRAMES);
+        this.toggleOrbitMode = new UIIcon(Icons.ORBIT, (b) -> this.filmPanel.getController().toggleOrbit());
+        this.toggleOrbitMode.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT).marginLeft(10);
+        this.changeOrbitPerspectice = new UIIcon(Icons.VISIBLE, (b) -> this.filmPanel.getController().toggleOrbitMode());
+        this.changeOrbitPerspectice.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
 
         this.keyframes = new UIElement();
         this.keyframes.relative(this).y(20).w(1F).h(1F, -20);
 
-        this.icons = UI.row(0, this.openReplays, this.record, this.toggleKeyframes, this.toggleProperties);
+        this.icons = UI.row(0, this.openReplays, this.record, this.toggleKeyframes, this.toggleProperties, this.toggleOrbitMode, this.changeOrbitPerspectice);
         this.icons.relative(this.keyframes).y(-20).w(60).h(20);
 
         this.add(this.openReplays, this.keyframes, this.icons);
@@ -486,6 +492,11 @@ public class UIReplaysEditor extends UIElement
         else if (this.propertyEditor != null && this.propertyEditor.isVisible())
         {
             UIDashboardPanels.renderHighlight(context.batcher, this.toggleProperties.area);
+        }
+
+        if (this.filmPanel.getController().orbit.enabled)
+        {
+            UIDashboardPanels.renderHighlight(context.batcher, this.toggleOrbitMode.area);
         }
 
         super.render(context);

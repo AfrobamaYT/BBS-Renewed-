@@ -115,7 +115,7 @@ public class UIFilmController extends UIElement
         this.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, this::insertFrame).active(hasActor).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT, this::toggleOrbit).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_CONTROL, this::toggleControl).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, () -> this.setPov(this.pov + 1)).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, this::toggleOrbitMode).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
         {
             Area area = this.panel.getFramebufferViewport();
@@ -564,9 +564,22 @@ public class UIFilmController extends UIElement
         ));
     }
 
-    private void toggleOrbit()
+    public void toggleOrbit()
     {
         this.orbit.enabled = !this.orbit.enabled;
+    }
+
+    public void toggleOrbitMode()
+    {
+        this.getContext().replaceContextMenu((menu) ->
+        {
+            int color = BBSSettings.primaryColor(0);
+
+            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 0 ? color : 0, () -> this.setPov(0));
+            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 1 ? color : 0, () -> this.setPov(1));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 2 ? color : 0, () -> this.setPov(2));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == 3 ? color : 0, () -> this.setPov(3));
+        });
     }
 
     public void handleCamera(Camera camera, float transition)
