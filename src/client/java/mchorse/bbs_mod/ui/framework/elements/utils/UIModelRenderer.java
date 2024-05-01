@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.MinecraftClient;
@@ -45,7 +46,7 @@ public abstract class UIModelRenderer extends UIElement
     public Camera camera = new Camera();
 
     public Vector3f pos = new Vector3f();
-    public float distance;
+    public Factor distance = new Factor(0, 0, 100, (x) -> Math.pow(x, 2) / 100D);
     public boolean grid = true;
 
     private Vector3d cachedPlaneIntersection = new Vector3d();
@@ -81,9 +82,9 @@ public abstract class UIModelRenderer extends UIElement
         this.pos.set(x, y, z);
     }
 
-    public void setDistance(float distance)
+    public void setDistance(int distanceX)
     {
-        this.distance = distance;
+        this.distance.setX(distanceX);
     }
 
     public void setEntity(IEntity entity)
@@ -98,7 +99,7 @@ public abstract class UIModelRenderer extends UIElement
 
     public void reset()
     {
-        this.distance = 2;
+        this.setDistance(15);
         this.setPosition(0, 1, 0);
         this.setRotation(0, 0);
     }
@@ -138,21 +139,10 @@ public abstract class UIModelRenderer extends UIElement
     {
         if (this.area.isInside(context) && !this.isDragging())
         {
-            this.distance += Math.copySign(this.getZoomFactor(), -context.mouseWheel);
-            this.distance = MathUtils.clamp(this.distance, 0, 100);
+            this.distance.addX(-context.mouseWheel);
         }
 
         return super.subMouseScrolled(context);
-    }
-
-    protected float getZoomFactor()
-    {
-        if (this.distance < 1) return 0.05F;
-        if (this.distance > 30) return 5F;
-        if (this.distance > 10) return 1F;
-        if (this.distance > 3) return 0.5F;
-
-        return 0.1F;
     }
 
     @Override
@@ -291,7 +281,7 @@ public abstract class UIModelRenderer extends UIElement
     {
         this.camera.position.set(this.pos);
 
-        vec.set(0, 0, -this.distance);
+        vec.set(0, 0, -this.distance.getValue());
         this.rotateVector(vec);
 
         this.camera.position.x += vec.x;
@@ -303,7 +293,7 @@ public abstract class UIModelRenderer extends UIElement
     {
         Vector3d vector = new Vector3d();
         Vector3d origin = new Vector3d(this.cachedCamera.position).sub(this.cachedPos);
-        Vector3d destination = new Vector3d(this.cachedCamera.getMouseDirection(context.mouseX, context.mouseY, this.area.x, this.area.y, this.area.w, this.area.h)).mul(this.distance * 2).add(origin);
+        Vector3d destination = new Vector3d(this.cachedCamera.getMouseDirection(context.mouseX, context.mouseY, this.area.x, this.area.y, this.area.w, this.area.h)).mul(this.distance.getValue() * 2).add(origin);
         Intersectiond.intersectLineSegmentPlane(origin.x, origin.y, origin.z, destination.x, destination.y, destination.z, this.plane.x, this.plane.y, this.plane.z, 0, vector);
 
         return vector;

@@ -5,6 +5,7 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
+import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Matrix3f;
@@ -24,7 +25,7 @@ public class OrbitCamera
 {
     public Vector3d position = new Vector3d();
     public Vector3f rotation = new Vector3f();
-    public float distance;
+    public Factor distance = new Factor();
     public float fov;
 
     protected int dragging = -1;
@@ -52,7 +53,7 @@ public class OrbitCamera
         this.rotation.set(camera.rotation);
         this.fov = camera.fov;
 
-        this.distance = 0;
+        this.distance.setX(0);
     }
 
     public Vector3i getVelocityPosition()
@@ -132,7 +133,7 @@ public class OrbitCamera
      */
     public Vector3d getFinalPosition()
     {
-        return this.finalPosition.set(this.position).add(this.rotateVector(0, 0, -1).mul(this.distance));
+        return this.finalPosition.set(this.position).add(this.rotateVector(0, 0, -1).mul((float) this.distance.getValue()));
     }
 
     /**
@@ -199,15 +200,11 @@ public class OrbitCamera
             return false;
         }
 
-        float distance = MathUtils.clamp(this.distance - Math.copySign(1F, scroll), 0, 100);
-        boolean hasChanged = this.distance != distance;
+        int factor = this.distance.getX();
 
-        if (hasChanged)
-        {
-            this.distance = distance;
-        }
+        this.distance.addX(scroll);
 
-        return hasChanged;
+        return this.distance.getX() != factor;
     }
 
     public boolean keyPressed(UIContext context)

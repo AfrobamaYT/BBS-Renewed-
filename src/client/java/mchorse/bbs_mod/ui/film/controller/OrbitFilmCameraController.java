@@ -4,6 +4,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
@@ -20,7 +21,7 @@ public class OrbitFilmCameraController implements ICameraController
     private boolean orbiting;
     private Vector2f rotation = new Vector2f();
     private Vector2i last = new Vector2i();
-    private float distance = 5F;
+    private Factor distance = new Factor();
 
     public OrbitFilmCameraController(UIFilmController controller)
     {
@@ -29,7 +30,7 @@ public class OrbitFilmCameraController implements ICameraController
 
     public float getDistance()
     {
-        return this.distance;
+        return (float) this.distance.getValue();
     }
 
     public void start(UIContext context)
@@ -40,7 +41,7 @@ public class OrbitFilmCameraController implements ICameraController
 
     public void handleDistance(UIContext context)
     {
-        this.distance = MathUtils.clamp(this.distance + Math.copySign(1, context.mouseWheel), 0F, 100F);
+        this.distance.addX(context.mouseWheel);
     }
 
     public void stop()
@@ -74,7 +75,7 @@ public class OrbitFilmCameraController implements ICameraController
             float renderYaw = MathUtils.toRad(-Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition) + 180F);
             Vector3d offset = new Vector3d(Matrices.rotation(this.rotation.x, this.rotation.y + renderYaw));
 
-            offset.mul(this.distance);
+            offset.mul(this.distance.getValue());
             camera.position.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ());
             camera.position.lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
             camera.position.add(offset);

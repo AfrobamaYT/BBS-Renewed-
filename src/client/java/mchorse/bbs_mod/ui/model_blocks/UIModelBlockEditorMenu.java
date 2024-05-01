@@ -47,7 +47,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.orbitCameraController = new OrbitCameraController(this.uiOrbitCamera.orbit);
         this.orbitCameraController.camera.position.set(player.getPos().x, player.getPos().y + 1D, player.getPos().z);
         this.orbitCameraController.camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
-        this.orbitCameraController.camera.distance = 2F;
+        this.orbitCameraController.camera.distance.setX(10);
 
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();

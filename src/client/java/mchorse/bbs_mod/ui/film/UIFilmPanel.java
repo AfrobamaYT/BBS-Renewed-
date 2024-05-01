@@ -140,7 +140,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.runner = new RunnerCameraController(this);
 
         this.main = new UIElement();
-        this.main.relative(this.editor).w(0.75F).h(1F);
+        this.main.relative(this.editor).w(0.66F).h(1F);
 
         this.cameraClips = new UIClipsPanel(this, BBSMod.getFactoryCameraClips());
         this.cameraClips.relative(this.main).full();
