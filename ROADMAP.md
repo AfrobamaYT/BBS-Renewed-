@@ -98,6 +98,7 @@ Useful user suggestions:
 - [ ] Base form options for shadows (vanilla and iris)
 - [ ] Add color to extruded form
 - [ ] Add step interpolation / break down a segment into more
+- [ ] Model block form per transformation type (on the ground, third person, first person, etc.)
 
 Considerations:
 

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.cubic.render;
 
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.util.math.MatrixStack;
@@ -38,7 +39,9 @@ public interface ICubicRenderer
 
     public static void scaleGroup(MatrixStack stack, ModelGroup group)
     {
-        stack.scale(group.current.scale.x, group.current.scale.y, group.current.scale.z);
+        Vector3f scale = group.current.scale;
+
+        MatrixStackUtils.scaleStack(stack, scale.x, scale.y, scale.z);
     }
 
     public static void moveBackFromGroupPivot(MatrixStack stack, ModelGroup group)

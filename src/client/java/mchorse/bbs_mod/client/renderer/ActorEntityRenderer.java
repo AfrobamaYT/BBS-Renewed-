@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.client.renderer;
 
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
@@ -33,7 +34,7 @@ public class ActorEntityRenderer extends LivingEntityRenderer<ActorEntity, Playe
     {
         float gg = 0.9375F;
 
-        matrixStack.scale(gg, gg, gg);
+        MatrixStackUtils.scaleStack(matrixStack, gg, gg, gg);
 
         this.getModel().sneaking = livingEntity.isInSneakingPose();
 

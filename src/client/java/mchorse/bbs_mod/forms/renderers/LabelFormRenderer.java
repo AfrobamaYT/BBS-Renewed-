@@ -5,6 +5,7 @@ import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.MinecraftClient;
@@ -41,7 +42,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
         float scale = 1F / 16F;
 
-        context.stack.scale(scale, -scale, scale);
+        MatrixStackUtils.scaleStack(context.stack, scale, -scale, scale);
 
         RenderSystem.disableCull();
 

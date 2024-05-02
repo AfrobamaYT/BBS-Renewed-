@@ -9,6 +9,7 @@ import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.particles.ParticleScheme;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.GameRenderer;
@@ -66,7 +67,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             stack.push();
             stack.translate((x2 + x1) / 2, (y2 + y1) / 2, 40);
-            stack.scale(scale, scale, scale);
+            MatrixStackUtils.scaleStack(stack, scale, scale, scale);
 
             this.updateTexture(context.getTransition());
             emitter.lastGlobal.set(new Vector3f(0, 0, 0));
