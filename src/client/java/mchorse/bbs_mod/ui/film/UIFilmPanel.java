@@ -1034,6 +1034,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void setCursor(int value)
     {
         this.flightEditTime.mark();
+        this.lastPosition.set(Position.ZERO);
 
         this.runner.ticks = Math.max(0, value);
 
