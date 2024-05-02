@@ -44,9 +44,11 @@ public class UIOrbitCamera implements IUIElement
     @Override
     public IUIElement mouseClicked(UIContext context)
     {
-        if (this.orbit.canStart(context))
+        int i = this.orbit.canStart(context);
+
+        if (i >= 0)
         {
-            this.orbit.start(context.mouseX, context.mouseY);
+            this.orbit.start(i, context.mouseX, context.mouseY);
 
             return this;
         }

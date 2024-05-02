@@ -7,13 +7,13 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Matrix3f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4i;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Orbit camera class.
@@ -74,14 +74,24 @@ public class OrbitCamera
         return this.velocityAngle;
     }
 
-    public boolean canStart(UIContext context)
+    public int canStart(UIContext context)
     {
-        if (context.mouseButton == 2)
+        if (context.mouseButton == 0)
         {
-            return true;
+            return 0;
         }
 
-        return context.mouseButton == 0 && Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
+        if (context.mouseButton == 1)
+        {
+            return 1;
+        }
+
+        if (context.mouseButton == 2)
+        {
+            return 2;
+        }
+
+        return -1;
     }
 
     public void from(Position position)
@@ -154,7 +164,7 @@ public class OrbitCamera
 
     protected float getAngleSpeed()
     {
-        return (1 / 180F) * (float) this.speed.getValue();
+        return (1 / 180F) * Interpolations.lerp(1F, (float) this.speed.getValue(), 0.8F);
     }
 
     protected float getSpeed()
@@ -179,6 +189,8 @@ public class OrbitCamera
      */
     public boolean drag(int mouseX, int mouseY)
     {
+        float angleFactor = this.getAngleSpeed();
+
         if (this.dragging == 0)
         {
             int x = mouseX - this.lastX;
@@ -186,10 +198,36 @@ public class OrbitCamera
 
             if (x != 0 || y != 0)
             {
-                float angleFactor = this.getAngleSpeed();
-
                 this.rotation.x += y * angleFactor;
                 this.rotation.y += x * angleFactor;
+
+                this.lastX = mouseX;
+                this.lastY = mouseY;
+            }
+
+            return true;
+        }
+        else if (this.dragging == 1)
+        {
+            int x = mouseX - this.lastX;
+
+            if (x != 0)
+            {
+                this.rotation.z += x * angleFactor;
+
+                this.lastX = mouseX;
+                this.lastY = mouseY;
+            }
+
+            return true;
+        }
+        else if (this.dragging == 2)
+        {
+            int y = mouseY - this.lastY;
+
+            if (y != 0)
+            {
+                this.fov += y * angleFactor;
 
                 this.lastX = mouseX;
                 this.lastY = mouseY;

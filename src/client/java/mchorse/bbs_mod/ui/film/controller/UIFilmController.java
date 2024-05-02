@@ -902,6 +902,11 @@ public class UIFilmController extends UIElement
 
     private void renderPickingPreview(UIContext context, Area area)
     {
+        if (!this.panel.isFlightDisabled())
+        {
+            return;
+        }
+
         RenderSystem.depthFunc(GL11.GL_LESS);
 
         /* Cache the global stuff */

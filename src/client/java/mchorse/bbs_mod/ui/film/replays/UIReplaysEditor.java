@@ -371,6 +371,11 @@ public class UIReplaysEditor extends UIElement
 
     public boolean clickViewport(UIContext context, Area area)
     {
+        if (!this.filmPanel.isFlightDisabled())
+        {
+            return false;
+        }
+
         StencilFormFramebuffer stencil = this.filmPanel.getController().getStencil();
 
         if (stencil.hasPicked())
