@@ -125,6 +125,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastView = new Matrix4f();
     public final Matrix4f lastProjection = new Matrix4f();
 
+    private Timer flightEditTime = new Timer(100);
+
     public static VoiceLines getVoiceLines()
     {
         return voiceLines;
@@ -252,6 +254,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.JUMP_BACKWARD, () -> this.setCursor(this.getCursor() - BBSSettings.editorJump.get())).active(active).category(editor);
 
         this.fill(null);
+
+        this.flightEditTime.mark();
     }
 
     public void showPanel(UIElement element)
@@ -848,16 +852,20 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.dashboard.orbit.apply(this.position);
 
             Position current = new Position(this.getCamera());
+            boolean check = this.flightEditTime.check();
 
             if (this.cameraClips.getClip() != null && this.cameraClips.isVisible())
             {
-                if (!this.lastPosition.equals(current))
+                if (!this.lastPosition.equals(current) && check)
                 {
                     this.cameraClips.editClip(current);
                 }
             }
 
-            this.lastPosition.set(current);
+            if (check)
+            {
+                this.lastPosition.set(current);
+            }
         }
         else
         {
@@ -1025,6 +1033,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public void setCursor(int value)
     {
+        this.flightEditTime.mark();
+
         this.runner.ticks = Math.max(0, value);
 
         this.screenplay.setCursor(this.runner.ticks);
