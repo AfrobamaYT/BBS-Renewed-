@@ -115,7 +115,10 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         ) {
             if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)
             {
-                return !modelBlockPanel.isEditing(entity);
+                if (!modelBlockPanel.isEditing(entity))
+                {
+                    return modelBlockPanel.canBeSeen();
+                }
             }
         }
 
