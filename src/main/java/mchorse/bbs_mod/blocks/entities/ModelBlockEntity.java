@@ -9,9 +9,7 @@ import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
-import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -99,10 +97,15 @@ public class ModelBlockEntity extends BlockEntity
     public static class Properties implements IMapSerializable
     {
         private Form form;
+        private Form formThirdPerson;
+        private Form formInventory;
+        private Form formFirstPerson;
+
         private final Transform transform = new Transform();
         private final Transform transformThirdPerson = new Transform();
         private final Transform transformInventory = new Transform();
         private final Transform transformFirstPerson = new Transform();
+
         private boolean shadow;
 
         public Form getForm()
@@ -113,6 +116,36 @@ public class ModelBlockEntity extends BlockEntity
         public void setForm(Form form)
         {
             this.form = form;
+        }
+
+        public Form getFormThirdPerson()
+        {
+            return this.formThirdPerson;
+        }
+
+        public void setFormThirdPerson(Form form)
+        {
+            this.formThirdPerson = form;
+        }
+
+        public Form getFormInventory()
+        {
+            return this.formInventory;
+        }
+
+        public void setFormInventory(Form form)
+        {
+            this.formInventory = form;
+        }
+
+        public Form getFormFirstPerson()
+        {
+            return this.formFirstPerson;
+        }
+
+        public void setFormFirstPerson(Form form)
+        {
+            this.formFirstPerson = form;
         }
 
         public Transform getTransform()
@@ -149,10 +182,15 @@ public class ModelBlockEntity extends BlockEntity
         public void fromData(MapType data)
         {
             this.form = FormUtils.fromData(data.getMap("form"));
+            this.formThirdPerson = FormUtils.fromData(data.getMap("formThirdPerson"));
+            this.formInventory = FormUtils.fromData(data.getMap("formInventory"));
+            this.formFirstPerson = FormUtils.fromData(data.getMap("formFirstPerson"));
+
             this.transform.fromData(data.getMap("transform"));
             this.transformThirdPerson.fromData(data.getMap("transformThirdPerson"));
             this.transformInventory.fromData(data.getMap("transformInventory"));
             this.transformFirstPerson.fromData(data.getMap("transformFirstPerson"));
+
             this.shadow = data.getBool("shadow");
         }
 
@@ -160,10 +198,15 @@ public class ModelBlockEntity extends BlockEntity
         public void toData(MapType data)
         {
             data.put("form", FormUtils.toData(this.form));
+            data.put("formThirdPerson", FormUtils.toData(this.formThirdPerson));
+            data.put("formInventory", FormUtils.toData(this.formInventory));
+            data.put("formFirstPerson", FormUtils.toData(this.formFirstPerson));
+
             data.put("transform", this.transform.toData());
             data.put("transformThirdPerson", this.transformThirdPerson.toData());
             data.put("transformInventory", this.transformInventory.toData());
             data.put("transformFirstPerson", this.transformFirstPerson.toData());
+
             data.putBool("shadow", this.shadow);
         }
 
@@ -172,6 +215,21 @@ public class ModelBlockEntity extends BlockEntity
             if (this.form != null)
             {
                 this.form.update(entity);
+            }
+
+            if (this.formThirdPerson != null)
+            {
+                this.formThirdPerson.update(entity);
+            }
+
+            if (this.formInventory != null)
+            {
+                this.formInventory.update(entity);
+            }
+
+            if (this.formFirstPerson != null)
+            {
+                this.formFirstPerson.update(entity);
             }
         }
     }

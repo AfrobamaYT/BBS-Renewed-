@@ -41,13 +41,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
             }
 
             item.expiration -= 1;
-
-            Form form = item.entity.getProperties().getForm();
-
-            if (form != null)
-            {
-                form.update(item.formEntity);
-            }
+            item.entity.getProperties().update(item.formEntity);
         }
     }
 
@@ -59,37 +53,65 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         if (item != null)
         {
             ModelBlockEntity.Properties properties = item.entity.getProperties();
+            Form form = this.getForm(properties, mode);
 
-            if (properties.getForm() != null)
+            if (form != null)
             {
                 item.expiration = 20;
 
-                Transform transform = properties.getTransformThirdPerson();
-
-                if (mode == ModelTransformationMode.GUI)
-                {
-                    transform = properties.getTransformInventory();
-                }
-                else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
-                {
-                    transform = properties.getTransformFirstPerson();
-                }
-                else if (mode == ModelTransformationMode.GROUND)
-                {
-                    transform = properties.getTransform();
-                }
+                Transform transform = this.getTransform(properties, mode);
 
                 matrices.push();
                 matrices.translate(0.5F, 0F, 0.5F);
                 MatrixStackUtils.applyTransform(matrices, transform);
 
                 RenderSystem.enableDepthTest();
-                FormUtilsClient.render(properties.getForm(), FormRenderingContext.set(item.formEntity, matrices, light, MinecraftClient.getInstance().getTickDelta()));
+                FormUtilsClient.render(form, FormRenderingContext.set(item.formEntity, matrices, light, MinecraftClient.getInstance().getTickDelta()));
                 RenderSystem.disableDepthTest();
 
                 matrices.pop();
             }
         }
+    }
+
+    private Form getForm(ModelBlockEntity.Properties properties, ModelTransformationMode mode)
+    {
+        Form form = properties.getForm();
+
+        if (mode == ModelTransformationMode.GUI && properties.getFormInventory() != null)
+        {
+            form = properties.getFormInventory();
+        }
+        else if ((mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND || mode == ModelTransformationMode.THIRD_PERSON_RIGHT_HAND) && properties.getFormThirdPerson() != null)
+        {
+            form = properties.getFormThirdPerson();
+        }
+        else if ((mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND) && properties.getFormFirstPerson() != null)
+        {
+            form = properties.getFormFirstPerson();
+        }
+
+        return form;
+    }
+
+    private Transform getTransform(ModelBlockEntity.Properties properties, ModelTransformationMode mode)
+    {
+        Transform transform = properties.getTransformThirdPerson();
+
+        if (mode == ModelTransformationMode.GUI)
+        {
+            transform = properties.getTransformInventory();
+        }
+        else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
+        {
+            transform = properties.getTransformFirstPerson();
+        }
+        else if (mode == ModelTransformationMode.GROUND)
+        {
+            transform = properties.getTransform();
+        }
+
+        return transform;
     }
 
     public Item get(ItemStack stack)

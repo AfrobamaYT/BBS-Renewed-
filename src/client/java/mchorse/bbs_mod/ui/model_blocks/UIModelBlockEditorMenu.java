@@ -5,9 +5,12 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCamera;
+import mchorse.bbs_mod.ui.forms.UIFormPalette;
+import mchorse.bbs_mod.ui.forms.UINestedEdit;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIRenderingContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -26,6 +29,7 @@ import net.minecraft.client.option.Perspective;
 
 public class UIModelBlockEditorMenu extends UIBaseMenu
 {
+    public UINestedEdit pickEdit;
     public UIPropTransform transform;
     public UIIcon thirdPerson;
     public UIIcon firstPerson;
@@ -49,9 +53,18 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.orbitCameraController.camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
         this.orbitCameraController.camera.distance.setX(10);
 
+        this.pickEdit = new UINestedEdit((edit) ->
+        {
+            UIFormPalette.open(this.main, edit, this.getForm(), (f) ->
+            {
+                this.setForm(f);
+            });
+        });
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
         this.transform.relative(this.viewport).x(10).y(0.5F).wh(200, 95).anchor(0F, 0.5F);
+
+        this.pickEdit.relative(this.transform).y(-5).w(1F).anchor(0F, 1F);
 
         this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setTransform(this.item.entity.getProperties().getTransformThirdPerson()));
         this.thirdPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_THIRD_PERSON);
@@ -65,9 +78,43 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         bar.row().resize();
         bar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
-        this.main.add(this.uiOrbitCamera, this.transform, bar);
+        this.main.add(this.uiOrbitCamera, this.transform, this.pickEdit, bar);
 
         this.setTransform(item.entity.getProperties().getTransformThirdPerson());
+    }
+
+    private Form getForm()
+    {
+        ModelBlockEntity.Properties properties = this.item.entity.getProperties();
+
+        if (this.transform.getTransform() == properties.getTransformThirdPerson())
+        {
+            return properties.getFormThirdPerson();
+        }
+        else if (this.transform.getTransform() == properties.getTransformInventory())
+        {
+            return properties.getFormInventory();
+        }
+
+        return properties.getFormFirstPerson();
+    }
+
+    private void setForm(Form f)
+    {
+        ModelBlockEntity.Properties properties = this.item.entity.getProperties();
+
+        if (this.transform.getTransform() == properties.getTransformThirdPerson())
+        {
+            properties.setFormThirdPerson(f);
+        }
+        else if (this.transform.getTransform() == properties.getTransformInventory())
+        {
+            properties.setFormInventory(f);
+        }
+        else
+        {
+            properties.setFormFirstPerson(f);
+        }
     }
 
     @Override
@@ -101,6 +148,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         }
 
         this.transform.setTransform(transform);
+        this.pickEdit.setForm(this.getForm());
     }
 
     @Override
