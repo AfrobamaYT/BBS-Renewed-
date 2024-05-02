@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.IViewport;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.IViewportStack;
@@ -102,8 +103,12 @@ public abstract class UIBaseMenu
         if (this.root.isEnabled())
         {
             this.context.pushViewport(this.viewport);
-            result = this.root.mouseClicked(this.context);
+
+            IUIElement element = this.root.mouseClicked(this.context);
+
             this.context.popViewport();
+
+            result = element != null;
         }
 
         return result;
@@ -118,8 +123,12 @@ public abstract class UIBaseMenu
         if (this.root.isEnabled())
         {
             this.context.pushViewport(this.viewport);
-            result = this.root.mouseScrolled(this.context);
+
+            IUIElement element = this.root.mouseScrolled(this.context);
+
             this.context.popViewport();
+
+            result = element != null;
         }
 
         return result;
@@ -134,8 +143,12 @@ public abstract class UIBaseMenu
         if (this.root.isEnabled())
         {
             this.context.pushViewport(this.viewport);
-            result = this.root.mouseReleased(this.context);
+
+            IUIElement element = this.root.mouseReleased(this.context);
+
             this.context.popViewport();
+
+            result = element != null;
         }
 
         return result;
@@ -150,7 +163,9 @@ public abstract class UIBaseMenu
 
         this.context.setKeyEvent(key, scanCode, action);
 
-        if (this.root.isEnabled() && this.root.keyPressed(this.context))
+        IUIElement element = this.root.keyPressed(this.context);
+
+        if (this.root.isEnabled() && element != null)
         {
             return true;
         }

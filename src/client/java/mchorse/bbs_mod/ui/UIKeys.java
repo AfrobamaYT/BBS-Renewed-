@@ -175,6 +175,7 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_RECORD_DESCRIPTION = L10n.lang("bbs.ui.film.controller.record-description");
     public static final IKey FILM_CONTROLLER_RECORD_TITLE = L10n.lang("bbs.ui.film.controller.record-title");
     public static final IKey FILM_CONTROLLER_TICKS = L10n.lang("bbs.ui.film.controller.ticks");
+    public static final IKey FILM_CONTROLLER_SPEED = L10n.lang("bbs.ui.film.controller.speed");
     public static final IKey FILM_GROUPS_ALL = L10n.lang("bbs.ui.film.groups.all");
     public static final IKey FILM_GROUPS_EXTRA_1 = L10n.lang("bbs.ui.film.groups.extra_1");
     public static final IKey FILM_GROUPS_EXTRA_2 = L10n.lang("bbs.ui.film.groups.extra_2");

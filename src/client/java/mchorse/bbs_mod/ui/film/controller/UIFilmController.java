@@ -821,12 +821,11 @@ public class UIFilmController extends UIElement
 
     public void renderHUD(UIContext context, Area area)
     {
+        FontRenderer font = context.batcher.getFont();
         int mode = this.getMouseMode();
 
         if (this.controlled != null)
         {
-            FontRenderer font = context.batcher.getFont();
-
             /* Render helpful guides for sticks and triggers controls */
             if (mode > 0)
             {
@@ -884,6 +883,16 @@ public class UIFilmController extends UIElement
             }
 
             context.batcher.outlinedIcon(Icons.POSE, area.ex() - 5, area.y + 5, 1F, 0F);
+        }
+
+        if (!this.panel.isFlightDisabled())
+        {
+            String label = UIKeys.FILM_CONTROLLER_SPEED.format(this.panel.dashboard.orbit.speed.getValue()).get();
+            int w = font.getWidth(label);
+            int x = area.ex() - 5 - w;
+            int y = area.ey() - 5 - font.getHeight();
+
+            context.batcher.textCard(label, x, y, Colors.WHITE, Colors.A50);
         }
 
         this.renderPickingPreview(context, area);

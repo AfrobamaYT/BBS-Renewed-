@@ -264,9 +264,7 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     {
         if (this.canScroll() && Window.isAltPressed())
         {
-            this.scroll.mouseScroll(context);
-
-            return true;
+            return this.scroll.mouseScroll(context);
         }
 
         if (this.area.isInside(context.mouseX, context.mouseY) && !this.scrolling)

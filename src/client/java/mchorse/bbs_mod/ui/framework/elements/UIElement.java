@@ -1051,110 +1051,170 @@ public class UIElement implements IUIElement
      * subclass children*, sub* or misc. event handling methods! */
 
     @Override
-    public final boolean mouseClicked(UIContext context)
+    public final IUIElement mouseClicked(UIContext context)
     {
-        return this.childrenMouseClicked(context) || this.subMouseClicked(context) || this.mouseClickedContextMenu(context) || this.cantPropagate(this.mousePropagation, context);
+        IUIElement element = this.childrenMouseClicked(context);
+
+        if (element != null)
+        {
+            return element;
+        }
+
+        return this.subMouseClicked(context) || this.mouseClickedContextMenu(context) || this.cantPropagate(this.mousePropagation, context) ? this : null;
     }
 
     @Override
-    public final boolean mouseScrolled(UIContext context)
+    public final IUIElement mouseScrolled(UIContext context)
     {
-        return this.childrenMouseScrolled(context) || this.subMouseScrolled(context) || this.cantPropagate(this.mousePropagation, context);
+        IUIElement element = this.childrenMouseScrolled(context);
+
+        if (element != null)
+        {
+            return element;
+        }
+
+        return this.subMouseScrolled(context) || this.cantPropagate(this.mousePropagation, context) ? this : null;
     }
 
     @Override
-    public final boolean mouseReleased(UIContext context)
+    public final IUIElement mouseReleased(UIContext context)
     {
-        return this.childrenMouseReleased(context) || this.subMouseReleased(context) || this.cantPropagate(this.mousePropagation, context);
+        IUIElement element = this.childrenMouseReleased(context);
+
+        if (element != null)
+        {
+            return element;
+        }
+
+        return this.subMouseReleased(context) || this.cantPropagate(this.mousePropagation, context) ? this : null;
     }
 
     @Override
-    public final boolean keyPressed(UIContext context)
+    public final IUIElement keyPressed(UIContext context)
     {
-        return this.childrenKeyPressed(context) || this.subKeyPressed(context) || this.keybindsKeyPressed(context) || this.cantPropagate(this.keyboardPropagation, context);
+        IUIElement element = this.childrenKeyPressed(context);
+
+        if (element != null)
+        {
+            return element;
+        }
+
+        return this.subKeyPressed(context) || this.keybindsKeyPressed(context) || this.cantPropagate(this.keyboardPropagation, context) ? this : null;
     }
 
     @Override
-    public final boolean textInput(UIContext context)
+    public final IUIElement textInput(UIContext context)
     {
-        return this.childrenTextInput(context) || this.subTextInput(context) || this.cantPropagate(this.keyboardPropagation, context);
+        IUIElement element = this.childrenTextInput(context);
+
+        if (element != null)
+        {
+            return element;
+        }
+
+        return this.subTextInput(context) || this.cantPropagate(this.keyboardPropagation, context) ? this : null;
     }
 
     /* Handling children input events */
 
-    protected boolean childrenMouseClicked(UIContext context)
+    protected IUIElement childrenMouseClicked(UIContext context)
     {
         for (int i = this.children.size() - 1; i >= 0; i--)
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseClicked(context))
+            if (element.isEnabled())
             {
-                return true;
+                IUIElement anElement = element.mouseClicked(context);
+
+                if (anElement != null)
+                {
+                    return anElement;
+                }
             }
         }
 
-        return false;
+        return null;
     }
 
-    protected boolean childrenMouseScrolled(UIContext context)
+    protected IUIElement childrenMouseScrolled(UIContext context)
     {
         for (int i = this.children.size() - 1; i >= 0; i--)
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseScrolled(context))
+            if (element.isEnabled())
             {
-                return true;
+                IUIElement anElement = element.mouseScrolled(context);
+
+                if (anElement != null)
+                {
+                    return anElement;
+                }
             }
         }
 
-        return false;
+        return null;
     }
 
-    protected boolean childrenMouseReleased(UIContext context)
+    protected IUIElement childrenMouseReleased(UIContext context)
     {
         for (int i = this.children.size() - 1; i >= 0; i--)
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.mouseReleased(context))
+            if (element.isEnabled())
             {
-                return true;
+                IUIElement anElement = element.mouseReleased(context);
+
+                if (anElement != null)
+                {
+                    return anElement;
+                }
             }
         }
 
-        return false;
+        return null;
     }
 
-    protected boolean childrenKeyPressed(UIContext context)
+    protected IUIElement childrenKeyPressed(UIContext context)
     {
         for (int i = this.children.size() - 1; i >= 0; i--)
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.keyPressed(context))
+            if (element.isEnabled())
             {
-                return true;
+                IUIElement anElement = element.keyPressed(context);
+
+                if (anElement != null)
+                {
+                    return anElement;
+                }
             }
         }
 
-        return false;
+        return null;
     }
 
-    protected boolean childrenTextInput(UIContext context)
+    protected IUIElement childrenTextInput(UIContext context)
     {
         for (int i = this.children.size() - 1; i >= 0; i--)
         {
             IUIElement element = this.children.get(i);
 
-            if (element.isEnabled() && element.textInput(context))
+            if (element.isEnabled())
             {
-                return true;
+                IUIElement anElement = element.textInput(context);
+
+                if (anElement != null)
+                {
+                    return anElement;
+                }
             }
         }
 
-        return false;
+        return null;
     }
 
     /* Subclasses' input event handling */

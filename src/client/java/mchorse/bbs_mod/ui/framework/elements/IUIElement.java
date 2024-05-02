@@ -23,27 +23,27 @@ public interface IUIElement
     /**
      * Mouse was clicked
      */
-    public boolean mouseClicked(UIContext context);
+    public IUIElement mouseClicked(UIContext context);
 
     /**
      * Mouse wheel was scrolled
      */
-    public boolean mouseScrolled(UIContext context);
+    public IUIElement mouseScrolled(UIContext context);
 
     /**
      * Mouse was released
      */
-    public boolean mouseReleased(UIContext context);
+    public IUIElement mouseReleased(UIContext context);
 
     /**
      * Key was typed
      */
-    public boolean keyPressed(UIContext context);
+    public IUIElement keyPressed(UIContext context);
 
     /**
      * Text was inputted
      */
-    public boolean textInput(UIContext context);
+    public IUIElement textInput(UIContext context);
 
     /**
      * Determines whether this element can be rendered on the screen

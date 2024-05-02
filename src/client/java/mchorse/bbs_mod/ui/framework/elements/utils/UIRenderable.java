@@ -32,33 +32,33 @@ public class UIRenderable implements IUIElement
     }
 
     @Override
-    public boolean mouseClicked(UIContext context)
+    public IUIElement mouseClicked(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override
-    public boolean mouseScrolled(UIContext context)
+    public IUIElement mouseScrolled(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override
-    public boolean mouseReleased(UIContext context)
+    public IUIElement mouseReleased(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override
-    public boolean keyPressed(UIContext context)
+    public IUIElement keyPressed(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override
-    public boolean textInput(UIContext context)
+    public IUIElement textInput(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override

@@ -42,35 +42,35 @@ public class UIOrbitCamera implements IUIElement
     }
 
     @Override
-    public boolean mouseClicked(UIContext context)
+    public IUIElement mouseClicked(UIContext context)
     {
         if (this.orbit.canStart(context))
         {
             this.orbit.start(context.mouseX, context.mouseY);
 
-            return true;
+            return this;
         }
 
-        return false;
+        return null;
     }
 
     @Override
-    public boolean mouseScrolled(UIContext context)
+    public IUIElement mouseScrolled(UIContext context)
     {
         if (!this.control)
         {
-            return false;
+            return null;
         }
 
-        return this.orbit.scroll(context.mouseWheel);
+        return this.orbit.scroll(context.mouseWheel) ? this : null;
     }
 
     @Override
-    public boolean mouseReleased(UIContext context)
+    public IUIElement mouseReleased(UIContext context)
     {
         this.orbit.release();
 
-        return false;
+        return null;
     }
 
     @Override
@@ -98,15 +98,15 @@ public class UIOrbitCamera implements IUIElement
     }
 
     @Override
-    public boolean keyPressed(UIContext context)
+    public IUIElement keyPressed(UIContext context)
     {
-        return this.control && this.orbit.keyPressed(context);
+        return this.control && this.orbit.keyPressed(context) ? this : null;
     }
 
     @Override
-    public boolean textInput(UIContext context)
+    public IUIElement textInput(UIContext context)
     {
-        return false;
+        return null;
     }
 
     @Override

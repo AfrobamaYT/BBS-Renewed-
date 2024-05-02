@@ -78,7 +78,7 @@ public class UIScrollView extends UIElement implements IViewport
     }
 
     @Override
-    protected boolean childrenMouseClicked(UIContext context)
+    protected IUIElement childrenMouseClicked(UIContext context)
     {
         if (!this.area.isInside(context))
         {
@@ -87,23 +87,23 @@ public class UIScrollView extends UIElement implements IViewport
                 context.unfocus();
             }
 
-            return false;
+            return null;
         }
 
         if (this.scroll.mouseClicked(context))
         {
-            return true;
+            return null;
         }
 
         this.apply(context);
-        boolean result = super.childrenMouseClicked(context);
+        IUIElement result = super.childrenMouseClicked(context);
         this.unapply(context);
 
         return result;
     }
 
     @Override
-    protected boolean childrenMouseScrolled(UIContext context)
+    protected IUIElement childrenMouseScrolled(UIContext context)
     {
         if (!this.area.isInside(context))
         {
@@ -112,48 +112,48 @@ public class UIScrollView extends UIElement implements IViewport
                 context.unfocus();
             }
 
-            return false;
+            return null;
         }
 
         this.apply(context);
-        boolean result = super.childrenMouseScrolled(context);
+        IUIElement result = super.childrenMouseScrolled(context);
         this.unapply(context);
 
-        if (result)
+        if (result != null)
         {
-            return true;
+            return result;
         }
 
-        return this.scroll.mouseScroll(context);
+        return this.scroll.mouseScroll(context) ? this : null;
     }
 
     @Override
-    protected boolean childrenMouseReleased(UIContext context)
+    protected IUIElement childrenMouseReleased(UIContext context)
     {
         this.scroll.mouseReleased(context);
 
         this.apply(context);
-        boolean result = super.childrenMouseReleased(context);
+        IUIElement result = super.childrenMouseReleased(context);
         this.unapply(context);
 
         return result;
     }
 
     @Override
-    protected boolean childrenKeyPressed(UIContext context)
+    protected IUIElement childrenKeyPressed(UIContext context)
     {
         this.apply(context);
-        boolean result = super.childrenKeyPressed(context);
+        IUIElement result = super.childrenKeyPressed(context);
         this.unapply(context);
 
         return result;
     }
 
     @Override
-    protected boolean childrenTextInput(UIContext context)
+    protected IUIElement childrenTextInput(UIContext context)
     {
         this.apply(context);
-        boolean result = super.childrenTextInput(context);
+        IUIElement result = super.childrenTextInput(context);
         this.unapply(context);
 
         return result;

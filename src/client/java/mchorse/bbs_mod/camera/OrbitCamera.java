@@ -25,7 +25,15 @@ public class OrbitCamera
 {
     public Vector3d position = new Vector3d();
     public Vector3f rotation = new Vector3f();
-    public Factor distance = new Factor();
+    public final Factor distance = new Factor();
+    public final Factor speed = new Factor(20, 1, 40, (x) ->
+    {
+        if (x <= 10) return x / 100D;
+        else if (x <= 20) return (x - 10) / 10D;
+        else if (x <= 30) return (x - 20) / 1D;
+
+        return (x - 30) * 10D;
+    });
     public float fov;
 
     protected int dragging = -1;
@@ -146,12 +154,12 @@ public class OrbitCamera
 
     protected float getAngleSpeed()
     {
-        return 1 / 180F;
+        return (1 / 180F) * (float) this.speed.getValue();
     }
 
     protected float getSpeed()
     {
-        return Window.isCtrlPressed() ? this.high : (Window.isAltPressed() ? this.low : this.normal);
+        return (Window.isCtrlPressed() ? this.high : (Window.isAltPressed() ? this.low : this.normal)) * (float) this.speed.getValue();
     }
 
     protected Vector3f rotateVector(float x, float y, float z)
@@ -195,6 +203,15 @@ public class OrbitCamera
 
     public boolean scroll(int scroll)
     {
+        if (Window.isAltPressed())
+        {
+            int factor = this.speed.getX();
+
+            this.speed.addX(scroll);
+
+            return this.speed.getX() != factor;
+        }
+
         if (this.dragging >= 0)
         {
             return false;
