@@ -345,7 +345,7 @@ public class PathClip extends CameraClip
         PathClip path = (PathClip) original;
         Position position = new Position();
 
-        path.apply(new CameraClipContext().setup(null, offset, 0), position);
+        path.apply(new CameraClipContext().setup(offset, 0), position);
 
         float factor = (offset / (float) original.duration.get()) * (this.size() - 1);
         int originalPoints = (int) Math.ceil(factor);

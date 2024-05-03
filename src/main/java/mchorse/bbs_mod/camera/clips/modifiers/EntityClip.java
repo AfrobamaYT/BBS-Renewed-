@@ -1,18 +1,16 @@
 package mchorse.bbs_mod.camera.clips.modifiers;
 
 import mchorse.bbs_mod.camera.clips.CameraClip;
+import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValuePoint;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueString;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.TypeFilter;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.World;
+import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.clips.ClipContext;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -24,18 +22,11 @@ import java.util.List;
  */
 public abstract class EntityClip extends CameraClip
 {
-    private static Box HUGE_BOX = new Box(-30_000_000D, -64D, -30_000_000D, 30_000_000D, 256D, 30_000_000D);
-
     /**
      * Position which may be used for calculation of relative
      * camera fixture animations
      */
     public Position position = new Position(0, 0, 0, 0, 0);
-
-    /**
-     * Target entity
-     */
-    public List<Entity> entities;
 
     /**
      * Target (entity) selector
@@ -53,66 +44,25 @@ public abstract class EntityClip extends CameraClip
         this.add(this.offset);
     }
 
-    /**
-     * Try finding entity based on entity selector or target's UUID
-     */
-    public void tryFindingEntity(World world)
+    public List<IEntity> getEntities(ClipContext context)
     {
-        this.entities = null;
+        String selector = this.selector.get();
 
-        this.tryFindingEntityClient(world, this.selector.get());
-    }
-
-    /**
-     * Fancier targeting mechanism
-     */
-    private void tryFindingEntityClient(World world, String selector)
-    {
-        if (world == null)
+        if (context instanceof CameraClipContext cameraClipContext && !selector.isEmpty())
         {
-            this.entities = null;
-
-            return;
-        }
-
-        selector = selector.trim();
-
-        List<Entity> entities = new ArrayList<>();
-        final Identifier id = new Identifier(selector);
-
-        /* TODO: switch to entity selector */
-        world.collectEntitiesByType(TypeFilter.instanceOf(Entity.class), HUGE_BOX, (e) -> e.getType().getLootTableId().equals(id), entities);
-
-        this.entities = entities.isEmpty() ? null : entities;
-    }
-
-    /**
-     * Check for dead entities
-     */
-    protected boolean checkForDead()
-    {
-        if (this.entities == null)
-        {
-            return true;
-        }
-
-        Iterator<Entity> it = this.entities.iterator();
-
-        while (it.hasNext())
-        {
-            Entity entity = it.next();
-
-            if (entity.isRemoved())
+            try
             {
-                it.remove();
+                int index = Integer.parseInt(selector);
+
+                if (CollectionUtils.inRange(cameraClipContext.entities, index))
+                {
+                    return Collections.singletonList(cameraClipContext.entities.get(index));
+                }
             }
+            catch (Exception e)
+            {}
         }
 
-        if (this.entities.isEmpty())
-        {
-            this.entities = null;
-        }
-
-        return this.entities == null;
+        return Collections.emptyList();
     }
 }

@@ -76,7 +76,7 @@ public class DollyClip extends IdleClip
         DollyClip dolly = (DollyClip) original;
         Position position = new Position();
 
-        dolly.apply(new CameraClipContext().setup(null, offset, 0), position);
+        dolly.apply(new CameraClipContext().setup(offset, 0), position);
 
         Point point = dolly.position.get().point;
         double dx = point.x - position.point.x;

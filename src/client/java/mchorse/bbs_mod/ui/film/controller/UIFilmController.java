@@ -254,6 +254,9 @@ public class UIFilmController extends UIElement
                 this.entities.add(entity);
             }
         }
+
+        this.panel.getRunner().getContext().entities.clear();
+        this.panel.getRunner().getContext().entities.addAll(this.entities);
     }
 
     /* Character control state */

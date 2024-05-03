@@ -4,15 +4,14 @@ import mchorse.bbs_mod.camera.clips.modifiers.OrbitClip;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.clips.modules.UIPointModule;
-import mchorse.bbs_mod.ui.film.utils.UITextboxHelp;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.UI;
-import net.minecraft.client.MinecraftClient;
 
 public class UIOrbitClip extends UIClip<OrbitClip>
 {
-    public UITextboxHelp selector;
+    public UITextbox selector;
     public UIToggle copy;
     public UITrackpad yaw;
     public UITrackpad pitch;
@@ -29,12 +28,8 @@ public class UIOrbitClip extends UIClip<OrbitClip>
     {
         super.registerUI();
 
-        this.selector = new UITextboxHelp(500, (str) ->
-        {
-            this.clip.selector.set(str);
-            this.clip.tryFindingEntity(MinecraftClient.getInstance().world);
-        });
-        this.selector.link(UILookClip.SELECTOR_HELP).tooltip(UIKeys.CAMERA_PANELS_SELECTOR_TOOLTIP);
+        this.selector = new UITextbox(500, (str) -> this.clip.selector.set(str));
+        this.selector.tooltip(UIKeys.CAMERA_PANELS_SELECTOR_TOOLTIP);
 
         this.copy = new UIToggle(UIKeys.CAMERA_PANELS_COPY_ENTITY, false, (b) -> this.clip.copy.set(b.getValue()));
         this.copy.tooltip(UIKeys.CAMERA_PANELS_COPY_ENTITY_TOOLTIP);

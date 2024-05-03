@@ -34,7 +34,7 @@ public abstract class CameraWorkCameraController implements ICameraController
         this.position.set(camera);
 
         this.context.clipData.clear();
-        this.context.setup(MinecraftClient.getInstance().world, ticks, transition);
+        this.context.setup(ticks, transition);
 
         for (Clip clip : this.context.clips.getClips(ticks))
         {

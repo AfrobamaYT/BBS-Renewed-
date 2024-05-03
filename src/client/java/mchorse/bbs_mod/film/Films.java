@@ -10,9 +10,9 @@ public class Films
 {
     private List<FilmController> controllers = new ArrayList<FilmController>();
 
-    public void addFilm(Film film)
+    public void addFilm(FilmController controller)
     {
-        this.controllers.add(new FilmController(film));
+        this.controllers.add(controller);
     }
 
     public void update()

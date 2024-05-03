@@ -203,6 +203,11 @@ public class FilmController
         }
     }
 
+    public List<IEntity> getEntities()
+    {
+        return this.entities;
+    }
+
     public boolean update()
     {
         this.tick += 1;

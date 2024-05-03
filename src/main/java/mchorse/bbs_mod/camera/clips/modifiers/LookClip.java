@@ -4,11 +4,13 @@ import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValuePoint;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.math.Interpolations;
-import net.minecraft.entity.Entity;
+
+import java.util.List;
 
 /**
  * Look modifier
@@ -36,15 +38,12 @@ public class LookClip extends EntityClip
     @Override
     public void applyClip(ClipContext context, Position position)
     {
-        if (this.checkForDead())
-        {
-            this.tryFindingEntity(context.world);
-        }
+        List<IEntity> entities = this.getEntities(context);
 
         boolean atBlock = this.atBlock.get();
         boolean forward = this.forward.get();
 
-        if (this.entities == null && !(atBlock || forward))
+        if (entities.isEmpty() && !(atBlock || forward))
         {
             return;
         }
@@ -75,13 +74,13 @@ public class LookClip extends EntityClip
         }
         else if (!forward)
         {
-            double size = this.entities.size();
+            double size = entities.size();
 
-            for (Entity entity : this.entities)
+            for (IEntity entity : entities)
             {
-                x += Interpolations.lerp(entity.prevX, entity.getX(), context.transition) / size;
-                y += Interpolations.lerp(entity.prevY, entity.getY(), context.transition) / size;
-                z += Interpolations.lerp(entity.prevZ, entity.getZ(), context.transition) / size;
+                x += Interpolations.lerp(entity.getPrevX(), entity.getX(), context.transition) / size;
+                y += Interpolations.lerp(entity.getPrevY(), entity.getY(), context.transition) / size;
+                z += Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.transition) / size;
             }
         }
 

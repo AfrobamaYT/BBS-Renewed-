@@ -6,9 +6,9 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.clips.modules.UIPointModule;
-import mchorse.bbs_mod.ui.film.utils.UITextboxHelp;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.RayTracing;
 import net.minecraft.client.MinecraftClient;
@@ -21,9 +21,7 @@ import net.minecraft.world.World;
 
 public class UILookClip extends UIClip<LookClip>
 {
-    public static final String SELECTOR_HELP = "https://minecraft.wiki/w/Target_selectors";
-
-    public UITextboxHelp selector;
+    public UITextbox selector;
     public UIToggle relative;
     public UIPointModule offset;
     public UIToggle atBlock;
@@ -42,12 +40,8 @@ public class UILookClip extends UIClip<LookClip>
     {
         super.registerUI();
 
-        this.selector = new UITextboxHelp(500, (str) ->
-        {
-            this.clip.selector.set(str);
-            this.clip.tryFindingEntity(MinecraftClient.getInstance().world);
-        });
-        this.selector.link(SELECTOR_HELP).tooltip(UIKeys.CAMERA_PANELS_SELECTOR_TOOLTIP);
+        this.selector = new UITextbox(500, (str) -> this.clip.selector.set(str));
+        this.selector.tooltip(UIKeys.CAMERA_PANELS_SELECTOR_TOOLTIP);
 
         this.block = new UIPointModule(editor, UIKeys.CAMERA_PANELS_BLOCK).contextMenu();
         this.block.context((menu) ->

@@ -3,6 +3,7 @@ package mchorse.bbs_mod.camera.clips.modifiers;
 import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -10,8 +11,9 @@ import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
-import net.minecraft.entity.Entity;
 import org.joml.Vector3f;
+
+import java.util.List;
 
 /**
  * Orbit modifier
@@ -54,12 +56,9 @@ public class OrbitClip extends EntityClip
     @Override
     public void applyClip(ClipContext context, Position position)
     {
-        if (this.checkForDead())
-        {
-            this.tryFindingEntity(context.world);
-        }
+        List<IEntity> entities = this.getEntities(context);
 
-        if (this.entities == null)
+        if (entities.isEmpty())
         {
             return;
         }
@@ -72,21 +71,21 @@ public class OrbitClip extends EntityClip
         float yaw = this.yaw.get() + (position.angle.yaw - this.position.angle.yaw);
         float pitch = this.pitch.get() + (position.angle.pitch - this.position.angle.pitch);
         float distance = this.distance.get() + (float) (position.point.z - this.position.point.z);
-        Entity entity = this.entities.get(0);
+        IEntity entity = entities.get(0);
         Vector3f vector = Matrices.rotation(MathUtils.toRad(pitch), MathUtils.toRad(-yaw));
 
         if (this.copy.get())
         {
-            float entityYaw = MathUtils.toDeg(Interpolations.lerp(entity.prevYaw, entity.getYaw(), context.transition));
-            float entityPitch = MathUtils.toDeg(Interpolations.lerp(entity.prevPitch, entity.getPitch(), context.transition));
+            float entityYaw = Interpolations.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), context.transition);
+            float entityPitch = Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), context.transition);
 
             Matrices.rotate(vector, MathUtils.toRad(-entityPitch), MathUtils.toRad(-entityYaw));
         }
 
         Point offset = this.offset.get();
-        double x = Interpolations.lerp(entity.prevX, entity.getX(), context.transition) + offset.x;
-        double y = Interpolations.lerp(entity.prevY, entity.getY(), context.transition) + offset.y;
-        double z = Interpolations.lerp(entity.prevZ, entity.getZ(), context.transition) + offset.z;
+        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.transition) + offset.x;
+        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.transition) + offset.y;
+        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.transition) + offset.z;
 
         vector.mul(distance);
 
