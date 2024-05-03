@@ -59,17 +59,7 @@ public class FilmController
         }
 
         Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
-                .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
-
-        BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
-        int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
-        int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
-        int light = LightmapTextureManager.pack(torch, sky);
-
-        FormRenderingContext formContext = FormRenderingContext
-                .set(entity, stack, light, transition)
-                .camera(camera)
-                .stencilMap(map);
+            .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
 
         AnchorProperty.Anchor value = form.anchor.get();
         AnchorProperty.Anchor last = form.anchor.getLast();
@@ -105,46 +95,36 @@ public class FilmController
 
         if (target != null)
         {
-            stack.push();
-            MatrixStackUtils.multiply(stack, target);
-            FormUtilsClient.render(form, formContext);
-            stack.pop();
+            Vector3f v = target.getTranslation(new Vector3f());
+            Vector3f v2 = defaultMatrix.getTranslation(new Vector3f());
 
-            if (map == null && opacity > 0F)
-            {
-                Vector3f v = target.getTranslation(new Vector3f());
-                Vector3f v2 = defaultMatrix.getTranslation(new Vector3f());
-                double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), transition);
-                double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), transition);
-                double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), transition);
-
-                x += v.x - v2.x;
-                y += v.y - v2.y;
-                z += v.z - v2.z;
-
-                stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
-
-                ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, x, y, z, 0F, 0F, 0F, 0.5F, opacity);
-            }
-
-            return;
+            position.x += v.x - v2.x;
+            position.y += v.y - v2.y;
+            position.z += v.z - v2.z;
         }
 
+        BlockPos pos = BlockPos.ofFloored(position.x, position.y + 0.5D, position.z);
+        int sky = entity.getWorld().getLightLevel(LightType.SKY, pos);
+        int torch = entity.getWorld().getLightLevel(LightType.BLOCK, pos);
+        int light = LightmapTextureManager.pack(torch, sky);
+
+        FormRenderingContext formContext = FormRenderingContext
+            .set(entity, stack, light, transition)
+            .camera(camera)
+            .stencilMap(map);
+
         stack.push();
-        MatrixStackUtils.multiply(stack, defaultMatrix);
+        MatrixStackUtils.multiply(stack, target == null ? defaultMatrix : target);
         FormUtilsClient.render(form, formContext);
         stack.pop();
 
         stack.push();
 
-        if (map == null)
+        if (map == null && opacity > 0F)
         {
-            double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), transition);
-            double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), transition);
-            double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), transition);
+            stack.translate(position.x - camera.getPos().x, position.y - camera.getPos().y, position.z - camera.getPos().z);
 
-            stack.translate(x - camera.getPos().x, y - camera.getPos().y, z - camera.getPos().z);
-            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, x, y, z, 0F, 0F, 0F);
+            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, 0.5F, opacity);
         }
 
         stack.pop();
