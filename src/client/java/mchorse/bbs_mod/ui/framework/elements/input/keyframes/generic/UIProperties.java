@@ -607,8 +607,6 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                 int dx = mouseX - this.lastX;
                 int xx = this.toGraphX(this.lastT);
 
-                System.out.println(dx);
-
                 x = this.fromGraphX(xx + dx);
             }
 

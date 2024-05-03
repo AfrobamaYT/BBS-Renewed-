@@ -786,8 +786,11 @@ public class UIFilmController extends UIElement
 
             if (CollectionUtils.inRange(replays, i))
             {
+                /* Plus 1 is necessary because apparently the render ticks comes before
+                 * the update tick, so in order to force the correct animation, I have to
+                 *  */
                 Replay replay = replays.get(i);
-                int ticks = runner.ticks;
+                int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
 
                 if (entity != this.controlled || (this.recording && this.recordingCountdown <= 0 && this.recordingGroups != null))
                 {
