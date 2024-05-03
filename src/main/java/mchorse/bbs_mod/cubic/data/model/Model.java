@@ -66,6 +66,11 @@ public class Model
             PoseTransform transform = entry.getValue();
             ModelGroup group = this.getGroup(entry.getKey());
 
+            if (group == null)
+            {
+                continue;
+            }
+
             if (pose.staticPose)
             {
                 group.current.copy(group.initial);

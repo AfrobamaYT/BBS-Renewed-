@@ -788,7 +788,7 @@ public class UIFilmController extends UIElement
             {
                 /* Plus 1 is necessary because apparently the render ticks comes before
                  * the update tick, so in order to force the correct animation, I have to
-                 *  */
+                 * increment the tick, so it would appear correctly */
                 Replay replay = replays.get(i);
                 int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
 
