@@ -7,7 +7,7 @@ import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.audio.Wave;
 import mchorse.bbs_mod.audio.Waveform;
 import mchorse.bbs_mod.audio.wav.WaveWriter;
-import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.camera.clips.misc.VoicelineClip;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
@@ -317,7 +317,7 @@ public class UIScreenplayEditor extends UIElement
                 Film film = this.panel.getFilm();
                 int layer = film.camera.getTopLayer();
 
-                AudioClip clip = new AudioClip();
+                AudioClientClip clip = new AudioClientClip();
 
                 clip.duration.set((int) (wave.getDuration() * 20));
                 clip.layer.set(layer + 1);

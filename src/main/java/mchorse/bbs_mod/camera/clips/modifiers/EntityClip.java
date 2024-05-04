@@ -28,11 +28,6 @@ public abstract class EntityClip extends CameraClip
      */
     public Position position = new Position(0, 0, 0, 0, 0);
 
-    /**
-     * Target (entity) selector
-     *
-     * @link https://minecraft.gamepedia.com/Commands#Target_selector_variables
-     */
     public final ValueString selector = new ValueString("selector", "");
     public final ValuePoint offset = new ValuePoint("offset", new Point(0, 0, 0));
 
