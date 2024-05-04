@@ -195,7 +195,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     @Override
     public void markLastUndoNoMerging()
     {
-        this.filmPanel.markLastUndoNoMerging();
+        this.filmPanel.cacheMarkLastUndoNoMerging = true;
     }
 
     @Override

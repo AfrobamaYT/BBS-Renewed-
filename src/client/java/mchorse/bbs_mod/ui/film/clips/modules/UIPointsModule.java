@@ -66,6 +66,7 @@ public class UIPointsModule extends UIAbstractModule
         }
 
         this.path.points.move(this.index, this.index - 1);
+        this.editor.markLastUndoNoMerging();
 
         this.index = this.index - 1;
     }
@@ -78,6 +79,7 @@ public class UIPointsModule extends UIAbstractModule
         }
 
         this.path.points.move(this.index, this.index + 1);
+        this.editor.markLastUndoNoMerging();
 
         this.index = this.index - 1;
     }
@@ -85,6 +87,7 @@ public class UIPointsModule extends UIAbstractModule
     public void addPoint()
     {
         this.path.points.add(this.index + 1, new Position(this.editor.getCamera()));
+        this.editor.markLastUndoNoMerging();
 
         this.index = MathUtils.clamp(this.index + 1, 0, this.path.points.size() - 1);
 
@@ -105,6 +108,7 @@ public class UIPointsModule extends UIAbstractModule
         }
 
         this.path.points.remove(this.index);
+        this.editor.markLastUndoNoMerging();
 
         this.index = Math.max(this.index - 1, 0);
         this.scroll.setSize(this.path.size());

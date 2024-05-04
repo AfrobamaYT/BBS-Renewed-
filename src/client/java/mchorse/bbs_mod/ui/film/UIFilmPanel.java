@@ -121,6 +121,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private FilmEditorUndo.KeyframeSelection cachedKeyframeSelection;
     private FilmEditorUndo.KeyframeSelection cachedPropertiesSelection;
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
+    public boolean cacheMarkLastUndoNoMerging = false;
 
     public final Matrix4f lastView = new Matrix4f();
     public final Matrix4f lastProjection = new Matrix4f();
@@ -652,6 +653,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.cachedKeyframeSelection = this.cachedPropertiesSelection = null;
 
         this.undoTimer.mark();
+
+        if (this.cacheMarkLastUndoNoMerging)
+        {
+            this.cacheMarkLastUndoNoMerging = false;
+
+            this.markLastUndoNoMerging();
+        }
     }
 
     private void handleUndos(IUndo<ValueGroup> undo, boolean redo)
