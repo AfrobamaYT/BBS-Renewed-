@@ -55,14 +55,6 @@ public class BBSSettings
     public static ValueBoolean editorCrosshair;
     public static ValueBoolean editorSeconds;
 
-    public static ValueInt nodePulseBackgroundColor;
-    public static ValueBoolean nodePulseBackgroundPrimaryColor;
-    public static ValueInt nodeThickness;
-    public static ValueBoolean questsPreviewRewards;
-
-    public static ValueBoolean damageControl;
-    public static ValueInt damageControlDistance;
-
     public static ValueFloat recordingCountdown;
 
     public static ValueBoolean audioWaveformVisible;
@@ -143,14 +135,6 @@ public class BBSSettings
         editorCenterLines = builder.getBoolean("center_lines", false);
         editorCrosshair = builder.getBoolean("crosshair", false);
         editorSeconds = builder.getBoolean("seconds", false);
-
-        nodePulseBackgroundColor = builder.category("gui").getInt("pulse_background_color", 0).color();
-        nodePulseBackgroundPrimaryColor = builder.getBoolean("pulse_background_primary_color", false);
-        nodeThickness = builder.getInt("node_thickness", 3, 0, 20);
-        questsPreviewRewards = builder.getBoolean("quest_preview_rewards", true);
-
-        damageControl = builder.category("damage_control").getBoolean("damage_control", true);
-        damageControlDistance = builder.getInt("damage_control_distance", 64, 1, 1024);
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
 
