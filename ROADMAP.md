@@ -31,18 +31,24 @@ Beside that, here is a list to finish:
 In this stage, I'll implement any missing features from my mods that are core 
 experience. Like following:
 
+- [ ] Vanilla animation system for models
+  - [ ] Basic properties like looking, swinging (+inverted), swiping, leaning pitch
+  - [ ] Item anchors
+  - [ ] Editor
+- [ ] Drag and drop system
+  - [ ] Images (.jpg, .gif, .webp) -> png
+  - [ ] PNG skins 64x32 to 64x64
+  - [ ] Audio (.mp3, .aiff) -> .wav mono 16bit
+  - [ ] .geo.json + .animation.json -> .bbs.json
+  - [ ] .mp4 -> .wav
+- [ ] Mob form
+- [ ] Emoticons and S&B
 - [ ] Action system
   - [ ] In-game recording
 - [ ] Damage control
-- [ ] Emoticons and S&B
-- [ ] BB gun?
-- [ ] Vanilla integrations
-  - [ ] Item holding
-  - [ ] Swimming
-  - [ ] Vanilla-like animator
 - [ ] Audio editor
 - [ ] Structure form
-- [ ] Mob form
+- [ ] BB gun?
 
 ## Missing features
 
@@ -68,7 +74,7 @@ series that teaches how to practically use BBS mod to record machinimas by examp
 Bugs:
 
 - [x] Reset camera when switching to another dimension
-- [ ] Save films somehwere when the server doesn't have BBS mod
+- [ ] Save films somewhere when the server doesn't have BBS mod
 
 Useful user suggestions:
 
@@ -92,13 +98,13 @@ Useful user suggestions:
 - [x] Add button to toggle orbit mode, orbit perspective and make context menu for perspectives
 - [ ] Add an icon when in orbit mode
 - [ ] Add loop option to /bbs film play
-- [ ] Add /bbs film stop
+- [x] Add /bbs film stop
 - [ ] Teleport to model block
 - [ ] Morph entity selectors 
 - [ ] Base form options for shadows (vanilla and iris)
 - [ ] Add color to extruded form
 - [ ] Add step interpolation / break down a segment into more
-- [ ] Model block form per transformation type (on the ground, third person, first person, etc.)
+- [x] Model block form per transformation type (on the ground, third person, first person, etc.)
 
 Considerations:
 

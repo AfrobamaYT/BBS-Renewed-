@@ -32,6 +32,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "c2");
     public static final Identifier CLIENT_PLAY_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c3");
     public static final Identifier CLIENT_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "c4");
+    public static final Identifier CLIENT_STOP_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c5");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -207,6 +208,15 @@ public class ServerNetwork
         buf.writeBoolean(withCamera);
 
         ServerPlayNetworking.send(player, CLIENT_PLAY_FILM_PACKET, buf);
+    }
+
+    public static void sendStopFilm(ServerPlayerEntity player, String filmId)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(filmId);
+
+        ServerPlayNetworking.send(player, CLIENT_STOP_FILM_PACKET, buf);
     }
 
     public static void sendManagerData(ServerPlayerEntity player, int callbackId, RepositoryOperation op, BaseType data)

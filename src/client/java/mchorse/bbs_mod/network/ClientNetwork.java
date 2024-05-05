@@ -2,6 +2,7 @@ package mchorse.bbs_mod.network;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -40,6 +41,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM_PACKET, (client, handler, buf, responseSender) -> handlePlayerFormPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
     }
 
     /* Handlers */
@@ -118,7 +120,7 @@ public class ClientNetwork
                         BBSModClient.getCameraController().add(controller);
                     }
 
-                    BBSModClient.getFilms().addFilm(filmController);
+                    BBSModClient.getFilms().add(filmController);
                 });
             });
         }
@@ -138,6 +140,25 @@ public class ClientNetwork
         {
             callback.accept(data);
         }
+    }
+
+    private static void handleStopFilmPacket(PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+
+        MinecraftClient.getInstance().execute(() ->
+        {
+            Film film = BBSModClient.getFilms().remove(filmId);
+            ICameraController current = BBSModClient.getCameraController().getCurrent();
+
+            if (film != null && current instanceof PlayCameraController play)
+            {
+                if (play.getContext().clips == film.camera)
+                {
+                    BBSModClient.getCameraController().remove(play);
+                }
+            }
+        });
     }
 
     /* API */

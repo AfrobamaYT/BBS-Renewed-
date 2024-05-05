@@ -28,7 +28,7 @@ public class BBSCommands
         LiteralArgumentBuilder<ServerCommandSource> bbs = CommandManager.literal("bbs").requires((source) -> source.hasPermissionLevel(2));
 
         registerMorphCommand(bbs, environment);
-        registerSceneCommand(bbs, environment);
+        registerFilmsCommand(bbs, environment);
 
         dispatcher.register(bbs);
     }
@@ -46,21 +46,48 @@ public class BBSCommands
         bbs.then(morph);
     }
 
-    private static void registerSceneCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerFilmsCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> scene = CommandManager.literal("films");
         LiteralArgumentBuilder<ServerCommandSource> play = CommandManager.literal("play");
+        LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
         RequiredArgumentBuilder<ServerCommandSource, EntitySelector> target = CommandManager.argument("target", EntityArgumentType.players());
-        RequiredArgumentBuilder<ServerCommandSource, String> film = CommandManager.argument("film", StringArgumentType.word());
+        RequiredArgumentBuilder<ServerCommandSource, String> playFilm = CommandManager.argument("film", StringArgumentType.word());
+        RequiredArgumentBuilder<ServerCommandSource, String> stopFilm = CommandManager.argument("film", StringArgumentType.word());
         RequiredArgumentBuilder<ServerCommandSource, Boolean> camera = CommandManager.argument("camera", BoolArgumentType.bool());
+
+        playFilm.suggests((ctx, builder) ->
+        {
+            for (String key : BBSMod.getFilms().getKeys())
+            {
+                builder.suggest(key);
+            }
+
+            return builder.buildFuture();
+        });
+
+        stopFilm.suggests((ctx, builder) ->
+        {
+            for (String key : BBSMod.getFilms().getKeys())
+            {
+                builder.suggest(key);
+            }
+
+            return builder.buildFuture();
+        });
 
         scene.then(
             target.then(
                 play.then(
-                    film.executes((source) -> sceneCommandPlay(source, true))
+                    playFilm.executes((source) -> sceneCommandPlay(source, true))
                         .then(
                             camera.executes((source) -> sceneCommandPlay(source, BoolArgumentType.getBool(source, "camera")))
                         )
+                )
+            )
+            .then(
+                stop.then(
+                    stopFilm.executes(BBSCommands::sceneCommandStop)
                 )
             )
         );
@@ -120,6 +147,22 @@ public class BBSCommands
         for (ServerPlayerEntity player : players)
         {
             ServerNetwork.sendPlayFilm(player, filmId, withCamera);
+        }
+
+        return 1;
+    }
+
+    /**
+     * /bbs film McHorseYT stop test - Stops film playback
+     */
+    private static int sceneCommandStop(CommandContext<ServerCommandSource> source) throws CommandSyntaxException
+    {
+        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(source, "target");
+        String filmId = StringArgumentType.getString(source, "film");
+
+        for (ServerPlayerEntity player : players)
+        {
+            ServerNetwork.sendStopFilm(player, filmId);
         }
 
         return 1;
