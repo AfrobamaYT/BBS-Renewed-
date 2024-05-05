@@ -249,6 +249,8 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_GENERAL_HITBOX_SNEAK_MULTIPLIER = L10n.lang("bbs.ui.forms.editors.general.hitbox_sneak_multiplier");
     public static final IKey FORMS_EDITORS_GENERAL_HITBOX_WIDTH = L10n.lang("bbs.ui.forms.editors.general.hitbox_width");
     public static final IKey FORMS_EDITORS_GENERAL_VISIBLE = L10n.lang("bbs.ui.forms.editors.general.visible");
+    public static final IKey FORMS_EDITORS_GENERAL_LIGHTING = L10n.lang("bbs.ui.forms.editors.general.lighting");
+    public static final IKey FORMS_EDITORS_GENERAL_LIGHTING_TOOLTIP = L10n.lang("bbs.ui.forms.editors.general.lighting-tooltip");
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR = L10n.lang("bbs.ui.forms.editors.label.anchor");
     public static final IKey FORMS_EDITORS_LABEL_ANCHOR_LINES = L10n.lang("bbs.ui.forms.editors.label.anchor_lines");
     public static final IKey FORMS_EDITORS_LABEL_BACKGROUND = L10n.lang("bbs.ui.forms.editors.label.background");

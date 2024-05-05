@@ -11,6 +11,7 @@ import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
@@ -79,6 +80,7 @@ public abstract class FormRenderer <T extends Form>
 
     public final void render(FormRenderingContext context)
     {
+        int light = context.light;
         Boolean visible = this.form.visible.get(context.getTransition());
 
         if (!visible)
@@ -91,6 +93,11 @@ public abstract class FormRenderer <T extends Form>
         context.stack.push();
         MatrixStackUtils.applyTransform(context.stack, this.form.transform.get(context.getTransition()));
 
+        if (!this.form.lighting.get(context.getTransition()))
+        {
+            context.light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+        }
+
         this.render3D(context);
 
         if (isPicking)
@@ -101,6 +108,8 @@ public abstract class FormRenderer <T extends Form>
         this.renderBodyParts(context);
 
         context.stack.pop();
+
+        context.light = light;
     }
 
     protected Supplier<ShaderProgram> getShader(FormRenderingContext context, Supplier<ShaderProgram> normal, Supplier<ShaderProgram> picking)
