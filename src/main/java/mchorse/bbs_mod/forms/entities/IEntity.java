@@ -31,6 +31,8 @@ public interface IEntity
 
     public boolean isPunching();
 
+    public float getHandSwingProgress(float tickDelta);
+
     public int getAge();
 
     public void setAge(int ticks);

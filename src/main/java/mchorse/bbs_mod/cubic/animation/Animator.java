@@ -17,7 +17,7 @@ import java.util.List;
  * This class is responsible for applying currently running actions onto 
  * form (more specifically onto an armature).
  */
-public class Animator
+public class Animator implements IAnimator
 {
     /* Actions */
     public ActionPlayback idle;
@@ -49,6 +49,7 @@ public class Animator
 
     private CubicModel model;
 
+    @Override
     public List<String> getActions()
     {
         return Arrays.asList(
@@ -57,6 +58,7 @@ public class Animator
         );
     }
 
+    @Override
     public void setup(CubicModel model, ActionsConfig actions)
     {
         this.model = model;
@@ -132,6 +134,7 @@ public class Animator
      * Update animator. This method is responsible for updating action 
      * pipeline and also change current actions based on entity's state.
      */
+    @Override
     public void update(IEntity target)
     {
         /* Fix issue with forms sudden running action */
@@ -313,6 +316,7 @@ public class Animator
     /**
      * Apply currently running action pipeline onto given armature
      */
+    @Override
     public void applyActions(IEntity target, Model armature, float transition)
     {
         if (this.lastActive != null && this.active.isFading())

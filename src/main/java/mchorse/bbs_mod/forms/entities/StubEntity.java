@@ -111,6 +111,12 @@ public class StubEntity implements IEntity
     }
 
     @Override
+    public float getHandSwingProgress(float tickDelta)
+    {
+        return 0F;
+    }
+
+    @Override
     public int getAge()
     {
         return this.age;

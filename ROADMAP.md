@@ -105,6 +105,8 @@ Useful user suggestions:
 - [ ] Add color to extruded form
 - [ ] Add step interpolation / break down a segment into more
 - [x] Model block form per transformation type (on the ground, third person, first person, etc.)
+- [ ] For 1.20.1 build force 1.20.1
+- [ ] Model block items for form
 
 Considerations:
 

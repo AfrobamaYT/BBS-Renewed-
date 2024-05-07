@@ -13,10 +13,9 @@ public class CubicModel
     public Link texture;
     public long loadTime;
 
-    public String poseGroup = "";
-    public boolean normals = true;
+    public String poseGroup;
+    public boolean procedural;
     public boolean culling = true;
-    public boolean overlap;
 
     public CubicModel(String id, Model model, Animations animations, Link texture)
     {
@@ -36,9 +35,8 @@ public class CubicModel
             return;
         }
 
-        this.normals = config.getBool("normals", this.normals);
+        this.procedural = config.getBool("procedural", this.procedural);
         this.culling = config.getBool("culling", this.culling);
-        this.overlap = config.getBool("overlap", this.overlap);
         this.poseGroup = config.getString("pose_group", this.poseGroup);
     }
 }

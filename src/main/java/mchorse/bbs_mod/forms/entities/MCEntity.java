@@ -100,6 +100,17 @@ public class MCEntity implements IEntity
     }
 
     @Override
+    public float getHandSwingProgress(float tickDelta)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.getHandSwingProgress(tickDelta);
+        }
+
+        return 0F;
+    }
+
+    @Override
     public int getAge()
     {
         return this.mcEntity.age;
