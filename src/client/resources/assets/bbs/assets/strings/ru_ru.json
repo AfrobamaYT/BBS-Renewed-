@@ -58,6 +58,8 @@
     "bbs.config.editor.title": "Редактор камеры",
     "bbs.config.editor.tooltip": "Параметры конфигурации, которые используются в редакторе камеры",
     "bbs.config.elevenlabs.title": "ElevenLabs (Синтез речи)",
+    "bbs.config.elevenlabs.all_voices": "Все голоса",
+    "bbs.config.elevenlabs.all_voices-comment": "По умолчанию, только сгенерированные и склонированные голоса доступны в списке. Включив эту опцию, все голоса будут доступны",
     "bbs.config.elevenlabs.token": "Токен",
     "bbs.config.elevenlabs.token-comment": "Токен вашего аккаунта который требуется для синтеза речи",
     "bbs.config.elevenlabs.tooltip": "Опции для ElevenLabs синтеза речи",

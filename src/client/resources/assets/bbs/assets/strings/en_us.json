@@ -61,6 +61,8 @@
     "bbs.config.elevenlabs.title": "ElevenLabs (TTS)",
     "bbs.config.elevenlabs.token": "Token",
     "bbs.config.elevenlabs.token-comment": "Token that is required for the TTS generation to work",
+    "bbs.config.elevenlabs.all_voices": "All voices",
+    "bbs.config.elevenlabs.all_voices-comment": "By default, only cloned and generated voices are listed. Enabling this option will display all of the available voices",
     "bbs.config.elevenlabs.tooltip": "Config options for ElevenLabs' TTS",
     "bbs.config.multiskin.multithreaded": "Multi-threaded processing",
     "bbs.config.multiskin.multithreaded-comment": "Allows you to toggle multi-threaded processing of multi-skins, which should fix the lag at cost of longer processing",

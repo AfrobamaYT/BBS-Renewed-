@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film.tts;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
 
@@ -11,7 +12,7 @@ public class ElevenLabsVoice implements IMapSerializable
 
     public boolean isAllowed()
     {
-        return this.category.equals("cloned") || this.category.equals("generated");
+        return this.category.equals("cloned") || this.category.equals("generated") || BBSSettings.elevenLabsAllVoices.get();
     }
 
     @Override

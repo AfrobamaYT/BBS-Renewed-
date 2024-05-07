@@ -65,6 +65,7 @@ public class BBSSettings
     public static ValueBoolean audioWaveformTime;
 
     public static ValueString elevenLabsToken;
+    public static ValueBoolean elevenLabsAllVoices;
     public static ValueVoiceColors elevenVoiceColors;
 
     public static int primaryColor()
@@ -148,6 +149,7 @@ public class BBSSettings
 
         builder.category("elevenlabs");
         elevenLabsToken = builder.getString("token", "");
+        elevenLabsAllVoices = builder.getBoolean("all_voices", false);
         elevenVoiceColors = new ValueVoiceColors("colors");
 
         builder.register(elevenVoiceColors);
