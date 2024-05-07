@@ -74,22 +74,29 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         matrices.push();
         matrices.translate(0.5F, 0F, 0.5F);
 
-        if (MinecraftClient.getInstance().getDebugHud().shouldShowDebugHud())
-        {
-            Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
-        }
-
-        MatrixStackUtils.applyTransform(matrices, transform);
-        int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
-        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
-
         if (properties.getForm() != null && this.canRender(entity))
         {
+            matrices.push();
+
+            MatrixStackUtils.applyTransform(matrices, transform);
+
+            int lightAbove = WorldRenderer.getLightmapCoordinates(entity.getWorld(), pos.add((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
+            Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+
             RenderSystem.enableDepthTest();
             FormUtilsClient.render(properties.getForm(), FormRenderingContext
                 .set(entity.getEntity(), matrices, lightAbove, tickDelta)
                 .camera(camera));
             RenderSystem.disableDepthTest();
+
+            matrices.pop();
+        }
+
+        RenderSystem.disableDepthTest();
+
+        if (MinecraftClient.getInstance().getDebugHud().shouldShowDebugHud())
+        {
+            Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
         }
 
         matrices.pop();
