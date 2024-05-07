@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
+import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Color;
 
 public class UIModelFormPanel extends UIFormPanel<ModelForm>
@@ -25,6 +26,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         super(editor);
 
         this.color = new UIColor((c) -> this.form.color.set(new Color().set(c))).withAlpha();
+        this.color.direction(Direction.LEFT);
         this.poseEditor = new UIPoseEditor();
         this.pick = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_TEXTURE, (b) ->
         {

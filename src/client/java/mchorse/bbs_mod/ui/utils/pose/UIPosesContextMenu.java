@@ -4,6 +4,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
@@ -72,7 +73,13 @@ public class UIPosesContextMenu extends UIContextMenu
         this.name = new UITextbox().filename();
         this.name.placeholder(UIKeys.POSE_CONTEXT_NAME);
 
-        this.add(UI.row(this.copy, this.paste, this.reset, this.save));
+        UIElement row = UI.row(this.copy, this.paste, this.reset, this.save);
+
+        row.relative(this).xy(5, 5).w(1F, -10).h(20);
+        this.name.relative(this).xy(5, 25).w(1F, -10).h(20);
+        this.poses.relative(this).xy(5, 45).w(1F, -10).hTo(this.area, 1F, -5);
+
+        this.add(row);
         this.add(this.name);
         this.add(this.poses);
 
@@ -92,7 +99,6 @@ public class UIPosesContextMenu extends UIContextMenu
         this.poses.clear();
         this.poses.add(this.data.keys());
         this.poses.sort();
-        this.poses.h(UIStringList.DEFAULT_HEIGHT * 8);
     }
 
     @Override
@@ -105,6 +111,6 @@ public class UIPosesContextMenu extends UIContextMenu
     public void setMouse(UIContext context)
     {
         /* Padding from both side + 4 icon 20px + 3 margin 5px */
-        this.xy(context.mouseX(), context.mouseY()).w(10 + 80 + 15).column().vertical().stretch().padding(5);
+        this.xy(context.mouseX(), context.mouseY()).w(10 + 80 + 15).h(10 + 40 + UIStringList.DEFAULT_HEIGHT * 8).bounds(context.menu.overlay, 5);
     }
 }
