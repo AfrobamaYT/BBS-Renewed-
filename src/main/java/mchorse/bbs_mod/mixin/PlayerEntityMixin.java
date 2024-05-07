@@ -1,54 +1,39 @@
 package mchorse.bbs_mod.mixin;
 
 import mchorse.bbs_mod.morphing.IMorphProvider;
-import mchorse.bbs_mod.morphing.Morph;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * For some unknown reason to me, if these methods are used in {@link PlayerEntityMorphMixin}
+ * then the world will be locked for some reason... by extracting write/read NBT method to
+ * a separate mixin fixes it...
+ */
 @Mixin(PlayerEntity.class)
-public abstract class PlayerEntityMixin extends LivingEntity implements IMorphProvider
+public class PlayerEntityMixin
 {
-    public Morph morph = new Morph(this);
-
-    protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world)
+    @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
+    public void onWriteCustomDataToNbt(NbtCompound nbt, CallbackInfo info)
     {
-        super(entityType, world);
-    }
-
-    @Override
-    public Morph getMorph()
-    {
-        return this.morph;
-    }
-
-    @Override
-    public void baseTick()
-    {
-        this.morph.update();
-
-        super.baseTick();
-    }
-
-    @Override
-    public void writeCustomDataToNbt(NbtCompound nbt)
-    {
-        super.writeCustomDataToNbt(nbt);
-
-        nbt.put("BBSMorph", this.morph.toNbt());
-    }
-
-    @Override
-    public void readCustomDataFromNbt(NbtCompound nbt)
-    {
-        super.readCustomDataFromNbt(nbt);
-
-        if (nbt.contains("BBSMorph"))
+        if (this instanceof IMorphProvider provider)
         {
-            this.morph.fromNbt(nbt.getCompound("BBSMorph"));
+            nbt.put("BBSMorph", provider.getMorph().toNbt());
+        }
+    }
+
+    @Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
+    public void onReadCustomDataFromNbt(NbtCompound nbt, CallbackInfo info)
+    {
+        if (this instanceof IMorphProvider provider)
+        {
+            if (nbt.contains("BBSMorph"))
+            {
+                provider.getMorph().fromNbt(nbt.getCompound("BBSMorph"));
+            }
         }
     }
 }
