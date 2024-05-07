@@ -156,7 +156,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             MatrixStackUtils.multiply(stack, uiMatrix);
 
-            RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
+            BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
@@ -243,7 +243,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
 
-            RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
+            BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.setShader(this.getShader(context,
                 GameRenderer::getRenderTypeEntityTranslucentCullProgram,
                 BBSShaders::getPickerModelsProgram));

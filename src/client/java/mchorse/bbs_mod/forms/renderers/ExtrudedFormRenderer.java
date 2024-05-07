@@ -66,7 +66,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             gameRenderer.getLightmapTextureManager().enable();
             gameRenderer.getOverlayTexture().setupOverlayColor();
-            RenderSystem.setShaderTexture(0, BBSModClient.getTextures().getTexture(texture).id);
+            BBSModClient.getTextures().bindTexture(texture);
 
             RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntityTranslucentCullProgram, BBSShaders::getPickerBillboardProgram));
 

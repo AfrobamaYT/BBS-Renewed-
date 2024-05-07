@@ -12,7 +12,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
-import mchorse.bbs_mod.utils.IrisUtils;
+import mchorse.bbs_mod.utils.iris.IrisUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
@@ -207,5 +207,15 @@ public class BBSRendering
         }
 
         return IrisUtils.isShadowPass();
+    }
+
+    public static void trackTexture(Texture texture)
+    {
+        if (!iris)
+        {
+            return;
+        }
+
+        IrisUtils.trackTexture(texture);
     }
 }

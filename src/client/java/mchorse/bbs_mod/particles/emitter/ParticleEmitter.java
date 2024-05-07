@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.particles.emitter;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.Camera;
@@ -453,7 +452,7 @@ public class ParticleEmitter
     {
         Texture texture = BBSModClient.getTextures().getTexture(this.texture == null ? this.scheme.texture : this.texture);
 
-        RenderSystem.setShaderTexture(0, texture.id);
+        BBSModClient.getTextures().bindTexture(texture);
     }
 
     public void setupCameraProperties(Camera camera)

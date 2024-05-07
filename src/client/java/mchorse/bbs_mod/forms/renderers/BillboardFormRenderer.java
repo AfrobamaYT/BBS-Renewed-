@@ -168,7 +168,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         gameRenderer.getLightmapTextureManager().enable();
         gameRenderer.getOverlayTexture().setupOverlayColor();
 
-        RenderSystem.setShaderTexture(0, texture.id);
+        BBSModClient.getTextures().bindTexture(texture);
         RenderSystem.setShader(this.getShader(context,
             GameRenderer::getRenderTypeEntityTranslucentCullProgram,
             BBSShaders::getPickerBillboardProgram
