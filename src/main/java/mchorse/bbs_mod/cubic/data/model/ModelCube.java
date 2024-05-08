@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.utils.Quad;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -26,6 +27,118 @@ public class ModelCube implements IMapSerializable
     public ModelUV left;
     public ModelUV top;
     public ModelUV bottom;
+
+    public void setupBoxUV(Vector2f boxUV, boolean mirror)
+    {
+        /* North */
+        float w = (float) Math.floor(this.size.x);
+        float h = (float) Math.floor(this.size.y);
+        float d = (float) Math.floor(this.size.z);
+        float tMinX = boxUV.x + d;
+        float tMinY = boxUV.y + d;
+        float tMaxX = tMinX + w;
+        float tMaxY = tMinY + h;
+
+        if (mirror)
+        {
+            float tmp = tMaxX;
+
+            tMaxX = tMinX;
+            tMinX = tmp;
+        }
+
+        this.front = ModelUV.fromXY(tMinX, tMinY, tMaxX, tMaxY);
+
+        /* East */
+        tMinX = boxUV.x;
+        tMinY = boxUV.y + d;
+        tMaxX = tMinX + d;
+        tMaxY = tMinY + h;
+
+        if (mirror)
+        {
+            tMinX = boxUV.x + d + w;
+            tMinY = boxUV.y + d;
+            tMaxX = tMinX + d;
+            tMaxY = tMinY + h;
+
+            float tmp = tMinX;
+
+            tMinX = tMaxX;
+            tMaxX = tmp;
+        }
+
+        this.right = ModelUV.fromXY(tMinX, tMinY, tMaxX, tMaxY);
+
+        /* South */
+        tMinX = boxUV.x + d * 2 + w;
+        tMinY = boxUV.y + d;
+        tMaxX = tMinX + w;
+        tMaxY = tMinY + h;
+
+        if (mirror)
+        {
+            float tmp = tMaxX;
+
+            tMaxX = tMinX;
+            tMinX = tmp;
+        }
+
+        this.back = ModelUV.fromXY(tMinX, tMinY, tMaxX, tMaxY);
+
+        /* West */
+        tMinX = boxUV.x + d + w;
+        tMinY = boxUV.y + d;
+        tMaxX = tMinX + d;
+        tMaxY = tMinY + h;
+
+        if (mirror)
+        {
+            tMinX = boxUV.x;
+            tMinY = boxUV.y + d;
+            tMaxX = tMinX + d;
+            tMaxY = tMinY + h;
+
+            float tmp = tMinX;
+
+            tMinX = tMaxX;
+            tMaxX = tmp;
+        }
+
+        this.left = ModelUV.fromXY(tMinX, tMinY, tMaxX, tMaxY);
+
+        /* Up */
+        tMinX = boxUV.x + d;
+        tMinY = boxUV.y;
+        tMaxX = tMinX + w;
+        tMaxY = tMinY + d;
+
+        if (mirror)
+        {
+            float tmp = tMaxX;
+
+            tMaxX = tMinX;
+            tMinX = tmp;
+        }
+
+        this.top = ModelUV.fromXY(tMaxX, tMaxY, tMinX, tMinY);
+
+        /* Down */
+        tMinX = boxUV.x + d + w;
+        tMinY = boxUV.y + d;
+        tMaxX = tMinX + w;
+        tMaxY = boxUV.y;
+
+        if (mirror)
+        {
+            float tmp = tMaxX;
+
+            tMaxX = tMinX;
+            tMinX = tmp;
+        }
+
+        this.bottom = ModelUV.fromXY(tMaxX, tMaxY, tMinX, tMinY);
+    }
 
     public void generateQuads(int textureWidth, int textureHeight)
     {

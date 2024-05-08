@@ -14,13 +14,36 @@ import java.io.InputStream;
 
 public class CubicLoader
 {
+    public static MapType loadFile(InputStream stream)
+    {
+        try
+        {
+            return DataToString.mapFromString(loadStringFile(stream));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static String loadStringFile(InputStream stream) throws IOException
+    {
+        String content = IOUtils.readText(stream);
+
+        stream.close();
+
+        return content;
+    }
+
     public LoadingInfo load(MolangParser parser, InputStream stream, String path)
     {
         LoadingInfo info = new LoadingInfo();
 
         try
         {
-            MapType root = this.loadFile(stream);
+            MapType root = loadFile(stream);
 
             if (root.has("model"))
             {
@@ -46,29 +69,6 @@ public class CubicLoader
         }
 
         return info;
-    }
-
-    private MapType loadFile(InputStream stream)
-    {
-        try
-        {
-            return DataToString.mapFromString(this.loadStringFile(stream));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    private String loadStringFile(InputStream stream) throws IOException
-    {
-        String content = IOUtils.readText(stream);
-
-        stream.close();
-
-        return content;
     }
 
     public static class LoadingInfo

@@ -32,6 +32,7 @@ public class ModelManager implements IWatchDogListener
         MolangHelper.registerVars(this.parser);
 
         this.loaders.add(new CubicModelLoader());
+        this.loaders.add(new GeoCubicModelLoader());
         this.loaders.add(new VoxModelLoader());
     }
 
@@ -100,7 +101,7 @@ public class ModelManager implements IWatchDogListener
             return;
         }
 
-        if (link.path.endsWith(".bbs.json") || link.path.endsWith(".vox"))
+        if (link.path.endsWith(".bbs.json") || link.path.endsWith(".geo.json") || link.path.endsWith(".animation.json") || link.path.endsWith(".vox"))
         {
             int index = link.path.lastIndexOf('/');
             int secondIndex = link.path.lastIndexOf('/', index - 1);

@@ -15,6 +15,15 @@ public class ModelUV implements IDataSerializable<ListType>
     public Vector2f size = new Vector2f();
     public float rotation;
 
+    public static ModelUV fromXY(float x1, float y1, float x2, float y2)
+    {
+        ModelUV uv = new ModelUV();
+
+        uv.from(x1, y1, x2, y2);
+
+        return uv;
+    }
+
     public void from(float x1, float y1, float x2, float y2)
     {
         this.origin.x = x1;
