@@ -7,11 +7,11 @@ import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.StringUtils;
-import net.coderbot.iris.rendertarget.NativeImageBackedSingleColorTexture;
-import net.coderbot.iris.texture.pbr.PBRTextureHolder;
-import net.coderbot.iris.texture.pbr.PBRTextureManager;
-import net.coderbot.iris.texture.pbr.PBRType;
 import net.irisshaders.iris.api.v0.IrisApi;
+import net.irisshaders.iris.targets.backed.NativeImageBackedSingleColorTexture;
+import net.irisshaders.iris.texture.pbr.PBRTextureHolder;
+import net.irisshaders.iris.texture.pbr.PBRTextureManager;
+import net.irisshaders.iris.texture.pbr.PBRType;
 
 import java.lang.reflect.Field;
 
@@ -43,12 +43,9 @@ public class IrisUtils
                 Link normalKey = new Link(key.source, StringUtils.removeExtension(key.path) + "_n.png");
                 Link specularKey = new Link(key.source, StringUtils.removeExtension(key.path) + "_s.png");
 
-                Texture normalTexture = textures.getTexture(normalKey);
-                Texture specularTexture = textures.getTexture(specularKey);
-
                 IrisPBRTextureHolder newHolder = new IrisPBRTextureHolder(
-                    normalTexture == error ? defaultNormalTexture : new IrisTextureWrapper(normalKey),
-                    specularTexture == error ? defaultSpecularTexture : new IrisTextureWrapper(specularKey)
+                    new IrisTextureWrapper(normalKey, defaultNormalTexture),
+                    new IrisTextureWrapper(specularKey, defaultSpecularTexture)
                 );
 
                 try

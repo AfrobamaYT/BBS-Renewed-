@@ -11,10 +11,12 @@ import java.io.IOException;
 public class IrisTextureWrapper extends AbstractTexture
 {
     public final Link link;
+    public final AbstractTexture defaultTexture;
 
-    public IrisTextureWrapper(Link link)
+    public IrisTextureWrapper(Link link, AbstractTexture defaultTexture)
     {
         this.link = link;
+        this.defaultTexture = defaultTexture;
     }
 
     @Override
@@ -26,7 +28,7 @@ public class IrisTextureWrapper extends AbstractTexture
     {
         Texture texture = BBSModClient.getTextures().getTexture(this.link);
 
-        return texture == null ? -1 : texture.id;
+        return texture == null || texture == BBSModClient.getTextures().getError() ? this.defaultTexture.getGlId() : texture.id;
     }
 
     @Override

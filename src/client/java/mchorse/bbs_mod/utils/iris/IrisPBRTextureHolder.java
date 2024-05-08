@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.utils.iris;
 
-import net.coderbot.iris.texture.pbr.PBRTextureHolder;
+import net.irisshaders.iris.texture.pbr.PBRTextureHolder;
 import net.minecraft.client.texture.AbstractTexture;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,13 +16,13 @@ public class IrisPBRTextureHolder implements PBRTextureHolder
     }
 
     @Override
-    public @NotNull AbstractTexture getNormalTexture()
+    public @NotNull AbstractTexture normalTexture()
     {
         return this.normal;
     }
 
     @Override
-    public @NotNull AbstractTexture getSpecularTexture()
+    public @NotNull AbstractTexture specularTexture()
     {
         return this.specular;
     }
