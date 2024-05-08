@@ -1,5 +1,8 @@
 package mchorse.bbs_mod.cubic.data.model;
 
+import mchorse.bbs_mod.data.IMapSerializable;
+import mchorse.bbs_mod.data.types.ListType;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
@@ -12,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Model
+public class Model implements IMapSerializable
 {
     public int textureWidth;
     public int textureHeight;
@@ -116,5 +119,71 @@ public class Model
     public ModelGroup getGroup(String id)
     {
         return this.namedGroups.get(id);
+    }
+
+    @Override
+    public void fromData(MapType data)
+    {
+        ListType texture = data.getList("texture");
+
+        this.textureWidth = texture.getInt(0);
+        this.textureHeight = texture.getInt(1);
+
+        MapType groups = data.getMap("groups");
+        Map<String, List<String>> hierarchy = new HashMap<>();
+        Map<String, ModelGroup> flatGroups = new HashMap<>();
+
+        for (String key : groups.keys())
+        {
+            MapType groupElement = groups.getMap(key);
+            ModelGroup group = new ModelGroup(key);
+
+            /* Fill hierarchy information */
+            String parent = groupElement.has("parent") ? groupElement.getString("parent") : "";
+            List<String> list = hierarchy.computeIfAbsent(parent, (k) -> new ArrayList<>());
+
+            list.add(group.id);
+
+            group.fromData(groupElement);
+
+            for (ModelCube cube : group.cubes)
+            {
+                cube.generateQuads(this.textureWidth, this.textureHeight);
+            }
+
+            flatGroups.put(group.id, group);
+        }
+
+        /* Setup hierarchy */
+        for (Map.Entry<String, List<String>> entry : hierarchy.entrySet())
+        {
+            if (entry.getKey().isEmpty())
+            {
+                continue;
+            }
+
+            ModelGroup group = flatGroups.get(entry.getKey());
+
+            for (String child : entry.getValue())
+            {
+                group.children.add(flatGroups.get(child));
+            }
+        }
+
+        List<String> topLevel = hierarchy.get("");
+
+        if (topLevel != null)
+        {
+            for (String rootGroup : topLevel)
+            {
+                this.topGroups.add(flatGroups.get(rootGroup));
+            }
+        }
+    }
+
+    @Override
+    public void toData(MapType data)
+    {
+
     }
 }

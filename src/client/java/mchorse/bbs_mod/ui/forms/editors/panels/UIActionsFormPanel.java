@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
+import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -108,12 +109,12 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
         super.startEdit(form);
 
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(this.form);
+        CubicModel model = renderer.getModel();
 
         renderer.ensureAnimator();
 
-        CubicModel model = renderer.getModel();
-
         this.animations.list.clear();
+        this.actions.clear();
 
         if (model != null)
         {
@@ -121,11 +122,15 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
             this.animations.list.sort();
         }
 
-        this.actions.clear();
-        this.actions.add(renderer.getAnimator().getActions());
-        this.actions.sort();
+        IAnimator animator = renderer.getAnimator();
 
-        this.pickAction("idle", true);
+        if (animator != null)
+        {
+            this.actions.add(animator.getActions());
+            this.actions.sort();
+
+            this.pickAction("idle", true);
+        }
     }
 
     @Override
