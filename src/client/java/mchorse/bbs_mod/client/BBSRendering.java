@@ -78,6 +78,13 @@ public class BBSRendering
                 capturedModelBlocks.add(entity);
             }
         });
+
+        if (!iris)
+        {
+            return;
+        }
+
+        IrisUtils.setup();
     }
 
     public static void onWorldRenderBegin()

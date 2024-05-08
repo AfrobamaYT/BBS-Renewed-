@@ -10,13 +10,18 @@ import java.io.IOException;
 
 public class IrisTextureWrapper extends AbstractTexture
 {
-    public final Link link;
-    public final AbstractTexture defaultTexture;
+    public final Link texture;
+    public final AbstractTexture fallback;
 
-    public IrisTextureWrapper(Link link, AbstractTexture defaultTexture)
+    public IrisTextureWrapper(Link texture)
     {
-        this.link = link;
-        this.defaultTexture = defaultTexture;
+        this(texture, null);
+    }
+
+    public IrisTextureWrapper(Link texture, AbstractTexture fallback)
+    {
+        this.texture = texture;
+        this.fallback = fallback;
     }
 
     @Override
@@ -26,14 +31,19 @@ public class IrisTextureWrapper extends AbstractTexture
     @Override
     public int getGlId()
     {
-        Texture texture = BBSModClient.getTextures().getTexture(this.link);
+        Texture texture = BBSModClient.getTextures().getTexture(this.texture);
 
-        return texture == null || texture == BBSModClient.getTextures().getError() ? this.defaultTexture.getGlId() : texture.id;
+        if (texture == null || texture == BBSModClient.getTextures().getError())
+        {
+            return this.fallback == null ? -1 : this.fallback.getGlId();
+        }
+
+        return texture.id;
     }
 
     @Override
     public void close()
     {
-        BBSModClient.getTextures().delete(this.link);
+        BBSModClient.getTextures().delete(this.texture);
     }
 }
