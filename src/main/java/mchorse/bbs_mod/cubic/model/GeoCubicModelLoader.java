@@ -14,6 +14,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,11 +23,13 @@ public class GeoCubicModelLoader implements IModelLoader
     @Override
     public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links) throws Exception
     {
+        Collection<Link> recursiveLinks = BBSMod.getProvider().getLinksFromPath(model, true);
+
         List<Link> modelGeo = IModelLoader.getLinks(links, ".geo.json");
-        List<Link> modelAnimation = IModelLoader.getLinks(links, ".animation.json");
-        Link modelTexture = IModelLoader.getLink(model.combine("model.png"), links, ".png");
+        List<Link> modelAnimation = IModelLoader.getLinks(recursiveLinks, ".animation.json");
+        Link modelTexture = IModelLoader.getLink(model.combine("model.png"), recursiveLinks, ".png");
         InputStream geoStream = null;
-        InputStream animationStream = null;
+        List<InputStream> animationStream = new ArrayList<>();
         MapType config = null;
 
         try
@@ -51,16 +54,16 @@ public class GeoCubicModelLoader implements IModelLoader
             System.err.println("Failed to load Bedrock entity .geo.json for model: " + model);
         }
 
-        try
+        for (Link link : modelAnimation)
         {
-            if (!modelAnimation.isEmpty())
+            try
             {
-                animationStream = BBSMod.getProvider().getAsset(modelAnimation.get(0));
+                animationStream.add(BBSMod.getProvider().getAsset(link));
             }
-        }
-        catch (Exception e)
-        {
-            System.err.println("Failed to load Bedrock entity .animation.json for model: " + model);
+            catch (Exception e)
+            {
+                System.err.println("Failed to load Bedrock entity .animation.json for model: " + model + " in " + link);
+            }
         }
 
         if (geoStream == null)
@@ -73,13 +76,14 @@ public class GeoCubicModelLoader implements IModelLoader
             JsonObject modelJson = JsonParser.parseString(IOUtils.readText(geoStream)).getAsJsonObject();
             Animations modelAnimations = new Animations();
 
-            if (animationStream != null)
+            for (InputStream stream : animationStream)
             {
-                JsonObject animationJson = JsonParser.parseString(IOUtils.readText(animationStream)).getAsJsonObject().get("animations").getAsJsonObject();
+                JsonObject jsonObject = JsonParser.parseString(IOUtils.readText(stream)).getAsJsonObject();
+                JsonObject animationsJson = jsonObject.get("animations").getAsJsonObject();
 
-                for (String key : animationJson.keySet())
+                for (String key : animationsJson.keySet())
                 {
-                    JsonObject animation = animationJson.getAsJsonObject(key);
+                    JsonObject animation = animationsJson.getAsJsonObject(key);
 
                     modelAnimations.animations.put(key, GeoAnimationParser.parse(models.parser, key, animation));
                 }
