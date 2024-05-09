@@ -3,6 +3,7 @@ package mchorse.bbs_mod.forms.categories;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.AnchorForm;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
@@ -32,6 +33,7 @@ public class FormCategories
     public void setup()
     {
         FormCategory extra = new FormCategory(UIKeys.FORMS_CATEGORIES_EXTRA);
+        AnchorForm anchor = new AnchorForm();
         BillboardForm billboard = new BillboardForm();
         LabelForm label = new LabelForm();
         ExtrudedForm extruded = new ExtrudedForm();
@@ -43,6 +45,7 @@ public class FormCategories
         block.blockState.set(Blocks.GRASS_BLOCK.getDefaultState());
         item.stack.set(new ItemStack(Items.STICK));
 
+        extra.forms.add(anchor);
         extra.forms.add(billboard);
         extra.forms.add(label);
         extra.forms.add(extruded);

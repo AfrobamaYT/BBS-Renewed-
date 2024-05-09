@@ -121,6 +121,8 @@ public class Model implements IMapSerializable
         return this.namedGroups.get(id);
     }
 
+    /* Deserialization / Serialization */
+
     @Override
     public void fromData(MapType data)
     {
@@ -184,6 +186,38 @@ public class Model implements IMapSerializable
     @Override
     public void toData(MapType data)
     {
+        ListType texture = new ListType();
 
+        texture.addInt(this.textureWidth);
+        texture.addInt(this.textureHeight);
+
+        Map<String, String> parents = new HashMap<>();
+        Collection<ModelGroup> allGroups = this.getAllGroups();
+
+        for (ModelGroup parent : allGroups)
+        {
+            for (ModelGroup child : parent.children)
+            {
+                parents.put(child.id, parent.id);
+            }
+        }
+
+        MapType groups = new MapType();
+
+        for (ModelGroup group : allGroups)
+        {
+            MapType groupData = group.toData();
+            String parentId = parents.get(group.id);
+
+            if (parentId != null)
+            {
+                groupData.putString("parent", parentId);
+            }
+
+            groups.put(group.id, groupData);
+        }
+
+        data.put("texture", texture);
+        data.put("groups", groups);
     }
 }

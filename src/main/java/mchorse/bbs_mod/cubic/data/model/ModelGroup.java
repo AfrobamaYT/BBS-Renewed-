@@ -31,55 +31,64 @@ public class ModelGroup implements IMapSerializable
     public void fromData(MapType data)
     {
         /* Setup initial transformations */
-        if (data.has("origin"))
-        {
-            this.initial.translate.set(DataStorageUtils.vector3fFromData(data.getList("origin")));
-        }
-
-        if (data.has("rotate"))
-        {
-            this.initial.rotate.set(DataStorageUtils.vector3fFromData(data.getList("rotate")));
-        }
+        if (data.has("origin")) this.initial.translate.set(DataStorageUtils.vector3fFromData(data.getList("origin")));
+        if (data.has("rotate")) this.initial.rotate.set(DataStorageUtils.vector3fFromData(data.getList("rotate")));
 
         /* Setup cubes and meshes */
         if (data.has("cubes"))
         {
-            this.parseCubes(this, data.getList("cubes"));
+            for (BaseType element : data.getList("cubes"))
+            {
+                ModelCube cube = new ModelCube();
+
+                cube.fromData((MapType) element);
+
+                this.cubes.add(cube);
+            }
+
         }
 
         if (data.has("meshes"))
         {
-            this.parseMeshes(this, data.getList("meshes"));
-        }
-    }
+            for (BaseType element : data.getList("meshes"))
+            {
+                ModelMesh mesh = new ModelMesh();
 
-    private void parseCubes(ModelGroup group, ListType cubes)
-    {
-        for (BaseType element : cubes)
-        {
-            ModelCube cube = new ModelCube();
+                mesh.fromData((MapType) element);
 
-            cube.fromData((MapType) element);
-
-            group.cubes.add(cube);
-        }
-    }
-
-    private void parseMeshes(ModelGroup group, ListType meshes)
-    {
-        for (BaseType element : meshes)
-        {
-            ModelMesh mesh = new ModelMesh();
-
-            mesh.fromData((MapType) element);
-
-            group.meshes.add(mesh);
+                this.meshes.add(mesh);
+            }
         }
     }
 
     @Override
     public void toData(MapType data)
     {
+        data.put("origin", DataStorageUtils.vector3fToData(this.initial.translate));
+        data.put("rotate", DataStorageUtils.vector3fToData(this.initial.rotate));
 
+        if (!this.cubes.isEmpty())
+        {
+            ListType list = new ListType();
+
+            for (ModelCube cube : this.cubes)
+            {
+                list.add(cube.toData());
+            }
+
+            data.put("cubes", list);
+        }
+
+        if (!this.meshes.isEmpty())
+        {
+            ListType list = new ListType();
+
+            for (ModelMesh mesh : this.meshes)
+            {
+                list.add(mesh.toData());
+            }
+
+            data.put("meshes", list);
+        }
     }
 }

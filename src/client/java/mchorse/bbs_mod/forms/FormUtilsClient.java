@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms;
 
+import mchorse.bbs_mod.forms.forms.AnchorForm;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
@@ -8,6 +9,7 @@ import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
+import mchorse.bbs_mod.forms.renderers.AnchorFormRenderer;
 import mchorse.bbs_mod.forms.renderers.BillboardFormRenderer;
 import mchorse.bbs_mod.forms.renderers.BlockFormRenderer;
 import mchorse.bbs_mod.forms.renderers.ExtrudedFormRenderer;
@@ -38,6 +40,7 @@ public class FormUtilsClient
         register(ParticleForm.class, ParticleFormRenderer::new);
         register(BlockForm.class, BlockFormRenderer::new);
         register(ItemForm.class, ItemFormRenderer::new);
+        register(AnchorForm.class, AnchorFormRenderer::new);
     }
 
     public static CustomVertexConsumerProvider getProvider()
