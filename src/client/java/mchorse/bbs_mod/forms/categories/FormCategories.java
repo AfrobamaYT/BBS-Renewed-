@@ -153,4 +153,9 @@ public class FormCategories
 
         this.categories.add(index, category);
     }
+
+    public void removeUserCategory(UserFormCategory category)
+    {
+        this.categories.remove(category);
+    }
 }

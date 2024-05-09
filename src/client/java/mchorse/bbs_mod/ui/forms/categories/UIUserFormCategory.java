@@ -10,6 +10,8 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormList;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIConfirmOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -62,6 +64,27 @@ public class UIUserFormCategory extends UIFormCategory
                     BBSModClient.getFormCategories().writeUserCategories();
                 });
             }
+
+            menu.action(Icons.TRASH, UIKeys.FORMS_CATEGORIES_CONTEXT_REMOVE_CATEGORY, () ->
+            {
+                UIConfirmOverlayPanel panel = new UIConfirmOverlayPanel(
+                    UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE.format(this.category.title),
+                    UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_DESCRIPTION,
+                    (confirm) ->
+                    {
+                        BBSModClient.getFormCategories().removeUserCategory((UserFormCategory) this.category);
+                        BBSModClient.getFormCategories().writeUserCategories();
+
+                        UIElement parent = this.getParentContainer();
+
+                        this.removeFromParent();
+                        parent.resize();
+                    }
+                );
+
+                UIOverlay.addOverlay(this.getContext(), panel);
+                BBSModClient.getFormCategories().writeUserCategories();
+            });
         });
     }
 

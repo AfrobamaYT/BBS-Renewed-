@@ -215,12 +215,15 @@ public class UIKeys
     public static final IKey FORMS_CATEGORIES_CONTEXT_PASTE_FORM = L10n.lang("bbs.ui.forms.categories.context.paste_form");
     public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_FORM = L10n.lang("bbs.ui.forms.categories.context.remove_form");
     public static final IKey FORMS_CATEGORIES_CONTEXT_RENAME_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.rename_category");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.remove_category");
     public static final IKey FORMS_CATEGORIES_EXTRA = L10n.lang("bbs.ui.forms.categories.extra");
     public static final IKey FORMS_CATEGORIES_MODELS = L10n.lang("bbs.ui.forms.categories.models");
     public static final IKey FORMS_CATEGORIES_PARTICLES = L10n.lang("bbs.ui.forms.categories.particles");
     public static final IKey FORMS_CATEGORIES_RECENT = L10n.lang("bbs.ui.forms.categories.recent");
     public static final IKey FORMS_CATEGORIES_RENAME_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.rename_category-description");
     public static final IKey FORMS_CATEGORIES_RENAME_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.rename_category-title");
+    public static final IKey FORMS_CATEGORIES_REMOVE_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.remove_category-description");
+    public static final IKey FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.remove_category-title");
     public static final IKey FORMS_CROP_BOTTOM = L10n.lang("bbs.ui.forms.crop.bottom");
     public static final IKey FORMS_CROP_LEFT = L10n.lang("bbs.ui.forms.crop.left");
     public static final IKey FORMS_CROP_RIGHT = L10n.lang("bbs.ui.forms.crop.right");

@@ -49,6 +49,7 @@ experience. Like following:
 - [ ] Audio editor
 - [ ] Structure form
 - [ ] BB gun?
+- [ ] 白某人是个萌新's suggestion about mouse travel
 
 ## Missing features
 
