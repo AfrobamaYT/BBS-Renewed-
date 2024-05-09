@@ -196,8 +196,6 @@
     "bbs.ui.camera.panels.relative": "Relativ",
     "bbs.ui.camera.panels.relative_tooltip": "Wende relative Animation des Clips oder Kamera-Profils an",
     "bbs.ui.camera.panels.roll": "Drehung",
-    "bbs.ui.camera.panels.selector": "Entität Selektor",
-    "bbs.ui.camera.panels.selector_tooltip": "Entitäts-Selektor (du kannst auch den Name Tag eingeben statt dem Selektor)",
     "bbs.ui.camera.panels.shake": "Wackeln",
     "bbs.ui.camera.panels.shake_amount": "Menge des Wackeln",
     "bbs.ui.camera.panels.tick": "Tick des Clips (in Ticks, 20 Ticks = ~1 Sekunde), die Zahl definiert wie weit dieser Clip in der Arbeit der Kamera ist",

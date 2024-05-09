@@ -209,8 +209,6 @@
     "bbs.ui.camera.panels.relative": "Σχετικό",
     "bbs.ui.camera.panels.relative_tooltip": "Εφαρμογή σχετικής κίνησης του κλιπ ή του προφίλ της κάμερας",
     "bbs.ui.camera.panels.roll": "Περιστροφή",
-    "bbs.ui.camera.panels.selector": "Επιλογέας οντότητας",
-    "bbs.ui.camera.panels.selector_tooltip": "Επιλογέας στόχου οντότητας (μπορείτε επίσης να εισαγάγετε το όνομα ετικέτας της οντότητας αντί για τον επιλογέα στόχου)",
     "bbs.ui.camera.panels.shake": "Ταλάντωση",
     "bbs.ui.camera.panels.shake_amount": "Ποσό ταλάντωσης",
     "bbs.ui.camera.panels.subtitle.anchor": "Αγκύλη",

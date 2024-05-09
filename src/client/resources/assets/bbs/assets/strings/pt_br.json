@@ -186,8 +186,6 @@
     "bbs.ui.camera.panels.rate_tooltip": "Taxa (em frames) na qual os dados devem ser suavizados por segundo; quanto maior o número, mais intensivos serão os cálculos. Usado apenas quando o determinístico está habilitado!",
     "bbs.ui.camera.panels.relative": "Relativo",
     "bbs.ui.camera.panels.relative_tooltip": "Aplicar animação relativa do clipe ou perfil da câmera",
-    "bbs.ui.camera.panels.selector": "Selecionador de Entidade",
-    "bbs.ui.camera.panels.selector_tooltip": "Seletor de destino da entidade (você também pode inserir a tag de nome da entidade em vez do seletor de destino)",
     "bbs.ui.camera.panels.shake_amount": "Shake quantia",
     "bbs.ui.camera.panels.tick": "Tique do clipe (medido em tiques, 20 tiques = ~1 segundo), o número determina o quão longe este clipe está da câmera",
     "bbs.ui.camera.panels.title": "Título",

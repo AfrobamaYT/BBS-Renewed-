@@ -210,8 +210,6 @@
     "bbs.ui.camera.panels.relative": "相对",
     "bbs.ui.camera.panels.relative_tooltip": "应用剪辑或相机配置的相对动画",
     "bbs.ui.camera.panels.roll": "翻滚",
-    "bbs.ui.camera.panels.selector": "实体选择器",
-    "bbs.ui.camera.panels.selector_tooltip": "实体目标选择器（您还可以输入实体的名称标签而不只是目标选择器）",
     "bbs.ui.camera.panels.shake": "摇晃",
     "bbs.ui.camera.panels.shake_amount": "摇晃强度",
     "bbs.ui.camera.panels.tick": "剪辑时长（以刻计算，20 刻 = ~1 秒），该数字决定了此剪辑在摄像机中生效的位置",

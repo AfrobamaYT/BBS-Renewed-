@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -21,11 +22,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.Anchor>
 {
     private UIButton actor;
     private UIButton attachment;
+
+    public static void displayActors(UIContext context, List<IEntity> entities, int value, Consumer<Integer> callback)
+    {
+        context.replaceContextMenu((menu) ->
+        {
+            menu.action(Icons.CLOSE, UIKeys.GENERAL_NONE, Colors.NEGATIVE, () -> callback.accept(-1));
+
+            for (int i = 0; i < entities.size(); i++)
+            {
+                IEntity entity = entities.get(i);
+                Form form = entity.getForm();
+                final int actor = i;
+                IKey label = IKey.raw(i + (form == null ? "" : " - " + form.getIdOrName()));
+
+                menu.action(Icons.CLOSE, label, actor == value ? BBSSettings.primaryColor(0) : 0, () -> callback.accept(actor));
+            }
+        });
+    }
 
     public UIAnchorKeyframeFactory(GenericKeyframe<AnchorProperty.Anchor> keyframe, UIPropertyEditor editor)
     {
@@ -39,30 +59,9 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
 
     private void displayActors()
     {
-        this.getContext().replaceContextMenu((menu) ->
-        {
-            UIFilmPanel panel = this.getPanel();
-            int value = this.keyframe.getValue().actor;
+        UIFilmPanel panel = this.getPanel();
 
-            menu.action(Icons.CLOSE, UIKeys.GENERAL_NONE, Colors.NEGATIVE, () -> this.setActor(-1));
-
-            for (int i = 0; i < panel.getController().entities.size(); i++)
-            {
-                IEntity entity = panel.getController().entities.get(i);
-                Form form = entity.getForm();
-                final int actor = i;
-                IKey label = IKey.raw(i + (form == null ? "" : " - " + form.getIdOrName()));
-
-                if (actor == value)
-                {
-                    menu.action(Icons.CLOSE, label, BBSSettings.primaryColor(0), () -> this.setActor(actor));
-                }
-                else
-                {
-                    menu.action(Icons.CLOSE, label, () -> this.setActor(actor));
-                }
-            }
-        });
+        displayActors(this.getContext(), panel.getController().entities, this.keyframe.getValue().actor, this::setActor);
     }
 
     private void displayAttachments()

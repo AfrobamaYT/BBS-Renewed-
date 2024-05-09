@@ -5,6 +5,7 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import net.minecraft.client.texture.AbstractTexture;
 import net.minecraft.resource.ResourceManager;
+import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
@@ -31,7 +32,7 @@ public class IrisTextureWrapper extends AbstractTexture
     @Override
     public int getGlId()
     {
-        Texture texture = BBSModClient.getTextures().getTexture(this.texture);
+        Texture texture = BBSModClient.getTextures().getTexture(this.texture, GL11.GL_NEAREST, true);
 
         if (texture == null || texture == BBSModClient.getTextures().getError())
         {

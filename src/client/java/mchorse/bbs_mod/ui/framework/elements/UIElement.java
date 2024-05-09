@@ -151,6 +151,23 @@ public class UIElement implements IUIElement
         return this.parent;
     }
 
+    public <T extends UIElement> T getParent(Class<T> clazz)
+    {
+        UIElement element = this;
+
+        while (element != null)
+        {
+            element = element.getParent();
+
+            if (element.getClass() == clazz)
+            {
+                return (T) element;
+            }
+        }
+
+        return null;
+    }
+
     public boolean hasParent()
     {
         return this.parent != null;

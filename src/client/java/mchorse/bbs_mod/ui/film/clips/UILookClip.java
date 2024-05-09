@@ -5,10 +5,12 @@ import mchorse.bbs_mod.camera.clips.modifiers.LookClip;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.clips.modules.UIPointModule;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
-import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIAnchorKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.RayTracing;
 import net.minecraft.client.MinecraftClient;
@@ -21,7 +23,7 @@ import net.minecraft.world.World;
 
 public class UILookClip extends UIClip<LookClip>
 {
-    public UITextbox selector;
+    public UIButton selector;
     public UIToggle relative;
     public UIPointModule offset;
     public UIToggle atBlock;
@@ -40,8 +42,16 @@ public class UILookClip extends UIClip<LookClip>
     {
         super.registerUI();
 
-        this.selector = new UITextbox(500, (str) -> this.clip.selector.set(str));
-        this.selector.tooltip(UIKeys.CAMERA_PANELS_SELECTOR_TOOLTIP);
+        this.selector = new UIButton(UIKeys.CAMERA_PANELS_TARGET_TITLE, (b) ->
+        {
+            UIFilmPanel panel = this.getParent(UIFilmPanel.class);
+
+            if (panel != null)
+            {
+                UIAnchorKeyframeFactory.displayActors(this.getContext(), panel.getController().entities, this.clip.selector.get(), (i) -> this.clip.selector.set(i));
+            }
+        });
+        this.selector.tooltip(UIKeys.CAMERA_PANELS_TARGET_TOOLTIP);
 
         this.block = new UIPointModule(editor, UIKeys.CAMERA_PANELS_BLOCK).contextMenu();
         this.block.context((menu) ->
@@ -65,7 +75,7 @@ public class UILookClip extends UIClip<LookClip>
     {
         super.registerPanels();
 
-        this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_SELECTOR).marginTop(12), this.selector);
+        this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_TARGET).marginTop(12), this.selector);
         this.panels.add(this.relative);
         this.panels.add(this.offset.marginTop(6));
         this.panels.add(this.atBlock.marginTop(6));
@@ -78,7 +88,6 @@ public class UILookClip extends UIClip<LookClip>
     {
         super.fillData();
 
-        this.selector.setText(this.clip.selector.get());
         this.block.fill(this.clip.block);
         this.offset.fill(this.clip.offset);
         this.relative.setValue(this.clip.relative.get());

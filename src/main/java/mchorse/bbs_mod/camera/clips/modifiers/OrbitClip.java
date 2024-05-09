@@ -77,7 +77,7 @@ public class OrbitClip extends EntityClip
         if (this.copy.get())
         {
             float entityYaw = Interpolations.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), context.transition);
-            float entityPitch = Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), context.transition);
+            float entityPitch = -Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), context.transition);
 
             Matrices.rotate(vector, MathUtils.toRad(-entityPitch), MathUtils.toRad(-entityYaw));
         }

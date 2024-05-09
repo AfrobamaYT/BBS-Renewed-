@@ -105,8 +105,9 @@ public class UIKeys
     public static final IKey CAMERA_PANELS_RELATIVE = L10n.lang("bbs.ui.camera.panels.relative");
     public static final IKey CAMERA_PANELS_RELATIVE_TOOLTIP = L10n.lang("bbs.ui.camera.panels.relative_tooltip");
     public static final IKey CAMERA_PANELS_ROLL = L10n.lang("bbs.ui.camera.panels.roll");
-    public static final IKey CAMERA_PANELS_SELECTOR = L10n.lang("bbs.ui.camera.panels.selector");
-    public static final IKey CAMERA_PANELS_SELECTOR_TOOLTIP = L10n.lang("bbs.ui.camera.panels.selector_tooltip");
+    public static final IKey CAMERA_PANELS_TARGET = L10n.lang("bbs.ui.camera.panels.target");
+    public static final IKey CAMERA_PANELS_TARGET_TITLE = L10n.lang("bbs.ui.camera.panels.target-title");
+    public static final IKey CAMERA_PANELS_TARGET_TOOLTIP = L10n.lang("bbs.ui.camera.panels.target-tooltip");
     public static final IKey CAMERA_PANELS_SHAKE = L10n.lang("bbs.ui.camera.panels.shake");
     public static final IKey CAMERA_PANELS_SHAKE_AMOUNT = L10n.lang("bbs.ui.camera.panels.shake_amount");
     public static final IKey CAMERA_PANELS_SUBTITLE_ANCHOR = L10n.lang("bbs.ui.camera.panels.subtitle.anchor");

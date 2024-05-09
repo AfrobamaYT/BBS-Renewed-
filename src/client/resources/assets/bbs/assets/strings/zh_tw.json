@@ -211,8 +211,6 @@
     "bbs.ui.camera.panels.relative": "相對",
     "bbs.ui.camera.panels.relative_tooltip": "應用剪輯或相機配置的相對動畫",
     "bbs.ui.camera.panels.roll": "翻滾",
-    "bbs.ui.camera.panels.selector": "實體選擇器",
-    "bbs.ui.camera.panels.selector_tooltip": "實體目標選擇器（您還可以輸入實體的名稱標籤而不只是目標選擇器）",
     "bbs.ui.camera.panels.shake": "搖晃",
     "bbs.ui.camera.panels.shake_amount": "搖晃強度",
     "bbs.ui.camera.panels.tick": "剪輯時長（以刻計算，20 刻 = ~1 秒），該數字決定了此剪輯在攝像機中生效的位置",

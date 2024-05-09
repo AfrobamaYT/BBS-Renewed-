@@ -6,7 +6,7 @@ import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValuePoint;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.settings.values.ValueString;
+import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
@@ -28,7 +28,7 @@ public abstract class EntityClip extends CameraClip
      */
     public Position position = new Position(0, 0, 0, 0, 0);
 
-    public final ValueString selector = new ValueString("selector", "");
+    public final ValueInt selector = new ValueInt("selector", -1);
     public final ValuePoint offset = new ValuePoint("offset", new Point(0, 0, 0));
 
     public EntityClip()
@@ -41,21 +41,14 @@ public abstract class EntityClip extends CameraClip
 
     public List<IEntity> getEntities(ClipContext context)
     {
-        String selector = this.selector.get();
+        int index = this.selector.get();
 
-        if (context instanceof CameraClipContext cameraClipContext && !selector.isEmpty())
+        if (context instanceof CameraClipContext cameraClipContext && index >= 0)
         {
-            try
+            if (CollectionUtils.inRange(cameraClipContext.entities, index))
             {
-                int index = Integer.parseInt(selector);
-
-                if (CollectionUtils.inRange(cameraClipContext.entities, index))
-                {
-                    return Collections.singletonList(cameraClipContext.entities.get(index));
-                }
+                return Collections.singletonList(cameraClipContext.entities.get(index));
             }
-            catch (Exception e)
-            {}
         }
 
         return Collections.emptyList();
