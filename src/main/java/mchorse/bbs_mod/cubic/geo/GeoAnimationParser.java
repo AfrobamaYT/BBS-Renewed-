@@ -20,7 +20,7 @@ public class GeoAnimationParser
 {
     public static Animation parse(MolangParser parser, String key, JsonObject object) throws Exception
     {
-        Animation animation = new Animation(key);
+        Animation animation = new Animation(key, parser);
 
         if (object.has("animation_length"))
         {
@@ -40,22 +40,11 @@ public class GeoAnimationParser
 
     private static AnimationPart parsePart(MolangParser parser, JsonObject object) throws Exception
     {
-        AnimationPart part = new AnimationPart();
+        AnimationPart part = new AnimationPart(parser);
 
-        if (object.has("position"))
-        {
-            parseChannel(parser, part.position, object.get("position"));
-        }
-
-        if (object.has("scale"))
-        {
-            parseChannel(parser, part.scale, object.get("scale"));
-        }
-
-        if (object.has("rotation"))
-        {
-            parseChannel(parser, part.rotation, object.get("rotation"));
-        }
+        if (object.has("position")) parseChannel(parser, part.position, object.get("position"));
+        if (object.has("scale")) parseChannel(parser, part.scale, object.get("scale"));
+        if (object.has("rotation")) parseChannel(parser, part.rotation, object.get("rotation"));
 
         return part;
     }

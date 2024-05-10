@@ -74,7 +74,7 @@ public class GeoCubicModelLoader implements IModelLoader
         try
         {
             JsonObject modelJson = JsonParser.parseString(IOUtils.readText(geoStream)).getAsJsonObject();
-            Animations modelAnimations = new Animations();
+            Animations modelAnimations = new Animations(models.parser);
 
             for (InputStream stream : animationStream)
             {

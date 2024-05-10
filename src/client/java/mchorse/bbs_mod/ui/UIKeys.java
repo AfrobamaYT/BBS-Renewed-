@@ -212,6 +212,9 @@ public class UIKeys
     public static final IKey FORMS_CATEGORIES_CONTEXT_COPY_TO = L10n.lang("bbs.ui.forms.categories.context.copy_to");
     public static final IKey FORMS_CATEGORIES_CONTEXT_COPY_TO_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.copy_to_category");
     public static final IKey FORMS_CATEGORIES_CONTEXT_OPEN_MODEL_FOLDER = L10n.lang("bbs.ui.forms.categories.context.open_model_form");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL = L10n.lang("bbs.ui.forms.categories.context.export_model");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL_TITLE = L10n.lang("bbs.ui.forms.categories.context.export_model-title");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.context.export_model-description");
     public static final IKey FORMS_CATEGORIES_CONTEXT_PASTE_FORM = L10n.lang("bbs.ui.forms.categories.context.paste_form");
     public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_FORM = L10n.lang("bbs.ui.forms.categories.context.remove_form");
     public static final IKey FORMS_CATEGORIES_CONTEXT_RENAME_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.rename_category");

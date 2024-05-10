@@ -2,8 +2,6 @@ package mchorse.bbs_mod.cubic;
 
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
-import mchorse.bbs_mod.cubic.parsing.AnimationParser;
-import mchorse.bbs_mod.cubic.parsing.ModelParser;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangParser;
@@ -47,19 +45,15 @@ public class CubicLoader
 
             if (root.has("model"))
             {
-                info.model = ModelParser.parse(parser, root.getMap("model"));
+                info.model = new Model(parser);
+                info.model.fromData(root.getMap("model"));
+                info.model.initialize();
             }
 
             if (root.has("animations"))
             {
-                MapType animations = root.getMap("animations");
-
-                info.animations = new Animations();
-
-                for (String key : animations.keys())
-                {
-                    info.animations.add(AnimationParser.parse(parser, key, animations.getMap(key)));
-                }
+                info.animations = new Animations(parser);
+                info.animations.fromData(root.getMap("animations"));
             }
         }
         catch (Exception e)
@@ -69,6 +63,23 @@ public class CubicLoader
         }
 
         return info;
+    }
+
+    public static MapType toData(CubicModel model)
+    {
+        MapType data = new MapType();
+
+        if (model.model != null)
+        {
+            data.put("model", model.model.toData());
+        }
+
+        if (model.animations != null)
+        {
+            data.put("animations", model.animations.toData());
+        }
+
+        return data;
     }
 
     public static class LoadingInfo

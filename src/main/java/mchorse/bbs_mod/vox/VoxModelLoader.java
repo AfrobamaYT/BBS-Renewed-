@@ -57,7 +57,7 @@ public class VoxModelLoader implements IModelLoader
 
         this.ensurePalette(models.provider, document, modelVox, pallete);
 
-        return new CubicModel(id, newModel, new Animations(), pallete);
+        return new CubicModel(id, newModel, new Animations(models.parser), pallete);
     }
 
     private void ensurePalette(AssetProvider provider, VoxDocument document, Link vox, Link pallete)

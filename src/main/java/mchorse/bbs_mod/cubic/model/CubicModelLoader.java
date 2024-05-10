@@ -53,7 +53,7 @@ public class CubicModelLoader implements IModelLoader
             return null;
         }
 
-        CubicModel newModel = new CubicModel(id, null, new Animations(), modelTexture);
+        CubicModel newModel = new CubicModel(id, null, new Animations(models.parser), modelTexture);
 
         for (int i = 0; i < modelStreams.size(); i++)
         {
@@ -93,7 +93,7 @@ public class CubicModelLoader implements IModelLoader
 
     private Animations tryLoadingExternalAnimations(ModelManager models, Link model, MapType config)
     {
-        Animations animations = new Animations();
+        Animations animations = new Animations(models.parser);
 
         if (config == null)
         {
@@ -120,7 +120,7 @@ public class CubicModelLoader implements IModelLoader
                 }
                 catch (FileNotFoundException e)
                 {
-                    return new Animations();
+                    return new Animations(models.parser);
                 }
                 catch (Exception e)
                 {
