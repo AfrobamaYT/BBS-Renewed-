@@ -180,7 +180,7 @@ public class BBSModClient implements ClientModInitializer
         videoRecorder = new VideoRecorder(new File(parentFile, "movies"));
         films = new Films();
 
-        particles = new ParticleManager(() -> new File(BBSMod.getDataFolder(), "particles"));
+        particles = new ParticleManager(() -> new File(BBSMod.getAssetsFolder(), "particles"));
 
         KeybindSettings.registerClasses();
 

@@ -90,7 +90,6 @@ public class BBSMod implements ModInitializer
     private static File gameFolder;
     private static File assetsFolder;
     private static File settingsFolder;
-    private static File dataFolder;
 
     /* Core services */
     private static AssetProvider provider;
@@ -203,21 +202,6 @@ public class BBSMod implements ModInitializer
         return new File(settingsFolder, path);
     }
 
-    /**
-     * Data folder within game's folder. It's used to store game data like
-     * quests, dialogues, states, player data, etc. anything related to game
-     * basically.
-     */
-    public static File getDataFolder()
-    {
-        return dataFolder;
-    }
-
-    public static File getDataPath(String path)
-    {
-        return new File(dataFolder, path);
-    }
-
     public static File getExportFolder()
     {
         return getGamePath("export");
@@ -260,7 +244,6 @@ public class BBSMod implements ModInitializer
         gameFolder = FabricLoader.getInstance().getGameDir().toFile();
         assetsFolder = new File(gameFolder, "config/bbs/assets");
         settingsFolder = new File(gameFolder, "config/bbs/settings");
-        dataFolder = new File(gameFolder, "config/bbs/data");
 
         assetsFolder.mkdirs();
 
