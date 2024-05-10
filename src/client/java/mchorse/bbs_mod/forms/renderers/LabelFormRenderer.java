@@ -30,8 +30,20 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         int color = this.form.color.get(context.getTransition()).getARGBColor();
+        String text = StringUtils.processColoredText(this.form.text.get());
+        List<String> wrap = context.batcher.getFont().wrap(text, x2 - x1 - 4);
 
-        context.batcher.wallText(StringUtils.processColoredText(this.form.text.get()), x1 + 4, y1 + 4, color, x2 - x1 - 8);
+        int th = context.batcher.getFont().getHeight();
+        int lineHeight = th + 4;
+        int h = th + (wrap.size() - 1) * lineHeight;
+        int y = (y2 + y1) / 2 - h / 2;
+
+        for (String s : wrap)
+        {
+            context.batcher.textShadow(s, x1 + 2, y, color);
+
+            y += lineHeight;
+        }
     }
 
     @Override
