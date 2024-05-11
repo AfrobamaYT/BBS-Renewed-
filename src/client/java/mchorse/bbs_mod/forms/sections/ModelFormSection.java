@@ -1,23 +1,21 @@
 package mchorse.bbs_mod.forms.sections;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormCategories;
-import mchorse.bbs_mod.forms.categories.FormCategory;
-import mchorse.bbs_mod.forms.categories.ModelFormCategory;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.utils.DataPath;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-public class ModelFormSection extends FormSection
+public class ModelFormSection extends SubFormSection
 {
-    private ModelFormCategory formCategory = new ModelFormCategory();
-
     public ModelFormSection(FormCategories parent)
     {
         super(parent);
@@ -26,34 +24,78 @@ public class ModelFormSection extends FormSection
     @Override
     public void initiate()
     {
-        List<Link> models = new ArrayList<>(BBSMod.getProvider().getLinksFromPath(Link.assets("models"), false));
+        List<String> keys = BBSModClient.getModels().getAvailableKeys();
 
-        models.sort((a, b) -> a.toString().compareToIgnoreCase(b.toString()));
+        keys.sort((a, b) -> a.compareToIgnoreCase(b));
 
-        for (Link link : models)
+        for (String key : keys)
         {
-            DataPath dataPath = new DataPath(link.path);
-
-            if (!dataPath.folder)
-            {
-                continue;
-            }
-
-            ModelForm form = new ModelForm();
-
-            form.model.set(dataPath.getLast());
+            this.add(key);
         }
     }
 
     @Override
-    public List<FormCategory> getCategories()
+    protected IKey getTitle()
     {
-        return Collections.singletonList(this.formCategory);
+        return UIKeys.FORMS_CATEGORIES_MODELS;
+    }
+
+    @Override
+    protected Form create(String key)
+    {
+        ModelForm form = new ModelForm();
+
+        form.model.set(key);
+
+        return form;
+    }
+
+    @Override
+    protected boolean isEqual(Form form, String key)
+    {
+        ModelForm modelForm = (ModelForm) form;
+
+        return Objects.equals(modelForm.model.get(), key);
     }
 
     @Override
     public void accept(Path path, WatchDogEvent event)
     {
-        super.accept(path, event);
+        Link link = BBSMod.getProvider().getLink(path.toFile());
+
+        if (link.path.startsWith("models/"))
+        {
+            String extension = this.getExtension(link);
+
+            if (extension == null)
+            {
+                return;
+            }
+
+            String key = link.path.substring("models/".length());
+
+            key = key.substring(0, key.length() - extension.length());
+
+            if (event == WatchDogEvent.DELETED)
+            {
+                this.remove(key);
+                this.parent.markDirty();
+            }
+            else if (event == WatchDogEvent.CREATED)
+            {
+                this.add(key);
+                this.parent.markDirty();
+            }
+        }
+    }
+
+    private String getExtension(Link link)
+    {
+        if (BBSModClient.getModels().isRelodable(link))
+        {
+            return link.path.substring(link.path.lastIndexOf('/') + 1);
+        }
+
+        return null;
     }
 }

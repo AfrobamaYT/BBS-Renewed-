@@ -14,8 +14,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ModelManager implements IWatchDogListener
 {
@@ -34,6 +36,28 @@ public class ModelManager implements IWatchDogListener
         this.loaders.add(new CubicModelLoader());
         this.loaders.add(new GeoCubicModelLoader());
         this.loaders.add(new VoxModelLoader());
+    }
+
+    public List<String> getAvailableKeys()
+    {
+        List<Link> models = new ArrayList<>(BBSMod.getProvider().getLinksFromPath(Link.assets("models"), true));
+        Set<String> keys = new HashSet<>();
+
+        models.sort((a, b) -> a.toString().compareToIgnoreCase(b.toString()));
+
+        for (Link link : models)
+        {
+            if (this.isRelodable(link))
+            {
+                String path = link.path;
+
+                path = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
+
+                keys.add(path);
+            }
+        }
+
+        return new ArrayList<>(keys);
     }
 
     public CubicModel getModel(String id)
@@ -87,6 +111,16 @@ public class ModelManager implements IWatchDogListener
         this.models.clear();
     }
 
+    public boolean isRelodable(Link link)
+    {
+        if (link.path.contains("/animations/"))
+        {
+            return false;
+        }
+
+        return link.path.endsWith(".bbs.json") || link.path.endsWith(".geo.json") || link.path.endsWith(".animation.json") || link.path.endsWith(".vox");
+    }
+
     /**
      * Watch dog listener implementation. This is a pretty bad hardcoded
      * solution that would only work for the cubic model loader.
@@ -101,7 +135,7 @@ public class ModelManager implements IWatchDogListener
             return;
         }
 
-        if (link.path.endsWith(".bbs.json") || link.path.endsWith(".geo.json") || link.path.endsWith(".animation.json") || link.path.endsWith(".vox"))
+        if (this.isRelodable(link))
         {
             int index = link.path.lastIndexOf('/');
             int secondIndex = link.path.lastIndexOf('/', index - 1);

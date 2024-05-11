@@ -3,7 +3,6 @@ package mchorse.bbs_mod.forms.sections;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormCategories;
-import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -12,17 +11,10 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
-public class ParticleFormSection extends FormSection
+public class ParticleFormSection extends SubFormSection
 {
-    private Map<String, FormCategory> categories = new LinkedHashMap<>();
-
     public ParticleFormSection(FormCategories parent)
     {
         super(parent);
@@ -33,77 +25,32 @@ public class ParticleFormSection extends FormSection
     {
         for (String key : BBSModClient.getParticles().getKeys())
         {
-            this.addParticle(key);
-        }
-    }
-
-    private String getKey(String key)
-    {
-        int slash = key.lastIndexOf('/');
-
-        return slash >= 0 ? key.substring(0, slash) : "";
-    }
-
-    private FormCategory getCategory(String key)
-    {
-        return this.categories.computeIfAbsent(this.getKey(key), (k) ->
-        {
-            IKey uiKey = UIKeys.FORMS_CATEGORIES_PARTICLES;
-
-            if (!key.isEmpty())
-            {
-                uiKey = IKey.comp(Arrays.asList(uiKey, IKey.raw(" (" + this.getKey(key) + ")")));
-            }
-
-            return new FormCategory(uiKey);
-        });
-    }
-
-    private void addParticle(String key)
-    {
-        FormCategory category = this.getCategory(key);
-
-        for (Form form : category.forms)
-        {
-            if (((ParticleForm) form).effect.get().equals(key))
-            {
-                return;
-            }
-        }
-
-        ParticleForm form = new ParticleForm();
-
-        form.effect.set(key);
-        category.forms.add(form);
-    }
-
-    private void removeParticle(String key)
-    {
-        FormCategory category = this.getCategory(key);
-        Iterator<Form> it = category.forms.iterator();
-
-        while (it.hasNext())
-        {
-            ParticleForm next = (ParticleForm) it.next();
-
-            if (next.effect.get().equals(key))
-            {
-                it.remove();
-                this.parent.markDirty();
-            }
-        }
-
-        if (category.forms.isEmpty())
-        {
-            this.categories.remove(this.getKey(key));
-            this.parent.markDirty();
+            this.add(key);
         }
     }
 
     @Override
-    public List<FormCategory> getCategories()
+    protected IKey getTitle()
     {
-        return new ArrayList<>(this.categories.values());
+        return UIKeys.FORMS_CATEGORIES_PARTICLES;
+    }
+
+    @Override
+    protected Form create(String key)
+    {
+        ParticleForm form = new ParticleForm();
+
+        form.effect.set(key);
+
+        return form;
+    }
+
+    @Override
+    protected boolean isEqual(Form form, String key)
+    {
+        ParticleForm particleForm = (ParticleForm) form;
+
+        return Objects.equals(particleForm.effect.get(), key);
     }
 
     @Override
@@ -119,11 +66,11 @@ public class ParticleFormSection extends FormSection
 
             if (event == WatchDogEvent.DELETED)
             {
-                this.removeParticle(key);
+                this.remove(key);
             }
             else
             {
-                this.addParticle(key);
+                this.add(key);
             }
 
             this.parent.markDirty();
