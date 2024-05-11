@@ -26,6 +26,8 @@ public class ModelManager implements IWatchDogListener
     public final AssetProvider provider;
     public final MolangParser parser;
 
+    private ModelLoader loader = new ModelLoader(this);
+
     public ModelManager(AssetProvider provider)
     {
         this.provider = provider;
@@ -67,6 +69,14 @@ public class ModelManager implements IWatchDogListener
             return this.models.get(id);
         }
 
+        this.models.put(id, null);
+        this.loader.add(id);
+
+        return null;
+    }
+
+    public CubicModel loadModel(String id)
+    {
         CubicModel model = null;
         Link modelLink = Link.assets("models/" + id);
         Collection<Link> links = this.provider.getLinksFromPath(modelLink, false);
