@@ -26,6 +26,7 @@ import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
+import mchorse.bbs_mod.utils.OS;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.VideoRecorder;
 import mchorse.bbs_mod.utils.watchdog.WatchDog;
@@ -173,7 +174,7 @@ public class BBSModClient implements ClientModInitializer
         models = new ModelManager(provider);
         formCategories = new FormCategories();
         formCategories.setup();
-        watchDog = new WatchDog(BBSMod.getAssetsFolder(), (runnable) -> MinecraftClient.getInstance().execute(runnable));
+        watchDog = new WatchDog(BBSMod.getAssetsFolder(), OS.CURRENT == OS.WINDOWS, (runnable) -> MinecraftClient.getInstance().execute(runnable));
         watchDog.register(textures);
         watchDog.register(models);
         watchDog.register(sounds);

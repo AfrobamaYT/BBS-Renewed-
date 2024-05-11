@@ -14,7 +14,7 @@ import java.util.Map;
 
 public abstract class SubFormSection extends FormSection
 {
-    private Map<String, FormCategory> categories = new LinkedHashMap<>();
+    protected Map<String, FormCategory> categories = new LinkedHashMap<>();
 
     public SubFormSection(FormCategories parent)
     {
@@ -24,6 +24,11 @@ public abstract class SubFormSection extends FormSection
     protected abstract IKey getTitle();
 
     protected abstract Form create(String key);
+
+    protected FormCategory createCategory(IKey uiKey)
+    {
+        return new FormCategory(uiKey);
+    }
 
     protected abstract boolean isEqual(Form form, String key);
 
@@ -47,7 +52,7 @@ public abstract class SubFormSection extends FormSection
                 uiKey = IKey.comp(Arrays.asList(uiKey, IKey.raw(" (" + newKey + ")")));
             }
 
-            return new FormCategory(uiKey);
+            return this.createCategory(uiKey);
         });
     }
 

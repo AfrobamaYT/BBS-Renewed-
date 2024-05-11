@@ -31,10 +31,13 @@ public class WatchDog implements Runnable
     private Thread thread;
     private boolean stopThread;
 
-    public WatchDog(File folder, Consumer<Runnable> spawner)
+    private boolean onlyTop;
+
+    public WatchDog(File folder, boolean onlyTop, Consumer<Runnable> spawner)
     {
         this.folder = folder.toPath();
         this.spawner = spawner;
+        this.onlyTop = onlyTop;
     }
 
     public void register(IWatchDogListener listener)
@@ -62,16 +65,23 @@ public class WatchDog implements Runnable
 
     private void registerFolderRecursive(final Path path) throws IOException
     {
-        Files.walkFileTree(path, new SimpleFileVisitor<Path>()
+        if (this.onlyTop)
         {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
+            this.registerFolder(path);
+        }
+        else
+        {
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>()
             {
-            WatchDog.this.registerFolder(dir);
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
+                {
+                    WatchDog.this.registerFolder(dir);
 
-            return FileVisitResult.CONTINUE;
-            }
-        });
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 
     public void start()
@@ -153,7 +163,7 @@ public class WatchDog implements Runnable
                 continue;
             }
 
-            if (kind == StandardWatchEventKinds.ENTRY_CREATE && Files.isDirectory(file, LinkOption.NOFOLLOW_LINKS))
+            if (kind == StandardWatchEventKinds.ENTRY_CREATE && Files.isDirectory(file, LinkOption.NOFOLLOW_LINKS) && !this.onlyTop)
             {
                 try
                 {

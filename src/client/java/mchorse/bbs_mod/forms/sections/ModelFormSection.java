@@ -3,6 +3,8 @@ package mchorse.bbs_mod.forms.sections;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormCategories;
+import mchorse.bbs_mod.forms.categories.FormCategory;
+import mchorse.bbs_mod.forms.categories.ModelFormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -10,6 +12,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -24,9 +27,11 @@ public class ModelFormSection extends SubFormSection
     @Override
     public void initiate()
     {
+        this.categories.clear();
+
         List<String> keys = BBSModClient.getModels().getAvailableKeys();
 
-        keys.sort((a, b) -> a.compareToIgnoreCase(b));
+        keys.sort(String::compareToIgnoreCase);
 
         for (String key : keys)
         {
@@ -51,6 +56,12 @@ public class ModelFormSection extends SubFormSection
     }
 
     @Override
+    protected FormCategory createCategory(IKey uiKey)
+    {
+        return new ModelFormCategory(uiKey);
+    }
+
+    @Override
     protected boolean isEqual(Form form, String key)
     {
         ModelForm modelForm = (ModelForm) form;
@@ -61,9 +72,15 @@ public class ModelFormSection extends SubFormSection
     @Override
     public void accept(Path path, WatchDogEvent event)
     {
-        Link link = BBSMod.getProvider().getLink(path.toFile());
+        File file = path.toFile();
+        Link link = BBSMod.getProvider().getLink(file);
 
-        if (link.path.startsWith("models/"))
+        if (file.isDirectory())
+        {
+            this.initiate();
+            this.parent.markDirty();
+        }
+        else if (link.path.startsWith("models/"))
         {
             String extension = this.getExtension(link);
 

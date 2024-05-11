@@ -53,6 +53,7 @@ experience. Like following:
 - [ ] Video recording
   - [ ] Export audio
   - [ ] Movies folder location
+  - [ ] Presets
 
 ## Missing features
 
