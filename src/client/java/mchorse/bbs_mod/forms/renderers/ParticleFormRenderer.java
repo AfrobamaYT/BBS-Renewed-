@@ -90,6 +90,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             this.updateTexture(context.getTransition());
 
             Matrix4f matrix = new Matrix4f(RenderSystem.getInverseViewRotationMatrix());
+
             matrix.mul(context.stack.peek().getPositionMatrix());
 
             Vector3d translation = new Vector3d(matrix.getTranslation(Vectors.TEMP_3F));

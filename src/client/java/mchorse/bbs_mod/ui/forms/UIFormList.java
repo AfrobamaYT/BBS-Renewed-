@@ -1,12 +1,13 @@
 package mchorse.bbs_mod.ui.forms;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.forms.categories.FormCategories;
+import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
+import mchorse.bbs_mod.ui.forms.categories.UIRecentFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
@@ -35,6 +36,9 @@ public class UIFormList extends UIElement
 
     private UIFormCategory recent;
     private List<UIFormCategory> categories = new ArrayList<>();
+
+    private long lastUpdate;
+    private int lastScroll;
 
     public UIFormList(IUIFormList palette)
     {
@@ -70,18 +74,23 @@ public class UIFormList extends UIElement
         this.categories.clear();
         this.forms.removeAll();
 
-        for (FormCategory category : forms.getCategories())
+        for (FormCategory category : forms.getAllCategories())
         {
             UIFormCategory uiCategory = category.createUI(this);
 
-            category.update();
             this.forms.add(uiCategory);
             this.categories.add(uiCategory);
+
+            if (uiCategory instanceof UIRecentFormCategory)
+            {
+                this.recent = uiCategory;
+            }
         }
 
-        this.recent = (UIFormCategory) this.forms.getChildren().get(0);
         this.categories.get(this.categories.size() - 1).marginBottom(40);
         this.resize();
+
+        this.lastUpdate = forms.getLastUpdate();
     }
 
     private void search(String search)
@@ -178,6 +187,25 @@ public class UIFormList extends UIElement
     @Override
     public void render(UIContext context)
     {
+        FormCategories categories = BBSModClient.getFormCategories();
+
+        if (this.lastScroll >= 0)
+        {
+            this.forms.scroll.scrollTo(this.lastScroll);
+
+            this.lastScroll = -1;
+        }
+
+        if (this.lastUpdate != categories.getLastUpdate())
+        {
+            this.lastScroll = this.forms.scroll.scroll;
+
+            Form selected = this.getSelected();
+
+            this.setupForms(categories);
+            this.setSelected(selected);
+        }
+
         DiffuseLighting.enableGuiDepthLighting();
 
         super.render(context);

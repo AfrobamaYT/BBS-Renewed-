@@ -10,7 +10,7 @@ import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
-import mchorse.bbs_mod.forms.categories.FormCategories;
+import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.l10n.L10n;
@@ -168,6 +168,8 @@ public class BBSModClient implements ClientModInitializer
 
         File parentFile = BBSMod.getSettingsFolder().getParentFile();
 
+        particles = new ParticleManager(() -> new File(BBSMod.getAssetsFolder(), "particles"));
+
         models = new ModelManager(provider);
         formCategories = new FormCategories();
         formCategories.setup();
@@ -175,12 +177,11 @@ public class BBSModClient implements ClientModInitializer
         watchDog.register(textures);
         watchDog.register(models);
         watchDog.register(sounds);
+        watchDog.register(formCategories);
         watchDog.start();
         screenshotRecorder = new ScreenshotRecorder(new File(parentFile, "screenshots"));
         videoRecorder = new VideoRecorder(new File(parentFile, "movies"));
         films = new Films();
-
-        particles = new ParticleManager(() -> new File(BBSMod.getAssetsFolder(), "particles"));
 
         KeybindSettings.registerClasses();
 

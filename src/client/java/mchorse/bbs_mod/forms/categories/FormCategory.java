@@ -29,9 +29,6 @@ public class FormCategory implements IMapSerializable
         return false;
     }
 
-    public void update()
-    {}
-
     public UIFormCategory createUI(UIFormList list)
     {
         return new UIFormCategory(this, list);

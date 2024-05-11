@@ -2,9 +2,9 @@ package mchorse.bbs_mod.ui.forms.categories;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
-import mchorse.bbs_mod.forms.categories.FormCategories;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.categories.UserFormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -52,16 +52,16 @@ public class UIFormCategory extends UIElement
                     {
                         FormCategories formCategories = BBSModClient.getFormCategories();
 
-                        formCategories.addUserCategory(new UserFormCategory(IKey.raw(str)));
+                        formCategories.getUserForms().addUserCategory(new UserFormCategory(IKey.raw(str)));
+                        formCategories.getUserForms().writeUserCategories();
                         list.setupForms(formCategories);
-                        BBSModClient.getFormCategories().writeUserCategories();
                     }
                 ));
             });
 
             if (this.selected != null)
             {
-                List<UserFormCategory> categories = BBSModClient.getFormCategories().getUserCategories();
+                List<UserFormCategory> categories = BBSModClient.getFormCategories().getUserForms().categories;
 
                 categories.remove(this.category);
                 menu.action(Icons.COPY, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_FORM, () -> Window.setClipboard(FormUtils.toData(this.selected)));
@@ -77,7 +77,7 @@ public class UIFormCategory extends UIElement
                                 m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
                                 {
                                     formCategory.forms.add(FormUtils.copy(this.selected));
-                                    BBSModClient.getFormCategories().writeUserCategories();
+                                    BBSModClient.getFormCategories().getUserForms().writeUserCategories();
                                 });
                             }
                         });
