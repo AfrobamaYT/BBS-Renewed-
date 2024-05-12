@@ -29,6 +29,7 @@ import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
@@ -514,6 +515,37 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         {
             COLOR.set(property.color, false);
 
+            /* Render same values */
+            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+            Object previous = null;
+
+            for (Object object : property.channel.getKeyframes())
+            {
+                GenericKeyframe frame = (GenericKeyframe) object;
+
+                if (previous != null)
+                {
+                    GenericKeyframe previousFrame = (GenericKeyframe) previous;
+
+                    if (Objects.equals(previousFrame.getValue(), frame.getValue()))
+                    {
+                        int c = 0xffff00 | Colors.A50;
+                        int xx = this.toGraphX(previousFrame.getTick());
+                        int yy = y + h / 2;
+
+                        context.batcher.fillRect(builder, matrix4f, xx, yy - 2, this.toGraphX(frame.getTick()) - xx, 4, c, c, c, c);
+                    }
+                }
+
+                previous = object;
+            }
+
+            RenderSystem.enableBlend();
+            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            BufferRenderer.drawWithGlobalProgram(builder.end());
+
+            /* Render the line */
             LineBuilder line = new LineBuilder(0.75F);
             boolean hover = this.area.isInside(context) && context.mouseY >= y && context.mouseY < y + h;
 
@@ -521,9 +553,9 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             line.add(this.area.ex(), y + h / 2);
             line.render(context.batcher, SolidColorLineRenderer.get(COLOR.r, COLOR.g, COLOR.b, hover ? 1F : 0.45F));
 
+            /* Draw points */
             builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
-            /* Draw points */
             int index = 0;
             int forcedIndex = 0;
 

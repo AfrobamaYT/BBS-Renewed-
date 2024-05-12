@@ -174,7 +174,7 @@ public class BBSModClient implements ClientModInitializer
         models = new ModelManager(provider);
         formCategories = new FormCategories();
         formCategories.setup();
-        watchDog = new WatchDog(BBSMod.getAssetsFolder(), OS.CURRENT == OS.WINDOWS, (runnable) -> MinecraftClient.getInstance().execute(runnable));
+        watchDog = new WatchDog(BBSMod.getAssetsFolder(), false, (runnable) -> MinecraftClient.getInstance().execute(runnable));
         watchDog.register(textures);
         watchDog.register(models);
         watchDog.register(sounds);
