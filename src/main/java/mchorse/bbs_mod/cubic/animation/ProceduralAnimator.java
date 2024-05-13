@@ -6,8 +6,9 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
-import net.minecraft.util.Arm;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,8 @@ public class ProceduralAnimator implements IAnimator
             return;
         }
 
-        boolean bl = false;
+        boolean isRolling = entity.getRoll() > 4;
+        boolean isInSwimmingPose = entity.getEntityPose() == EntityPose.SWIMMING;
 
         /* Common variables */
         float handSwingProgress = entity.getHandSwingProgress(transition);
@@ -43,29 +45,89 @@ public class ProceduralAnimator implements IAnimator
         float pitch = Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), transition);
         float limbSpeed = entity.getLimbSpeed(transition);
         float limbPhase = entity.getLimbPos(transition);
+        float leaningPitch = entity.getLeaningPitch(transition);
 
-        float k = 1.0F;
+        float coefficient = 1.0F;
 
-        if (bl) {
-            k = (float) entity.getVelocity().lengthSquared();
-            k /= 0.2F;
-            k *= k * k;
+        if (isRolling)
+        {
+            coefficient = (float) entity.getVelocity().lengthSquared();
+            coefficient /= 0.2F;
+            coefficient *= coefficient * coefficient;
         }
 
-        if (k < 1.0F) {
-            k = 1.0F;
+        if (coefficient < 1.0F)
+        {
+            coefficient = 1.0F;
         }
 
         for (ModelGroup group : model.getAllGroups())
         {
-            if (group.id.equals("head"))
+            if (group.id.equals("anchor"))
             {
-                group.current.rotate.x = -pitch;
-                group.current.rotate.y = -(yaw);
+                if (entity.isUsingRiptide())
+                {
+                    group.current.rotate.x = -90.0F - pitch;
+                    group.current.rotate2.y = age * -75.0F;
+                }
+
+                if (entity.isFallFlying())
+                {
+                    float roll = entity.getRoll() + transition;
+                    float riptide = MathHelper.clamp(roll * roll / 100F, 0F, 1F);
+
+                    if (!entity.isUsingRiptide())
+                    {
+                        group.current.rotate.x = riptide * (-90 - pitch);
+                    }
+
+                    Vec3d look = entity.getRotationVec(transition);
+                    Vec3d velocity = entity.lerpVelocity(transition);
+                    double vl = velocity.horizontalLengthSquared();
+                    double ll = look.horizontalLengthSquared();
+
+                    if (vl > 0 && ll > 0)
+                    {
+                        double m = (velocity.x * look.x + velocity.z * look.z) / Math.sqrt(vl * ll);
+                        double n = velocity.x * look.z - velocity.z * look.x;
+
+                        group.current.rotate.y = MathUtils.toDeg((float)(Math.signum(n) * Math.acos(m)));
+                    }
+                }
+                else if (leaningPitch > 0F)
+                {
+                    float newPitch = entity.isTouchingWater() ? -90F - pitch : -90F;
+                    float finalPitch = MathHelper.lerp(leaningPitch, 0F, newPitch);
+
+                    group.current.rotate.x = finalPitch;
+
+                    if (entity.getEntityPose() == EntityPose.SWIMMING)
+                    {
+                        group.current.translate.y -= 0.5F * 16F;
+                        group.current.translate.z += 0.3F * 16F;
+                    }
+                }
+            }
+            else if (group.id.equals("head"))
+            {
+                group.current.rotate.y = -yaw;
+
+                if (isRolling)
+                {
+                    group.current.rotate.x = 45;
+                }
+                else if (leaningPitch > 0F)
+                {
+                    group.current.rotate.x = this.lerpAngle(leaningPitch, group.current.rotate.x, isInSwimmingPose ? 45 : -pitch);
+                }
+                else
+                {
+                    group.current.rotate.x = -pitch;
+                }
             }
             else if (group.id.equals("left_arm"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / k);
+                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient);
 
                 if (handSwingProgress > 0F)
                 {
@@ -87,7 +149,7 @@ public class ProceduralAnimator implements IAnimator
             }
             else if (group.id.equals("right_arm"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / k);
+                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient);
             }
             else if (group.id.equals("body"))
             {
@@ -95,13 +157,23 @@ public class ProceduralAnimator implements IAnimator
             }
             else if (group.id.equals("left_leg"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 1.4F * limbSpeed / k);
+                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 1.4F * limbSpeed / coefficient);
             }
             else if (group.id.equals("right_leg"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 1.4F * limbSpeed / k);
+                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 1.4F * limbSpeed / coefficient);
             }
         }
+    }
+
+    protected float lerpAngle(float a, float b, float magnitude)
+    {
+        float factor = (magnitude - b) % (360);
+
+        if (factor < -180) factor += 360;
+        if (factor >= 180) factor -= 360;
+
+        return b + a * factor;
     }
 
     @Override

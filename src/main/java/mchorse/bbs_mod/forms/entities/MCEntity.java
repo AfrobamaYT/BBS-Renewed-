@@ -4,6 +4,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.AABB;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -13,9 +14,11 @@ public class MCEntity implements IEntity
     private Entity mcEntity;
 
     private float prevPrevBodyYaw;
+    private Vec3d lastVelocity = Vec3d.ZERO;
 
     private float[] extraVariables = new float[10];
     private float[] prevExtraVariables = new float[10];
+
 
     public MCEntity(Entity mcEntity)
     {
@@ -373,6 +376,7 @@ public class MCEntity implements IEntity
     @Override
     public void update()
     {
+        this.lastVelocity = this.mcEntity.getVelocity();
         this.prevPrevBodyYaw = this.getPrevBodyYaw();
 
         for (int i = 0; i < this.extraVariables.length; i++)
@@ -389,7 +393,7 @@ public class MCEntity implements IEntity
             return living.limbAnimator.getPos(tickDelta);
         }
 
-        return 0;
+        return 0F;
     }
 
     @Override
@@ -400,6 +404,74 @@ public class MCEntity implements IEntity
             return living.limbAnimator.getSpeed(tickDelta);
         }
 
+        return 0F;
+    }
+
+    @Override
+    public float getLeaningPitch(float tickDelta)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.getLeaningPitch(tickDelta);
+        }
+
+        return 0F;
+    }
+
+    @Override
+    public boolean isTouchingWater()
+    {
+        return this.mcEntity.isTouchingWater();
+    }
+
+    @Override
+    public EntityPose getEntityPose()
+    {
+        return this.mcEntity.getPose();
+    }
+
+    @Override
+    public int getRoll()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.getRoll();
+        }
+
         return 0;
+    }
+
+    @Override
+    public boolean isFallFlying()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.isFallFlying();
+        }
+
+        return false;
+    }
+
+    @Override
+    public Vec3d getRotationVec(float transition)
+    {
+        return this.mcEntity.getRotationVec(transition);
+    }
+
+    @Override
+    public Vec3d lerpVelocity(float transition)
+    {
+        return this.lastVelocity.lerp(this.mcEntity.getVelocity(), transition);
+    }
+
+    @Override
+    public boolean isUsingRiptide()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.isUsingRiptide();
+        }
+
+        return false;
     }
 }

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -151,4 +152,22 @@ public interface IEntity
     public float getLimbPos(float tickDelta);
 
     public float getLimbSpeed(float tickDelta);
+
+    /* Swimming */
+
+    public float getLeaningPitch(float tickDelta);
+
+    public boolean isTouchingWater();
+
+    public EntityPose getEntityPose();
+
+    public int getRoll();
+
+    public boolean isFallFlying();
+
+    public Vec3d getRotationVec(float transition);
+
+    public Vec3d lerpVelocity(float transition);
+
+    public boolean isUsingRiptide();
 }

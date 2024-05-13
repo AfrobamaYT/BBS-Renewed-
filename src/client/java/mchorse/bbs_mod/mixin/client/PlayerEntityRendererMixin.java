@@ -1,14 +1,17 @@
 package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
+import mchorse.bbs_mod.morphing.Morph;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntityRenderer.class)
 public class PlayerEntityRendererMixin
@@ -19,6 +22,17 @@ public class PlayerEntityRendererMixin
         if (MorphRenderer.renderPlayer(abstractClientPlayerEntity, f, g, matrixStack, vertexConsumerProvider, i))
         {
             info.cancel();
+        }
+    }
+
+    @Inject(method = "getPositionOffset", at = @At("HEAD"), cancellable = true)
+    public void onPositionOffset(AbstractClientPlayerEntity abstractClientPlayerEntity, float f, CallbackInfoReturnable<Vec3d> info)
+    {
+        Morph morph = Morph.getMorph(abstractClientPlayerEntity);
+
+        if (morph != null && morph.form != null)
+        {
+            info.setReturnValue(Vec3d.ZERO);
         }
     }
 }

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LimbAnimator;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -382,5 +383,53 @@ public class StubEntity implements IEntity
     public float getLimbSpeed(float tickDelta)
     {
         return this.limbAnimator.getSpeed(tickDelta);
+    }
+
+    @Override
+    public float getLeaningPitch(float tickDelta)
+    {
+        return 0;
+    }
+
+    @Override
+    public boolean isTouchingWater()
+    {
+        return false;
+    }
+
+    @Override
+    public EntityPose getEntityPose()
+    {
+        return EntityPose.STANDING;
+    }
+
+    @Override
+    public int getRoll()
+    {
+        return 0;
+    }
+
+    @Override
+    public boolean isFallFlying()
+    {
+        return false;
+    }
+
+    @Override
+    public Vec3d getRotationVec(float transition)
+    {
+        return Vec3d.ZERO;
+    }
+
+    @Override
+    public Vec3d lerpVelocity(float transition)
+    {
+        return Vec3d.ZERO;
+    }
+
+    @Override
+    public boolean isUsingRiptide()
+    {
+        return false;
     }
 }
