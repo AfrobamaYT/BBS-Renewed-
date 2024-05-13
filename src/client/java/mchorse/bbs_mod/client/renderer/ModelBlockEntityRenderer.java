@@ -114,6 +114,12 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         }
     }
 
+    @Override
+    public int getRenderDistance()
+    {
+        return 196;
+    }
+
     private boolean canRender(ModelBlockEntity entity)
     {
         if (

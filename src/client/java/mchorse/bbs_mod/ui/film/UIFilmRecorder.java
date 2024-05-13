@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -50,7 +51,7 @@ public class UIFilmRecorder extends UIElement
 
     public void openMovies()
     {
-        UIUtils.openFolder(this.getRecorder().movies);
+        UIUtils.openFolder(BBSRendering.getVideoFolder());
     }
 
     public void startRecording(int duration, Texture texture)

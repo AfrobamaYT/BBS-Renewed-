@@ -13,6 +13,7 @@ import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.settings.values.ValueLink;
 import mchorse.bbs_mod.settings.values.ValueLong;
 import mchorse.bbs_mod.settings.values.ValueString;
+import mchorse.bbs_mod.settings.values.ValueVideoSettings;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -167,6 +168,16 @@ public class UIValueMap
             UIButton button = new UIButton(UIKeys.VOICE_COLORS_OPEN, (b) ->
             {
                 UIOverlay.addOverlay(ui.getContext(), new UIVoiceColorsOverlayPanel(value));
+            });
+
+            return Arrays.asList(button);
+        });
+
+        register(ValueVideoSettings.class, (value, ui) ->
+        {
+            UIButton button = new UIButton(UIKeys.VIDEO_SETTINGS_EDIT, (b) ->
+            {
+                UIOverlay.addOverlay(ui.getContext(), new UIVideoSettingsOverlayPanel(value));
             });
 
             return Arrays.asList(button);

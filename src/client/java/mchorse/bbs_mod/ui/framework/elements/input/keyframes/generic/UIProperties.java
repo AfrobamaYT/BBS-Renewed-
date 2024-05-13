@@ -283,11 +283,11 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             {
                 value = segment.createInterpolated();
             }
-        }
 
-        if (segment.a.getInterpolation() != Interpolation.LINEAR)
-        {
-            segment.a.setDuration((int) (segment.b.getTick() - segment.a.getTick()));
+            if (segment.a != null && segment.a.getInterpolation() != Interpolation.LINEAR)
+            {
+                segment.a.setDuration((int) (segment.b.getTick() - segment.a.getTick()));
+            }
         }
 
         property.clearSelection();

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
@@ -1118,8 +1119,8 @@ public class UIFilmController extends UIElement
         this.stencil.setup(Link.bbs("stencil_film"));
 
         Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
-        int w = BBSSettings.videoWidth.get();
-        int h = BBSSettings.videoHeight.get();
+        int w = BBSRendering.getVideoWidth();
+        int h = BBSRendering.getVideoHeight();
 
         if (mainTexture.width != w || mainTexture.height != h)
         {

@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.util.Window;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,7 +37,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue(BBSSettings.videoWidth.get());
+            info.setReturnValue(BBSRendering.getVideoWidth());
         }
     }
 
@@ -47,7 +46,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue(BBSSettings.videoHeight.get());
+            info.setReturnValue(BBSRendering.getVideoHeight());
         }
     }
 
@@ -56,7 +55,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue(BBSSettings.videoWidth.get());
+            info.setReturnValue(BBSRendering.getVideoWidth());
         }
     }
 
@@ -65,7 +64,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue(BBSSettings.videoHeight.get());
+            info.setReturnValue(BBSRendering.getVideoHeight());
         }
     }
 
@@ -74,7 +73,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue((int) (BBSSettings.videoWidth.get() / this.scaleFactor));
+            info.setReturnValue((int) (BBSRendering.getVideoWidth() / this.scaleFactor));
         }
     }
 
@@ -83,7 +82,7 @@ public class WindowMixin
     {
         if (BBSRendering.isCustomSize() && BBSRendering.renderingWorld)
         {
-            info.setReturnValue((int) (BBSSettings.videoHeight.get() / this.scaleFactor));
+            info.setReturnValue((int) (BBSRendering.getVideoHeight() / this.scaleFactor));
         }
     }
 }

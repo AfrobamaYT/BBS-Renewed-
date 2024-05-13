@@ -52,8 +52,9 @@ experience. Like following:
 - [ ] 白某人是个萌新's suggestion about mouse travel
 - [ ] Video recording
   - [ ] Export audio
-  - [ ] Movies folder location
-  - [ ] Presets
+  - [x] Movies folder location
+  - [x] Presets
+  - [ ] ffmpeg motion blur
 
 ## Missing features
 

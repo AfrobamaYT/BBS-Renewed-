@@ -34,7 +34,7 @@ public class RenderTickCounterMixin
                 this.tickDelta = 0;
             }
 
-            this.lastFrameDuration = 20F / (float) BBSSettings.videoFrameRate.get();
+            this.lastFrameDuration = 20F / (float) BBSSettings.videoSettings.frameRate.get();
             this.prevTimeMillis = timeMillis;
             this.tickDelta += this.lastFrameDuration;
 

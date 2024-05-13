@@ -300,8 +300,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public Area getFramebufferArea(Area viewport)
     {
-        int width = BBSSettings.videoWidth.get(); // this.texture.width;
-        int height = BBSSettings.videoHeight.get(); // this.texture.height;
+        int width = BBSRendering.getVideoWidth();
+        int height = BBSRendering.getVideoHeight();
 
         Camera camera = new Camera();
 

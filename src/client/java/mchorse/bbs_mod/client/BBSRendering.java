@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
@@ -22,6 +24,7 @@ import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import org.lwjgl.opengl.GL11;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +41,31 @@ public class BBSRendering
     private static boolean iris;
 
     private static Texture texture;
+
+    public static int getVideoWidth()
+    {
+        return BBSSettings.videoSettings.width.get();
+    }
+
+    public static int getVideoHeight()
+    {
+        return BBSSettings.videoSettings.height.get();
+    }
+
+    public static File getVideoFolder()
+    {
+        File movies = new File(BBSMod.getSettingsFolder().getParentFile(), "movies");
+        File exportPath = new File(BBSSettings.videoSettings.path.get());
+
+        if (exportPath.isDirectory())
+        {
+            movies = exportPath;
+        }
+
+        movies.mkdirs();
+
+        return movies;
+    }
 
     public static boolean isCustomSize()
     {

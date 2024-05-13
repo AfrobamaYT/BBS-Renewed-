@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -22,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 public class VideoRecorder
 {
-    public File movies;
-
     private Process process;
     private WritableByteChannel channel;
     private boolean recording;
@@ -36,12 +35,6 @@ public class VideoRecorder
 
     public int serverTicks;
     public int lastServerTicks;
-
-    public VideoRecorder(File movies)
-    {
-        this.movies = movies;
-        this.movies.mkdirs();
-    }
 
     public boolean isRecording()
     {
@@ -80,10 +73,18 @@ public class VideoRecorder
 
         try
         {
-            Path path = Paths.get(this.movies.toString());
+            File movies = BBSRendering.getVideoFolder();
+            File exportPath = new File(BBSSettings.videoSettings.path.get());
+
+            if (exportPath.isDirectory())
+            {
+                movies = exportPath;
+            }
+
+            Path path = Paths.get(movies.toString());
             String movieName = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-            String params = BBSSettings.videoEncoderArguments.get();
-            float frameRate = (float) BBSSettings.videoFrameRate.get();
+            String params = BBSSettings.videoSettings.arguments.get();
+            float frameRate = (float) BBSSettings.videoSettings.frameRate.get();
 
             params = params.replace("%WIDTH%", String.valueOf(width));
             params = params.replace("%HEIGHT%", String.valueOf(height));

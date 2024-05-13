@@ -535,6 +535,17 @@ public class UIKeys
     public static final IKey TRANSFORMS_ROTATE2 = L10n.lang("bbs.ui.transforms.rotate2");
     public static final IKey TRANSFORMS_SCALE = L10n.lang("bbs.ui.transforms.scale");
     public static final IKey TRANSFORMS_TRANSLATE = L10n.lang("bbs.ui.transforms.translate");
+    public static final IKey VIDEO_SETTINGS_TITLE = L10n.lang("bbs.ui.video_settings.title");
+    public static final IKey VIDEO_SETTINGS_EDIT = L10n.lang("bbs.ui.video_settings.edit");
+    public static final IKey VIDEO_SETTINGS_ARGS = L10n.lang("bbs.ui.video_settings.args");
+    public static final IKey VIDEO_SETTINGS_RESOLUTION = L10n.lang("bbs.ui.video_settings.resolution");
+    public static final IKey VIDEO_SETTINGS_WIDTH = L10n.lang("bbs.ui.video_settings.width");
+    public static final IKey VIDEO_SETTINGS_HEIGHT = L10n.lang("bbs.ui.video_settings.height");
+    public static final IKey VIDEO_SETTINGS_FRAME_RATE = L10n.lang("bbs.ui.video_settings.frame_rate");
+    public static final IKey VIDEO_SETTINGS_PATH = L10n.lang("bbs.ui.video_settings.path");
+    public static final IKey VIDEO_SETTINGS_PRESETS_720p = L10n.lang("bbs.ui.video_settings.presets.720p");
+    public static final IKey VIDEO_SETTINGS_PRESETS_1080P = L10n.lang("bbs.ui.video_settings.presets.1080p");
+    public static final IKey VIDEO_SETTINGS_PRESETS_SHORTS_1080P = L10n.lang("bbs.ui.video_settings.presets.shorts_1080p");
     public static final IKey VOICE_COLORS_OPEN = L10n.lang("bbs.ui.voice_colors.open");
     public static final IKey VOICE_COLORS_TITLE = L10n.lang("bbs.ui.voice_colors.title");
     public static final IKey VOICE_LINE_ACTION_NO_VOICE = L10n.lang("bbs.ui.voice_line.action.no_voice");
