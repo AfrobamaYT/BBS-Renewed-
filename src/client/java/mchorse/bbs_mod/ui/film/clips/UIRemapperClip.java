@@ -26,6 +26,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
 
         this.editChannel = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {
+            this.channel.keyframes.editSheet(this.channel.keyframes.sheets.get(0));
             this.editor.embedView(this.channel);
             this.channel.resetView();
         });
