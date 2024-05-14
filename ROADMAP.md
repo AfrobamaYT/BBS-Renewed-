@@ -54,7 +54,7 @@ experience. Like following:
   - [ ] Export audio
   - [x] Movies folder location
   - [x] Presets
-  - [ ] ffmpeg motion blur
+  - [x] ffmpeg motion blur
 
 ## Missing features
 

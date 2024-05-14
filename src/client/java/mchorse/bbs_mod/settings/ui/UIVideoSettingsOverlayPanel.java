@@ -19,6 +19,7 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
     private UITrackpad width;
     private UITrackpad height;
     private UITrackpad frameRate;
+    private UITrackpad motionBlur;
     private UITextbox path;
 
     public UIVideoSettingsOverlayPanel(ValueVideoSettings value)
@@ -36,6 +37,9 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
         this.height.tooltip(UIKeys.VIDEO_SETTINGS_HEIGHT);
         this.frameRate = new UITrackpad((v) -> this.value.frameRate.set(v.intValue()));
         this.frameRate.limit(10, 1000, true);
+        this.motionBlur = new UITrackpad((v) -> this.value.motionBlur.set(v.intValue()));
+        this.motionBlur.limit(0, 6, true);
+        this.motionBlur.tooltip(UIKeys.VIDEO_SETTINGS_MOTION_BLUR_TOOLTIP);
         this.path = new UITextbox(1024, (s) -> this.value.path.set(s));
 
         this.editor = UI.scrollView(5, 6,
@@ -45,6 +49,8 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
             UI.row(this.width, this.height),
             UI.label(UIKeys.VIDEO_SETTINGS_FRAME_RATE).marginTop(6),
             this.frameRate,
+            UI.label(UIKeys.VIDEO_SETTINGS_MOTION_BLUR).marginTop(6),
+            this.motionBlur,
             UI.label(UIKeys.VIDEO_SETTINGS_PATH).marginTop(6),
             this.path
         );
@@ -96,6 +102,7 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
         this.width.setValue(this.value.width.get());
         this.height.setValue(this.value.height.get());
         this.frameRate.setValue(this.value.frameRate.get());
+        this.motionBlur.setValue(this.value.motionBlur.get());
         this.path.setText(this.value.path.get());
     }
 }

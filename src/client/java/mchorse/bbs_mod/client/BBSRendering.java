@@ -42,6 +42,35 @@ public class BBSRendering
 
     private static Texture texture;
 
+    public static int getMotionBlur()
+    {
+        return getMotionBlur(BBSSettings.videoSettings.frameRate.get(), getMotionBlurFactor());
+    }
+
+    public static int getMotionBlur(double fps, int target)
+    {
+        int i = 0;
+
+        while (fps < target)
+        {
+            fps *= 2;
+
+            i++;
+        }
+
+        return i;
+    }
+
+    public static int getMotionBlurFactor()
+    {
+        return getMotionBlurFactor(BBSSettings.videoSettings.motionBlur.get());
+    }
+
+    public static int getMotionBlurFactor(int integer)
+    {
+        return integer == 0 ? 0 : (int) Math.pow(2, 6 + integer);
+    }
+
     public static int getVideoWidth()
     {
         return BBSSettings.videoSettings.width.get();
@@ -50,6 +79,13 @@ public class BBSRendering
     public static int getVideoHeight()
     {
         return BBSSettings.videoSettings.height.get();
+    }
+
+    public static int getVideoFrameRate()
+    {
+        int frameRate = BBSSettings.videoSettings.frameRate.get();
+
+        return frameRate * (1 << getMotionBlur(frameRate, getMotionBlurFactor()));
     }
 
     public static File getVideoFolder()

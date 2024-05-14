@@ -284,14 +284,15 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
                 value = segment.createInterpolated();
             }
 
-            if (segment.a != null && segment.a.getInterpolation() != Interpolation.LINEAR)
+            if (segment.a != null)
             {
-                segment.a.setDuration((int) (segment.b.getTick() - segment.a.getTick()));
+                interp = segment.a.getInterpolation();
             }
         }
 
         property.clearSelection();
         property.addToSelection(property.channel.insert(tick, value));
+
         frame = this.getCurrent();
 
         if (oldTick != tick)

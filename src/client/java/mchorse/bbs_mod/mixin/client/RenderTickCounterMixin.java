@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.VideoRecorder;
 import net.minecraft.client.render.RenderTickCounter;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,7 +34,7 @@ public class RenderTickCounterMixin
                 this.tickDelta = 0;
             }
 
-            this.lastFrameDuration = 20F / (float) BBSSettings.videoSettings.frameRate.get();
+            this.lastFrameDuration = 20F / (float) BBSRendering.getVideoFrameRate();
             this.prevTimeMillis = timeMillis;
             this.tickDelta += this.lastFrameDuration;
 

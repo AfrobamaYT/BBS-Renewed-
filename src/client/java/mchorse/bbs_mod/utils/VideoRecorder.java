@@ -84,12 +84,21 @@ public class VideoRecorder
             Path path = Paths.get(movies.toString());
             String movieName = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
             String params = BBSSettings.videoSettings.arguments.get();
-            float frameRate = (float) BBSSettings.videoSettings.frameRate.get();
+            StringBuilder filters = new StringBuilder("vflip");
+            float frameRate = (float) BBSRendering.getVideoFrameRate();
+
+            int motionBlur = BBSRendering.getMotionBlur();
+
+            for (int i = 0; i < motionBlur; i++)
+            {
+                filters.append(",tblend=all_mode=average,framestep=2");
+            }
 
             params = params.replace("%WIDTH%", String.valueOf(width));
             params = params.replace("%HEIGHT%", String.valueOf(height));
             params = params.replace("%FPS%", String.valueOf(frameRate));
             params = params.replace("%NAME%", movieName);
+            params = params.replace("%FILTERS%", filters.toString());
 
             List<String> args = new ArrayList<String>();
 
