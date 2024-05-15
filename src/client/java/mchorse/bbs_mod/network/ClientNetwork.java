@@ -34,6 +34,19 @@ public class ClientNetwork
 {
     private static int ids = 0;
     private static Map<Integer, Consumer<BaseType>> callbacks = new HashMap<>();
+    private static boolean isBBSModOnServer;
+
+    public static void resetHandshake()
+    {
+        isBBSModOnServer = false;
+    }
+
+    public static boolean isIsBBSModOnServer()
+    {
+        return isBBSModOnServer;
+    }
+
+    /* Network */
 
     public static void setup()
     {
@@ -42,6 +55,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
     }
 
     /* Handlers */

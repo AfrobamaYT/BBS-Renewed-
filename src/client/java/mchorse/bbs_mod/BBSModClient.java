@@ -271,6 +271,8 @@ public class BBSModClient implements ClientModInitializer
         {
             dashboard = null;
             films = new Films();
+
+            ClientNetwork.resetHandshake();
         });
 
         ClientTickEvents.START_CLIENT_TICK.register((client) ->

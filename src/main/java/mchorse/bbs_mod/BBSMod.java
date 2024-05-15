@@ -56,6 +56,8 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -331,6 +333,11 @@ public class BBSMod implements ModInitializer
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register((event) -> worldFolder = event.getSavePath(WorldSavePath.ROOT).toFile());
+
+        ServerPlayConnectionEvents.JOIN.register((a, b, c) ->
+        {
+            b.sendPacket(ServerNetwork.CLIENT_HANDSHAKE, PacketByteBufs.empty());
+        });
     }
 
     public static Settings setupConfig(Icon icon, String id, File destination, Consumer<SettingsBuilder> registerer)
