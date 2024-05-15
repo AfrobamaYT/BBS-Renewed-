@@ -113,6 +113,18 @@ public class MolangParser extends MathBuilder
     @Override
     protected Variable getVariable(String name)
     {
+        if (name.charAt(1) == '.')
+        {
+            if (name.charAt(0) == 'q')
+            {
+                name = "query." + name.substring(2);
+            }
+            else if (name.charAt(0) == 'v')
+            {
+                name = "variable." + name.substring(2);
+            }
+        }
+
         Variable variable = this.currentStatement == null ? null : this.currentStatement.locals.get(name);
 
         if (variable == null)
