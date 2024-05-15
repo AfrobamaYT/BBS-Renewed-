@@ -62,37 +62,25 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
         {
             this.getContext().replaceContextMenu((menu) ->
             {
-                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_720p, () ->
-                {
-                    this.value.arguments.set(ValueVideoSettings.DEFAULT_FFMPEG_ARGUMENTS);
-                    this.value.width.set(1280);
-                    this.value.height.set(720);
-                    this.value.frameRate.set(60);
-                    this.fill();
-                });
-
-                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_1080P, () ->
-                {
-                    this.value.arguments.set(ValueVideoSettings.DEFAULT_FFMPEG_ARGUMENTS);
-                    this.value.width.set(1920);
-                    this.value.height.set(1080);
-                    this.value.frameRate.set(60);
-                    this.fill();
-                });
-
-                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_SHORTS_1080P, () ->
-                {
-                    this.value.arguments.set(ValueVideoSettings.DEFAULT_FFMPEG_ARGUMENTS);
-                    this.value.width.set(1080);
-                    this.value.height.set(1920);
-                    this.value.frameRate.set(60);
-                    this.fill();
-                });
+                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_720p, () -> this.setPreset(1280, 720));
+                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_1080P, () -> this.setPreset(1920, 1080));
+                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_SHORTS_1080P, () -> this.setPreset(1080, 1920));
+                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_1440P, () -> this.setPreset(2560, 1440));
+                menu.action(Icons.FILM, UIKeys.VIDEO_SETTINGS_PRESETS_4K, () -> this.setPreset(3840, 2160));
             });
         });
 
         this.icons.add(icon);
 
+        this.fill();
+    }
+
+    private void setPreset(int w, int h)
+    {
+        this.value.arguments.set(ValueVideoSettings.DEFAULT_FFMPEG_ARGUMENTS);
+        this.value.width.set(w);
+        this.value.height.set(h);
+        this.value.frameRate.set(60);
         this.fill();
     }
 
