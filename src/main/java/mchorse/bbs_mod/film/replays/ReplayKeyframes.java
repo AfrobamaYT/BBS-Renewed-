@@ -2,7 +2,11 @@ package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
+import org.joml.Vector2d;
 
 import java.util.Arrays;
 import java.util.List;
@@ -166,9 +170,20 @@ public class ReplayKeyframes extends ValueGroup
 
         if (position)
         {
-            entity.setPosition(this.x.interpolate(tick), this.y.interpolate(tick), this.z.interpolate(tick));
             entity.setVelocity((float) this.vX.interpolate(tick), (float) this.vY.interpolate(tick), (float) this.vZ.interpolate(tick));
             entity.setFallDistance((float) this.fall.interpolate(tick));
+
+            Pair<Keyframe, Keyframe> x = this.x.findSegment(tick);
+            Vector2d xx = this.getPrev(x, tick, entity.getPrevX());
+            Pair<Keyframe, Keyframe> y = this.y.findSegment(tick);
+            Vector2d yy = this.getPrev(y, tick, entity.getPrevY());
+            Pair<Keyframe, Keyframe> z = this.z.findSegment(tick);
+            Vector2d zz = this.getPrev(z, tick, entity.getPrevZ());
+
+            entity.setPosition(xx.x, yy.x, zz.x);
+            entity.setPrevX(xx.y);
+            entity.setPrevY(yy.y);
+            entity.setPrevZ(zz.y);
         }
 
         if (rotation)
@@ -215,5 +230,21 @@ public class ReplayKeyframes extends ValueGroup
             sticks[8] = (float) this.extra2X.interpolate(tick);
             sticks[9] = (float) this.extra2Y.interpolate(tick);
         }
+    }
+
+    /**
+     * Force teleportation for the previous keyframe being constant
+     */
+    private Vector2d getPrev(Pair<Keyframe, Keyframe> frame, int tick, double prev)
+    {
+        if (frame != null && frame.b != null)
+        {
+            if (frame.a.getInterpolation() == KeyframeInterpolation.CONST && frame.b.getTick() == tick)
+            {
+                return new Vector2d(frame.b.getValue(), frame.b.getValue());
+            }
+        }
+
+        return new Vector2d(KeyframeChannel.compute(frame, tick), prev);
     }
 }

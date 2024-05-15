@@ -16,6 +16,21 @@ public class KeyframeChannel extends ValueList<Keyframe>
 {
     private static final Pair<Keyframe, Keyframe> segment = new Pair<>();
 
+    public static double compute(Pair<Keyframe, Keyframe> segment, float ticks)
+    {
+        if (segment == null)
+        {
+            return 0;
+        }
+
+        if (segment.a == segment.b)
+        {
+            return segment.a.getValue();
+        }
+
+        return segment.a.interpolateTicks(segment.b, ticks);
+    }
+
     public KeyframeChannel()
     {
         super("");
@@ -58,19 +73,7 @@ public class KeyframeChannel extends ValueList<Keyframe>
      */
     public double interpolate(float ticks)
     {
-        Pair<Keyframe, Keyframe> segment = this.findSegment(ticks);
-
-        if (segment == null)
-        {
-            return 0;
-        }
-
-        if (segment.a == segment.b)
-        {
-            return segment.a.getValue();
-        }
-
-        return segment.a.interpolateTicks(segment.b, ticks);
+        return compute(this.findSegment(ticks), ticks);
     }
 
     /**
