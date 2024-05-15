@@ -21,6 +21,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -188,6 +189,16 @@ public class BBSModClient implements ClientModInitializer
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
 
         BBSSettings.language.postCallback((v) -> reloadLanguage(((ValueLanguage) v).get()));
+        BBSSettings.editorSeconds.postCallback((v) ->
+        {
+            if (dashboard != null)
+            {
+                if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
+                {
+                    panel.fillData();
+                }
+            }
+        });
 
         BBSSettings.tooltipStyle.modes(
             UIKeys.ENGINE_TOOLTIP_STYLE_LIGHT,

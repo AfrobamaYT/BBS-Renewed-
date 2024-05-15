@@ -514,6 +514,8 @@ public class UIClips extends UIElement
         {
             clip.tick.set(clip.tick.get() + diff);
         }
+
+        this.delegate.fillData();
     }
 
     /**
@@ -542,6 +544,8 @@ public class UIClips extends UIElement
                 clip.duration.set(clip.duration.get() + offset - this.delegate.getCursor());
             }
         }
+
+        this.delegate.fillData();
     }
 
     /**
