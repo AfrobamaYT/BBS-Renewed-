@@ -70,17 +70,7 @@ Once all of these stages are passed, and people are happy with the tools for the
 part. It's time preparing for the release. For the release, I need to record a tutorial 
 series that teaches how to practically use BBS mod to record machinimas by examples.
 
-- [ ] What is BBS mod
-- [ ] Obtain the mod and setup
-- [ ] Recording characters
-- [ ] Setting up cameras
-
 ### Miscellaneous
-
-Bugs:
-
-- [x] Reset camera when switching to another dimension
-- [ ] Save films somewhere when the server doesn't have BBS mod
 
 Epic features
 

@@ -9,6 +9,7 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmController;
+import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
@@ -119,24 +120,7 @@ public class ClientNetwork
 
         try
         {
-            ContentType.FILMS.getRepository().load(filmId, (data) ->
-            {
-                MinecraftClient.getInstance().execute(() ->
-                {
-                    Film film = (Film) data;
-                    FilmController filmController = new FilmController(film);
-
-                    if (withCamera)
-                    {
-                        PlayCameraController controller = new PlayCameraController(film.camera);
-
-                        controller.getContext().entities.addAll(filmController.getEntities());
-                        BBSModClient.getCameraController().add(controller);
-                    }
-
-                    BBSModClient.getFilms().add(filmController);
-                });
-            });
+            Films.playFilm(filmId, withCamera);
         }
         catch (Exception e)
         {}

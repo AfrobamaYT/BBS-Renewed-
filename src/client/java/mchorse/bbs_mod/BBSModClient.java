@@ -22,6 +22,7 @@ import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.menu.UIFilmsMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -68,6 +69,7 @@ public class BBSModClient implements ClientModInitializer
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
+    private static KeyBinding keyFilms;
     /* private static KeyBinding keyToggleRecording; */
 
     private static UIDashboard dashboard;
@@ -235,6 +237,13 @@ public class BBSModClient implements ClientModInitializer
             "category." + BBSMod.MOD_ID + ".main"
         ));
 
+        keyFilms = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + ".films",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_RIGHT_ALT,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+
         /* keyToggleRecording = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key." + BBSMod.MOD_ID + ".toggle_recording",
             InputUtil.Type.KEYSYM,
@@ -315,6 +324,11 @@ public class BBSModClient implements ClientModInitializer
                         UIScreen.open(new UIModelBlockEditorMenu(item));
                     }
                 }
+            }
+
+            while (keyFilms.wasPressed())
+            {
+                UIScreen.open(new UIFilmsMenu());
             }
 
             /* while (keyToggleRecording.wasPressed())

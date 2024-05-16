@@ -333,6 +333,8 @@
     "bbs.ui.film.replay.title": "Replays",
     "bbs.ui.film.replay.context.add": "Add a replay here",
     "bbs.ui.film.replay.context.move_here": "Move replay here",
+    "bbs.ui.films.title": "Films",
+    "bbs.ui.films.camera": "Camera",
     "bbs.ui.forms.categories.add_category-description": "Type in the name for the form category:",
     "bbs.ui.forms.categories.add_category-title": "Add category",
     "bbs.ui.forms.categories.extra": "Miscellaneous",
