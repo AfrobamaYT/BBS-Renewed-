@@ -7,19 +7,25 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
+import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import org.lwjgl.opengl.GL11;
@@ -247,6 +253,24 @@ public class BBSRendering
         if (isIrisShadersEnabled())
         {
             renderCoolStuff(worldRenderContext);
+        }
+    }
+
+    public static void renderHud(DrawContext drawContext, float tickDelta)
+    {
+        Batcher2D batcher2D = new Batcher2D(drawContext);
+        Recorder recorder = BBSModClient.getFilms().getRecorder();
+
+        if (recorder != null)
+        {
+            String label = UIKeys.FILMS_RECORDING.format(recorder.tick / 20F).get();
+            int x = 5;
+            int y = 5;
+            int w = batcher2D.getFont().getWidth(label);
+
+            batcher2D.box(x, y, x + 18 + w + 3, y + 16, Colors.A50);
+            batcher2D.icon(Icons.SPHERE, Colors.RED | Colors.A100, x, y);
+            batcher2D.textShadow(label, x + 18, y + 4);
         }
     }
 

@@ -1,8 +1,11 @@
 package mchorse.bbs_mod.ui.film.menu;
 
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Films;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.window.Window;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -18,25 +21,37 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 public class UIFilmsOverlayPanel extends UIOverlayPanel
 {
-    private static String stateFilmId = "";
+    private static String stateFilmId;
     private static boolean stateWithCamera = true;
+    private static int stateReplayId = -1;
 
     public UISearchList<String> films;
     public UIStringList replays;
 
     public UIToggle withCamera;
     public UIIcon play;
+    public UIIcon record;
     public UIIcon command;
 
     public UIFilmsOverlayPanel()
     {
         super(UIKeys.FILMS_TITLE);
 
-        this.films = new UISearchList<>(new UIStringList(null));
+        this.films = new UISearchList<>(new UIStringList((l) ->
+        {
+            stateReplayId = -1;
+
+            this.setFilm(l.get(0));
+        }));
         this.films.label(UIKeys.GENERAL_SEARCH);
         this.films.list.background();
-        this.withCamera = new UIToggle(UIKeys.FILMS_CAMERA, null);
+        this.replays = new UIStringList((l) ->
+        {
+            stateReplayId = this.replays.getIndex();
+        });
+        this.replays.background().relative(this.content).x(0.5F, 6).w(0.5F, -12).h(1F, -6);
 
+        this.withCamera = new UIToggle(UIKeys.FILMS_CAMERA, null);
         this.play = new UIIcon(Icons.PLAY, (b) ->
         {
             String filmId = this.films.list.getCurrentFirst();
@@ -50,7 +65,18 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
             }
         });
         this.play.tooltip(UIKeys.FILMS_PLAY, Direction.LEFT);
+        this.record = new UIIcon(Icons.SPHERE, (b) ->
+        {
+            String filmId = this.films.list.getCurrentFirst();
 
+            if (filmId != null && !filmId.isEmpty() && stateReplayId >= 0)
+            {
+                BBSModClient.getFilms().startRecording(filmId, stateReplayId);
+
+                this.close();
+            }
+        });
+        this.record.tooltip(UIKeys.FILMS_RECORD, Direction.LEFT);
         this.command = new UIIcon(Icons.CONSOLE, (b) ->
         {
             String filmId = this.films.list.getCurrentFirst();
@@ -65,7 +91,7 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
         });
         this.command.tooltip(UIKeys.FILMS_PLAY_COMMAND, Direction.LEFT);
 
-        this.icons.add(this.play, this.command);
+        this.icons.add(this.play, this.record, this.command);
 
         UIElement element = new UIElement();
 
@@ -74,7 +100,7 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
         this.films.relative(element).w(1F).hTo(this.withCamera.area, 0F, -5);
         element.add(this.withCamera, this.films);
 
-        this.content.add(element);
+        this.content.add(element, this.replays);
 
         ContentType.FILMS.getRepository().requestKeys((keys) ->
         {
@@ -82,10 +108,42 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
             this.films.list.sort();
 
             this.films.list.setCurrentScroll(stateFilmId);
+            this.setFilm(stateFilmId);
         });
 
         this.withCamera.setValue(stateWithCamera);
         this.keys().register(Keys.PLAUSE, () -> this.play.clickItself());
+    }
+
+    private void setFilm(String filmId)
+    {
+        this.replays.setVisible(false);
+
+        if (filmId != null && !filmId.isEmpty())
+        {
+            ContentType.FILMS.getRepository().load(filmId, (data) ->
+            {
+                if (data instanceof Film film)
+                {
+                    this.setFilm(film);
+                }
+            });
+        }
+    }
+
+    private void setFilm(Film film)
+    {
+        this.replays.setVisible(true);
+        this.replays.clear();
+
+        for (Replay replay : film.replays.getList())
+        {
+            Form form = replay.form.get();
+
+            this.replays.add(form != null ? form.getDisplayName() : "-");
+        }
+
+        this.replays.setIndex(stateReplayId);
     }
 
     @Override
@@ -93,6 +151,7 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
     {
         stateFilmId = this.films.list.getCurrentFirst();
         stateWithCamera = this.withCamera.getValue();
+        stateReplayId = this.replays.getIndex();
 
         super.onClose();
     }

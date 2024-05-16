@@ -3,6 +3,7 @@ package mchorse.bbs_mod.film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
+import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.ui.ContentType;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -14,6 +15,7 @@ import java.util.List;
 public class Films
 {
     private List<FilmController> controllers = new ArrayList<FilmController>();
+    private Recorder recorder;
 
     public static void playFilm(String filmId, boolean withCamera)
     {
@@ -35,6 +37,25 @@ public class Films
                 BBSModClient.getFilms().add(filmController);
             });
         });
+    }
+
+    public Recorder getRecorder()
+    {
+        return this.recorder;
+    }
+
+    public void startRecording(String filmId, int replayId)
+    {
+        this.recorder = new Recorder(filmId, replayId);
+    }
+
+    public Recorder stopRecording()
+    {
+        Recorder recorder = this.recorder;
+
+        this.recorder = null;
+
+        return recorder;
     }
 
     public void add(FilmController controller)
@@ -64,6 +85,11 @@ public class Films
     public void update()
     {
         this.controllers.removeIf(FilmController::update);
+
+        if (this.recorder != null)
+        {
+            this.recorder.update();
+        }
     }
 
     public void render(WorldRenderContext context)

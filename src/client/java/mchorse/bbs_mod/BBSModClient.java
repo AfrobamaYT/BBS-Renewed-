@@ -10,6 +10,7 @@ import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
+import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
@@ -24,6 +25,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.menu.UIFilmsMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
@@ -38,6 +40,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
@@ -299,10 +302,10 @@ public class BBSModClient implements ClientModInitializer
             }
 
             cameraController.update();
-            films.update();
 
             if (!mc.isPaused())
             {
+                films.update();
                 modelBlockItemRenderer.update();
             }
 
@@ -335,6 +338,11 @@ public class BBSModClient implements ClientModInitializer
             {
                 requestToggleRecording = true;
             } */
+        });
+
+        HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
+        {
+            BBSRendering.renderHud(drawContext, tickDelta);
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->
