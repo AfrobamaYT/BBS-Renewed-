@@ -207,6 +207,9 @@ public class UIKeys
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
     public static final IKey FILMS_TITLE = L10n.lang("bbs.ui.films.title");
     public static final IKey FILMS_CAMERA = L10n.lang("bbs.ui.films.camera");
+    public static final IKey FILMS_PLAY = L10n.lang("bbs.ui.films.play");
+    public static final IKey FILMS_PLAY_COMMAND = L10n.lang("bbs.ui.films.play_command");
+    public static final IKey FILMS_PLAY_COMMAND_NOTIFICATION = L10n.lang("bbs.ui.films.play_command-notification");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");
     public static final IKey FORMS_CATEGORIES_CONTEXT_ADD_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.add_category");
