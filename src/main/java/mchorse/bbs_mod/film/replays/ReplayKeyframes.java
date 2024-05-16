@@ -188,10 +188,24 @@ public class ReplayKeyframes extends ValueGroup
 
         if (rotation)
         {
-            entity.setYaw((float) this.yaw.interpolate(tick));
-            entity.setPitch((float) this.pitch.interpolate(tick));
-            entity.setHeadYaw((float) this.headYaw.interpolate(tick));
-            entity.setBodyYaw((float) this.bodyYaw.interpolate(tick));
+            Pair<Keyframe, Keyframe> yaw = this.yaw.findSegment(tick);
+            Vector2d yyaw = this.getPrev(yaw, tick, entity.getPrevYaw());
+            Pair<Keyframe, Keyframe> pitch = this.pitch.findSegment(tick);
+            Vector2d ppitch = this.getPrev(pitch, tick, entity.getPrevPitch());
+            Pair<Keyframe, Keyframe> headYaw = this.headYaw.findSegment(tick);
+            Vector2d hheadYaw = this.getPrev(headYaw, tick, entity.getPrevHeadYaw());
+            Pair<Keyframe, Keyframe> bodyYaw = this.bodyYaw.findSegment(tick);
+            Vector2d bbodyYaw = this.getPrev(bodyYaw, tick, entity.getPrevBodyYaw());
+
+            entity.setYaw((float) yyaw.x);
+            entity.setPitch((float) ppitch.x);
+            entity.setHeadYaw((float) hheadYaw.x);
+            entity.setBodyYaw((float) bbodyYaw.x);
+
+            entity.setPrevYaw((float) yyaw.y);
+            entity.setPrevPitch((float) ppitch.y);
+            entity.setPrevHeadYaw((float) hheadYaw.y);
+            entity.setPrevBodyYaw((float) bbodyYaw.y);
         }
 
         /* Motion and fall distance */
@@ -239,6 +253,15 @@ public class ReplayKeyframes extends ValueGroup
     {
         if (frame != null && frame.b != null)
         {
+            /* Special case for when there is no keyframe afterwards */
+            if (frame.a == frame.b && frame.b.next == frame.b && frame.a.prev != frame.a)
+            {
+                if (frame.a.prev.getInterpolation() == KeyframeInterpolation.CONST && frame.a.getTick() == tick)
+                {
+                    return new Vector2d(frame.a.getValue(), frame.a.getValue());
+                }
+            }
+
             if (frame.a.getInterpolation() == KeyframeInterpolation.CONST && frame.b.getTick() == tick)
             {
                 return new Vector2d(frame.b.getValue(), frame.b.getValue());

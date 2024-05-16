@@ -5,6 +5,7 @@ import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -181,8 +182,9 @@ public class Animator implements IAnimator
      */
     protected void controlActions(IEntity target)
     {
-        double dx = target.getX() - this.prevX;
-        double dz = target.getZ() - this.prevZ;
+        Vec3d velocity = target.getVelocity();
+        double dx = velocity.x;
+        double dz = velocity.z;
         final float threshold = 0.05F;
         boolean moves = Math.abs(dx) > threshold || Math.abs(dz) > threshold;
 
@@ -221,7 +223,7 @@ public class Animator implements IAnimator
             {
                 this.setActiveAction(!moves ? this.crouchingIdle : this.crouching);
             }
-            else if (!target.isOnGround() && target.getVelocity().y < 0 && target.getFallDistance() > 1.25)
+            else if (!target.isOnGround() && velocity.y < 0 && target.getFallDistance() > 1.25)
             {
                 this.setActiveAction(this.falling);
             }
@@ -240,7 +242,7 @@ public class Animator implements IAnimator
             }
         }
 
-        if (!target.isOnGround() && this.wasOnGround && Math.abs(target.getVelocity().y) > 0.2F)
+        if (!target.isOnGround() && this.wasOnGround && Math.abs(velocity.y) > 0.2F)
         {
             this.addAction(this.jump);
             this.wasOnGround = false;
@@ -253,7 +255,7 @@ public class Animator implements IAnimator
 
         this.prevX = target.getX();
         this.prevZ = target.getZ();
-        this.prevMY = target.getVelocity().y;
+        this.prevMY = velocity.y;
 
         this.wasOnGround = target.isOnGround();
     }
