@@ -14,6 +14,7 @@ import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -46,6 +47,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.FFMpegUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
@@ -127,6 +129,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastProjection = new Matrix4f();
 
     private Timer flightEditTime = new Timer(100);
+    private Recorder lastRecorder;
 
     public static VoiceLines getVoiceLines()
     {
@@ -420,6 +423,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super.open();
 
         this.cameraClips.open();
+
+        Recorder recorder = BBSModClient.getFilms().stopRecording();
+
+        if (recorder != null && recorder.tick >= 0)
+        {
+            this.lastRecorder = recorder;
+        }
     }
 
     @Override
@@ -533,6 +543,24 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         else
         {
             this.undoManager = null;
+        }
+
+        if (this.lastRecorder != null)
+        {
+            /* Apply recorded data */
+            if (data != null && this.lastRecorder.filmId.equals(data.getId()))
+            {
+                int replayId = this.lastRecorder.replayId;
+
+                if (CollectionUtils.inRange(data.replays.getList(), replayId))
+                {
+                    data.replays.getList().get(replayId).keyframes.copy(this.lastRecorder.keyframes);
+
+                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(data.getId()), Colors.BLUE | Colors.A100);
+                }
+            }
+
+            this.lastRecorder = null;
         }
 
         super.fill(data);

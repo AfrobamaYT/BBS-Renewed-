@@ -112,7 +112,9 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
         });
 
         this.withCamera.setValue(stateWithCamera);
+
         this.keys().register(Keys.PLAUSE, () -> this.play.clickItself());
+        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, () -> this.record.clickItself());
     }
 
     private void setFilm(String filmId)

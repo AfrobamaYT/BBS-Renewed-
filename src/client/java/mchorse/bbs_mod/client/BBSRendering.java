@@ -6,6 +6,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -263,7 +264,10 @@ public class BBSRendering
 
         if (recorder != null)
         {
-            String label = UIKeys.FILMS_RECORDING.format(recorder.tick / 20F).get();
+            int tick = recorder.tick;
+            String label = tick < 0 ?
+                String.valueOf(-TimeUtils.toSeconds(tick)) :
+                UIKeys.FILMS_RECORDING.format(tick).get();
             int x = 5;
             int y = 5;
             int w = batcher2D.getFont().getWidth(label);

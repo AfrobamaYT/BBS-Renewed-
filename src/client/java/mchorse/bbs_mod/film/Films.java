@@ -3,8 +3,9 @@ package mchorse.bbs_mod.film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
-import mchorse.bbs_mod.film.replays.ReplayKeyframes;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.ContentType;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 
@@ -54,6 +55,17 @@ public class Films
         Recorder recorder = this.recorder;
 
         this.recorder = null;
+
+        if (recorder != null)
+        {
+            for (BaseValue value : recorder.keyframes.getAll())
+            {
+                if (value instanceof KeyframeChannel channel)
+                {
+                    channel.simplify();
+                }
+            }
+        }
 
         return recorder;
     }

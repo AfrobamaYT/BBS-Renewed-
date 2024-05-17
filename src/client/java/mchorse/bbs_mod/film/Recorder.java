@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.film;
 
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.morphing.Morph;
 import net.minecraft.client.MinecraftClient;
@@ -16,13 +18,17 @@ public class Recorder
     {
         this.filmId = filmId;
         this.replayId = replayId;
+        this.tick = -TimeUtils.toTick(BBSSettings.recordingCountdown.get());
     }
 
     public void update()
     {
-        Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+        if (this.tick >= 0)
+        {
+            Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
 
-        this.keyframes.record(this.tick, morph.entity, null);
+            this.keyframes.record(this.tick, morph.entity, null);
+        }
 
         this.tick += 1;
     }
