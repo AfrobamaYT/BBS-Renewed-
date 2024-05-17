@@ -305,6 +305,7 @@
     "bbs.ui.film.controller.insert_frame-title": "Insert keyframe",
     "bbs.ui.film.controller.record-description": "Pick a keyframe group that you want to record:",
     "bbs.ui.film.controller.record-title": "Record",
+    "bbs.ui.film.controller.record_outside": "Record outside in the world...",
     "bbs.ui.film.controller.keys.category": "Player controller",
     "bbs.ui.film.controller.keys.insert_frame": "Insert keyframe",
     "bbs.ui.film.controller.keys.move_replay_to_cursor": "Move replay to cursor",

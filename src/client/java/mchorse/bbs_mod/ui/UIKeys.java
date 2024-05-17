@@ -175,6 +175,7 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE = L10n.lang("bbs.ui.film.controller.keys.toggle_orbit_mode");
     public static final IKey FILM_CONTROLLER_RECORD_DESCRIPTION = L10n.lang("bbs.ui.film.controller.record-description");
     public static final IKey FILM_CONTROLLER_RECORD_TITLE = L10n.lang("bbs.ui.film.controller.record-title");
+    public static final IKey FILM_CONTROLLER_RECORD_OUTSIDE = L10n.lang("bbs.ui.film.controller.record_outside");
     public static final IKey FILM_CONTROLLER_TICKS = L10n.lang("bbs.ui.film.controller.ticks");
     public static final IKey FILM_CONTROLLER_SPEED = L10n.lang("bbs.ui.film.controller.speed");
     public static final IKey FILM_GROUPS_ALL = L10n.lang("bbs.ui.film.groups.all");

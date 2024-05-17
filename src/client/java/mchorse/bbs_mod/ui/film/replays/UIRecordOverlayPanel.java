@@ -26,6 +26,8 @@ public class UIRecordOverlayPanel extends UIMessageOverlayPanel
     public UIIcon rotation;
     public UIIcon posRot;
 
+    public UIElement bar;
+
     private Consumer<List<String>> callback;
 
     public UIRecordOverlayPanel(IKey title, IKey message, Consumer<List<String>> callback)
@@ -54,10 +56,10 @@ public class UIRecordOverlayPanel extends UIMessageOverlayPanel
         this.rotation.tooltip(UIKeys.FILM_GROUPS_ONLY_ROTATION);
         this.posRot.tooltip(UIKeys.FILM_GROUPS_ONLY_POS_ROT);
 
-        UIElement bar = UI.row(this.all, this.left, this.right, this.triggers, this.extra1, this.extra2, this.position, this.rotation, this.posRot);
+        this.bar = UI.row(this.all, this.left, this.right, this.triggers, this.extra1, this.extra2, this.position, this.rotation, this.posRot);
 
-        bar.relative(this.content).x(0.5F).y(1F, -6).w(1F, -12).anchor(0.5F, 1F).row().resize();
-        this.content.add(bar);
+        this.bar.relative(this.content).x(0.5F).y(1F, -6).w(1F, -12).anchor(0.5F, 1F).row().resize();
+        this.content.add(this.bar);
 
         this.keys().register(Keys.RECORDING_GROUP_ALL, this.all::clickItself);
         this.keys().register(Keys.RECORDING_GROUP_LEFT_STICK, this.left::clickItself);

@@ -545,24 +545,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.undoManager = null;
         }
 
-        if (this.lastRecorder != null)
-        {
-            /* Apply recorded data */
-            if (data != null && this.lastRecorder.filmId.equals(data.getId()))
-            {
-                int replayId = this.lastRecorder.replayId;
-
-                if (CollectionUtils.inRange(data.replays.getList(), replayId))
-                {
-                    data.replays.getList().get(replayId).keyframes.copy(this.lastRecorder.keyframes);
-
-                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(data.getId()), Colors.BLUE | Colors.A100);
-                }
-            }
-
-            this.lastRecorder = null;
-        }
-
         super.fill(data);
 
         this.plause.setEnabled(data != null);
@@ -582,6 +564,27 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.controller.createEntities();
 
         this.entered = data != null;
+
+        if (this.lastRecorder != null)
+        {
+            /* Apply recorded data */
+            if (data != null && this.lastRecorder.filmId.equals(data.getId()))
+            {
+                int replayId = this.lastRecorder.replayId;
+
+                if (CollectionUtils.inRange(data.replays.getList(), replayId))
+                {
+                    BaseValue.edit(data.replays.getList().get(replayId), (replay) ->
+                    {
+                        replay.keyframes.copy(this.lastRecorder.keyframes);
+                    });
+
+                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(data.getId()), Colors.BLUE | Colors.A100);
+                }
+            }
+
+            this.lastRecorder = null;
+        }
     }
 
     private void handlePreValues(BaseValue baseValue)

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.film.controller;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
@@ -31,6 +32,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIRecordOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -561,11 +563,28 @@ public class UIFilmController extends UIElement
 
         this.toggleMousePointer(false);
 
-        UIOverlay.addOverlay(this.getContext(), new UIRecordOverlayPanel(
+        UIRecordOverlayPanel panel = new UIRecordOverlayPanel(
             UIKeys.FILM_CONTROLLER_RECORD_TITLE,
             UIKeys.FILM_CONTROLLER_RECORD_DESCRIPTION,
             this::startRecording
-        ));
+        );
+
+        UIOverlay.addOverlay(this.getContext(), panel);
+        int index = this.panel.replayEditor.replays.replays.getIndex();
+
+        if (index >= 0)
+        {
+            UIIcon icon = new UIIcon(Icons.UPLOAD, (b) ->
+            {
+                panel.close();
+                this.panel.dashboard.closeThisMenu();
+
+                BBSModClient.getFilms().startRecording(this.panel.getData().getId(), index);
+            });
+            icon.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);
+
+            panel.bar.add(icon);
+        }
     }
 
     public void toggleOrbit()
