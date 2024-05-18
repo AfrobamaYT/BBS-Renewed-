@@ -14,8 +14,14 @@ import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
@@ -89,6 +95,18 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
                 .camera(camera));
             RenderSystem.disableDepthTest();
 
+            if (this.canRenderAxes(entity))
+            {
+                BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                Draw.axes(builder, matrices, 0.5F, 0.01F);
+
+                RenderSystem.disableDepthTest();
+                RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+                BufferRenderer.drawWithGlobalProgram(builder.end());
+            }
+
             matrices.pop();
         }
 
@@ -120,12 +138,20 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         return 196;
     }
 
+    private boolean canRenderAxes(ModelBlockEntity entity)
+    {
+        if (UIScreen.getCurrentMenu() instanceof UIDashboard dashboard)
+        {
+            return dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel;
+        }
+
+        return false;
+    }
+
     private boolean canRender(ModelBlockEntity entity)
     {
-        if (
-            MinecraftClient.getInstance().currentScreen instanceof UIScreen screen &&
-            screen.getMenu() instanceof UIDashboard dashboard
-        ) {
+        if (UIScreen.getCurrentMenu() instanceof UIDashboard dashboard)
+        {
             if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)
             {
                 if (!modelBlockPanel.isEditing(entity))
