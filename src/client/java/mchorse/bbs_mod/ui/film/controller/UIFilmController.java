@@ -23,6 +23,7 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.mixin.client.MinecraftClientInvoker;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
@@ -198,6 +199,13 @@ public class UIFilmController extends UIElement
 
     private void setMouseMode(int mode)
     {
+        if (!ClientNetwork.isIsBBSModOnServer() && mode == 0)
+        {
+            mode = 1;
+
+            this.getContext().notify(UIKeys.FILM_CONTROLLER_SERVER_WARNING, Colors.RED | Colors.A100);
+        }
+
         this.mouseMode = mode;
 
         if (this.controlled != null)
@@ -264,9 +272,11 @@ public class UIFilmController extends UIElement
 
     public void toggleControl()
     {
+        boolean replacePlayer = ClientNetwork.isIsBBSModOnServer();
+
         if (this.controlled != null)
         {
-            if (this.previousEntity != null)
+            if (replacePlayer && this.previousEntity != null)
             {
                 this.controlled.setForm(this.playerForm);
 
@@ -280,7 +290,7 @@ public class UIFilmController extends UIElement
         {
             this.controlled = this.getCurrentEntity();
 
-            if (this.controlled != null)
+            if (replacePlayer && this.controlled != null)
             {
                 MCEntity player = Morph.getMorph(MinecraftClient.getInstance().player).entity;
 
@@ -294,6 +304,7 @@ public class UIFilmController extends UIElement
             }
         }
 
+        this.setMouseMode(this.mouseMode);
         this.toggleMousePointer(this.controlled != null);
 
         if (this.controlled == null && this.recording)
@@ -410,7 +421,7 @@ public class UIFilmController extends UIElement
             this.recordingOld = null;
         }
 
-        this.setMouseMode(0);
+        this.setMouseMode(ClientNetwork.isIsBBSModOnServer() ? 0 : 1);
     }
 
     /* Input handling */
@@ -502,8 +513,6 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            int key = context.getKeyCode();
-
             if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
             {
                 /* Switch mouse input mode */
@@ -535,6 +544,11 @@ public class UIFilmController extends UIElement
 
     private boolean canControlWithKeyboard(InputUtil.Key utilKey)
     {
+        if (!ClientNetwork.isIsBBSModOnServer())
+        {
+            return false;
+        }
+
         GameOptions options = MinecraftClient.getInstance().options;
 
         return options.forwardKey.getDefaultKey() == utilKey
@@ -1000,7 +1014,7 @@ public class UIFilmController extends UIElement
 
         if (this.canControl())
         {
-            if (this.isMouseLookMode())
+            if (this.isMouseLookMode() && ClientNetwork.isIsBBSModOnServer())
             {
                 float cursorDeltaX = (x - this.lastMouse.x) / 2F;
                 float cursorDeltaY = (y - this.lastMouse.y) / 2F;

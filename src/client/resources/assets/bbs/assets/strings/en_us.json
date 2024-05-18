@@ -315,6 +315,7 @@
     "bbs.ui.film.controller.keys.toggle_orbit_mode": "Toggle orbit mode",
     "bbs.ui.film.controller.ticks": "%s ticks",
     "bbs.ui.film.controller.speed": "Speed: %.2f",
+    "bbs.ui.film.controller.server_warning": "Player control is disabled on a server that doesn't have BBS mod installed! Use record outside feature for player recording.",
     "bbs.ui.film.groups.all": "All groups",
     "bbs.ui.film.groups.extra_1": "Extra 1",
     "bbs.ui.film.groups.extra_2": "Extra 2",
