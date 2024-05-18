@@ -17,6 +17,7 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -63,6 +64,7 @@ public class UIReplaysEditor extends UIElement
     public UIReplaysOverlayPanel replays;
     public UIIcon openReplays;
     public UIIcon record;
+    public UIIcon recordOutside;
     public UIIcon toggleKeyframes;
     public UIIcon toggleProperties;
     public UIIcon toggleOrbitMode;
@@ -115,24 +117,38 @@ public class UIReplaysEditor extends UIElement
         this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE);
         this.record = new UIIcon(Icons.SPHERE, (b) -> this.filmPanel.getController().pickRecording());
         this.record.tooltip(UIKeys.FILM_REPLAY_RECORD);
+        this.recordOutside = new UIIcon(Icons.UPLOAD, (b) ->
+        {
+            int index = this.replays.replays.getIndex();
+
+            if (index >= 0)
+            {
+                this.filmPanel.dashboard.closeThisMenu();
+
+                BBSModClient.getFilms().startRecording(this.filmPanel.getData().getId(), index);
+            }
+        });
+        this.recordOutside.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);
         this.toggleKeyframes = new UIIcon(Icons.GRAPH, (b) -> this.toggleProperties(false));
         this.toggleKeyframes.tooltip(UIKeys.FILM_REPLAY_ENTITY_KEYFRAMES);
         this.toggleProperties = new UIIcon(Icons.MORE, (b) -> this.toggleProperties(true));
         this.toggleProperties.tooltip(UIKeys.FILM_REPLAY_FORM_KEYFRAMES);
         this.toggleOrbitMode = new UIIcon(Icons.ORBIT, (b) -> this.filmPanel.getController().toggleOrbit());
-        this.toggleOrbitMode.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT).marginLeft(10);
+        this.toggleOrbitMode.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT);
         this.changeOrbitPerspectice = new UIIcon(Icons.VISIBLE, (b) -> this.filmPanel.getController().toggleOrbitMode());
         this.changeOrbitPerspectice.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
 
         this.keyframes = new UIElement();
         this.keyframes.relative(this).y(20).w(1F).h(1F, -20);
 
-        this.icons = UI.row(0, this.openReplays, this.record, this.toggleKeyframes, this.toggleProperties, this.toggleOrbitMode, this.changeOrbitPerspectice);
+        this.icons = UI.row(0, this.openReplays, this.record.marginLeft(5), this.recordOutside, this.toggleKeyframes.marginLeft(5), this.toggleProperties, this.toggleOrbitMode.marginLeft(10), this.changeOrbitPerspectice);
         this.icons.relative(this.keyframes).y(-20).w(60).h(20);
 
         this.add(this.openReplays, this.keyframes, this.icons);
 
         this.markContainer();
+
+        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.recordOutside.clickItself());
     }
 
     private void toggleProperties(boolean properties)
@@ -184,6 +200,7 @@ public class UIReplaysEditor extends UIElement
 
         this.replays.replays.setCurrentScroll(replay);
         this.record.setEnabled(replay != null);
+        this.recordOutside.setEnabled(replay != null);
     }
 
     public void moveReplay(double x, double y, double z)
