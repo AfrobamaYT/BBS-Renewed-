@@ -125,7 +125,7 @@ public class UIReplaysEditor extends UIElement
             {
                 this.filmPanel.dashboard.closeThisMenu();
 
-                BBSModClient.getFilms().startRecording(this.filmPanel.getData().getId(), index);
+                BBSModClient.getFilms().startRecording(this.filmPanel.getData(), index);
             }
         });
         this.recordOutside.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);

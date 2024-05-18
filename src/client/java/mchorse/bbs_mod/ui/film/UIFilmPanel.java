@@ -568,9 +568,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (this.lastRecorder != null)
         {
             /* Apply recorded data */
-            if (data != null && this.lastRecorder.filmId.equals(data.getId()))
+            if (data != null && this.lastRecorder.film.getId().equals(data.getId()))
             {
-                int replayId = this.lastRecorder.replayId;
+                int replayId = this.lastRecorder.exception;
 
                 if (CollectionUtils.inRange(data.replays.getList(), replayId))
                 {

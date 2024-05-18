@@ -33,6 +33,8 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
     public UIIcon record;
     public UIIcon command;
 
+    private Film lastFilm;
+
     public UIFilmsOverlayPanel()
     {
         super(UIKeys.FILMS_TITLE);
@@ -67,11 +69,9 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
         this.play.tooltip(UIKeys.FILMS_PLAY, Direction.LEFT);
         this.record = new UIIcon(Icons.SPHERE, (b) ->
         {
-            String filmId = this.films.list.getCurrentFirst();
-
-            if (filmId != null && !filmId.isEmpty() && stateReplayId >= 0)
+            if (this.lastFilm != null && !this.lastFilm.getId().isEmpty() && stateReplayId >= 0)
             {
-                BBSModClient.getFilms().startRecording(filmId, stateReplayId);
+                BBSModClient.getFilms().startRecording(this.lastFilm, stateReplayId);
 
                 this.close();
             }
@@ -135,6 +135,7 @@ public class UIFilmsOverlayPanel extends UIOverlayPanel
 
     private void setFilm(Film film)
     {
+        this.lastFilm = film;
         this.replays.setVisible(true);
         this.replays.clear();
 

@@ -39,10 +39,13 @@ public class FilmController
 {
     public Film film;
 
-    private List<IEntity> entities = new ArrayList<>();
+    protected List<IEntity> entities = new ArrayList<>();
 
-    private int tick;
-    private int duration;
+    public int exception = -1;
+    public int tick;
+    public int duration;
+
+    /* Rendering helpers */
 
     public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map)
     {
@@ -178,6 +181,8 @@ public class FilmController
         return matrix;
     }
 
+    /* Film controller */
+
     public FilmController(Film film)
     {
         this.film = film;
@@ -208,12 +213,22 @@ public class FilmController
         return this.entities;
     }
 
-    public boolean update()
+    public boolean hasFinished()
+    {
+        return this.tick >= this.duration;
+    }
+
+    public void update()
     {
         this.tick += 1;
 
         for (int i = 0; i < this.entities.size(); i++)
         {
+            if (i == this.exception)
+            {
+                continue;
+            }
+
             IEntity entity = this.entities.get(i);
 
             entity.update();
@@ -234,17 +249,20 @@ public class FilmController
                 replay.applyProperties(ticks, entity.getForm(), true);
             }
         }
-
-        return this.tick >= this.duration;
     }
 
     public void render(WorldRenderContext context)
     {
         RenderSystem.enableDepthTest();
 
-        for (IEntity entity : this.entities)
+        for (int i = 0; i < this.entities.size(); i++)
         {
-            renderEntity(this.entities, context, entity, null);
+            if (i == this.exception)
+            {
+                continue;
+            }
+
+            renderEntity(this.entities, context, this.entities.get(i), null);
         }
 
         RenderSystem.disableDepthTest();

@@ -45,9 +45,9 @@ public class Films
         return this.recorder;
     }
 
-    public void startRecording(String filmId, int replayId)
+    public void startRecording(Film film, int replayId)
     {
-        this.recorder = new Recorder(filmId, replayId);
+        this.recorder = new Recorder(film, replayId);
     }
 
     public Recorder stopRecording()
@@ -96,7 +96,12 @@ public class Films
 
     public void update()
     {
-        this.controllers.removeIf(FilmController::update);
+        this.controllers.removeIf((film) ->
+        {
+            film.update();
+
+            return film.hasFinished();
+        });
 
         if (this.recorder != null)
         {
@@ -111,6 +116,11 @@ public class Films
         for (FilmController controller : this.controllers)
         {
             controller.render(context);
+        }
+
+        if (this.recorder != null)
+        {
+            this.recorder.render(context);
         }
 
         RenderSystem.disableDepthTest();

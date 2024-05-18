@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.utils.Quad;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -9,6 +10,7 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -138,6 +140,25 @@ public class Draw
         builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a).next();
     }
 
+    public static void fillBoxTo(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a)
+    {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float dz = z2 - z1;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        Angle angle = Angle.angle(dx, dy, dz);
+
+        stack.push();
+
+        stack.translate(x1, y1, z1);
+        stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(angle.yaw));
+        stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(angle.pitch));
+
+        fillBox(builder, stack, -thickness / 2, -thickness / 2, 0, thickness / 2, thickness / 2, (float) distance, r, g, b, a);
+
+        stack.pop();
+    }
+
     public static void fillBox(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
     {
         fillBox(builder, stack, x1, y1, z1, x2, y2, z2, r, g, b, 1F);
@@ -158,7 +179,7 @@ public class Draw
         fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
     }
 
-    public static void axis(BufferBuilder builder, MatrixStack stack, float length, float thickness)
+    public static void axes(BufferBuilder builder, MatrixStack stack, float length, float thickness)
     {
         fillBox(builder, stack, thickness, -thickness, -thickness, length, thickness, thickness, 1, 0, 0, 1);
         fillBox(builder, stack, -thickness, -thickness, -thickness, thickness, length, thickness, 0, 1, 0, 1);

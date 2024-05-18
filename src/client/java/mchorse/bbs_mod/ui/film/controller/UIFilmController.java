@@ -347,6 +347,10 @@ public class UIFilmController extends UIElement
             {
                 this.setMouseMode(5);
             }
+            else
+            {
+                this.setMouseMode(0);
+            }
         }
 
         if (this.controlled == null)

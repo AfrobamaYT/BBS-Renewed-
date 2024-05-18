@@ -140,7 +140,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-        Draw.axis(builder, context.batcher.getContext().getMatrices(), 1F, 0.01F);
+        Draw.axes(builder, context.batcher.getContext().getMatrices(), 1F, 0.01F);
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         BufferRenderer.drawWithGlobalProgram(builder.end());

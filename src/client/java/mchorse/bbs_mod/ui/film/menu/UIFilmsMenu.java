@@ -28,19 +28,21 @@ public class UIFilmsMenu extends UIBaseMenu
             return;
         }
 
-        ContentType.FILMS.getRepository().load(recorder.filmId, (group) ->
+        String id = recorder.film.getId();
+
+        ContentType.FILMS.getRepository().load(id, (group) ->
         {
             if (group instanceof Film film)
             {
                 List<Replay> list = film.replays.getList();
 
-                if (CollectionUtils.inRange(list, recorder.replayId))
+                if (CollectionUtils.inRange(list, recorder.exception))
                 {
-                    ReplayKeyframes keyframes = list.get(recorder.replayId).keyframes;
+                    ReplayKeyframes keyframes = list.get(recorder.exception).keyframes;
 
                     keyframes.copy(recorder.keyframes);
 
-                    ContentType.FILMS.getRepository().save(recorder.filmId, (MapType) film.toData());
+                    ContentType.FILMS.getRepository().save(id, (MapType) film.toData());
                     context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(film.getId()), Colors.BLUE | Colors.A100);
                 }
             }
