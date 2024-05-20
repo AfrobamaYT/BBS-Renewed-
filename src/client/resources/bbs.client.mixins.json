@@ -13,7 +13,10 @@
         "IntegratedServerMixin",
         "WindowMixin",
         "WorldRendererMixin",
-        "LanguageManagerMixin"
+        "LanguageManagerMixin",
+        "LivingEntityMixin",
+        "LivingEntityUpdateMixin",
+        "LivingEntityRendererMixin"
     ],
     "injectors": {
         "defaultRequire": 1

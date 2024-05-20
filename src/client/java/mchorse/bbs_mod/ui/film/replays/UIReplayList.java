@@ -43,7 +43,6 @@ public class UIReplayList extends UIList<Replay>
 
         this.panel = panel;
 
-        this.scroll.scrollItemSize = 20;
         this.context((menu) ->
         {
             menu.action(Icons.ADD, UIKeys.SCENE_REPLAYS_CONTEXT_ADD, this::addReplay);

@@ -10,7 +10,6 @@ import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
-import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
@@ -19,13 +18,13 @@ import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.particles.ParticleManager;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.selectors.EntitySelectors;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.menu.UIFilmsMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
-import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
@@ -67,6 +66,7 @@ public class BBSModClient implements ClientModInitializer
     private static WatchDog watchDog;
     private static ScreenshotRecorder screenshotRecorder;
     private static VideoRecorder videoRecorder;
+    private static EntitySelectors selectors;
 
     private static ParticleManager particles;
 
@@ -121,6 +121,11 @@ public class BBSModClient implements ClientModInitializer
     public static VideoRecorder getVideoRecorder()
     {
         return videoRecorder;
+    }
+
+    public static EntitySelectors getSelectors()
+    {
+        return selectors;
     }
 
     public static ParticleManager getParticles()
@@ -187,6 +192,8 @@ public class BBSModClient implements ClientModInitializer
         watchDog.start();
         screenshotRecorder = new ScreenshotRecorder(new File(parentFile, "screenshots"));
         videoRecorder = new VideoRecorder();
+        selectors = new EntitySelectors();
+        selectors.read();
         films = new Films();
 
         KeybindSettings.registerClasses();

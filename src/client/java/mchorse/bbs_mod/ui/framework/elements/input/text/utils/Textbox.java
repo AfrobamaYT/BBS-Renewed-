@@ -547,6 +547,7 @@ public class Textbox
                 if (context.isPressed(GLFW.GLFW_KEY_X))
                 {
                     this.deleteSelection();
+                    this.acceptText();
                 }
 
                 return true;

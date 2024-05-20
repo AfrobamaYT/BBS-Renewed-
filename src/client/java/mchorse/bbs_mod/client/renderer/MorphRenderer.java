@@ -2,8 +2,11 @@ package mchorse.bbs_mod.client.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.selectors.ISelectorOwnerProvider;
+import mchorse.bbs_mod.selectors.SelectorOwner;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
@@ -14,6 +17,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.RotationAxis;
 
 public class MorphRenderer
@@ -70,5 +74,38 @@ public class MorphRenderer
         }
 
         return true;
+    }
+
+    public static boolean renderLivingEntity(LivingEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i)
+    {
+        if (!(livingEntity instanceof ISelectorOwnerProvider))
+        {
+            return false;
+        }
+
+        SelectorOwner owner = ((ISelectorOwnerProvider) livingEntity).getOwner();
+        Form form = owner.getForm();
+
+        if (form != null)
+        {
+            RenderSystem.enableDepthTest();
+
+            float bodyYaw = Interpolations.lerp(livingEntity.prevBodyYaw, livingEntity.bodyYaw, g);
+
+            matrixStack.push();
+            matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
+
+            FormUtilsClient.render(form, FormRenderingContext
+                    .set(owner.entity, matrixStack, i, g)
+                    .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
+
+            matrixStack.pop();
+
+            RenderSystem.disableDepthTest();
+
+            return true;
+        }
+
+        return false;
     }
 }
