@@ -8,6 +8,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.MemoryUtil;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class Window
 {
@@ -96,7 +100,23 @@ public class Window
 
     public static void setClipboard(String string)
     {
-        GLFW.glfwSetClipboardString(getWindow(), string);
+        if (string.length() > 1024)
+        {
+            byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+            ByteBuffer buffer = MemoryUtil.memAlloc(bytes.length + 1);
+
+            buffer.put(bytes);
+            buffer.put((byte) 0);
+            buffer.flip();
+
+            GLFW.glfwSetClipboardString(getWindow(), buffer);
+
+            MemoryUtil.memFree(buffer);
+        }
+        else
+        {
+            GLFW.glfwSetClipboardString(getWindow(), string);
+        }
     }
 
     public static void setClipboard(BaseType data)
