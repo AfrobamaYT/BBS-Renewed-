@@ -9,15 +9,18 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
+import mchorse.bbs_mod.utils.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FormCategory implements IMapSerializable
 {
     public IKey title;
-    public final List<Form> forms = new ArrayList<>();
     public boolean hidden;
+
+    private final List<Form> forms = new ArrayList<>();
 
     public FormCategory(IKey title)
     {
@@ -29,6 +32,37 @@ public class FormCategory implements IMapSerializable
         return false;
     }
 
+    public List<Form> getForms()
+    {
+        return Collections.unmodifiableList(this.forms);
+    }
+
+    public List<Form> getDirectForms()
+    {
+        return this.forms;
+    }
+
+    public void addForm(Form form)
+    {
+        if (form != null)
+        {
+            this.forms.add(form);
+        }
+    }
+
+    public void replaceForm(int index, Form form)
+    {
+        if (form != null && CollectionUtils.inRange(this.forms, index))
+        {
+            this.forms.set(index, form);
+        }
+    }
+
+    public void removeForm(Form form)
+    {
+        this.forms.remove(form);
+    }
+
     public UIFormCategory createUI(UIFormList list)
     {
         return new UIFormCategory(this, list);
@@ -37,11 +71,24 @@ public class FormCategory implements IMapSerializable
     @Override
     public void fromData(MapType data)
     {
+        if (data.has("title"))
+        {
+            this.title = IKey.raw(data.getString("title"));
+        }
+
         this.hidden = data.getBool("hidden");
 
         for (BaseType formData : data.getList("forms"))
         {
-            this.forms.add(FormUtils.fromData(formData.asMap()));
+            if (formData.isMap())
+            {
+                Form form = FormUtils.fromData(formData.asMap());
+
+                if (form != null)
+                {
+                    this.forms.add(form);
+                }
+            }
         }
     }
 
@@ -50,12 +97,22 @@ public class FormCategory implements IMapSerializable
     {
         ListType forms = new ListType();
 
+        data.putString("title", this.title.get());
         data.putBool("hidden", this.hidden);
         data.put("forms", forms);
 
-        for (Form form : this.forms)
+        for (int i = 0; i < this.forms.size(); i++)
         {
-            forms.add(FormUtils.toData(form));
+            MapType formData = FormUtils.toData(this.forms.get(i));
+
+            if (formData != null)
+            {
+                forms.add(formData);
+            }
+            else
+            {
+                System.err.println("Form at index " + i + " is null in \"" + this.title.get() + "\" category!");
+            }
         }
     }
 }

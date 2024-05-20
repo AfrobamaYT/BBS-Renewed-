@@ -42,12 +42,12 @@ public class ExtraFormSection extends FormSection
         block.blockState.set(Blocks.GRASS_BLOCK.getDefaultState());
         item.stack.set(new ItemStack(Items.STICK));
 
-        extra.forms.add(anchor);
-        extra.forms.add(billboard);
-        extra.forms.add(label);
-        extra.forms.add(extruded);
-        extra.forms.add(block);
-        extra.forms.add(item);
+        extra.addForm(anchor);
+        extra.addForm(billboard);
+        extra.addForm(label);
+        extra.addForm(extruded);
+        extra.addForm(block);
+        extra.addForm(item);
 
         this.extra = extra;
     }

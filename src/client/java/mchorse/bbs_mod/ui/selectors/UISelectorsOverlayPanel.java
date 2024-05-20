@@ -38,7 +38,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
 
         this.form = new UINestedEdit((editing) ->
         {
-            UIFormPalette.open(this.getParent(UIOverlay.class), editing, this.current.form, (form) ->
+            UIFormPalette.open(this.getParent(UIOverlay.class), editing, this.current.form, true, (form) ->
             {
                 this.current.form = FormUtils.copy(form);
 

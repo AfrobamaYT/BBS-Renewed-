@@ -24,11 +24,19 @@ public class UIFormPalette extends UIElement implements IUIFormList
 
     public static UIFormPalette open(UIElement parent, boolean editing, Form form, Consumer<Form> callback)
     {
+        return open(parent, editing, form, false, callback);
+    }
+
+    public static UIFormPalette open(UIElement parent, boolean editing, Form form, boolean ignore, Consumer<Form> callback)
+    {
         UIContext context = parent.getContext();
 
-        if (!parent.getRoot().getChildren(UIFormPalette.class).isEmpty() || context == null)
+        if (!ignore)
         {
-            return null;
+            if (!parent.getRoot().getChildren(UIFormPalette.class).isEmpty() || context == null)
+            {
+                return null;
+            }
         }
 
         context.unfocus();
@@ -131,11 +139,11 @@ public class UIFormPalette extends UIElement implements IUIFormList
 
             if (this.lastSelected.category.canModify(form))
             {
-                int index = this.lastSelected.category.forms.indexOf(this.lastSelected.selected);
+                int index = this.lastSelected.category.getForms().indexOf(this.lastSelected.selected);
 
                 if (index >= 0)
                 {
-                    this.lastSelected.category.forms.set(index, form);
+                    this.lastSelected.category.replaceForm(index, form);
                 }
             }
 

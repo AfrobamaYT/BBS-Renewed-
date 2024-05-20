@@ -161,7 +161,7 @@ public class UIFormList extends UIElement
 
         for (UIFormCategory category : this.categories)
         {
-            int index = category.category.forms.indexOf(form);
+            int index = category.category.getForms().indexOf(form);
 
             if (index == -1)
             {
@@ -171,7 +171,7 @@ public class UIFormList extends UIElement
             {
                 found = true;
 
-                category.select(category.category.forms.get(index), false);
+                category.select(category.category.getForms().get(index), false);
             }
         }
 
@@ -179,7 +179,7 @@ public class UIFormList extends UIElement
         {
             Form copy = form.copy();
 
-            this.recent.category.forms.add(copy);
+            this.recent.category.addForm(copy);
             this.recent.select(copy, false);
         }
     }

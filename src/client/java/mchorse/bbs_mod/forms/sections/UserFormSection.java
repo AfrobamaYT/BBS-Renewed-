@@ -19,9 +19,14 @@ public class UserFormSection extends FormSection
 {
     public List<UserFormCategory> categories = new ArrayList<>();
 
-    public static File getUserCategoriesFile()
+    public static File getOldUserCategoriesFile()
     {
         return BBSMod.getSettingsPath("forms.json");
+    }
+
+    public static File getUserCategoriesFile(int index)
+    {
+        return BBSMod.getSettingsPath("forms/" + index + ".json");
     }
 
     public UserFormSection(FormCategories parent)
@@ -32,7 +37,66 @@ public class UserFormSection extends FormSection
     @Override
     public void initiate()
     {
-        this.readUserCategories(getUserCategoriesFile());
+        File oldCategories = getOldUserCategoriesFile();
+        File folder = getUserCategoriesFile(0).getParentFile();
+
+        if (folder.isDirectory())
+        {
+            this.loadNewCategories();
+        }
+        else if (oldCategories.isFile())
+        {
+            this.loadOldCategories(oldCategories);
+        }
+    }
+
+    private void loadOldCategories(File oldCategories)
+    {
+        try
+        {
+            MapType data = (MapType) DataToString.read(oldCategories);
+
+            for (String key : data.keys())
+            {
+                UserFormCategory category = new UserFormCategory(IKey.raw(key));
+
+                category.fromData(data.getMap(key));
+                this.categories.add(category);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadNewCategories()
+    {
+        /* Just in case 420 categories, because it's blazing */
+        for (int i = 0; i < 420; i++)
+        {
+            File file = getUserCategoriesFile(i);
+
+            if (!file.isFile())
+            {
+                break;
+            }
+
+            UserFormCategory category = new UserFormCategory(IKey.EMPTY);
+
+            try
+            {
+                MapType data = (MapType) DataToString.read(file);
+
+                category.fromData(data);
+                this.categories.add(category);
+            }
+            catch (Exception e)
+            {
+                System.err.println("Failed to load user form category: " + file.getAbsolutePath());
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -52,51 +116,37 @@ public class UserFormSection extends FormSection
     public void accept(Path path, WatchDogEvent event)
     {}
 
-    public void readUserCategories(File file)
-    {
-        if (!file.exists())
-        {
-            return;
-        }
-
-        try
-        {
-            MapType data = (MapType) DataToString.read(file);
-
-            for (String key : data.keys())
-            {
-                UserFormCategory category = new UserFormCategory(IKey.raw(key));
-
-                category.fromData(data.getMap(key));
-                this.categories.add(category);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-
     public void writeUserCategories()
     {
-        this.writeUserCategories(getUserCategoriesFile());
+        for (int i = 0; i < this.categories.size(); i++)
+        {
+            this.writeUserCategory(i, this.categories.get(i));
+        }
     }
 
-    public void writeUserCategories(File file)
+    public void writeUserCategories(UserFormCategory formCategory)
     {
-        MapType data = new MapType(false);
+        int index = this.categories.indexOf(formCategory);
 
-        for (UserFormCategory category : this.categories)
+        if (formCategory != null)
         {
-            data.put(category.title.get(), category.toData());
+            this.writeUserCategory(index, formCategory);
         }
+    }
+
+    private void writeUserCategory(int index, FormCategory category)
+    {
+        File file = getUserCategoriesFile(index);
+
+        file.getParentFile().mkdirs();
 
         try
         {
-            DataToString.write(file, data, true);
+            DataToString.write(file, category.toData(), true);
         }
         catch (Exception e)
         {
+            System.err.println("Failed to save user category: " + file.getAbsolutePath());
             e.printStackTrace();
         }
     }
@@ -123,7 +173,16 @@ public class UserFormSection extends FormSection
 
     public void removeUserCategory(UserFormCategory category)
     {
+        File lastFile = getUserCategoriesFile(this.categories.size() - 1);
+
+        if (lastFile.isFile())
+        {
+            lastFile.delete();
+        }
+
         this.categories.remove(category);
         this.parent.markDirty();
+
+        this.writeUserCategories();
     }
 }

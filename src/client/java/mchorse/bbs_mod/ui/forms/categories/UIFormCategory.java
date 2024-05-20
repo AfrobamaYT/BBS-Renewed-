@@ -76,7 +76,7 @@ public class UIFormCategory extends UIElement
                             {
                                 m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
                                 {
-                                    formCategory.forms.add(FormUtils.copy(this.selected));
+                                    formCategory.addForm(FormUtils.copy(this.selected));
                                     BBSModClient.getFormCategories().getUserForms().writeUserCategories();
                                 });
                             }
@@ -100,7 +100,7 @@ public class UIFormCategory extends UIElement
             return;
         }
 
-        for (Form form : this.category.forms)
+        for (Form form : this.category.getForms())
         {
             if (form.getId().contains(search) || form.getDisplayName().contains(search))
             {
@@ -113,7 +113,7 @@ public class UIFormCategory extends UIElement
     {
         if (this.search.isEmpty())
         {
-            return this.category.forms;
+            return this.category.getForms();
         }
 
         return this.searched;

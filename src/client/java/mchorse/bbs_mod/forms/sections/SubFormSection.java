@@ -60,7 +60,7 @@ public abstract class SubFormSection extends FormSection
     {
         FormCategory category = this.getCategory(key);
 
-        for (Form form : category.forms)
+        for (Form form : category.getForms())
         {
             if (this.isEqual(form, key))
             {
@@ -68,13 +68,13 @@ public abstract class SubFormSection extends FormSection
             }
         }
 
-        category.forms.add(this.create(key));
+        category.addForm(this.create(key));
     }
 
     protected void remove(String key)
     {
         FormCategory category = this.getCategory(key);
-        Iterator<Form> it = category.forms.iterator();
+        Iterator<Form> it = category.getDirectForms().iterator();
 
         while (it.hasNext())
         {
@@ -85,7 +85,7 @@ public abstract class SubFormSection extends FormSection
             }
         }
 
-        if (category.forms.isEmpty())
+        if (category.getForms().isEmpty())
         {
             this.categories.remove(this.getKey(key));
             this.parent.markDirty();
