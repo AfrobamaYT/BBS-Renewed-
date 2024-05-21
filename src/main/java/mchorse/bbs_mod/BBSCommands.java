@@ -52,8 +52,8 @@ public class BBSCommands
         LiteralArgumentBuilder<ServerCommandSource> play = CommandManager.literal("play");
         LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
         RequiredArgumentBuilder<ServerCommandSource, EntitySelector> target = CommandManager.argument("target", EntityArgumentType.players());
-        RequiredArgumentBuilder<ServerCommandSource, String> playFilm = CommandManager.argument("film", StringArgumentType.word());
-        RequiredArgumentBuilder<ServerCommandSource, String> stopFilm = CommandManager.argument("film", StringArgumentType.word());
+        RequiredArgumentBuilder<ServerCommandSource, String> playFilm = CommandManager.argument("film", StringArgumentType.string());
+        RequiredArgumentBuilder<ServerCommandSource, String> stopFilm = CommandManager.argument("film", StringArgumentType.string());
         RequiredArgumentBuilder<ServerCommandSource, Boolean> camera = CommandManager.argument("camera", BoolArgumentType.bool());
 
         playFilm.suggests((ctx, builder) ->
