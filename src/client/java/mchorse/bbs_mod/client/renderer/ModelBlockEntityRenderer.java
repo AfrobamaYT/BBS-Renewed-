@@ -57,7 +57,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
         double distance = MinecraftClient.getInstance().getEntityRenderDispatcher().getSquaredDistanceToCamera(x, y, z);
 
-        opacity = (float) (1D - distance / 256D * opacity);
+        opacity = (float) ((1D - distance / 256D) * opacity);
 
         matrices.push();
         matrices.translate(tx, ty, tz);
