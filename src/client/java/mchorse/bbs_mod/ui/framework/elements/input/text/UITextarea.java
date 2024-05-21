@@ -1303,10 +1303,9 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
         return false;
     }
 
+    /* Kinda annoying with Minecraft's sound */
     protected void playSound(String event)
-    {
-        UIUtils.playClick();
-    }
+    {}
 
     protected String getFromChar(char typedChar)
     {

@@ -45,6 +45,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     public UIModelBlockEntityList modelBlocks;
     public UINestedEdit pickEdit;
     public UIToggle shadow;
+    public UIToggle global;
     public UIPropTransform transform;
 
     private ModelBlockEntity modelBlock;
@@ -102,11 +103,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         });
 
         this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
+        this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) -> this.modelBlock.getProperties().setGlobal(b.getValue()));
 
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
 
-        this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.transform);
+        this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.global, this.transform);
         this.scrollView.scroll.opposite().cancelScrolling();
         this.scrollView.relative(this).w(200).h(1F);
 
@@ -213,6 +215,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.pickEdit.setVisible(modelBlock != null);
         this.shadow.setVisible(modelBlock != null);
+        this.global.setVisible(modelBlock != null);
         this.transform.setVisible(modelBlock != null);
 
         if (select)
@@ -228,6 +231,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.pickEdit.setForm(properties.getForm());
         this.transform.setTransform(properties.getTransform());
         this.shadow.setValue(properties.getShadow());
+        this.global.setValue(properties.isGlobal());
     }
 
     private void save()

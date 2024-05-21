@@ -106,6 +106,7 @@ public class ModelBlockEntity extends BlockEntity
         private final Transform transformInventory = new Transform();
         private final Transform transformFirstPerson = new Transform();
 
+        private boolean global;
         private boolean shadow;
 
         public Form getForm()
@@ -168,6 +169,16 @@ public class ModelBlockEntity extends BlockEntity
             return this.transformFirstPerson;
         }
 
+        public boolean isGlobal()
+        {
+            return this.global;
+        }
+
+        public void setGlobal(boolean global)
+        {
+            this.global = global;
+        }
+
         public boolean getShadow()
         {
             return this.shadow;
@@ -192,6 +203,7 @@ public class ModelBlockEntity extends BlockEntity
             this.transformFirstPerson.fromData(data.getMap("transformFirstPerson"));
 
             this.shadow = data.getBool("shadow");
+            this.global = data.getBool("global");
         }
 
         @Override
@@ -208,6 +220,7 @@ public class ModelBlockEntity extends BlockEntity
             data.put("transformFirstPerson", this.transformFirstPerson.toData());
 
             data.putBool("shadow", this.shadow);
+            data.putBool("global", this.global);
         }
 
         public void update(IEntity entity)

@@ -71,6 +71,12 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     {}
 
     @Override
+    public boolean rendersOutsideBoundingBox(ModelBlockEntity blockEntity)
+    {
+        return blockEntity.getProperties().isGlobal();
+    }
+
+    @Override
     public void render(ModelBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay)
     {
         ModelBlockEntity.Properties properties = entity.getProperties();
