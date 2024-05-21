@@ -42,6 +42,10 @@ public interface IEntity
 
     public void setFallDistance(float fallDistance);
 
+    public int getHurtTimer();
+
+    public void setHurtTimer(int hurtTimer);
+
     public double getX();
 
     public double getPrevX();
@@ -120,6 +124,7 @@ public interface IEntity
         this.setSprinting(entity.isSprinting());
         this.setOnGround(entity.isOnGround());
         this.setFallDistance(entity.getFallDistance());
+        this.setHurtTimer(entity.getHurtTimer());
 
         this.setPrevX(entity.getPrevX());
         this.setPrevY(entity.getPrevY());

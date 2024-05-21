@@ -17,6 +17,7 @@ public class StubEntity implements IEntity
     private boolean sprinting;
     private boolean onGround = true;
     private float fallDistance;
+    private int hurtTimer;
 
     private double prevX;
     private double prevY;
@@ -139,6 +140,18 @@ public class StubEntity implements IEntity
     public void setFallDistance(float fallDistance)
     {
         this.fallDistance = fallDistance;
+    }
+
+    @Override
+    public int getHurtTimer()
+    {
+        return this.hurtTimer;
+    }
+
+    @Override
+    public void setHurtTimer(int hurtTimer)
+    {
+        this.hurtTimer = hurtTimer;
     }
 
     @Override

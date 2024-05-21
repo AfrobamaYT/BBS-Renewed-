@@ -138,6 +138,26 @@ public class MCEntity implements IEntity
     }
 
     @Override
+    public int getHurtTimer()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.hurtTime;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public void setHurtTimer(int hurtTimer)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            living.hurtTime = hurtTimer;
+        }
+    }
+
+    @Override
     public double getX()
     {
         return this.mcEntity.getX();
