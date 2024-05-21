@@ -53,9 +53,15 @@ public class ModelManager implements IWatchDogListener
             {
                 String path = link.path;
 
-                path = path.substring(path.indexOf('/') + 1, path.lastIndexOf('/'));
+                int slash = path.indexOf('/');
+                int lastSlash = path.lastIndexOf('/');
 
-                keys.add(path);
+                if (slash != lastSlash)
+                {
+                    path = path.substring(slash + 1, lastSlash);
+
+                    keys.add(path);
+                }
             }
         }
 
