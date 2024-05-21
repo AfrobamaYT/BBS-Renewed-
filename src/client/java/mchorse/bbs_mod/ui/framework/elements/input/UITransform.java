@@ -9,7 +9,6 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.MinecraftClient;
 import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
@@ -392,6 +391,20 @@ public abstract class UITransform extends UIElement
         this.fillSetS(1, 1, 1);
         this.fillSetR(0, 0, 0);
         this.fillSetR2(0, 0, 0);
+    }
+
+    @Override
+    protected boolean subKeyPressed(UIContext context)
+    {
+        if (this.sx.isDragging() || this.sy.isDragging() || this.sz.isDragging())
+        {
+            if (context.isHeld(GLFW.GLFW_KEY_SPACE))
+            {
+                return true;
+            }
+        }
+
+        return super.subKeyPressed(context);
     }
 
     @Override
