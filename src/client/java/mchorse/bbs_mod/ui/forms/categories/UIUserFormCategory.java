@@ -67,26 +67,31 @@ public class UIUserFormCategory extends UIFormCategory
                     userForms.writeUserCategories((UserFormCategory) this.category);
                 });
             }
-
-            menu.action(Icons.TRASH, UIKeys.FORMS_CATEGORIES_CONTEXT_REMOVE_CATEGORY, () ->
+            else
             {
-                UIConfirmOverlayPanel panel = new UIConfirmOverlayPanel(
-                    UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE.format(this.category.title),
-                    UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_DESCRIPTION,
-                    (confirm) ->
-                    {
-                        userForms.removeUserCategory((UserFormCategory) this.category);
+                menu.action(Icons.TRASH, UIKeys.FORMS_CATEGORIES_CONTEXT_REMOVE_CATEGORY, () ->
+                {
+                    UIConfirmOverlayPanel panel = new UIConfirmOverlayPanel(
+                        UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE.format(this.category.title),
+                        UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_DESCRIPTION,
+                        (confirm) ->
+                        {
+                            if (confirm)
+                            {
+                                userForms.removeUserCategory((UserFormCategory) this.category);
 
-                        UIElement parent = this.getParentContainer();
+                                UIElement parent = this.getParentContainer();
 
-                        this.removeFromParent();
-                        parent.resize();
-                    }
-                );
+                                this.removeFromParent();
+                                parent.resize();
+                            }
+                        }
+                    );
 
-                UIOverlay.addOverlay(this.getContext(), panel);
-                userForms.writeUserCategories();
-            });
+                    UIOverlay.addOverlay(this.getContext(), panel);
+                    userForms.writeUserCategories();
+                });
+            }
         });
     }
 
