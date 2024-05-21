@@ -41,6 +41,17 @@ public class SelectorOwner
             return;
         }
 
+        this.check();
+        this.entity.update();
+
+        if (this.form != null)
+        {
+            this.form.update(this.entity);
+        }
+    }
+
+    public void check()
+    {
         Text customName = this.mcEntity.getCustomName();
         String literallyAName = customName == null ? "" : customName.getString();
 
@@ -65,13 +76,6 @@ public class SelectorOwner
             {
                 this.form = null;
             }
-        }
-
-        this.entity.update();
-
-        if (this.form != null)
-        {
-            this.form.update(this.entity);
         }
 
         this.lastDisplayName = literallyAName;

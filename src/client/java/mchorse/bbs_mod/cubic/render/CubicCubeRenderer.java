@@ -8,7 +8,6 @@ import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -26,6 +25,7 @@ public class CubicCubeRenderer implements ICubicRenderer
     protected float b = 1;
     protected float a = 1;
     protected int light;
+    protected int overlay;
 
     /* Temporary variables to avoid allocating and GC vectors */
     protected Vector3f normal = new Vector3f();
@@ -34,9 +34,10 @@ public class CubicCubeRenderer implements ICubicRenderer
     private ModelVertex modelVertex = new ModelVertex();
     private boolean picking;
 
-    public CubicCubeRenderer(int light, boolean picking)
+    public CubicCubeRenderer(int light, int overlay, boolean picking)
     {
         this.light = light;
+        this.overlay = overlay;
         this.picking = picking;
     }
 
@@ -199,7 +200,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         builder.vertex(this.vertex.x, this.vertex.y, this.vertex.z)
             .color(this.r, this.g, this.b, this.a)
             .texture(vertex.uv.x, vertex.uv.y)
-            .overlay(OverlayTexture.DEFAULT_UV);
+            .overlay(this.overlay);
 
         if (this.picking)
         {

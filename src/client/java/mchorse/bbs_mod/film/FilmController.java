@@ -21,6 +21,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
@@ -112,7 +113,7 @@ public class FilmController
         int light = LightmapTextureManager.pack(torch, sky);
 
         FormRenderingContext formContext = FormRenderingContext
-            .set(entity, stack, light, transition)
+            .set(entity, stack, light, OverlayTexture.DEFAULT_UV, transition)
             .camera(camera)
             .stencilMap(map);
 

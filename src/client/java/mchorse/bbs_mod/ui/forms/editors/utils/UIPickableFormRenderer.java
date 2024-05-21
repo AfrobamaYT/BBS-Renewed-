@@ -23,6 +23,7 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
@@ -89,7 +90,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
         }
 
         FormRenderingContext formContext = FormRenderingContext
-            .set(this.entity, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), context.getTransition())
+            .set(this.entity, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
             .camera(this.camera);
 
         FormUtilsClient.render(this.form, formContext);

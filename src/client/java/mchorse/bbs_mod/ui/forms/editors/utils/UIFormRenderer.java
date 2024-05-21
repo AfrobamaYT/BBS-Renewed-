@@ -6,6 +6,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
 
 public class UIFormRenderer extends UIModelRenderer
 {
@@ -20,7 +21,7 @@ public class UIFormRenderer extends UIModelRenderer
         }
 
         FormRenderingContext formContext = FormRenderingContext
-            .set(this.entity, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), context.getTransition())
+            .set(this.entity, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
             .camera(this.camera);
 
         FormUtilsClient.render(this.form, formContext);

@@ -65,7 +65,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
             light = 0;
         }
 
-        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, OverlayTexture.DEFAULT_UV);
+        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
         consumers.clearRunnables();
 

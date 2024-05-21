@@ -170,29 +170,31 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         BBSModClient.getTextures().bindTexture(texture);
         RenderSystem.setShader(this.getShader(context,
-            GameRenderer::getRenderTypeEntityTranslucentCullProgram,
+            GameRenderer::getRenderTypeEntityTranslucentProgram,
             BBSShaders::getPickerBillboardProgram
         ));
 
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
-        /* Front */
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        int overlay = context.overlay;
 
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        /* Front */
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
 
         /* Back */
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
 
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(OverlayTexture.DEFAULT_UV).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
 

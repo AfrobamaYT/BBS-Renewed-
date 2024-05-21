@@ -9,13 +9,9 @@ import mchorse.bbs_mod.graphics.texture.TextureExtruder;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
@@ -68,7 +64,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             gameRenderer.getOverlayTexture().setupOverlayColor();
             BBSModClient.getTextures().bindTexture(texture);
 
-            RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntityTranslucentCullProgram, BBSShaders::getPickerBillboardProgram));
+            RenderSystem.setShader(getShader(context, GameRenderer::getRenderTypeEntityTranslucentProgram, BBSShaders::getPickerBillboardProgram));
 
             BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             Matrix4f matrix = context.stack.peek().getPositionMatrix();
@@ -83,7 +79,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                 buffer.vertex(matrix, data.data[offset], data.data[offset + 1], data.data[offset + 2])
                     .color(1F, 1F, 1F, 1F)
                     .texture(data.data[offset + 3], data.data[offset + 4])
-                    .overlay(OverlayTexture.DEFAULT_UV)
+                    .overlay(context.overlay)
                     .light(context.light)
                     .normal(normal, data.data[offset + 5], data.data[offset + 6], data.data[offset + 7])
                     .next();

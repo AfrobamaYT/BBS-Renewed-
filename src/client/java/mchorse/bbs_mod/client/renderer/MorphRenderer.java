@@ -16,6 +16,7 @@ import mchorse.bbs_mod.utils.math.Interpolations;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.RotationAxis;
@@ -40,12 +41,13 @@ public class MorphRenderer
                 RenderSystem.enableDepthTest();
 
                 float bodyYaw = Interpolations.lerp(player.prevBodyYaw, player.bodyYaw, g);
+                int overlay = LivingEntityRenderer.getOverlay(player, 0F);
 
                 matrixStack.push();
                 matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
                 FormUtilsClient.render(morph.form, FormRenderingContext
-                    .set(morph.entity, matrixStack, i, g)
+                    .set(morph.entity, matrixStack, i, overlay, g)
                     .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 
                 matrixStack.pop();
@@ -76,7 +78,7 @@ public class MorphRenderer
         return true;
     }
 
-    public static boolean renderLivingEntity(LivingEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i)
+    public static boolean renderLivingEntity(LivingEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, int o)
     {
         if (!(livingEntity instanceof ISelectorOwnerProvider))
         {
@@ -84,6 +86,9 @@ public class MorphRenderer
         }
 
         SelectorOwner owner = ((ISelectorOwnerProvider) livingEntity).getOwner();
+
+        owner.check();
+
         Form form = owner.getForm();
 
         if (form != null)
@@ -96,8 +101,8 @@ public class MorphRenderer
             matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
             FormUtilsClient.render(form, FormRenderingContext
-                    .set(owner.entity, matrixStack, i, g)
-                    .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
+                .set(owner.entity, matrixStack, i, o, g)
+                .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 
             matrixStack.pop();
 

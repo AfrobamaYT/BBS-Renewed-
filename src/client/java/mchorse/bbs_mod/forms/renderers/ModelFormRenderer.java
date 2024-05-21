@@ -32,6 +32,7 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
@@ -160,7 +161,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            this.renderModel(stack, model, LightmapTextureManager.pack(15, 15), color, true, false);
+            this.renderModel(stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false);
 
             /* Render body parts */
             this.captureMatrices(model);
@@ -169,7 +170,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
             stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
-            this.renderBodyParts(FormRenderingContext.set(this.entity, stack, LightmapTextureManager.pack(15, 15), context.getTransition()).inUI());
+            this.renderBodyParts(FormRenderingContext.set(this.entity, stack, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition()).inUI());
 
             stack.pop();
             stack.pop();
@@ -178,7 +179,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(MatrixStack stack, CubicModel model, int light, Color color, boolean ui, boolean picking)
+    private void renderModel(MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking)
     {
         if (!model.culling)
         {
@@ -194,7 +195,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
-        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, picking);
+        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking);
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 
@@ -245,10 +246,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.setShader(this.getShader(context,
-                GameRenderer::getRenderTypeEntityTranslucentCullProgram,
+                GameRenderer::getRenderTypeEntityTranslucentProgram,
                 BBSShaders::getPickerModelsProgram));
 
-            this.renderModel(context.stack, model, context.light, color, false, context.isPicking());
+            this.renderModel(context.stack, model, context.light, context.overlay, color, false, context.isPicking());
 
             this.captureMatrices(model);
         }

@@ -63,7 +63,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
             light = 0;
         }
 
-        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, OverlayTexture.DEFAULT_UV, context.stack, consumers, context.entity.getWorld(), 0);
+        MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
         consumers.clearRunnables();
 

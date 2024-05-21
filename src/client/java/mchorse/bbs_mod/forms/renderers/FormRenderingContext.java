@@ -14,6 +14,7 @@ public class FormRenderingContext
     public IEntity entity;
     public MatrixStack stack;
     public int light;
+    public int overlay;
     public float transition;
     public final Camera camera = new Camera();
     public StencilMap stencilMap;
@@ -22,11 +23,12 @@ public class FormRenderingContext
     private FormRenderingContext()
     {}
 
-    public static FormRenderingContext set(IEntity entity, MatrixStack stack, int light, float transition)
+    public static FormRenderingContext set(IEntity entity, MatrixStack stack, int light, int overlay, float transition)
     {
         context.entity = entity;
         context.stack = stack;
         context.light = light;
+        context.overlay = overlay;
         context.transition = transition;
         context.stencilMap = null;
         context.ui = false;

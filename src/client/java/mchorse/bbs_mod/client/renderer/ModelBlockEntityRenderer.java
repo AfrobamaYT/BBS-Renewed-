@@ -91,7 +91,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
             RenderSystem.enableDepthTest();
             FormUtilsClient.render(properties.getForm(), FormRenderingContext
-                .set(entity.getEntity(), matrices, lightAbove, tickDelta)
+                .set(entity.getEntity(), matrices, lightAbove, overlay, tickDelta)
                 .camera(camera));
             RenderSystem.disableDepthTest();
 
