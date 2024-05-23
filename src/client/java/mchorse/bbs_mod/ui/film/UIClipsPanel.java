@@ -112,7 +112,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         {
             if (this.panel != null)
             {
-                scrolls.put(this.panel.getClass(), this.panel.panels.scroll.scroll);
+                scrolls.put(this.panel.getClass(), (int) this.panel.panels.scroll.scroll);
             }
 
             this.clips.embedView(null);
@@ -129,7 +129,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
 
             if (scroll != null)
             {
-                this.panel.panels.scroll.scroll = scroll;
+                this.panel.panels.scroll.scrollTo(scroll);
                 this.panel.panels.scroll.clamp();
             }
 

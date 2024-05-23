@@ -679,7 +679,7 @@ public abstract class UIList <T> extends UIElement
         int ySide = this.isHorizontal() ? this.area.h : this.scroll.scrollItemSize;
 
         int x = this.area.x;
-        int y = this.area.y + i * s - this.scroll.scroll;
+        int y = this.area.y + i * s - (int) this.scroll.scroll;
 
         int axis = y;
         int low = this.area.y;
@@ -687,7 +687,7 @@ public abstract class UIList <T> extends UIElement
 
         if (this.isHorizontal())
         {
-            x = this.area.x + i * s - this.scroll.scroll;
+            x = this.area.x + i * s - (int) this.scroll.scroll;
             y = this.area.y;
 
             axis = x;

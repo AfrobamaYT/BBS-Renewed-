@@ -568,7 +568,7 @@ public class UITexturePicker extends UIElement implements IFileDropListener
         if (this.lastChecked.checkRepeat())
         {
             File file = BBSMod.getProvider().getFile(this.picker.path);
-            int scroll = this.picker.scroll.scroll;
+            int scroll = (int) this.picker.scroll.scroll;
 
             if (file != null)
             {

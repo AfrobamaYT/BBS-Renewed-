@@ -41,7 +41,7 @@ public class OrbitFilmCameraController implements ICameraController
 
     public void handleDistance(UIContext context)
     {
-        this.distance.addX(context.mouseWheel);
+        this.distance.addX((int) context.mouseWheel);
     }
 
     public void stop()

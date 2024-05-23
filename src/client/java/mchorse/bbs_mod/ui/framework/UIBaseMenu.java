@@ -114,7 +114,7 @@ public abstract class UIBaseMenu
         return result;
     }
 
-    public boolean mouseScrolled(int x, int y, int scroll)
+    public boolean mouseScrolled(int x, int y, double scroll)
     {
         boolean result = false;
 

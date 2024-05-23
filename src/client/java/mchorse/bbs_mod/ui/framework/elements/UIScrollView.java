@@ -46,11 +46,11 @@ public class UIScrollView extends UIElement implements IViewport
 
         if (this.scroll.direction == ScrollDirection.VERTICAL)
         {
-            stack.shiftY(this.scroll.scroll);
+            stack.shiftY((int) this.scroll.scroll);
         }
         else
         {
-            stack.shiftX(this.scroll.scroll);
+            stack.shiftX((int) this.scroll.scroll);
         }
     }
 
@@ -59,11 +59,11 @@ public class UIScrollView extends UIElement implements IViewport
     {
         if (this.scroll.direction == ScrollDirection.VERTICAL)
         {
-            stack.shiftY(-this.scroll.scroll);
+            stack.shiftY((int) -this.scroll.scroll);
         }
         else
         {
-            stack.shiftX(-this.scroll.scroll);
+            stack.shiftX((int) -this.scroll.scroll);
         }
 
         stack.popViewport();

@@ -78,6 +78,8 @@
     "bbs.config.scrollbars.tooltip": "Background options like color and texture to be used",
     "bbs.config.scrollbars.width": "Thickness",
     "bbs.config.scrollbars.width-comment": "Allows you to setup the thickness (width of scrollbars)",
+    "bbs.config.scrollbars.sensitivity": "Scrolling sensitivity",
+    "bbs.config.scrollbars.sensitivity-comment": "Allows you to change the factor of how much faster or slower mouse wheel scrolling",
     "bbs.config.tutorials.chalkboard": "Chalkboard",
     "bbs.config.tutorials.chalkboard-comment": "Enables chalkboard (F8 to toggle), which allows you to draw diagrams on top of the screen. Resizing window clears the chalkboard",
     "bbs.config.tutorials.cursor": "Mouse cursor",

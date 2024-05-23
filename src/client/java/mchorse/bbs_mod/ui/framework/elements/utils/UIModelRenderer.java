@@ -139,7 +139,7 @@ public abstract class UIModelRenderer extends UIElement
     {
         if (this.area.isInside(context) && !this.isDragging())
         {
-            this.distance.addX(-context.mouseWheel);
+            this.distance.addX(-(int) context.mouseWheel);
         }
 
         return super.subMouseScrolled(context);

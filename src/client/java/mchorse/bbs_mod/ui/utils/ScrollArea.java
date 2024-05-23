@@ -5,6 +5,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.math.MathUtils;
+import net.minecraft.client.MinecraftClient;
 
 /**
  * Scrollable area
@@ -27,7 +28,7 @@ public class ScrollArea
     /**
      * Scroll position 
      */
-    public int scroll;
+    public double scroll;
 
     /**
      * Whether this scroll area gets dragged 
@@ -151,7 +152,7 @@ public class ScrollArea
     /**
      * Scroll by relative amount 
      */
-    public void scrollBy(int x)
+    public void scrollBy(double x)
     {
         this.scroll += x;
         this.clamp();
@@ -160,7 +161,7 @@ public class ScrollArea
     /**
      * Scroll to the position in the scroll area 
      */
-    public void scrollTo(int x)
+    public void scrollTo(double x)
     {
         this.scroll = x;
         this.clamp();
@@ -294,16 +295,23 @@ public class ScrollArea
     /**
      * This method should be invoked when mouse wheel is scrolling 
      */
-    public boolean mouseScroll(int x, int y, int scroll)
+    public boolean mouseScroll(int x, int y, double scroll)
     {
         scroll = -scroll;
 
         boolean isInside = this.area.isInside(x, y);
-        int lastScroll = this.scroll;
+        double lastScroll = this.scroll;
 
         if (isInside)
         {
-            this.scrollBy((int) Math.copySign(this.scrollSpeed, scroll));
+            if (MinecraftClient.IS_SYSTEM_MAC)
+            {
+                this.scrollBy(scroll * BBSSettings.scrollingSensitivity.get());
+            }
+            else
+            {
+                this.scrollBy((int) (Math.copySign(this.scrollSpeed, scroll) * BBSSettings.scrollingSensitivity.get()));
+            }
         }
 
         return isInside && (this.cancelScrollEdge || lastScroll != this.scroll);

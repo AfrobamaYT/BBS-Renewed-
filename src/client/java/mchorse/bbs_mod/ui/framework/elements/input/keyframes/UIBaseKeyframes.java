@@ -269,7 +269,7 @@ public abstract class UIBaseKeyframes <T> extends UIElement
 
         if (this.area.isInside(context.mouseX, context.mouseY) && !this.scrolling)
         {
-            int scroll = context.mouseWheel;
+            int scroll = (int) context.mouseWheel;
 
             if (OS.CURRENT != OS.MACOS)
             {

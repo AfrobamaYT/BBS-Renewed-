@@ -185,7 +185,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         List<UIProperty> properties = this.properties;
         int sheetCount = properties.size();
         int h = LANE_HEIGHT;
-        int i = (mouseY - (this.area.y + TOP_MARGIN - this.scroll.scroll)) / h;
+        int i = (mouseY - (this.area.y + TOP_MARGIN - (int) this.scroll.scroll)) / h;
 
         return i < 0 || i >= sheetCount ? null : properties.get(i);
     }
@@ -370,7 +370,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     protected boolean pickKeyframe(UIContext context, int mouseX, int mouseY, boolean shift)
     {
         int h = LANE_HEIGHT;
-        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
+        int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
         boolean alt = Window.isAltPressed();
         boolean finished = false;
         boolean isMultiSelect = this.isMultipleSelected();
@@ -462,7 +462,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             /* Multi select */
             Area area = this.getGrabbingArea(context);
             int h = LANE_HEIGHT;
-            int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
+            int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
             int c = 0;
 
             for (UIProperty property : this.properties)
@@ -512,7 +512,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         this.scroll.scrollSize = LANE_HEIGHT * propertyCount + TOP_MARGIN;
 
         int h = LANE_HEIGHT;
-        int y = this.area.y + TOP_MARGIN - this.scroll.scroll;
+        int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();

@@ -64,7 +64,7 @@ public class UIOrbitCamera implements IUIElement
             return null;
         }
 
-        return this.orbit.scroll(context.mouseWheel) ? this : null;
+        return this.orbit.scroll((int) context.mouseWheel) ? this : null;
     }
 
     @Override

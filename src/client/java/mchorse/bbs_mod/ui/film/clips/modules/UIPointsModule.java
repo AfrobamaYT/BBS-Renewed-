@@ -224,7 +224,7 @@ public class UIPointsModule extends UIAbstractModule
         for (int i = 0; i < c; i++)
         {
             String label = String.valueOf(i);
-            int xx = this.area.x + i * this.scroll.scrollItemSize - this.scroll.scroll;
+            int xx = this.area.x + i * this.scroll.scrollItemSize - (int) this.scroll.scroll;
             int w = context.batcher.getFont().getWidth(label);
 
             context.batcher.box(xx, y, xx + 20, y + 20, this.index == i ? 0xffcc1170 : 0xffff2280);

@@ -91,7 +91,7 @@ public abstract class UICanvas extends UIElement
     {
         if (this.area.isInside(context.mouseX, context.mouseY) && !this.dragging)
         {
-            this.zoom(context, context.mouseWheel);
+            this.zoom(context, (int) context.mouseWheel);
         }
 
         return super.subMouseScrolled(context);

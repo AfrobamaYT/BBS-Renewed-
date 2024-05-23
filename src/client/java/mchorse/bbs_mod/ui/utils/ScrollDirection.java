@@ -22,7 +22,7 @@ public enum ScrollDirection
         @Override
         public int getScroll(Area area, ScrollArea scroll, int x, int y)
         {
-            return y - area.y + scroll.scroll;
+            return y - area.y + (int) scroll.scroll;
         }
 
         @Override
@@ -48,7 +48,7 @@ public enum ScrollDirection
         @Override
         public int getScroll(Area area, ScrollArea scroll, int x, int y)
         {
-            return x - area.x + scroll.scroll;
+            return x - area.x + (int) scroll.scroll;
         }
 
         @Override

@@ -432,7 +432,7 @@ public class UITextEditor extends UITextarea<HighlightedTextLine>
             this.lineNumber = 0;
 
             /* Draw shadow to the right of line numbers when scrolling */
-            float a = Math.min(this.horizontal.scroll / 10F, 1F) * 0.25F;
+            float a = Math.min((int) this.horizontal.scroll / 10F, 1F) * 0.25F;
 
             if (a > 0)
             {

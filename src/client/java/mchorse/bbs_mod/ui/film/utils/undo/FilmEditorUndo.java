@@ -97,7 +97,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         {
             this.viewMin = clips.scale.getMinValue();
             this.viewMax = clips.scale.getMaxValue();
-            this.scroll = clips.vertical.scroll;
+            this.scroll = (int) clips.vertical.scroll;
 
             this.selectedAfter.addAll(clips.getSelection());
             this.selectedBefore.addAll(this.selectedAfter);

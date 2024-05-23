@@ -766,7 +766,7 @@ public class UIClips extends UIElement
             return 0;
         }
 
-        return this.vertical.scrollSize - this.vertical.area.h - this.vertical.scroll;
+        return this.vertical.scrollSize - this.vertical.area.h - (int) this.vertical.scroll;
     }
 
     public int fromGraphX(int mouseX)
