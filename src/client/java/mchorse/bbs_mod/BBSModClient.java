@@ -46,6 +46,7 @@ import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.Window;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -82,6 +83,7 @@ public class BBSModClient implements ClientModInitializer
     private static Films films;
 
     private static boolean requestToggleRecording;
+    private static float originalFramebufferScale;
 
     public static TextureManager getTextures()
     {
@@ -163,6 +165,11 @@ public class BBSModClient implements ClientModInitializer
         }
 
         return scale;
+    }
+
+    public static float getOriginalFramebufferScale()
+    {
+        return originalFramebufferScale;
     }
 
     @Override
@@ -355,6 +362,13 @@ public class BBSModClient implements ClientModInitializer
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->
         {
             watchDog.stop();
+        });
+
+        ClientLifecycleEvents.CLIENT_STARTED.register((e) ->
+        {
+            Window window = MinecraftClient.getInstance().getWindow();
+
+            originalFramebufferScale = window.getFramebufferWidth() / window.getWidth();
         });
 
         BBSRendering.setup();
