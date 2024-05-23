@@ -5,6 +5,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
+import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.animation.Animator;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITickable
 {
@@ -53,6 +55,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private Map<String, Matrix4f> bones = new HashMap<>();
 
+    private ActionsConfig lastConfigs;
     private IAnimator animator;
     private long lastCheck;
 
@@ -107,15 +110,25 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void ensureAnimator()
     {
         CubicModel model = this.getModel();
+        ActionsConfig actionsConfig = this.form.actions.get();
 
         if (model == null || this.lastCheck >= model.loadTime)
         {
+            /* Update the config */
+            if (this.animator != null && !Objects.equals(actionsConfig, this.lastConfigs))
+            {
+                this.animator.setup(model, actionsConfig, true);
+
+                this.lastConfigs = actionsConfig;
+            }
+
             return;
         }
 
         this.animator = model.procedural ? new ProceduralAnimator() : new Animator();
-        this.animator.setup(model, this.form.actions.get());
+        this.animator.setup(model, actionsConfig, false);
 
+        this.lastConfigs = actionsConfig;
         this.lastCheck = model.loadTime;
     }
 

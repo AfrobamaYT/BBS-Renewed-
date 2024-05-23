@@ -10,7 +10,7 @@ public interface IAnimator
 {
     public List<String> getActions();
 
-    public void setup(CubicModel model, ActionsConfig actionsConfig);
+    public void setup(CubicModel model, ActionsConfig actionsConfig, boolean fade);
 
     public void applyActions(IEntity entity, Model model, float transition);
 

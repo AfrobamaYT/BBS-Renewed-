@@ -17,6 +17,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIActionsConfigKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIAnchorKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIBlockStateKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIBooleanKeyframeFactory;
@@ -81,6 +82,7 @@ public class UIPropertyEditor extends UIElement
         register(KeyframeFactories.VECTOR4F, UIVector4fKeyframeFactory::new);
         register(KeyframeFactories.BLOCK_STATE, UIBlockStateKeyframeFactory::new);
         register(KeyframeFactories.ITEM_STACK, UIItemStackKeyframeFactory::new);
+        register(KeyframeFactories.ACTIONS_CONFIG, UIActionsConfigKeyframeFactory::new);
     }
 
     public static <T> void register(IGenericKeyframeFactory<T> clazz, IUIKeyframeFactoryFactory<T> factory)

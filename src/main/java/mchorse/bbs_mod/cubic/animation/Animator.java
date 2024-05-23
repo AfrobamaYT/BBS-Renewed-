@@ -60,7 +60,7 @@ public class Animator implements IAnimator
     }
 
     @Override
-    public void setup(CubicModel model, ActionsConfig actions)
+    public void setup(CubicModel model, ActionsConfig actions, boolean fade)
     {
         this.model = model;
 
@@ -79,11 +79,14 @@ public class Animator implements IAnimator
         this.shoot = this.createAction(this.shoot, actions.getConfig("shoot"), true);
         this.consume = this.createAction(this.consume, actions.getConfig("consume"), true);
 
-        this.setActiveAction(this.idle);
-
-        if (this.idle != null)
+        if (!fade)
         {
-            this.idle.resetFade();
+            this.setActiveAction(this.idle);
+
+            if (this.idle != null)
+            {
+                this.idle.resetFade();
+            }
         }
     }
 

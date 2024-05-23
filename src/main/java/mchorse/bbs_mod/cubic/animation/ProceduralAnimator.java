@@ -22,7 +22,7 @@ public class ProceduralAnimator implements IAnimator
     }
 
     @Override
-    public void setup(CubicModel model, ActionsConfig actionsConfig)
+    public void setup(CubicModel model, ActionsConfig actionsConfig, boolean fade)
     {}
 
     @Override

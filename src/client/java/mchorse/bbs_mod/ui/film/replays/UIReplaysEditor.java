@@ -103,6 +103,8 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("pose", Colors.RED);
         COLORS.put("transform", Colors.GREEN);
         COLORS.put("color", Colors.INACTIVE);
+        COLORS.put("lighting", Colors.YELLOW);
+        COLORS.put("actions", Colors.MAGENTA);
     }
 
     public UIReplaysEditor(UIFilmPanel filmPanel)
