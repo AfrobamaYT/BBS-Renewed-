@@ -16,7 +16,8 @@
         "LanguageManagerMixin",
         "LivingEntityMixin",
         "LivingEntityUpdateMixin",
-        "LivingEntityRendererMixin"
+        "LivingEntityRendererMixin",
+        "iris.SystemTimeUniformsTimerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
