@@ -40,6 +40,9 @@ public class ModelManager implements IWatchDogListener
         this.loaders.add(new VoxModelLoader());
     }
 
+    /**
+     * Get all models that can be loaded by
+     */
     public List<String> getAvailableKeys()
     {
         List<Link> models = new ArrayList<>(BBSMod.getProvider().getLinksFromPath(Link.assets("models"), true));

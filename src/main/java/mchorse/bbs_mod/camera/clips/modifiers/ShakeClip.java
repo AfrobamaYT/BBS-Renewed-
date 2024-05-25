@@ -22,6 +22,9 @@ public class ShakeClip extends ComponentClip
 
         this.add(this.shake);
         this.add(this.shakeAmount);
+
+        /* Yaw and pitch should be enabled by default */
+        this.active.set(0b0011000);
     }
 
     @Override

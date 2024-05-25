@@ -12,6 +12,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         super(UIKeys.SELECTORS_TITLE);
 
         this.selectors = new UISelectorList((l) -> this.setSelector(l.get(0), false));
-        this.selectors.background();
+        this.selectors.background(Colors.A100);
         this.selectors.setList(BBSModClient.getSelectors().selectors);
         this.selectors.update();
 
