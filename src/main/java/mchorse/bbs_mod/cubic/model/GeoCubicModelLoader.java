@@ -8,7 +8,6 @@ import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.geo.GeoAnimationParser;
 import mchorse.bbs_mod.cubic.geo.GeoModelParser;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;
@@ -21,7 +20,7 @@ import java.util.List;
 public class GeoCubicModelLoader implements IModelLoader
 {
     @Override
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links) throws Exception
+    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         Collection<Link> recursiveLinks = BBSMod.getProvider().getLinksFromPath(model, true);
 
@@ -30,17 +29,6 @@ public class GeoCubicModelLoader implements IModelLoader
         Link modelTexture = IModelLoader.getLink(model.combine("model.png"), recursiveLinks, ".png");
         InputStream geoStream = null;
         List<InputStream> animationStream = new ArrayList<>();
-        MapType config = null;
-
-        try
-        {
-            InputStream asset = models.provider.getAsset(model.combine("config.json"));
-            String string = IOUtils.readText(asset);
-
-            config = (MapType) DataToString.fromString(string);
-        }
-        catch (Exception e)
-        {}
 
         try
         {
@@ -52,6 +40,8 @@ public class GeoCubicModelLoader implements IModelLoader
         catch (Exception e)
         {
             System.err.println("Failed to load Bedrock entity .geo.json for model: " + model);
+
+            return null;
         }
 
         for (Link link : modelAnimation)
@@ -64,11 +54,6 @@ public class GeoCubicModelLoader implements IModelLoader
             {
                 System.err.println("Failed to load Bedrock entity .animation.json for model: " + model + " in " + link);
             }
-        }
-
-        if (geoStream == null)
-        {
-            return null;
         }
 
         try

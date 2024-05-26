@@ -6,6 +6,7 @@ import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.model.IModelLoader;
 import mchorse.bbs_mod.cubic.model.ModelManager;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.PNGEncoder;
@@ -21,43 +22,48 @@ import java.util.Collection;
 public class VoxModelLoader implements IModelLoader
 {
     @Override
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links) throws Exception
+    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         Link modelVox = IModelLoader.getLink(model.combine("model.vox"), links, ".vox");
-        Link pallete = IModelLoader.getLink(model.combine("palette.png"), links, ".palette");
+        Link palette = IModelLoader.getLink(model.combine("palette.png"), links, ".palette");
         InputStream voxStream;
         Model newModel = new Model(models.parser);
 
         try
         {
             voxStream = models.provider.getAsset(modelVox);
+
+            VoxReader reader = new VoxReader();
+            VoxDocument document = reader.read(voxStream, modelVox);
+
+            newModel.textureWidth = document.palette.length;
+            newModel.textureHeight = 1;
+
+            for (VoxDocument.LimbNode node : document.generate())
+            {
+                ModelGroup group = new ModelGroup(node.name);
+                VoxBuilder builder = new VoxBuilder(node.translation, node.rotation);
+
+                group.initial.translate.set(node.translation.x, node.translation.z, node.translation.y);
+                group.meshes.add(builder.build(node.chunk));
+                newModel.topGroups.add(group);
+            }
+
+            newModel.initialize();
+            this.ensurePalette(models.provider, document, modelVox, palette);
+
+            CubicModel cubicModel = new CubicModel(id, newModel, new Animations(models.parser), palette);
+
+            cubicModel.applyConfig(config);
+
+            return cubicModel;
         }
         catch (Exception e)
         {
-            return null;
+            e.printStackTrace();
         }
 
-        VoxReader reader = new VoxReader();
-        VoxDocument document = reader.read(voxStream, modelVox);
-
-        newModel.textureWidth = document.palette.length;
-        newModel.textureHeight = 1;
-
-        for (VoxDocument.LimbNode node : document.generate())
-        {
-            ModelGroup group = new ModelGroup(node.name);
-            VoxBuilder builder = new VoxBuilder(node.translation, node.rotation);
-
-            group.initial.translate.set(node.translation.x, node.translation.z, node.translation.y);
-            group.meshes.add(builder.build(node.chunk));
-            newModel.topGroups.add(group);
-        }
-
-        newModel.initialize();
-
-        this.ensurePalette(models.provider, document, modelVox, pallete);
-
-        return new CubicModel(id, newModel, new Animations(models.parser), pallete);
+        return null;
     }
 
     private void ensurePalette(AssetProvider provider, VoxDocument document, Link vox, Link pallete)

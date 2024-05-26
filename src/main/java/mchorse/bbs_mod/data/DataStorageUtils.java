@@ -31,6 +31,9 @@ import org.joml.Vector4f;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class DataStorageUtils
 {
@@ -351,5 +354,37 @@ public class DataStorageUtils
         }
 
         return defaultValue;
+    }
+
+    /* List<String> */
+
+    public static ListType stringListToData(Collection<String> strings)
+    {
+        ListType list = new ListType();
+
+        for (String string : strings)
+        {
+            list.addString(string);
+        }
+
+        return list;
+    }
+
+    public static List<String> stringListFromData(BaseType type)
+    {
+        ArrayList<String> strings = new ArrayList<>();
+
+        if (type.isList())
+        {
+            for (BaseType baseType : type.asList())
+            {
+                if (baseType.isString())
+                {
+                    strings.add(baseType.asString());
+                }
+            }
+        }
+
+        return strings;
     }
 }

@@ -3,6 +3,8 @@ package mchorse.bbs_mod.forms.entities;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
 import net.minecraft.entity.EntityPose;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -17,6 +19,10 @@ public interface IEntity
     public Form getForm();
 
     public void setForm(Form form);
+
+    public ItemStack getEquipmentStack(EquipmentSlot slot);
+
+    public void setEquipmentStack(EquipmentSlot slot, ItemStack stack);
 
     public boolean isSneaking();
 

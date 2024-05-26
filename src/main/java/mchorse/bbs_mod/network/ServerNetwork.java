@@ -142,12 +142,7 @@ public class ServerNetwork
         }
         else if (op == RepositoryOperation.KEYS)
         {
-            ListType list = new ListType();
-
-            for (String key : films.getKeys())
-            {
-                list.addString(key);
-            }
+            ListType list = DataStorageUtils.stringListToData(films.getKeys());
 
             sendManagerData(player, callbackId, op, list);
         }

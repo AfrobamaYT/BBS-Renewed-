@@ -19,6 +19,9 @@ import java.util.Objects;
 
 public class ModelFormSection extends SubFormSection
 {
+
+    public static final String MODELS_PREFIX = "models/";
+
     public ModelFormSection(FormCategories parent)
     {
         super(parent);
@@ -80,7 +83,7 @@ public class ModelFormSection extends SubFormSection
             this.initiate();
             this.parent.markDirty();
         }
-        else if (link.path.startsWith("models/"))
+        else if (link.path.startsWith(MODELS_PREFIX))
         {
             String extension = this.getExtension(link);
 
@@ -89,7 +92,7 @@ public class ModelFormSection extends SubFormSection
                 return;
             }
 
-            String key = link.path.substring("models/".length());
+            String key = link.path.substring(MODELS_PREFIX.length());
 
             key = key.substring(0, key.length() - extension.length());
 

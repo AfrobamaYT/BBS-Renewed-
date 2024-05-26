@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.particles.components.expiration;
 
+import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.math.molang.MolangException;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.particles.components.ParticleComponentBase;
@@ -21,14 +21,7 @@ public abstract class ParticleComponentExpireBlocks extends ParticleComponentBas
     @Override
     public BaseType toData()
     {
-        ListType list = new ListType();
-
-        for (String block : this.blocks)
-        {
-            list.addString(block);
-        }
-
-        return list;
+        return DataStorageUtils.stringListToData(this.blocks);
     }
 
     @Override
@@ -39,15 +32,7 @@ public abstract class ParticleComponentExpireBlocks extends ParticleComponentBas
             return super.fromData(data, parser);
         }
 
-        for (BaseType value : data.asList())
-        {
-            try
-            {
-                this.blocks.add(value.asString());
-            }
-            catch (Exception e)
-            {}
-        }
+        this.blocks = DataStorageUtils.stringListFromData(data);
 
         return super.fromData(data, parser);
     }

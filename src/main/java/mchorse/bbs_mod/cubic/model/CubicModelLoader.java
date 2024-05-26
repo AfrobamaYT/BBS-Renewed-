@@ -4,11 +4,9 @@ import mchorse.bbs_mod.cubic.CubicLoader;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.utils.IOUtils;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -19,22 +17,11 @@ import java.util.List;
 public class CubicModelLoader implements IModelLoader
 {
     @Override
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links) throws Exception
+    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         List<Link> modelBBS = IModelLoader.getLinks(links, ".bbs.json");
         Link modelTexture = IModelLoader.getLink(model.combine("model.png"), links, ".png");
         List<InputStream> modelStreams = new ArrayList<>();
-        MapType config = null;
-
-        try
-        {
-            InputStream asset = models.provider.getAsset(model.combine("config.json"));
-            String string = IOUtils.readText(asset);
-
-            config = (MapType) DataToString.fromString(string);
-        }
-        catch (Exception e)
-        {}
 
         try
         {

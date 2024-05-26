@@ -3,13 +3,17 @@ package mchorse.bbs_mod.cubic.model;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.data.DataToString;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 import mchorse.bbs_mod.vox.VoxModelLoader;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,21 +93,15 @@ public class ModelManager implements IWatchDogListener
         CubicModel model = null;
         Link modelLink = Link.assets("models/" + id);
         Collection<Link> links = this.provider.getLinksFromPath(modelLink, false);
+        MapType config = this.loadConfig(modelLink);
 
         for (IModelLoader loader : this.loaders)
         {
-            try
-            {
-                model = loader.load(id, this, modelLink, links);
+            model = loader.load(id, this, modelLink, links, config);
 
-                if (model != null)
-                {
-                    break;
-                }
-            }
-            catch (Exception e)
+            if (model != null)
             {
-                e.printStackTrace();
+                break;
             }
         }
 
@@ -119,6 +117,21 @@ public class ModelManager implements IWatchDogListener
         this.models.put(id, model);
 
         return model;
+    }
+
+    private MapType loadConfig(Link modelLink)
+    {
+        try
+        {
+            InputStream asset = this.provider.getAsset(modelLink.combine("config.json"));
+            String string = IOUtils.readText(asset);
+
+            return (MapType) DataToString.fromString(string);
+        }
+        catch (Exception e)
+        {}
+
+        return null;
     }
 
     public void delete()
@@ -137,7 +150,10 @@ public class ModelManager implements IWatchDogListener
             return false;
         }
 
-        return link.path.endsWith(".bbs.json") || link.path.endsWith(".geo.json") || link.path.endsWith(".animation.json") || link.path.endsWith(".vox");
+        return link.path.endsWith(".bbs.json")
+            || link.path.endsWith(".geo.json")
+            || link.path.endsWith(".animation.json")
+            || link.path.endsWith(".vox");
     }
 
     /**

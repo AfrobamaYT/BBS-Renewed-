@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.cubic.model;
 
 import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 
 import java.util.ArrayList;
@@ -51,5 +52,5 @@ public interface IModelLoader
         return newLinks;
     }
 
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links) throws Exception;
+    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config);
 }

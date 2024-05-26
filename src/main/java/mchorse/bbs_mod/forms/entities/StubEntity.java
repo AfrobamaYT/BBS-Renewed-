@@ -3,9 +3,14 @@ package mchorse.bbs_mod.forms.entities;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
 import net.minecraft.entity.EntityPose;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LimbAnimator;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class StubEntity implements IEntity
 {
@@ -43,6 +48,7 @@ public class StubEntity implements IEntity
     private float[] prevExtraVariables = new float[10];
 
     private LimbAnimator limbAnimator = new LimbAnimator();
+    private final Map<EquipmentSlot, ItemStack> items = new HashMap<>();
 
     public StubEntity(World world)
     {
@@ -50,7 +56,12 @@ public class StubEntity implements IEntity
     }
 
     public StubEntity()
-    {}
+    {
+        for (EquipmentSlot value : EquipmentSlot.values())
+        {
+            this.items.put(value, ItemStack.EMPTY);
+        }
+    }
 
     @Override
     public World getWorld()
@@ -68,6 +79,23 @@ public class StubEntity implements IEntity
     public void setForm(Form form)
     {
         this.form = form;
+    }
+
+    @Override
+    public ItemStack getEquipmentStack(EquipmentSlot slot)
+    {
+        return this.items.get(slot);
+    }
+
+    @Override
+    public void setEquipmentStack(EquipmentSlot slot, ItemStack stack)
+    {
+        if (stack == null)
+        {
+            stack = ItemStack.EMPTY;
+        }
+
+        this.items.put(slot, stack);
     }
 
     @Override
