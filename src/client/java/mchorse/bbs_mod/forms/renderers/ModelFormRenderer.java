@@ -241,11 +241,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         /* Render items */
         this.captureMatrices(model);
 
-        this.renderItems(target, stack, model, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, overlay, light);
-        this.renderItems(target, stack, model, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, overlay, light);
+        this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, overlay, light);
+        this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, overlay, light);
     }
 
-    private void renderItems(IEntity target, MatrixStack stack, CubicModel model, EquipmentSlot slot, ModelTransformationMode mode, List<String> items, int overlay, int light)
+    private void renderItems(IEntity target, MatrixStack stack, EquipmentSlot slot, ModelTransformationMode mode, List<String> items, int overlay, int light)
     {
         ItemStack itemStack = target.getEquipmentStack(slot);
 

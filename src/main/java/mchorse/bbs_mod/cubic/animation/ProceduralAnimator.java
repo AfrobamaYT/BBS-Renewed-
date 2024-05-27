@@ -66,6 +66,10 @@ public class ProceduralAnimator implements IAnimator
             coefficient = 1.0F;
         }
 
+        ModelGroup leftArm = null;
+        ModelGroup rightArm = null;
+        ModelGroup torso = null;
+
         for (ModelGroup group : model.getAllGroups())
         {
             if (group.id.equals("anchor"))
@@ -139,23 +143,7 @@ public class ProceduralAnimator implements IAnimator
                     group.current.rotate.x = group.current.rotate.x * 0.5F + 18F;
                 }
 
-                if (handSwingProgress > 0F)
-                {
-                    float swing = handSwingProgress;
-                    float bodyY = MathHelper.sin(MathHelper.sqrt(swing) * MathUtils.PI * 2F) * 0.2F;
-
-                    swing = 1.0F - swing;
-                    swing = swing * swing * swing;
-                    swing = 1.0F - swing;
-
-                    float sinSwing = MathHelper.sin(swing * MathUtils.PI);
-                    float sinSwing2 = MathHelper.sin(handSwingProgress * MathUtils.PI) * -(0.0F - 0.7F) * 0.75F;
-                    float factor = 1F;
-
-                    group.current.rotate.x = group.current.rotate.x + MathUtils.toDeg((sinSwing * 1.2F + sinSwing2));
-                    group.current.rotate.y -= MathUtils.toDeg(bodyY * 2.0F * factor);
-                    group.current.rotate.z -= MathUtils.toDeg(MathHelper.sin(handSwingProgress * MathUtils.PI) * -0.4F * factor);
-                }
+                rightArm = group;
             }
             else if (group.id.equals("left_arm"))
             {
@@ -165,10 +153,12 @@ public class ProceduralAnimator implements IAnimator
                 {
                     group.current.rotate.x = group.current.rotate.x * 0.5F + 18F;
                 }
-            }
-            else if (group.id.equals("body"))
-            {
 
+                leftArm = group;
+            }
+            else if (group.id.equals("torso"))
+            {
+                torso = group;
             }
             else if (group.id.equals("right_leg"))
             {
@@ -178,6 +168,38 @@ public class ProceduralAnimator implements IAnimator
             {
                 group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 1.4F * limbSpeed / coefficient);
             }
+        }
+
+        if (handSwingProgress > 0F && torso != null && leftArm != null && rightArm != null)
+        {
+            ModelGroup group;
+            float swingFactor = handSwingProgress;
+
+            torso.current.rotate.y = -MathUtils.toDeg(MathHelper.sin(MathHelper.sqrt(swingFactor) * MathUtils.PI * 2F) * 0.2F);
+
+            rightArm.current.translate.z = MathHelper.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
+            rightArm.current.translate.x -= MathHelper.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
+            leftArm.current.translate.z = -MathHelper.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
+            leftArm.current.translate.x -= MathHelper.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
+
+            group = rightArm;
+            group.current.rotate.y += torso.current.rotate.y;
+            group = leftArm;
+            group.current.rotate.y += torso.current.rotate.y;
+            group = leftArm;
+            group.current.rotate.x += torso.current.rotate.y;
+
+            swingFactor = 1F - handSwingProgress;
+            swingFactor *= swingFactor;
+            swingFactor *= swingFactor;
+            swingFactor = 1F - swingFactor;
+
+            float headPitch = 0F;
+            float swing1 = MathHelper.sin(swingFactor * MathUtils.PI);
+            float swign2 = MathHelper.sin(handSwingProgress * MathUtils.PI) * -(headPitch - 0.7F) * 0.75F;
+            rightArm.current.rotate.x = group.current.rotate.x + MathUtils.toDeg( swing1 * 1.2F + swign2);
+            rightArm.current.rotate.y += torso.current.rotate.y * 2F;
+            rightArm.current.rotate.z += MathUtils.toDeg(MathHelper.sin(handSwingProgress * MathUtils.PI) * -0.4F);
         }
     }
 
