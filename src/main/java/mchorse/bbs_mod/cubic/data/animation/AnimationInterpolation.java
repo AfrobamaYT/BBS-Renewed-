@@ -2,90 +2,104 @@ package mchorse.bbs_mod.cubic.data.animation;
 
 import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.utils.Axis;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolations;
 import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.math.Interpolation;
 import mchorse.bbs_mod.utils.math.Interpolations;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
-public enum AnimationInterpolation
+public class AnimationInterpolation
 {
-    LINEAR("linear", Interpolation.LINEAR), HERMITE("catmullrom", null)
+    public static final Map<String, IInterpolation> geckoLibNames = new HashMap<>();
+
+    static
     {
-        @Override
-        public double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
+        geckoLibNames.put("linear", Interpolation.LINEAR);
+        geckoLibNames.put("catmullrom", KeyframeInterpolations.HERMITE);
+        geckoLibNames.put("step", KeyframeInterpolations.CONSTANT);
+        geckoLibNames.put("easeInSine", Interpolation.SINE_IN);
+        geckoLibNames.put("easeOutSine", Interpolation.SINE_OUT);
+        geckoLibNames.put("easeInOutSine", Interpolation.SINE_INOUT);
+        geckoLibNames.put("easeInQuad", Interpolation.QUAD_IN);
+        geckoLibNames.put("easeOutQuad", Interpolation.QUAD_OUT);
+        geckoLibNames.put("easeInOutQuad", Interpolation.QUAD_INOUT);
+        geckoLibNames.put("easeInCubic", Interpolation.CUBIC_IN);
+        geckoLibNames.put("easeOutCubic", Interpolation.CUBIC_OUT);
+        geckoLibNames.put("easeInOutCubic", Interpolation.CUBIC_INOUT);
+        geckoLibNames.put("easeInQuart", Interpolation.QUART_IN);
+        geckoLibNames.put("easeOutQuart", Interpolation.QUART_OUT);
+        geckoLibNames.put("easeInOutQuart", Interpolation.QUART_INOUT);
+        geckoLibNames.put("easeInQuint", Interpolation.QUINT_IN);
+        geckoLibNames.put("easeOutQuint", Interpolation.QUINT_OUT);
+        geckoLibNames.put("easeInOutQuint", Interpolation.QUINT_INOUT);
+        geckoLibNames.put("easeInExpo", Interpolation.EXP_IN);
+        geckoLibNames.put("easeOutExpo", Interpolation.EXP_OUT);
+        geckoLibNames.put("easeInOutExpo", Interpolation.EXP_INOUT);
+        geckoLibNames.put("easeInCirc", Interpolation.CIRCLE_IN);
+        geckoLibNames.put("easeOutCirc", Interpolation.CIRCLE_OUT);
+        geckoLibNames.put("easeInOutCirc", Interpolation.CIRCLE_INOUT);
+        geckoLibNames.put("easeInBack", Interpolation.BACK_IN);
+        geckoLibNames.put("easeOutBack", Interpolation.BACK_OUT);
+        geckoLibNames.put("easeInOutBack", Interpolation.BACK_INOUT);
+        /* These are inverted (i.e. in and out swapped places)
+         * because that's how the GeckoLib plugin shows */
+        geckoLibNames.put("easeInElastic", Interpolation.ELASTIC_OUT);
+        geckoLibNames.put("easeOutElastic", Interpolation.ELASTIC_IN);
+        geckoLibNames.put("easeInOutElastic", Interpolation.ELASTIC_INOUT);
+        geckoLibNames.put("easeInBounce", Interpolation.BOUNCE_OUT);
+        geckoLibNames.put("easeOutBounce", Interpolation.BOUNCE_IN);
+        geckoLibNames.put("easeInOutBounce", Interpolation.BOUNCE_INOUT);
+    }
+
+    private static double interpolateHermite(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
+    {
+        double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
+        double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
+
+        double pre = start;
+        double post = destination;
+
+        if (vector.prev != null)
         {
-            double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
-            double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
-
-            double pre = start;
-            double post = destination;
-
-            if (vector.prev != null)
-            {
-                pre = MolangHelper.getValue(vector.prev.getStart(axis), component, axis);
-            }
-
-            if (vector.next != null)
-            {
-                post = MolangHelper.getValue(vector.next.getEnd(axis), component, axis);
-            }
-
-            return Interpolations.cubicHermite(pre, start, destination, post, factor);
+            pre = MolangHelper.getValue(vector.prev.getStart(axis), component, axis);
         }
-    },
-    STEP("step", KeyframeInterpolations.CONSTANT),
-    SINE_IN("easeInSine", Interpolation.SINE_IN), SINE_OUT("easeOutSine", Interpolation.SINE_OUT), SINE_INOUT("easeInOutSine", Interpolation.SINE_INOUT),
-    QUAD_IN("easeInQuad", Interpolation.QUAD_IN), QUAD_OUT("easeOutQuad", Interpolation.QUAD_OUT), QUAD_INOUT("easeInOutQuad", Interpolation.QUAD_INOUT),
-    CUBIC_IN("easeInCubic", Interpolation.CUBIC_IN), CUBIC_OUT("easeOutCubic", Interpolation.CUBIC_OUT), CUBIC_INOUT("easeInOutCubic", Interpolation.CUBIC_INOUT),
-    QUART_IN("easeInQuart", Interpolation.QUART_IN), QUART_OUT("easeOutQuart", Interpolation.QUART_OUT), QUART_INOUT("easeInOutQuart", Interpolation.QUART_INOUT),
-    QUINT_IN("easeInQuint", Interpolation.QUINT_IN), QUINT_OUT("easeOutQuint", Interpolation.QUINT_OUT), QUINT_INOUT("easeInOutQuint", Interpolation.QUINT_INOUT),
-    EXP_IN("easeInExpo", Interpolation.EXP_IN), EXP_OUT("easeOutExpo", Interpolation.EXP_OUT), EXP_INOUT("easeInOutExpo", Interpolation.EXP_INOUT),
-    CIRCLE_IN("easeInCirc", Interpolation.CIRCLE_IN), CIRCLE_OUT("easeOutCirc", Interpolation.CIRCLE_OUT), CIRCLE_INOUT("easeInOutCirc", Interpolation.CIRCLE_INOUT),
-    BACK_IN("easeInBack", Interpolation.BACK_IN), BACK_OUT("easeOutBack", Interpolation.BACK_OUT), BACK_INOUT("easeInOutBack", Interpolation.BACK_INOUT),
-    /* These are inverted (i.e. in and out swapped places) because that's how the GeckoLib plugin shows */
-    ELASTIC_IN("easeInElastic", Interpolation.ELASTIC_OUT), ELASTIC_OUT("easeOutElastic", Interpolation.ELASTIC_IN), ELASTIC_INOUT("easeInOutElastic", Interpolation.ELASTIC_INOUT),
-    BOUNCE_IN("easeInBounce", Interpolation.BOUNCE_OUT), BOUNCE_OUT("easeOutBounce", Interpolation.BOUNCE_IN), BOUNCE_INOUT("easeInOutBounce", Interpolation.BOUNCE_INOUT);
 
-    public final String name;
-    public final IInterpolation interp;
-
-    public static AnimationInterpolation byName(String easing)
-    {
-        for (AnimationInterpolation interp : values())
+        if (vector.next != null)
         {
-            if (Objects.equals(interp.name, easing))
-            {
-                return interp;
-            }
+            post = MolangHelper.getValue(vector.next.getEnd(axis), component, axis);
         }
 
-        return LINEAR;
+        return Interpolations.cubicHermite(pre, start, destination, post, factor);
     }
 
-    private AnimationInterpolation(String name, IInterpolation interp)
+    public static IInterpolation byName(String easing)
     {
-        this.name = name;
-        this.interp = interp;
+        return geckoLibNames.getOrDefault(easing, Interpolation.LINEAR);
     }
 
-    private AnimationInterpolation()
+    public static double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
     {
-        this.name = null;
-        this.interp = null;
-    }
-
-    public double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
-    {
-        if (vector.next != null && vector.next.interp != null && vector.next.interp.interp != null)
+        if (vector.next != null)
         {
-            factor = vector.next.interp.interp.interpolate(0, 1, factor);
+            if (vector.next.interp == KeyframeInterpolations.HERMITE)
+            {
+                return interpolateHermite(vector, component, axis, factor);
+            }
+
+            factor = vector.next.interp.interpolate(0, 1, factor);
         }
 
         double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
         double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
 
         return Interpolations.lerp(start, destination, factor);
+    }
+
+    public static String toName(IInterpolation interp)
+    {
+        return CollectionUtils.getKey(geckoLibNames, interp);
     }
 }

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.cubic;
 
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationChannel;
+import mchorse.bbs_mod.cubic.data.animation.AnimationInterpolation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
 import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -133,9 +134,9 @@ public class CubicModelAnimator
             {
                 double factor = (frame - duration) / length;
 
-                output.x = vector.interp.interpolate(vector, component, Axis.X, factor);
-                output.y = vector.interp.interpolate(vector, component, Axis.Y, factor);
-                output.z = vector.interp.interpolate(vector, component, Axis.Z, factor);
+                output.x = AnimationInterpolation.interpolate(vector, component, Axis.X, factor);
+                output.y = AnimationInterpolation.interpolate(vector, component, Axis.Y, factor);
+                output.z = AnimationInterpolation.interpolate(vector, component, Axis.Z, factor);
 
                 return output;
             }

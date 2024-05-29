@@ -52,18 +52,12 @@ public class ProceduralAnimator implements IAnimator
         float limbPhase = entity.getLimbPos(transition);
         float leaningPitch = entity.getLeaningPitch(transition);
 
-        float coefficient = 1.0F;
+        float coefficient = 1F;
 
         if (isRolling)
         {
-            coefficient = (float) entity.getVelocity().lengthSquared();
-            coefficient /= 0.2F;
-            coefficient *= coefficient * coefficient;
-        }
-
-        if (coefficient < 1.0F)
-        {
-            coefficient = 1.0F;
+            coefficient = (float) (entity.getVelocity().lengthSquared() / 2D);
+            coefficient = Math.min(1F, coefficient * coefficient * coefficient);
         }
 
         ModelGroup leftArm = null;
@@ -106,9 +100,8 @@ public class ProceduralAnimator implements IAnimator
                 else if (leaningPitch > 0F)
                 {
                     float newPitch = entity.isTouchingWater() ? -90F - pitch : -90F;
-                    float finalPitch = MathHelper.lerp(leaningPitch, 0F, newPitch);
 
-                    group.current.rotate.x = finalPitch;
+                    group.current.rotate.x = MathHelper.lerp(leaningPitch, 0F, newPitch);
 
                     if (entity.getEntityPose() == EntityPose.SWIMMING)
                     {

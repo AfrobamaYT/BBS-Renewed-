@@ -18,6 +18,20 @@ public enum Interpolation implements IInterpolation
             return Interpolations.lerp(a, b, x);
         }
     },
+    CONST("constant", GLFW.GLFW_KEY_T)
+    {
+        @Override
+        public float interpolate(float a, float b, float x)
+        {
+            return a;
+        }
+
+        @Override
+        public double interpolate(double a, double b, double x)
+        {
+            return a;
+        }
+    },
     QUAD_IN("quad_in", GLFW.GLFW_KEY_Q)
     {
         @Override

@@ -97,7 +97,7 @@ public class AnimationPart implements IMapSerializable
             ListType keyframeList = new ListType();
 
             keyframeList.addDouble(keyframe.time);
-            keyframeList.addString(keyframe.interp.name);
+            keyframeList.addString(AnimationInterpolation.toName(keyframe.interp));
             keyframeList.add(keyframe.x.toData());
             keyframeList.add(keyframe.y.toData());
             keyframeList.add(keyframe.z.toData());

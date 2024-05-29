@@ -249,7 +249,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         ItemStack itemStack = target.getEquipmentStack(slot);
 
-        if (itemStack.isEmpty())
+        if (itemStack != null && itemStack.isEmpty())
         {
             return;
         }
