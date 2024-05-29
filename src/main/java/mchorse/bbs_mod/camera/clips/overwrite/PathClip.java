@@ -140,19 +140,7 @@ public class PathClip extends CameraClip
         /* Interpolating the position */
         IInterpolation interp = this.interpolationPoint.get();
 
-        if (interp == Interpolation.CUBIC)
-        {
-            x = Interpolations.cubic(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress);
-            y = Interpolations.cubic(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress);
-            z = Interpolations.cubic(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress);
-        }
-        else if (interp == Interpolation.HERMITE)
-        {
-            x = Interpolations.cubicHermite(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress);
-            y = Interpolations.cubicHermite(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress);
-            z = Interpolations.cubicHermite(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress);
-        }
-        else if (interp == Interpolation.CIRCULAR)
+        if (interp == Interpolation.CIRCULAR)
         {
             int size = this.size();
 
@@ -192,9 +180,9 @@ public class PathClip extends CameraClip
         }
         else if (interp != null)
         {
-            x = interp.interpolate(p1.point.x, p2.point.x, progress);
-            y = interp.interpolate(p1.point.y, p2.point.y, progress);
-            z = interp.interpolate(p1.point.z, p2.point.z, progress);
+            x = interp.interpolate(IInterpolation.context.set(p1.point.x, p2.point.x, progress).extra(p0.point.x, p3.point.x));
+            y = interp.interpolate(IInterpolation.context.set(p1.point.y, p2.point.y, progress).extra(p0.point.y, p3.point.y));
+            z = interp.interpolate(IInterpolation.context.set(p1.point.z, p2.point.z, progress).extra(p0.point.z, p3.point.z));
         }
 
         point.set(x, y, z);
@@ -287,39 +275,19 @@ public class PathClip extends CameraClip
      */
     private void applyAngle(Angle angle, int index, float progress)
     {
-        float yaw, pitch, roll, fov;
-
         Position p0 = this.getPoint(index - 1);
         Position p1 = this.getPoint(index);
         Position p2 = this.getPoint(index + 1);
         Position p3 = this.getPoint(index + 2);
 
         /* Interpolating the angle */
-        IInterpolation interp = this.interpolationAngle.get();
+        IInterpolation maybeNull = this.interpolationAngle.get();
+        IInterpolation interp = maybeNull == null ? Interpolation.LINEAR : maybeNull;
 
-        if (interp == Interpolation.CUBIC)
-        {
-            yaw = Interpolations.cubic(p0.angle.yaw, p1.angle.yaw, p2.angle.yaw, p3.angle.yaw, progress);
-            pitch = Interpolations.cubic(p0.angle.pitch, p1.angle.pitch, p2.angle.pitch, p3.angle.pitch, progress);
-            roll = Interpolations.cubic(p0.angle.roll, p1.angle.roll, p2.angle.roll, p3.angle.roll, progress);
-            fov = Interpolations.cubic(p0.angle.fov, p1.angle.fov, p2.angle.fov, p3.angle.fov, progress);
-        }
-        else if (interp == Interpolation.HERMITE)
-        {
-            yaw = (float) Interpolations.cubicHermite(p0.angle.yaw, p1.angle.yaw, p2.angle.yaw, p3.angle.yaw, progress);
-            pitch = (float) Interpolations.cubicHermite(p0.angle.pitch, p1.angle.pitch, p2.angle.pitch, p3.angle.pitch, progress);
-            roll = (float) Interpolations.cubicHermite(p0.angle.roll, p1.angle.roll, p2.angle.roll, p3.angle.roll, progress);
-            fov = (float) Interpolations.cubicHermite(p0.angle.fov, p1.angle.fov, p2.angle.fov, p3.angle.fov, progress);
-        }
-        else
-        {
-            IInterpolation func = interp == null ? Interpolation.LINEAR : interp;
-
-            yaw = func.interpolate(p1.angle.yaw, p2.angle.yaw, progress);
-            pitch = func.interpolate(p1.angle.pitch, p2.angle.pitch, progress);
-            roll = func.interpolate(p1.angle.roll, p2.angle.roll, progress);
-            fov = func.interpolate(p1.angle.fov, p2.angle.fov, progress);
-        }
+        float yaw   = (float) interp.interpolate(IInterpolation.context.set(p1.angle.yaw, p2.angle.yaw, progress).extra(p0.angle.yaw, p3.angle.yaw));
+        float pitch = (float) interp.interpolate(IInterpolation.context.set(p1.angle.pitch, p2.angle.pitch, progress).extra(p0.angle.pitch, p3.angle.pitch));
+        float roll  = (float) interp.interpolate(IInterpolation.context.set(p1.angle.roll, p2.angle.roll, progress).extra(p0.angle.roll, p3.angle.roll));
+        float fov   = (float) interp.interpolate(IInterpolation.context.set(p1.angle.fov, p2.angle.fov, progress).extra(p0.angle.fov, p3.angle.fov));
 
         angle.set(yaw, pitch, roll, fov);
     }

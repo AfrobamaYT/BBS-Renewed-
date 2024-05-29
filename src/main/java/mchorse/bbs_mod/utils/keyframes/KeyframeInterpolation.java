@@ -25,18 +25,9 @@ public class KeyframeInterpolation
 
     public static double interpolateK(Keyframe a, Keyframe b, double x)
     {
-        IInterpolation interpolation = a.getInterpolation();
+        IInterpolation interp = a.getInterpolation();
 
-        if (interpolation == Interpolation.HERMITE)
-        {
-            double v0 = a.prev.getValue();
-            double v1 = a.getValue();
-            double v2 = b.getValue();
-            double v3 = b.next.getValue();
-
-            return Interpolations.cubicHermite(v0, v1, v2, v3, x);
-        }
-        else if (interpolation == Interpolation.BEZIER)
+        if (interp == Interpolation.BEZIER)
         {
             if (x <= 0) return a.getValue();
             if (x >= 1) return b.getValue();
@@ -61,7 +52,14 @@ public class KeyframeInterpolation
             return Interpolations.bezier(0, y1, y2, 1, Interpolations.bezierX(x1, x2, x, e)) * h + a.getValue();
         }
 
-        return interpolation == null ? a.getValue() : interpolation.interpolate(a.getValue(), b.getValue(), x);
+        if (interp == null)
+        {
+            return a.getValue();
+        }
+
+        return interp.interpolate(IInterpolation.context
+            .set(a.getValue(), b.getValue(), x)
+            .extra(a.prev.getValue(), b.next.getValue()));
     }
 
     public static boolean isBezier(IInterpolation interp)
