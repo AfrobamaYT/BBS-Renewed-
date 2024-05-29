@@ -9,7 +9,6 @@ import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
-import net.minecraft.entity.LivingEntity;
 
 import java.util.List;
 
@@ -67,7 +66,7 @@ public class Replay extends ValueGroup
 
         if (segment != null)
         {
-            if (segment.isSame() || segment.a.isInstant())
+            if (segment.isSame())
             {
                 property.set(segment.a.getValue());
             }

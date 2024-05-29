@@ -4,33 +4,29 @@ import mchorse.bbs_mod.camera.data.InterpolationType;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.StringType;
 import mchorse.bbs_mod.settings.values.base.BaseValueBasic;
+import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.math.Interpolation;
 
-public class ValueInterpolationType extends BaseValueBasic<InterpolationType>
+public class ValueInterpolationType extends BaseValueBasic<IInterpolation>
 {
     public ValueInterpolationType(String id)
     {
-        super(id, InterpolationType.HERMITE);
+        super(id, Interpolation.HERMITE);
     }
 
     @Override
     public BaseType toData()
     {
-        return new StringType(this.value.name);
+        return new StringType(CollectionUtils.getKey(InterpolationType.MAP, this.value));
     }
 
     @Override
     public void fromData(BaseType base)
     {
-        String key = base.asString();
-
-        for (InterpolationType type : InterpolationType.values())
+        if (base.isString())
         {
-            if (type.name.equals(key))
-            {
-                this.value = type;
-
-                break;
-            }
+            this.value = InterpolationType.MAP.get(base.asString());
         }
     }
 }

@@ -16,6 +16,7 @@ import mchorse.bbs_mod.utils.TimeUtilsClient;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Envelope;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.math.Interpolation;
 
 public class UIEnvelope extends UIElement
 {
@@ -46,7 +47,7 @@ public class UIEnvelope extends UIElement
         });
         this.pre = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_PRE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), this.get().pre.get(), (v) ->
+            UICameraUtils.interps(this.getContext(), Interpolation.values(), this.get().pre.get(), (v) ->
             {
                 this.panel.editor.editMultiple(this.get().pre, (value) -> value.set(v));
             });
@@ -54,7 +55,7 @@ public class UIEnvelope extends UIElement
         this.pre.tooltip(preTooltip);
         this.post = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_POST, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), this.get().post.get(), (v) ->
+            UICameraUtils.interps(this.getContext(), Interpolation.values(), this.get().post.get(), (v) ->
             {
                 this.panel.editor.editMultiple(this.get().post, (value) -> value.set(v));
             });

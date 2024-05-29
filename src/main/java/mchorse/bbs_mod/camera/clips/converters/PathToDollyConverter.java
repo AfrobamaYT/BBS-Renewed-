@@ -4,7 +4,7 @@ import mchorse.bbs_mod.camera.clips.overwrite.DollyClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.math.IInterpolation;
 
 public class PathToDollyConverter implements IClipConverter<PathClip, DollyClip>
 {
@@ -29,7 +29,7 @@ public class PathToDollyConverter implements IClipConverter<PathClip, DollyClip>
         dolly.yaw.set(angle.yaw);
         dolly.pitch.set(angle.pitch);
 
-        Interpolation function = path.interpolationPoint.get().function;
+        IInterpolation function = path.interpolationPoint.get();
 
         if (function != null)
         {

@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.film.utils;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Angle;
-import mchorse.bbs_mod.camera.data.InterpolationType;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValueAngle;
@@ -18,8 +17,9 @@ import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.math.IInterpolation;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -31,11 +31,11 @@ public class UICameraUtils
 
     /* Interpolations context menu */
 
-    public static void interps(UIContext context, Interpolation current, Consumer<Interpolation> consumer)
+    public static void interps(UIContext context, IInterpolation[] values, IInterpolation current, Consumer<IInterpolation> consumer)
     {
         context.replaceContextMenu((menu) ->
         {
-            for (Interpolation interpolation : Interpolation.values())
+            for (IInterpolation interpolation : values)
             {
                 ContextAction action;
 
@@ -53,11 +53,11 @@ public class UICameraUtils
         });
     }
 
-    public static void interpTypes(UIContext context, InterpolationType current, Consumer<InterpolationType> consumer)
+    public static void interps(UIContext context, Collection<IInterpolation> values, IInterpolation current, Consumer<IInterpolation> consumer)
     {
         context.replaceContextMenu((menu) ->
         {
-            for (InterpolationType interpolation : InterpolationType.values())
+            for (IInterpolation interpolation : values)
             {
                 ContextAction action;
 

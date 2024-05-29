@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils.keyframes;
 
 import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.math.Interpolation;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import org.joml.Vector2d;
 
@@ -54,8 +55,8 @@ public class KeyframeSimplifier
             Keyframe left = newChannel.get(a);
             Keyframe right = newChannel.get(b);
 
-            left.setInterpolation(KeyframeInterpolation.BEZIER);
-            right.setInterpolation(KeyframeInterpolation.BEZIER);
+            left.setInterpolation(Interpolation.BEZIER);
+            right.setInterpolation(Interpolation.BEZIER);
             left.setRx(pair.a.getRx());
             left.setRy(pair.a.getRy());
             right.setLx(pair.b.getLx());
@@ -80,8 +81,8 @@ public class KeyframeSimplifier
 
         left.copy(keyframes.get(0));
         right.copy(keyframes.get(keyframes.size() - 1));
-        left.setInterpolation(KeyframeInterpolation.BEZIER);
-        right.setInterpolation(KeyframeInterpolation.BEZIER);
+        left.setInterpolation(Interpolation.BEZIER);
+        right.setInterpolation(Interpolation.BEZIER);
         left.setRx(5);
         left.setRy(0);
         right.setLx(5);

@@ -4,58 +4,30 @@ import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.math.Interpolation;
 import mchorse.bbs_mod.utils.math.Interpolations;
 import mchorse.bbs_mod.utils.math.MathUtils;
-import org.lwjgl.glfw.GLFW;
 
-public enum KeyframeInterpolation
+import java.util.ArrayList;
+import java.util.List;
+
+public class KeyframeInterpolation
 {
-    CONST()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            return KeyframeInterpolations.CONSTANT;
-        }
-    },
-    LINEAR()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            return Interpolation.LINEAR;
-        }
-    },
-    QUAD()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.QUAD_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.QUAD_OUT;
+    public static final List<IInterpolation> INTERPOLATIONS = new ArrayList<>();
 
-            return Interpolation.QUAD_INOUT;
-        }
-    },
-    CUBIC()
+    static
     {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
+        for (Interpolation value : Interpolation.values())
         {
-            if (easing == KeyframeEasing.IN) return Interpolation.CUBIC_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.CUBIC_OUT;
-
-            return Interpolation.CUBIC_INOUT;
-        }
-    },
-    HERMITE()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            return KeyframeInterpolations.HERMITE;
+            INTERPOLATIONS.add(value);
         }
 
-        @Override
-        public double interpolate(Keyframe a, Keyframe b, double x)
+        INTERPOLATIONS.remove(Interpolation.CUBIC);
+        INTERPOLATIONS.remove(Interpolation.CIRCULAR);
+    }
+
+    public static double interpolateK(Keyframe a, Keyframe b, double x)
+    {
+        IInterpolation interpolation = a.getInterpolation();
+
+        if (interpolation == Interpolation.HERMITE)
         {
             double v0 = a.prev.getValue();
             double v1 = a.getValue();
@@ -64,28 +36,7 @@ public enum KeyframeInterpolation
 
             return Interpolations.cubicHermite(v0, v1, v2, v3, x);
         }
-    },
-    EXP()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.EXP_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.EXP_OUT;
-
-            return Interpolation.EXP_INOUT;
-        }
-    },
-    BEZIER()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            return KeyframeInterpolations.BEZIER;
-        }
-
-        @Override
-        public double interpolate(Keyframe a, Keyframe b, double x)
+        else if (interpolation == Interpolation.BEZIER)
         {
             if (x <= 0) return a.getValue();
             if (x >= 1) return b.getValue();
@@ -109,99 +60,12 @@ public enum KeyframeInterpolation
 
             return Interpolations.bezier(0, y1, y2, 1, Interpolations.bezierX(x1, x2, x, e)) * h + a.getValue();
         }
-    },
-    BACK()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.BACK_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.BACK_OUT;
-
-            return Interpolation.BACK_INOUT;
-        }
-    },
-    ELASTIC()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.ELASTIC_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.ELASTIC_OUT;
-
-            return Interpolation.ELASTIC_INOUT;
-        }
-    },
-    BOUNCE()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.BOUNCE_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.BOUNCE_OUT;
-
-            return Interpolation.BOUNCE_INOUT;
-        }
-    },
-    SINE()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.SINE_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.SINE_OUT;
-
-            return Interpolation.SINE_INOUT;
-        }
-    },
-    QUART()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.QUART_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.QUART_OUT;
-
-            return Interpolation.QUART_INOUT;
-        }
-    },
-    QUINT()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.QUINT_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.QUINT_OUT;
-
-            return Interpolation.QUINT_INOUT;
-        }
-    },
-    CIRCLE()
-    {
-        @Override
-        public IInterpolation from(KeyframeEasing easing)
-        {
-            if (easing == KeyframeEasing.IN) return Interpolation.CIRCLE_IN;
-            if (easing == KeyframeEasing.OUT) return Interpolation.CIRCLE_OUT;
-
-            return Interpolation.CIRCLE_INOUT;
-        }
-    };
-
-    public IInterpolation from(KeyframeEasing easing)
-    {
-        return null;
-    }
-
-    public double interpolate(Keyframe a, Keyframe b, double x)
-    {
-        IInterpolation interpolation = this.from(a.getEasing());
 
         return interpolation == null ? a.getValue() : interpolation.interpolate(a.getValue(), b.getValue(), x);
     }
 
-    public boolean isBezier()
+    public static boolean isBezier(IInterpolation interp)
     {
-        return this == BEZIER;
+        return interp == Interpolation.BEZIER;
     }
 }

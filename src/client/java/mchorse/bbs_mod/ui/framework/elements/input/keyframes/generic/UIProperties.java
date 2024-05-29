@@ -53,14 +53,6 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
     /* Implementation of setters */
 
-    public void setInstant(boolean instant)
-    {
-        for (UIProperty property : this.properties)
-        {
-            property.setInstant(instant);
-        }
-    }
-
     public void setTick(double tick)
     {
         if (this.isMultipleSelected())

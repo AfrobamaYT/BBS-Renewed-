@@ -6,8 +6,6 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.l10n.keys.KeyCollection;
 import mchorse.bbs_mod.particles.ParticleCurveType;
 import mchorse.bbs_mod.utils.EnumUtils;
-import mchorse.bbs_mod.utils.keyframes.KeyframeEasing;
-import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
 import mchorse.bbs_mod.utils.math.Interpolation;
 
 public class UIKeys
@@ -333,9 +331,7 @@ public class UIKeys
     public static final IKey KEYFRAMES_CONTEXT_SELECT_ALL = L10n.lang("bbs.ui.keyframes.context.select_all");
     public static final IKey KEYFRAMES_CONTEXT_SIMPLIFY = L10n.lang("bbs.ui.keyframes.context.simplify");
     public static final IKey KEYFRAMES_FORCED_DURATION = L10n.lang("bbs.ui.keyframes.forced_duration");
-    public static final IKey KEYFRAMES_INSTANT = L10n.lang("bbs.ui.keyframes.instant");
     public static final IKey KEYFRAMES_KEYS_CATEGORY = L10n.lang("bbs.ui.keyframes.keys.category");
-    public static final IKey KEYFRAMES_KEYS_TOGGLE_EASING = L10n.lang("bbs.ui.keyframes.keys.toggle_easing");
     public static final IKey KEYFRAMES_KEYS_TOGGLE_INTERP = L10n.lang("bbs.ui.keyframes.keys.toggle_interp");
     public static final IKey KEYFRAMES_TICK = L10n.lang("bbs.ui.keyframes.tick");
     public static final IKey KEYFRAMES_VALUE = L10n.lang("bbs.ui.keyframes.value");
@@ -648,14 +644,14 @@ public class UIKeys
     public static final KeyCollection C_CLIP = new KeyCollection("bbs.ui.camera.clips.^")
         .load(BBSMod.getFactoryCameraClips().getStringKeys())
         .load(BBSMod.getFactoryScreenplayClips().getStringKeys());
+
     public static final KeyCollection C_CURVE_TYPE = new KeyCollection("bbs.ui.snowstorm.curves.types.^")
         .load(EnumUtils.getKeys(ParticleCurveType.class, (c) -> c.id));
     public static final KeyCollection C_INTERPOLATION = new KeyCollection("interpolations.^")
-        .load(EnumUtils.getKeys(Interpolation.class, (i) -> i.key))
-        .load(EnumUtils.getKeys(KeyframeInterpolation.class, (i) -> i.from(KeyframeEasing.IN).getKey()));
+        .load(EnumUtils.getKeys(Interpolation.class, (i) -> i.key));
     public static final KeyCollection C_INTERPOLATION_TIPS = new KeyCollection("interpolations.^-tooltip")
-        .load(EnumUtils.getKeys(Interpolation.class, (i) -> i.key))
-        .load(EnumUtils.getKeys(KeyframeInterpolation.class, (i) -> i.from(KeyframeEasing.IN).getKey()));
+        .load(EnumUtils.getKeys(Interpolation.class, (i) -> i.key));
+
     public static final KeyCollection C_KEYBIND_CATGORIES = new KeyCollection("keybinds.config.^.title");
     public static final KeyCollection C_KEYBIND_CATGORIES_TOOLTIP = new KeyCollection("keybinds.config.^.tooltip");
 }

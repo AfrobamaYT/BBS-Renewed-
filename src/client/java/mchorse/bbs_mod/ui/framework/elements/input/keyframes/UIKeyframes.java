@@ -15,8 +15,9 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.KeyframeEasing;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
+import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.math.Interpolation;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -166,19 +167,11 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         }
     }
 
-    public void setInterpolation(KeyframeInterpolation interp)
+    public void setInterpolation(IInterpolation interp)
     {
         for (UISheet sheet : this.getSheets())
         {
             sheet.setInterpolation(interp);
-        }
-    }
-
-    public void setEasing(KeyframeEasing easing)
-    {
-        for (UISheet sheet : this.getSheets())
-        {
-            sheet.setEasing(easing);
         }
     }
 
@@ -326,14 +319,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         long tick = Math.round(this.fromGraphX(mouseX));
         double value = this.current == null ? sheet.channel.interpolate(tick) : this.fromGraphY(mouseY);
 
-        KeyframeEasing easing = KeyframeEasing.IN;
-        KeyframeInterpolation interp = KeyframeInterpolation.LINEAR;
+        IInterpolation interp = Interpolation.LINEAR;
         Keyframe frame = this.getCurrent();
         long oldTick = tick;
 
         if (frame != null)
         {
-            easing = frame.getEasing();
             interp = frame.getInterpolation();
             oldTick = frame.getTick();
         }
@@ -344,7 +335,6 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         if (oldTick != tick)
         {
             frame = this.getCurrent();
-            frame.setEasing(easing);
             frame.setInterpolation(interp);
         }
     }
@@ -439,8 +429,8 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
             for (Keyframe frame : sheet.channel.getKeyframes())
             {
-                boolean left = prev != null && prev.getInterpolation().isBezier() && this.isInside(this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, mouseX, mouseY);
-                boolean right = frame.getInterpolation().isBezier() && this.isInside(this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, mouseX, mouseY) && index != count - 1;
+                boolean left = prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()) && this.isInside(this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, mouseX, mouseY);
+                boolean right = KeyframeInterpolation.isBezier(frame.getInterpolation()) && this.isInside(this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, mouseX, mouseY) && index != count - 1;
                 boolean point = this.isInside(this.toGraphX(frame.getTick()), alt ? mouseY : y + h / 2, mouseX, mouseY);
 
                 if (left || right || point)
@@ -514,8 +504,8 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
         for (Keyframe frame : sheet.channel.getKeyframes())
         {
-            boolean left = prev != null && prev.getInterpolation().isBezier() && this.isInsideTickValue(frame.getTick() - frame.getLx(), frame.getValue() + frame.getLy(), mouseX, mouseY);
-            boolean right = frame.getInterpolation().isBezier() && this.isInsideTickValue(frame.getTick() + frame.getRx(), frame.getValue() + frame.getRy(), mouseX, mouseY) && index != count - 1;
+            boolean left = prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()) && this.isInsideTickValue(frame.getTick() - frame.getLx(), frame.getValue() + frame.getLy(), mouseX, mouseY);
+            boolean right = KeyframeInterpolation.isBezier(frame.getInterpolation()) && this.isInsideTickValue(frame.getTick() + frame.getRx(), frame.getValue() + frame.getRy(), mouseX, mouseY) && index != count - 1;
             boolean point = this.isInsideTickValue(frame.getTick(), frame.getValue(), mouseX, mouseY);
 
             if (left || right || point)
@@ -792,12 +782,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
 
-                if (frame.getInterpolation().isBezier() && index != count - 1)
+                if (KeyframeInterpolation.isBezier(frame.getInterpolation()) && index != count - 1)
                 {
                     this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
                 }
 
-                if (prev != null && prev.getInterpolation().isBezier())
+                if (prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()))
                 {
                     this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 2, sheet.hasSelected(index) ? Colors.WHITE : sheet.color);
                 }
@@ -813,12 +803,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
             {
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 2, this.which == Selection.KEYFRAME && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
 
-                if (frame.getInterpolation().isBezier() && index != count - 1)
+                if (KeyframeInterpolation.isBezier(frame.getInterpolation()) && index != count - 1)
                 {
                     this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), y + h / 2, 1, this.which == Selection.RIGHT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
                 }
 
-                if (prev != null && prev.getInterpolation().isBezier())
+                if (prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()))
                 {
                     this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), y + h / 2, 1, this.which == Selection.LEFT_HANDLE && sheet.hasSelected(index) ? Colors.ACTIVE : 0);
                 }
@@ -870,7 +860,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 int fx = this.toGraphX(frame.getTick());
 
                 /* Main line */
-                if (prev.getInterpolation() == KeyframeInterpolation.LINEAR)
+                if (prev.getInterpolation() == Interpolation.LINEAR)
                 {
                     main.add(px, this.toGraphY(prev.getValue()))
                         .add(fx, this.toGraphY(frame.getValue()));
@@ -879,7 +869,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 {
                     float seg = 10;
 
-                    if (prev.getInterpolation() == KeyframeInterpolation.BOUNCE || prev.getInterpolation() == KeyframeInterpolation.ELASTIC)
+                    if (prev.getInterpolation().getKey().startsWith("bounce_") || prev.getInterpolation().getKey().startsWith("elastic_"))
                     {
                         seg = 30;
                     }
@@ -891,7 +881,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                     }
                 }
 
-                if (prev.getInterpolation().isBezier())
+                if (KeyframeInterpolation.isBezier(prev.getInterpolation()))
                 {
                     /* Left bezier handle */
                     lines.push()
@@ -906,7 +896,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                     .add(this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()));
             }
 
-            if (frame.getInterpolation().isBezier() && index != count - 1)
+            if (KeyframeInterpolation.isBezier(frame.getInterpolation()) && index != count - 1)
             {
                 /* Right bezier handle */
                 lines.push()
@@ -944,12 +934,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
             this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 3, sheet.hasSelected(index) || isPointHover ? Colors.WHITE : sheet.color);
 
-            if (frame.getInterpolation().isBezier() && index != count - 1)
+            if (KeyframeInterpolation.isBezier(frame.getInterpolation()) && index != count - 1)
             {
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 3, Colors.WHITE);
             }
 
-            if (prev != null && prev.getInterpolation().isBezier())
+            if (prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()))
             {
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 3, Colors.WHITE);
             }
@@ -967,12 +957,12 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
 
             this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame.getValue()), 2, has && this.which == Selection.KEYFRAME ? Colors.ACTIVE : 0);
 
-            if (frame.getInterpolation().isBezier() && index != count - 1)
+            if (KeyframeInterpolation.isBezier(frame.getInterpolation()) && index != count - 1)
             {
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() + frame.getRx()), this.toGraphY(frame.getValue() + frame.getRy()), 2, has && this.which == Selection.RIGHT_HANDLE ? Colors.ACTIVE : 0);
             }
 
-            if (prev != null && prev.getInterpolation().isBezier())
+            if (prev != null && KeyframeInterpolation.isBezier(prev.getInterpolation()))
             {
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick() - frame.getLx()), this.toGraphY(frame.getValue() + frame.getLy()), 2, has && this.which == Selection.LEFT_HANDLE ? Colors.ACTIVE : 0);
             }

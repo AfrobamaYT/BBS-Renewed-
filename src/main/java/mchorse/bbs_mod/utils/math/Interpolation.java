@@ -672,6 +672,62 @@ public enum Interpolation implements IInterpolation
 
             return Interpolations.lerp(a, b, factor);
         }
+    },
+    CIRCULAR("circle", GLFW.GLFW_KEY_P)
+    {
+        @Override
+        public float interpolate(float a, float b, float x)
+        {
+            return (float) Interpolations.cubicHermite(a, a, b, b, x);
+        }
+
+        @Override
+        public double interpolate(double a, double b, double x)
+        {
+            return Interpolations.cubicHermite(a, a, b, b, x);
+        }
+    },
+    CUBIC("cubic", GLFW.GLFW_KEY_K)
+    {
+        @Override
+        public float interpolate(float a, float b, float x)
+        {
+            return (float) Interpolations.cubicHermite(a, a, b, b, x);
+        }
+
+        @Override
+        public double interpolate(double a, double b, double x)
+        {
+            return Interpolations.cubicHermite(a, a, b, b, x);
+        }
+    },
+    HERMITE("hermite", GLFW.GLFW_KEY_H)
+    {
+        @Override
+        public float interpolate(float a, float b, float x)
+        {
+            return (float) Interpolations.cubicHermite(a, a, b, b, x);
+        }
+
+        @Override
+        public double interpolate(double a, double b, double x)
+        {
+            return Interpolations.cubicHermite(a, a, b, b, x);
+        }
+    },
+    BEZIER("bezier", GLFW.GLFW_KEY_Z)
+    {
+        @Override
+        public float interpolate(float a, float b, float x)
+        {
+            return (float) Interpolations.cubicHermite(a, a, b, b, x);
+        }
+
+        @Override
+        public double interpolate(double a, double b, double x)
+        {
+            return Interpolations.cubicHermite(a, a, b, b, x);
+        }
     };
 
     public final String key;
@@ -692,5 +748,11 @@ public enum Interpolation implements IInterpolation
     public String getKey()
     {
         return this.key;
+    }
+
+    @Override
+    public int getKeyCode()
+    {
+        return this.keybind;
     }
 }

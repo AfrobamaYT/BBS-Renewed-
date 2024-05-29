@@ -9,7 +9,7 @@ import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Vector3f;
 
@@ -44,7 +44,7 @@ public class DollyClip extends IdleClip
     {
         super.applyClip(context, position);
 
-        Interpolation interp = this.interp.get();
+        IInterpolation interp = this.interp.get();
         Point point = this.position.get().point;
         double x = point.x;
         double y = point.y;

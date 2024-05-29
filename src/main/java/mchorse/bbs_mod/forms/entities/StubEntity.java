@@ -84,7 +84,7 @@ public class StubEntity implements IEntity
     @Override
     public ItemStack getEquipmentStack(EquipmentSlot slot)
     {
-        return this.items.get(slot);
+        return this.items.getOrDefault(slot, ItemStack.EMPTY);
     }
 
     @Override

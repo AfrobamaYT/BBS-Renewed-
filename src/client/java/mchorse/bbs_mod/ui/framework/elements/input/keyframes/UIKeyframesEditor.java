@@ -7,6 +7,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -16,9 +17,8 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.keyframes.KeyframeEasing;
+import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSimplifier;
-import mchorse.bbs_mod.utils.math.MathUtils;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
@@ -32,14 +32,12 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
     public UITrackpad tick;
     public UITrackpad value;
     public UIIcon interp;
-    public UIIcon easing;
 
     public T keyframes;
 
     private int clicks;
     private long clickTimer;
 
-    private KeyframeEasing e = KeyframeEasing.IN;
     private IAxisConverter converter;
 
     public UIKeyframesEditor()
@@ -55,7 +53,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
                 return null;
             }
 
-            return keyframe.getInterpolation().from(keyframe.getEasing());
+            return keyframe.getInterpolation();
         });
 
         this.frameButtons = new UIElement();
@@ -67,18 +65,9 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.value.tooltip(UIKeys.KEYFRAMES_VALUE);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            UI.keyframeInterps(this.getContext(), this.keyframes.getCurrent().getInterpolation(), this.keyframes::setInterpolation);
+            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, this.keyframes.getCurrent().getInterpolation(), this.keyframes::setInterpolation);
         });
         this.interp.tooltip(tooltip);
-
-        this.easing = new UIIcon(Icons.CURVES, (b) ->
-        {
-            KeyframeEasing[] values = KeyframeEasing.values();
-            this.e = values[MathUtils.cycler(this.e.ordinal() + 1, 0, values.length - 1)];
-
-            this.changeEasing();
-        });
-        this.easing.tooltip(tooltip);
 
         this.keyframes = this.createElement();
 
@@ -89,7 +78,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
 
         /* Add all elements */
         this.add(this.keyframes, this.frameButtons);
-        this.frameButtons.add(UI.row(0, this.interp, this.tick), UI.row(0, this.easing, this.value));
+        this.frameButtons.add(UI.row(0, this.interp, this.tick), UI.row(this.value));
 
         this.context((menu) ->
         {
@@ -152,7 +141,6 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.keys().register(Keys.DELETE, this::removeSelectedKeyframes).inside().category(category);
 
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this::toggleInterpolation).category(category);
-        this.easing.keys().register(Keys.KEYFRAMES_EASING, this::toggleEasing).category(category);
     }
 
     protected abstract T createElement();
@@ -160,11 +148,6 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
     protected void toggleInterpolation()
     {
         this.interp.clickItself();
-    }
-
-    protected void toggleEasing()
-    {
-        this.easing.clickItself(this.getContext(), Window.isShiftPressed() ? 1 : 0);
     }
 
     public void setConverter(IAxisConverter converter)
@@ -384,11 +367,6 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.keyframes.setValue(value, false);
     }
 
-    public void changeEasing()
-    {
-        this.keyframes.setEasing(this.e);
-    }
-
     public void fillData(Keyframe frame)
     {
         boolean show = frame != null && this.keyframes.which != Selection.NOT_SELECTED;
@@ -406,7 +384,6 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.tick.integer = this.converter == null ? forceInteger : this.converter.forceInteger(frame, this.keyframes.which, forceInteger);
         this.tick.setValue(this.converter == null ? tick : this.converter.to(tick));
         this.value.setValue(this.keyframes.which.getY(frame));
-        this.e = frame.getEasing();
     }
 
     public void select(List<List<Integer>> selection, Vector2i selected)

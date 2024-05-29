@@ -3,7 +3,6 @@ package mchorse.bbs_mod.cubic.data.animation;
 import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolations;
 import mchorse.bbs_mod.utils.math.IInterpolation;
 import mchorse.bbs_mod.utils.math.Interpolation;
 import mchorse.bbs_mod.utils.math.Interpolations;
@@ -18,8 +17,8 @@ public class AnimationInterpolation
     static
     {
         geckoLibNames.put("linear", Interpolation.LINEAR);
-        geckoLibNames.put("catmullrom", KeyframeInterpolations.HERMITE);
-        geckoLibNames.put("step", KeyframeInterpolations.CONSTANT);
+        geckoLibNames.put("catmullrom", Interpolation.HERMITE);
+        geckoLibNames.put("step", Interpolation.CONST);
         geckoLibNames.put("easeInSine", Interpolation.SINE_IN);
         geckoLibNames.put("easeOutSine", Interpolation.SINE_OUT);
         geckoLibNames.put("easeInOutSine", Interpolation.SINE_INOUT);
@@ -54,6 +53,16 @@ public class AnimationInterpolation
         geckoLibNames.put("easeInOutBounce", Interpolation.BOUNCE_INOUT);
     }
 
+    public static IInterpolation byName(String easing)
+    {
+        return geckoLibNames.getOrDefault(easing, Interpolation.LINEAR);
+    }
+
+    public static String toName(IInterpolation interp)
+    {
+        return CollectionUtils.getKey(geckoLibNames, interp);
+    }
+
     private static double interpolateHermite(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
     {
         double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
@@ -75,16 +84,11 @@ public class AnimationInterpolation
         return Interpolations.cubicHermite(pre, start, destination, post, factor);
     }
 
-    public static IInterpolation byName(String easing)
-    {
-        return geckoLibNames.getOrDefault(easing, Interpolation.LINEAR);
-    }
-
     public static double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
     {
         if (vector.next != null)
         {
-            if (vector.next.interp == KeyframeInterpolations.HERMITE)
+            if (vector.next.interp == Interpolation.HERMITE)
             {
                 return interpolateHermite(vector, component, axis, factor);
             }
@@ -96,10 +100,5 @@ public class AnimationInterpolation
         double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
 
         return Interpolations.lerp(start, destination, factor);
-    }
-
-    public static String toName(IInterpolation interp)
-    {
-        return CollectionUtils.getKey(geckoLibNames, interp);
     }
 }

@@ -7,4 +7,6 @@ public interface IInterpolation
     public double interpolate(double a, double b, double x);
 
     public String getKey();
+
+    public int getKeyCode();
 }

@@ -3,6 +3,9 @@ package mchorse.bbs_mod.utils.keyframes;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.math.Interpolation;
 
 public class Keyframe extends BaseValue
 {
@@ -12,8 +15,7 @@ public class Keyframe extends BaseValue
     private long tick;
     private double value;
 
-    private KeyframeInterpolation interp = KeyframeInterpolation.LINEAR;
-    private KeyframeEasing easing = KeyframeEasing.IN;
+    private IInterpolation interp = Interpolation.LINEAR;
 
     private float rx = 5;
     private float ry;
@@ -60,35 +62,15 @@ public class Keyframe extends BaseValue
         this.postNotifyParent();
     }
 
-    public KeyframeInterpolation getInterpolation()
+    public IInterpolation getInterpolation()
     {
         return this.interp;
     }
 
-    public void setInterpolation(KeyframeInterpolation interp)
+    public void setInterpolation(IInterpolation interp)
     {
         this.preNotifyParent();
         this.interp = interp;
-        this.postNotifyParent();
-    }
-
-    public void setInterpolation(KeyframeInterpolation interp, KeyframeEasing easing)
-    {
-        this.preNotifyParent();
-        this.interp = interp;
-        this.easing = easing;
-        this.postNotifyParent();
-    }
-
-    public KeyframeEasing getEasing()
-    {
-        return this.easing;
-    }
-
-    public void setEasing(KeyframeEasing easing)
-    {
-        this.preNotifyParent();
-        this.easing = easing;
         this.postNotifyParent();
     }
 
@@ -142,12 +124,12 @@ public class Keyframe extends BaseValue
 
     public double interpolateTicks(Keyframe frame, double ticks)
     {
-        return this.interp.interpolate(this, frame, (ticks - this.tick) / (frame.tick - this.tick));
+        return KeyframeInterpolation.interpolateK(this, frame, (ticks - this.tick) / (frame.tick - this.tick));
     }
 
     public double interpolate(Keyframe frame, double x)
     {
-        return this.interp.interpolate(this, frame, x);
+        return KeyframeInterpolation.interpolateK(this, frame, x);
     }
 
     public Keyframe copy()
@@ -164,7 +146,6 @@ public class Keyframe extends BaseValue
         this.tick = keyframe.tick;
         this.value = keyframe.value;
         this.interp = keyframe.interp;
-        this.easing = keyframe.easing;
         this.lx = keyframe.lx;
         this.ly = keyframe.ly;
         this.rx = keyframe.rx;
@@ -179,8 +160,15 @@ public class Keyframe extends BaseValue
         data.putLong("tick", this.tick);
         data.putDouble("value", this.value);
 
-        if (this.interp != KeyframeInterpolation.LINEAR) data.putInt("interp", this.interp.ordinal());
-        if (this.easing != KeyframeEasing.IN) data.putInt("easing", this.easing.ordinal());
+        if (this.interp != Interpolation.LINEAR)
+        {
+            int index = KeyframeInterpolation.INTERPOLATIONS.indexOf(this.interp);
+
+            if (index >= 0)
+            {
+                data.putInt("interp", index);
+            }
+        }
         if (this.rx != 5) data.putFloat("rx", this.rx);
         if (this.ry != 0) data.putFloat("ry", this.ry);
         if (this.lx != 5) data.putFloat("lx", this.lx);
@@ -201,8 +189,15 @@ public class Keyframe extends BaseValue
 
         if (map.has("tick")) this.tick = map.getLong("tick");
         if (map.has("value")) this.value = map.getDouble("value");
-        if (map.has("interp")) this.interp = KeyframeInterpolation.values()[map.getInt("interp")];
-        if (map.has("easing")) this.easing = KeyframeEasing.values()[map.getInt("easing")];
+        if (map.has("interp"))
+        {
+            int index = map.getInt("interp");
+
+            if (CollectionUtils.inRange(KeyframeInterpolation.INTERPOLATIONS, index))
+            {
+                this.interp = KeyframeInterpolation.INTERPOLATIONS.get(index);
+            }
+        }
         if (map.has("rx")) this.rx = map.getFloat("rx");
         if (map.has("ry")) this.ry = map.getFloat("ry");
         if (map.has("lx")) this.lx = map.getFloat("lx");
