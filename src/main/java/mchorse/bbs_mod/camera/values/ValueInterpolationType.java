@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.camera.values;
 
-import mchorse.bbs_mod.camera.data.InterpolationType;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.StringType;
 import mchorse.bbs_mod.settings.values.base.BaseValueBasic;
@@ -18,7 +17,7 @@ public class ValueInterpolationType extends BaseValueBasic<IInterpolation>
     @Override
     public BaseType toData()
     {
-        return new StringType(CollectionUtils.getKey(InterpolationType.MAP, this.value));
+        return new StringType(CollectionUtils.getKey(Interpolation.MAP, this.value));
     }
 
     @Override
@@ -26,7 +25,7 @@ public class ValueInterpolationType extends BaseValueBasic<IInterpolation>
     {
         if (base.isString())
         {
-            this.value = InterpolationType.MAP.get(base.asString());
+            this.value = Interpolation.MAP.get(base.asString());
         }
     }
 }

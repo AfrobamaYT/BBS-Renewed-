@@ -2,6 +2,9 @@ package mchorse.bbs_mod.utils.math;
 
 import org.lwjgl.glfw.GLFW;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum Interpolation implements IInterpolation
 {
     LINEAR("linear", GLFW.GLFW_KEY_L)
@@ -18,6 +21,23 @@ public enum Interpolation implements IInterpolation
         public double interpolate(InterpolationContext context)
         {
             return context.a;
+        }
+    },
+    STEP("step", GLFW.GLFW_KEY_P)
+    {
+        @Override
+        public double interpolate(InterpolationContext context)
+        {
+            double steps = Math.floor(Math.min(1, context.v1));
+
+            if (steps <= 1)
+            {
+                return context.a;
+            }
+
+            double x = Math.floor(context.x * steps) / steps;
+
+            return Interpolations.lerp(context.a, context.b, x);
         }
     },
     QUAD_IN("quad_in", GLFW.GLFW_KEY_Q)
@@ -439,8 +459,18 @@ public enum Interpolation implements IInterpolation
         }
     };
 
+    public static final Map<String, IInterpolation> MAP = new HashMap<>();
+
     public final String key;
     public final int keybind;
+
+    static
+    {
+        for (Interpolation value : Interpolation.values())
+        {
+            MAP.put(((IInterpolation) value).getKey(), value);
+        }
+    }
 
     private static double remapExp(double factor)
     {
