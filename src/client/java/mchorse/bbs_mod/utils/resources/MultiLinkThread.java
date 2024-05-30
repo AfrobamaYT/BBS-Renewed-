@@ -1,10 +1,8 @@
 package mchorse.bbs_mod.utils.resources;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.resources.Link;
 import net.minecraft.client.MinecraftClient;
 
 import java.io.IOException;
@@ -12,7 +10,6 @@ import java.util.Stack;
 
 public class MultiLinkThread implements Runnable
 {
-    private static final Link MULTILINK_PLACEHOLDER = Link.assets("textures/placeholder.png");
     private static MultiLinkThread instance;
     private static Thread thread;
 
@@ -34,7 +31,7 @@ public class MultiLinkThread implements Runnable
             {
                 add(multi);
 
-                return Pixels.fromPNGStream(BBSMod.getProvider().getAsset(MULTILINK_PLACEHOLDER));
+                return null;
             }
             else
             {
@@ -42,10 +39,6 @@ public class MultiLinkThread implements Runnable
 
                 return TextureProcessor.process(multi);
             }
-        }
-        catch (IOException e)
-        {
-            throw e;
         }
         catch (Exception e)
         {
@@ -94,27 +87,25 @@ public class MultiLinkThread implements Runnable
         while (!this.links.isEmpty() && instance != null)
         {
             MultiLink location = this.links.peek();
-            Texture texture = BBSModClient.getTextures().textures.get(location);
 
             try
             {
-                if (texture != null)
+                this.links.pop();
+
+                Pixels pixels = TextureProcessor.process(location);
+
+                MinecraftClient.getInstance().execute(() ->
                 {
-                    this.links.pop();
+                    Texture newTexture = BBSModClient.getTextures().createTexture(location);
 
-                    Pixels pixels = TextureProcessor.process(location);
+                    newTexture.bind();
+                    newTexture.uploadTexture(pixels);
 
-                    MinecraftClient.getInstance().execute(() ->
+                    if (newTexture.isMipmap())
                     {
-                        texture.bind();
-                        texture.uploadTexture(pixels);
-
-                        if (texture.isMipmap())
-                        {
-                            texture.generateMipmap();
-                        }
-                    });
-                }
+                        newTexture.generateMipmap();
+                    }
+                });
 
                 Thread.sleep(100);
             }

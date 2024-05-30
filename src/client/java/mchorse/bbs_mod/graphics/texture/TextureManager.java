@@ -166,6 +166,12 @@ public class TextureManager implements IWatchDogListener
 
                     this.textures.put(link, texture);
                 }
+                else
+                {
+                    this.textures.put(link, this.getError());
+
+                    return this.getError();
+                }
             }
             catch (Exception e)
             {
