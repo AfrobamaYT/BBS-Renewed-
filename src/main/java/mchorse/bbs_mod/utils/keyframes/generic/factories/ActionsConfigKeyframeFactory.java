@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class ActionsConfigKeyframeFactory implements IGenericKeyframeFactory<ActionsConfig>
 {
@@ -36,7 +36,7 @@ public class ActionsConfigKeyframeFactory implements IGenericKeyframeFactory<Act
     }
 
     @Override
-    public ActionsConfig interpolate(ActionsConfig a, ActionsConfig b, IInterpolation interpolation, float x)
+    public ActionsConfig interpolate(ActionsConfig a, ActionsConfig b, IInterp interpolation, float x)
     {
         return a;
     }

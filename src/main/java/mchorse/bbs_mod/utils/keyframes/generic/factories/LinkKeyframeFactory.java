@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
 import mchorse.bbs_mod.utils.resources.MultiLink;
 
@@ -27,7 +27,7 @@ public class LinkKeyframeFactory implements IGenericKeyframeFactory<Link>
     }
 
     @Override
-    public Link interpolate(Link a, Link b, IInterpolation interpolation, float x)
+    public Link interpolate(Link a, Link b, IInterp interpolation, float x)
     {
         if (!this.canAnimate(a, b))
         {

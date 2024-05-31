@@ -18,8 +18,8 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.rasterizers.LineRasterizer;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.interps.rasterizers.LineRasterizer;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
@@ -314,8 +314,8 @@ public class UIPixelsEditor extends UICanvasEditor
 
             for (int i = 0; i <= distance; i++)
             {
-                int xx = (int) Interpolations.lerp(last.x, current.x, i / distance);
-                int yy = (int) Interpolations.lerp(last.y, current.y, i / distance);
+                int xx = (int) Lerps.lerp(last.x, current.x, i / distance);
+                int yy = (int) Lerps.lerp(last.y, current.y, i / distance);
 
                 this.pixelsUndo.setColor(this.pixels, xx, yy, this.drawColor);
             }

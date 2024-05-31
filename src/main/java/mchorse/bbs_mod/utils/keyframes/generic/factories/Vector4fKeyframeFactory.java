@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import org.joml.Vector4f;
 
 public class Vector4fKeyframeFactory implements IGenericKeyframeFactory<Vector4f>
@@ -28,7 +28,7 @@ public class Vector4fKeyframeFactory implements IGenericKeyframeFactory<Vector4f
     }
 
     @Override
-    public Vector4f interpolate(Vector4f a, Vector4f b, IInterpolation interpolation, float x)
+    public Vector4f interpolate(Vector4f a, Vector4f b, IInterp interpolation, float x)
     {
         float factor = interpolation.interpolate(0, 1, x);
 

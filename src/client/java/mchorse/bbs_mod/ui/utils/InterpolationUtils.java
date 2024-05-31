@@ -3,12 +3,12 @@ package mchorse.bbs_mod.ui.utils;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import org.lwjgl.glfw.GLFW;
 
 public class InterpolationUtils
 {
-    public static void setupKeybind(IInterpolation interp, ContextAction action, IKey category)
+    public static void setupKeybind(IInterp interp, ContextAction action, IKey category)
     {
         String key = interp.getKey();
 
@@ -26,12 +26,12 @@ public class InterpolationUtils
         }
     }
 
-    public static IKey getName(IInterpolation interp)
+    public static IKey getName(IInterp interp)
     {
         return UIKeys.C_INTERPOLATION.get(interp.getKey());
     }
 
-    public static IKey getTooltip(IInterpolation interp)
+    public static IKey getTooltip(IInterp interp)
     {
         return UIKeys.C_INTERPOLATION_TIPS.get(interp.getKey());
     }

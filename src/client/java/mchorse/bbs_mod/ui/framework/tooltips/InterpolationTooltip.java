@@ -4,7 +4,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.renderers.InterpolationRenderer;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 import java.util.function.Supplier;
 
@@ -12,16 +12,16 @@ public class InterpolationTooltip implements ITooltip
 {
     public float ax;
     public float ay;
-    public Supplier<IInterpolation> interpolation;
+    public Supplier<IInterp> interpolation;
     public Supplier<Integer> duration;
     public int margin = 10;
 
-    public InterpolationTooltip(float ax, float ay, Supplier<IInterpolation> interpolation)
+    public InterpolationTooltip(float ax, float ay, Supplier<IInterp> interpolation)
     {
         this(ax, ay, interpolation, null);
     }
 
-    public InterpolationTooltip(float ax, float ay, Supplier<IInterpolation> interpolation, Supplier<Integer> duration)
+    public InterpolationTooltip(float ax, float ay, Supplier<IInterp> interpolation, Supplier<Integer> duration)
     {
         this.ax = ax;
         this.ay = ay;
@@ -46,7 +46,7 @@ public class InterpolationTooltip implements ITooltip
     public void renderTooltip(UIContext context)
     {
         Area area = context.tooltip.area;
-        IInterpolation interpolation = this.interpolation == null ? null : this.interpolation.get();
+        IInterp interpolation = this.interpolation == null ? null : this.interpolation.get();
         int duration = this.duration == null ? 40 : this.duration.get();
 
         float fx = (this.ax - 0.5F) * 2;

@@ -38,8 +38,8 @@ import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
@@ -120,7 +120,7 @@ public class UIPropertyEditor extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interpolation.values(), this.properties.getCurrent().getInterpolation(), this::pickInterpolation);
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.properties.getCurrent().getInterpolation(), this::pickInterpolation);
         });
         this.interp.tooltip(tooltip);
 
@@ -429,7 +429,7 @@ public class UIPropertyEditor extends UIElement
         this.properties.setValue(value);
     }
 
-    public void pickInterpolation(IInterpolation interp)
+    public void pickInterpolation(IInterp interp)
     {
         this.properties.setInterpolation(interp);
     }

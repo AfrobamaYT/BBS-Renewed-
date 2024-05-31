@@ -4,7 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
@@ -37,7 +37,7 @@ public class ItemStackKeyframeFactory implements IGenericKeyframeFactory<ItemSta
     }
 
     @Override
-    public ItemStack interpolate(ItemStack a, ItemStack b, IInterpolation interpolation, float x)
+    public ItemStack interpolate(ItemStack a, ItemStack b, IInterp interpolation, float x)
     {
         return a;
     }

@@ -4,7 +4,7 @@ import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.clips.overwrite.DollyClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class DollyToPathConverter implements IClipConverter<DollyClip, PathClip>
 {
@@ -13,7 +13,7 @@ public class DollyToPathConverter implements IClipConverter<DollyClip, PathClip>
     {
         PathClip path = new PathClip();
         Position position = new Position();
-        IInterpolation interpolation = dolly.interp.get();
+        IInterp interpolation = dolly.interp.get();
 
         dolly.applyLast(new CameraClipContext(), position);
 

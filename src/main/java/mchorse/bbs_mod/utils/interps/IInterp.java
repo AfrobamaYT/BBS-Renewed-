@@ -1,8 +1,8 @@
-package mchorse.bbs_mod.utils.math;
+package mchorse.bbs_mod.utils.interps;
 
-public interface IInterpolation
+public interface IInterp
 {
-    public static final InterpolationContext context = new InterpolationContext();
+    public static final InterpContext context = new InterpContext();
 
     public default float interpolate(float a, float b, float x)
     {
@@ -14,7 +14,7 @@ public interface IInterpolation
         return this.interpolate(context.set(a, b, x));
     }
 
-    public double interpolate(InterpolationContext context);
+    public double interpolate(InterpContext context);
 
     public String getKey();
 

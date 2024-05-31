@@ -4,8 +4,8 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 
 public class GenericKeyframe <T> extends BaseValue
 {
@@ -18,7 +18,7 @@ public class GenericKeyframe <T> extends BaseValue
     private int duration;
 
     private T value;
-    private IInterpolation interp = Interpolation.LINEAR;
+    private IInterp interp = Interps.LINEAR;
 
     private final IGenericKeyframeFactory<T> factory;
 
@@ -78,12 +78,12 @@ public class GenericKeyframe <T> extends BaseValue
         this.postNotifyParent();
     }
 
-    public IInterpolation getInterpolation()
+    public IInterp getInterpolation()
     {
         return this.interp;
     }
 
-    public void setInterpolation(IInterpolation interp)
+    public void setInterpolation(IInterp interp)
     {
         this.preNotifyParent();
         this.interp = interp;
@@ -107,7 +107,7 @@ public class GenericKeyframe <T> extends BaseValue
         data.putInt("duration", this.duration);
         data.put("value", this.factory.toData(this.value));
 
-        if (this.interp != Interpolation.LINEAR) data.putString("interp", this.interp.toString());
+        if (this.interp != Interps.LINEAR) data.putString("interp", this.interp.toString());
 
         return data;
     }
@@ -125,6 +125,6 @@ public class GenericKeyframe <T> extends BaseValue
         if (map.has("tick")) this.tick = map.getLong("tick");
         if (map.has("duration")) this.duration = map.getInt("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
-        if (map.has("interp")) this.interp = Interpolation.valueOf(map.getString("interp"));
+        if (map.has("interp")) this.interp = Interps.valueOf(map.getString("interp"));
     }
 }

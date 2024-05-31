@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class AnchorKeyframeFactory implements IGenericKeyframeFactory<AnchorProperty.Anchor>
 {
@@ -34,7 +34,7 @@ public class AnchorKeyframeFactory implements IGenericKeyframeFactory<AnchorProp
     }
 
     @Override
-    public AnchorProperty.Anchor interpolate(AnchorProperty.Anchor a, AnchorProperty.Anchor b, IInterpolation interpolation, float x)
+    public AnchorProperty.Anchor interpolate(AnchorProperty.Anchor a, AnchorProperty.Anchor b, IInterp interpolation, float x)
     {
         return a;
     }

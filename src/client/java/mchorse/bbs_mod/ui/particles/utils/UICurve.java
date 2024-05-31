@@ -18,8 +18,8 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Tessellator;
@@ -320,15 +320,15 @@ public class UICurve extends UIElement
 
                 for (int j = 0; j < d; j++)
                 {
-                    int x1 = (int) Interpolations.lerp(v1.x, v2.x, j / d);
-                    int vy1 = (int) Interpolations.cubicHermite(v0.y, v1.y, v2.y, v3.y, j / d);
+                    int x1 = (int) Lerps.lerp(v1.x, v2.x, j / d);
+                    int vy1 = (int) Lerps.cubicHermite(v0.y, v1.y, v2.y, v3.y, j / d);
 
                     line.add(x1, vy1);
 
                     if (last)
                     {
-                        int x2 = (int) Interpolations.lerp(v1.x, v2.x, (j + 1) / d);
-                        int vy2 = (int) Interpolations.cubicHermite(v0.y, v1.y, v2.y, v3.y, (j + 1) / d);
+                        int x2 = (int) Lerps.lerp(v1.x, v2.x, (j + 1) / d);
+                        int vy2 = (int) Lerps.cubicHermite(v0.y, v1.y, v2.y, v3.y, (j + 1) / d);
 
                         line.add(x2, vy2);
                     }

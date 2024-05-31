@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.utils.keyframes;
 
 import mchorse.bbs_mod.utils.Pair;
-import mchorse.bbs_mod.utils.math.Interpolation;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import org.joml.Vector2d;
 
 import java.util.ArrayList;
@@ -55,8 +55,8 @@ public class KeyframeSimplifier
             Keyframe left = newChannel.get(a);
             Keyframe right = newChannel.get(b);
 
-            left.setInterpolation(Interpolation.BEZIER);
-            right.setInterpolation(Interpolation.BEZIER);
+            left.setInterpolation(Interps.BEZIER);
+            right.setInterpolation(Interps.BEZIER);
             left.setRx(pair.a.getRx());
             left.setRy(pair.a.getRy());
             right.setLx(pair.b.getLx());
@@ -81,8 +81,8 @@ public class KeyframeSimplifier
 
         left.copy(keyframes.get(0));
         right.copy(keyframes.get(keyframes.size() - 1));
-        left.setInterpolation(Interpolation.BEZIER);
-        right.setInterpolation(Interpolation.BEZIER);
+        left.setInterpolation(Interps.BEZIER);
+        right.setInterpolation(Interps.BEZIER);
         left.setRx(5);
         left.setRy(0);
         right.setLx(5);
@@ -163,7 +163,7 @@ public class KeyframeSimplifier
 
         for (int i = 0; i < 10; i++)
         {
-            float tick = Interpolations.lerp(left.getTick(), right.getTick(), i / 10F);
+            float tick = Lerps.lerp(left.getTick(), right.getTick(), i / 10F);
             double value = left.interpolate(right, (tick - left.getTick()) / (double) (right.getTick() - left.getTick()));
             double channelValue = channel.interpolate(tick);
 

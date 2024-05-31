@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.utils.colors;
 
 import mchorse.bbs_mod.utils.StringUtils;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class Colors
 {
@@ -95,13 +95,13 @@ public class Colors
         target.set(a, alpha);
         COLOR.set(b, alpha);
 
-        target.r = Interpolations.lerp(target.r, COLOR.r, x);
-        target.g = Interpolations.lerp(target.g, COLOR.g, x);
-        target.b = Interpolations.lerp(target.b, COLOR.b, x);
+        target.r = Lerps.lerp(target.r, COLOR.r, x);
+        target.g = Lerps.lerp(target.g, COLOR.g, x);
+        target.b = Lerps.lerp(target.b, COLOR.b, x);
 
         if (alpha)
         {
-            target.a = Interpolations.lerp(target.a, COLOR.a, x);
+            target.a = Lerps.lerp(target.a, COLOR.a, x);
         }
     }
 

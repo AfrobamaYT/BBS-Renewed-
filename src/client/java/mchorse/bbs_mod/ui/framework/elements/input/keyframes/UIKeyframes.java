@@ -16,8 +16,8 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -167,7 +167,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         }
     }
 
-    public void setInterpolation(IInterpolation interp)
+    public void setInterpolation(IInterp interp)
     {
         for (UISheet sheet : this.getSheets())
         {
@@ -319,7 +319,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         long tick = Math.round(this.fromGraphX(mouseX));
         double value = this.current == null ? sheet.channel.interpolate(tick) : this.fromGraphY(mouseY);
 
-        IInterpolation interp = Interpolation.LINEAR;
+        IInterp interp = Interps.LINEAR;
         Keyframe frame = this.getCurrent();
         long oldTick = tick;
 
@@ -860,7 +860,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 int fx = this.toGraphX(frame.getTick());
 
                 /* Main line */
-                if (prev.getInterpolation() == Interpolation.LINEAR)
+                if (prev.getInterpolation() == Interps.LINEAR)
                 {
                     main.add(px, this.toGraphY(prev.getValue()))
                         .add(fx, this.toGraphY(frame.getValue()));

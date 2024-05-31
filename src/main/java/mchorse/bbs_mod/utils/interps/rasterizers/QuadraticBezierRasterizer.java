@@ -1,6 +1,6 @@
-package mchorse.bbs_mod.utils.math.rasterizers;
+package mchorse.bbs_mod.utils.interps.rasterizers;
 
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
@@ -20,8 +20,8 @@ public class QuadraticBezierRasterizer extends BaseRasterizer
     @Override
     protected Vector2i calculate(float i)
     {
-        double dx = Interpolations.quadBezier(this.a.x, this.control.x, this.b.x, i);
-        double dy = Interpolations.quadBezier(this.a.y, this.control.y, this.b.y, i);
+        double dx = Lerps.quadBezier(this.a.x, this.control.x, this.b.x, i);
+        double dy = Lerps.quadBezier(this.a.y, this.control.y, this.b.y, i);
 
         return new Vector2i((int) Math.round(dx), (int) Math.round(dy));
     }

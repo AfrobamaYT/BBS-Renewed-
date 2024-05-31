@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.utils.math;
+package mchorse.bbs_mod.utils;
 
 import org.joml.Vector3i;
 

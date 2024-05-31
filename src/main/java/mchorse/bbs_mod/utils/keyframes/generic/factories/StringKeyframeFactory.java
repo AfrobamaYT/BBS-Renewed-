@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.StringType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class StringKeyframeFactory implements IGenericKeyframeFactory<String>
 {
@@ -25,7 +25,7 @@ public class StringKeyframeFactory implements IGenericKeyframeFactory<String>
     }
 
     @Override
-    public String interpolate(String a, String b, IInterpolation interpolation, float x)
+    public String interpolate(String a, String b, IInterp interpolation, float x)
     {
         return a;
     }

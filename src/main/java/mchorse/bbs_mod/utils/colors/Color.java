@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.utils.colors;
 
 import mchorse.bbs_mod.utils.StringUtils;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 
 public class Color
 {

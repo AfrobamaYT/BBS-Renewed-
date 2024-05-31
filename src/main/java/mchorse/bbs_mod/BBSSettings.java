@@ -11,7 +11,7 @@ import mchorse.bbs_mod.settings.values.ValueLink;
 import mchorse.bbs_mod.settings.values.ValueString;
 import mchorse.bbs_mod.settings.values.ValueVideoSettings;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 
 public class BBSSettings
 {

@@ -7,8 +7,8 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix3f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -164,7 +164,7 @@ public class OrbitCamera
 
     protected float getAngleSpeed()
     {
-        return (1 / 180F) * Interpolations.lerp(1F, (float) this.speed.getValue(), 0.8F);
+        return (1 / 180F) * Lerps.lerp(1F, (float) this.speed.getValue(), 0.8F);
     }
 
     protected float getSpeed()

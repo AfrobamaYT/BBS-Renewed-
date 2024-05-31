@@ -2,7 +2,7 @@ package mchorse.bbs_mod.math.functions.utility;
 
 import mchorse.bbs_mod.math.IExpression;
 import mchorse.bbs_mod.math.functions.NNFunction;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class Lerp extends NNFunction
 {
@@ -20,6 +20,6 @@ public class Lerp extends NNFunction
     @Override
     public double doubleValue()
     {
-        return Interpolations.lerp(this.getArg(0).doubleValue(), this.getArg(1).doubleValue(), this.getArg(2).doubleValue());
+        return Lerps.lerp(this.getArg(0).doubleValue(), this.getArg(1).doubleValue(), this.getArg(2).doubleValue());
     }
 }

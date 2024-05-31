@@ -8,7 +8,7 @@ import mchorse.bbs_mod.camera.values.ValuePoint;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 
 public class CircularClip extends CameraClip
 {

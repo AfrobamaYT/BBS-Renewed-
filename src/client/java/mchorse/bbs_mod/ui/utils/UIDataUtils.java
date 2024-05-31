@@ -10,8 +10,8 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
 import mchorse.bbs_mod.ui.utils.renderers.InputRenderer;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.Interpolation;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.MinecraftClient;
 
 import java.util.Collection;
@@ -30,11 +30,11 @@ public class UIDataUtils
         double ticks = context.getTickTransition() % 80D;
         double factor = Math.abs(ticks / 80D * 2 - 1F);
 
-        factor = Interpolation.EXP_INOUT.interpolate(0, 1, factor);
+        factor = Interps.EXP_INOUT.interpolate(0, 1, factor);
 
-        double factor2 = Interpolations.envelope(ticks, 37, 40, 40, 43);
+        double factor2 = Lerps.envelope(ticks, 37, 40, 40, 43);
 
-        factor2 = Interpolation.CUBIC_OUT.interpolate(0, 1, factor2);
+        factor2 = Interps.CUBIC_OUT.interpolate(0, 1, factor2);
 
         int offset = (int) (factor * 70 + factor2 * 2);
 

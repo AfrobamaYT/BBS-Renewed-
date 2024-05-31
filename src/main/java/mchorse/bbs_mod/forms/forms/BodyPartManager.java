@@ -5,7 +5,7 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +59,7 @@ public class BodyPartManager implements IMapSerializable
         }
     }
 
-    public void tween(BodyPartManager parts, int duration, IInterpolation interpolation, int offset, boolean playing)
+    public void tween(BodyPartManager parts, int duration, IInterp interpolation, int offset, boolean playing)
     {
         if (this.parts.size() > parts.parts.size())
         {

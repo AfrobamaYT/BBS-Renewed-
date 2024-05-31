@@ -10,7 +10,7 @@ import mchorse.bbs_mod.particles.components.IComponentParticleRender;
 import mchorse.bbs_mod.particles.components.ParticleComponentBase;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
@@ -267,10 +267,10 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         this.calculateUVs(particle, emitter, transition);
 
         /* Render the particle */
-        double px = Interpolations.lerp(particle.prevPosition.x, particle.position.x, transition);
-        double py = Interpolations.lerp(particle.prevPosition.y, particle.position.y, transition);
-        double pz = Interpolations.lerp(particle.prevPosition.z, particle.position.z, transition);
-        float angle = Interpolations.lerp(particle.prevRotation, particle.rotation, transition);
+        double px = Lerps.lerp(particle.prevPosition.x, particle.position.x, transition);
+        double py = Lerps.lerp(particle.prevPosition.y, particle.position.y, transition);
+        double pz = Lerps.lerp(particle.prevPosition.z, particle.position.z, transition);
+        float angle = Lerps.lerp(particle.prevRotation, particle.rotation, transition);
 
         if (particle.relativePosition && particle.relativeRotation)
         {
@@ -375,7 +375,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         this.calculateUVs(particle, null, transition);
 
         this.w = this.h = 0.5F;
-        float angle = Interpolations.lerp(particle.prevRotation, particle.rotation, transition);
+        float angle = Lerps.lerp(particle.prevRotation, particle.rotation, transition);
 
         /* Calculate the geometry for billboards using cool matrix math */
         this.vertices[0].set(-this.w / 2, -this.h / 2, 0, 1);

@@ -3,7 +3,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.IntType;
 import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class ColorKeyframeFactory implements IGenericKeyframeFactory<Color>
 {
@@ -33,7 +33,7 @@ public class ColorKeyframeFactory implements IGenericKeyframeFactory<Color>
     }
 
     @Override
-    public Color interpolate(Color a, Color b, IInterpolation interpolation, float x)
+    public Color interpolate(Color a, Color b, IInterp interpolation, float x)
     {
         this.i.r = interpolation.interpolate(a.r, b.r, x);
         this.i.g = interpolation.interpolate(a.g, b.g, x);

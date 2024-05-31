@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.FloatType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class FloatKeyframeFactory implements IGenericKeyframeFactory<Float>
 {
@@ -25,7 +25,7 @@ public class FloatKeyframeFactory implements IGenericKeyframeFactory<Float>
     }
 
     @Override
-    public Float interpolate(Float a, Float b, IInterpolation interpolation, float x)
+    public Float interpolate(Float a, Float b, IInterp interpolation, float x)
     {
         return interpolation.interpolate(a, b, x);
     }

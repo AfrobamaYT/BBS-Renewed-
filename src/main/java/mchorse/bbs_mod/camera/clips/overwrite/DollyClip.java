@@ -4,19 +4,19 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.camera.values.ValueInterpolation;
+import mchorse.bbs_mod.camera.values.ValueInterp;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector3f;
 
 public class DollyClip extends IdleClip
 {
     public final ValueFloat distance = new ValueFloat("distance", 0.1F);
-    public final ValueInterpolation interp = new ValueInterpolation("interp");
+    public final ValueInterp interp = new ValueInterp("interp");
     public final ValueFloat yaw = new ValueFloat("yaw", 0F);
     public final ValueFloat pitch = new ValueFloat("pitch", 0F);
 
@@ -44,7 +44,7 @@ public class DollyClip extends IdleClip
     {
         super.applyClip(context, position);
 
-        IInterpolation interp = this.interp.get();
+        IInterp interp = this.interp.get();
         Point point = this.position.get().point;
         double x = point.x;
         double y = point.y;

@@ -1,7 +1,5 @@
 package mchorse.bbs_mod.utils;
 
-import mchorse.bbs_mod.utils.math.MathUtils;
-
 import java.util.function.Function;
 
 public class Factor

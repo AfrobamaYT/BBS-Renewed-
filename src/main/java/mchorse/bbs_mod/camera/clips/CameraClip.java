@@ -4,7 +4,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 public abstract class CameraClip extends Clip
 {
@@ -41,14 +41,14 @@ public abstract class CameraClip extends Clip
             temporary.set(position);
             this.applyClip(context, temporary);
 
-            position.point.x = Interpolations.lerp(position.point.x, temporary.point.x, factor);
-            position.point.y = Interpolations.lerp(position.point.y, temporary.point.y, factor);
-            position.point.z = Interpolations.lerp(position.point.z, temporary.point.z, factor);
+            position.point.x = Lerps.lerp(position.point.x, temporary.point.x, factor);
+            position.point.y = Lerps.lerp(position.point.y, temporary.point.y, factor);
+            position.point.z = Lerps.lerp(position.point.z, temporary.point.z, factor);
 
-            position.angle.yaw = Interpolations.lerp(position.angle.yaw, temporary.angle.yaw, factor);
-            position.angle.pitch = Interpolations.lerp(position.angle.pitch, temporary.angle.pitch, factor);
-            position.angle.roll = Interpolations.lerp(position.angle.roll, temporary.angle.roll, factor);
-            position.angle.fov = Interpolations.lerp(position.angle.fov, temporary.angle.fov, factor);
+            position.angle.yaw = Lerps.lerp(position.angle.yaw, temporary.angle.yaw, factor);
+            position.angle.pitch = Lerps.lerp(position.angle.pitch, temporary.angle.pitch, factor);
+            position.angle.roll = Lerps.lerp(position.angle.roll, temporary.angle.roll, factor);
+            position.angle.fov = Lerps.lerp(position.angle.fov, temporary.angle.fov, factor);
         }
     }
 

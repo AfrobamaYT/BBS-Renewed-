@@ -17,7 +17,7 @@ import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -31,11 +31,11 @@ public class UICameraUtils
 
     /* Interpolations context menu */
 
-    public static void interps(UIContext context, IInterpolation[] values, IInterpolation current, Consumer<IInterpolation> consumer)
+    public static void interps(UIContext context, IInterp[] values, IInterp current, Consumer<IInterp> consumer)
     {
         context.replaceContextMenu((menu) ->
         {
-            for (IInterpolation interpolation : values)
+            for (IInterp interpolation : values)
             {
                 ContextAction action;
 
@@ -53,11 +53,11 @@ public class UICameraUtils
         });
     }
 
-    public static void interps(UIContext context, Collection<IInterpolation> values, IInterpolation current, Consumer<IInterpolation> consumer)
+    public static void interps(UIContext context, Collection<IInterp> values, IInterp current, Consumer<IInterp> consumer)
     {
         context.replaceContextMenu((menu) ->
         {
-            for (IInterpolation interpolation : values)
+            for (IInterp interpolation : values)
             {
                 ContextAction action;
 

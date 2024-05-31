@@ -9,8 +9,8 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.InterpolationUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.MathUtils;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class InterpolationRenderer
 {
     private static Color color = new Color();
 
-    public static void renderInterpolationPreview(IInterpolation interp, UIContext context, int x, int y, float anchorX, float anchorY, int duration)
+    public static void renderInterpolationPreview(IInterp interp, UIContext context, int x, int y, float anchorX, float anchorY, int duration)
     {
         if (interp == null)
         {

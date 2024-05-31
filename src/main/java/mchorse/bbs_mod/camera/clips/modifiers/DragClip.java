@@ -6,7 +6,7 @@ import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 /**
  * Drag modifier
@@ -93,13 +93,13 @@ public class DragClip extends ComponentClip
 
                 context.applyUnderneath(offset + (int) tick, tick % 1, this.current);
 
-                if (isX) position.point.x = Interpolations.lerp(position.point.x, this.current.point.x, factor);
-                if (isY) position.point.y = Interpolations.lerp(position.point.y, this.current.point.y, factor);
-                if (isZ) position.point.z = Interpolations.lerp(position.point.z, this.current.point.z, factor);
-                if (isYaw) position.angle.yaw = Interpolations.lerp(position.angle.yaw, this.current.angle.yaw, factor);
-                if (isPitch) position.angle.pitch = Interpolations.lerp(position.angle.pitch, this.current.angle.pitch, factor);
-                if (isRoll) position.angle.roll = Interpolations.lerp(position.angle.roll, this.current.angle.roll, factor);
-                if (isFov) position.angle.fov = Interpolations.lerp(position.angle.fov, this.current.angle.fov, factor);
+                if (isX) position.point.x = Lerps.lerp(position.point.x, this.current.point.x, factor);
+                if (isY) position.point.y = Lerps.lerp(position.point.y, this.current.point.y, factor);
+                if (isZ) position.point.z = Lerps.lerp(position.point.z, this.current.point.z, factor);
+                if (isYaw) position.angle.yaw = Lerps.lerp(position.angle.yaw, this.current.angle.yaw, factor);
+                if (isPitch) position.angle.pitch = Lerps.lerp(position.angle.pitch, this.current.angle.pitch, factor);
+                if (isRoll) position.angle.roll = Lerps.lerp(position.angle.roll, this.current.angle.roll, factor);
+                if (isFov) position.angle.fov = Lerps.lerp(position.angle.fov, this.current.angle.fov, factor);
             }
 
             if (!isX) position.point.x = this.original.point.x;
@@ -114,13 +114,13 @@ public class DragClip extends ComponentClip
         {
             context.applyUnderneath(context.ticks, context.transition, this.current);
 
-            if (isX) position.point.x = this.prevX = Interpolations.lerp(this.prevX, this.current.point.x, factor);
-            if (isY) position.point.y = this.prevY = Interpolations.lerp(this.prevY, this.current.point.y, factor);
-            if (isZ) position.point.z = this.prevZ = Interpolations.lerp(this.prevZ, this.current.point.z, factor);
-            if (isYaw) position.angle.yaw = this.prevYaw = Interpolations.lerp(this.prevYaw, this.current.angle.yaw, factor);
-            if (isPitch) position.angle.pitch = this.prevPitch = Interpolations.lerp(this.prevPitch, this.current.angle.pitch, factor);
-            if (isRoll) position.angle.roll = this.prevRoll = Interpolations.lerp(this.prevRoll, this.current.angle.roll, factor);
-            if (isFov) position.angle.fov = this.prevFov = Interpolations.lerp(this.prevFov, this.current.angle.fov, factor);
+            if (isX) position.point.x = this.prevX = Lerps.lerp(this.prevX, this.current.point.x, factor);
+            if (isY) position.point.y = this.prevY = Lerps.lerp(this.prevY, this.current.point.y, factor);
+            if (isZ) position.point.z = this.prevZ = Lerps.lerp(this.prevZ, this.current.point.z, factor);
+            if (isYaw) position.angle.yaw = this.prevYaw = Lerps.lerp(this.prevYaw, this.current.angle.yaw, factor);
+            if (isPitch) position.angle.pitch = this.prevPitch = Lerps.lerp(this.prevPitch, this.current.angle.pitch, factor);
+            if (isRoll) position.angle.roll = this.prevRoll = Lerps.lerp(this.prevRoll, this.current.angle.roll, factor);
+            if (isFov) position.angle.fov = this.prevFov = Lerps.lerp(this.prevFov, this.current.angle.fov, factor);
         }
     }
 

@@ -14,7 +14,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.Interps;
 
 public class UIDollyClip extends UIClip<DollyClip>
 {
@@ -51,7 +51,7 @@ public class UIDollyClip extends UIClip<DollyClip>
 
         this.interp = new UIButton(UIKeys.CAMERA_PANELS_INTERPOLATION, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interpolation.values(), this.clip.interp.get(), (i) -> this.clip.interp.set(i));
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.clip.interp.get(), (i) -> this.clip.interp.set(i));
         });
         this.interp.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interp.get()));
     }

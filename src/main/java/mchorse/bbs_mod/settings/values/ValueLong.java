@@ -3,7 +3,7 @@ package mchorse.bbs_mod.settings.values;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.LongType;
 import mchorse.bbs_mod.settings.values.base.BaseValueNumber;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 
 public class ValueLong extends BaseValueNumber<Long>
 {

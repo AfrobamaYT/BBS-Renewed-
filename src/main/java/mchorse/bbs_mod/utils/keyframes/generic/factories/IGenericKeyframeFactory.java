@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public interface IGenericKeyframeFactory <T>
 {
@@ -11,5 +11,5 @@ public interface IGenericKeyframeFactory <T>
 
     public T copy(T value);
 
-    public T interpolate(T a, T b, IInterpolation interpolation, float x);
+    public T interpolate(T a, T b, IInterp interpolation, float x);
 }

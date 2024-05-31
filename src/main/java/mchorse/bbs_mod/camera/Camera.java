@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.camera;
 
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;

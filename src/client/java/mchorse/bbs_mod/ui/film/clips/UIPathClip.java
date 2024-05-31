@@ -16,8 +16,8 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
-import mchorse.bbs_mod.utils.math.Interpolation;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector2d;
 
 /**
@@ -57,12 +57,12 @@ public class UIPathClip extends UIClip<PathClip>
         this.angle = new UIAngleModule(editor);
         this.interpPoint = new UIButton(UIKeys.CAMERA_PANELS_POINT, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interpolation.MAP.values(), this.clip.interpolationPoint.get(), this.clip.interpolationPoint::set);
+            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationPoint.get(), this.clip.interpolationPoint::set);
         });
         this.interpPoint.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationPoint.get()));
         this.interpAngle = new UIButton(UIKeys.CAMERA_PANELS_ANGLE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interpolation.MAP.values(), this.clip.interpolationAngle.get(), this.clip.interpolationAngle::set);
+            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationAngle.get(), this.clip.interpolationAngle::set);
         });
         this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.get()));
 

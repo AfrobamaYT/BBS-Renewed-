@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ByteType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class BooleanKeyframeFactory implements IGenericKeyframeFactory<Boolean>
 {
@@ -25,7 +25,7 @@ public class BooleanKeyframeFactory implements IGenericKeyframeFactory<Boolean>
     }
 
     @Override
-    public Boolean interpolate(Boolean a, Boolean b, IInterpolation interpolation, float x)
+    public Boolean interpolate(Boolean a, Boolean b, IInterp interpolation, float x)
     {
         return a;
     }

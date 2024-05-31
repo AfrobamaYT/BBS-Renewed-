@@ -1,6 +1,6 @@
-package mchorse.bbs_mod.utils.math.rasterizers;
+package mchorse.bbs_mod.utils.interps.rasterizers;
 
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 
@@ -18,8 +18,8 @@ public class LineRasterizer extends BaseRasterizer
     @Override
     protected Vector2i calculate(float i)
     {
-        double x = Interpolations.lerp(this.start.x, this.end.x, i);
-        double y = Interpolations.lerp(this.start.y, this.end.y, i);
+        double x = Lerps.lerp(this.start.x, this.end.x, i);
+        double y = Lerps.lerp(this.start.y, this.end.y, i);
 
         return new Vector2i((int) Math.round(x), (int) Math.round(y));
     }

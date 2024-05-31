@@ -4,8 +4,8 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 
 public class Keyframe extends BaseValue
 {
@@ -15,7 +15,7 @@ public class Keyframe extends BaseValue
     private long tick;
     private double value;
 
-    private IInterpolation interp = Interpolation.LINEAR;
+    private IInterp interp = Interps.LINEAR;
 
     private float rx = 5;
     private float ry;
@@ -62,12 +62,12 @@ public class Keyframe extends BaseValue
         this.postNotifyParent();
     }
 
-    public IInterpolation getInterpolation()
+    public IInterp getInterpolation()
     {
         return this.interp;
     }
 
-    public void setInterpolation(IInterpolation interp)
+    public void setInterpolation(IInterp interp)
     {
         this.preNotifyParent();
         this.interp = interp;
@@ -124,12 +124,12 @@ public class Keyframe extends BaseValue
 
     public double interpolateTicks(Keyframe frame, double ticks)
     {
-        return KeyframeInterpolation.interpolateK(this, frame, (ticks - this.tick) / (frame.tick - this.tick));
+        return KeyframeInterpolation.interpolate(this, frame, (ticks - this.tick) / (frame.tick - this.tick));
     }
 
     public double interpolate(Keyframe frame, double x)
     {
-        return KeyframeInterpolation.interpolateK(this, frame, x);
+        return KeyframeInterpolation.interpolate(this, frame, x);
     }
 
     public Keyframe copy()
@@ -160,7 +160,7 @@ public class Keyframe extends BaseValue
         data.putLong("tick", this.tick);
         data.putDouble("value", this.value);
 
-        if (this.interp != Interpolation.LINEAR)
+        if (this.interp != Interps.LINEAR)
         {
             int index = KeyframeInterpolation.INTERPOLATIONS.indexOf(this.interp);
 

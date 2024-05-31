@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.utils.math;
+package mchorse.bbs_mod.utils.interps;
 
 /**
  * Interpolation methods
@@ -10,7 +10,7 @@ package mchorse.bbs_mod.utils.math;
  * @link http://paulbourke.net/miscellaneous/interpolation/
  * @link https://github.com/daipenger/BauerCam
  */
-public class Interpolations
+public class Lerps
 {
     /**
      * Linear interpolation

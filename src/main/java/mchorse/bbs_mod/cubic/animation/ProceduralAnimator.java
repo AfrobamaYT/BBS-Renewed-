@@ -4,8 +4,8 @@ import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -44,10 +44,10 @@ public class ProceduralAnimator implements IAnimator
         /* Common variables */
         float handSwingProgress = entity.getHandSwingProgress(transition);
         float age = entity.getAge() + transition;
-        float bodyYaw = Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition);
-        float headYaw = Interpolations.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), transition);
+        float bodyYaw = Lerps.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition);
+        float headYaw = Lerps.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), transition);
         float yaw = headYaw - bodyYaw;
-        float pitch = Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), transition);
+        float pitch = Lerps.lerp(entity.getPrevPitch(), entity.getPitch(), transition);
         float limbSpeed = entity.getLimbSpeed(transition);
         float limbPhase = entity.getLimbPos(transition);
         float leaningPitch = entity.getLeaningPitch(transition);

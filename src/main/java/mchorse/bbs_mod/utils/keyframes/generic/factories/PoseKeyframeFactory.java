@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.Transform;
 
@@ -40,7 +40,7 @@ public class PoseKeyframeFactory implements IGenericKeyframeFactory<Pose>
     }
 
     @Override
-    public Pose interpolate(Pose a, Pose b, IInterpolation interpolation, float x)
+    public Pose interpolate(Pose a, Pose b, IInterp interpolation, float x)
     {
         float factor = interpolation.interpolate(0, 1, x);
 

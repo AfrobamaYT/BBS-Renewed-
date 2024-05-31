@@ -7,7 +7,7 @@ import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.utils.StringUtils;
-import mchorse.bbs_mod.utils.math.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 /**
  * Solid color (not necessarily static)
@@ -91,9 +91,9 @@ public class Solid extends Tint
 
     public void lerp(Particle particle, float factor)
     {
-        particle.r = Interpolations.lerp(particle.r, (float) this.r.get(), factor);
-        particle.g = Interpolations.lerp(particle.g, (float) this.g.get(), factor);
-        particle.b = Interpolations.lerp(particle.b, (float) this.b.get(), factor);
-        particle.a = Interpolations.lerp(particle.a, (float) this.a.get(), factor);
+        particle.r = Lerps.lerp(particle.r, (float) this.r.get(), factor);
+        particle.g = Lerps.lerp(particle.g, (float) this.g.get(), factor);
+        particle.b = Lerps.lerp(particle.b, (float) this.b.get(), factor);
+        particle.a = Lerps.lerp(particle.a, (float) this.a.get(), factor);
     }
 }

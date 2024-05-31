@@ -3,7 +3,7 @@ package mchorse.bbs_mod.camera.clips.converters;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class PathToKeyframeConverter implements IClipConverter<PathClip, KeyframeClip>
 {
@@ -16,8 +16,8 @@ public class PathToKeyframeConverter implements IClipConverter<PathClip, Keyfram
         KeyframeClip keyframe = new KeyframeClip();
 
         keyframe.copy(path);
-        IInterpolation pos = path.interpolationPoint.get();
-        IInterpolation angle = path.interpolationAngle.get();
+        IInterp pos = path.interpolationPoint.get();
+        IInterp angle = path.interpolationAngle.get();
 
         long x;
 

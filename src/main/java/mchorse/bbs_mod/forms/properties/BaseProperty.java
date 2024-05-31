@@ -3,8 +3,8 @@ package mchorse.bbs_mod.forms.properties;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     private boolean playing = true;
     protected int ticks = -1;
     protected int duration;
-    protected IInterpolation interpolation = Interpolation.LINEAR;
+    protected IInterp interpolation = Interps.LINEAR;
 
     protected boolean canAnimate = true;
 
@@ -82,13 +82,13 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     }
 
     @Override
-    public void tween(T newValue, T oldValue, int duration, IInterpolation interpolation, int offset, boolean playing)
+    public void tween(T newValue, T oldValue, int duration, IInterp interpolation, int offset, boolean playing)
     {
         this.lastValue = oldValue;
         this.value = newValue;
 
         this.ticks = this.duration = duration;
-        this.interpolation = interpolation == null ? Interpolation.LINEAR : interpolation;
+        this.interpolation = interpolation == null ? Interps.LINEAR : interpolation;
         this.playing = playing;
 
         this.ticks -= offset;

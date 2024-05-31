@@ -6,8 +6,8 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -72,7 +72,7 @@ public class OrbitFilmCameraController implements ICameraController
 
         if (entity != null)
         {
-            float renderYaw = MathUtils.toRad(-Interpolations.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition) + 180F);
+            float renderYaw = MathUtils.toRad(-Lerps.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition) + 180F);
             Vector3d offset = new Vector3d(Matrices.rotation(this.rotation.x, this.rotation.y + renderYaw));
 
             offset.mul(this.distance.getValue());

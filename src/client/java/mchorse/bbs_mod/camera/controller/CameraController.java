@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.camera.controller;
 
 import mchorse.bbs_mod.camera.Camera;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;

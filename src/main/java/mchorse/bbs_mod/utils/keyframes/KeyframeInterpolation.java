@@ -1,33 +1,33 @@
 package mchorse.bbs_mod.utils.keyframes;
 
-import mchorse.bbs_mod.utils.math.IInterpolation;
-import mchorse.bbs_mod.utils.math.Interpolation;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KeyframeInterpolation
 {
-    public static final List<IInterpolation> INTERPOLATIONS = new ArrayList<>();
+    public static final List<IInterp> INTERPOLATIONS = new ArrayList<>();
 
     static
     {
-        for (Interpolation value : Interpolation.values())
+        for (Interps value : Interps.values())
         {
             INTERPOLATIONS.add(value);
         }
 
-        INTERPOLATIONS.remove(Interpolation.CUBIC);
-        INTERPOLATIONS.remove(Interpolation.CIRCULAR);
+        INTERPOLATIONS.remove(Interps.CUBIC);
+        INTERPOLATIONS.remove(Interps.CIRCULAR);
     }
 
-    public static double interpolateK(Keyframe a, Keyframe b, double x)
+    public static double interpolate(Keyframe a, Keyframe b, double x)
     {
-        IInterpolation interp = a.getInterpolation();
+        IInterp interp = a.getInterpolation();
 
-        if (interp == Interpolation.BEZIER)
+        if (interp == Interps.BEZIER)
         {
             if (x <= 0) return a.getValue();
             if (x >= 1) return b.getValue();
@@ -49,7 +49,7 @@ public class KeyframeInterpolation
             x1 = MathUtils.clamp(x1, 0, 1);
             x2 = MathUtils.clamp(x2, 0, 1);
 
-            return Interpolations.bezier(0, y1, y2, 1, Interpolations.bezierX(x1, x2, x, e)) * h + a.getValue();
+            return Lerps.bezier(0, y1, y2, 1, Lerps.bezierX(x1, x2, x, e)) * h + a.getValue();
         }
 
         if (interp == null)
@@ -57,13 +57,12 @@ public class KeyframeInterpolation
             return a.getValue();
         }
 
-        return interp.interpolate(IInterpolation.context
-            .set(a.getValue(), b.getValue(), x)
-            .extra(a.prev.getValue(), b.next.getValue()));
+        return interp.interpolate(IInterp.context
+            .set(a.prev.getValue(), a.getValue(), b.getValue(), b.next.getValue(), x));
     }
 
-    public static boolean isBezier(IInterpolation interp)
+    public static boolean isBezier(IInterp interp)
     {
-        return interp == Interpolation.BEZIER;
+        return interp == Interps.BEZIER;
     }
 }

@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.utils.math.rasterizers;
+package mchorse.bbs_mod.utils.interps.rasterizers;
 
 import org.joml.Vector2i;
 

@@ -9,8 +9,8 @@ import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -76,16 +76,16 @@ public class OrbitClip extends EntityClip
 
         if (this.copy.get())
         {
-            float entityYaw = Interpolations.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), context.transition);
-            float entityPitch = -Interpolations.lerp(entity.getPrevPitch(), entity.getPitch(), context.transition);
+            float entityYaw = Lerps.lerp(entity.getPrevHeadYaw(), entity.getHeadYaw(), context.transition);
+            float entityPitch = -Lerps.lerp(entity.getPrevPitch(), entity.getPitch(), context.transition);
 
             Matrices.rotate(vector, MathUtils.toRad(-entityPitch), MathUtils.toRad(-entityYaw));
         }
 
         Point offset = this.offset.get();
-        double x = Interpolations.lerp(entity.getPrevX(), entity.getX(), context.transition) + offset.x;
-        double y = Interpolations.lerp(entity.getPrevY(), entity.getY(), context.transition) + offset.y;
-        double z = Interpolations.lerp(entity.getPrevZ(), entity.getZ(), context.transition) + offset.z;
+        double x = Lerps.lerp(entity.getPrevX(), entity.getX(), context.transition) + offset.x;
+        double y = Lerps.lerp(entity.getPrevY(), entity.getY(), context.transition) + offset.y;
+        double z = Lerps.lerp(entity.getPrevZ(), entity.getZ(), context.transition) + offset.z;
 
         vector.mul(distance);
 

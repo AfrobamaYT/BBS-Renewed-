@@ -6,8 +6,8 @@ import mchorse.bbs_mod.math.Variable;
 import mchorse.bbs_mod.math.molang.MolangException;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
-import mchorse.bbs_mod.utils.math.Interpolations;
-import mchorse.bbs_mod.utils.math.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.MathUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ParticleCurve
             MolangExpression next = this.getNode(index + 1);
             MolangExpression afterNext = this.getNode(index + 2);
 
-            return Interpolations.cubicHermite(beforeFirst.get(), first.get(), next.get(), afterNext.get(), factor % 1);
+            return Lerps.cubicHermite(beforeFirst.get(), first.get(), next.get(), afterNext.get(), factor % 1);
         }
 
         factor *= length - 1;
@@ -76,7 +76,7 @@ public class ParticleCurve
         MolangExpression first = this.getNode(index);
         MolangExpression next = this.getNode(index + 1);
 
-        return Interpolations.lerp(first.get(), next.get(), factor % 1);
+        return Lerps.lerp(first.get(), next.get(), factor % 1);
     }
 
     private MolangExpression getNode(int index)

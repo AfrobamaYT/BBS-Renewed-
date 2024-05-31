@@ -12,7 +12,7 @@ import mchorse.bbs_mod.forms.properties.FloatProperty;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.properties.TransformProperty;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.Collections;
@@ -170,7 +170,7 @@ public abstract class Form implements IMapSerializable
 
     /* Tweening */
 
-    public void tween(Form form, int duration, IInterpolation interpolation, int offset, boolean playing)
+    public void tween(Form form, int duration, IInterp interpolation, int offset, boolean playing)
     {
         for (IFormProperty property : this.properties.values())
         {

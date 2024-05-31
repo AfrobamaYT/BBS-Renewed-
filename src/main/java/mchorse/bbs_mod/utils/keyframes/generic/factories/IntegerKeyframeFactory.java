@@ -2,7 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.IntType;
-import mchorse.bbs_mod.utils.math.IInterpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class IntegerKeyframeFactory implements IGenericKeyframeFactory<Integer>
 {
@@ -25,7 +25,7 @@ public class IntegerKeyframeFactory implements IGenericKeyframeFactory<Integer>
     }
 
     @Override
-    public Integer interpolate(Integer a, Integer b, IInterpolation interpolation, float x)
+    public Integer interpolate(Integer a, Integer b, IInterp interpolation, float x)
     {
         return (int) interpolation.interpolate(a.intValue(), b.intValue(), x);
     }
