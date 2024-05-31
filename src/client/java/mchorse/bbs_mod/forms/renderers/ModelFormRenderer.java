@@ -202,6 +202,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 

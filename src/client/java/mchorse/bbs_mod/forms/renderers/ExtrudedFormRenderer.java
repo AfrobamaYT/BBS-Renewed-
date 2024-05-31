@@ -85,6 +85,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                     .next();
             }
 
+            RenderSystem.defaultBlendFunc();
             RenderSystem.enableBlend();
             BufferRenderer.drawWithGlobalProgram(buffer.end());
             RenderSystem.disableBlend();
