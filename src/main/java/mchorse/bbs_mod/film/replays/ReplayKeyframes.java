@@ -3,9 +3,9 @@ package mchorse.bbs_mod.film.replays;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.interps.Interps;
 import org.joml.Vector2d;
 
 import java.util.Arrays;
@@ -260,13 +260,13 @@ public class ReplayKeyframes extends ValueGroup
             /* Special case for when there is no keyframe afterwards */
             if (frame.a == frame.b && frame.b.next == frame.b && frame.a.prev != frame.a)
             {
-                if (frame.a.prev.getInterpolation() == Interps.CONST && frame.a.getTick() == tick)
+                if (frame.a.prev.getInterpolation().getInterp() == Interps.CONST && frame.a.getTick() == tick)
                 {
                     return new Vector2d(frame.a.getValue(), frame.a.getValue());
                 }
             }
 
-            if (frame.a.getInterpolation() == Interps.CONST && frame.b.getTick() == tick)
+            if (frame.a.getInterpolation().getInterp() == Interps.CONST && frame.b.getTick() == tick)
             {
                 return new Vector2d(frame.b.getValue(), frame.b.getValue());
             }

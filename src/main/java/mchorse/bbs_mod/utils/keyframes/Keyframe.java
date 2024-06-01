@@ -2,12 +2,11 @@ package mchorse.bbs_mod.utils.keyframes;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interps;
 
-public class Keyframe extends BaseValue
+public class Keyframe extends ValueGroup
 {
     public Keyframe prev;
     public Keyframe next;
@@ -15,7 +14,7 @@ public class Keyframe extends BaseValue
     private long tick;
     private double value;
 
-    private IInterp interp = Interps.LINEAR;
+    private final Interpolation interp = new Interpolation("interp", Interps.MAP);
 
     private float rx = 5;
     private float ry;
@@ -28,6 +27,8 @@ public class Keyframe extends BaseValue
 
         this.tick = tick;
         this.value = value;
+
+        this.add(this.interp);
     }
 
     public Keyframe(String id)
@@ -62,16 +63,9 @@ public class Keyframe extends BaseValue
         this.postNotifyParent();
     }
 
-    public IInterp getInterpolation()
+    public Interpolation getInterpolation()
     {
         return this.interp;
-    }
-
-    public void setInterpolation(IInterp interp)
-    {
-        this.preNotifyParent();
-        this.interp = interp;
-        this.postNotifyParent();
     }
 
     public float getRx()
@@ -145,7 +139,7 @@ public class Keyframe extends BaseValue
     {
         this.tick = keyframe.tick;
         this.value = keyframe.value;
-        this.interp = keyframe.interp;
+        this.interp.copy(keyframe.interp);
         this.lx = keyframe.lx;
         this.ly = keyframe.ly;
         this.rx = keyframe.rx;
@@ -159,16 +153,8 @@ public class Keyframe extends BaseValue
 
         data.putLong("tick", this.tick);
         data.putDouble("value", this.value);
+        data.put("interp", this.interp.toData());
 
-        if (this.interp != Interps.LINEAR)
-        {
-            int index = KeyframeInterpolation.INTERPOLATIONS.indexOf(this.interp);
-
-            if (index >= 0)
-            {
-                data.putInt("interp", index);
-            }
-        }
         if (this.rx != 5) data.putFloat("rx", this.rx);
         if (this.ry != 0) data.putFloat("ry", this.ry);
         if (this.lx != 5) data.putFloat("lx", this.lx);
@@ -189,15 +175,7 @@ public class Keyframe extends BaseValue
 
         if (map.has("tick")) this.tick = map.getLong("tick");
         if (map.has("value")) this.value = map.getDouble("value");
-        if (map.has("interp"))
-        {
-            int index = map.getInt("interp");
-
-            if (CollectionUtils.inRange(KeyframeInterpolation.INTERPOLATIONS, index))
-            {
-                this.interp = KeyframeInterpolation.INTERPOLATIONS.get(index);
-            }
-        }
+        if (map.has("interp")) this.interp.fromData(map.get("interp"));
         if (map.has("rx")) this.rx = map.getFloat("rx");
         if (map.has("ry")) this.ry = map.getFloat("ry");
         if (map.has("lx")) this.lx = map.getFloat("lx");

@@ -7,6 +7,7 @@ import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueForm;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.interps.InterpolationWrapper;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
 
@@ -72,7 +73,7 @@ public class Replay extends ValueGroup
             }
             else
             {
-                property.tween(segment.b.getValue(), segment.a.getValue(), segment.duration, segment.a.getInterpolation(), (int) segment.offset, playing);
+                property.tween(segment.b.getValue(), segment.a.getValue(), segment.duration, new InterpolationWrapper(segment.a.getInterpolation()), (int) segment.offset, playing);
             }
         }
         else

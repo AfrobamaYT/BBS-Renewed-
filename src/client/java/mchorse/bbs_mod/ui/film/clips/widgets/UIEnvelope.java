@@ -38,8 +38,8 @@ public class UIEnvelope extends UIElement
 
         this.panel = panel;
 
-        InterpolationTooltip preTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().pre.get());
-        InterpolationTooltip postTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().post.get());
+        InterpolationTooltip preTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().pre.getInterp());
+        InterpolationTooltip postTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().post.getInterp());
 
         this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) ->
         {
@@ -47,17 +47,17 @@ public class UIEnvelope extends UIElement
         });
         this.pre = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_PRE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().pre.get(), (v) ->
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().pre.getInterp(), (v) ->
             {
-                this.panel.editor.editMultiple(this.get().pre, (value) -> value.set(v));
+                this.panel.editor.editMultiple(this.get().pre, (value) -> value.setInterp(v));
             });
         });
         this.pre.tooltip(preTooltip);
         this.post = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_POST, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().post.get(), (v) ->
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().post.getInterp(), (v) ->
             {
-                this.panel.editor.editMultiple(this.get().post, (value) -> value.set(v));
+                this.panel.editor.editMultiple(this.get().post, (value) -> value.setInterp(v));
             });
         });
         this.post.tooltip(postTooltip);

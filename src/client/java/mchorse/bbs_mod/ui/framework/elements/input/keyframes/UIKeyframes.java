@@ -13,11 +13,12 @@ import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
+import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
-import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -319,7 +320,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         long tick = Math.round(this.fromGraphX(mouseX));
         double value = this.current == null ? sheet.channel.interpolate(tick) : this.fromGraphY(mouseY);
 
-        IInterp interp = Interps.LINEAR;
+        Interpolation interp = null;
         Keyframe frame = this.getCurrent();
         long oldTick = tick;
 
@@ -335,7 +336,11 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         if (oldTick != tick)
         {
             frame = this.getCurrent();
-            frame.setInterpolation(interp);
+
+            if (interp != null)
+            {
+                frame.getInterpolation().copy(interp);
+            }
         }
     }
 
@@ -860,7 +865,9 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 int fx = this.toGraphX(frame.getTick());
 
                 /* Main line */
-                if (prev.getInterpolation() == Interps.LINEAR)
+                IInterp interp = prev.getInterpolation().getInterp();
+
+                if (interp == Interps.LINEAR)
                 {
                     main.add(px, this.toGraphY(prev.getValue()))
                         .add(fx, this.toGraphY(frame.getValue()));
@@ -869,7 +876,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 {
                     float seg = 10;
 
-                    if (prev.getInterpolation().getKey().startsWith("bounce_") || prev.getInterpolation().getKey().startsWith("elastic_"))
+                    if (interp.getKey().startsWith("bounce_") || interp.getKey().startsWith("elastic_"))
                     {
                         seg = 30;
                     }

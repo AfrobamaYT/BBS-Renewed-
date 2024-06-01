@@ -51,9 +51,9 @@ public class UIDollyClip extends UIClip<DollyClip>
 
         this.interp = new UIButton(UIKeys.CAMERA_PANELS_INTERPOLATION, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.clip.interp.get(), (i) -> this.clip.interp.set(i));
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.clip.interp.getInterp(), (i) -> this.clip.interp.setInterp(i));
         });
-        this.interp.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interp.get()));
+        this.interp.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interp.getInterp()));
     }
 
     @Override

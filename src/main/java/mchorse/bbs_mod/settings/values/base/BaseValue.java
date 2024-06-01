@@ -217,6 +217,9 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
 
     public void copy(BaseValue value)
     {
-        this.fromData(value.toData());
+        if (value != null)
+        {
+            this.fromData(value.toData());
+        }
     }
 }

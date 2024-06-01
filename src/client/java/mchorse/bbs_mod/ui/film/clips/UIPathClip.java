@@ -57,14 +57,14 @@ public class UIPathClip extends UIClip<PathClip>
         this.angle = new UIAngleModule(editor);
         this.interpPoint = new UIButton(UIKeys.CAMERA_PANELS_POINT, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationPoint.get(), this.clip.interpolationPoint::set);
+            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationPoint.getInterp(), this.clip.interpolationPoint::setInterp);
         });
-        this.interpPoint.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationPoint.get()));
+        this.interpPoint.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationPoint.getInterp()));
         this.interpAngle = new UIButton(UIKeys.CAMERA_PANELS_ANGLE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationAngle.get(), this.clip.interpolationAngle::set);
+            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationAngle.getInterp(), this.clip.interpolationAngle::setInterp);
         });
-        this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.get()));
+        this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.getInterp()));
 
         this.autoCenter = new UIToggle(UIKeys.CAMERA_PANELS_AUTO_CENTER, (b) ->
         {

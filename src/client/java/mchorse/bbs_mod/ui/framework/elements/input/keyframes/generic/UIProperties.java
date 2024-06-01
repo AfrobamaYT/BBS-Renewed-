@@ -14,11 +14,11 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
-import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -247,7 +247,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
     public void addCurrent(UIProperty property, long tick)
     {
-        IInterp interp = Interps.LINEAR;
+        Interpolation interp = null;
         GenericKeyframe frame = this.getCurrent();
         IGenericKeyframeFactory factory = property.channel.getFactory();
         long oldTick = tick;
@@ -287,9 +287,9 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
         frame = this.getCurrent();
 
-        if (oldTick != tick)
+        if (oldTick != tick && interp != null)
         {
-            frame.setInterpolation(interp);
+            frame.getInterpolation().copy(interp);
         }
     }
 

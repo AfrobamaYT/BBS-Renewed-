@@ -3,7 +3,6 @@ package mchorse.bbs_mod.camera.clips.converters;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class PathToKeyframeConverter implements IClipConverter<PathClip, KeyframeClip>
 {
@@ -16,16 +15,11 @@ public class PathToKeyframeConverter implements IClipConverter<PathClip, Keyfram
         KeyframeClip keyframe = new KeyframeClip();
 
         keyframe.copy(path);
-        IInterp pos = path.interpolationPoint.get();
-        IInterp angle = path.interpolationAngle.get();
-
-        long x;
 
         for (int i = 0; i < path.size(); i++)
         {
             Position point = path.points.get(i);
-
-            x = (int) (i / (c - 1F) * duration);
+            long x = (int) (i / (c - 1F) * duration);
 
             int index = keyframe.x.insert(x, (float) point.point.x);
             keyframe.y.insert(x, (float) point.point.y);
@@ -35,13 +29,13 @@ public class PathToKeyframeConverter implements IClipConverter<PathClip, Keyfram
             keyframe.roll.insert(x, point.angle.roll);
             keyframe.fov.insert(x, point.angle.fov);
 
-            keyframe.x.get(index).setInterpolation(pos);
-            keyframe.y.get(index).setInterpolation(pos);
-            keyframe.z.get(index).setInterpolation(pos);
-            keyframe.yaw.get(index).setInterpolation(angle);
-            keyframe.pitch.get(index).setInterpolation(angle);
-            keyframe.roll.get(index).setInterpolation(angle);
-            keyframe.fov.get(index).setInterpolation(angle);
+            keyframe.x.get(index).getInterpolation().copy(path.interpolationPoint);
+            keyframe.y.get(index).getInterpolation().copy(path.interpolationPoint);
+            keyframe.z.get(index).getInterpolation().copy(path.interpolationPoint);
+            keyframe.yaw.get(index).getInterpolation().copy(path.interpolationAngle);
+            keyframe.pitch.get(index).getInterpolation().copy(path.interpolationAngle);
+            keyframe.roll.get(index).getInterpolation().copy(path.interpolationAngle);
+            keyframe.fov.get(index).getInterpolation().copy(path.interpolationAngle);
         }
 
         return keyframe;

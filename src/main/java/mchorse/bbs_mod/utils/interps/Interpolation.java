@@ -1,25 +1,92 @@
 package mchorse.bbs_mod.utils.interps;
 
-import mchorse.bbs_mod.data.IDataSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.CollectionUtils;
 
 import java.util.Map;
 
-public class Interpolation implements IDataSerializable
+public class Interpolation extends BaseValue
 {
-    public IInterp interp = Interps.LINEAR;
-    public double v1;
-    public double v2;
-    public double v3;
-    public double v4;
-
     private final Map<String, IInterp> map;
 
-    public Interpolation(Map<String, IInterp> map)
+    private IInterp interp = Interps.LINEAR;
+    private double v1;
+    private double v2;
+    private double v3;
+    private double v4;
+
+    public Interpolation(String id, Map<String, IInterp> map)
     {
+        super(id);
+
         this.map = map;
+    }
+
+    public double interpolate(InterpContext context)
+    {
+        return this.interp.interpolate(context.extra(this.v1, this.v2, this.v3, this.v4));
+    }
+
+    public IInterp getInterp()
+    {
+        return this.interp;
+    }
+
+    public void setInterp(IInterp interp)
+    {
+        this.preNotifyParent();
+        this.interp = interp;
+        this.postNotifyParent();
+    }
+
+    public double getV1()
+    {
+        return this.v1;
+    }
+
+    public void setV1(double v1)
+    {
+        this.preNotifyParent();
+        this.v1 = v1;
+        this.postNotifyParent();
+    }
+
+    public double getV2()
+    {
+        return this.v2;
+    }
+
+    public void setV2(double v2)
+    {
+        this.preNotifyParent();
+        this.v2 = v2;
+        this.postNotifyParent();
+    }
+
+    public double getV3()
+    {
+        return this.v3;
+    }
+
+    public void setV3(double v3)
+    {
+        this.preNotifyParent();
+        this.v3 = v3;
+        this.postNotifyParent();
+    }
+
+    public double getV4()
+    {
+        return this.v4;
+    }
+
+    public void setV4(double v4)
+    {
+        this.preNotifyParent();
+        this.v4 = v4;
+        this.postNotifyParent();
     }
 
     @Override

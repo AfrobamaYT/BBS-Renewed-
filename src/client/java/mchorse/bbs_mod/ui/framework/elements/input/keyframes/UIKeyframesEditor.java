@@ -53,7 +53,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
                 return null;
             }
 
-            return keyframe.getInterpolation();
+            return keyframe.getInterpolation().getInterp();
         });
 
         this.frameButtons = new UIElement();
@@ -65,7 +65,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.value.tooltip(UIKeys.KEYFRAMES_VALUE);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, this.keyframes.getCurrent().getInterpolation(), this.keyframes::setInterpolation);
+            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, this.keyframes.getCurrent().getInterpolation().getInterp(), this.keyframes::setInterpolation);
         });
         this.interp.tooltip(tooltip);
 

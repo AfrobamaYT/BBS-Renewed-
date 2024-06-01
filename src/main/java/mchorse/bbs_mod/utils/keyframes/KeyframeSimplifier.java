@@ -55,8 +55,8 @@ public class KeyframeSimplifier
             Keyframe left = newChannel.get(a);
             Keyframe right = newChannel.get(b);
 
-            left.setInterpolation(Interps.BEZIER);
-            right.setInterpolation(Interps.BEZIER);
+            left.getInterpolation().setInterp(Interps.BEZIER);
+            right.getInterpolation().setInterp(Interps.BEZIER);
             left.setRx(pair.a.getRx());
             left.setRy(pair.a.getRy());
             right.setLx(pair.b.getLx());
@@ -81,8 +81,8 @@ public class KeyframeSimplifier
 
         left.copy(keyframes.get(0));
         right.copy(keyframes.get(keyframes.size() - 1));
-        left.setInterpolation(Interps.BEZIER);
-        right.setInterpolation(Interps.BEZIER);
+        left.getInterpolation().setInterp(Interps.BEZIER);
+        right.getInterpolation().setInterp(Interps.BEZIER);
         left.setRx(5);
         left.setRy(0);
         right.setLx(5);

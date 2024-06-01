@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils.keyframes.generic;
 
+import mchorse.bbs_mod.utils.interps.InterpolationWrapper;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 
 public class GenericKeyframeSegment <T>
@@ -29,7 +30,7 @@ public class GenericKeyframeSegment <T>
     {
         IGenericKeyframeFactory<T> factory = this.a.getFactory();
 
-        return factory.copy(factory.interpolate(this.a.getValue(), this.b.getValue(), this.a.getInterpolation(), this.x));
+        return factory.copy(factory.interpolate(this.a.getValue(), this.b.getValue(), new InterpolationWrapper(this.a.getInterpolation()), this.x));
     }
 
     public boolean isSame()

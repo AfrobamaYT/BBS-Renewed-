@@ -2,12 +2,12 @@ package mchorse.bbs_mod.utils.keyframes.generic;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
-import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 
-public class GenericKeyframe <T> extends BaseValue
+public class GenericKeyframe <T> extends ValueGroup
 {
     private long tick;
 
@@ -18,7 +18,7 @@ public class GenericKeyframe <T> extends BaseValue
     private int duration;
 
     private T value;
-    private IInterp interp = Interps.LINEAR;
+    private final Interpolation interp = new Interpolation("interp", Interps.MAP);
 
     private final IGenericKeyframeFactory<T> factory;
 
@@ -78,16 +78,9 @@ public class GenericKeyframe <T> extends BaseValue
         this.postNotifyParent();
     }
 
-    public IInterp getInterpolation()
+    public Interpolation getInterpolation()
     {
         return this.interp;
-    }
-
-    public void setInterpolation(IInterp interp)
-    {
-        this.preNotifyParent();
-        this.interp = interp;
-        this.postNotifyParent();
     }
 
     public void copy(GenericKeyframe<T> keyframe)
@@ -95,7 +88,7 @@ public class GenericKeyframe <T> extends BaseValue
         this.tick = keyframe.tick;
         this.duration = keyframe.duration;
         this.value = this.factory.copy(keyframe.value);
-        this.interp = keyframe.interp;
+        this.interp.copy(keyframe.interp);
     }
 
     @Override
@@ -106,8 +99,7 @@ public class GenericKeyframe <T> extends BaseValue
         data.putLong("tick", this.tick);
         data.putInt("duration", this.duration);
         data.put("value", this.factory.toData(this.value));
-
-        if (this.interp != Interps.LINEAR) data.putString("interp", this.interp.toString());
+        data.put("interp", this.interp.toData());
 
         return data;
     }
@@ -125,6 +117,6 @@ public class GenericKeyframe <T> extends BaseValue
         if (map.has("tick")) this.tick = map.getLong("tick");
         if (map.has("duration")) this.duration = map.getInt("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
-        if (map.has("interp")) this.interp = Interps.valueOf(map.getString("interp"));
+        if (map.has("interp")) this.interp.fromData(map.get("interp"));
     }
 }

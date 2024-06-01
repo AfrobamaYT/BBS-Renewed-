@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils.keyframes;
 
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
@@ -25,9 +26,9 @@ public class KeyframeInterpolation
 
     public static double interpolate(Keyframe a, Keyframe b, double x)
     {
-        IInterp interp = a.getInterpolation();
+        Interpolation interpolation = a.getInterpolation();
 
-        if (interp == Interps.BEZIER)
+        if (interpolation.getInterp() == Interps.BEZIER)
         {
             if (x <= 0) return a.getValue();
             if (x >= 1) return b.getValue();
@@ -52,13 +53,12 @@ public class KeyframeInterpolation
             return Lerps.bezier(0, y1, y2, 1, Lerps.bezierX(x1, x2, x, e)) * h + a.getValue();
         }
 
-        if (interp == null)
-        {
-            return a.getValue();
-        }
+        return interpolation.interpolate(IInterp.context.set(a.prev.getValue(), a.getValue(), b.getValue(), b.next.getValue(), x));
+    }
 
-        return interp.interpolate(IInterp.context
-            .set(a.prev.getValue(), a.getValue(), b.getValue(), b.next.getValue(), x));
+    public static boolean isBezier(Interpolation interp)
+    {
+        return isBezier(interp.getInterp());
     }
 
     public static boolean isBezier(IInterp interp)

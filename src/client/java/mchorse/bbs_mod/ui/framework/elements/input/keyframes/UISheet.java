@@ -1,9 +1,9 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.interps.IInterp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,7 +85,7 @@ public class UISheet
 
             if (keyframe != null)
             {
-                keyframe.setInterpolation(interp);
+                keyframe.getInterpolation().setInterp(interp);
             }
         }
     }

@@ -6,7 +6,6 @@ import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.camera.values.ValueInterp;
 import mchorse.bbs_mod.camera.values.ValuePositions;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.settings.values.ValueDouble;
@@ -14,6 +13,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import org.joml.Vector2d;
@@ -36,8 +36,8 @@ public class PathClip extends CameraClip
      */
     public final ValuePositions points = new ValuePositions("points");
 
-    public final ValueInterp interpolationPoint = new ValueInterp("interpPoint");
-    public final ValueInterp interpolationAngle = new ValueInterp("interpAngle");
+    public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interps.MAP);
+    public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interps.MAP);
 
     public final ValueBoolean circularAutoCenter = new ValueBoolean("circularAutoCenter", true);
     public final ValueDouble circularX = new ValueDouble("circularX", 0D);
@@ -137,10 +137,7 @@ public class PathClip extends CameraClip
         Position p2 = this.getPoint(index + 1);
         Position p3 = this.getPoint(index + 2);
 
-        /* Interpolating the position */
-        IInterp interp = this.interpolationPoint.get();
-
-        if (interp == Interps.CIRCULAR)
+        if (this.interpolationPoint.getInterp() == Interps.CIRCULAR)
         {
             int size = this.size();
 
@@ -178,11 +175,11 @@ public class PathClip extends CameraClip
                 z = mz + Math.sin(a) * d;
             }
         }
-        else if (interp != null)
+        else
         {
-            x = interp.interpolate(IInterp.context.set(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress));
-            y = interp.interpolate(IInterp.context.set(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress));
-            z = interp.interpolate(IInterp.context.set(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress));
+            x = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress));
+            y = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress));
+            z = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress));
         }
 
         point.set(x, y, z);
@@ -281,13 +278,10 @@ public class PathClip extends CameraClip
         Position p3 = this.getPoint(index + 2);
 
         /* Interpolating the angle */
-        IInterp maybeNull = this.interpolationAngle.get();
-        IInterp interp = maybeNull == null ? Interps.LINEAR : maybeNull;
-
-        float yaw   = (float) interp.interpolate(IInterp.context.set(p0.angle.yaw, p1.angle.yaw, p2.angle.yaw, p3.angle.yaw, progress));
-        float pitch = (float) interp.interpolate(IInterp.context.set(p0.angle.pitch, p1.angle.pitch, p2.angle.pitch, p3.angle.pitch, progress));
-        float roll  = (float) interp.interpolate(IInterp.context.set(p0.angle.roll, p1.angle.roll, p2.angle.roll, p3.angle.roll, progress));
-        float fov   = (float) interp.interpolate(IInterp.context.set(p0.angle.fov, p1.angle.fov, p2.angle.fov, p3.angle.fov, progress));
+        float yaw   = (float) this.interpolationAngle.interpolate(IInterp.context.set(p0.angle.yaw, p1.angle.yaw, p2.angle.yaw, p3.angle.yaw, progress));
+        float pitch = (float) this.interpolationAngle.interpolate(IInterp.context.set(p0.angle.pitch, p1.angle.pitch, p2.angle.pitch, p3.angle.pitch, progress));
+        float roll  = (float) this.interpolationAngle.interpolate(IInterp.context.set(p0.angle.roll, p1.angle.roll, p2.angle.roll, p3.angle.roll, progress));
+        float fov   = (float) this.interpolationAngle.interpolate(IInterp.context.set(p0.angle.fov, p1.angle.fov, p2.angle.fov, p3.angle.fov, progress));
 
         angle.set(yaw, pitch, roll, fov);
     }

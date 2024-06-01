@@ -34,12 +34,12 @@ import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
-import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
@@ -108,7 +108,7 @@ public class UIPropertyEditor extends UIElement
                 return null;
             }
 
-            return keyframe.getInterpolation();
+            return keyframe.getInterpolation().getInterp();
         });
 
         this.frameButtons = new UIElement();
@@ -120,7 +120,7 @@ public class UIPropertyEditor extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.properties.getCurrent().getInterpolation(), this::pickInterpolation);
+            UICameraUtils.interps(this.getContext(), Interps.values(), this.properties.getCurrent().getInterpolation().getInterp(), this::pickInterpolation);
         });
         this.interp.tooltip(tooltip);
 

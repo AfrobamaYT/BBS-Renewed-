@@ -4,19 +4,20 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.camera.values.ValueInterp;
 import mchorse.bbs_mod.settings.values.ValueFloat;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Interpolation;
+import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.joml.Matrices;
 import org.joml.Vector3f;
 
 public class DollyClip extends IdleClip
 {
     public final ValueFloat distance = new ValueFloat("distance", 0.1F);
-    public final ValueInterp interp = new ValueInterp("interp");
+    public final Interpolation interp = new Interpolation("interp", Interps.MAP);
     public final ValueFloat yaw = new ValueFloat("yaw", 0F);
     public final ValueFloat pitch = new ValueFloat("pitch", 0F);
 
@@ -44,7 +45,6 @@ public class DollyClip extends IdleClip
     {
         super.applyClip(context, position);
 
-        IInterp interp = this.interp.get();
         Point point = this.position.get().point;
         double x = point.x;
         double y = point.y;
@@ -55,9 +55,9 @@ public class DollyClip extends IdleClip
         Vector3f look = Matrices.rotation(MathUtils.toRad(pitch), MathUtils.toRad(180 - yaw)).normalize().mul(this.distance.get());
         float transition = (context.relativeTick + context.transition) / this.duration.get();
 
-        x = interp.interpolate(x, x + look.x, transition);
-        y = interp.interpolate(y, y + look.y, transition);
-        z = interp.interpolate(z, z + look.z, transition);
+        x = this.interp.interpolate(IInterp.context.set(x, x + look.x, transition));
+        y = this.interp.interpolate(IInterp.context.set(y, y + look.y, transition));
+        z = this.interp.interpolate(IInterp.context.set(z, z + look.z, transition));
 
         position.point.set(x, y, z);
     }
