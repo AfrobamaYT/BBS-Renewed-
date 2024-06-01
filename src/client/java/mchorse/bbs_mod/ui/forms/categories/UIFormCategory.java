@@ -2,12 +2,12 @@ package mchorse.bbs_mod.ui.forms.categories;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.categories.UserFormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.sections.UserFormSection;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -43,6 +43,8 @@ public class UIFormCategory extends UIElement
 
         this.context((menu) ->
         {
+            UserFormSection userForms = BBSModClient.getFormCategories().getUserForms();
+
             menu.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_ADD_CATEGORY, () ->
             {
                 UIOverlay.addOverlay(this.getContext(), new UIPromptOverlayPanel(
@@ -50,39 +52,35 @@ public class UIFormCategory extends UIElement
                     UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        FormCategories formCategories = BBSModClient.getFormCategories();
-
-                        formCategories.getUserForms().addUserCategory(new UserFormCategory(IKey.raw(str)));
-                        formCategories.getUserForms().writeUserCategories();
-                        list.setupForms(formCategories);
+                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str)));
+                        userForms.writeUserCategories();
+                        list.setupForms(BBSModClient.getFormCategories());
                     }
                 ));
             });
 
             if (this.selected != null)
             {
-                List<UserFormCategory> categories = BBSModClient.getFormCategories().getUserForms().categories;
-
-                categories.remove(this.category);
                 menu.action(Icons.COPY, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_FORM, () -> Window.setClipboard(FormUtils.toData(this.selected)));
-
-                if (!categories.isEmpty())
+                menu.action(Icons.COPY, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO_CATEGORY, () ->
                 {
-                    menu.action(Icons.COPY, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO_CATEGORY, () ->
+                    this.getContext().replaceContextMenu((m) ->
                     {
-                        this.getContext().replaceContextMenu((m) ->
+                        for (UserFormCategory formCategory : userForms.categories)
                         {
-                            for (UserFormCategory formCategory : categories)
+                            if (formCategory == this.category)
                             {
-                                m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
-                                {
-                                    formCategory.addForm(FormUtils.copy(this.selected));
-                                    BBSModClient.getFormCategories().getUserForms().writeUserCategories();
-                                });
+                                continue;
                             }
-                        });
+
+                            m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
+                            {
+                                formCategory.addForm(FormUtils.copy(this.selected));
+                                userForms.writeUserCategories();
+                            });
+                        }
                     });
-                }
+                });
             }
         });
 
