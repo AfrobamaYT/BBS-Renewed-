@@ -37,7 +37,7 @@ public class GameRendererMixin
     {
         CameraController controller = BBSModClient.getCameraController();
 
-        if (controller.getCurrent() != null)
+        if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
         {
             info.setReturnValue(controller.getFOV());
         }
@@ -51,7 +51,7 @@ public class GameRendererMixin
     {
         CameraController controller = BBSModClient.getCameraController();
 
-        if (controller.getCurrent() != null)
+        if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
         {
             matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(controller.getRoll()));
 
