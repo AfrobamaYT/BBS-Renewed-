@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic;
 
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 
@@ -96,7 +96,7 @@ public class UIProperty
         }
     }
 
-    public void setInterpolation(IInterp interp)
+    public void setInterpolation(Interpolation interp)
     {
         for (int index : this.selected)
         {
@@ -104,7 +104,7 @@ public class UIProperty
 
             if (keyframe != null)
             {
-                keyframe.getInterpolation().setInterp(interp);
+                keyframe.getInterpolation().copy(interp);
             }
         }
     }

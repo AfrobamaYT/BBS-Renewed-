@@ -94,7 +94,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         }
     }
 
-    public void setInterpolation(IInterp interp)
+    public void setInterpolation(Interpolation interp)
     {
         for (UIProperty property : this.properties)
         {

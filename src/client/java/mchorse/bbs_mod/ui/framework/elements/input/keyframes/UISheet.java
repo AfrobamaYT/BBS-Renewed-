@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
@@ -77,7 +78,7 @@ public class UISheet
         }
     }
 
-    public void setInterpolation(IInterp interp)
+    public void setInterpolation(Interpolation interp)
     {
         for (int index : this.selected)
         {
@@ -85,7 +86,7 @@ public class UISheet
 
             if (keyframe != null)
             {
-                keyframe.getInterpolation().setInterp(interp);
+                keyframe.getInterpolation().copy(interp);
             }
         }
     }

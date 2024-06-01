@@ -168,7 +168,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
         }
     }
 
-    public void setInterpolation(IInterp interp)
+    public void setInterpolation(Interpolation interp)
     {
         for (UISheet sheet : this.getSheets())
         {

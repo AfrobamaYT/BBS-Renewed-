@@ -16,6 +16,7 @@ import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSimplifier;
@@ -65,7 +66,13 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.value.tooltip(UIKeys.KEYFRAMES_VALUE);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, this.keyframes.getCurrent().getInterpolation().getInterp(), this.keyframes::setInterpolation);
+            Interpolation interp = this.keyframes.getCurrent().getInterpolation();
+
+            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, interp.getInterp(), (i) ->
+            {
+                interp.setInterp(i);
+                this.keyframes.setInterpolation(interp);
+            });
         });
         this.interp.tooltip(tooltip);
 
