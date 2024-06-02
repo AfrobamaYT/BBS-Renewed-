@@ -9,7 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCodes;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 
@@ -216,7 +216,7 @@ public class InputRenderer
             else
             {
                 int x = mx + (qx < 0.5F ? key.x : -(key.x + key.width + 16));
-                int y = my + (int) (Interps.EXP_INOUT.interpolate(0, 1, key.getFactor()) * 50 * fy);
+                int y = my + (int) (Interpolations.EXP_INOUT.interpolate(0, 1, key.getFactor()) * 50 * fy);
                 int fw = 16 + key.width;
 
                 Batcher2D batcher = menu.context.batcher;

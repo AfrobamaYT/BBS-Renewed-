@@ -15,7 +15,7 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
@@ -867,7 +867,7 @@ public class UIKeyframes extends UIBaseKeyframes<Keyframe>
                 /* Main line */
                 IInterp interp = prev.getInterpolation().getInterp();
 
-                if (interp == Interps.LINEAR)
+                if (interp == Interpolations.LINEAR)
                 {
                     main.add(px, this.toGraphY(prev.getValue()))
                         .add(fx, this.toGraphY(frame.getValue()));

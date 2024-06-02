@@ -13,7 +13,7 @@ import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 import java.util.Map;
 
@@ -142,7 +142,7 @@ public class GeoAnimationParser
             /* Hermite support */
             if (object.has("lerp_mode") && object.get("lerp_mode").isJsonPrimitive() && object.get("lerp_mode").getAsString().equals("catmullrom"))
             {
-                vector.interp = Interps.HERMITE;
+                vector.interp = Interpolations.HERMITE;
             }
             /* GeckoLib's partial easing support */
             else if (object.has("easing") && object.get("easing").isJsonPrimitive())

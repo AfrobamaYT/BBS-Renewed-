@@ -13,7 +13,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 import java.util.Collection;
 
@@ -173,7 +173,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
             double ticks = context.getTickTransition() % 15D;
             double factor = Math.abs(ticks / 15D * 2 - 1F);
 
-            int x = this.openOverlay.area.x - 10 + (int) Interps.SINE_INOUT.interpolate(-10, 0, factor);
+            int x = this.openOverlay.area.x - 10 + (int) Interpolations.SINE_INOUT.interpolate(-10, 0, factor);
             int y = this.openOverlay.area.my();
 
             context.batcher.icon(Icons.ARROW_RIGHT, x, y, 0.5F, 0.5F);

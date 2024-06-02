@@ -3,7 +3,7 @@ package mchorse.bbs_mod.cubic.data.animation;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class AnimationVector
 {
@@ -11,7 +11,7 @@ public class AnimationVector
     public AnimationVector next;
 
     public double time;
-    public IInterp interp = Interps.LINEAR;
+    public IInterp interp = Interpolations.LINEAR;
     public MolangExpression x;
     public MolangExpression y;
     public MolangExpression z;

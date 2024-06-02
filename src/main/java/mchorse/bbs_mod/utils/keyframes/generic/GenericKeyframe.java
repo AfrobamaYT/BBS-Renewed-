@@ -4,7 +4,7 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 
 public class GenericKeyframe <T> extends ValueGroup
@@ -18,7 +18,7 @@ public class GenericKeyframe <T> extends ValueGroup
     private int duration;
 
     private T value;
-    private final Interpolation interp = new Interpolation("interp", Interps.MAP);
+    private final Interpolation interp = new Interpolation("interp", Interpolations.MAP);
 
     private final IGenericKeyframeFactory<T> factory;
 

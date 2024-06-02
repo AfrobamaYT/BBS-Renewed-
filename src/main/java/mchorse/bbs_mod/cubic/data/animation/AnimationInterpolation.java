@@ -4,7 +4,7 @@ import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,47 +15,47 @@ public class AnimationInterpolation
 
     static
     {
-        GECKO_LIB_NAMES.put("linear", Interps.LINEAR);
-        GECKO_LIB_NAMES.put("catmullrom", Interps.HERMITE);
-        GECKO_LIB_NAMES.put("step", Interps.CONST);
-        GECKO_LIB_NAMES.put("easeInSine", Interps.SINE_IN);
-        GECKO_LIB_NAMES.put("easeOutSine", Interps.SINE_OUT);
-        GECKO_LIB_NAMES.put("easeInOutSine", Interps.SINE_INOUT);
-        GECKO_LIB_NAMES.put("easeInQuad", Interps.QUAD_IN);
-        GECKO_LIB_NAMES.put("easeOutQuad", Interps.QUAD_OUT);
-        GECKO_LIB_NAMES.put("easeInOutQuad", Interps.QUAD_INOUT);
-        GECKO_LIB_NAMES.put("easeInCubic", Interps.CUBIC_IN);
-        GECKO_LIB_NAMES.put("easeOutCubic", Interps.CUBIC_OUT);
-        GECKO_LIB_NAMES.put("easeInOutCubic", Interps.CUBIC_INOUT);
-        GECKO_LIB_NAMES.put("easeInQuart", Interps.QUART_IN);
-        GECKO_LIB_NAMES.put("easeOutQuart", Interps.QUART_OUT);
-        GECKO_LIB_NAMES.put("easeInOutQuart", Interps.QUART_INOUT);
-        GECKO_LIB_NAMES.put("easeInQuint", Interps.QUINT_IN);
-        GECKO_LIB_NAMES.put("easeOutQuint", Interps.QUINT_OUT);
-        GECKO_LIB_NAMES.put("easeInOutQuint", Interps.QUINT_INOUT);
-        GECKO_LIB_NAMES.put("easeInExpo", Interps.EXP_IN);
-        GECKO_LIB_NAMES.put("easeOutExpo", Interps.EXP_OUT);
-        GECKO_LIB_NAMES.put("easeInOutExpo", Interps.EXP_INOUT);
-        GECKO_LIB_NAMES.put("easeInCirc", Interps.CIRCLE_IN);
-        GECKO_LIB_NAMES.put("easeOutCirc", Interps.CIRCLE_OUT);
-        GECKO_LIB_NAMES.put("easeInOutCirc", Interps.CIRCLE_INOUT);
-        GECKO_LIB_NAMES.put("easeInBack", Interps.BACK_IN);
-        GECKO_LIB_NAMES.put("easeOutBack", Interps.BACK_OUT);
-        GECKO_LIB_NAMES.put("easeInOutBack", Interps.BACK_INOUT);
+        GECKO_LIB_NAMES.put("linear", Interpolations.LINEAR);
+        GECKO_LIB_NAMES.put("catmullrom", Interpolations.HERMITE);
+        GECKO_LIB_NAMES.put("step", Interpolations.CONST);
+        GECKO_LIB_NAMES.put("easeInSine", Interpolations.SINE_IN);
+        GECKO_LIB_NAMES.put("easeOutSine", Interpolations.SINE_OUT);
+        GECKO_LIB_NAMES.put("easeInOutSine", Interpolations.SINE_INOUT);
+        GECKO_LIB_NAMES.put("easeInQuad", Interpolations.QUAD_IN);
+        GECKO_LIB_NAMES.put("easeOutQuad", Interpolations.QUAD_OUT);
+        GECKO_LIB_NAMES.put("easeInOutQuad", Interpolations.QUAD_INOUT);
+        GECKO_LIB_NAMES.put("easeInCubic", Interpolations.CUBIC_IN);
+        GECKO_LIB_NAMES.put("easeOutCubic", Interpolations.CUBIC_OUT);
+        GECKO_LIB_NAMES.put("easeInOutCubic", Interpolations.CUBIC_INOUT);
+        GECKO_LIB_NAMES.put("easeInQuart", Interpolations.QUART_IN);
+        GECKO_LIB_NAMES.put("easeOutQuart", Interpolations.QUART_OUT);
+        GECKO_LIB_NAMES.put("easeInOutQuart", Interpolations.QUART_INOUT);
+        GECKO_LIB_NAMES.put("easeInQuint", Interpolations.QUINT_IN);
+        GECKO_LIB_NAMES.put("easeOutQuint", Interpolations.QUINT_OUT);
+        GECKO_LIB_NAMES.put("easeInOutQuint", Interpolations.QUINT_INOUT);
+        GECKO_LIB_NAMES.put("easeInExpo", Interpolations.EXP_IN);
+        GECKO_LIB_NAMES.put("easeOutExpo", Interpolations.EXP_OUT);
+        GECKO_LIB_NAMES.put("easeInOutExpo", Interpolations.EXP_INOUT);
+        GECKO_LIB_NAMES.put("easeInCirc", Interpolations.CIRCLE_IN);
+        GECKO_LIB_NAMES.put("easeOutCirc", Interpolations.CIRCLE_OUT);
+        GECKO_LIB_NAMES.put("easeInOutCirc", Interpolations.CIRCLE_INOUT);
+        GECKO_LIB_NAMES.put("easeInBack", Interpolations.BACK_IN);
+        GECKO_LIB_NAMES.put("easeOutBack", Interpolations.BACK_OUT);
+        GECKO_LIB_NAMES.put("easeInOutBack", Interpolations.BACK_INOUT);
 
         /* These are inverted (i.e. in and out swapped places)
          * because that's how the GeckoLib plugin shows */
-        GECKO_LIB_NAMES.put("easeInElastic", Interps.ELASTIC_OUT);
-        GECKO_LIB_NAMES.put("easeOutElastic", Interps.ELASTIC_IN);
-        GECKO_LIB_NAMES.put("easeInOutElastic", Interps.ELASTIC_INOUT);
-        GECKO_LIB_NAMES.put("easeInBounce", Interps.BOUNCE_OUT);
-        GECKO_LIB_NAMES.put("easeOutBounce", Interps.BOUNCE_IN);
-        GECKO_LIB_NAMES.put("easeInOutBounce", Interps.BOUNCE_INOUT);
+        GECKO_LIB_NAMES.put("easeInElastic", Interpolations.ELASTIC_OUT);
+        GECKO_LIB_NAMES.put("easeOutElastic", Interpolations.ELASTIC_IN);
+        GECKO_LIB_NAMES.put("easeInOutElastic", Interpolations.ELASTIC_INOUT);
+        GECKO_LIB_NAMES.put("easeInBounce", Interpolations.BOUNCE_OUT);
+        GECKO_LIB_NAMES.put("easeOutBounce", Interpolations.BOUNCE_IN);
+        GECKO_LIB_NAMES.put("easeInOutBounce", Interpolations.BOUNCE_INOUT);
     }
 
     public static IInterp byName(String easing)
     {
-        return GECKO_LIB_NAMES.getOrDefault(easing, Interps.LINEAR);
+        return GECKO_LIB_NAMES.getOrDefault(easing, Interpolations.LINEAR);
     }
 
     public static String toName(IInterp interp)
@@ -65,7 +65,7 @@ public class AnimationInterpolation
 
     public static double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
     {
-        IInterp interpolation = Interps.LINEAR;
+        IInterp interpolation = Interpolations.LINEAR;
         double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
         double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
         double pre = start;

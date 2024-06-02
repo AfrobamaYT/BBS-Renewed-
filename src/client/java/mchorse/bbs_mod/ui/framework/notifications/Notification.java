@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.framework.notifications;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class Notification
@@ -30,7 +30,7 @@ public class Notification
     {
         float envelope = Lerps.envelope(this.tick - transition, 0F, 20F, 70F, 80F);
 
-        return Interps.QUAD_INOUT.interpolate(0F, 1F, envelope);
+        return Interpolations.QUAD_INOUT.interpolate(0F, 1F, envelope);
     }
 
     public void update()

@@ -12,7 +12,7 @@ public class Interpolation extends BaseValue
 {
     private final Map<String, IInterp> map;
 
-    private IInterp interp = Interps.LINEAR;
+    private IInterp interp = Interpolations.LINEAR;
     private double v1;
     private double v2;
     private double v3;
@@ -125,7 +125,7 @@ public class Interpolation extends BaseValue
 
             if (list.size() >= 5)
             {
-                this.interp = this.map.getOrDefault(list.getString(0), Interps.LINEAR);
+                this.interp = this.map.getOrDefault(list.getString(0), Interpolations.LINEAR);
                 this.v1 = list.getDouble(1);
                 this.v2 = list.getDouble(2);
                 this.v3 = list.getDouble(3);
@@ -134,7 +134,7 @@ public class Interpolation extends BaseValue
         }
         else if (data.isString())
         {
-            this.interp = this.map.getOrDefault(data.asString(), Interps.LINEAR);
+            this.interp = this.map.getOrDefault(data.asString(), Interpolations.LINEAR);
             this.v1 = this.v2 = this.v3 = this.v4 = 0;
         }
     }

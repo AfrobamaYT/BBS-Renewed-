@@ -10,14 +10,14 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import org.joml.Vector3f;
 
 public class DollyClip extends IdleClip
 {
     public final ValueFloat distance = new ValueFloat("distance", 0.1F);
-    public final Interpolation interp = new Interpolation("interp", Interps.MAP);
+    public final Interpolation interp = new Interpolation("interp", Interpolations.MAP);
     public final ValueFloat yaw = new ValueFloat("yaw", 0F);
     public final ValueFloat pitch = new ValueFloat("pitch", 0F);
 

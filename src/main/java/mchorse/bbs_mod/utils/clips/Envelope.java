@@ -9,7 +9,7 @@ import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
@@ -20,8 +20,8 @@ public class Envelope extends ValueGroup
     public final ValueFloat fadeIn = new ValueFloat("fadeIn", 10F);
     public final ValueFloat fadeOut = new ValueFloat("fadeOut", 10F);
 
-    public final Interpolation pre = new Interpolation("pre", Interps.MAP);
-    public final Interpolation post = new Interpolation("post", Interps.MAP);
+    public final Interpolation pre = new Interpolation("pre", Interpolations.MAP);
+    public final Interpolation post = new Interpolation("post", Interpolations.MAP);
 
     public final ValueBoolean keyframes = new ValueBoolean("keyframes");
     public final KeyframeChannel channel = new KeyframeChannel("channel");

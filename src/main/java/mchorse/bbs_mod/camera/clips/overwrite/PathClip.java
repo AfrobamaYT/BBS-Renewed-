@@ -14,7 +14,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import org.joml.Vector2d;
 
@@ -36,8 +36,8 @@ public class PathClip extends CameraClip
      */
     public final ValuePositions points = new ValuePositions("points");
 
-    public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interps.MAP);
-    public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interps.MAP);
+    public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interpolations.MAP);
+    public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interpolations.MAP);
 
     public final ValueBoolean circularAutoCenter = new ValueBoolean("circularAutoCenter", true);
     public final ValueDouble circularX = new ValueDouble("circularX", 0D);
@@ -137,7 +137,7 @@ public class PathClip extends CameraClip
         Position p2 = this.getPoint(index + 1);
         Position p3 = this.getPoint(index + 2);
 
-        if (this.interpolationPoint.getInterp() == Interps.CIRCULAR)
+        if (this.interpolationPoint.getInterp() == Interpolations.CIRCULAR)
         {
             int size = this.size();
 

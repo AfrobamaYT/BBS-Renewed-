@@ -2,9 +2,9 @@ package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interps;
+import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 
 import java.util.Objects;
 
@@ -18,7 +18,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     private boolean playing = true;
     protected int ticks = -1;
     protected int duration;
-    protected IInterp interpolation = Interps.LINEAR;
+    protected IInterp interpolation = Interpolations.LINEAR;
 
     protected boolean canAnimate = true;
 
@@ -88,7 +88,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
         this.value = newValue;
 
         this.ticks = this.duration = duration;
-        this.interpolation = interpolation == null ? Interps.LINEAR : interpolation;
+        this.interpolation = interpolation == null ? Interpolations.LINEAR : interpolation;
         this.playing = playing;
 
         this.ticks -= offset;
