@@ -30,9 +30,4 @@ public class InterpolationUtils
     {
         return UIKeys.C_INTERPOLATION.get(interp.getKey());
     }
-
-    public static IKey getTooltip(IInterp interp)
-    {
-        return UIKeys.C_INTERPOLATION_TIPS.get(interp.getKey());
-    }
 }

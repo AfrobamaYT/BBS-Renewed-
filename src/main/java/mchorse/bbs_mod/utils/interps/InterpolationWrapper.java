@@ -4,7 +4,7 @@ public class InterpolationWrapper implements IInterp
 {
     private Interpolation interpolation;
 
-    public InterpolationWrapper(Interpolation interpolation)
+    InterpolationWrapper(Interpolation interpolation)
     {
         this.interpolation = interpolation;
     }

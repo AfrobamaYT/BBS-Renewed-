@@ -162,6 +162,21 @@ public class Icons
     public static final Icon Y = register(new Icon(ATLAS, "y", 128, 128));
     public static final Icon Z = register(new Icon(ATLAS, "z", 144, 128));
 
+    public static final Icon INTERP_LINEAR = register(new Icon(ATLAS, "interp_linear", 0, 144));
+    public static final Icon INTERP_CONST = register(new Icon(ATLAS, "interp_const", 16, 144));
+    public static final Icon INTERP_STEP = register(new Icon(ATLAS, "interp_step", 32, 144));
+    public static final Icon INTERP_QUAD = register(new Icon(ATLAS, "interp_quad", 48, 144));
+    public static final Icon INTERP_CUBIC = register(new Icon(ATLAS, "interp_cubic", 64, 144));
+    public static final Icon INTERP_QUART = register(new Icon(ATLAS, "interp_quart", 80, 144));
+    public static final Icon INTERP_QUINT = register(new Icon(ATLAS, "interp_quint", 96, 144));
+    public static final Icon INTERP_EXP = register(new Icon(ATLAS, "interp_exp", 112, 144));
+    public static final Icon INTERP_BACK = register(new Icon(ATLAS, "interp_back", 128, 144));
+    public static final Icon INTERP_ELASTIC = register(new Icon(ATLAS, "interp_elastic", 144, 144));
+    public static final Icon INTERP_BOUNCE = register(new Icon(ATLAS, "interp_bounce", 160, 144));
+    public static final Icon INTERP_SINE = register(new Icon(ATLAS, "interp_sine", 176, 144));
+    public static final Icon INTERP_CIRCLE = register(new Icon(ATLAS, "interp_circle", 192, 144));
+    public static final Icon INTERP_BEZIER = register(new Icon(ATLAS, "interp_bezier", 208, 144));
+
     public static final Icon CHECKBOARD = register(new Icon(ATLAS, "checkboard", 0, 240));
     public static final Icon DISABLED = register(new Icon(ATLAS, "disabled", 16, 240));
     public static final Icon CURSOR = register(new Icon(ATLAS, "cursor", 32, 240));

@@ -31,28 +31,6 @@ public class UICameraUtils
 
     /* Interpolations context menu */
 
-    public static void interps(UIContext context, IInterp[] values, IInterp current, Consumer<IInterp> consumer)
-    {
-        context.replaceContextMenu((menu) ->
-        {
-            for (IInterp interpolation : values)
-            {
-                ContextAction action;
-
-                if (interpolation == current)
-                {
-                    action = menu.action(Icons.ADD, InterpolationUtils.getName(interpolation), BBSSettings.primaryColor.get(), () -> consumer.accept(interpolation));
-                }
-                else
-                {
-                    action = menu.action(Icons.ADD, InterpolationUtils.getName(interpolation), () -> consumer.accept(interpolation));
-                }
-
-                InterpolationUtils.setupKeybind(interpolation, action, KEYS_CATEGORY);
-            }
-        });
-    }
-
     public static void interps(UIContext context, Collection<IInterp> values, IInterp current, Consumer<IInterp> consumer)
     {
         context.replaceContextMenu((menu) ->

@@ -649,8 +649,6 @@ public class UIKeys
         .load(EnumUtils.getKeys(ParticleCurveType.class, (c) -> c.id));
     public static final KeyCollection C_INTERPOLATION = new KeyCollection("interpolations.^")
         .load(EnumUtils.getKeys(Interps.class, (i) -> i.key));
-    public static final KeyCollection C_INTERPOLATION_TIPS = new KeyCollection("interpolations.^-tooltip")
-        .load(EnumUtils.getKeys(Interps.class, (i) -> i.key));
 
     public static final KeyCollection C_KEYBIND_CATGORIES = new KeyCollection("keybinds.config.^.title");
     public static final KeyCollection C_KEYBIND_CATGORIES_TOOLTIP = new KeyCollection("keybinds.config.^.tooltip");

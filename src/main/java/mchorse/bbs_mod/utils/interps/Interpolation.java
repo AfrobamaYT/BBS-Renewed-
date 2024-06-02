@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils.interps;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
+import mchorse.bbs_mod.data.types.StringType;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.CollectionUtils;
 
@@ -17,6 +18,8 @@ public class Interpolation extends BaseValue
     private double v3;
     private double v4;
 
+    private InterpolationWrapper wrapped;
+
     public Interpolation(String id, Map<String, IInterp> map)
     {
         super(id);
@@ -27,6 +30,11 @@ public class Interpolation extends BaseValue
     public double interpolate(InterpContext context)
     {
         return this.interp.interpolate(context.extra(this.v1, this.v2, this.v3, this.v4));
+    }
+
+    public Map<String, IInterp> getMap()
+    {
+        return this.map;
     }
 
     public IInterp getInterp()
@@ -92,6 +100,11 @@ public class Interpolation extends BaseValue
     @Override
     public BaseType toData()
     {
+        if (this.v1 == 0 && this.v2 == 0 && this.v3 == 0 && this.v4 == 0)
+        {
+            return new StringType(CollectionUtils.getKey(this.map, this.interp));
+        }
+
         ListType list = new ListType();
 
         list.addString(CollectionUtils.getKey(this.map, this.interp));
@@ -112,19 +125,27 @@ public class Interpolation extends BaseValue
 
             if (list.size() >= 5)
             {
-                String key = list.getString(0);
-                IInterp interp = this.map.get(key);
-
-                if (interp != null)
-                {
-                    this.interp = interp;
-                }
-
+                this.interp = this.map.getOrDefault(list.getString(0), Interps.LINEAR);
                 this.v1 = list.getDouble(1);
                 this.v2 = list.getDouble(2);
                 this.v3 = list.getDouble(3);
                 this.v4 = list.getDouble(4);
             }
         }
+        else if (data.isString())
+        {
+            this.interp = this.map.getOrDefault(data.asString(), Interps.LINEAR);
+            this.v1 = this.v2 = this.v3 = this.v4 = 0;
+        }
+    }
+
+    public IInterp wrap()
+    {
+        if (this.wrapped == null)
+        {
+            this.wrapped = new InterpolationWrapper(this);
+        }
+
+        return this.wrapped;
     }
 }

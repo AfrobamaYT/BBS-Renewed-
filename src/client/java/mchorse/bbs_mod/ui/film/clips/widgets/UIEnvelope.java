@@ -3,11 +3,11 @@ package mchorse.bbs_mod.ui.film.clips.widgets;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
-import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UICameraDopeSheetEditor;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -16,7 +16,6 @@ import mchorse.bbs_mod.utils.TimeUtilsClient;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Envelope;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.interps.Interps;
 
 public class UIEnvelope extends UIElement
 {
@@ -38,8 +37,8 @@ public class UIEnvelope extends UIElement
 
         this.panel = panel;
 
-        InterpolationTooltip preTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().pre.getInterp());
-        InterpolationTooltip postTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().post.getInterp());
+        InterpolationTooltip preTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().pre.wrap());
+        InterpolationTooltip postTooltip = new InterpolationTooltip(0F, 0.5F, () -> this.get().post.wrap());
 
         this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) ->
         {
@@ -47,18 +46,12 @@ public class UIEnvelope extends UIElement
         });
         this.pre = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_PRE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().pre.getInterp(), (v) ->
-            {
-                this.panel.editor.editMultiple(this.get().pre, (value) -> value.setInterp(v));
-            });
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.get().pre));
         });
         this.pre.tooltip(preTooltip);
         this.post = new UIButton(UIKeys.CAMERA_PANELS_ENVELOPES_POST, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.values(), this.get().post.getInterp(), (v) ->
-            {
-                this.panel.editor.editMultiple(this.get().post, (value) -> value.setInterp(v));
-            });
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.get().post));
         });
         this.post.tooltip(postTooltip);
 

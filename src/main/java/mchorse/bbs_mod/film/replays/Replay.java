@@ -73,7 +73,7 @@ public class Replay extends ValueGroup
             }
             else
             {
-                property.tween(segment.b.getValue(), segment.a.getValue(), segment.duration, new InterpolationWrapper(segment.a.getInterpolation()), (int) segment.offset, playing);
+                property.tween(segment.b.getValue(), segment.a.getValue(), segment.duration, segment.a.getInterpolation().wrap(), (int) segment.offset, playing);
             }
         }
         else

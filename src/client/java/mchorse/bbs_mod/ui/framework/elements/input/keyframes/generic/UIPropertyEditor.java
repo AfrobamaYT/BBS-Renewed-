@@ -9,11 +9,11 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
-import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UICameraDopeSheetEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIActionsConfigKeyframeFactory;
@@ -34,8 +34,6 @@ import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
@@ -108,7 +106,7 @@ public class UIPropertyEditor extends UIElement
                 return null;
             }
 
-            return keyframe.getInterpolation().getInterp();
+            return keyframe.getInterpolation().wrap();
         });
 
         this.frameButtons = new UIElement();
@@ -120,13 +118,7 @@ public class UIPropertyEditor extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = this.properties.getCurrent().getInterpolation();
-
-            UICameraUtils.interps(this.getContext(), Interps.values(), interp.getInterp(), (i) ->
-            {
-                interp.setInterp(i);
-                this.properties.setInterpolation(interp);
-            });
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.properties.getCurrent().getInterpolation()));
         });
         this.interp.tooltip(tooltip);
 

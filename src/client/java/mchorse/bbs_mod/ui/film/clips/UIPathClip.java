@@ -13,10 +13,10 @@ import mchorse.bbs_mod.ui.film.clips.modules.UIPointsModule;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
-import mchorse.bbs_mod.utils.interps.Interps;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector2d;
 
@@ -57,14 +57,14 @@ public class UIPathClip extends UIClip<PathClip>
         this.angle = new UIAngleModule(editor);
         this.interpPoint = new UIButton(UIKeys.CAMERA_PANELS_POINT, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationPoint.getInterp(), this.clip.interpolationPoint::setInterp);
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.clip.interpolationPoint));
         });
-        this.interpPoint.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationPoint.getInterp()));
+        this.interpPoint.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationPoint.wrap()));
         this.interpAngle = new UIButton(UIKeys.CAMERA_PANELS_ANGLE, (b) ->
         {
-            UICameraUtils.interps(this.getContext(), Interps.MAP.values(), this.clip.interpolationAngle.getInterp(), this.clip.interpolationAngle::setInterp);
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.clip.interpolationAngle));
         });
-        this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.getInterp()));
+        this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.wrap()));
 
         this.autoCenter = new UIToggle(UIKeys.CAMERA_PANELS_AUTO_CENTER, (b) ->
         {

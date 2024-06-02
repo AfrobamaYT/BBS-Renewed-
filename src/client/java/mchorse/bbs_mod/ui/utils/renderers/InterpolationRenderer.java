@@ -3,16 +3,13 @@ package mchorse.bbs_mod.ui.utils.renderers;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.tooltips.styles.TooltipStyle;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.InterpolationUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.MathUtils;
-
-import java.util.List;
 
 public class InterpolationRenderer
 {
@@ -25,27 +22,17 @@ public class InterpolationRenderer
             return;
         }
 
-        final float iterations = 40;
-        final float padding = 50;
-
         int w = 140;
         int h = 130;
 
-        FontRenderer font = context.batcher.getFont();
         TooltipStyle style = TooltipStyle.get();
-        String tooltip = InterpolationUtils.getTooltip(interp).get();
-        List<String> lines = font.wrap(tooltip, w - 20);
-        int ah = lines.isEmpty() ? 0 : lines.size() * (font.getHeight() + 4);
 
-        y = MathUtils.clamp(y, 0, context.menu.height - h - ah);
-
-        x -= (int) (w * anchorX);
-        y -= (int) (h * anchorY);
-
-        x = MathUtils.clamp(x, 0, context.menu.width - w);
         y = MathUtils.clamp(y, 0, context.menu.height - h);
 
-        Area.SHARED.set(x, y, w, h + ah);
+        x = MathUtils.clamp(x - (int) (w * anchorX), 0, context.menu.width - w);
+        y = MathUtils.clamp(y - (int) (h * anchorY), 0, context.menu.height - h);
+
+        Area.SHARED.set(x, y, w, h);
         style.renderBackground(context, Area.SHARED);
 
         Color fg = color.set(style.getForegroundColor(), false);
@@ -54,44 +41,55 @@ public class InterpolationRenderer
         fg.a = 0.2F;
 
         String name = InterpolationUtils.getName(interp).get();
+        int fh = context.batcher.getFont().getHeight() + 2;
 
         context.batcher.textShadow(name, x + 10, y + 10, fontColor);
 
-        for (int i = 0; i < lines.size(); i++)
+        renderInterpolationGraph(interp, context, fg, fontColor, x + 10, y + 10 + fh, w - 20, h - 20 - fh, duration, 10);
+    }
+
+    public static void renderInterpolationGraph(IInterp interp, UIContext context, Color fg, int fontColor, int x, int y, int w, int h, int duration, int padding)
+    {
+        if (interp == null)
         {
-            context.batcher.textShadow(lines.get(i), x + 10, y + h - 5 + i * (font.getHeight() + 4), fontColor);
+            return;
         }
+
+        final float iterations = 40;
 
         LineBuilder grid = new LineBuilder(0.25F);
 
-        grid.add(x + 10, y + 20);
-        grid.add(x + 10, y + h - 10);
-        grid.add(x + w - 10, y + h - 10);
-        grid.add(x + w - 10, y + 20);
-        grid.add(x + 10, y + 20);
+        /* Border */
+        grid.add(x, y);
+        grid.add(x, y + h);
+        grid.add(x + w, y + h);
+        grid.add(x + w, y);
+        grid.add(x, y);
+
+        /* Vertical middle */
+        grid.push();
+        grid.add(x + w / 2, y);
+        grid.add(x + w / 2, y + h);
+
+        /* Horizontal middle */
+        grid.push();
+        grid.add(x, y + h / 2);
+        grid.add(x + w, y + h / 2);
+
+        /* Padding */
+        grid.push();
+        grid.add(x, y + h - padding);
+        grid.add(x + w, y + h - padding);
 
         grid.push();
-        grid.add(x + w / 2, y + 20);
-        grid.add(x + w / 2, y + h - 10);
-
-        grid.push();
-        grid.add(x + 10, y + h - 10 - padding / 2);
-        grid.add(x + w - 10, y + h - 10 - padding / 2);
-
-        grid.push();
-        grid.add(x + 10, y + 20 + padding / 2);
-        grid.add(x + w - 10, y + 20 + padding / 2);
-
-        int h2 = (h + 10) / 2;
-
-        grid.push();
-        grid.add(x + 10, y + h2);
-        grid.add(x + w - 10, y + h2);
+        grid.add(x, y + padding);
+        grid.add(x + w, y + padding);
 
         grid.render(context.batcher, SolidColorLineRenderer.get(fg));
 
         fg.a = 1F;
 
+        /* Render the interpolation graph */
         LineBuilder line = new LineBuilder(0.75F);
 
         for (int i = 0; i <= iterations; i++)
@@ -99,21 +97,21 @@ public class InterpolationRenderer
             float factor = i / iterations;
             float value = 1 - interp.interpolate(0, 1, factor);
 
-            float x1 = x + 10 + factor * (w - 20);
-            float y1 = y + 20 + padding / 2 + value * (h - 30 - padding);
+            float x1 = x + factor * w;
+            float y1 = y + padding + value * (h - padding * 2F);
 
             line.add(x1, y1);
         }
 
         line.render(context.batcher, SolidColorLineRenderer.get(fg));
 
-        context.batcher.text("A", x + 14, (int)(y + h - 10 - padding / 2) + 4, fontColor);
-        context.batcher.text("B", x + w - 19, (int)(y + 20 + padding / 2) - font.getHeight() - 4, fontColor);
+        context.batcher.text("A", x + 4, (int)(y + h - padding) + 4, fontColor);
+        context.batcher.text("B", x + w - 9, (int)(y + padding) - context.batcher.getFont().getHeight() - 4, fontColor);
 
         float tick = context.getTickTransition() % (duration + 20);
         float factor = MathUtils.clamp(tick / (float) duration, 0, 1);
-        int px = x + w - 5;
-        int py = y + 20 + (int) (padding / 2) + (int) ((1 - interp.interpolate(0, 1, factor)) * (h - 30 - padding));
+        int px = x + w + 5;
+        int py = y + (int) padding + (int) ((1 - interp.interpolate(0, 1, factor)) * (h - padding * 2F));
 
         context.batcher.box(px - 2, py - 2, px + 2, py + 2, Colors.A100 + fg.getRGBColor());
     }

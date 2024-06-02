@@ -3,7 +3,7 @@ package mchorse.bbs_mod.utils.interps;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public enum Interps implements IInterp
@@ -29,7 +29,7 @@ public enum Interps implements IInterp
         @Override
         public double interpolate(InterpContext context)
         {
-            double steps = Math.floor(Math.min(1, context.v1));
+            double steps = Math.floor(Math.max(1, context.v1));
 
             if (steps <= 1)
             {
@@ -460,7 +460,7 @@ public enum Interps implements IInterp
         }
     };
 
-    public static final Map<String, IInterp> MAP = new HashMap<>();
+    public static final Map<String, IInterp> MAP = new LinkedHashMap<>();
 
     public final String key;
     public final int keybind;

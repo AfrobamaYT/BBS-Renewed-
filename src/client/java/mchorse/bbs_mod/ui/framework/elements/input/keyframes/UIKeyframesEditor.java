@@ -7,18 +7,16 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.keyframes.KeyframeInterpolation;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSimplifier;
 import org.joml.Vector2i;
 
@@ -54,7 +52,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
                 return null;
             }
 
-            return keyframe.getInterpolation().getInterp();
+            return keyframe.getInterpolation().wrap();
         });
 
         this.frameButtons = new UIElement();
@@ -66,13 +64,7 @@ public abstract class UIKeyframesEditor <T extends UIKeyframes> extends UIElemen
         this.value.tooltip(UIKeys.KEYFRAMES_VALUE);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = this.keyframes.getCurrent().getInterpolation();
-
-            UICameraUtils.interps(this.getContext(), KeyframeInterpolation.INTERPOLATIONS, interp.getInterp(), (i) ->
-            {
-                interp.setInterp(i);
-                this.keyframes.setInterpolation(interp);
-            });
+            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.keyframes.getCurrent().getInterpolation()));
         });
         this.interp.tooltip(tooltip);
 
