@@ -89,6 +89,8 @@ public class InterpolationRenderer
 
         fg.a = 1F;
 
+        context.batcher.clip(x - 1, y, w + 10, h, context);
+
         /* Render the interpolation graph */
         LineBuilder line = new LineBuilder(0.75F);
 
@@ -105,14 +107,15 @@ public class InterpolationRenderer
 
         line.render(context.batcher, SolidColorLineRenderer.get(fg));
 
-        context.batcher.text("A", x + 4, (int)(y + h - padding) + 4, fontColor);
-        context.batcher.text("B", x + w - 9, (int)(y + padding) - context.batcher.getFont().getHeight() - 4, fontColor);
+        context.batcher.text("A", x + 4, (y + h - padding) + 4, fontColor);
+        context.batcher.text("B", x + w - 9, (y + padding) - context.batcher.getFont().getHeight() - 4, fontColor);
 
         float tick = context.getTickTransition() % (duration + 20);
         float factor = MathUtils.clamp(tick / (float) duration, 0, 1);
         int px = x + w + 5;
-        int py = y + (int) padding + (int) ((1 - interp.interpolate(0, 1, factor)) * (h - padding * 2F));
+        int py = y + padding + (int) ((1 - interp.interpolate(0, 1, factor)) * (h - padding * 2F));
 
         context.batcher.box(px - 2, py - 2, px + 2, py + 2, Colors.A100 + fg.getRGBColor());
+        context.batcher.unclip(context);
     }
 }

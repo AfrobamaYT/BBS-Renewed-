@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.utils.interps;
 
+import mchorse.bbs_mod.utils.interps.easings.EasingArgs;
+
 public class InterpContext
 {
     public double a;
@@ -11,10 +13,7 @@ public class InterpContext
     public double b0;
 
     /* Extra variables */
-    public double v1;
-    public double v2;
-    public double v3;
-    public double v4;
+    public final EasingArgs args = new EasingArgs();
 
     public InterpContext set(double a, double b, double x)
     {
@@ -29,18 +28,31 @@ public class InterpContext
         this.b0 = b0;
         this.x = x;
 
-        this.v1 = this.v2 = this.v3 = this.v4 = 0;
+        return this;
+    }
+
+    public InterpContext extra(EasingArgs args)
+    {
+        this.args.v1 = args.v1;
+        this.args.v2 = args.v2;
+        this.args.v3 = args.v3;
+        this.args.v4 = args.v4;
 
         return this;
     }
 
     public InterpContext extra(double v1, double v2, double v3, double v4)
     {
-        this.v1 = v1;
-        this.v2 = v2;
-        this.v3 = v3;
-        this.v4 = v4;
+        this.args.v1 = v1;
+        this.args.v2 = v2;
+        this.args.v3 = v3;
+        this.args.v4 = v4;
 
         return this;
+    }
+
+    public EasingArgs getArgs()
+    {
+        return this.args;
     }
 }

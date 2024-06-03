@@ -19,7 +19,7 @@ public class Interpolations
         @Override
         public double interpolate(InterpContext context)
         {
-            double steps = Math.floor(Math.max(1, context.v1));
+            double steps = Math.floor(Math.max(1, context.args.v1));
 
             if (steps <= 1)
             {
@@ -57,8 +57,8 @@ public class Interpolations
     public static final IInterp QUINT_INOUT = new EasingInterp("quint_inout", GLFW.GLFW_KEY_N, Easings.inOut(Easings.QUINTIC));
 
     public static final IInterp EXP_IN = new EasingInterp("exp_in", GLFW.GLFW_KEY_E, Easings.EXP);
-    public static final IInterp EXP_OUT = new EasingInterp("exp_out", GLFW.GLFW_KEY_E, Easings.expOut());
-    public static final IInterp EXP_INOUT = new EasingInterp("exp_inout", GLFW.GLFW_KEY_E, Easings.expInOut());
+    public static final IInterp EXP_OUT = new EasingInterp("exp_out", GLFW.GLFW_KEY_E, Easings.out(Easings.EXP));
+    public static final IInterp EXP_INOUT = new EasingInterp("exp_inout", GLFW.GLFW_KEY_E, Easings.inOut(Easings.EXP));
 
     public static final IInterp BACK_IN = new EasingInterp("back_in", GLFW.GLFW_KEY_B, Easings.BACK);
     public static final IInterp BACK_OUT = new EasingInterp("back_out", GLFW.GLFW_KEY_B, Easings.out(Easings.BACK));
@@ -86,7 +86,7 @@ public class Interpolations
         @Override
         public double interpolate(InterpContext context)
         {
-            return Lerps.cubic(context.a + context.v1, context.a, context.b, context.b + context.v2, context.x);
+            return Lerps.cubic(context.a0 + context.args.v1, context.a, context.b, context.b0 + context.args.v2, context.x);
         }
     };
 
@@ -95,7 +95,7 @@ public class Interpolations
         @Override
         public double interpolate(InterpContext context)
         {
-            return Lerps.cubicHermite(context.a + context.v1, context.a, context.b, context.b + context.v2, context.x);
+            return Lerps.cubicHermite(context.a0 + context.args.v1, context.a, context.b, context.b0 + context.args.v2, context.x);
         }
     };
 
@@ -104,11 +104,7 @@ public class Interpolations
         @Override
         public double interpolate(InterpContext context)
         {
-            double a = context.a;
-            double b = context.b;
-            double x = context.x;
-
-            return Lerps.cubicHermite(a, a, b, b, x);
+            return Lerps.cubicHermite(context.a, context.a, context.b, context.b, context.x);
         }
     };
 

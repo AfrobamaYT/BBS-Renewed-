@@ -18,6 +18,6 @@ public class EasingInterp extends BaseInterp
     @Override
     public double interpolate(InterpContext context)
     {
-        return Lerps.lerp(context.a, context.b, this.easing.calculate(context.x));
+        return Lerps.lerp(context.a, context.b, this.easing.calculate(context.getArgs(), context.x));
     }
 }

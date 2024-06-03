@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.context;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -26,6 +27,11 @@ import java.util.Map;
 public class UIInterpolationContextMenu extends UIContextMenu
 {
     public static final Map<IInterp, Icon> INTERP_ICON_MAP = new HashMap<>();
+
+    private static final int PADDING = 10;
+    private static final int MARGIN = 5;
+    private static final int GRAPH_HEIGHT = 80;
+    private static final int ARGUMENTS_HEIGHT = 45;
 
     public UIElement grid;
     public UITrackpad v1;
@@ -83,6 +89,7 @@ public class UIInterpolationContextMenu extends UIContextMenu
 
         int w = 120;
         int h = (int) Math.ceil(interpolation.getMap().values().size() / (w / 20F)) * 20;
+        int gridY = PADDING + GRAPH_HEIGHT + MARGIN + ARGUMENTS_HEIGHT;
 
         this.v1 = new UITrackpad((v) -> this.interpolation.setV1(v));
         this.v2 = new UITrackpad((v) -> this.interpolation.setV2(v));
@@ -95,7 +102,7 @@ public class UIInterpolationContextMenu extends UIContextMenu
         this.v4.setValue(interpolation.getV4());
 
         this.grid = new UIElement();
-        this.grid.relative(this).xy(10, 85 + 45).w(w).h(h).grid(0).items(6);
+        this.grid.relative(this).xy(PADDING, gridY).w(w).h(h).grid(0).items(6);
 
         for (IInterp value : interpolation.getMap().values())
         {
@@ -109,9 +116,9 @@ public class UIInterpolationContextMenu extends UIContextMenu
 
         UIElement vs = UI.column(UI.row(this.v1, this.v2), UI.row(this.v3, this.v4));
 
-        vs.relative(this).xy(10, 80).w(w);
+        vs.relative(this).xy(PADDING, PADDING + GRAPH_HEIGHT + MARGIN).w(w);
 
-        this.wh(w + 20, 85 + 45 + h + 10);
+        this.wh(w + PADDING * 2, gridY + h + PADDING);
         this.add(vs, this.grid);
     }
 
@@ -158,11 +165,11 @@ public class UIInterpolationContextMenu extends UIContextMenu
 
         fg.a = 0.5F;
 
-        InterpolationRenderer.renderInterpolationGraph(this.interpolation.wrap(), context, fg, Colors.WHITE, this.area.x + 10, this.area.y + 10, 120, 60, 20,10);
+        InterpolationRenderer.renderInterpolationGraph(this.interpolation.wrap(), context, fg, Colors.WHITE, this.area.x + PADDING, this.area.y + PADDING, this.area.w - PADDING * 2, GRAPH_HEIGHT, 20, 15);
 
         if (icon != null)
         {
-            icon.area.render(context.batcher, color | Colors.A50);
+            UIDashboardPanels.renderHighlight(context.batcher, icon.area);
         }
     }
 }

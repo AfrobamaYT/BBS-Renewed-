@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.StringType;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.interps.easings.EasingArgs;
 
 import java.util.Map;
 
@@ -13,10 +14,7 @@ public class Interpolation extends BaseValue
     private final Map<String, IInterp> map;
 
     private IInterp interp = Interpolations.LINEAR;
-    private double v1;
-    private double v2;
-    private double v3;
-    private double v4;
+    private EasingArgs args = new EasingArgs();
 
     private InterpolationWrapper wrapped;
 
@@ -29,7 +27,7 @@ public class Interpolation extends BaseValue
 
     public double interpolate(InterpContext context)
     {
-        return this.interp.interpolate(context.extra(this.v1, this.v2, this.v3, this.v4));
+        return this.interp.interpolate(context.extra(this.args));
     }
 
     public Map<String, IInterp> getMap()
@@ -51,56 +49,56 @@ public class Interpolation extends BaseValue
 
     public double getV1()
     {
-        return this.v1;
+        return this.args.v1;
     }
 
     public void setV1(double v1)
     {
         this.preNotifyParent();
-        this.v1 = v1;
+        this.args.v1 = v1;
         this.postNotifyParent();
     }
 
     public double getV2()
     {
-        return this.v2;
+        return this.args.v2;
     }
 
     public void setV2(double v2)
     {
         this.preNotifyParent();
-        this.v2 = v2;
+        this.args.v2 = v2;
         this.postNotifyParent();
     }
 
     public double getV3()
     {
-        return this.v3;
+        return this.args.v3;
     }
 
     public void setV3(double v3)
     {
         this.preNotifyParent();
-        this.v3 = v3;
+        this.args.v3 = v3;
         this.postNotifyParent();
     }
 
     public double getV4()
     {
-        return this.v4;
+        return this.args.v4;
     }
 
     public void setV4(double v4)
     {
         this.preNotifyParent();
-        this.v4 = v4;
+        this.args.v4 = v4;
         this.postNotifyParent();
     }
 
     @Override
     public BaseType toData()
     {
-        if (this.v1 == 0 && this.v2 == 0 && this.v3 == 0 && this.v4 == 0)
+        if (this.args.v1 == 0 && this.args.v2 == 0 && this.args.v3 == 0 && this.args.v4 == 0)
         {
             return new StringType(CollectionUtils.getKey(this.map, this.interp));
         }
@@ -108,10 +106,10 @@ public class Interpolation extends BaseValue
         ListType list = new ListType();
 
         list.addString(CollectionUtils.getKey(this.map, this.interp));
-        list.addDouble(this.v1);
-        list.addDouble(this.v2);
-        list.addDouble(this.v3);
-        list.addDouble(this.v4);
+        list.addDouble(this.args.v1);
+        list.addDouble(this.args.v2);
+        list.addDouble(this.args.v3);
+        list.addDouble(this.args.v4);
 
         return list;
     }
@@ -126,16 +124,16 @@ public class Interpolation extends BaseValue
             if (list.size() >= 5)
             {
                 this.interp = this.map.getOrDefault(list.getString(0), Interpolations.LINEAR);
-                this.v1 = list.getDouble(1);
-                this.v2 = list.getDouble(2);
-                this.v3 = list.getDouble(3);
-                this.v4 = list.getDouble(4);
+                this.args.v1 = list.getDouble(1);
+                this.args.v2 = list.getDouble(2);
+                this.args.v3 = list.getDouble(3);
+                this.args.v4 = list.getDouble(4);
             }
         }
         else if (data.isString())
         {
             this.interp = this.map.getOrDefault(data.asString(), Interpolations.LINEAR);
-            this.v1 = this.v2 = this.v3 = this.v4 = 0;
+            this.args.v1 = this.args.v2 = this.args.v3 = this.args.v4 = 0;
         }
     }
 
