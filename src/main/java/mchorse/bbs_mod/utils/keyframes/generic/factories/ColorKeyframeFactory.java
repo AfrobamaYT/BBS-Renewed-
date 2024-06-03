@@ -33,12 +33,12 @@ public class ColorKeyframeFactory implements IGenericKeyframeFactory<Color>
     }
 
     @Override
-    public Color interpolate(Color a, Color b, IInterp interpolation, float x)
+    public Color interpolate(Color preA, Color a, Color b, Color postB, IInterp interpolation, float x)
     {
-        this.i.r = interpolation.interpolate(a.r, b.r, x);
-        this.i.g = interpolation.interpolate(a.g, b.g, x);
-        this.i.b = interpolation.interpolate(a.b, b.b, x);
-        this.i.a = interpolation.interpolate(a.a, b.a, x);
+        this.i.r = (float) interpolation.interpolate(IInterp.context.set(preA.r, a.r, b.r, postB.r, x));
+        this.i.g = (float) interpolation.interpolate(IInterp.context.set(preA.g, a.g, b.g, postB.g, x));
+        this.i.b = (float) interpolation.interpolate(IInterp.context.set(preA.b, a.b, b.b, postB.b, x));
+        this.i.a = (float) interpolation.interpolate(IInterp.context.set(preA.a, a.a, b.a, postB.a, x));
 
         return this.i;
     }

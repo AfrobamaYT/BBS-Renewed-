@@ -34,6 +34,7 @@ import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
@@ -118,7 +119,10 @@ public class UIPropertyEditor extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            this.getContext().replaceContextMenu(new UIInterpolationContextMenu(this.properties.getCurrent().getInterpolation()));
+            Interpolation interp = this.properties.getCurrent().getInterpolation();
+            UIInterpolationContextMenu menu = new UIInterpolationContextMenu(interp);
+
+            this.getContext().replaceContextMenu(menu.callback(() -> this.properties.setInterpolation(interp)));
         });
         this.interp.tooltip(tooltip);
 

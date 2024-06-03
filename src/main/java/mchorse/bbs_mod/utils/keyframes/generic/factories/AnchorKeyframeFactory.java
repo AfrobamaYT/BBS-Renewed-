@@ -34,7 +34,7 @@ public class AnchorKeyframeFactory implements IGenericKeyframeFactory<AnchorProp
     }
 
     @Override
-    public AnchorProperty.Anchor interpolate(AnchorProperty.Anchor a, AnchorProperty.Anchor b, IInterp interpolation, float x)
+    public AnchorProperty.Anchor interpolate(AnchorProperty.Anchor preA, AnchorProperty.Anchor a, AnchorProperty.Anchor b, AnchorProperty.Anchor postB, IInterp interpolation, float x)
     {
         return a;
     }

@@ -28,11 +28,12 @@ public class Vector4fKeyframeFactory implements IGenericKeyframeFactory<Vector4f
     }
 
     @Override
-    public Vector4f interpolate(Vector4f a, Vector4f b, IInterp interpolation, float x)
+    public Vector4f interpolate(Vector4f preA, Vector4f a, Vector4f b, Vector4f postB, IInterp interpolation, float x)
     {
-        float factor = interpolation.interpolate(0, 1, x);
-
-        a.lerp(b, factor, this.i);
+        this.i.x = (float) interpolation.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
+        this.i.y = (float) interpolation.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
+        this.i.z = (float) interpolation.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
+        this.i.w = (float) interpolation.interpolate(IInterp.context.set(preA.w, a.w, b.w, postB.w, x));
 
         return this.i;
     }

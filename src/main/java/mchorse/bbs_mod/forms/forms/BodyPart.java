@@ -82,18 +82,6 @@ public class BodyPart implements IMapSerializable
         return part;
     }
 
-    public void tween(BodyPart part, int duration, IInterp interpolation, int offset, boolean playing)
-    {
-        if (this.form != null && part.form != null)
-        {
-            this.form.tween(part.form, duration, interpolation, offset, playing);
-        }
-
-        this.transform.copy(part.transform);
-        this.bone = part.bone;
-        this.useTarget = part.useTarget;
-    }
-
     @Override
     public boolean equals(Object obj)
     {

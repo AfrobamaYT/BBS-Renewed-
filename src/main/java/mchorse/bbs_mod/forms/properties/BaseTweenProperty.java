@@ -26,7 +26,7 @@ public abstract class BaseTweenProperty <T> extends BaseProperty<T>
     {
         if (this.isTweening())
         {
-            return this.factory.interpolate(this.lastValue, this.value, this.interpolation, this.getTweenFactor(transition));
+            return this.factory.interpolate(this.preValue, this.lastValue, this.value, this.postValue, this.interpolation, this.getTweenFactor(transition));
         }
 
         return super.get(transition);

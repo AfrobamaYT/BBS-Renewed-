@@ -25,8 +25,8 @@ public class FloatKeyframeFactory implements IGenericKeyframeFactory<Float>
     }
 
     @Override
-    public Float interpolate(Float a, Float b, IInterp interpolation, float x)
+    public Float interpolate(Float preA, Float a, Float b, Float postB, IInterp interpolation, float x)
     {
-        return interpolation.interpolate(a, b, x);
+        return (float) interpolation.interpolate(IInterp.context.set(preA, a, b, postB, x));
     }
 }

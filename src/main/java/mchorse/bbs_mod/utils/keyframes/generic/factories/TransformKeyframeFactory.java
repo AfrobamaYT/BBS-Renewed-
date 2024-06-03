@@ -34,12 +34,9 @@ public class TransformKeyframeFactory implements IGenericKeyframeFactory<Transfo
     }
 
     @Override
-    public Transform interpolate(Transform a, Transform b, IInterp interpolation, float x)
+    public Transform interpolate(Transform preA, Transform a, Transform b, Transform postB, IInterp interpolation, float x)
     {
-        float factor = interpolation.interpolate(0, 1, x);
-
-        this.i.copy(a);
-        this.i.lerp(b, factor);
+        this.i.lerp(preA, a, b, postB, interpolation, x);
 
         return this.i;
     }

@@ -39,6 +39,7 @@ public class UIInterpolationContextMenu extends UIContextMenu
     public UITrackpad v3;
     public UITrackpad v4;
 
+    private Runnable callback;
     private Interpolation interpolation;
     private Map<IInterp, UIIcon> icons = new HashMap<>();
 
@@ -106,7 +107,15 @@ public class UIInterpolationContextMenu extends UIContextMenu
 
         for (IInterp value : interpolation.getMap().values())
         {
-            UIIcon icon = new UIIcon(INTERP_ICON_MAP.getOrDefault(value, Icons.INTERP_LINEAR), (b) -> this.interpolation.setInterp(value));
+            UIIcon icon = new UIIcon(INTERP_ICON_MAP.getOrDefault(value, Icons.INTERP_LINEAR), (b) ->
+            {
+                this.interpolation.setInterp(value);
+
+                if (this.callback != null)
+                {
+                    this.callback.run();
+                }
+            });
 
             icon.tooltip(InterpolationUtils.getName(value));
             this.grid.add(icon);
@@ -139,6 +148,13 @@ public class UIInterpolationContextMenu extends UIContextMenu
         }
 
         this.keys().register(combo.category(category), icon::clickItself);
+    }
+
+    public UIInterpolationContextMenu callback(Runnable callback)
+    {
+        this.callback = callback;
+
+        return this;
     }
 
     @Override

@@ -40,30 +40,24 @@ public class PoseKeyframeFactory implements IGenericKeyframeFactory<Pose>
     }
 
     @Override
-    public Pose interpolate(Pose a, Pose b, IInterp interpolation, float x)
+    public Pose interpolate(Pose preA, Pose a, Pose b, Pose postB, IInterp interpolation, float x)
     {
-        float factor = interpolation.interpolate(0, 1, x);
-
         keys.clear();
 
-        if (a != null)
-        {
-            keys.addAll(a.transforms.keySet());
-        }
-
-        if (b != null)
-        {
-            keys.addAll(b.transforms.keySet());
-        }
-
-        this.i.copy(a);
+        if (preA != a && preA != null) keys.addAll(preA.transforms.keySet());
+        if (a != null) keys.addAll(a.transforms.keySet());
+        if (b != null) keys.addAll(b.transforms.keySet());
+        if (postB != b && postB != null) keys.addAll(postB.transforms.keySet());
 
         for (String key : keys)
         {
             Transform transform = this.i.get(key);
-            Transform t = b.get(key);
+            Transform preATransform = preA.get(key);
+            Transform aTransform = a.get(key);
+            Transform bTransform = b.get(key);
+            Transform postBTransform = postB.get(key);
 
-            transform.lerp(t, factor);
+            transform.lerp(preATransform, aTransform, bTransform, postBTransform, interpolation, x);
         }
 
         return this.i;

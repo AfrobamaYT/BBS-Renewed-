@@ -27,7 +27,7 @@ public class LinkKeyframeFactory implements IGenericKeyframeFactory<Link>
     }
 
     @Override
-    public Link interpolate(Link a, Link b, IInterp interpolation, float x)
+    public Link interpolate(Link preA, Link a, Link b, Link postB, IInterp interpolation, float x)
     {
         if (!this.canAnimate(a, b))
         {

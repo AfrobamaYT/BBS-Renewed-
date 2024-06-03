@@ -37,7 +37,7 @@ public class BlockStateKeyframeFactory implements IGenericKeyframeFactory<BlockS
     }
 
     @Override
-    public BlockState interpolate(BlockState a, BlockState b, IInterp interpolation, float x)
+    public BlockState interpolate(BlockState preA, BlockState a, BlockState b, BlockState postB, IInterp interpolation, float x)
     {
         return a;
     }

@@ -4,7 +4,6 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.ValueList;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
 
@@ -57,14 +56,12 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
 
     public GenericKeyframeSegment find(float ticks)
     {
-        Pair<GenericKeyframe<T>, GenericKeyframe<T>> pair = this.findSegment(ticks);
+        GenericKeyframeSegment segment = this.findSegment(ticks);
 
-        if (pair == null)
+        if (segment == null)
         {
             return null;
         }
-
-        GenericKeyframeSegment<T> segment = new GenericKeyframeSegment(pair.a, pair.b);
 
         segment.setup(ticks);
 
@@ -74,7 +71,7 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
     /**
      * Find a keyframe segment at given ticks
      */
-    public Pair<GenericKeyframe<T>, GenericKeyframe<T>> findSegment(float ticks)
+    public GenericKeyframeSegment<T> findSegment(float ticks)
     {
         /* No keyframes, no values */
         if (this.list.isEmpty())
@@ -87,7 +84,7 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
 
         if (ticks <= prev.getTick())
         {
-            return new Pair<>(prev, prev);
+            return new GenericKeyframeSegment(prev, prev);
         }
 
         int size = this.list.size();
@@ -95,7 +92,7 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
 
         if (ticks >= last.getTick())
         {
-            return new Pair<>(last, last);
+            return new GenericKeyframeSegment(last, last);
         }
 
         /* Use binary search to find the proper segment */
@@ -126,7 +123,7 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
 
         GenericKeyframe<T> a = low - 1 >= 0 ? this.list.get(low - 1) : b;
 
-        return new Pair<>(a, b);
+        return new GenericKeyframeSegment(a, b);
     }
 
     /* Write only */

@@ -5,7 +5,6 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.utils.interps.IInterp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,32 +55,6 @@ public class BodyPartManager implements IMapSerializable
         for (BodyPart part : this.parts)
         {
             part.update(target);
-        }
-    }
-
-    public void tween(BodyPartManager parts, int duration, IInterp interpolation, int offset, boolean playing)
-    {
-        if (this.parts.size() > parts.parts.size())
-        {
-            while (this.parts.size() != parts.parts.size())
-            {
-                this.parts.remove(this.parts.size() - 1);
-            }
-        }
-        else if (this.parts.size() < parts.parts.size())
-        {
-            for (int i = this.parts.size(); i < parts.parts.size(); i++)
-            {
-                this.parts.add(parts.parts.get(i).copy());
-            }
-        }
-
-        for (int i = 0, c = this.parts.size(); i < c; i++)
-        {
-            BodyPart thisPart = this.parts.get(i);
-            BodyPart otherPart = parts.parts.get(i);
-
-            thisPart.tween(otherPart, duration, interpolation, offset, playing);
         }
     }
 

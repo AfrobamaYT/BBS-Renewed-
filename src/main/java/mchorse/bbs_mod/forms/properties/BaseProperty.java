@@ -12,8 +12,10 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
 {
     protected Form form;
     protected String key;
+    protected T preValue;
     protected T value;
     protected T lastValue;
+    protected T postValue;
 
     private boolean playing = true;
     protected int ticks = -1;
@@ -82,10 +84,12 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     }
 
     @Override
-    public void tween(T newValue, T oldValue, int duration, IInterp interpolation, int offset, boolean playing)
+    public void tween(T preValue, T oldValue, T newValue, T postValue, int duration, IInterp interpolation, int offset, boolean playing)
     {
+        this.preValue = preValue;
         this.lastValue = oldValue;
         this.value = newValue;
+        this.postValue = postValue;
 
         this.ticks = this.duration = duration;
         this.interpolation = interpolation == null ? Interpolations.LINEAR : interpolation;

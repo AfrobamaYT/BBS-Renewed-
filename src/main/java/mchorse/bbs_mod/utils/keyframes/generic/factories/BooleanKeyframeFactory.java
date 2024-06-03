@@ -25,7 +25,7 @@ public class BooleanKeyframeFactory implements IGenericKeyframeFactory<Boolean>
     }
 
     @Override
-    public Boolean interpolate(Boolean a, Boolean b, IInterp interpolation, float x)
+    public Boolean interpolate(Boolean preA, Boolean a, Boolean b, Boolean postB, IInterp interpolation, float x)
     {
         return a;
     }

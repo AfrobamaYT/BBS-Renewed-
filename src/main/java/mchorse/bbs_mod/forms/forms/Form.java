@@ -168,23 +168,6 @@ public abstract class Form implements IMapSerializable
         }
     }
 
-    /* Tweening */
-
-    public void tween(Form form, int duration, IInterp interpolation, int offset, boolean playing)
-    {
-        for (IFormProperty property : this.properties.values())
-        {
-            IFormProperty formProperty = form.properties.get(property.getKey());
-
-            if (formProperty != null)
-            {
-                property.tween(formProperty.get(), property.get(), duration, interpolation, offset, playing);
-            }
-        }
-
-        this.parts.tween(form.parts, duration, interpolation, offset, playing);
-    }
-
     /* Data comparison and (de)serialization */
 
     public final Form copy()

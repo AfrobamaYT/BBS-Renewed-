@@ -3,6 +3,7 @@ package mchorse.bbs_mod.utils.pose;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,6 +25,21 @@ public class Transform implements IMapSerializable
         this.scale.lerp(transform.scale, a);
         this.rotate.lerp(transform.rotate, a);
         this.rotate2.lerp(transform.rotate2, a);
+    }
+
+    public void lerp(Transform preA, Transform a, Transform b, Transform postB, IInterp interp, float x)
+    {
+        this.lerp(this.translate, preA.translate, a.translate, b.translate, postB.translate, interp, x);
+        this.lerp(this.scale, preA.scale, a.scale, b.scale, postB.scale, interp, x);
+        this.lerp(this.rotate, preA.rotate, a.rotate, b.rotate, postB.rotate, interp, x);
+        this.lerp(this.rotate2, preA.rotate2, a.rotate2, b.rotate2, postB.rotate2, interp, x);
+    }
+
+    private void lerp(Vector3f target, Vector3f preA, Vector3f a, Vector3f b, Vector3f postB, IInterp interp, float x)
+    {
+        target.x = (float) interp.interpolate(IInterp.context.set(preA.x, a.x, b.x, postB.x, x));
+        target.y = (float) interp.interpolate(IInterp.context.set(preA.y, a.y, b.y, postB.y, x));
+        target.z = (float) interp.interpolate(IInterp.context.set(preA.z, a.z, b.z, postB.z, x));
     }
 
     public void identity()

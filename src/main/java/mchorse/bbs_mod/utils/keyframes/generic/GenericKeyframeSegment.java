@@ -6,6 +6,9 @@ public class GenericKeyframeSegment <T>
 {
     public final GenericKeyframe<T> a;
     public final GenericKeyframe<T> b;
+
+    public final GenericKeyframe<T> preA;
+    public final GenericKeyframe<T> postB;
     public int duration;
     public float offset;
     public float x;
@@ -14,6 +17,23 @@ public class GenericKeyframeSegment <T>
     {
         this.a = a;
         this.b = b;
+
+        GenericKeyframeChannel<T> channel = (GenericKeyframeChannel<T>) a.getParent();
+        int index = channel.getKeyframes().indexOf(a);
+
+        if (index >= 0 && a != b)
+        {
+            GenericKeyframe<T> preA = channel.get(index - 1);
+            GenericKeyframe<T> postB = channel.get(index + 2);
+
+            this.preA = preA == null ? a : preA;
+            this.postB = postB == null ? b : postB;
+        }
+        else
+        {
+            this.preA = a;
+            this.postB = b;
+        }
     }
 
     public void setup(float ticks)
@@ -29,7 +49,7 @@ public class GenericKeyframeSegment <T>
     {
         IGenericKeyframeFactory<T> factory = this.a.getFactory();
 
-        return factory.copy(factory.interpolate(this.a.getValue(), this.b.getValue(), this.a.getInterpolation().wrap(), this.x));
+        return factory.copy(factory.interpolate(this.preA.getValue(), this.a.getValue(), this.b.getValue(), this.postB.getValue(), this.a.getInterpolation().wrap(), this.x));
     }
 
     public boolean isSame()

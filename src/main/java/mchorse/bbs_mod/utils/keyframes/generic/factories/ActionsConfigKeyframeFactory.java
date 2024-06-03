@@ -36,7 +36,7 @@ public class ActionsConfigKeyframeFactory implements IGenericKeyframeFactory<Act
     }
 
     @Override
-    public ActionsConfig interpolate(ActionsConfig a, ActionsConfig b, IInterp interpolation, float x)
+    public ActionsConfig interpolate(ActionsConfig preA, ActionsConfig a, ActionsConfig b, ActionsConfig postB, IInterp interpolation, float x)
     {
         return a;
     }
