@@ -12,6 +12,7 @@ public class KeyframeFactories
     public static final BooleanKeyframeFactory BOOLEAN = new BooleanKeyframeFactory();
     public static final StringKeyframeFactory STRING = new StringKeyframeFactory();
     public static final FloatKeyframeFactory FLOAT = new FloatKeyframeFactory();
+    public static final DoubleKeyframeFactory DOUBLE = new DoubleKeyframeFactory();
     public static final IntegerKeyframeFactory INTEGER = new IntegerKeyframeFactory();
     public static final LinkKeyframeFactory LINK = new LinkKeyframeFactory();
     public static final Vector4fKeyframeFactory VECTOR4F = new Vector4fKeyframeFactory();
@@ -28,6 +29,7 @@ public class KeyframeFactories
         FACTORIES.put("boolean", BOOLEAN);
         FACTORIES.put("string", STRING);
         FACTORIES.put("float", FLOAT);
+        FACTORIES.put("double", DOUBLE);
         FACTORIES.put("integer", INTEGER);
         FACTORIES.put("link", LINK);
         FACTORIES.put("vector4f", VECTOR4F);

@@ -9,6 +9,7 @@ import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Keyframe channel
@@ -205,6 +206,33 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
         this.list.sort((a, b) -> (int) (a.getTick() - b.getTick()));
 
         this.sync();
+    }
+
+    public void simplify()
+    {
+        if (this.list.size() <= 2)
+        {
+            return;
+        }
+
+        this.preNotifyParent();
+
+        for (int i = 1; i < this.list.size() - 1; i++)
+        {
+            GenericKeyframe<T> prev = this.list.get(i - 1);
+            GenericKeyframe<T> current = this.list.get(i);
+            GenericKeyframe<T> next = this.list.get(i + 1);
+
+            if (Objects.equals(current.getValue(), prev.getValue()) && Objects.equals(current.getValue(), next.getValue()))
+            {
+                this.list.remove(i);
+
+                i -= 1;
+            }
+        }
+
+        this.sync();
+        this.postNotifyParent();
     }
 
     @Override

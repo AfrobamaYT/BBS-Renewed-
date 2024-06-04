@@ -28,6 +28,8 @@ public class InterpContext
         this.b0 = b0;
         this.x = x;
 
+        this.args.v1 = this.args.v2 = this.args.v3 = this.args.v4 = 0D;
+
         return this;
     }
 

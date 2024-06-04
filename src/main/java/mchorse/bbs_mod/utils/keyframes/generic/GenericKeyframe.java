@@ -10,14 +10,13 @@ import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory
 public class GenericKeyframe <T> extends ValueGroup
 {
     private long tick;
+    private T value;
 
     /**
      * Forced duration that would be used instead of the difference
      * between two keyframes, if not 0
      */
     private int duration;
-
-    private T value;
     private final Interpolation interp = new Interpolation("interp", Interpolations.MAP);
 
     private final IGenericKeyframeFactory<T> factory;

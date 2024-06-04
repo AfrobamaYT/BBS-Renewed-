@@ -3,6 +3,7 @@ package mchorse.bbs_mod.utils.keyframes.generic.factories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.HashSet;
@@ -48,6 +49,11 @@ public class PoseKeyframeFactory implements IGenericKeyframeFactory<Pose>
         if (a != null) keys.addAll(a.transforms.keySet());
         if (b != null) keys.addAll(b.transforms.keySet());
         if (postB != b && postB != null) keys.addAll(postB.transforms.keySet());
+
+        for (PoseTransform value : this.i.transforms.values())
+        {
+            value.identity();
+        }
 
         for (String key : keys)
         {
