@@ -6,8 +6,12 @@ import mchorse.bbs_mod.settings.values.ValueLink;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
+import java.util.function.Predicate;
+
 public class AudioClip extends CameraClip
 {
+    public static final Predicate<Clip> NO_AUDIO = (clip) -> !(clip instanceof AudioClip);
+
     public ValueLink audio = new ValueLink("audio", null);
 
     public AudioClip()

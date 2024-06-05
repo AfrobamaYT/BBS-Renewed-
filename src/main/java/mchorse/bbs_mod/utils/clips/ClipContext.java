@@ -1,7 +1,10 @@
 package mchorse.bbs_mod.utils.clips;
 
+import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public abstract class ClipContext <T extends Clip, E>
 {
@@ -65,10 +68,15 @@ public abstract class ClipContext <T extends Clip, E>
 
     public abstract boolean apply(Clip clip, E position);
 
+    public boolean applyUnderneath(int ticks, float transition, E position)
+    {
+        return this.applyUnderneath(ticks, transition, position, AudioClip.NO_AUDIO);
+    }
+
     /**
      * Apply clips underneath currently running
      */
-    public boolean applyUnderneath(int ticks, float transition, E position)
+    public boolean applyUnderneath(int ticks, float transition, E position, Predicate<Clip> filter)
     {
         if (this.currentLayer > 0)
         {
@@ -84,7 +92,9 @@ public abstract class ClipContext <T extends Clip, E>
 
             for (Clip clip : this.clips.getClips(ticks, lastLayer))
             {
-                if (this.apply(clip, position))
+                boolean allowed = filter == null || filter.test(clip);
+
+                if (allowed && this.apply(clip, position))
                 {
                     applied = true;
                 }
