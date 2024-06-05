@@ -50,15 +50,14 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.FFMpegUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.undo.CompoundUndo;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
@@ -120,7 +119,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private UndoManager<ValueGroup> undoManager;
     private List<Integer> cachedCameraSelection = new ArrayList<>();
     private List<Integer> cachedVoicelineSelection = new ArrayList<>();
-    private FilmEditorUndo.KeyframeSelection cachedKeyframeSelection;
     private FilmEditorUndo.KeyframeSelection cachedPropertiesSelection;
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
     public boolean cacheMarkLastUndoNoMerging = false;
@@ -370,16 +368,16 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
                 for (BaseValue value : replay.keyframes.getAll())
                 {
-                    if (!(value instanceof KeyframeChannel))
+                    if (!(value instanceof GenericKeyframeChannel<?>))
                     {
                         continue;
                     }
 
-                    KeyframeChannel channel = (KeyframeChannel) value;
+                    GenericKeyframeChannel<Double> channel = (GenericKeyframeChannel<Double>) value;
 
                     if (!channel.isEmpty())
                     {
-                        KeyframeChannel newChannel = (KeyframeChannel) copy.keyframes.get(channel.getId());
+                        GenericKeyframeChannel<Double> newChannel = (GenericKeyframeChannel<Double>) copy.keyframes.get(channel.getId());
 
                         newChannel.insert(0, channel.interpolate(tick));
                     }
@@ -599,13 +597,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.cachedVoicelineSelection.addAll(this.screenplay.editor.clips.getSelection());
         }
 
-        if (this.cachedKeyframeSelection == null)
-        {
-            this.cachedKeyframeSelection = this.replayEditor.keyframeEditor == null
-                ? new FilmEditorUndo.KeyframeSelection()
-                : this.replayEditor.keyframeEditor.keyframes.createSelection();
-        }
-
         if (this.cachedPropertiesSelection == null)
         {
             this.cachedPropertiesSelection = this.replayEditor.propertyEditor == null
@@ -667,7 +658,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), value.toData());
 
             undo.editor(this);
-            undo.selectedBefore(this.cachedCameraSelection, this.cachedVoicelineSelection, this.cachedKeyframeSelection, this.cachedPropertiesSelection);
+            undo.selectedBefore(this.cachedCameraSelection, this.cachedVoicelineSelection, this.cachedPropertiesSelection);
             changeUndos.add(undo);
         }
 
@@ -681,7 +672,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         this.cachedUndo.clear();
-        this.cachedKeyframeSelection = this.cachedPropertiesSelection = null;
+        this.cachedPropertiesSelection = null;
 
         this.undoTimer.mark();
 

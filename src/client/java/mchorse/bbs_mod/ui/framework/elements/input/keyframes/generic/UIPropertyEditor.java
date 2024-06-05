@@ -47,7 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UIPropertyEditor extends UIElement
+public class UIPropertyEditor <T extends UIProperties> extends UIElement
 {
     private static final Map<IGenericKeyframeFactory, IUIKeyframeFactoryFactory> factories = new HashMap<>();
 
@@ -57,7 +57,7 @@ public class UIPropertyEditor extends UIElement
     public UIIcon interp;
     public UIKeyframeFactory editor;
 
-    public UIProperties properties;
+    public T properties;
 
     private int clicks;
     private long clickTimer;
@@ -128,7 +128,7 @@ public class UIPropertyEditor extends UIElement
         });
         this.interp.tooltip(tooltip);
 
-        this.properties = new UIProperties(delegate, this::fillData);
+        this.properties = this.createElement(delegate);
         this.properties.relative(this).full();
 
         /* Add all elements */
@@ -183,6 +183,11 @@ public class UIPropertyEditor extends UIElement
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this.interp::clickItself).category(category);
 
         this.updateConverter();
+    }
+
+    protected T createElement(IUIClipsDelegate delegate)
+    {
+        return (T) new UIProperties(delegate, this::fillData);
     }
 
     public void setChannels(List<GenericKeyframeChannel> properties, List<IFormProperty> property, List<Integer> colors)

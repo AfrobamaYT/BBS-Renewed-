@@ -4,26 +4,23 @@ import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.utils.CameraAxisConverter;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframesEditor;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UISheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 
 import java.util.List;
 
-public class UICameraDopeSheetEditor extends UIKeyframesEditor<UIDopeSheetView>
+public class UICameraDopeSheetEditor extends UIPropertyEditor<UIDopeSheetView>
 {
     public static final int[] COLORS = {Colors.RED, Colors.GREEN, Colors.BLUE, Colors.CYAN, Colors.MAGENTA, Colors.YELLOW, Colors.LIGHTEST_GRAY};
     public static final CameraAxisConverter CONVERTER = new CameraAxisConverter();
 
-    protected IUIClipsDelegate editor;
-
-    public UICameraDopeSheetEditor(IUIClipsDelegate editor)
+    public UICameraDopeSheetEditor(IUIClipsDelegate delegate)
     {
-        super();
+        super(delegate);
 
-        this.editor = editor;
-        this.keyframes.editor = editor;
+        this.properties.editor = delegate;
     }
 
     public void updateConverter()
@@ -32,52 +29,52 @@ public class UICameraDopeSheetEditor extends UIKeyframesEditor<UIDopeSheetView>
     }
 
     @Override
-    protected UIDopeSheetView createElement()
+    protected UIDopeSheetView createElement(IUIClipsDelegate delegate)
     {
-        return new UIDopeSheetView(this, this::fillData);
+        return new UIDopeSheetView(delegate, this::fillData);
     }
 
-    public void setChannel(KeyframeChannel channel, int color)
+    public void setChannel(GenericKeyframeChannel channel, int color)
     {
-        List<UISheet> sheets = this.keyframes.sheets;
+        List<UIProperty> sheets = this.properties.properties;
 
         sheets.clear();
-        this.keyframes.clearSelection();
+        this.properties.clearSelection();
 
-        sheets.add(new UISheet(channel.getId(), IKey.raw(channel.getId()), color, channel));
+        sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), color, channel, null));
 
         this.frameButtons.setVisible(false);
     }
 
     public void setClip(KeyframeClip clip)
     {
-        List<UISheet> sheets = this.keyframes.sheets;
+        List<UIProperty> sheets = this.properties.properties;
 
         sheets.clear();
-        this.keyframes.clearSelection();
+        this.properties.clearSelection();
 
         for (int i = 0; i < clip.channels.length; i++)
         {
-            KeyframeChannel channel = clip.channels[i];
+            GenericKeyframeChannel channel = clip.channels[i];
 
-            sheets.add(new UISheet(channel.getId(), IKey.raw(channel.getId()), COLORS[i], channel));
+            sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), COLORS[i], channel, null));
         }
 
         this.frameButtons.setVisible(false);
     }
 
-    public void setChannels(List<KeyframeChannel> channels, List<Integer> colors)
+    public void setChannels(List<GenericKeyframeChannel> channels, List<Integer> colors)
     {
-        List<UISheet> sheets = this.keyframes.sheets;
+        List<UIProperty> sheets = this.properties.properties;
 
         sheets.clear();
-        this.keyframes.clearSelection();
+        this.properties.clearSelection();
 
         for (int i = 0; i < channels.size(); i++)
         {
-            KeyframeChannel channel = channels.get(i);
+            GenericKeyframeChannel channel = channels.get(i);
 
-            sheets.add(new UISheet(channel.getId(), IKey.raw(channel.getId()), colors.get(i), channel));
+            sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), colors.get(i), channel, null));
         }
 
         this.frameButtons.setVisible(false);

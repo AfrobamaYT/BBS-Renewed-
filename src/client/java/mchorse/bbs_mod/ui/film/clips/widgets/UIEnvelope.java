@@ -73,7 +73,6 @@ public class UIEnvelope extends UIElement
         });
         this.editKeyframes = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {
-            this.channel.keyframes.editSheet(this.channel.keyframes.sheets.get(0));
             this.panel.editor.embedView(this.channel);
             this.channel.resetView();
         });
@@ -144,12 +143,7 @@ public class UIEnvelope extends UIElement
 
     public void updateDuration()
     {
-        this.channel.keyframes.duration = this.getDuration();
-    }
-
-    public int getDuration()
-    {
-        return this.panel.clip.duration.get();
+        this.channel.properties.setDuration(this.panel.clip.duration.get());
     }
 
     public Envelope get()

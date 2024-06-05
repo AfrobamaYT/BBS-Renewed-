@@ -116,10 +116,10 @@ public class UIReplayList extends UIList<Replay>
         replay.keyframes.y.insert(0, position.y);
         replay.keyframes.z.insert(0, position.z);
 
-        replay.keyframes.pitch.insert(0, pitch);
-        replay.keyframes.yaw.insert(0, yaw);
-        replay.keyframes.headYaw.insert(0, yaw);
-        replay.keyframes.bodyYaw.insert(0, yaw);
+        replay.keyframes.pitch.insert(0, (double) pitch);
+        replay.keyframes.yaw.insert(0, (double) yaw);
+        replay.keyframes.headYaw.insert(0, (double) yaw);
+        replay.keyframes.bodyYaw.insert(0, (double) yaw);
 
         this.update();
         this.panel.replayEditor.setReplay(replay);

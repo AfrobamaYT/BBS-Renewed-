@@ -21,13 +21,13 @@ public class PathToKeyframeConverter implements IClipConverter<PathClip, Keyfram
             Position point = path.points.get(i);
             long x = (int) (i / (c - 1F) * duration);
 
-            int index = keyframe.x.insert(x, (float) point.point.x);
-            keyframe.y.insert(x, (float) point.point.y);
-            keyframe.z.insert(x, (float) point.point.z);
-            keyframe.yaw.insert(x, point.angle.yaw);
-            keyframe.pitch.insert(x, point.angle.pitch);
-            keyframe.roll.insert(x, point.angle.roll);
-            keyframe.fov.insert(x, point.angle.fov);
+            int index = keyframe.x.insert(x, point.point.x);
+            keyframe.y.insert(x, point.point.y);
+            keyframe.z.insert(x, point.point.z);
+            keyframe.yaw.insert(x, (double) point.angle.yaw);
+            keyframe.pitch.insert(x, (double) point.angle.pitch);
+            keyframe.roll.insert(x, (double) point.angle.roll);
+            keyframe.fov.insert(x, (double) point.angle.fov);
 
             keyframe.x.get(index).getInterpolation().copy(path.interpolationPoint);
             keyframe.y.get(index).getInterpolation().copy(path.interpolationPoint);

@@ -46,7 +46,7 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
         super.updateDuration(duration);
 
         this.dope.updateConverter();
-        this.dope.keyframes.setDuration(duration);
+        this.dope.properties.setDuration(duration);
     }
 
     @Override
@@ -57,10 +57,10 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
         this.clip.x.insert(tick, position.point.x);
         this.clip.y.insert(tick, position.point.y);
         this.clip.z.insert(tick, position.point.z);
-        this.clip.yaw.insert(tick, position.angle.yaw);
-        this.clip.pitch.insert(tick, position.angle.pitch);
-        this.clip.roll.insert(tick, position.angle.roll);
-        this.clip.fov.insert(tick, position.angle.fov);
+        this.clip.yaw.insert(tick, (double) position.angle.yaw);
+        this.clip.pitch.insert(tick, (double) position.angle.pitch);
+        this.clip.roll.insert(tick, (double) position.angle.roll);
+        this.clip.fov.insert(tick, (double) position.angle.fov);
     }
 
     @Override

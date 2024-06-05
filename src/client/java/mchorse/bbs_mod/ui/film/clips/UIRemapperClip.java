@@ -26,7 +26,6 @@ public class UIRemapperClip extends UIClip<RemapperClip>
 
         this.editChannel = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {
-            this.channel.keyframes.editSheet(this.channel.keyframes.sheets.get(0));
             this.editor.embedView(this.channel);
             this.channel.resetView();
         });
@@ -45,7 +44,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.fillData();
 
-        this.channel.keyframes.setDuration(this.clip.duration.get());
+        this.channel.properties.setDuration(this.clip.duration.get());
         this.channel.setChannel(this.clip.channel, Colors.ACTIVE);
     }
 
@@ -54,6 +53,6 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.updateDuration(duration);
 
-        this.channel.keyframes.duration = duration;
+        this.channel.properties.setDuration(duration);
     }
 }

@@ -35,6 +35,11 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
 
     /* Read only */
 
+    public int getLength()
+    {
+        return this.list.isEmpty() ? 0 : (int) this.list.get(this.list.size() - 1).getTick();
+    }
+
     public boolean isEmpty()
     {
         return this.list.isEmpty();
@@ -67,6 +72,30 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
         segment.setup(ticks);
 
         return segment;
+    }
+
+    public T interpolate(float ticks)
+    {
+        T orDefault = null;
+
+        if (this.factory == KeyframeFactories.FLOAT) orDefault = (T) Float.valueOf(0F);
+        if (this.factory == KeyframeFactories.DOUBLE) orDefault = (T) Double.valueOf(0D);
+
+        return this.interpolate(ticks, orDefault);
+    }
+
+    public T interpolate(float ticks, T orDefault)
+    {
+        GenericKeyframeSegment<T> segment = this.findSegment(ticks);
+
+        if (segment == null)
+        {
+            return orDefault;
+        }
+
+        segment.setup(ticks);
+
+        return segment.createInterpolated();
     }
 
     /**
@@ -235,6 +264,18 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
         this.postNotifyParent();
     }
 
+    public void moveX(long offset)
+    {
+        this.preNotifyParent();
+
+        for (GenericKeyframe<T> keyframe : this.list)
+        {
+            keyframe.setTick(keyframe.getTick() + offset);
+        }
+
+        this.postNotifyParent();
+    }
+
     @Override
     protected GenericKeyframe<T> create(String id)
     {
@@ -266,6 +307,21 @@ public class GenericKeyframeChannel <T> extends ValueList<GenericKeyframe<T>>
         this.factory = factory;
 
         super.fromData(map.getList("keyframes"));
+
+        this.sort();
+    }
+
+    public void copyKeyframes(GenericKeyframeChannel<T> channel)
+    {
+        this.list.clear();
+
+        for (GenericKeyframe<T> keyframe : channel.getKeyframes())
+        {
+            GenericKeyframe<T> value = new GenericKeyframe<>(keyframe.getId(), keyframe.getFactory());
+
+            value.setValue(keyframe.getFactory().copy(keyframe.getValue()));
+            this.add(value);
+        }
 
         this.sort();
     }

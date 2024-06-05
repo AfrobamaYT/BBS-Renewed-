@@ -31,12 +31,12 @@ import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.IFactory;
-import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -456,7 +456,7 @@ public class UIClips extends UIElement
                 {
                     KeyframeClip clip = new KeyframeClip();
 
-                    clip.fov.insert(0, 50);
+                    clip.fov.insert(0, 50D);
 
                     clip.x.copyKeyframes(replay.keyframes.x);
                     clip.y.copyKeyframes(replay.keyframes.y);
@@ -465,11 +465,11 @@ public class UIClips extends UIElement
                     clip.yaw.copyKeyframes(replay.keyframes.yaw);
                     clip.pitch.copyKeyframes(replay.keyframes.pitch);
 
-                    for (Keyframe keyframe : clip.yaw.getKeyframes())
+                    for (GenericKeyframe<Double> keyframe : clip.yaw.getKeyframes())
                     {
                         keyframe.setValue(180D + keyframe.getValue());
-                        keyframe.setLy(180F + keyframe.getLy());
-                        keyframe.setRy(180F + keyframe.getRy());
+                        // keyframe.setLy(180F + keyframe.getLy());
+                        // keyframe.setRy(180F + keyframe.getRy());
                     }
 
                     int size = Math.max(

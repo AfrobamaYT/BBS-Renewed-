@@ -18,15 +18,8 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
     public int panel;
 
     /* Replays */
-    private KeyframeSelection keyframesBefore = new KeyframeSelection();
-    private KeyframeSelection keyframesAfter = new KeyframeSelection();
     private KeyframeSelection propertiesBefore = new KeyframeSelection();
     private KeyframeSelection propertiesAfter = new KeyframeSelection();
-
-    public KeyframeSelection getKeyframeSelection(boolean redo)
-    {
-        return redo ? this.keyframesAfter : this.keyframesBefore;
-    }
 
     public KeyframeSelection getPropertiesSelection(boolean redo)
     {
@@ -55,16 +48,12 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         this.cameraClips = new ClipsData(cameraClips);
         this.voiceLinesClips = new ClipsData(voiceLineClips);
 
-        this.keyframesBefore = this.keyframesAfter = editor.replayEditor.keyframeEditor == null
-            ? new KeyframeSelection()
-            : editor.replayEditor.keyframeEditor.keyframes.createSelection();
-
         this.propertiesBefore = this.propertiesAfter = editor.replayEditor.propertyEditor == null
             ? new KeyframeSelection()
             : editor.replayEditor.propertyEditor.properties.createSelection();
     }
 
-    public void selectedBefore(List<Integer> cameraClipsSelection, List<Integer> voiceLineSelection, KeyframeSelection keyframe, KeyframeSelection properties)
+    public void selectedBefore(List<Integer> cameraClipsSelection, List<Integer> voiceLineSelection, KeyframeSelection properties)
     {
         this.cameraClips.selectedBefore.clear();
         this.cameraClips.selectedBefore.addAll(cameraClipsSelection);
@@ -72,7 +61,6 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         this.voiceLinesClips.selectedBefore.clear();
         this.voiceLinesClips.selectedBefore.addAll(voiceLineSelection);
 
-        this.keyframesBefore = keyframe;
         this.propertiesBefore = properties;
     }
 

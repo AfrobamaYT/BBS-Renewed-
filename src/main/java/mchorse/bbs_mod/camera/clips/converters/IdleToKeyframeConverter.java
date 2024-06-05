@@ -2,7 +2,7 @@ package mchorse.bbs_mod.camera.clips.converters;
 
 import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 
 public class IdleToKeyframeConverter implements IClipConverter<IdleClip, KeyframeClip>
 {
@@ -24,7 +24,7 @@ public class IdleToKeyframeConverter implements IClipConverter<IdleClip, Keyfram
         return keyframeClip;
     }
 
-    private void insert(KeyframeChannel channel, double value)
+    private void insert(GenericKeyframeChannel<Double> channel, double value)
     {
         channel.getKeyframes().clear();
         channel.insert(0, value);

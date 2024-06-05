@@ -4,23 +4,20 @@ import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
-import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperties;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
 
 import java.util.function.Consumer;
 
-public class UIDopeSheetView extends UIKeyframes
+public class UIDopeSheetView extends UIProperties
 {
     public IUIClipsDelegate editor;
 
-    private UICameraDopeSheetEditor keyframeEditor;
     private boolean relative = true;
 
-    public UIDopeSheetView(UICameraDopeSheetEditor keyframeEditor, Consumer<Keyframe> callback)
+    public UIDopeSheetView(IUIClipsDelegate delegate, Consumer<GenericKeyframe> callback)
     {
-        super(callback);
-
-        this.keyframeEditor = keyframeEditor;
+        super(delegate, callback);
     }
 
     public UIDopeSheetView absolute()

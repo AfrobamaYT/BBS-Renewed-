@@ -511,6 +511,13 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
         for (UIProperty property : this.properties)
         {
+            if (y + h < this.area.y || y > this.area.ey())
+            {
+                y += h;
+
+                continue;
+            }
+
             COLOR.set(property.color, false);
 
             /* Render same values */
@@ -528,7 +535,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
                     if (Objects.equals(previousFrame.getValue(), frame.getValue()))
                     {
-                        int c = 0xffff00 | Colors.A50;
+                        int c = 0xffff00 | Colors.A25;
                         int xx = this.toGraphX(previousFrame.getTick());
                         int yy = y + h / 2;
 
@@ -611,8 +618,11 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             FontRenderer font = context.batcher.getFont();
             int lw = font.getWidth(property.title.get()) + 10;
 
-            context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + h, property.color, Colors.A75 | property.color);
-            context.batcher.textShadow(property.title.get(), this.area.ex() - lw + 5, y + (h - font.getHeight()) / 2);
+            if (hover)
+            {
+                context.batcher.gradientHBox(this.area.x, y, this.area.x + lw + 10, y + h, Colors.A75 | property.color, property.color);
+                context.batcher.textShadow(property.title.get(), this.area.x + 5, y + (h - font.getHeight()) / 2);
+            }
 
             y += h;
         }

@@ -150,9 +150,6 @@ public abstract class UIBaseKeyframes <T> extends UIElement
         return area;
     }
 
-    public void selectByDuration(long duration)
-    {}
-
     public abstract void selectAll();
 
     public abstract int getSelectedCount();
@@ -312,7 +309,6 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     public void render(UIContext context)
     {
         this.scroll.drag(context);
-
         this.handleMouse(context, context.mouseX, context.mouseY);
         this.renderBackground(context);
 
@@ -425,6 +421,9 @@ public abstract class UIBaseKeyframes <T> extends UIElement
     protected void scrolling(int mouseX, int mouseY)
     {
         this.scaleX.setShift(-(mouseX - this.lastX) / this.scaleX.getZoom() + this.lastT);
+        this.scroll.scrollBy(-(mouseY - this.lastY));
+
+        this.lastY = mouseY;
     }
 
     protected abstract T moving(UIContext context, int mouseX, int mouseY);

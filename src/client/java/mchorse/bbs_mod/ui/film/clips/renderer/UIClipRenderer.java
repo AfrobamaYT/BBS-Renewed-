@@ -6,13 +6,13 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Envelope;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Tessellator;
@@ -105,17 +105,17 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
     /**
      * Render keyframe based envelope.
      */
-    private void renderEnvelopesKeyframes(BufferBuilder builder, Matrix4f matrix, KeyframeChannel channel, int duration, int x1, int y1, int x2, int y2)
+    private void renderEnvelopesKeyframes(BufferBuilder builder, Matrix4f matrix, GenericKeyframeChannel<Double> channel, int duration, int x1, int y1, int x2, int y2)
     {
-        Keyframe prevKeyframe = null;
+        GenericKeyframe<Double> prevKeyframe = null;
         int c = ENVELOPE_COLOR.getARGBColor();
 
-        for (Keyframe keyframe : channel.getKeyframes())
+        for (GenericKeyframe<Double> keyframe : channel.getKeyframes())
         {
             if (prevKeyframe != null)
             {
-                Vector2f point = this.calculateEnvelopePoint(vector, (int) keyframe.getTick(), (float) keyframe.getValue(), duration, x1, y1, x2, y2);
-                Vector2f prevPoint = this.calculateEnvelopePoint(previous, (int) prevKeyframe.getTick(), (float) prevKeyframe.getValue(), duration, x1, y1, x2, y2);
+                Vector2f point = this.calculateEnvelopePoint(vector, (int) keyframe.getTick(), keyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
+                Vector2f prevPoint = this.calculateEnvelopePoint(previous, (int) prevKeyframe.getTick(), prevKeyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
 
                 builder.vertex(matrix, prevPoint.x, y2, 0F).color(c).next();
                 builder.vertex(matrix, point.x, point.y, 0F).color(c).next();
@@ -132,7 +132,7 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
         /* Finish the end */
         if (prevKeyframe != null && prevKeyframe.getTick() < duration)
         {
-            Vector2f point = this.calculateEnvelopePoint(vector, (int) prevKeyframe.getTick(), (float) prevKeyframe.getValue(), duration, x1, y1, x2, y2);
+            Vector2f point = this.calculateEnvelopePoint(vector, (int) prevKeyframe.getTick(), prevKeyframe.getValue().floatValue(), duration, x1, y1, x2, y2);
 
             builder.vertex(matrix, point.x, y2, 0F).color(c).next();
             builder.vertex(matrix, x2, point.y, 0F).color(c).next();
