@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 public interface IAxisConverter
 {
@@ -13,5 +13,5 @@ public interface IAxisConverter
 
     public void updateField(UITrackpad element);
 
-    public boolean forceInteger(GenericKeyframe keyframe, boolean forceInteger);
+    public boolean forceInteger(Keyframe keyframe, boolean forceInteger);
 }

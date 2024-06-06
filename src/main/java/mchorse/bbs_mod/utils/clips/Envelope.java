@@ -11,8 +11,8 @@ import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 public class Envelope extends ValueGroup
 {
@@ -25,7 +25,7 @@ public class Envelope extends ValueGroup
     public final Interpolation post = new Interpolation("post", Interpolations.MAP);
 
     public final ValueBoolean keyframes = new ValueBoolean("keyframes");
-    public final GenericKeyframeChannel<Double> channel = new GenericKeyframeChannel<>("channel", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> channel = new KeyframeChannel<>("channel", KeyframeFactories.DOUBLE);
 
     public Envelope(String id)
     {

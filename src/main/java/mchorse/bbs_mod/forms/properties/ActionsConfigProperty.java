@@ -2,7 +2,7 @@ package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 public class ActionsConfigProperty extends BaseTweenProperty<ActionsConfig>
 {

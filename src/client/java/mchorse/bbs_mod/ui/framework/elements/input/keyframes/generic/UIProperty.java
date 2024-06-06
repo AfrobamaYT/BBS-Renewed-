@@ -3,8 +3,8 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,11 +16,11 @@ public class UIProperty
     public final String id;
     public IKey title;
     public int color;
-    public GenericKeyframeChannel channel;
+    public KeyframeChannel channel;
     private List<Integer> selected = new ArrayList<>();
     public IFormProperty property;
 
-    public UIProperty(String id, IKey title, int color, GenericKeyframeChannel channel, IFormProperty property)
+    public UIProperty(String id, IKey title, int color, KeyframeChannel channel, IFormProperty property)
     {
         this.id = id;
         this.title = title;
@@ -47,11 +47,11 @@ public class UIProperty
 
     public void sort()
     {
-        List<GenericKeyframe> keyframes = new ArrayList<>();
+        List<Keyframe> keyframes = new ArrayList<>();
 
         for (int index : this.selected)
         {
-            GenericKeyframe keyframe = this.channel.get(index);
+            Keyframe keyframe = this.channel.get(index);
 
             if (keyframe != null)
             {
@@ -64,7 +64,7 @@ public class UIProperty
         this.channel.postNotifyParent();
         this.selected.clear();
 
-        for (GenericKeyframe keyframe : keyframes)
+        for (Keyframe keyframe : keyframes)
         {
             this.selected.add(this.channel.getKeyframes().indexOf(keyframe));
         }
@@ -74,7 +74,7 @@ public class UIProperty
     {
         for (int index : this.selected)
         {
-            GenericKeyframe keyframe = this.channel.get(index);
+            Keyframe keyframe = this.channel.get(index);
 
             if (keyframe != null)
             {
@@ -87,7 +87,7 @@ public class UIProperty
     {
         for (int index : this.selected)
         {
-            GenericKeyframe keyframe = this.channel.get(index);
+            Keyframe keyframe = this.channel.get(index);
 
             if (keyframe != null)
             {
@@ -100,7 +100,7 @@ public class UIProperty
     {
         for (int index : this.selected)
         {
-            GenericKeyframe keyframe = this.channel.get(index);
+            Keyframe keyframe = this.channel.get(index);
 
             if (keyframe != null)
             {
@@ -109,7 +109,7 @@ public class UIProperty
         }
     }
 
-    public GenericKeyframe getKeyframe()
+    public Keyframe getKeyframe()
     {
         if (this.selected.isEmpty())
         {
@@ -139,7 +139,7 @@ public class UIProperty
         return this.selected.get(0);
     }
 
-    public GenericKeyframe getSelectedKeyframe(int i)
+    public Keyframe getSelectedKeyframe(int i)
     {
         return this.channel.get(this.selected.get(i));
     }
@@ -173,14 +173,14 @@ public class UIProperty
 
     public void duplicate(long tick)
     {
-        List<GenericKeyframe> selected = new ArrayList<>();
-        List<GenericKeyframe> created = new ArrayList<>();
+        List<Keyframe> selected = new ArrayList<>();
+        List<Keyframe> created = new ArrayList<>();
 
         long minTick = Integer.MAX_VALUE;
 
         for (int index : this.selected)
         {
-            GenericKeyframe keyframe = this.channel.get(index);
+            Keyframe keyframe = this.channel.get(index);
 
             if (keyframe != null)
             {
@@ -189,15 +189,15 @@ public class UIProperty
             }
         }
 
-        selected.sort(Comparator.comparingLong(GenericKeyframe::getTick));
+        selected.sort(Comparator.comparingLong(Keyframe::getTick));
 
         long diff = tick - minTick;
 
-        for (GenericKeyframe keyframe : selected)
+        for (Keyframe keyframe : selected)
         {
             long fin = keyframe.getTick() + diff;
             int index = this.channel.insert(fin, keyframe.getValue());
-            GenericKeyframe current = this.channel.get(index);
+            Keyframe current = this.channel.get(index);
 
             current.copy(keyframe);
             current.setTick(fin);
@@ -206,7 +206,7 @@ public class UIProperty
 
         this.clearSelection();
 
-        for (GenericKeyframe keyframe : created)
+        for (Keyframe keyframe : created)
         {
             this.selected.add(this.channel.getKeyframes().indexOf(keyframe));
         }

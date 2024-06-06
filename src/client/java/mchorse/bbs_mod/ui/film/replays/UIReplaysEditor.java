@@ -27,7 +27,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
@@ -41,9 +41,9 @@ import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -214,7 +214,7 @@ public class UIReplaysEditor extends UIElement
         int duration = this.film.camera.calculateDuration();
 
         /* Replay keyframes */
-        List<GenericKeyframeChannel> properties = new ArrayList<>();
+        List<KeyframeChannel> properties = new ArrayList<>();
         List<Integer> propertiesColors = new ArrayList<>();
         List<IFormProperty> formProperties = new ArrayList<>();
 
@@ -222,7 +222,7 @@ public class UIReplaysEditor extends UIElement
         {
             BaseValue value = this.replay.keyframes.get(key);
 
-            properties.add((GenericKeyframeChannel) value);
+            properties.add((KeyframeChannel) value);
             propertiesColors.add(COLORS.getOrDefault(key, Colors.ACTIVE));
             formProperties.add(null);
         }
@@ -230,7 +230,7 @@ public class UIReplaysEditor extends UIElement
         /* Form properties */
         for (String key : FormUtils.collectPropertyPaths(this.replay.form.get()))
         {
-            GenericKeyframeChannel property = this.replay.properties.getOrCreate(this.replay.form.get(), key);
+            KeyframeChannel property = this.replay.properties.getOrCreate(this.replay.form.get(), key);
 
             if (property != null)
             {
@@ -338,11 +338,11 @@ public class UIReplaysEditor extends UIElement
             return;
         }
 
-        GenericKeyframeSegment segment = property.channel.find(tick);
+        KeyframeSegment segment = property.channel.find(tick);
 
         if (segment != null)
         {
-            GenericKeyframe closest = segment.getClosest();
+            Keyframe closest = segment.getClosest();
 
             this.propertyEditor.pickKeyframe(closest);
 

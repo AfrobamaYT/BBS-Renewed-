@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.camera.clips.modifiers;
 
+import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;

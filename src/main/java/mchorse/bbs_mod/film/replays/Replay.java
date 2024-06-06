@@ -7,8 +7,8 @@ import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueForm;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 
 import java.util.List;
 
@@ -46,14 +46,14 @@ public class Replay extends ValueGroup
 
         for (BaseValue value : this.properties.getAll())
         {
-            if (value instanceof GenericKeyframeChannel)
+            if (value instanceof KeyframeChannel)
             {
-                this.applyProperty(tick, playing, form, (GenericKeyframeChannel) value);
+                this.applyProperty(tick, playing, form, (KeyframeChannel) value);
             }
         }
     }
 
-    private void applyProperty(int tick, boolean playing, Form form, GenericKeyframeChannel value)
+    private void applyProperty(int tick, boolean playing, Form form, KeyframeChannel value)
     {
         IFormProperty property = FormUtils.getProperty(form, value.getId());
 
@@ -62,7 +62,7 @@ public class Replay extends ValueGroup
             return;
         }
 
-        GenericKeyframeSegment segment = value.find(tick);
+        KeyframeSegment segment = value.find(tick);
 
         if (segment != null)
         {

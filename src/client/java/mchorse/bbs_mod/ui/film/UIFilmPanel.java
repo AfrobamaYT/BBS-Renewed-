@@ -56,8 +56,8 @@ import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.undo.CompoundUndo;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
@@ -368,32 +368,32 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
                 for (BaseValue value : replay.keyframes.getAll())
                 {
-                    if (!(value instanceof GenericKeyframeChannel<?>))
+                    if (!(value instanceof KeyframeChannel<?>))
                     {
                         continue;
                     }
 
-                    GenericKeyframeChannel<Double> channel = (GenericKeyframeChannel<Double>) value;
+                    KeyframeChannel<Double> channel = (KeyframeChannel<Double>) value;
 
                     if (!channel.isEmpty())
                     {
-                        GenericKeyframeChannel<Double> newChannel = (GenericKeyframeChannel<Double>) copy.keyframes.get(channel.getId());
+                        KeyframeChannel<Double> newChannel = (KeyframeChannel<Double>) copy.keyframes.get(channel.getId());
 
                         newChannel.insert(0, channel.interpolate(tick));
                     }
                 }
 
-                for (Map.Entry<String, GenericKeyframeChannel> entry : replay.properties.properties.entrySet())
+                for (Map.Entry<String, KeyframeChannel> entry : replay.properties.properties.entrySet())
                 {
-                    GenericKeyframeChannel channel = entry.getValue();
+                    KeyframeChannel channel = entry.getValue();
 
                     if (channel.isEmpty())
                     {
                         continue;
                     }
 
-                    GenericKeyframeChannel newChannel = new GenericKeyframeChannel(channel.getId(), channel.getFactory());
-                    GenericKeyframeSegment segment = channel.find(tick);
+                    KeyframeChannel newChannel = new KeyframeChannel(channel.getId(), channel.getFactory());
+                    KeyframeSegment segment = channel.find(tick);
 
                     if (segment != null)
                     {

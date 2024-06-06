@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.graphics.line.Line;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -12,13 +13,17 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIBaseKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
+import mchorse.bbs_mod.ui.utils.Scale;
+import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
+import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -32,23 +37,109 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
+public class UIProperties extends UIBaseKeyframes<Keyframe>
 {
     public boolean selected;
     public List<UIProperty> properties = new ArrayList<>();
 
+    private Scale scaleY;
+    private List<UIProperty> currentSheet = new ArrayList<>();
+    private UIProperty current;
+
     private IUIClipsDelegate delegate;
 
-    public UIProperties(IUIClipsDelegate delegate, Consumer<GenericKeyframe> callback)
+    public UIProperties(IUIClipsDelegate delegate, Consumer<Keyframe> callback)
     {
         super(callback);
 
         this.delegate = delegate;
+
+        this.scaleY = new Scale(this.area, ScrollDirection.VERTICAL);
+        this.scaleY.inverse().anchor(0.5F);
     }
 
     public IUIClipsDelegate getDelegate()
     {
         return this.delegate;
+    }
+
+    @Override
+    public boolean canScroll()
+    {
+        return this.current == null;
+    }
+
+    public Scale getScaleY()
+    {
+        return this.scaleY;
+    }
+
+    public boolean isEditing()
+    {
+        return this.current != null;
+    }
+
+    public void editSheet(UIProperty sheet)
+    {
+        this.clearSelection();
+
+        this.current = sheet;
+
+        this.currentSheet.clear();
+        this.currentSheet.add(sheet);
+
+        this.resetViewY();
+    }
+
+    public void resetViewY()
+    {
+        if (this.current == null)
+        {
+            return;
+        }
+
+        this.scaleY.set(0, 2);
+
+        KeyframeChannel channel = this.current.channel;
+        List<Keyframe> keyframes = channel.getKeyframes();
+        int c = keyframes.size();
+
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+
+        if (c > 1)
+        {
+            for (int i = 0; i < c; i++)
+            {
+                Keyframe frame = keyframes.get(i);
+
+                minY = Math.min(minY, frame.getFactory().getY(frame.getValue(), i));
+                maxY = Math.max(maxY, frame.getFactory().getY(frame.getValue(), i));
+            }
+        }
+        else
+        {
+            minY = -10;
+            maxY = 10;
+
+            if (c == 1)
+            {
+                Keyframe first = channel.get(0);
+
+                minY = maxY = first.getFactory().getY(first.getValue(), 0);
+            }
+        }
+
+        if (Math.abs(maxY - minY) < 0.01F)
+        {
+            /* Centerize */
+            this.scaleY.setShift(minY);
+        }
+        else
+        {
+            /* Spread apart vertically */
+            this.scaleY.viewOffset(minY, maxY, this.area.h, 20);
+        }
     }
 
     /* Implementation of setters */
@@ -76,7 +167,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
     public void setValue(Object value)
     {
-        GenericKeyframe current = this.getCurrent();
+        Keyframe current = this.getCurrent();
 
         if (this.isMultipleSelected())
         {
@@ -104,6 +195,26 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
     /* Graphing code */
 
+    public int toGraphY(double value)
+    {
+        return (int) this.scaleY.to(value);
+    }
+
+    public int toGraphY(IKeyframeFactory factory, Object value, int index)
+    {
+        return (int) this.scaleY.to(factory.getY(value, index));
+    }
+
+    public int toGraphY(Keyframe keyframe, int index)
+    {
+        return (int) this.scaleY.to(keyframe.getFactory().getY(keyframe.getValue(), index));
+    }
+
+    public double fromGraphY(int mouseY)
+    {
+        return this.scaleY.from(mouseY);
+    }
+
     @Override
     public void resetView()
     {
@@ -119,7 +230,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         {
             for (Object object : property.channel.getKeyframes())
             {
-                GenericKeyframe frame = (GenericKeyframe) object;
+                Keyframe frame = (Keyframe) object;
 
                 min = Integer.min((int) frame.getTick(), min);
                 max = Integer.max((int) frame.getTick(), max);
@@ -144,19 +255,19 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         }
     }
 
-    public GenericKeyframe getCurrent()
+    public Keyframe getCurrent()
     {
-        UIProperty current = this.getCurrentSheet();
+        UIProperty current = this.getCurrentProperty();
 
         return current == null ? null : current.getKeyframe();
     }
 
     public List<UIProperty> getProperties()
     {
-        return this.properties;
+        return this.current == null ? this.properties : this.currentSheet;
     }
 
-    public UIProperty getProperty(GenericKeyframe keyframe)
+    public UIProperty getProperty(Keyframe keyframe)
     {
         for (UIProperty property : this.getProperties())
         {
@@ -174,6 +285,11 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
     public UIProperty getProperty(int mouseY)
     {
+        if (this.current != null)
+        {
+            return this.current;
+        }
+
         List<UIProperty> properties = this.properties;
         int sheetCount = properties.size();
         int h = LANE_HEIGHT;
@@ -191,12 +307,16 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         }
 
         this.selected = true;
-
         this.setKeyframe(this.getCurrent());
     }
 
-    public UIProperty getCurrentSheet()
+    public UIProperty getCurrentProperty()
     {
+        if (this.current != null)
+        {
+            return this.current;
+        }
+
         for (UIProperty property : this.properties)
         {
             if (property.hasSelected())
@@ -248,8 +368,8 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     public void addCurrent(UIProperty property, long tick)
     {
         Interpolation interp = null;
-        GenericKeyframe frame = this.getCurrent();
-        IGenericKeyframeFactory factory = property.channel.getFactory();
+        Keyframe frame = this.getCurrent();
+        IKeyframeFactory factory = property.channel.getFactory();
         long oldTick = tick;
 
         if (frame != null)
@@ -259,7 +379,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         }
 
         Object value;
-        GenericKeyframeSegment segment = property.channel.find(tick);
+        KeyframeSegment segment = property.channel.find(tick);
 
         if (segment == null)
         {
@@ -296,14 +416,14 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     @Override
     public void removeCurrent()
     {
-        GenericKeyframe frame = this.getCurrent();
+        Keyframe frame = this.getCurrent();
 
         if (frame == null)
         {
             return;
         }
 
-        UIProperty current = this.getCurrentSheet();
+        UIProperty current = this.getCurrentProperty();
 
         current.channel.remove(current.getSelected(0));
         current.clearSelection();
@@ -361,6 +481,13 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     @Override
     protected boolean pickKeyframe(UIContext context, int mouseX, int mouseY, boolean shift)
     {
+        return this.current == null
+            ? this.pickKeyframeDopeSheet(context, mouseX, mouseY, shift)
+            : this.pickKeyframeGraph(context, mouseX, mouseY, shift);
+    }
+
+    private boolean pickKeyframeDopeSheet(UIContext context, int mouseX, int mouseY, boolean shift)
+    {
         int h = LANE_HEIGHT;
         int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
         boolean alt = Window.isAltPressed();
@@ -373,7 +500,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
             for (Object object : property.channel.getKeyframes())
             {
-                GenericKeyframe frame = (GenericKeyframe) object;
+                Keyframe frame = (Keyframe) object;
                 boolean point = this.isInside(this.toGraphX(frame.getTick()), alt ? mouseY : y + h / 2, mouseX, mouseY);
 
                 if (point)
@@ -429,6 +556,94 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         return finished;
     }
 
+    private boolean pickKeyframeGraph(UIContext context, int mouseX, int mouseY, boolean shift)
+    {
+        UIProperty property = this.current;
+        List<Keyframe> keyframes = property.channel.getKeyframes();
+        int index = 0;
+        boolean isMultiSelect = this.isMultipleSelected();
+
+        for (int i = 0; i < keyframes.size(); i++)
+        {
+            Keyframe frame = keyframes.get(i);
+            boolean point = this.isInsideTickValue(frame.getTick(), frame, index, mouseX, mouseY);
+
+            if (point)
+            {
+                int key = property.getSelection().indexOf(index);
+
+                if (!shift && key == -1)
+                {
+                    this.clearSelection();
+                }
+
+                if (!shift)
+                {
+                    this.selected = true;
+
+                    if (key == -1)
+                    {
+                        property.addToSelection(index);
+                        frame = isMultiSelect ? this.getCurrent() : frame;
+                    }
+                    else
+                    {
+                        frame = this.getCurrent();
+                    }
+
+                    this.setKeyframe(frame);
+                }
+
+                if (frame != null)
+                {
+                    this.lastT = frame.getTick();
+                }
+
+                return true;
+            }
+
+            index++;
+        }
+
+        return false;
+    }
+
+    private boolean isInsideTickValue(double tick, Keyframe keyframe, int index, int mouseX, int mouseY)
+    {
+        int x = this.toGraphX(tick);
+        int y = this.toGraphY(keyframe, index);
+        double d = Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2);
+
+        return d < 25;
+    }
+
+    @Override
+    protected void zoom(UIContext context, int scroll)
+    {
+        if (this.current == null)
+        {
+            super.zoom(context, scroll);
+
+            return;
+        }
+
+        boolean x = Window.isShiftPressed();
+        boolean y = Window.isCtrlPressed();
+        boolean none = !x && !y;
+
+        /* Scaling X */
+        if (x && !y || none)
+        {
+            this.scaleX.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scaleX.getZoomFactor(), scroll), MIN_ZOOM, MAX_ZOOM);
+        }
+
+        /* Scaling Y */
+        if (y && !x || none)
+        {
+            this.scaleY.zoomAnchor(Scale.getAnchorY(context, this.area), Math.copySign(this.scaleY.getZoomFactor(), scroll), MIN_ZOOM, MAX_ZOOM);
+        }
+    }
+
     @Override
     protected void resetMouseReleased(UIContext context)
     {
@@ -451,37 +666,62 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
         if (this.isGrabbing())
         {
-            /* Multi select */
-            Area area = this.getGrabbingArea(context);
-            int h = LANE_HEIGHT;
-            int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
-            int c = 0;
-
-            for (UIProperty property : this.properties)
+            if (this.current == null)
             {
-                int i = 0;
+                /* Multi select */
+                Area area = this.getGrabbingArea(context);
+                int h = LANE_HEIGHT;
+                int y = this.area.y + TOP_MARGIN - (int) this.scroll.scroll;
+                int c = 0;
 
-                for (Object object : property.channel.getKeyframes())
+                for (UIProperty property : this.properties)
                 {
-                    GenericKeyframe keyframe = (GenericKeyframe) object;
+                    int i = 0;
 
-                    if (area.isInside(this.toGraphX(keyframe.getTick()), y + h / 2) && !property.getSelection().contains(i))
+                    for (Object object : property.channel.getKeyframes())
                     {
-                        property.getSelection().add(i);
-                        c++;
+                        Keyframe keyframe = (Keyframe) object;
+
+                        if (area.isInside(this.toGraphX(keyframe.getTick()), y + h / 2) && !property.getSelection().contains(i))
+                        {
+                            property.getSelection().add(i);
+                            c++;
+                        }
+
+                        i++;
                     }
 
-                    i++;
+                    y += h;
                 }
 
-                y += h;
+                if (c > 0)
+                {
+                    this.selected = true;
+                    this.setKeyframe(this.getCurrent());
+                }
             }
-
-            if (c > 0)
+            else
             {
-                this.selected = true;
+                /* Multi select */
+                UIProperty property = this.current;
+                Area area = this.getGrabbingArea(context);
+                KeyframeChannel channel = property.channel;
 
-                this.setKeyframe(this.getCurrent());
+                for (int i = 0, c = channel.getKeyframes().size(); i < c; i ++)
+                {
+                    Keyframe keyframe = channel.get(i);
+
+                    if (area.isInside(this.toGraphX(keyframe.getTick()), this.toGraphY(keyframe, i)) && !property.hasSelected(i))
+                    {
+                        property.addToSelection(i);
+                    }
+                }
+
+                if (!property.hasSelected())
+                {
+                    this.selected = true;
+                    this.setKeyframe(this.getCurrent());
+                }
             }
         }
 
@@ -491,7 +731,54 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     /* Rendering */
 
     @Override
+    protected void renderGrid(UIContext context)
+    {
+        super.renderGrid(context);
+
+        if (this.current == null)
+        {
+            return;
+        }
+
+        /* Draw vertical grid */
+        int ty = (int) this.fromGraphY(this.area.ey());
+        int by = (int) this.fromGraphY(this.area.y - 12);
+
+        int min = Math.min(ty, by) - 1;
+        int max = Math.max(ty, by) + 1;
+        int mult = this.scaleY.getMult();
+
+        min -= min % mult + mult;
+        max -= max % mult - mult;
+
+        for (int j = 0, c = (max - min) / mult; j < c; j++)
+        {
+            int y = this.toGraphY(min + j * mult);
+
+            if (y > this.area.ey())
+            {
+                continue;
+            }
+
+            context.batcher.box(this.area.x, y, this.area.ex(), y + 1, Colors.setA(Colors.WHITE, 0.25F));
+            context.batcher.text(String.valueOf(min + j * mult), this.area.x + 4, y + 4);
+        }
+    }
+
+    @Override
     protected void renderGraph(UIContext context)
+    {
+        if (this.current == null)
+        {
+            this.renderDopeSheetGraph(context);
+        }
+        else
+        {
+            this.renderGraphGraph(context, this.current);
+        }
+    }
+
+    private void renderDopeSheetGraph(UIContext context)
     {
         /* Draw dope property */
         int propertyCount = this.properties.size();
@@ -527,11 +814,11 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
             for (Object object : property.channel.getKeyframes())
             {
-                GenericKeyframe frame = (GenericKeyframe) object;
+                Keyframe frame = (Keyframe) object;
 
                 if (previous != null)
                 {
-                    GenericKeyframe previousFrame = (GenericKeyframe) previous;
+                    Keyframe previousFrame = (Keyframe) previous;
 
                     if (Objects.equals(previousFrame.getValue(), frame.getValue()))
                     {
@@ -566,7 +853,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
             for (Object object : property.channel.getKeyframes())
             {
-                GenericKeyframe frame = (GenericKeyframe) object;
+                Keyframe frame = (Keyframe) object;
                 int duration = frame.getDuration();
                 long tick = frame.getTick();
                 int x1 = this.toGraphX(tick);
@@ -605,7 +892,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
 
             for (Object object : property.channel.getKeyframes())
             {
-                GenericKeyframe frame = (GenericKeyframe) object;
+                Keyframe frame = (Keyframe) object;
 
                 this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), y + h / 2, 2, property.hasSelected(index) ? Colors.ACTIVE : 0);
 
@@ -628,12 +915,112 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
         }
     }
 
+    private void renderGraphGraph(UIContext context, UIProperty sheet)
+    {
+        if (sheet == null || sheet.channel == null || sheet.channel.isEmpty())
+        {
+            return;
+        }
+
+        KeyframeChannel channel = sheet.channel;
+        LineBuilder lines = new LineBuilder(0.75F);
+        Line main = new Line();
+
+        /* Colorize the graph for given channel */
+        COLOR.set(sheet.color, false);
+
+        /* Draw the graph */
+        for (int i = 1; i < channel.getKeyframes().size(); i++)
+        {
+            Keyframe prev = (Keyframe) channel.getKeyframes().get(i - 1);
+            Keyframe frame = (Keyframe) channel.getKeyframes().get(i);
+
+            if (prev != null)
+            {
+                int px = this.toGraphX(prev.getTick());
+                int fx = this.toGraphX(frame.getTick());
+
+                /* Main line */
+                IInterp interp = prev.getInterpolation().getInterp();
+
+                if (interp == Interpolations.LINEAR)
+                {
+                    main.add(px, this.toGraphY(prev, i))
+                        .add(fx, this.toGraphY(frame, i));
+                }
+                else
+                {
+                    float seg = 10;
+
+                    if (interp.getKey().startsWith("bounce_") || interp.getKey().startsWith("elastic_"))
+                    {
+                        seg = 30;
+                    }
+
+                    for (int j = 0; j < seg; j++)
+                    {
+                        int a = this.toGraphY(prev.getFactory(), KeyframeSegment.interpolate(prev, frame, j / seg), i);
+                        int b = this.toGraphY(prev.getFactory(), KeyframeSegment.interpolate(prev, frame, (j + 1) / seg), i);
+
+                        main.add(px + (fx - px) * (j / seg), a)
+                            .add(px + (fx - px) * ((j + 1) / seg), b);
+                    }
+                }
+            }
+            else
+            {
+                /* Left edge line */
+                main.add(0, this.toGraphY(frame, i))
+                    .add(this.toGraphX(frame.getTick()), this.toGraphY(frame, 0));
+            }
+        }
+
+        /* Right edge line */
+        int index = channel.getKeyframes().size() - 1;
+        Keyframe prev = (Keyframe) channel.getKeyframes().get(index);
+
+        main.add(this.toGraphX(prev.getTick()), this.toGraphY(prev, index))
+            .add(this.area.ex(), this.toGraphY(prev, index));
+
+        lines.push(main).render(context.batcher, SolidColorLineRenderer.get(COLOR.r, COLOR.g, COLOR.b, 0.65F));
+
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        Matrix4f matrix4f = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
+
+        /* Draw points */
+        builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        for (int i = 0; i < channel.getKeyframes().size(); i++)
+        {
+            Keyframe frame = (Keyframe) channel.getKeyframes().get(i);
+            boolean isPointHover = this.isInside(this.toGraphX(frame.getTick()), this.toGraphY(frame, i), context.mouseX, context.mouseY);
+
+            if (this.isGrabbing())
+            {
+                isPointHover = isPointHover || this.getGrabbingArea(context).isInside(this.toGraphX(frame.getTick()), this.toGraphY(frame, i));
+            }
+
+            this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame, i), 3, sheet.hasSelected(i) || isPointHover ? Colors.WHITE : sheet.color);
+        }
+
+        for (int i = 0; i < channel.getKeyframes().size(); i++)
+        {
+            Keyframe frame = (Keyframe) channel.getKeyframes().get(i);
+            boolean has = sheet.getSelection().contains(i);
+
+            this.renderRect(context, builder, matrix4f, this.toGraphX(frame.getTick()), this.toGraphY(frame, i), 2, has && this.selected ? Colors.ACTIVE : 0);
+        }
+
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        BufferRenderer.drawWithGlobalProgram(builder.end());
+    }
+
     /* Handling dragging */
 
     @Override
-    protected GenericKeyframe moving(UIContext context, int mouseX, int mouseY)
+    protected Keyframe moving(UIContext context, int mouseX, int mouseY)
     {
-        GenericKeyframe frame = this.getCurrent();
+        Keyframe frame = this.getCurrent();
         double x = this.fromGraphX(mouseX);
 
         if (!this.selected)
@@ -685,7 +1072,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
     public FilmEditorUndo.KeyframeSelection createSelection()
     {
         FilmEditorUndo.KeyframeSelection selection = super.createSelection();
-        GenericKeyframe keyframe = this.getCurrent();
+        Keyframe keyframe = this.getCurrent();
         List<UIProperty> properties = this.getProperties();
 
         for (UIProperty property : properties)
@@ -736,7 +1123,7 @@ public class UIProperties extends UIBaseKeyframes<GenericKeyframe>
             CollectionUtils.inRange(properties, selection.current.x) &&
             CollectionUtils.inRange(properties.get(selection.current.x).channel.getKeyframes(), selection.current.y)
         ) {
-            GenericKeyframe keyframe = (GenericKeyframe) properties.get(selection.current.x).channel.getKeyframes().get(selection.current.y);
+            Keyframe keyframe = (Keyframe) properties.get(selection.current.x).channel.getKeyframes().get(selection.current.y);
 
             this.selected = true;
             this.setKeyframe(keyframe);

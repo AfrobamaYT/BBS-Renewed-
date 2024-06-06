@@ -3,9 +3,9 @@ package mchorse.bbs_mod.film.replays;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.utils.interps.Interpolations;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeSegment;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import org.joml.Vector2d;
 
 import java.util.Arrays;
@@ -24,37 +24,37 @@ public class ReplayKeyframes extends ValueGroup
 
     public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
 
-    public final GenericKeyframeChannel<Double> x = new GenericKeyframeChannel<>("x", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> y = new GenericKeyframeChannel<>("y", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> z = new GenericKeyframeChannel<>("z", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> x = new KeyframeChannel<>("x", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> y = new KeyframeChannel<>("y", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> z = new KeyframeChannel<>("z", KeyframeFactories.DOUBLE);
 
-    public final GenericKeyframeChannel<Double> vX = new GenericKeyframeChannel<>("vX", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> vY = new GenericKeyframeChannel<>("vY", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> vZ = new GenericKeyframeChannel<>("vZ", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> vX = new KeyframeChannel<>("vX", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> vY = new KeyframeChannel<>("vY", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> vZ = new KeyframeChannel<>("vZ", KeyframeFactories.DOUBLE);
 
-    public final GenericKeyframeChannel<Double> yaw = new GenericKeyframeChannel<>("yaw", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> pitch = new GenericKeyframeChannel<>("pitch", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> headYaw = new GenericKeyframeChannel<>("headYaw", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> bodyYaw = new GenericKeyframeChannel<>("bodyYaw", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> yaw = new KeyframeChannel<>("yaw", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> pitch = new KeyframeChannel<>("pitch", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> headYaw = new KeyframeChannel<>("headYaw", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> bodyYaw = new KeyframeChannel<>("bodyYaw", KeyframeFactories.DOUBLE);
 
-    public final GenericKeyframeChannel<Double> sneaking = new GenericKeyframeChannel<>("sneaking", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> sprinting = new GenericKeyframeChannel<>("sprinting", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> grounded = new GenericKeyframeChannel<>("grounded", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> fall = new GenericKeyframeChannel<>("fall", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> damage = new GenericKeyframeChannel<>("damage", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> sneaking = new KeyframeChannel<>("sneaking", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> sprinting = new KeyframeChannel<>("sprinting", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> grounded = new KeyframeChannel<>("grounded", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> fall = new KeyframeChannel<>("fall", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> damage = new KeyframeChannel<>("damage", KeyframeFactories.DOUBLE);
 
-    public final GenericKeyframeChannel<Double> stickLeftX = new GenericKeyframeChannel<>("stick_lx", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> stickLeftY = new GenericKeyframeChannel<>("stick_ly", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> stickRightX = new GenericKeyframeChannel<>("stick_rx", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> stickRightY = new GenericKeyframeChannel<>("stick_ry", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> triggerLeft = new GenericKeyframeChannel<>("trigger_l", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> triggerRight = new GenericKeyframeChannel<>("trigger_r", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> stickLeftX = new KeyframeChannel<>("stick_lx", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> stickLeftY = new KeyframeChannel<>("stick_ly", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> stickRightX = new KeyframeChannel<>("stick_rx", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> stickRightY = new KeyframeChannel<>("stick_ry", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> triggerLeft = new KeyframeChannel<>("trigger_l", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> triggerRight = new KeyframeChannel<>("trigger_r", KeyframeFactories.DOUBLE);
 
     /* Miscellaneous animatable keyframe channels */
-    public final GenericKeyframeChannel<Double> extra1X = new GenericKeyframeChannel<>("extra1_x", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> extra1Y = new GenericKeyframeChannel<>("extra1_y", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> extra2X = new GenericKeyframeChannel<>("extra2_x", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> extra2Y = new GenericKeyframeChannel<>("extra2_y", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> extra1X = new KeyframeChannel<>("extra1_x", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> extra1Y = new KeyframeChannel<>("extra1_y", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> extra2X = new KeyframeChannel<>("extra2_x", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> extra2Y = new KeyframeChannel<>("extra2_y", KeyframeFactories.DOUBLE);
 
     public ReplayKeyframes(String id)
     {
@@ -177,11 +177,11 @@ public class ReplayKeyframes extends ValueGroup
             entity.setVelocity(this.vX.interpolate(tick).floatValue(), this.vY.interpolate(tick).floatValue(), this.vZ.interpolate(tick).floatValue());
             entity.setFallDistance(this.fall.interpolate(tick).floatValue());
 
-            GenericKeyframeSegment<Double> x = this.x.findSegment(tick);
+            KeyframeSegment<Double> x = this.x.findSegment(tick);
             Vector2d xx = this.getPrev(x, tick, entity.getPrevX());
-            GenericKeyframeSegment<Double> y = this.y.findSegment(tick);
+            KeyframeSegment<Double> y = this.y.findSegment(tick);
             Vector2d yy = this.getPrev(y, tick, entity.getPrevY());
-            GenericKeyframeSegment<Double> z = this.z.findSegment(tick);
+            KeyframeSegment<Double> z = this.z.findSegment(tick);
             Vector2d zz = this.getPrev(z, tick, entity.getPrevZ());
 
             entity.setPosition(xx.x, yy.x, zz.x);
@@ -192,13 +192,13 @@ public class ReplayKeyframes extends ValueGroup
 
         if (rotation)
         {
-            GenericKeyframeSegment<Double> yaw = this.yaw.findSegment(tick);
+            KeyframeSegment<Double> yaw = this.yaw.findSegment(tick);
             Vector2d yyaw = this.getPrev(yaw, tick, entity.getPrevYaw());
-            GenericKeyframeSegment<Double> pitch = this.pitch.findSegment(tick);
+            KeyframeSegment<Double> pitch = this.pitch.findSegment(tick);
             Vector2d ppitch = this.getPrev(pitch, tick, entity.getPrevPitch());
-            GenericKeyframeSegment<Double> headYaw = this.headYaw.findSegment(tick);
+            KeyframeSegment<Double> headYaw = this.headYaw.findSegment(tick);
             Vector2d hheadYaw = this.getPrev(headYaw, tick, entity.getPrevHeadYaw());
-            GenericKeyframeSegment<Double> bodyYaw = this.bodyYaw.findSegment(tick);
+            KeyframeSegment<Double> bodyYaw = this.bodyYaw.findSegment(tick);
             Vector2d bbodyYaw = this.getPrev(bodyYaw, tick, entity.getPrevBodyYaw());
 
             entity.setYaw((float) yyaw.x);
@@ -254,7 +254,7 @@ public class ReplayKeyframes extends ValueGroup
     /**
      * Force teleportation for the previous keyframe being constant
      */
-    private Vector2d getPrev(GenericKeyframeSegment<Double> frame, int tick, double prev)
+    private Vector2d getPrev(KeyframeSegment<Double> frame, int tick, double prev)
     {
         if (frame == null)
         {

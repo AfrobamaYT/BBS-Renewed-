@@ -5,7 +5,7 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
 
 /**
- * This class represents a scale of an axis 
+ * This class represents a scale of an axis
  */
 public class Scale
 {
@@ -212,16 +212,16 @@ public class Scale
     /**
      * Convert on-screen coordinate to value
      */
-    public double from(double coordinate)
+    public double from(double mouse)
     {
         if (this.area != null)
         {
-            coordinate -= this.direction.getPosition(this.area, this.anchor);
+            mouse -= this.direction.getPosition(this.area, this.anchor);
         }
 
         return this.inverse
-            ? -(coordinate / this.getZoom() - this.shift)
-            : coordinate / this.getZoom() + this.shift;
+            ? -(mouse / this.getZoom() - this.shift)
+            : mouse / this.getZoom() + this.shift;
     }
 
     public double getMinValue()

@@ -48,7 +48,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
@@ -405,7 +405,7 @@ public class UIFilmController extends UIElement
         {
             for (BaseValue value : replay.keyframes.getAll())
             {
-                if (value instanceof GenericKeyframeChannel channel)
+                if (value instanceof KeyframeChannel channel)
                 {
                     channel.simplify();
                 }

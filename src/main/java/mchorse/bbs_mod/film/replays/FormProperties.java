@@ -7,27 +7,27 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FormProperties extends ValueGroup
 {
-    public final Map<String, GenericKeyframeChannel> properties = new HashMap<>();
+    public final Map<String, KeyframeChannel> properties = new HashMap<>();
 
     public FormProperties(String id)
     {
         super(id);
     }
 
-    public GenericKeyframeChannel getOrCreate(Form form, String key)
+    public KeyframeChannel getOrCreate(Form form, String key)
     {
         BaseValue value = this.get(key);
 
-        if (value instanceof GenericKeyframeChannel)
+        if (value instanceof KeyframeChannel)
         {
-            return (GenericKeyframeChannel) value;
+            return (KeyframeChannel) value;
         }
 
         IFormProperty property = FormUtils.getProperty(form, key);
@@ -35,12 +35,12 @@ public class FormProperties extends ValueGroup
         return property != null ? this.create(property) : null;
     }
 
-    public GenericKeyframeChannel create(IFormProperty property)
+    public KeyframeChannel create(IFormProperty property)
     {
         if (property.canCreateChannel())
         {
             String key = FormUtils.getPropertyPath(property);
-            GenericKeyframeChannel channel = property.createChannel(key);
+            KeyframeChannel channel = property.createChannel(key);
 
             this.properties.put(key, channel);
             this.add(channel);
@@ -74,7 +74,7 @@ public class FormProperties extends ValueGroup
                 continue;
             }
 
-            GenericKeyframeChannel property = new GenericKeyframeChannel(key, null);
+            KeyframeChannel property = new KeyframeChannel(key, null);
 
             property.fromData(mapType);
 

@@ -5,7 +5,7 @@ import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperties;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 import java.util.function.Consumer;
 
@@ -15,7 +15,7 @@ public class UIDopeSheetView extends UIProperties
 
     private boolean relative = true;
 
-    public UIDopeSheetView(IUIClipsDelegate delegate, Consumer<GenericKeyframe> callback)
+    public UIDopeSheetView(IUIClipsDelegate delegate, Consumer<Keyframe> callback)
     {
         super(delegate, callback);
     }

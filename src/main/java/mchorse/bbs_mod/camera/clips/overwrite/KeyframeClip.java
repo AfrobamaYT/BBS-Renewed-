@@ -5,8 +5,8 @@ import mchorse.bbs_mod.camera.clips.CameraClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 /**
  * Keyframe fixture
@@ -16,23 +16,23 @@ import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
  */
 public class KeyframeClip extends CameraClip
 {
-    public final GenericKeyframeChannel<Double> x = new GenericKeyframeChannel<>("x", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> y = new GenericKeyframeChannel<>("y", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> z = new GenericKeyframeChannel<>("z", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> yaw = new GenericKeyframeChannel<>("yaw", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> pitch = new GenericKeyframeChannel<>("pitch", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> roll = new GenericKeyframeChannel<>("roll", KeyframeFactories.DOUBLE);
-    public final GenericKeyframeChannel<Double> fov = new GenericKeyframeChannel<>("fov", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> x = new KeyframeChannel<>("x", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> y = new KeyframeChannel<>("y", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> z = new KeyframeChannel<>("z", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> yaw = new KeyframeChannel<>("yaw", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> pitch = new KeyframeChannel<>("pitch", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> roll = new KeyframeChannel<>("roll", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> fov = new KeyframeChannel<>("fov", KeyframeFactories.DOUBLE);
 
-    public GenericKeyframeChannel<Double>[] channels;
+    public KeyframeChannel<Double>[] channels;
 
     public KeyframeClip()
     {
         super();
 
-        this.channels = new GenericKeyframeChannel[] {this.x, this.y, this.z, this.yaw, this.pitch, this.roll, this.fov};
+        this.channels = new KeyframeChannel[] {this.x, this.y, this.z, this.yaw, this.pitch, this.roll, this.fov};
 
-        for (GenericKeyframeChannel<Double> channel : this.channels)
+        for (KeyframeChannel<Double> channel : this.channels)
         {
             this.add(channel);
         }
@@ -77,7 +77,7 @@ public class KeyframeClip extends CameraClip
     {
         super.breakDownClip(original, offset);
 
-        for (GenericKeyframeChannel<Double> channel : this.channels)
+        for (KeyframeChannel<Double> channel : this.channels)
         {
             channel.moveX(-offset);
         }

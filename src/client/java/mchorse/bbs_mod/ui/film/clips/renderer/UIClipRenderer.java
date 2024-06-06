@@ -11,8 +11,8 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Envelope;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Tessellator;
@@ -105,12 +105,12 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
     /**
      * Render keyframe based envelope.
      */
-    private void renderEnvelopesKeyframes(BufferBuilder builder, Matrix4f matrix, GenericKeyframeChannel<Double> channel, int duration, int x1, int y1, int x2, int y2)
+    private void renderEnvelopesKeyframes(BufferBuilder builder, Matrix4f matrix, KeyframeChannel<Double> channel, int duration, int x1, int y1, int x2, int y2)
     {
-        GenericKeyframe<Double> prevKeyframe = null;
+        Keyframe<Double> prevKeyframe = null;
         int c = ENVELOPE_COLOR.getARGBColor();
 
-        for (GenericKeyframe<Double> keyframe : channel.getKeyframes())
+        for (Keyframe<Double> keyframe : channel.getKeyframes())
         {
             if (prevKeyframe != null)
             {

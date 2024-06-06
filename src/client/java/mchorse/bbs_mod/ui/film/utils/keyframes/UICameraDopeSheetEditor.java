@@ -7,7 +7,7 @@ import mchorse.bbs_mod.ui.film.utils.CameraAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class UICameraDopeSheetEditor extends UIPropertyEditor<UIDopeSheetView>
         return new UIDopeSheetView(delegate, this::fillData);
     }
 
-    public void setChannel(GenericKeyframeChannel channel, int color)
+    public void setChannel(KeyframeChannel channel, int color)
     {
         List<UIProperty> sheets = this.properties.properties;
 
@@ -55,7 +55,7 @@ public class UICameraDopeSheetEditor extends UIPropertyEditor<UIDopeSheetView>
 
         for (int i = 0; i < clip.channels.length; i++)
         {
-            GenericKeyframeChannel channel = clip.channels[i];
+            KeyframeChannel channel = clip.channels[i];
 
             sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), COLORS[i], channel, null));
         }
@@ -63,7 +63,7 @@ public class UICameraDopeSheetEditor extends UIPropertyEditor<UIDopeSheetView>
         this.frameButtons.setVisible(false);
     }
 
-    public void setChannels(List<GenericKeyframeChannel> channels, List<Integer> colors)
+    public void setChannels(List<KeyframeChannel> channels, List<Integer> colors)
     {
         List<UIProperty> sheets = this.properties.properties;
 
@@ -72,7 +72,7 @@ public class UICameraDopeSheetEditor extends UIPropertyEditor<UIDopeSheetView>
 
         for (int i = 0; i < channels.size(); i++)
         {
-            GenericKeyframeChannel channel = channels.get(i);
+            KeyframeChannel channel = channels.get(i);
 
             sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), colors.get(i), channel, null));
         }

@@ -5,7 +5,7 @@ import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
 import mchorse.bbs_mod.utils.TimeUtilsClient;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 public class CameraAxisConverter implements IAxisConverter
 {
@@ -36,7 +36,7 @@ public class CameraAxisConverter implements IAxisConverter
     }
 
     @Override
-    public boolean forceInteger(GenericKeyframe keyframe, boolean forceInteger)
+    public boolean forceInteger(Keyframe keyframe, boolean forceInteger)
     {
         return !BBSSettings.editorSeconds.get() && forceInteger;
     }

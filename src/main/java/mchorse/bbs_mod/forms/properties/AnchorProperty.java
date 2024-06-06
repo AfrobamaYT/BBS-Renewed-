@@ -3,7 +3,7 @@ package mchorse.bbs_mod.forms.properties;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 public class AnchorProperty extends BaseTweenProperty<AnchorProperty.Anchor>
 {

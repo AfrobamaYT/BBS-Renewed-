@@ -6,12 +6,12 @@ import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 public class RemapperClip extends CameraClip
 {
-    public final GenericKeyframeChannel<Double> channel = new GenericKeyframeChannel<>("channel", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> channel = new KeyframeChannel<>("channel", KeyframeFactories.DOUBLE);
 
     public RemapperClip()
     {
@@ -28,8 +28,6 @@ public class RemapperClip extends CameraClip
     {
         double factor = this.channel.interpolate(context.relativeTick + context.transition);
         int duration = this.duration.get();
-
-        System.out.println(factor);
 
         factor *= duration;
         factor = MathUtils.clamp(factor, 0, duration - 0.0001F);

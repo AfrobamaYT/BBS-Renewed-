@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import org.joml.Vector4f;
 
 public class Vector4fProperty extends BaseTweenProperty<Vector4f>

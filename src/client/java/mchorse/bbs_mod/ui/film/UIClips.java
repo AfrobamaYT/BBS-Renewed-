@@ -36,7 +36,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.IFactory;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -465,7 +465,7 @@ public class UIClips extends UIElement
                     clip.yaw.copyKeyframes(replay.keyframes.yaw);
                     clip.pitch.copyKeyframes(replay.keyframes.pitch);
 
-                    for (GenericKeyframe<Double> keyframe : clip.yaw.getKeyframes())
+                    for (Keyframe<Double> keyframe : clip.yaw.getKeyframes())
                     {
                         keyframe.setValue(180D + keyframe.getValue());
                         // keyframe.setLy(180F + keyframe.getLy());

@@ -4,7 +4,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.Objects;
 
@@ -133,7 +133,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     }
 
     @Override
-    public GenericKeyframeChannel createChannel(String key)
+    public KeyframeChannel createChannel(String key)
     {
         return null;
     }

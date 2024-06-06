@@ -16,31 +16,16 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIActionsConfigKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIAnchorKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIBlockStateKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIBooleanKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIColorKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIDoubleKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIFloatKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIIntegerKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIItemStackKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UILinkKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIPoseKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIStringKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UITransformKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.factories.UIVector4fKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.interps.Interpolation;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframe;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.IGenericKeyframeFactory;
-import mchorse.bbs_mod.utils.keyframes.generic.factories.KeyframeFactories;
-import org.joml.Vector2i;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,8 +34,6 @@ import java.util.Map;
 
 public class UIPropertyEditor <T extends UIProperties> extends UIElement
 {
-    private static final Map<IGenericKeyframeFactory, IUIKeyframeFactoryFactory> factories = new HashMap<>();
-
     public UIElement frameButtons;
     public UITrackpad tick;
     public UITrackpad duration;
@@ -66,43 +49,13 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
 
     protected List<BaseValue> valueChannels = new ArrayList<>();
 
-    static
-    {
-        register(KeyframeFactories.ANCHOR, UIAnchorKeyframeFactory::new);
-        register(KeyframeFactories.BOOLEAN, UIBooleanKeyframeFactory::new);
-        register(KeyframeFactories.COLOR, UIColorKeyframeFactory::new);
-        register(KeyframeFactories.FLOAT, UIFloatKeyframeFactory::new);
-        register(KeyframeFactories.DOUBLE, UIDoubleKeyframeFactory::new);
-        register(KeyframeFactories.INTEGER, UIIntegerKeyframeFactory::new);
-        register(KeyframeFactories.LINK, UILinkKeyframeFactory::new);
-        register(KeyframeFactories.POSE, UIPoseKeyframeFactory::new);
-        register(KeyframeFactories.STRING, UIStringKeyframeFactory::new);
-        register(KeyframeFactories.TRANSFORM, UITransformKeyframeFactory::new);
-        register(KeyframeFactories.VECTOR4F, UIVector4fKeyframeFactory::new);
-        register(KeyframeFactories.BLOCK_STATE, UIBlockStateKeyframeFactory::new);
-        register(KeyframeFactories.ITEM_STACK, UIItemStackKeyframeFactory::new);
-        register(KeyframeFactories.ACTIONS_CONFIG, UIActionsConfigKeyframeFactory::new);
-    }
-
-    public static <T> void register(IGenericKeyframeFactory<T> clazz, IUIKeyframeFactoryFactory<T> factory)
-    {
-        factories.put(clazz, factory);
-    }
-
-    public static <T> UIKeyframeFactory createPanel(GenericKeyframe<T> keyframe, UIPropertyEditor editor)
-    {
-        IUIKeyframeFactoryFactory<T> factory = factories.get(keyframe.getFactory());
-
-        return factory == null ? null : factory.create(keyframe, editor);
-    }
-
     public UIPropertyEditor(IUIClipsDelegate delegate)
     {
         super();
 
         InterpolationTooltip tooltip = new InterpolationTooltip(0F, 1F, () ->
         {
-            GenericKeyframe keyframe = this.properties.getCurrent();
+            Keyframe keyframe = this.properties.getCurrent();
 
             if (keyframe == null)
             {
@@ -137,6 +90,20 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
 
         this.context((menu) ->
         {
+            if (this.properties.isEditing())
+            {
+                menu.action(Icons.CLOSE, UIKeys.KEYFRAMES_CONTEXT_EXIT_TRACK, () -> this.properties.editSheet(null));
+            }
+            else
+            {
+                UIProperty sheet = this.properties.getProperty(this.getContext().mouseY);
+
+                if (sheet != null)
+                {
+                    menu.action(Icons.EDIT, UIKeys.KEYFRAMES_CONTEXT_EDIT_TRACK.format(sheet.id), () -> this.properties.editSheet(sheet));
+                }
+            }
+
             menu.action(Icons.MAXIMIZE, UIKeys.KEYFRAMES_CONTEXT_MAXIMIZE, this::resetView);
             menu.action(Icons.FULLSCREEN, UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, this::selectAll);
 
@@ -171,11 +138,10 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
             if (pasted != null)
             {
                 UIContext context = this.getContext();
-                final Map<String, PastedKeyframes> keyframes = pasted;
                 double offset = this.properties.fromGraphX(context.mouseX);
                 int mouseY = context.mouseY;
 
-                this.pasteKeyframes(keyframes, (long) offset, mouseY);
+                this.pasteKeyframes(pasted, (long) offset, mouseY);
             }
         }).inside().category(category);
         this.keys().register(Keys.DELETE, this::removeSelectedKeyframes).inside().category(category);
@@ -190,7 +156,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         return (T) new UIProperties(delegate, this::fillData);
     }
 
-    public void setChannels(List<GenericKeyframeChannel> properties, List<IFormProperty> property, List<Integer> colors)
+    public void setChannels(List<KeyframeChannel> properties, List<IFormProperty> property, List<Integer> colors)
     {
         List<UIProperty> sheets = this.properties.properties;
 
@@ -201,7 +167,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
 
         for (int i = 0; i < properties.size(); i++)
         {
-            GenericKeyframeChannel channel = properties.get(i);
+            KeyframeChannel channel = properties.get(i);
 
             this.valueChannels.add(channel);
             sheets.add(new UIProperty(channel.getId(), IKey.raw(channel.getId()), colors.get(i), channel, property.get(i)));
@@ -281,12 +247,12 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         {
             MapType map = data.getMap(key);
             ListType list = map.getList("keyframes");
-            IGenericKeyframeFactory serializer = KeyframeFactories.FACTORIES.get(map.getString("type"));
+            IKeyframeFactory serializer = KeyframeFactories.FACTORIES.get(map.getString("type"));
 
             for (int i = 0, c = list.size(); i < c; i++)
             {
                 PastedKeyframes pastedKeyframes = temp.computeIfAbsent(key, k -> new PastedKeyframes(serializer));
-                GenericKeyframe keyframe = new GenericKeyframe("", serializer);
+                Keyframe keyframe = new Keyframe("", serializer);
 
                 keyframe.fromData(list.getMap(i));
                 pastedKeyframes.keyframes.add(keyframe);
@@ -375,20 +341,20 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         }
 
         long firstX = pastedKeyframes.keyframes.get(0).getTick();
-        List<GenericKeyframe> toSelect = new ArrayList<>();
+        List<Keyframe> toSelect = new ArrayList<>();
 
-        for (GenericKeyframe keyframe : pastedKeyframes.keyframes)
+        for (Keyframe keyframe : pastedKeyframes.keyframes)
         {
             keyframe.setTick(keyframe.getTick() - firstX + offset);
 
             int index = property.channel.insert(keyframe.getTick(), keyframe.getValue());
-            GenericKeyframe inserted = property.channel.get(index);
+            Keyframe inserted = property.channel.get(index);
 
             inserted.copy(keyframe);
             toSelect.add(inserted);
         }
 
-        for (GenericKeyframe select : toSelect)
+        for (Keyframe select : toSelect)
         {
             property.addToSelection(property.channel.getKeyframes().indexOf(select));
         }
@@ -425,7 +391,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
 
     public void setDuration(int value)
     {
-        GenericKeyframe current = this.properties.getCurrent();
+        Keyframe current = this.properties.getCurrent();
 
         if (current != null)
         {
@@ -438,7 +404,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         this.properties.setValue(value);
     }
 
-    public void fillData(GenericKeyframe frame)
+    public void fillData(Keyframe frame)
     {
         boolean show = frame != null;
 
@@ -458,7 +424,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
             this.editor = null;
         }
 
-        this.editor = createPanel(frame, this);
+        this.editor = UIKeyframeFactory.createPanel(frame, this);
 
         if (this.editor != null)
         {
@@ -470,7 +436,7 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         this.frameButtons.resize();
     }
 
-    public void pickKeyframe(GenericKeyframe frame)
+    public void pickKeyframe(Keyframe frame)
     {
         this.fillData(frame);
 
@@ -495,55 +461,14 @@ public class UIPropertyEditor <T extends UIProperties> extends UIElement
         }
     }
 
-    public void select(List<List<Integer>> selection, Vector2i selected)
-    {
-        int i = 0;
-        boolean deselect = true;
-
-        for (UIProperty property : this.properties.getProperties())
-        {
-            List<Integer> sheetSelection = CollectionUtils.inRange(selection, i) ? selection.get(i) : null;
-
-            if (sheetSelection != null)
-            {
-                property.clearSelection();
-                property.addToSelection(sheetSelection);
-            }
-
-            if (i == selected.x)
-            {
-                GenericKeyframe keyframe = property.channel.get(selected.y);
-
-                if (keyframe != null)
-                {
-                    this.fillData(keyframe);
-
-                    deselect = false;
-                }
-            }
-
-            i += 1;
-        }
-
-        if (deselect)
-        {
-            this.fillData(null);
-        }
-    }
-
     private static class PastedKeyframes
     {
-        public IGenericKeyframeFactory factory;
-        public List<GenericKeyframe> keyframes = new ArrayList<>();
+        public IKeyframeFactory factory;
+        public List<Keyframe> keyframes = new ArrayList<>();
 
-        public PastedKeyframes(IGenericKeyframeFactory factory)
+        public PastedKeyframes(IKeyframeFactory factory)
         {
             this.factory = factory;
         }
-    }
-
-    public static interface IUIKeyframeFactoryFactory <T>
-    {
-        public UIKeyframeFactory<T> create(GenericKeyframe<T> keyframe, UIPropertyEditor editor);
     }
 }

@@ -2,7 +2,7 @@ package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.keyframes.generic.GenericKeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.interps.IInterp;
 
 public interface IFormProperty <T> extends IMapSerializable
@@ -71,5 +71,5 @@ public interface IFormProperty <T> extends IMapSerializable
     /**
      * Create a generic keyframe channel that can be used with this property
      */
-    public GenericKeyframeChannel createChannel(String key);
+    public KeyframeChannel createChannel(String key);
 }
