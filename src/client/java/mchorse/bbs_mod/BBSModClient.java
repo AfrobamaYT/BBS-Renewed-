@@ -1,6 +1,5 @@
 package mchorse.bbs_mod;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
@@ -11,6 +10,8 @@ import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
+import mchorse.bbs_mod.film.Recorder;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
@@ -75,6 +76,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
     private static KeyBinding keyFilms;
+    private static KeyBinding keyRecordReplay;
     /* private static KeyBinding keyToggleRecording; */
 
     private static UIDashboard dashboard;
@@ -258,6 +260,13 @@ public class BBSModClient implements ClientModInitializer
         keyFilms = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key." + BBSMod.MOD_ID + ".films",
             InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_RIGHT_CONTROL,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+
+        keyRecordReplay = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + ".record_replay",
+            InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_RIGHT_ALT,
             "category." + BBSMod.MOD_ID + ".main"
         ));
@@ -347,6 +356,31 @@ public class BBSModClient implements ClientModInitializer
             while (keyFilms.wasPressed())
             {
                 UIScreen.open(new UIFilmsMenu());
+            }
+
+            while (keyRecordReplay.wasPressed())
+            {
+                UIDashboard dashboard = getDashboard();
+
+                if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+                {
+                    Recorder recorder = getFilms().getRecorder();
+
+                    if (recorder != null)
+                    {
+                        UIScreen.open(getDashboard());
+                    }
+                    else
+                    {
+                        Replay replay = panel.replayEditor.getReplay();
+                        int index = panel.getFilm().replays.getList().indexOf(replay);
+
+                        if (index >= 0)
+                        {
+                            getFilms().startRecording(panel.getFilm(), index);
+                        }
+                    }
+                }
             }
 
             /* while (keyToggleRecording.wasPressed())
