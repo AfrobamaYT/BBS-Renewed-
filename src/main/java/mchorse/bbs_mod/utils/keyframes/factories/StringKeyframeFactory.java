@@ -19,6 +19,12 @@ public class StringKeyframeFactory implements IKeyframeFactory<String>
     }
 
     @Override
+    public String createEmpty()
+    {
+        return "";
+    }
+
+    @Override
     public String copy(String value)
     {
         return value;

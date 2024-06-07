@@ -62,6 +62,11 @@ public class KeyframeSegment <T>
     {
         IKeyframeFactory<T> factory = this.a.getFactory();
 
+        if (this.isSame())
+        {
+            return factory.copy(this.a.getValue());
+        }
+
         return factory.copy(factory.interpolate(this.preA.getValue(), this.a.getValue(), this.b.getValue(), this.postB.getValue(), this.a.getInterpolation().wrap(), this.x));
     }
 

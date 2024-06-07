@@ -35,6 +35,12 @@ public class PoseKeyframeFactory implements IKeyframeFactory<Pose>
     }
 
     @Override
+    public Pose createEmpty()
+    {
+        return new Pose();
+    }
+
+    @Override
     public Pose copy(Pose value)
     {
         return value.copy();

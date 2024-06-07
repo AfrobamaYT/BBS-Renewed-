@@ -23,6 +23,12 @@ public class AnchorKeyframeFactory implements IKeyframeFactory<AnchorProperty.An
     }
 
     @Override
+    public AnchorProperty.Anchor createEmpty()
+    {
+        return new AnchorProperty.Anchor();
+    }
+
+    @Override
     public AnchorProperty.Anchor copy(AnchorProperty.Anchor value)
     {
         AnchorProperty.Anchor anchor = new AnchorProperty.Anchor();

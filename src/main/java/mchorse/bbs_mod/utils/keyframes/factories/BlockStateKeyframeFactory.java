@@ -6,6 +6,7 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 
@@ -28,6 +29,12 @@ public class BlockStateKeyframeFactory implements IKeyframeFactory<BlockState>
         Optional<NbtElement> result = BlockState.CODEC.encodeStart(NbtOps.INSTANCE, value).result();
 
         return result.map(DataStorageUtils::fromNbt).orElse(null);
+    }
+
+    @Override
+    public BlockState createEmpty()
+    {
+        return Blocks.AIR.getDefaultState();
     }
 
     @Override

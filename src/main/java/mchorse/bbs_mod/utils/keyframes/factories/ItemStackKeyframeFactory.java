@@ -31,6 +31,12 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
     }
 
     @Override
+    public ItemStack createEmpty()
+    {
+        return ItemStack.EMPTY;
+    }
+
+    @Override
     public ItemStack copy(ItemStack value)
     {
         return value.copy();

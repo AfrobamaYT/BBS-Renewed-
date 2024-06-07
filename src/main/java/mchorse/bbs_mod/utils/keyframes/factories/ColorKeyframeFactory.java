@@ -3,6 +3,7 @@ package mchorse.bbs_mod.utils.keyframes.factories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.IntType;
 import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 
 public class ColorKeyframeFactory implements IKeyframeFactory<Color>
@@ -24,6 +25,12 @@ public class ColorKeyframeFactory implements IKeyframeFactory<Color>
     public BaseType toData(Color value)
     {
         return new IntType(value.getARGBColor());
+    }
+
+    @Override
+    public Color createEmpty()
+    {
+        return new Color().set(Colors.WHITE);
     }
 
     @Override

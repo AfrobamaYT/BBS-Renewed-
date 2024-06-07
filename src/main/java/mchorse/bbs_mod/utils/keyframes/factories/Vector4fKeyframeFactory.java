@@ -22,6 +22,12 @@ public class Vector4fKeyframeFactory implements IKeyframeFactory<Vector4f>
     }
 
     @Override
+    public Vector4f createEmpty()
+    {
+        return new Vector4f();
+    }
+
+    @Override
     public Vector4f copy(Vector4f value)
     {
         return new Vector4f(value);

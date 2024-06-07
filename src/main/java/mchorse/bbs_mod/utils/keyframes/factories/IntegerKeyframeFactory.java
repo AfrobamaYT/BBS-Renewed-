@@ -19,6 +19,12 @@ public class IntegerKeyframeFactory implements IKeyframeFactory<Integer>
     }
 
     @Override
+    public Integer createEmpty()
+    {
+        return 0;
+    }
+
+    @Override
     public Integer copy(Integer value)
     {
         return value;

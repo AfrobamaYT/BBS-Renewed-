@@ -19,6 +19,12 @@ public class DoubleKeyframeFactory implements IKeyframeFactory<Double>
     }
 
     @Override
+    public Double createEmpty()
+    {
+        return 0D;
+    }
+
+    @Override
     public Double copy(Double value)
     {
         return value;

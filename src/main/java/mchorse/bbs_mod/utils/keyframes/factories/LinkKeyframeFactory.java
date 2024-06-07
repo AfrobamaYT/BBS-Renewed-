@@ -21,6 +21,12 @@ public class LinkKeyframeFactory implements IKeyframeFactory<Link>
     }
 
     @Override
+    public Link createEmpty()
+    {
+        return Link.create("bbs:textures/error.png");
+    }
+
+    @Override
     public Link copy(Link value)
     {
         return LinkUtils.copy(value);

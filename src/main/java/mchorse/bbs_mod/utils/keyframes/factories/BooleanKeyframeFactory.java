@@ -19,6 +19,12 @@ public class BooleanKeyframeFactory implements IKeyframeFactory<Boolean>
     }
 
     @Override
+    public Boolean createEmpty()
+    {
+        return false;
+    }
+
+    @Override
     public Boolean copy(Boolean value)
     {
         return value;

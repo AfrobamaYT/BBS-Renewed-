@@ -26,6 +26,12 @@ public class ActionsConfigKeyframeFactory implements IKeyframeFactory<ActionsCon
     }
 
     @Override
+    public ActionsConfig createEmpty()
+    {
+        return new ActionsConfig();
+    }
+
+    @Override
     public ActionsConfig copy(ActionsConfig value)
     {
         ActionsConfig configs = new ActionsConfig();

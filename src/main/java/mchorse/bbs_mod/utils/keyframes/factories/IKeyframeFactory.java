@@ -9,6 +9,8 @@ public interface IKeyframeFactory <T>
 
     public BaseType toData(T value);
 
+    public T createEmpty();
+
     public T copy(T value);
 
     public T interpolate(T preA, T a, T b, T postB, IInterp interpolation, float x);

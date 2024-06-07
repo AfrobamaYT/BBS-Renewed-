@@ -28,6 +28,12 @@ public class TransformKeyframeFactory implements IKeyframeFactory<Transform>
     }
 
     @Override
+    public Transform createEmpty()
+    {
+        return new Transform();
+    }
+
+    @Override
     public Transform copy(Transform value)
     {
         return value.copy();

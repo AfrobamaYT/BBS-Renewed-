@@ -387,14 +387,7 @@ public class UIProperties extends UIBaseKeyframes<Keyframe>
         }
         else
         {
-            if (segment.isSame())
-            {
-                value = factory.copy(segment.a.getValue());
-            }
-            else
-            {
-                value = segment.createInterpolated();
-            }
+            value = segment.createInterpolated();
 
             if (segment.a != null)
             {

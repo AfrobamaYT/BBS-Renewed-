@@ -19,6 +19,12 @@ public class FloatKeyframeFactory implements IKeyframeFactory<Float>
     }
 
     @Override
+    public Float createEmpty()
+    {
+        return 0F;
+    }
+
+    @Override
     public Float copy(Float value)
     {
         return value;

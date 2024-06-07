@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -11,10 +12,14 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollArea;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -29,6 +34,13 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * - Moving keyframes by grabbing
+ * - Adding and removing
+ * - Context menu options
+ * - Editor panels
+ * - Editing inside
+ */
 public class UINewKeyframes extends UIElement
 {
     /* Constants */
@@ -48,11 +60,15 @@ public class UINewKeyframes extends UIElement
 
     private boolean selecting;
     private boolean navigating;
+    private int dragging;
 
     private int lastX;
     private int lastY;
     private int originalX;
     private int originalY;
+
+    private long lastClick;
+    private int clicks;
 
     /* Fields */
 
@@ -150,11 +166,136 @@ public class UINewKeyframes extends UIElement
         return null;
     }
 
+    public UIKeyframeSheet getSheet(Keyframe keyframe)
+    {
+        KeyframeChannel channel = (KeyframeChannel) keyframe.getParent();
+
+        for (UIKeyframeSheet sheet : this.sheets)
+        {
+            if (sheet.channel == channel)
+            {
+                return sheet;
+            }
+        }
+
+        return null;
+    }
+
+    public UIKeyframeSheet getSheet(int mouseY)
+    {
+        int dopeSheetY = this.getDopeSheetY();
+        int index = (mouseY - dopeSheetY) / TRACK_HEIGHT;
+
+        if (CollectionUtils.inRange(this.sheets, index))
+        {
+            return this.sheets.get(index);
+        }
+
+        return null;
+    }
+
+    public void addKeyframe(int mouseX, int mouseY)
+    {
+        long tick = Math.round(this.fromGraphX(mouseX));
+        UIKeyframeSheet sheet = this.getSheet(mouseY);
+
+        if (sheet != null)
+        {
+            KeyframeSegment segment = sheet.channel.find(tick);
+            Interpolation interpolation = null;
+            IFormProperty property = sheet.property;
+            Object value;
+
+            if (segment != null)
+            {
+                value = segment.createInterpolated();
+                interpolation = segment.a.getInterpolation();
+            }
+            else if (property != null)
+            {
+                value = sheet.channel.getFactory().copy(property.get());
+            }
+            else
+            {
+                value = sheet.channel.getFactory().createEmpty();
+            }
+
+            int index = sheet.channel.insert(tick, value);
+            Keyframe keyframe = sheet.channel.get(index);
+
+            if (interpolation != null)
+            {
+                keyframe.getInterpolation().copy(interpolation);
+            }
+
+            this.clearSelection();
+            this.pickKeyframe(keyframe);
+            sheet.selection.add(index);
+        }
+    }
+
+    public void removeKeyframe(Keyframe keyframe)
+    {
+        UIKeyframeSheet sheet = this.getSheet(keyframe);
+
+        sheet.remove(keyframe);
+        this.clearSelection();
+        this.pickKeyframe(null);
+    }
+
+    public Keyframe findKeyframe(int mouseX, int mouseY)
+    {
+        UIKeyframeSheet sheet = this.getSheet(mouseY);
+        List keyframes = sheet.channel.getKeyframes();
+        int i = this.sheets.indexOf(sheet);
+
+        for (int j = 0; j < keyframes.size(); j++)
+        {
+            Keyframe keyframe = (Keyframe) keyframes.get(j);
+            int x = this.toGraphX(keyframe.getTick());
+            int y = this.getDopeSheetY(i) + TRACK_HEIGHT / 2;
+
+            if (this.isNear(x, y, mouseX, mouseY, false))
+            {
+                return keyframe;
+            }
+        }
+
+        return null;
+    }
+
     public void pickKeyframe(Keyframe keyframe)
     {
         if (this.callback != null)
         {
             this.callback.accept(keyframe);
+        }
+    }
+
+    public void setTick(long tick)
+    {
+        Keyframe selected = this.getSelected();
+        long diff = tick - selected.getTick();
+
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.setTickBy(diff);
+        }
+    }
+
+    /**
+     * Set value for all selected keyframes
+     */
+    public void setValue(Object value)
+    {
+        IKeyframeFactory factory = this.getSelected().getFactory();
+
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            if (sheet.channel.getFactory() == factory)
+            {
+                sheet.setValue(value);
+            }
         }
     }
 
@@ -314,26 +455,41 @@ public class UINewKeyframes extends UIElement
 
         if (this.area.isInside(context))
         {
+            this.lastX = this.originalX = context.mouseX;
+            this.lastY = this.originalY = context.mouseY;
+
             if (context.mouseButton == 0)
             {
-                boolean shift = Window.isShiftPressed();
-
-                if (!shift)
+                if (this.handleDoubleClick(context))
                 {
-                    this.clearSelection();
+                    return true;
                 }
 
-                Keyframe found = this.findKeyframe(context);
+                /* Picking keyframe or initiating selection */
+                boolean found = this.findKeyframe(context);
 
-                if (shift && found == null)
+                if (Window.isShiftPressed() && !found)
                 {
                     this.selecting = true;
                 }
 
-                if (found != null)
+                if (found)
                 {
-                    this.pickKeyframe(found);
+                    this.pickKeyframe(this.getSelected());
+                }
+                else if (!this.selecting)
+                {
+                    this.clearSelection();
+                    this.pickKeyframe(null);
+                }
 
+                if (!this.selecting)
+                {
+                    this.dragging = 0;
+                }
+
+                if (found)
+                {
                     return true;
                 }
             }
@@ -341,20 +497,58 @@ public class UINewKeyframes extends UIElement
             {
                 this.navigating = true;
             }
+            else if (context.mouseButton == 4)
+            {
+                this.doubleClick(context);
 
-            this.lastX = context.mouseX;
-            this.lastY = context.mouseY;
-            this.originalX = context.mouseX;
-            this.originalY = context.mouseY;
+                return true;
+            }
         }
 
         return super.subMouseClicked(context);
     }
 
-    private Keyframe findKeyframe(UIContext context)
+    private boolean handleDoubleClick(UIContext context)
+    {
+        /* Handle double click */
+        if (System.currentTimeMillis() > this.lastClick + 175L)
+        {
+            this.clicks = 0;
+        }
+
+        this.clicks += 1;
+        this.lastClick = System.currentTimeMillis();
+
+        if (this.clicks >= 2)
+        {
+            this.clicks = 0;
+
+            this.doubleClick(context);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void doubleClick(UIContext context)
+    {
+        Keyframe keyframe = this.findKeyframe(context.mouseX, context.mouseY);
+
+        if (keyframe != null)
+        {
+            this.removeKeyframe(keyframe);
+        }
+        else
+        {
+            this.addKeyframe(context.mouseX, context.mouseY);
+        }
+    }
+
+    private boolean findKeyframe(UIContext context)
     {
         List<UIKeyframeSheet> sheets = this.getSheets();
-        Keyframe found = null;
+        boolean found = false;
         boolean selectInARow = Window.isAltPressed();
 
         for (int i = 0; i < sheets.size(); i++)
@@ -377,10 +571,10 @@ public class UINewKeyframes extends UIElement
 
                 if (!selectInARow)
                 {
-                    return keyframe;
+                    return true;
                 }
 
-                found = keyframe;
+                found = true;
             }
         }
 
@@ -416,8 +610,17 @@ public class UINewKeyframes extends UIElement
             }
         }
 
+        if (this.dragging > 0)
+        {
+            for (UIKeyframeSheet sheet : this.getSheets())
+            {
+                sheet.sort();
+            }
+        }
+
         this.navigating = false;
         this.selecting = false;
+        this.dragging = -1;
 
         return super.subMouseReleased(context);
     }
@@ -473,6 +676,22 @@ public class UINewKeyframes extends UIElement
             this.xAxis.setShift(this.xAxis.getShift() - (mouseX - this.lastX) / this.xAxis.getZoom());
 
             this.dopeSheet.scrollBy(-(mouseY - this.lastY));
+        }
+
+        if (this.dragging == 0 && (mouseX != this.lastX || mouseY != this.lastY))
+        {
+            this.dragging = 1;
+        }
+        else if (this.dragging == 1)
+        {
+            if (this.getSelected() != null)
+            {
+                this.setTick(Math.round(this.fromGraphX(mouseX)));
+            }
+            else
+            {
+                /* TODO: move cursor */
+            }
         }
 
         this.lastX = mouseX;
