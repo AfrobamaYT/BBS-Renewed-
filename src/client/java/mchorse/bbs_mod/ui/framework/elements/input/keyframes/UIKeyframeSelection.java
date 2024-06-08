@@ -4,12 +4,15 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 public class UIKeyframeSelection
 {
+    private static final List<Integer> tmpIndices = new ArrayList<>();
+
     private KeyframeChannel channel;
     private Set<Integer> selected = new LinkedHashSet<>();
 
@@ -25,6 +28,16 @@ public class UIKeyframeSelection
         return this.selected.contains(index);
     }
 
+    public void all()
+    {
+        this.selected.clear();
+
+        for (int i = 0, c = this.channel.getKeyframes().size(); i < c; i++)
+        {
+            this.selected.add(i);
+        }
+    }
+
     public void clear()
     {
         this.selected.clear();
@@ -38,6 +51,20 @@ public class UIKeyframeSelection
     public void remove(int index)
     {
         this.selected.remove(index);
+    }
+
+    public void removeSelected()
+    {
+        tmpIndices.clear();
+        tmpIndices.addAll(this.selected);
+        tmpIndices.sort(Comparator.reverseOrder());
+
+        for (Integer index : tmpIndices)
+        {
+            this.channel.remove(index);
+        }
+
+        this.selected.clear();
     }
 
     public Keyframe getFirst()

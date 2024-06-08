@@ -1,10 +1,15 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.data.types.ListType;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
@@ -12,6 +17,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollArea;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -20,6 +26,7 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -29,15 +36,14 @@ import net.minecraft.client.render.VertexFormats;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * - Moving keyframes by grabbing
- * - Adding and removing
- * - Context menu options
  * - Editor panels
  * - Editing inside
  */
@@ -66,6 +72,7 @@ public class UINewKeyframes extends UIElement
     private int lastY;
     private int originalX;
     private int originalY;
+    private int originalT;
 
     private long lastClick;
     private int clicks;
@@ -85,6 +92,66 @@ public class UINewKeyframes extends UIElement
     public UINewKeyframes(Consumer<Keyframe> callback)
     {
         this.callback = callback;
+
+        /* Context menu items */
+        this.context((menu) ->
+        {
+            /* TODO: if (this.isEditing())
+            {
+                menu.action(Icons.CLOSE, UIKeys.KEYFRAMES_CONTEXT_EXIT_TRACK, () -> this.properties.editSheet(null));
+            }
+            else
+            {
+                UIProperty sheet = this.getSheet(this.getContext().mouseY);
+
+                if (sheet != null)
+                {
+                    menu.action(Icons.EDIT, UIKeys.KEYFRAMES_CONTEXT_EDIT_TRACK.format(sheet.id), () -> this.editSheet(sheet));
+                }
+            } */
+
+            menu.action(Icons.MAXIMIZE, UIKeys.KEYFRAMES_CONTEXT_MAXIMIZE, this::resetView);
+            menu.action(Icons.FULLSCREEN, UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, this::selectAll);
+
+            if (this.getSelected() != null)
+            {
+                menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, this::removeSelected);
+                menu.action(Icons.COPY, UIKeys.KEYFRAMES_CONTEXT_COPY, this::copyKeyframes);
+            }
+
+            Map<String, PastedKeyframes> pasted = this.parseKeyframes();
+
+            if (pasted != null)
+            {
+                UIContext context = this.getContext();
+                final Map<String, PastedKeyframes> keyframes = pasted;
+                double offset = this.fromGraphX(context.mouseX);
+                int mouseY = context.mouseY;
+
+                menu.action(Icons.PASTE, UIKeys.KEYFRAMES_CONTEXT_PASTE, () -> this.pasteKeyframes(keyframes, (long) offset, mouseY));
+            }
+        });
+
+        /* Keys */
+        IKey category = UIKeys.KEYFRAMES_KEYS_CATEGORY;
+
+        this.keys().register(Keys.KEYFRAMES_MAXIMIZE, this::resetView).inside().category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_ALL, this::selectAll).inside().category(category);
+        this.keys().register(Keys.COPY, this::copyKeyframes).inside().category(category);
+        this.keys().register(Keys.PASTE, () ->
+        {
+            Map<String, PastedKeyframes> pasted = this.parseKeyframes();
+
+            if (pasted != null)
+            {
+                UIContext context = this.getContext();
+                double offset = this.fromGraphX(context.mouseX);
+                int mouseY = context.mouseY;
+
+                this.pasteKeyframes(pasted, (long) offset, mouseY);
+            }
+        }).inside().category(category);
+        this.keys().register(Keys.DELETE, this::removeSelected).inside().category(category);
     }
 
     /* Setters and getters */
@@ -147,6 +214,16 @@ public class UINewKeyframes extends UIElement
         }
 
         this.pickKeyframe(null);
+    }
+
+    public void selectAll()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.all();
+        }
+
+        this.pickKeyframe(this.getSelected());
     }
 
     /* Keyframes */
@@ -243,6 +320,16 @@ public class UINewKeyframes extends UIElement
         this.pickKeyframe(null);
     }
 
+    public void removeSelected()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.removeSelected();
+        }
+
+        this.pickKeyframe(null);
+    }
+
     public Keyframe findKeyframe(int mouseX, int mouseY)
     {
         UIKeyframeSheet sheet = this.getSheet(mouseY);
@@ -299,6 +386,141 @@ public class UINewKeyframes extends UIElement
         }
     }
 
+    /**
+     * Parse keyframes from clipboard
+     */
+    private Map<String, PastedKeyframes> parseKeyframes()
+    {
+        MapType data = Window.getClipboardMap("_CopyProperties");
+
+        if (data == null)
+        {
+            return null;
+        }
+
+        Map<String, PastedKeyframes> temp = new HashMap<>();
+
+        for (String key : data.keys())
+        {
+            MapType map = data.getMap(key);
+            ListType list = map.getList("keyframes");
+            IKeyframeFactory serializer = KeyframeFactories.FACTORIES.get(map.getString("type"));
+
+            for (int i = 0, c = list.size(); i < c; i++)
+            {
+                PastedKeyframes pastedKeyframes = temp.computeIfAbsent(key, k -> new PastedKeyframes(serializer));
+                Keyframe keyframe = new Keyframe("", serializer);
+
+                keyframe.fromData(list.getMap(i));
+                pastedKeyframes.keyframes.add(keyframe);
+            }
+        }
+
+        return temp.isEmpty() ? null : temp;
+    }
+
+    /**
+     * Copy keyframes to clipboard
+     */
+    private void copyKeyframes()
+    {
+        MapType keyframes = new MapType();
+
+        for (UIKeyframeSheet property : this.getSheets())
+        {
+            List<Keyframe> selected = property.selection.getSelected();
+
+            if (selected.isEmpty())
+            {
+                continue;
+            }
+
+            MapType data = new MapType();
+            ListType list = new ListType();
+
+            data.putString("type", CollectionUtils.getKey(KeyframeFactories.FACTORIES, property.channel.getFactory()));
+            data.put("keyframes", list);
+
+            for (Keyframe keyframe : selected)
+            {
+                list.add(keyframe.toData());
+            }
+
+            if (!list.isEmpty())
+            {
+                keyframes.put(property.id, data);
+            }
+        }
+
+        Window.setClipboard(keyframes, "_CopyProperties");
+    }
+
+    /**
+     * Paste copied keyframes to clipboard
+     */
+    protected void pasteKeyframes(Map<String, PastedKeyframes> keyframes, long offset, int mouseY)
+    {
+        List<UIKeyframeSheet> sheets = this.getSheets();
+
+        this.clearSelection();
+
+        if (keyframes.size() == 1)
+        {
+            UIKeyframeSheet current = this.getSheet(mouseY);
+
+            if (current == null)
+            {
+                current =  sheets.get(0);
+            }
+
+            this.pasteKeyframesTo(current, keyframes.get(keyframes.keySet().iterator().next()), offset);
+
+            return;
+        }
+
+        for (Map.Entry<String, PastedKeyframes> entry : keyframes.entrySet())
+        {
+            for (UIKeyframeSheet property : sheets)
+            {
+                if (!property.id.equals(entry.getKey()))
+                {
+                    continue;
+                }
+
+                this.pasteKeyframesTo(property, entry.getValue(), offset);
+            }
+        }
+    }
+
+    private void pasteKeyframesTo(UIKeyframeSheet sheet, PastedKeyframes pastedKeyframes, long offset)
+    {
+        if (sheet.channel.getFactory() != pastedKeyframes.factory)
+        {
+            return;
+        }
+
+        long firstX = pastedKeyframes.keyframes.get(0).getTick();
+        List<Keyframe> toSelect = new ArrayList<>();
+
+        for (Keyframe keyframe : pastedKeyframes.keyframes)
+        {
+            keyframe.setTick(keyframe.getTick() - firstX + offset);
+
+            int index = sheet.channel.insert(keyframe.getTick(), keyframe.getValue());
+            Keyframe inserted = sheet.channel.get(index);
+
+            inserted.copy(keyframe);
+            toSelect.add(inserted);
+        }
+
+        for (Keyframe select : toSelect)
+        {
+            sheet.selection.add(sheet.channel.getKeyframes().indexOf(select));
+        }
+
+        this.pickKeyframe(this.getSelected());
+    }
+
     /* Graphing */
 
     public int toGraphX(double tick)
@@ -342,6 +564,11 @@ public class UINewKeyframes extends UIElement
         }
 
         return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < 25D;
+    }
+
+    public void resetView()
+    {
+        this.resetViewX();
     }
 
     public void resetViewX()
@@ -473,9 +700,11 @@ public class UINewKeyframes extends UIElement
                     this.selecting = true;
                 }
 
+                Keyframe selected = this.getSelected();
+
                 if (found)
                 {
-                    this.pickKeyframe(this.getSelected());
+                    this.pickKeyframe(selected);
                 }
                 else if (!this.selecting)
                 {
@@ -486,6 +715,11 @@ public class UINewKeyframes extends UIElement
                 if (!this.selecting)
                 {
                     this.dragging = 0;
+
+                    if (selected != null)
+                    {
+                        this.originalT = (int) selected.getTick();
+                    }
                 }
 
                 if (found)
@@ -670,15 +904,18 @@ public class UINewKeyframes extends UIElement
 
         int mouseX = context.mouseX;
         int mouseY = context.mouseY;
+        boolean mouseHasMoved = mouseX != this.lastX || mouseY != this.lastY;
 
         if (this.navigating)
         {
-            this.xAxis.setShift(this.xAxis.getShift() - (mouseX - this.lastX) / this.xAxis.getZoom());
+            double offset = (mouseX - this.lastX) / this.xAxis.getZoom();
+
+            this.xAxis.setShift(this.xAxis.getShift() - offset);
 
             this.dopeSheet.scrollBy(-(mouseY - this.lastY));
         }
 
-        if (this.dragging == 0 && (mouseX != this.lastX || mouseY != this.lastY))
+        if (this.dragging == 0 && mouseHasMoved)
         {
             this.dragging = 1;
         }
@@ -686,7 +923,9 @@ public class UINewKeyframes extends UIElement
         {
             if (this.getSelected() != null)
             {
-                this.setTick(Math.round(this.fromGraphX(mouseX)));
+                int offset = (int) (Math.round(this.fromGraphX(this.originalX)) - this.originalT);
+
+                this.setTick(Math.round(this.fromGraphX(mouseX)) - offset);
             }
             else
             {
@@ -865,5 +1104,16 @@ public class UINewKeyframes extends UIElement
         c = Colors.A100 | c;
 
         context.batcher.fillRect(builder, matrix, x - offset, y - offset, offset * 2, offset * 2, c, c, c, c);
+    }
+
+    private static class PastedKeyframes
+    {
+        public IKeyframeFactory factory;
+        public List<Keyframe> keyframes = new ArrayList<>();
+
+        public PastedKeyframes(IKeyframeFactory factory)
+        {
+            this.factory = factory;
+        }
     }
 }
