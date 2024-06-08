@@ -12,6 +12,7 @@ public class MolangHelper
     public static void registerVars(MolangParser parser)
     {
         parser.register("query.anim_time");
+        parser.register("query.life_time");
         parser.register("query.ground_speed");
         parser.register("query.yaw_speed");
 
@@ -101,6 +102,7 @@ public class MolangHelper
         float groundSpeed = (float) Math.sqrt(dx * dx + dz * dz);
 
         parser.setValue("query.anim_time", frame / 20);
+        parser.setValue("query.life_tiem", frame / 20);
         parser.setValue("query.ground_speed", groundSpeed);
         parser.setValue("query.yaw_speed", MathUtils.toRad((float) yawSpeed));
         parser.setValue("query.head_yaw", headYaw);
