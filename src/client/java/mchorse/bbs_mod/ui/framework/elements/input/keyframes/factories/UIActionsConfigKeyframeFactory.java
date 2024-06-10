@@ -6,8 +6,8 @@ import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.pose.UIActionsConfigEditor;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
@@ -17,11 +17,11 @@ public class UIActionsConfigKeyframeFactory extends UIKeyframeFactory<ActionsCon
 {
     public UIActionsConfigEditor actionsEditor;
 
-    public UIActionsConfigKeyframeFactory(Keyframe<ActionsConfig> keyframe, UIPropertyEditor editor)
+    public UIActionsConfigKeyframeFactory(Keyframe<ActionsConfig> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 
-        UIProperty property = editor.properties.getProperty(keyframe);
+        UIKeyframeSheet property = editor.getSheet(keyframe);
         ModelForm form = (ModelForm) property.property.getForm();
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(form);
         CubicModel model = renderer.getModel();

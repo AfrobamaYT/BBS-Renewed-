@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.film.clips;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
-import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.camera.clips.misc.VoicelineClip;
 import mchorse.bbs_mod.camera.clips.modifiers.AngleClip;
@@ -43,8 +42,6 @@ import java.util.Map;
 
 public abstract class UIClip <T extends Clip> extends UIElement
 {
-    public static final IKey CATEGORY = UIKeys.CAMERA_PANELS_KEYS_TITLE;
-
     private static final Map<Class, IUIClipFactory> factories = new HashMap<>();
 
     public T clip;
@@ -153,9 +150,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
     }
 
     protected void updateDuration(int duration)
-    {
-        this.envelope.updateDuration();
-    }
+    {}
 
     public void cameraEditorWasOpened()
     {}

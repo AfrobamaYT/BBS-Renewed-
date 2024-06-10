@@ -6,8 +6,8 @@ import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.pose.Pose;
@@ -17,14 +17,14 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 {
     public UIPoseFactoryEditor poseEditor;
 
-    public UIPoseKeyframeFactory(Keyframe<Pose> keyframe, UIPropertyEditor editor)
+    public UIPoseKeyframeFactory(Keyframe<Pose> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 
         this.poseEditor = new UIPoseFactoryEditor(keyframe);
 
-        UIProperty property = editor.properties.getProperty(keyframe);
-        ModelForm form = (ModelForm) property.property.getForm();
+        UIKeyframeSheet sheet = editor.getSheet(keyframe);
+        ModelForm form = (ModelForm) sheet.property.getForm();
         CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
 
         if (model != null)

@@ -4,12 +4,14 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class UIKeyframeSelection
+public class KeyframeSelection
 {
     private static final List<Integer> tmpIndices = new ArrayList<>();
 
@@ -18,7 +20,7 @@ public class UIKeyframeSelection
 
     private List<Keyframe> tmp = new ArrayList<>();
 
-    public UIKeyframeSelection(KeyframeChannel channel)
+    public KeyframeSelection(KeyframeChannel channel)
     {
         this.channel = channel;
     }
@@ -46,6 +48,21 @@ public class UIKeyframeSelection
     public void add(int i)
     {
         this.selected.add(i);
+    }
+
+    public void add(Keyframe keyframe)
+    {
+        int index = this.channel.getKeyframes().indexOf(keyframe);
+
+        if (index >= 0)
+        {
+            this.add(index);
+        }
+    }
+
+    public void addAll(Collection<Integer> selected)
+    {
+        this.selected.addAll(selected);
     }
 
     public void remove(int index)
@@ -92,5 +109,10 @@ public class UIKeyframeSelection
         }
 
         return this.tmp;
+    }
+
+    public Collection<Integer> getIndices()
+    {
+        return Collections.unmodifiableSet(this.selected);
     }
 }

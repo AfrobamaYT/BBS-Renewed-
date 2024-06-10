@@ -4,12 +4,12 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 public class UILinkKeyframeFactory extends UIKeyframeFactory<Link>
 {
-    public UILinkKeyframeFactory(Keyframe<Link> keyframe, UIPropertyEditor editor)
+    public UILinkKeyframeFactory(Keyframe<Link> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 

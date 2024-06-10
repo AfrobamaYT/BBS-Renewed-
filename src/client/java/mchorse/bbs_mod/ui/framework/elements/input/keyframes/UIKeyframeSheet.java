@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
@@ -15,7 +16,7 @@ public class UIKeyframeSheet
     public final int color;
 
     public final KeyframeChannel channel;
-    public final UIKeyframeSelection selection;
+    public final KeyframeSelection selection;
     public final IFormProperty property;
 
     public UIKeyframeSheet(String id, IKey title, int color, KeyframeChannel channel, IFormProperty property)
@@ -25,7 +26,7 @@ public class UIKeyframeSheet
         this.color = color;
 
         this.channel = channel;
-        this.selection = new UIKeyframeSelection(channel);
+        this.selection = new KeyframeSelection(channel);
         this.property = property;
     }
 
@@ -57,6 +58,14 @@ public class UIKeyframeSheet
         for (Keyframe keyframe : this.selection.getSelected())
         {
             keyframe.setValue(this.channel.getFactory().copy(value));
+        }
+    }
+
+    public void setInterpolation(Interpolation interpolation)
+    {
+        for (Keyframe keyframe : this.selection.getSelected())
+        {
+            keyframe.getInterpolation().copy(interpolation);
         }
     }
 

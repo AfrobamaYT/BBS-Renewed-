@@ -21,12 +21,14 @@ import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperty;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -69,7 +71,7 @@ public class UIReplaysEditor extends UIElement
 
     /* Keyframes */
     public UIElement keyframes;
-    public UIPropertyEditor propertyEditor;
+    public UIKeyframeEditor keyframeEditor;
 
     /* Clips */
     private UIFilmPanel filmPanel;
@@ -144,19 +146,11 @@ public class UIReplaysEditor extends UIElement
         this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.recordOutside.clickItself());
     }
 
-    private void toggleProperties(boolean properties)
-    {
-        if (this.propertyEditor != null)
-        {
-            this.propertyEditor.setVisible(properties);
-        }
-    }
-
     public void handleUndo(ValueChangeUndo change, boolean redo)
     {
-        if (this.propertyEditor != null)
+        if (this.keyframeEditor != null)
         {
-            this.propertyEditor.properties.applySelection(change.getPropertiesSelection(redo));
+            this.keyframeEditor.view.applyState(change.getPropertiesSelection(redo));
         }
     }
 
@@ -204,14 +198,15 @@ public class UIReplaysEditor extends UIElement
 
     public void updateChannelsList()
     {
-        if (this.propertyEditor != null) this.propertyEditor.removeFromParent();
+        if (this.keyframeEditor != null)
+        {
+            this.keyframeEditor.removeFromParent();
+        }
 
         if (this.replay == null)
         {
             return;
         }
-
-        int duration = this.film.camera.calculateDuration();
 
         /* Replay keyframes */
         List<KeyframeChannel> properties = new ArrayList<>();
@@ -244,31 +239,28 @@ public class UIReplaysEditor extends UIElement
 
         if (!properties.isEmpty())
         {
-            this.propertyEditor = new UIPropertyEditor(this.filmPanel.cameraClips);
-            this.propertyEditor.setChannels(properties, formProperties, propertiesColors);
-            this.propertyEditor.relative(this.keyframes).full();
+            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraClips, consumer));
+            this.keyframeEditor.relative(this.keyframes).full();
 
-            this.propertyEditor.properties.setBackgroundRender(this::renderBackground);
-            this.propertyEditor.properties.duration = duration;
+            this.keyframeEditor.view.backgroundRenderer(this::renderBackground);
+            this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
 
-            this.keyframes.add(this.propertyEditor);
+            for (int i = 0; i < properties.size(); i++)
+            {
+                KeyframeChannel channel = properties.get(i);
+                UIKeyframeSheet sheet = new UIKeyframeSheet(channel.getId(), IKey.raw(channel.getId()), propertiesColors.get(i), channel, formProperties.get(i));
+
+                this.keyframeEditor.view.addSheet(sheet);
+            }
+
+            this.keyframes.add(this.keyframeEditor);
         }
 
         this.keyframes.resize();
 
-        if (this.propertyEditor != null)
+        if (this.keyframeEditor != null)
         {
-            this.propertyEditor.resetView();
-        }
-    }
-
-    public void updateDuration()
-    {
-        int duration = this.film.camera.calculateDuration();
-
-        if (this.propertyEditor != null)
-        {
-            this.propertyEditor.properties.duration = duration;
+            this.keyframeEditor.view.resetView();
         }
     }
 
@@ -276,16 +268,12 @@ public class UIReplaysEditor extends UIElement
     {
         String path = FormUtils.getPath(form);
 
-        if (!bone.isEmpty())
+        if (this.keyframeEditor == null || bone.isEmpty())
         {
-            if (this.propertyEditor == null)
-            {
-                return;
-            }
-
-            this.toggleProperties(true);
-            this.pickProperty(bone, StringUtils.combinePaths(path, "pose"), false);
+            return;
         }
+
+        this.pickProperty(bone, StringUtils.combinePaths(path, "pose"), false);
     }
 
     public void pickFormProperty(Form form, String bone)
@@ -303,7 +291,6 @@ public class UIReplaysEditor extends UIElement
 
             manager.action(Icons.POINTER, IKey.raw(formProperty.getKey()), () ->
             {
-                this.toggleProperties(true);
                 this.pickProperty(bone, StringUtils.combinePaths(path, formProperty.getKey()), shift);
             });
         }
@@ -313,42 +300,42 @@ public class UIReplaysEditor extends UIElement
 
     private void pickProperty(String bone, String key, boolean insert)
     {
-        List<UIProperty> properties = this.propertyEditor.properties.getProperties();
-
-        for (UIProperty property : properties)
+        for (UIKeyframeSheet sheet : this.keyframeEditor.view.getSheets())
         {
-            if (FormUtils.getPropertyPath(property.property).equals(key))
+            IFormProperty property = sheet.property;
+
+            if (property != null && FormUtils.getPropertyPath(property).equals(key))
             {
-                this.pickProperty(bone, property, insert);
+                this.pickProperty(bone, sheet, insert);
 
                 break;
             }
         }
     }
 
-    private void pickProperty(String bone, UIProperty property, boolean insert)
+    private void pickProperty(String bone, UIKeyframeSheet sheet, boolean insert)
     {
         int tick = this.filmPanel.getRunner().ticks;
 
         if (insert)
         {
-            this.propertyEditor.properties.addCurrent(property, tick);
-            this.propertyEditor.fillData(this.propertyEditor.properties.getCurrent());
+            this.keyframeEditor.view.addKeyframe(sheet, tick);
+            this.keyframeEditor.view.selectKeyframe(this.keyframeEditor.view.getSelected());
 
             return;
         }
 
-        KeyframeSegment segment = property.channel.find(tick);
+        KeyframeSegment segment = sheet.channel.find(tick);
 
         if (segment != null)
         {
             Keyframe closest = segment.getClosest();
 
-            this.propertyEditor.pickKeyframe(closest);
+            this.keyframeEditor.view.selectKeyframe(closest);
 
-            if (this.propertyEditor.editor instanceof UIPoseKeyframeFactory)
+            if (this.keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory)
             {
-                ((UIPoseKeyframeFactory) this.propertyEditor.editor).poseEditor.selectBone(bone);
+                poseFactory.poseEditor.selectBone(bone);
             }
 
             this.filmPanel.setCursor((int) closest.getTick());
@@ -423,19 +410,14 @@ public class UIReplaysEditor extends UIElement
 
     private void renderBackground(UIContext context)
     {
-        UIPropertyEditor propertyEditor = this.propertyEditor;
+        UIKeyframes keyframes = this.keyframeEditor.view;
 
-        if (!BBSSettings.audioWaveformVisible.get() || propertyEditor == null)
+        if (!BBSSettings.audioWaveformVisible.get() || keyframes == null)
         {
             return;
         }
 
-        Scale scale = null;
-
-        if (propertyEditor != null)
-        {
-            scale = propertyEditor.properties.getScaleX();
-        }
+        Scale scale = keyframes.getXAxis();
 
         for (Clip clip : this.film.camera.get())
         {
@@ -465,7 +447,7 @@ public class UIReplaysEditor extends UIElement
                     int x1 = (int) scale.to(offset);
                     int x2 = (int) scale.to(offset + duration * 20);
 
-                    wave.render(context.batcher, Colors.WHITE, x1, propertyEditor.area.y + 15, x2 - x1, 20, 0F, duration);
+                    wave.render(context.batcher, Colors.WHITE, x1, keyframes.area.y + 15, x2 - x1, 20, 0F, duration);
                 }
             }
         }

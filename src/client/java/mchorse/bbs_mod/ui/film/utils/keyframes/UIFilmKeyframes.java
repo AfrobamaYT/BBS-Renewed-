@@ -4,32 +4,25 @@ import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIProperties;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 import java.util.function.Consumer;
 
-public class UIDopeSheetView extends UIProperties
+public class UIFilmKeyframes extends UIKeyframes
 {
     public IUIClipsDelegate editor;
 
-    private boolean relative = true;
-
-    public UIDopeSheetView(IUIClipsDelegate delegate, Consumer<Keyframe> callback)
+    public UIFilmKeyframes(IUIClipsDelegate delegate, Consumer<Keyframe> callback)
     {
-        super(delegate, callback);
-    }
+        super(callback);
 
-    public UIDopeSheetView absolute()
-    {
-        this.relative = false;
-
-        return this;
+        this.editor = delegate;
     }
 
     public long getClipOffset()
     {
-        if (this.editor == null || this.editor.getClip() == null || !this.relative)
+        if (this.editor == null || this.editor.getClip() == null)
         {
             return 0;
         }
@@ -48,23 +41,25 @@ public class UIDopeSheetView extends UIProperties
     }
 
     @Override
-    protected void moveNoKeyframe(UIContext context, double x, double y)
+    protected void moveNoKeyframes(UIContext context)
     {
         if (this.editor != null)
         {
             long offset = this.getClipOffset();
 
-            this.editor.setCursor((int) (x + offset));
+            this.editor.setCursor((int) (this.fromGraphX(context.mouseX) + offset));
         }
     }
 
     @Override
-    protected void renderCursor(UIContext context)
+    protected void renderBackground(UIContext context)
     {
+        super.renderBackground(context);
+
         if (this.editor != null)
         {
             int cx = this.toGraphX(this.getOffset());
-            String label = TimeUtils.formatTime(this.getOffset()) + "/" + TimeUtils.formatTime(this.duration);
+            String label = TimeUtils.formatTime(this.getOffset()) + "/" + TimeUtils.formatTime(this.getDuration());
 
             UIClips.renderCursor(context, label, this.area, cx - 1);
         }

@@ -3,12 +3,13 @@ package mchorse.bbs_mod.ui.film.clips.widgets;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
-import mchorse.bbs_mod.ui.film.utils.keyframes.UICameraDopeSheetEditor;
+import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.Direction;
@@ -29,7 +30,7 @@ public class UIEnvelope extends UIElement
 
     public UIToggle keyframes;
     public UIButton editKeyframes;
-    public UICameraDopeSheetEditor channel;
+    public UIKeyframeEditor channel;
 
     public UIEnvelope(UIClip<? extends Clip> panel)
     {
@@ -74,9 +75,9 @@ public class UIEnvelope extends UIElement
         this.editKeyframes = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {
             this.panel.editor.embedView(this.channel);
-            this.channel.resetView();
+            this.channel.view.resetView();
         });
-        this.channel = new UICameraDopeSheetEditor(panel.editor);
+        this.channel = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.panel.editor, consumer));
 
         this.column().vertical().stretch();
     }
@@ -111,8 +112,7 @@ public class UIEnvelope extends UIElement
 
     public void initiate()
     {
-        this.updateDuration();
-        this.channel.resetView();
+        this.channel.view.resetView();
         this.channel.updateConverter();
 
         TimeUtilsClient.configure(this.fadeIn, 0);
@@ -139,11 +139,6 @@ public class UIEnvelope extends UIElement
 
         this.fadeIn.setValue(TimeUtils.toTime(envelope.fadeIn.get().intValue()));
         this.fadeOut.setValue(TimeUtils.toTime(envelope.fadeOut.get().intValue()));
-    }
-
-    public void updateDuration()
-    {
-        this.channel.properties.setDuration(this.panel.clip.duration.get());
     }
 
     public Envelope get()

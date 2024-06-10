@@ -10,7 +10,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -47,7 +47,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
         });
     }
 
-    public UIAnchorKeyframeFactory(Keyframe<AnchorProperty.Anchor> keyframe, UIPropertyEditor editor)
+    public UIAnchorKeyframeFactory(Keyframe<AnchorProperty.Anchor> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 

@@ -3,20 +3,20 @@ package mchorse.bbs_mod.ui.dashboard;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UINewKeyframes;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 public class UIDebugPanel extends UIDashboardPanel
 {
-    public UINewKeyframes keyframes;
+    public UIKeyframes keyframes;
 
     public UIDebugPanel(UIDashboard dashboard)
     {
         super(dashboard);
 
-        this.keyframes = new UINewKeyframes(null).duration(() -> 40);
+        this.keyframes = new UIKeyframes(null).duration(() -> 40);
         this.keyframes.relative(this).full();
 
         for (int i = 0; i < 20; i++)

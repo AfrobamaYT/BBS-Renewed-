@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import org.joml.Vector4f;
@@ -13,7 +13,7 @@ public class UIVector4fKeyframeFactory extends UIKeyframeFactory<Vector4f>
     private UITrackpad z;
     private UITrackpad w;
 
-    public UIVector4fKeyframeFactory(Keyframe<Vector4f> keyframe, UIPropertyEditor editor)
+    public UIVector4fKeyframeFactory(Keyframe<Vector4f> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 

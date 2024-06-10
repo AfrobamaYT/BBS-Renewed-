@@ -3,14 +3,15 @@ package mchorse.bbs_mod.ui.film.clips;
 import mchorse.bbs_mod.camera.clips.modifiers.RemapperClip;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
-import mchorse.bbs_mod.ui.film.utils.keyframes.UICameraDopeSheetEditor;
+import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 public class UIRemapperClip extends UIClip<RemapperClip>
 {
-    public UICameraDopeSheetEditor channel;
-    public UIButton editChannel;
+    public UIKeyframeEditor keyframes;
+    public UIButton edit;
 
     public UIRemapperClip(RemapperClip clip, IUIClipsDelegate editor)
     {
@@ -22,12 +23,12 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.registerUI();
 
-        this.channel = new UICameraDopeSheetEditor(this.editor);
+        this.keyframes = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.editor, consumer));
 
-        this.editChannel = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
+        this.edit = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {
-            this.editor.embedView(this.channel);
-            this.channel.resetView();
+            this.editor.embedView(this.keyframes);
+            this.keyframes.view.resetView();
         });
     }
 
@@ -36,7 +37,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.registerPanels();
 
-        this.panels.add(UIClip.label(UIKeys.C_CLIP.get("bbs:remapper")).marginTop(12), this.editChannel);
+        this.panels.add(UIClip.label(UIKeys.C_CLIP.get("bbs:remapper")).marginTop(12), this.edit);
     }
 
     @Override
@@ -44,8 +45,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.fillData();
 
-        this.channel.properties.setDuration(this.clip.duration.get());
-        this.channel.setChannel(this.clip.channel, Colors.ACTIVE);
+        this.keyframes.setChannel(this.clip.channel, Colors.ACTIVE);
     }
 
     @Override
@@ -53,6 +53,6 @@ public class UIRemapperClip extends UIClip<RemapperClip>
     {
         super.updateDuration(duration);
 
-        this.channel.properties.setDuration(duration);
+        this.keyframes.updateConverter();
     }
 }

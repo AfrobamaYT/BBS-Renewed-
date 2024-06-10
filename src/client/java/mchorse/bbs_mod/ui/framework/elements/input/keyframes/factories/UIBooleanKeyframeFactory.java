@@ -2,14 +2,14 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
-import mchorse.bbs_mod.ui.framework.elements.input.keyframes.generic.UIPropertyEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 public class UIBooleanKeyframeFactory extends UIKeyframeFactory<Boolean>
 {
     private UIToggle toggle;
 
-    public UIBooleanKeyframeFactory(Keyframe<Boolean> keyframe, UIPropertyEditor editor)
+    public UIBooleanKeyframeFactory(Keyframe<Boolean> keyframe, UIKeyframes editor)
     {
         super(keyframe, editor);
 

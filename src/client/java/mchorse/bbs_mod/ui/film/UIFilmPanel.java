@@ -33,11 +33,11 @@ import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.screenplay.UIScreenplayEditor;
-import mchorse.bbs_mod.ui.film.utils.undo.FilmEditorUndo;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeState;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
@@ -63,7 +63,6 @@ import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
@@ -119,7 +118,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private UndoManager<ValueGroup> undoManager;
     private List<Integer> cachedCameraSelection = new ArrayList<>();
     private List<Integer> cachedVoicelineSelection = new ArrayList<>();
-    private FilmEditorUndo.KeyframeSelection cachedPropertiesSelection;
+    private KeyframeState cachedKeyframeState;
     private Map<BaseValue, BaseType> cachedUndo = new HashMap<>();
     public boolean cacheMarkLastUndoNoMerging = false;
 
@@ -267,11 +266,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.screenplay.setVisible(false);
 
         element.setVisible(true);
-
-        if (this.replayEditor == element)
-        {
-            this.replayEditor.updateDuration();
-        }
     }
 
     public UIFilmController getController()
@@ -282,11 +276,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public RunnerCameraController getRunner()
     {
         return this.runner;
-    }
-
-    public Framebuffer getFramebuffer()
-    {
-        return MinecraftClient.getInstance().getFramebuffer();
     }
 
     public Area getViewportArea()
@@ -597,11 +586,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.cachedVoicelineSelection.addAll(this.screenplay.editor.clips.getSelection());
         }
 
-        if (this.cachedPropertiesSelection == null)
+        if (this.cachedKeyframeState == null)
         {
-            this.cachedPropertiesSelection = this.replayEditor.propertyEditor == null
-                ? new FilmEditorUndo.KeyframeSelection()
-                : this.replayEditor.propertyEditor.properties.createSelection();
+            if (this.replayEditor.keyframeEditor != null)
+            {
+                this.cachedKeyframeState = this.replayEditor.keyframeEditor.view.cacheState();
+            }
         }
 
         if (!this.cachedUndo.containsKey(baseValue))
@@ -658,7 +648,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), value.toData());
 
             undo.editor(this);
-            undo.selectedBefore(this.cachedCameraSelection, this.cachedVoicelineSelection, this.cachedPropertiesSelection);
+            undo.selectedBefore(this.cachedCameraSelection, this.cachedVoicelineSelection, this.cachedKeyframeState);
             changeUndos.add(undo);
         }
 
@@ -672,7 +662,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         this.cachedUndo.clear();
-        this.cachedPropertiesSelection = null;
+        this.cachedKeyframeState = null;
 
         this.undoTimer.mark();
 
