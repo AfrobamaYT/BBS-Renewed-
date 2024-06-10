@@ -61,8 +61,6 @@ public class EntitySelectors implements IMapSerializable
             {
                 this.fromData(DataToString.read(file).asMap());
             }
-
-            System.out.println(this.selectors);
         }
         catch (Exception e)
         {

@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.ui.utils;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 /**
  * This class represents a scale of an axis
@@ -338,6 +338,11 @@ public class Scale
         this.anchor = newAnchor;
 
         this.zoom(amount, min, max);
+
+        double diff = this.from(this.direction.getPosition(this.area, newAnchor)) - this.from(this.direction.getPosition(this.area, 0F));
+
+        this.shift -= diff;
+        this.anchor = 0F;
     }
 
     public double getZoomFactor()

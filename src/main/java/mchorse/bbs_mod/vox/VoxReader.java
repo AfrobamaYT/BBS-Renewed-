@@ -69,8 +69,6 @@ public class VoxReader extends BinaryReader
                 break;
             }
 
-            /* System.out.println(chunk.toString() + " " + chunk.size + " " + chunk.chunks); */
-
             if (chunk.id.equals("SIZE"))
             {
                 vox = new Vox();
