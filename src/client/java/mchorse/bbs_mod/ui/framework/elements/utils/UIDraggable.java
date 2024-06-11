@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.utils;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.function.Consumer;
@@ -53,7 +53,7 @@ public class UIDraggable extends UIElement
 
         if (!this.hover || this.area.isInside(context) || this.dragging)
         {
-            ScrollArea.bar(context.batcher, this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50);
+            Scroll.bar(context.batcher, this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50);
         }
 
         if (this.dragging && this.callback != null)

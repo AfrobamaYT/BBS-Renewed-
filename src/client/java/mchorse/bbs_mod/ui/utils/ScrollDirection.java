@@ -20,15 +20,15 @@ public enum ScrollDirection
         }
 
         @Override
-        public int getScroll(Area area, ScrollArea scroll, int x, int y)
+        public int getScroll(Area area, Scroll scroll, int x, int y)
         {
             return y - area.y + (int) scroll.scroll;
         }
 
         @Override
-        public float getProgress(Area area, int x, int y)
+        public float getMouse(int x, int y)
         {
-            return (y - area.y) / (float) area.h;
+            return y;
         }
     },
     HORIZONTAL()
@@ -46,15 +46,15 @@ public enum ScrollDirection
         }
 
         @Override
-        public int getScroll(Area area, ScrollArea scroll, int x, int y)
+        public int getScroll(Area area, Scroll scroll, int x, int y)
         {
             return x - area.x + (int) scroll.scroll;
         }
 
         @Override
-        public float getProgress(Area area, int x, int y)
+        public float getMouse(int x, int y)
         {
-            return (x - area.x) / (float) area.w;
+            return x;
         }
     };
 
@@ -71,11 +71,7 @@ public enum ScrollDirection
     /**
      * Get scrolled amount for given mouse position
      */
-    public abstract int getScroll(Area area, ScrollArea scroll, int x, int y);
+    public abstract int getScroll(Area area, Scroll scroll, int x, int y);
 
-    /**
-     * Get progress scalar between 0 and 1 which identifies how much
-     * it is near the maximum side
-     */
-    public abstract float getProgress(Area area, int x, int y);
+    public abstract float getMouse(int x, int y);
 }

@@ -15,7 +15,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
@@ -77,7 +77,7 @@ public class UIKeyframes extends UIElement
 
     private Scale xAxis = new Scale(this.area, ScrollDirection.HORIZONTAL);
     private Scale yAxis = new Scale(this.area, ScrollDirection.VERTICAL);
-    private ScrollArea dopeSheet = new ScrollArea(this.area);
+    private Scroll dopeSheet = new Scroll(this.area);
 
     private Consumer<Keyframe> callback;
     private Consumer<UIContext> backgroundRender;

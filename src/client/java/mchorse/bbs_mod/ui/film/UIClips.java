@@ -26,7 +26,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
@@ -65,7 +65,7 @@ public class UIClips extends UIElement
 
     /* Navigation */
     public Scale scale = new Scale(this.area, ScrollDirection.HORIZONTAL);
-    public ScrollArea vertical = new ScrollArea(new Area());
+    public Scroll vertical = new Scroll(new Area());
 
     private boolean grabbing;
     private boolean scrubbing;

@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.IViewportStack;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 
 import java.util.function.Consumer;
@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  */
 public class UIScrollView extends UIElement implements IViewport
 {
-    public ScrollArea scroll;
+    public Scroll scroll;
 
     public Consumer<UIContext> preRenderCallback;
 
@@ -27,7 +27,7 @@ public class UIScrollView extends UIElement implements IViewport
     {
         super();
 
-        this.scroll = new ScrollArea(this.area, 0);
+        this.scroll = new Scroll(this.area, 0);
         this.scroll.direction = direction;
         this.scroll.scrollSpeed = 20;
     }

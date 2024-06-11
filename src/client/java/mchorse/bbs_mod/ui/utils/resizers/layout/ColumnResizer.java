@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.utils.resizers.layout;
 
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.Area;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.resizers.AutomaticResizer;
 import mchorse.bbs_mod.ui.utils.resizers.ChildResizer;
@@ -144,7 +144,7 @@ public class ColumnResizer extends AutomaticResizer
     {
         if (this.scroll && this.parent.area.scroll != null)
         {
-            ScrollArea scroll = this.parent.area.scroll;
+            Scroll scroll = this.parent.area.scroll;
 
             if (this.vertical && scroll.direction == ScrollDirection.VERTICAL)
             {

@@ -12,7 +12,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.ITextColoring;
 import mchorse.bbs_mod.ui.utils.Area;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.StringGroupMatcher;
 import mchorse.bbs_mod.utils.Pair;
@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 
 public class UITextarea <T extends TextLine> extends UIElement implements IFocusedUIElement, ITextColoring
 {
-    public ScrollArea horizontal = new ScrollArea(new Area());
-    public ScrollArea vertical = new ScrollArea(this.area);
+    public Scroll horizontal = new Scroll(new Area());
+    public Scroll vertical = new Scroll(this.area);
 
     public Consumer<String> callback;
 

@@ -39,7 +39,7 @@ public class Area implements IResizer
      */
     public int h;
 
-    public ScrollArea scroll;
+    public Scroll scroll;
 
     public Area()
     {}

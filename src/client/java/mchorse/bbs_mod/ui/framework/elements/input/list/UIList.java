@@ -4,7 +4,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.utils.ScrollArea;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -34,7 +34,7 @@ public abstract class UIList <T> extends UIElement
     /**
      * Scrolling area
      */
-    public ScrollArea scroll;
+    public Scroll scroll;
 
     /**
      * Callback which gets invoked when user selects an element
@@ -75,7 +75,7 @@ public abstract class UIList <T> extends UIElement
         super();
 
         this.callback = callback;
-        this.scroll = new ScrollArea(this.area, 20);
+        this.scroll = new Scroll(this.area, 20);
     }
 
     /* List element settings */
