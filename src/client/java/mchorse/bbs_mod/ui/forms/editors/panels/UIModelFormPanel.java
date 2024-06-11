@@ -26,7 +26,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         super(editor);
 
         this.color = new UIColor((c) -> this.form.color.set(new Color().set(c))).withAlpha();
-        this.color.direction(Direction.LEFT);
+        this.color.direction(Direction.RIGHT);
         this.poseEditor = new UIPoseEditor();
         this.pick = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_TEXTURE, (b) ->
         {

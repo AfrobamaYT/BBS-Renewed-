@@ -22,7 +22,7 @@ public class AudioRenderer
             {
                 renderWaveform(batcher, file, x, y, w, h, sw, sh);
 
-                y -= h + 5;
+                y += h + 8;
             }
         }
     }

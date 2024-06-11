@@ -120,7 +120,7 @@ public class UIFilmController extends UIElement
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, this::toggleOrbitMode).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
         {
-            Area area = this.panel.getFramebufferViewport();
+            Area area = this.panel.preview.getViewport();
             UIContext context = this.getContext();
             World world = MinecraftClient.getInstance().world;
             Camera camera = this.panel.getCamera();
@@ -460,7 +460,7 @@ public class UIFilmController extends UIElement
         }
         else if (context.mouseButton == 2)
         {
-            Area area = this.panel.getFramebufferViewport();
+            Area area = this.panel.preview.getViewport();
 
             if (area.isInside(context) && this.orbit.enabled)
             {
@@ -476,7 +476,7 @@ public class UIFilmController extends UIElement
     @Override
     protected boolean subMouseScrolled(UIContext context)
     {
-        Area area = this.panel.getFramebufferViewport();
+        Area area = this.panel.preview.getViewport();
 
         if (area.isInside(context) && this.orbit.enabled)
         {
@@ -1050,7 +1050,7 @@ public class UIFilmController extends UIElement
         }
 
         UIContext c = this.getContext();
-        Area area = this.panel.getFramebufferViewport();
+        Area area = this.panel.preview.getViewport();
 
         if (!area.isInside(c))
         {
@@ -1099,7 +1099,7 @@ public class UIFilmController extends UIElement
 
     private void renderStencil(WorldRenderContext renderContext, UIContext context)
     {
-        Area viewport = this.panel.getFramebufferViewport();
+        Area viewport = this.panel.preview.getViewport();
 
         if (!viewport.isInside(context) || this.controlled != null)
         {

@@ -27,7 +27,7 @@ public class UIKeyframeEditor extends UIElement
     public UIKeyframeEditor(Function<Consumer<Keyframe>, UIKeyframes> factory)
     {
         this.view = factory.apply(this::pickKeyframe);
-        this.view.relative(this).w(1F, -140).h(1F);
+        this.view.relative(this).full();
 
         this.scrollView = UI.scrollView(5, 10);
         this.scrollView.relative(this).x(1F, -140).w(140).h(1F);
@@ -45,9 +45,11 @@ public class UIKeyframeEditor extends UIElement
             this.editor = UIKeyframeFactory.createPanel(keyframe, this.view);
 
             this.scrollView.add(this.editor);
+
         }
 
-        this.scrollView.resize();
+        this.view.w(1F, keyframe == null ? 0 : -140);
+        this.resize();
     }
 
     public void updateConverter()

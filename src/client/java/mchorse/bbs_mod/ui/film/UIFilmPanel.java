@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.audio.AudioRenderer;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
@@ -42,7 +41,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
-import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -50,12 +48,10 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.FFMpegUtils;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.undo.CompoundUndo;
@@ -66,7 +62,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
-import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
@@ -87,6 +82,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public UIElement main;
     public UIFilmRecorder recorder;
+    public UIFilmPreview preview;
 
     public UIClipsPanel cameraClips;
     public UIReplaysEditor replayEditor;
@@ -105,7 +101,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIIcon duplicateFilm;
 
     public UIRenderable renderableOverlay;
-    public UIDraggable draggable;
 
     private Camera camera = new Camera();
     private Timer undoTimer = new Timer(1000);
@@ -141,9 +136,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super(dashboard);
 
         this.runner = new RunnerCameraController(this);
+        this.preview = new UIFilmPreview(this);
+        this.preview.relative(this).full();
 
         this.main = new UIElement();
-        this.main.relative(this.editor).w(0.66F).h(1F);
+        this.main.relative(this.editor).full();
 
         this.cameraClips = new UIClipsPanel(this, BBSMod.getFactoryCameraClips());
         this.cameraClips.relative(this.main).full();
@@ -216,22 +213,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openScreenplay = new UIIcon(Icons.FILE, (b) -> this.showPanel(this.screenplay));
         this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
 
-        this.draggable = new UIDraggable((context) ->
-        {
-            float value = (context.mouseX - this.main.area.x) / (float) this.editor.area.w;
-
-            this.main.w(MathUtils.clamp(value, 0.05F, 0.95F), 0);
-            this.resize();
-        });
-        this.draggable.hoverOnly().relative(this.main).x(1F, -3).y(0.5F, -40).wh(6, 80);
-
         this.iconBar.add(this.plause.marginTop(9), this.teleport, this.screenshot, this.record, this.openVideos, this.openCamera.marginTop(9), this.openReplays, this.openScreenplay);
 
         /* Adding everything */
 
         this.editor.add(this.main, new UIRenderable(this::renderIcons));
-        this.main.add(this.cameraClips, this.replayEditor, this.screenplay, this.draggable);
-        this.add(this.controller, new UIRenderable(this::renderDividers));
+        this.main.add(this.cameraClips, this.replayEditor, this.screenplay);
+        this.add(this.controller, new UIRenderable(this::renderDividers), this.preview);
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
         /* Register keybinds */
@@ -276,35 +264,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public RunnerCameraController getRunner()
     {
         return this.runner;
-    }
-
-    public Area getViewportArea()
-    {
-        return new Area(this.cameraClips.area.ex(), this.area.y, this.iconBar.area.x - this.cameraClips.area.ex(), this.area.h);
-    }
-
-    public Area getFramebufferViewport()
-    {
-        return this.getFramebufferArea(this.getViewportArea());
-    }
-
-    public Area getFramebufferArea(Area viewport)
-    {
-        int width = BBSRendering.getVideoWidth();
-        int height = BBSRendering.getVideoHeight();
-
-        Camera camera = new Camera();
-
-        camera.copy(this.getWorldCamera());
-        camera.updatePerspectiveProjection(width, height);
-
-        Vector2i size = Vectors.resize(width / (float) height, viewport.w, viewport.h);
-        Area area = new Area();
-
-        area.setSize(size.x, size.y);
-        area.setPos(viewport.mx() - area.w / 2, viewport.my() - area.h / 2);
-
-        return area;
     }
 
     @Override
@@ -779,19 +738,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     @Override
-    protected boolean subMouseClicked(UIContext context)
-    {
-        Area area = this.getFramebufferViewport();
-
-        if (area.isInside(context))
-        {
-            return this.replayEditor.clickViewport(context, area);
-        }
-
-        return super.subMouseClicked(context);
-    }
-
-    @Override
     public void update()
     {
         this.controller.update();
@@ -809,7 +755,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         this.submitUndo();
         this.updateLogic(context);
-        this.renderOverlays(context);
+
+        int color = BBSSettings.primaryColor.get();
+
+        this.area.render(context.batcher, Colors.mulRGB(color | Colors.A100, 0.2F));
 
         super.render(context);
 
@@ -930,84 +879,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         context.batcher.box(a1.x + 3, a1.ey() + 4, a1.ex() - 3, a1.ey() + 5, 0x22ffffff);
         context.batcher.box(a2.x + 3, a2.ey() + 4, a2.ex() - 3, a2.ey() + 5, 0x22ffffff);
-    }
-
-    /**
-     * Draw different camera type overlays (custom texture overlay, letterbox,
-     * rule of thirds and crosshair)
-     */
-    private void renderOverlays(UIContext context)
-    {
-        int color = BBSSettings.primaryColor.get();
-
-        this.area.render(context.batcher, Colors.mulRGB(color | Colors.A100, 0.2F));
-
-        if (this.data == null)
-        {
-            return;
-        }
-
-        this.camera.copy(this.getWorldCamera());
-        this.camera.view.set(this.lastView);
-        this.camera.projection.set(this.lastProjection);
-        context.batcher.flush();
-
-        Texture texture = BBSRendering.getTexture();
-        Area viewport = this.getViewportArea();
-        Area area = this.getFramebufferArea(viewport);
-
-        viewport.render(context.batcher, Colors.A75);
-
-        if (texture != null)
-        {
-            context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
-        }
-
-        /* Render rule of thirds */
-        if (BBSSettings.editorRuleOfThirds.get())
-        {
-            int guidesColor = BBSSettings.editorGuidesColor.get();
-
-            context.batcher.box(area.x + area.w / 3 - 1, area.y, area.x + area.w / 3, area.y + area.h, guidesColor);
-            context.batcher.box(area.x + area.w - area.w / 3, area.y, area.x + area.w - area.w / 3 + 1, area.y + area.h, guidesColor);
-
-            context.batcher.box(area.x, area.y + area.h / 3 - 1, area.x + area.w, area.y + area.h / 3, guidesColor);
-            context.batcher.box(area.x, area.y + area.h - area.h / 3, area.x + area.w, area.y + area.h - area.h / 3 + 1, guidesColor);
-        }
-
-        if (BBSSettings.editorCenterLines.get())
-        {
-            int guidesColor = BBSSettings.editorGuidesColor.get();
-            int x = area.mx();
-            int y = area.my();
-
-            context.batcher.box(area.x, y, area.ex(), y + 1, guidesColor);
-            context.batcher.box(x, area.y, x + 1, area.ey(), guidesColor);
-        }
-
-        if (BBSSettings.editorCrosshair.get())
-        {
-            int x = area.mx() + 1;
-            int y = area.my() + 1;
-
-            context.batcher.box(x - 4, y - 1, x + 3, y, Colors.setA(Colors.WHITE, 0.5F));
-            context.batcher.box(x - 1, y - 4, x, y + 3, Colors.setA(Colors.WHITE, 0.5F));
-        }
-
-        this.controller.renderHUD(context, area);
-
-        if (this.replayEditor.isVisible())
-        {
-            this.renderAudio(context, area);
-        }
-    }
-
-    private void renderAudio(UIContext context, Area area)
-    {
-        int w = (int) (area.w * BBSSettings.audioWaveformWidth.get());
-        int x = area.x(0.5F, w);
-
-        AudioRenderer.renderAll(context.batcher, x, this.area.y + 10, w, BBSSettings.audioWaveformHeight.get(), this.dashboard.width, this.dashboard.height);
     }
 
     @Override

@@ -44,7 +44,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * - Editor panels
  * - Editing inside
  */
 public class UIKeyframes extends UIElement
@@ -52,7 +51,7 @@ public class UIKeyframes extends UIElement
     /* Constants */
 
     public static final int TOP_MARGIN = 25;
-    public static final int TRACK_HEIGHT = 16;
+    public static final int TRACK_HEIGHT = 12;
 
     public static final Color COLOR = new Color();
     public static final double MIN_ZOOM = 0.01D;
@@ -736,40 +735,42 @@ public class UIKeyframes extends UIElement
 
             if (Window.isCtrlPressed() && context.mouseButton == 0)
             {
-                return this.removeOrCreateKeyframe(context);
+                this.removeOrCreateKeyframe(context);
             }
             else if (Window.isAltPressed() && context.mouseButton == 0)
             {
-                return this.duplicateOrSelectColumn(context);
+                this.duplicateOrSelectColumn(context);
             }
             else if (context.mouseButton == 0)
             {
-                return this.pickOrStartSelectingKeyframes(context);
+                this.pickOrStartSelectingKeyframes(context);
             }
             else if (context.mouseButton == 2)
             {
                 this.navigating = true;
             }
+
+            return true;
         }
 
         return super.subMouseClicked(context);
     }
 
-    private boolean removeOrCreateKeyframe(UIContext context)
+    private void removeOrCreateKeyframe(UIContext context)
     {
         Keyframe keyframe = this.findKeyframe(context.mouseX, context.mouseY);
 
         if (keyframe != null)
         {
             this.removeKeyframe(keyframe);
-
-            return true;
         }
-
-        return this.addKeyframe(context.mouseX, context.mouseY);
+        else
+        {
+            this.addKeyframe(context.mouseX, context.mouseY);
+        }
     }
 
-    private boolean duplicateOrSelectColumn(UIContext context)
+    private void duplicateOrSelectColumn(UIContext context)
     {
         if (this.getSelected() != null)
         {
@@ -777,11 +778,11 @@ public class UIKeyframes extends UIElement
             int tick = (int) Math.round(this.fromGraphX(context.mouseX));
 
             this.pasteKeyframes(this.parseKeyframes(this.serializeKeyframes()), tick, context.mouseY);
+
+            return;
         }
 
         /* Select a column */
-        int counter = 0;
-
         for (int i = 0; i < sheets.size(); i++)
         {
             UIKeyframeSheet sheet = sheets.get(i);
@@ -796,15 +797,12 @@ public class UIKeyframes extends UIElement
                 if (this.isNear(x, y, context.mouseX, context.mouseY, true))
                 {
                     sheet.selection.add(j);
-                    counter += 1;
                 }
             }
         }
-
-        return counter > 0;
     }
 
-    private boolean pickOrStartSelectingKeyframes(UIContext context)
+    private void pickOrStartSelectingKeyframes(UIContext context)
     {
         /* Picking keyframe or initiating selection */
         Keyframe found = this.findKeyframe(context.mouseX, context.mouseY);
@@ -845,8 +843,6 @@ public class UIKeyframes extends UIElement
                 this.originalT = (int) found.getTick();
             }
         }
-
-        return found != null;
     }
 
     @Override
