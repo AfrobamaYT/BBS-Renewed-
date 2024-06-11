@@ -16,6 +16,7 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
 
     private UIScrollView editor;
     private UITextbox arguments;
+    private UIIcon flip;
     private UITrackpad width;
     private UITrackpad height;
     private UITrackpad frameRate;
@@ -29,6 +30,16 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
         this.value = value;
 
         this.arguments = new UITextbox(1024, (s) -> this.value.arguments.set(s));
+        this.flip = new UIIcon(Icons.REFRESH, (b) ->
+        {
+            int w = this.value.width.get();
+            int h = this.value.height.get();
+
+            this.value.width.set(h);
+            this.value.height.set(w);
+
+            this.fill();
+        });
         this.width = new UITrackpad((v) -> this.value.width.set(v.intValue()));
         this.width.limit(2, 8096, true);
         this.width.tooltip(UIKeys.VIDEO_SETTINGS_WIDTH);
@@ -46,7 +57,7 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
             UI.label(UIKeys.VIDEO_SETTINGS_ARGS),
             this.arguments,
             UI.label(UIKeys.VIDEO_SETTINGS_RESOLUTION).marginTop(6),
-            UI.row(this.width, this.height),
+            UI.row(this.width, this.flip, this.height),
             UI.label(UIKeys.VIDEO_SETTINGS_FRAME_RATE).marginTop(6),
             this.frameRate,
             UI.label(UIKeys.VIDEO_SETTINGS_MOTION_BLUR).marginTop(6),
