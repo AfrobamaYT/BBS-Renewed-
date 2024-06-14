@@ -314,6 +314,7 @@
     "bbs.ui.film.replay.context.move_here": "Move replay here",
     "bbs.ui.film.replay.entity_keyframes": "Open entity keyframes",
     "bbs.ui.film.replay.form_keyframes": "Open form keyframes",
+    "bbs.ui.film.replay.orbit.camera": "Camera",
     "bbs.ui.film.replay.orbit.first_person": "First-person",
     "bbs.ui.film.replay.orbit.orbit": "Orbit",
     "bbs.ui.film.replay.orbit.third_person_back": "Third-person (back)",

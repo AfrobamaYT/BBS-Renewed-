@@ -19,7 +19,6 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
@@ -34,7 +33,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
-import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -65,12 +63,9 @@ public class UIReplaysEditor extends UIElement
     public UIIcon openReplays;
     public UIIcon record;
     public UIIcon recordOutside;
-    public UIIcon toggleOrbitMode;
     public UIIcon changeOrbitPerspectice;
-    public UIElement icons;
 
     /* Keyframes */
-    public UIElement keyframes;
     public UIKeyframeEditor keyframeEditor;
 
     /* Clips */
@@ -128,22 +123,12 @@ public class UIReplaysEditor extends UIElement
             }
         });
         this.recordOutside.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);
-        this.toggleOrbitMode = new UIIcon(Icons.ORBIT, (b) -> this.filmPanel.getController().toggleOrbit());
-        this.toggleOrbitMode.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT);
         this.changeOrbitPerspectice = new UIIcon(Icons.VISIBLE, (b) -> this.filmPanel.getController().toggleOrbitMode());
         this.changeOrbitPerspectice.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
 
-        this.keyframes = new UIElement();
-        this.keyframes.relative(this).y(20).w(1F).h(1F, -20);
-
-        this.icons = UI.row(0, this.openReplays, this.record.marginLeft(5), this.recordOutside, this.toggleOrbitMode.marginLeft(10), this.changeOrbitPerspectice);
-        this.icons.relative(this.keyframes).y(-20).w(60).h(20);
-
-        this.add(this.openReplays, this.keyframes, this.icons);
-
         this.markContainer();
 
-        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.recordOutside.clickItself());
+        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.recordOutside.clickItself(this.getContext()));
     }
 
     public void handleUndo(ValueChangeUndo change, boolean redo)
@@ -176,12 +161,10 @@ public class UIReplaysEditor extends UIElement
     {
         this.replay = replay;
 
-        this.keyframes.setVisible(replay != null);
         this.updateChannelsList();
 
         this.replays.replays.setCurrentScroll(replay);
         this.record.setEnabled(replay != null);
-        this.recordOutside.setEnabled(replay != null);
     }
 
     public void moveReplay(double x, double y, double z)
@@ -239,8 +222,8 @@ public class UIReplaysEditor extends UIElement
 
         if (!properties.isEmpty())
         {
-            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraClips, consumer));
-            this.keyframeEditor.relative(this.keyframes).full();
+            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraClips, consumer).absolute()).target(this.filmPanel.editArea);
+            this.keyframeEditor.relative(this).full();
 
             this.keyframeEditor.view.backgroundRenderer(this::renderBackground);
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
@@ -253,10 +236,10 @@ public class UIReplaysEditor extends UIElement
                 this.keyframeEditor.view.addSheet(sheet);
             }
 
-            this.keyframes.add(this.keyframeEditor);
+            this.add(this.keyframeEditor);
         }
 
-        this.keyframes.resize();
+        this.resize();
 
         if (this.keyframeEditor != null)
         {
@@ -451,18 +434,5 @@ public class UIReplaysEditor extends UIElement
                 }
             }
         }
-    }
-
-    @Override
-    public void render(UIContext context)
-    {
-        context.batcher.box(this.icons.area.x, this.icons.area.y, this.keyframes.area.ex(), this.icons.area.ey(), Colors.CONTROL_BAR);
-
-        if (this.filmPanel.getController().orbit.enabled)
-        {
-            UIDashboardPanels.renderHighlight(context.batcher, this.toggleOrbitMode.area);
-        }
-
-        super.render(context);
     }
 }

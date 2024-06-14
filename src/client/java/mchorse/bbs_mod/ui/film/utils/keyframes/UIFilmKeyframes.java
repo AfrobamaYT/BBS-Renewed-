@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 public class UIFilmKeyframes extends UIKeyframes
 {
     public IUIClipsDelegate editor;
+    public boolean absolute;
 
     public UIFilmKeyframes(IUIClipsDelegate delegate, Consumer<Keyframe> callback)
     {
@@ -20,8 +21,20 @@ public class UIFilmKeyframes extends UIKeyframes
         this.editor = delegate;
     }
 
+    public UIFilmKeyframes absolute()
+    {
+        this.absolute = true;
+
+        return this;
+    }
+
     public long getClipOffset()
     {
+        if (this.absolute)
+        {
+            return 0;
+        }
+
         if (this.editor == null || this.editor.getClip() == null)
         {
             return 0;
@@ -47,7 +60,7 @@ public class UIFilmKeyframes extends UIKeyframes
         {
             long offset = this.getClipOffset();
 
-            this.editor.setCursor((int) (this.fromGraphX(context.mouseX) + offset));
+            this.editor.setCursor(Math.max(0, (int) (Math.round(this.fromGraphX(context.mouseX)) + offset)));
         }
     }
 

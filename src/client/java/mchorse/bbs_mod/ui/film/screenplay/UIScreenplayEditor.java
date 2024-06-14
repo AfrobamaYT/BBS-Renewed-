@@ -32,10 +32,10 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UITextareaOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.MinecraftClient;
 import org.lwjgl.system.MemoryUtil;
 
@@ -77,7 +77,7 @@ public class UIScreenplayEditor extends UIElement
         this.masterBar = UI.row(this.master, this.save, this.subtitles, this.generate);
         this.masterBar.relative(this).x(10).y(10).w(1F, -20).h(20);
 
-        this.editor = new UIClipsPanel(panel, BBSMod.getFactoryScreenplayClips());
+        this.editor = new UIClipsPanel(panel, BBSMod.getFactoryScreenplayClips()).target(this.panel.editArea);
         this.editor.relative(this).y(40).w(1F).h(1F, -40);
         this.editor.clips.context((menu) ->
         {

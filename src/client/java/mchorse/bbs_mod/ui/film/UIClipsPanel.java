@@ -28,6 +28,8 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     private IFactory<Clip, ClipFactoryData> factory;
     private UIClip panel;
 
+    private UIElement target;
+
     public UIClipsPanel(UIFilmPanel panel, IFactory<Clip, ClipFactoryData> factory)
     {
         this.filmPanel = panel;
@@ -36,6 +38,13 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
 
         this.clips.relative(this).full();
         this.add(this.clips);
+    }
+
+    public UIClipsPanel target(UIElement target)
+    {
+        this.target = target;
+
+        return this;
     }
 
     public void open()
@@ -120,12 +129,21 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
             UIClip panel = UIClip.createPanel(clip, this);
 
             this.panel = panel;
-            this.panel.relative(this).x(1F, -160).w(160).h(1F);
             this.add(this.panel);
 
+            if (this.target == null)
+            {
+                this.panel.relative(this).x(1F, -160).w(160).h(1F);
+            }
+            else
+            {
+                this.panel.relative(this.target).full();
+            }
+
+            this.resize();
             this.panel.fillData();
 
-            Integer scroll = scrolls.get(this.filmPanel.getClass());
+            Integer scroll = scrolls.get(this.panel.getClass());
 
             if (scroll != null)
             {
@@ -143,7 +161,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
             e.printStackTrace();
         }
 
-        this.clips.w(1F, -160);
+        this.clips.w(1F, this.target == null ? -160 : 0);
         this.resize();
     }
 

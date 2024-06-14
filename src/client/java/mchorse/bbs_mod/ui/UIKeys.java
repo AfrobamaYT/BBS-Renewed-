@@ -169,7 +169,6 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_KEYS_MOVE_REPLAY_TO_CURSOR = L10n.lang("bbs.ui.film.controller.keys.move_replay_to_cursor");
     public static final IKey FILM_CONTROLLER_KEYS_START_RECORDING = L10n.lang("bbs.ui.film.controller.keys.start_recording");
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_CONTROL = L10n.lang("bbs.ui.film.controller.keys.toggle_control");
-    public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_ORBIT = L10n.lang("bbs.ui.film.controller.keys.toggle_orbit");
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE = L10n.lang("bbs.ui.film.controller.keys.toggle_orbit_mode");
     public static final IKey FILM_CONTROLLER_RECORD_DESCRIPTION = L10n.lang("bbs.ui.film.controller.record-description");
     public static final IKey FILM_CONTROLLER_RECORD_TITLE = L10n.lang("bbs.ui.film.controller.record-title");
@@ -196,6 +195,7 @@ public class UIKeys
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
     public static final IKey FILM_REPLAY_ENTITY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.entity_keyframes");
     public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
+    public static final IKey FILM_REPLAY_ORBIT_CAMERA = L10n.lang("bbs.ui.film.replay.orbit.camera");
     public static final IKey FILM_REPLAY_ORBIT_ORBIT = L10n.lang("bbs.ui.film.replay.orbit.orbit");
     public static final IKey FILM_REPLAY_ORBIT_FIRST_PERSON = L10n.lang("bbs.ui.film.replay.orbit.first_person");
     public static final IKey FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT = L10n.lang("bbs.ui.film.replay.orbit.third_person_front");

@@ -419,8 +419,6 @@ public class Scroll
             float progress = (this.direction.getMouse(x, y) - (this.direction.getPosition(this.area, 0F) + scrollbar * this.scrollbarRatio)) / (float) h;
             float to = progress * (this.scrollSize - this.direction.getSide(this.area));
 
-            System.out.println(scrollbar + " " + h + " " + progress + " " + to);
-
             this.scrollTo((int) Lerps.lerp(this.scroll, to, 0.2F));
         }
     }

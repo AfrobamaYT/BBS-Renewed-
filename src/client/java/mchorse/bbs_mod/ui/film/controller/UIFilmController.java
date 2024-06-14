@@ -115,7 +115,6 @@ public class UIFilmController extends UIElement
 
         this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, this::pickRecording).active(hasActor).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, this::insertFrame).active(hasActor).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT, this::toggleOrbit).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_CONTROL, this::toggleControl).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, this::toggleOrbitMode).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
@@ -184,12 +183,13 @@ public class UIFilmController extends UIElement
 
     private int getPovMode()
     {
-        return this.pov % 4;
+        return this.pov % 5;
     }
 
     public void setPov(int pov)
     {
         this.pov = pov;
+        this.orbit.enabled = this.getPovMode() != 0;
     }
 
     private int getMouseMode()
@@ -579,28 +579,34 @@ public class UIFilmController extends UIElement
 
         this.toggleMousePointer(false);
 
-        UIOverlay.addOverlay(this.getContext(), new UIRecordOverlayPanel(
+        UIRecordOverlayPanel panel = new UIRecordOverlayPanel(
             UIKeys.FILM_CONTROLLER_RECORD_TITLE,
             UIKeys.FILM_CONTROLLER_RECORD_DESCRIPTION,
             this::startRecording
-        ));
-    }
+        );
 
-    public void toggleOrbit()
-    {
-        this.orbit.enabled = !this.orbit.enabled;
+        panel.bar.add(this.panel.replayEditor.recordOutside);
+        UIOverlay.addOverlay(this.getContext(), panel);
     }
 
     public void toggleOrbitMode()
     {
+        if (this.controlled != null)
+        {
+            this.setPov(this.pov + 1);
+
+            return;
+        }
+
         this.getContext().replaceContextMenu((menu) ->
         {
             int color = BBSSettings.primaryColor(0);
 
-            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 0 ? color : 0, () -> this.setPov(0));
-            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 1 ? color : 0, () -> this.setPov(1));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 2 ? color : 0, () -> this.setPov(2));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == 3 ? color : 0, () -> this.setPov(3));
+            menu.action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == 0 ? color : 0, () -> this.setPov(0));
+            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 1 ? color : 0, () -> this.setPov(1));
+            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 2 ? color : 0, () -> this.setPov(2));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 3 ? color : 0, () -> this.setPov(3));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == 4 ? color : 0, () -> this.setPov(4));
         });
     }
 
@@ -608,7 +614,7 @@ public class UIFilmController extends UIElement
     {
         if (this.orbit.enabled)
         {
-            int mode = this.getPovMode();
+            int mode = this.getPovMode() - 1;
 
             if (mode == 0)
             {
@@ -998,7 +1004,7 @@ public class UIFilmController extends UIElement
 
         for (IEntity entity : this.entities)
         {
-            if (this.getPovMode() == 1 && entity == getCurrentEntity() && this.orbit.enabled)
+            if (this.getPovMode() == 2 && entity == getCurrentEntity() && this.orbit.enabled)
             {
                 continue;
             }

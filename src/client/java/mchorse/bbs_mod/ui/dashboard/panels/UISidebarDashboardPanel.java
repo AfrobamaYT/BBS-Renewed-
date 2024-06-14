@@ -1,7 +1,5 @@
 package mchorse.bbs_mod.ui.dashboard.panels;
 
-import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -10,8 +8,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 public abstract class UISidebarDashboardPanel extends UIDashboardPanel
 {
-    public static final IKey KEYS_CATEGORY = UIKeys.PANELS_KEYS_CATEGORY;
-
     public UIElement iconBar;
     public UIElement editor;
 

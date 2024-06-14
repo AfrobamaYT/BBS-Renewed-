@@ -21,34 +21,55 @@ public class UIKeyframeEditor extends UIElement
     public static final CameraAxisConverter CONVERTER = new CameraAxisConverter();
 
     public UIKeyframes view;
-    public UIScrollView scrollView;
     public UIKeyframeFactory editor;
+    public UIScrollView scrollView;
+
+    private UIElement target;
 
     public UIKeyframeEditor(Function<Consumer<Keyframe>, UIKeyframes> factory)
     {
         this.view = factory.apply(this::pickKeyframe);
         this.view.relative(this).full();
 
-        this.scrollView = UI.scrollView(5, 10);
-        this.scrollView.relative(this).x(1F, -140).w(140).h(1F);
+        this.add(this.view);
+    }
 
-        this.add(this.scrollView, this.view);
+    public UIKeyframeEditor target(UIElement target)
+    {
+        this.target = target;
+
+        return this;
     }
 
     private void pickKeyframe(Keyframe keyframe)
     {
-        this.scrollView.removeAll();
-        this.editor = null;
+        if (this.scrollView != null)
+        {
+            this.scrollView.removeFromParent();
+            this.scrollView = null;
+            this.editor = null;
+        }
 
         if (keyframe != null)
         {
             this.editor = UIKeyframeFactory.createPanel(keyframe, this.view);
+            this.scrollView = UI.scrollView(5, 10, this.editor);
 
-            this.scrollView.add(this.editor);
+            this.add(this.scrollView);
 
+            if (this.target != null)
+            {
+                this.scrollView.relative(this.target).full();
+
+                this.target.resize();
+            }
+            else
+            {
+                this.scrollView.relative(this).x(1F, -140).w(140).h(1F);
+            }
         }
 
-        this.view.w(1F, keyframe == null ? 0 : -140);
+        this.view.w(1F, keyframe == null || this.target != null ? 0 : -140);
         this.resize();
     }
 

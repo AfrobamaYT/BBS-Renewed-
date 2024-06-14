@@ -51,7 +51,7 @@ public class UIKeyframes extends UIElement
     /* Constants */
 
     public static final int TOP_MARGIN = 25;
-    public static final int TRACK_HEIGHT = 12;
+    public static final int TRACK_HEIGHT = 14;
 
     public static final Color COLOR = new Color();
     public static final double MIN_ZOOM = 0.01D;
@@ -88,6 +88,8 @@ public class UIKeyframes extends UIElement
     public UIKeyframes(Consumer<Keyframe> callback)
     {
         this.callback = callback;
+
+        this.dopeSheet.scrollSpeed = TRACK_HEIGHT * 2;
 
         /* Context menu items */
         this.context((menu) ->
@@ -750,7 +752,7 @@ public class UIKeyframes extends UIElement
                 this.navigating = true;
             }
 
-            return true;
+            return context.mouseButton != 1;
         }
 
         return super.subMouseClicked(context);
@@ -872,6 +874,8 @@ public class UIKeyframes extends UIElement
                     }
                 }
             }
+
+            this.pickKeyframe(this.getSelected());
         }
 
         if (this.dragging > 0)
@@ -894,7 +898,14 @@ public class UIKeyframes extends UIElement
     {
         if (this.area.isInside(context) && !this.navigating)
         {
-            this.xAxis.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.xAxis.getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+            if (Window.isShiftPressed())
+            {
+                this.dopeSheet.mouseScroll(context);
+            }
+            else
+            {
+                this.xAxis.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.xAxis.getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+            }
         }
 
         return super.subMouseScrolled(context);
@@ -1145,12 +1156,13 @@ public class UIKeyframes extends UIElement
             BufferRenderer.drawWithGlobalProgram(builder.end());
 
             FontRenderer font = context.batcher.getFont();
-            int lw = font.getWidth(sheet.title.get()) + 10;
+            int lw = font.getWidth(sheet.title.get());
+
+            context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + TRACK_HEIGHT, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
 
             if (hover)
             {
-                context.batcher.gradientHBox(this.area.x, y, this.area.x + lw + 10, y + TRACK_HEIGHT, Colors.A75 | sheet.color, sheet.color);
-                context.batcher.textShadow(sheet.title.get(), this.area.x + 5, my - font.getHeight() / 2);
+                context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
             }
         }
     }
