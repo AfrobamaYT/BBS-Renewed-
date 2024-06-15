@@ -35,7 +35,7 @@ public class UISettingsOverlayPanel extends UIOverlayPanel
         this.options = new UIScrollView(ScrollDirection.VERTICAL);
         this.options.scroll.scrollSpeed = 51;
 
-        this.options.relative(this.content).full();
+        this.options.full(this.content);
         this.options.column().scroll().vertical().stretch().padding(10).height(20);
 
         for (Settings settings : BBSMod.getSettings().modules.values())

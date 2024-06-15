@@ -17,19 +17,16 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
-import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
-import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
@@ -60,10 +57,6 @@ public class UIReplaysEditor extends UIElement
     private static final Map<String, Integer> COLORS = new HashMap<>();
 
     public UIReplaysOverlayPanel replays;
-    public UIIcon openReplays;
-    public UIIcon record;
-    public UIIcon recordOutside;
-    public UIIcon changeOrbitPerspectice;
 
     /* Keyframes */
     public UIKeyframeEditor keyframeEditor;
@@ -103,33 +96,9 @@ public class UIReplaysEditor extends UIElement
     public UIReplaysEditor(UIFilmPanel filmPanel)
     {
         this.filmPanel = filmPanel;
-
         this.replays = new UIReplaysOverlayPanel(filmPanel, this::setReplay);
-        this.openReplays = new UIIcon(Icons.EDITOR, (b) ->
-        {
-            UIOverlay.addOverlayLeft(this.getContext(), this.replays, 200);
-        });
-        this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE);
-        this.record = new UIIcon(Icons.SPHERE, (b) -> this.filmPanel.getController().pickRecording());
-        this.record.tooltip(UIKeys.FILM_REPLAY_RECORD);
-        this.recordOutside = new UIIcon(Icons.UPLOAD, (b) ->
-        {
-            int index = this.replays.replays.getIndex();
-
-            if (index >= 0)
-            {
-                this.filmPanel.dashboard.closeThisMenu();
-
-                BBSModClient.getFilms().startRecording(this.filmPanel.getData(), index);
-            }
-        });
-        this.recordOutside.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);
-        this.changeOrbitPerspectice = new UIIcon(Icons.VISIBLE, (b) -> this.filmPanel.getController().toggleOrbitMode());
-        this.changeOrbitPerspectice.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
 
         this.markContainer();
-
-        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.recordOutside.clickItself(this.getContext()));
     }
 
     public void handleUndo(ValueChangeUndo change, boolean redo)
@@ -165,7 +134,7 @@ public class UIReplaysEditor extends UIElement
         this.updateChannelsList();
 
         this.replays.replays.setCurrentScroll(replay);
-        this.record.setEnabled(replay != null);
+        this.filmPanel.preview.recordReplay.setEnabled(replay != null);
     }
 
     public void moveReplay(double x, double y, double z)
@@ -223,8 +192,8 @@ public class UIReplaysEditor extends UIElement
 
         if (!properties.isEmpty())
         {
-            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraClips, consumer).absolute()).target(this.filmPanel.editArea);
-            this.keyframeEditor.relative(this).full();
+            this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute()).target(this.filmPanel.editArea);
+            this.keyframeEditor.full(this);
 
             this.keyframeEditor.view.backgroundRenderer(this::renderBackground);
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());

@@ -8,9 +8,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIDataOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
-import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -90,15 +88,6 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
         this.overlay.namesList.fill(names);
         this.overlay.namesList.setCurrentFile(value);
-    }
-
-    protected UIScrollView createScrollEditor()
-    {
-        UIScrollView scrollEditor = UI.scrollView(5, 10);
-
-        scrollEditor.relative(this.editor).full();
-
-        return scrollEditor;
     }
 
     @Override

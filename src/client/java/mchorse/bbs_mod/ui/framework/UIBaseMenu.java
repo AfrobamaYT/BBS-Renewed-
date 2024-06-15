@@ -35,13 +35,13 @@ public abstract class UIBaseMenu
         this.context = new UIContext(this);
 
         this.root = new UIRootElement(this.context);
-        this.root.markContainer().relative(this.viewport).full();
+        this.root.markContainer().full(this.viewport);
         this.root.keys().register(Keys.KEYBINDS, () -> this.context.toggleKeybinds());
 
         this.main = new UIElement();
-        this.main.relative(this.viewport).full();
+        this.main.full(this.viewport);
         this.overlay = new UIElement();
-        this.overlay.relative(this.viewport).full();
+        this.overlay.full(this.viewport);
         this.root.add(this.main, this.overlay);
 
         this.context.keybinds.relative(this.viewport).wh(0.5F, 1F);

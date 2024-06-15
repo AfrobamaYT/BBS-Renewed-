@@ -40,7 +40,7 @@ public class UISupportersPanel extends UIDashboardPanel
         UIScrollView scrollView = UI.scrollView(0, 0);
         UIElement column = UI.column(5, 10);
 
-        scrollView.relative(this).full();
+        scrollView.full(this);
 
         /* Resources */
         UIButton tutorials = new UIButton(UIKeys.SUPPORTERS_TUTORIALS, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_TUTORIALS_LINK.get()));

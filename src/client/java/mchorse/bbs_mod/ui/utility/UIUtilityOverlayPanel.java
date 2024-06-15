@@ -41,7 +41,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         this.callback = callback;
 
         this.view = UI.scrollView(5, 10, 140);
-        this.view.relative(this.content).full();
+        this.view.full(this.content);
 
         UIButton openGameDirectory = new UIButton(UIKeys.UTILITY_OPEN_GAME_FOLDER, (b) -> this.openFolder(BBSMod.getGameFolder()));
         UIButton openAudioDirectory = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_FOLDER, (b) -> this.openFolder(BBSMod.getAssetsPath("audio")));

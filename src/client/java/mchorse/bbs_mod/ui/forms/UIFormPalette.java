@@ -43,7 +43,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
 
         UIFormPalette palette = new UIFormPalette(callback);
 
-        palette.resetFlex().relative(parent).full();
+        palette.resetFlex().full(parent);
         palette.resize();
 
         parent.add(palette);
@@ -59,10 +59,10 @@ public class UIFormPalette extends UIElement implements IUIFormList
         this.callback = callback;
 
         this.list = new UIFormList(this);
-        this.list.relative(this).full();
+        this.list.full(this);
 
         this.editor = new UIFormEditor(this);
-        this.editor.relative(this).full();
+        this.editor.full(this);
         this.editor.setVisible(false);
 
         this.add(this.list, this.editor);

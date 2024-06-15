@@ -29,9 +29,8 @@ public class UIKeyframeEditor extends UIElement
     public UIKeyframeEditor(Function<Consumer<Keyframe>, UIKeyframes> factory)
     {
         this.view = factory.apply(this::pickKeyframe);
-        this.view.relative(this).full();
 
-        this.add(this.view);
+        this.add(this.view.full(this));
     }
 
     public UIKeyframeEditor target(UIElement target)
@@ -59,7 +58,7 @@ public class UIKeyframeEditor extends UIElement
 
             if (this.target != null)
             {
-                this.scrollView.relative(this.target).full();
+                this.scrollView.full(this.target);
 
                 this.target.resize();
             }

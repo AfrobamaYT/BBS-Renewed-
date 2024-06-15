@@ -1,11 +1,8 @@
 package mchorse.bbs_mod.camera.controller;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
-import mchorse.bbs_mod.camera.OrbitCamera;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import org.joml.Vector3d;
 
 public class RunnerCameraController extends CameraWorkCameraController
 {

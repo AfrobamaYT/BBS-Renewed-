@@ -78,7 +78,7 @@ public class UITextureManagerOverlayPanel extends UIOverlayPanel
             }
         }));
         this.textures.label(UIKeys.GENERAL_SEARCH);
-        this.textures.relative(this.content).full().x(6).w(1F, -12);
+        this.textures.full(this.content).x(6).w(1F, -12);
 
         this.linear = new UIIcon(Icons.GRAPH, (b) -> this.toggleLinear());
         this.linear.tooltip(UIKeys.TEXTURES_LINEAR, Direction.LEFT);

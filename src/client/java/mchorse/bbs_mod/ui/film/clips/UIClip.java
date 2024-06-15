@@ -119,7 +119,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
 
         this.panels = UI.scrollView(5, 10);
         this.panels.scroll.cancelScrolling();
-        this.panels.relative(this).full();
+        this.panels.full(this);
 
         this.registerUI();
         this.registerPanels();

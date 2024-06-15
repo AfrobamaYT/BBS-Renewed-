@@ -1,18 +1,33 @@
 package mchorse.bbs_mod.ui.film;
 
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.audio.AudioRenderer;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.FFMpegUtils;
+import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import org.joml.Vector2i;
+import org.joml.Vector3d;
 
 public class UIFilmPreview extends UIElement
 {
@@ -20,14 +35,82 @@ public class UIFilmPreview extends UIElement
 
     public UIElement icons;
 
-    public UIFilmPreview(UIFilmPanel panel)
+    public UIIcon plause;
+    public UIIcon teleport;
+    public UIIcon control;
+    public UIIcon perspective;
+    public UIIcon recordReplay;
+    public UIIcon recordVideo;
+
+    public UIFilmPreview(UIFilmPanel filmPanel)
     {
-        this.panel = panel;
+        this.panel = filmPanel;
 
         this.icons = UI.row(0, 0);
         this.icons.row().resize();
         this.icons.relative(this).x(0.5F).y(1F).anchor(0.5F, 1F);
 
+        /* Preview buttons */
+        this.plause = new UIIcon(Icons.PLAY, (b) -> this.panel.togglePlayback());
+        this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
+        this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
+        {
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            Vector3d cameraPos = this.panel.getCamera().position;
+            String name = player.getGameProfile().getName();
+            double posX = Math.floor(cameraPos.x);
+            double posY = Math.floor(cameraPos.y);
+            double posZ = Math.floor(cameraPos.z);
+
+            player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
+        });
+        this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE);
+        this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
+        this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
+        this.control = new UIIcon(Icons.POSE, (b) -> this.panel.getController().toggleControl());
+        this.control.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_CONTROL);
+        this.perspective = new UIIcon(Icons.VISIBLE, (b) -> this.panel.getController().toggleOrbitMode());
+        this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
+        this.recordVideo = new UIIcon(Icons.SCENE, (b) ->
+        {
+            if (!FFMpegUtils.checkFFMpeg())
+            {
+                UIMessageOverlayPanel panel = new UIMessageOverlayPanel(UIKeys.GENERAL_WARNING, UIKeys.GENERAL_FFMPEG_ERROR_DESCRIPTION);
+                UIIcon guide = new UIIcon(Icons.HELP, (bb) -> UIUtils.openWebLink(UIKeys.GENERAL_FFMPEG_ERROR_GUIDE_LINK.get()));
+
+                guide.tooltip(UIKeys.GENERAL_FFMPEG_ERROR_GUIDE, Direction.LEFT);
+                panel.icons.add(guide);
+
+                UIOverlay.addOverlay(this.getContext(), panel);
+
+                return;
+            }
+
+            this.panel.recorder.startRecording(this.panel.getData().camera.calculateDuration(), BBSRendering.getTexture());
+        });
+        this.recordVideo.tooltip(UIKeys.CAMERA_TOOLTIPS_RECORD);
+        this.recordVideo.context((menu) ->
+        {
+            menu.action(Icons.CAMERA, UIKeys.FILM_SCREENSHOT, () ->
+            {
+                ScreenshotRecorder recorder = BBSModClient.getScreenshotRecorder();
+                Texture texture = BBSRendering.getTexture();
+
+                recorder.takeScreenshot(Window.isAltPressed() ? null : recorder.getScreenshotFile(), texture.id, texture.width, texture.height);
+
+                UIMessageFolderOverlayPanel overlayPanel = new UIMessageFolderOverlayPanel(
+                    UIKeys.FILM_SCREENSHOT_TITLE,
+                    UIKeys.FILM_SCREENSHOT_DESCRIPTION,
+                    recorder.getScreenshots()
+                );
+
+                UIOverlay.addOverlay(this.getContext(), overlayPanel);
+            });
+
+            menu.action(Icons.FILM, UIKeys.CAMERA_TOOLTIPS_OPEN_VIDEOS, () -> this.panel.recorder.openMovies());
+        });
+
+        this.icons.add(this.plause, this.teleport, this.control, this.perspective, this.recordReplay, this.recordVideo);
         this.add(this.icons);
     }
 
@@ -125,7 +208,12 @@ public class UIFilmPreview extends UIElement
 
         Area a = this.icons.area;
 
+        /* Render icon bar */
         context.batcher.gradientVBox(a.x, a.y, a.ex(), a.ey(), 0, Colors.A50);
+
+        if (this.panel.getController().isControlling()) UIDashboardPanels.renderHighlight(context.batcher, this.control.area);
+        if (this.panel.getController().isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordReplay.area);
+        if (this.panel.recorder.isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordVideo.area);
 
         super.render(context);
     }

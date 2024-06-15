@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.film.controller;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
@@ -32,6 +33,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIRecordOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -269,6 +271,11 @@ public class UIFilmController extends UIElement
     }
 
     /* Character control state */
+
+    public boolean isControlling()
+    {
+        return this.controlled != null;
+    }
 
     public void toggleControl()
     {
@@ -585,8 +592,23 @@ public class UIFilmController extends UIElement
             this::startRecording
         );
 
-        panel.bar.add(this.panel.replayEditor.recordOutside);
+        UIIcon recordOutside = new UIIcon(Icons.UPLOAD, (b) -> this.recordOutside());
+        recordOutside.tooltip(UIKeys.FILM_CONTROLLER_RECORD_OUTSIDE);
+
+        panel.bar.add(recordOutside);
         UIOverlay.addOverlay(this.getContext(), panel);
+    }
+
+    public void recordOutside()
+    {
+        int index = this.panel.replayEditor.replays.replays.getIndex();
+
+        if (index >= 0)
+        {
+            this.panel.dashboard.closeThisMenu();
+
+            BBSModClient.getFilms().startRecording(this.panel.getData(), index);
+        }
     }
 
     public void toggleOrbitMode()
@@ -912,8 +934,6 @@ public class UIFilmController extends UIElement
                     context.batcher.textCard(String.valueOf(this.recordingCountdown / 20F), x + 3, y + 4, Colors.WHITE, Colors.A50);
                 }
             }
-
-            context.batcher.outlinedIcon(Icons.POSE, area.ex() - 5, area.y + 5, 1F, 0F);
         }
 
         if (!this.panel.isFlightDisabled())

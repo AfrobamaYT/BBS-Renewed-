@@ -34,7 +34,7 @@ public class UITextureManagerPanel extends UISidebarDashboardPanel
         super(dashboard);
 
         this.viewer = new UITextureEditor();
-        this.viewer.relative(this.editor).full();
+        this.viewer.full(this.editor);
 
         UIIcon icon = new UIIcon(Icons.MORE, (b) ->
         {

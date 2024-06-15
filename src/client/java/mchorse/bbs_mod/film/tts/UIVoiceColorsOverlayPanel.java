@@ -36,7 +36,6 @@ public class UIVoiceColorsOverlayPanel extends UIOverlayPanel
             scrollView.add(UI.row(label, color));
         }
 
-        scrollView.relative(this.content).full();
-        this.content.add(scrollView);
+        this.content.add(scrollView.full(this.content));
     }
 }

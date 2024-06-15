@@ -84,7 +84,7 @@ public class UITexturePicker extends UIElement implements IFileDropListener
         UITexturePicker picker = new UITexturePicker(callback);
 
         picker.fill(current);
-        picker.relative(parent).full();
+        picker.full(parent);
         picker.resize();
 
         parent.add(picker);
@@ -140,7 +140,7 @@ public class UITexturePicker extends UIElement implements IFileDropListener
 
         icons.relative(this).x(1F, -10).y(10).w(60).h(20).anchorX(1F);
 
-        this.right.relative(this).full();
+        this.right.full(this);
         this.text.relative(this.multi).x(1F, 20).wTo(icons.area).h(20);
         this.picker.relative(this.right).set(10, 30, 0, 0).w(1, -10).h(1, -30);
 
@@ -276,7 +276,7 @@ public class UITexturePicker extends UIElement implements IFileDropListener
             UIIcon close = new UIIcon(Icons.CLOSE, (b) -> this.togglePixelEditor());
 
             this.pixelEditor.savebar.add(close);
-            this.pixelEditor.relative(this).full();
+            this.pixelEditor.full(this);
             this.pixelEditor.resize();
 
             this.add(this.pixelEditor);

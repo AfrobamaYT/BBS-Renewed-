@@ -9,8 +9,8 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
-import mchorse.bbs_mod.ui.morphing.camera.ImmersiveMorphingCameraController;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.morphing.camera.ImmersiveMorphingCameraController;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import net.minecraft.client.MinecraftClient;
@@ -30,8 +30,8 @@ public class UIMorphingPanel extends UIDashboardPanel
         this.palette = new UIFormPalette(this::setForm);
         this.palette.updatable().cantExit();
         this.palette.immersive();
-        this.palette.relative(this).full();
-        this.palette.editor.renderer.relative(dashboard.getRoot()).full();
+        this.palette.full(this);
+        this.palette.editor.renderer.full(dashboard.getRoot());
 
         this.demorph = new UIIcon(Icons.POSE, (b) ->
         {

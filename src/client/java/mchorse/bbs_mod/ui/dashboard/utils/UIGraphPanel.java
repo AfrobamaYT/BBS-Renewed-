@@ -30,7 +30,7 @@ public class UIGraphPanel extends UIDashboardPanel
         this.canvas.parseExpression(first);
 
         this.expression.relative(this).x(10).y(1F, -30).w(1F, -20).h(20);
-        this.canvas.relative(this).full();
+        this.canvas.full(this);
         this.help.relative(this.expression).x(1F, -19).y(1).wh(18, 18);
 
         this.expression.add(this.help);

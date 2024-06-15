@@ -761,9 +761,14 @@ public class UIElement implements IUIElement
         return this;
     }
 
-    public UIElement full()
+    public UIElement full(IResizer relative)
     {
-        return this.wh(1F, 1F);
+        return this.relative(relative).wh(1F, 1F);
+    }
+
+    public UIElement full(UIElement relative)
+    {
+        return this.relative(relative).wh(1F, 1F);
     }
 
     public UIElement wh(float w, float h)

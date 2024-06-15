@@ -28,10 +28,10 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
 
     public void editor(UIFilmPanel editor)
     {
-        UIClips cameraClips = editor.cameraClips.clips;
-        UIClips voiceLineClips = editor.screenplay.editor.clips;
+        UIClips cameraClips = editor.cameraEditor.clips;
+        UIClips voiceLineClips = editor.screenplayEditor.editor.clips;
 
-        if (editor.screenplay.isVisible())
+        if (editor.screenplayEditor.isVisible())
         {
             this.panel = 2;
         }

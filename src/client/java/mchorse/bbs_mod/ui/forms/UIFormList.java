@@ -51,7 +51,7 @@ public class UIFormList extends UIElement
         this.edit.tooltip(UIKeys.FORMS_LIST_EDIT, Direction.TOP);
         this.close = new UIIcon(Icons.CLOSE, this::close);
 
-        this.forms.relative(this).full();
+        this.forms.full(this);
         this.bar.relative(this).x(10).y(1F, -30).w(1F, -20).h(20).row().height(20);
         this.close.w(20);
 

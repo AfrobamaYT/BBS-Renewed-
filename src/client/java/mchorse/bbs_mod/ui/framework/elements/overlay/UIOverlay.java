@@ -91,7 +91,7 @@ public class UIOverlay extends UIElement
             flex.y.offset = offset.y;
         }
 
-        overlay.relative(context.menu.overlay).full();
+        overlay.full(context.menu.overlay);
         context.menu.overlay.add(overlay);
         overlay.add(panel);
         context.menu.overlay.resize();

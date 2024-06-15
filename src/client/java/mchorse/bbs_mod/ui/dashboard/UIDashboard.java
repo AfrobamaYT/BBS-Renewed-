@@ -72,7 +72,7 @@ public class UIDashboard extends UIBaseMenu
             this.orbitUI.setControl(this.panels.isFlightSupported());
             this.copyCurrentEntityCamera();
         });
-        this.panels.relative(this.viewport).full();
+        this.panels.full(this.viewport);
         this.registerPanels();
 
         this.main.add(this.panels);

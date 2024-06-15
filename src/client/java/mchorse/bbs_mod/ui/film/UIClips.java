@@ -818,7 +818,7 @@ public class UIClips extends UIElement
 
         if (this.embedded != null)
         {
-            this.embedded.resetFlex().relative(this).full();
+            this.embedded.resetFlex().full(this);
 
             this.prepend(this.embedded);
             this.add(this.embeddedClose);

@@ -285,7 +285,7 @@ public class UIScreenplayEditor extends UIElement
             data.camera.addClip(clip);
         }
 
-        this.panel.showPanel(this.panel.cameraClips);
+        this.panel.showPanel(this.panel.cameraEditor);
     }
 
     private void saveAudio()
@@ -324,7 +324,7 @@ public class UIScreenplayEditor extends UIElement
                 clip.audio.set(Link.assets("audio/" + filename));
 
                 film.camera.addClip(clip);
-                this.panel.showPanel(this.panel.cameraClips);
+                this.panel.showPanel(this.panel.cameraEditor);
             }
             else
             {

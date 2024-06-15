@@ -65,9 +65,8 @@ public class UIVideoSettingsOverlayPanel extends UIOverlayPanel
             UI.label(UIKeys.VIDEO_SETTINGS_PATH).marginTop(6),
             this.path
         );
-        this.editor.relative(this.content).full();
 
-        this.content.add(this.editor);
+        this.content.add(this.editor.full(this.content));
 
         UIIcon icon = new UIIcon(Icons.FILM, (b) ->
         {

@@ -75,7 +75,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             });
 
             palette.immersive();
-            palette.editor.renderer.relative(dashboard.getRoot()).full();
+            palette.editor.renderer.full(dashboard.getRoot());
             palette.getEvents().register(UIToggleEditorEvent.class, (e) ->
             {
                 if (e.editing)

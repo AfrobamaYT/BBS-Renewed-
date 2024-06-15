@@ -36,8 +36,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         this.factory = factory;
         this.clips = new UIClips(this, factory);
 
-        this.clips.relative(this).full();
-        this.add(this.clips);
+        this.add(this.clips.full(this));
     }
 
     public UIClipsPanel target(UIElement target)
@@ -126,9 +125,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
 
             this.clips.embedView(null);
 
-            UIClip panel = UIClip.createPanel(clip, this);
-
-            this.panel = panel;
+            this.panel = UIClip.createPanel(clip, this);
             this.add(this.panel);
 
             if (this.target == null)
@@ -137,19 +134,12 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
             }
             else
             {
-                this.panel.relative(this.target).full();
+                this.panel.full(this.target);
             }
 
             this.resize();
             this.panel.fillData();
-
-            Integer scroll = scrolls.get(this.panel.getClass());
-
-            if (scroll != null)
-            {
-                this.panel.panels.scroll.scrollTo(scroll);
-                this.panel.panels.scroll.clamp();
-            }
+            this.panel.panels.scroll.scrollTo(scrolls.getOrDefault(this.panel.getClass(), 0));
 
             if (!this.filmPanel.isFlightDisabled())
             {
@@ -213,7 +203,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     @Override
     public void markLastUndoNoMerging()
     {
-        this.filmPanel.cacheMarkLastUndoNoMerging = true;
+        this.filmPanel.getUndoHandler().cacheMarkLastUndoNoMerging();
     }
 
     @Override

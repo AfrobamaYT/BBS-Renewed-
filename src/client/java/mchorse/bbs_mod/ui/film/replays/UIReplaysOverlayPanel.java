@@ -18,10 +18,8 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         super(UIKeys.FILM_REPLAY_TITLE);
 
         this.callback = callback;
-
         this.replays = new UIReplayList((l) -> this.callback.accept(l.get(0)), filmPanel);
-        this.replays.relative(this.content).full();
 
-        this.content.add(this.replays);
+        this.content.add(this.replays.full(this.content));
     }
 }

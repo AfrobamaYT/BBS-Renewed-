@@ -44,7 +44,7 @@ public abstract class UICRUDOverlayPanel extends UIOverlayPanel
                 this.callback.accept(list.get(0).toString());
             }
         }));
-        this.names.relative(this.content).full().x(6).w(1F, -12);
+        this.names.full(this.content).x(6).w(1F, -12);
         this.namesList = (UIDataPathList) this.names.list;
         this.names.label(UIKeys.GENERAL_SEARCH);
         this.content.add(this.names);

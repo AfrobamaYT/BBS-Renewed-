@@ -17,7 +17,7 @@ public class UIDebugPanel extends UIDashboardPanel
         super(dashboard);
 
         this.keyframes = new UIKeyframes(null).duration(() -> 40);
-        this.keyframes.relative(this).full();
+        this.keyframes.full(this);
 
         for (int i = 0; i < 20; i++)
         {
