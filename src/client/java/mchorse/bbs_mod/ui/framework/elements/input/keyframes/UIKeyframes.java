@@ -51,7 +51,7 @@ public class UIKeyframes extends UIElement
     /* Constants */
 
     public static final int TOP_MARGIN = 25;
-    public static final int TRACK_HEIGHT = 14;
+    public static final int TRACK_HEIGHT = 16;
 
     public static final Color COLOR = new Color();
     public static final double MIN_ZOOM = 0.01D;
@@ -65,7 +65,7 @@ public class UIKeyframes extends UIElement
 
     private boolean selecting;
     private boolean navigating;
-    private int dragging;
+    private int dragging = -1;
 
     private int lastX;
     private int lastY;
@@ -1159,11 +1159,7 @@ public class UIKeyframes extends UIElement
             int lw = font.getWidth(sheet.title.get());
 
             context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + TRACK_HEIGHT, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
-
-            if (hover)
-            {
-                context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
-            }
+            context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
         }
     }
 

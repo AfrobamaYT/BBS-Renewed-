@@ -92,6 +92,7 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("trigger_l", Colors.RED);
         COLORS.put("trigger_r", Colors.GREEN);
 
+        COLORS.put("visible", Colors.WHITE & 0xFFFFFF);
         COLORS.put("pose", Colors.RED);
         COLORS.put("transform", Colors.GREEN);
         COLORS.put("color", Colors.INACTIVE);
