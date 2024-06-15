@@ -53,6 +53,11 @@ public class FilmController
         renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta());
     }
 
+    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition)
+    {
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition);
+    }
+
     public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition)
     {
         Form form = entity.getForm();

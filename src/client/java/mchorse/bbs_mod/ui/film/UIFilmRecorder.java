@@ -77,6 +77,7 @@ public class UIFilmRecorder extends UIElement
             return;
         }
 
+        this.editor.getController().createEntities();
         this.editor.setCursor(0);
         this.editor.togglePlayback();
         context.menu.main.setEnabled(false);

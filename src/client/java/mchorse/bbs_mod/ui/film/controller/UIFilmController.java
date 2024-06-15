@@ -104,6 +104,7 @@ public class UIFilmController extends UIElement
 
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
+    private int lastTick;
 
     private WorldRenderContext worldRenderContext;
 
@@ -328,6 +329,11 @@ public class UIFilmController extends UIElement
     }
 
     /* Recording */
+
+    public boolean isPlaying()
+    {
+        return !UIOverlay.has(this.getContext()) && this.panel.isRunning();
+    }
 
     public boolean isRecording()
     {
@@ -815,20 +821,21 @@ public class UIFilmController extends UIElement
 
     private void updateEntities(Film film, RunnerCameraController runner, UIContext context)
     {
+        boolean isPlaying = this.isPlaying();
+        int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
+
         for (int i = 0; i < this.entities.size(); i++)
         {
             IEntity entity = this.entities.get(i);
+            boolean isActor = !(entity instanceof MCEntity);
 
-            if (context == null || !UIOverlay.has(context))
+            if (isPlaying && isActor)
             {
-                if (!(entity instanceof MCEntity))
-                {
-                    entity.update();
+                entity.update();
 
-                    if (entity.getForm() != null)
-                    {
-                        entity.getForm().update(entity);
-                    }
+                if (entity.getForm() != null)
+                {
+                    entity.getForm().update(entity);
                 }
             }
 
@@ -840,7 +847,6 @@ public class UIFilmController extends UIElement
                  * the update tick, so in order to force the correct animation, I have to
                  * increment the tick, so it would appear correctly */
                 Replay replay = replays.get(i);
-                int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
 
                 if (entity != this.controlled || (this.recording && this.recordingCountdown <= 0 && this.recordingGroups != null))
                 {
@@ -854,7 +860,35 @@ public class UIFilmController extends UIElement
 
                 replay.applyProperties(ticks, entity.getForm(), runner.isRunning());
             }
+
+            /* Special pausing logic */
+            if (!isPlaying && isActor)
+            {
+                entity.setPrevX(entity.getX());
+                entity.setPrevY(entity.getY());
+                entity.setPrevZ(entity.getZ());
+                entity.setPrevYaw(entity.getYaw());
+                entity.setPrevHeadYaw(entity.getHeadYaw());
+                entity.setPrevBodyYaw(entity.getBodyYaw());
+                entity.setPrevPitch(entity.getPitch());
+
+                int diff = Math.abs(this.lastTick - ticks);
+
+                while (diff > 0)
+                {
+                    entity.update();
+
+                    if (entity.getForm() != null)
+                    {
+                        entity.getForm().update(entity);
+                    }
+
+                    diff -= 1;
+                }
+            }
         }
+
+        this.lastTick = ticks;
     }
 
     private void updateControls()
@@ -1018,6 +1052,8 @@ public class UIFilmController extends UIElement
 
     public void renderFrame(WorldRenderContext context)
     {
+        boolean isPlaying = this.isPlaying();
+
         this.worldRenderContext = context;
 
         RenderSystem.enableDepthTest();
@@ -1029,7 +1065,7 @@ public class UIFilmController extends UIElement
                 continue;
             }
 
-            FilmController.renderEntity(this.entities, context, entity, null);
+            FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F);
         }
 
         this.rayTraceEntity(context);
@@ -1143,11 +1179,12 @@ public class UIFilmController extends UIElement
 
         this.ensureStencilFramebuffer();
 
+        boolean isPlaying = this.isPlaying();
         Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
 
         this.stencilMap.setup();
         this.stencil.apply();
-        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap);
+        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap, isPlaying ? renderContext.tickDelta() : 0);
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
         int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
