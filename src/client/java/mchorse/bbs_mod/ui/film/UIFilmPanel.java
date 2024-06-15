@@ -171,7 +171,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             this.setupEditorFlex(true);
         });
-        this.toggleHorizontal.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.LEFT);
+        this.toggleHorizontal.tooltip(UIKeys.FILM_TOGGLE_LAYOUT, Direction.LEFT);
         this.openCameraEditor = new UIIcon(Icons.FRUSTUM, (b) -> this.showPanel(this.cameraEditor));
         this.openCameraEditor.tooltip(UIKeys.FILM_OPEN_CAMERA_EDITOR);
         this.openReplayEditor = new UIIcon(Icons.SCENE, (b) -> this.showPanel(this.replayEditor));
@@ -191,7 +191,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         IKey modes = UIKeys.CAMERA_EDITOR_KEYS_MODES_TITLE;
         IKey editor = UIKeys.CAMERA_EDITOR_KEYS_EDITOR_TITLE;
         IKey looping = UIKeys.CAMERA_EDITOR_KEYS_LOOPING_TITLE;
-        Supplier<Boolean> active = this::isFlightDisabled;
+        Supplier<Boolean> active = () -> !this.isFlying();
 
         this.keys().register(Keys.PLAUSE, () -> this.preview.plause.clickItself()).active(active).category(editor);
         this.keys().register(Keys.NEXT_CLIP, () -> this.setCursor(this.data.camera.findNextTick(this.getCursor()))).active(active).category(editor);
@@ -200,7 +200,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.PREV, () -> this.setCursor(this.getCursor() - 1)).active(active).category(editor);
         this.keys().register(Keys.UNDO, this::undo).category(editor);
         this.keys().register(Keys.REDO, this::redo).category(editor);
-        this.keys().register(Keys.FLIGHT, () -> this.setFlight(this.isFlightDisabled())).active(() -> this.data != null).category(modes);
+        this.keys().register(Keys.FLIGHT, this::toggleFlight).active(() -> this.data != null).category(modes);
         this.keys().register(Keys.LOOPING, () -> BBSSettings.editorLoop.set(!BBSSettings.editorLoop.get())).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MIN, () -> this.cameraEditor.clips.setLoopMin()).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MAX, () -> this.cameraEditor.clips.setLoopMax()).active(active).category(looping);
@@ -548,9 +548,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (this.data != null && this.undoHandler.getUndoManager().redo(this.data)) UIUtils.playClick();
     }
 
-    public boolean isFlightDisabled()
+    public boolean isFlying()
     {
-        return !this.dashboard.orbitUI.canControl();
+        return this.dashboard.orbitUI.canControl();
+    }
+
+    public void toggleFlight()
+    {
+        this.setFlight(!this.isFlying());
     }
 
     /**
@@ -804,7 +809,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public boolean canUseKeybinds()
     {
-        return this.isFlightDisabled();
+        return !this.isFlying();
     }
 
     public void fillData()

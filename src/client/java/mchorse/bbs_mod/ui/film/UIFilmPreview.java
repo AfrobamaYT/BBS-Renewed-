@@ -37,6 +37,7 @@ public class UIFilmPreview extends UIElement
 
     public UIIcon plause;
     public UIIcon teleport;
+    public UIIcon flight;
     public UIIcon control;
     public UIIcon perspective;
     public UIIcon recordReplay;
@@ -65,12 +66,14 @@ public class UIFilmPreview extends UIElement
             player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
         });
         this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE);
-        this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
-        this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
+        this.flight = new UIIcon(Icons.PLANE, (b) -> this.panel.toggleFlight());
+        this.flight.tooltip(UIKeys.CAMERA_EDITOR_KEYS_MODES_FLIGHT);
         this.control = new UIIcon(Icons.POSE, (b) -> this.panel.getController().toggleControl());
         this.control.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_CONTROL);
         this.perspective = new UIIcon(Icons.VISIBLE, (b) -> this.panel.getController().toggleOrbitMode());
         this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
+        this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
+        this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
         this.recordVideo = new UIIcon(Icons.SCENE, (b) ->
         {
             if (!FFMpegUtils.checkFFMpeg())
@@ -110,7 +113,7 @@ public class UIFilmPreview extends UIElement
             menu.action(Icons.FILM, UIKeys.CAMERA_TOOLTIPS_OPEN_VIDEOS, () -> this.panel.recorder.openMovies());
         });
 
-        this.icons.add(this.plause, this.teleport, this.control, this.perspective, this.recordReplay, this.recordVideo);
+        this.icons.add(this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
         this.add(this.icons);
     }
 
@@ -211,6 +214,7 @@ public class UIFilmPreview extends UIElement
         /* Render icon bar */
         context.batcher.gradientVBox(a.x, a.y, a.ex(), a.ey(), 0, Colors.A50);
 
+        if (this.panel.isFlying()) UIDashboardPanels.renderHighlight(context.batcher, this.flight.area);
         if (this.panel.getController().isControlling()) UIDashboardPanels.renderHighlight(context.batcher, this.control.area);
         if (this.panel.getController().isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordReplay.area);
         if (this.panel.recorder.isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordVideo.area);

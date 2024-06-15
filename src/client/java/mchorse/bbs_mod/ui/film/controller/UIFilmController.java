@@ -970,7 +970,7 @@ public class UIFilmController extends UIElement
             }
         }
 
-        if (!this.panel.isFlightDisabled())
+        if (this.panel.isFlying())
         {
             String label = UIKeys.FILM_CONTROLLER_SPEED.format(this.panel.dashboard.orbit.speed.getValue()).get();
             int w = font.getWidth(label);
@@ -987,7 +987,7 @@ public class UIFilmController extends UIElement
 
     private void renderPickingPreview(UIContext context, Area area)
     {
-        if (!this.panel.isFlightDisabled())
+        if (this.panel.isFlying())
         {
             return;
         }
@@ -1106,7 +1106,7 @@ public class UIFilmController extends UIElement
     {
         this.hoveredEntity = null;
 
-        if (!Window.isAltPressed() || this.panel.recorder.isRecording() || !this.panel.isFlightDisabled())
+        if (!Window.isAltPressed() || this.panel.recorder.isRecording() || this.panel.isFlying())
         {
             return;
         }

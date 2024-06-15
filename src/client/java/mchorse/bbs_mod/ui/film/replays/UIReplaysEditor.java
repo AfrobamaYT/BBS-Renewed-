@@ -297,7 +297,7 @@ public class UIReplaysEditor extends UIElement
 
     public boolean clickViewport(UIContext context, Area area)
     {
-        if (!this.filmPanel.isFlightDisabled())
+        if (this.filmPanel.isFlying())
         {
             return false;
         }

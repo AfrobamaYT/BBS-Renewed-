@@ -10,7 +10,6 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class UIKeys
 {
-    public static final IKey BLOCK_VARIANT_CONTEXT_INSERT_EMPTY = L10n.lang("bbs.ui.block_variant.context.insert_empty");
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_DESELECT = L10n.lang("bbs.ui.camera.editor.keys.clips.deselect");
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_TITLE = L10n.lang("bbs.ui.camera.editor.keys.clips.title");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_JUMP_BACKWARD = L10n.lang("bbs.ui.camera.editor.keys.editor.jump_backward");
@@ -41,7 +40,6 @@ public class UIKeys
     public static final IKey CAMERA_FLIGHT_FLIGHT_TILT_DOWN = L10n.lang("bbs.ui.camera.flight.camera_down");
     public static final IKey CAMERA_FLIGHT_FLIGHT_TILT_UP = L10n.lang("bbs.ui.camera.flight.camera_up");
     public static final IKey CAMERA_FLIGHT_FLIGHT_UP = L10n.lang("bbs.ui.camera.flight.up");
-    public static final IKey CAMERA_PANELS_ALL = L10n.lang("bbs.ui.camera.panels.all");
     public static final IKey CAMERA_PANELS_ANGLE = L10n.lang("bbs.ui.camera.panels.angle");
     public static final IKey CAMERA_PANELS_AT_BLOCK = L10n.lang("bbs.ui.camera.panels.at_block");
     public static final IKey CAMERA_PANELS_AUDIO_PICK_AUDIO = L10n.lang("bbs.ui.camera.panels.audio.pick_audio");
@@ -186,6 +184,7 @@ public class UIKeys
     public static final IKey FILM_GROUPS_RIGHT_STICK = L10n.lang("bbs.ui.film.groups.right_stick");
     public static final IKey FILM_GROUPS_TRIGGERS = L10n.lang("bbs.ui.film.groups.triggers");
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor");
+    public static final IKey FILM_TOGGLE_LAYOUT = L10n.lang("bbs.ui.film.toggle_layout");
     public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot");
     public static final IKey FILM_SCREENSHOT_TITLE = L10n.lang("bbs.ui.film.screenshot-title");
     public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description");
@@ -193,8 +192,6 @@ public class UIKeys
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor");
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
-    public static final IKey FILM_REPLAY_ENTITY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.entity_keyframes");
-    public static final IKey FILM_REPLAY_FORM_KEYFRAMES = L10n.lang("bbs.ui.film.replay.form_keyframes");
     public static final IKey FILM_REPLAY_ORBIT_CAMERA = L10n.lang("bbs.ui.film.replay.orbit.camera");
     public static final IKey FILM_REPLAY_ORBIT_ORBIT = L10n.lang("bbs.ui.film.replay.orbit.orbit");
     public static final IKey FILM_REPLAY_ORBIT_FIRST_PERSON = L10n.lang("bbs.ui.film.replay.orbit.first_person");

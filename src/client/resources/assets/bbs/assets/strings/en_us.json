@@ -308,6 +308,7 @@
     "bbs.ui.film.groups.right_stick": "Right stick",
     "bbs.ui.film.groups.triggers": "Triggers",
     "bbs.ui.film.open_camera_editor": "Open camera editor",
+    "bbs.ui.film.toggle_layout": "Toggle layout",
     "bbs.ui.film.open_replay_editor": "Open replay editor",
     "bbs.ui.film.open_voice_line_editor": "Open voice line editor",
     "bbs.ui.film.replay.context.add": "Add a replay here",

@@ -141,7 +141,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
             this.panel.fillData();
             this.panel.panels.scroll.scrollTo(scrolls.getOrDefault(this.panel.getClass(), 0));
 
-            if (!this.filmPanel.isFlightDisabled())
+            if (this.filmPanel.isFlying())
             {
                 this.setCursor(clip.tick.get());
             }
