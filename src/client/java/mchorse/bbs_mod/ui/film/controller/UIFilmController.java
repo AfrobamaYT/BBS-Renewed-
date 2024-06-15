@@ -1106,7 +1106,7 @@ public class UIFilmController extends UIElement
     {
         this.hoveredEntity = null;
 
-        if (!Window.isAltPressed() || this.panel.recorder.isRecording())
+        if (!Window.isAltPressed() || this.panel.recorder.isRecording() || !this.panel.isFlightDisabled())
         {
             return;
         }
