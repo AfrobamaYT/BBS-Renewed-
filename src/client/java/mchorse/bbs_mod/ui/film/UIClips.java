@@ -173,7 +173,7 @@ public class UIClips extends UIElement
         this.keys().register(Keys.CLIP_CUT, this::cut).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SHIFT, this::shiftToCursor).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_DURATION, this::shiftDurationToCursor).category(KEYS_CATEGORY).active(canUseKeybinds);
-        this.keys().register(Keys.CLIP_REMOVE, this::removeSelected).category(KEYS_CATEGORY).active(canUseKeybinds);
+        this.keys().register(Keys.DELETE, this::removeSelected).label(UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_ENABLE, this::toggleEnabled).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SELECT_AFTER, this::selectAfter).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SELECT_BEFORE, this::selectBefore).category(KEYS_CATEGORY).active(canUseKeybinds);
@@ -862,17 +862,17 @@ public class UIClips extends UIElement
             boolean shift = Window.isShiftPressed();
             boolean alt = Window.isAltPressed();
 
-            if (context.mouseButton == 0)
+            if (context.mouseButton == 0 && this.handleLeftClick(mouseX, mouseY, ctrl, shift, alt))
             {
-                if (this.handleLeftClick(mouseX, mouseY, ctrl, shift, alt)) return true;
+                return true;
             }
-            else if (context.mouseButton == 1)
+            else if (context.mouseButton == 1 && this.handleRightClick(mouseX, mouseY, ctrl, shift, alt))
             {
-                if (this.handleRightClick(mouseX, mouseY, ctrl, shift, alt)) return true;
+                return true;
             }
-            else if (context.mouseButton == 2)
+            else if (context.mouseButton == 2 && this.handleMiddleClick(mouseX, mouseY, ctrl, shift, alt))
             {
-                if (this.handleMiddleClick(mouseX, mouseY, ctrl, shift, alt)) return true;
+                return true;
             }
         }
 
@@ -881,15 +881,50 @@ public class UIClips extends UIElement
 
     private boolean handleLeftClick(int mouseX, int mouseY, boolean ctrl, boolean shift, boolean alt)
     {
-        if (ctrl && !this.hasEmbeddedView() && this.isSelecting())
+        if (!this.hasEmbeddedView())
         {
-            this.grabbing = true;
-            this.lastX = mouseX;
-            this.lastY = mouseY;
+            int tick = this.fromGraphX(mouseX);
+            int layerIndex = this.fromLayerY(mouseY);
+            Clip original = this.delegate.getClip();
+            Clip clip = this.clips.getClipAt(tick, layerIndex);
 
-            return true;
+            if (clip != null && clip != original)
+            {
+                this.delegate.pickClip(clip);
+
+                if (shift)
+                {
+                    this.addSelected(clip);
+
+                    Clip last = this.getLastSelectedClip();
+
+                    if (last != original)
+                    {
+                        this.delegate.pickClip(last);
+                    }
+                }
+                else
+                {
+                    this.setSelected(clip);
+                }
+
+                this.grabbing = true;
+                this.lastX = mouseX;
+                this.lastY = mouseY;
+
+                return true;
+            }
+            else if (clip != null)
+            {
+                this.grabbing = true;
+                this.lastX = mouseX;
+                this.lastY = mouseY;
+
+                return true;
+            }
         }
-        else if (shift && !this.hasEmbeddedView())
+
+        if (shift && !this.hasEmbeddedView())
         {
             this.selecting = true;
             this.lastX = mouseX;
@@ -933,36 +968,6 @@ public class UIClips extends UIElement
             }
 
             return true;
-        }
-        else if (!this.hasEmbeddedView())
-        {
-            int tick = this.fromGraphX(mouseX);
-            int layerIndex = this.fromLayerY(mouseY);
-            Clip original = this.delegate.getClip();
-            Clip clip = this.clips.getClipAt(tick, layerIndex);
-
-            if (clip != null && clip != original)
-            {
-                this.delegate.pickClip(clip);
-
-                if (shift)
-                {
-                    this.addSelected(clip);
-
-                    Clip last = this.getLastSelectedClip();
-
-                    if (last != original)
-                    {
-                        this.delegate.pickClip(last);
-                    }
-                }
-                else
-                {
-                    this.setSelected(clip);
-                }
-
-                return true;
-            }
         }
 
         return false;
@@ -1074,7 +1079,7 @@ public class UIClips extends UIElement
         else if (this.grabbing)
         {
             List<Clip> clips = this.getClipsFromSelection();
-            List<Clip> others = new ArrayList<>(this.clips.get());
+            List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
 

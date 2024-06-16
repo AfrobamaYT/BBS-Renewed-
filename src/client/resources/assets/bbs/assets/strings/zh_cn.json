@@ -316,7 +316,6 @@
     "bbs.ui.film.groups.triggers": "扳机",
     "bbs.ui.film.replay.entity_keyframes": "打开实体关键帧",
     "bbs.ui.film.replay.form_keyframes": "打开形态关键帧",
-    "bbs.ui.film.replay.record": "录制...",
     "bbs.ui.film.replay.title": "回放",
     "bbs.ui.film.replay.context.add": "在此处添加回放",
     "bbs.ui.film.replay.context.move_here": "将回放移动到此处",

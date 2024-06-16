@@ -30,7 +30,6 @@ public class Keys
     public static final KeyCombo CLIP_CUT = new KeyCombo("clip_cut", UIKeys.CAMERA_TIMELINE_CONTEXT_CUT, GLFW.GLFW_KEY_C, GLFW.GLFW_KEY_LEFT_ALT).categoryKey("camera");
     public static final KeyCombo CLIP_DURATION = new KeyCombo("clip_duration", UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT_DURATION, GLFW.GLFW_KEY_M).categoryKey("camera");
     public static final KeyCombo CLIP_ENABLE = new KeyCombo("clip_enable", UIKeys.CAMERA_TIMELINE_KEYS_ENABLED, GLFW.GLFW_KEY_J).categoryKey("camera");
-    public static final KeyCombo CLIP_REMOVE = new KeyCombo("clip_remove", UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS, GLFW.GLFW_KEY_X, GLFW.GLFW_KEY_LEFT_SHIFT).categoryKey("camera");
     public static final KeyCombo CLIP_SHIFT = new KeyCombo("clip_shift", UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT, GLFW.GLFW_KEY_S, GLFW.GLFW_KEY_LEFT_SHIFT).categoryKey("camera");
     public static final KeyCombo CLIP_SELECT_AFTER = new KeyCombo("clip_select_after", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_SELECT_AFTER, GLFW.GLFW_KEY_PERIOD, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("camera");
     public static final KeyCombo CLIP_SELECT_BEFORE = new KeyCombo("clip_select_before", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_SELECT_BEFORE, GLFW.GLFW_KEY_COMMA, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("camera");

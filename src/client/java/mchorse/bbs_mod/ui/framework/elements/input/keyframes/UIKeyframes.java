@@ -224,7 +224,7 @@ public class UIKeyframes extends UIElement
             sheet.selection.all();
         }
 
-        this.pickKeyframe(this.getSelected());
+        this.pickSelected();
     }
 
     /* Keyframes */
@@ -363,6 +363,11 @@ public class UIKeyframes extends UIElement
         }
 
         return null;
+    }
+
+    public void pickSelected()
+    {
+        this.pickKeyframe(this.getSelected());
     }
 
     public void pickKeyframe(Keyframe keyframe)
@@ -534,7 +539,7 @@ public class UIKeyframes extends UIElement
             }
         }
 
-        this.pickKeyframe(this.getSelected());
+        this.pickSelected();
     }
 
     private void pasteKeyframesTo(UIKeyframeSheet sheet, PastedKeyframes pastedKeyframes, long offset)
@@ -563,7 +568,7 @@ public class UIKeyframes extends UIElement
             sheet.selection.add(sheet.channel.getKeyframes().indexOf(select));
         }
 
-        this.pickKeyframe(this.getSelected());
+        this.pickSelected();
     }
 
     /* Graphing */
@@ -875,7 +880,7 @@ public class UIKeyframes extends UIElement
                 }
             }
 
-            this.pickKeyframe(this.getSelected());
+            this.pickSelected();
         }
 
         if (this.dragging > 0)
@@ -1202,7 +1207,7 @@ public class UIKeyframes extends UIElement
             }
         }
 
-        this.pickKeyframe(this.getSelected());
+        this.pickSelected();
     }
 
     private static class PastedKeyframes

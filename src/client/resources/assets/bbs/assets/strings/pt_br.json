@@ -283,7 +283,6 @@
     "bbs.ui.film.groups.right_stick": "Controle direita",
     "bbs.ui.film.replay.entity_keyframes": "Abrir keyframes de entidade",
     "bbs.ui.film.replay.form_keyframes": "Abrir forma de keyframes",
-    "bbs.ui.film.replay.record": "Gravar...",
     "bbs.ui.film.replay.context.add": "Adicionar replay aqui",
     "bbs.ui.film.replay.context.move_here": "Mover replay aqui",
     "bbs.ui.forms.categories.add_category-description": "Digite o nome da categoria do formulário:",

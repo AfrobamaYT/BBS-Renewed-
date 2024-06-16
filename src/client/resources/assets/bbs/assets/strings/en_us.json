@@ -320,7 +320,7 @@
     "bbs.ui.film.replay.orbit.orbit": "Orbit",
     "bbs.ui.film.replay.orbit.third_person_back": "Third-person (back)",
     "bbs.ui.film.replay.orbit.third_person_front": "Third-person (front)",
-    "bbs.ui.film.replay.record": "Record...",
+    "bbs.ui.film.replay.record": "Record replay...",
     "bbs.ui.film.replay.title": "Replays",
     "bbs.ui.film.screenshot": "Take a screenshot",
     "bbs.ui.film.screenshot-description": "Your screenshot was successfully taken! Click the icon on the right to open the folder...",
