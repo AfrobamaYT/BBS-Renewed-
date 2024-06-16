@@ -48,6 +48,16 @@ public class UIOverlay extends UIElement
         return overlay;
     }
 
+    public static UIOverlay addOverlay(UIContext context, UIOverlayPanel panel, int w, float h)
+    {
+        UIOverlay overlay = new UIOverlay();
+
+        panel.relative(overlay).xy(0.5F, 0.5F).w(w).h(h).anchor(0.5F).bounds(overlay, 0);
+        setupPanel(context, overlay, panel);
+
+        return overlay;
+    }
+
     public static UIOverlay addOverlayLeft(UIContext context, UIOverlayPanel panel, int w)
     {
         return addOverlayLeft(context, panel, w, 10);

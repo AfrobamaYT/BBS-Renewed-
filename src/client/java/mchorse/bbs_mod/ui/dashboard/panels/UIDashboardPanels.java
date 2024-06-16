@@ -112,9 +112,9 @@ public class UIDashboardPanels extends UIElement
         {
             this.setPanelPlacement(panel);
 
+            this.prepend(this.panel);
             this.panel.appear();
             this.panel.resize();
-            this.prepend(this.panel);
         }
     }
 

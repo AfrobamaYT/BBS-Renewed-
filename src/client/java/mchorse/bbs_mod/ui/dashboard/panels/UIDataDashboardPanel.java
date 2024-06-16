@@ -22,6 +22,8 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     protected T data;
     protected boolean save;
 
+    private boolean openedBefore;
+
     public UIDataDashboardPanel(UIDashboard dashboard)
     {
         super(dashboard);
@@ -88,6 +90,19 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
         this.overlay.namesList.fill(names);
         this.overlay.namesList.setCurrentFile(value);
+    }
+
+    @Override
+    public void resize()
+    {
+        super.resize();
+
+        if (!this.openedBefore)
+        {
+            this.openOverlay.clickItself();
+
+            this.openedBefore = true;
+        }
     }
 
     @Override
