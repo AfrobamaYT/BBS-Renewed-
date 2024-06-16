@@ -98,7 +98,7 @@ public class UIFilmController extends UIElement
     private BaseType recordingOld;
 
     /* Replay and group picking */
-    private IEntity hoveredEntity;
+    private List<IEntity> hoveredEntities = new ArrayList<>();
     private StencilFormFramebuffer stencil = new StencilFormFramebuffer();
     private StencilMap stencilMap = new StencilMap();
 
@@ -457,16 +457,25 @@ public class UIFilmController extends UIElement
 
         if (context.mouseButton == 0)
         {
-            if (this.hoveredEntity != null)
+            /* Alt pick the replay */
+            if (this.hoveredEntities.size() == 1)
             {
-                int index = this.entities.indexOf(this.hoveredEntity);
+                this.pickEntity(this.hoveredEntities.get(0));
 
-                this.panel.replayEditor.setReplay(this.panel.getData().replays.getList().get(index));
-
-                if (!this.panel.replayEditor.isVisible())
+                return true;
+            }
+            else if (!this.hoveredEntities.isEmpty())
+            {
+                this.getContext().replaceContextMenu((menu) ->
                 {
-                    this.panel.showPanel(this.panel.replayEditor);
-                }
+                    for (IEntity entity : this.hoveredEntities)
+                    {
+                        Form form = entity.getForm();
+                        String name = form == null ? "-" : form.getIdOrName();
+
+                        menu.action(Icons.POSE, IKey.raw(name), () -> this.pickEntity(entity));
+                    }
+                });
 
                 return true;
             }
@@ -484,6 +493,18 @@ public class UIFilmController extends UIElement
         }
 
         return super.subMouseClicked(context);
+    }
+
+    private void pickEntity(IEntity entity)
+    {
+        int index = this.entities.indexOf(entity);
+
+        this.panel.replayEditor.setReplay(this.panel.getData().replays.getList().get(index));
+
+        if (!this.panel.replayEditor.isVisible())
+        {
+            this.panel.showPanel(this.panel.replayEditor);
+        }
     }
 
     @Override
@@ -1104,7 +1125,7 @@ public class UIFilmController extends UIElement
 
     private void rayTraceEntity(WorldRenderContext context)
     {
-        this.hoveredEntity = null;
+        this.hoveredEntities.clear();
 
         if (!Window.isAltPressed() || this.panel.recorder.isRecording() || this.panel.isFlying())
         {
@@ -1143,12 +1164,12 @@ public class UIFilmController extends UIElement
                 return (int) (distanceA - distanceB);
             });
 
-            this.hoveredEntity = entities.get(0);
+            this.hoveredEntities.addAll(entities);
         }
 
-        if (this.hoveredEntity != null)
+        for (IEntity entity : this.hoveredEntities)
         {
-            AABB aabb = this.hoveredEntity.getPickingHitbox();
+            AABB aabb = entity.getPickingHitbox();
 
             context.matrixStack().push();
             context.matrixStack().translate(aabb.x - camera.position.x, aabb.y - camera.position.y, aabb.z - camera.position.z);
