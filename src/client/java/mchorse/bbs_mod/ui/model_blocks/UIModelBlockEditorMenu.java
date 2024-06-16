@@ -20,8 +20,8 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -51,14 +51,10 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.orbitCameraController = new OrbitCameraController(this.uiOrbitCamera.orbit);
         this.orbitCameraController.camera.position.set(player.getPos().x, player.getPos().y + 1D, player.getPos().z);
         this.orbitCameraController.camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
-        this.orbitCameraController.camera.distance.setX(10);
 
         this.pickEdit = new UINestedEdit((edit) ->
         {
-            UIFormPalette.open(this.main, edit, this.getForm(), (f) ->
-            {
-                this.setForm(f);
-            });
+            UIFormPalette.open(this.main, edit, this.getForm(), this::setForm);
         });
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();

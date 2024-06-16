@@ -876,7 +876,7 @@ public class UIFilmController extends UIElement
 
                 if (entity == this.controlled && this.recording && runner.isRunning())
                 {
-                    replay.keyframes.record(ticks, entity, this.recordingGroups);
+                    replay.keyframes.record(runner.ticks, entity, this.recordingGroups);
                 }
 
                 replay.applyProperties(ticks, entity.getForm(), runner.isRunning());

@@ -25,7 +25,6 @@ public class OrbitCamera
 {
     public Vector3d position = new Vector3d();
     public Vector3f rotation = new Vector3f();
-    public final Factor distance = new Factor();
     public final Factor speed = new Factor(20, 1, 40, (x) ->
     {
         if (x <= 10) return x / 100D;
@@ -60,8 +59,6 @@ public class OrbitCamera
         this.position.set(camera.position);
         this.rotation.set(camera.rotation);
         this.fov = camera.fov;
-
-        this.distance.setX(0);
     }
 
     public Vector3i getVelocityPosition()
@@ -151,7 +148,7 @@ public class OrbitCamera
      */
     public Vector3d getFinalPosition()
     {
-        return this.finalPosition.set(this.position).add(this.rotateVector(0, 0, -1).mul((float) this.distance.getValue()));
+        return this.finalPosition.set(this.position);
     }
 
     /**
@@ -241,25 +238,11 @@ public class OrbitCamera
 
     public boolean scroll(int scroll)
     {
-        if (Window.isAltPressed())
-        {
-            int factor = this.speed.getX();
+        int factor = this.speed.getX();
 
-            this.speed.addX(scroll);
+        this.speed.addX(scroll);
 
-            return this.speed.getX() != factor;
-        }
-
-        if (this.dragging >= 0)
-        {
-            return false;
-        }
-
-        int factor = this.distance.getX();
-
-        this.distance.addX(scroll);
-
-        return this.distance.getX() != factor;
+        return this.speed.getX() != factor;
     }
 
     public boolean keyPressed(UIContext context)

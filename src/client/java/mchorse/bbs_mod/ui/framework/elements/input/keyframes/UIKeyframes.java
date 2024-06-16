@@ -938,9 +938,9 @@ public class UIKeyframes extends UIElement
             context.batcher.normalizedBox(this.originalX, this.originalY, context.mouseX, context.mouseY, Colors.setA(Colors.ACTIVE, 0.25F));
         }
 
-        context.batcher.unclip(context);
-
         this.dopeSheet.renderScrollbar(context.batcher);
+
+        context.batcher.unclip(context);
     }
 
     /**
