@@ -11,7 +11,9 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -19,6 +21,8 @@ public class UIKeyframeEditor extends UIElement
 {
     public static final int[] COLORS = {Colors.RED, Colors.GREEN, Colors.BLUE, Colors.CYAN, Colors.MAGENTA, Colors.YELLOW, Colors.LIGHTEST_GRAY};
     public static final CameraAxisConverter CONVERTER = new CameraAxisConverter();
+
+    private static Map<Class, Integer> scrolls = new HashMap<>();
 
     public UIKeyframes view;
     public UIKeyframeFactory editor;
@@ -44,6 +48,8 @@ public class UIKeyframeEditor extends UIElement
     {
         if (this.scrollView != null)
         {
+            scrolls.put(this.editor.getClass(), (int) this.scrollView.scroll.scroll);
+
             this.scrollView.removeFromParent();
             this.scrollView = null;
             this.editor = null;
@@ -66,6 +72,9 @@ public class UIKeyframeEditor extends UIElement
             {
                 this.scrollView.relative(this).x(1F, -140).w(140).h(1F);
             }
+
+            this.resize();
+            this.scrollView.scroll.scrollTo(scrolls.getOrDefault(this.editor.getClass(), 0));
         }
 
         this.view.w(1F, keyframe == null || this.target != null ? 0 : -140);
