@@ -721,12 +721,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         int x = this.iconBar.area.ex() - 18;
         int y = this.iconBar.area.ey() - 18;
 
-        if (this.dashboard.orbitUI.canControl())
-        {
-            context.batcher.icon(Icons.ORBIT, x, y);
-            y -= 20;
-        }
-
         if (BBSSettings.editorLoop.get())
         {
             context.batcher.icon(Icons.REFRESH, x, y);

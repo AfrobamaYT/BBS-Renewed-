@@ -6,9 +6,9 @@ import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.Factor;
-import mchorse.bbs_mod.utils.joml.Matrices;
-import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.joml.Matrices;
 import org.joml.Matrix3f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -267,17 +267,15 @@ public class OrbitCamera
         int x = this.getFactor(context, Keys.FLIGHT_LEFT, Keys.FLIGHT_RIGHT, this.velocityPosition.x);
         int y = this.getFactor(context, Keys.FLIGHT_UP, Keys.FLIGHT_DOWN, this.velocityPosition.y);
         int z = this.getFactor(context, Keys.FLIGHT_FORWARD, Keys.FLIGHT_BACKWARD, this.velocityPosition.z);
-        boolean same = this.velocityPosition.x == x && this.velocityPosition.y == y && this.velocityPosition.z == z;
 
         int pitch = this.getFactor(context, Keys.FLIGHT_TILT_UP, Keys.FLIGHT_TILT_DOWN, this.velocityAngle.x);
         int yaw = this.getFactor(context, Keys.FLIGHT_PAN_LEFT, Keys.FLIGHT_PAN_RIGHT, this.velocityAngle.y);
-        same = same && this.velocityAngle.x == pitch && this.velocityAngle.y == yaw;
 
         this.velocityPosition.set(x, y, z);
         this.velocityAngle.x = pitch;
         this.velocityAngle.y = yaw;
 
-        return !same;
+        return x != 0 || y != 0 || z != 0 || pitch != 0 || yaw != 0;
     }
 
     protected int getFactor(UIContext context, KeyCombo positive, KeyCombo negative, int x)

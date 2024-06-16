@@ -89,7 +89,7 @@ public class UIKeyframes extends UIElement
     {
         this.callback = callback;
 
-        this.dopeSheet.scrollSpeed = TRACK_HEIGHT * 2;
+        this.dopeSheet.scrollSpeed = TRACK_HEIGHT;
 
         /* Context menu items */
         this.context((menu) ->
@@ -911,6 +911,8 @@ public class UIKeyframes extends UIElement
             {
                 this.xAxis.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.xAxis.getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
             }
+
+            return true;
         }
 
         return super.subMouseScrolled(context);

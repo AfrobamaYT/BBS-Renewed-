@@ -16,6 +16,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.dashboard.textures.UITextureManagerPanel;
 import mchorse.bbs_mod.ui.dashboard.utils.UIGraphPanel;
 import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCamera;
+import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCameraKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIRenderingContext;
@@ -53,6 +54,7 @@ public class UIDashboard extends UIBaseMenu
 
     /* Camera data */
     public final UIOrbitCamera orbitUI = new UIOrbitCamera();
+    public final UIOrbitCameraKeys orbitKeysUI = new UIOrbitCameraKeys(this.orbitUI);
     public final OrbitCamera orbit = this.orbitUI.orbit;
     public final OrbitCameraController camera = new OrbitCameraController(this.orbit, 5);
 
@@ -92,6 +94,7 @@ public class UIDashboard extends UIBaseMenu
 
         this.panels.pinned.add(this.settings, this.selectors);
         this.getRoot().prepend(this.orbitUI);
+        this.getRoot().add(this.orbitKeysUI);
 
         /* Register keys */
         IKey category = UIKeys.DASHBOARD_CATEGORY;

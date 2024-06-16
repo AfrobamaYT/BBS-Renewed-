@@ -16,6 +16,11 @@ public class UIOrbitCamera implements IUIElement
         return this.control;
     }
 
+    public boolean getControl()
+    {
+        return this.control;
+    }
+
     public void setControl(boolean control)
     {
         this.control = control;
@@ -24,21 +29,6 @@ public class UIOrbitCamera implements IUIElement
     public void setEnabled(boolean enabled)
     {
         this.enabled = enabled;
-    }
-
-    public boolean animate(UIContext context)
-    {
-        if (!this.control)
-        {
-            this.orbit.cache(context.mouseX, context.mouseY);
-
-            return false;
-        }
-
-        boolean dragged = this.orbit.drag(context.mouseX, context.mouseY);
-        boolean moved = this.orbit.update(context);
-
-        return dragged || moved;
     }
 
     @Override
@@ -78,7 +68,15 @@ public class UIOrbitCamera implements IUIElement
     @Override
     public void render(UIContext context)
     {
-        this.animate(context);
+        if (!this.control)
+        {
+            this.orbit.cache(context.mouseX, context.mouseY);
+
+            return;
+        }
+
+        this.orbit.drag(context.mouseX, context.mouseY);
+        this.orbit.update(context);
     }
 
     /* Unimplemented GUI element methods */
@@ -102,7 +100,7 @@ public class UIOrbitCamera implements IUIElement
     @Override
     public IUIElement keyPressed(UIContext context)
     {
-        return this.control && this.orbit.keyPressed(context) ? this : null;
+        return null;
     }
 
     @Override

@@ -47,8 +47,8 @@ public class Keys
     public static final KeyCombo FLIGHT_BACKWARD = new KeyCombo("flight_backward", UIKeys.CAMERA_FLIGHT_FLIGHT_BACKWARD, GLFW.GLFW_KEY_S).categoryKey("flight");
     public static final KeyCombo FLIGHT_LEFT = new KeyCombo("flight_left", UIKeys.CAMERA_FLIGHT_FLIGHT_LEFT, GLFW.GLFW_KEY_A).categoryKey("flight");
     public static final KeyCombo FLIGHT_RIGHT = new KeyCombo("flight_right", UIKeys.CAMERA_FLIGHT_FLIGHT_RIGHT, GLFW.GLFW_KEY_D).categoryKey("flight");
-    public static final KeyCombo FLIGHT_UP = new KeyCombo("flight_up", UIKeys.CAMERA_FLIGHT_FLIGHT_UP, GLFW.GLFW_KEY_E).categoryKey("flight");
-    public static final KeyCombo FLIGHT_DOWN = new KeyCombo("flight_down", UIKeys.CAMERA_FLIGHT_FLIGHT_DOWN, GLFW.GLFW_KEY_Q).categoryKey("flight");
+    public static final KeyCombo FLIGHT_UP = new KeyCombo("flight_up", UIKeys.CAMERA_FLIGHT_FLIGHT_UP, GLFW.GLFW_KEY_SPACE).categoryKey("flight");
+    public static final KeyCombo FLIGHT_DOWN = new KeyCombo("flight_down", UIKeys.CAMERA_FLIGHT_FLIGHT_DOWN, GLFW.GLFW_KEY_LEFT_SHIFT).categoryKey("flight");
     public static final KeyCombo FLIGHT_TILT_UP = new KeyCombo("flight_tilt_up", UIKeys.CAMERA_FLIGHT_FLIGHT_TILT_UP, GLFW.GLFW_KEY_UP).categoryKey("flight");
     public static final KeyCombo FLIGHT_TILT_DOWN = new KeyCombo("flight_tilt_down", UIKeys.CAMERA_FLIGHT_FLIGHT_TILT_DOWN, GLFW.GLFW_KEY_DOWN).categoryKey("flight");
     public static final KeyCombo FLIGHT_PAN_LEFT = new KeyCombo("flight_pan_left", UIKeys.CAMERA_FLIGHT_FLIGHT_PAN_LEFT, GLFW.GLFW_KEY_LEFT).categoryKey("flight");
