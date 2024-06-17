@@ -157,7 +157,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.finish = new UIIcon(Icons.IN, (b) -> this.palette.exit());
         this.finish.tooltip(UIKeys.FORMS_EDITOR_FINISH, Direction.RIGHT).relative(this.editArea).xy(0, 1F).anchorY(1F);
 
-        this.toggleSidebar = new UIIcon(Icons.LEFTLOAD, (b) ->
+        this.toggleSidebar = new UIIcon(() -> this.formsArea.isVisible() ? Icons.LEFTLOAD : Icons.RIGHTLOAD, (b) ->
         {
             this.toggleSidebar();
 
@@ -193,7 +193,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
     private void toggleSidebar()
     {
         this.formsArea.toggleVisible();
-        this.toggleSidebar.both(this.formsArea.isVisible() ? Icons.LEFTLOAD : Icons.RIGHTLOAD);
     }
 
     private void createFormContextMenu(ContextMenuManager menu)

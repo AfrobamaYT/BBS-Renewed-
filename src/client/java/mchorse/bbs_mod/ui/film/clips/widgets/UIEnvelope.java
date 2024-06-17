@@ -78,6 +78,7 @@ public class UIEnvelope extends UIElement
             this.channel.view.resetView();
         });
         this.channel = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.panel.editor, consumer));
+        this.channel.view.duration(() -> this.panel.clip.duration.get());
 
         this.column().vertical().stretch();
     }

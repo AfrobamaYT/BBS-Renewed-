@@ -52,7 +52,7 @@ public class UIFilmPreview extends UIElement
         this.icons.relative(this).x(0.5F).y(1F).anchor(0.5F, 1F);
 
         /* Preview buttons */
-        this.plause = new UIIcon(Icons.PLAY, (b) -> this.panel.togglePlayback());
+        this.plause = new UIIcon(() -> this.panel.isRunning() ? Icons.PAUSE : Icons.PLAY, (b) -> this.panel.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
         this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
         {
@@ -74,7 +74,7 @@ public class UIFilmPreview extends UIElement
         this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
         this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
         this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
-        this.recordVideo = new UIIcon(Icons.SCENE, (b) ->
+        this.recordVideo = new UIIcon(Icons.VIDEO_CAMERA, (b) ->
         {
             if (!FFMpegUtils.checkFFMpeg())
             {

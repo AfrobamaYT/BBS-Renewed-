@@ -5,12 +5,14 @@ import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class UIIcon extends UIClickable<UIIcon>
 {
-    public Icon icon;
+    private Icon icon;
+    private Supplier<Icon> iconSupplier;
+
     public int iconColor = Colors.WHITE;
-    public Icon hoverIcon;
     public int hoverColor = Colors.LIGHTEST_GRAY;
 
     public int disabledColor = 0x80404040;
@@ -20,27 +22,42 @@ public class UIIcon extends UIClickable<UIIcon>
         super(callback);
 
         this.icon = icon;
-        this.hoverIcon = icon;
         this.wh(20, 20);
     }
 
-    public UIIcon both(Icon icon)
+    public UIIcon(Supplier<Icon> iconSupplier, Consumer<UIIcon> callback)
     {
-        this.icon = this.hoverIcon = icon;
+        super(callback);
 
-        return this;
+        this.iconSupplier = iconSupplier;
+        this.wh(20, 20);
     }
 
-    public UIIcon icon(Icon icon)
+    public Icon getIcon()
+    {
+        if (this.iconSupplier != null)
+        {
+            Icon icon = this.iconSupplier.get();
+
+            if (icon != null)
+            {
+                return icon;
+            }
+        }
+
+        return this.icon;
+    }
+
+    public UIIcon both(Icon icon)
     {
         this.icon = icon;
 
         return this;
     }
 
-    public UIIcon hovered(Icon icon)
+    public UIIcon both(Supplier<Icon> icon)
     {
-        this.hoverIcon = icon;
+        this.iconSupplier = icon;
 
         return this;
     }
@@ -75,7 +92,7 @@ public class UIIcon extends UIClickable<UIIcon>
     @Override
     protected void renderSkin(UIContext context)
     {
-        Icon icon = this.hover ? this.hoverIcon : this.icon;
+        Icon icon = this.getIcon();
         int color = this.isEnabled() ? (this.hover ? this.hoverColor : this.iconColor) : this.disabledColor;
 
         context.batcher.icon(icon, color, this.area.mx(), this.area.my(), 0.5F, 0.5F);

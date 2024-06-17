@@ -24,6 +24,7 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
         super.registerUI();
 
         this.keyframes = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.editor, consumer));
+        this.keyframes.view.duration(() -> this.clip.duration.get());
 
         this.edit = new UIButton(UIKeys.GENERAL_EDIT, (b) ->
         {

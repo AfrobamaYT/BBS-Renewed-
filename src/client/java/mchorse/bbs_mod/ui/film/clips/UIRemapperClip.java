@@ -24,6 +24,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
         super.registerUI();
 
         this.keyframes = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.editor, consumer));
+        this.keyframes.view.duration(() -> this.clip.duration.get());
 
         this.edit = new UIButton(UIKeys.CAMERA_PANELS_EDIT_KEYFRAMES, (b) ->
         {

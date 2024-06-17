@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils.interps;
 
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.easings.Easings;
 import mchorse.bbs_mod.utils.interps.types.BaseInterp;
 import mchorse.bbs_mod.utils.interps.types.EasingInterp;
@@ -26,7 +27,16 @@ public class Interpolations
                 return context.a;
             }
 
-            double x = Math.floor(context.x * steps) / steps;
+            double x = context.x;
+            double easing = MathUtils.clamp(context.args.v2, -1D, 1D);
+            double function = context.args.v3;
+
+            if (easing > 0) x = Lerps.lerp(x, Easings.EXP.calculate(null, x), easing);
+            if (easing < 0) x = Lerps.lerp(x, 1F - Easings.EXP.calculate(null, 1F - x), -easing);
+
+            if (function > 0) x = Math.ceil(x * steps) / steps;
+            else if (function < 0) x = Math.round(x * steps) / steps;
+            else x = Math.floor(x * steps) / steps;
 
             return Lerps.lerp(context.a, context.b, x);
         }

@@ -161,6 +161,7 @@ public class Icons
     public static final Icon X = register(new Icon(ATLAS, "x", 112, 128));
     public static final Icon Y = register(new Icon(ATLAS, "y", 128, 128));
     public static final Icon Z = register(new Icon(ATLAS, "z", 144, 128));
+    public static final Icon VIDEO_CAMERA = register(new Icon(ATLAS, "video_camera", 160, 128));
 
     public static final Icon INTERP_LINEAR = register(new Icon(ATLAS, "interp_linear", 0, 192));
     public static final Icon INTERP_CONST = register(new Icon(ATLAS, "interp_const", 16, 192));

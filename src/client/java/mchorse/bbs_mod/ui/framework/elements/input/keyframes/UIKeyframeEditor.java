@@ -19,7 +19,7 @@ import java.util.function.Function;
 
 public class UIKeyframeEditor extends UIElement
 {
-    public static final int[] COLORS = {Colors.RED, Colors.GREEN, Colors.BLUE, Colors.CYAN, Colors.MAGENTA, Colors.YELLOW, Colors.LIGHTEST_GRAY};
+    public static final int[] COLORS = {Colors.RED, Colors.GREEN, Colors.BLUE, Colors.CYAN, Colors.MAGENTA, Colors.YELLOW, Colors.LIGHTEST_GRAY & 0xffffff};
     public static final CameraAxisConverter CONVERTER = new CameraAxisConverter();
 
     private static Map<Class, Integer> scrolls = new HashMap<>();

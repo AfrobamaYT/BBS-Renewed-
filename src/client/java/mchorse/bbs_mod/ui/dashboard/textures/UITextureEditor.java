@@ -33,7 +33,7 @@ public class UITextureEditor extends UIPixelsEditor
 
         this.savebar = new UIElement();
         this.savebar.relative(this).x(1F).h(30).anchorX(1F).row(0).resize().padding(5);
-        this.save = new UIIcon(Icons.SAVE, (b) -> this.saveTexture());
+        this.save = new UIIcon(() -> this.dirty ? Icons.SAVE : Icons.SAVED, (b) -> this.saveTexture());
 
         this.savebar.add(this.save);
 
@@ -58,8 +58,6 @@ public class UITextureEditor extends UIPixelsEditor
     public void setDirty(boolean dirty)
     {
         this.dirty = dirty;
-
-        this.save.both(dirty ? Icons.SAVE : Icons.SAVED);
     }
 
     @Override

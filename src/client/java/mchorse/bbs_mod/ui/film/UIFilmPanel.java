@@ -581,14 +581,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
     }
 
-    /**
-     * Update display icon of the plause button
-     */
-    private void updatePlauseButton()
-    {
-        this.preview.plause.both(this.isRunning() ? Icons.PAUSE : Icons.PLAY);
-    }
-
     @Override
     public void update()
     {
@@ -707,8 +699,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             this.lastRunning = this.runner.isRunning();
             this.setCursor(0);
-
-            this.updatePlauseButton();
         }
     }
 
@@ -798,7 +788,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.runner.toggle(this.getCursor());
         this.lastRunning = this.runner.isRunning();
-        this.updatePlauseButton();
     }
 
     public boolean canUseKeybinds()
