@@ -48,7 +48,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         this.cameraClips = new ClipsData(cameraClips);
         this.voiceLinesClips = new ClipsData(voiceLineClips);
 
-        if (editor.replayEditor.keyframeEditor == null)
+        if (editor.replayEditor.keyframeEditor != null)
         {
             this.propertiesBefore = this.propertiesAfter = editor.replayEditor.keyframeEditor.view.cacheState();
         }

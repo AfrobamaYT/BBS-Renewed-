@@ -49,10 +49,10 @@ public abstract class DataStorage implements IDataStorage
         DataOutputStream dataOutput = new DataOutputStream(stream);
         DataStorageContext context = new DataStorageContext(dataOutput);
 
-        dataOutput.writeByte((int) 'B');
-        dataOutput.writeByte((int) 'B');
-        dataOutput.writeByte((int) 'S');
-        dataOutput.writeByte((int) '1');
+        dataOutput.writeByte('B');
+        dataOutput.writeByte('B');
+        dataOutput.writeByte('S');
+        dataOutput.writeByte('1');
 
         type.traverseKeys(context);
         context.write();

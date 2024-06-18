@@ -77,11 +77,11 @@ public class DataStorageContext
             this.keyMap = new HashMap<>();
         }
 
-        if (this.keyMap.size() <= 256)
+        if (this.keyMap.size() < 256)
         {
             this.type = KeyType.BYTE;
         }
-        else if (this.keyMap.size() <= 65536)
+        else if (this.keyMap.size() < 65536)
         {
             this.type = KeyType.SHORT;
         }
