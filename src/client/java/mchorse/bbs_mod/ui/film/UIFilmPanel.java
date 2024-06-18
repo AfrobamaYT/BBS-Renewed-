@@ -165,7 +165,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Icon bar buttons */
         this.openReplays = new UIIcon(Icons.EDITOR, (b) -> UIOverlay.addOverlayLeft(this.getContext(), this.replayEditor.replays, 200));
         this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE, Direction.LEFT);
-        this.toggleHorizontal = new UIIcon(Icons.REFRESH, (b) ->
+        this.toggleHorizontal = new UIIcon(() -> this.horizontal ? Icons.EXCHANGE : Icons.CONVERT, (b) ->
         {
             this.horizontal = !this.horizontal;
 

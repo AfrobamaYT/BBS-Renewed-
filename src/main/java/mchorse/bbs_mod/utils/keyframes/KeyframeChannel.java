@@ -158,6 +158,13 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
 
     /* Write only */
 
+    public void removeAll()
+    {
+        this.preNotifyParent();
+        this.list.clear();
+        this.postNotifyParent();
+    }
+
     public void remove(int index)
     {
         if (index < 0 || index > this.list.size() - 1)

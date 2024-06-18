@@ -45,6 +45,7 @@ public class UIFormList extends UIElement
         this.palette = palette;
 
         this.forms = UI.scrollView(0, 0);
+        this.forms.scroll.cancelScrolling();
         this.bar = new UIElement();
         this.search = new UITextbox(100, this::search).placeholder(UIKeys.FORMS_LIST_SEARCH);
         this.edit = new UIIcon(Icons.EDIT, this::edit);

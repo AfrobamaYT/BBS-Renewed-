@@ -50,6 +50,11 @@ public class UIOrbitCameraKeys implements IUIElement
     @Override
     public IUIElement keyPressed(UIContext context)
     {
+        if (context.isFocused())
+        {
+            return null;
+        }
+
         return this.orbitCamera.getControl() && this.orbitCamera.orbit.keyPressed(context) ? this : null;
     }
 
