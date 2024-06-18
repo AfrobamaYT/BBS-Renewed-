@@ -67,6 +67,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             this.renderLimitedString(context, renderer);
         }
 
+        RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
 
         context.stack.pop();
