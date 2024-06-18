@@ -112,7 +112,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         /* Check whether given ticks are outside keyframe channel's range */
         Keyframe<T> prev = this.list.get(0);
 
-        if (ticks <= prev.getTick())
+        if (ticks < prev.getTick())
         {
             return new KeyframeSegment(prev, prev);
         }
@@ -152,8 +152,11 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         }
 
         Keyframe<T> a = low - 1 >= 0 ? this.list.get(low - 1) : b;
+        KeyframeSegment<T> segment = new KeyframeSegment<>(a, b);
 
-        return new KeyframeSegment(a, b);
+        segment.setup(ticks);
+
+        return segment;
     }
 
     /* Write only */

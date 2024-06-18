@@ -261,21 +261,9 @@ public class ReplayKeyframes extends ValueGroup
             return new Vector2d(prev, prev);
         }
 
-        if (frame != null && frame.b != null)
+        if (frame.a.getInterpolation().getInterp() == Interpolations.CONST)
         {
-            /* Special case for when there is no keyframe afterwards */
-            if (Objects.equals(frame.a, frame.b) && Objects.equals(frame.postB, frame.b) && !Objects.equals(frame.preA, frame.a))
-            {
-                if (frame.preA.getInterpolation().getInterp() == Interpolations.CONST && frame.a.getTick() == tick)
-                {
-                    return new Vector2d(frame.a.getValue(), frame.a.getValue());
-                }
-            }
-
-            if (frame.a.getInterpolation().getInterp() == Interpolations.CONST && frame.b.getTick() == tick)
-            {
-                return new Vector2d(frame.b.getValue(), frame.b.getValue());
-            }
+            return new Vector2d(frame.b.getValue(), frame.b.getValue());
         }
 
         Double interpolated = frame.createInterpolated();
