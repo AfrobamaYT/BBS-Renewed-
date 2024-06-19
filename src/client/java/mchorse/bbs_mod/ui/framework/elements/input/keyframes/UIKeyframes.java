@@ -34,6 +34,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.util.math.MathHelper;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -1021,7 +1022,9 @@ public class UIKeyframes extends UIElement
             if (rightBorder < this.area.ex()) context.batcher.box(Math.max(this.area.x, rightBorder), this.area.y, this.area.ex() , this.area.y + this.area.h, Colors.A50);
         }
 
-        if (this.area.isInside(context) && Window.isCtrlPressed())
+        boolean alt = Window.isAltPressed();
+
+        if (this.area.isInside(context) && (Window.isCtrlPressed() || alt))
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 
@@ -1031,7 +1034,7 @@ public class UIKeyframes extends UIElement
                 int y = this.getDopeSheetY(sheet) + (int) this.trackHeight / 2;
                 float a = (float) Math.sin(context.getTickTransition() / 2D) * 0.1F + 0.5F;
 
-                context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(0xffffffff, a));
+                context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(alt ? Colors.YELLOW : Colors.WHITE, a));
             }
         }
 

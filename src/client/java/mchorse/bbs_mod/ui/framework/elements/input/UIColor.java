@@ -28,7 +28,7 @@ public class UIColor extends UIElement
         super();
 
         this.picker = new UIColorPicker(callback);
-        this.picker.wh(200, 85).bounds(this, 2);
+        this.picker.wh(200, 85);
 
         this.direction(Direction.BOTTOM).h(20);
     }
@@ -86,6 +86,7 @@ public class UIColor extends UIElement
 
                 target.add(this.picker);
                 this.picker.setup(x, y);
+                this.picker.bounds(context.menu.main, 2);
                 this.picker.resize();
             }
             else

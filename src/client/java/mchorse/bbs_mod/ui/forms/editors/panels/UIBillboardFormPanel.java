@@ -41,7 +41,7 @@ public class UIBillboardFormPanel extends UIFormPanel<BillboardForm>
             UIOverlay.addOverlay(this.getContext(), new UICropOverlayPanel(this.form.texture.get(), this.form.crop.get()), 0.5F, 0.5F);
         });
         this.resizeCrop = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_RESIZE_CROP, false, (b) -> this.form.resizeCrop.set(b.getValue()));
-        this.color = new UIColor((value) -> this.form.color.set(Color.rgba(value))).direction(Direction.TOP).withAlpha();
+        this.color = new UIColor((value) -> this.form.color.set(Color.rgba(value))).direction(Direction.LEFT).withAlpha();
 
         this.offsetX = new UITrackpad((value) -> this.form.offsetX.set(value.floatValue()));
         this.offsetX.tooltip(UIKeys.FORMS_EDITORS_BILLBOARD_OFFSET_X);
