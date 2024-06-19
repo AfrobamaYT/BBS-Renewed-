@@ -63,7 +63,8 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         if (this.builder.isBuilding())
         {
             BufferBuilder.BuiltBuffer builtBuffer = this.builder.end();
-            Runnable runnable = this.runnables.get(this.currentLayer.getVertexFormat());
+            VertexFormat vertexFormat = this.currentLayer.getVertexFormat();
+            Runnable runnable = this.runnables.get(vertexFormat);
 
             this.currentLayer.startDrawing();
 

@@ -2,7 +2,6 @@ package mchorse.bbs_mod.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.camera.data.Angle;
-import mchorse.bbs_mod.utils.Quad;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -12,7 +11,6 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 public class Draw
 {
@@ -115,16 +113,6 @@ public class Draw
         builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a);
         builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a);
         builder.vertex(matrix4f, x3, y3, z3).texture(u1, v1).color(r, g, b, a);
-    }
-
-    public static void fillQuad(BufferBuilder builder, MatrixStack stack, Quad quad, float r, float g, float b, float a)
-    {
-        fillQuad(builder, stack, quad.p1, quad.p2, quad.p3, quad.p4, r, g, b, a);
-    }
-
-    public static void fillQuad(BufferBuilder builder, MatrixStack stack, Vector3f p1, Vector3f p2, Vector3f p3, Vector3f p4, float r, float g, float b, float a)
-    {
-        fillQuad(builder, stack, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z, p4.x, p4.y, p4.z, r, g, b, a);
     }
 
     public static void fillQuad(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a)

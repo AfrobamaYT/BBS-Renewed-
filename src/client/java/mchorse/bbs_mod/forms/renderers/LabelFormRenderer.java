@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -16,11 +19,26 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
 
 import java.util.List;
 
 public class LabelFormRenderer extends FormRenderer<LabelForm>
 {
+    public static void fillQuad(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a)
+    {
+        Matrix4f matrix4f = stack.peek().getPositionMatrix();
+
+        /* 1 - BR, 2 - BL, 3 - TL, 4 - TR */
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).texture(0F, 0F).next();
+        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a).texture(0F, 0F).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).texture(0F, 0F).next();
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).texture(0F, 0F).next();
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).texture(0F, 0F).next();
+        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a).texture(0F, 0F).next();
+    }
+
     public LabelFormRenderer(LabelForm form)
     {
         super(form);
@@ -52,20 +70,35 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         context.stack.push();
 
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
+        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
         float scale = 1F / 16F;
+        int light = context.light;
 
         MatrixStackUtils.scaleStack(context.stack, scale, -scale, scale);
 
         RenderSystem.disableCull();
 
+        if (context.isPicking())
+        {
+            consumers.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_LIGHT, () ->
+            {
+                this.setupTarget(context, BBSShaders.getPickerModelsProgram());
+                RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
+            });
+
+            light = 0;
+        }
+
         if (this.form.max.get(context.getTransition()) <= 10)
         {
-            this.renderString(context, renderer);
+            this.renderString(context, consumers, renderer, light);
         }
         else
         {
-            this.renderLimitedString(context, renderer);
+            this.renderLimitedString(context, consumers, renderer, light);
         }
+
+        consumers.clearRunnables();
 
         RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
@@ -73,7 +106,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         context.stack.pop();
     }
 
-    private void renderString(FormRenderingContext context, TextRenderer renderer)
+    private void renderString(FormRenderingContext context, CustomVertexConsumerProvider consumers, TextRenderer renderer, int light)
     {
         String content = StringUtils.processColoredText(this.form.text.get());
         float transition = context.getTransition();
@@ -95,10 +128,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                 y + this.form.shadowY.get(transition),
                 shadowColor.getARGBColor(), false,
                 context.stack.peek().getPositionMatrix(),
-                MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers(),
+                consumers,
                 TextRenderer.TextLayerType.NORMAL,
                 0,
-                context.light
+                light
             );
             context.stack.pop();
         }
@@ -109,20 +142,20 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             y,
             color.getARGBColor(), false,
             context.stack.peek().getPositionMatrix(),
-            MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers(),
+            consumers,
             TextRenderer.TextLayerType.NORMAL,
             0,
-            context.light
+            light
         );
 
         RenderSystem.enableDepthTest();
 
-        MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw();
+        consumers.draw();
 
         this.renderShadow(context, x, y, w, h);
     }
 
-    private void renderLimitedString(FormRenderingContext context, TextRenderer renderer)
+    private void renderLimitedString(FormRenderingContext context, CustomVertexConsumerProvider consumers, TextRenderer renderer, int light)
     {
         float transition = context.getTransition();
         int w = 0;
@@ -132,7 +165,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (lines.size() <= 1)
         {
-            this.renderString(context, renderer);
+            this.renderString(context, consumers, renderer, light);
 
             return;
         }
@@ -166,10 +199,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                     y2 + this.form.shadowY.get(transition),
                     shadowColor.getARGBColor(), false,
                     context.stack.peek().getPositionMatrix(),
-                    MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers(),
+                    consumers,
                     TextRenderer.TextLayerType.NORMAL,
                     0,
-                    context.light
+                    light
                 );
 
                 y2 += 12;
@@ -192,16 +225,16 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
                 y2,
                 color, false,
                 context.stack.peek().getPositionMatrix(),
-                MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers(),
+                consumers,
                 TextRenderer.TextLayerType.NORMAL,
                 0,
-                context.light
+                light
             );
 
             y2 += 12;
         }
 
-        MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw();
+        consumers.draw();
 
         RenderSystem.enableDepthTest();
 
@@ -223,9 +256,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE);
 
-        Draw.fillQuad(
+        fillQuad(
             builder, context.stack,
             x + w + offset, y - offset, 0,
             x - offset, y - offset, 0,
@@ -234,6 +267,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             color.r, color.g, color.b, color.a
         );
 
+        RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         BufferRenderer.drawWithGlobalProgram(builder.end());
