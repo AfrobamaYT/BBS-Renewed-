@@ -2,6 +2,7 @@ package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
@@ -10,7 +11,6 @@ import org.joml.Vector2d;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class ReplayKeyframes extends ValueGroup
 {
@@ -178,11 +178,11 @@ public class ReplayKeyframes extends ValueGroup
             entity.setFallDistance(this.fall.interpolate(tick).floatValue());
 
             KeyframeSegment<Double> x = this.x.findSegment(tick);
-            Vector2d xx = this.getPrev(x, tick, entity.getPrevX());
+            Vector2d xx = this.getPrev(x, entity.getPrevX());
             KeyframeSegment<Double> y = this.y.findSegment(tick);
-            Vector2d yy = this.getPrev(y, tick, entity.getPrevY());
+            Vector2d yy = this.getPrev(y, entity.getPrevY());
             KeyframeSegment<Double> z = this.z.findSegment(tick);
-            Vector2d zz = this.getPrev(z, tick, entity.getPrevZ());
+            Vector2d zz = this.getPrev(z, entity.getPrevZ());
 
             entity.setPosition(xx.x, yy.x, zz.x);
             entity.setPrevX(xx.y);
@@ -193,13 +193,13 @@ public class ReplayKeyframes extends ValueGroup
         if (rotation)
         {
             KeyframeSegment<Double> yaw = this.yaw.findSegment(tick);
-            Vector2d yyaw = this.getPrev(yaw, tick, entity.getPrevYaw());
+            Vector2d yyaw = this.getPrev(yaw, entity.getPrevYaw());
             KeyframeSegment<Double> pitch = this.pitch.findSegment(tick);
-            Vector2d ppitch = this.getPrev(pitch, tick, entity.getPrevPitch());
+            Vector2d ppitch = this.getPrev(pitch, entity.getPrevPitch());
             KeyframeSegment<Double> headYaw = this.headYaw.findSegment(tick);
-            Vector2d hheadYaw = this.getPrev(headYaw, tick, entity.getPrevHeadYaw());
+            Vector2d hheadYaw = this.getPrev(headYaw, entity.getPrevHeadYaw());
             KeyframeSegment<Double> bodyYaw = this.bodyYaw.findSegment(tick);
-            Vector2d bbodyYaw = this.getPrev(bodyYaw, tick, entity.getPrevBodyYaw());
+            Vector2d bbodyYaw = this.getPrev(bodyYaw, entity.getPrevBodyYaw());
 
             entity.setYaw((float) yyaw.x);
             entity.setPitch((float) ppitch.x);
@@ -254,19 +254,25 @@ public class ReplayKeyframes extends ValueGroup
     /**
      * Force teleportation for the previous keyframe being constant
      */
-    private Vector2d getPrev(KeyframeSegment<Double> frame, int tick, double prev)
+    private Vector2d getPrev(KeyframeSegment<Double> frame, double prev)
     {
         if (frame == null)
         {
             return new Vector2d(prev, prev);
         }
 
-        if (frame.a.getInterpolation().getInterp() == Interpolations.CONST)
-        {
-            return new Vector2d(frame.b.getValue(), frame.b.getValue());
-        }
-
+        IInterp interp = frame.a.getInterpolation().getInterp();
         Double interpolated = frame.createInterpolated();
+
+        if (interp == Interpolations.CONST || interp == Interpolations.STEP)
+        {
+            if (interpolated != null)
+            {
+                prev = interpolated;
+            }
+
+            return new Vector2d(prev, prev);
+        }
 
         return new Vector2d(interpolated == null ? prev : interpolated, prev);
     }
