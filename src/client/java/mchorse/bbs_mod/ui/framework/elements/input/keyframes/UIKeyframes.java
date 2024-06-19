@@ -19,6 +19,7 @@ import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Interpolation;
@@ -51,7 +52,6 @@ public class UIKeyframes extends UIElement
     /* Constants */
 
     public static final int TOP_MARGIN = 25;
-    public static final int TRACK_HEIGHT = 16;
 
     public static final Color COLOR = new Color();
     public static final double MIN_ZOOM = 0.01D;
@@ -85,11 +85,13 @@ public class UIKeyframes extends UIElement
 
     private IAxisConverter converter;
 
+    private double trackHeight;
+
     public UIKeyframes(Consumer<Keyframe> callback)
     {
         this.callback = callback;
 
-        this.dopeSheet.scrollSpeed = TRACK_HEIGHT * 2;
+        this.setTrackHeight(16);
 
         /* Context menu items */
         this.context((menu) ->
@@ -195,6 +197,15 @@ public class UIKeyframes extends UIElement
         return this.duration == null ? 0 : this.duration.get();
     }
 
+    private void setTrackHeight(double height)
+    {
+        this.trackHeight = MathUtils.clamp(height, 8D, 100D);
+        this.dopeSheet.scrollSpeed = (int) this.trackHeight * 2;
+        this.dopeSheet.scrollSize = (int) this.trackHeight * this.sheets.size() + TOP_MARGIN;
+
+        this.dopeSheet.clamp();
+    }
+
     /* Sheet management */
 
     public List<UIKeyframeSheet> getSheets()
@@ -262,7 +273,7 @@ public class UIKeyframes extends UIElement
     public UIKeyframeSheet getSheet(int mouseY)
     {
         int dopeSheetY = this.getDopeSheetY();
-        int index = (mouseY - dopeSheetY) / TRACK_HEIGHT;
+        int index = (mouseY - dopeSheetY) / (int) this.trackHeight;
 
         if (CollectionUtils.inRange(this.sheets, index))
         {
@@ -354,7 +365,7 @@ public class UIKeyframes extends UIElement
         {
             Keyframe keyframe = (Keyframe) keyframes.get(j);
             int x = this.toGraphX(keyframe.getTick());
-            int y = this.getDopeSheetY(i) + TRACK_HEIGHT / 2;
+            int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
 
             if (this.isNear(x, y, mouseX, mouseY, false))
             {
@@ -600,7 +611,7 @@ public class UIKeyframes extends UIElement
 
     public int getDopeSheetY(int sheet)
     {
-        return this.getDopeSheetY() + sheet * TRACK_HEIGHT;
+        return this.getDopeSheetY() + sheet * (int) this.trackHeight;
     }
 
     public int getDopeSheetY(UIKeyframeSheet sheet)
@@ -799,7 +810,7 @@ public class UIKeyframes extends UIElement
             {
                 Keyframe keyframe = (Keyframe) keyframes.get(j);
                 int x = this.toGraphX(keyframe.getTick());
-                int y = this.getDopeSheetY(i) + TRACK_HEIGHT / 2;
+                int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
 
                 if (this.isNear(x, y, context.mouseX, context.mouseY, true))
                 {
@@ -871,7 +882,7 @@ public class UIKeyframes extends UIElement
                 {
                     Keyframe keyframe = (Keyframe) keyframes.get(j);
                     int x = this.toGraphX(keyframe.getTick());
-                    int y = this.getDopeSheetY(i) + TRACK_HEIGHT / 2;
+                    int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
 
                     if (area.isInside(x, y))
                     {
@@ -906,6 +917,10 @@ public class UIKeyframes extends UIElement
             if (Window.isShiftPressed())
             {
                 this.dopeSheet.mouseScroll(context);
+            }
+            else if (Window.isAltPressed())
+            {
+                this.setTrackHeight(this.trackHeight - context.mouseWheel);
             }
             else
             {
@@ -1013,7 +1028,7 @@ public class UIKeyframes extends UIElement
             if (sheet != null)
             {
                 int x = this.toGraphX(Math.round(this.fromGraphX(context.mouseX)));
-                int y = this.getDopeSheetY(sheet) + TRACK_HEIGHT / 2;
+                int y = this.getDopeSheetY(sheet) + (int) this.trackHeight / 2;
                 float a = (float) Math.sin(context.getTickTransition() / 2D) * 0.1F + 0.5F;
 
                 context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(0xffffffff, a));
@@ -1063,7 +1078,7 @@ public class UIKeyframes extends UIElement
             return;
         }
 
-        this.dopeSheet.scrollSize = TRACK_HEIGHT * this.sheets.size() + TOP_MARGIN;
+        this.dopeSheet.scrollSize = (int) this.trackHeight * this.sheets.size() + TOP_MARGIN;
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
@@ -1072,7 +1087,7 @@ public class UIKeyframes extends UIElement
         {
             int y = this.getDopeSheetY(i);
 
-            if (y + TRACK_HEIGHT < this.area.y || y > this.area.ey())
+            if (y + this.trackHeight < this.area.y || y > this.area.ey())
             {
                 continue;
             }
@@ -1081,8 +1096,8 @@ public class UIKeyframes extends UIElement
             List keyframes = sheet.channel.getKeyframes();
             LineBuilder<Void> line = new LineBuilder<>(0.75F);
 
-            boolean hover = this.area.isInside(context) && context.mouseY >= y && context.mouseY < y + TRACK_HEIGHT;
-            int my = y + TRACK_HEIGHT / 2;
+            boolean hover = this.area.isInside(context) && context.mouseY >= y && context.mouseY < y + this.trackHeight;
+            int my = y + (int) this.trackHeight / 2;
 
             COLOR.set(sheet.color, false);
             COLOR.a = hover ? 1F : 0.45F;
@@ -1099,7 +1114,7 @@ public class UIKeyframes extends UIElement
             {
                 int c = COLOR.getRGBColor();
 
-                context.batcher.fillRect(builder, matrix, this.area.x, y, this.area.w, TRACK_HEIGHT, c | Colors.A25, c | Colors.A25, c, c);
+                context.batcher.fillRect(builder, matrix, this.area.x, y, this.area.w, (int) this.trackHeight, c | Colors.A25, c | Colors.A25, c, c);
             }
 
             for (int j = 1; j < keyframes.size(); j++)
@@ -1172,7 +1187,7 @@ public class UIKeyframes extends UIElement
             FontRenderer font = context.batcher.getFont();
             int lw = font.getWidth(sheet.title.get());
 
-            context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + TRACK_HEIGHT, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
+            context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + (int) this.trackHeight, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
             context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
         }
     }
