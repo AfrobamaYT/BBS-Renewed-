@@ -32,6 +32,7 @@ import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.RayTracing;
@@ -55,6 +56,8 @@ import java.util.Map;
 public class UIReplaysEditor extends UIElement
 {
     private static final Map<String, Integer> COLORS = new HashMap<>();
+    private static String lastFilm = "";
+    private static int lastReplay;
 
     public UIReplaysOverlayPanel replays;
 
@@ -116,9 +119,15 @@ public class UIReplaysEditor extends UIElement
         if (film != null)
         {
             List<Replay> replays = film.replays.getList();
+            int index = film.getId().equals(lastFilm) ? lastReplay : 0;
+
+            if (!CollectionUtils.inRange(replays, index))
+            {
+                index = 0;
+            }
 
             this.replays.replays.setList(replays);
-            this.setReplay(replays.isEmpty() ? null : replays.get(0));
+            this.setReplay(replays.isEmpty() ? null : replays.get(index));
         }
     }
 
@@ -397,6 +406,15 @@ public class UIReplaysEditor extends UIElement
                     wave.render(context.batcher, Colors.WHITE, x1, keyframes.area.y + 15, x2 - x1, 20, 0F, duration);
                 }
             }
+        }
+    }
+
+    public void close()
+    {
+        if (this.film != null)
+        {
+            lastFilm = this.film.getId();
+            lastReplay = this.replays.replays.getIndex();
         }
     }
 }

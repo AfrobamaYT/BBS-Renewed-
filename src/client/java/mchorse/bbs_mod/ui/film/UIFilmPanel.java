@@ -418,6 +418,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         cameraController.remove(this.runner);
 
         this.disableContext();
+        this.replayEditor.close();
     }
 
     @Override
