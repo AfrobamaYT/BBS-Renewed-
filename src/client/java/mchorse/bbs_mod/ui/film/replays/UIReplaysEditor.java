@@ -162,17 +162,14 @@ public class UIReplaysEditor extends UIElement
         }
 
         /* Replay keyframes */
-        List<KeyframeChannel> properties = new ArrayList<>();
-        List<Integer> propertiesColors = new ArrayList<>();
-        List<IFormProperty> formProperties = new ArrayList<>();
+        List<UIKeyframeSheet> sheets = new ArrayList<>();
 
         for (String key : ReplayKeyframes.CURATED_CHANNELS)
         {
             BaseValue value = this.replay.keyframes.get(key);
+            KeyframeChannel channel = (KeyframeChannel) value;
 
-            properties.add((KeyframeChannel) value);
-            propertiesColors.add(COLORS.getOrDefault(key, Colors.ACTIVE));
-            formProperties.add(null);
+            sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(key, Colors.ACTIVE), false, channel, null));
         }
 
         /* Form properties */
@@ -183,14 +180,14 @@ public class UIReplaysEditor extends UIElement
             if (property != null)
             {
                 IFormProperty formProperty = FormUtils.getProperty(this.replay.form.get(), key);
+                String topLevel = StringUtils.fileName(key);
+                boolean separator = topLevel.equals("visible");
 
-                properties.add(property);
-                propertiesColors.add(COLORS.getOrDefault(StringUtils.fileName(key), Colors.ACTIVE));
-                formProperties.add(formProperty);
+                sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(topLevel, Colors.ACTIVE), separator, property, formProperty));
             }
         }
 
-        if (!properties.isEmpty())
+        if (!sheets.isEmpty())
         {
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute()).target(this.filmPanel.editArea);
             this.keyframeEditor.full(this);
@@ -198,11 +195,8 @@ public class UIReplaysEditor extends UIElement
             this.keyframeEditor.view.backgroundRenderer(this::renderBackground);
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
 
-            for (int i = 0; i < properties.size(); i++)
+            for (UIKeyframeSheet sheet : sheets)
             {
-                KeyframeChannel channel = properties.get(i);
-                UIKeyframeSheet sheet = new UIKeyframeSheet(channel.getId(), IKey.raw(channel.getId()), propertiesColors.get(i), channel, formProperties.get(i));
-
                 this.keyframeEditor.view.addSheet(sheet);
             }
 

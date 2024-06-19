@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.film.utils.CameraAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
@@ -91,7 +90,7 @@ public class UIKeyframeEditor extends UIElement
         List<UIKeyframeSheet> sheets = this.view.getSheets();
 
         sheets.clear();
-        this.view.addSheet(new UIKeyframeSheet(channel.getId(), IKey.raw(channel.getId()), color, channel, null));
+        this.view.addSheet(new UIKeyframeSheet(color, false, channel, null));
 
         this.pickKeyframe(null);
     }
@@ -106,7 +105,7 @@ public class UIKeyframeEditor extends UIElement
         {
             KeyframeChannel channel = clip.channels[i];
 
-            sheets.add(new UIKeyframeSheet(channel.getId(), IKey.raw(channel.getId()), COLORS[i], channel, null));
+            sheets.add(new UIKeyframeSheet(COLORS[i], false, channel, null));
         }
 
         this.pickKeyframe(null);

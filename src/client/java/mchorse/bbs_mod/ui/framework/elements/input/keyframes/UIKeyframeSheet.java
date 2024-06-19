@@ -14,16 +14,23 @@ public class UIKeyframeSheet
     public final String id;
     public final IKey title;
     public final int color;
+    public final boolean separator;
 
     public final KeyframeChannel channel;
     public final KeyframeSelection selection;
     public final IFormProperty property;
 
-    public UIKeyframeSheet(String id, IKey title, int color, KeyframeChannel channel, IFormProperty property)
+    public UIKeyframeSheet(int color, boolean separator, KeyframeChannel channel, IFormProperty property)
+    {
+        this(channel.getId(), IKey.raw(channel.getId()), color, separator, channel, property);
+    }
+
+    public UIKeyframeSheet(String id, IKey title, int color, boolean separator, KeyframeChannel channel, IFormProperty property)
     {
         this.id = id;
         this.title = title;
         this.color = color;
+        this.separator = separator;
 
         this.channel = channel;
         this.selection = new KeyframeSelection(channel);

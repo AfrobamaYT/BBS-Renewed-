@@ -89,7 +89,7 @@ public class UIKeyframes extends UIElement
     {
         this.callback = callback;
 
-        this.dopeSheet.scrollSpeed = TRACK_HEIGHT;
+        this.dopeSheet.scrollSpeed = TRACK_HEIGHT * 2;
 
         /* Context menu items */
         this.context((menu) ->
@@ -1094,6 +1094,13 @@ public class UIKeyframes extends UIElement
 
             /* Render bars indicating same values */
             builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+            if (sheet.separator)
+            {
+                int c = COLOR.getRGBColor();
+
+                context.batcher.fillRect(builder, matrix, this.area.x, y, this.area.w, TRACK_HEIGHT, c | Colors.A25, c | Colors.A25, c, c);
+            }
 
             for (int j = 1; j < keyframes.size(); j++)
             {
