@@ -72,6 +72,7 @@ public class UIClips extends UIElement
     private boolean scrolling;
     private int lastX;
     private int lastY;
+    private int grabMode;
 
     /* Looping */
     public int loopMin = 0;
@@ -862,7 +863,7 @@ public class UIClips extends UIElement
             boolean shift = Window.isShiftPressed();
             boolean alt = Window.isAltPressed();
 
-            if (context.mouseButton == 0 && this.handleLeftClick(mouseX, mouseY, ctrl, shift, alt))
+            if (context.mouseButton == 0 && this.handleLeftClick(context, mouseX, mouseY, ctrl, shift, alt))
             {
                 return true;
             }
@@ -879,7 +880,7 @@ public class UIClips extends UIElement
         return super.subMouseClicked(context);
     }
 
-    private boolean handleLeftClick(int mouseX, int mouseY, boolean ctrl, boolean shift, boolean alt)
+    private boolean handleLeftClick(UIContext context, int mouseX, int mouseY, boolean ctrl, boolean shift, boolean alt)
     {
         if (!this.hasEmbeddedView())
         {
@@ -888,35 +889,29 @@ public class UIClips extends UIElement
             Clip original = this.delegate.getClip();
             Clip clip = this.clips.getClipAt(tick, layerIndex);
 
-            if (clip != null && clip != original)
+            if (clip != null)
             {
-                boolean wasSelected = this.selection.contains(this.clips.getIndex(clip));
-
-                if (shift || wasSelected)
+                if (clip != original)
                 {
-                    this.addSelected(clip);
-
-                    Clip last = this.getLastSelectedClip();
-
-                    if (last != original)
+                    if (shift || this.selection.contains(this.clips.getIndex(clip)))
                     {
-                        this.delegate.pickClip(last);
+                        this.addSelected(clip);
+
+                        Clip last = this.getLastSelectedClip();
+
+                        if (last != original)
+                        {
+                            this.delegate.pickClip(last);
+                        }
+                    }
+                    else
+                    {
+                        this.delegate.pickClip(clip);
+                        this.setSelected(clip);
                     }
                 }
-                else
-                {
-                    this.delegate.pickClip(clip);
-                    this.setSelected(clip);
-                }
 
-                this.grabbing = true;
-                this.lastX = mouseX;
-                this.lastY = mouseY;
-
-                return true;
-            }
-            else if (clip != null)
-            {
+                this.grabMode = this.getClipHandle(clip, context, LAYER_HEIGHT);
                 this.grabbing = true;
                 this.lastX = mouseX;
                 this.lastY = mouseY;
@@ -926,8 +921,6 @@ public class UIClips extends UIElement
             else if (this.isSelecting())
             {
                 this.pickClip(null);
-
-                return true;
             }
         }
 
@@ -1039,6 +1032,7 @@ public class UIClips extends UIElement
             this.delegate.markLastUndoNoMerging();
         }
 
+        this.grabMode = 0;
         this.grabbing = false;
         this.selecting = false;
         this.scrubbing = false;
@@ -1086,66 +1080,67 @@ public class UIClips extends UIElement
         else if (this.grabbing)
         {
             List<Clip> clips = this.getClipsFromSelection();
-            List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
 
             /* Collect the rest of clips for collision */
-            Iterator<Clip> it = others.iterator();
-
-            while (it.hasNext())
+            if (this.grabMode == 0)
             {
-                if (clips.contains(it.next()))
+                List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
+                Iterator<Clip> it = others.iterator();
+
+                while (it.hasNext())
                 {
-                    it.remove();
-                }
-            }
-
-            /* Checking whether it's possible to move clips */
-            for (Clip clip : clips)
-            {
-                int newTick = clip.tick.get() + relativeX;
-                int newLayer = clip.layer.get() + relativeY;
-
-                /* Detect clips collisions */
-                for (Clip other : others)
-                {
-                    int otherLeft = other.tick.get();
-                    int otherRight = otherLeft + other.duration.get();
-
-                    int clipLeft = newTick;
-                    int clipRight = clipLeft + clip.duration.get();
-                    boolean intersect = clipLeft < otherRight && otherLeft < clipRight;
-
-                    if (intersect)
+                    if (clips.contains(it.next()))
                     {
-                        if (other.layer.get() == newLayer)
-                        {
-                            relativeX = 0;
-                            relativeY = 0;
-                        }
+                        it.remove();
                     }
                 }
 
-                if (newTick < 0)
+                /* Checking whether it's possible to move clips */
+                for (Clip clip : clips)
                 {
-                    relativeX = 0;
-                }
+                    int newTick = clip.tick.get() + relativeX;
+                    int newLayer = clip.layer.get() + relativeY;
 
-                if (newLayer < 0 || newLayer >= LAYERS)
-                {
-                    relativeY = 0;
+                    /* Detect clips collisions */
+                    for (Clip other : others)
+                    {
+                        int otherLeft = other.tick.get();
+                        int otherRight = otherLeft + other.duration.get();
+
+                        int clipLeft = newTick;
+                        int clipRight = clipLeft + clip.duration.get();
+                        boolean intersect = clipLeft < otherRight && otherLeft < clipRight;
+
+                        if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
+                    }
+
+                    if (newTick < 0) relativeX = 0;
+                    if (newLayer < 0 || newLayer >= LAYERS) relativeY = 0;
                 }
             }
 
-            /* Move clips */
             for (Clip clip : clips)
             {
-                int newTick = clip.tick.get() + relativeX;
-                int newLayer = clip.layer.get() + relativeY;
+                /* Move clips */
+                if (this.grabMode == 0)
+                {
+                    int newTick = clip.tick.get() + relativeX;
+                    int newLayer = clip.layer.get() + relativeY;
 
-                clip.tick.set(newTick);
-                clip.layer.set(newLayer);
+                    clip.tick.set(newTick);
+                    clip.layer.set(newLayer);
+                }
+                else if (this.grabMode == 1 && clip.duration.get() - relativeX > 0)
+                {
+                    clip.tick.set(clip.tick.get() + relativeX);
+                    clip.duration.set(clip.duration.get() - relativeX);
+                }
+                else if (this.grabMode == 2)
+                {
+                    clip.duration.set(Math.max(clip.duration.get() + relativeX, 1));
+                }
             }
 
             this.delegate.fillData();
@@ -1234,20 +1229,28 @@ public class UIClips extends UIElement
             Clip clip = clips.get(i);
             IUIClipRenderer renderer = this.renderers.get(clip);
 
-            int tick = clip.tick.get();
-            int x = this.toGraphX(tick);
-            int y = this.toLayerY(clip.layer.get());
-            int w = this.toGraphX(tick + clip.duration.get()) - x;
-
-            CLIP_AREA.set(x, y, w, h);
+            Area clipArea = this.getClipArea(clip, CLIP_AREA, h);
+            boolean selected = this.hasSelected(i);
 
             if (!this.hasEmbeddedView())
             {
-                CLIP_AREA.y += 1;
-                CLIP_AREA.h -= 2;
+                clipArea.y += 1;
+                clipArea.h -= 2;
             }
 
-            renderer.renderClip(context, this, clip, CLIP_AREA, this.hasSelected(i), this.delegate.getClip() == clip);
+            renderer.renderClip(context, this, clip, clipArea, selected, this.delegate.getClip() == clip);
+
+            int clipHandle = this.getClipHandle(clip, context, h);
+            int color = this.grabMode != 0 ? Colors.WHITE : Colors.A50;
+
+            if (clipHandle == 1 || (selected && this.grabMode == 1))
+            {
+                context.batcher.icon(Icons.MOVE_LEFT, color, clipArea.x + 10, clipArea.y + 10, 0.5F, 0.5F);
+            }
+            else if (clipHandle == 2 || (selected && this.grabMode == 2))
+            {
+                context.batcher.icon(Icons.MOVE_RIGHT, color, clipArea.ex() - 10, clipArea.y + 10, 0.5F, 0.5F);
+            }
         }
 
         this.renderAddPreview(context, h);
@@ -1267,6 +1270,39 @@ public class UIClips extends UIElement
         this.vertical.renderScrollbar(batcher);
 
         batcher.unclip(context);
+    }
+
+    private Area getClipArea(Clip clip, Area area, int h)
+    {
+        int tick = clip.tick.get();
+        int x = this.toGraphX(tick);
+        int y = this.toLayerY(clip.layer.get());
+        int w = this.toGraphX(tick + clip.duration.get()) - x;
+
+        area.set(x, y, w, h);
+
+        return area;
+    }
+
+    private int getClipHandle(Clip clip, UIContext context, int h)
+    {
+        Area clipArea = this.getClipArea(clip, CLIP_AREA, h);
+
+        if (clipArea.isInside(context) && clipArea.w >= 40)
+        {
+            if (context.mouseX - clipArea.x < 20)
+            {
+                return 1;
+            }
+            else if (context.mouseX - clipArea.ex() >= -20)
+            {
+                return 2;
+            }
+
+            return 0;
+        }
+
+        return -1;
     }
 
     private void renderAddPreview(UIContext context, int h)
@@ -1292,7 +1328,6 @@ public class UIClips extends UIElement
         int start = (int) this.scale.getMinValue();
         int end = (int) this.scale.getMaxValue();
         int max = Integer.MAX_VALUE;
-        int cursor = this.toGraphX(this.delegate.getCursor());
 
         start -= start % mult;
         end -= end % mult;
