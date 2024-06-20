@@ -75,8 +75,6 @@
     "bbs.config.scrollbars.tooltip": "背景选项，如颜色和纹理",
     "bbs.config.scrollbars.width": "厚度",
     "bbs.config.scrollbars.width-comment": "用于设置滚动条的厚度（宽度）",
-    "bbs.config.tutorials.chalkboard": "黑板",
-    "bbs.config.tutorials.chalkboard-comment": "启用黑板（按 F8 切换），可以让您在屏幕上方绘制图形。调整窗口大小将清除黑板",
     "bbs.config.tutorials.cursor": "鼠标光标",
     "bbs.config.tutorials.cursor-comment": "启用鼠标光标渲染。在使用 BBS 的视频录制器录制教程时非常有用，因为光标不可见",
     "bbs.config.tutorials.keystrokes": "按键提示",

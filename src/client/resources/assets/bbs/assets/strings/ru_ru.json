@@ -78,8 +78,6 @@
     "bbs.config.scrollbars.width": "Толщина",
     "bbs.config.scrollbars.width-comment": "Позволяет Вам настроить толщину (ширину ползунков)",
     "bbs.config.title": "ББС",
-    "bbs.config.tutorials.chalkboard": "Режим рисование",
-    "bbs.config.tutorials.chalkboard-comment": "Включает мелок (F8 чтобы включить), который позволяет рисовать на экране. Изменение размера окна очищает экран от рисунка",
     "bbs.config.tutorials.cursor": "Курсор мыши",
     "bbs.config.tutorials.cursor-comment": "Включает показ курсора мыши. Это очень полезно для туториалов если Вы записываете через мод Минема и основной курсор мыши не виден.",
     "bbs.config.tutorials.keystrokes": "Клавиши",

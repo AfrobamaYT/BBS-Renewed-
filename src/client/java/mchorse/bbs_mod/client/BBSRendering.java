@@ -43,8 +43,9 @@ public class BBSRendering
     public static final Set<ModelBlockEntity> capturedModelBlocks = new HashSet<>();
 
     public static boolean renderingWorld;
-    private static boolean customSize;
+    public static int lastAction;
 
+    private static boolean customSize;
     private static boolean iris;
 
     private static Texture texture;

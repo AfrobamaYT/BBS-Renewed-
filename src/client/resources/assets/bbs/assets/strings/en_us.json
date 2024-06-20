@@ -80,8 +80,6 @@
     "bbs.config.scrollbars.width": "Thickness",
     "bbs.config.scrollbars.width-comment": "Allows you to setup the thickness (width of scrollbars)",
     "bbs.config.title": "BBS",
-    "bbs.config.tutorials.chalkboard": "Chalkboard",
-    "bbs.config.tutorials.chalkboard-comment": "Enables chalkboard (F8 to toggle), which allows you to draw diagrams on top of the screen. Resizing window clears the chalkboard",
     "bbs.config.tutorials.cursor": "Mouse cursor",
     "bbs.config.tutorials.cursor-comment": "Enables rendering of the mouse cursor. It's very useful for tutorials when they're recorded with BBS' video recorder and the cursor isn't visible",
     "bbs.config.tutorials.keystrokes": "Keystrokes",

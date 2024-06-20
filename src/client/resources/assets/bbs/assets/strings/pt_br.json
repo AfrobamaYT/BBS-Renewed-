@@ -70,7 +70,6 @@
     "bbs.config.scrollbars.tooltip": "Opções de fundo como cor e textura usadas",
     "bbs.config.scrollbars.width": "Grossura",
     "bbs.config.scrollbars.width-comment": "Permite você configurar o thickness (largura das scrollbars)",
-    "bbs.config.tutorials.chalkboard-comment": "Ativa o chalkboard (F8 para alternar), que permite desenhar diagramas na parte superior da tela. Redimensionar a janela limpa o chalkboard",
     "bbs.config.tutorials.cursor": "Cursor do Mouse ",
     "bbs.config.tutorials.cursor-comment": "Ativa a renderização do cursor do mouse. É muito util para tutoriais, se você estiver gravando no BBS o gravador de video e o cursor não serão visiveis",
     "bbs.config.tutorials.keystrokes": "Teclas",

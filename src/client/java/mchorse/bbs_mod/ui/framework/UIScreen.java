@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -158,7 +159,7 @@ public class UIScreen extends Screen implements IFileDropListener
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers)
     {
-        return this.menu.handleKey(keyCode, scanCode, GLFW.GLFW_PRESS, modifiers);
+        return this.menu.handleKey(keyCode, scanCode, BBSRendering.lastAction, modifiers);
     }
 
     @Override

@@ -18,7 +18,8 @@
         "LivingEntityUpdateMixin",
         "LivingEntityRendererMixin",
         "iris.SystemTimeUniformsTimerMixin",
-        "InGameHudMixin"
+        "InGameHudMixin",
+        "KeyboardMixin"
     ],
     "injectors": {
         "defaultRequire": 1

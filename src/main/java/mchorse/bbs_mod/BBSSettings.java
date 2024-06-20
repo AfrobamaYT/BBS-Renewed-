@@ -28,7 +28,6 @@ public class BBSSettings
     public static ValueBoolean enableCursorRendering;
     public static ValueBoolean enableMouseButtonRendering;
     public static ValueBoolean enableKeystrokeRendering;
-    public static ValueBoolean enableChalkboard;
     public static ValueInt keystrokeOffset;
     public static ValueInt keystrokeMode;
 
@@ -107,7 +106,6 @@ public class BBSSettings
         enableCursorRendering = builder.category("tutorials").getBoolean("cursor", false);
         enableMouseButtonRendering = builder.getBoolean("mouse_buttons", false);
         enableKeystrokeRendering = builder.getBoolean("keystrokes", false);
-        enableChalkboard = builder.getBoolean("chalkboard", false);
         keystrokeOffset = builder.getInt("keystrokes_offset", 10, 0, 20);
         keystrokeMode = builder.getInt("keystrokes_position", 1);
 

@@ -90,8 +90,6 @@
     "bbs.config.scrollbars.tooltip": "Параметри тла, такі як колір та текстура, котрі будуть використовуватися",
     "bbs.config.scrollbars.width": "Товщина",
     "bbs.config.scrollbars.width-comment": "Дозволяє вам налаштувати товщину (ширину повзунків)",
-    "bbs.config.tutorials.chalkboard": "Крейда",
-    "bbs.config.tutorials.chalkboard-comment": "Вмикає крейду (F8, щоб увімкнути), котрий дозволяє малювати на екрані. Зміна розміру вікна очищує екран від малюнка",
     "bbs.config.tutorials.cursor": "Курсор миші",
     "bbs.config.tutorials.cursor-comment": "Вмикає обробку курсора миші. це дуже корисно для навчальних відео якщо ви знімаєте через мод Мінема та курсор миші не видно.",
     "bbs.config.tutorials.keystrokes": "Клавіші",

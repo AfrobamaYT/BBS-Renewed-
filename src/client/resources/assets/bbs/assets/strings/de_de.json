@@ -73,8 +73,6 @@
     "bbs.config.scrollbars.tooltip": "Hintergrund-Optionen wie Farbe oder Textur die verwendet werden sollen",
     "bbs.config.scrollbars.width": "Dicke",
     "bbs.config.scrollbars.width-comment": "Erlaubt es dir die Dicke einzustellen (Breite der Scrollbars)",
-    "bbs.config.tutorials.chalkboard": "Tafel",
-    "bbs.config.tutorials.chalkboard-comment": "Aktiviert Tafel (F8 um ein und auszuschalten), welche es erlaubt Diagram über dem Bildschirm zu zeichnen. Die Größe des Fensters zu verändern leert die Tafel.",
     "bbs.config.tutorials.cursor": "Maus Cursor",
     "bbs.config.tutorials.cursor-comment": "Aktiviert Rendering des Maus Cursors. Er ist sehr hilfreich für Tutorials when sie mit BBS' Videorekorder aufgezeichnet werden und der Cursor nicht sichtbar ist",
     "bbs.config.tutorials.keystrokes": "Tastenanschläge",
