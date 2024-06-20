@@ -404,10 +404,7 @@ public class UIKeyframes extends UIElement
             double x = keyframe.getTick();
             int y = (int) (this.sheets.indexOf(sheet) * this.trackHeight) + TOP_MARGIN;
 
-            if (!this.xAxis.isInView(x))
-            {
-                this.xAxis.setShift(x - (this.xAxis.getMaxValue() - this.xAxis.getMinValue()) / 2);
-            }
+            this.getXAxis().shiftIntoMiddle(x);
 
             if (y < this.area.y || y > this.area.y)
             {

@@ -789,6 +789,18 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.runner.toggle(this.getCursor());
         this.lastRunning = this.runner.isRunning();
+
+        if (this.runner.isRunning())
+        {
+            this.cameraEditor.clips.scale.shiftIntoMiddle(this.runner.ticks);
+
+            if (this.replayEditor.keyframeEditor != null)
+            {
+                this.replayEditor.keyframeEditor.view.getXAxis().shiftIntoMiddle(this.runner.ticks);
+            }
+
+            this.screenplayEditor.editor.clips.scale.shiftIntoMiddle(this.runner.ticks);
+        }
     }
 
     public boolean canUseKeybinds()

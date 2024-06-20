@@ -294,6 +294,14 @@ public class Scale
         this.shift = Lerps.lerp(min, max, this.inverse ? 1 - this.anchor : this.anchor);
     }
 
+    public void shiftIntoMiddle(double x)
+    {
+        if (!this.isInView(x))
+        {
+            this.setShift(x - (this.getMaxValue() - this.getMinValue()) / 2);
+        }
+    }
+
     public void shiftInto(double value)
     {
         this.shiftInto(value, 0);
