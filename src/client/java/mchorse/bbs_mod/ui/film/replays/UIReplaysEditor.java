@@ -31,6 +31,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
+import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -56,6 +57,7 @@ import java.util.Map;
 public class UIReplaysEditor extends UIElement
 {
     private static final Map<String, Integer> COLORS = new HashMap<>();
+    private static final Map<String, Icon> ICONS = new HashMap<>();
     private static String lastFilm = "";
     private static int lastReplay;
 
@@ -87,6 +89,10 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("stick_ry", Colors.GREEN);
         COLORS.put("trigger_l", Colors.RED);
         COLORS.put("trigger_r", Colors.GREEN);
+        COLORS.put("extra1_x", Colors.RED);
+        COLORS.put("extra1_y", Colors.GREEN);
+        COLORS.put("extra2_x", Colors.RED);
+        COLORS.put("extra2_y", Colors.GREEN);
 
         COLORS.put("visible", Colors.WHITE & 0xFFFFFF);
         COLORS.put("pose", Colors.RED);
@@ -94,6 +100,25 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("color", Colors.INACTIVE);
         COLORS.put("lighting", Colors.YELLOW);
         COLORS.put("actions", Colors.MAGENTA);
+
+        ICONS.put("x", Icons.X);
+        ICONS.put("y", Icons.Y);
+        ICONS.put("z", Icons.Z);
+
+        ICONS.put("visible", Icons.VISIBLE);
+        ICONS.put("texture", Icons.MATERIAL);
+        ICONS.put("pose", Icons.POSE);
+        ICONS.put("transform", Icons.ALL_DIRECTIONS);
+        ICONS.put("color", Icons.BUCKET);
+        ICONS.put("lighting", Icons.LIGHT);
+        ICONS.put("actions", Icons.CONVERT);
+        ICONS.put("text", Icons.FONT);
+
+        ICONS.put("stick_lx", Icons.LEFT_STICK);
+        ICONS.put("stick_rx", Icons.RIGHT_STICK);
+        ICONS.put("trigger_l", Icons.TRIGGER);
+        ICONS.put("extra1_x", Icons.CURVES);
+        ICONS.put("extra2_x", Icons.CURVES);
     }
 
     public UIReplaysEditor(UIFilmPanel filmPanel)
@@ -178,7 +203,7 @@ public class UIReplaysEditor extends UIElement
             BaseValue value = this.replay.keyframes.get(key);
             KeyframeChannel channel = (KeyframeChannel) value;
 
-            sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(key, Colors.ACTIVE), false, channel, null));
+            sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(key, Colors.ACTIVE), false, channel, null).icon(ICONS.get(key)));
         }
 
         /* Form properties */
@@ -191,8 +216,9 @@ public class UIReplaysEditor extends UIElement
                 IFormProperty formProperty = FormUtils.getProperty(this.replay.form.get(), key);
                 String topLevel = StringUtils.fileName(key);
                 boolean separator = topLevel.equals("visible");
+                UIKeyframeSheet sheet = new UIKeyframeSheet(COLORS.getOrDefault(topLevel, Colors.ACTIVE), separator, property, formProperty);
 
-                sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(topLevel, Colors.ACTIVE), separator, property, formProperty));
+                sheets.add(sheet.icon(ICONS.get(topLevel)));
             }
         }
 

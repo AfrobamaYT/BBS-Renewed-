@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -15,6 +16,8 @@ public class UIKeyframeSheet
     public final IKey title;
     public final int color;
     public final boolean separator;
+
+    private Icon icon;
 
     public final KeyframeChannel channel;
     public final KeyframeSelection selection;
@@ -35,6 +38,18 @@ public class UIKeyframeSheet
         this.channel = channel;
         this.selection = new KeyframeSelection(channel);
         this.property = property;
+    }
+
+    public UIKeyframeSheet icon(Icon icon)
+    {
+        this.icon = icon;
+
+        return this;
+    }
+
+    public Icon getIcon()
+    {
+        return this.icon;
     }
 
     public void sort()

@@ -17,6 +17,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
+import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -680,7 +681,7 @@ public class UIKeyframes extends UIElement
 
         if (Math.abs(max - min) > 0.01F)
         {
-            this.xAxis.viewOffset(min, max, this.area.w, 20);
+            this.xAxis.viewOffset(min, max, this.area.w, 30);
         }
         else
         {
@@ -1203,7 +1204,24 @@ public class UIKeyframes extends UIElement
             int lw = font.getWidth(sheet.title.get());
 
             context.batcher.gradientHBox(this.area.ex() - lw - 10, y, this.area.ex(), y + (int) this.trackHeight, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
-            context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
+
+            if (hover)
+            {
+                context.batcher.textShadow(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2);
+            }
+            else
+            {
+                context.batcher.text(sheet.title.get(), this.area.ex() - lw - 5, my - font.getHeight() / 2, Colors.WHITE & 0x88ffffff);
+            }
+
+            Icon icon = sheet.getIcon();
+
+            if (icon != null && this.trackHeight >= 12D)
+            {
+                context.batcher.box(this.area.x, y, this.area.x + 6, y + (int) this.trackHeight, Colors.A75);
+                context.batcher.gradientHBox(this.area.x + 6, y, this.area.x + 4 + icon.w, y + (int) this.trackHeight, Colors.A75, 0);
+                context.batcher.icon(icon, this.area.x + 2, my - icon.h / 2);
+            }
         }
     }
 
