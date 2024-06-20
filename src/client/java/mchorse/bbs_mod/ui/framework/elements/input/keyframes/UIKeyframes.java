@@ -849,7 +849,7 @@ public class UIKeyframes extends UIElement
         {
             UIKeyframeSheet sheet = this.getSheet(found);
 
-            if (!shift)
+            if (!shift && !sheet.selection.has(found))
             {
                 this.clearSelection();
             }

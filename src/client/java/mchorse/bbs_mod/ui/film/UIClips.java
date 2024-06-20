@@ -890,9 +890,9 @@ public class UIClips extends UIElement
 
             if (clip != null && clip != original)
             {
-                this.delegate.pickClip(clip);
+                boolean wasSelected = this.selection.contains(this.clips.getIndex(clip));
 
-                if (shift)
+                if (shift || wasSelected)
                 {
                     this.addSelected(clip);
 
@@ -905,6 +905,7 @@ public class UIClips extends UIElement
                 }
                 else
                 {
+                    this.delegate.pickClip(clip);
                     this.setSelected(clip);
                 }
 
@@ -919,6 +920,12 @@ public class UIClips extends UIElement
                 this.grabbing = true;
                 this.lastX = mouseX;
                 this.lastY = mouseY;
+
+                return true;
+            }
+            else if (this.isSelecting())
+            {
+                this.pickClip(null);
 
                 return true;
             }

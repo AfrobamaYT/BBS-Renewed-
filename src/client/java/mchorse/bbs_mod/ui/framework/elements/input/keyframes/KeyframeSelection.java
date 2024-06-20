@@ -30,6 +30,11 @@ public class KeyframeSelection
         return this.selected.contains(index);
     }
 
+    public boolean has(Keyframe keyframe)
+    {
+        return this.selected.contains(this.channel.getKeyframes().indexOf(keyframe));
+    }
+
     public void all()
     {
         this.selected.clear();
