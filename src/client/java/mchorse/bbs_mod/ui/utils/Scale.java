@@ -240,6 +240,11 @@ public class Scale
 
     /* Viewport manipulation methods */
 
+    public boolean isInView(double value)
+    {
+        return value >= this.getMinValue() && value <= this.getMaxValue();
+    }
+
     public void view(double min, double max)
     {
         this.assertArea();

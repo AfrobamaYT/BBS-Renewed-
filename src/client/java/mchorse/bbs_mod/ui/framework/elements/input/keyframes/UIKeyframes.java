@@ -34,7 +34,6 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
-import net.minecraft.util.math.MathHelper;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -400,6 +399,19 @@ public class UIKeyframes extends UIElement
         {
             sheet.selection.add(keyframe);
             this.pickKeyframe(keyframe);
+
+            double x = keyframe.getTick();
+            int y = (int) (this.sheets.indexOf(sheet) * this.trackHeight) + TOP_MARGIN;
+
+            if (!this.xAxis.isInView(x))
+            {
+                this.xAxis.setShift(x - (this.xAxis.getMaxValue() - this.xAxis.getMinValue()) / 2);
+            }
+
+            if (y < this.area.y || y > this.area.y)
+            {
+                this.dopeSheet.scrollIntoView(y, (int) (this.trackHeight * 2), (int) (this.trackHeight * 2));
+            }
         }
     }
 
