@@ -75,17 +75,17 @@ public class KeyCodes
             case 280: return "Capslock";
             case 282: return "Numlock";
             /* Shift */
-            case 340: return "\u21e7";
+            case 340: return "Shift";
             /* Control */
-            case 341: return "^";
+            case 341: return "Ctrl";
             /* Alt/Option */
-            case 342: return "\u2325";
+            case 342: return "Alt";
             /* Command/Windows */
-            case 343: return OS.CURRENT == OS.MACOS ? "\u2318" : "\u229e";
-            case 344: return "R.\u21e7";
-            case 345: return "R.^";
-            case 346: return "R.\u2325";
-            case 347: return "R." + (OS.CURRENT == OS.MACOS ? "\u2318" : "\u229e");
+            case 343: return OS.CURRENT == OS.MACOS ? "Cmd" : "Win";
+            case 344: return "R.Shift";
+            case 345: return "R.Ctrl";
+            case 346: return "R.Alt";
+            case 347: return "R." + (OS.CURRENT == OS.MACOS ? "Cmd" : "Win");
         }
 
         String name = GLFW.glfwGetKeyName(keyCode, 0);
