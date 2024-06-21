@@ -10,6 +10,8 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class UIKeys
 {
+    public static final IKey CONTEXT_MENU_KEY = L10n.lang("bbs.ui.context.key");
+    public static final IKey CONTEXT_MENU_KEY_CATEGORY = L10n.lang("bbs.ui.context.key_category");
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_DESELECT = L10n.lang("bbs.ui.camera.editor.keys.clips.deselect");
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_TITLE = L10n.lang("bbs.ui.camera.editor.keys.clips.title");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_JUMP_BACKWARD = L10n.lang("bbs.ui.camera.editor.keys.editor.jump_backward");

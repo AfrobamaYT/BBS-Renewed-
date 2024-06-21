@@ -1,12 +1,14 @@
 package mchorse.bbs_mod.ui.utils.context;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.events.UIRemovedEvent;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.Keybind;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +18,18 @@ public class ContextMenuManager
 {
     public List<ContextAction> actions = new ArrayList<>();
     public Consumer<UIRemovedEvent> onClose;
+    public boolean autoKeys;
 
     public ContextMenuManager onClose(Consumer<UIRemovedEvent> onClose)
     {
         this.onClose = onClose;
+
+        return this;
+    }
+
+    public ContextMenuManager autoKeys()
+    {
+        this.autoKeys = true;
 
         return this;
     }
@@ -88,6 +98,21 @@ public class ContextMenuManager
                 {
                     register.category(action.keyCategory);
                 }
+            }
+            else if (this.autoKeys && i <= 9)
+            {
+                IKey label = UIKeys.CONTEXT_MENU_KEY.format(action.label);
+                KeyCombo combo = new KeyCombo(label, GLFW.GLFW_KEY_1 + i);
+
+                contextMenu.keys().register(combo, () ->
+                {
+                    if (action.runnable != null)
+                    {
+                        action.runnable.run();
+                    }
+
+                    contextMenu.removeFromParent();
+                }).category(UIKeys.CONTEXT_MENU_KEY_CATEGORY);
             }
         }
 

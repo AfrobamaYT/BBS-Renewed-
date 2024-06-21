@@ -642,7 +642,7 @@ public class UIFilmController extends UIElement
     {
         if (this.controlled != null)
         {
-            this.setPov(this.pov + 1);
+            this.setPov(this.pov + (Window.isShiftPressed() ? -1 : 1));
 
             return;
         }
@@ -651,7 +651,7 @@ public class UIFilmController extends UIElement
         {
             int color = BBSSettings.primaryColor(0);
 
-            menu.action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == 0 ? color : 0, () -> this.setPov(0));
+            menu.autoKeys().action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == 0 ? color : 0, () -> this.setPov(0));
             menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 1 ? color : 0, () -> this.setPov(1));
             menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 2 ? color : 0, () -> this.setPov(2));
             menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 3 ? color : 0, () -> this.setPov(3));

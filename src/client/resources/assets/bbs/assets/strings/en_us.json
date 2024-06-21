@@ -113,6 +113,8 @@
     "bbs.tooltip_style.light": "Light",
     "bbs.ui.add": "Add",
     "bbs.ui.block_variant.context.insert_empty": "Insert empty block",
+    "bbs.ui.context.key": "Option \"%s\"",
+    "bbs.ui.context.key_category": "Context menu",
     "bbs.ui.camera.clips.bbs:angle": "Angle",
     "bbs.ui.camera.clips.bbs:audio": "Audio",
     "bbs.ui.camera.clips.bbs:circular": "Circular",
