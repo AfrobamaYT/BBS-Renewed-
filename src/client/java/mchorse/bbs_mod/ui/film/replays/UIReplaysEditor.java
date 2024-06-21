@@ -264,6 +264,8 @@ public class UIReplaysEditor extends UIElement
         boolean shift = Window.isShiftPressed();
         ContextMenuManager manager = new ContextMenuManager();
 
+        manager.autoKeys();
+
         for (IFormProperty formProperty : form.getProperties().values())
         {
             if (!formProperty.canCreateChannel())
