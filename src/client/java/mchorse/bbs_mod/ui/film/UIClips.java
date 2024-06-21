@@ -918,10 +918,6 @@ public class UIClips extends UIElement
 
                 return true;
             }
-            else if (this.isSelecting())
-            {
-                this.pickClip(null);
-            }
         }
 
         if (shift && !this.hasEmbeddedView())
@@ -1109,9 +1105,8 @@ public class UIClips extends UIElement
                         int otherLeft = other.tick.get();
                         int otherRight = otherLeft + other.duration.get();
 
-                        int clipLeft = newTick;
-                        int clipRight = clipLeft + clip.duration.get();
-                        boolean intersect = clipLeft < otherRight && otherLeft < clipRight;
+                        int clipRight = newTick + clip.duration.get();
+                        boolean intersect = newTick < otherRight && otherLeft < clipRight;
 
                         if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
                     }
@@ -1134,6 +1129,11 @@ public class UIClips extends UIElement
                 }
                 else if (this.grabMode == 1 && clip.duration.get() - relativeX > 0)
                 {
+                    if (clip.tick.get() + relativeX < 0)
+                    {
+                        relativeX -= clip.tick.get() + relativeX;
+                    }
+
                     clip.tick.set(clip.tick.get() + relativeX);
                     clip.duration.set(clip.duration.get() - relativeX);
                 }
@@ -1245,11 +1245,11 @@ public class UIClips extends UIElement
 
             if (clipHandle == 1 || (selected && this.grabMode == 1))
             {
-                context.batcher.icon(Icons.MOVE_LEFT, color, clipArea.x + 10, clipArea.y + 10, 0.5F, 0.5F);
+                context.batcher.icon(Icons.CLIP_HANLDE_LEFT, color, clipArea.x, clipArea.y + 10, 0F, 0.5F);
             }
             else if (clipHandle == 2 || (selected && this.grabMode == 2))
             {
-                context.batcher.icon(Icons.MOVE_RIGHT, color, clipArea.ex() - 10, clipArea.y + 10, 0.5F, 0.5F);
+                context.batcher.icon(Icons.CLIP_HANLDE_RIGHT, color, clipArea.ex(), clipArea.y + 10, 1F, 0.5F);
             }
         }
 
@@ -1287,14 +1287,15 @@ public class UIClips extends UIElement
     private int getClipHandle(Clip clip, UIContext context, int h)
     {
         Area clipArea = this.getClipArea(clip, CLIP_AREA, h);
+        int separation = Math.min(clipArea.w / 2, 10);
 
-        if (clipArea.isInside(context) && clipArea.w >= 40)
+        if (clipArea.isInside(context))
         {
-            if (context.mouseX - clipArea.x < 20)
+            if (context.mouseX - clipArea.x < separation)
             {
                 return 1;
             }
-            else if (context.mouseX - clipArea.ex() >= -20)
+            else if (context.mouseX - clipArea.ex() >= -separation)
             {
                 return 2;
             }

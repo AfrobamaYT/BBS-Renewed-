@@ -162,6 +162,9 @@ public class Icons
     public static final Icon Y = register(new Icon(ATLAS, "y", 128, 128));
     public static final Icon Z = register(new Icon(ATLAS, "z", 144, 128));
     public static final Icon VIDEO_CAMERA = register(new Icon(ATLAS, "video_camera", 160, 128));
+    public static final Icon COLOR = register(new Icon(ATLAS, "color", 176, 128));
+    public static final Icon CLIP_HANLDE_LEFT = register(new Icon(ATLAS, "clip_hanlde_left", 192, 128, 8, 16));
+    public static final Icon CLIP_HANLDE_RIGHT = register(new Icon(ATLAS, "clip_hanlde_right", 200, 128, 8, 16));
 
     public static final Icon INTERP_LINEAR = register(new Icon(ATLAS, "interp_linear", 0, 192));
     public static final Icon INTERP_CONST = register(new Icon(ATLAS, "interp_const", 16, 192));
