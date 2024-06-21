@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
@@ -21,6 +22,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIRenderingContext;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
@@ -116,6 +118,23 @@ public class UIDashboard extends UIBaseMenu
 
             UIOverlay.addOverlay(this.context, new UIUtilityOverlayPanel(UIKeys.UTILITY_TITLE, null), 240, 160);
         });
+
+        this.checkSignificantVersion();
+    }
+
+    private void checkSignificantVersion()
+    {
+        String version = BBSMod.SIGNIFICANT_VERSION;
+
+        if (!version.equals(BBSSettings.version.get()))
+        {
+            UIOverlay.addOverlay(this.context, new UIMessageOverlayPanel(
+                UIKeys.DASHBOARD_VERSION_WARNING_TITLE,
+                UIKeys.DASHBOARD_VERSION_WARNING_DESCRIPTION
+            ));
+
+            BBSSettings.version.set(version);
+        }
     }
 
     public void copyCurrentEntityCamera()

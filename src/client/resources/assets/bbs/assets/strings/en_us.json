@@ -274,6 +274,8 @@
     "bbs.ui.color.recent": "Recent colors",
     "bbs.ui.config.title": "Settings",
     "bbs.ui.copy": "Copy",
+    "bbs.ui.dashboard.version_warning-title": "Version changed!",
+    "bbs.ui.dashboard.version_warning-description": "IMPORTANT: the version was significantly changed! This means any old data could be corrupted like films, model blocks, etc. USE with caution AT YOUR OWN RISK!\n\nBack up files just in case!",
     "bbs.ui.dashboard.category": "Dashboard",
     "bbs.ui.dashboard.context.toggle_visibility": "Toggle dashboard's visibility",
     "bbs.ui.dupe": "Duplicate",

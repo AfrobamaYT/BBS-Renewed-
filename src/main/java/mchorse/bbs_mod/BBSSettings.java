@@ -10,11 +10,13 @@ import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.settings.values.ValueLink;
 import mchorse.bbs_mod.settings.values.ValueString;
 import mchorse.bbs_mod.settings.values.ValueVideoSettings;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 
 public class BBSSettings
 {
+    public static ValueString version;
+
     public static ValueColors favoriteColors;
     public static ValueLanguage language;
     public static ValueInt primaryColor;
@@ -89,6 +91,9 @@ public class BBSSettings
     public static void register(SettingsBuilder builder)
     {
         builder.category("appearance");
+
+        version = builder.getString("version", "");
+        version.invisible();
 
         language = new ValueLanguage("language");
         builder.register(language);
