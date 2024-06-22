@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
@@ -21,7 +22,9 @@ import java.util.Map;
 public abstract class UIKeyframeFactory <T> extends UIElement
 {
     private static final Map<IKeyframeFactory, IUIKeyframeFactoryFactory> FACTORIES = new HashMap<>();
+    private static final Map<IKeyframeFactory, Integer> SCROLLS = new HashMap<>();
 
+    public UIScrollView scroll;
     public UITrackpad tick;
     public UITrackpad duration;
     public UIIcon interp;
@@ -52,17 +55,35 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         FACTORIES.put(clazz, factory);
     }
 
+    public static void saveScroll(UIKeyframeFactory editor)
+    {
+        if (editor != null)
+        {
+            SCROLLS.put(editor.keyframe.getFactory(), (int) editor.scroll.scroll.scroll);
+        }
+    }
+
     public static <T> UIKeyframeFactory createPanel(Keyframe<T> keyframe, UIKeyframes editor)
     {
         IUIKeyframeFactoryFactory<T> factory = FACTORIES.get(keyframe.getFactory());
+        UIKeyframeFactory uiEditor = factory == null ? null : factory.create(keyframe, editor);
 
-        return factory == null ? null : factory.create(keyframe, editor);
+        if (uiEditor != null)
+        {
+            uiEditor.scroll.scroll.scroll = SCROLLS.getOrDefault(keyframe.getFactory(), 0);
+        }
+
+        return uiEditor;
     }
 
     public UIKeyframeFactory(Keyframe<T> keyframe, UIKeyframes editor)
     {
         this.keyframe = keyframe;
         this.editor = editor;
+
+        this.scroll = UI.scrollView(5, 10);
+        this.scroll.scroll.cancelScrolling();
+        this.scroll.full(this);
 
         this.tick = new UITrackpad(this::setTick);
         this.tick.limit(Integer.MIN_VALUE, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_TICK);
@@ -78,9 +99,8 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.interp.tooltip(tooltip);
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this.interp::clickItself).category(UIKeys.KEYFRAMES_KEYS_CATEGORY);
 
-        this.column().vertical().stretch();
-
-        this.add(UI.row(this.interp, this.tick, this.duration));
+        this.scroll.add(UI.row(this.interp, this.tick, this.duration));
+        this.add(this.scroll);
 
         /* Fill data */
         IAxisConverter converter = this.editor.getConverter();

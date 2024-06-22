@@ -40,7 +40,7 @@ public class UIActionsConfigEditor extends UIElement
         }));
         this.animations.list.cancelScrollEdge();
         this.animations.label(UIKeys.GENERAL_SEARCH).list.background();
-        this.animations.h(132);
+        this.animations.h(112);
         this.loop = new UIToggle(UIKeys.FORMS_EDITORS_ACTIONS_LOOPS, (b) ->
         {
             this.config.loop = b.getValue();

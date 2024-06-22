@@ -17,6 +17,6 @@ public class UITransformKeyframeFactory extends UIKeyframeFactory<Transform>
         this.transform.verticalCompactNoIcons();
         this.transform.setTransform(keyframe.getValue());
 
-        this.add(this.transform);
+        this.scroll.add(this.transform);
     }
 }

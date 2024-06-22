@@ -14,9 +14,8 @@ public class UIItemStackKeyframeFactory extends UIKeyframeFactory<ItemStack>
         super(keyframe, editor);
 
         this.editor = new UIItemStackEditor(keyframe::setValue);
-
-        this.add(this.editor);
-
         this.editor.setStack(keyframe.getValue());
+
+        this.scroll.add(this.editor);
     }
 }

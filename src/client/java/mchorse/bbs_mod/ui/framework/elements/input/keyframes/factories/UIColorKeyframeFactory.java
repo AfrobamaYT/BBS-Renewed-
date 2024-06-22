@@ -17,6 +17,6 @@ public class UIColorKeyframeFactory extends UIKeyframeFactory<Color>
         this.color.setColor(keyframe.getValue().getARGBColor());
         this.color.withAlpha();
 
-        this.add(this.color);
+        this.scroll.add(this.color);
     }
 }

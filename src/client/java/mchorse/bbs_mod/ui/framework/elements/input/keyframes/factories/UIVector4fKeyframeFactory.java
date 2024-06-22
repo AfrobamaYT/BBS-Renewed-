@@ -28,7 +28,7 @@ public class UIVector4fKeyframeFactory extends UIKeyframeFactory<Vector4f>
         this.w = new UITrackpad((v) -> this.editor.setValue(this.getValue()));
         this.w.setValue(value.w);
 
-        this.add(UI.row(this.x, this.y), UI.row(this.z, this.w));
+        this.scroll.add(UI.row(this.x, this.y), UI.row(this.z, this.w));
     }
 
     private Vector4f getValue()

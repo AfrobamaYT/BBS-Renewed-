@@ -42,7 +42,8 @@ import java.util.Map;
 
 public abstract class UIClip <T extends Clip> extends UIElement
 {
-    private static final Map<Class, IUIClipFactory> factories = new HashMap<>();
+    private static final Map<Class, IUIClipFactory> FACTORIES = new HashMap<>();
+    private static final Map<Class, Integer> SCROLLS = new HashMap<>();
 
     public T clip;
     public IUIClipsDelegate editor;
@@ -79,14 +80,28 @@ public abstract class UIClip <T extends Clip> extends UIElement
 
     public static <T extends Clip> void register(Class<T> clazz, IUIClipFactory<T> factory)
     {
-        factories.put(clazz, factory);
+        FACTORIES.put(clazz, factory);
+    }
+
+    public static void saveScroll(UIClip editor)
+    {
+        if (editor != null)
+        {
+            SCROLLS.put(editor.clip.getClass(), (int) editor.panels.scroll.scroll);
+        }
     }
 
     public static UIClip createPanel(Clip clip, IUIClipsDelegate delegate)
     {
-        IUIClipFactory factory = factories.get(clip.getClass());
+        IUIClipFactory factory = FACTORIES.get(clip.getClass());
+        UIClip clipEditor = factory == null ? null : factory.create(clip, delegate);
 
-        return factory == null ? null : factory.create(clip, delegate);
+        if (clipEditor != null)
+        {
+            clipEditor.panels.scroll.scroll = SCROLLS.getOrDefault(clip.getClass(), 0);
+        }
+
+        return clipEditor;
     }
 
     public static UILabel label(IKey key)

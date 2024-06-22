@@ -15,6 +15,6 @@ public class UIStringKeyframeFactory extends UIKeyframeFactory<String>
         this.string = new UITextbox(1000, (t) -> this.editor.setValue(t));
         this.string.setText(keyframe.getValue());
 
-        this.add(this.string);
+        this.scroll.add(this.string);
     }
 }

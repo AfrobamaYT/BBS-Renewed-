@@ -24,7 +24,7 @@ public class UIPoseEditor extends UIElement
     public UIPoseEditor()
     {
         this.groups = new UIStringList((l) -> this.pickBone(l.get(0)));
-        this.groups.background().h(UIStringList.DEFAULT_HEIGHT * 8);
+        this.groups.background().h(UIStringList.DEFAULT_HEIGHT * 8 - 8);
         this.groups.scroll.cancelScrolling();
         this.groups.context(() -> new UIPosesContextMenu(this.group, () -> this.pose.toData(), (data) ->
         {

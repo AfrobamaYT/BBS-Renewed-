@@ -15,6 +15,6 @@ public class UIIntegerKeyframeFactory extends UIKeyframeFactory<Integer>
         this.value = new UITrackpad((v) -> this.editor.setValue(v.intValue()));
         this.value.integer().setValue(keyframe.getValue());
 
-        this.add(this.value);
+        this.scroll.add(this.value);
     }
 }

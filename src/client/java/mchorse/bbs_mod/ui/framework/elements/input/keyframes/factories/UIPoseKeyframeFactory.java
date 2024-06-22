@@ -5,9 +5,11 @@ import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.pose.Pose;
@@ -33,7 +35,27 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             this.poseEditor.fillGroups(model.model.getAllGroupKeys());
         }
 
-        this.add(this.poseEditor);
+        this.scroll.add(this.poseEditor);
+    }
+
+    @Override
+    public void resize()
+    {
+        this.poseEditor.removeAll();
+
+        if (this.getFlex().getW() > 240)
+        {
+            this.poseEditor.add(UI.row(
+                UI.column(UI.label(UIKeys.POSE_CONTEXT_FIX), this.poseEditor.fix, this.poseEditor.transform),
+                UI.column(UI.label(UIKeys.FORMS_EDITOR_BONE), this.poseEditor.groups)
+            ));
+        }
+        else
+        {
+            this.poseEditor.add(UI.label(UIKeys.FORMS_EDITOR_BONE), this.poseEditor.groups, UI.label(UIKeys.POSE_CONTEXT_FIX), this.poseEditor.fix, this.poseEditor.transform);
+        }
+
+        super.resize();
     }
 
     public static class UIPoseFactoryEditor extends UIPoseEditor

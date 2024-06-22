@@ -16,6 +16,6 @@ public class UIBooleanKeyframeFactory extends UIKeyframeFactory<Boolean>
         this.toggle = new UIToggle(UIKeys.GENERIC_KEYFRAMES_BOOLEAN_TRUE, (b) -> this.editor.setValue(b.getValue()));
         this.toggle.setValue(keyframe.getValue());
 
-        this.add(this.toggle);
+        this.scroll.add(this.toggle);
     }
 }

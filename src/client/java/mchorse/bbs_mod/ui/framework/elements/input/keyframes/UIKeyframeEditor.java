@@ -3,9 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.ui.film.utils.CameraAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
-import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -25,7 +23,6 @@ public class UIKeyframeEditor extends UIElement
 
     public UIKeyframes view;
     public UIKeyframeFactory editor;
-    public UIScrollView scrollView;
 
     private UIElement target;
 
@@ -45,35 +42,31 @@ public class UIKeyframeEditor extends UIElement
 
     private void pickKeyframe(Keyframe keyframe)
     {
-        if (this.scrollView != null)
-        {
-            scrolls.put(this.editor.getClass(), (int) this.scrollView.scroll.scroll);
+        UIKeyframeFactory.saveScroll(this.editor);
 
-            this.scrollView.removeFromParent();
-            this.scrollView = null;
+        if (this.editor != null)
+        {
+            this.editor.removeFromParent();
             this.editor = null;
         }
 
         if (keyframe != null)
         {
             this.editor = UIKeyframeFactory.createPanel(keyframe, this.view);
-            this.scrollView = UI.scrollView(5, 10, this.editor);
-
-            this.add(this.scrollView);
 
             if (this.target != null)
             {
-                this.scrollView.full(this.target);
+                this.editor.full(this.target);
 
                 this.target.resize();
             }
             else
             {
-                this.scrollView.relative(this).x(1F, -140).w(140).h(1F);
+                this.editor.relative(this).x(1F, -140).w(140).h(1F);
             }
 
+            this.add(this.editor);
             this.resize();
-            this.scrollView.scroll.scrollTo(scrolls.getOrDefault(this.editor.getClass(), 0));
         }
 
         this.view.w(1F, keyframe == null || this.target != null ? 0 : -140);
