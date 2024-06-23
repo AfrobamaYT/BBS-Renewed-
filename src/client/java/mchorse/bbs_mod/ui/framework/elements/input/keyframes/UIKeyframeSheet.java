@@ -75,11 +75,27 @@ public class UIKeyframeSheet
         }
     }
 
-    public void setValue(Object value)
+    public void setValue(Object value, Object selectedValue)
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {
-            keyframe.setValue(this.channel.getFactory().copy(value));
+            if (selectedValue instanceof Double)
+            {
+                keyframe.setValue((double) keyframe.getValue() + (double) value - (double) selectedValue);
+            }
+            else if (selectedValue instanceof Float)
+            {
+                keyframe.setValue((float) keyframe.getValue() + (float) value - (float) selectedValue);
+            }
+            else if (selectedValue instanceof Integer)
+            {
+
+                keyframe.setValue((int) keyframe.getValue() + (int) value - (int) selectedValue);
+            }
+            else
+            {
+                keyframe.setValue(this.channel.getFactory().copy(value));
+            }
         }
     }
 

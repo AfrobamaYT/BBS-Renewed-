@@ -437,13 +437,15 @@ public class UIKeyframes extends UIElement
      */
     public void setValue(Object value)
     {
-        IKeyframeFactory factory = this.getSelected().getFactory();
+        Keyframe selected = this.getSelected();
+        IKeyframeFactory factory = selected.getFactory();
+        Object keyframe = factory.copy(selected.getValue());
 
         for (UIKeyframeSheet sheet : this.getSheets())
         {
             if (sheet.channel.getFactory() == factory)
             {
-                sheet.setValue(value);
+                sheet.setValue(value, keyframe);
             }
         }
     }
