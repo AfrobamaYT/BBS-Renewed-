@@ -23,7 +23,7 @@ public class UIActionsConfigKeyframeFactory extends UIKeyframeFactory<ActionsCon
     {
         super(keyframe, editor);
 
-        UIKeyframeSheet property = editor.getSheet(keyframe);
+        UIKeyframeSheet property = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) property.property.getForm();
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(form);
         CubicModel model = renderer.getModel();

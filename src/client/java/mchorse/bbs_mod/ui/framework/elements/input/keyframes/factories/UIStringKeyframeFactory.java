@@ -12,7 +12,7 @@ public class UIStringKeyframeFactory extends UIKeyframeFactory<String>
     {
         super(keyframe, editor);
 
-        this.string = new UITextbox(1000, (t) -> this.editor.setValue(t));
+        this.string = new UITextbox(1000, this::setValue);
         this.string.setText(keyframe.getValue());
 
         this.scroll.add(this.string);

@@ -25,7 +25,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 
         this.poseEditor = new UIPoseFactoryEditor(keyframe);
 
-        UIKeyframeSheet sheet = editor.getSheet(keyframe);
+        UIKeyframeSheet sheet = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) sheet.property.getForm();
         CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
 

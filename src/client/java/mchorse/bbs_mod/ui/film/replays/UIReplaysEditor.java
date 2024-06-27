@@ -284,7 +284,7 @@ public class UIReplaysEditor extends UIElement
 
     private void pickProperty(String bone, String key, boolean insert)
     {
-        for (UIKeyframeSheet sheet : this.keyframeEditor.view.getSheets())
+        for (UIKeyframeSheet sheet : this.keyframeEditor.view.getGraph().getSheets())
         {
             IFormProperty property = sheet.property;
 
@@ -303,8 +303,8 @@ public class UIReplaysEditor extends UIElement
 
         if (insert)
         {
-            this.keyframeEditor.view.addKeyframe(sheet, tick);
-            this.keyframeEditor.view.selectKeyframe(this.keyframeEditor.view.getSelected());
+            this.keyframeEditor.view.getGraph().addKeyframe(sheet, tick);
+            this.keyframeEditor.view.pickSelected();
 
             return;
         }
@@ -315,7 +315,7 @@ public class UIReplaysEditor extends UIElement
         {
             Keyframe closest = segment.getClosest();
 
-            this.keyframeEditor.view.selectKeyframe(closest);
+            this.keyframeEditor.view.getGraph().selectKeyframe(closest);
 
             if (this.keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory)
             {

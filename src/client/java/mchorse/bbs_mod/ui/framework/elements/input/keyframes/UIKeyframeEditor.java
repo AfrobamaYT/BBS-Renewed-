@@ -9,7 +9,6 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -80,9 +79,7 @@ public class UIKeyframeEditor extends UIElement
 
     public void setChannel(KeyframeChannel channel, int color)
     {
-        List<UIKeyframeSheet> sheets = this.view.getSheets();
-
-        sheets.clear();
+        this.view.removeAllSheets();
         this.view.addSheet(new UIKeyframeSheet(color, false, channel, null));
 
         this.pickKeyframe(null);
@@ -90,15 +87,13 @@ public class UIKeyframeEditor extends UIElement
 
     public void setClip(KeyframeClip clip)
     {
-        List<UIKeyframeSheet> sheets = this.view.getSheets();
-
-        sheets.clear();
+        this.view.removeAllSheets();
 
         for (int i = 0; i < clip.channels.length; i++)
         {
             KeyframeChannel channel = clip.channels[i];
 
-            sheets.add(new UIKeyframeSheet(COLORS[i], false, channel, null));
+            this.view.addSheet(new UIKeyframeSheet(COLORS[i], false, channel, null));
         }
 
         this.pickKeyframe(null);

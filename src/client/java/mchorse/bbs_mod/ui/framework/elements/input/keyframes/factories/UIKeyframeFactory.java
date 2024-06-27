@@ -91,10 +91,10 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = this.editor.getSelected().getInterpolation();
+            Interpolation interp = this.editor.getGraph().getSelected().getInterpolation();
             UIInterpolationContextMenu menu = new UIInterpolationContextMenu(interp);
 
-            this.getContext().replaceContextMenu(menu.callback(() -> this.editor.setInterpolation(interp)));
+            this.getContext().replaceContextMenu(menu.callback(() -> this.editor.getGraph().setInterpolation(interp)));
         });
         this.interp.tooltip(tooltip);
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this.interp::clickItself).category(UIKeys.KEYFRAMES_KEYS_CATEGORY);
@@ -113,12 +113,12 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     {
         IAxisConverter converter = this.editor.getConverter();
 
-        this.editor.setTick((long) (converter == null ? tick : converter.from(tick)));
+        this.editor.getGraph().setTick((long) (converter == null ? tick : converter.from(tick)));
     }
 
     public void setDuration(int value)
     {
-        Keyframe current = this.editor.getSelected();
+        Keyframe current = this.editor.getGraph().getSelected();
 
         if (current != null)
         {
@@ -128,7 +128,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
     public void setValue(Object value)
     {
-        this.editor.setValue(value);
+        this.editor.getGraph().setValue(value);
     }
 
     public static interface IUIKeyframeFactoryFactory <T>

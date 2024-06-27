@@ -89,7 +89,6 @@ public class UIKeyframeSheet
             }
             else if (selectedValue instanceof Integer)
             {
-
                 keyframe.setValue((int) keyframe.getValue() + (int) value - (int) selectedValue);
             }
             else
