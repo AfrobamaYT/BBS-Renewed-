@@ -37,8 +37,14 @@ public class FloatKeyframeFactory implements IKeyframeFactory<Float>
     }
 
     @Override
-    public double getY(Float value, int index)
+    public double getY(Float value)
     {
         return value;
+    }
+
+    @Override
+    public Object yToValue(double y)
+    {
+        return (float) y;
     }
 }

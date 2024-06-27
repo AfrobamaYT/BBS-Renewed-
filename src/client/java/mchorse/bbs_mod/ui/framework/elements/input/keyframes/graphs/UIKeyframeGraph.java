@@ -2,23 +2,22 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.forms.properties.IFormProperty;
+import mchorse.bbs_mod.graphics.line.LineBuilder;
+import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
-import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
-import mchorse.bbs_mod.ui.utils.Scroll;
-import mchorse.bbs_mod.ui.utils.icons.Icon;
+import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.interps.Interpolation;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -28,291 +27,174 @@ import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import org.joml.Matrix4f;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 public class UIKeyframeGraph implements IUIKeyframeGraph
 {
-    public static final int TOP_MARGIN = 25;
-    public static final double MIN_ZOOM = 0.01D;
-    public static final double MAX_ZOOM = 1000D;
-
     private UIKeyframes keyframes;
-    private List<UIKeyframeSheet> sheets = new ArrayList<>();
 
-    private Scroll dopeSheet;
-    private double trackHeight;
+    private UIKeyframeSheet sheet;
 
-    public UIKeyframeGraph(UIKeyframes keyframes)
+    private final Scale yAxis;
+
+    public UIKeyframeGraph(UIKeyframes keyframes, UIKeyframeSheet sheet)
     {
         this.keyframes = keyframes;
-        this.dopeSheet = new Scroll(this.keyframes.area);
+        this.sheet = sheet;
 
-        this.setTrackHeight(16);
-    }
-
-    private void setTrackHeight(double height)
-    {
-        this.trackHeight = MathUtils.clamp(height, 8D, 100D);
-        this.dopeSheet.scrollSpeed = (int) this.trackHeight * 2;
-        this.dopeSheet.scrollSize = (int) this.trackHeight * this.sheets.size() + TOP_MARGIN;
-
-        this.dopeSheet.clamp();
+        this.yAxis = new Scale(this.keyframes.area, ScrollDirection.VERTICAL).inverse();
     }
 
     /* Graphing */
 
-    public int getDopeSheetY()
+    public int toGraphY(double value)
     {
-        return this.keyframes.area.y + TOP_MARGIN - (int) this.dopeSheet.scroll;
+        return (int) this.yAxis.to(value);
     }
 
-    public int getDopeSheetY(int sheet)
+    public double fromGraphY(int mouseY)
     {
-        return this.getDopeSheetY() + sheet * (int) this.trackHeight;
-    }
-
-    public int getDopeSheetY(UIKeyframeSheet sheet)
-    {
-        return this.getDopeSheetY(this.sheets.indexOf(sheet));
+        return this.yAxis.from(mouseY);
     }
 
     /**
      * Whether given mouse coordinates are near the given point?
      */
-    private boolean isNear(double x, double y, int mouseX, int mouseY, boolean checkOnlyX)
+    private boolean isNear(double x, double y, int mouseX, int mouseY)
     {
-        if (checkOnlyX)
-        {
-            return Math.pow(mouseX - x, 2) < 25D;
-        }
-
         return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < 25D;
     }
 
-    /* Sheet management */
-
-    public void removeAllSheets()
+    public void resetViewY(UIKeyframeSheet current)
     {
-        this.sheets.clear();
+        this.yAxis.set(0, 2);
+
+        KeyframeChannel channel = current.channel;
+        List<Keyframe> keyframes = channel.getKeyframes();
+        int c = keyframes.size();
+
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+
+        if (c > 1)
+        {
+            for (int i = 0; i < c; i++)
+            {
+                Keyframe frame = keyframes.get(i);
+
+                minY = Math.min(minY, frame.getY(i));
+                maxY = Math.max(maxY, frame.getY(i));
+            }
+        }
+        else
+        {
+            minY = -10;
+            maxY = 10;
+
+            if (c == 1)
+            {
+                minY = maxY = channel.get(0).getY(0);
+            }
+        }
+
+        if (Math.abs(maxY - minY) < 0.01F)
+        {
+            /* Centerize */
+            this.yAxis.setShift(minY);
+        }
+        else
+        {
+            /* Spread apart vertically */
+            this.yAxis.viewOffset(minY, maxY, this.keyframes.area.h, 20);
+        }
+    }
+
+    @Override
+    public void resetView()
+    {
+        this.keyframes.resetViewX();
+        this.resetViewY(this.sheet);
     }
 
     @Override
     public List<UIKeyframeSheet> getSheets()
     {
-        return this.sheets;
-    }
-
-    public void addSheet(UIKeyframeSheet sheet)
-    {
-        this.sheets.add(sheet);
-    }
-
-    /* Selection */
-
-    @Override
-    public void clearSelection()
-    {
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            sheet.selection.clear();
-        }
-    }
-
-    @Override
-    public void selectAll()
-    {
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            sheet.selection.all();
-        }
-
-        this.keyframes.pickSelected();
+        return Collections.singletonList(this.sheet);
     }
 
     @Override
     public void selectByX(int mouseX)
     {
-        for (int i = 0; i < sheets.size(); i++)
+        List keyframes = this.sheet.channel.getKeyframes();
+
+        for (int i = 0; i < keyframes.size(); i++)
         {
-            UIKeyframeSheet sheet = sheets.get(i);
-            List keyframes = sheet.channel.getKeyframes();
+            Keyframe keyframe = (Keyframe) keyframes.get(i);
+            int x = this.keyframes.toGraphX(keyframe.getTick());
+            int y = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()));
 
-            for (int j = 0; j < keyframes.size(); j++)
+            if (this.isNear(x, y, mouseX, 0))
             {
-                Keyframe keyframe = (Keyframe) keyframes.get(j);
-                int x = this.keyframes.toGraphX(keyframe.getTick());
-                int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
-
-                if (this.isNear(x, y, mouseX, 0, true))
-                {
-                    sheet.selection.add(j);
-                }
+                this.sheet.selection.add(i);
             }
         }
+
+        this.pickSelected();
     }
 
     @Override
     public void selectInArea(Area area)
     {
-        List<UIKeyframeSheet> sheets = this.getSheets();
+        List keyframes = this.sheet.channel.getKeyframes();
 
-        for (int i = 0; i < sheets.size(); i++)
+        for (int i = 0; i < keyframes.size(); i++)
         {
-            UIKeyframeSheet sheet = sheets.get(i);
-            List keyframes = sheet.channel.getKeyframes();
+            Keyframe keyframe = (Keyframe) keyframes.get(i);
+            int x = this.keyframes.toGraphX(keyframe.getTick());
+            int y = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()));
 
-            for (int j = 0; j < keyframes.size(); j++)
+            if (area.isInside(x, y))
             {
-                Keyframe keyframe = (Keyframe) keyframes.get(j);
-                int x = this.keyframes.toGraphX(keyframe.getTick());
-                int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
-
-                if (area.isInside(x, y))
-                {
-                    sheet.selection.add(j);
-                }
-            }
-        }
-    }
-
-    @Override
-    public Keyframe getSelected()
-    {
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            Keyframe first = sheet.selection.getFirst();
-
-            if (first != null)
-            {
-                return first;
+                this.sheet.selection.add(i);
             }
         }
 
-        return null;
-    }
-
-    @Override
-    public UIKeyframeSheet getSheet(Keyframe keyframe)
-    {
-        KeyframeChannel channel = (KeyframeChannel) keyframe.getParent();
-
-        for (UIKeyframeSheet sheet : this.sheets)
-        {
-            if (sheet.channel == channel)
-            {
-                return sheet;
-            }
-        }
-
-        return null;
+        this.pickSelected();
     }
 
     @Override
     public UIKeyframeSheet getSheet(int mouseY)
     {
-        int dopeSheetY = this.getDopeSheetY();
-        int index = (mouseY - dopeSheetY) / (int) this.trackHeight;
-
-        if (CollectionUtils.inRange(this.sheets, index))
-        {
-            return this.sheets.get(index);
-        }
-
-        return null;
+        return this.sheet;
     }
 
     @Override
     public boolean addKeyframe(int mouseX, int mouseY)
     {
         long tick = Math.round(this.keyframes.fromGraphX(mouseX));
-        UIKeyframeSheet sheet = this.getSheet(mouseY);
+        UIKeyframeSheet sheet = this.sheet;
 
         if (sheet != null)
         {
-            this.addKeyframe(sheet, tick);
+            this.addKeyframe(sheet, tick, sheet.channel.getFactory().yToValue(this.fromGraphY(mouseY)));
         }
 
         return sheet != null;
     }
 
     @Override
-    public void addKeyframe(UIKeyframeSheet sheet, long tick)
-    {
-        KeyframeSegment segment = sheet.channel.find(tick);
-        Interpolation interpolation = null;
-        IFormProperty property = sheet.property;
-        Object value;
-
-        if (segment != null)
-        {
-            value = segment.createInterpolated();
-            interpolation = segment.a.getInterpolation();
-        }
-        else if (property != null)
-        {
-            value = sheet.channel.getFactory().copy(property.get());
-        }
-        else
-        {
-            value = sheet.channel.getFactory().createEmpty();
-        }
-
-        int index = sheet.channel.insert(tick, value);
-        Keyframe keyframe = sheet.channel.get(index);
-
-        if (interpolation != null)
-        {
-            keyframe.getInterpolation().copy(interpolation);
-        }
-
-        this.clearSelection();
-        this.pickKeyframe(keyframe);
-        sheet.selection.add(index);
-    }
-
-    @Override
-    public void removeKeyframe(Keyframe keyframe)
-    {
-        UIKeyframeSheet sheet = this.getSheet(keyframe);
-
-        sheet.remove(keyframe);
-        this.clearSelection();
-        this.pickKeyframe(null);
-    }
-
-    @Override
-    public void removeSelected()
-    {
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            sheet.selection.removeSelected();
-        }
-
-        this.pickKeyframe(null);
-    }
-
-    @Override
     public Keyframe findKeyframe(int mouseX, int mouseY)
     {
-        UIKeyframeSheet sheet = this.getSheet(mouseY);
+        List keyframes = this.sheet.channel.getKeyframes();
 
-        if (sheet == null)
+        for (int i = 0; i < keyframes.size(); i++)
         {
-            return null;
-        }
-
-        List keyframes = sheet.channel.getKeyframes();
-        int i = this.sheets.indexOf(sheet);
-
-        for (int j = 0; j < keyframes.size(); j++)
-        {
-            Keyframe keyframe = (Keyframe) keyframes.get(j);
+            Keyframe keyframe = (Keyframe) keyframes.get(i);
             int x = this.keyframes.toGraphX(keyframe.getTick());
-            int y = this.getDopeSheetY(i) + (int) this.trackHeight / 2;
+            int y = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()));
 
-            if (this.isNear(x, y, mouseX, mouseY, false))
+            if (this.isNear(x, y, mouseX, mouseY))
             {
                 return keyframe;
             }
@@ -340,111 +222,73 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             this.pickKeyframe(keyframe);
 
             double x = keyframe.getTick();
-            int y = (int) (this.sheets.indexOf(sheet) * this.trackHeight) + TOP_MARGIN;
+            int y = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()));
 
             this.keyframes.getXAxis().shiftIntoMiddle(x);
-
-            if (y < this.keyframes.area.y || y > this.keyframes.area.y)
-            {
-                this.dopeSheet.scrollIntoView(y, (int) (this.trackHeight * 2), (int) (this.trackHeight * 2));
-            }
-        }
-    }
-
-    @Override
-    public void setTick(long tick)
-    {
-        Keyframe selected = this.getSelected();
-        long diff = tick - selected.getTick();
-
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            sheet.setTickBy(diff);
-        }
-    }
-
-    @Override
-    public void setInterpolation(Interpolation interpolation)
-    {
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            sheet.setInterpolation(interpolation);
-        }
-    }
-
-    /**
-     * Set value for all selected keyframes
-     */
-    @Override
-    public void setValue(Object value)
-    {
-        Keyframe selected = this.getSelected();
-        IKeyframeFactory factory = selected.getFactory();
-        Object keyframe = factory.copy(selected.getValue());
-
-        for (UIKeyframeSheet sheet : this.getSheets())
-        {
-            if (sheet.channel.getFactory() == factory)
-            {
-                sheet.setValue(value, keyframe);
-            }
+            this.yAxis.shiftIntoMiddle(y);
         }
     }
 
     @Override
     public void resize()
-    {
-        this.dopeSheet.clamp();
-    }
-
-    /* Input handling */
+    {}
 
     @Override
     public boolean mouseClicked(UIContext context)
     {
-        return this.dopeSheet.mouseClicked(context);
+        return false;
     }
 
     @Override
     public void mouseReleased(UIContext context)
-    {
-        this.dopeSheet.mouseReleased(context);
-    }
+    {}
 
     @Override
     public void mouseScrolled(UIContext context)
     {
-        if (Window.isShiftPressed())
-        {
-            this.dopeSheet.mouseScroll(context);
-        }
-        else if (Window.isAltPressed())
-        {
-            this.setTrackHeight(this.trackHeight - context.mouseWheel);
-        }
-        else
+        boolean x = Window.isShiftPressed();
+        boolean y = Window.isCtrlPressed();
+        boolean none = !x && !y;
+
+        /* Scaling X */
+        if (x && !y || none)
         {
             this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+        }
+
+        /* Scaling Y */
+        if (y && !x || none)
+        {
+            this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
         }
     }
 
     @Override
     public void handleMouse(UIContext context, int lastX, int lastY)
     {
-        this.dopeSheet.drag(context);
-
         if (this.keyframes.isNavigating())
         {
             int mouseX = context.mouseX;
             int mouseY = context.mouseY;
-            double offset = (mouseX - lastX) / this.keyframes.getXAxis().getZoom();
+            double offsetX = (mouseX - lastX) / this.keyframes.getXAxis().getZoom();
+            double offsetY = -(mouseY - lastY) / this.yAxis.getZoom();
 
-            this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offset);
-            this.dopeSheet.scrollBy(-(mouseY - lastY));
+            this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
+            this.yAxis.setShift(this.yAxis.getShift() - offsetY);
         }
     }
 
-    /* Rendering */
+    @Override
+    public void dragKeyframes(UIContext context, int originalX, int originalY, int originalT, Object originalV)
+    {
+        IKeyframeFactory factory = this.sheet.channel.getFactory();
+
+        int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
+        double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
+
+        this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX);
+        this.setValue(factory.yToValue(this.fromGraphY(context.mouseY) - offsetY));
+    }
 
     @Override
     public void render(UIContext context)
@@ -479,6 +323,30 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             context.batcher.text(label, x + 4, area.y + 4);
         }
 
+        /* Draw vertical grid */
+        int ty = (int) this.fromGraphY(area.ey());
+        int by = (int) this.fromGraphY(area.y - 12);
+
+        int min = Math.min(ty, by) - 1;
+        int max = Math.max(ty, by) + 1;
+        mult = this.yAxis.getMult();
+
+        min -= min % mult + mult;
+        max -= max % mult - mult;
+
+        for (int j = 0, c = (max - min) / mult; j < c; j++)
+        {
+            int y = this.toGraphY(min + j * mult);
+
+            if (y > area.ey())
+            {
+                continue;
+            }
+
+            context.batcher.box(area.x, y, area.ex(), y + 1, Colors.setA(Colors.WHITE, 0.25F));
+            context.batcher.text(String.valueOf(min + j * mult), area.x + 4, y + 4);
+        }
+
         /* Render where the keyframe will be duplicated or added */
         boolean alt = Window.isAltPressed();
 
@@ -489,7 +357,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             if (sheet != null)
             {
                 int x = this.keyframes.toGraphX(Math.round(this.keyframes.fromGraphX(context.mouseX)));
-                int y = this.getDopeSheetY(sheet) + (int) this.trackHeight / 2;
+                int y = context.mouseY;
                 float a = (float) Math.sin(context.getTickTransition() / 2D) * 0.1F + 0.5F;
 
                 context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(alt ? Colors.YELLOW : Colors.WHITE, a));
@@ -503,138 +371,126 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @SuppressWarnings({"rawtypes", "IntegerDivisionInFloatingPointContext"})
     protected void renderGraph(UIContext context)
     {
-        if (this.sheets.isEmpty())
-        {
-            return;
-        }
-
-        this.dopeSheet.scrollSize = (int) this.trackHeight * this.sheets.size() + TOP_MARGIN;
-
-        Area area = this.keyframes.area;
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f matrix = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
 
-        for (int i = 0; i < this.sheets.size(); i++)
+        UIKeyframeSheet sheet = this.sheet;
+        List keyframes = sheet.channel.getKeyframes();
+
+        /* Render graph */
+        LineBuilder lineBuilder = new LineBuilder(0.7F);
+
+        for (int i = 0; i < keyframes.size(); i++)
         {
-            int y = this.getDopeSheetY(i);
+            Keyframe frame = (Keyframe) keyframes.get(i);
+            int x = this.keyframes.toGraphX(frame.getTick());
+            int y = this.toGraphY(sheet.channel.getFactory().getY(frame.getValue()));
 
-            if (y + this.trackHeight < area.y || y > area.ey())
+            if (i == 0 && x > this.keyframes.area.x)
             {
-                continue;
+                lineBuilder.add(this.keyframes.area.x, y);
             }
 
-            UIKeyframeSheet sheet = this.sheets.get(i);
-            List keyframes = sheet.channel.getKeyframes();
-
-            boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + this.trackHeight;
-            int my = y + (int) this.trackHeight / 2;
-            int cc = Colors.setA(sheet.color, hover ? 1F : 0.45F);
-
-            /* Render track bars (horizontal lines) */
-            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-
-            context.batcher.fillRect(builder, matrix, area.x, my - 1, area.w, 2, cc, cc, cc, cc);
-
-            if (sheet.separator)
+            if (i != 0)
             {
-                int c = Colors.setA(sheet.color, 0F);
+                Keyframe prev = (Keyframe) keyframes.get(i - 1);
+                IInterp interp = prev.getInterpolation().getInterp();
+                int px = this.keyframes.toGraphX(prev.getTick());
+                int py = this.toGraphY(sheet.channel.getFactory().getY(prev.getValue()));
 
-                /* Render separator */
-                context.batcher.fillRect(builder, matrix, area.x, y, area.w, (int) this.trackHeight, c | Colors.A25, c | Colors.A25, c, c);
-            }
+                int ppy = py;
+                int pny = y;
 
-            /* Render bars indicating same values */
-            for (int j = 1; j < keyframes.size(); j++)
-            {
-                Keyframe previous = (Keyframe) keyframes.get(j - 1);
-                Keyframe frame = (Keyframe) keyframes.get(j);
+                if (CollectionUtils.inRange(keyframes, i - 2)) ppy = this.toGraphY(sheet.channel.getFactory().getY(((Keyframe) keyframes.get(i - 2)).getValue()));
+                if (CollectionUtils.inRange(keyframes, i + 1)) pny = this.toGraphY(sheet.channel.getFactory().getY(((Keyframe) keyframes.get(i + 1)).getValue()));
 
-                if (Objects.equals(previous.getValue(), frame.getValue()))
+                if (interp == Interpolations.CONST)
                 {
-                    int c = Colors.YELLOW | Colors.A25;
-                    int xx = this.keyframes.toGraphX(previous.getTick());
+                    lineBuilder.add(x, py);
+                    lineBuilder.push();
+                }
+                else if (interp != Interpolations.LINEAR)
+                {
+                    float steps = 50F;
 
-                    context.batcher.fillRect(builder, matrix, xx, my - 2, this.keyframes.toGraphX(frame.getTick()) - xx, 4, c, c, c, c);
+                    for (int j = 1; j < steps; j++)
+                    {
+                        float a = j / steps;
+                        float interpolate = (float) prev.getInterpolation().interpolate(IInterp.context.set(ppy, py, y, pny, a));
+
+                        lineBuilder.add(Lerps.lerp(px, x, a), interpolate);
+                    }
                 }
             }
 
-            /* Draw keyframe handles (outer) */
-            int forcedIndex = 0;
+            lineBuilder.add(x, y);
 
-            for (int j = 0; j < keyframes.size(); j++)
+            if (i == keyframes.size() - 1 && x < this.keyframes.area.ex())
             {
-                Keyframe frame = (Keyframe) keyframes.get(j);
-                long tick = frame.getTick();
-                int x1 = this.keyframes.toGraphX(tick);
-                int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
-
-                /* Render custom duration markers */
-                if (x1 != x2)
-                {
-                    int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
-                    int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
-
-                    context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
-                    context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
-                    context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
-
-                    forcedIndex += 1;
-                }
-
-                boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, false);
-                boolean toRemove = Window.isCtrlPressed() && isPointHover;
-
-                if (this.keyframes.isSelecting())
-                {
-                    isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
-                }
-
-                int c = (sheet.selection.has(j) || isPointHover ? Colors.WHITE : sheet.color) | Colors.A100;
-
-                if (toRemove)
-                {
-                    c = Colors.RED | Colors.A100;
-                }
-
-                this.renderSquare(context, builder, matrix, x1, my, toRemove ? 4 : 3, c);
-            }
-
-            /* Render keyframe handles (inner) */
-            for (int j = 0; j < keyframes.size(); j++)
-            {
-                Keyframe frame = (Keyframe) keyframes.get(j);
-                int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
-
-                this.renderSquare(context, builder, matrix, this.keyframes.toGraphX(frame.getTick()), my, 2, c | Colors.A100);
-            }
-
-            RenderSystem.enableBlend();
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-            BufferRenderer.drawWithGlobalProgram(builder.end());
-
-            FontRenderer font = context.batcher.getFont();
-            int lw = font.getWidth(sheet.title.get());
-
-            context.batcher.gradientHBox(area.ex() - lw - 10, y, area.ex(), y + (int) this.trackHeight, sheet.color, sheet.color | (hover ? Colors.A75 : Colors.A25));
-
-            if (hover)
-            {
-                context.batcher.textShadow(sheet.title.get(), area.ex() - lw - 5, my - font.getHeight() / 2);
-            }
-            else
-            {
-                context.batcher.text(sheet.title.get(), area.ex() - lw - 5, my - font.getHeight() / 2, Colors.WHITE & 0x88ffffff);
-            }
-
-            Icon icon = sheet.getIcon();
-
-            if (icon != null && this.trackHeight >= 12D)
-            {
-                context.batcher.box(area.x, y, area.x + 6, y + (int) this.trackHeight, Colors.A75);
-                context.batcher.gradientHBox(area.x + 6, y, area.x + 4 + icon.w, y + (int) this.trackHeight, Colors.A75, 0);
-                context.batcher.icon(icon, area.x + 2, my - icon.h / 2);
+                lineBuilder.add(this.keyframes.area.ex(), y);
             }
         }
+
+        lineBuilder.render(context.batcher, SolidColorLineRenderer.get(Colors.COLOR.set(Colors.setA(sheet.color, 1F))));
+
+        /* Render track bars (horizontal lines) */
+        builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+
+        /* Draw keyframe handles (outer) */
+        int forcedIndex = 0;
+
+        for (int i = 0; i < keyframes.size(); i++)
+        {
+            Keyframe frame = (Keyframe) keyframes.get(i);
+            long tick = frame.getTick();
+            int x1 = this.keyframes.toGraphX(tick);
+            int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
+            int y = this.toGraphY(sheet.channel.getFactory().getY(frame.getValue()));
+
+            /* Render custom duration markers */
+            if (x1 != x2)
+            {
+                int y1 = y - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
+                int color = sheet.selection.has(i) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
+
+                context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
+                context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
+                context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
+
+                forcedIndex += 1;
+            }
+
+            boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), y, context.mouseX, context.mouseY);
+            boolean toRemove = Window.isCtrlPressed() && isPointHover;
+
+            if (this.keyframes.isSelecting())
+            {
+                isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, y);
+            }
+
+            int c = (sheet.selection.has(i) || isPointHover ? Colors.WHITE : sheet.color) | Colors.A100;
+
+            if (toRemove)
+            {
+                c = Colors.RED | Colors.A100;
+            }
+
+            this.renderSquare(context, builder, matrix, x1, y, toRemove ? 4 : 3, c);
+        }
+
+        /* Render keyframe handles (inner) */
+        for (int j = 0; j < keyframes.size(); j++)
+        {
+            Keyframe frame = (Keyframe) keyframes.get(j);
+            int y = this.toGraphY(sheet.channel.getFactory().getY(frame.getValue()));
+            int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
+
+            this.renderSquare(context, builder, matrix, this.keyframes.toGraphX(frame.getTick()), y, 2, c | Colors.A100);
+        }
+
+        RenderSystem.enableBlend();
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 
     protected void renderSquare(UIContext context, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
@@ -644,23 +500,18 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
     @Override
     public void postRender(UIContext context)
-    {
-        this.dopeSheet.renderScrollbar(context.batcher);
-    }
-
-    /* State recovery */
+    {}
 
     @Override
     public void saveState(MapType extra)
     {
-        extra.putDouble("track_height", this.trackHeight);
-        extra.putDouble("scroll", this.dopeSheet.scroll);
+        extra.putDouble("y_min", this.yAxis.getMinValue());
+        extra.putDouble("y_max", this.yAxis.getMaxValue());
     }
 
     @Override
     public void restoreState(MapType extra)
     {
-        this.setTrackHeight(extra.getDouble("track_height"));
-        this.dopeSheet.scroll = extra.getDouble("scroll");
+        this.yAxis.view(extra.getDouble("y_min"), extra.getDouble("y_max"));
     }
 }

@@ -15,8 +15,13 @@ public interface IKeyframeFactory <T>
 
     public T interpolate(T preA, T a, T b, T postB, IInterp interpolation, float x);
 
-    public default double getY(T value, int index)
+    public default double getY(T value)
     {
-        return index;
+        return 0D;
+    }
+
+    public default Object yToValue(double y)
+    {
+        return y;
     }
 }

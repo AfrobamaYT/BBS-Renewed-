@@ -22,6 +22,13 @@ public class KeyframeFactories
     public static final ItemStackKeyframeFactory ITEM_STACK = new ItemStackKeyframeFactory();
     public static final ActionsConfigKeyframeFactory ACTIONS_CONFIG = new ActionsConfigKeyframeFactory();
 
+    public static boolean isNumeric(IKeyframeFactory factory)
+    {
+        return factory instanceof DoubleKeyframeFactory
+            || factory instanceof FloatKeyframeFactory
+            || factory instanceof IntegerKeyframeFactory;
+    }
+
     static
     {
         FACTORIES.put("color", COLOR);

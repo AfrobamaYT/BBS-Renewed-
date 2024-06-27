@@ -37,8 +37,14 @@ public class IntegerKeyframeFactory implements IKeyframeFactory<Integer>
     }
 
     @Override
-    public double getY(Integer value, int index)
+    public double getY(Integer value)
     {
         return value;
+    }
+
+    @Override
+    public Object yToValue(double y)
+    {
+        return (int) y;
     }
 }

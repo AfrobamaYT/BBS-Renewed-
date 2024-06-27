@@ -72,7 +72,7 @@ public class Keyframe <T> extends ValueGroup
 
     public double getY(int index)
     {
-        return this.factory.getY(this.value, index);
+        return this.factory.getY(this.value);
     }
 
     public void setValue(T value)

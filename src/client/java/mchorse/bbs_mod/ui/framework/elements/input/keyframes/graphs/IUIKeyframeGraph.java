@@ -1,55 +1,187 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 
 import java.util.List;
 
 public interface IUIKeyframeGraph
 {
+    public static final int TOP_MARGIN = 25;
+    public static final double MIN_ZOOM = 0.01D;
+    public static final double MAX_ZOOM = 1000D;
+
+    public void resetView();
+
     public List<UIKeyframeSheet> getSheets();
 
     /* Selection */
 
-    public void clearSelection();
+    public default void clearSelection()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.clear();
+        }
+    }
 
-    public void selectAll();
+    public default void selectAll()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.all();
+        }
+
+        this.pickSelected();
+    }
 
     public void selectByX(int mouseX);
 
     public void selectInArea(Area area);
 
-    public Keyframe getSelected();
+    public default Keyframe getSelected()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            Keyframe first = sheet.selection.getFirst();
+
+            if (first != null)
+            {
+                return first;
+            }
+        }
+
+        return null;
+    }
 
     /* Keyframe management */
 
-    public UIKeyframeSheet getSheet(Keyframe keyframe);
+    public default UIKeyframeSheet getSheet(Keyframe keyframe)
+    {
+        KeyframeChannel channel = (KeyframeChannel) keyframe.getParent();
+
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            if (sheet.channel == channel)
+            {
+                return sheet;
+            }
+        }
+
+        return null;
+    }
 
     public UIKeyframeSheet getSheet(int mouseY);
 
     public boolean addKeyframe(int mouseX, int mouseY);
 
-    public void addKeyframe(UIKeyframeSheet sheet, long tick);
+    public default void addKeyframe(UIKeyframeSheet sheet, long tick, Object value)
+    {
+        KeyframeSegment segment = sheet.channel.find(tick);
+        Interpolation interpolation = null;
+        IFormProperty property = sheet.property;
 
-    public void removeKeyframe(Keyframe keyframe);
+        if (value == null)
+        {
+            if (segment != null)
+            {
+                value = segment.createInterpolated();
+                interpolation = segment.a.getInterpolation();
+            }
+            else if (property != null)
+            {
+                value = sheet.channel.getFactory().copy(property.get());
+            }
+            else
+            {
+                value = sheet.channel.getFactory().createEmpty();
+            }
+        }
 
-    public void removeSelected();
+        int index = sheet.channel.insert(tick, value);
+        Keyframe keyframe = sheet.channel.get(index);
+
+        if (interpolation != null)
+        {
+            keyframe.getInterpolation().copy(interpolation);
+        }
+
+        this.clearSelection();
+        this.pickKeyframe(keyframe);
+        sheet.selection.add(index);
+    }
+
+    public default void removeKeyframe(Keyframe keyframe)
+    {
+        UIKeyframeSheet sheet = this.getSheet(keyframe);
+
+        sheet.remove(keyframe);
+        this.clearSelection();
+        this.pickKeyframe(null);
+    }
+
+    public default void removeSelected()
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.removeSelected();
+        }
+
+        this.pickKeyframe(null);
+    }
 
     public Keyframe findKeyframe(int mouseX, int mouseY);
+
+    public default void pickSelected()
+    {
+        this.pickKeyframe(this.getSelected());
+    }
 
     public void pickKeyframe(Keyframe keyframe);
 
     public void selectKeyframe(Keyframe keyframe);
 
-    public void setTick(long tick);
+    public default void setTick(long tick)
+    {
+        Keyframe selected = this.getSelected();
+        long diff = tick - selected.getTick();
 
-    public void setInterpolation(Interpolation interpolation);
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.setTickBy(diff);
+        }
+    }
 
-    public void setValue(Object value);
+    public default void setInterpolation(Interpolation interpolation)
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.setInterpolation(interpolation);
+        }
+    }
+
+    public default void setValue(Object value)
+    {
+        Keyframe selected = this.getSelected();
+        IKeyframeFactory factory = selected.getFactory();
+        Object keyframe = factory.copy(selected.getValue());
+
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            if (sheet.channel.getFactory() == factory)
+            {
+                sheet.setValue(value, keyframe);
+            }
+        }
+    }
 
     public void resize();
 
@@ -62,6 +194,8 @@ public interface IUIKeyframeGraph
     public void mouseScrolled(UIContext context);
 
     public void handleMouse(UIContext context, int lastX, int lastY);
+
+    public void dragKeyframes(UIContext context, int originalX, int originalY, int originalT, Object originalV);
 
     /* Rendering */
 

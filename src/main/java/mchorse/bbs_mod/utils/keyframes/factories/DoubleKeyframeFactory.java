@@ -37,8 +37,14 @@ public class DoubleKeyframeFactory implements IKeyframeFactory<Double>
     }
 
     @Override
-    public double getY(Double value, int index)
+    public double getY(Double value)
     {
         return value;
+    }
+
+    @Override
+    public Object yToValue(double y)
+    {
+        return y;
     }
 }
