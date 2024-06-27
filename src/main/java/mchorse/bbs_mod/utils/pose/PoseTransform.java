@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils.pose;
 
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class PoseTransform extends Transform
@@ -26,6 +27,22 @@ public class PoseTransform extends Transform
         }
 
         super.lerp(transform, a);
+    }
+
+    @Override
+    public void lerp(Transform preA, Transform a, Transform b, Transform postB, IInterp interp, float x)
+    {
+        super.lerp(preA, a, b, postB, interp, x);
+
+        if (preA instanceof PoseTransform)
+        {
+            this.fix = (float) interp.interpolate(IInterp.context.set(
+                ((PoseTransform) preA).fix,
+                ((PoseTransform) a).fix,
+                ((PoseTransform) b).fix,
+                ((PoseTransform) postB).fix, x
+            ));
+        }
     }
 
     @Override
