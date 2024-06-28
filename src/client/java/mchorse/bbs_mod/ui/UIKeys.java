@@ -322,6 +322,8 @@ public class UIKeys
     public static final IKey GENERIC_KEYFRAMES_LINK_PICK_TEXTURE = L10n.lang("bbs.ui.generic_keyframes.link.pick_texture");
     public static final IKey GRAPH_HELP = L10n.lang("bbs.ui.graph.help");
     public static final IKey GRAPH_TOOLTIP = L10n.lang("bbs.ui.graph.tooltip");
+    public static final IKey INTERPOLATIONS_CONTEXT_COPY = L10n.lang("interpolations.ui.context.copy");
+    public static final IKey INTERPOLATIONS_CONTEXT_PASTE = L10n.lang("interpolations.ui.context.paste");
     public static final IKey INTERPOLATIONS_KEY_CATEGORY = L10n.lang("interpolations.key_category");
     public static final IKey KEYFRAMES_CONTEXT_COPY = L10n.lang("bbs.ui.keyframes.context.copy");
     public static final IKey KEYFRAMES_CONTEXT_EDIT_TRACK = L10n.lang("bbs.ui.keyframes.context.edit_track");
@@ -344,7 +346,6 @@ public class UIKeys
     public static final IKey PANELS_CONTEXT_COPY = L10n.lang("bbs.ui.panels.context.copy");
     public static final IKey PANELS_CONTEXT_OPEN = L10n.lang("bbs.ui.panels.context.open");
     public static final IKey PANELS_CONTEXT_PASTE = L10n.lang("bbs.ui.panels.context.paste");
-    public static final IKey PANELS_KEYS_CATEGORY = L10n.lang("bbs.ui.panels.keys.category");
     public static final IKey PANELS_KEYS_OPEN_DATA_MANAGER = L10n.lang("bbs.ui.panels.keys.open_data_list");
     public static final IKey PANELS_MODALS_ADD = L10n.lang("bbs.ui.panels.modals.add");
     public static final IKey PANELS_MODALS_ADD_FOLDER = L10n.lang("bbs.ui.panels.modals.add_folder");

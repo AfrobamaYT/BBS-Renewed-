@@ -1,7 +1,10 @@
 package mchorse.bbs_mod.ui.framework.elements.context;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -38,6 +41,9 @@ public class UIInterpolationContextMenu extends UIContextMenu
     public UITrackpad v2;
     public UITrackpad v3;
     public UITrackpad v4;
+
+    public UIIcon copy;
+    public UIIcon paste;
 
     private Runnable callback;
     private Interpolation interpolation;
@@ -102,6 +108,33 @@ public class UIInterpolationContextMenu extends UIContextMenu
         this.v3.setValue(interpolation.getV3());
         this.v4.setValue(interpolation.getV4());
 
+        this.copy = new UIIcon(Icons.COPY, (b) ->
+        {
+            MapType data = new MapType();
+
+            data.put("interp", this.interpolation.toData());
+            Window.setClipboard(data, "_CopyInterpolation");
+        });
+        this.copy.tooltip(UIKeys.INTERPOLATIONS_CONTEXT_COPY);
+
+        this.paste = new UIIcon(Icons.PASTE, (b) ->
+        {
+            MapType copy = Window.getClipboardMap("_CopyInterpolation");
+
+            if (copy == null)
+            {
+                return;
+            }
+
+            BaseValue.edit(this.interpolation, (v) -> v.fromData(copy.get("interp")));
+
+            if (this.callback != null)
+            {
+                this.callback.run();
+            }
+        });
+        this.paste.tooltip(UIKeys.INTERPOLATIONS_CONTEXT_PASTE);
+
         this.grid = new UIElement();
         this.grid.relative(this).xy(PADDING, gridY).w(w).h(h).grid(0).items(6);
 
@@ -123,7 +156,7 @@ public class UIInterpolationContextMenu extends UIContextMenu
             this.setupKeybind(value, icon);
         }
 
-        UIElement vs = UI.column(UI.row(this.v1, this.v2), UI.row(this.v3, this.v4));
+        UIElement vs = UI.column(UI.row(this.v1, this.v2, this.copy), UI.row(this.v3, this.v4, this.paste));
 
         vs.relative(this).xy(PADDING, PADDING + GRAPH_HEIGHT + MARGIN).w(w);
 

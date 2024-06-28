@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.interps.Interpolation;
@@ -91,12 +92,12 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
-            Interpolation interp = this.editor.getGraph().getSelected().getInterpolation();
+            Interpolation interp = this.keyframe.getInterpolation();
             UIInterpolationContextMenu menu = new UIInterpolationContextMenu(interp);
 
             this.getContext().replaceContextMenu(menu.callback(() -> this.editor.getGraph().setInterpolation(interp)));
         });
-        this.interp.tooltip(tooltip);
+        this.interp.tooltip(new InterpolationTooltip(0F, 0.5F, () -> this.keyframe.getInterpolation().wrap()));
         this.interp.keys().register(Keys.KEYFRAMES_INTERP, this.interp::clickItself).category(UIKeys.KEYFRAMES_KEYS_CATEGORY);
 
         this.scroll.add(UI.row(this.interp, this.tick, this.duration));

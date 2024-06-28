@@ -750,6 +750,8 @@
     "interpolations.sine_inout": "Sine In/out",
     "interpolations.sine_out": "Sine Out",
     "interpolations.step": "Step",
+    "interpolations.ui.context.copy": "Copy interpolation",
+    "interpolations.ui.context.paste": "Paste interpolation",
     "keybinds.config.all.title": "General",
     "keybinds.config.all.tooltip": "Keybinds that are commonly used in BBS mod",
     "keybinds.config.camera.title": "Camera editor",
