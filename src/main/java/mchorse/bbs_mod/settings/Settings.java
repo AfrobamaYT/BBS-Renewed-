@@ -29,7 +29,7 @@ public class Settings extends BaseValue
     }
 
     @Override
-    public void postNotifyParent(BaseValue value)
+    public void postNotifyParent(BaseValue value, int flag)
     {
         this.saveLater();
     }

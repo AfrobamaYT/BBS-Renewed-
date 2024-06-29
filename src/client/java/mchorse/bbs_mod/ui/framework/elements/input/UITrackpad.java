@@ -7,13 +7,15 @@ import mchorse.bbs_mod.settings.values.ValueDouble;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragEndEvent;
+import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragStartEvent;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UIBaseTextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.MinecraftClient;
 import org.lwjgl.glfw.GLFW;
 
@@ -310,6 +312,8 @@ public class UITrackpad extends UIBaseTextbox
                 this.initialY = context.mouseY;
                 this.lastValue = this.value;
                 this.time = System.currentTimeMillis();
+
+                this.getEvents().emit(new UITrackpadDragStartEvent(this));
             }
         }
 
@@ -350,6 +354,11 @@ public class UITrackpad extends UIBaseTextbox
         if (this.delayedInput && this.isDraggingTime())
         {
             this.setValueAndNotify(this.value);
+        }
+
+        if (this.dragging)
+        {
+            this.getEvents().emit(new UITrackpadDragEndEvent(this));
         }
 
         this.wasInside = false;

@@ -6,6 +6,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
+import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragEndEvent;
+import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragStartEvent;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.IAxisConverter;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
@@ -88,6 +90,8 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
         this.tick = new UITrackpad(this::setTick);
         this.tick.limit(Integer.MIN_VALUE, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_TICK);
+        this.tick.getEvents().register(UITrackpadDragStartEvent.class, (e) -> this.editor.cacheKeyframes());
+        this.tick.getEvents().register(UITrackpadDragEndEvent.class, (e) -> this.editor.submitKeyframes());
         this.duration = new UITrackpad((v) -> this.setDuration(v.intValue()));
         this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
@@ -114,7 +118,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     {
         IAxisConverter converter = this.editor.getConverter();
 
-        this.editor.getGraph().setTick((long) (converter == null ? tick : converter.from(tick)));
+        this.editor.getGraph().setTick((long) (converter == null ? tick : converter.from(tick)), false);
     }
 
     public void setDuration(int value)
@@ -129,7 +133,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
     public void setValue(Object value)
     {
-        this.editor.getGraph().setValue(value);
+        this.editor.getGraph().setValue(value, true);
     }
 
     public static interface IUIKeyframeFactoryFactory <T>

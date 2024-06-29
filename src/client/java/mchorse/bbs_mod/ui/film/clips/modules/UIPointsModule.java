@@ -14,12 +14,6 @@ import mchorse.bbs_mod.utils.MathUtils;
 
 import java.util.function.Consumer;
 
-/**
- * Points GUI module
- *
- * This module is responsible for displaying "buttons" for picking up path
- * clip's points, and also an ability to add or remove them.
- */
 public class UIPointsModule extends UIAbstractModule
 {
     /* Input */

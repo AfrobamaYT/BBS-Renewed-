@@ -9,12 +9,6 @@ import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 
-/**
- * Angle GUI module
- *
- * This class unifies four trackpads into one object which edits a {@link Angle},
- * and makes it way easier to reuse in other classes.
- */
 public class UIAngleModule extends UIAbstractModule
 {
     public UITrackpad yaw;

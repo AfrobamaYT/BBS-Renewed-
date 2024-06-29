@@ -67,15 +67,15 @@ public class UIKeyframeSheet
         }
     }
 
-    public void setTickBy(long diff)
+    public void setTickBy(long diff, boolean dirty)
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {
-            keyframe.setTick(keyframe.getTick() + diff);
+            keyframe.setTick(keyframe.getTick() + diff, dirty);
         }
     }
 
-    public void setValue(Object value, Object selectedValue)
+    public void setValue(Object value, Object selectedValue, boolean dirty)
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {
@@ -93,7 +93,7 @@ public class UIKeyframeSheet
             }
             else
             {
-                keyframe.setValue(this.channel.getFactory().copy(value));
+                keyframe.setValue(this.channel.getFactory().copy(value), dirty);
             }
         }
     }

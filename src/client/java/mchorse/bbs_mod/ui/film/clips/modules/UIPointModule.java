@@ -10,12 +10,6 @@ import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 
-/**
- * Point GUI module
- *
- * This class unifies three trackpads into one object which edits a {@link Point},
- * and makes it way easier to reuse in other classes.
- */
 public class UIPointModule extends UIAbstractModule
 {
     public UITrackpad x;

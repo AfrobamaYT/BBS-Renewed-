@@ -210,8 +210,8 @@ public class BBSModClient implements ClientModInitializer
 
         BBSMod.setupConfig(Icons.KEY_CAP, "keybinds", new File(BBSMod.getSettingsFolder(), "keybinds.json"), KeybindSettings::register);
 
-        BBSSettings.language.postCallback((v) -> reloadLanguage(((ValueLanguage) v).get()));
-        BBSSettings.editorSeconds.postCallback((v) ->
+        BBSSettings.language.postCallback((v, f) -> reloadLanguage(((ValueLanguage) v).get()));
+        BBSSettings.editorSeconds.postCallback((v, f) ->
         {
             if (dashboard != null)
             {

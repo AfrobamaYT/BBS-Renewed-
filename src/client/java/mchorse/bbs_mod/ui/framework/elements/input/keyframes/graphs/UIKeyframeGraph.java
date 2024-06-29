@@ -286,8 +286,8 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
         double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
 
-        this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX);
-        this.setValue(factory.yToValue(this.fromGraphY(context.mouseY) - offsetY));
+        this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX, false);
+        this.setValue(factory.yToValue(this.fromGraphY(context.mouseY) - offsetY), false);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film.utils;
 
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -26,9 +27,9 @@ public class UIFilmUndoHandler
     private List<Integer> cachedCameraSelection = new ArrayList<>();
     private List<Integer> cachedVoicelineSelection = new ArrayList<>();
     private KeyframeState cachedKeyframeState;
+    private boolean cacheMarkLastUndoNoMerging;
 
     private Timer undoTimer = new Timer(1000);
-    private boolean cacheMarkLastUndoNoMerging;
 
     private UIFilmPanel panel;
 
@@ -106,7 +107,7 @@ public class UIFilmUndoHandler
         this.panel.fillData();
     }
 
-    public void handlePreValues(BaseValue baseValue)
+    public void handlePreValues(BaseValue baseValue, int flag)
     {
         if (this.cachedCameraSelection.isEmpty()) this.cachedCameraSelection.addAll(this.panel.cameraEditor.clips.getSelection());
         if (this.cachedVoicelineSelection.isEmpty()) this.cachedVoicelineSelection.addAll(this.panel.screenplayEditor.editor.clips.getSelection());
@@ -118,6 +119,11 @@ public class UIFilmUndoHandler
         if (!this.cachedValues.containsKey(baseValue))
         {
             this.cachedValues.put(baseValue, baseValue.toData());
+        }
+
+        if ((flag & IValueListener.FLAG_UNMERGEABLE) != 0)
+        {
+            this.cacheMarkLastUndoNoMerging = true;
         }
     }
 
@@ -217,10 +223,5 @@ public class UIFilmUndoHandler
         {
             undo.noMerging();
         }
-    }
-
-    public void cacheMarkLastUndoNoMerging()
-    {
-        this.cacheMarkLastUndoNoMerging = true;
     }
 }

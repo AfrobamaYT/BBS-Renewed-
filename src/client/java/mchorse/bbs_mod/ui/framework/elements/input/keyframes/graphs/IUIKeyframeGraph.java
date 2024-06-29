@@ -149,14 +149,14 @@ public interface IUIKeyframeGraph
 
     public void selectKeyframe(Keyframe keyframe);
 
-    public default void setTick(long tick)
+    public default void setTick(long tick, boolean dirty)
     {
         Keyframe selected = this.getSelected();
         long diff = tick - selected.getTick();
 
         for (UIKeyframeSheet sheet : this.getSheets())
         {
-            sheet.setTickBy(diff);
+            sheet.setTickBy(diff, dirty);
         }
     }
 
@@ -168,7 +168,7 @@ public interface IUIKeyframeGraph
         }
     }
 
-    public default void setValue(Object value)
+    public default void setValue(Object value, boolean unmergeable)
     {
         Keyframe selected = this.getSelected();
         IKeyframeFactory factory = selected.getFactory();
@@ -178,7 +178,7 @@ public interface IUIKeyframeGraph
         {
             if (sheet.channel.getFactory() == factory)
             {
-                sheet.setValue(value, keyframe);
+                sheet.setValue(value, keyframe, unmergeable);
             }
         }
     }

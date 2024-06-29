@@ -12,7 +12,7 @@ public class ValueAngle extends BaseValueBasic<Angle>
     }
 
     @Override
-    public void set(Angle value)
+    public void set(Angle value, int flag)
     {
         this.preNotifyParent();
         this.value.set(value);

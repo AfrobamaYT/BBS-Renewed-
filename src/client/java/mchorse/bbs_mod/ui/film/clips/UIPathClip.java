@@ -20,14 +20,6 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Vector2d;
 
-/**
- * Path clip panel
- *
- * This panel has the most modules used. It's responsible for editing path
- * clip. It uses point and angle modules to edit a position which is picked
- * from the points module. Interpolation module is used to modify path clip's
- * interpolation methods.
- */
 public class UIPathClip extends UIClip<PathClip>
 {
     public UIPointModule point;

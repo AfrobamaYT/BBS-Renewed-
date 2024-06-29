@@ -24,14 +24,14 @@ public abstract class BaseValueNumber <T extends Number> extends BaseValueBasic<
     }
 
     @Override
-    public void set(T value)
+    public void set(T value, int flag)
     {
         if (this.min != null && this.max != null)
         {
             value = this.clamp(value);
         }
 
-        super.set(value);
+        super.set(value, flag);
     }
 
     protected abstract T clamp(T value);

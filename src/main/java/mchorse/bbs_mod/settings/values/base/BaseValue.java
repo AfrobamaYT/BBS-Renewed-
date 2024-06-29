@@ -2,6 +2,7 @@ package mchorse.bbs_mod.settings.values.base;
 
 import mchorse.bbs_mod.data.IDataSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.settings.values.IValueListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,19 +15,24 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
     protected BaseValue parent;
 
     private boolean visible = true;
-    private List<Consumer<BaseValue>> preCallbacks;
-    private List<Consumer<BaseValue>> postCallbacks;
+    private List<IValueListener> preCallbacks;
+    private List<IValueListener> postCallbacks;
 
     public static <T extends BaseValue> void edit(T value, Consumer<T> callback)
+    {
+        edit(value, 0, callback);
+    }
+
+    public static <T extends BaseValue> void edit(T value, int flag, Consumer<T> callback)
     {
         if (callback == null)
         {
             return;
         }
 
-        value.preNotifyParent();
+        value.preNotifyParent(flag);
         callback.accept(value);
-        value.postNotifyParent();
+        value.postNotifyParent(flag);
     }
 
     public BaseValue(String id)
@@ -49,7 +55,7 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
         return this;
     }
 
-    public BaseValue preCallback(Consumer<BaseValue> callback)
+    public BaseValue preCallback(IValueListener callback)
     {
         if (this.preCallbacks == null)
         {
@@ -61,7 +67,7 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
         return this;
     }
 
-    public BaseValue postCallback(Consumer<BaseValue> callback)
+    public BaseValue postCallback(IValueListener callback)
     {
         if (this.postCallbacks == null)
         {
@@ -114,42 +120,52 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
 
     public void preNotifyParent()
     {
-        this.preNotifyParent(this);
+        this.preNotifyParent(IValueListener.FLAG_DEFAULT);
     }
 
-    public void preNotifyParent(BaseValue value)
+    public void preNotifyParent(int flag)
+    {
+        this.preNotifyParent(this, flag);
+    }
+
+    public void preNotifyParent(BaseValue value, int flag)
     {
         if (this.parent != null)
         {
-            this.parent.preNotifyParent(value);
+            this.parent.preNotifyParent(value, flag);
         }
 
         if (this.preCallbacks != null)
         {
-            for (Consumer<BaseValue> callback : this.preCallbacks)
+            for (IValueListener callback : this.preCallbacks)
             {
-                callback.accept(value);
+                callback.accept(value, flag);
             }
         }
     }
 
     public void postNotifyParent()
     {
-        this.postNotifyParent(this);
+        this.postNotifyParent(IValueListener.FLAG_DEFAULT);
     }
 
-    public void postNotifyParent(BaseValue value)
+    public void postNotifyParent(int flag)
+    {
+        this.postNotifyParent(this, flag);
+    }
+
+    public void postNotifyParent(BaseValue value, int flag)
     {
         if (this.parent != null)
         {
-            this.parent.postNotifyParent(value);
+            this.parent.postNotifyParent(value, flag);
         }
 
         if (this.postCallbacks != null)
         {
-            for (Consumer<BaseValue> callback : this.postCallbacks)
+            for (IValueListener callback : this.postCallbacks)
             {
-                callback.accept(value);
+                callback.accept(value, flag);
             }
         }
     }
@@ -217,13 +233,18 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
 
     public void copy(BaseValue value)
     {
-        this.preNotifyParent();
+        this.copy(value, IValueListener.FLAG_DEFAULT);
+    }
+
+    public void copy(BaseValue value, int flag)
+    {
+        this.preNotifyParent(flag);
 
         if (value != null)
         {
             this.fromData(value.toData());
         }
 
-        this.postNotifyParent();
+        this.postNotifyParent(flag);
     }
 }

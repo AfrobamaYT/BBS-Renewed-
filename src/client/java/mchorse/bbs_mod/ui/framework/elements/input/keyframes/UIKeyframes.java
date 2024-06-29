@@ -1,10 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -17,12 +18,14 @@ import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +60,8 @@ public class UIKeyframes extends UIElement
     private final Consumer<Keyframe> callback;
     private Consumer<UIContext> backgroundRender;
     private Supplier<Integer> duration;
+
+    private SheetCache cache;
 
     private IAxisConverter converter;
 
@@ -147,6 +152,52 @@ public class UIKeyframes extends UIElement
 
             this.resetView();
         }
+    }
+
+    /* Caching keyframes */
+
+    public void cacheKeyframes()
+    {
+        this.cache = new SheetCache(this.currentGraph.getSheets());
+    }
+
+    public void submitKeyframes()
+    {
+        /* Cache selection indices */
+        Map<UIKeyframeSheet, List<Integer>> oldIndices = new HashMap<>();
+        Map<UIKeyframeSheet, List<Integer>> indices = new HashMap<>();
+
+        for (UIKeyframeSheet sheet : this.currentGraph.getSheets())
+        {
+            boolean notEmpty = !sheet.selection.getIndices().isEmpty();
+
+            if (notEmpty) oldIndices.put(sheet, new ArrayList<>(sheet.selection.getIndices()));
+
+            sheet.sort();
+
+            if (notEmpty) indices.put(sheet, new ArrayList<>(sheet.selection.getIndices()));
+        }
+
+        /* Apply the data in order and submit to pre-/post-handlers */
+        SheetCache cache = new SheetCache(this.currentGraph.getSheets());
+
+        for (Pair<BaseType, UIKeyframeSheet> pair : this.cache.data)
+        {
+            pair.b.channel.fromData(pair.a);
+            pair.b.selection.clear();
+            pair.b.selection.addAll(oldIndices.get(pair.b));
+            pair.b.channel.preNotifyParent(IValueListener.FLAG_UNMERGEABLE);
+        }
+
+        for (Pair<BaseType, UIKeyframeSheet> pair : cache.data)
+        {
+            pair.b.channel.fromData(pair.a);
+            pair.b.selection.clear();
+            pair.b.selection.addAll(indices.get(pair.b));
+            pair.b.channel.postNotifyParent(IValueListener.FLAG_UNMERGEABLE);
+        }
+
+        this.cache = null;
     }
 
     /* Copy-pasting */
@@ -543,6 +594,8 @@ public class UIKeyframes extends UIElement
         {
             this.dragging = 0;
 
+            this.cacheKeyframes();
+
             if (found != null)
             {
                 this.originalT = (int) found.getTick();
@@ -563,10 +616,8 @@ public class UIKeyframes extends UIElement
 
         if (this.dragging > 0)
         {
-            for (UIKeyframeSheet sheet : this.currentGraph.getSheets())
-            {
-                BaseValue.edit(sheet.channel, (s) -> sheet.sort());
-            }
+            this.submitKeyframes();
+            this.currentGraph.pickSelected();
         }
 
         this.navigating = false;
@@ -716,6 +767,22 @@ public class UIKeyframes extends UIElement
         public PastedKeyframes(IKeyframeFactory factory)
         {
             this.factory = factory;
+        }
+    }
+
+    private static class SheetCache
+    {
+        public List<Pair<BaseType, UIKeyframeSheet>> data = new ArrayList<>();
+
+        public SheetCache(Collection<UIKeyframeSheet> sheets)
+        {
+            for (UIKeyframeSheet sheet : sheets)
+            {
+                if (!sheet.selection.getIndices().isEmpty())
+                {
+                    this.data.add(new Pair<>(sheet.channel.toData(), sheet));
+                }
+            }
         }
     }
 }

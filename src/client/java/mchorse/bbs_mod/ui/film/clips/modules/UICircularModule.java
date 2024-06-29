@@ -6,13 +6,6 @@ import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 
-/**
- * Circular GUI module
- *
- * This class unifies four trackpads into one object which edits
- * {@link CircularClip}'s other properties, and makes it way easier to reuse
- * in other classes.
- */
 public class UICircularModule extends UIAbstractModule
 {
     public UITrackpad offset;
