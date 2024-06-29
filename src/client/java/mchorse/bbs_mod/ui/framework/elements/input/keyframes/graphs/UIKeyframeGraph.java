@@ -102,11 +102,12 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         {
             /* Centerize */
             this.yAxis.setShift(minY);
+            this.yAxis.anchor(0.5F);
         }
         else
         {
             /* Spread apart vertically */
-            this.yAxis.viewOffset(minY, maxY, this.keyframes.area.h, 20);
+            this.yAxis.viewOffset(minY, maxY, this.keyframes.area.h, 30);
         }
     }
 
