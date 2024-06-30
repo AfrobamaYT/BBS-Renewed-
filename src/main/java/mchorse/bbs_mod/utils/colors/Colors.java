@@ -39,19 +39,6 @@ public class Colors
     public static final int HIGHLIGHT = 0xddddff;
     public static final int CURSOR = 0xff57f52a;
 
-    /* Data element colors */
-    public static final int CANCEL = 0xeeeeee;
-    public static final int CONDITION = 0xff1493;
-    public static final int CRAFTING = 0xff6600;
-    public static final int DIALOGUE = 0x11ff33;
-    public static final int ENTITY = 0x2d4163;
-    public static final int FACTION = 0xb3ff00;
-    public static final int QUEST = 0xffaa00;
-    public static final int REPLY = 0x00a0ff;
-    public static final int STATE = Colors.NEGATIVE;
-    public static final int TIME = 0x0088ff;
-    public static final int FORM = 0x4f00e0;
-
     public static final Color COLOR = new Color();
 
     public static int mulRGB(int color, float factor)

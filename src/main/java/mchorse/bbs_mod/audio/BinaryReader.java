@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.audio;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -40,7 +41,7 @@ public abstract class BinaryReader
     {
         if (stream.read(this.buf) < 4)
         {
-            throw new IOException();
+            throw new EOFException();
         }
 
         return b2i(this.buf[0], this.buf[1], this.buf[2], this.buf[3]);

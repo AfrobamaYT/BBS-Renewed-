@@ -1,9 +1,13 @@
 package mchorse.bbs_mod.audio;
 
+import mchorse.bbs_mod.audio.wav.WaveCue;
+import mchorse.bbs_mod.audio.wav.WaveList;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Wave
 {
@@ -15,6 +19,9 @@ public class Wave
     public int bitsPerSample;
 
     public byte[] data;
+
+    public List<WaveList> lists = new ArrayList<>();
+    public List<WaveCue> cues = new ArrayList<>();
 
     public Wave(int audioFormat, int numChannels, int sampleRate, int bitsPerSample, byte[] data)
     {
@@ -129,6 +136,24 @@ public class Wave
         MemoryUtil.memFree(sample);
         MemoryUtil.memFree(dataBuffer);
 
+        wave.lists = this.lists;
+        wave.cues = this.cues;
+
         return wave;
+    }
+
+    public float[] getCues()
+    {
+        float[] cues = new float[this.cues.size()];
+        int i = 0;
+
+        for (WaveCue cue : this.cues)
+        {
+            cues[i] = cue.position / (float) this.sampleRate;
+
+            i += 1;
+        }
+
+        return cues;
     }
 }

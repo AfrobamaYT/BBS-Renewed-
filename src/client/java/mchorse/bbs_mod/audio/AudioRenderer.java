@@ -47,11 +47,6 @@ public class AudioRenderer
 
         Waveform wave = file.getBuffer().getWaveform();
 
-        if (!wave.isCreated())
-        {
-            wave.render(null);
-        }
-
         float duration = w / (float) wave.getPixelsPerSecond();
         float playback = file.getPlaybackPosition();
         int offset = (int) (playback * wave.getPixelsPerSecond());
