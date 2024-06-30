@@ -121,17 +121,6 @@ public class CubicCubeRenderer implements ICubicRenderer
             this.normal.set(quad.normal.x, quad.normal.y, quad.normal.z);
             stack.peek().getNormalMatrix().transform(this.normal);
 
-            /* For 0 sized cubes on either axis, to avoid getting dark shading on models
-             * which didn't correctly setup the UV faces.
-             *
-             * For example two wings, first wing uses top face for texturing the flap,
-             * and second wing uses bottom face as a flap. In the end, the second wing
-             * will appear dark shaded without this fix.
-             */
-            if (this.normal.x < 0 && (cube.size.y == 0 || cube.size.z == 0)) this.normal.x *= -1;
-            if (this.normal.y < 0 && (cube.size.x == 0 || cube.size.z == 0)) this.normal.y *= -1;
-            if (this.normal.z < 0 && (cube.size.x == 0 || cube.size.y == 0)) this.normal.z *= -1;
-
             if (quad.vertices.size() == 4)
             {
                 this.writeVertex(builder, stack, group, quad.vertices.get(0));
