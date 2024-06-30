@@ -14,7 +14,6 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.util.math.MathHelper;
 
 import java.util.List;
 
@@ -33,7 +32,7 @@ public class UIAudioPlayer extends UIElement implements IUITreeEventListener
 
     public UIAudioPlayer()
     {
-        this.play = new UIIcon(() -> this.player.isPlaying() ? Icons.PAUSE : Icons.PLAY, (b) -> this.togglePlaying());
+        this.play = new UIIcon(() -> this.player == null || this.player.isPlaying() ? Icons.PAUSE : Icons.PLAY, (b) -> this.togglePlaying());
         this.play.relative(this).h(1F);
 
         this.add(this.play);
