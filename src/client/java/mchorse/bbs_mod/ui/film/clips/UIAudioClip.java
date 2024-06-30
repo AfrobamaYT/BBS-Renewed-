@@ -4,12 +4,14 @@ import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UISoundOverlayPanel;
 
 public class UIAudioClip extends UIClip<AudioClip>
 {
     public UIButton pickAudio;
+    public UITrackpad offset;
 
     public UIAudioClip(AudioClip clip, IUIClipsDelegate editor)
     {
@@ -27,6 +29,9 @@ public class UIAudioClip extends UIClip<AudioClip>
 
             UIOverlay.addOverlay(this.getContext(), panel.set(this.clip.audio.get()));
         });
+
+        this.offset = new UITrackpad((v) -> this.clip.offset.set(v.intValue()));
+        this.offset.integer().limit(0D);
     }
 
     @Override
@@ -35,5 +40,14 @@ public class UIAudioClip extends UIClip<AudioClip>
         super.registerPanels();
 
         this.panels.add(UIClip.label(UIKeys.C_CLIP.get("bbs:audio")).marginTop(12), this.pickAudio);
+        this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_AUDIO_OFFSET).marginTop(6), this.offset);
+    }
+
+    @Override
+    public void fillData()
+    {
+        super.fillData();
+
+        this.offset.setValue(this.clip.offset.get());
     }
 }

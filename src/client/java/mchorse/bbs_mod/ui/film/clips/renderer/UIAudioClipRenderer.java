@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.clips.renderer;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.audio.SoundBuffer;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -21,8 +22,10 @@ public class UIAudioClipRenderer extends UIClipRenderer<AudioClip>
 
             if (player != null)
             {
+                int offset = clip.offset.get();
+
                 context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.mulRGB(color, 0.6F));
-                player.getWaveform().render(context.batcher, Colors.WHITE, area.x, area.y, area.w, area.h, 0, clip.duration.get() / 20F);
+                player.getWaveform().render(context.batcher, Colors.WHITE, area.x, area.y, area.w, area.h, TimeUtils.toSeconds(offset), TimeUtils.toSeconds(offset + clip.duration.get()));
             }
         }
         else

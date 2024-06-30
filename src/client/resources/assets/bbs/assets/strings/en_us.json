@@ -156,6 +156,7 @@
     "bbs.ui.camera.panels.all": "All",
     "bbs.ui.camera.panels.angle": "Angle",
     "bbs.ui.camera.panels.at_block": "Look at block",
+    "bbs.ui.camera.panels.audio.offset": "Audio offset",
     "bbs.ui.camera.panels.audio.pick_audio": "Pick audio...",
     "bbs.ui.camera.panels.auto_center": "Auto center",
     "bbs.ui.camera.panels.block": "Block coordinates",

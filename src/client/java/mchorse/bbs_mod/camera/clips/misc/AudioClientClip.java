@@ -3,6 +3,7 @@ package mchorse.bbs_mod.camera.clips.misc;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
@@ -105,7 +106,7 @@ public class AudioClientClip extends AudioClip
             }
             else
             {
-                playback.put(link, tickTime);
+                playback.put(link, TimeUtils.toSeconds(this.offset.get()) + tickTime);
             }
         }
     }
