@@ -7,6 +7,7 @@ import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UIKeyframeSheet
@@ -52,9 +53,10 @@ public class UIKeyframeSheet
         return this.icon;
     }
 
-    public void sort()
+    public List<Integer> sort()
     {
         List<Keyframe> selected = this.selection.getSelected();
+        List<Integer> lastSelection = new ArrayList<>(this.selection.getIndices());
 
         this.channel.sort();
         this.selection.clear();
@@ -65,6 +67,8 @@ public class UIKeyframeSheet
         {
             this.selection.add(keyframes.indexOf(keyframe));
         }
+
+        return lastSelection;
     }
 
     public void setTickBy(long diff, boolean dirty)

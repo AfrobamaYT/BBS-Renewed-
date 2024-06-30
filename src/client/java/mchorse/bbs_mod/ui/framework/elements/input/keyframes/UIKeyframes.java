@@ -164,18 +164,13 @@ public class UIKeyframes extends UIElement
     public void submitKeyframes()
     {
         /* Cache selection indices */
-        Map<UIKeyframeSheet, List<Integer>> oldIndices = new HashMap<>();
-        Map<UIKeyframeSheet, List<Integer>> indices = new HashMap<>();
+        Map<UIKeyframeSheet, Pair<List<Integer>, List<Integer>>> selection = new HashMap<>();
 
         for (UIKeyframeSheet sheet : this.currentGraph.getSheets())
         {
-            boolean notEmpty = !sheet.selection.getIndices().isEmpty();
+            List<Integer> last = sheet.sort();
 
-            if (notEmpty) oldIndices.put(sheet, new ArrayList<>(sheet.selection.getIndices()));
-
-            sheet.sort();
-
-            if (notEmpty) indices.put(sheet, new ArrayList<>(sheet.selection.getIndices()));
+            selection.put(sheet, new Pair<>(last, new ArrayList<>(sheet.selection.getIndices())));
         }
 
         /* Apply the data in order and submit to pre-/post-handlers */
@@ -185,7 +180,7 @@ public class UIKeyframes extends UIElement
         {
             pair.b.channel.fromData(pair.a);
             pair.b.selection.clear();
-            pair.b.selection.addAll(oldIndices.get(pair.b));
+            pair.b.selection.addAll(selection.get(pair.b).a);
             pair.b.channel.preNotifyParent(IValueListener.FLAG_UNMERGEABLE);
         }
 
@@ -193,7 +188,7 @@ public class UIKeyframes extends UIElement
         {
             pair.b.channel.fromData(pair.a);
             pair.b.selection.clear();
-            pair.b.selection.addAll(indices.get(pair.b));
+            pair.b.selection.addAll(selection.get(pair.b).b);
             pair.b.channel.postNotifyParent(IValueListener.FLAG_UNMERGEABLE);
         }
 
