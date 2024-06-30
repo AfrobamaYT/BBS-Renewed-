@@ -164,6 +164,7 @@ public class SoundManager implements IWatchDogListener
         {
             SoundPlayer player = new SoundPlayer(buffer).unique();
 
+            player.setRelative(true);
             player.play();
             this.sounds.add(player);
 

@@ -7,11 +7,62 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class AudioClientClip extends AudioClip
 {
     public AudioClientClip()
     {
         super();
+    }
+
+    public static Map<Link, Float> getPlayback(ClipContext context)
+    {
+        return (Map<Link, Float>) context.clipData.computeIfAbsent("audio", (v) -> new HashMap<Link, Float>());
+    }
+
+    public static void manageSounds(ClipContext context)
+    {
+        Map<Link, Float> playback = getPlayback(context);
+
+        for (Map.Entry<Link, Float> entry : playback.entrySet())
+        {
+            float tickTime = entry.getValue();
+            SoundPlayer player = BBSModClient.getSounds().playUnique(entry.getKey());
+
+            if (player == null)
+            {
+                continue;
+            }
+
+            if (tickTime < 0 || tickTime >= player.getBuffer().getDuration())
+            {
+                if (!player.isStopped())
+                {
+                    player.stop();
+                }
+
+                continue;
+            }
+
+            float time = player.getPlaybackPosition();
+            float diff = Math.abs(tickTime - time);
+
+            if (context.playing && !player.isPlaying())
+            {
+                player.play();
+            }
+            else if (!context.playing && player.isPlaying())
+            {
+                player.pause();
+            }
+
+            if (diff > 0.05F)
+            {
+                player.setPlaybackPosition(tickTime);
+            }
+        }
     }
 
     @Override
@@ -45,41 +96,16 @@ public class AudioClientClip extends AudioClip
                 return;
             }
 
-            player.setRelative(true);
-
             float tickTime = (context.relativeTick + context.transition) / 20F;
-            float time = player.getPlaybackPosition();
+            Map<Link, Float> playback = getPlayback(context);
 
-            if (tickTime >= player.getBuffer().getDuration() || context.relativeTick >= this.duration.get())
+            if (context.relativeTick >= this.duration.get() || tickTime < 0)
             {
-                if (!player.isStopped())
-                {
-                    player.stop();
-                }
-
-                return;
+                playback.putIfAbsent(link, -1F);
             }
-
-            if (player.isStopped())
+            else
             {
-                player.setPlaybackPosition(0);
-                player.play();
-            }
-
-            if (player.isPlaying() && !context.playing)
-            {
-                player.pause();
-            }
-            else if (player.isPaused() && context.playing)
-            {
-                player.play();
-            }
-
-            float diff = Math.abs(tickTime - time);
-
-            if (diff > 0.05F)
-            {
-                player.setPlaybackPosition(tickTime);
+                playback.put(link, tickTime);
             }
         }
     }

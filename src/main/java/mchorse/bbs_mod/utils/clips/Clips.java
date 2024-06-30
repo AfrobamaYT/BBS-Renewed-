@@ -79,7 +79,7 @@ public class Clips extends ValueGroup
 
     public List<Clip> getClips(int tick, int maxLayer)
     {
-        clipMap.clear();
+        List<Clip> clipList = new ArrayList<>();
 
         for (Clip clip : this.clips)
         {
@@ -87,14 +87,10 @@ public class Clips extends ValueGroup
 
             if ((clip.isInside(tick) || isGlobal) && clip.layer.get() < maxLayer)
             {
-                clipMap.put(clip.layer.get(), clip);
+                clipList.add(clip);
             }
         }
 
-        List<Clip> clipList = new ArrayList<>();
-
-        clipList.clear();
-        clipList.addAll(clipMap.values());
         clipList.sort(Comparator.comparingInt((a) -> a.layer.get()));
 
         return clipList;

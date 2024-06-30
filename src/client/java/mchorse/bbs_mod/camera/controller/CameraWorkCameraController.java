@@ -2,10 +2,10 @@ package mchorse.bbs_mod.camera.controller;
 
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
+import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
-import net.minecraft.client.MinecraftClient;
 
 public abstract class CameraWorkCameraController implements ICameraController
 {
@@ -40,6 +40,8 @@ public abstract class CameraWorkCameraController implements ICameraController
         {
             this.context.apply(clip, this.position);
         }
+
+        AudioClientClip.manageSounds(this.context);
 
         this.context.currentLayer = 0;
 
