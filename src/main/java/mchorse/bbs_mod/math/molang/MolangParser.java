@@ -125,7 +125,8 @@ public class MolangParser extends MathBuilder
             }
         }
 
-        Variable variable = this.currentStatement == null ? null : this.currentStatement.locals.get(name);
+        MolangMultiStatement currentStatement = this.currentStatement;
+        Variable variable = currentStatement == null ? null : currentStatement.locals.get(name);
 
         if (variable == null)
         {
