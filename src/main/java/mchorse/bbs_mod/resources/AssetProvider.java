@@ -56,6 +56,11 @@ public class AssetProvider
 
     public File getFile(Link link)
     {
+        if (link == null)
+        {
+            return null;
+        }
+
         List<ISourcePack> packs = this.getPacks(link.source);
 
         for (ISourcePack pack : packs)

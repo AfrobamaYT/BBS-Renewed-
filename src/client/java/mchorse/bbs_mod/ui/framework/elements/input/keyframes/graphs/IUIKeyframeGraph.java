@@ -16,8 +16,6 @@ import java.util.List;
 public interface IUIKeyframeGraph
 {
     public static final int TOP_MARGIN = 25;
-    public static final double MIN_ZOOM = 0.01D;
-    public static final double MAX_ZOOM = 1000D;
 
     public void resetView();
 

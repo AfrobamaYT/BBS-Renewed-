@@ -10,6 +10,9 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class UIKeys
 {
+    public static final IKey AUDIO_TITLE = L10n.lang("bbs.ui.audio_editor.title");
+    public static final IKey AUDIO_CONTEXT_ADD = L10n.lang("bbs.ui.audio_editor.context.add");
+    public static final IKey AUDIO_CONTEXT_REMOVE = L10n.lang("bbs.ui.audio_editor.context.remove");
     public static final IKey CONTEXT_MENU_KEY = L10n.lang("bbs.ui.context.key");
     public static final IKey CONTEXT_MENU_KEY_CATEGORY = L10n.lang("bbs.ui.context.key_category");
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_DESELECT = L10n.lang("bbs.ui.camera.editor.keys.clips.deselect");
@@ -625,6 +628,8 @@ public class UIKeys
     public static final IKey LANGUAGE_EDITOR_REFERENCE_TITLE = L10n.lang("studio.ui.language.editor.reference-title");
     public static final IKey LANGUAGE_EDITOR_SAVE = L10n.lang("studio.ui.language.editor.save");
     public static final IKey LANGUAGE_EDITOR_TITLE = L10n.lang("studio.ui.language.editor.title");
+    public static final IKey UTILITY_AUDIO = L10n.lang("studio.ui.utility.audio");
+    public static final IKey UTILITY_OPEN_AUDIO_EDITOR = L10n.lang("studio.ui.utility.open_audio_editor");
     public static final IKey UTILITY_ANALYZE_LANG = L10n.lang("studio.ui.utility.analyze_lang");
     public static final IKey UTILITY_COMPILE_LANG = L10n.lang("studio.ui.utility.compile_lang");
     public static final IKey UTILITY_COMPILE_LANG_DESCRIPTION = L10n.lang("studio.ui.utility.compile_lang-description");

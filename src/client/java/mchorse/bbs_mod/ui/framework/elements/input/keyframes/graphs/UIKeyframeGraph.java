@@ -254,13 +254,13 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         /* Scaling X */
         if (x && !y || none)
         {
-            this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+            this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
         }
 
         /* Scaling Y */
         if (y && !x || none)
         {
-            this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+            this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel));
         }
     }
 

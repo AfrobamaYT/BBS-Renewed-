@@ -278,7 +278,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
         else
         {
-            this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel), MIN_ZOOM, MAX_ZOOM);
+            this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
         }
     }
 

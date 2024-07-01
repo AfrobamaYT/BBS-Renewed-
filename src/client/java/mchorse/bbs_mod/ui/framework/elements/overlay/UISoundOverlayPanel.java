@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.overlay;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -54,7 +55,8 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
         }
 
         Link location = Link.create(this.strings.list.getCurrentFirst());
+        SoundPlayer play = BBSModClient.getSounds().play(location);
 
-        BBSModClient.getSounds().play(location);
+        play.setRelative(true);
     }
 }

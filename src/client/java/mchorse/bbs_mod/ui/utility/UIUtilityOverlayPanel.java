@@ -14,6 +14,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
+import mchorse.bbs_mod.ui.utility.audio.UIAudioEditorOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -99,11 +100,13 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         UIButton analyze = new UIButton(UIKeys.UTILITY_ANALYZE_LANG, (b) -> this.analyzeLanguageStrings());
         UIButton compile = new UIButton(UIKeys.UTILITY_COMPILE_LANG, (b) -> this.compileLanguageStrings());
         UIButton langEditor = new UIButton(UIKeys.UTILITY_LANG_EDITOR, (b) -> this.openLangEditor());
+        UIButton openAudioEditor = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_EDITOR, (b) -> this.openAudioEditor());
 
         this.view.add(UI.label(UIKeys.UTILITY_OPEN_FOLDER), UI.row(openGameDirectory, openModelsDirectory, openAudioDirectory).marginBottom(8));
         this.view.add(UI.label(UIKeys.UTILITY_RELOAD_LABEL), UI.row(textures, language, models, sounds, terrain).marginBottom(8));
         this.view.add(UI.column(UI.label(UIKeys.UTILITY_RESIZE_WINDOW), UI.row(this.width, this.height)).marginBottom(8));
-        this.view.add(UI.label(UIKeys.UTILITY_LANG_LABEL), UI.row(analyze, compile), langEditor);
+        this.view.add(UI.label(UIKeys.UTILITY_LANG_LABEL), UI.row(analyze, compile), langEditor.marginBottom(8));
+        this.view.add(UI.label(UIKeys.UTILITY_AUDIO), openAudioEditor);
         this.content.add(this.view);
     }
 
@@ -121,6 +124,15 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         this.close();
 
         UIOverlay.addOverlay(context, new UILanguageEditorOverlayPanel(), 0.6F, 0.9F);
+    }
+
+    private void openAudioEditor()
+    {
+        UIContext context = this.getContext();
+
+        this.close();
+
+        UIOverlay.addOverlay(context, new UIAudioEditorOverlayPanel(), 0.6F, 0.9F);
     }
 
     private void analyzeLanguageStrings()

@@ -41,7 +41,7 @@ public class UIDebugPanel extends UIDashboardPanel
             this.keyframes.addSheet(sheet);
         }
 
-        this.button = new UIButton(IKey.raw("Herro"), (b) ->
+        this.button = new UIButton(IKey.raw("Hello"), (b) ->
         {
             WaveReader waveReader = new WaveReader();
             File assetsFolder = new File(BBSMod.getAssetsFolder(), "audio/cheese.wav");

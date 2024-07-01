@@ -330,6 +330,11 @@ public class Scale
         this.setZoom(MathUtils.clamp(this.getZoom() + amount, min, max));
     }
 
+    public void zoomAnchor(float newAnchor, double amount)
+    {
+        this.zoomAnchor(newAnchor, amount, 0.01D, 1000D);
+    }
+
     public void zoomAnchor(float newAnchor, double amount, double min, double max)
     {
         if (this.area != null)
