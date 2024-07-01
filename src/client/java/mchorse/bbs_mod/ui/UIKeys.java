@@ -210,6 +210,7 @@ public class UIKeys
     public static final IKey FILM_TELEPORT_TITLE = L10n.lang("bbs.ui.film.teleport-title");
     public static final IKey FILM_TELEPORT_DESCRIPTION = L10n.lang("bbs.ui.film.teleport-description");
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
+    public static final IKey FILM_SAVE = L10n.lang("bbs.ui.film.save");
     public static final IKey FILMS_TITLE = L10n.lang("bbs.ui.films.title");
     public static final IKey FILMS_CAMERA = L10n.lang("bbs.ui.films.camera");
     public static final IKey FILMS_PLAY = L10n.lang("bbs.ui.films.play");
