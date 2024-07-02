@@ -36,6 +36,9 @@ public class Animator implements IAnimator
     public ActionPlayback shoot;
     public ActionPlayback consume;
 
+    public ActionPlayback basePre;
+    public ActionPlayback basePost;
+
     /* Action pipeline properties */
     public ActionPlayback active;
     public ActionPlayback lastActive;
@@ -55,7 +58,7 @@ public class Animator implements IAnimator
     {
         return Arrays.asList(
             "idle", "running", "sprinting", "crouching", "crouching_idle", "dying", "falling",
-            "swipe", "jump", "hurt", "land", "shoot", "consume"
+            "swipe", "jump", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
         );
     }
 
@@ -78,6 +81,9 @@ public class Animator implements IAnimator
         this.land = this.createAction(this.land, actions.getConfig("land"), false);
         this.shoot = this.createAction(this.shoot, actions.getConfig("shoot"), true);
         this.consume = this.createAction(this.consume, actions.getConfig("consume"), true);
+
+        this.basePre = this.createAction(this.consume, actions.getConfig("base_pre"), true);
+        this.basePost = this.createAction(this.consume, actions.getConfig("base_post"), true);
 
         if (!fade)
         {
@@ -151,6 +157,16 @@ public class Animator implements IAnimator
         this.controlActions(target);
 
         /* Update primary actions */
+        if (this.basePre != null)
+        {
+            this.basePre.update();
+        }
+
+        if (this.basePost != null)
+        {
+            this.basePost.update();
+        }
+
         if (this.active != null)
         {
             this.active.update();
@@ -324,6 +340,11 @@ public class Animator implements IAnimator
     @Override
     public void applyActions(IEntity target, Model armature, float transition)
     {
+        if (this.basePre != null)
+        {
+            this.basePre.apply(target, armature, transition, 1F, false);
+        }
+
         if (this.lastActive != null && this.active.isFading())
         {
             this.lastActive.apply(target, armature, transition, 1F, false);
@@ -334,6 +355,11 @@ public class Animator implements IAnimator
             float fade = this.active.isFading() ? this.active.getFadeFactor(transition) : 1F;
 
             this.active.apply(target, armature, transition, fade, false);
+        }
+
+        if (this.basePost != null)
+        {
+            this.basePost.apply(target, armature, transition, 1F, false);
         }
 
         for (ActionPlayback action : this.actions)
