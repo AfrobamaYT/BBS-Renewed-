@@ -34,6 +34,7 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -185,9 +186,9 @@ public class UILanguageEditorOverlayPanel extends UIOverlayPanel
                 continue;
             }
 
-            try
+            try (InputStream asset = BBSMod.getProvider().getAsset(link))
             {
-                String string = IOUtils.readText(BBSMod.getProvider().getAsset(link));
+                String string = IOUtils.readText(asset);
 
                 base.combine(DataToString.mapFromString(string));
             }

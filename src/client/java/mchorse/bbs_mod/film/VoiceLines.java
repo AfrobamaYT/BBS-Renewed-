@@ -42,13 +42,13 @@ public class VoiceLines
         Wave wave = null;
         Waveform waveform = null;
 
-        try
-        {
-            File file = new File(this.folder, clip.uuid.get() + "/" + clip.variant.get());
-            List<ColorCode> colorCodes = new ArrayList<>();
-            int color = BBSSettings.elevenVoiceColors.getColor(clip.voice.get());
+        File file = new File(this.folder, clip.uuid.get() + "/" + clip.variant.get());
+        List<ColorCode> colorCodes = new ArrayList<>();
+        int color = BBSSettings.elevenVoiceColors.getColor(clip.voice.get());
 
-            wave = new WaveReader().read(new FileInputStream(file));
+        try (FileInputStream stream = new FileInputStream(file))
+        {
+            wave = new WaveReader().read(stream);
             waveform = new Waveform();
 
             colorCodes.add(new ColorCode(0, wave.getDuration(), color));

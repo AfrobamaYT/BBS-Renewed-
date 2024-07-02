@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,9 +21,9 @@ public class TextureProcessor
         {
             FilteredLink child = multi.children.get(i);
 
-            try
+            try (InputStream asset = BBSMod.getProvider().getAsset(child.path))
             {
-                Pixels pixels = Pixels.fromPNGStream(BBSMod.getProvider().getAsset(child.path));
+                Pixels pixels = Pixels.fromPNGStream(asset);
 
                 w = Math.max(w, child.getWidth(pixels.width));
                 h = Math.max(h, child.getHeight(pixels.height));

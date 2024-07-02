@@ -121,9 +121,8 @@ public class ModelManager implements IWatchDogListener
 
     private MapType loadConfig(Link modelLink)
     {
-        try
+        try (InputStream asset = this.provider.getAsset(modelLink.combine("config.json")))
         {
-            InputStream asset = this.provider.getAsset(modelLink.combine("config.json"));
             String string = IOUtils.readText(asset);
 
             return (MapType) DataToString.fromString(string);

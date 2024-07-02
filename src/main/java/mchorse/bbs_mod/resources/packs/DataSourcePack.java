@@ -60,9 +60,9 @@ public class DataSourcePack implements ISourcePack
 
     private static void read(MapType data, File file, String path)
     {
-        try
+        try (FileInputStream stream = new FileInputStream(file))
         {
-            data.putByteArray(path, IOUtils.readBytes(new FileInputStream(file)));
+            data.putByteArray(path, IOUtils.readBytes(stream));
         }
         catch (Exception e)
         {

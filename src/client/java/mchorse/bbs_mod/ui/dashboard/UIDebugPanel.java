@@ -46,9 +46,9 @@ public class UIDebugPanel extends UIDashboardPanel
             WaveReader waveReader = new WaveReader();
             File assetsFolder = new File(BBSMod.getAssetsFolder(), "audio/cheese.wav");
 
-            try
+            try (FileInputStream stream = new FileInputStream(assetsFolder))
             {
-                Wave read = waveReader.read(new FileInputStream(assetsFolder));
+                Wave read = waveReader.read(stream);
 
                 System.out.println(read);
             }

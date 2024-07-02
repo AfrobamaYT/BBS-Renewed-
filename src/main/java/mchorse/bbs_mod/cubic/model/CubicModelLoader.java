@@ -9,6 +9,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,7 +46,8 @@ public class CubicModelLoader implements IModelLoader
         for (int i = 0; i < modelStreams.size(); i++)
         {
             CubicLoader loader = new CubicLoader();
-            CubicLoader.LoadingInfo info = loader.load(models.parser, modelStreams.get(i), modelBBS.get(i).path);
+            InputStream stream = modelStreams.get(i);
+            CubicLoader.LoadingInfo info = loader.load(models.parser, stream, modelBBS.get(i).path);
 
             if (info.model != null)
             {
@@ -59,6 +61,13 @@ public class CubicModelLoader implements IModelLoader
                     newModel.animations.add(animation);
                 }
             }
+
+            try
+            {
+                stream.close();
+            }
+            catch (IOException e)
+            {}
         }
 
         if (newModel.model == null || newModel.model.topGroups.isEmpty())
@@ -91,11 +100,12 @@ public class CubicModelLoader implements IModelLoader
         {
             if (type.isString())
             {
-                try
+                Link animationFile = Link.create(type.asString());
+
+                try (InputStream asset = models.provider.getAsset(animationFile))
                 {
-                    Link animationFile = Link.create(type.asString());
                     CubicLoader loader = new CubicLoader();
-                    CubicLoader.LoadingInfo info = loader.load(models.parser, models.provider.getAsset(animationFile), type.asString());
+                    CubicLoader.LoadingInfo info = loader.load(models.parser, asset, type.asString());
 
                     if (info.animations != null)
                     {

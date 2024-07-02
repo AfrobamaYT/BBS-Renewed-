@@ -78,9 +78,8 @@ public class SoundManager implements IWatchDogListener
 
     public List<ColorCode> readColorCodes(Link link)
     {
-        try
+        try (InputStream stream = this.provider.getAsset(new Link(link.source, link.path + ".json")))
         {
-            InputStream stream = this.provider.getAsset(new Link(link.source, link.path + ".json"));
             String string = IOUtils.readText(stream);
             ListType data = DataToString.listFromString(string);
 

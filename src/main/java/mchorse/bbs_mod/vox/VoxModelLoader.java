@@ -26,15 +26,12 @@ public class VoxModelLoader implements IModelLoader
     {
         Link modelVox = IModelLoader.getLink(model.combine("model.vox"), links, ".vox");
         Link palette = IModelLoader.getLink(model.combine("palette.png"), links, ".palette");
-        InputStream voxStream;
         Model newModel = new Model(models.parser);
 
-        try
+        try (InputStream asset = models.provider.getAsset(modelVox))
         {
-            voxStream = models.provider.getAsset(modelVox);
-
             VoxReader reader = new VoxReader();
-            VoxDocument document = reader.read(voxStream, modelVox);
+            VoxDocument document = reader.read(asset, modelVox);
 
             newModel.textureWidth = document.palette.length;
             newModel.textureHeight = 1;

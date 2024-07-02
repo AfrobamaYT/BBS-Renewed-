@@ -141,11 +141,11 @@ public class L10n
 
         for (Link link : links)
         {
-            try
+            try (InputStream asset = provider.getAsset(link))
             {
                 System.out.println("Loading language file \"" + link + "\".");
 
-                this.load(link, provider.getAsset(link));
+                this.load(link, asset);
             }
             catch (Exception e)
             {

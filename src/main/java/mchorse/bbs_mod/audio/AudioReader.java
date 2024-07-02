@@ -5,17 +5,27 @@ import mchorse.bbs_mod.audio.wav.WaveReader;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 
+import java.io.InputStream;
+
 public class AudioReader
 {
     public static Wave read(AssetProvider provider, Link link) throws Exception
     {
-        if (link.path.endsWith(".wav"))
+        if (!link.path.endsWith(".wav") && !link.path.endsWith(".ogg"))
         {
-            return new WaveReader().read(provider.getAsset(link));
+            return null;
         }
-        else if (link.path.endsWith(".ogg"))
+
+        try (InputStream asset = provider.getAsset(link))
         {
-            return VorbisReader.read(link, provider.getAsset(link));
+            if (link.path.endsWith(".wav"))
+            {
+                return new WaveReader().read(asset);
+            }
+            else if (link.path.endsWith(".ogg"))
+            {
+                return VorbisReader.read(link, asset);
+            }
         }
 
         throw new IllegalStateException("Given link " + link + " isn't a Wave or a Vorbis file!");

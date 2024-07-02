@@ -65,16 +65,11 @@ public abstract class DataStorage implements IDataStorage
     @Override
     public BaseType read() throws IOException
     {
-        InputStream inputStream = this.getInputStream();
         BaseType type = null;
 
-        try
+        try (InputStream inputStream = this.getInputStream())
         {
             type = readFromStream(inputStream);
-        }
-        finally
-        {
-            inputStream.close();
         }
 
         return type;

@@ -12,6 +12,7 @@ import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 import org.lwjgl.opengl.GL11;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -129,7 +130,10 @@ public class TextureManager implements IWatchDogListener
         }
         else
         {
-            pixels = Pixels.fromPNGStream(this.provider.getAsset(link));
+            try (InputStream asset = this.provider.getAsset(link))
+            {
+                pixels = Pixels.fromPNGStream(asset);
+            }
         }
 
         return pixels;
