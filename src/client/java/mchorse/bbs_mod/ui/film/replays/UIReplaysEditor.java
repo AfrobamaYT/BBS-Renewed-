@@ -349,7 +349,9 @@ public class UIReplaysEditor extends UIElement
 
         if (insert)
         {
-            this.keyframeEditor.view.getGraph().addKeyframe(sheet, tick, null);
+            Keyframe keyframe = this.keyframeEditor.view.getGraph().addKeyframe(sheet, tick, null);
+
+            this.keyframeEditor.view.getGraph().selectKeyframe(keyframe);
 
             return;
         }

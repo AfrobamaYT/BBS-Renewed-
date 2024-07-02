@@ -4,6 +4,7 @@ import mchorse.bbs_mod.film.tts.ValueVoiceColors;
 import mchorse.bbs_mod.settings.SettingsBuilder;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.settings.values.ValueColors;
+import mchorse.bbs_mod.settings.values.ValueEditorLayout;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
@@ -55,6 +56,7 @@ public class BBSSettings
     public static ValueBoolean editorCrosshair;
     public static ValueBoolean editorSeconds;
     public static ValueInt editorPeriodicSave;
+    public static ValueEditorLayout editorLayoutSettings;
 
     public static ValueFloat recordingCountdown;
 
@@ -138,6 +140,7 @@ public class BBSSettings
         editorCrosshair = builder.getBoolean("crosshair", false);
         editorSeconds = builder.getBoolean("seconds", false);
         editorPeriodicSave = builder.getInt("periodic_save", 60, 0, 3600);
+        builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
 

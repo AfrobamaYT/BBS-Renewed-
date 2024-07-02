@@ -172,7 +172,7 @@ public class BBSModClient implements ClientModInitializer
 
     public static float getOriginalFramebufferScale()
     {
-        return originalFramebufferScale;
+        return Math.max(originalFramebufferScale, 1);
     }
 
     @Override

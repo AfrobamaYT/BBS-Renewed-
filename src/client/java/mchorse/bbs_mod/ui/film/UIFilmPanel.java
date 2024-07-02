@@ -17,6 +17,7 @@ import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.settings.values.ValueEditorLayout;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.Keys;
@@ -69,7 +70,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIElement main;
     public UIElement editArea;
     public UIDraggable draggableMain;
-    public UIDraggable draggableEditor;
     public UIFilmRecorder recorder;
     public UIFilmPreview preview;
 
@@ -89,13 +89,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private Camera camera = new Camera();
     private boolean entered;
-
-    /* Toggle viewport mode */
-    private boolean horizontal;
-    private float mainSizeH = 0.66F;
-    private float editorSizeH = 0.5F;
-    private float mainSizeV = 0.66F;
-    private float editorSizeV = 0.5F;
 
     /* Entity control */
     private UIFilmController controller = new UIFilmController(this);
@@ -129,30 +122,54 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.draggableMain = new UIDraggable((context) ->
         {
-            if (this.horizontal)
+            ValueEditorLayout layout = BBSSettings.editorLayoutSettings;
+
+            if (layout.isHorizontal())
             {
-                this.mainSizeH = 1F - (context.mouseY - this.editor.area.y) / (float) this.editor.area.h;
+                layout.setMainSizeH(1F - (context.mouseY - this.editor.area.y) / (float) this.editor.area.h);
+                layout.setEditorSizeH(1F - (context.mouseX - this.editor.area.x) / (float) this.editor.area.w);
             }
             else
             {
-                this.mainSizeV = (context.mouseX - this.editor.area.x) / (float) this.editor.area.w;
+                layout.setMainSizeV((context.mouseX - this.editor.area.x) / (float) this.editor.area.w);
+                layout.setEditorSizeV((context.mouseY - this.editor.area.y) / (float) this.editor.area.h);
             }
 
             this.setupEditorFlex(true);
         });
 
-        this.draggableEditor = new UIDraggable((context) ->
+        this.draggableMain.rendering((context) ->
         {
-            if (this.horizontal)
+            int size = 5;
+
+            if (BBSSettings.editorLayoutSettings.isHorizontal())
             {
-                this.editorSizeH = 1F - (context.mouseX - this.editor.area.x) / (float) this.editor.area.w;
+                int x = this.editArea.area.x + 3;
+                int y = this.editArea.area.ey() - 3;
+
+                context.batcher.box(x, y - size, x + 1, y, Colors.WHITE);
+                context.batcher.box(x, y - 1, x + size, y, Colors.WHITE);
+
+                x = this.editArea.area.x - 3;
+                y = this.editArea.area.ey() - 3;
+
+                context.batcher.box(x - 1, y - size, x, y, Colors.WHITE);
+                context.batcher.box(x - size, y - 1, x, y, Colors.WHITE);
             }
             else
             {
-                this.editorSizeV = (context.mouseY - this.editor.area.y) / (float) this.editor.area.h;
-            }
+                int x = this.editArea.area.x + 3;
+                int y = this.editArea.area.y - 3;
 
-            this.setupEditorFlex(true);
+                context.batcher.box(x, y - size, x + 1, y, Colors.WHITE);
+                context.batcher.box(x, y - 1, x + size, y, Colors.WHITE);
+
+                x = this.editArea.area.x + 3;
+                y = this.editArea.area.y + 3;
+
+                context.batcher.box(x, y, x + 1, y + size, Colors.WHITE);
+                context.batcher.box(x, y, x + size, y + 1, Colors.WHITE);
+            }
         });
 
         /* Editors */
@@ -166,9 +183,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Icon bar buttons */
         this.openReplays = new UIIcon(Icons.EDITOR, (b) -> UIOverlay.addOverlayLeft(this.getContext(), this.replayEditor.replays, 200));
         this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE, Direction.LEFT);
-        this.toggleHorizontal = new UIIcon(() -> this.horizontal ? Icons.EXCHANGE : Icons.CONVERT, (b) ->
+        this.toggleHorizontal = new UIIcon(() -> BBSSettings.editorLayoutSettings.isHorizontal() ? Icons.EXCHANGE : Icons.CONVERT, (b) ->
         {
-            this.horizontal = !this.horizontal;
+            BBSSettings.editorLayoutSettings.setHorizontal(!BBSSettings.editorLayoutSettings.isHorizontal());
 
             this.setupEditorFlex(true);
         });
@@ -184,7 +201,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.iconBar.add(this.openReplays.marginTop(9), this.toggleHorizontal, this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openScreenplay);
 
         this.editor.add(this.main, new UIRenderable(this::renderIcons));
-        this.main.add(this.cameraEditor, this.replayEditor, this.screenplayEditor, this.editArea, this.preview, this.draggableMain, this.draggableEditor);
+        this.main.add(this.cameraEditor, this.replayEditor, this.screenplayEditor, this.editArea, this.preview, this.draggableMain);
         this.add(this.controller, new UIRenderable(this::renderDividers));
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
@@ -218,32 +235,31 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void setupEditorFlex(boolean resize)
     {
-        this.mainSizeH = MathUtils.clamp(this.mainSizeH, 0.05F, 0.95F);
-        this.editorSizeH = MathUtils.clamp(this.editorSizeH, 0.05F, 0.95F);
-        this.mainSizeV = MathUtils.clamp(this.mainSizeV, 0.05F, 0.95F);
-        this.editorSizeV = MathUtils.clamp(this.editorSizeV, 0.05F, 0.95F);
+        ValueEditorLayout layout = BBSSettings.editorLayoutSettings;
+
+        layout.setMainSizeH(MathUtils.clamp(layout.getMainSizeH(), 0.05F, 0.95F));
+        layout.setEditorSizeH(MathUtils.clamp(layout.getEditorSizeH(), 0.05F, 0.95F));
+        layout.setMainSizeV(MathUtils.clamp(layout.getMainSizeV(), 0.05F, 0.95F));
+        layout.setEditorSizeV(MathUtils.clamp(layout.getEditorSizeV(), 0.05F, 0.95F));
 
         this.main.resetFlex();
         this.editArea.resetFlex();
         this.preview.resetFlex();
         this.draggableMain.resetFlex();
-        this.draggableEditor.resetFlex();
 
-        if (this.horizontal)
+        if (layout.isHorizontal())
         {
-            this.main.relative(this.editor).y(1F - this.mainSizeH).w(1F).hTo(this.editor.area, 1F);
-            this.editArea.relative(this.editor).x(1F - this.editorSizeH).wTo(this.editor.area, 1F).hTo(this.main.area, 0F);
-            this.preview.relative(this.editor).w(1F - this.editorSizeH).hTo(this.main.area, 0F);
-            this.draggableMain.hoverOnly().relative(this.main).x(0.5F, -40).y(-3).wh(80, 6);
-            this.draggableEditor.hoverOnly().relative(this.preview).x(1F, -3).y(0.5F, -20).wh(6, 40);
+            this.main.relative(this.editor).y(1F - layout.getMainSizeH()).w(1F).hTo(this.editor.area, 1F);
+            this.editArea.relative(this.editor).x(1F - layout.getEditorSizeH()).wTo(this.editor.area, 1F).hTo(this.main.area, 0F);
+            this.preview.relative(this.editor).w(1F - layout.getEditorSizeH()).hTo(this.main.area, 0F);
+            this.draggableMain.hoverOnly().relative(this.main).y(-3).w(1F).h(6);
         }
         else
         {
-            this.main.relative(this.editor).w(this.mainSizeV).h(1F);
-            this.editArea.relative(this.main).x(1F).y(this.editorSizeV).wTo(this.editor.area, 1F).hTo(this.editor.area, 1F);
+            this.main.relative(this.editor).w(layout.getMainSizeV()).h(1F);
+            this.editArea.relative(this.main).x(1F).y(layout.getEditorSizeV()).wTo(this.editor.area, 1F).hTo(this.editor.area, 1F);
             this.preview.relative(this.main).x(1F).wTo(this.editor.area, 1F).hTo(this.editArea.area, 0F);
-            this.draggableMain.hoverOnly().relative(this.main).x(1F).y(0.5F, -40).wh(6, 80);
-            this.draggableEditor.hoverOnly().relative(this.editArea).x(0.5F, -20).wh(40, 6);
+            this.draggableMain.hoverOnly().relative(this.main).x(1F).w(6).h(1F);
         }
 
         if (resize)

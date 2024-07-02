@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 public class UIDraggable extends UIElement
 {
     private Consumer<UIContext> callback;
+    private Consumer<UIContext> render;
     private boolean dragging;
     private boolean hover;
 
@@ -21,6 +22,13 @@ public class UIDraggable extends UIElement
     public UIDraggable hoverOnly()
     {
         this.hover = true;
+
+        return this;
+    }
+
+    public UIDraggable rendering(Consumer<UIContext> render)
+    {
+        this.render = render;
 
         return this;
     }
@@ -53,7 +61,14 @@ public class UIDraggable extends UIElement
 
         if (!this.hover || this.area.isInside(context) || this.dragging)
         {
-            Scroll.bar(context.batcher, this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50);
+            if (this.render != null)
+            {
+                this.render.accept(context);
+            }
+            else
+            {
+                Scroll.bar(context.batcher, this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A50);
+            }
         }
 
         if (this.dragging && this.callback != null)

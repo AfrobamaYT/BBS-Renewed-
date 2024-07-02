@@ -81,7 +81,7 @@ public interface IUIKeyframeGraph
 
     public boolean addKeyframe(int mouseX, int mouseY);
 
-    public default void addKeyframe(UIKeyframeSheet sheet, long tick, Object value)
+    public default Keyframe addKeyframe(UIKeyframeSheet sheet, long tick, Object value)
     {
         KeyframeSegment segment = sheet.channel.find(tick);
         Interpolation interpolation = null;
@@ -115,6 +115,8 @@ public interface IUIKeyframeGraph
         this.clearSelection();
         this.pickKeyframe(keyframe);
         sheet.selection.add(index);
+
+        return keyframe;
     }
 
     public default void removeKeyframe(Keyframe keyframe)
