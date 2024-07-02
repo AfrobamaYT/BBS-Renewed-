@@ -92,7 +92,6 @@ public class WaveReader extends BinaryReader
                             String string = new String(stringData);
 
                             list.entries.add(new Pair<>(id, string));
-
                         }
 
                         lists.add(list);

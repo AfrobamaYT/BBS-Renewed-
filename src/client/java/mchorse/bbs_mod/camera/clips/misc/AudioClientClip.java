@@ -39,9 +39,9 @@ public class AudioClientClip extends AudioClip
 
             if (tickTime < 0 || tickTime >= player.getBuffer().getDuration())
             {
-                if (!player.isStopped())
+                if (player.isPlaying())
                 {
-                    player.stop();
+                    player.pause();
                 }
 
                 continue;

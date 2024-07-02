@@ -65,9 +65,10 @@ public class Waveform
 
                 if (this.hasCue(cues, time))
                 {
-                    pixels.drawRect(j, 0, 1, this.h, Colors.ACTIVE | Colors.A100);
+                    pixels.drawRect(j, 0, 1, this.h, Colors.ACTIVE | Colors.A75);
                 }
-                else if (avgHeight > 0)
+
+                if (avgHeight > 0)
                 {
                     pixels.drawRect(j, this.h / 2 - maxHeight / 2, 1, maxHeight, color);
                     pixels.drawRect(j, this.h / 2 - avgHeight / 2, 1, avgHeight, Colors.mulRGB(color, 0.8F));

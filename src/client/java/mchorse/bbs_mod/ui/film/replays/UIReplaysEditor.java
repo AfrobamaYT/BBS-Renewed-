@@ -7,6 +7,7 @@ import mchorse.bbs_mod.audio.Waveform;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
+import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
@@ -424,13 +425,14 @@ public class UIReplaysEditor extends UIElement
 
                 if (wave != null)
                 {
+                    int audioOffset = audioClip.offset.get();
                     float offset = audioClip.tick.get();
-                    float duration = wave.getDuration();
+                    int duration = Math.min((int) (wave.getDuration() * 20), clip.duration.get());
 
                     int x1 = (int) scale.to(offset);
-                    int x2 = (int) scale.to(offset + duration * 20);
+                    int x2 = (int) scale.to(offset + duration);
 
-                    wave.render(context.batcher, Colors.WHITE, x1, keyframes.area.y + 15, x2 - x1, 20, 0F, duration);
+                    wave.render(context.batcher, Colors.WHITE, x1, keyframes.area.y + 15, x2 - x1, 20, TimeUtils.toSeconds(audioOffset), TimeUtils.toSeconds(audioOffset + duration));
                 }
             }
         }

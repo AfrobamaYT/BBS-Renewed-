@@ -174,11 +174,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
         this.toggleHorizontal.tooltip(UIKeys.FILM_TOGGLE_LAYOUT, Direction.LEFT);
         this.openCameraEditor = new UIIcon(Icons.FRUSTUM, (b) -> this.showPanel(this.cameraEditor));
-        this.openCameraEditor.tooltip(UIKeys.FILM_OPEN_CAMERA_EDITOR);
+        this.openCameraEditor.tooltip(UIKeys.FILM_OPEN_CAMERA_EDITOR, Direction.LEFT);
         this.openReplayEditor = new UIIcon(Icons.SCENE, (b) -> this.showPanel(this.replayEditor));
-        this.openReplayEditor.tooltip(UIKeys.FILM_OPEN_REPLAY_EDITOR);
+        this.openReplayEditor.tooltip(UIKeys.FILM_OPEN_REPLAY_EDITOR, Direction.LEFT);
         this.openScreenplay = new UIIcon(Icons.FILE, (b) -> this.showPanel(this.screenplayEditor));
-        this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR);
+        this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
 
         /* Setup elements */
         this.iconBar.add(this.openReplays.marginTop(9), this.toggleHorizontal, this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openScreenplay);
