@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.clips.widgets;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
+import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -15,6 +16,7 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.TimeUtilsClient;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.clips.Envelope;
 import mchorse.bbs_mod.utils.colors.Colors;
 
@@ -78,6 +80,10 @@ public class UIEnvelope extends UIElement
             this.channel.view.resetView();
         });
         this.channel = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.panel.editor, consumer));
+        this.channel.view.backgroundRenderer((context) ->
+        {
+            UIReplaysEditor.renderBackground(context, this.channel.view, (Clips) this.panel.clip.getParent(), this.panel.clip.tick.get());
+        });
         this.channel.view.duration(() -> this.panel.clip.duration.get());
 
         this.column().vertical().stretch();

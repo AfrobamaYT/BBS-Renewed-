@@ -4,9 +4,11 @@ import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
+import mchorse.bbs_mod.utils.clips.Clips;
 
 public class UIKeyframeClip extends UIClip<KeyframeClip>
 {
@@ -24,6 +26,10 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
         super.registerUI();
 
         this.keyframes = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.editor, consumer));
+        this.keyframes.view.backgroundRenderer((context) ->
+        {
+            UIReplaysEditor.renderBackground(context, this.keyframes.view, (Clips) this.clip.getParent(), this.clip.tick.get());
+        });
         this.keyframes.view.duration(() -> this.clip.duration.get());
 
         this.edit = new UIButton(UIKeys.GENERAL_EDIT, (b) ->
