@@ -155,12 +155,19 @@ public class ActionPlayback
 
         this.ticks += this.speed;
 
-        if (!this.looping && this.fading != Fade.OUT && this.ticks >= this.duration)
+        boolean looping = this.looping;
+
+        if (!this.config.loop)
+        {
+            looping = false;
+        }
+
+        if (!looping && this.fading != Fade.OUT && this.ticks >= this.duration)
         {
             this.fadeOut();
         }
 
-        if (this.looping)
+        if (looping)
         {
             if (this.ticks >= this.duration && this.speed > 0)
             {
