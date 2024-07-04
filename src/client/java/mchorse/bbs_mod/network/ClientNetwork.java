@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.network;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.controller.ICameraController;
@@ -8,16 +9,15 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
-import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -57,6 +57,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActions(client, buf));
     }
 
     /* Handlers */
@@ -159,6 +160,19 @@ public class ClientNetwork
         });
     }
 
+    private static void handleRecordedActions(MinecraftClient client, PacketByteBuf buf)
+    {
+        int callbackId = buf.readInt();
+        Clips clips = new Clips("...", BBSMod.getFactoryActionClips());
+
+        clips.fromData(DataStorageUtils.readFromPacket(buf));
+
+        client.execute(() ->
+        {
+            Films.receivedClips(callbackId, clips);
+        });
+    }
+
     /* API */
     
     public static void sendModelBlockForm(BlockPos pos, ModelBlockEntity modelBlock)
@@ -209,5 +223,16 @@ public class ClientNetwork
         DataStorageUtils.writeToPacket(buf, data);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_MANAGER_DATA_PACKET, buf);
+    }
+
+    public static void sendActionRecording(int replayId, int tick, boolean state)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeInt(replayId);
+        buf.writeInt(tick);
+        buf.writeBoolean(state);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_RECORDING, buf);
     }
 }

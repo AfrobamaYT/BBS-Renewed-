@@ -3,18 +3,26 @@ package mchorse.bbs_mod.film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
+import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.ContentType;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class Films
 {
+    private static Map<Integer, Consumer<Clips>> callbacks = new HashMap<>();
+    private static int callbackId = 0;
+
     private List<FilmController> controllers = new ArrayList<FilmController>();
     private Recorder recorder;
 
@@ -40,6 +48,16 @@ public class Films
         });
     }
 
+    public static void receivedClips(int callbackId, Clips clips)
+    {
+        Consumer<Clips> remove = callbacks.remove(callbackId);
+
+        if (remove != null)
+        {
+            remove.accept(clips);
+        }
+    }
+
     public Recorder getRecorder()
     {
         return this.recorder;
@@ -48,9 +66,14 @@ public class Films
     public void startRecording(Film film, int replayId)
     {
         this.recorder = new Recorder(film, replayId);
+
+        if (ClientNetwork.isIsBBSModOnServer())
+        {
+            ClientNetwork.sendActionRecording(0, this.recorder.tick, true);
+        }
     }
 
-    public Recorder stopRecording()
+    public Recorder stopRecording(Consumer<Clips> callback)
     {
         Recorder recorder = this.recorder;
 
@@ -64,6 +87,18 @@ public class Films
                 {
                     channel.simplify();
                 }
+            }
+
+            if (ClientNetwork.isIsBBSModOnServer())
+            {
+                ClientNetwork.sendActionRecording(callbackId, recorder.tick, false);
+                callbacks.put(callbackId, callback);
+
+                callbackId += 1;
+            }
+            else
+            {
+                callback.accept(null);
             }
         }
 

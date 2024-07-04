@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film.replays;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -7,6 +8,7 @@ import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueForm;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 
@@ -17,6 +19,7 @@ public class Replay extends ValueGroup
     public final ValueForm form = new ValueForm("form");
     public final ReplayKeyframes keyframes = new ReplayKeyframes("keyframes");
     public final FormProperties properties = new FormProperties("properties");
+    public final Clips actions = new Clips("actions", BBSMod.getFactoryActionClips());
 
     public Replay(String id)
     {
@@ -25,6 +28,7 @@ public class Replay extends ValueGroup
         this.add(this.form);
         this.add(this.keyframes);
         this.add(this.properties);
+        this.add(this.actions);
     }
 
     public void applyFrame(int tick, IEntity actor)

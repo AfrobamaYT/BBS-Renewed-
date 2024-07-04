@@ -1,5 +1,8 @@
 package mchorse.bbs_mod;
 
+import mchorse.bbs_mod.actions.ActionHandler;
+import mchorse.bbs_mod.actions.ActionManager;
+import mchorse.bbs_mod.actions.types.ChatActionClip;
 import mchorse.bbs_mod.blocks.ModelBlock;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -50,11 +53,13 @@ import mchorse.bbs_mod.settings.SettingsManager;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.MapFactory;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -89,6 +94,8 @@ public class BBSMod implements ModInitializer
     public static final String MOD_ID = "bbs";
     public static final String SIGNIFICANT_VERSION = "ea7";
 
+    private static ActionManager actions;
+
     /* Important folders */
     private static File gameFolder;
     private static File assetsFolder;
@@ -106,6 +113,7 @@ public class BBSMod implements ModInitializer
 
     private static MapFactory<Clip, ClipFactoryData> factoryCameraClips;
     private static MapFactory<Clip, ClipFactoryData> factoryScreenplayClips;
+    private static MapFactory<Clip, ClipFactoryData> factoryActionClips;
 
     public static final EntityType<ActorEntity> ACTOR_ENTITY = Registry.register(
         Registries.ENTITY_TYPE,
@@ -139,6 +147,8 @@ public class BBSMod implements ModInitializer
         })
         .build();
 
+    private static File worldFolder;
+
     private static ItemStack createModelBlockStack(Link texture)
     {
         ItemStack stack = new ItemStack(MODEL_BLOCK_ITEM);
@@ -159,8 +169,6 @@ public class BBSMod implements ModInitializer
 
         return stack;
     }
-
-    private static File worldFolder;
 
     /**
      * Main folder, where all the other folders are located.
@@ -208,6 +216,11 @@ public class BBSMod implements ModInitializer
         return getGamePath("export");
     }
 
+    public static ActionManager getActions()
+    {
+        return actions;
+    }
+
     public static AssetProvider getProvider()
     {
         return provider;
@@ -238,6 +251,11 @@ public class BBSMod implements ModInitializer
         return factoryScreenplayClips;
     }
 
+    public static MapFactory<Clip, ClipFactoryData> getFactoryActionClips()
+    {
+        return factoryActionClips;
+    }
+
     @Override
     public void onInitialize()
     {
@@ -247,6 +265,8 @@ public class BBSMod implements ModInitializer
         settingsFolder = new File(gameFolder, "config/bbs/settings");
 
         assetsFolder.mkdirs();
+
+        actions = new ActionManager();
 
         provider = new AssetProvider();
         provider.register(new ExternalAssetsSourcePack("assets", assetsFolder).providesFiles());
@@ -298,6 +318,9 @@ public class BBSMod implements ModInitializer
         factoryScreenplayClips = new MapFactory<Clip, ClipFactoryData>()
             .register(Link.bbs("voice_line"), VoicelineClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825));
 
+        factoryActionClips = new MapFactory<Clip, ClipFactoryData>()
+            .register(Link.bbs("chat"), ChatActionClip.class, new ClipFactoryData(Icons.BUBBLE, Colors.YELLOW));
+
         setupConfig(Icons.PROCESSOR, "bbs", new File(settingsFolder, "bbs.json"), BBSSettings::register);
 
         /* Networking */
@@ -336,6 +359,13 @@ public class BBSMod implements ModInitializer
         ServerPlayConnectionEvents.JOIN.register((a, b, c) ->
         {
             b.sendPacket(ServerNetwork.CLIENT_HANDSHAKE, PacketByteBufs.empty());
+        });
+
+        ActionHandler.registerHandlers(actions);
+
+        ServerTickEvents.START_SERVER_TICK.register((server) ->
+        {
+            actions.tick();
         });
     }
 

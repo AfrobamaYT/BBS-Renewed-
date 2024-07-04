@@ -13,6 +13,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.List;
@@ -21,7 +22,9 @@ public class UIFilmsMenu extends UIBaseMenu
 {
     public UIFilmsOverlayPanel films;
 
-    private static void saveRecorder(UIContext context, Recorder recorder)
+    private Recorder recorder;
+
+    private static void saveRecorder(UIContext context, Recorder recorder, Clips clips)
     {
         if (recorder.tick < 0)
         {
@@ -38,7 +41,13 @@ public class UIFilmsMenu extends UIBaseMenu
 
                 if (CollectionUtils.inRange(list, recorder.exception))
                 {
-                    ReplayKeyframes keyframes = list.get(recorder.exception).keyframes;
+                    Replay replay = list.get(recorder.exception);
+                    ReplayKeyframes keyframes = replay.keyframes;
+
+                    if (clips != null)
+                    {
+                        replay.actions.copy(clips);
+                    }
 
                     keyframes.copy(recorder.keyframes);
 
@@ -53,12 +62,13 @@ public class UIFilmsMenu extends UIBaseMenu
     {
         super();
 
-        Recorder recorder = BBSModClient.getFilms().stopRecording();
-
-        if (recorder != null)
+        this.recorder = BBSModClient.getFilms().stopRecording((clips) ->
         {
-            saveRecorder(this.context, recorder);
-        }
+            if (this.recorder != null)
+            {
+                saveRecorder(this.context, this.recorder, clips);
+            }
+        });
 
         this.films = new UIFilmsOverlayPanel();
         this.films.onClose((event) -> this.closeThisMenu());

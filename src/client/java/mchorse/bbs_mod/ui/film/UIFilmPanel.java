@@ -397,7 +397,15 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.cameraEditor.open();
 
-        Recorder recorder = BBSModClient.getFilms().stopRecording();
+        Recorder recorder = BBSModClient.getFilms().stopRecording((clips) ->
+        {
+            if (clips != null)
+            {
+                Replay replay = this.data.replays.getList().get(this.lastRecorder.exception);
+
+                replay.actions.copy(clips);
+            }
+        });
 
         if (recorder != null && recorder.tick >= 0)
         {
@@ -551,8 +559,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                     this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(data.getId()), Colors.BLUE | Colors.A100);
                 }
             }
-
-            this.lastRecorder = null;
         }
 
         this.savingTimer.mark(BBSSettings.editorPeriodicSave.get() * 1000L);
