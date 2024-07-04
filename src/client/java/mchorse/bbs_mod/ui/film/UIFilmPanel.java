@@ -403,7 +403,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             {
                 Replay replay = this.data.replays.getList().get(this.lastRecorder.exception);
 
-                replay.actions.copy(clips);
+                replay.actions.fromData(clips.toData());
             }
         });
 

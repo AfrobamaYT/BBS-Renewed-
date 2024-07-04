@@ -8,6 +8,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.server.world.ServerWorld;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ActionPlayer
@@ -16,7 +17,7 @@ public class ActionPlayer
 
     public Film film;
     public int tick;
-    public boolean playing;
+    public boolean playing = true;
 
     private ServerWorld world;
     private int duration;
@@ -43,7 +44,9 @@ public class ActionPlayer
 
             for (Replay replay : this.film.replays.getList())
             {
-                for (Clip clip : replay.actions.getClips(this.tick))
+                List<Clip> clips = replay.actions.getClips(this.tick);
+
+                for (Clip clip : clips)
                 {
                     ((ActionClip) clip).apply(fakePlayer, this.film, replay, this.tick);
                 }

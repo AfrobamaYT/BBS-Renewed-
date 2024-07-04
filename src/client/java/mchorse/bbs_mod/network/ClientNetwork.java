@@ -235,4 +235,13 @@ public class ClientNetwork
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_RECORDING, buf);
     }
+
+    public static void sendActionPlay(String id)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(id);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_PLAY, buf);
+    }
 }

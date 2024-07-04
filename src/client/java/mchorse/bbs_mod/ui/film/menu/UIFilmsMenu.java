@@ -46,7 +46,7 @@ public class UIFilmsMenu extends UIBaseMenu
 
                     if (clips != null)
                     {
-                        replay.actions.copy(clips);
+                        replay.actions.fromData(clips.toData());
                     }
 
                     keyframes.copy(recorder.keyframes);

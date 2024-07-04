@@ -43,6 +43,7 @@ public class Films
                     BBSModClient.getCameraController().add(controller);
                 }
 
+                ClientNetwork.sendActionPlay(film.getId());
                 BBSModClient.getFilms().add(filmController);
             });
         });

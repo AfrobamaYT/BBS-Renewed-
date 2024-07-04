@@ -42,6 +42,7 @@ public class ServerNetwork
     public static final Identifier SERVER_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s3");
     public static final Identifier SERVER_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "s4");
     public static final Identifier SERVER_ACTION_RECORDING = new Identifier(BBSMod.MOD_ID, "s5");
+    public static final Identifier SERVER_ACTION_PLAY = new Identifier(BBSMod.MOD_ID, "s6");
 
     public static void setup()
     {
@@ -50,6 +51,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_FORM_PACKET, (server, player, handler, buf, responder) -> handlePlayerFormPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_MANAGER_DATA_PACKET, (server, player, handler, buf, responder) -> handleManagerDataPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_RECORDING, (server, player, handler, buf, responder) -> handleActionRecording(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_PLAY, (server, player, handler, buf, responder) -> handleActionPlay(server, player, buf));
     }
 
     /* Handlers */
@@ -186,6 +188,22 @@ public class ServerNetwork
                 DataStorageUtils.writeToPacket(outBuf, clips.toData());
                 ServerPlayNetworking.send(player, CLIENT_RECORDED_ACTIONS, outBuf);
             }
+        }
+    }
+
+    private static void handleActionPlay(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+
+        try
+        {
+            Film film = BBSMod.getFilms().load(filmId);
+
+            BBSMod.getActions().play(player.getServerWorld(), film, 0);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 

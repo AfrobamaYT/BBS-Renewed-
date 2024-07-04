@@ -16,7 +16,7 @@ public class ActionManager
     private List<ActionPlayer> players = new ArrayList<>();
     private Map<ServerPlayerEntity, ActionRecorder> recorders = new HashMap<>();
 
-    public void add(ServerWorld world, Film film, int tick)
+    public void play(ServerWorld world, Film film, int tick)
     {
         this.players.add(new ActionPlayer(world, film, tick));
     }
