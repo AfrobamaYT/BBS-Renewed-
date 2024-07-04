@@ -399,7 +399,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         Recorder recorder = BBSModClient.getFilms().stopRecording((clips) ->
         {
-            if (clips != null)
+            if (clips != null && this.lastRecorder != null)
             {
                 Replay replay = this.data.replays.getList().get(this.lastRecorder.exception);
 

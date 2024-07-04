@@ -13,8 +13,6 @@ import java.util.UUID;
 
 public class ActionPlayer
 {
-    private static final GameProfile PROFILE = new GameProfile(UUID.fromString("12345678-9ABC-DEF1-2345-6789ABCDEF69"), "[BBS Player]");
-
     public Film film;
     public int tick;
     public boolean playing = true;
@@ -40,7 +38,7 @@ public class ActionPlayer
 
         if (this.tick >= 0)
         {
-            FakePlayer fakePlayer = FakePlayer.get(this.world, PROFILE);
+            SuperFakePlayer fakePlayer = SuperFakePlayer.get(this.world);
 
             for (Replay replay : this.film.replays.getList())
             {

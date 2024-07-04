@@ -79,7 +79,8 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         T orDefault = null;
 
         if (this.factory == KeyframeFactories.FLOAT) orDefault = (T) Float.valueOf(0F);
-        if (this.factory == KeyframeFactories.DOUBLE) orDefault = (T) Double.valueOf(0D);
+        else if (this.factory == KeyframeFactories.DOUBLE) orDefault = (T) Double.valueOf(0D);
+        else if (this.factory == KeyframeFactories.INTEGER) orDefault = (T) Integer.valueOf(0);
 
         return this.interpolate(ticks, orDefault);
     }

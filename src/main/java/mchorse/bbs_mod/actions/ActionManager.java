@@ -56,5 +56,6 @@ public class ActionManager
     public void reset()
     {
         this.players.clear();
+        this.recorders.clear();
     }
 }
