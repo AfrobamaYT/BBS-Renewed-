@@ -48,6 +48,18 @@ public class SuperFakePlayer extends ServerPlayerEntity
     }
 
     @Override
+    public boolean shouldBroadcastConsoleToOps()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean shouldReceiveFeedback()
+    {
+        return false;
+    }
+
+    @Override
     public void tick()
     {}
 
