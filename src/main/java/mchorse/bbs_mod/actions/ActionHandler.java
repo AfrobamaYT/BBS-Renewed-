@@ -1,12 +1,20 @@
 package mchorse.bbs_mod.actions;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.actions.types.BlockActionClip;
 import mchorse.bbs_mod.actions.types.ChatActionClip;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class ActionHandler
 {
@@ -22,6 +30,21 @@ public class ActionHandler
 
                 clip.message.set(literalString);
                 actions.addAction(sender, clip);
+            }
+        });
+
+        PlayerBlockBreakEvents.AFTER.register((World world, PlayerEntity player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity) ->
+        {
+            if (player instanceof ServerPlayerEntity serverPlayer)
+            {
+                BlockActionClip clip = new BlockActionClip();
+
+                clip.state.set(world.getBlockState(pos));
+                clip.x.set(pos.getX());
+                clip.y.set(pos.getY());
+                clip.z.set(pos.getZ());
+
+                actions.addAction(serverPlayer, clip);
             }
         });
 
