@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class ActionManager
 {
@@ -26,13 +27,18 @@ public class ActionManager
         this.recorders.put(entity, new ActionRecorder(tick));
     }
 
-    public void addAction(ServerPlayerEntity entity, ActionClip clip)
+    public void addAction(ServerPlayerEntity entity, Supplier<ActionClip> supplier)
     {
         ActionRecorder recorder = this.recorders.get(entity);
 
-        if (recorder != null)
+        if (recorder != null && supplier != null)
         {
-            recorder.add(clip);
+            ActionClip actionClip = supplier.get();
+
+            if (actionClip != null)
+            {
+                recorder.add(actionClip);
+            }
         }
     }
 

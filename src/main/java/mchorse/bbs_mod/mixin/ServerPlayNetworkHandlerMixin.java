@@ -21,9 +21,13 @@ public class ServerPlayNetworkHandlerMixin
     @Inject(method = "parse", at = @At("HEAD"))
     public void onParse(String command, CallbackInfoReturnable<ParseResults<ServerCommandSource>> info)
     {
-        CommandActionClip clip = new CommandActionClip();
+        BBSMod.getActions().addAction(this.player, () ->
+        {
+            CommandActionClip clip = new CommandActionClip();
 
-        clip.command.set(command);
-        BBSMod.getActions().addAction(this.player, clip);
+            clip.command.set(command);
+
+            return clip;
+        });
     }
 }

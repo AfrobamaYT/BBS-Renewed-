@@ -24,12 +24,16 @@ public class ActionHandler
         {
             String literalString = message.getContent().getLiteralString();
 
-            if (literalString != null && !literalString.startsWith("/"))
+            if (literalString != null)
             {
-                ChatActionClip clip = new ChatActionClip();
+                actions.addAction(sender, () ->
+                {
+                    ChatActionClip clip = new ChatActionClip();
 
-                clip.message.set(literalString);
-                actions.addAction(sender, clip);
+                    clip.message.set(literalString);
+
+                    return clip;
+                });
             }
         });
 
@@ -37,14 +41,17 @@ public class ActionHandler
         {
             if (player instanceof ServerPlayerEntity serverPlayer)
             {
-                BlockActionClip clip = new BlockActionClip();
+                actions.addAction(serverPlayer, () ->
+                {
+                    BlockActionClip clip = new BlockActionClip();
 
-                clip.state.set(world.getBlockState(pos));
-                clip.x.set(pos.getX());
-                clip.y.set(pos.getY());
-                clip.z.set(pos.getZ());
+                    clip.state.set(world.getBlockState(pos));
+                    clip.x.set(pos.getX());
+                    clip.y.set(pos.getY());
+                    clip.z.set(pos.getZ());
 
-                actions.addAction(serverPlayer, clip);
+                    return clip;
+                });
             }
         });
 
