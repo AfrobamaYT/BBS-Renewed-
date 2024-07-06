@@ -4,25 +4,23 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.VertexFormat;
 import org.lwjgl.opengl.GL11;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
-public class CustomVertexConsumerProvider implements VertexConsumerProvider
+public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immediate
 {
-    private BufferBuilder builder;
-    private RenderLayer currentLayer;
+    private Map<VertexFormat, Runnable> runnables = new HashMap<>();
     private boolean ui;
 
-    private Map<VertexFormat, Runnable> runnables = new HashMap<>();
-
-    public CustomVertexConsumerProvider()
+    public CustomVertexConsumerProvider(BufferBuilder fallback, Map<RenderLayer, BufferBuilder> layers)
     {
-        this.builder = new BufferBuilder(1536);
+        super(fallback, layers);
     }
 
     public void setUI(boolean ui)
@@ -40,45 +38,9 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         this.runnables.clear();
     }
 
-    @Override
-    public VertexConsumer getBuffer(RenderLayer layer)
-    {
-        if (this.currentLayer != null && this.currentLayer != layer)
-        {
-            this.draw();
-        }
-
-        this.currentLayer = layer;
-
-        if (!this.builder.isBuilding())
-        {
-            this.builder.begin(layer.getDrawMode(), layer.getVertexFormat());
-        }
-
-        return this.builder;
-    }
-
     public void draw()
     {
-        if (this.builder.isBuilding())
-        {
-            BufferBuilder.BuiltBuffer builtBuffer = this.builder.end();
-            VertexFormat vertexFormat = this.currentLayer.getVertexFormat();
-            Runnable runnable = this.runnables.get(vertexFormat);
-
-            this.currentLayer.startDrawing();
-
-            if (runnable != null)
-            {
-                runnable.run();
-            }
-
-            BufferRenderer.drawWithGlobalProgram(builtBuffer);
-
-            this.currentLayer.endDrawing();
-
-            this.currentLayer = null;
-        }
+        super.draw();
 
         if (this.ui)
         {
@@ -86,6 +48,42 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
              * consumer is resetting the depth func to GL_LESS, and since this vertex consumer
              * is designed  */
             RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        }
+    }
+
+    public void draw(RenderLayer layer)
+    {
+        BufferBuilder builder = this.layerBuffers.getOrDefault(layer, this.fallbackBuffer);
+        boolean same = Objects.equals(this.currentLayer, layer.asOptional());
+
+        if (!same && builder == this.fallbackBuffer)
+        {
+            return;
+        }
+        else if (!this.activeConsumers.remove(builder))
+        {
+            return;
+        }
+
+        Runnable runnable = this.runnables.get(layer.getVertexFormat());
+
+        if (builder.isBuilding()) {
+
+            layer.startDrawing();
+
+            if (runnable != null)
+            {
+                runnable.run();
+            }
+
+            BufferRenderer.drawWithGlobalProgram(builder.end());
+
+            layer.endDrawing();
+        }
+
+        if (same)
+        {
+            this.currentLayer = Optional.empty();
         }
     }
 }
