@@ -5,6 +5,7 @@ import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -204,7 +205,7 @@ public class Animator implements IAnimator
         Vec3d velocity = target.getVelocity();
         double dx = velocity.x;
         double dz = velocity.z;
-        final float threshold = 0.05F;
+        final float threshold = 0.01F;
         boolean moves = Math.abs(dx) > threshold || Math.abs(dz) > threshold;
 
         /* if (target.getHealth() <= 0)
