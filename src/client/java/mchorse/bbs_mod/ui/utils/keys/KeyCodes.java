@@ -63,6 +63,7 @@ public class KeyCodes
             case 257: return "Enter";
             case 258: return "Tab";
             case 259: return "Backspace";
+            case 260: return "Insert";
             case 261: return "Delete";
             case 262: return "Right";
             case 263: return "Left";
@@ -73,7 +74,10 @@ public class KeyCodes
             case 268: return "Home";
             case 269: return "End";
             case 280: return "Capslock";
+            case 281: return "Scrolllock";
             case 282: return "Numlock";
+            case 283: return "Printscreen";
+            case 284: return "Pause";
             /* Shift */
             case 340: return "Shift";
             /* Control */
