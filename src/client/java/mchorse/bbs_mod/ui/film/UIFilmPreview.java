@@ -54,9 +54,9 @@ public class UIFilmPreview extends UIElement
 
         /* Preview buttons */
         this.replays = new UIIcon(Icons.EDITOR, (b) -> UIOverlay.addOverlayLeft(this.getContext(), this.panel.replayEditor.replays, 200));
-        this.replays.tooltip(UIKeys.FILM_REPLAY_TITLE, Direction.LEFT);
+        this.replays.tooltip(UIKeys.FILM_REPLAY_TITLE);
         this.plause = new UIIcon(() -> this.panel.isRunning() ? Icons.PAUSE : Icons.PLAY, (b) -> this.panel.togglePlayback());
-        this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, Direction.BOTTOM);
+        this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE);
         this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
         {
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
@@ -222,6 +222,8 @@ public class UIFilmPreview extends UIElement
         if (this.panel.getController().isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordReplay.area);
         if (this.panel.recorder.isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordVideo.area);
 
+        context.batcher.clip(this.area, context);
         super.render(context);
+        context.batcher.unclip(context);
     }
 }

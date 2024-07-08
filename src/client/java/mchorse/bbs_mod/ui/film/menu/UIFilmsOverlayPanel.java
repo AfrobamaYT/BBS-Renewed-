@@ -22,7 +22,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 public class UIFilmsOverlayPanel extends UIOverlayPanel
 {
     private static String stateFilmId;
-    private static boolean stateWithCamera = true;
+    private static boolean stateWithCamera;
     private static int stateReplayId = -1;
 
     public UISearchList<String> films;

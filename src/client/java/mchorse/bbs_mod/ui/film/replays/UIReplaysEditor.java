@@ -123,6 +123,11 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("extra2_x", Icons.CURVES);
     }
 
+    public static void setLastReplay(int replay)
+    {
+        lastReplay = replay;
+    }
+
     public static void renderBackground(UIContext context, UIKeyframes keyframes, Clips camera, int clipOffset)
     {
         if (!BBSSettings.audioWaveformVisible.get())
