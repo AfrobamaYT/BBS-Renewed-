@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.mixin;
 
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.BreakBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;

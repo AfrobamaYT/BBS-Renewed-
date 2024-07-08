@@ -1,9 +1,8 @@
 package mchorse.bbs_mod.actions;
 
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.BlockActionClip;
-import mchorse.bbs_mod.actions.types.ChatActionClip;
-import mchorse.bbs_mod.actions.types.PlaceBlockActionClip;
+import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
+import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;

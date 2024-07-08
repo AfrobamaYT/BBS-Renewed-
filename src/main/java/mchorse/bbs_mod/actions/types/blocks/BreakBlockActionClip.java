@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.actions.types;
+package mchorse.bbs_mod.actions.types.blocks;
 
 import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.film.Film;

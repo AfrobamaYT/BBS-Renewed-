@@ -15,9 +15,9 @@ import java.util.Optional;
 
 public class ValueBlockState extends BaseValueBasic<BlockState>
 {
-    public ValueBlockState(String id, BlockState value)
+    public ValueBlockState(String id)
     {
-        super(id, value);
+        super(id, Blocks.AIR.getDefaultState());
     }
 
     @Override

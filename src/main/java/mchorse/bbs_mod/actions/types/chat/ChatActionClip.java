@@ -1,6 +1,7 @@
-package mchorse.bbs_mod.actions.types;
+package mchorse.bbs_mod.actions.types.chat;
 
 import mchorse.bbs_mod.actions.SuperFakePlayer;
+import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ValueString;

@@ -1,5 +1,6 @@
-package mchorse.bbs_mod.actions.types;
+package mchorse.bbs_mod.actions.types.blocks;
 
+import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.settings.values.ValueInt;
 
 public abstract class BlockActionClip extends ActionClip

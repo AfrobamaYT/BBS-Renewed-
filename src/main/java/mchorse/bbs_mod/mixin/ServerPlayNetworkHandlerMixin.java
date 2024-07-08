@@ -2,8 +2,8 @@ package mchorse.bbs_mod.mixin;
 
 import com.mojang.brigadier.ParseResults;
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.CommandActionClip;
-import mchorse.bbs_mod.actions.types.InteractBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
+import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
@@ -46,15 +46,8 @@ public class ServerPlayNetworkHandlerMixin
         {
             InteractBlockActionClip clip = new InteractBlockActionClip();
 
-            clip.x.set(hitResult.getBlockPos().getX());
-            clip.y.set(hitResult.getBlockPos().getY());
-            clip.z.set(hitResult.getBlockPos().getZ());
-            clip.hitX.set(hitResult.getPos().x);
-            clip.hitY.set(hitResult.getPos().y);
-            clip.hitZ.set(hitResult.getPos().z);
+            clip.hit.setHitResult(hitResult);
             clip.hand.set(hand == Hand.MAIN_HAND);
-            clip.inside.set(hitResult.isInsideBlock());
-            clip.direction.set(hitResult.getSide().ordinal());
 
             return clip;
         });

@@ -2,11 +2,13 @@ package mchorse.bbs_mod;
 
 import mchorse.bbs_mod.actions.ActionHandler;
 import mchorse.bbs_mod.actions.ActionManager;
-import mchorse.bbs_mod.actions.types.BreakBlockActionClip;
-import mchorse.bbs_mod.actions.types.ChatActionClip;
-import mchorse.bbs_mod.actions.types.CommandActionClip;
-import mchorse.bbs_mod.actions.types.InteractBlockActionClip;
-import mchorse.bbs_mod.actions.types.PlaceBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
+import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
+import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
+import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
+import mchorse.bbs_mod.actions.types.item.UseBlockItemActionClip;
+import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
 import mchorse.bbs_mod.blocks.ModelBlock;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -327,7 +329,9 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("command"), CommandActionClip.class, new ClipFactoryData(Icons.PROPERTIES, Colors.ACTIVE))
             .register(Link.bbs("place_block"), PlaceBlockActionClip.class, new ClipFactoryData(Icons.BLOCK, Colors.RED))
             .register(Link.bbs("interact_block"), InteractBlockActionClip.class, new ClipFactoryData(Icons.LIMB, Colors.MAGENTA))
-            .register(Link.bbs("break_block"), BreakBlockActionClip.class, new ClipFactoryData(Icons.BULLET, Colors.GREEN));
+            .register(Link.bbs("break_block"), BreakBlockActionClip.class, new ClipFactoryData(Icons.BULLET, Colors.GREEN))
+            .register(Link.bbs("use_item"), UseItemActionClip.class, new ClipFactoryData(Icons.POINTER, Colors.BLUE))
+            .register(Link.bbs("use_block_item"), UseBlockItemActionClip.class, new ClipFactoryData(Icons.BUCKET, Colors.CYAN));
 
         setupConfig(Icons.PROCESSOR, "bbs", new File(settingsFolder, "bbs.json"), BBSSettings::register);
 
