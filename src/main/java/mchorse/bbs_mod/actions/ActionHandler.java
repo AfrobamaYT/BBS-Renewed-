@@ -3,6 +3,7 @@ package mchorse.bbs_mod.actions;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.actions.types.BlockActionClip;
 import mchorse.bbs_mod.actions.types.ChatActionClip;
+import mchorse.bbs_mod.actions.types.PlaceBlockActionClip;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
@@ -43,7 +44,7 @@ public class ActionHandler
             {
                 actions.addAction(serverPlayer, () ->
                 {
-                    BlockActionClip clip = new BlockActionClip();
+                    PlaceBlockActionClip clip = new PlaceBlockActionClip();
 
                     clip.state.set(world.getBlockState(pos));
                     clip.x.set(pos.getX());

@@ -2,10 +2,11 @@ package mchorse.bbs_mod;
 
 import mchorse.bbs_mod.actions.ActionHandler;
 import mchorse.bbs_mod.actions.ActionManager;
-import mchorse.bbs_mod.actions.types.BlockActionClip;
+import mchorse.bbs_mod.actions.types.BreakBlockActionClip;
 import mchorse.bbs_mod.actions.types.ChatActionClip;
 import mchorse.bbs_mod.actions.types.CommandActionClip;
 import mchorse.bbs_mod.actions.types.InteractBlockActionClip;
+import mchorse.bbs_mod.actions.types.PlaceBlockActionClip;
 import mchorse.bbs_mod.blocks.ModelBlock;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -324,8 +325,9 @@ public class BBSMod implements ModInitializer
         factoryActionClips = new MapFactory<Clip, ClipFactoryData>()
             .register(Link.bbs("chat"), ChatActionClip.class, new ClipFactoryData(Icons.BUBBLE, Colors.YELLOW))
             .register(Link.bbs("command"), CommandActionClip.class, new ClipFactoryData(Icons.PROPERTIES, Colors.ACTIVE))
-            .register(Link.bbs("block"), BlockActionClip.class, new ClipFactoryData(Icons.BLOCK, Colors.RED))
-            .register(Link.bbs("interact_block"), InteractBlockActionClip.class, new ClipFactoryData(Icons.LIMB, Colors.MAGENTA));
+            .register(Link.bbs("place_block"), PlaceBlockActionClip.class, new ClipFactoryData(Icons.BLOCK, Colors.RED))
+            .register(Link.bbs("interact_block"), InteractBlockActionClip.class, new ClipFactoryData(Icons.LIMB, Colors.MAGENTA))
+            .register(Link.bbs("break_block"), BreakBlockActionClip.class, new ClipFactoryData(Icons.BULLET, Colors.GREEN));
 
         setupConfig(Icons.PROCESSOR, "bbs", new File(settingsFolder, "bbs.json"), BBSSettings::register);
 

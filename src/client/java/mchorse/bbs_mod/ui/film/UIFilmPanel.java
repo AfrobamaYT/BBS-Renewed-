@@ -81,7 +81,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIScreenplayEditor screenplayEditor;
 
     /* Icon bar buttons */
-    public UIIcon openReplays;
     public UIIcon toggleHorizontal;
     public UIIcon openCameraEditor;
     public UIIcon openReplayEditor;
@@ -181,8 +180,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.screenplayEditor.full(this.main).setVisible(false);
 
         /* Icon bar buttons */
-        this.openReplays = new UIIcon(Icons.EDITOR, (b) -> UIOverlay.addOverlayLeft(this.getContext(), this.replayEditor.replays, 200));
-        this.openReplays.tooltip(UIKeys.FILM_REPLAY_TITLE, Direction.LEFT);
         this.toggleHorizontal = new UIIcon(() -> BBSSettings.editorLayoutSettings.isHorizontal() ? Icons.EXCHANGE : Icons.CONVERT, (b) ->
         {
             BBSSettings.editorLayoutSettings.setHorizontal(!BBSSettings.editorLayoutSettings.isHorizontal());
@@ -198,7 +195,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
 
         /* Setup elements */
-        this.iconBar.add(this.openReplays.marginTop(9), this.toggleHorizontal, this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openScreenplay);
+        this.iconBar.add(this.toggleHorizontal.marginTop(9), this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openScreenplay);
 
         this.editor.add(this.main, new UIRenderable(this::renderIcons));
         this.main.add(this.cameraEditor, this.replayEditor, this.screenplayEditor, this.editArea, this.preview, this.draggableMain);
@@ -527,7 +524,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         super.fill(data);
 
-        this.openReplays.setEnabled(data != null);
+        this.preview.replays.setEnabled(data != null);
         this.toggleHorizontal.setEnabled(data != null);
         this.openCameraEditor.setEnabled(data != null);
         this.openReplayEditor.setEnabled(data != null);

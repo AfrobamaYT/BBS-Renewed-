@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.mixin;
 
 import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.BlockActionClip;
+import mchorse.bbs_mod.actions.types.PlaceBlockActionClip;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemPlacementContext;
@@ -22,7 +22,7 @@ public class BlockItemMixin
         {
             BBSMod.getActions().addAction(player, () ->
             {
-                BlockActionClip clip = new BlockActionClip();
+                PlaceBlockActionClip clip = new PlaceBlockActionClip();
                 BlockPos pos = context.getBlockPos();
 
                 clip.x.set(pos.getX());

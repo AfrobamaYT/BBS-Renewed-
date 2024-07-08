@@ -6,7 +6,8 @@
         "PlayerEntityMixin",
         "PlayerEntityMorphMixin",
         "ServerPlayNetworkHandlerMixin",
-        "BlockItemMixin"
+        "BlockItemMixin",
+        "ServerWorldMixin"
     ],
     "injectors": {
         "defaultRequire": 1
