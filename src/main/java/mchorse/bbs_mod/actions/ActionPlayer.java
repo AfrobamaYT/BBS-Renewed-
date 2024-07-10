@@ -1,15 +1,12 @@
 package mchorse.bbs_mod.actions;
 
-import com.mojang.authlib.GameProfile;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.utils.clips.Clip;
-import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.server.world.ServerWorld;
 
 import java.util.List;
-import java.util.UUID;
 
 public class ActionPlayer
 {
@@ -20,13 +17,21 @@ public class ActionPlayer
     private ServerWorld world;
     private int duration;
 
+    private DamageControl control;
+
     public ActionPlayer(ServerWorld world, Film film, int tick)
     {
         this.world = world;
         this.film = film;
         this.tick = tick;
+        this.control = new DamageControl(world);
 
         this.duration = film.camera.calculateDuration();
+    }
+
+    public DamageControl getDC()
+    {
+        return this.control;
     }
 
     public boolean tick()
@@ -53,6 +58,13 @@ public class ActionPlayer
 
         this.tick += 1;
 
-        return this.tick >= this.duration;
+        boolean hasFinished = this.tick >= this.duration;
+
+        if (hasFinished)
+        {
+            this.control.restore();
+        }
+
+        return hasFinished;
     }
 }

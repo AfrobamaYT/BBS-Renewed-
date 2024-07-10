@@ -3,8 +3,10 @@ package mchorse.bbs_mod.actions;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clips;
+import net.minecraft.block.BlockState;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,5 +65,13 @@ public class ActionManager
     {
         this.players.clear();
         this.recorders.clear();
+    }
+
+    public void changedBlock(BlockPos pos, BlockState state)
+    {
+        for (ActionPlayer player : this.players)
+        {
+            player.getDC().addBlock(pos, state);
+        }
     }
 }
