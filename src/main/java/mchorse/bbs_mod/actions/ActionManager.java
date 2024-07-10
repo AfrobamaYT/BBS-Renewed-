@@ -4,6 +4,7 @@ import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clips;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -68,11 +69,11 @@ public class ActionManager
         this.recorders.clear();
     }
 
-    public void changedBlock(BlockPos pos, BlockState state)
+    public void changedBlock(BlockPos pos, BlockState state, BlockEntity blockEntity)
     {
         for (ActionPlayer player : this.players)
         {
-            player.getDC().addBlock(pos, state);
+            player.getDC().addBlock(pos, state, blockEntity);
         }
     }
 

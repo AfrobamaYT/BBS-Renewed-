@@ -18,7 +18,7 @@ public class WorldMixin
     {
         if ((Object) this instanceof ServerWorld world)
         {
-            BBSMod.getActions().changedBlock(pos, world.getBlockState(pos));
+            BBSMod.getActions().changedBlock(pos, world.getBlockState(pos), world.getBlockEntity(pos));
         }
     }
 }

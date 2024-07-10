@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.actions;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
@@ -20,7 +22,7 @@ public class DamageControl
         this.world = world;
     }
 
-    public void addBlock(BlockPos pos, BlockState state)
+    public void addBlock(BlockPos pos, BlockState state, BlockEntity entity)
     {
         for (int i = 0; i < this.blocks.size(); i++)
         {
@@ -32,7 +34,7 @@ public class DamageControl
             }
         }
 
-        this.blocks.add(new BlockCapture(pos, state));
+        this.blocks.add(new BlockCapture(pos, state, entity == null ? null : entity.createNbtWithId()));
     }
 
     public void addEntity(Entity entity)
@@ -45,6 +47,13 @@ public class DamageControl
         for (BlockCapture block : this.blocks)
         {
             this.world.setBlockState(block.pos, block.lastState, 2);
+
+            if (block.blockEntity != null)
+            {
+                BlockEntity blockEntity = BlockEntity.createFromNbt(block.pos, block.lastState, block.blockEntity);
+
+                this.world.addBlockEntity(blockEntity);
+            }
         }
 
         for (Entity entity : this.entities)
@@ -63,11 +72,13 @@ public class DamageControl
     {
         public BlockPos pos;
         public BlockState lastState;
+        public NbtCompound blockEntity;
 
-        public BlockCapture(BlockPos pos, BlockState lastState)
+        public BlockCapture(BlockPos pos, BlockState lastState, NbtCompound blockEntity)
         {
             this.pos = pos;
             this.lastState = lastState;
+            this.blockEntity = blockEntity;
         }
     }
 }
