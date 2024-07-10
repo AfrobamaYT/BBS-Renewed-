@@ -14,6 +14,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
     /* Timeline */
     public int tick;
     public ClipsData cameraClips;
+    public ClipsData actionClips;
     public ClipsData voiceLinesClips;
     public int panel;
 
@@ -33,6 +34,10 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
 
         if (editor.screenplayEditor.isVisible())
         {
+            this.panel = 3;
+        }
+        else if (editor.actionEditor.isVisible())
+        {
             this.panel = 2;
         }
         else if (editor.replayEditor.isVisible())
@@ -46,6 +51,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
 
         this.tick = editor.getCursor();
         this.cameraClips = new ClipsData(cameraClips);
+        this.actionClips = new ClipsData(editor.actionEditor.clips);
         this.voiceLinesClips = new ClipsData(voiceLineClips);
 
         if (editor.replayEditor.keyframeEditor != null)
@@ -54,10 +60,13 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         }
     }
 
-    public void selectedBefore(List<Integer> cameraClipsSelection, List<Integer> voiceLineSelection, KeyframeState properties)
+    public void selectedBefore(List<Integer> cameraClipsSelection, List<Integer> actionClipsSelection, List<Integer> voiceLineSelection, KeyframeState properties)
     {
         this.cameraClips.selectedBefore.clear();
         this.cameraClips.selectedBefore.addAll(cameraClipsSelection);
+
+        this.actionClips.selectedBefore.clear();
+        this.actionClips.selectedBefore.addAll(cameraClipsSelection);
 
         this.voiceLinesClips.selectedBefore.clear();
         this.voiceLinesClips.selectedBefore.addAll(voiceLineSelection);

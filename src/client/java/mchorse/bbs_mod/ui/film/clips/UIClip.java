@@ -1,6 +1,13 @@
 package mchorse.bbs_mod.ui.film.clips;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
+import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
+import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
+import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
+import mchorse.bbs_mod.actions.types.item.UseBlockItemActionClip;
+import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.camera.clips.misc.VoicelineClip;
@@ -23,6 +30,13 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.clips.actions.UIBreakBlockActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UIChatActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UICommandActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UIInteractBlockActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UIPlaceBlockActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UIUseBlockItemActionClip;
+import mchorse.bbs_mod.ui.film.clips.actions.UIUseItemActionClip;
 import mchorse.bbs_mod.ui.film.clips.widgets.UIEnvelope;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -75,7 +89,16 @@ public abstract class UIClip <T extends Clip> extends UIElement
         register(RemapperClip.class, UIRemapperClip::new);
         register(AudioClientClip.class, UIAudioClip::new);
         register(SubtitleClip.class, UISubtitleClip::new);
+
         register(VoicelineClip.class, UIVoicelineClip::new);
+
+        register(ChatActionClip.class, UIChatActionClip::new);
+        register(CommandActionClip.class, UICommandActionClip::new);
+        register(PlaceBlockActionClip.class, UIPlaceBlockActionClip::new);
+        register(InteractBlockActionClip.class, UIInteractBlockActionClip::new);
+        register(BreakBlockActionClip.class, UIBreakBlockActionClip::new);
+        register(UseItemActionClip.class, UIUseItemActionClip::new);
+        register(UseBlockItemActionClip.class, UIUseBlockItemActionClip::new);
     }
 
     public static <T extends Clip> void register(Class<T> clazz, IUIClipFactory<T> factory)
@@ -165,9 +188,6 @@ public abstract class UIClip <T extends Clip> extends UIElement
     }
 
     protected void updateDuration(int duration)
-    {}
-
-    public void cameraEditorWasOpened()
     {}
 
     public void editClip(Position position)

@@ -144,4 +144,22 @@ public class MathUtils
 
         return rad + circle * times;
     }
+
+    /**
+     * Whether segments a and b are intersecting.
+     *
+     *     an          ax
+     *     [ ---------- ]
+     *               bn            bx
+     *               [ ------------ ]
+     *
+     *               an            ax
+     *               [ ------------ ]
+     *     bn          bx
+     *     [ ---------- ]
+     */
+    public static boolean isInside(double an, double ax, double bn, double bx)
+    {
+        return an < bx && bn < ax;
+    }
 }

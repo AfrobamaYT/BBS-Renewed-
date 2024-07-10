@@ -73,11 +73,12 @@ public class Area implements IResizer
     }
 
     /**
-     * Check whether given position is inside of the rect
+     * Check whether given position is inside the rect
      */
     public boolean isInside(int x, int y)
     {
-        return x >= this.x && x < this.x + this.w && y >= this.y && y < this.y + this.h;
+        return MathUtils.isInside(this.x, this.x + this.w, x, x)
+            && MathUtils.isInside(this.y, this.y + this.h, y, y);
     }
 
     /**
@@ -85,8 +86,8 @@ public class Area implements IResizer
      */
     public boolean intersects(Area area)
     {
-        return this.x < area.x + area.w && this.y < area.y + area.h
-            && area.x < this.x + this.w && area.y < this.y + this.h;
+        return MathUtils.isInside(this.x, this.x + this.w, area.x, area.x + area.w)
+            && MathUtils.isInside(this.y, this.y + this.h, area.y, area.y + area.h);
     }
 
     /**

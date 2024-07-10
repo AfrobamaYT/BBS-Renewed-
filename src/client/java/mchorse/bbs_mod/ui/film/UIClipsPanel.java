@@ -42,14 +42,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         return this;
     }
 
-    public void open()
-    {
-        if (this.panel != null)
-        {
-            this.panel.cameraEditorWasOpened();
-        }
-    }
-
     public void handleUndo(IUndo<ValueGroup> undo, boolean redo)
     {
         if (this.panel != null)

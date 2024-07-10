@@ -19,7 +19,6 @@ public class ValueBlockHitResult extends ValueGroup
     public final ValueDouble hitX = new ValueDouble("hitX", 0D);
     public final ValueDouble hitY = new ValueDouble("hitY", 0D);
     public final ValueDouble hitZ = new ValueDouble("hitZ", 0D);
-    public final ValueBoolean hand = new ValueBoolean("hand", true);
     public final ValueInt direction = new ValueInt("direction", 0);
     public final ValueBoolean inside = new ValueBoolean("inside", false);
 
@@ -30,7 +29,6 @@ public class ValueBlockHitResult extends ValueGroup
         this.add(this.x);
         this.add(this.y);
         this.add(this.z);
-        this.add(this.hand);
         this.add(this.hitX);
         this.add(this.hitY);
         this.add(this.hitZ);

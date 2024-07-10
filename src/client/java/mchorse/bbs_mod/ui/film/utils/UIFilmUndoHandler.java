@@ -25,6 +25,7 @@ public class UIFilmUndoHandler
 
     private Map<BaseValue, BaseType> cachedValues = new HashMap<>();
     private List<Integer> cachedCameraSelection = new ArrayList<>();
+    private List<Integer> cachedActionSelection = new ArrayList<>();
     private List<Integer> cachedVoicelineSelection = new ArrayList<>();
     private KeyframeState cachedKeyframeState;
     private boolean cacheMarkLastUndoNoMerging;
@@ -63,7 +64,7 @@ public class UIFilmUndoHandler
         {
             ValueChangeUndo change = (ValueChangeUndo) anotherUndo;
 
-            this.panel.showPanel(change.panel == 1 ? this.panel.replayEditor : (change.panel == 2 ? this.panel.screenplayEditor : this.panel.cameraEditor));
+            this.panel.showPanel(change.panel == 1 ? this.panel.replayEditor : (change.panel == 2 ? this.panel.actionEditor : (change.panel == 3 ? this.panel.screenplayEditor : this.panel.cameraEditor)));
 
             List<Integer> cameraSelection = change.cameraClips.getSelection(redo);
             List<Integer> voiceLineSelection = change.voiceLinesClips.getSelection(redo);
@@ -95,6 +96,7 @@ public class UIFilmUndoHandler
             }
 
             change.cameraClips.apply(this.panel.cameraEditor.clips);
+            change.actionClips.apply(this.panel.actionEditor.clips);
             change.voiceLinesClips.apply(this.panel.screenplayEditor.editor.clips);
 
             this.panel.setCursor(change.tick);
@@ -103,6 +105,7 @@ public class UIFilmUndoHandler
         }
 
         this.panel.cameraEditor.handleUndo(undo, redo);
+        this.panel.actionEditor.handleUndo(undo, redo);
         this.panel.screenplayEditor.editor.handleUndo(undo, redo);
         this.panel.fillData();
     }
@@ -110,16 +113,11 @@ public class UIFilmUndoHandler
     public void handlePreValues(BaseValue baseValue, int flag)
     {
         if (this.cachedCameraSelection.isEmpty()) this.cachedCameraSelection.addAll(this.panel.cameraEditor.clips.getSelection());
+        if (this.cachedActionSelection.isEmpty()) this.cachedActionSelection.addAll(this.panel.actionEditor.clips.getSelection());
         if (this.cachedVoicelineSelection.isEmpty()) this.cachedVoicelineSelection.addAll(this.panel.screenplayEditor.editor.clips.getSelection());
-        if (this.cachedKeyframeState == null && this.panel.replayEditor.keyframeEditor != null)
-        {
-            this.cachedKeyframeState = this.panel.replayEditor.keyframeEditor.view.cacheState();
-        }
+        if (this.cachedKeyframeState == null && this.panel.replayEditor.keyframeEditor != null) this.cachedKeyframeState = this.panel.replayEditor.keyframeEditor.view.cacheState();
 
-        if (!this.cachedValues.containsKey(baseValue))
-        {
-            this.cachedValues.put(baseValue, baseValue.toData());
-        }
+        if (!this.cachedValues.containsKey(baseValue)) this.cachedValues.put(baseValue, baseValue.toData());
 
         if ((flag & IValueListener.FLAG_UNMERGEABLE) != 0)
         {
@@ -149,7 +147,7 @@ public class UIFilmUndoHandler
             ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), value.toData());
 
             undo.editor(this.panel);
-            undo.selectedBefore(this.cachedCameraSelection, this.cachedVoicelineSelection, this.cachedKeyframeState);
+            undo.selectedBefore(this.cachedCameraSelection, this.cachedActionSelection, this.cachedVoicelineSelection, this.cachedKeyframeState);
             changeUndos.add(undo);
         }
 

@@ -216,10 +216,9 @@ public class UIReplaysEditor extends UIElement
     {
         this.replay = replay;
 
+        this.filmPanel.actionEditor.clips.setClips(replay.actions);
         this.updateChannelsList();
-
         this.replays.replays.setCurrentScroll(replay);
-        this.filmPanel.preview.recordReplay.setEnabled(replay != null);
     }
 
     public void moveReplay(double x, double y, double z)

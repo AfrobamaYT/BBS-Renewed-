@@ -1101,11 +1101,11 @@ public class UIClips extends UIElement
                     /* Detect clips collisions */
                     for (Clip other : others)
                     {
-                        int otherLeft = other.tick.get();
-                        int otherRight = otherLeft + other.duration.get();
+                        int otherTick = other.tick.get();
+                        int otherRight = otherTick + other.duration.get();
 
-                        int clipRight = newTick + clip.duration.get();
-                        boolean intersect = newTick < otherRight && otherLeft < clipRight;
+                        int newRight = newTick + clip.duration.get();
+                        boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
 
                         if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
                     }
