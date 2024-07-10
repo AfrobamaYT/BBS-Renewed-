@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.actions;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
@@ -10,6 +11,8 @@ import java.util.List;
 public class DamageControl
 {
     private List<BlockCapture> blocks = new ArrayList<>();
+    private List<Entity> entities = new ArrayList<>();
+
     private ServerWorld world;
 
     public DamageControl(ServerWorld world)
@@ -25,8 +28,6 @@ public class DamageControl
 
             if (blockCapture.pos.equals(pos))
             {
-                blockCapture.lastState = state;
-
                 return;
             }
         }
@@ -34,12 +35,28 @@ public class DamageControl
         this.blocks.add(new BlockCapture(pos, state));
     }
 
+    public void addEntity(Entity entity)
+    {
+        this.entities.add(entity);
+    }
+
     public void restore()
     {
         for (BlockCapture block : this.blocks)
         {
-            this.world.setBlockState(block.pos, block.lastState);
+            this.world.setBlockState(block.pos, block.lastState, 2);
         }
+
+        for (Entity entity : this.entities)
+        {
+            if (!entity.isRemoved())
+            {
+                entity.remove(Entity.RemovalReason.DISCARDED);
+            }
+        }
+
+        this.blocks.clear();
+        this.entities.clear();
     }
 
     private static class BlockCapture

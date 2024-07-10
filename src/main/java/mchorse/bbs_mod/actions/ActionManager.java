@@ -4,6 +4,7 @@ import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clips;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -72,6 +73,14 @@ public class ActionManager
         for (ActionPlayer player : this.players)
         {
             player.getDC().addBlock(pos, state);
+        }
+    }
+
+    public void spawnedEntity(Entity entity)
+    {
+        for (ActionPlayer player : this.players)
+        {
+            player.getDC().addEntity(entity);
         }
     }
 }

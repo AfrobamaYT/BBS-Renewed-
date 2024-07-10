@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerWorld.class)
 public class ServerWorldMixin
@@ -34,5 +35,11 @@ public class ServerWorldMixin
                 return clip;
             });
         }
+    }
+
+    @Inject(method = "spawnEntity", at = @At("HEAD"))
+    public void onSpawnEntity(Entity entity, CallbackInfoReturnable<Boolean> info)
+    {
+        BBSMod.getActions().spawnedEntity(entity);
     }
 }
