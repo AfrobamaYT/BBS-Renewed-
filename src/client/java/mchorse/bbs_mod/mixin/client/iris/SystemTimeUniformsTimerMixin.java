@@ -29,7 +29,7 @@ public class SystemTimeUniformsTimerMixin
             float videoFrameRate = BBSRendering.getVideoFrameRate();
 
             this.lastFrameTime = 20F / videoFrameRate;
-            this.frameTimeCounter = (videoRecorder.getCounter() / videoFrameRate) % 3600F;
+            this.frameTimeCounter += 1F / videoFrameRate;
 
             info.cancel();
         }
