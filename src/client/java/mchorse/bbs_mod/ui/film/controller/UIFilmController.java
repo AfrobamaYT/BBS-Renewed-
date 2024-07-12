@@ -254,7 +254,7 @@ public class UIFilmController extends UIElement
 
                 entity.setForm(FormUtils.copy(replay.form.get()));
                 replay.applyFrame(this.getTick(), entity);
-                // replay.applyProperties(this.getTick(), entity.getForm(), this.panel.getRunner().isRunning());
+                replay.applyProperties(this.getTick(), entity.getForm(), this.panel.getRunner().isRunning());
                 entity.setPrevX(entity.getX());
                 entity.setPrevY(entity.getY());
                 entity.setPrevZ(entity.getZ());
