@@ -12,7 +12,6 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,9 +46,9 @@ public class GeoCubicModelLoader implements IModelLoader
 
         for (Link link : modelAnimation)
         {
-            try (InputStream asset = BBSMod.getProvider().getAsset(link))
+            try
             {
-                animationStream.add(asset);
+                animationStream.add(BBSMod.getProvider().getAsset(link));
             }
             catch (Exception e)
             {
@@ -73,6 +72,8 @@ public class GeoCubicModelLoader implements IModelLoader
 
                     modelAnimations.animations.put(key, GeoAnimationParser.parse(models.parser, key, animation));
                 }
+
+                stream.close();
             }
 
             geoStream.close();
