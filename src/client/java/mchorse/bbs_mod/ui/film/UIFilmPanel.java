@@ -17,6 +17,8 @@ import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.network.ClientNetwork;
+import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.ValueEditorLayout;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.ContentType;
@@ -99,7 +101,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastProjection = new Matrix4f();
 
     private Timer flightEditTime = new Timer(100);
-    private Recorder lastRecorder;
 
     public static VoiceLines getVoiceLines()
     {
@@ -398,22 +399,36 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         super.open();
 
-        Recorder recorder = BBSModClient.getFilms().stopRecording((clips) ->
-        {
-            if (clips != null && this.lastRecorder != null)
-            {
-                Replay replay = this.data.replays.getList().get(this.lastRecorder.exception);
-
-                replay.actions.fromData(clips.toData());
-                replay.actions.sortLayers();
-
-                this.lastRecorder = null;
-            }
-        });
+        Recorder recorder = BBSModClient.getFilms().stopRecording();
 
         if (recorder != null && recorder.tick >= 0)
         {
-            this.lastRecorder = recorder;
+            ClientNetwork.sendManagerDataLoad(recorder.film.getId(), (data) ->
+            {
+                Film film = this.data;
+                Film newFilm = new Film();
+
+                newFilm.setId(recorder.film.getId());
+                newFilm.fromData(data);
+
+                BaseValue.edit(this.getData(), IValueListener.FLAG_UNMERGEABLE, (group) ->
+                {
+                    film.copy(newFilm);
+                });
+
+                int replayId = recorder.exception;
+
+                if (CollectionUtils.inRange(film.replays.getList(), replayId))
+                {
+                    BaseValue.edit(film.replays.getList().get(replayId), (replay) ->
+                    {
+                        replay.keyframes.copy(recorder.keyframes);
+                    });
+
+                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(film.getId()), Colors.BLUE | Colors.A100);
+                    this.save();
+                }
+            });
         }
     }
 
@@ -545,25 +560,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.controller.createEntities();
 
         this.entered = data != null;
-
-        if (this.lastRecorder != null)
-        {
-            /* Apply recorded data */
-            if (data != null && this.lastRecorder.film.getId().equals(data.getId()))
-            {
-                int replayId = this.lastRecorder.exception;
-
-                if (CollectionUtils.inRange(data.replays.getList(), replayId))
-                {
-                    BaseValue.edit(data.replays.getList().get(replayId), (replay) ->
-                    {
-                        replay.keyframes.copy(this.lastRecorder.keyframes);
-                    });
-
-                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(data.getId()), Colors.BLUE | Colors.A100);
-                }
-            }
-        }
     }
 
     public void undo()

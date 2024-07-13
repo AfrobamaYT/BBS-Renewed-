@@ -31,10 +31,7 @@ public class FilmRepository implements IRepository<Film>
     @Override
     public void load(String id, Consumer<Film> callback)
     {
-        MapType mapType = new MapType();
-
-        mapType.putString("id", id);
-        ClientNetwork.sendManagerData(RepositoryOperation.LOAD, mapType, (data) ->
+        ClientNetwork.sendManagerDataLoad(id, (data) ->
         {
             if (data.isMap())
             {

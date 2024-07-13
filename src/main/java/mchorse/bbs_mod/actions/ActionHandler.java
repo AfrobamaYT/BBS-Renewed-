@@ -1,9 +1,7 @@
 package mchorse.bbs_mod.actions;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
 import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.block.BlockState;
@@ -53,11 +51,6 @@ public class ActionHandler
                     return clip;
                 });
             }
-        });
-
-        ServerLifecycleEvents.SERVER_STOPPED.register((server) ->
-        {
-            BBSMod.getActions().reset();
         });
     }
 }

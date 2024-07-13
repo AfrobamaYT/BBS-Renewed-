@@ -12,6 +12,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -21,14 +22,30 @@ public class ActionManager
     private List<ActionPlayer> players = new ArrayList<>();
     private Map<ServerPlayerEntity, ActionRecorder> recorders = new HashMap<>();
 
-    public void play(ServerWorld world, Film film, int tick)
+    public void play(ServerWorld world, Film film, int tick, int exception)
     {
-        this.players.add(new ActionPlayer(world, film, tick));
+        this.players.add(new ActionPlayer(world, film, tick, exception));
     }
 
-    public void startRecording(ServerPlayerEntity entity, int tick)
+    public void stop(String filmId)
     {
-        this.recorders.put(entity, new ActionRecorder(tick));
+        Iterator<ActionPlayer> it = this.players.iterator();
+
+        while (it.hasNext())
+        {
+            ActionPlayer next = it.next();
+
+            if (next.film.getId().equals(filmId))
+            {
+                next.getDC().restore();
+                it.remove();
+            }
+        }
+    }
+
+    public void startRecording(Film film, ServerPlayerEntity entity, int tick)
+    {
+        this.recorders.put(entity, new ActionRecorder(film, tick));
     }
 
     public void addAction(ServerPlayerEntity entity, Supplier<ActionClip> supplier)
@@ -49,8 +66,13 @@ public class ActionManager
     public Clips stopRecording(ServerPlayerEntity entity)
     {
         ActionRecorder remove = this.recorders.remove(entity);
+        Clips clips = remove.getClips();
 
-        return remove.getClips();
+        clips.sortLayers();
+
+        this.stop(remove.getFilm().getId());
+
+        return clips;
     }
 
     public void tick()

@@ -13,6 +13,7 @@ public class ActionPlayer
     public Film film;
     public int tick;
     public boolean playing = true;
+    public int exception;
 
     private ServerWorld world;
     private int duration;
@@ -21,9 +22,15 @@ public class ActionPlayer
 
     public ActionPlayer(ServerWorld world, Film film, int tick)
     {
+        this(world, film, tick, -1);
+    }
+
+    public ActionPlayer(ServerWorld world, Film film, int tick, int exception)
+    {
         this.world = world;
         this.film = film;
         this.tick = tick;
+        this.exception = exception;
         this.control = new DamageControl(world);
 
         this.duration = film.camera.calculateDuration();
@@ -44,9 +51,16 @@ public class ActionPlayer
         if (this.tick >= 0)
         {
             SuperFakePlayer fakePlayer = SuperFakePlayer.get(this.world);
+            List<Replay> list = this.film.replays.getList();
 
-            for (Replay replay : this.film.replays.getList())
+            for (int i = 0; i < list.size(); i++)
             {
+                if (i == this.exception)
+                {
+                    continue;
+                }
+
+                Replay replay = list.get(i);
                 List<Clip> clips = replay.actions.getClips(this.tick);
 
                 for (Clip clip : clips)

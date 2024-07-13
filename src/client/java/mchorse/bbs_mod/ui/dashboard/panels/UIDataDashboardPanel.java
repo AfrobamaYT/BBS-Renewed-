@@ -136,6 +136,19 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     }
 
     @Override
+    public void open()
+    {
+        super.open();
+
+        int seconds = BBSSettings.editorPeriodicSave.get();
+
+        if (seconds > 0)
+        {
+            this.savingTimer.mark(seconds * 1000L);
+        }
+    }
+
+    @Override
     public void render(UIContext context)
     {
         if (this.data == null)

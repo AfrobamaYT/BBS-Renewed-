@@ -12,6 +12,7 @@ import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -35,7 +36,6 @@ public class ServerNetwork
     public static final Identifier CLIENT_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "c4");
     public static final Identifier CLIENT_STOP_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c5");
     public static final Identifier CLIENT_HANDSHAKE = new Identifier(BBSMod.MOD_ID, "c6");
-    public static final Identifier CLIENT_RECORDED_ACTIONS = new Identifier(BBSMod.MOD_ID, "c7");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -168,25 +168,29 @@ public class ServerNetwork
 
     private static void handleActionRecording(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
+        String filmId = buf.readString();
         int replayId = buf.readInt();
         int tick = buf.readInt();
         boolean recording = buf.readBoolean();
 
         if (recording)
         {
-            BBSMod.getActions().startRecording(player, tick);
+            Film film = BBSMod.getFilms().load(filmId);
+
+            if (film != null)
+            {
+                BBSMod.getActions().startRecording(film, player, tick);
+                BBSMod.getActions().play(player.getServerWorld(), film, tick, replayId);
+            }
         }
         else
         {
             Clips clips = BBSMod.getActions().stopRecording(player);
+            Film film = BBSMod.getFilms().load(filmId);
 
-            if (clips != null)
+            if (clips != null && film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
             {
-                PacketByteBuf outBuf = PacketByteBufs.create();
-
-                outBuf.writeInt(replayId);
-                DataStorageUtils.writeToPacket(outBuf, clips.toData());
-                ServerPlayNetworking.send(player, CLIENT_RECORDED_ACTIONS, outBuf);
+                film.replays.getList().get(replayId).actions.fromData(clips.toData());
             }
         }
     }
@@ -199,7 +203,7 @@ public class ServerNetwork
         {
             Film film = BBSMod.getFilms().load(filmId);
 
-            BBSMod.getActions().play(player.getServerWorld(), film, 0);
+            BBSMod.getActions().play(player.getServerWorld(), film, 0, -1);
         }
         catch (Exception e)
         {

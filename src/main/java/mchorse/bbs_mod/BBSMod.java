@@ -3,10 +3,10 @@ package mchorse.bbs_mod;
 import mchorse.bbs_mod.actions.ActionHandler;
 import mchorse.bbs_mod.actions.ActionManager;
 import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
-import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
-import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
 import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
 import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
+import mchorse.bbs_mod.actions.types.chat.ChatActionClip;
+import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
 import mchorse.bbs_mod.actions.types.item.UseBlockItemActionClip;
 import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
 import mchorse.bbs_mod.blocks.ModelBlock;
@@ -378,6 +378,12 @@ public class BBSMod implements ModInitializer
         ServerTickEvents.START_SERVER_TICK.register((server) ->
         {
             actions.tick();
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPED.register((server) ->
+        {
+            actions.reset();
+            films.reset();
         });
     }
 
