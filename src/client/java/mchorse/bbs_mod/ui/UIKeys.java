@@ -227,7 +227,6 @@ public class UIKeys
     public static final IKey FILM_TELEPORT_TITLE = L10n.lang("bbs.ui.film.teleport-title");
     public static final IKey FILM_TELEPORT_DESCRIPTION = L10n.lang("bbs.ui.film.teleport-description");
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
-    public static final IKey FILM_SAVE = L10n.lang("bbs.ui.film.save");
     public static final IKey FILMS_TITLE = L10n.lang("bbs.ui.films.title");
     public static final IKey FILMS_CAMERA = L10n.lang("bbs.ui.films.camera");
     public static final IKey FILMS_PLAY = L10n.lang("bbs.ui.films.play");
@@ -365,6 +364,7 @@ public class UIKeys
     public static final IKey LANGUAGE_PICK = L10n.lang("bbs.ui.language.pick");
     public static final IKey LANGUAGE_PICK_TITLE = L10n.lang("bbs.ui.language.pick.title");
     public static final IKey OVERLAYS_SOUNDS_MAIN = L10n.lang("bbs.ui.overlays.sounds.main");
+    public static final IKey PANELS_SAVED_NOTIFICATION = L10n.lang("bbs.ui.panels.saved-notification");
     public static final IKey PANELS_CONTEXT_COPY = L10n.lang("bbs.ui.panels.context.copy");
     public static final IKey PANELS_CONTEXT_OPEN = L10n.lang("bbs.ui.panels.context.open");
     public static final IKey PANELS_CONTEXT_PASTE = L10n.lang("bbs.ui.panels.context.paste");

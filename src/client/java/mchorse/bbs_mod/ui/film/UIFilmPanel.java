@@ -99,7 +99,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastProjection = new Matrix4f();
 
     private Timer flightEditTime = new Timer(100);
-    private Timer savingTimer = new Timer(0);
     private Recorder lastRecorder;
 
     public static VoiceLines getVoiceLines()
@@ -507,7 +506,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     @Override
-    public void fill(Film data)
+    protected void fillData(Film data)
     {
         if (this.data != null)
         {
@@ -527,8 +526,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             this.undoHandler = null;
         }
-
-        super.fill(data);
 
         this.preview.replays.setEnabled(data != null);
         this.toggleHorizontal.setEnabled(data != null);
@@ -567,8 +564,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 }
             }
         }
-
-        this.savingTimer.mark(BBSSettings.editorPeriodicSave.get() * 1000L);
     }
 
     public void undo()
@@ -662,27 +657,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             }
 
             this.entered = false;
-        }
-
-        this.checkPeriodicSave(context);
-    }
-
-    private void checkPeriodicSave(UIContext context)
-    {
-        if (this.data != null)
-        {
-            int seconds = BBSSettings.editorPeriodicSave.get();
-
-            if (seconds > 0)
-            {
-                if (this.savingTimer.check())
-                {
-                    this.savingTimer.mark(seconds * 1000L);
-
-                    this.save();
-                    context.notify(UIKeys.FILM_SAVE.format(this.data.getId()), Colors.mulRGB(Colors.GREEN, 0.75F) | Colors.A100);
-                }
-            }
         }
     }
 

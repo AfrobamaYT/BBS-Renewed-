@@ -138,10 +138,8 @@ public class UIParticleSchemePanel extends UIDataDashboardPanel<ParticleScheme>
     }
 
     @Override
-    public void fill(ParticleScheme data)
+    protected void fillData(ParticleScheme data)
     {
-        super.fill(data);
-
         this.editMoLang(null, null, null);
 
         if (this.data != null)

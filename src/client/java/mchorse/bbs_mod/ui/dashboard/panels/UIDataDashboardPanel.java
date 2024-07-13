@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.ui.dashboard.panels;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIDataOverlayPanel;
@@ -11,6 +13,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.Timer;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 
 import java.util.Collection;
@@ -20,9 +24,10 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     public UIIcon saveIcon;
 
     protected T data;
-    protected boolean save;
 
     private boolean openedBefore;
+
+    private Timer savingTimer = new Timer(0);
 
     public UIDataDashboardPanel(UIDashboard dashboard)
     {
@@ -70,7 +75,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
     /* Data population */
 
-    public void fill(T data)
+    public final void fill(T data)
     {
         this.data = data;
 
@@ -79,7 +84,13 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
         this.overlay.dupe.setEnabled(data != null);
         this.overlay.rename.setEnabled(data != null);
         this.overlay.remove.setEnabled(data != null);
+
+        this.fillData(data);
+
+        this.savingTimer.mark(BBSSettings.editorPeriodicSave.get() * 1000L);
     }
+
+    protected abstract void fillData(T data);
 
     public void fillDefaultData(T data)
     {}
@@ -106,50 +117,9 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     }
 
     @Override
-    public void open()
-    {
-        super.open();
-
-        this.save = true;
-    }
-
-    @Override
-    public void appear()
-    {
-        super.appear();
-
-        if (this.data != null)
-        {
-            this.requestData(this.data.getId());
-        }
-    }
-
-    @Override
     public void requestNames()
     {
         UIDataUtils.requestNames(this.getType(), this::fillNames);
-    }
-
-    @Override
-    public void disappear()
-    {
-        super.disappear();
-
-        if (this.save)
-        {
-            this.save();
-        }
-    }
-
-    @Override
-    public void close()
-    {
-        super.close();
-
-        if (this.save)
-        {
-            this.save();
-        }
     }
 
     public void save()
@@ -162,12 +132,8 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
     public void forceSave()
     {
-        this.preSave();
         this.getType().getRepository().save(this.data.getId(), this.data.toData().asMap());
     }
-
-    protected void preSave()
-    {}
 
     @Override
     public void render(UIContext context)
@@ -188,6 +154,29 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
         if (!this.editor.isEnabled() && this.data != null)
         {
             this.renderLockedArea(context);
+        }
+
+        this.checkPeriodicSave(context);
+    }
+
+    private void checkPeriodicSave(UIContext context)
+    {
+        if (this.data == null)
+        {
+            return;
+        }
+
+        int seconds = BBSSettings.editorPeriodicSave.get();
+
+        if (seconds > 0)
+        {
+            if (this.savingTimer.check())
+            {
+                this.savingTimer.mark(seconds * 1000L);
+
+                this.save();
+                context.notify(UIKeys.PANELS_SAVED_NOTIFICATION.format(this.data.getId()), Colors.mulRGB(Colors.GREEN, 0.75F) | Colors.A100);
+            }
         }
     }
 }
