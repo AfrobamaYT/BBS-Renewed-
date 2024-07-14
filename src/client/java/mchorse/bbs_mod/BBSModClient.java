@@ -9,7 +9,6 @@ import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
-import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -26,8 +25,6 @@ import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import mchorse.bbs_mod.ui.film.menu.UIFilmsMenu;
-import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -77,9 +74,8 @@ public class BBSModClient implements ClientModInitializer
 
     private static KeyBinding keyDashboard;
     private static KeyBinding keyModelBlockEditor;
-    private static KeyBinding keyFilms;
+    private static KeyBinding keyPlayFilm;
     private static KeyBinding keyRecordReplay;
-    /* private static KeyBinding keyToggleRecording; */
 
     private static UIDashboard dashboard;
 
@@ -215,12 +211,9 @@ public class BBSModClient implements ClientModInitializer
         BBSSettings.language.postCallback((v, f) -> reloadLanguage(((ValueLanguage) v).get()));
         BBSSettings.editorSeconds.postCallback((v, f) ->
         {
-            if (dashboard != null)
+            if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel)
             {
-                if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
-                {
-                    panel.fillData();
-                }
+                panel.fillData();
             }
         });
 
@@ -244,41 +237,11 @@ public class BBSModClient implements ClientModInitializer
         BBSMod.getFactoryCameraClips()
             .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825));
 
-        /* Keybind shenanigans */
-        keyDashboard = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".dashboard",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_0,
-            "category." + BBSMod.MOD_ID + ".main"
-        ));
-
-        keyModelBlockEditor = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".block_editor",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_HOME,
-            "category." + BBSMod.MOD_ID + ".main"
-        ));
-
-        keyFilms = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".films",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_RIGHT_CONTROL,
-            "category." + BBSMod.MOD_ID + ".main"
-        ));
-
-        keyRecordReplay = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".record_replay",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_RIGHT_ALT,
-            "category." + BBSMod.MOD_ID + ".main"
-        ));
-
-        /* keyToggleRecording = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key." + BBSMod.MOD_ID + ".toggle_recording",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_F4,
-            "category." + BBSMod.MOD_ID + ".main"
-        )); */
+        /* Keybinds */
+        keyDashboard = this.createKey("dashboard", GLFW.GLFW_KEY_0);
+        keyModelBlockEditor = this.createKey("block_editor", GLFW.GLFW_KEY_HOME);
+        keyPlayFilm = this.createKey("play_film", GLFW.GLFW_KEY_RIGHT_CONTROL);
+        keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
@@ -335,86 +298,10 @@ public class BBSModClient implements ClientModInitializer
                 modelBlockItemRenderer.update();
             }
 
-            while (keyDashboard.wasPressed())
-            {
-                UIScreen.open(getDashboard());
-            }
-
-            while (keyModelBlockEditor.wasPressed())
-            {
-                ItemStack stack = mc.player.getEquippedStack(EquipmentSlot.MAINHAND);
-
-                if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == BBSMod.MODEL_BLOCK)
-                {
-                    ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
-
-                    if (item != null)
-                    {
-                        UIScreen.open(new UIModelBlockEditorMenu(item));
-                    }
-                }
-            }
-
-            while (keyFilms.wasPressed())
-            {
-                Recorder recorder = BBSModClient.getFilms().getRecorder();
-
-                if (recorder != null)
-                {
-                    UIReplaysEditor.setLastReplay(recorder.exception);
-
-                    UIDashboard dashboard = BBSModClient.getDashboard();
-                    UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
-
-                    if (dashboard.getPanels().panel != panel)
-                    {
-                        dashboard.setPanel(panel);
-                    }
-
-                    Film data = panel.getData();
-
-                    if (data == null || !data.getId().equals(recorder.film.getId()))
-                    {
-                        panel.pickData(recorder.film.getId());
-                    }
-
-                    UIScreen.open(dashboard);
-                }
-                else
-                {
-                    UIScreen.open(new UIFilmsMenu());
-                }
-            }
-
-            while (keyRecordReplay.wasPressed())
-            {
-                UIDashboard dashboard = getDashboard();
-
-                if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
-                {
-                    Recorder recorder = getFilms().getRecorder();
-
-                    if (recorder != null)
-                    {
-                        UIScreen.open(getDashboard());
-                    }
-                    else
-                    {
-                        Replay replay = panel.replayEditor.getReplay();
-                        int index = panel.getFilm().replays.getList().indexOf(replay);
-
-                        if (index >= 0)
-                        {
-                            getFilms().startRecording(panel.getFilm(), index);
-                        }
-                    }
-                }
-            }
-
-            /* while (keyToggleRecording.wasPressed())
-            {
-                requestToggleRecording = true;
-            } */
+            while (keyDashboard.wasPressed()) UIScreen.open(getDashboard());
+            while (keyModelBlockEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
+            while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
+            while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
@@ -445,6 +332,66 @@ public class BBSModClient implements ClientModInitializer
         BlockEntityRendererFactories.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
+    }
+
+    private KeyBinding createKey(String id, int key)
+    {
+        return KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + "." + id,
+            InputUtil.Type.KEYSYM,
+            key,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+    }
+
+    private void keyOpenModelBlockEditor(MinecraftClient mc)
+    {
+        ItemStack stack = mc.player.getEquippedStack(EquipmentSlot.MAINHAND);
+
+        if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == BBSMod.MODEL_BLOCK)
+        {
+            ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
+
+            if (item != null)
+            {
+                UIScreen.open(new UIModelBlockEditorMenu(item));
+            }
+        }
+    }
+
+    private void keyPlayFilm()
+    {
+        UIFilmPanel panel = getDashboard().getPanel(UIFilmPanel.class);
+
+        if (panel.getData() != null)
+        {
+            Films.playFilm(panel.getData().getId(), false);
+        }
+    }
+
+    private void keyRecordReplay()
+    {
+        UIDashboard dashboard = getDashboard();
+
+        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+        {
+            Recorder recorder = getFilms().getRecorder();
+
+            if (recorder != null)
+            {
+                UIScreen.open(getDashboard());
+            }
+            else
+            {
+                Replay replay = panel.replayEditor.getReplay();
+                int index = panel.getFilm().replays.getList().indexOf(replay);
+
+                if (index >= 0)
+                {
+                    getFilms().startRecording(panel.getFilm(), index);
+                }
+            }
+        }
     }
 
     public static void reloadLanguage(String language)

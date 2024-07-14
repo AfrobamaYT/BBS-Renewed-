@@ -149,6 +149,14 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     }
 
     @Override
+    public void close()
+    {
+        super.close();
+
+        this.save();
+    }
+
+    @Override
     public void render(UIContext context)
     {
         if (this.data == null)

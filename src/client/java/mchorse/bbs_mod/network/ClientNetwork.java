@@ -2,8 +2,6 @@ package mchorse.bbs_mod.network;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
-import mchorse.bbs_mod.camera.controller.ICameraController;
-import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -51,7 +49,7 @@ public class ClientNetwork
     {
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET, (client, handler, buf, responseSender) -> handleClientModelBlockPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM_PACKET, (client, handler, buf, responseSender) -> handlePlayerFormPacket(client, buf));
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
@@ -111,17 +109,19 @@ public class ClientNetwork
         });
     }
 
-    private static void handlePlayFilmPacket(PacketByteBuf buf)
+    private static void handlePlayFilmPacket(MinecraftClient client, PacketByteBuf buf)
     {
         String filmId = buf.readString();
         boolean withCamera = buf.readBoolean();
+        Film film = new Film();
 
-        try
+        film.setId(filmId);
+        film.fromData(DataStorageUtils.readFromPacket(buf));
+
+        client.execute(() ->
         {
-            Films.playFilm(filmId, withCamera);
-        }
-        catch (Exception e)
-        {}
+            Films.playFilm(film, withCamera);
+        });
     }
 
     private static void handleManagerDataPacket(PacketByteBuf buf)
@@ -144,16 +144,7 @@ public class ClientNetwork
 
         MinecraftClient.getInstance().execute(() ->
         {
-            Film film = BBSModClient.getFilms().remove(filmId);
-            ICameraController current = BBSModClient.getCameraController().getCurrent();
-
-            if (film != null && current instanceof PlayCameraController play)
-            {
-                if (play.getContext().clips == film.camera)
-                {
-                    BBSModClient.getCameraController().remove(play);
-                }
-            }
+            Films.stopFilm(filmId);
         });
     }
 
@@ -236,5 +227,15 @@ public class ClientNetwork
         buf.writeString(id);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_PLAY, buf);
+    }
+
+    public static void sendToggleFilm(String filmId, boolean withCamera)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(filmId);
+        buf.writeBoolean(withCamera);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_TOGGLE_FILM, buf);
     }
 }

@@ -9,9 +9,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,52 +20,33 @@ public class CubicModelLoader implements IModelLoader
     {
         List<Link> modelBBS = IModelLoader.getLinks(links, ".bbs.json");
         Link modelTexture = IModelLoader.getLink(model.combine("model.png"), links, ".png");
-        List<InputStream> modelStreams = new ArrayList<>();
-
-        try
-        {
-            for (Link link : modelBBS)
-            {
-                modelStreams.add(models.provider.getAsset(link));
-            }
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-
-        if (modelStreams.isEmpty() || modelStreams.size() != modelBBS.size())
-        {
-            return null;
-        }
 
         CubicModel newModel = new CubicModel(id, null, new Animations(models.parser), modelTexture);
 
-        for (int i = 0; i < modelStreams.size(); i++)
+        for (Link modelBB : modelBBS)
         {
-            CubicLoader loader = new CubicLoader();
-            InputStream stream = modelStreams.get(i);
-            CubicLoader.LoadingInfo info = loader.load(models.parser, stream, modelBBS.get(i).path);
-
-            if (info.model != null)
+            try (InputStream stream = models.provider.getAsset(modelBB))
             {
-                newModel.model = info.model;
-            }
+                CubicLoader loader = new CubicLoader();
+                CubicLoader.LoadingInfo info = loader.load(models.parser, stream, modelBB.path);
 
-            if (info.animations != null)
-            {
-                for (Animation animation : info.animations.getAll())
+                if (info.model != null)
                 {
-                    newModel.animations.add(animation);
+                    newModel.model = info.model;
+                }
+
+                if (info.animations != null)
+                {
+                    for (Animation animation : info.animations.getAll())
+                    {
+                        newModel.animations.add(animation);
+                    }
                 }
             }
-
-            try
+            catch (Exception e)
             {
-                stream.close();
+                System.err.println("Failed to load BBS file: " + modelBB);
             }
-            catch (IOException e)
-            {}
         }
 
         if (newModel.model == null || newModel.model.topGroups.isEmpty())

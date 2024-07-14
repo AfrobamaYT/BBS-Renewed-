@@ -2,6 +2,7 @@ package mchorse.bbs_mod.film;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -19,28 +20,60 @@ public class Films
     private List<FilmController> controllers = new ArrayList<FilmController>();
     private Recorder recorder;
 
+    /* Static helpers */
+
     public static void playFilm(String filmId, boolean withCamera)
     {
-        ContentType.FILMS.getRepository().load(filmId, (data) ->
+        if (ClientNetwork.isIsBBSModOnServer())
         {
-            MinecraftClient.getInstance().execute(() ->
+            ClientNetwork.sendToggleFilm(filmId, withCamera);
+        }
+        else
+        {
+            if (BBSModClient.getFilms().has(filmId))
             {
-                Film film = (Film) data;
-                FilmController filmController = new FilmController(film);
-
-                if (withCamera)
+                stopFilm(filmId);
+            }
+            else
+            {
+                ContentType.FILMS.getRepository().load(filmId, (data) ->
                 {
-                    PlayCameraController controller = new PlayCameraController(film.camera);
-
-                    controller.getContext().entities.addAll(filmController.getEntities());
-                    BBSModClient.getCameraController().add(controller);
-                }
-
-                ClientNetwork.sendActionPlay(film.getId());
-                BBSModClient.getFilms().add(filmController);
-            });
-        });
+                    MinecraftClient.getInstance().execute(() -> playFilm((Film) data, withCamera));
+                });
+            }
+        }
     }
+
+    public static void playFilm(Film film, boolean withCamera)
+    {
+        FilmController filmController = new FilmController(film);
+
+        if (withCamera)
+        {
+            PlayCameraController controller = new PlayCameraController(film.camera);
+
+            controller.getContext().entities.addAll(filmController.getEntities());
+            BBSModClient.getCameraController().add(controller);
+        }
+
+        BBSModClient.getFilms().add(filmController);
+    }
+
+    public static void stopFilm(String filmId)
+    {
+        Film film = BBSModClient.getFilms().remove(filmId);
+        ICameraController current = BBSModClient.getCameraController().getCurrent();
+
+        if (film != null && current instanceof PlayCameraController play)
+        {
+            if (play.getContext().clips == film.camera)
+            {
+                BBSModClient.getCameraController().remove(play);
+            }
+        }
+    }
+
+    /* Instance API */
 
     public Recorder getRecorder()
     {
@@ -55,8 +88,6 @@ public class Films
         {
             ClientNetwork.sendActionRecording(film.getId(), 0, this.recorder.tick, true);
         }
-
-        ContentType.FILMS.getRepository().save(film.getId(), film.toData().asMap());
     }
 
     public Recorder stopRecording()
@@ -87,6 +118,19 @@ public class Films
     public void add(FilmController controller)
     {
         this.controllers.add(controller);
+    }
+
+    public boolean has(String filmId)
+    {
+        for (FilmController controller : this.controllers)
+        {
+            if (controller.film.getId().equals(filmId))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public Film remove(String id)

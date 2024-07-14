@@ -59,16 +59,7 @@ public class FilmManager extends BaseManager<Film>
     @Override
     public boolean save(String id, MapType data)
     {
-        Film film = this.cache.get(id);
-
-        if (film != null)
-        {
-            film.fromData(data);
-        }
-        else
-        {
-            this.cache.put(id, this.create(id, data));
-        }
+        this.cache.put(id, this.create(id, data));
 
         return super.save(id, data);
     }

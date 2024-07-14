@@ -4,5 +4,7 @@
 
     "key.bbs.dashboard": "Главная Панель",
     "key.bbs.block_editor": "Редактор Модель Блока",
+    "key.bbs.play_film": "Произвести Фильм",
+    "key.bbs.record_replay": "Записать Данную Запись",
     "category.bbs.main": "ББС мод"
 }

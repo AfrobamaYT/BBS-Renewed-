@@ -228,8 +228,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.JUMP_FORWARD, () -> this.setCursor(this.getCursor() + BBSSettings.editorJump.get())).active(active).category(editor);
         this.keys().register(Keys.JUMP_BACKWARD, () -> this.setCursor(this.getCursor() - BBSSettings.editorJump.get())).active(active).category(editor);
 
-        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING_OUTSIDE, () -> this.controller.recordOutside());
-
         this.fill(null);
 
         this.setupEditorFlex(false);
@@ -401,7 +399,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         Recorder recorder = BBSModClient.getFilms().stopRecording();
 
-        if (recorder != null && recorder.tick >= 0)
+        if (recorder == null || recorder.tick < 0)
+        {
+            return;
+        }
+
+        if (ClientNetwork.isIsBBSModOnServer())
         {
             ClientNetwork.sendManagerDataLoad(recorder.film.getId(), (data) ->
             {
@@ -416,19 +419,27 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                     film.copy(newFilm);
                 });
 
-                int replayId = recorder.exception;
-
-                if (CollectionUtils.inRange(film.replays.getList(), replayId))
-                {
-                    BaseValue.edit(film.replays.getList().get(replayId), (replay) ->
-                    {
-                        replay.keyframes.copy(recorder.keyframes);
-                    });
-
-                    this.dashboard.context.notify(UIKeys.FILMS_SAVED_NOTIFICATION.format(film.getId()), Colors.BLUE | Colors.A100);
-                    this.save();
-                }
+                this.applyRecordedKeyframes(recorder, film);
             });
+        }
+        else
+        {
+            this.applyRecordedKeyframes(recorder, this.data);
+        }
+    }
+
+    private void applyRecordedKeyframes(Recorder recorder, Film film)
+    {
+        int replayId = recorder.exception;
+
+        if (CollectionUtils.inRange(film.replays.getList(), replayId))
+        {
+            BaseValue.edit(film.replays.getList().get(replayId), (replay) ->
+            {
+                replay.keyframes.copy(recorder.keyframes);
+            });
+
+            this.save();
         }
     }
 

@@ -106,4 +106,17 @@ public class ActionManager
             player.getDC().addEntity(entity);
         }
     }
+
+    public ActionPlayer getPlayer(String filmId)
+    {
+        for (ActionPlayer player : this.players)
+        {
+            if (player.film.getId().equals(filmId))
+            {
+                return player;
+            }
+        }
+
+        return null;
+    }
 }
