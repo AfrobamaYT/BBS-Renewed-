@@ -56,10 +56,13 @@ public class StencilFormFramebuffer
         {
             Texture texture = new Texture();
 
+            texture.setSize(2, 2);
             texture.setFilter(GL11.GL_NEAREST);
             texture.setWrap(GL13.GL_CLAMP_TO_EDGE);
 
             Renderbuffer renderbuffer = new Renderbuffer();
+
+            renderbuffer.resize(2, 2);
 
             framebuffer.deleteTextures().attach(texture, GL30.GL_COLOR_ATTACHMENT0);
             framebuffer.attach(renderbuffer);

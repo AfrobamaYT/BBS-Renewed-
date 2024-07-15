@@ -17,6 +17,8 @@ public class DamageControl
 
     private ServerWorld world;
 
+    public int nested;
+
     public DamageControl(ServerWorld world)
     {
         this.world = world;

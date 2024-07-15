@@ -29,8 +29,21 @@ public class BBSCommands
 
         registerMorphCommand(bbs, environment);
         registerFilmsCommand(bbs, environment);
+        registerDCCommand(bbs, environment);
 
         dispatcher.register(bbs);
+    }
+
+    private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> dc = CommandManager.literal("dc");
+        LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
+
+        bbs.then(
+            dc.then(
+                stop.executes(BBSCommands::DCCommandStop)
+            )
+        );
     }
 
     private static void registerMorphCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
@@ -164,6 +177,13 @@ public class BBSCommands
         {
             ServerNetwork.sendStopFilm(player, filmId);
         }
+
+        return 1;
+    }
+
+    private static int DCCommandStop(CommandContext<ServerCommandSource> source)
+    {
+        BBSMod.getActions().resetDamage(source.getSource().getWorld());
 
         return 1;
     }

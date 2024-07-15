@@ -18,27 +18,19 @@ public class ActionPlayer
     private ServerWorld world;
     private int duration;
 
-    private DamageControl control;
-
-    public ActionPlayer(ServerWorld world, Film film, int tick)
-    {
-        this(world, film, tick, -1);
-    }
-
     public ActionPlayer(ServerWorld world, Film film, int tick, int exception)
     {
         this.world = world;
         this.film = film;
         this.tick = tick;
         this.exception = exception;
-        this.control = new DamageControl(world);
 
         this.duration = film.camera.calculateDuration();
     }
 
-    public DamageControl getDC()
+    public ServerWorld getWorld()
     {
-        return this.control;
+        return this.world;
     }
 
     public boolean tick()
@@ -72,13 +64,6 @@ public class ActionPlayer
 
         this.tick += 1;
 
-        boolean hasFinished = this.tick >= this.duration;
-
-        if (hasFinished)
-        {
-            this.control.restore();
-        }
-
-        return hasFinished;
+        return this.tick >= this.duration;
     }
 }

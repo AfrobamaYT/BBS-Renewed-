@@ -21,10 +21,57 @@ public class ActionManager
 {
     private List<ActionPlayer> players = new ArrayList<>();
     private Map<ServerPlayerEntity, ActionRecorder> recorders = new HashMap<>();
+    private Map<ServerWorld, DamageControl> dc = new HashMap<>();
+
+    public void reset()
+    {
+        this.players.clear();
+        this.recorders.clear();
+        this.dc.clear();
+    }
+
+    public void tick()
+    {
+        this.players.removeIf((player) ->
+        {
+            boolean tick = player.tick();
+
+            if (tick)
+            {
+                this.stopDamage(player.getWorld());
+            }
+
+            return tick;
+        });
+
+        for (ActionRecorder recorder : this.recorders.values())
+        {
+            recorder.tick();
+        }
+    }
+
+    /* Actions playback */
+
+    public ActionPlayer getPlayer(String filmId)
+    {
+        for (ActionPlayer player : this.players)
+        {
+            if (player.film.getId().equals(filmId))
+            {
+                return player;
+            }
+        }
+
+        return null;
+    }
 
     public void play(ServerWorld world, Film film, int tick, int exception)
     {
-        this.players.add(new ActionPlayer(world, film, tick, exception));
+        if (film != null)
+        {
+            this.players.add(new ActionPlayer(world, film, tick, exception));
+            this.trackDamage(world);
+        }
     }
 
     public void stop(String filmId)
@@ -37,11 +84,13 @@ public class ActionManager
 
             if (next.film.getId().equals(filmId))
             {
-                next.getDC().restore();
+                this.stopDamage(next.getWorld());
                 it.remove();
             }
         }
     }
+
+    /* Actions recording */
 
     public void startRecording(Film film, ServerPlayerEntity entity, int tick)
     {
@@ -75,48 +124,63 @@ public class ActionManager
         return clips;
     }
 
-    public void tick()
-    {
-        this.players.removeIf(ActionPlayer::tick);
+    /* Damage control */
 
-        for (ActionRecorder recorder : this.recorders.values())
+    public void trackDamage(ServerWorld world)
+    {
+        DamageControl damageControl = this.dc.get(world);
+
+        if (damageControl == null)
         {
-            recorder.tick();
+            this.dc.put(world, new DamageControl(world));
+        }
+        else
+        {
+            damageControl.nested += 1;
         }
     }
 
-    public void reset()
+    public void stopDamage(ServerWorld world)
     {
-        this.players.clear();
-        this.recorders.clear();
+        DamageControl damageControl = this.dc.get(world);
+
+        if (damageControl != null)
+        {
+            if (damageControl.nested > 0)
+            {
+                damageControl.nested -= 1;
+            }
+            else
+            {
+                damageControl.restore();
+                this.dc.remove(world);
+            }
+        }
+    }
+
+    public void resetDamage(ServerWorld world)
+    {
+        DamageControl dc = this.dc.remove(world);
+
+        if (dc != null)
+        {
+            dc.restore();
+        }
     }
 
     public void changedBlock(BlockPos pos, BlockState state, BlockEntity blockEntity)
     {
-        for (ActionPlayer player : this.players)
+        for (DamageControl control : this.dc.values())
         {
-            player.getDC().addBlock(pos, state, blockEntity);
+            control.addBlock(pos, state, blockEntity);
         }
     }
 
     public void spawnedEntity(Entity entity)
     {
-        for (ActionPlayer player : this.players)
+        for (DamageControl control : this.dc.values())
         {
-            player.getDC().addEntity(entity);
+            control.addEntity(entity);
         }
-    }
-
-    public ActionPlayer getPlayer(String filmId)
-    {
-        for (ActionPlayer player : this.players)
-        {
-            if (player.film.getId().equals(filmId))
-            {
-                return player;
-            }
-        }
-
-        return null;
     }
 }

@@ -25,6 +25,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -232,29 +233,7 @@ public class ServerNetwork
         }
         else
         {
-            try
-            {
-                Film film = BBSMod.getFilms().load(filmId);
-
-                if (film != null)
-                {
-                    BBSMod.getActions().play(player.getServerWorld(), film, 0, -1);
-                    PacketByteBuf newBuf = PacketByteBufs.create();
-
-                    newBuf.writeString(filmId);
-                    newBuf.writeBoolean(withCamera);
-                    DataStorageUtils.writeToPacket(newBuf, film.toData());
-
-                    for (ServerPlayerEntity otherPlayer : server.getPlayerManager().getPlayerList())
-                    {
-                        ServerPlayNetworking.send(otherPlayer, CLIENT_PLAY_FILM_PACKET, newBuf);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            sendPlayFilm(player.getServerWorld(), filmId, withCamera);
         }
     }
 
@@ -294,19 +273,56 @@ public class ServerNetwork
         ServerPlayNetworking.send(player, CLIENT_CLICKED_MODEL_BLOCK_PACKET, buf);
     }
 
+    public static void sendPlayFilm(ServerWorld world, String filmId, boolean withCamera)
+    {
+        try
+        {
+            Film film = BBSMod.getFilms().load(filmId);
+
+            if (film != null)
+            {
+                BBSMod.getActions().play(world, film, 0, -1);
+
+                PacketByteBuf newBuf = PacketByteBufs.create();
+
+                newBuf.writeString(filmId);
+                newBuf.writeBoolean(withCamera);
+                DataStorageUtils.writeToPacket(newBuf, film.toData());
+
+                for (ServerPlayerEntity otherPlayer : world.getPlayers())
+                {
+                    ServerPlayNetworking.send(otherPlayer, CLIENT_PLAY_FILM_PACKET, newBuf);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     public static void sendPlayFilm(ServerPlayerEntity player, String filmId, boolean withCamera)
     {
-        Film film = BBSMod.getFilms().load(filmId);
-
-        if (film != null)
+        try
         {
-            PacketByteBuf buf = PacketByteBufs.create();
+            Film film = BBSMod.getFilms().load(filmId);
 
-            buf.writeString(filmId);
-            buf.writeBoolean(withCamera);
-            DataStorageUtils.writeToPacket(buf, film.toData());
+            if (film != null)
+            {
+                BBSMod.getActions().play(player.getServerWorld(), film, 0, -1);
 
-            ServerPlayNetworking.send(player, CLIENT_PLAY_FILM_PACKET, buf);
+                PacketByteBuf buf = PacketByteBufs.create();
+
+                buf.writeString(filmId);
+                buf.writeBoolean(withCamera);
+                DataStorageUtils.writeToPacket(buf, film.toData());
+
+                ServerPlayNetworking.send(player, CLIENT_PLAY_FILM_PACKET, buf);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
 
