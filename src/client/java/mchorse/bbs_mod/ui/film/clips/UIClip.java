@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film.clips;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.actions.types.AttackActionClip;
 import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
 import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
 import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
@@ -30,6 +31,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.clips.actions.UIAttackActionClip;
 import mchorse.bbs_mod.ui.film.clips.actions.UIBreakBlockActionClip;
 import mchorse.bbs_mod.ui.film.clips.actions.UIChatActionClip;
 import mchorse.bbs_mod.ui.film.clips.actions.UICommandActionClip;
@@ -99,6 +101,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
         register(BreakBlockActionClip.class, UIBreakBlockActionClip::new);
         register(UseItemActionClip.class, UIUseItemActionClip::new);
         register(UseBlockItemActionClip.class, UIUseBlockItemActionClip::new);
+        register(AttackActionClip.class, UIAttackActionClip::new);
     }
 
     public static <T extends Clip> void register(Class<T> clazz, IUIClipFactory<T> factory)

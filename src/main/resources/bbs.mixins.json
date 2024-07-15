@@ -9,7 +9,8 @@
         "BlockItemMixin",
         "ServerWorldMixin",
         "ItemStackMixin",
-        "WorldMixin"
+        "WorldMixin",
+        "LivingEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1

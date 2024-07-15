@@ -166,6 +166,7 @@ public class Icons
     public static final Icon CLIP_HANLDE_LEFT = register(new Icon(ATLAS, "clip_hanlde_left", 192, 128, 8, 16));
     public static final Icon CLIP_HANLDE_RIGHT = register(new Icon(ATLAS, "clip_hanlde_right", 200, 128, 8, 16));
     public static final Icon ACTION = register(new Icon(ATLAS, "action", 208, 128));
+    public static final Icon DROP = register(new Icon(ATLAS, "drop", 224, 128));
 
     public static final Icon INTERP_LINEAR = register(new Icon(ATLAS, "interp_linear", 0, 192));
     public static final Icon INTERP_CONST = register(new Icon(ATLAS, "interp_const", 16, 192));
