@@ -321,7 +321,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void dupeData(String name)
     {
-        if (this.getData() != null && !this.overlay.namesList.getList().contains(name))
+        if (this.getData() != null && !this.overlay.namesList.hasInHierarchy(name))
         {
             this.save();
             this.overlay.namesList.addFile(name);

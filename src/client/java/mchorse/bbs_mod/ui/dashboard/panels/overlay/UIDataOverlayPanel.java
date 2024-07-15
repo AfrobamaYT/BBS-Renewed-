@@ -116,7 +116,7 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void dupeData(String name)
     {
-        if (this.panel.getData() != null && !this.namesList.getList().contains(name))
+        if (this.panel.getData() != null && !this.namesList.hasInHierarchy(name))
         {
             this.panel.save();
             this.panel.getType().getRepository().save(name, this.panel.getData().toData().asMap());
@@ -131,7 +131,7 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void renameData(String name)
     {
-        if (this.panel.getData() != null && !this.namesList.getList().contains(name))
+        if (this.panel.getData() != null && !this.namesList.hasInHierarchy(name))
         {
             this.panel.getType().getRepository().rename(this.panel.getData().getId(), name);
 
