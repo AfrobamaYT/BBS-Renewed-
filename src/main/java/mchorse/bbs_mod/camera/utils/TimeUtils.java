@@ -10,7 +10,7 @@ public class TimeUtils
         return (int) (seconds * 20);
     }
 
-    public static float toSeconds(int tick)
+    public static float toSeconds(float tick)
     {
         return tick / 20F;
     }

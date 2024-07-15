@@ -39,6 +39,6 @@ public class AudioClip extends CameraClip
     {
         super.breakDownClip(original, offset);
 
-        this.offset.set(offset);
+        this.offset.set(this.offset.get() + offset);
     }
 }
