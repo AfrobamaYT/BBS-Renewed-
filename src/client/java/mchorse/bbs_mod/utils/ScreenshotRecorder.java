@@ -18,8 +18,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Screenshot recorder
@@ -106,9 +104,7 @@ public class ScreenshotRecorder
      */
     public File getScreenshotFile()
     {
-        String fileName = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
-
-        return new File(this.screenshots, fileName + ".png");
+        return new File(this.screenshots, StringUtils.createTimestampFilename() + ".png");
     }
 
     /**

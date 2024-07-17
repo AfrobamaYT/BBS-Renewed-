@@ -184,7 +184,6 @@ public class UIKeys
     public static final IKey ENGINE_KEYSTROKES_POSITION_TOP_RIGHT = L10n.lang("bbs.keystrokes_position.top_right");
     public static final IKey ENGINE_TOOLTIP_STYLE_DARK = L10n.lang("bbs.tooltip_style.dark");
     public static final IKey ENGINE_TOOLTIP_STYLE_LIGHT = L10n.lang("bbs.tooltip_style.light");
-    public static final IKey FILM_RECORDING = L10n.lang("bbs.ui.film.recording");
     public static final IKey FILM_CONTROLLER_INSERT_FRAME_DESCRIPTION = L10n.lang("bbs.ui.film.controller.insert_frame-description");
     public static final IKey FILM_CONTROLLER_INSERT_FRAME_TITLE = L10n.lang("bbs.ui.film.controller.insert_frame-title");
     public static final IKey FILM_CONTROLLER_KEYS_CATEGORY = L10n.lang("bbs.ui.film.controller.keys.category");
@@ -211,6 +210,10 @@ public class UIKeys
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor");
     public static final IKey FILM_OPEN_REPLAY_EDITOR = L10n.lang("bbs.ui.film.open_replay_editor");
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor");
+    public static final IKey FILM_RECORDING = L10n.lang("bbs.ui.film.recording");
+    public static final IKey FILM_RENDER_AUDIO = L10n.lang("bbs.ui.film.render_audio");
+    public static final IKey FILM_RENDER_AUDIO_ERROR = L10n.lang("bbs.ui.film.render_audio.error");
+    public static final IKey FILM_RENDER_AUDIO_SUCCESS = L10n.lang("bbs.ui.film.render_audio.success");
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
     public static final IKey FILM_REPLAY_ORBIT_CAMERA = L10n.lang("bbs.ui.film.replay.orbit.camera");

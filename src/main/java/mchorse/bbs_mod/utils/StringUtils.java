@@ -5,8 +5,16 @@ import org.joml.Vector3f;
 import org.joml.Vector4d;
 import org.joml.Vector4f;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class StringUtils
 {
+    public static String createTimestampFilename()
+    {
+        return new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+    }
+
     public static String combinePaths(String a, String b)
     {
         return combinePaths(a, b, "/");

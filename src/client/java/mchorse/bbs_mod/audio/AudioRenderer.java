@@ -1,15 +1,24 @@
 package mchorse.bbs_mod.audio;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.audio.wav.WaveWriter;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import org.lwjgl.system.MemoryUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AudioRenderer
 {
@@ -88,5 +97,92 @@ public class AudioRenderer
 
             batcher.textCard(tickLabel, x + w - 8 - fontRenderer.getWidth(tickLabel), y + h / 2 - 4, 0xffffff, 0x99000000);
         }
+    }
+
+    public static boolean renderAudio(File file, List<AudioClip> clips, int totalDuration)
+    {
+        float total = totalDuration / 20F;
+        Map<AudioClip, Wave> map = new HashMap<>();
+
+        for (AudioClip clip : clips)
+        {
+            try
+            {
+                map.put(clip, AudioReader.read(BBSMod.getProvider(), clip.audio.get()));
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        if (map.isEmpty())
+        {
+            return false;
+        }
+
+        int totalBytes = (int) (total * map.values().iterator().next().byteRate);
+        byte[] bytes = new byte[totalBytes + totalBytes % 2];
+        ByteBuffer buffer = MemoryUtil.memAlloc(2);
+
+        for (AudioClip clip : clips)
+        {
+            try
+            {
+                Wave wave = map.get(clip);
+
+                int offset = (int) (TimeUtils.toSeconds(clip.tick.get()) * wave.byteRate);
+                int length = (int) (TimeUtils.toSeconds(clip.duration.get()) * wave.byteRate);
+                int start = (int) (TimeUtils.toSeconds(clip.offset.get()) * wave.byteRate);
+
+                offset -= offset % 2;
+                start -= start % 2;
+
+                length = Math.min(wave.data.length, MathUtils.clamp(length, 0, bytes.length - offset));
+                length -= length % 2;
+                length -= start;
+
+                for (int i = 0; i < length; i += 2)
+                {
+                    buffer.position(0);
+                    buffer.put(wave.data[start + i]);
+                    buffer.put(wave.data[start + i + 1]);
+
+                    int waveShort = buffer.getShort(0);
+
+                    buffer.position(0);
+                    buffer.put(bytes[offset + i]);
+                    buffer.put(bytes[offset + i + 1]);
+
+                    int bytesShort = buffer.getShort(0);
+                    int finalShort = waveShort + bytesShort;
+
+                    buffer.putShort(0, (short) MathUtils.clamp(finalShort, Short.MIN_VALUE, Short.MAX_VALUE));
+
+                    bytes[offset + i + 1] = buffer.get(1);
+                    bytes[offset + i] =     buffer.get(0);
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        try
+        {
+            Wave lastWave = map.values().iterator().next();
+            Wave wave = new Wave(lastWave.audioFormat, lastWave.numChannels, lastWave.sampleRate, lastWave.bitsPerSample, bytes);
+
+            WaveWriter.write(file, wave);
+
+            return true;
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }

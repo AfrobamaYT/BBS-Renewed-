@@ -14,10 +14,8 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -82,7 +80,7 @@ public class VideoRecorder
             }
 
             Path path = Paths.get(movies.toString());
-            String movieName = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date());
+            String movieName = StringUtils.createTimestampFilename();
             String params = BBSSettings.videoSettings.arguments.get();
             StringBuilder filters = new StringBuilder("vflip");
             float frameRate = (float) BBSRendering.getVideoFrameRate();
