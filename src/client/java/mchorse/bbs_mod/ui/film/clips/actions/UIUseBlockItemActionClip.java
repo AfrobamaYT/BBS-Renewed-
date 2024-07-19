@@ -24,9 +24,9 @@ public class UIUseBlockItemActionClip extends UIActionClip<UseBlockItemActionCli
     {
         super.registerUI();
 
-        this.hit = new UIBlockHitResult();
+        this.hit = new UIBlockHitResult(this.editor);
         this.hand = new UIToggle(UIKeys.ACTIONS_ITEM_MAIN_HAND, (b) -> this.clip.hand.set(b.getValue()));
-        this.itemStack = new UIItemStackEditor((stack) -> this.clip.itemStack.set(stack));
+        this.itemStack = new UIItemStackEditor((stack) -> this.editor.editMultiple(this.clip.itemStack, (itemStack) -> itemStack.set(stack)));
     }
 
     @Override

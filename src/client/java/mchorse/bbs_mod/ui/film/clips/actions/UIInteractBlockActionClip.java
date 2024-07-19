@@ -22,8 +22,8 @@ public class UIInteractBlockActionClip extends UIActionClip<InteractBlockActionC
     {
         super.registerUI();
 
-        this.hit = new UIBlockHitResult();
-        this.hand = new UIToggle(UIKeys.ACTIONS_ITEM_MAIN_HAND, (b) -> this.clip.hand.set(b.getValue()));
+        this.hit = new UIBlockHitResult(this.editor);
+        this.hand = new UIToggle(UIKeys.ACTIONS_ITEM_MAIN_HAND, (b) -> this.editor.editMultiple(this.clip.hand, (hand) -> hand.set(b.getValue())));
     }
 
     @Override

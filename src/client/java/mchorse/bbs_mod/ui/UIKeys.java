@@ -162,6 +162,7 @@ public class UIKeys
     public static final IKey CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS = L10n.lang("bbs.ui.camera.timeline.context.remove_clips");
     public static final IKey CAMERA_TIMELINE_CONTEXT_SHIFT = L10n.lang("bbs.ui.camera.timeline.context.shift");
     public static final IKey CAMERA_TIMELINE_CONTEXT_SHIFT_DURATION = L10n.lang("bbs.ui.camera.timeline.context.shift_duration");
+    public static final IKey CAMERA_TIMELINE_CONTEXT_REORGANIZE = L10n.lang("bbs.ui.camera.timeline.context.reorganize");
     public static final IKey CAMERA_TIMELINE_KEYS_CLIPS = L10n.lang("bbs.ui.camera.timeline.keys.clips");
     public static final IKey CAMERA_TIMELINE_KEYS_ENABLED = L10n.lang("bbs.ui.camera.timeline.keys.enabled");
     public static final IKey CAMERA_TOOLTIPS_OPEN_VIDEOS = L10n.lang("bbs.ui.camera.tooltips.open_videos");

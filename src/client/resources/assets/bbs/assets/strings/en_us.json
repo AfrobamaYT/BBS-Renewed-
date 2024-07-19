@@ -284,6 +284,7 @@
     "bbs.ui.camera.timeline.context.remove_clips": "Remove clip(s)",
     "bbs.ui.camera.timeline.context.shift": "Shift clip(s) to cursor",
     "bbs.ui.camera.timeline.context.shift_duration": "Shift duration(s) to cursor",
+    "bbs.ui.camera.timeline.context.reorganize": "Reorganize clips",
     "bbs.ui.camera.timeline.keys.clips": "Add clips",
     "bbs.ui.camera.timeline.keys.enabled": "Toggle enable",
     "bbs.ui.camera.tooltips.open_videos": "Open videos folder...",

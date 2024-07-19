@@ -24,13 +24,13 @@ public class UIPlaceBlockActionClip extends UIActionClip<PlaceBlockActionClip>
     {
         super.registerUI();
 
-        this.x = new UITrackpad((v) -> this.clip.x.set(v.intValue()));
+        this.x = new UITrackpad((v) -> this.editor.editMultiple(this.clip.x, (x) -> x.set(v.intValue())));
         this.x.integer();
-        this.y = new UITrackpad((v) -> this.clip.y.set(v.intValue()));
+        this.y = new UITrackpad((v) -> this.editor.editMultiple(this.clip.y, (x) -> x.set(v.intValue())));
         this.y.integer();
-        this.z = new UITrackpad((v) -> this.clip.z.set(v.intValue()));
+        this.z = new UITrackpad((v) -> this.editor.editMultiple(this.clip.z, (x) -> x.set(v.intValue())));
         this.z.integer();
-        this.blockState = new UIBlockStateEditor((state) -> this.clip.state.set(state));
+        this.blockState = new UIBlockStateEditor((state) -> this.editor.editMultiple(this.clip.state, (x) -> x.set(state)));
     }
 
     @Override

@@ -150,6 +150,12 @@ public class UIClips extends UIElement
                 menu.action(Icons.CUT, UIKeys.CAMERA_TIMELINE_CONTEXT_CUT, this::cut);
                 menu.action(Icons.MOVE_TO, UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT, this::shiftToCursor);
                 menu.action(Icons.SHIFT_TO, UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT_DURATION, this::shiftDurationToCursor);
+            }
+
+            menu.action(Icons.EXCHANGE, UIKeys.CAMERA_TIMELINE_CONTEXT_REORGANIZE, () -> this.clips.sortLayers());
+
+            if (hasSelected)
+            {
                 menu.action(Icons.REMOVE, UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS, Colors.NEGATIVE, this::removeSelected);
             }
         });
@@ -1290,6 +1296,11 @@ public class UIClips extends UIElement
 
         if (clipArea.isInside(context))
         {
+            if (Window.isCtrlPressed())
+            {
+                return 0;
+            }
+
             if (context.mouseX - clipArea.x < separation)
             {
                 return 1;

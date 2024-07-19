@@ -75,7 +75,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
 
     /* Data population */
 
-    public final void fill(T data)
+    public void fill(T data)
     {
         this.data = data;
 

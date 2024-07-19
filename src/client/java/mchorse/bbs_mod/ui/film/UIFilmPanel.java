@@ -540,6 +540,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     @Override
+    public void fill(Film data)
+    {
+        this.notifyServer(ActionState.STOP);
+        super.fill(data);
+        this.notifyServer(ActionState.RESTART);
+    }
+
+    @Override
     protected void fillData(Film data)
     {
         if (this.data != null)
