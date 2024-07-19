@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.ui.film.utils;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -9,6 +12,7 @@ import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeState;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.undo.CompoundUndo;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
@@ -31,6 +35,7 @@ public class UIFilmUndoHandler
     private boolean cacheMarkLastUndoNoMerging;
 
     private Timer undoTimer = new Timer(1000);
+    private Timer actionsTimer = new Timer(100);
 
     private UIFilmPanel panel;
 
@@ -127,10 +132,7 @@ public class UIFilmUndoHandler
 
     public void submitUndo()
     {
-        if (this.undoTimer.checkReset())
-        {
-            this.markLastUndoNoMerging();
-        }
+        this.handleTimers();
 
         if (this.cachedValues.isEmpty())
         {
@@ -149,6 +151,11 @@ public class UIFilmUndoHandler
             undo.editor(this.panel);
             undo.selectedBefore(this.cachedCameraSelection, this.cachedActionSelection, this.cachedVoicelineSelection, this.cachedKeyframeState);
             changeUndos.add(undo);
+
+            if (this.isReplayActions(value))
+            {
+                this.actionsTimer.mark();
+            }
         }
 
         if (changeUndos.size() == 1)
@@ -171,6 +178,37 @@ public class UIFilmUndoHandler
 
             this.markLastUndoNoMerging();
         }
+    }
+
+    private void handleTimers()
+    {
+        if (this.undoTimer.checkReset())
+        {
+            this.markLastUndoNoMerging();
+        }
+
+        if (this.actionsTimer.checkReset())
+        {
+            Replay replay = this.panel.replayEditor.getReplay();
+            int index = this.panel.getFilm().replays.getList().indexOf(replay);
+
+            ClientNetwork.sendActions(this.panel.getFilm().getId(), index, replay.actions);
+        }
+    }
+
+    private boolean isReplayActions(BaseValue value)
+    {
+        while (value != null)
+        {
+            if (value instanceof Clips clips && clips.getFactory() == BBSMod.getFactoryActionClips())
+            {
+                return true;
+            }
+
+            value = value.getParent();
+        }
+
+        return false;
     }
 
     /**

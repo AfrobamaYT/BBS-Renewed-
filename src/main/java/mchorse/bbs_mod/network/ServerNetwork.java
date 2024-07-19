@@ -49,6 +49,7 @@ public class ServerNetwork
     public static final Identifier SERVER_ACTION_RECORDING = new Identifier(BBSMod.MOD_ID, "s5");
     public static final Identifier SERVER_TOGGLE_FILM = new Identifier(BBSMod.MOD_ID, "s6");
     public static final Identifier SERVER_ACTION_CONTROL = new Identifier(BBSMod.MOD_ID, "s7");
+    public static final Identifier SERVER_ACTIONS_UPLOAD = new Identifier(BBSMod.MOD_ID, "s8");
 
     public static void setup()
     {
@@ -59,6 +60,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_RECORDING, (server, player, handler, buf, responder) -> handleActionRecording(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_TOGGLE_FILM, (server, player, handler, buf, responder) -> handleToggleFilm(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_CONTROL, (server, player, handler, buf, responder) -> handleActionControl(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTIONS_UPLOAD, (server, player, handler, buf, responder) -> handleActionsUpload(server, player, buf));
     }
 
     /* Handlers */
@@ -289,6 +291,24 @@ public class ServerNetwork
         else if (state == ActionState.STOP)
         {
             actions.stop(filmId);
+        }
+    }
+
+    private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+        int replayId = buf.readInt();
+        BaseType data = DataStorageUtils.readFromPacket(buf);
+
+        Film film = BBSMod.getFilms().load(filmId);
+
+        if (film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
+        {
+            film.replays.getList().get(replayId).actions.fromData(data);
+
+            BBSMod.getFilms().save(filmId, film.toData().asMap());
+
+            System.out.println("Actions for " + filmId + " were ");
         }
     }
 

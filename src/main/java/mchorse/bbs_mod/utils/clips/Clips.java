@@ -24,6 +24,11 @@ public class Clips extends ValueGroup
         this.factory = factory;
     }
 
+    public IFactory<Clip, ClipFactoryData> getFactory()
+    {
+        return this.factory;
+    }
+
     public void sortLayers()
     {
         for (Clip clip : this.clips)

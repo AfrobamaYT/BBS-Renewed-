@@ -15,6 +15,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -240,5 +241,16 @@ public class ClientNetwork
         buf.writeInt(tick);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_CONTROL, buf);
+    }
+
+    public static void sendActions(String filmId, int replayId, Clips actions)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(filmId);
+        buf.writeInt(replayId);
+        DataStorageUtils.writeToPacket(buf, actions.toData());
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTIONS_UPLOAD, buf);
     }
 }
