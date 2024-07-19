@@ -4,6 +4,8 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 
+import java.util.function.Consumer;
+
 public class RunnerCameraController extends CameraWorkCameraController
 {
     public int ticks;
@@ -12,11 +14,14 @@ public class RunnerCameraController extends CameraWorkCameraController
     private Position manual;
     private UIFilmPanel panel;
 
-    public RunnerCameraController(UIFilmPanel panel)
+    private Consumer<Boolean> callback;
+
+    public RunnerCameraController(UIFilmPanel panel, Consumer<Boolean> callback)
     {
         super();
 
         this.panel = panel;
+        this.callback = callback;
         this.context.playing = false;
     }
 
@@ -25,9 +30,20 @@ public class RunnerCameraController extends CameraWorkCameraController
         return this.context.playing;
     }
 
+    public void setPlaying(boolean playing)
+    {
+        this.context.playing = playing;
+
+        if (this.callback != null)
+        {
+            this.callback.accept(this.context.playing);
+        }
+    }
+
     public void toggle(int ticks)
     {
-        this.context.playing = !this.context.playing;
+        this.setPlaying(!this.context.playing);
+
         this.ticks = ticks;
     }
 
@@ -50,7 +66,7 @@ public class RunnerCameraController extends CameraWorkCameraController
 
             if (this.ticks >= this.context.clips.calculateDuration())
             {
-                this.context.playing = false;
+                this.setPlaying(false);
             }
         }
     }

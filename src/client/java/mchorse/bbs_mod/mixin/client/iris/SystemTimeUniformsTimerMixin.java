@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SystemTimeUniforms.Timer.class)
 public class SystemTimeUniformsTimerMixin
 {
-    @Shadow
+    @Shadow(remap = false)
     private float frameTimeCounter;
 
-    @Shadow
+    @Shadow(remap = false)
     private float lastFrameTime;
 
     @Inject(method = "beginFrame", at = @At("HEAD"), cancellable = true, remap = false)

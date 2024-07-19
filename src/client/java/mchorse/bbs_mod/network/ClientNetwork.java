@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.network;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -220,15 +221,6 @@ public class ClientNetwork
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_RECORDING, buf);
     }
 
-    public static void sendActionPlay(String id)
-    {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeString(id);
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_PLAY, buf);
-    }
-
     public static void sendToggleFilm(String filmId, boolean withCamera)
     {
         PacketByteBuf buf = PacketByteBufs.create();
@@ -237,5 +229,16 @@ public class ClientNetwork
         buf.writeBoolean(withCamera);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_TOGGLE_FILM, buf);
+    }
+
+    public static void sendActionState(String filmId, ActionState state, int tick)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(filmId);
+        buf.writeByte(state.ordinal());
+        buf.writeInt(tick);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_CONTROL, buf);
     }
 }

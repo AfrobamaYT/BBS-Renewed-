@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.network;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.actions.ActionManager;
 import mchorse.bbs_mod.actions.ActionPlayer;
+import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -14,6 +16,7 @@ import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.EnumUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -44,8 +47,8 @@ public class ServerNetwork
     public static final Identifier SERVER_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s3");
     public static final Identifier SERVER_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "s4");
     public static final Identifier SERVER_ACTION_RECORDING = new Identifier(BBSMod.MOD_ID, "s5");
-    public static final Identifier SERVER_ACTION_PLAY = new Identifier(BBSMod.MOD_ID, "s6");
-    public static final Identifier SERVER_TOGGLE_FILM = new Identifier(BBSMod.MOD_ID, "s7");
+    public static final Identifier SERVER_TOGGLE_FILM = new Identifier(BBSMod.MOD_ID, "s6");
+    public static final Identifier SERVER_ACTION_CONTROL = new Identifier(BBSMod.MOD_ID, "s7");
 
     public static void setup()
     {
@@ -54,8 +57,8 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_FORM_PACKET, (server, player, handler, buf, responder) -> handlePlayerFormPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_MANAGER_DATA_PACKET, (server, player, handler, buf, responder) -> handleManagerDataPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_RECORDING, (server, player, handler, buf, responder) -> handleActionRecording(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_PLAY, (server, player, handler, buf, responder) -> handleActionPlay(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_TOGGLE_FILM, (server, player, handler, buf, responder) -> handleToggleFilm(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_CONTROL, (server, player, handler, buf, responder) -> handleActionControl(server, player, buf));
     }
 
     /* Handlers */
@@ -199,22 +202,6 @@ public class ServerNetwork
         }
     }
 
-    private static void handleActionPlay(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
-    {
-        String filmId = buf.readString();
-
-        try
-        {
-            Film film = BBSMod.getFilms().load(filmId);
-
-            BBSMod.getActions().play(player.getServerWorld(), film, 0, -1);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-
     private static void handleToggleFilm(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
         String filmId = buf.readString();
@@ -234,6 +221,74 @@ public class ServerNetwork
         else
         {
             sendPlayFilm(player.getServerWorld(), filmId, withCamera);
+        }
+    }
+
+    private static void handleActionControl(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        ActionManager actions = BBSMod.getActions();
+        String filmId = buf.readString();
+        ActionState state = EnumUtils.getValue(buf.readByte(), ActionState.values(), ActionState.STOP);
+        int tick = buf.readInt();
+
+        if (state == ActionState.SEEK)
+        {
+            ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+            if (actionPlayer != null)
+            {
+                actionPlayer.goTo(tick);
+            }
+        }
+        else if (state == ActionState.PLAY)
+        {
+            ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+            if (actionPlayer != null)
+            {
+                actionPlayer.goTo(tick);
+                actionPlayer.playing = true;
+            }
+        }
+        else if (state == ActionState.PAUSE)
+        {
+            ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+            if (actionPlayer != null)
+            {
+                actionPlayer.goTo(tick);
+                actionPlayer.playing = false;
+            }
+        }
+        else if (state == ActionState.RESTART)
+        {
+            ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+            if (actionPlayer == null)
+            {
+                Film film = BBSMod.getFilms().load(filmId);
+
+                if (film != null)
+                {
+                    actionPlayer = actions.play(player.getServerWorld(), film, tick);
+                }
+            }
+            else
+            {
+                actions.stop(filmId);
+
+                actionPlayer = actions.play(player.getServerWorld(), actionPlayer.film, 0);
+            }
+
+            if (actionPlayer != null)
+            {
+                actionPlayer.syncing = true;
+                actionPlayer.playing = false;
+            }
+        }
+        else if (state == ActionState.STOP)
+        {
+            actions.stop(filmId);
         }
     }
 
@@ -281,7 +336,7 @@ public class ServerNetwork
 
             if (film != null)
             {
-                BBSMod.getActions().play(world, film, 0, -1);
+                BBSMod.getActions().play(world, film, 0);
 
                 PacketByteBuf newBuf = PacketByteBufs.create();
 
@@ -309,7 +364,7 @@ public class ServerNetwork
 
             if (film != null)
             {
-                BBSMod.getActions().play(player.getServerWorld(), film, 0, -1);
+                BBSMod.getActions().play(player.getServerWorld(), film, 0);
 
                 PacketByteBuf buf = PacketByteBufs.create();
 

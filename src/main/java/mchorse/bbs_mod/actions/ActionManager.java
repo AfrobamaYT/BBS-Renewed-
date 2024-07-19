@@ -65,13 +65,24 @@ public class ActionManager
         return null;
     }
 
-    public void play(ServerWorld world, Film film, int tick, int exception)
+    public ActionPlayer play(ServerWorld world, Film film, int tick)
+    {
+        return this.play(world, film, tick, -1);
+    }
+
+    public ActionPlayer play(ServerWorld world, Film film, int tick, int exception)
     {
         if (film != null)
         {
-            this.players.add(new ActionPlayer(world, film, tick, exception));
+            ActionPlayer player = new ActionPlayer(world, film, tick, exception);
+
+            this.players.add(player);
             this.trackDamage(world);
+
+            return player;
         }
+
+        return null;
     }
 
     public void stop(String filmId)

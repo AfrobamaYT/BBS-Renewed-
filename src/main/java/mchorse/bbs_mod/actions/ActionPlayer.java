@@ -14,6 +14,7 @@ public class ActionPlayer
     public int tick;
     public boolean playing = true;
     public int exception;
+    public boolean syncing;
 
     private ServerWorld world;
     private int duration;
@@ -42,28 +43,46 @@ public class ActionPlayer
 
         if (this.tick >= 0)
         {
-            SuperFakePlayer fakePlayer = SuperFakePlayer.get(this.world);
-            List<Replay> list = this.film.replays.getList();
-
-            for (int i = 0; i < list.size(); i++)
-            {
-                if (i == this.exception)
-                {
-                    continue;
-                }
-
-                Replay replay = list.get(i);
-                List<Clip> clips = replay.actions.getClips(this.tick);
-
-                for (Clip clip : clips)
-                {
-                    ((ActionClip) clip).apply(fakePlayer, this.film, replay, this.tick);
-                }
-            }
+            this.applyAction();
         }
 
         this.tick += 1;
 
-        return this.tick >= this.duration;
+        return !this.syncing ? this.tick >= this.duration : false;
+    }
+
+    private void applyAction()
+    {
+        SuperFakePlayer fakePlayer = SuperFakePlayer.get(this.world);
+        List<Replay> list = this.film.replays.getList();
+
+        for (int i = 0; i < list.size(); i++)
+        {
+            if (i == this.exception)
+            {
+                continue;
+            }
+
+            Replay replay = list.get(i);
+            List<Clip> clips = replay.actions.getClips(this.tick);
+
+            for (Clip clip : clips)
+            {
+                ((ActionClip) clip).apply(fakePlayer, this.film, replay, this.tick);
+            }
+        }
+    }
+
+    public void goTo(int tick)
+    {
+        if (this.tick != tick)
+        {
+            while (this.tick != tick)
+            {
+                this.tick += this.tick > tick ? -1 : 1;
+
+                this.applyAction();
+            }
+        }
     }
 }
