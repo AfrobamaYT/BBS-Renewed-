@@ -37,7 +37,9 @@ import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSupported
 {
@@ -52,6 +54,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     private ModelBlockEntity hovered;
     private Vector3f mouseDirection = new Vector3f();
 
+    private Set<ModelBlockEntity> toSave = new HashSet<>();
+
     private ImmersiveModelBlockCameraController cameraController;
 
     public UIModelBlockPanel(UIDashboard dashboard)
@@ -60,7 +64,6 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.modelBlocks = new UIModelBlockEntityList((l) ->
         {
-            this.save();
             this.fill(l.get(0), false);
         });
         this.modelBlocks.background();
@@ -188,8 +191,14 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         super.close();
 
-        this.save();
         this.removeCameraController();
+
+        for (ModelBlockEntity entity : this.toSave)
+        {
+            this.save(entity);
+        }
+
+        this.toSave.clear();
     }
 
     private void updateList()
@@ -206,6 +215,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     public void fill(ModelBlockEntity modelBlock, boolean select)
     {
+        if (modelBlock != null)
+        {
+            this.toSave.add(modelBlock);
+        }
+
         this.modelBlock = modelBlock;
 
         if (modelBlock != null)
@@ -234,11 +248,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.global.setValue(properties.isGlobal());
     }
 
-    private void save()
+    private void save(ModelBlockEntity modelBlock)
     {
-        if (this.modelBlock != null)
+        if (modelBlock != null)
         {
-            ClientNetwork.sendModelBlockForm(this.modelBlock.getPos(), this.modelBlock);
+            ClientNetwork.sendModelBlockForm(modelBlock.getPos(), modelBlock);
         }
     }
 
