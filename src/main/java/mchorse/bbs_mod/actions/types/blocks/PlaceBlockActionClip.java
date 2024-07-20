@@ -4,6 +4,7 @@ import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ValueBlockState;
+import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -11,10 +12,12 @@ import net.minecraft.util.math.BlockPos;
 public class PlaceBlockActionClip extends BlockActionClip
 {
     public final ValueBlockState state = new ValueBlockState("state");
+    public final ValueBoolean drop = new ValueBoolean("drop", false);
 
     public PlaceBlockActionClip()
     {
         this.add(this.state);
+        this.add(this.drop);
     }
 
     @Override
@@ -24,7 +27,7 @@ public class PlaceBlockActionClip extends BlockActionClip
 
         if (this.state.get().getBlock() == Blocks.AIR)
         {
-            player.getWorld().breakBlock(pos, true);
+            player.getWorld().breakBlock(pos, this.drop.get());
         }
         else
         {

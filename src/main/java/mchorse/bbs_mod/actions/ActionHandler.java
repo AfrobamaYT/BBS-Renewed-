@@ -11,6 +11,7 @@ import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,6 +48,7 @@ public class ActionHandler
                     clip.x.set(pos.getX());
                     clip.y.set(pos.getY());
                     clip.z.set(pos.getZ());
+                    clip.drop.set(serverPlayer.interactionManager.getGameMode() == GameMode.SURVIVAL);
 
                     return clip;
                 });
