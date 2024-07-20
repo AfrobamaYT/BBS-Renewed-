@@ -86,7 +86,7 @@ public class Films
 
         if (ClientNetwork.isIsBBSModOnServer())
         {
-            ClientNetwork.sendActionRecording(film.getId(), 0, this.recorder.tick, true);
+            ClientNetwork.sendActionRecording(film.getId(), replayId, this.recorder.tick, true);
         }
     }
 
