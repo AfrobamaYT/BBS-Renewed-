@@ -400,13 +400,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public void open()
     {
         super.open();
-
-        this.notifyServer(ActionState.RESTART);
-
+        
         Recorder recorder = BBSModClient.getFilms().stopRecording();
 
         if (recorder == null || recorder.tick < 0)
         {
+            this.notifyServer(ActionState.RESTART);
+
             return;
         }
 
@@ -426,6 +426,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 });
 
                 this.applyRecordedKeyframes(recorder, film);
+                this.notifyServer(ActionState.RESTART);
             });
         }
         else

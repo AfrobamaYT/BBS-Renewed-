@@ -297,7 +297,7 @@ public class ServerNetwork
         else if (state == ActionState.STOP)
         {
             actions.stop(filmId);
-        }
+    }
     }
 
     private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
