@@ -314,6 +314,7 @@
     "bbs.ui.film.controller.keys.insert_frame": "Insert keyframe",
     "bbs.ui.film.controller.keys.move_replay_to_cursor": "Move replay to cursor",
     "bbs.ui.film.controller.keys.start_recording": "Start recording",
+    "bbs.ui.film.controller.keys.restart_actions": "Restart actions",
     "bbs.ui.film.controller.keys.toggle_control": "Toggle actor control",
     "bbs.ui.film.controller.keys.toggle_orbit": "Toggle orbit",
     "bbs.ui.film.controller.keys.toggle_orbit_mode": "Toggle orbit mode",

@@ -200,6 +200,7 @@ public class ServerNetwork
             if (clips != null && film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
             {
                 film.replays.getList().get(replayId).actions.fromData(clips.toData());
+                BBSMod.getFilms().save(filmId, film.toData().asMap());
             }
         }
     }
@@ -286,6 +287,11 @@ public class ServerNetwork
             {
                 actionPlayer.syncing = true;
                 actionPlayer.playing = false;
+
+                if (tick != 0)
+                {
+                    actionPlayer.goTo(tick);
+                }
             }
         }
         else if (state == ActionState.STOP)
@@ -300,16 +306,7 @@ public class ServerNetwork
         int replayId = buf.readInt();
         BaseType data = DataStorageUtils.readFromPacket(buf);
 
-        Film film = BBSMod.getFilms().load(filmId);
-
-        if (film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
-        {
-            film.replays.getList().get(replayId).actions.fromData(data);
-
-            BBSMod.getFilms().save(filmId, film.toData().asMap());
-
-            System.out.println("Actions for " + filmId + " were ");
-        }
+        BBSMod.getActions().updatePlayers(filmId, replayId, data);
     }
 
     /* API */

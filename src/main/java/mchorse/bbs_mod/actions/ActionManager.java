@@ -1,7 +1,10 @@
 package mchorse.bbs_mod.actions;
 
 import mchorse.bbs_mod.actions.types.ActionClip;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -51,6 +54,19 @@ public class ActionManager
     }
 
     /* Actions playback */
+
+    public void updatePlayers(String filmId, int replayId, BaseType data)
+    {
+        for (ActionPlayer player : this.players)
+        {
+            if (player.film.getId().equals(filmId) && CollectionUtils.inRange(player.film.replays.getList(), replayId))
+            {
+                Replay replay = player.film.replays.getList().get(replayId);
+
+                replay.actions.fromData(data);
+            }
+        }
+    }
 
     public ActionPlayer getPlayer(String filmId)
     {

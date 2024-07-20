@@ -385,7 +385,6 @@ public class BBSMod implements ModInitializer
         ServerLifecycleEvents.SERVER_STOPPED.register((server) ->
         {
             actions.reset();
-            films.reset();
         });
     }
 

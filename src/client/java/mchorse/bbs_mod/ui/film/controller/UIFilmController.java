@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.controller;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -137,6 +138,7 @@ public class UIFilmController extends UIElement
                 this.panel.replayEditor.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
             }
         }).active(hasActor).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_KEYS_RESTART_ACTIONS, () -> this.panel.notifyServer(ActionState.RESTART)).category(category);
 
         this.noCulling();
     }
