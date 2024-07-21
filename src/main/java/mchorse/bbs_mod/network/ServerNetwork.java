@@ -41,6 +41,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "c4");
     public static final Identifier CLIENT_STOP_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c5");
     public static final Identifier CLIENT_HANDSHAKE = new Identifier(BBSMod.MOD_ID, "c6");
+    public static final Identifier CLIENT_RECORDED_ACTIONS = new Identifier(BBSMod.MOD_ID, "c7");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -197,6 +198,8 @@ public class ServerNetwork
             else
             {
                 Clips clips = BBSMod.getActions().stopRecording(player);
+
+                /* Save clips to the film */
                 Film film = BBSMod.getFilms().load(filmId);
 
                 if (clips != null && film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
@@ -204,6 +207,9 @@ public class ServerNetwork
                     film.replays.getList().get(replayId).actions.fromData(clips.toData());
                     BBSMod.getFilms().save(filmId, film.toData().asMap());
                 }
+
+                /* Send recorded clips to the client */
+                sendRecordedActions(player, filmId, replayId, clips);
             }
         });
     }
@@ -428,5 +434,16 @@ public class ServerNetwork
         DataStorageUtils.writeToPacket(buf, data);
 
         ServerPlayNetworking.send(player, CLIENT_MANAGER_DATA_PACKET, buf);
+    }
+
+    public static void sendRecordedActions(ServerPlayerEntity player, String filmId, int replayId, Clips clips)
+    {
+        PacketByteBuf newBuf = PacketByteBufs.create();
+
+        newBuf.writeString(filmId);
+        newBuf.writeInt(replayId);
+        DataStorageUtils.writeToPacket(newBuf, clips.toData());
+
+        ServerPlayNetworking.send(player, CLIENT_RECORDED_ACTIONS, newBuf);
     }
 }

@@ -12,6 +12,7 @@ import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
@@ -410,30 +411,22 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             return;
         }
 
-        if (ClientNetwork.isIsBBSModOnServer())
+        this.applyRecordedKeyframes(recorder, this.data);
+    }
+
+    public void receiveActions(String filmId, int replayId, BaseType clips)
+    {
+        Film film = this.data;
+
+        if (film != null && film.getId().equals(filmId) && CollectionUtils.inRange(film.replays.getList(), replayId))
         {
-            ClientNetwork.sendManagerDataLoad(recorder.film.getId(), (data) ->
+            BaseValue.edit(film.replays.getList().get(replayId), IValueListener.FLAG_UNMERGEABLE, (replay) ->
             {
-                Film film = this.data;
-                Film newFilm = new Film();
-
-                newFilm.setId(recorder.film.getId());
-                newFilm.fromData(data);
-
-                BaseValue.edit(this.getData(), IValueListener.FLAG_UNMERGEABLE, (group) ->
-                {
-                    film.copy(newFilm);
-                });
-
-                this.applyRecordedKeyframes(recorder, film);
-                this.notifyServer(ActionState.RESTART);
-                this.fillData(film);
+                replay.actions.fromData(clips);
             });
         }
-        else
-        {
-            this.applyRecordedKeyframes(recorder, this.data);
-        }
+
+        this.notifyServer(ActionState.RESTART);
     }
 
     private void applyRecordedKeyframes(Recorder recorder, Film film)

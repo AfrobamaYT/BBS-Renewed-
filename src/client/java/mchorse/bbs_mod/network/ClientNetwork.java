@@ -12,6 +12,7 @@ import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
@@ -55,6 +56,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(buf));
     }
 
     /* Handlers */
@@ -147,6 +149,18 @@ public class ClientNetwork
         MinecraftClient.getInstance().execute(() ->
         {
             Films.stopFilm(filmId);
+        });
+    }
+
+    private static void handleRecordedActionsPacket(PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+        int replayId = buf.readInt();
+        BaseType data = DataStorageUtils.readFromPacket(buf);
+
+        MinecraftClient.getInstance().execute(() ->
+        {
+            BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
         });
     }
 
