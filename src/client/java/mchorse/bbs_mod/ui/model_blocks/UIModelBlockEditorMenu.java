@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.model_blocks;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.OrbitDistanceCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -48,6 +49,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         this.uiOrbitCamera = new UIOrbitCamera();
         this.uiOrbitCamera.setControl(true);
+        this.uiOrbitCamera.orbit = new OrbitDistanceCamera();
         this.orbitCameraController = new OrbitCameraController(this.uiOrbitCamera.orbit);
         this.orbitCameraController.camera.position.set(player.getPos().x, player.getPos().y + 1D, player.getPos().z);
         this.orbitCameraController.camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
