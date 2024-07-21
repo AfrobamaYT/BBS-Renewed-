@@ -350,7 +350,7 @@ public class UIScreenplayEditor extends UIElement
 
     private void fillData()
     {
-        this.editor.clips.setClips(this.film.voiceLines);
+        this.editor.setClips(this.film.voiceLines);
 
         this.resize();
     }

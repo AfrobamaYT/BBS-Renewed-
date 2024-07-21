@@ -182,27 +182,30 @@ public class ServerNetwork
         int tick = buf.readInt();
         boolean recording = buf.readBoolean();
 
-        if (recording)
+        server.execute(() ->
         {
-            Film film = BBSMod.getFilms().load(filmId);
-
-            if (film != null)
+            if (recording)
             {
-                BBSMod.getActions().startRecording(film, player, tick);
-                BBSMod.getActions().play(player.getServerWorld(), film, tick, replayId);
-            }
-        }
-        else
-        {
-            Clips clips = BBSMod.getActions().stopRecording(player);
-            Film film = BBSMod.getFilms().load(filmId);
+                Film film = BBSMod.getFilms().load(filmId);
 
-            if (clips != null && film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
-            {
-                film.replays.getList().get(replayId).actions.fromData(clips.toData());
-                BBSMod.getFilms().save(filmId, film.toData().asMap());
+                if (film != null)
+                {
+                    BBSMod.getActions().startRecording(film, player, tick);
+                    BBSMod.getActions().play(player.getServerWorld(), film, tick, replayId);
+                }
             }
-        }
+            else
+            {
+                Clips clips = BBSMod.getActions().stopRecording(player);
+                Film film = BBSMod.getFilms().load(filmId);
+
+                if (clips != null && film != null && CollectionUtils.inRange(film.replays.getList(), replayId))
+                {
+                    film.replays.getList().get(replayId).actions.fromData(clips.toData());
+                    BBSMod.getFilms().save(filmId, film.toData().asMap());
+                }
+            }
+        });
     }
 
     private static void handleToggleFilm(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
@@ -210,21 +213,24 @@ public class ServerNetwork
         String filmId = buf.readString();
         boolean withCamera = buf.readBoolean();
 
-        ActionPlayer actionPlayer = BBSMod.getActions().getPlayer(filmId);
-
-        if (actionPlayer != null)
+        server.execute(() ->
         {
-            BBSMod.getActions().stop(filmId);
+            ActionPlayer actionPlayer = BBSMod.getActions().getPlayer(filmId);
 
-            for (ServerPlayerEntity otherPlayer : server.getPlayerManager().getPlayerList())
+            if (actionPlayer != null)
             {
-                sendStopFilm(otherPlayer, filmId);
+                BBSMod.getActions().stop(filmId);
+
+                for (ServerPlayerEntity otherPlayer : server.getPlayerManager().getPlayerList())
+                {
+                    sendStopFilm(otherPlayer, filmId);
+                }
             }
-        }
-        else
-        {
-            sendPlayFilm(player.getServerWorld(), filmId, withCamera);
-        }
+            else
+            {
+                sendPlayFilm(player.getServerWorld(), filmId, withCamera);
+            }
+        });
     }
 
     private static void handleActionControl(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
@@ -234,70 +240,73 @@ public class ServerNetwork
         ActionState state = EnumUtils.getValue(buf.readByte(), ActionState.values(), ActionState.STOP);
         int tick = buf.readInt();
 
-        if (state == ActionState.SEEK)
+        server.execute(() ->
         {
-            ActionPlayer actionPlayer = actions.getPlayer(filmId);
-
-            if (actionPlayer != null)
+            if (state == ActionState.SEEK)
             {
-                actionPlayer.goTo(tick);
-            }
-        }
-        else if (state == ActionState.PLAY)
-        {
-            ActionPlayer actionPlayer = actions.getPlayer(filmId);
+                ActionPlayer actionPlayer = actions.getPlayer(filmId);
 
-            if (actionPlayer != null)
-            {
-                actionPlayer.goTo(tick);
-                actionPlayer.playing = true;
-            }
-        }
-        else if (state == ActionState.PAUSE)
-        {
-            ActionPlayer actionPlayer = actions.getPlayer(filmId);
-
-            if (actionPlayer != null)
-            {
-                actionPlayer.goTo(tick);
-                actionPlayer.playing = false;
-            }
-        }
-        else if (state == ActionState.RESTART)
-        {
-            ActionPlayer actionPlayer = actions.getPlayer(filmId);
-
-            if (actionPlayer == null)
-            {
-                Film film = BBSMod.getFilms().load(filmId);
-
-                if (film != null)
-                {
-                    actionPlayer = actions.play(player.getServerWorld(), film, tick);
-                }
-            }
-            else
-            {
-                actions.stop(filmId);
-
-                actionPlayer = actions.play(player.getServerWorld(), actionPlayer.film, 0);
-            }
-
-            if (actionPlayer != null)
-            {
-                actionPlayer.syncing = true;
-                actionPlayer.playing = false;
-
-                if (tick != 0)
+                if (actionPlayer != null)
                 {
                     actionPlayer.goTo(tick);
                 }
             }
-        }
-        else if (state == ActionState.STOP)
-        {
-            actions.stop(filmId);
-    }
+            else if (state == ActionState.PLAY)
+            {
+                ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+                if (actionPlayer != null)
+                {
+                    actionPlayer.goTo(tick);
+                    actionPlayer.playing = true;
+                }
+            }
+            else if (state == ActionState.PAUSE)
+            {
+                ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+                if (actionPlayer != null)
+                {
+                    actionPlayer.goTo(tick);
+                    actionPlayer.playing = false;
+                }
+            }
+            else if (state == ActionState.RESTART)
+            {
+                ActionPlayer actionPlayer = actions.getPlayer(filmId);
+
+                if (actionPlayer == null)
+                {
+                    Film film = BBSMod.getFilms().load(filmId);
+
+                    if (film != null)
+                    {
+                        actionPlayer = actions.play(player.getServerWorld(), film, tick);
+                    }
+                }
+                else
+                {
+                    actions.stop(filmId);
+
+                    actionPlayer = actions.play(player.getServerWorld(), actionPlayer.film, 0);
+                }
+
+                if (actionPlayer != null)
+                {
+                    actionPlayer.syncing = true;
+                    actionPlayer.playing = false;
+
+                    if (tick != 0)
+                    {
+                        actionPlayer.goTo(tick);
+                    }
+                }
+            }
+            else if (state == ActionState.STOP)
+            {
+                actions.stop(filmId);
+            }
+        });
     }
 
     private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
@@ -306,7 +315,10 @@ public class ServerNetwork
         int replayId = buf.readInt();
         BaseType data = DataStorageUtils.readFromPacket(buf);
 
-        BBSMod.getActions().updatePlayers(filmId, replayId, data);
+        server.execute(() ->
+        {
+            BBSMod.getActions().updatePlayers(filmId, replayId, data);
+        });
     }
 
     /* API */

@@ -579,9 +579,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openScreenplay.setEnabled(data != null);
         this.duplicateFilm.setEnabled(data != null);
 
-        this.actionEditor.clips.setClips(null);
+        this.actionEditor.setClips(null);
         this.runner.setWork(data == null ? null : data.camera);
-        this.cameraEditor.clips.setClips(data == null ? null : data.camera);
+        this.cameraEditor.setClips(data == null ? null : data.camera);
         this.replayEditor.setFilm(data);
         this.cameraEditor.pickClip(null);
 

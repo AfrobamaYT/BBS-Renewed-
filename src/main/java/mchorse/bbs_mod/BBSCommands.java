@@ -37,11 +37,17 @@ public class BBSCommands
     private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> dc = CommandManager.literal("dc");
+        LiteralArgumentBuilder<ServerCommandSource> shutdown = CommandManager.literal("shutdown");
+        LiteralArgumentBuilder<ServerCommandSource> start = CommandManager.literal("start");
         LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
 
         bbs.then(
             dc.then(
+                start.executes(BBSCommands::DCCommandStart)
+            ).then(
                 stop.executes(BBSCommands::DCCommandStop)
+            ).then(
+                shutdown.executes(BBSCommands::DCCommandShutdown)
             )
         );
     }
@@ -181,9 +187,23 @@ public class BBSCommands
         return 1;
     }
 
-    private static int DCCommandStop(CommandContext<ServerCommandSource> source)
+    private static int DCCommandShutdown(CommandContext<ServerCommandSource> source)
     {
         BBSMod.getActions().resetDamage(source.getSource().getWorld());
+
+        return 1;
+    }
+
+    private static int DCCommandStart(CommandContext<ServerCommandSource> source)
+    {
+        BBSMod.getActions().trackDamage(source.getSource().getWorld());
+
+        return 1;
+    }
+
+    private static int DCCommandStop(CommandContext<ServerCommandSource> source)
+    {
+        BBSMod.getActions().stopDamage(source.getSource().getWorld());
 
         return 1;
     }

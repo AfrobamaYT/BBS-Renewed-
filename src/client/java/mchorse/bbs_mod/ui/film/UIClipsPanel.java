@@ -10,6 +10,7 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.factory.IFactory;
 import mchorse.bbs_mod.utils.undo.IUndo;
 
@@ -40,6 +41,12 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         this.target = target;
 
         return this;
+    }
+
+    public void setClips(Clips clips)
+    {
+        this.clips.setClips(clips);
+        this.clips.setVisible(clips != null);
     }
 
     public void handleUndo(IUndo<ValueGroup> undo, boolean redo)
