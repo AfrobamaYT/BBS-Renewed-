@@ -773,7 +773,7 @@ public class UIKeyframes extends UIElement
         {
             for (UIKeyframeSheet sheet : sheets)
             {
-                if (!sheet.selection.getIndices().isEmpty())
+                if (sheet.selection.hasAny())
                 {
                     this.data.add(new Pair<>(sheet.channel.toData(), sheet));
                 }

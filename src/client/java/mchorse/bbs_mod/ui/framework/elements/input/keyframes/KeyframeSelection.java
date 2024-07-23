@@ -25,6 +25,11 @@ public class KeyframeSelection
         this.channel = channel;
     }
 
+    public boolean hasAny()
+    {
+        return !this.selected.isEmpty();
+    }
+
     public boolean has(int index)
     {
         return this.selected.contains(index);

@@ -349,21 +349,43 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         }
 
         /* Render where the keyframe will be duplicated or added */
-        boolean alt = Window.isAltPressed();
+        if (!area.isInside(context))
+        {
+            return;
+        }
 
-        if (area.isInside(context) && (Window.isCtrlPressed() || alt))
+        if (Window.isCtrlPressed())
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 
             if (sheet != null)
             {
-                int x = this.keyframes.toGraphX(Math.round(this.keyframes.fromGraphX(context.mouseX)));
-                int y = context.mouseY;
-                float a = (float) Math.sin(context.getTickTransition() / 2D) * 0.1F + 0.5F;
-
-                context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(alt ? Colors.YELLOW : Colors.WHITE, a));
+                this.renderPreviewKeyframe(context, sheet, Math.round(this.keyframes.fromGraphX(context.mouseX)), context.mouseY, Colors.WHITE);
             }
         }
+        else if (Window.isAltPressed())
+        {
+            UIKeyframeSheet current = this.sheet;
+            List<Keyframe> selected = current.selection.getSelected();
+            IKeyframeFactory factory = current.channel.getFactory();
+
+            for (int i = 0; i < selected.size(); i++)
+            {
+                Keyframe first = selected.get(0);
+                Keyframe keyframe = selected.get(i);
+                int y = (int) this.yAxis.to(factory.getY(keyframe.getValue()));
+
+                this.renderPreviewKeyframe(context, current, Math.round(this.keyframes.fromGraphX(context.mouseX)) + (keyframe.getTick() - first.getTick()), y, Colors.YELLOW);
+            }
+        }
+    }
+
+    private void renderPreviewKeyframe(UIContext context, UIKeyframeSheet sheet, double tick, int y, int color)
+    {
+        int x = this.keyframes.toGraphX(tick);
+        float a = (float) Math.sin(context.getTickTransition() / 2D) * 0.1F + 0.5F;
+
+        context.batcher.box(x - 3, y - 3, x + 3, y + 3, Colors.setA(color, a));
     }
 
     /**
