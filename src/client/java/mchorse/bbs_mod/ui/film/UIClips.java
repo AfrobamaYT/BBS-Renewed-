@@ -1084,75 +1084,85 @@ public class UIClips extends UIElement
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
 
-            /* Collect the rest of clips for collision */
-            if (this.grabMode == 0)
-            {
-                List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
-                Iterator<Clip> it = others.iterator();
-
-                while (it.hasNext())
-                {
-                    if (clips.contains(it.next()))
-                    {
-                        it.remove();
-                    }
-                }
-
-                /* Checking whether it's possible to move clips */
-                for (Clip clip : clips)
-                {
-                    int newTick = clip.tick.get() + relativeX;
-                    int newLayer = clip.layer.get() + relativeY;
-
-                    /* Detect clips collisions */
-                    for (Clip other : others)
-                    {
-                        int otherTick = other.tick.get();
-                        int otherRight = otherTick + other.duration.get();
-
-                        int newRight = newTick + clip.duration.get();
-                        boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
-
-                        if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
-                    }
-
-                    if (newTick < 0) relativeX = 0;
-                    if (newLayer < 0 || newLayer >= LAYERS) relativeY = 0;
-                }
-            }
-
-            for (Clip clip : clips)
-            {
-                /* Move clips */
-                if (this.grabMode == 0)
-                {
-                    int newTick = clip.tick.get() + relativeX;
-                    int newLayer = clip.layer.get() + relativeY;
-
-                    clip.tick.set(newTick);
-                    clip.layer.set(newLayer);
-                }
-                else if (this.grabMode == 1 && clip.duration.get() - relativeX > 0)
-                {
-                    if (clip.tick.get() + relativeX < 0)
-                    {
-                        relativeX -= clip.tick.get() + relativeX;
-                    }
-
-                    clip.tick.set(clip.tick.get() + relativeX);
-                    clip.duration.set(clip.duration.get() - relativeX);
-                }
-                else if (this.grabMode == 2)
-                {
-                    clip.duration.set(Math.max(clip.duration.get() + relativeX, 1));
-                }
-            }
-
-            this.delegate.fillData();
+            this.dragClips(clips, relativeX, relativeY);
 
             this.lastX = mouseX;
             this.lastY = mouseY;
         }
+    }
+
+    private void dragClips(List<Clip> clips, int relativeX, int relativeY)
+    {
+        /* Collect the rest of clips for collision */
+        if (this.grabMode == 0)
+        {
+            List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
+            Iterator<Clip> it = others.iterator();
+
+            while (it.hasNext())
+            {
+                if (clips.contains(it.next()))
+                {
+                    it.remove();
+                }
+            }
+
+            /* Checking whether it's possible to move clips */
+            for (Clip clip : clips)
+            {
+                int newTick = clip.tick.get() + relativeX;
+                int newLayer = clip.layer.get() + relativeY;
+
+                /* Detect clips collisions */
+                for (Clip other : others)
+                {
+                    int otherTick = other.tick.get();
+                    int otherRight = otherTick + other.duration.get();
+
+                    int newRight = newTick + clip.duration.get();
+                    boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
+
+                    if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
+                }
+
+                if (newTick < 0) relativeX = 0;
+                if (newLayer < 0 || newLayer >= LAYERS) relativeY = 0;
+            }
+        }
+
+        if (relativeX == 0 && relativeY == 0)
+        {
+            return;
+        }
+
+        for (Clip clip : clips)
+        {
+            /* Move clips */
+            if (this.grabMode == 0)
+            {
+                int newTick = clip.tick.get() + relativeX;
+                int newLayer = clip.layer.get() + relativeY;
+
+                clip.tick.set(newTick);
+                clip.layer.set(newLayer);
+            }
+            else if (this.grabMode == 1 && clip.duration.get() - relativeX > 0)
+            {
+                if (clip.tick.get() + relativeX < 0)
+                {
+                    relativeX -= clip.tick.get() + relativeX;
+                }
+
+                clip.tick.set(clip.tick.get() + relativeX);
+                clip.duration.set(clip.duration.get() - relativeX);
+            }
+            else if (this.grabMode == 2)
+            {
+                clip.duration.set(Math.max(clip.duration.get() + relativeX, 1));
+            }
+        }
+
+        this.delegate.fillData();
     }
 
     private void captureSelection(Area area)

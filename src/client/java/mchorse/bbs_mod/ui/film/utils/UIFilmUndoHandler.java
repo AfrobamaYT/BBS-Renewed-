@@ -167,6 +167,13 @@ public class UIFilmUndoHandler
             this.undoManager.pushUndo(new CompoundUndo<>(changeUndos.toArray(new IUndo[0])));
         }
 
+        List<String> ids = new ArrayList<>();
+
+        for (BaseValue baseValue : this.cachedValues.keySet())
+        {
+            ids.add(baseValue.getPath());
+        }
+
         this.cachedValues.clear();
         this.cachedKeyframeState = null;
 
