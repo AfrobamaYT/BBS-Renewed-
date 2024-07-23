@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -104,10 +105,16 @@ public class VideoRecorder
             args.addAll(Arrays.asList(params.split(" ")));
 
             ProcessBuilder builder = new ProcessBuilder(args);
+            File log = path.resolve(movieName.concat(".log")).toFile();
+
+            if (!BBSSettings.videoEncoderLog.get())
+            {
+                log = BBSMod.getSettingsPath("video.log");
+            }
 
             builder.directory(path.toFile());
             builder.redirectErrorStream(true);
-            builder.redirectOutput(path.resolve(movieName.concat(".log")).toFile());
+            builder.redirectOutput(log);
 
             this.process = builder.start();
 

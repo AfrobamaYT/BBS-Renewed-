@@ -44,6 +44,7 @@ public class BBSSettings
     public static ValueBoolean multiskinMultiThreaded;
 
     public static ValueString videoEncoderPath;
+    public static ValueBoolean videoEncoderLog;
     public static ValueVideoSettings videoSettings;
 
     public static ValueInt duration;
@@ -127,6 +128,7 @@ public class BBSSettings
         multiskinMultiThreaded = builder.category("multiskin").getBoolean("multithreaded", true);
 
         videoEncoderPath = builder.category("video").getString("encoder_path", "ffmpeg");
+        videoEncoderLog = builder.getBoolean("log", true);
         builder.register(videoSettings = new ValueVideoSettings("settings"));
 
         /* Camera editor */
