@@ -2,7 +2,6 @@ package mchorse.bbs_mod.actions;
 
 import com.google.common.collect.MapMaker;
 import com.mojang.authlib.GameProfile;
-import net.fabricmc.fabric.impl.event.interaction.FakePlayerNetworkHandler;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
@@ -38,7 +37,7 @@ public class SuperFakePlayer extends ServerPlayerEntity
     {
         super(world.getServer(), world, profile, SyncedClientOptions.createDefault());
 
-        this.networkHandler = new FakePlayerNetworkHandler(this);
+        this.networkHandler = new SuperFakePlayerNetworkHandler(this);
     }
 
     @Override
