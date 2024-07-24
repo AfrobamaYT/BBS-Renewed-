@@ -1,8 +1,17 @@
 package mchorse.bbs_mod.ui.framework;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.importers.IImportPathProvider;
+import mchorse.bbs_mod.importers.ImporterContext;
+import mchorse.bbs_mod.importers.Importers;
+import mchorse.bbs_mod.importers.types.IImporter;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
+import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.utils.FFMpegUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -10,7 +19,9 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UIScreen extends Screen implements IFileDropListener
@@ -194,9 +205,54 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         if (this.menu != null)
         {
-            for (IFileDropListener listener : this.menu.getRoot().getChildren(IFileDropListener.class))
+            if (!FFMpegUtils.checkFFMpeg())
             {
-                listener.acceptFilePaths(paths);
+                this.menu.context.notify(UIKeys.IMPORTER_FFMPEG_NOTIFICATION, Colors.RED);
+
+                return;
+            }
+
+            File directory = null;
+
+            for (IImportPathProvider provider : this.menu.getRoot().getChildren(IImportPathProvider.class))
+            {
+                directory = provider.getImporterPath();
+
+                if (directory != null)
+                {
+                    break;
+                }
+            }
+
+            if (directory == null)
+            {
+                directory = BBSMod.getAssetsFolder();
+            }
+
+            List<File> files = new ArrayList<>();
+
+            for (String path : paths)
+            {
+                File file = new File(path);
+
+                if (file.exists())
+                {
+                    files.add(file);
+                }
+            }
+
+            ImporterContext context = new ImporterContext(files, directory);
+
+            for (IImporter importer : Importers.getImporters())
+            {
+                if (importer.canImport(context))
+                {
+                    importer.importFiles(context);
+                    UIUtils.openFolder(context.destination);
+                    this.menu.context.notify(UIKeys.IMPORTER_SUCCESS_NOTIFICATION.format(importer.getName()), Colors.mulRGB(Colors.GREEN, 0.75F));
+
+                    return;
+                }
             }
         }
     }

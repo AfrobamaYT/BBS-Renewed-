@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.notifications;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
@@ -15,8 +16,8 @@ public class Notification
     public Notification(IKey message, int background, int color)
     {
         this.message = message;
-        this.background = background;
-        this.color = color;
+        this.background = background | Colors.A100;
+        this.color = color| Colors.A100;
 
         this.tick = 80;
     }

@@ -671,7 +671,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             if (distance > value * 12)
             {
-                this.getContext().notify(UIKeys.FILM_TELEPORT_DESCRIPTION, Colors.RED | Colors.A100);
+                this.getContext().notify(UIKeys.FILM_TELEPORT_DESCRIPTION, Colors.RED);
             }
 
             this.entered = false;

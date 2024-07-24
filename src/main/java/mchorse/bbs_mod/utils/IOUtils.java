@@ -156,8 +156,8 @@ public class IOUtils
     {
         String name = file.getName();
         int index = name.lastIndexOf('.');
-        String baseName = name.substring(0, index);
-        String extension = name.substring(index);
+        String baseName = index == -1 ? name : name.substring(0, index);
+        String extension = index == -1 ? "" : name.substring(index);
 
         int i = 1;
 

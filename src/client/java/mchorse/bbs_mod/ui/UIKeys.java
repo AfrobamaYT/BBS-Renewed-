@@ -341,6 +341,12 @@ public class UIKeys
     public static final IKey GENERIC_KEYFRAMES_LINK_PICK_TEXTURE = L10n.lang("bbs.ui.generic_keyframes.link.pick_texture");
     public static final IKey GRAPH_HELP = L10n.lang("bbs.ui.graph.help");
     public static final IKey GRAPH_TOOLTIP = L10n.lang("bbs.ui.graph.tooltip");
+    public static final IKey IMPORTER_FFMPEG_NOTIFICATION = L10n.lang("bbs.ui.importer.ffmpeg-notification");
+    public static final IKey IMPORTER_SUCCESS_NOTIFICATION = L10n.lang("bbs.ui.importer.success-notification");
+    public static final IKey IMPORTER_GIF = L10n.lang("bbs.ui.importer.gif");
+    public static final IKey IMPORTER_JPEG = L10n.lang("bbs.ui.importer.jpeg");
+    public static final IKey IMPORTER_MPEG = L10n.lang("bbs.ui.importer.mpeg");
+    public static final IKey IMPORTER_OLD_SKIN = L10n.lang("bbs.ui.importer.old_skin");
     public static final IKey INTERPOLATIONS_CONTEXT_COPY = L10n.lang("interpolations.ui.context.copy");
     public static final IKey INTERPOLATIONS_CONTEXT_PASTE = L10n.lang("interpolations.ui.context.paste");
     public static final IKey INTERPOLATIONS_KEY_CATEGORY = L10n.lang("interpolations.key_category");

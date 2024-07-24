@@ -3,6 +3,7 @@ package mchorse.bbs_mod.utils.resources;
 import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -225,6 +226,43 @@ public class Pixels
             for (int j = Math.max(y, 0), jc = Math.min(y + h, this.height); j < jc; j++)
             {
                 this.setColor(i, j, color);
+            }
+        }
+    }
+
+    public void drawPixels(Pixels source, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2)
+    {
+        int dirX = dx2 - dx1 < 0 ? -1 : 1;
+        int dirY = dy2 - dy1 < 0 ? -1 : 1;
+
+        if (dirX < 0)
+        {
+            dx1 -= 1;
+            dx2 -= 1;
+        }
+
+        if (dirY < 0)
+        {
+            dy1 -= 1;
+            dy2 -= 1;
+        }
+
+        for (int x = dx1; x != dx2; x += dirX)
+        {
+            for (int y = dy1; y != dy2; y += dirY)
+            {
+                float fx = (x - dx1) / (float) (dx2 - dx1);
+                float fy = (y - dy1) / (float) (dy2 - dy1);
+
+                int xx = (int) Lerps.lerp(sx1, sx2, fx);
+                int yy = (int) Lerps.lerp(sy1, sy2, fy);
+
+                Color color = source.getColor(xx, yy);
+
+                if (color != null)
+                {
+                    this.setColor(x, y, color);
+                }
             }
         }
     }

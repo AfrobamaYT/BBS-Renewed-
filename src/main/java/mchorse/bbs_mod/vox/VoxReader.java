@@ -33,7 +33,7 @@ public class VoxReader extends BinaryReader
 
     public VoxDocument read(InputStream stream, Link link) throws Exception
     {
-        if (this.readInt(stream) != this.fourChars("VOX "))
+        if (this.readInt(stream) != fourChars("VOX "))
         {
             throw new Exception("Not a 'VOX ' file!");
         }

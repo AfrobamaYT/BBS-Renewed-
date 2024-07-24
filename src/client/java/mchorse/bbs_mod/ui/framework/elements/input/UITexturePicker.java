@@ -7,6 +7,7 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.importers.IImportPathProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.textures.UITextureEditor;
@@ -20,12 +21,10 @@ import mchorse.bbs_mod.ui.framework.elements.input.multilink.UIMultiLinkEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
-import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
-import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
@@ -34,9 +33,6 @@ import mchorse.bbs_mod.utils.resources.MultiLink;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 
 /**
@@ -45,7 +41,7 @@ import java.util.function.Consumer;
  * This bad boy allows picking a texture from the file browser, and also 
  * it allows creating multi-skins. See {@link MultiLink} for more information.
  */
-public class UITexturePicker extends UIElement implements IFileDropListener
+public class UITexturePicker extends UIElement implements IImportPathProvider
 {
     public UIElement right;
     public UITextbox text;
@@ -212,36 +208,16 @@ public class UITexturePicker extends UIElement implements IFileDropListener
     }
 
     @Override
-    public void acceptFilePaths(String[] paths)
+    public File getImporterPath()
     {
         File target = BBSMod.getProvider().getFile(this.picker.path);
 
         if (target == null || !target.isDirectory())
         {
-            return;
+            return null;
         }
 
-        for (String path : paths)
-        {
-            File file = new File(path);
-
-            if (file.isFile())
-            {
-                String name = file.getName();
-                File copy = IOUtils.findNonExistingFile(new File(target, name));
-
-                try
-                {
-                    Files.copy(file.toPath(), copy.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        this.refresh();
+        return target;
     }
 
     public void refresh()

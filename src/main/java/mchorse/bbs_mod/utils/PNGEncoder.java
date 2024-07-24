@@ -1,12 +1,16 @@
 package mchorse.bbs_mod.utils;
 
+import mchorse.bbs_mod.audio.BinaryReader;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
+import org.joml.Vector2i;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -19,7 +23,62 @@ import java.util.zip.DeflaterOutputStream;
  */
 public class PNGEncoder
 {
+    private static final int[] HEADER = new int[]{137, 80, 78, 71, 13, 10, 26, 10};
+
     private ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+    public static Vector2i readSize(File file)
+    {
+        try (FileInputStream stream = new FileInputStream(file))
+        {
+            byte[] header = new byte[HEADER.length];
+
+            stream.read(header);
+
+            /* Read and verify the header */
+            for (int i = 0; i < HEADER.length; i++)
+            {
+                if (header[i] != (byte) HEADER[i])
+                {
+                    return null;
+                }
+            }
+
+            int size = readInt(stream);
+
+            if (size != 13)
+            {
+                return null;
+            }
+
+            int a = stream.read();
+            int b = stream.read();
+            int c = stream.read();
+            int d = stream.read();
+            String chunkName = new String(new char[] {(char) a, (char) b, (char) c, (char) d});
+
+            if (!chunkName.equals("IHDR"))
+            {
+                return null;
+            }
+
+            return new Vector2i(readInt(stream), readInt(stream));
+        }
+        catch (Exception e)
+        {}
+
+        return null;
+    }
+
+    private static int readInt(InputStream stream) throws IOException
+    {
+        byte b1 = (byte) stream.read();
+        byte b2 = (byte) stream.read();
+        byte b3 = (byte) stream.read();
+        byte b4 = (byte) stream.read();
+
+        return BinaryReader.b2i(b4, b3, b2, b1);
+    }
 
     public static void writeToFile(Pixels pixels, File file) throws IOException
     {
@@ -47,14 +106,10 @@ public class PNGEncoder
     private void writeSignature()
     {
         /* http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature */
-        this.bytes.write(137);
-        this.bytes.write(80);
-        this.bytes.write(78);
-        this.bytes.write(71);
-        this.bytes.write(13);
-        this.bytes.write(10);
-        this.bytes.write(26);
-        this.bytes.write(10);
+        for (int i : HEADER)
+        {
+            this.bytes.write(i);
+        }
     }
 
     private void writeIHDRChunk(Pixels pixels) throws IOException

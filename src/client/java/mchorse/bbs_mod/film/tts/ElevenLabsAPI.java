@@ -119,25 +119,25 @@ public class ElevenLabsAPI implements Runnable
             {
                 if (result.status == ElevenLabsResult.Status.INITIALIZED)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_COMMENCING, Colors.BLUE | Colors.A100);
+                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_COMMENCING, Colors.BLUE);
                 }
                 else if (result.status == ElevenLabsResult.Status.GENERATED)
                 {
-                    context.notify(result.message, Colors.BLUE | Colors.A100);
+                    context.notify(result.message, Colors.BLUE);
                 }
                 else if (result.status == ElevenLabsResult.Status.ERROR)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_GENERATING.format(result.message), Colors.RED | Colors.A100);
+                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_GENERATING.format(result.message), Colors.RED);
                 }
                 else if (result.status == ElevenLabsResult.Status.TOKEN_MISSING)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_TOKEN, Colors.RED | Colors.A100);
+                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_TOKEN, Colors.RED);
                 }
                 else if (result.status == ElevenLabsResult.Status.VOICE_IS_MISSING)
                 {
                     context.notify(!result.missingVoices.isEmpty()
                         ? UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_VOICES.format(String.join(", ", result.missingVoices))
-                        : UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_LOADING_VOICES, Colors.RED | Colors.A100);
+                        : UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_LOADING_VOICES, Colors.RED);
                 }
 
                 callback.accept(result);

@@ -85,7 +85,7 @@ public class UITextureEditor extends UIPixelsEditor
 
         if (!link.source.equals("assets") || !link.path.endsWith(".png"))
         {
-            this.getContext().notify(UIKeys.TEXTURES_SAVE_WRONG_PATH, Colors.RED | Colors.A100);
+            this.getContext().notify(UIKeys.TEXTURES_SAVE_WRONG_PATH, Colors.RED);
 
             return;
         }
@@ -118,7 +118,7 @@ public class UITextureEditor extends UIPixelsEditor
         {
             e.printStackTrace();
 
-            this.getContext().notify(UIKeys.TEXTURES_EXPORT_OVERLAY_ERROR.format(file.getName()), Colors.RED | Colors.A100);
+            this.getContext().notify(UIKeys.TEXTURES_EXPORT_OVERLAY_ERROR.format(file.getName()), Colors.RED);
         }
     }
 

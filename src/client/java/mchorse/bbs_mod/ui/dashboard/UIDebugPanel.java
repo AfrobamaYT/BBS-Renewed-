@@ -1,8 +1,5 @@
 package mchorse.bbs_mod.ui.dashboard;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.audio.Wave;
-import mchorse.bbs_mod.audio.wav.WaveReader;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -11,9 +8,6 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
-
-import java.io.File;
-import java.io.FileInputStream;
 
 public class UIDebugPanel extends UIDashboardPanel
 {
@@ -43,6 +37,27 @@ public class UIDebugPanel extends UIDashboardPanel
 
         this.button = new UIButton(IKey.raw("Hello"), (b) ->
         {
+            /* File file = BBSMod.getAssetsPath("textures/skin.png");
+            Vector2i vector2i = PNGEncoder.readSize(file);
+
+            System.out.println(vector2i);
+
+            // ---
+
+            File file = BBSMod.getAssetsPath("textures/skin.png");
+            File out = BBSMod.getAssetsPath("textures/skin_64x64.png");
+
+            try
+            {
+                OldSkinImporter.convertSkin(file, out);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            // ---
+
             WaveReader waveReader = new WaveReader();
             File assetsFolder = new File(BBSMod.getAssetsFolder(), "audio/cheese.wav");
 
@@ -57,7 +72,9 @@ public class UIDebugPanel extends UIDashboardPanel
                 e.printStackTrace();
             }
 
-            /* File file = new File(BBSMod.getExportFolder(), "abc.dat");
+            // ---
+
+            File file = new File(BBSMod.getExportFolder(), "abc.dat");
             MapType type = new MapType(false);
 
             for (int i = 0; i < 256; i++)
