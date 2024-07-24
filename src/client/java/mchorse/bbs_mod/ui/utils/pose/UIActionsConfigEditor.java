@@ -35,7 +35,7 @@ public class UIActionsConfigEditor extends UIElement
 
         this.animations = new UISearchList<>(new UIStringList((l) ->
         {
-            this.config.name = l.get(0);
+            this.config.name = this.animations.list.getIndex() == 0 ? "" : l.get(0);
             this.callback();
         }));
         this.animations.list.cancelScrollEdge();
@@ -91,6 +91,8 @@ public class UIActionsConfigEditor extends UIElement
         {
             this.animations.list.add(animations);
             this.animations.list.sort();
+            this.animations.list.getList().add(0, UIKeys.GENERAL_NONE.get());
+            this.animations.list.update();
         }
 
         if (actions != null)
@@ -116,6 +118,12 @@ public class UIActionsConfigEditor extends UIElement
         }
 
         this.animations.list.setCurrentScroll(this.config.name);
+
+        if (this.animations.list.getIndex() == -1)
+        {
+            this.animations.list.setIndex(0);
+        }
+
         this.loop.setValue(this.config.loop);
         this.speed.setValue(this.config.speed);
         this.fade.setValue(this.config.fade);
