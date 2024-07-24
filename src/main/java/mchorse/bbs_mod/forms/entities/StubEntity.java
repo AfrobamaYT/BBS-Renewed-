@@ -397,6 +397,8 @@ public class StubEntity implements IEntity
     @Override
     public void update()
     {
+        this.age += 1;
+
         this.prevX = this.x;
         this.prevY = this.y;
         this.prevZ = this.z;
