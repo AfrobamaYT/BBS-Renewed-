@@ -668,7 +668,7 @@ public class UIKeyframes extends UIElement
 
         int mouseX = context.mouseX;
         int mouseY = context.mouseY;
-        boolean mouseHasMoved = mouseX != this.lastX || mouseY != this.lastY;
+        boolean mouseHasMoved = Math.abs(mouseX - this.originalX) > 2 || Math.abs(mouseY - this.originalY) > 2;
 
         if (this.dragging == 0 && mouseHasMoved)
         {
