@@ -24,6 +24,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
@@ -80,6 +81,12 @@ public class ModelBlock extends Block implements BlockEntityProvider, Waterlogga
     public BlockRenderType getRenderType(BlockState state)
     {
         return BlockRenderType.INVISIBLE;
+    }
+
+    @Override
+    public boolean isTransparent(BlockState state, BlockView world, BlockPos pos)
+    {
+        return true;
     }
 
     @Nullable
