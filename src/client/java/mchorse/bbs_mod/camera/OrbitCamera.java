@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.camera;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.Keys;
@@ -175,7 +176,12 @@ public class OrbitCamera
         Vector3f rotate = new Vector3f(x, y, z);
 
         rotation.rotateY(MathUtils.PI - this.rotation.y);
-        rotation.rotateX(this.rotation.x);
+
+        if (!BBSSettings.editorHorizontalFlight.get())
+        {
+            rotation.rotateX(this.rotation.x);
+        }
+
         rotation.transform(rotate);
 
         return rotate;

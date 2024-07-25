@@ -57,6 +57,7 @@ public class BBSSettings
     public static ValueBoolean editorCrosshair;
     public static ValueBoolean editorSeconds;
     public static ValueInt editorPeriodicSave;
+    public static ValueBoolean editorHorizontalFlight;
     public static ValueEditorLayout editorLayoutSettings;
 
     public static ValueFloat recordingCountdown;
@@ -142,6 +143,7 @@ public class BBSSettings
         editorCrosshair = builder.getBoolean("crosshair", false);
         editorSeconds = builder.getBoolean("seconds", false);
         editorPeriodicSave = builder.getInt("periodic_save", 60, 0, 3600);
+        editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
         builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
