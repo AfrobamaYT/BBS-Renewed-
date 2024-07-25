@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.panels.overlay;
 
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
@@ -31,7 +32,7 @@ public abstract class UICRUDOverlayPanel extends UIOverlayPanel
 
         this.callback = callback;
 
-        this.add = new UIIcon(Icons.ADD, this::addNewData);
+        this.add = new UIIcon(Icons.ADD, (b) -> this.addNewData(null));
         this.add.context((menu) -> menu.action(Icons.FOLDER, UIKeys.PANELS_MODALS_ADD_FOLDER_TITLE, this::addNewFolder));
         this.dupe = new UIIcon(Icons.DUPE, this::dupeData);
         this.rename = new UIIcon(Icons.EDIT, this::renameData);
@@ -54,12 +55,12 @@ public abstract class UICRUDOverlayPanel extends UIOverlayPanel
 
     /* CRUD */
 
-    protected void addNewData(UIIcon element)
+    protected void addNewData(MapType data)
     {
         UIPromptOverlayPanel panel = new UIPromptOverlayPanel(
             UIKeys.GENERAL_ADD,
             UIKeys.PANELS_MODALS_ADD,
-            (str) -> this.addNewData(this.namesList.getPath(str).toString())
+            (str) -> this.addNewData(this.namesList.getPath(str).toString(), data)
         );
 
         panel.text.filename();
@@ -67,7 +68,7 @@ public abstract class UICRUDOverlayPanel extends UIOverlayPanel
         UIOverlay.addOverlay(this.getContext(), panel);
     }
 
-    protected abstract void addNewData(String name);
+    protected abstract void addNewData(String name, MapType data);
 
     protected void addNewFolder()
     {

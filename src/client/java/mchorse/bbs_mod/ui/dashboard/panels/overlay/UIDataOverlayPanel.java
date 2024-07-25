@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPanel
 {
     protected UIDataDashboardPanel<T> panel;
-    protected T transientCopy;
 
     public UIDataOverlayPanel(IKey title, UIDataDashboardPanel<T> panel, Consumer<String> callback)
     {
@@ -63,37 +62,34 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
 
     private void paste(MapType data)
     {
-        this.transientCopy = (T) this.panel.getType().getRepository().create("", data);
-
-        this.addNewData(this.add);
+        this.addNewData(data);
     }
 
     /* CRUD */
 
     @Override
-    protected void addNewData(String name)
+    protected void addNewData(String name, MapType mapType)
     {
         if (!this.namesList.hasInHierarchy(name))
         {
             this.panel.save();
 
+            T data = null;
             this.namesList.addFile(name);
 
-            if (this.transientCopy == null)
+            if (mapType == null)
             {
-                this.transientCopy = (T) this.panel.getType().getRepository().create(name);
+                data = (T) this.panel.getType().getRepository().create(name);
 
-                this.fillDefaultData(this.transientCopy);
+                this.fillDefaultData(data);
             }
             else
             {
-                this.transientCopy.setId(name);
+                data = (T) this.panel.getType().getRepository().create(name, mapType);
             }
 
-            this.panel.fill(this.transientCopy);
+            this.panel.fill(data);
         }
-
-        this.transientCopy = null;
     }
 
     @Override
