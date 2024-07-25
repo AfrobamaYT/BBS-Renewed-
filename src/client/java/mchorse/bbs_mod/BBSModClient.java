@@ -77,6 +77,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyPlayFilm;
     private static KeyBinding keyRecordReplay;
     private static KeyBinding keyRecordVideo;
+    private static KeyBinding keyOpenReplays;
 
     private static UIDashboard dashboard;
 
@@ -244,6 +245,7 @@ public class BBSModClient implements ClientModInitializer
         keyPlayFilm = this.createKey("play_film", GLFW.GLFW_KEY_RIGHT_CONTROL);
         keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
         keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
+        keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
@@ -305,6 +307,7 @@ public class BBSModClient implements ClientModInitializer
             while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
             while (keyRecordVideo.wasPressed()) requestToggleRecording = true;
+            while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
@@ -382,7 +385,7 @@ public class BBSModClient implements ClientModInitializer
 
             if (recorder != null)
             {
-                UIScreen.open(getDashboard());
+                UIScreen.open(dashboard);
             }
             else
             {
@@ -394,6 +397,17 @@ public class BBSModClient implements ClientModInitializer
                     getFilms().startRecording(panel.getFilm(), index);
                 }
             }
+        }
+    }
+
+    private void keyOpenReplays()
+    {
+        UIDashboard dashboard = getDashboard();
+
+        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+        {
+            UIScreen.open(dashboard);
+            panel.preview.openReplays();
         }
     }
 

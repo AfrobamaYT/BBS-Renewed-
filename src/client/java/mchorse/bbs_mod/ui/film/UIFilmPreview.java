@@ -35,9 +35,7 @@ import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class UIFilmPreview extends UIElement
@@ -65,7 +63,7 @@ public class UIFilmPreview extends UIElement
         this.icons.relative(this).x(0.5F).y(1F).anchor(0.5F, 1F);
 
         /* Preview buttons */
-        this.replays = new UIIcon(Icons.EDITOR, (b) -> UIOverlay.addOverlayLeft(this.getContext(), this.panel.replayEditor.replays, 200));
+        this.replays = new UIIcon(Icons.EDITOR, (b) -> this.openReplays());
         this.replays.tooltip(UIKeys.FILM_REPLAY_TITLE);
         this.plause = new UIIcon(() -> this.panel.isRunning() ? Icons.PAUSE : Icons.PLAY, (b) -> this.panel.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE);
@@ -132,6 +130,11 @@ public class UIFilmPreview extends UIElement
 
         this.icons.add(this.replays, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
         this.add(this.icons);
+    }
+
+    public void openReplays()
+    {
+        UIOverlay.addOverlayLeft(this.getContext(), this.panel.replayEditor.replays, 200);
     }
 
     private void renderAudio()
