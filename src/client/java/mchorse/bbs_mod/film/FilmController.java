@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.film;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.camera.clips.CameraClipContext;
+import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
+import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -12,11 +15,12 @@ import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.interps.Lerps;
-import mchorse.bbs_mod.utils.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
@@ -41,6 +45,8 @@ public class FilmController
     public Film film;
 
     protected List<IEntity> entities = new ArrayList<>();
+    protected CameraClipContext context;
+    protected Position position = new Position();
 
     public int exception = -1;
     public int tick;
@@ -213,6 +219,9 @@ public class FilmController
 
             this.entities.add(entity);
         }
+
+        this.context = new CameraClipContext();
+        this.context.clips = film.camera;
     }
 
     public List<IEntity> getEntities()
@@ -273,5 +282,27 @@ public class FilmController
         }
 
         RenderSystem.disableDepthTest();
+
+        int tick = Math.max(this.tick, 0);
+        List<Clip> clips = this.context.clips.getClips(tick);
+
+        if (clips.isEmpty())
+        {
+            return;
+        }
+
+        RenderSystem.enableDepthTest();
+
+        this.context.clipData.clear();
+        this.context.setup(tick, context.tickDelta());
+
+        for (Clip clip : clips)
+        {
+            this.context.apply(clip, this.position);
+        }
+
+        this.context.currentLayer = 0;
+
+        AudioClientClip.manageSounds(this.context);
     }
 }

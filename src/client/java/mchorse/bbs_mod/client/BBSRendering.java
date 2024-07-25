@@ -260,23 +260,7 @@ public class BBSRendering
 
     public static void renderHud(DrawContext drawContext, float tickDelta)
     {
-        Batcher2D batcher2D = new Batcher2D(drawContext);
-        Recorder recorder = BBSModClient.getFilms().getRecorder();
-
-        if (recorder != null)
-        {
-            int tick = recorder.tick;
-            String label = tick < 0 ?
-                String.valueOf(-TimeUtils.toSeconds(tick)) :
-                UIKeys.FILM_RECORDING.format(tick).get();
-            int x = 5;
-            int y = 5;
-            int w = batcher2D.getFont().getWidth(label);
-
-            batcher2D.box(x, y, x + 18 + w + 3, y + 16, Colors.A50);
-            batcher2D.icon(Icons.SPHERE, Colors.RED | Colors.A100, x, y);
-            batcher2D.textShadow(label, x + 18, y + 4);
-        }
+        BBSModClient.getFilms().renderHud(drawContext, tickDelta);
     }
 
     public static void renderCoolStuff(WorldRenderContext worldRenderContext)

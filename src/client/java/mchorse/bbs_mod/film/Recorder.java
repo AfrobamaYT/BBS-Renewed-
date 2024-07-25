@@ -3,16 +3,17 @@ package mchorse.bbs_mod.film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
+import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.MathUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
@@ -32,19 +33,13 @@ public class Recorder extends FilmController
     public ReplayKeyframes keyframes = new ReplayKeyframes("keyframes");
 
     private Matrix4f perspective = new Matrix4f();
-    private Position position = new Position();
-    private CameraClipContext context;
 
     public Recorder(Film film, int replayId)
     {
         super(film);
 
-        this.film = film;
         this.exception = replayId;
         this.tick = -TimeUtils.toTick(BBSSettings.recordingCountdown.get());
-
-        this.context = new CameraClipContext();
-        this.context.clips = film.camera;
     }
 
     public void update()
@@ -62,27 +57,6 @@ public class Recorder extends FilmController
     public void render(WorldRenderContext context)
     {
         super.render(context);
-
-        int tick = Math.max(this.tick, 0);
-        List<Clip> clips = this.context.clips.getClips(tick);
-
-        if (clips.isEmpty())
-        {
-            return;
-        }
-
-        RenderSystem.enableDepthTest();
-
-        this.position.copy(Position.ZERO);
-        this.context.clipData.clear();
-        this.context.setup(tick, context.tickDelta());
-
-        for (Clip clip : clips)
-        {
-            this.context.apply(clip, this.position);
-        }
-
-        this.context.currentLayer = 0;
 
         Camera camera = context.camera();
         Vector4f vector = Vectors.TEMP_4F;
