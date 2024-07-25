@@ -651,6 +651,8 @@ public class UIFilmController extends UIElement
             if (mode == 0)
             {
                 this.orbit.setup(camera, transition);
+
+                camera.fov = BBSSettings.getFov();
             }
             else
             {
@@ -683,12 +685,11 @@ public class UIFilmController extends UIElement
         rotation.x = MathUtils.toRad(rotation.x);
         rotation.y = MathUtils.toRad(rotation.y);
 
-        camera.fov = BBSSettings.getFov();
-
         if (mode == 1)
         {
             camera.position.set(position);
             camera.rotation.set(rotation.x, rotation.y + MathUtils.PI, 0F);
+            camera.fov = BBSSettings.getFov();
 
             return;
         }
@@ -713,6 +714,7 @@ public class UIFilmController extends UIElement
 
         camera.position.set(position);
         camera.rotation.set(rotation.x * (back ? -1 : 1), rotation.y + (back ? 0 : MathUtils.PI), 0);
+        camera.fov = BBSSettings.getFov();
     }
 
     public void insertFrame()

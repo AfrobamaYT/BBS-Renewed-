@@ -248,7 +248,12 @@ public class UIScreen extends Screen implements IFileDropListener
                 if (importer.canImport(context))
                 {
                     importer.importFiles(context);
-                    UIUtils.openFolder(context.destination);
+
+                    if (!context.destination.equals(BBSMod.getAssetsFolder()))
+                    {
+                        UIUtils.openFolder(context.destination);
+                    }
+
                     this.menu.context.notify(UIKeys.IMPORTER_SUCCESS_NOTIFICATION.format(importer.getName()), Colors.mulRGB(Colors.GREEN, 0.75F));
 
                     return;
