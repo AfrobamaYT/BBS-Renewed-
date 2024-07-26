@@ -126,9 +126,18 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
         if (this.emitter != null)
         {
-            this.emitter.paused = this.form.paused.get();
+            boolean lastPaused = this.emitter.paused;
 
+            this.emitter.paused = this.form.paused.get();
             this.emitter.update();
+
+            /* Rewind the emitter if it was paused and resumed in order to make
+             * particle effects with once emitter */
+            if (lastPaused != this.emitter.paused && !this.emitter.paused)
+            {
+                this.emitter.stop();
+                this.emitter.start();
+            }
         }
     }
 }
