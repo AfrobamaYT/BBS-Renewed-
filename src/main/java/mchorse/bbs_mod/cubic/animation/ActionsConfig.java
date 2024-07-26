@@ -61,7 +61,11 @@ public class ActionsConfig implements IMapSerializable
     public void copy(ActionsConfig config)
     {
         this.actions.clear();
-        this.actions.putAll(config.actions);
+
+        for (Map.Entry<String, ActionConfig> entry : config.actions.entrySet())
+        {
+            this.actions.put(entry.getKey(), entry.getValue().copy());
+        }
     }
 
     public ActionConfig getConfig(String key)

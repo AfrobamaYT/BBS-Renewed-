@@ -43,8 +43,7 @@ public class ActionConfig implements IMapSerializable
         return false;
     }
 
-    @Override
-    public ActionConfig clone()
+    public ActionConfig copy()
     {
         ActionConfig config = new ActionConfig(this.name);
 

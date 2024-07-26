@@ -23,11 +23,11 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
@@ -123,7 +123,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             {
                 this.animator.setup(model, actionsConfig, true);
 
-                this.lastConfigs = actionsConfig;
+                this.lastConfigs = new ActionsConfig();
+                this.lastConfigs.copy(actionsConfig);
             }
 
             return;
@@ -132,7 +133,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         this.animator = model.procedural ? new ProceduralAnimator() : new Animator();
         this.animator.setup(model, actionsConfig, false);
 
-        this.lastConfigs = actionsConfig;
+        this.lastConfigs = new ActionsConfig();
+        this.lastConfigs.copy(actionsConfig);
         this.lastCheck = model.loadTime;
     }
 
