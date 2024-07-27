@@ -28,13 +28,16 @@ public class UIActionsConfigKeyframeFactory extends UIKeyframeFactory<ActionsCon
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(form);
         CubicModel model = renderer.getModel();
 
-        renderer.ensureAnimator();
+        renderer.ensureAnimator(0F);
 
         IAnimator animator = renderer.getAnimator();
         Collection<String> animations = model != null ? model.animations.animations.keySet() : null;
         Collection<String> actions = animator != null ? animator.getActions() : null;
 
-        this.actionsEditor = new UIActionsConfigEditor(renderer::resetAnimator);
+        this.actionsEditor = new UIActionsConfigEditor(() ->
+        {
+            renderer.resetAnimator();
+        });
         this.actionsEditor.setConfigs(keyframe.getValue(), animations, actions);
 
         this.scroll.add(this.actionsEditor);

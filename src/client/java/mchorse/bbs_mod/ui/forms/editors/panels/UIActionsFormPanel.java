@@ -37,7 +37,7 @@ public class UIActionsFormPanel extends UIFormPanel<ModelForm>
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(this.form);
         CubicModel model = renderer.getModel();
 
-        renderer.ensureAnimator();
+        renderer.ensureAnimator(0F);
 
         IAnimator animator = renderer.getAnimator();
         Collection<String> animations = model != null ? model.animations.animations.keySet() : null;

@@ -111,10 +111,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         this.lastCheck = 0;
     }
 
-    public void ensureAnimator()
+    public void ensureAnimator(float transition)
     {
         CubicModel model = this.getModel();
-        ActionsConfig actionsConfig = this.form.actions.get();
+        ActionsConfig actionsConfig = this.form.actions.get(transition);
 
         if (model == null || this.lastCheck >= model.loadTime)
         {
@@ -151,7 +151,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         context.batcher.flush();
 
-        this.ensureAnimator();
+        this.ensureAnimator(context.getTransition());
 
         CubicModel model = this.getModel();
 
@@ -286,7 +286,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public void render3D(FormRenderingContext context)
     {
-        this.ensureAnimator();
+        this.ensureAnimator(context.getTransition());
 
         CubicModel model = this.getModel();
 
@@ -452,7 +452,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public void tick(IEntity entity)
     {
-        this.ensureAnimator();
+        this.ensureAnimator(0F);
 
         if (this.animator != null)
         {
