@@ -10,7 +10,8 @@
         "ServerWorldMixin",
         "ItemStackMixin",
         "WorldMixin",
-        "LivingEntityMixin"
+        "LivingEntityMixin",
+        "ServerPlayerEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1
