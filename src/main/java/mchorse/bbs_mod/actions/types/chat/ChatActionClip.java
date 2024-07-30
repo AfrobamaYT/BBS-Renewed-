@@ -20,7 +20,7 @@ public class ChatActionClip extends ActionClip
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         for (PlayerEntity entity : player.getWorld().getPlayers())
         {

@@ -17,12 +17,14 @@ public class InteractBlockActionClip extends ActionClip
 
     public InteractBlockActionClip()
     {
+        super();
+
         this.add(this.hit);
         this.add(this.hand);
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         BlockHitResult result = this.hit.getHitResult();
 

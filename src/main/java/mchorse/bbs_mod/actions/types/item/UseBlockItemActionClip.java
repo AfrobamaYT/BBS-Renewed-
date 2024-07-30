@@ -15,11 +15,13 @@ public class UseBlockItemActionClip extends ItemActionClip
 
     public UseBlockItemActionClip()
     {
+        super();
+
         this.add(this.hit);
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         Hand hand = this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND;
         ItemStack copy = this.itemStack.get().copy();

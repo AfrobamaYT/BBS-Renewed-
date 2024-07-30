@@ -18,11 +18,13 @@ public class AttackActionClip extends ActionClip
 
     public AttackActionClip()
     {
+        super();
+
         this.add(this.damage);
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         float damage = this.damage.get();
 

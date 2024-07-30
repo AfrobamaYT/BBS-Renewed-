@@ -19,6 +19,8 @@ public class ItemDropActionClip extends ItemActionClip
 
     public ItemDropActionClip()
     {
+        super();
+
         this.add(this.posX);
         this.add(this.posY);
         this.add(this.posZ);
@@ -28,7 +30,7 @@ public class ItemDropActionClip extends ItemActionClip
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         this.applyPositionRotation(player, replay, tick);
 

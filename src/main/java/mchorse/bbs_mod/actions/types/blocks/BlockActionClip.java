@@ -11,6 +11,8 @@ public abstract class BlockActionClip extends ActionClip
 
     public BlockActionClip()
     {
+        super();
+
         this.add(this.x);
         this.add(this.y);
         this.add(this.z);

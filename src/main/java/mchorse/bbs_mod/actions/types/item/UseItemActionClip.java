@@ -10,7 +10,7 @@ import net.minecraft.util.Hand;
 public class UseItemActionClip extends ItemActionClip
 {
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         Hand hand = this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND;
 

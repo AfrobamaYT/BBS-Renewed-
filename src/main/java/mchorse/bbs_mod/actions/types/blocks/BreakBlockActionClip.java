@@ -20,7 +20,7 @@ public class BreakBlockActionClip extends BlockActionClip
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         player.getWorld().setBlockBreakingInfo(player.getId(), new BlockPos(this.x.get(), this.y.get(), this.z.get()), this.progress.get());
     }

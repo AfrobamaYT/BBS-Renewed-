@@ -11,6 +11,8 @@ public abstract class ItemActionClip extends ActionClip
 
     public ItemActionClip()
     {
+        super();
+
         this.add(this.itemStack);
         this.add(this.hand);
     }

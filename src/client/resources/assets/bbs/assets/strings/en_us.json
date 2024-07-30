@@ -115,6 +115,7 @@
     "bbs.keystrokes_position.top_right": "Top right",
     "bbs.tooltip_style.dark": "Dark",
     "bbs.tooltip_style.light": "Light",
+    "bbs.ui.actions.frequency": "Frequency",
     "bbs.ui.actions.attack.damage": "Damage",
     "bbs.ui.actions.block.direction": "Hit direction",
     "bbs.ui.actions.block.direction.down": "Down",

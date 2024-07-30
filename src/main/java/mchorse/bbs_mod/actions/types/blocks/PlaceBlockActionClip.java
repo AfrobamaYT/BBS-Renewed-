@@ -16,12 +16,14 @@ public class PlaceBlockActionClip extends BlockActionClip
 
     public PlaceBlockActionClip()
     {
+        super();
+
         this.add(this.state);
         this.add(this.drop);
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         BlockPos pos = new BlockPos(this.x.get(), this.y.get(), this.z.get());
 

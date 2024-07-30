@@ -17,7 +17,7 @@ public class CommandActionClip extends ActionClip
     }
 
     @Override
-    public void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         this.applyPositionRotation(player, replay, tick);
 
