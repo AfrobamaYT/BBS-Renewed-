@@ -140,7 +140,6 @@ public class AudioRenderer
 
                 length = Math.min(wave.data.length, MathUtils.clamp(length, 0, bytes.length - offset));
                 length -= length % 2;
-                length -= start;
 
                 for (int i = 0; i < length; i += 2)
                 {
