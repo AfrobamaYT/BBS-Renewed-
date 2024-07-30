@@ -404,10 +404,25 @@ public class BBSModClient implements ClientModInitializer
     {
         UIDashboard dashboard = getDashboard();
 
-        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+        if (dashboard != null)
         {
             UIScreen.open(dashboard);
-            panel.preview.openReplays();
+
+            if (dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+            {
+                panel.preview.openReplays();
+            }
+            else
+            {
+                UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
+
+                dashboard.setPanel(panel);
+
+                if (!panel.overlay.canBeSeen())
+                {
+                    panel.openOverlay.clickItself();
+                }
+            }
         }
     }
 
