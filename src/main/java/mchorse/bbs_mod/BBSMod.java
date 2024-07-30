@@ -366,7 +366,7 @@ public class BBSMod implements ModInitializer
             {
                 Morph morph = Morph.getMorph(player);
 
-                ServerNetwork.sendMorphToTracked(player, morph.form);
+                ServerNetwork.sendMorphToTracked(player, morph.getForm());
             }
         });
 

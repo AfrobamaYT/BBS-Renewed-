@@ -122,7 +122,7 @@ public class BBSCommands
         ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
 
         ServerNetwork.sendMorphToTracked(entity, null);
-        Morph.getMorph(entity).form = null;
+        Morph.getMorph(entity).setForm(null);
 
         return 1;
     }
@@ -142,7 +142,7 @@ public class BBSCommands
             Form form = FormUtils.fromData(DataToString.mapFromString(formData));
 
             ServerNetwork.sendMorphToTracked(entity, form);
-            Morph.getMorph(entity).form = FormUtils.copy(form);
+            Morph.getMorph(entity).setForm(FormUtils.copy(form));
 
             return 1;
         }

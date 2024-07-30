@@ -124,7 +124,7 @@ public class ServerNetwork
 
         server.execute(() ->
         {
-            Morph.getMorph(player).form = FormUtils.copy(finalForm);
+            Morph.getMorph(player).setForm(FormUtils.copy(finalForm));
 
             sendMorphToTracked(player, finalForm);
         });

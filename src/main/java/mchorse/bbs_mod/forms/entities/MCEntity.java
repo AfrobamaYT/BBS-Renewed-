@@ -43,7 +43,7 @@ public class MCEntity implements IEntity
     {
         Morph morph = Morph.getMorph(this.mcEntity);
 
-        return morph == null ? null : morph.form;
+        return morph == null ? null : morph.getForm();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class MCEntity implements IEntity
 
         if (morph != null)
         {
-            morph.form = form;
+            morph.setForm(form);
         }
     }
 

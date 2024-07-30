@@ -108,7 +108,7 @@ public class ClientNetwork
 
             if (morph != null)
             {
-                morph.form = finalForm;
+                morph.setForm(finalForm);
             }
         });
     }

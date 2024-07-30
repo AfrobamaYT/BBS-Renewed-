@@ -11,7 +11,7 @@ import net.minecraft.nbt.NbtElement;
 
 public class Morph
 {
-    public Form form;
+    private Form form;
     public final MCEntity entity;
 
     public Morph(Entity entity)
@@ -27,6 +27,18 @@ public class Morph
         }
 
         return null;
+    }
+
+    public Form getForm()
+    {
+        return this.form;
+    }
+
+    public void setForm(Form form)
+    {
+        this.form = form;
+
+        this.entity.getMcEntity().calculateDimensions();
     }
 
     public void update()

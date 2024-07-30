@@ -34,7 +34,7 @@ public class MorphRenderer
 
         Morph morph = Morph.getMorph(player);
 
-        if (morph != null && morph.form != null)
+        if (morph != null && morph.getForm() != null)
         {
             if (canRender())
             {
@@ -46,7 +46,7 @@ public class MorphRenderer
                 matrixStack.push();
                 matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
-                FormUtilsClient.render(morph.form, FormRenderingContext
+                FormUtilsClient.render(morph.getForm(), FormRenderingContext
                     .set(morph.entity, matrixStack, i, overlay, g)
                     .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 

@@ -30,7 +30,7 @@ public class PlayerEntityRendererMixin
     {
         Morph morph = Morph.getMorph(abstractClientPlayerEntity);
 
-        if (morph != null && morph.form != null)
+        if (morph != null && morph.getForm() != null)
         {
             info.setReturnValue(Vec3d.ZERO);
         }
