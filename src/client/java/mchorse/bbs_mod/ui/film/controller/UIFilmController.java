@@ -976,14 +976,27 @@ public class UIFilmController extends UIElement
             }
         }
 
+        int x = area.ex() - 5;
+        int y = area.ey() - 5 - font.getHeight();
+
         if (this.panel.isFlying())
         {
             String label = UIKeys.FILM_CONTROLLER_SPEED.format(this.panel.dashboard.orbit.speed.getValue()).get();
             int w = font.getWidth(label);
-            int x = area.ex() - 5 - w;
-            int y = area.ey() - 5 - font.getHeight();
 
-            context.batcher.textCard(label, x, y, Colors.WHITE, Colors.A50);
+            context.batcher.textCard(label, x - w, y, Colors.WHITE, Colors.A50);
+
+            y += font.getHeight() + 2;
+        }
+
+        Replay replay = this.panel.replayEditor.getReplay();
+
+        if (replay != null)
+        {
+            String label = replay.getName();
+            int w = font.getWidth(label);
+
+            context.batcher.textCard(label, x - w, y, Colors.WHITE, Colors.A50);
         }
 
         this.renderPickingPreview(context, area);
