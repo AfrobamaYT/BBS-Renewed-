@@ -78,6 +78,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyRecordReplay;
     private static KeyBinding keyRecordVideo;
     private static KeyBinding keyOpenReplays;
+    private static KeyBinding keyDemorph;
 
     private static UIDashboard dashboard;
 
@@ -246,6 +247,7 @@ public class BBSModClient implements ClientModInitializer
         keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
         keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
         keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
+        keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
@@ -308,6 +310,7 @@ public class BBSModClient implements ClientModInitializer
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
             while (keyRecordVideo.wasPressed()) requestToggleRecording = true;
             while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
+            while (keyDemorph.wasPressed()) ClientNetwork.sendPlayerForm(null);
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->

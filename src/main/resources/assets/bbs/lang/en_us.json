@@ -2,11 +2,12 @@
     "block.bbs.model": "Model block",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.dashboard": "Dashboard",
     "key.bbs.block_editor": "Model Block Editor",
+    "key.bbs.dashboard": "Dashboard",
+    "key.bbs.demorph": "Demorph",
+    "key.bbs.open_replays": "Open Current Replays",
     "key.bbs.play_film": "Play film",
     "key.bbs.record_replay": "Record Current Replay",
     "key.bbs.record_video": "Record Video",
-    "key.bbs.open_replays": "Open Current Replays",
     "category.bbs.main": "BBS mod"
 }
