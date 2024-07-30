@@ -211,6 +211,7 @@ public class UIReplaysEditor extends UIElement
     {
         this.replay = replay;
 
+        this.replays.setReplay(replay);
         this.filmPanel.actionEditor.setClips(replay == null ? null : replay.actions);
         this.updateChannelsList();
         this.replays.replays.setCurrentScroll(replay);

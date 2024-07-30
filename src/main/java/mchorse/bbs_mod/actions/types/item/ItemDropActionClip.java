@@ -34,7 +34,7 @@ public class ItemDropActionClip extends ItemActionClip
 
         ItemEntity entity = new ItemEntity(
             player.getServerWorld(),
-            this.posX.get(), this.posY.get(), this.posZ.get(), this.itemStack.get(),
+            this.posX.get(), this.posY.get(), this.posZ.get(), this.itemStack.get().copy(),
             this.velocityX.get(), this.velocityY.get(), this.velocityZ.get()
         );
 

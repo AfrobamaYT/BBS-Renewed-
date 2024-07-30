@@ -228,6 +228,10 @@ public class UIKeys
     public static final IKey FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT = L10n.lang("bbs.ui.film.replay.orbit.third_person_front");
     public static final IKey FILM_REPLAY_RECORD = L10n.lang("bbs.ui.film.replay.record");
     public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title");
+    public static final IKey FILM_REPLAY_REPLAY = L10n.lang("bbs.ui.film.replay.replay");
+    public static final IKey FILM_REPLAY_LABEL = L10n.lang("bbs.ui.film.replay.label");
+    public static final IKey FILM_REPLAY_SHADOW = L10n.lang("bbs.ui.film.replay.shadow");
+    public static final IKey FILM_REPLAY_SHADOW_SIZE = L10n.lang("bbs.ui.film.replay.shadow_size");
     public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot");
     public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description");
     public static final IKey FILM_SCREENSHOT_TITLE = L10n.lang("bbs.ui.film.screenshot-title");

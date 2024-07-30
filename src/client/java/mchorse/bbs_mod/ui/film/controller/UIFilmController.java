@@ -1064,14 +1064,18 @@ public class UIFilmController extends UIElement
 
         RenderSystem.enableDepthTest();
 
-        for (IEntity entity : this.entities)
+        for (int i = 0; i < this.entities.size(); i++)
         {
+            IEntity entity = this.entities.get(i);
+
             if (this.getPovMode() == 2 && entity == getCurrentEntity() && this.orbit.enabled)
             {
                 continue;
             }
 
-            FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F);
+            Replay replay = this.panel.getData().replays.getList().get(i);
+
+            FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
         }
 
         this.rayTraceEntity(context);
@@ -1190,7 +1194,7 @@ public class UIFilmController extends UIElement
 
         this.stencilMap.setup();
         this.stencil.apply();
-        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap, isPlaying ? renderContext.tickDelta() : 0);
+        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap, isPlaying ? renderContext.tickDelta() : 0, false, 0F);
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
         int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);

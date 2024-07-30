@@ -175,8 +175,6 @@ public class UIReplayList extends UIList<Replay>
     @Override
     public void render(UIContext context)
     {
-        this.area.render(context.batcher, Colors.A100);
-
         if (this.getList().size() < 3)
         {
             UIDataUtils.renderRightClickHere(context, this.area);
@@ -188,9 +186,7 @@ public class UIReplayList extends UIList<Replay>
     @Override
     protected String elementToString(UIContext context, int i, Replay element)
     {
-        Form form = element.form.get();
-
-        return form == null ? "-" : context.batcher.getFont().limitToWidth(form.getIdOrName(), this.area.w - 20);
+        return context.batcher.getFont().limitToWidth(element.getName(), this.area.w - 20);
     }
 
     @Override

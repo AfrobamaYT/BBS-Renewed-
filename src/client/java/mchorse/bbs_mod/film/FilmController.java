@@ -54,17 +54,17 @@ public class FilmController
 
     /* Rendering helpers */
 
-    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map)
+    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, boolean shadow, float shadowRadius)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta());
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta(), shadow, shadowRadius);
     }
 
-    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition)
+    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition, boolean shadow, float shadowRadius)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition);
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, shadow, shadowRadius);
     }
 
-    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition)
+    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition, boolean shadow, float shadowRadius)
     {
         Form form = entity.getForm();
 
@@ -136,11 +136,11 @@ public class FilmController
 
         stack.push();
 
-        if (map == null && opacity > 0F)
+        if (map == null && opacity > 0F && shadow)
         {
             stack.translate(position.x - camera.getPos().x, position.y - camera.getPos().y, position.z - camera.getPos().z);
 
-            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, 0.5F, opacity);
+            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, shadowRadius, opacity);
         }
 
         stack.pop();
@@ -278,7 +278,9 @@ public class FilmController
                 continue;
             }
 
-            renderEntity(this.entities, context, this.entities.get(i), null);
+            Replay replay = this.film.replays.getList().get(i);
+
+            renderEntity(this.entities, context, this.entities.get(i), null, replay.shadow.get(), replay.shadowSize.get());
         }
 
         RenderSystem.disableDepthTest();

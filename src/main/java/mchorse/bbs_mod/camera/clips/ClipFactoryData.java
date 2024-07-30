@@ -4,6 +4,7 @@ import mchorse.bbs_mod.camera.clips.converters.IClipConverter;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class ClipFactoryData
     public ClipFactoryData(Icon icon, int color)
     {
         this.icon = icon;
-        this.color = color;
+        this.color = color & Colors.RGB;
     }
 
     public ClipFactoryData withConverter(Link to, IClipConverter<? extends Clip, ? extends Clip> converter)
