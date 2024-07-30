@@ -1,16 +1,21 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.input.UIKeybind;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 public class UIGeneralFormPanel extends UIFormPanel
 {
+    public UIKeybind hotkey;
+
     public UIToggle visible;
     public UIToggle lighting;
     public UITextbox name;
@@ -25,6 +30,12 @@ public class UIGeneralFormPanel extends UIFormPanel
     public UIGeneralFormPanel(UIForm editor)
     {
         super(editor);
+
+        this.hotkey = new UIKeybind((combo) ->
+        {
+            this.form.hotkey.set(combo.keys.isEmpty() ? 0 : combo.keys.get(0));
+        });
+        this.hotkey.single().tooltip(UIKeys.FORMS_EDITORS_GENERAL_HOTKEY);
 
         this.visible = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_VISIBLE, (b) -> this.form.visible.set(b.getValue()));
         this.lighting = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, (b) -> this.form.lighting.set(b.getValue()));
@@ -44,7 +55,7 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hitboxEyeHeight = new UITrackpad((v) -> this.form.hitboxEyeHeight.set(v.floatValue()));
         this.hitboxEyeHeight.limit(0, 1);
 
-        this.options.add(this.visible, this.lighting, UI.label(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY), this.name, this.transform.verticalCompact().marginTop(8));
+        this.options.add(this.hotkey, this.visible, this.lighting, UI.label(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY), this.name, this.transform.verticalCompact().marginTop(8));
         this.options.add(this.hitbox.marginTop(12), UI.row(this.hitboxWidth, this.hitboxHeight));
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_SNEAK_MULTIPLIER), this.hitboxSneakMultiplier);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_EYE_HEIGHT), this.hitboxEyeHeight);
@@ -54,6 +65,8 @@ public class UIGeneralFormPanel extends UIFormPanel
     public void startEdit(Form form)
     {
         super.startEdit(form);
+
+        this.hotkey.setKeyCombo(new KeyCombo(IKey.EMPTY, form.hotkey.get()));
 
         this.visible.setValue(form.visible.get());
         this.lighting.setValue(form.lighting.get());

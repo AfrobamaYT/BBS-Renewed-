@@ -10,9 +10,9 @@ import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.forms.properties.BooleanProperty;
 import mchorse.bbs_mod.forms.properties.FloatProperty;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
+import mchorse.bbs_mod.forms.properties.IntegerProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.properties.TransformProperty;
-import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.Collections;
@@ -36,6 +36,8 @@ public abstract class Form implements IMapSerializable
     public final FloatProperty hitboxHeight = new FloatProperty(this, "hitboxHeight", 1.8F);
     public final FloatProperty hitboxSneakMultiplier = new FloatProperty(this, "hitboxSneakMultiplier", 0.9F);
     public final FloatProperty hitboxEyeHeight = new FloatProperty(this, "hitboxEyeHeight", 0.9F);
+
+    public final IntegerProperty hotkey = new IntegerProperty(this, "keybind", 0);
 
     protected Object renderer;
     protected String cachedID;
@@ -62,6 +64,10 @@ public abstract class Form implements IMapSerializable
         this.register(this.hitboxHeight);
         this.register(this.hitboxSneakMultiplier);
         this.register(this.hitboxEyeHeight);
+
+        this.hotkey.cantAnimate();
+
+        this.register(this.hotkey);
     }
 
     public Object getRenderer()

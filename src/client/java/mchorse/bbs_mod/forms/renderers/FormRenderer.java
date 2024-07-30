@@ -6,6 +6,7 @@ import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.utils.keys.KeyCodes;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -62,17 +63,28 @@ public abstract class FormRenderer <T extends Form>
     {
         this.renderInUI(context, x1, y1, x2, y2);
 
+        FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();
 
         if (!name.isEmpty())
         {
-            FontRenderer font = context.batcher.getFont();
-
             name = font.limitToWidth(name, x2 - x1 - 3);
 
             int w = font.getWidth(name);
 
             context.batcher.textCard(name, (x2 + x1 - w) / 2, y1 + 6, Colors.WHITE, Colors.ACTIVE | Colors.A50);
+        }
+
+        int keybind = this.form.hotkey.get();
+
+        if (keybind > 0)
+        {
+            name = KeyCodes.getName(keybind);
+            name = font.limitToWidth(name, x2 - x1 - 3);
+
+            int w = font.getWidth(name);
+
+            context.batcher.textCard(name, (x2 + x1 - w) / 2, y2 - 6 - font.getHeight(), Colors.WHITE, Colors.A50);
         }
     }
 

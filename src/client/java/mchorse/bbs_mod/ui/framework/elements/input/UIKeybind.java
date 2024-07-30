@@ -19,6 +19,8 @@ public class UIKeybind extends UIElement
     public boolean reading;
     public Consumer<KeyCombo> callback;
 
+    private boolean single;
+
     public UIKeybind(Consumer<KeyCombo> callback)
     {
         super();
@@ -30,19 +32,24 @@ public class UIKeybind extends UIElement
         this.h(20);
     }
 
-    public void setKeyCodes(int... keys)
+    public UIKeybind single()
     {
-        this.combo.keys.clear();
+        this.single = true;
 
-        for (int i : keys)
-        {
-            this.combo.keys.add(i);
-        }
+        return this;
     }
 
     public void setKeyCombo(KeyCombo combo)
     {
         this.combo.copy(combo);
+
+        if (this.single)
+        {
+            while (this.combo.keys.size() > 1)
+            {
+                this.combo.keys.remove(this.combo.keys.size() - 1);
+            }
+        }
     }
 
     @Override
@@ -80,6 +87,11 @@ public class UIKeybind extends UIElement
 
                 if (!this.combo.keys.contains(key))
                 {
+                    if (this.single)
+                    {
+                        this.combo.keys.clear();
+                    }
+
                     this.combo.keys.add(0, key);
                 }
             }
