@@ -31,7 +31,7 @@ public class MPEGImporter implements IImporter
             String name = StringUtils.removeExtension(file.getName()) + ".wav";
 
             /* Force the audio to be mono */
-            FFMpegUtils.execute(context.destination, "-i", file.getAbsolutePath(), "-ac", "1", ImporterUtils.getName(context.destination, name));
+            FFMpegUtils.execute(context.destination, "-y", "-i", file.getAbsolutePath(), "-ac", "1", ImporterUtils.getName(context.destination, name));
         }
     }
 }

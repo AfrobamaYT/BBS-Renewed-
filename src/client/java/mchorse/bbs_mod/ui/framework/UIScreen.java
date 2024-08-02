@@ -213,6 +213,7 @@ public class UIScreen extends Screen implements IFileDropListener
             }
 
             File directory = null;
+            boolean open = true;
 
             for (IImportPathProvider provider : this.menu.getRoot().getChildren(IImportPathProvider.class))
             {
@@ -220,6 +221,8 @@ public class UIScreen extends Screen implements IFileDropListener
 
                 if (directory != null)
                 {
+                    open = false;
+
                     break;
                 }
             }
@@ -249,7 +252,7 @@ public class UIScreen extends Screen implements IFileDropListener
                 {
                     importer.importFiles(context);
 
-                    if (!context.destination.equals(BBSMod.getAssetsFolder()))
+                    if (open)
                     {
                         UIUtils.openFolder(context.destination);
                     }

@@ -26,8 +26,11 @@ public class FFMpegUtils
         }
 
         ProcessBuilder builder = new ProcessBuilder(args);
+        File log = BBSMod.getSettingsPath("converter.log");
 
         builder.directory(folder);
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(log);
 
         try
         {

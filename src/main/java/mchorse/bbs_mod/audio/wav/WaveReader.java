@@ -132,7 +132,10 @@ public class WaveReader extends BinaryReader
                 }
             }
 
-            stream.close();
+            if (data == null)
+            {
+                throw new Exception("The data chunk isn't present in this file!");
+            }
 
             Wave wave = new Wave(audioFormat, numChannels, sampleRate, byteRate, blockAlign, bitsPerSample, data);
 
