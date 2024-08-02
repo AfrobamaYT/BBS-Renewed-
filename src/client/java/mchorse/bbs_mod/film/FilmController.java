@@ -263,6 +263,7 @@ public class FilmController
 
                 replay.applyFrame(ticks, entity, null);
                 replay.applyProperties(ticks, entity.getForm(), true);
+                replay.applyClientActions(ticks, entity, this.film);
             }
         }
     }

@@ -42,6 +42,8 @@ public class StubEntity implements IEntity
     private float pitch;
     private float bodyYaw;
 
+    private int armSwing;
+
     private Vec3d velocity = Vec3d.ZERO;
 
     private float[] extraVariables = new float[10];
@@ -135,15 +137,15 @@ public class StubEntity implements IEntity
     }
 
     @Override
-    public boolean isPunching()
+    public void swingArm()
     {
-        return false;
+        this.armSwing = 6;
     }
 
     @Override
     public float getHandSwingProgress(float tickDelta)
     {
-        return 0F;
+        return this.armSwing <= 0 ? 0F : 1F - (this.armSwing - tickDelta) / 6F;
     }
 
     @Override
@@ -397,6 +399,7 @@ public class StubEntity implements IEntity
     @Override
     public void update()
     {
+        this.armSwing -= 1;
         this.age += 1;
 
         this.prevX = this.x;

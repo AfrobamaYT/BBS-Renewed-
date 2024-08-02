@@ -5,7 +5,6 @@ import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -48,6 +47,7 @@ public class Animator implements IAnimator
     public double prevX = Float.MAX_VALUE;
     public double prevZ = Float.MAX_VALUE;
     public double prevMY;
+    public float prevHandSwing;
 
     /* States */
     public boolean wasOnGround = true;
@@ -268,7 +268,14 @@ public class Animator implements IAnimator
             this.wasOnGround = false;
         }
 
-        if (target.isPunching())
+        float handSwingProgress = target.getHandSwingProgress(0F);
+
+        if (handSwingProgress < this.prevHandSwing)
+        {
+            this.prevHandSwing = 0;
+        }
+
+        if (handSwingProgress > 0 && this.prevHandSwing == 0)
         {
             this.addAction(this.swipe);
         }
@@ -276,6 +283,7 @@ public class Animator implements IAnimator
         this.prevX = target.getX();
         this.prevZ = target.getZ();
         this.prevMY = velocity.y;
+        this.prevHandSwing = handSwingProgress;
 
         this.wasOnGround = target.isOnGround();
     }

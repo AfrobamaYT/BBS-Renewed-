@@ -36,7 +36,7 @@ public interface IEntity
 
     public void setOnGround(boolean ground);
 
-    public boolean isPunching();
+    public void swingArm();
 
     public float getHandSwingProgress(float tickDelta);
 

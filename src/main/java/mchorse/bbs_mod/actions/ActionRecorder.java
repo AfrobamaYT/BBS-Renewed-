@@ -2,8 +2,10 @@ package mchorse.bbs_mod.actions;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.actions.types.ActionClip;
+import mchorse.bbs_mod.actions.types.SwipeActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clips;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 public class ActionRecorder
 {
@@ -40,8 +42,13 @@ public class ActionRecorder
         this.clips.addClip(clip);
     }
 
-    public void tick()
+    public void tick(ServerPlayerEntity player)
     {
+        if (player.handSwingTicks == -1)
+        {
+            this.add(new SwipeActionClip());
+        }
+
         this.tick += 1;
     }
 }

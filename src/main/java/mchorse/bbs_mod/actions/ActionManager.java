@@ -47,9 +47,9 @@ public class ActionManager
             return tick;
         });
 
-        for (ActionRecorder recorder : this.recorders.values())
+        for (Map.Entry<ServerPlayerEntity, ActionRecorder> entry : this.recorders.entrySet())
         {
-            recorder.tick();
+            entry.getValue().tick(entry.getKey());
         }
     }
 
