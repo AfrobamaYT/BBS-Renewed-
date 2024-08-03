@@ -57,6 +57,9 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
         Link location = Link.create(this.strings.list.getCurrentFirst());
         SoundPlayer play = BBSModClient.getSounds().play(location);
 
-        play.setRelative(true);
+        if (play != null)
+        {
+            play.setRelative(true);
+        }
     }
 }

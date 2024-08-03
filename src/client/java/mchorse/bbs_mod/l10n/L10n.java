@@ -18,7 +18,6 @@ import mchorse.bbs_mod.utils.Pair;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -35,9 +34,33 @@ public class L10n
     private Set<Function<String, List<Link>>> langFiles = new LinkedHashSet<>();
     private List<Pair<String, String>> supportedLanguages;
 
+    private static List<Pair<String, String>> read(Link link)
+    {
+        try
+        {
+            String string = IOUtils.readText(BBSMod.getProvider().getAsset(link));
+            MapType mapType = DataToString.mapFromString(string);
+            List<Pair<String, String>> pairs = new ArrayList<>();
+
+            for (String key : mapType.keys())
+            {
+                if (mapType.has(key, BaseType.TYPE_STRING))
+                {
+                    pairs.add(new Pair<>(key, mapType.getString(key)));
+                }
+            }
+
+            return pairs;
+        }
+        catch (Exception e)
+        {}
+
+        return Collections.emptyList();
+    }
+
     public L10n()
     {
-        this.reloadSupportedLanguages(Collections.emptyList());
+        this.reloadSupportedLanguages(read(Link.assets("extra_languages.json")));
     }
 
     public static IKey lang(String key)
@@ -60,17 +83,7 @@ public class L10n
     public void reloadSupportedLanguages(List<Pair<String, String>> additionalLanguages)
     {
         this.supportedLanguages = new ArrayList<>();
-        this.supportedLanguages.addAll(Arrays.asList(
-            new Pair<>("Minecraft (auto)", ""),
-            new Pair<>("中文 (zh_CN)", "zh_cn"),
-            new Pair<>("中文 (繁体) (zh_TW)", "zh_tw"),
-            new Pair<>("English (en_US)", "en_us"),
-            new Pair<>("Deutsch (de_DE)", "de_de"),
-            new Pair<>("Ελληνικά (el_GR)", "el_gr"),
-            new Pair<>("Русский (ru_RU)", "ru_ru"),
-            new Pair<>("Português (pt_BR)", "pt_br"),
-            new Pair<>("Українська (uk_UA)", "uk_ua")
-        ));
+        this.supportedLanguages.addAll(read(Link.assets("languages.json")));
         this.supportedLanguages.addAll(additionalLanguages);
     }
 
