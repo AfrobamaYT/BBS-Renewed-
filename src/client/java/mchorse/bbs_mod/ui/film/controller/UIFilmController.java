@@ -22,7 +22,6 @@ import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.mixin.client.MinecraftClientInvoker;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.Link;
@@ -591,11 +590,8 @@ public class UIFilmController extends UIElement
             || options.backKey.getDefaultKey() == utilKey
             || options.leftKey.getDefaultKey() == utilKey
             || options.rightKey.getDefaultKey() == utilKey
-            || options.attackKey.getDefaultKey() == utilKey
-            || options.useKey.getDefaultKey() == utilKey
             || options.sneakKey.getDefaultKey() == utilKey
             || options.sprintKey.getDefaultKey() == utilKey
-            || options.dropKey.getDefaultKey() == utilKey
             || options.jumpKey.getDefaultKey() == utilKey;
     }
 
@@ -788,20 +784,6 @@ public class UIFilmController extends UIElement
         if (this.canControl())
         {
             this.updateControls();
-        }
-
-        if (this.canControl())
-        {
-            MinecraftClientInvoker mc = (MinecraftClientInvoker) MinecraftClient.getInstance();
-            int attackCooldown = mc.bbs$getAttackCooldown();
-
-            mc.bbs$handleInputEvents();
-            mc.bbs$handleBlockBreaking(MinecraftClient.getInstance().options.attackKey.isPressed());
-
-            if (attackCooldown > 0)
-            {
-                mc.bbs$setAttackCooldown(attackCooldown - 1);
-            }
         }
     }
 

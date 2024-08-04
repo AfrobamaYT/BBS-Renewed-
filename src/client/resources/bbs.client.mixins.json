@@ -8,7 +8,6 @@
         "MouseMixin",
         "EntityRendererDispatcherInvoker",
         "PlayerEntityRendererMixin",
-        "MinecraftClientInvoker",
         "RenderTickCounterMixin",
         "IntegratedServerMixin",
         "WindowMixin",
