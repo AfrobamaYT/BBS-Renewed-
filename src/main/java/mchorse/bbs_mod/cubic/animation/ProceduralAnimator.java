@@ -1,11 +1,12 @@
 package mchorse.bbs_mod.cubic.animation;
 
 import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.CubicModelAnimator;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -28,13 +29,14 @@ public class ProceduralAnimator implements IAnimator
     {}
 
     @Override
-    public void applyActions(IEntity entity, Model model, float transition)
+    public void applyActions(IEntity entity, CubicModel cubicModel, float transition)
     {
         if (entity == null)
         {
             return;
         }
 
+        Model model = cubicModel.model;
         ItemStack main = entity.getEquipmentStack(EquipmentSlot.MAINHAND);
         ItemStack offhand = entity.getEquipmentStack(EquipmentSlot.OFFHAND);
 
@@ -63,6 +65,13 @@ public class ProceduralAnimator implements IAnimator
         ModelGroup leftArm = null;
         ModelGroup rightArm = null;
         ModelGroup torso = null;
+
+        CubicModelAnimator.resetPose(model);
+
+        if (entity.isSneaking())
+        {
+            model.apply(cubicModel.sneakingPose);
+        }
 
         for (ModelGroup group : model.getAllGroups())
         {
@@ -129,7 +138,7 @@ public class ProceduralAnimator implements IAnimator
             }
             else if (group.id.equals("right_arm"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient);
+                group.current.rotate.x += MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient);
 
                 if (!main.isEmpty())
                 {
@@ -140,7 +149,7 @@ public class ProceduralAnimator implements IAnimator
             }
             else if (group.id.equals("left_arm"))
             {
-                group.current.rotate.x = MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient);
+                group.current.rotate.x += MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient);
 
                 if (!offhand.isEmpty())
                 {

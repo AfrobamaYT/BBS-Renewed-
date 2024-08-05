@@ -171,7 +171,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             CubicModelAnimator.resetPose(model.model);
 
-            this.animator.applyActions(null, model.model, context.getTransition());
+            this.animator.applyActions(null, model, context.getTransition());
             model.model.apply(this.getPose(context.getTransition()));
 
             MatrixStackUtils.multiply(stack, uiMatrix);
@@ -300,7 +300,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             CubicModelAnimator.resetPose(model.model);
 
-            this.animator.applyActions(context.entity, model.model, context.getTransition());
+            this.animator.applyActions(context.entity, model, context.getTransition());
             model.model.apply(this.getPose(context.getTransition()));
 
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
@@ -334,6 +334,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         MatrixStack stack = new MatrixStack();
         CubicMatrixRenderer renderer = new CubicMatrixRenderer(model.model);
+
+        stack.scale(model.scale.x, model.scale.y, model.scale.z);
 
         CubicRenderer.processRenderModel(renderer, null, stack, model.model);
 
@@ -409,7 +411,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         {
             CubicModelAnimator.resetPose(model.model);
 
-            this.animator.applyActions(entity, model.model, transition);
+            this.animator.applyActions(entity, model, transition);
             model.model.apply(this.getPose(transition));
 
             stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));

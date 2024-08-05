@@ -3,7 +3,6 @@ package mchorse.bbs_mod.cubic.animation;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
-import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import net.minecraft.util.math.Vec3d;
 
@@ -347,39 +346,39 @@ public class Animator implements IAnimator
      * Apply currently running action pipeline onto given armature
      */
     @Override
-    public void applyActions(IEntity target, Model armature, float transition)
+    public void applyActions(IEntity target, CubicModel armature, float transition)
     {
         if (this.basePre != null)
         {
-            this.basePre.apply(target, armature, transition, 1F, false);
+            this.basePre.apply(target, armature.model, transition, 1F, false);
         }
 
         if (this.lastActive != null && this.active.isFading())
         {
-            this.lastActive.apply(target, armature, transition, 1F, false);
+            this.lastActive.apply(target, armature.model, transition, 1F, false);
         }
 
         if (this.active != null)
         {
             float fade = this.active.isFading() ? this.active.getFadeFactor(transition) : 1F;
 
-            this.active.apply(target, armature, transition, fade, false);
+            this.active.apply(target, armature.model, transition, fade, false);
         }
 
         if (this.basePost != null)
         {
-            this.basePost.apply(target, armature, transition, 1F, false);
+            this.basePost.apply(target, armature.model, transition, 1F, false);
         }
 
         for (ActionPlayback action : this.actions)
         {
             if (action.isFading())
             {
-                action.apply(target, armature, transition, action.getFadeFactor(transition), true);
+                action.apply(target, armature.model, transition, action.getFadeFactor(transition), true);
             }
             else
             {
-                action.apply(target, armature, transition, 1F, true);
+                action.apply(target, armature.model, transition, 1F, true);
             }
         }
     }

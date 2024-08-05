@@ -46,6 +46,7 @@ public class ModelBlockEntity extends BlockEntity
     {
         ModelBlockEntityUpdateCallback.EVENT.invoker().update(this);
 
+        this.entity.update();
         this.properties.update(this.entity);
     }
 
