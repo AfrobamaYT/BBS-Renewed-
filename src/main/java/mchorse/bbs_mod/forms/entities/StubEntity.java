@@ -6,6 +6,7 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LimbAnimator;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -399,6 +400,11 @@ public class StubEntity implements IEntity
     @Override
     public void update()
     {
+        float delta = (float) MathHelper.magnitude(this.x - this.prevX, 0D, this.z - this.prevZ);
+        float speed = Math.min(delta * 4F, 1F);
+        
+        this.limbAnimator.updateLimbs(speed, 0.4F);
+
         this.armSwing -= 1;
         this.age += 1;
 
