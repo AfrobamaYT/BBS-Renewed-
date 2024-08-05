@@ -7,6 +7,8 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
 import org.joml.Vector2d;
 
 import java.util.Arrays;
@@ -22,7 +24,7 @@ public class ReplayKeyframes extends ValueGroup
     public static final String GROUP_EXTRA1 = "extra1";
     public static final String GROUP_EXTRA2 = "extra2";
 
-    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
+    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "item_main_hand", "item_off_hand", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
 
     public final KeyframeChannel<Double> x = new KeyframeChannel<>("x", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> y = new KeyframeChannel<>("y", KeyframeFactories.DOUBLE);
@@ -56,6 +58,9 @@ public class ReplayKeyframes extends ValueGroup
     public final KeyframeChannel<Double> extra2X = new KeyframeChannel<>("extra2_x", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> extra2Y = new KeyframeChannel<>("extra2_y", KeyframeFactories.DOUBLE);
 
+    public final KeyframeChannel<ItemStack> mainHand = new KeyframeChannel<>("item_main_hand", KeyframeFactories.ITEM_STACK);
+    public final KeyframeChannel<ItemStack> offHand = new KeyframeChannel<>("item_off_hand", KeyframeFactories.ITEM_STACK);
+
     public ReplayKeyframes(String id)
     {
         super(id);
@@ -85,6 +90,9 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.extra1Y);
         this.add(this.extra2X);
         this.add(this.extra2Y);
+
+        this.add(this.mainHand);
+        this.add(this.offHand);
     }
 
     public void record(int tick, IEntity entity, List<String> groups)
@@ -155,6 +163,12 @@ public class ReplayKeyframes extends ValueGroup
         {
             this.extra2X.insert(tick, (double) sticks[8]);
             this.extra2Y.insert(tick, (double) sticks[9]);
+        }
+
+        if (empty)
+        {
+            this.mainHand.insert(tick, entity.getEquipmentStack(EquipmentSlot.MAINHAND).copy());
+            this.offHand.insert(tick, entity.getEquipmentStack(EquipmentSlot.OFFHAND).copy());
         }
     }
 
@@ -249,6 +263,9 @@ public class ReplayKeyframes extends ValueGroup
             sticks[8] = this.extra2X.interpolate(tick).floatValue();
             sticks[9] = this.extra2Y.interpolate(tick).floatValue();
         }
+
+        entity.setEquipmentStack(EquipmentSlot.MAINHAND, this.mainHand.interpolate(tick));
+        entity.setEquipmentStack(EquipmentSlot.OFFHAND, this.offHand.interpolate(tick));
     }
 
     /**

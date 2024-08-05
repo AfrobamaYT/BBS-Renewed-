@@ -9,7 +9,6 @@ import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Keyframe channel
@@ -263,7 +262,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
             Keyframe<T> current = this.list.get(i);
             Keyframe<T> next = this.list.get(i + 1);
 
-            if (Objects.equals(current.getValue(), prev.getValue()) && Objects.equals(current.getValue(), next.getValue()))
+            if (this.factory.compare(current.getValue(), prev.getValue()) && this.factory.compare(current.getValue(), next.getValue()))
             {
                 this.list.remove(i);
 

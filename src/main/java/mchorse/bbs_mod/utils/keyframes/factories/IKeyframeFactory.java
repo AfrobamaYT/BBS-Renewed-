@@ -3,6 +3,8 @@ package mchorse.bbs_mod.utils.keyframes.factories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.utils.interps.IInterp;
 
+import java.util.Objects;
+
 public interface IKeyframeFactory <T>
 {
     public T fromData(BaseType data);
@@ -10,6 +12,11 @@ public interface IKeyframeFactory <T>
     public BaseType toData(T value);
 
     public T createEmpty();
+
+    public default boolean compare(T a, T b)
+    {
+        return Objects.equals(a, b);
+    }
 
     public T copy(T value);
 

@@ -37,6 +37,12 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
     }
 
     @Override
+    public boolean compare(ItemStack a, ItemStack b)
+    {
+        return ItemStack.areEqual(a, b);
+    }
+
+    @Override
     public ItemStack copy(ItemStack value)
     {
         return value.copy();

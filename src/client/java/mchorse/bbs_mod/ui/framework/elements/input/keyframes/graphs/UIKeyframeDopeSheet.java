@@ -25,7 +25,6 @@ import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 {
@@ -467,7 +466,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 Keyframe previous = (Keyframe) keyframes.get(j - 1);
                 Keyframe frame = (Keyframe) keyframes.get(j);
 
-                if (Objects.equals(previous.getValue(), frame.getValue()))
+                if (previous.getFactory().compare(previous.getValue(), frame.getValue()))
                 {
                     int c = Colors.YELLOW | Colors.A25;
                     int xx = this.keyframes.toGraphX(previous.getTick());

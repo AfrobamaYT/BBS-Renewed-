@@ -103,6 +103,9 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("lighting", Colors.YELLOW);
         COLORS.put("actions", Colors.MAGENTA);
 
+        COLORS.put("item_main_hand", Colors.ORANGE);
+        COLORS.put("item_off_hand", Colors.ORANGE);
+
         ICONS.put("x", Icons.X);
         ICONS.put("y", Icons.Y);
         ICONS.put("z", Icons.Z);
@@ -121,6 +124,7 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("trigger_l", Icons.TRIGGER);
         ICONS.put("extra1_x", Icons.CURVES);
         ICONS.put("extra2_x", Icons.CURVES);
+        ICONS.put("item_main_hand", Icons.LIMB);
     }
 
     public static void renderBackground(UIContext context, UIKeyframes keyframes, Clips camera, int clipOffset)
