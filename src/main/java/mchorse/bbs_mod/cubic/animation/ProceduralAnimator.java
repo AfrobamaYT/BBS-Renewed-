@@ -184,8 +184,6 @@ public class ProceduralAnimator implements IAnimator
             rightArm.current.translate.z -= (float) Math.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F;
             rightArm.current.translate.x -= (float) Math.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F - 5F;
 
-            System.out.println(torso.current.rotate.y + " " + leftArm.current.translate.x);
-
             group = rightArm;
             group.current.rotate.y += torso.current.rotate.y;
             group = leftArm;

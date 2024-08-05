@@ -19,7 +19,7 @@
         "iris.SystemTimeUniformsTimerMixin",
         "InGameHudMixin",
         "KeyboardMixin",
-        "MinecraftClientMixin"
+        "ResourceReloadLoggerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
