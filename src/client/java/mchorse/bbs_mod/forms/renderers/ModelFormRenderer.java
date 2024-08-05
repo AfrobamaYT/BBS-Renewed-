@@ -228,6 +228,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
 
+        newStack.scale(model.scale.x, model.scale.y, model.scale.z);
+
         CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
         newStack.pop();
 
@@ -354,6 +356,15 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public void renderBodyParts(FormRenderingContext context)
     {
+        CubicModel model = this.getModel();
+
+        context.stack.push();
+
+        if (model != null)
+        {
+            context.stack.scale(model.scale.x, model.scale.y, model.scale.z);
+        }
+
         for (BodyPart part : this.form.parts.getAll())
         {
             Matrix4f matrix = this.bones.get(part.bone);
@@ -375,19 +386,25 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         this.bones.clear();
+        context.stack.pop();
     }
 
     @Override
     public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
+        CubicModel model = this.getModel();
+
         stack.push();
         MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
+
+        if (model != null)
+        {
+            stack.scale(model.scale.x, model.scale.y, model.scale.z);
+        }
 
         matrices.put(prefix, new Matrix4f(stack.peek().getPositionMatrix()));
 
         /* Collect bones and add them to matrix list */
-        CubicModel model = this.getModel();
-
         if (this.animator != null && model != null)
         {
             CubicModelAnimator.resetPose(model.model);
