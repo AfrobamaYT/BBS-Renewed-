@@ -179,10 +179,12 @@ public class ProceduralAnimator implements IAnimator
 
             torso.current.rotate.y = -MathUtils.toDeg(MathHelper.sin(MathHelper.sqrt(swingFactor) * MathUtils.PI * 2F) * 0.2F);
 
-            rightArm.current.translate.z = MathHelper.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
-            rightArm.current.translate.x -= MathHelper.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
-            leftArm.current.translate.z = -MathHelper.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
-            leftArm.current.translate.x -= MathHelper.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F / 16F;
+            leftArm.current.translate.z += (float) Math.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F;
+            leftArm.current.translate.x += (float) Math.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F - 5F;
+            rightArm.current.translate.z -= (float) Math.sin(MathUtils.toRad(torso.current.rotate.y)) * 5F;
+            rightArm.current.translate.x -= (float) Math.cos(MathUtils.toRad(torso.current.rotate.y)) * 5F - 5F;
+
+            System.out.println(torso.current.rotate.y + " " + leftArm.current.translate.x);
 
             group = rightArm;
             group.current.rotate.y += torso.current.rotate.y;

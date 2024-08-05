@@ -319,7 +319,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         CubicModel model = this.getModel();
 
-        if (model == null || model.model == null)
+        if (model == null || model.model == null || context.stencilMap == null)
         {
             return;
         }
