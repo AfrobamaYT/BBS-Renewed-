@@ -1,10 +1,13 @@
 {
     "block.bbs.model": "Блок-модель",
-    "itemGroup.bbs.main": "ББС мод",
+    "itemGroup.bbs.main": "BBS мод",
 
-    "key.bbs.dashboard": "Главная Панель",
-    "key.bbs.block_editor": "Редактор Модель Блока",
-    "key.bbs.play_film": "Произвести Фильм",
-    "key.bbs.record_replay": "Записать Данную Запись",
-    "category.bbs.main": "ББС мод"
+    "key.bbs.block_editor": "Редактор блока модели",
+    "key.bbs.dashboard": "Боковая панель",
+    "key.bbs.demorph": "Деморф",
+    "key.bbs.open_replays": "Открыть текущие записи",
+    "key.bbs.play_film": "Проиграть фильм",
+    "key.bbs.record_replay": "Записать текующую запись",
+    "key.bbs.record_video": "Записать видео",
+    "category.bbs.main": "BBS мод"
 }

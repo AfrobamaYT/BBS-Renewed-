@@ -1,8 +1,13 @@
 {
-    "block.bbs.model": "Блок-модель",
-    "itemGroup.bbs.main": "ББС мод",
+    "block.bbs.model": "Блок Модель",
+    "itemGroup.bbs.main": "BBS мод",
 
-    "key.bbs.dashboard": "Головна панель",
-    "key.bbs.block_editor": "Редактор Блоку-моделі",
-    "category.bbs.main": "ББС мод"
+    "key.bbs.block_editor": "Редактор блоку моделі",
+    "key.bbs.dashboard": "Бокова панель",
+    "key.bbs.demorph": "Деморф",
+    "key.bbs.open_replays": "Відкрити поточні записи",
+    "key.bbs.play_film": "Програти фільм",
+    "key.bbs.record_replay": "Записати поточний запис",
+    "key.bbs.record_video": "Записати відео",
+    "category.bbs.main": "BBS мод"
 }

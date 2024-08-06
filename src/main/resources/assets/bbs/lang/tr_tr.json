@@ -1,0 +1,13 @@
+{
+    "block.bbs.model": "Model bloğu",
+    "itemGroup.bbs.main": "BBS mod",
+
+    "key.bbs.block_editor": "Model bloğu düzenleyicisi",
+    "key.bbs.dashboard": "Gösterge paneli",
+    "key.bbs.demorph": "Geri dönüş",
+    "key.bbs.open_replays": "Şu anki kayıtları göster",
+    "key.bbs.play_film": "Filmi oynat",
+    "key.bbs.record_replay": "Şu anki aktörü kaydet",
+    "key.bbs.record_video": "Video kaydet",
+    "category.bbs.main": "BBS mod"
+}
