@@ -2,7 +2,12 @@
     "block.bbs.model": "Bloco de Modelo",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.dashboard": "Painel",
     "key.bbs.block_editor": "Editor de bloco de modelo",
+    "key.bbs.dashboard": "Painel",
+    "key.bbs.demorph": "Detransformar",
+    "key.bbs.open_replays": "Abrir replays atuais",
+    "key.bbs.play_film": "Reproduzir filme",
+    "key.bbs.record_replay": "Gravar replay atual",
+    "key.bbs.record_video": "Gravar vídeo",
     "category.bbs.main": "BBS mod"
 }
