@@ -42,18 +42,23 @@ import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 
 public class BBSModClient implements ClientModInitializer
@@ -338,9 +343,67 @@ public class BBSModClient implements ClientModInitializer
         /* Entity renderers */
         EntityRendererRegistry.register(BBSMod.ACTOR_ENTITY, ActorEntityRenderer::new);
 
-        BlockEntityRendererFactories.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
+        BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
+
+        this.setupPlayerSkins();
+    }
+
+    private void setupPlayerSkins()
+    {
+        boolean isForge = false;
+
+        try
+        {
+            Class.forName("net.minecraftforge.common.MinecraftForge");
+
+            isForge = true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        File steve = BBSMod.getAssetsPath("models/players/steve");
+        File alex = BBSMod.getAssetsPath("models/players/alex");
+        boolean steveExists = steve.exists();
+        boolean alexExists = alex.exists();
+
+        steve.mkdirs();
+        alex.mkdirs();
+
+        if (isForge)
+        {
+            if (!steveExists)
+            {
+                this.copy("/assets/bbs/assets/models/player/steve/config.json", new File(steve, "config.json"));
+                this.copy("/assets/bbs/assets/models/player/steve/steve.bbs.json", new File(steve, "steve.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/steve/steve.png", new File(steve, "steve.png"));
+            }
+
+            if (!alexExists)
+            {
+                this.copy("/assets/bbs/assets/models/player/alex/config.json", new File(alex, "config.json"));
+                this.copy("/assets/bbs/assets/models/player/alex/alex.bbs.json", new File(alex, "alex.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/alex/alex.png", new File(alex, "alex.png"));
+            }
+        }
+    }
+
+    private void copy(String s, File file)
+    {
+        InputStream stream = BBSModClient.class.getResourceAsStream(s);
+
+        try
+        {
+            IOUtils.copy(stream, new FileOutputStream(file));
+        }
+        catch (IOException e)
+        {
+            System.out.println("Failed to copy " + s + " to " + file.getAbsolutePath());
+            e.printStackTrace();
+        }
     }
 
     private KeyBinding createKey(String id, int key)
