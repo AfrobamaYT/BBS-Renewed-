@@ -451,7 +451,7 @@
     "bbs.ui.generic_keyframes.link.pick_texture": "Doku seç...",
     "bbs.ui.graph.help": "Bu grafik hesap makinesinin özelliklerini anlatan web sayfasına gitmek için bu düğmeye tıklayın.",
     "bbs.ui.graph.tooltip": "Grafik hesaplayıcı",
-    "bbs.ui.importer.ffmpeg-notification": "FFMEPG düzgün ayarlanmamış gibi görünüyor... \"Video Ayarları\"ndan \"Kodlayıcı Yolu\" seçeneğini kontrol edin!",
+    "bbs.ui.importer.ffmpeg-notification": "FFMPEG düzgün ayarlanmamış gibi görünüyor... \"Video Ayarları\"ndan \"Kodlayıcı Yolu\" seçeneğini kontrol edin!",
     "bbs.ui.importer.gif": "GIF'ten PNG'ye Dizi",
     "bbs.ui.importer.jpeg": "JPEG'den to PNG'ye",
     "bbs.ui.importer.mpeg": "MP4/MP3'ten to WAV'a",

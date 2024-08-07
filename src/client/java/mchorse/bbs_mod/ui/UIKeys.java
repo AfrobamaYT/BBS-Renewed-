@@ -366,7 +366,7 @@ public class UIKeys
     public static final IKey KEYFRAMES_CONTEXT_MAXIMIZE = L10n.lang("bbs.ui.keyframes.context.maximize");
     public static final IKey KEYFRAMES_CONTEXT_PASTE = L10n.lang("bbs.ui.keyframes.context.paste");
     public static final IKey KEYFRAMES_CONTEXT_REMOVE = L10n.lang("bbs.ui.keyframes.context.remove");
-    public static final IKey KEYFRAMES_CONTEXT_SELECT_ALL = L10n.lang("bbs.ui.keyframes.context.sel ect_all");
+    public static final IKey KEYFRAMES_CONTEXT_SELECT_ALL = L10n.lang("bbs.ui.keyframes.context.select_all");
     public static final IKey KEYFRAMES_CONTEXT_SIMPLIFY = L10n.lang("bbs.ui.keyframes.context.simplify");
     public static final IKey KEYFRAMES_FORCED_DURATION = L10n.lang("bbs.ui.keyframes.forced_duration");
     public static final IKey KEYFRAMES_KEYS_CATEGORY = L10n.lang("bbs.ui.keyframes.keys.category");
@@ -678,7 +678,8 @@ public class UIKeys
     /* Key collections */
     public static final KeyCollection C_CLIP = new KeyCollection("bbs.ui.camera.clips.^")
         .load(BBSMod.getFactoryCameraClips().getStringKeys())
-        .load(BBSMod.getFactoryScreenplayClips().getStringKeys());
+        .load(BBSMod.getFactoryScreenplayClips().getStringKeys())
+        .load(BBSMod.getFactoryActionClips().getStringKeys());
 
     public static final KeyCollection C_CURVE_TYPE = new KeyCollection("bbs.ui.snowstorm.curves.types.^")
         .load(EnumUtils.getKeys(ParticleCurveType.class, (c) -> c.id));
