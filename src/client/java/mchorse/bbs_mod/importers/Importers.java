@@ -5,6 +5,8 @@ import mchorse.bbs_mod.importers.types.IImporter;
 import mchorse.bbs_mod.importers.types.JPEGImporter;
 import mchorse.bbs_mod.importers.types.MPEGImporter;
 import mchorse.bbs_mod.importers.types.OldSkinImporter;
+import mchorse.bbs_mod.importers.types.PNGImporter;
+import mchorse.bbs_mod.importers.types.WAVImporter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +22,8 @@ import java.util.List;
  * - PNG 1.7 skin to PNG 1.8 skin
  * - Models (as folders, as multiple files, etc.)
  * - Jpeg to PNG
+ * - PNG copy
+ * - WAV to WAV mono
  */
 public class Importers
 {
@@ -31,6 +35,8 @@ public class Importers
         importers.add(new MPEGImporter());
         importers.add(new GIFImporter());
         importers.add(new OldSkinImporter());
+        importers.add(new PNGImporter());
+        importers.add(new WAVImporter());
     }
 
     public static List<IImporter> getImporters()
