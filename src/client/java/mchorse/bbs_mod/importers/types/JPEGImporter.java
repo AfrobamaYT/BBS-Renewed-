@@ -29,8 +29,9 @@ public class JPEGImporter implements IImporter
         for (File file : context.files)
         {
             String name = StringUtils.removeExtension(file.getName()) + ".png";
+            File destination = context.getDestination(this);
 
-            FFMpegUtils.execute(context.destination, "-y", "-i", file.getAbsolutePath(), ImporterUtils.getName(context.destination, name));
+            FFMpegUtils.execute(destination, "-y", "-i", file.getAbsolutePath(), ImporterUtils.getName(destination, name));
         }
     }
 }

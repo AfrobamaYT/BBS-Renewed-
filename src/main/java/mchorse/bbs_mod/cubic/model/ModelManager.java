@@ -133,12 +133,8 @@ public class ModelManager implements IWatchDogListener
         return null;
     }
 
-    public void delete()
-    {}
-
     public void reload()
     {
-        this.delete();
         this.models.clear();
     }
 

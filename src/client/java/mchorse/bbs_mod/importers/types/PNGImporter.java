@@ -30,7 +30,9 @@ public class PNGImporter implements IImporter
         {
             try
             {
-                Files.copy(file, new File(context.destination, file.getName()));
+                File destination = context.getDestination(this);
+
+                Files.copy(file, new File(destination, file.getName()));
             }
             catch (IOException e)
             {

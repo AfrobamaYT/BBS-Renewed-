@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.importers.types;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.importers.ImporterContext;
 import mchorse.bbs_mod.importers.ImporterUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -17,6 +18,12 @@ public class WAVImporter implements IImporter
     }
 
     @Override
+    public File getDefaultFolder()
+    {
+        return BBSMod.getAssetsPath("audio");
+    }
+
+    @Override
     public boolean canImport(ImporterContext context)
     {
         return ImporterUtils.checkFileEtension(context.files, ".wav");
@@ -28,9 +35,10 @@ public class WAVImporter implements IImporter
         for (File file : context.files)
         {
             String name = file.getName();
+            File destination = context.getDestination(this);
 
             /* Force the audio to be mono */
-            FFMpegUtils.execute(context.destination, "-y", "-i", file.getAbsolutePath(), "-ac", "1", ImporterUtils.getName(context.destination, name));
+            FFMpegUtils.execute(destination, "-y", "-i", file.getAbsolutePath(), "-ac", "1", ImporterUtils.getName(destination, name));
         }
     }
 }

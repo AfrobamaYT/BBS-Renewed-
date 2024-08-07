@@ -93,7 +93,9 @@ public class OldSkinImporter implements IImporter
         {
             try
             {
-                convertSkin(file, new File(context.destination, ImporterUtils.getName(context.destination, file.getName())));
+                File destination = context.getDestination(this);
+
+                convertSkin(file, new File(destination, ImporterUtils.getName(destination, file.getName())));
             }
             catch (Exception e)
             {

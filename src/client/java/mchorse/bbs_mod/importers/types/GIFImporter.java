@@ -29,8 +29,9 @@ public class GIFImporter implements IImporter
         for (File file : context.files)
         {
             String name = StringUtils.removeExtension(file.getName()) + "_%d.png";
+            File destination = context.getDestination(this);
 
-            FFMpegUtils.execute(context.destination, "-y", "-i", file.getAbsolutePath(), ImporterUtils.getName(context.destination, name));
+            FFMpegUtils.execute(destination, "-y", "-i", file.getAbsolutePath(), ImporterUtils.getName(destination, name));
         }
     }
 }

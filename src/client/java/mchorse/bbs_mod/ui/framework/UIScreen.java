@@ -227,11 +227,6 @@ public class UIScreen extends Screen implements IFileDropListener
                 }
             }
 
-            if (directory == null)
-            {
-                directory = BBSMod.getAssetsFolder();
-            }
-
             List<File> files = new ArrayList<>();
 
             for (String path : paths)
@@ -254,7 +249,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
                     if (open)
                     {
-                        UIUtils.openFolder(context.destination);
+                        UIUtils.openFolder(context.getDestination(importer));
                     }
 
                     this.menu.context.notify(UIKeys.IMPORTER_SUCCESS_NOTIFICATION.format(importer.getName()), Colors.mulRGB(Colors.GREEN, 0.75F));
