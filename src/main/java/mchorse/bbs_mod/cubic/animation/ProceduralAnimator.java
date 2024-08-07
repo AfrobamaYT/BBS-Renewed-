@@ -139,6 +139,8 @@ public class ProceduralAnimator implements IAnimator
             else if (group.id.equals("right_arm"))
             {
                 group.current.rotate.x += MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F) * 2.0F * limbSpeed * 0.5F / coefficient);
+                group.current.rotate.z += MathUtils.toDeg(1F * (MathHelper.cos(-age * 0.09F) * 0.05F + 0.05F));
+                group.current.rotate.x += MathUtils.toDeg(1F * MathHelper.sin(-age * 0.067F) * 0.05F);
 
                 if (!main.isEmpty())
                 {
@@ -150,6 +152,8 @@ public class ProceduralAnimator implements IAnimator
             else if (group.id.equals("left_arm"))
             {
                 group.current.rotate.x += MathUtils.toDeg(MathHelper.cos(limbPhase * 0.6662F + 3.1415927F) * 2.0F * limbSpeed * 0.5F / coefficient);
+                group.current.rotate.z += MathUtils.toDeg(-1F * (MathHelper.cos(-age * 0.09F) * 0.05F + 0.05F));
+                group.current.rotate.x += MathUtils.toDeg(-1F * MathHelper.sin(-age * 0.067F) * 0.05F);
 
                 if (!offhand.isEmpty())
                 {
