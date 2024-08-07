@@ -14,7 +14,7 @@ public class PNGImporter implements IImporter
     @Override
     public IKey getName()
     {
-        return UIKeys.IMPORTER_GIF;
+        return UIKeys.IMPORTER_PNG;
     }
 
     @Override

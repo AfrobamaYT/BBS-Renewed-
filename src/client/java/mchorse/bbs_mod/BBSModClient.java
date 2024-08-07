@@ -365,8 +365,8 @@ public class BBSModClient implements ClientModInitializer
             e.printStackTrace();
         }
 
-        File steve = BBSMod.getAssetsPath("models/players/steve");
-        File alex = BBSMod.getAssetsPath("models/players/alex");
+        File steve = BBSMod.getAssetsPath("models/player/steve");
+        File alex = BBSMod.getAssetsPath("models/player/alex");
         boolean steveExists = steve.exists();
         boolean alexExists = alex.exists();
 
