@@ -1,8 +1,13 @@
 {
-    "block.bbs.model": "模型方块",
+    "block.bbs.model": "模型方塊",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.dashboard": "仪表盘",
     "key.bbs.block_editor": "模型方塊編輯器",
+    "key.bbs.dashboard": "儀表盤",
+    "key.bbs.demorph": "取消偽裝",
+    "key.bbs.open_replays": "打開當前回放列表",
+    "key.bbs.play_film": "播放影片",
+    "key.bbs.record_replay": "錄製當前回放",
+    "key.bbs.record_video": "錄製視頻",
     "category.bbs.main": "BBS mod"
 }
