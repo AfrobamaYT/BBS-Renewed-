@@ -36,6 +36,7 @@ public abstract class UITransform extends UIElement
     protected boolean vertical;
 
     private boolean renderLabels = true;
+    private boolean uniformDrag;
 
     public UITransform()
     {
@@ -137,6 +138,11 @@ public abstract class UITransform extends UIElement
         this.wh(190, 70);
     }
 
+    protected boolean isUniformScale()
+    {
+        return this.uniformDrag || Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
+    }
+
     public UITransform noLabels()
     {
         this.renderLabels = false;
@@ -199,7 +205,7 @@ public abstract class UITransform extends UIElement
 
     private void syncScale(double value)
     {
-        if (Window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
+        if (this.isUniformScale())
         {
             this.fillS(value, value, value);
             this.internalSetS(value, value, value);
@@ -394,6 +400,33 @@ public abstract class UITransform extends UIElement
         this.fillSetS(1, 1, 1);
         this.fillSetR(0, 0, 0);
         this.fillSetR2(0, 0, 0);
+    }
+
+    @Override
+    protected boolean subMouseClicked(UIContext context)
+    {
+        if (this.sx.area.isInside(context) || this.sy.area.isInside(context) || this.sz.area.isInside(context))
+        {
+            if (context.mouseButton == 1 && (this.sx.isDragging() || this.sy.isDragging() || this.sz.isDragging()))
+            {
+                this.uniformDrag = true;
+
+                return true;
+            }
+        }
+
+        return super.subMouseClicked(context);
+    }
+
+    @Override
+    protected boolean subMouseReleased(UIContext context)
+    {
+        if (context.mouseButton == 1)
+        {
+            this.uniformDrag = false;
+        }
+
+        return super.subMouseReleased(context);
     }
 
     @Override
