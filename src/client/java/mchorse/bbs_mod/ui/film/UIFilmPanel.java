@@ -708,7 +708,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             max = Math.min(max, this.data.camera.calculateDuration());
 
-            if (min >= 0 && max >= 0 && min < max && (this.runner.ticks >= max - 1 || this.runner.ticks < min))
+            if (!this.recorder.isRecording() && min >= 0 && max >= 0 && min < max && (this.runner.ticks >= max - 1 || this.runner.ticks < min))
             {
                 this.setCursor((int) min);
             }

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -65,7 +66,11 @@ public class UIFilmRecorder extends UIElement
             return;
         }
 
-        this.end = duration;
+        int min = this.editor.cameraEditor.clips.loopMin;
+        int max = this.editor.cameraEditor.clips.loopMax;
+        boolean looping = BBSSettings.editorLoop.get();
+
+        this.end = looping ? Math.max(min, max) : duration;
 
         try
         {
@@ -78,9 +83,9 @@ public class UIFilmRecorder extends UIElement
             return;
         }
 
+        this.editor.setCursor(looping ? Math.min(min, max) : 0);
         this.editor.notifyServer(ActionState.RESTART);
         this.editor.getController().createEntities();
-        this.editor.setCursor(0);
         this.editor.togglePlayback();
         context.menu.main.setEnabled(false);
         context.menu.overlay.add(this);
