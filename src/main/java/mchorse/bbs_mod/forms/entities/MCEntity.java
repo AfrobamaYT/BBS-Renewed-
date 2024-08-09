@@ -74,7 +74,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof LivingEntity living)
         {
-            living.equipStack(slot, stack);
+            living.equipStack(slot, stack == null ? ItemStack.EMPTY : stack);
         }
     }
 

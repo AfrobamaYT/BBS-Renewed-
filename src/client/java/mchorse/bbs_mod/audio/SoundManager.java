@@ -70,6 +70,8 @@ public class SoundManager implements IWatchDogListener
         }
         catch (Exception e)
         {
+            this.buffers.put(link, null);
+
             e.printStackTrace();
         }
 
@@ -145,7 +147,7 @@ public class SoundManager implements IWatchDogListener
 
         SoundBuffer player = this.buffers.get(link);
 
-        if (includeWaveform && player.getWaveform() == null)
+        if (player != null && includeWaveform && player.getWaveform() == null)
         {
             player.delete();
 

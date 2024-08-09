@@ -16,6 +16,8 @@ public class AudioReader
             return null;
         }
 
+        /* System.out.println("Reading: " + link); */
+
         try (InputStream asset = provider.getAsset(link))
         {
             if (link.path.endsWith(".wav"))

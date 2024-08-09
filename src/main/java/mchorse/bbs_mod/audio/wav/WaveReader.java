@@ -50,6 +50,8 @@ public class WaveReader extends BinaryReader
                 {
                     BinaryChunk chunk = this.readChunk(stream);
 
+                    this.log("Reading chunk: " + chunk.id + " " + chunk.size + " " + stream.available());
+
                     if (chunk.id.equals("fmt "))
                     {
                         audioFormat = this.readShort(stream);
@@ -78,23 +80,30 @@ public class WaveReader extends BinaryReader
                         byte[] listData = new byte[chunk.size];
                         stream.read(listData);
 
-                        ByteArrayInputStream bytes = new ByteArrayInputStream(listData);
-                        WaveList list = new WaveList(this.readFourString(bytes));
-
-                        while (bytes.available() > 0)
+                        try
                         {
-                            String id = this.readFourString(bytes);
-                            int size = this.readInt(bytes);
-                            byte[] stringData = new byte[size];
+                            ByteArrayInputStream bytes = new ByteArrayInputStream(listData);
+                            WaveList list = new WaveList(this.readFourString(bytes));
 
-                            bytes.read(stringData);
+                            while (bytes.available() > 0)
+                            {
+                                String id = this.readFourString(bytes);
+                                int size = this.readInt(bytes);
+                                byte[] stringData = new byte[size];
 
-                            String string = new String(stringData);
+                                bytes.read(stringData);
 
-                            list.entries.add(new Pair<>(id, string));
+                                String string = new String(stringData);
+
+                                list.entries.add(new Pair<>(id, string));
+                            }
+
+                            lists.add(list);
                         }
-
-                        lists.add(list);
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
                     /* https://www.recordingblogs.com/wiki/cue-chunk-of-a-wave-file */
                     else if (chunk.id.equals("cue "))
@@ -128,6 +137,8 @@ public class WaveReader extends BinaryReader
                 }
                 catch (EOFException e)
                 {
+                    e.printStackTrace();
+
                     break;
                 }
             }
@@ -152,10 +163,22 @@ public class WaveReader extends BinaryReader
         return null;
     }
 
+    private void log(String s)
+    {
+        // System.out.println(s);
+    }
+
     public BinaryChunk readChunk(InputStream stream) throws Exception
     {
+        this.log("- Starting reading chunk..." + stream.available());
+
         String id = this.readFourString(stream);
+
+        this.log("- Read chunk ID... " + id + " " + stream.available());
+
         int size = this.readInt(stream);
+
+        this.log("- Read chunk size... " + size + " " + stream.available());
 
         return new BinaryChunk(id, size);
     }
