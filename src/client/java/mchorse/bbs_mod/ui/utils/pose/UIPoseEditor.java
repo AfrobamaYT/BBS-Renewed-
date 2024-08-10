@@ -44,6 +44,7 @@ public class UIPoseEditor extends UIElement
                 this.setFix(poseTransform, v.floatValue());
             }
         });
+        this.fix.limit(0D, 1D).increment(0.1D).values(0.1, 0.05D, 0.2D);
         this.fix.tooltip(UIKeys.POSE_CONTEXT_FIX_TOOLTIP);
         this.transform = this.createTransformEditor();
         this.transform.verticalCompact();

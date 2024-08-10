@@ -29,6 +29,16 @@ public class KeyboardMixin
             return;
         }
 
+        for (Form form : BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).getForms())
+        {
+            if (form.hotkey.get() == key)
+            {
+                ClientNetwork.sendPlayerForm(form);
+
+                return;
+            }
+        }
+
         for (UserFormCategory category : BBSModClient.getFormCategories().getUserForms().categories)
         {
             for (Form form : category.getForms())
