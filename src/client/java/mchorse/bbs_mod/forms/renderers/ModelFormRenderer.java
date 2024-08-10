@@ -65,6 +65,32 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private IEntity entity = new StubEntity();
 
+    @Override
+    protected void applyTransforms(MatrixStack stack, float transition)
+    {
+        super.applyTransforms(stack, transition);
+
+        CubicModel model = this.getModel();
+
+        if (model != null)
+        {
+            stack.scale(model.scale.x, model.scale.y, model.scale.z);
+        }
+    }
+
+    @Override
+    protected void applyTransforms(Matrix4f matrix, float transition)
+    {
+        super.applyTransforms(matrix, transition);
+
+        CubicModel model = this.getModel();
+
+        if (model != null)
+        {
+            matrix.scale(model.scale.x, model.scale.y, model.scale.z);
+        }
+    }
+
     public static Matrix4f getUIMatrix(UIContext context, int x1, int y1, int x2, int y2)
     {
         float scale = (y2 - y1) / 2.5F;
@@ -163,7 +189,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             Matrix4f uiMatrix = getUIMatrix(context, x1, y1, x2, y2);
 
-            uiMatrix.mul(this.form.transform.get(context.getTransition()).createMatrix());
+            this.applyTransforms(uiMatrix, context.getTransition());
 
             Link link = this.form.texture.get(context.getTransition());
             Link texture = link == null ? model.texture : link;
@@ -227,8 +253,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             newStack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
             newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
-
-        newStack.scale(model.scale.x, model.scale.y, model.scale.z);
 
         CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
         newStack.pop();
@@ -335,8 +359,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         MatrixStack stack = new MatrixStack();
         CubicMatrixRenderer renderer = new CubicMatrixRenderer(model.model);
 
-        stack.scale(model.scale.x, model.scale.y, model.scale.z);
-
         CubicRenderer.processRenderModel(renderer, null, stack, model.model);
 
         List<Matrix4f> matrices = renderer.matrices;
@@ -362,11 +384,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         context.stack.push();
 
-        if (model != null)
-        {
-            context.stack.scale(model.scale.x, model.scale.y, model.scale.z);
-        }
-
         for (BodyPart part : this.form.parts.getAll())
         {
             Matrix4f matrix = this.bones.get(part.bone);
@@ -382,7 +399,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
             }
 
-            renderBodyPart(part, context);
+            this.renderBodyPart(part, context);
 
             context.stack.pop();
         }
@@ -397,12 +414,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         CubicModel model = this.getModel();
 
         stack.push();
-        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
-
-        if (model != null)
-        {
-            stack.scale(model.scale.x, model.scale.y, model.scale.z);
-        }
+        this.applyTransforms(stack, transition);
 
         matrices.put(prefix, new Matrix4f(stack.peek().getPositionMatrix()));
 

@@ -25,25 +25,6 @@ public abstract class FormRenderer <T extends Form>
 {
     protected T form;
 
-    public static void renderBodyPart(BodyPart part, FormRenderingContext context)
-    {
-        IEntity oldEntity = context.entity;
-
-        context.entity = part.useTarget ? oldEntity : part.getEntity();
-
-        if (part.getForm() != null)
-        {
-            context.stack.push();
-            MatrixStackUtils.applyTransform(context.stack, part.getTransform());
-
-            FormUtilsClient.render(part.getForm(), context);
-
-            context.stack.pop();
-        }
-
-        context.entity = oldEntity;
-    }
-
     public FormRenderer(T form)
     {
         this.form = form;
@@ -103,7 +84,7 @@ public abstract class FormRenderer <T extends Form>
         boolean isPicking = context.stencilMap != null;
 
         context.stack.push();
-        MatrixStackUtils.applyTransform(context.stack, this.form.transform.get(context.getTransition()));
+        this.applyTransforms(context.stack, context.getTransition());
 
         if (!this.form.lighting.get(context.getTransition()))
         {
@@ -122,6 +103,16 @@ public abstract class FormRenderer <T extends Form>
         context.stack.pop();
 
         context.light = light;
+    }
+
+    protected void applyTransforms(MatrixStack stack, float transition)
+    {
+        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
+    }
+
+    protected void applyTransforms(Matrix4f matrix, float transition)
+    {
+        matrix.mul(this.form.transform.get(transition).createMatrix());
     }
 
     protected Supplier<ShaderProgram> getShader(FormRenderingContext context, Supplier<ShaderProgram> normal, Supplier<ShaderProgram> picking)
@@ -170,14 +161,33 @@ public abstract class FormRenderer <T extends Form>
     {
         for (BodyPart part : this.form.parts.getAll())
         {
-            renderBodyPart(part, context);
+            this.renderBodyPart(part, context);
         }
+    }
+
+    protected void renderBodyPart(BodyPart part, FormRenderingContext context)
+    {
+        IEntity oldEntity = context.entity;
+
+        context.entity = part.useTarget ? oldEntity : part.getEntity();
+
+        if (part.getForm() != null)
+        {
+            context.stack.push();
+            MatrixStackUtils.applyTransform(context.stack, part.getTransform());
+
+            FormUtilsClient.render(part.getForm(), context);
+
+            context.stack.pop();
+        }
+
+        context.entity = oldEntity;
     }
 
     public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
         stack.push();
-        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
+        this.applyTransforms(stack, transition);
 
         matrices.put(prefix, new Matrix4f(stack.peek().getPositionMatrix()));
 
