@@ -82,8 +82,8 @@ public class Animator implements IAnimator
         this.shoot = this.createAction(this.shoot, actions.getConfig("shoot"), true);
         this.consume = this.createAction(this.consume, actions.getConfig("consume"), true);
 
-        this.basePre = this.createAction(this.consume, actions.getConfig("base_pre"), true);
-        this.basePost = this.createAction(this.consume, actions.getConfig("base_post"), true);
+        this.basePre = this.createAction(this.basePre, actions.getConfig("base_pre"), true);
+        this.basePost = this.createAction(this.basePost, actions.getConfig("base_post"), true);
 
         if (!fade)
         {
