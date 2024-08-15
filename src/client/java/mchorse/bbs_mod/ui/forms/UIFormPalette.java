@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.forms;
 
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -68,6 +69,14 @@ public class UIFormPalette extends UIElement implements IUIFormList
         this.add(this.list, this.editor);
 
         this.eventPropagataion(EventPropagation.BLOCK_INSIDE).markContainer();
+
+        this.keys().register(Keys.FORMS_EDIT, () ->
+        {
+            if (!this.editor.isEditing())
+            {
+                this.toggleEditor();
+            }
+        });
     }
 
     public void cantExit()

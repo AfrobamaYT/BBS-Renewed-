@@ -106,6 +106,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
             this.scrollView.setVisible(false);
         });
+        this.pickEdit.keybinds();
 
         this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) -> this.modelBlock.getProperties().setGlobal(b.getValue()));
