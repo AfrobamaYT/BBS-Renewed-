@@ -45,6 +45,11 @@ public class UIFormCategory extends UIElement
         {
             UserFormSection userForms = BBSModClient.getFormCategories().getUserForms();
 
+            menu.action(Icons.EDIT, UIKeys.GENERAL_EDIT, () ->
+            {
+                this.list.palette.toggleEditor();
+            });
+
             menu.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_ADD_CATEGORY, () ->
             {
                 UIOverlay.addOverlay(this.getContext(), new UIPromptOverlayPanel(
