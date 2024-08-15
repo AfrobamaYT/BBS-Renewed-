@@ -177,6 +177,7 @@
     "bbs.ui.camera.editor.keys.looping.set_max": "Установить конец позиции зацикливания",
     "bbs.ui.camera.editor.keys.looping.set_min": "Установить начало позиции зацикливания",
     "bbs.ui.camera.editor.keys.looping.title": "Зацикливание",
+    "bbs.ui.camera.editor.keys.looping.toggle-notification": "Зацикливание было переключено!",
     "bbs.ui.camera.editor.keys.modes.flight": "Переключить режим полёта",
     "bbs.ui.camera.editor.keys.modes.looping": "Переключить проигрывание зацикливания",
     "bbs.ui.camera.editor.keys.modes.title": "Режимы",

@@ -228,7 +228,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.UNDO, this::undo).category(editor);
         this.keys().register(Keys.REDO, this::redo).category(editor);
         this.keys().register(Keys.FLIGHT, this::toggleFlight).active(() -> this.data != null).category(modes);
-        this.keys().register(Keys.LOOPING, () -> BBSSettings.editorLoop.set(!BBSSettings.editorLoop.get())).active(active).category(looping);
+        this.keys().register(Keys.LOOPING, () ->
+        {
+            BBSSettings.editorLoop.set(!BBSSettings.editorLoop.get());
+            this.getContext().notify(UIKeys.CAMERA_EDITOR_KEYS_LOOPING_TOGGLE_NOTIFICATION, Colors.ACTIVE);
+        }).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MIN, () -> this.cameraEditor.clips.setLoopMin()).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MAX, () -> this.cameraEditor.clips.setLoopMax()).active(active).category(looping);
         this.keys().register(Keys.JUMP_FORWARD, () -> this.setCursor(this.getCursor() + BBSSettings.editorJump.get())).active(active).category(editor);

@@ -177,6 +177,7 @@
     "bbs.ui.camera.editor.keys.looping.set_max": "Set end (Out) looping position",
     "bbs.ui.camera.editor.keys.looping.set_min": "Set start (In) looping position",
     "bbs.ui.camera.editor.keys.looping.title": "Looping",
+    "bbs.ui.camera.editor.keys.looping.toggle-notification": "Looping was toggled!",
     "bbs.ui.camera.editor.keys.modes.flight": "Toggle flight mode",
     "bbs.ui.camera.editor.keys.modes.looping": "Toggle playback looping",
     "bbs.ui.camera.editor.keys.modes.title": "Modes",

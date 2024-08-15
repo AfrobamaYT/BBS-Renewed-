@@ -51,6 +51,7 @@ public class UIKeys
     public static final IKey CAMERA_EDITOR_KEYS_LOOPING_SET_MAX = L10n.lang("bbs.ui.camera.editor.keys.looping.set_max");
     public static final IKey CAMERA_EDITOR_KEYS_LOOPING_SET_MIN = L10n.lang("bbs.ui.camera.editor.keys.looping.set_min");
     public static final IKey CAMERA_EDITOR_KEYS_LOOPING_TITLE = L10n.lang("bbs.ui.camera.editor.keys.looping.title");
+    public static final IKey CAMERA_EDITOR_KEYS_LOOPING_TOGGLE_NOTIFICATION = L10n.lang("bbs.ui.camera.editor.keys.looping.toggle-notification");
     public static final IKey CAMERA_EDITOR_KEYS_MODES_FLIGHT = L10n.lang("bbs.ui.camera.editor.keys.modes.flight");
     public static final IKey CAMERA_EDITOR_KEYS_MODES_LOOPING = L10n.lang("bbs.ui.camera.editor.keys.modes.looping");
     public static final IKey CAMERA_EDITOR_KEYS_MODES_TITLE = L10n.lang("bbs.ui.camera.editor.keys.modes.title");

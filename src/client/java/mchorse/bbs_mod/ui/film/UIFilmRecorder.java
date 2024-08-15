@@ -70,7 +70,7 @@ public class UIFilmRecorder extends UIElement
         int max = this.editor.cameraEditor.clips.loopMax;
         boolean looping = BBSSettings.editorLoop.get();
 
-        this.end = looping ? Math.max(min, max) : duration;
+        this.end = looping && min != max ? Math.max(min, max) : duration;
 
         try
         {
