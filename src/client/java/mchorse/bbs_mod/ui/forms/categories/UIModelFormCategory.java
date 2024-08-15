@@ -32,13 +32,6 @@ public class UIModelFormCategory extends UIFormCategory
                 return;
             }
 
-            menu.action(Icons.FOLDER, UIKeys.FORMS_CATEGORIES_CONTEXT_OPEN_MODEL_FOLDER, () ->
-            {
-                ModelForm form = (ModelForm) this.selected;
-
-                UIUtils.openFolder(BBSMod.getAssetsPath("models/" + form.model.get() + "/"));
-            });
-
             menu.action(Icons.UPLOAD, UIKeys.FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL, () ->
             {
                 ModelForm modelForm = (ModelForm) this.selected;

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.categories;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -7,6 +8,7 @@ import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.categories.UserFormCategory;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.sections.UserFormSection;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -16,6 +18,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
+import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 
@@ -49,6 +52,16 @@ public class UIFormCategory extends UIElement
             {
                 this.list.palette.toggleEditor();
             });
+
+            if (this.selected instanceof ModelForm)
+            {
+                menu.action(Icons.FOLDER, UIKeys.FORMS_CATEGORIES_CONTEXT_OPEN_MODEL_FOLDER, () ->
+                {
+                    ModelForm form = (ModelForm) this.selected;
+
+                    UIUtils.openFolder(BBSMod.getAssetsPath("models/" + form.model.get() + "/"));
+                });
+            }
 
             menu.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_ADD_CATEGORY, () ->
             {
