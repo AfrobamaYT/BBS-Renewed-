@@ -74,9 +74,20 @@ public class UITextureEditor extends UIPixelsEditor
             this::saveTexture
         );
 
-        panel.text.setText(this.texture.toString());
+        String text = this.texture.toString();
+        int index = text.lastIndexOf('.');
+
+        panel.text.setText(text);
 
         UIOverlay.addOverlay(this.getContext(), panel);
+
+        if (index >= 0)
+        {
+            int path = text.lastIndexOf('/');
+
+            panel.text.textbox.moveCursorTo(index);
+            panel.text.textbox.setSelection(path >= 0 ? path + 1 : 0);
+        }
     }
 
     private void saveTexture(String path)
