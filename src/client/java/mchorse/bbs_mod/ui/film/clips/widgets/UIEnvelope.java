@@ -78,6 +78,7 @@ public class UIEnvelope extends UIElement
         {
             this.panel.editor.embedView(this.channel);
             this.channel.view.resetView();
+            this.channel.view.editSheet(this.channel.view.getGraph().getSheets().get(0));
         });
         this.channel = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.panel.editor, consumer));
         this.channel.view.backgroundRenderer((context) ->

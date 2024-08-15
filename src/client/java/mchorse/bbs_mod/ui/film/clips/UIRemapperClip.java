@@ -36,6 +36,7 @@ public class UIRemapperClip extends UIClip<RemapperClip>
         {
             this.editor.embedView(this.keyframes);
             this.keyframes.view.resetView();
+            this.keyframes.view.editSheet(this.keyframes.view.getGraph().getSheets().get(0));
         });
     }
 
