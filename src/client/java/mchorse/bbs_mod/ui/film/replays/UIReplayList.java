@@ -15,9 +15,8 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
 import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.RayTracing;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.RayTracing;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -51,12 +50,6 @@ public class UIReplayList extends UIList<Replay>
             {
                 menu.action(Icons.DUPE, UIKeys.SCENE_REPLAYS_CONTEXT_DUPE, this::dupeReplay);
                 menu.action(Icons.REMOVE, UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE, this::removeReplay);
-
-                if (this.isSelected())
-                {
-                    menu.action(Icons.POSE, UIKeys.SCENE_REPLAYS_CONTEXT_PICK_FORM, () -> this.openFormEditor(this.getCurrentFirst().form, false));
-                    menu.action(Icons.EDIT, UIKeys.SCENE_REPLAYS_CONTEXT_EDIT_FORM, () -> this.openFormEditor(this.getCurrentFirst().form, true));
-                }
             }
         });
 
@@ -64,15 +57,15 @@ public class UIReplayList extends UIList<Replay>
 
         this.keys().register(Keys.FORMS_PICK, () ->
         {
-            this.openFormEditor(this.getCurrentFirst().form, false);
+            this.openFormEditor(this.getCurrentFirst().form, false, null);
         }).active(active);
         this.keys().register(Keys.FORMS_EDIT, () ->
         {
-            this.openFormEditor(this.getCurrentFirst().form, true);
+            this.openFormEditor(this.getCurrentFirst().form, true, null);
         }).active(active);
     }
 
-    private void openFormEditor(ValueForm form, boolean editing)
+    public void openFormEditor(ValueForm form, boolean editing, Consumer<Form> consumer)
     {
         UIElement target = this.panel;
 
@@ -85,6 +78,11 @@ public class UIReplayList extends UIList<Replay>
         {
             form.set(f);
             this.updateFilmEditor();
+
+            if (consumer != null)
+            {
+                consumer.accept(f);
+            }
         });
 
         palette.updatable();
@@ -125,7 +123,7 @@ public class UIReplayList extends UIList<Replay>
         this.panel.replayEditor.setReplay(replay);
         this.updateFilmEditor();
 
-        this.openFormEditor(replay.form, false);
+        this.openFormEditor(replay.form, false, null);
     }
 
     private void updateFilmEditor()
