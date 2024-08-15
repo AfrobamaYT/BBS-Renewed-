@@ -21,10 +21,12 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.events.UIRemovedEvent;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
+import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.model_blocks.camera.ImmersiveModelBlockCameraController;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.RayTracing;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -134,6 +136,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         }).active(() -> this.modelBlock != null);
 
         this.add(this.scrollView);
+    }
+
+    @Override
+    public boolean supportsRollFOVControl()
+    {
+        return false;
     }
 
     public ModelBlockEntity getModelBlock()
@@ -278,6 +286,19 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     protected boolean subKeyPressed(UIContext context)
     {
         return super.subKeyPressed(context);
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        String label = UIKeys.FILM_CONTROLLER_SPEED.format(this.dashboard.orbit.speed.getValue()).get();
+        FontRenderer font = context.batcher.getFont();
+        int w = font.getWidth(label);
+        int x = this.area.w - w - 5;
+        int y = this.area.ey() - font.getHeight() - 5;
+
+        context.batcher.textCard(label, x, y, Colors.WHITE, Colors.A50);
+        super.render(context);
     }
 
     @Override

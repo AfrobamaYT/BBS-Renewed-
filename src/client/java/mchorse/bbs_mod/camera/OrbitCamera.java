@@ -49,6 +49,13 @@ public class OrbitCamera
     protected Vector3i velocityPosition = new Vector3i();
     protected Vector4i velocityAngle = new Vector4i();
 
+    protected boolean fovRoll = true;
+
+    public void setFovRoll(boolean fovRoll)
+    {
+        this.fovRoll = fovRoll;
+    }
+
     public void reset()
     {
         this.velocityPosition.set(0);
@@ -79,14 +86,17 @@ public class OrbitCamera
             return 0;
         }
 
-        if (context.mouseButton == 1)
+        if (this.fovRoll)
         {
-            return 1;
-        }
+            if (context.mouseButton == 1)
+            {
+                return 1;
+            }
 
-        if (context.mouseButton == 2)
-        {
-            return 2;
+            if (context.mouseButton == 2)
+            {
+                return 2;
+            }
         }
 
         return -1;
@@ -210,33 +220,36 @@ public class OrbitCamera
 
             return true;
         }
-        else if (this.dragging == 1)
+        else if (this.fovRoll)
         {
-            int x = mouseX - this.lastX;
-
-            if (x != 0)
+            if (this.dragging == 1)
             {
-                this.rotation.z += x * angleFactor;
+                int x = mouseX - this.lastX;
 
-                this.lastX = mouseX;
-                this.lastY = mouseY;
+                if (x != 0)
+                {
+                    this.rotation.z += x * angleFactor;
+
+                    this.lastX = mouseX;
+                    this.lastY = mouseY;
+                }
+
+                return true;
             }
-
-            return true;
-        }
-        else if (this.dragging == 2)
-        {
-            int y = mouseY - this.lastY;
-
-            if (y != 0)
+            else if (this.dragging == 2)
             {
-                this.fov += y * angleFactor;
+                int y = mouseY - this.lastY;
 
-                this.lastX = mouseX;
-                this.lastY = mouseY;
+                if (y != 0)
+                {
+                    this.fov += y * angleFactor;
+
+                    this.lastX = mouseX;
+                    this.lastY = mouseY;
+                }
+
+                return true;
             }
-
-            return true;
         }
 
         return false;

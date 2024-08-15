@@ -12,6 +12,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.ui.UISettingsOverlayPanel;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.dashboard.textures.UITextureManagerPanel;
@@ -74,6 +75,12 @@ public class UIDashboard extends UIBaseMenu
         this.panels.getEvents().register(UIDashboardPanels.PanelEvent.class, (e) ->
         {
             this.orbitUI.setControl(this.panels.isFlightSupported());
+
+            if (this.panels.panel instanceof IFlightSupported panel)
+            {
+                this.orbit.setFovRoll(panel.supportsRollFOVControl());
+            }
+
             this.copyCurrentEntityCamera();
         });
         this.panels.full(this.viewport);
