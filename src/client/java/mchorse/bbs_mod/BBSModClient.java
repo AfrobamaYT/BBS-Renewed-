@@ -360,9 +360,7 @@ public class BBSModClient implements ClientModInitializer
             isForge = true;
         }
         catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        {}
 
         BBSMod.getAudioFolder().mkdirs();
 
