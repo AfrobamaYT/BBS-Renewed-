@@ -140,9 +140,11 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     private void renderQuad(Texture texture, FormRenderingContext context)
     {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        Color color = this.form.color.get(context.getTransition());
+        Color color = this.form.color.get(context.getTransition()).copy();
         Matrix4f matrix = context.stack.peek().getPositionMatrix();
         Matrix3f normal = context.stack.peek().getNormalMatrix();
+
+        color.mul(context.color);
 
         if (this.form.billboard.get(context.getTransition()))
         {

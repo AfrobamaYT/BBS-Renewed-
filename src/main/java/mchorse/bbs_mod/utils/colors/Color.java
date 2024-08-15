@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.utils.colors;
 
-import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.StringUtils;
 
 public class Color
 {
@@ -143,6 +143,16 @@ public class Color
         }
 
         return "#" + StringUtils.leftPad(Integer.toHexString(this.getRGBColor()), 6, "0");
+    }
+
+    public void mul(int color)
+    {
+        Color newColor = new Color().set(color, true);
+
+        this.r *= newColor.r;
+        this.g *= newColor.g;
+        this.b *= newColor.b;
+        this.a *= newColor.a;
     }
 
     @Override

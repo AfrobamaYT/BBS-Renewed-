@@ -5,7 +5,6 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.LabelForm;
-import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -115,8 +114,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         int x = (int) (-w * this.form.anchorX.get(transition));
         int y = (int) (-h * this.form.anchorY.get(transition));
 
-        Color shadowColor = this.form.shadowColor.get(transition);
-        Color color = this.form.color.get(transition);
+        Color shadowColor = this.form.shadowColor.get(transition).copy();
+        Color color = this.form.color.get(transition).copy();
+
+        color.mul(context.color);
+        shadowColor.mul(context.color);
 
         if (shadowColor.a > 0)
         {
@@ -182,7 +184,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         int y = (int) (-h * this.form.anchorY.get(transition));
         int y2 = y;
 
-        Color shadowColor = this.form.shadowColor.get(transition);
+        Color shadowColor = this.form.shadowColor.get(transition).copy();
+
+        shadowColor.mul(context.color);
 
         if (shadowColor.a > 0)
         {
@@ -213,7 +217,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             y2 = y;
         }
 
-        int color = this.form.color.get(transition).getARGBColor();
+        Color cColor = this.form.color.get(transition);
+
+        cColor.mul(context.color);
+
+        int color = cColor.getARGBColor();
 
         for (String line : lines)
         {
@@ -244,7 +252,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
     private void renderShadow(FormRenderingContext context, int x, int y, int w, int h)
     {
         float offset = this.form.offset.get(context.getTransition());
-        Color color = this.form.background.get(context.getTransition());
+        Color color = this.form.background.get(context.getTransition()).copy();
+
+        color.mul(context.color);
 
         if (color.a <= 0)
         {

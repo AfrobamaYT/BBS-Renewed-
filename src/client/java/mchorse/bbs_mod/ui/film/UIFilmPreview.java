@@ -11,6 +11,7 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
+import mchorse.bbs_mod.ui.film.controller.UIOnionSkinContextMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -46,6 +47,7 @@ public class UIFilmPreview extends UIElement
     public UIElement icons;
 
     public UIIcon replays;
+    public UIIcon onionSkin;
     public UIIcon plause;
     public UIIcon teleport;
     public UIIcon flight;
@@ -65,6 +67,8 @@ public class UIFilmPreview extends UIElement
         /* Preview buttons */
         this.replays = new UIIcon(Icons.EDITOR, (b) -> this.openReplays());
         this.replays.tooltip(UIKeys.FILM_REPLAY_TITLE);
+        this.onionSkin = new UIIcon(Icons.ONION_SKIN, (b) -> this.openOnionSkin());
+        this.onionSkin.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_TITLE);
         this.plause = new UIIcon(() -> this.panel.isRunning() ? Icons.PAUSE : Icons.PLAY, (b) -> this.panel.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE);
         this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
@@ -128,13 +132,18 @@ public class UIFilmPreview extends UIElement
             menu.action(Icons.SOUND, UIKeys.FILM_RENDER_AUDIO, this::renderAudio);
         });
 
-        this.icons.add(this.replays, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
+        this.icons.add(this.replays, this.onionSkin, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
         this.add(this.icons);
     }
 
     public void openReplays()
     {
         UIOverlay.addOverlayLeft(this.getContext(), this.panel.replayEditor.replays, 200);
+    }
+
+    public void openOnionSkin()
+    {
+        this.getContext().replaceContextMenu(new UIOnionSkinContextMenu(this.panel.getController().getOnionSkin()));
     }
 
     private void renderAudio()

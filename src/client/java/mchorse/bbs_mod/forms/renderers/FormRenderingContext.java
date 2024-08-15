@@ -19,6 +19,7 @@ public class FormRenderingContext
     public final Camera camera = new Camera();
     public StencilMap stencilMap;
     public boolean ui;
+    public int color;
 
     private FormRenderingContext()
     {}
@@ -32,6 +33,7 @@ public class FormRenderingContext
         context.transition = transition;
         context.stencilMap = null;
         context.ui = false;
+        context.color = 0xffffffff;
 
         return context;
     }
@@ -64,6 +66,13 @@ public class FormRenderingContext
     public FormRenderingContext inUI()
     {
         this.ui = true;
+
+        return this;
+    }
+
+    public FormRenderingContext color(int color)
+    {
+        this.color = color;
 
         return this;
     }

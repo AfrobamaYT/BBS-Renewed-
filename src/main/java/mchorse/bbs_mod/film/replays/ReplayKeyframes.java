@@ -192,11 +192,11 @@ public class ReplayKeyframes extends ValueGroup
             entity.setFallDistance(this.fall.interpolate(tick).floatValue());
 
             KeyframeSegment<Double> x = this.x.findSegment(tick);
-            Vector2d xx = this.getPrev(x, entity.getPrevX());
+            Vector2d xx = this.getPrev(x, this.x.interpolate(tick - 1));
             KeyframeSegment<Double> y = this.y.findSegment(tick);
-            Vector2d yy = this.getPrev(y, entity.getPrevY());
+            Vector2d yy = this.getPrev(y, this.y.interpolate(tick - 1));
             KeyframeSegment<Double> z = this.z.findSegment(tick);
-            Vector2d zz = this.getPrev(z, entity.getPrevZ());
+            Vector2d zz = this.getPrev(z, this.z.interpolate(tick - 1));
 
             entity.setPosition(xx.x, yy.x, zz.x);
             entity.setPrevX(xx.y);
@@ -207,13 +207,13 @@ public class ReplayKeyframes extends ValueGroup
         if (rotation)
         {
             KeyframeSegment<Double> yaw = this.yaw.findSegment(tick);
-            Vector2d yyaw = this.getPrev(yaw, entity.getPrevYaw());
+            Vector2d yyaw = this.getPrev(yaw, this.yaw.interpolate(tick - 1));
             KeyframeSegment<Double> pitch = this.pitch.findSegment(tick);
-            Vector2d ppitch = this.getPrev(pitch, entity.getPrevPitch());
+            Vector2d ppitch = this.getPrev(pitch, this.pitch.interpolate(tick - 1));
             KeyframeSegment<Double> headYaw = this.headYaw.findSegment(tick);
-            Vector2d hheadYaw = this.getPrev(headYaw, entity.getPrevHeadYaw());
+            Vector2d hheadYaw = this.getPrev(headYaw, this.headYaw.interpolate(tick - 1));
             KeyframeSegment<Double> bodyYaw = this.bodyYaw.findSegment(tick);
-            Vector2d bbodyYaw = this.getPrev(bodyYaw, entity.getPrevBodyYaw());
+            Vector2d bbodyYaw = this.getPrev(bodyYaw, this.bodyYaw.interpolate(tick - 1));
 
             entity.setYaw((float) yyaw.x);
             entity.setPitch((float) ppitch.x);

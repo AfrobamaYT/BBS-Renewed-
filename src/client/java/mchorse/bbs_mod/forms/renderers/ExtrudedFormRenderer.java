@@ -8,6 +8,8 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureExtruder;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -58,6 +60,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
         if (data != null)
         {
+            Color color = Colors.COLOR.set(context.color, true);
             GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 
             gameRenderer.getLightmapTextureManager().enable();
@@ -77,7 +80,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                 int offset = i * 8;
 
                 buffer.vertex(matrix, data.data[offset], data.data[offset + 1], data.data[offset + 2])
-                    .color(1F, 1F, 1F, 1F)
+                    .color(color.r, color.g, color.b, color.a)
                     .texture(data.data[offset + 3], data.data[offset + 4])
                     .overlay(context.overlay)
                     .light(context.light)

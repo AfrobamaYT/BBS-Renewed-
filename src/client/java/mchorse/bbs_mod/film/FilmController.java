@@ -18,6 +18,7 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -56,15 +57,20 @@ public class FilmController
 
     public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, boolean shadow, float shadowRadius)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta(), shadow, shadowRadius);
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta(), Colors.WHITE, shadow, shadowRadius);
     }
 
     public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition, boolean shadow, float shadowRadius)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, shadow, shadowRadius);
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, Colors.WHITE, shadow, shadowRadius);
     }
 
-    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition, boolean shadow, float shadowRadius)
+    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition, int color, boolean shadow, float shadowRadius)
+    {
+        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, color, shadow, shadowRadius);
+    }
+
+    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition, int color, boolean shadow, float shadowRadius)
     {
         Form form = entity.getForm();
 
@@ -127,7 +133,8 @@ public class FilmController
         FormRenderingContext formContext = FormRenderingContext
             .set(entity, stack, light, overlay, transition)
             .camera(camera)
-            .stencilMap(map);
+            .stencilMap(map)
+            .color(color);
 
         stack.push();
         MatrixStackUtils.multiply(stack, target == null ? defaultMatrix : target);

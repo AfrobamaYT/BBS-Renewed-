@@ -6,7 +6,6 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 public class Colors
 {
     public static final int RGB = 0xffffff;
-    public static final int RGBA = 0xffffffff;
 
     /* Alpha */
     public static final int A100 = 0xff000000;

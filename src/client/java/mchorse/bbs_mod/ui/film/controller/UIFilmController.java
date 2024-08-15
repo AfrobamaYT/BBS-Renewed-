@@ -48,7 +48,9 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
@@ -104,6 +106,8 @@ public class UIFilmController extends UIElement
     private int pov;
     private int lastTick;
 
+    private OnionSkin onionSkin = new OnionSkin();
+
     private WorldRenderContext worldRenderContext;
 
     public UIFilmController(UIFilmPanel panel)
@@ -154,6 +158,11 @@ public class UIFilmController extends UIElement
         {
             GLFW.glfwSetInputMode(window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         }
+    }
+
+    public OnionSkin getOnionSkin()
+    {
+        return this.onionSkin;
     }
 
     private int getTick()
@@ -1056,6 +1065,7 @@ public class UIFilmController extends UIElement
     public void renderFrame(WorldRenderContext context)
     {
         boolean isPlaying = this.isPlaying();
+        int tick = this.getTick();
 
         this.worldRenderContext = context;
 
@@ -1073,6 +1083,33 @@ public class UIFilmController extends UIElement
             Replay replay = this.panel.getData().replays.getList().get(i);
 
             FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
+
+            BaseValue value = replay.properties.get("pose");
+
+            if (this.onionSkin.enabled && value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
+            {
+                KeyframeSegment<?> segment = pose.findSegment(tick);
+
+                if (segment != null)
+                {
+                    this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, this.onionSkin.preColor, this.onionSkin.preFrames, context, isPlaying, entity);
+                    this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, this.onionSkin.postColor, this.onionSkin.postFrames, context, isPlaying, entity);
+
+                    replay.applyFrame(tick, entity, null);
+                    replay.applyProperties(tick, entity.getForm(), isPlaying);
+
+                    if (!isPlaying)
+                    {
+                        entity.setPrevX(entity.getX());
+                        entity.setPrevY(entity.getY());
+                        entity.setPrevZ(entity.getZ());
+                        entity.setPrevYaw(entity.getYaw());
+                        entity.setPrevHeadYaw(entity.getHeadYaw());
+                        entity.setPrevBodyYaw(entity.getBodyYaw());
+                        entity.setPrevPitch(entity.getPitch());
+                    }
+                }
+            }
         }
 
         this.rayTraceEntity(context);
@@ -1107,6 +1144,25 @@ public class UIFilmController extends UIElement
         this.lastMouse.set(x, y);
 
         RenderSystem.disableDepthTest();
+    }
+
+    private void renderOnion(Replay replay, int index, int direction, KeyframeChannel<?> pose, int color, int frames, WorldRenderContext context, boolean isPlaying, IEntity entity)
+    {
+        List<? extends Keyframe<?>> keyframes = pose.getKeyframes();
+        float alpha = Colors.getAlpha(color);
+
+        for (; CollectionUtils.inRange(keyframes, index) && frames > 0; index += direction)
+        {
+            Keyframe<?> keyframe = keyframes.get(index);
+
+            replay.applyFrame((int) keyframe.getTick(), entity);
+            replay.applyProperties((int) keyframe.getTick(), entity.getForm(), isPlaying);
+
+            FilmController.renderEntity(this.entities, context, entity, null, 1F, Colors.setA(color, alpha), false, 0F);
+
+            frames -= 1;
+            alpha *= alpha;
+        }
     }
 
     private void rayTraceEntity(WorldRenderContext context)
