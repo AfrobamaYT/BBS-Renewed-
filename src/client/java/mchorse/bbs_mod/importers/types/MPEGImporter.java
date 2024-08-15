@@ -21,7 +21,7 @@ public class MPEGImporter implements IImporter
     @Override
     public File getDefaultFolder()
     {
-        return BBSMod.getAssetsPath("audio");
+        return BBSMod.getAudioFolder();
     }
 
     @Override

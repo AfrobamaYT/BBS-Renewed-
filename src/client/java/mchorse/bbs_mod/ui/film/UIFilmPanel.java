@@ -59,6 +59,7 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 
+import java.io.File;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -553,7 +554,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (data != null)
         {
             voiceLines.delete();
-            voiceLines = new VoiceLines(BBSMod.getAssetsPath("audio/elevenlabs/" + data.getId()));
+            voiceLines = new VoiceLines(new File(BBSMod.getAudioFolder(), "elevenlabs/" + data.getId()));
 
             this.undoHandler = new UIFilmUndoHandler(this);
 

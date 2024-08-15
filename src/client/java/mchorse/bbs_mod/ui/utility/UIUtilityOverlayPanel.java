@@ -45,7 +45,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         this.view.full(this.content);
 
         UIButton openGameDirectory = new UIButton(UIKeys.UTILITY_OPEN_GAME_FOLDER, (b) -> this.openFolder(BBSMod.getGameFolder()));
-        UIButton openAudioDirectory = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_FOLDER, (b) -> this.openFolder(BBSMod.getAssetsPath("audio")));
+        UIButton openAudioDirectory = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_FOLDER, (b) -> this.openFolder(BBSMod.getAudioFolder()));
         UIButton openModelsDirectory = new UIButton(UIKeys.UTILITY_OPEN_MODELS_FOLDER, (b) -> this.openFolder(BBSMod.getAssetsPath("models")));
 
         UIIcon textures = new UIIcon(Icons.MATERIAL, (b) ->

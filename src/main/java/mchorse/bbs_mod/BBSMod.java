@@ -201,6 +201,11 @@ public class BBSMod implements ModInitializer
         return assetsFolder;
     }
 
+    public static File getAudioFolder()
+    {
+        return getAssetsPath("audio");
+    }
+
     public static File getAssetsPath(String path)
     {
         return new File(assetsFolder, path);

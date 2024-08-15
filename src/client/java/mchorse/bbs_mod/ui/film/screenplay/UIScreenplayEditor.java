@@ -299,7 +299,7 @@ public class UIScreenplayEditor extends UIElement
 
         try
         {
-            File folder = BBSMod.getAssetsPath("audio");
+            File folder = BBSMod.getAudioFolder();
             String filename = this.panel.getData().getId() + ".wav";
 
             WaveWriter.write(new File(folder, filename), wave);
