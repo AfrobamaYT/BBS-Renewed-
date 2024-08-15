@@ -142,6 +142,12 @@ public class UIFilmController extends UIElement
             }
         }).active(hasActor).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_KEYS_RESTART_ACTIONS, () -> this.panel.notifyServer(ActionState.RESTART)).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_KEYS_TOGGLE_ONION_SKIN, () ->
+        {
+            this.onionSkin.enabled = !this.onionSkin.enabled;
+
+            UIUtils.playClick();
+        }).category(category);
 
         this.noCulling();
     }

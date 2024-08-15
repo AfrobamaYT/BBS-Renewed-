@@ -1,5 +1,6 @@
 {
 	"procedural": true,
+	"culling": false,
 	"items_main": ["right_arm_item"],
 	"items_off": ["left_arm_item"],
 	"scale": [0.9375, 0.9375, 0.9375],
