@@ -539,7 +539,7 @@ public class UIKeyframes extends UIElement
 
     private void duplicateOrSelectColumn(UIContext context)
     {
-        if (this.currentGraph.getSelected() != null)
+        if (this.currentGraph.getSelected() != null && !Window.isShiftPressed())
         {
             /* Duplicate */
             int tick = (int) Math.round(this.fromGraphX(context.mouseX));

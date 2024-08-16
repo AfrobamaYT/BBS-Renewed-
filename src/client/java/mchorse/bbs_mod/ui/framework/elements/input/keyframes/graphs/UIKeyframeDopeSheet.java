@@ -355,7 +355,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 this.renderPreviewKeyframe(context, sheet, Math.round(this.keyframes.fromGraphX(context.mouseX)), Colors.WHITE);
             }
         }
-        else if (Window.isAltPressed())
+        else if (Window.isAltPressed() && !Window.isShiftPressed())
         {
             List<UIKeyframeSheet> sheets = new ArrayList<>();
 
@@ -498,7 +498,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                     forcedIndex += 1;
                 }
 
-                boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, false);
+                boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
                 boolean toRemove = Window.isCtrlPressed() && isPointHover;
 
                 if (this.keyframes.isSelecting())
