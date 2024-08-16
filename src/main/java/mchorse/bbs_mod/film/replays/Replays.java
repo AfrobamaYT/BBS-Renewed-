@@ -24,9 +24,8 @@ public class Replays extends ValueList<Replay>
     {
         this.preNotifyParent();
         this.list.remove(replay);
-        this.postNotifyParent();
-
         this.sync();
+        this.postNotifyParent();
     }
 
     @Override

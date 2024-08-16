@@ -109,6 +109,7 @@ public class UIFilmUndoHandler
             this.panel.replayEditor.handleUndo(change, redo);
         }
 
+        this.panel.replayEditor.replays.replays.update();
         this.panel.cameraEditor.handleUndo(undo, redo);
         this.panel.actionEditor.handleUndo(undo, redo);
         this.panel.screenplayEditor.editor.handleUndo(undo, redo);
