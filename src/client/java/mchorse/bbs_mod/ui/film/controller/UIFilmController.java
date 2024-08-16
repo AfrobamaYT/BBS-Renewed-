@@ -1081,18 +1081,24 @@ public class UIFilmController extends UIElement
         {
             IEntity entity = this.entities.get(i);
 
-            if (this.getPovMode() == 2 && entity == getCurrentEntity() && this.orbit.enabled)
+            if (this.getPovMode() == 2 && entity == this.getCurrentEntity() && this.orbit.enabled)
             {
                 continue;
             }
 
             Replay replay = this.panel.getData().replays.getList().get(i);
+            BaseValue value = replay.properties.get("pose");
 
             FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
 
-            BaseValue value = replay.properties.get("pose");
+            boolean canRender = this.onionSkin.enabled;
 
-            if (this.onionSkin.enabled && value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
+            if (!this.onionSkin.all)
+            {
+                canRender = canRender && entity == this.getCurrentEntity();
+            }
+
+            if (canRender && value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
             {
                 KeyframeSegment<?> segment = pose.findSegment(tick);
 

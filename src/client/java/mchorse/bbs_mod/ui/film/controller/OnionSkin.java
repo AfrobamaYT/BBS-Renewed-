@@ -11,4 +11,6 @@ public class OnionSkin
 
     public int postFrames = 1;
     public int postColor = Colors.POSITIVE | Colors.A75;
+
+    public boolean all;
 }

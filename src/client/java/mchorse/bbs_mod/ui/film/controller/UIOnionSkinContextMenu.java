@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.film.controller;
 
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -17,6 +16,7 @@ public class UIOnionSkinContextMenu extends UIContextMenu
     public UIColor preColor;
     public UITrackpad postFrames;
     public UIColor postColor;
+    public UIToggle all;
 
     private UIElement column;
 
@@ -36,11 +36,15 @@ public class UIOnionSkinContextMenu extends UIContextMenu
         this.postFrames.limit(0, 10, true).setValue(this.onionSkin.postFrames);
         this.postColor = new UIColor((c) -> this.onionSkin.postColor = c);
         this.postColor.withAlpha().setColor(this.onionSkin.postColor);
+        this.all = new UIToggle(UIKeys.FILM_CONTROLLER_ONION_SKIN_ALL, (b) -> this.onionSkin.all = b.getValue());
+        this.all.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_ALL_DESCRIPTION);
+        this.all.setValue(this.onionSkin.all);
 
         this.column = UI.column(5, 10,
             this.enable,
             UI.row(this.preFrames, this.preColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_PREV),
-            UI.row(this.postFrames, this.postColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_NEXT)
+            UI.row(this.postFrames, this.postColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_NEXT),
+            this.all
         );
         this.column.relative(this).w(140);
 
