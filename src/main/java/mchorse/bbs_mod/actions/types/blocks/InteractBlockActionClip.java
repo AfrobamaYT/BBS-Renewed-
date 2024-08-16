@@ -26,6 +26,8 @@ public class InteractBlockActionClip extends ActionClip
     @Override
     public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
+        this.applyPositionRotation(player, replay, tick);
+
         BlockHitResult result = this.hit.getHitResult();
 
         player.getWorld().getBlockState(result.getBlockPos()).onUse(player.getWorld(), player, this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND, result);
