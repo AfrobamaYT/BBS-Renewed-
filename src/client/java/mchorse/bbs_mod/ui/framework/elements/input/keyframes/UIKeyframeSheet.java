@@ -79,6 +79,14 @@ public class UIKeyframeSheet
         }
     }
 
+    public void setDuration(int duration)
+    {
+        for (Keyframe keyframe : this.selection.getSelected())
+        {
+            keyframe.setDuration(duration);
+        }
+    }
+
     public void setValue(Object value, Object selectedValue, boolean dirty)
     {
         for (Keyframe keyframe : this.selection.getSelected())

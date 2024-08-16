@@ -123,12 +123,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
     public void setDuration(int value)
     {
-        Keyframe current = this.editor.getGraph().getSelected();
-
-        if (current != null)
-        {
-            current.setDuration(value);
-        }
+        this.editor.getGraph().setDuration(value);
     }
 
     public void setValue(Object value)

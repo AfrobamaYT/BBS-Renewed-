@@ -160,6 +160,14 @@ public interface IUIKeyframeGraph
         }
     }
 
+    public default void setDuration(int duration)
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.setDuration(duration);
+        }
+    }
+
     public default void setInterpolation(Interpolation interpolation)
     {
         for (UIKeyframeSheet sheet : this.getSheets())
