@@ -263,14 +263,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.main.relative(this.editor).y(1F - layout.getMainSizeH()).w(1F).hTo(this.editor.area, 1F);
             this.editArea.relative(this.editor).x(1F - layout.getEditorSizeH()).wTo(this.editor.area, 1F).hTo(this.main.area, 0F);
             this.preview.relative(this.editor).w(1F - layout.getEditorSizeH()).hTo(this.main.area, 0F);
-            this.draggableMain.hoverOnly().relative(this.main).y(-3).w(1F).h(6);
+            this.draggableMain.hoverOnly().relative(this.main).y(-12).w(1F).h(12);
         }
         else
         {
             this.main.relative(this.editor).w(layout.getMainSizeV()).h(1F);
             this.editArea.relative(this.main).x(1F).y(layout.getEditorSizeV()).wTo(this.editor.area, 1F).hTo(this.editor.area, 1F);
             this.preview.relative(this.main).x(1F).wTo(this.editor.area, 1F).hTo(this.editArea.area, 0F);
-            this.draggableMain.hoverOnly().relative(this.main).x(1F).w(6).h(1F);
+            this.draggableMain.hoverOnly().relative(this.main).x(1F).w(12).h(1F);
         }
 
         if (resize)
