@@ -7,6 +7,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -71,6 +72,15 @@ public class UIFilmPreview extends UIElement
         this.onionSkin.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_TITLE);
         this.plause = new UIIcon(() -> this.panel.isRunning() ? Icons.PAUSE : Icons.PLAY, (b) -> this.panel.togglePlayback());
         this.plause.tooltip(UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE);
+        this.plause.context((menu) ->
+        {
+            menu.action(Icons.PLAY, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAY_FILM, () ->
+            {
+                this.panel.dashboard.closeThisMenu();
+
+                Films.playFilm(this.panel.getFilm(), true);
+            });
+        });
         this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
         {
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
