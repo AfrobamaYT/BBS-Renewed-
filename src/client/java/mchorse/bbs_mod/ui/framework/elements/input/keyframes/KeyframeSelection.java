@@ -50,6 +50,36 @@ public class KeyframeSelection
         }
     }
 
+    public void after(int tick, int direction)
+    {
+        this.selected.clear();
+
+        List keyframes = this.channel.getKeyframes();
+
+        if (direction < 0)
+        {
+            for (int i = 0; i < keyframes.size() - 1; i++)
+            {
+                Keyframe keyframe = (Keyframe) keyframes.get(i);
+
+                if (keyframe.getTick() > tick) return;
+
+                this.selected.add(i);
+            }
+        }
+        else
+        {
+            for (int i = keyframes.size() - 1; i >= 0; i--)
+            {
+                Keyframe keyframe = (Keyframe) keyframes.get(i);
+
+                if (keyframe.getTick() < tick) return;
+
+                this.selected.add(i);
+            }
+        }
+    }
+
     public void clear()
     {
         this.selected.clear();

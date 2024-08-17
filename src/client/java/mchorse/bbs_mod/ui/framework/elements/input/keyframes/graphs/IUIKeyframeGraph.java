@@ -41,6 +41,16 @@ public interface IUIKeyframeGraph
         this.pickSelected();
     }
 
+    public default void selectAfter(int tick, int direction)
+    {
+        for (UIKeyframeSheet sheet : this.getSheets())
+        {
+            sheet.selection.after(tick, direction);
+        }
+
+        this.pickSelected();
+    }
+
     public void selectByX(int mouseX);
 
     public void selectInArea(Area area);

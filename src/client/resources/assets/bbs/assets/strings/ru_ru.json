@@ -477,6 +477,8 @@
     "bbs.ui.keyframes.forced_duration": "Принуждённая длина",
     "bbs.ui.keyframes.keys.category": "Редактор ключевых кадров",
     "bbs.ui.keyframes.keys.toggle_interp": "Включить выбор интерполяции",
+    "bbs.ui.keyframes.keys.select_left": "Выделить налево",
+    "bbs.ui.keyframes.keys.select_right": "Выделить направо",
     "bbs.ui.keyframes.tick": "Тик",
     "bbs.ui.keyframes.value": "Значение",
     "bbs.ui.keys.list": "Список горячих клавиш",

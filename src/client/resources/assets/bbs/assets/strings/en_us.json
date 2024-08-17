@@ -481,6 +481,8 @@
     "bbs.ui.keyframes.forced_duration": "Forced duration",
     "bbs.ui.keyframes.keys.category": "Keyframes editor",
     "bbs.ui.keyframes.keys.toggle_interp": "Toggle interpolation selection",
+    "bbs.ui.keyframes.keys.select_left": "Select to the left",
+    "bbs.ui.keyframes.keys.select_right": "Select to the right",
     "bbs.ui.keyframes.tick": "Tick",
     "bbs.ui.keyframes.value": "Value",
     "bbs.ui.keys.list": "Keybind list",

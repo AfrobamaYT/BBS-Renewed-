@@ -72,6 +72,10 @@ public class UIKeyframes extends UIElement
         /* Context menu items */
         this.context((menu) ->
         {
+            UIContext context = this.getContext();
+            int mouseX = context.mouseX;
+            int mouseY = context.mouseY;
+
             if (this.isEditing())
             {
                 menu.action(Icons.CLOSE, UIKeys.KEYFRAMES_CONTEXT_EXIT_TRACK, () -> this.editSheet(null));
@@ -86,6 +90,9 @@ public class UIKeyframes extends UIElement
                 }
             }
 
+            menu.action(Icons.ARROW_LEFT, UIKeys.KEYFRAMES_KEYS_SELECT_LEFT, () -> this.selectAfter(mouseX, mouseY, -1));
+            menu.action(Icons.ARROW_RIGHT, UIKeys.KEYFRAMES_KEYS_SELECT_RIGHT, () -> this.selectAfter(mouseX, mouseY, 1));
+
             menu.action(Icons.MAXIMIZE, UIKeys.KEYFRAMES_CONTEXT_MAXIMIZE, this::resetView);
             menu.action(Icons.FULLSCREEN, UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, () -> this.currentGraph.selectAll());
 
@@ -99,10 +106,8 @@ public class UIKeyframes extends UIElement
 
             if (pasted != null)
             {
-                UIContext context = this.getContext();
                 final Map<String, PastedKeyframes> keyframes = pasted;
-                double offset = this.fromGraphX(context.mouseX);
-                int mouseY = context.mouseY;
+                double offset = this.fromGraphX(mouseX);
 
                 menu.action(Icons.PASTE, UIKeys.KEYFRAMES_CONTEXT_PASTE, () -> this.pasteKeyframes(keyframes, (long) offset, mouseY));
             }
@@ -128,6 +133,33 @@ public class UIKeyframes extends UIElement
             }
         }).inside().category(category);
         this.keys().register(Keys.DELETE, () -> this.currentGraph.removeSelected()).inside().category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_LEFT, () ->
+        {
+            UIContext context = this.getContext();
+
+            this.selectAfter(context.mouseX, context.mouseY, -1);
+        }).category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_RIGHT, () ->
+        {
+            UIContext context = this.getContext();
+
+            this.selectAfter(context.mouseX, context.mouseY, 1);
+        }).category(category);
+    }
+
+    private void selectAfter(int mouseX, int mouseY, int direction)
+    {
+        int tick = (int) Math.round(this.fromGraphX(mouseX));
+
+        if (!Window.isShiftPressed())
+        {
+            this.currentGraph.selectAfter(tick, direction);
+        }
+        else
+        {
+            this.currentGraph.getSheet(mouseY).selection.after(tick, direction);
+            this.currentGraph.pickSelected();
+        }
     }
 
     /* Sheet editing */
