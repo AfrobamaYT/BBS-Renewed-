@@ -62,6 +62,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         {
             Color color = Colors.COLOR.set(context.color, true);
             GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
+            Color formColor = this.form.color.get(context.getTransition());
 
             gameRenderer.getLightmapTextureManager().enable();
             gameRenderer.getOverlayTexture().setupOverlayColor();
@@ -80,7 +81,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                 int offset = i * 8;
 
                 buffer.vertex(matrix, data.data[offset], data.data[offset + 1], data.data[offset + 2])
-                    .color(color.r, color.g, color.b, color.a)
+                    .color(color.r * formColor.r, color.g * formColor.g, color.b * formColor.b, color.a * formColor.a)
                     .texture(data.data[offset + 3], data.data[offset + 4])
                     .overlay(context.overlay)
                     .light(context.light)
