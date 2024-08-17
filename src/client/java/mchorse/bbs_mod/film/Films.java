@@ -7,6 +7,7 @@ import mchorse.bbs_mod.audio.AudioRenderer;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
+import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -78,7 +79,10 @@ public class Films
         {
             if (play.getContext().clips == film.camera)
             {
-                BBSModClient.getCameraController().remove(play);
+                if (BBSModClient.getCameraController().remove(play) instanceof RunnerCameraController controller)
+                {
+                    controller.getContext().shutdown();
+                }
             }
         }
     }
@@ -153,6 +157,7 @@ public class Films
 
             if (next.film.getId().equals(id))
             {
+                next.shutdown();
                 it.remove();
 
                 return next.film;
@@ -168,7 +173,14 @@ public class Films
         {
             film.update();
 
-            return film.hasFinished();
+            boolean finished = film.hasFinished();
+
+            if (finished)
+            {
+                film.shutdown();
+            }
+
+            return finished;
         });
 
         if (this.recorder != null)

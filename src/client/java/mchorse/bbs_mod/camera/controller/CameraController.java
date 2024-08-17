@@ -87,19 +87,26 @@ public class CameraController implements ICameraController
         this.updateCurrent();
     }
 
-    public void remove(ICameraController controller)
+    public ICameraController remove(ICameraController controller)
     {
         Iterator<ICameraController> it = this.controllers.iterator();
+        ICameraController removed = null;
 
         while (it.hasNext())
         {
-            if (it.next() == controller)
+            ICameraController next = it.next();
+
+            if (next == controller)
             {
                 it.remove();
+
+                removed = next;
             }
         }
 
         this.updateCurrent();
+
+        return removed;
     }
 
     @Override

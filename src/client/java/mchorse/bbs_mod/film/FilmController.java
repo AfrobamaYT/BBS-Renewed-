@@ -315,4 +315,9 @@ public class FilmController
 
         AudioClientClip.manageSounds(this.context);
     }
+
+    public void shutdown()
+    {
+        this.context.shutdown();
+    }
 }
