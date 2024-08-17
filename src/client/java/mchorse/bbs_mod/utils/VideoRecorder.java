@@ -192,6 +192,7 @@ public class VideoRecorder
         }
 
         this.buffer.rewind();
+        GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureId);
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
         this.buffer.rewind();
