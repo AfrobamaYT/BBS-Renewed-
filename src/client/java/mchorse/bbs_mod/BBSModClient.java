@@ -27,6 +27,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
+import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
@@ -82,6 +83,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyRecordReplay;
     private static KeyBinding keyRecordVideo;
     private static KeyBinding keyOpenReplays;
+    private static KeyBinding keyOpenMorphing;
     private static KeyBinding keyDemorph;
 
     private static UIDashboard dashboard;
@@ -251,6 +253,7 @@ public class BBSModClient implements ClientModInitializer
         keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
         keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
         keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
+        keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
         keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
@@ -314,6 +317,13 @@ public class BBSModClient implements ClientModInitializer
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
             while (keyRecordVideo.wasPressed()) requestToggleRecording = true;
             while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
+            while (keyOpenMorphing.wasPressed())
+            {
+                UIDashboard dashboard = getDashboard();
+
+                UIScreen.open(dashboard);
+                dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
+            }
             while (keyDemorph.wasPressed()) ClientNetwork.sendPlayerForm(null);
         });
 
