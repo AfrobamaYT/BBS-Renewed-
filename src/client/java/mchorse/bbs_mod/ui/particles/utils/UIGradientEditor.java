@@ -11,9 +11,9 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.particles.sections.UIParticleSchemeSection;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 
 public class UIGradientEditor extends UIElement
 {
@@ -102,6 +102,8 @@ public class UIGradientEditor extends UIElement
     {
         float x = (this.getContext().mouseX - this.area.x) / (float) this.area.w * this.gradient.range;
 
+        x = MathUtils.clamp(x, 0, this.gradient.range);
+
         Solid color = new Solid();
         Gradient.ColorStop stop = new Gradient.ColorStop(x, color);
 
@@ -139,7 +141,12 @@ public class UIGradientEditor extends UIElement
     @Override
     public boolean subMouseClicked(UIContext context)
     {
-        if (this.area.isInside(context) && context.mouseButton == 0)
+        Area outside = new Area();
+
+        outside.copy(this.area);
+        outside.offset(5);
+
+        if (outside.isInside(context) && context.mouseButton == 0)
         {
             for (Gradient.ColorStop stop : this.gradient.stops)
             {
@@ -149,6 +156,7 @@ public class UIGradientEditor extends UIElement
                 {
                     this.dragging = 0;
                     this.lastX = context.mouseX;
+
                     this.fillStop(stop);
 
                     return true;
