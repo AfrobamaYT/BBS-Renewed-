@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -104,8 +105,12 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             emitter.lastGlobal.set(translation);
             emitter.rotation.set(matrix);
-            emitter.setupCameraProperties(context.camera);
-            emitter.render(this.getShader(context, GameRenderer::getParticleProgram, BBSShaders::getPickerParticlesProgram), context.stack, context.getTransition());
+
+            if (!BBSRendering.isIrisShadowPass())
+            {
+                emitter.setupCameraProperties(context.camera);
+                emitter.render(this.getShader(context, GameRenderer::getParticleProgram, BBSShaders::getPickerParticlesProgram), context.stack, context.getTransition());
+            }
 
             context.stack.pop();
         }
