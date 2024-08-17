@@ -36,8 +36,8 @@ public class PathClip extends CameraClip
      */
     public final ValuePositions points = new ValuePositions("points");
 
-    public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interpolations.MAP);
-    public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interpolations.MAP);
+    public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interpolations.MAP, Interpolations.HERMITE);
+    public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interpolations.MAP, Interpolations.HERMITE);
 
     public final ValueBoolean circularAutoCenter = new ValueBoolean("circularAutoCenter", true);
     public final ValueDouble circularX = new ValueDouble("circularX", 0D);

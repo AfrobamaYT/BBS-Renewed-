@@ -13,15 +13,21 @@ public class Interpolation extends BaseValue
 {
     private final Map<String, IInterp> map;
 
-    private IInterp interp = Interpolations.LINEAR;
+    private IInterp interp;
     private EasingArgs args = new EasingArgs();
 
     private InterpolationWrapper wrapped;
 
     public Interpolation(String id, Map<String, IInterp> map)
     {
+        this(id, map, Interpolations.LINEAR);
+    }
+
+    public Interpolation(String id, Map<String, IInterp> map, IInterp interp)
+    {
         super(id);
 
+        this.interp = interp;
         this.map = map;
     }
 
