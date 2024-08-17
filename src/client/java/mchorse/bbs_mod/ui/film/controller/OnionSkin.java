@@ -13,4 +13,26 @@ public class OnionSkin
     public int postColor = Colors.POSITIVE | Colors.A75;
 
     public boolean all;
+
+    private String group;
+
+    public OnionSkin()
+    {
+        this.resetGroup();
+    }
+
+    public void resetGroup()
+    {
+        this.group = "pose";
+    }
+
+    public String getGroup()
+    {
+        return this.group;
+    }
+
+    public void setGroup(String group)
+    {
+        this.group = group;
+    }
 }

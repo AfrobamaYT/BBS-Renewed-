@@ -1087,38 +1087,41 @@ public class UIFilmController extends UIElement
             }
 
             Replay replay = this.panel.getData().replays.getList().get(i);
-            BaseValue value = replay.properties.get("pose");
+            BaseValue value = replay.properties.get(this.onionSkin.getGroup());
 
             FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
 
-            boolean canRender = this.onionSkin.enabled;
-
-            if (!this.onionSkin.all)
+            if (value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
             {
-                canRender = canRender && entity == this.getCurrentEntity();
-            }
+                boolean canRender = this.onionSkin.enabled;
 
-            if (canRender && value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
-            {
-                KeyframeSegment<?> segment = pose.findSegment(tick);
-
-                if (segment != null)
+                if (!this.onionSkin.all)
                 {
-                    this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, this.onionSkin.preColor, this.onionSkin.preFrames, context, isPlaying, entity);
-                    this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, this.onionSkin.postColor, this.onionSkin.postFrames, context, isPlaying, entity);
+                    canRender = canRender && entity == this.getCurrentEntity();
+                }
 
-                    replay.applyFrame(tick, entity, null);
-                    replay.applyProperties(tick, entity.getForm(), isPlaying);
+                if (canRender)
+                {
+                    KeyframeSegment<?> segment = pose.findSegment(tick);
 
-                    if (!isPlaying)
+                    if (segment != null)
                     {
-                        entity.setPrevX(entity.getX());
-                        entity.setPrevY(entity.getY());
-                        entity.setPrevZ(entity.getZ());
-                        entity.setPrevYaw(entity.getYaw());
-                        entity.setPrevHeadYaw(entity.getHeadYaw());
-                        entity.setPrevBodyYaw(entity.getBodyYaw());
-                        entity.setPrevPitch(entity.getPitch());
+                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, this.onionSkin.preColor, this.onionSkin.preFrames, context, isPlaying, entity);
+                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, this.onionSkin.postColor, this.onionSkin.postFrames, context, isPlaying, entity);
+
+                        replay.applyFrame(tick, entity, null);
+                        replay.applyProperties(tick, entity.getForm(), isPlaying);
+
+                        if (!isPlaying)
+                        {
+                            entity.setPrevX(entity.getX());
+                            entity.setPrevY(entity.getY());
+                            entity.setPrevZ(entity.getZ());
+                            entity.setPrevYaw(entity.getYaw());
+                            entity.setPrevHeadYaw(entity.getHeadYaw());
+                            entity.setPrevBodyYaw(entity.getBodyYaw());
+                            entity.setPrevPitch(entity.getPitch());
+                        }
                     }
                 }
             }

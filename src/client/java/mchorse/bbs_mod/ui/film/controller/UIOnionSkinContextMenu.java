@@ -1,33 +1,41 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
+import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 
 public class UIOnionSkinContextMenu extends UIContextMenu
 {
-    public UIToggle enable;
+    public UIIcon enable;
+    public UIIcon all;
+    public UIIcon group;
     public UITrackpad preFrames;
     public UIColor preColor;
     public UITrackpad postFrames;
     public UIColor postColor;
-    public UIToggle all;
 
     private UIElement column;
 
+    private UIFilmPanel panel;
     private OnionSkin onionSkin;
 
-    public UIOnionSkinContextMenu(OnionSkin onionSkin)
+    public UIOnionSkinContextMenu(UIFilmPanel panel, OnionSkin onionSkin)
     {
+        this.panel = panel;
         this.onionSkin = onionSkin;
 
-        this.enable = new UIToggle(UIKeys.FILM_CONTROLLER_ONION_SKIN_TITLE, (b) -> this.onionSkin.enabled = b.getValue());
-        this.enable.setValue(this.onionSkin.enabled);
+        this.enable = new UIIcon(Icons.VISIBLE, (b) -> this.onionSkin.enabled = !this.onionSkin.enabled);
+        this.enable.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_TITLE);
         this.preFrames = new UITrackpad((v) -> this.onionSkin.preFrames = v.intValue());
         this.preFrames.limit(0, 10, true).setValue(this.onionSkin.preFrames);
         this.preColor = new UIColor((c) -> this.onionSkin.preColor = c);
@@ -36,15 +44,30 @@ public class UIOnionSkinContextMenu extends UIContextMenu
         this.postFrames.limit(0, 10, true).setValue(this.onionSkin.postFrames);
         this.postColor = new UIColor((c) -> this.onionSkin.postColor = c);
         this.postColor.withAlpha().setColor(this.onionSkin.postColor);
-        this.all = new UIToggle(UIKeys.FILM_CONTROLLER_ONION_SKIN_ALL, (b) -> this.onionSkin.all = b.getValue());
+        this.all = new UIIcon(Icons.POSE, (b) -> this.onionSkin.all = !this.onionSkin.all);
         this.all.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_ALL_DESCRIPTION);
-        this.all.setValue(this.onionSkin.all);
+        this.group = new UIIcon(Icons.MORE, (b) ->
+        {
+            this.getContext().replaceContextMenu((menu) ->
+            {
+                for (String property : this.panel.replayEditor.getReplay().properties.properties.keySet())
+                {
+                    menu.action(Icons.FOLDER, IKey.raw(property), this.onionSkin.getGroup().equals(property) ? BBSSettings.primaryColor(0) : 0, () ->
+                    {
+                        this.onionSkin.setGroup(property);
+                        this.group.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_GROUP.format(property));
+                    });
+                }
+            });
+        });
+        this.group.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_GROUP.format(this.onionSkin.getGroup()));
+
+        UIElement row = UI.row(this.enable, this.all, this.group);
 
         this.column = UI.column(5, 10,
-            this.enable,
+            row,
             UI.row(this.preFrames, this.preColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_PREV),
-            UI.row(this.postFrames, this.postColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_NEXT),
-            this.all
+            UI.row(this.postFrames, this.postColor).tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_NEXT)
         );
         this.column.relative(this).w(140);
 
@@ -64,5 +87,21 @@ public class UIOnionSkinContextMenu extends UIContextMenu
         this.xy(context.mouseX(), context.mouseY())
             .wh(this.column.area.w, this.column.area.h)
             .bounds(context.menu.overlay, 5);
+    }
+
+    @Override
+    protected void renderBackground(UIContext context)
+    {
+        super.renderBackground(context);
+
+        if (this.onionSkin.enabled)
+        {
+            UIDashboardPanels.renderHighlight(context.batcher, this.enable.area);
+        }
+
+        if (this.onionSkin.all)
+        {
+            UIDashboardPanels.renderHighlight(context.batcher, this.all.area);
+        }
     }
 }

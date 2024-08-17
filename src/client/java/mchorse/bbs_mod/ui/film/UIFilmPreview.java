@@ -143,7 +143,7 @@ public class UIFilmPreview extends UIElement
 
     public void openOnionSkin()
     {
-        this.getContext().replaceContextMenu(new UIOnionSkinContextMenu(this.panel.getController().getOnionSkin()));
+        this.getContext().replaceContextMenu(new UIOnionSkinContextMenu(this.panel, this.panel.getController().getOnionSkin()));
     }
 
     private void renderAudio()
