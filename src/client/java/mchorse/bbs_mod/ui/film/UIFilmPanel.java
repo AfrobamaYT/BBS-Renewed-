@@ -18,6 +18,7 @@ import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.IValueListener;
@@ -28,6 +29,7 @@ import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDataDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
@@ -60,6 +62,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3d;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -91,7 +95,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIIcon openCameraEditor;
     public UIIcon openReplayEditor;
     public UIIcon openActionEditor;
-    public UIIcon openScreenplay;
+    public UIIcon openScreenplayEditor;
 
     private Camera camera = new Camera();
     private boolean entered;
@@ -104,6 +108,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastProjection = new Matrix4f();
 
     private Timer flightEditTime = new Timer(100);
+
+    private List<UIElement> panels = new ArrayList<>();
 
     public static VoiceLines getVoiceLines()
     {
@@ -203,11 +209,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openReplayEditor.tooltip(UIKeys.FILM_OPEN_REPLAY_EDITOR, Direction.LEFT);
         this.openActionEditor = new UIIcon(Icons.ACTION, (b) -> this.showPanel(this.actionEditor));
         this.openActionEditor.tooltip(UIKeys.FILM_OPEN_ACTION_EDITOR, Direction.LEFT);
-        this.openScreenplay = new UIIcon(Icons.FILE, (b) -> this.showPanel(this.screenplayEditor));
-        this.openScreenplay.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
+        this.openScreenplayEditor = new UIIcon(Icons.FILE, (b) -> this.showPanel(this.screenplayEditor));
+        this.openScreenplayEditor.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
 
         /* Setup elements */
-        this.iconBar.add(this.toggleHorizontal.marginTop(9), this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openActionEditor, this.openScreenplay);
+        this.iconBar.add(this.toggleHorizontal.marginTop(9), this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openActionEditor, this.openScreenplayEditor);
 
         this.editor.add(this.main, new UIRenderable(this::renderIcons));
         this.main.add(this.cameraEditor, this.replayEditor, this.actionEditor, this.screenplayEditor, this.editArea, this.preview, this.draggableMain);
@@ -237,11 +243,21 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.LOOPING_SET_MAX, () -> this.cameraEditor.clips.setLoopMax()).active(active).category(looping);
         this.keys().register(Keys.JUMP_FORWARD, () -> this.setCursor(this.getCursor() + BBSSettings.editorJump.get())).active(active).category(editor);
         this.keys().register(Keys.JUMP_BACKWARD, () -> this.setCursor(this.getCursor() - BBSSettings.editorJump.get())).active(active).category(editor);
+        this.keys().register(Keys.FILM_CONTROLLER_CYCLE_EDITORS, () ->
+        {
+            this.showPanel(this.panels.get(MathUtils.cycler(this.getPanelIndex() + (Window.isShiftPressed() ? -1 : 1), 0, this.panels.size() - 1)));
+            UIUtils.playClick();
+        }).category(editor);
 
         this.fill(null);
 
         this.setupEditorFlex(false);
         this.flightEditTime.mark();
+
+        this.panels.add(this.cameraEditor);
+        this.panels.add(this.replayEditor);
+        this.panels.add(this.actionEditor);
+        this.panels.add(this.screenplayEditor);
     }
 
     private void setupEditorFlex(boolean resize)
@@ -278,6 +294,19 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.resize();
             this.resize();
         }
+    }
+
+    public int getPanelIndex()
+    {
+        for (int i = 0; i < this.panels.size(); i++)
+        {
+            if (this.panels.get(i).isVisible())
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public void showPanel(UIElement element)
@@ -574,7 +603,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openCameraEditor.setEnabled(data != null);
         this.openReplayEditor.setEnabled(data != null);
         this.openActionEditor.setEnabled(data != null);
-        this.openScreenplay.setEnabled(data != null);
+        this.openScreenplayEditor.setEnabled(data != null);
         this.duplicateFilm.setEnabled(data != null);
 
         this.actionEditor.setClips(null);
@@ -641,6 +670,17 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     /* Rendering code */
+
+    @Override
+    protected void renderBackground(UIContext context)
+    {
+        super.renderBackground(context);
+
+        if (this.cameraEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openCameraEditor.area);
+        if (this.replayEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openReplayEditor.area);
+        if (this.actionEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openActionEditor.area);
+        if (this.screenplayEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openScreenplayEditor.area);
+    }
 
     /**
      * Draw everything on the screen

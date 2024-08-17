@@ -201,6 +201,7 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_CONTROL = L10n.lang("bbs.ui.film.controller.keys.toggle_control");
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE = L10n.lang("bbs.ui.film.controller.keys.toggle_orbit_mode");
     public static final IKey FILM_CONTROLLER_KEYS_OPEN_REPLAYS = L10n.lang("bbs.ui.film.controller.keys.open_replays");
+    public static final IKey FILM_CONTROLLER_KEYS_CYCLE_EDITORS = L10n.lang("bbs.ui.film.controller.keys.cycle_editors");
     public static final IKey FILM_CONTROLLER_RECORD_DESCRIPTION = L10n.lang("bbs.ui.film.controller.record-description");
     public static final IKey FILM_CONTROLLER_RECORD_TITLE = L10n.lang("bbs.ui.film.controller.record-title");
     public static final IKey FILM_CONTROLLER_SERVER_WARNING = L10n.lang("bbs.ui.film.controller.server_warning");

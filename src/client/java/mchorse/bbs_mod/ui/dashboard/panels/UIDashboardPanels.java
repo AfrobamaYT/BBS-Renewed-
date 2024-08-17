@@ -35,6 +35,14 @@ public class UIDashboardPanels extends UIElement
         batcher.gradientVBox(area.x, area.y, area.ex(), area.ey() - 2, color, Colors.A75 | color);
     }
 
+    public static void renderHighlightHorizontal(Batcher2D batcher, Area area)
+    {
+        int color = BBSSettings.primaryColor.get();
+
+        batcher.box(area.ex() - 2, area.y, area.ex(), area.ey(), Colors.A100 | color);
+        batcher.gradientHBox(area.x, area.y, area.ex() - 2, area.ey(), color, Colors.A75 | color);
+    }
+
     public UIDashboardPanels()
     {
         this.taskBar = new UIElement();
