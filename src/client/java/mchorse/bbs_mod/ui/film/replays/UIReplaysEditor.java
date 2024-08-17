@@ -223,7 +223,7 @@ public class UIReplaysEditor extends UIElement
 
         OnionSkin onionSkin = this.filmPanel.getController().getOnionSkin();
 
-        if (replay == null && !replay.properties.properties.containsKey(onionSkin.getGroup()))
+        if (replay == null || !replay.properties.properties.containsKey(onionSkin.getGroup()))
         {
             onionSkin.resetGroup();
         }

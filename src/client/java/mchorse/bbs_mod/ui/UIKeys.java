@@ -433,6 +433,7 @@ public class UIKeys
     public static final IKey POSE_CONTEXT_RESET = L10n.lang("bbs.ui.pose.context.reset");
     public static final IKey POSE_CONTEXT_SAVE = L10n.lang("bbs.ui.pose.context.save");
     public static final IKey SCENE_REPLAYS_CONTEXT_ADD = L10n.lang("bbs.ui.scene.replays.context.add");
+    public static final IKey SCENE_REPLAYS_CONTEXT_FROM_CAMERA = L10n.lang("bbs.ui.scene.replays.context.from_camera");
     public static final IKey SCENE_REPLAYS_CONTEXT_DUPE = L10n.lang("bbs.ui.scene.replays.context.dupe");
     public static final IKey SCENE_REPLAYS_CONTEXT_EDIT_FORM = L10n.lang("bbs.ui.scene.replays.context.edit_form");
     public static final IKey SCENE_REPLAYS_CONTEXT_PICK_FORM = L10n.lang("bbs.ui.scene.replays.context.pick_form");
