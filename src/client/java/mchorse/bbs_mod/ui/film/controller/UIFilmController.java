@@ -78,6 +78,13 @@ import java.util.function.Supplier;
 
 public class UIFilmController extends UIElement
 {
+    public static final int CAMERA_MODE_CAMERA = 0;
+    public static final int CAMERA_MODE_FREE = 1;
+    public static final int CAMERA_MODE_ORBIT = 2;
+    public static final int CAMERA_MODE_FIRST_PERSON = 3;
+    public static final int CAMERA_MODE_THIRD_PERSON_BACK = 4;
+    public static final int CAMERA_MODE_THIRD_PERSON_FRONT = 5;
+
     public final UIFilmPanel panel;
 
     public final List<IEntity> entities = new ArrayList<>();
@@ -202,9 +209,9 @@ public class UIFilmController extends UIElement
         return null;
     }
 
-    private int getPovMode()
+    public int getPovMode()
     {
-        return this.pov % 5;
+        return this.pov % 6;
     }
 
     public void setPov(int pov)
@@ -650,11 +657,12 @@ public class UIFilmController extends UIElement
         {
             int color = BBSSettings.primaryColor(0);
 
-            menu.autoKeys().action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == 0 ? color : 0, () -> this.setPov(0));
-            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == 1 ? color : 0, () -> this.setPov(1));
-            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == 2 ? color : 0, () -> this.setPov(2));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == 3 ? color : 0, () -> this.setPov(3));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == 4 ? color : 0, () -> this.setPov(4));
+            menu.autoKeys().action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == CAMERA_MODE_CAMERA ? color : 0, () -> this.setPov(0));
+            menu.action(Icons.REFRESH, UIKeys.FILM_REPLAY_ORBIT_FREE, this.pov == CAMERA_MODE_FREE ? color : 0, () -> this.setPov(1));
+            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == CAMERA_MODE_ORBIT ? color : 0, () -> this.setPov(2));
+            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == CAMERA_MODE_FIRST_PERSON ? color : 0, () -> this.setPov(3));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == CAMERA_MODE_THIRD_PERSON_BACK ? color : 0, () -> this.setPov(4));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == CAMERA_MODE_THIRD_PERSON_FRONT ? color : 0, () -> this.setPov(5));
         });
     }
 
@@ -662,15 +670,15 @@ public class UIFilmController extends UIElement
     {
         if (this.orbit.enabled)
         {
-            int mode = this.getPovMode() - 1;
+            int mode = this.getPovMode();
 
-            if (mode == 0)
+            if (mode == CAMERA_MODE_ORBIT)
             {
                 this.orbit.setup(camera, transition);
 
                 camera.fov = BBSSettings.getFov();
             }
-            else
+            else if (mode != CAMERA_MODE_FREE)
             {
                 this.handleFirstThirdPerson(camera, transition, mode);
             }
@@ -689,7 +697,6 @@ public class UIFilmController extends UIElement
         Vector3d position = new Vector3d();
         Vector3f rotation = new Vector3f();
         float distance = this.orbit.getDistance();
-        boolean back = mode == 2;
 
         position.set(controller.getPrevX(), controller.getPrevY(), controller.getPrevZ());
         position.lerp(new Vector3d(controller.getX(), controller.getY(), controller.getZ()), transition);
@@ -701,7 +708,7 @@ public class UIFilmController extends UIElement
         rotation.x = MathUtils.toRad(rotation.x);
         rotation.y = MathUtils.toRad(rotation.y);
 
-        if (mode == 1)
+        if (mode == CAMERA_MODE_FIRST_PERSON)
         {
             camera.position.set(position);
             camera.rotation.set(rotation.x, rotation.y + MathUtils.PI, 0F);
@@ -710,6 +717,7 @@ public class UIFilmController extends UIElement
             return;
         }
 
+        boolean back = mode == CAMERA_MODE_THIRD_PERSON_BACK;
         Vector3f rotate = Matrices.rotation(rotation.x * (back ? 1 : -1), (back ? 0F : MathUtils.PI) - rotation.y);
         World world = MinecraftClient.getInstance().world;
 

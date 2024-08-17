@@ -3,6 +3,7 @@ package mchorse.bbs_mod.camera.controller;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 
 import java.util.function.Consumer;
 
@@ -51,7 +52,7 @@ public class RunnerCameraController extends CameraWorkCameraController
     {
         this.manual = manual;
 
-        if (manual != null)
+        if (manual != null && this.panel.getController().getPovMode() != UIFilmController.CAMERA_MODE_FREE)
         {
             manual.copy(this.position);
         }
@@ -83,7 +84,7 @@ public class RunnerCameraController extends CameraWorkCameraController
         {
             this.manual.apply(camera);
         }
-        else if (this.context.clips != null)
+        else if (this.context.clips != null && this.panel.getController().getPovMode() != UIFilmController.CAMERA_MODE_FREE)
         {
             this.apply(camera, this.ticks, this.context.playing ? transition : this.lastTransition);
         }
