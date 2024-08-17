@@ -141,12 +141,16 @@ public class UIFilmController extends UIElement
                 this.panel.replayEditor.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
             }
         }).active(hasActor).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_KEYS_RESTART_ACTIONS, () -> this.panel.notifyServer(ActionState.RESTART)).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_KEYS_TOGGLE_ONION_SKIN, () ->
+        this.keys().register(Keys.FILM_CONTROLLER_RESTART_ACTIONS, () -> this.panel.notifyServer(ActionState.RESTART)).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ONION_SKIN, () ->
         {
             this.onionSkin.enabled = !this.onionSkin.enabled;
 
             UIUtils.playClick();
+        }).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_OPEN_REPLAYS, () ->
+        {
+            this.panel.preview.openReplays();
         }).category(category);
 
         this.noCulling();

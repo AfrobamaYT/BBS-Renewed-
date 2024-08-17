@@ -325,7 +325,7 @@
     "bbs.ui.film.controller.keys.start_recording": "Начать запись",
     "bbs.ui.film.controller.keys.toggle_control": "Переключить контроль актёра",
     "bbs.ui.film.controller.keys.toggle_orbit_mode": "Переключить режим орбиты",
-    "bbs.ui.film.controller.onion_skin.all": "Все",
+    "bbs.ui.film.controller.keys.open_replays": "Открыть записи",
     "bbs.ui.film.controller.onion_skin.all-description": "Включить луковую кожу для всех записей",
     "bbs.ui.film.controller.onion_skin.group": "Группа: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Переключить луковую кожу",
