@@ -7,9 +7,9 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.StringGroupMatcher;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
@@ -707,7 +707,7 @@ public class Textbox
         }
 
         boolean empty = !this.focused && this.text.isEmpty();
-        String text = empty ? this.placeholder.get() : this.getWrappedText();
+        String text = empty ? this.font.limitToWidth(this.placeholder.get(), this.area.w - 5) : this.getWrappedText();
         int length = text.length();
         int color = empty ? 0xaaaaaa : this.color;
 
