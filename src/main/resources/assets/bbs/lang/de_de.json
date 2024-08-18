@@ -2,7 +2,12 @@
     "block.bbs.model": "Modell-Block",
     "itemGroup.bbs.main": "BBS Mod",
 
-    "key.bbs.dashboard": "Dashboard",
     "key.bbs.block_editor": "Modell-Block Editor",
+    "key.bbs.dashboard": "Dashboard",
+    "key.bbs.demorph": "Entmorphen",
+    "key.bbs.open_replays": "Öffne aktuelle Aufnahmen",
+    "key.bbs.play_film": "Spiele Film",
+    "key.bbs.record_replay": "Nehme aktuelle Aufnahme auf",
+    "key.bbs.record_video": "Nehme Video auf",
     "category.bbs.main": "BBS Mod"
 }
