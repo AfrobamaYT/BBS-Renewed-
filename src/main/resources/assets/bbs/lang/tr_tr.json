@@ -1,13 +1,14 @@
 {
-    "block.bbs.model": "Model bloğu",
+    "block.bbs.model": "Model Bloğu",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.block_editor": "Model bloğu düzenleyicisi",
-    "key.bbs.dashboard": "Gösterge paneli",
-    "key.bbs.demorph": "Geri dönüş",
-    "key.bbs.open_replays": "Şu anki kayıtları göster",
-    "key.bbs.play_film": "Filmi oynat",
-    "key.bbs.record_replay": "Şu anki aktörü kaydet",
-    "key.bbs.record_video": "Video kaydet",
+    "key.bbs.block_editor": "Model Blok Düzenleyicisi",
+    "key.bbs.dashboard": "Gösterge Paneli",
+    "key.bbs.demorph": "Geri Dönüşme",
+    "key.bbs.open_replays": "Kayıtları Göster",
+    "key.bbs.open_morphing": "Dönüşme Menüsünü Aç",
+    "key.bbs.play_film": "Filmi Oynat",
+    "key.bbs.record_replay": "Seçili Aktörü Kaydet",
+    "key.bbs.record_video": "Video Kaydet",
     "category.bbs.main": "BBS mod"
 }
