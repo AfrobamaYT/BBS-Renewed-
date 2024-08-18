@@ -577,7 +577,7 @@ public class UIKeys
     public static final IKey SUPPORTERS_SUPER_SUPPORTERS = L10n.lang("bbs.ui.supporters.super_supporters");
     public static final IKey SUPPORTERS_TITLE = L10n.lang("bbs.ui.supporters.title");
     public static final IKey SUPPORTERS_TUTORIALS = L10n.lang("bbs.ui.supporters.tutorials");
-    public static final IKey SUPPORTERS_TUTORIALS_LINK = L10n.lang("bbs.ui.supporters.tutorials");
+    public static final IKey SUPPORTERS_TUTORIALS_LINK = L10n.lang("bbs.ui.supporters.tutorials_link");
     public static final IKey SUPPORTERS_WIKI = L10n.lang("bbs.ui.supporters.wiki");
     public static final IKey SUPPORTERS_WIKI_LINK = L10n.lang("bbs.ui.supporters.wiki_link");
     public static final IKey TEXTURES_COPY = L10n.lang("bbs.ui.textures.copy");
