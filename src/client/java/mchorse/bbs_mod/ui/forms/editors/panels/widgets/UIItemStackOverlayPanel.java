@@ -58,7 +58,7 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
             this.pickItemStack(this.stack);
             this.updateNbt();
         });
-        this.name.setText(stack.getName().getLiteralString());
+        this.name.setText(stack.getName().getString());
         this.count = new UITrackpad((v) ->
         {
             this.stack.setCount(v.intValue());
