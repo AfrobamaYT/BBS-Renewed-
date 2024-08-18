@@ -45,7 +45,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
@@ -268,9 +267,15 @@ public class BBSModClient implements ClientModInitializer
         {
             if (requestToggleRecording)
             {
-                Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+                Window window = MinecraftClient.getInstance().getWindow();
+                int width = Math.max(window.getWidth(), 2);
+                int height = Math.max(window.getHeight(), 2);
 
-                videoRecorder.toggleRecording(framebuffer.getColorAttachment(), framebuffer.textureWidth, framebuffer.textureHeight);
+                if (width % 2 == 1) width -= width % 2;
+                if (height % 2 == 1) height -= height % 2;
+
+                videoRecorder.toggleRecording(BBSRendering.getTexture().id, width, height);
+                BBSRendering.setCustomSize(videoRecorder.isRecording(), width, height);
 
                 requestToggleRecording = false;
             }

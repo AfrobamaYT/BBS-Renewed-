@@ -1,24 +1,20 @@
 package mchorse.bbs_mod.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
-import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
-import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
-import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
-import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
-import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -27,8 +23,15 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.io.File;
@@ -47,6 +50,9 @@ public class BBSRendering
 
     private static boolean customSize;
     private static boolean iris;
+
+    private static int width;
+    private static int height;
 
     private static Texture texture;
 
@@ -81,12 +87,12 @@ public class BBSRendering
 
     public static int getVideoWidth()
     {
-        return BBSSettings.videoSettings.width.get();
+        return width == 0 ? BBSSettings.videoSettings.width.get() : width;
     }
 
     public static int getVideoHeight()
     {
-        return BBSSettings.videoSettings.height.get();
+        return height == 0 ? BBSSettings.videoSettings.height.get() : height;
     }
 
     public static int getVideoFrameRate()
@@ -118,7 +124,15 @@ public class BBSRendering
 
     public static void setCustomSize(boolean customSize)
     {
+        setCustomSize(customSize, 0, 0);
+    }
+
+    public static void setCustomSize(boolean customSize, int w, int h)
+    {
         BBSRendering.customSize = customSize;
+
+        width = !customSize ? 0 : w;
+        height = !customSize ? 0 : h;
 
         if (!customSize)
         {
@@ -131,6 +145,13 @@ public class BBSRendering
 
     public static Texture getTexture()
     {
+        if (texture == null)
+        {
+            texture = new Texture();
+            texture.setFormat(TextureFormat.RGB_U8);
+            texture.setFilter(GL11.GL_NEAREST);
+        }
+
         return texture;
     }
 
@@ -190,15 +211,8 @@ public class BBSRendering
         }
 
         Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
-
-        if (texture == null)
-        {
-            texture = new Texture();
-            texture.setFormat(TextureFormat.RGB_U8);
-            texture.setFilter(GL11.GL_NEAREST);
-        }
-
         UIBaseMenu currentMenu = UIScreen.getCurrentMenu();
+        Texture texture = getTexture();
 
         if (currentMenu instanceof UIDashboard dashboard)
         {
@@ -220,7 +234,7 @@ public class BBSRendering
         framebuffer.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
         framebuffer.beginWrite(true);
 
-        /* For preview: if (texture != null)
+        if (texture != null && width != 0)
         {
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
@@ -238,7 +252,7 @@ public class BBSRendering
             RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
 
             BufferRenderer.drawWithGlobalProgram(builder.end());
-        } */
+        }
     }
 
     public static void onRenderChunkLayer(MatrixStack stack)

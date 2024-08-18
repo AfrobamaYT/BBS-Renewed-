@@ -1093,7 +1093,7 @@ public class UIFilmController extends UIElement
         {
             IEntity entity = this.entities.get(i);
 
-            if (this.getPovMode() == 2 && entity == this.getCurrentEntity() && this.orbit.enabled)
+            if (this.getPovMode() == CAMERA_MODE_FIRST_PERSON && entity == this.getCurrentEntity() && this.orbit.enabled)
             {
                 continue;
             }
