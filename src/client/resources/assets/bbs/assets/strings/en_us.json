@@ -328,6 +328,7 @@
     "bbs.ui.film.controller.keys.toggle_control": "Toggle actor control",
     "bbs.ui.film.controller.keys.toggle_orbit_mode": "Toggle orbit mode",
     "bbs.ui.film.controller.keys.open_replays": "Open replays",
+    "bbs.ui.film.controller.keys.cycle_editors": "Cycle editors",
     "bbs.ui.film.controller.onion_skin.all-description": "Enable onion skin for all replays",
     "bbs.ui.film.controller.onion_skin.group": "Group: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Toggle onion skin",
