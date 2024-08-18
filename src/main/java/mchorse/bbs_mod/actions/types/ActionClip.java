@@ -7,6 +7,7 @@ import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.utils.clips.Clip;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 
 public abstract class ActionClip extends Clip
@@ -74,7 +75,11 @@ public abstract class ActionClip extends Clip
         player.setHeadYaw(keyframes.headYaw.interpolate(tick).floatValue());
         player.setBodyYaw(keyframes.bodyYaw.interpolate(tick).floatValue());
         player.setPitch(keyframes.pitch.interpolate(tick).floatValue());
-        player.setStackInHand(Hand.MAIN_HAND, keyframes.mainHand.interpolate(tick).copy());
-        player.setStackInHand(Hand.OFF_HAND, keyframes.offHand.interpolate(tick).copy());
+
+        ItemStack main = keyframes.mainHand.interpolate(tick);
+        ItemStack offhand = keyframes.offHand.interpolate(tick);
+
+        player.setStackInHand(Hand.MAIN_HAND, (main == null ? ItemStack.EMPTY : main).copy());
+        player.setStackInHand(Hand.OFF_HAND, (offhand == null ? ItemStack.EMPTY : offhand).copy());
     }
 }
