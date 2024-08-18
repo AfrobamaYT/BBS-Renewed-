@@ -14,6 +14,7 @@ import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.IUIFormList;
 import mchorse.bbs_mod.ui.forms.UIFormList;
@@ -177,16 +178,34 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.formsArea.add(background, this.forms, this.bodyPartData);
         this.editArea.add(this.finish, this.toggleSidebar);
         this.add(this.editArea, this.formsArea);
+
+        this.pick.keys().register(Keys.FORMS_EDIT, () ->
+        {
+            
+        });
     }
 
     public void pickFormFromRenderer(Pair<Form, String> pair)
     {
-        this.forms.setCurrentForm(pair.a);
-        this.pickForm(this.forms.getCurrentFirst());
-
-        if (!pair.b.isEmpty())
+        if (Window.isCtrlPressed() && !pair.b.isEmpty())
         {
-            this.editor.pickBone(pair.b);
+            /* Ctrl + clicking to pick the parent bone to attach to */
+            BodyPart part = this.forms.getCurrentFirst().part;
+
+            if (part != null && this.bone.getList().contains(pair.b) && part.getForm().getParent() == pair.a)
+            {
+                this.bone.setCurrentScroll(part.bone = pair.b);
+            }
+        }
+        else
+        {
+            this.forms.setCurrentForm(pair.a);
+            this.pickForm(this.forms.getCurrentFirst());
+
+            if (!pair.b.isEmpty())
+            {
+                this.editor.pickBone(pair.b);
+            }
         }
     }
 
