@@ -51,6 +51,7 @@ public class ServerNetwork
     public static final Identifier SERVER_TOGGLE_FILM = new Identifier(BBSMod.MOD_ID, "s6");
     public static final Identifier SERVER_ACTION_CONTROL = new Identifier(BBSMod.MOD_ID, "s7");
     public static final Identifier SERVER_ACTIONS_UPLOAD = new Identifier(BBSMod.MOD_ID, "s8");
+    public static final Identifier SERVER_PLAYER_TP = new Identifier(BBSMod.MOD_ID, "s9");
 
     public static void setup()
     {
@@ -62,6 +63,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_TOGGLE_FILM, (server, player, handler, buf, responder) -> handleToggleFilm(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_CONTROL, (server, player, handler, buf, responder) -> handleActionControl(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTIONS_UPLOAD, (server, player, handler, buf, responder) -> handleActionsUpload(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_TP, (server, player, handler, buf, responder) -> handleTeleportPlayer(server, player, buf));
     }
 
     /* Handlers */
@@ -325,6 +327,15 @@ public class ServerNetwork
         {
             BBSMod.getActions().updatePlayers(filmId, replayId, data);
         });
+    }
+
+    private static void handleTeleportPlayer(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        int x = buf.readInt();
+        int y = buf.readInt();
+        int z = buf.readInt();
+
+        server.execute(() -> player.teleport(x, y, z, false));
     }
 
     /* API */

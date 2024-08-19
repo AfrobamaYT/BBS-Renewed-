@@ -99,6 +99,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private Camera camera = new Camera();
     private boolean entered;
+    public boolean playerToCamera;
 
     /* Entity control */
     private UIFilmController controller = new UIFilmController(this);
@@ -666,6 +667,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         this.controller.update();
 
+        if (this.playerToCamera && this.data != null)
+        {
+            this.teleportToCamera();
+        }
+
         super.update();
     }
 
@@ -920,6 +926,26 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (this.data != null)
         {
             this.screenplayEditor.setFilm(this.data);
+        }
+    }
+
+    public void teleportToCamera()
+    {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        Vector3d cameraPos = this.getCamera().position;
+        double posX = Math.floor(cameraPos.x);
+        double posY = Math.floor(cameraPos.y);
+        double posZ = Math.floor(cameraPos.z);
+
+        if (!ClientNetwork.isIsBBSModOnServer())
+        {
+            String name = player.getGameProfile().getName();
+
+            player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
+        }
+        else
+        {
+            ClientNetwork.sendTeleport((int) posX, (int) posY, (int) posZ);
         }
     }
 }

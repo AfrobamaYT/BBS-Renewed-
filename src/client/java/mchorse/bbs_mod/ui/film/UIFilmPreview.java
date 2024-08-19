@@ -31,10 +31,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
 import org.joml.Vector2i;
-import org.joml.Vector3d;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -81,18 +78,15 @@ public class UIFilmPreview extends UIElement
                 Films.playFilm(this.panel.getFilm(), true);
             });
         });
-        this.teleport = new UIIcon(Icons.MOVE_TO, (b) ->
-        {
-            ClientPlayerEntity player = MinecraftClient.getInstance().player;
-            Vector3d cameraPos = this.panel.getCamera().position;
-            String name = player.getGameProfile().getName();
-            double posX = Math.floor(cameraPos.x);
-            double posY = Math.floor(cameraPos.y);
-            double posZ = Math.floor(cameraPos.z);
-
-            player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
-        });
+        this.teleport = new UIIcon(Icons.MOVE_TO, (b) -> this.panel.teleportToCamera());
         this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE);
+        this.teleport.context((menu) ->
+        {
+            menu.action(Icons.MOVE_TO, UIKeys.FILM_TELEPORT_CONTEXT_PLAYER, this.panel.playerToCamera ? BBSSettings.primaryColor(0) : 0, () ->
+            {
+                this.panel.playerToCamera = !this.panel.playerToCamera;
+            });
+        });
         this.flight = new UIIcon(Icons.PLANE, (b) -> this.panel.toggleFlight());
         this.flight.tooltip(UIKeys.CAMERA_EDITOR_KEYS_MODES_FLIGHT);
         this.control = new UIIcon(Icons.POSE, (b) -> this.panel.getController().toggleControl());
