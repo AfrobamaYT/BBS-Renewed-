@@ -34,7 +34,7 @@ public class KeyframeSegment <T>
         KeyframeChannel<T> channel = (KeyframeChannel<T>) a.getParent();
         int index = channel.getKeyframes().indexOf(a);
 
-        if (index >= 0 && a != b)
+        if (index >= 0)
         {
             Keyframe<T> preA = channel.get(index - 1);
             Keyframe<T> postB = channel.get(index + 2);
