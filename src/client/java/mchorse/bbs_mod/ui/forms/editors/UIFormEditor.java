@@ -179,10 +179,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.editArea.add(this.finish, this.toggleSidebar);
         this.add(this.editArea, this.formsArea);
 
-        this.pick.keys().register(Keys.FORMS_EDIT, () ->
-        {
-            
-        });
+        this.pick.keys().register(Keys.FORMS_EDIT, this.pick::clickItself);
     }
 
     public void pickFormFromRenderer(Pair<Form, String> pair)

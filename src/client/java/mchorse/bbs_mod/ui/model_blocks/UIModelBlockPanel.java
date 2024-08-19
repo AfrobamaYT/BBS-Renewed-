@@ -109,7 +109,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.pickEdit.keybinds();
 
         this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
-        this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) -> this.modelBlock.getProperties().setGlobal(b.getValue()));
+        this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
+        {
+            this.modelBlock.getProperties().setGlobal(b.getValue());
+            MinecraftClient.getInstance().worldRenderer.reload();
+        });
 
         this.transform = new UIPropTransform();
         this.transform.verticalCompact();
@@ -162,6 +166,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
             transform.translate.set(0F, 0F, 0F);
             palette.editor.renderer.setTransform(new Matrix4f(transform.createMatrix()));
+
+            // this.dashboard. disable stuff
+
         }
     }
 
