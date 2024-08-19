@@ -4,8 +4,8 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
-import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class MolangHelper
 {
@@ -59,8 +59,8 @@ public class MolangHelper
             headYaw = yawHead - bodyYaw;
             headPitch = Lerps.lerp(target.getPrevPitch(), target.getPitch(), transition);
             velocity = Math.sqrt(dx * dx + target.getVelocity().y * target.getVelocity().y + dz * dz);
-            limbSwingAmount = target.getLimbPos(transition);
-            limbSwing = target.getLimbSpeed(transition);
+            limbSwingAmount = target.getLimbSpeed(transition);
+            limbSwing = target.getLimbPos(transition);
 
             /* There is still a tiny bit of vertical velocity (gravity) when an
              * entity stands still, so set it to zero in that case */
