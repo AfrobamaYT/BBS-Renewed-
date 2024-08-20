@@ -240,14 +240,20 @@ public class SoundManager implements IWatchDogListener
     {
         for (SoundPlayer player : this.sounds)
         {
-            player.delete();
+            if (player != null)
+            {
+                player.delete();
+            }
         }
 
         this.sounds.clear();
 
         for (SoundBuffer buffer : this.buffers.values())
         {
-            buffer.delete();
+            if (buffer != null)
+            {
+                buffer.delete();
+            }
         }
 
         this.buffers.clear();
