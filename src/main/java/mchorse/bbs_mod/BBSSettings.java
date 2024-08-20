@@ -61,6 +61,7 @@ public class BBSSettings
     public static ValueEditorLayout editorLayoutSettings;
 
     public static ValueFloat recordingCountdown;
+    public static ValueInt recordingNextVariable;
 
     public static ValueBoolean audioWaveformVisible;
     public static ValueInt audioWaveformDensity;
@@ -147,6 +148,7 @@ public class BBSSettings
         builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
+        recordingNextVariable = builder.getInt("next", 1, 1, 100);
 
         builder.category("audio");
         audioWaveformVisible = builder.getBoolean("waveform_visible", true);

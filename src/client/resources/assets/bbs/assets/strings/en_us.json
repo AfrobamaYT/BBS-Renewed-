@@ -73,6 +73,8 @@
     "bbs.config.multiskin.tooltip": "Options regarding Multi-skin feature",
     "bbs.config.recording.countdown": "Recording countdown",
     "bbs.config.recording.countdown-comment": "Recording countdown (in seconds)",
+    "bbs.config.recording.next": "Next variables",
+    "bbs.config.recording.next-comment": "In command action clips, you can specify ${next_x/y/z} variable to get future position. This option allows to specify how many ticks in the future",
     "bbs.config.recording.title": "Recording",
     "bbs.config.recording.tooltip": "Here is everything related to player recording system",
     "bbs.config.scrollbars.sensitivity": "Scrolling sensitivity",
