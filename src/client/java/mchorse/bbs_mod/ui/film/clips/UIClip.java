@@ -75,6 +75,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
     public UITrackpad duration;
 
     public UIEnvelope envelope;
+    public UIToggle additive;
 
     public UIScrollView panels;
 
@@ -163,6 +164,10 @@ public abstract class UIClip <T extends Clip> extends UIElement
         });
         this.duration.limit(1, Integer.MAX_VALUE, true).tooltip(UIKeys.CAMERA_PANELS_DURATION);
         this.envelope = new UIEnvelope(this);
+        this.additive = new UIToggle(UIKeys.CAMERA_PANELS_ADDITIVE, (b) ->
+        {
+            this.clip.additive.set(b.getValue());
+        });
 
         this.panels = UI.scrollView(5, 10);
         this.panels.scroll.cancelScrolling();
@@ -189,6 +194,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
     protected void addEnvelopes()
     {
         this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_ENVELOPES_TITLE).marginTop(12), this.envelope);
+        this.panels.add(this.additive);
     }
 
     public void handleUndo(IUndo<ValueGroup> undo, boolean redo)
@@ -215,6 +221,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
         this.tick.setValue(TimeUtils.toTime(this.clip.tick.get()));
         this.duration.setValue(TimeUtils.toTime(this.clip.duration.get()));
         this.envelope.fillData();
+        this.additive.setValue(this.clip.additive.get());
     }
 
     @Override

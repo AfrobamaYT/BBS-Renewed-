@@ -222,6 +222,7 @@
     "bbs.ui.camera.panels.dolly.title": "Dolly",
     "bbs.ui.camera.panels.dolly.yaw": "Horizontal direction (yaw, measured in degrees) in which dolly will travel",
     "bbs.ui.camera.panels.duration": "Clip's duration (measured in ticks, 20 ticks = ~1 second), the number determines for how long the clip will be applied",
+    "bbs.ui.camera.panels.additive": "Additive",
     "bbs.ui.camera.panels.edit_keyframes": "Edit keyframes",
     "bbs.ui.camera.panels.enabled": "Enabled",
     "bbs.ui.camera.panels.envelopes.end_d": "Fade out",
