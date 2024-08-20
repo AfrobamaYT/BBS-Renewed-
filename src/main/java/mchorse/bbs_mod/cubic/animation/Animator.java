@@ -28,7 +28,8 @@ public class Animator implements IAnimator
     public ActionPlayback dying;
     public ActionPlayback falling;
 
-    public ActionPlayback jump;
+    public ActionPlayback jump1;
+    public ActionPlayback jump2;
     public ActionPlayback swipe;
     public ActionPlayback hurt;
     public ActionPlayback land;
@@ -50,6 +51,7 @@ public class Animator implements IAnimator
 
     /* States */
     public boolean wasOnGround = true;
+    public int jumpingCounter;
 
     private CubicModel model;
 
@@ -76,7 +78,8 @@ public class Animator implements IAnimator
         this.falling = this.createAction(this.falling, actions.getConfig("falling"), true);
 
         this.swipe = this.createAction(this.swipe, actions.getConfig("swipe"), false);
-        this.jump = this.createAction(this.jump, actions.getConfig("jump"), false, 2);
+        this.jump1 = this.createAction(this.jump1, actions.getConfig("jump"), false, 2);
+        this.jump2 = this.createAction(this.jump2, actions.getConfig("jump_alt"), false, 2);
         this.hurt = this.createAction(this.hurt, actions.getConfig("hurt"), false, 3);
         this.land = this.createAction(this.land, actions.getConfig("land"), false);
         this.shoot = this.createAction(this.shoot, actions.getConfig("shoot"), true);
@@ -263,8 +266,17 @@ public class Animator implements IAnimator
 
         if (!target.isOnGround() && this.wasOnGround && Math.abs(velocity.y) > 0.2F)
         {
-            this.addAction(this.jump);
+            ActionPlayback jump = this.jump1;
+
+            if (this.jumpingCounter % 2 == 0 && this.jump2 != null)
+            {
+                jump = this.jump2;
+            }
+
+            this.addAction(jump);
             this.wasOnGround = false;
+
+            this.jumpingCounter += 1;
         }
 
         float handSwingProgress = target.getHandSwingProgress(0F);
