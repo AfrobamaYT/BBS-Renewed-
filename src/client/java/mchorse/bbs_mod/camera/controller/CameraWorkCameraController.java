@@ -31,7 +31,10 @@ public abstract class CameraWorkCameraController implements ICameraController
 
     protected void apply(Camera camera, int ticks, float transition)
     {
-        this.position.set(camera);
+        if (camera != null)
+        {
+            this.position.set(camera);
+        }
 
         this.context.clipData.clear();
         this.context.setup(ticks, transition);
@@ -45,7 +48,10 @@ public abstract class CameraWorkCameraController implements ICameraController
 
         this.context.currentLayer = 0;
 
-        this.position.apply(camera);
+        if (camera != null)
+        {
+            this.position.apply(camera);
+        }
     }
 
     @Override

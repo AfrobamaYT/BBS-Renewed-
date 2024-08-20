@@ -84,9 +84,12 @@ public class RunnerCameraController extends CameraWorkCameraController
         {
             this.manual.apply(camera);
         }
-        else if (this.context.clips != null && this.panel.getController().getPovMode() != UIFilmController.CAMERA_MODE_FREE)
+        else if (this.context.clips != null)
         {
-            this.apply(camera, this.ticks, this.context.playing ? transition : this.lastTransition);
+            /* kms */
+            boolean free = this.panel.getController().getPovMode() == UIFilmController.CAMERA_MODE_FREE;
+
+            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : this.lastTransition);
         }
 
         this.panel.getController().handleCamera(camera, transition);
