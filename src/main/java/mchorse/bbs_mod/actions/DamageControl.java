@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.actions;
 
+import mchorse.bbs_mod.BBSSettings;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
@@ -18,14 +19,21 @@ public class DamageControl
     private ServerWorld world;
 
     public int nested;
+    public boolean enable;
 
     public DamageControl(ServerWorld world)
     {
         this.world = world;
+        this.enable = BBSSettings.damageControl.get();
     }
 
     public void addBlock(BlockPos pos, BlockState state, BlockEntity entity)
     {
+        if (!this.enable)
+        {
+            return;
+        }
+
         for (int i = 0; i < this.blocks.size(); i++)
         {
             BlockCapture blockCapture = this.blocks.get(i);
@@ -41,6 +49,11 @@ public class DamageControl
 
     public void addEntity(Entity entity)
     {
+        if (!this.enable)
+        {
+            return;
+        }
+
         this.entities.add(entity);
     }
 

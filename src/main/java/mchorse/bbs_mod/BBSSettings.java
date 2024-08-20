@@ -63,6 +63,8 @@ public class BBSSettings
     public static ValueFloat recordingCountdown;
     public static ValueInt recordingNextVariable;
 
+    public static ValueBoolean damageControl;
+
     public static ValueBoolean audioWaveformVisible;
     public static ValueInt audioWaveformDensity;
     public static ValueFloat audioWaveformWidth;
@@ -149,6 +151,8 @@ public class BBSSettings
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingNextVariable = builder.getInt("next", 1, 1, 100);
+
+        damageControl = builder.category("dc").getBoolean("enabled", true);
 
         builder.category("audio");
         audioWaveformVisible = builder.getBoolean("waveform_visible", true);
