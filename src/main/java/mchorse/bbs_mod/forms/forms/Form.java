@@ -16,7 +16,7 @@ import mchorse.bbs_mod.forms.properties.TransformProperty;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public abstract class Form implements IMapSerializable
@@ -41,7 +41,7 @@ public abstract class Form implements IMapSerializable
 
     protected Object renderer;
     protected String cachedID;
-    protected final Map<String, IFormProperty> properties = new HashMap<>();
+    protected final Map<String, IFormProperty> properties = new LinkedHashMap<>();
 
     public Form()
     {

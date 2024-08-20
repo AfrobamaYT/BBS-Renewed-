@@ -14,6 +14,7 @@ import mchorse.bbs_mod.particles.components.IComponentParticleRender;
 import mchorse.bbs_mod.particles.components.IComponentParticleUpdate;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -74,7 +75,14 @@ public class ParticleEmitter
     public double cY;
     public double cZ;
 
-    /* Cached variable references to avoid hash look ups */
+    public float user1;
+    public float user2;
+    public float user3;
+    public float user4;
+    public float user5;
+    public float user6;
+
+    /* Cached variable references to avoid hash look-ups */
     private Variable varIndex;
     private Variable varAge;
     private Variable varLifetime;
@@ -82,6 +90,9 @@ public class ParticleEmitter
     private Variable varRandom2;
     private Variable varRandom3;
     private Variable varRandom4;
+    private Variable varPositionX;
+    private Variable varPositionY;
+    private Variable varPositionZ;
 
     private Variable varEmitterAge;
     private Variable varEmitterLifetime;
@@ -89,6 +100,12 @@ public class ParticleEmitter
     private Variable varEmitterRandom2;
     private Variable varEmitterRandom3;
     private Variable varEmitterRandom4;
+    private Variable varEmitterUser1;
+    private Variable varEmitterUser2;
+    private Variable varEmitterUser3;
+    private Variable varEmitterUser4;
+    private Variable varEmitterUser5;
+    private Variable varEmitterUser6;
 
     public double getAge()
     {
@@ -133,6 +150,16 @@ public class ParticleEmitter
         }
     }
 
+    public void setUserVariables(float a, float b, float c, float d, float e, float f)
+    {
+        this.user1 = a;
+        this.user2 = b;
+        this.user3 = c;
+        this.user4 = d;
+        this.user5 = e;
+        this.user6 = f;
+    }
+
     /* Variable related code */
 
     public void setupVariables()
@@ -144,6 +171,9 @@ public class ParticleEmitter
         this.varRandom2 = this.scheme.parser.variables.get("variable.particle_random_2");
         this.varRandom3 = this.scheme.parser.variables.get("variable.particle_random_3");
         this.varRandom4 = this.scheme.parser.variables.get("variable.particle_random_4");
+        this.varPositionX = this.scheme.parser.variables.get("variable.particle_x");
+        this.varPositionY = this.scheme.parser.variables.get("variable.particle_y");
+        this.varPositionZ = this.scheme.parser.variables.get("variable.particle_z");
 
         this.varEmitterAge = this.scheme.parser.variables.get("variable.emitter_age");
         this.varEmitterLifetime = this.scheme.parser.variables.get("variable.emitter_lifetime");
@@ -151,6 +181,12 @@ public class ParticleEmitter
         this.varEmitterRandom2 = this.scheme.parser.variables.get("variable.emitter_random_2");
         this.varEmitterRandom3 = this.scheme.parser.variables.get("variable.emitter_random_3");
         this.varEmitterRandom4 = this.scheme.parser.variables.get("variable.emitter_random_4");
+        this.varEmitterUser1 = this.scheme.parser.variables.get("variable.emitter_user_1");
+        this.varEmitterUser2 = this.scheme.parser.variables.get("variable.emitter_user_2");
+        this.varEmitterUser3 = this.scheme.parser.variables.get("variable.emitter_user_3");
+        this.varEmitterUser4 = this.scheme.parser.variables.get("variable.emitter_user_4");
+        this.varEmitterUser5 = this.scheme.parser.variables.get("variable.emitter_user_5");
+        this.varEmitterUser6 = this.scheme.parser.variables.get("variable.emitter_user_6");
     }
 
     public void setParticleVariables(Particle particle, float transition)
@@ -162,6 +198,9 @@ public class ParticleEmitter
         if (this.varRandom2 != null) this.varRandom2.set(particle.random2);
         if (this.varRandom3 != null) this.varRandom3.set(particle.random3);
         if (this.varRandom4 != null) this.varRandom4.set(particle.random4);
+        if (this.varPositionX != null) this.varPositionX.set(Lerps.lerp(particle.prevPosition.x, particle.position.x, transition));
+        if (this.varPositionY != null) this.varPositionY.set(Lerps.lerp(particle.prevPosition.y, particle.position.y, transition));
+        if (this.varPositionZ != null) this.varPositionZ.set(Lerps.lerp(particle.prevPosition.z, particle.position.z, transition));
 
         this.scheme.updateCurves();
     }
@@ -174,6 +213,12 @@ public class ParticleEmitter
         if (this.varEmitterRandom2 != null) this.varEmitterRandom2.set(this.random2);
         if (this.varEmitterRandom3 != null) this.varEmitterRandom3.set(this.random3);
         if (this.varEmitterRandom4 != null) this.varEmitterRandom4.set(this.random4);
+        if (this.varEmitterUser1 != null) this.varEmitterUser1.set(this.user1);
+        if (this.varEmitterUser2 != null) this.varEmitterUser2.set(this.user2);
+        if (this.varEmitterUser3 != null) this.varEmitterUser3.set(this.user3);
+        if (this.varEmitterUser4 != null) this.varEmitterUser4.set(this.user4);
+        if (this.varEmitterUser5 != null) this.varEmitterUser5.set(this.user5);
+        if (this.varEmitterUser6 != null) this.varEmitterUser6.set(this.user6);
 
         this.scheme.updateCurves();
     }

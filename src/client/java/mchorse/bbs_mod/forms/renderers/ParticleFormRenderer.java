@@ -88,6 +88,15 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
         if (emitter != null)
         {
+            emitter.setUserVariables(
+                this.form.user1.get(context.getTransition()),
+                this.form.user2.get(context.getTransition()),
+                this.form.user3.get(context.getTransition()),
+                this.form.user4.get(context.getTransition()),
+                this.form.user5.get(context.getTransition()),
+                this.form.user6.get(context.getTransition())
+            );
+
             this.updateTexture(context.getTransition());
 
             Matrix4f matrix = new Matrix4f(RenderSystem.getInverseViewRotationMatrix());
