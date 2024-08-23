@@ -148,8 +148,6 @@ public abstract class Form implements IMapSerializable
 
     public void update(IEntity entity)
     {
-        this.updateHitbox(entity);
-
         this.parts.update(entity);
 
         for (IFormProperty property : this.properties.values())
@@ -160,17 +158,6 @@ public abstract class Form implements IMapSerializable
         if (this.renderer instanceof ITickable)
         {
             ((ITickable) this.renderer).tick(entity);
-        }
-    }
-
-    public void updateHitbox(IEntity entity)
-    {
-        if (this.hitbox.get() && this.parent == null)
-        {
-//            TODO: entity.basic.hitboxWidth = this.hitboxWidth.get();
-//            entity.basic.hitboxHeight = this.hitboxHeight.get();
-//            entity.basic.eyeHeight = this.hitboxEyeHeight.get();
-//            entity.basic.sneakMultiplier = this.hitboxSneakMultiplier.get();
         }
     }
 

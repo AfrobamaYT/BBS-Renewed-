@@ -62,7 +62,7 @@ public class ParticleComponentRateSteady extends ParticleComponentRate implement
     @Override
     public void postRender(ParticleEmitter emitter, float transition)
     {
-        if (emitter.playing)
+        if (emitter.playing && !emitter.paused)
         {
             double particles = emitter.getAge(transition) * this.spawnRate.get();
             double diff = particles - emitter.index;

@@ -52,11 +52,13 @@ public class ParticleComponentRateInstant extends ParticleComponentRate implemen
     {
         double age = emitter.getAge();
 
-        if (emitter.playing && Operation.equals(age, 0))
+        if (emitter.playing && !emitter.paused && Operation.equals(age, 0))
         {
             emitter.setEmitterVariables(0);
 
-            for (int i = 0, c = (int) this.particles.get(); i < c; i ++)
+            int particles = (int) this.particles.get();
+
+            for (int i = 0, c = particles; i < c; i ++)
             {
                 emitter.spawnParticle();
             }

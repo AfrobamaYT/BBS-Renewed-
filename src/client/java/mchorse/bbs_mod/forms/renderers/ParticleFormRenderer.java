@@ -24,6 +24,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 {
     private ParticleEmitter emitter;
     private boolean checked;
+    private boolean restart;
 
     public ParticleFormRenderer(ParticleForm form)
     {
@@ -37,21 +38,31 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
     public void ensureEmitter(World world)
     {
-        if (this.checked)
+        if (!this.checked)
         {
-            return;
+            ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get());
+
+            if (scheme != null)
+            {
+                this.emitter = new ParticleEmitter();
+                this.emitter.setScheme(scheme);
+                this.emitter.setWorld(world);
+            }
+
+            this.checked = true;
         }
 
-        ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get());
-
-        if (scheme != null)
+        if (this.emitter != null && !BBSRendering.isIrisShadowPass())
         {
-            this.emitter = new ParticleEmitter();
-            this.emitter.setScheme(scheme);
-            this.emitter.setWorld(world);
-        }
+            boolean lastPaused = this.emitter.paused;
 
-        this.checked = true;
+            this.emitter.paused = this.form.paused.get();
+
+            if (lastPaused != this.emitter.paused && !this.emitter.paused && this.emitter.age > 0 && !this.restart)
+            {
+                this.restart = true;
+            }
+        }
     }
 
     @Override
@@ -140,18 +151,17 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
         if (this.emitter != null)
         {
-            boolean lastPaused = this.emitter.paused;
-
-            this.emitter.paused = this.form.paused.get();
-            this.emitter.update();
-
             /* Rewind the emitter if it was paused and resumed in order to make
              * particle effects with once emitter */
-            if (lastPaused != this.emitter.paused && !this.emitter.paused)
+            if (this.restart)
             {
                 this.emitter.stop();
                 this.emitter.start();
+
+                this.restart = false;
             }
+
+            this.emitter.update();
         }
     }
 }
