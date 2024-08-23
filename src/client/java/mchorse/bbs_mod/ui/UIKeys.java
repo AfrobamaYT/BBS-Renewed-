@@ -42,6 +42,7 @@ public class UIKeys
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_NEXT_CLIP = L10n.lang("bbs.ui.camera.editor.keys.editor.next_clip");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_PLAUSE = L10n.lang("bbs.ui.camera.editor.keys.editor.plause");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_PLAY_FILM = L10n.lang("bbs.ui.camera.editor.keys.editor.play_film");
+    public static final IKey CAMERA_EDITOR_KEYS_EDITOR_FREEZE_PAUSED = L10n.lang("bbs.ui.camera.editor.keys.editor.freeze_paused");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_PREV = L10n.lang("bbs.ui.camera.editor.keys.editor.prev");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_PREV_CLIP = L10n.lang("bbs.ui.camera.editor.keys.editor.prev_clip");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_REDO = L10n.lang("bbs.ui.camera.editor.keys.editor.redo");

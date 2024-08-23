@@ -112,6 +112,7 @@ public class UIFilmController extends UIElement
     public final OrbitFilmCameraController orbit = new OrbitFilmCameraController(this);
     private int pov;
     private int lastTick;
+    private boolean paused;
 
     private OnionSkin onionSkin = new OnionSkin();
 
@@ -161,6 +162,16 @@ public class UIFilmController extends UIElement
         }).category(category);
 
         this.noCulling();
+    }
+
+    public boolean isPaused()
+    {
+        return this.paused;
+    }
+
+    public void setPaused(boolean paused)
+    {
+        this.paused = paused;
     }
 
     private void toggleMousePointer(boolean disable)
@@ -359,7 +370,14 @@ public class UIFilmController extends UIElement
 
     public boolean isPlaying()
     {
-        return !UIOverlay.has(this.getContext()) && this.panel.isRunning();
+        boolean playing = !UIOverlay.has(this.getContext()) && this.panel.isRunning();
+
+        if (this.isPaused())
+        {
+            playing = true;
+        }
+
+        return playing;
     }
 
     public boolean isRecording()

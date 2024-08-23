@@ -167,6 +167,8 @@
     "bbs.ui.camera.editor.keys.editor.next": "Перейти к следующему кадру",
     "bbs.ui.camera.editor.keys.editor.next_clip": "Перейти к следующему клипу",
     "bbs.ui.camera.editor.keys.editor.plause": "Запуск/пауза",
+    "bbs.ui.camera.editor.keys.editor.play_film": "Проиграть фильм снаружи",
+    "bbs.ui.camera.editor.keys.editor.freeze_paused": "Заморозить во время паузы",
     "bbs.ui.camera.editor.keys.editor.prev": "Перейти к прошлому кадру",
     "bbs.ui.camera.editor.keys.editor.prev_clip": "Перейти к прошлому клипу",
     "bbs.ui.camera.editor.keys.editor.redo": "Повторить",

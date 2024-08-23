@@ -77,6 +77,11 @@ public class UIFilmPreview extends UIElement
 
                 Films.playFilm(this.panel.getFilm(), true);
             });
+
+            menu.action(Icons.PAUSE, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_FREEZE_PAUSED, !this.panel.getController().isPaused() ? BBSSettings.primaryColor(0) : 0, () ->
+            {
+                this.panel.getController().setPaused(!this.panel.getController().isPaused());
+            });
         });
         this.teleport = new UIIcon(Icons.MOVE_TO, (b) -> this.panel.teleportToCamera());
         this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE);

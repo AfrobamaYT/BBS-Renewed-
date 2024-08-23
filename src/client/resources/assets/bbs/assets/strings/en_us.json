@@ -174,6 +174,7 @@
     "bbs.ui.camera.editor.keys.editor.next_clip": "Jump to next clip",
     "bbs.ui.camera.editor.keys.editor.plause": "Play/pause",
     "bbs.ui.camera.editor.keys.editor.play_film": "Play film outside",
+    "bbs.ui.camera.editor.keys.editor.freeze_paused": "Freeze when paused",
     "bbs.ui.camera.editor.keys.editor.prev": "Jump to previous frame",
     "bbs.ui.camera.editor.keys.editor.prev_clip": "Jump to previous clip",
     "bbs.ui.camera.editor.keys.editor.redo": "Redo",
