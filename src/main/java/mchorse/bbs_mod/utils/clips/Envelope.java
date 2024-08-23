@@ -6,7 +6,6 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.settings.values.ValueGroup;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -81,7 +80,7 @@ public class Envelope extends ValueGroup
         {
             if (!this.channel.isEmpty())
             {
-                envelope = MathUtils.clamp(this.channel.interpolate(tick).floatValue(), 0, 1);
+                envelope = this.channel.interpolate(tick).floatValue();
             }
         }
         else
