@@ -9,8 +9,8 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.function.Consumer;
 
@@ -35,7 +35,6 @@ public class UIPointsModule extends UIAbstractModule
         this.picker = picker;
 
         this.scroll.direction = ScrollDirection.HORIZONTAL;
-        this.scroll.cancelScrolling();
 
         this.context((menu) ->
         {
