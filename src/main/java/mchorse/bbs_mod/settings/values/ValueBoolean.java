@@ -16,6 +16,11 @@ public class ValueBoolean extends BaseValueBasic<Boolean>
         super(id, defaultValue);
     }
 
+    public void toggle()
+    {
+        this.set(!this.get());
+    }
+
     @Override
     public BaseType toData()
     {

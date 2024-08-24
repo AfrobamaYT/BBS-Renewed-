@@ -25,6 +25,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.settings.values.ValueOnionSkin;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -114,8 +115,6 @@ public class UIFilmController extends UIElement
     private int lastTick;
     private boolean paused;
 
-    private OnionSkin onionSkin = new OnionSkin();
-
     private WorldRenderContext worldRenderContext;
 
     public UIFilmController(UIFilmPanel panel)
@@ -152,7 +151,7 @@ public class UIFilmController extends UIElement
         this.keys().register(Keys.FILM_CONTROLLER_RESTART_ACTIONS, () -> this.panel.notifyServer(ActionState.RESTART)).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ONION_SKIN, () ->
         {
-            this.onionSkin.enabled = !this.onionSkin.enabled;
+            this.getOnionSkin().enabled.toggle();
 
             UIUtils.playClick();
         }).category(category);
@@ -188,9 +187,9 @@ public class UIFilmController extends UIElement
         }
     }
 
-    public OnionSkin getOnionSkin()
+    public ValueOnionSkin getOnionSkin()
     {
-        return this.onionSkin;
+        return BBSSettings.editorOnionSkin;
     }
 
     private int getTick()
@@ -1116,16 +1115,22 @@ public class UIFilmController extends UIElement
                 continue;
             }
 
+            ValueOnionSkin onionSkin = this.getOnionSkin();
             Replay replay = this.panel.getData().replays.getList().get(i);
-            BaseValue value = replay.properties.get(this.onionSkin.getGroup());
+            BaseValue value = replay.properties.get(onionSkin.group.get());
+
+            if (value == null)
+            {
+                value = replay.properties.get("pose");
+            }
 
             FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
 
             if (value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
             {
-                boolean canRender = this.onionSkin.enabled;
+                boolean canRender = onionSkin.enabled.get();
 
-                if (!this.onionSkin.all)
+                if (!onionSkin.all.get())
                 {
                     canRender = canRender && entity == this.getCurrentEntity();
                 }
@@ -1136,8 +1141,8 @@ public class UIFilmController extends UIElement
 
                     if (segment != null)
                     {
-                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, this.onionSkin.preColor, this.onionSkin.preFrames, context, isPlaying, entity);
-                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, this.onionSkin.postColor, this.onionSkin.postFrames, context, isPlaying, entity);
+                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, onionSkin.preColor.get(), onionSkin.preFrames.get(), context, isPlaying, entity);
+                        this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, onionSkin.postColor.get(), onionSkin.postFrames.get(), context, isPlaying, entity);
 
                         replay.applyFrame(tick, entity, null);
                         replay.applyProperties(tick, entity.getForm(), isPlaying);

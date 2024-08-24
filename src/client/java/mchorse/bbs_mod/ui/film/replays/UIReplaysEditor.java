@@ -20,7 +20,6 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import mchorse.bbs_mod.ui.film.controller.OnionSkin;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -229,13 +228,6 @@ public class UIReplaysEditor extends UIElement
         this.filmPanel.actionEditor.setClips(replay == null ? null : replay.actions);
         this.updateChannelsList();
         this.replays.replays.setCurrentScroll(replay);
-
-        OnionSkin onionSkin = this.filmPanel.getController().getOnionSkin();
-
-        if (replay == null || !replay.properties.properties.containsKey(onionSkin.getGroup()))
-        {
-            onionSkin.resetGroup();
-        }
     }
 
     public void moveReplay(double x, double y, double z)
