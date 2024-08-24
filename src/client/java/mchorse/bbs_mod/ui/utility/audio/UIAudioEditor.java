@@ -9,7 +9,7 @@ import mchorse.bbs_mod.audio.SoundBuffer;
 import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.audio.Wave;
 import mchorse.bbs_mod.audio.Waveform;
-import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIClips;
@@ -45,6 +45,7 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
     private int dragging = -2;
     private int lastX;
 
+    private ColorCode dragged;
     private ColorCode current;
 
     public UIAudioEditor()
@@ -61,12 +62,7 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
 
             menu.action(Icons.ADD, UIKeys.AUDIO_CONTEXT_ADD, () ->
             {
-                float time = (float) this.scale.from(this.getContext().mouseX);
-                ColorCode code = new ColorCode();
-
-                code.start = time;
-                code.end = time + 0.3F;
-                code.color = Colors.HSVtoRGB((float) Math.random(), 1F, 1F).getRGBColor();
+                ColorCode code = this.createNewCode();
 
                 this.colorCodes.add(code);
                 this.setCurrent(code);
@@ -83,6 +79,18 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
         });
 
         this.add(this.color);
+    }
+
+    private ColorCode createNewCode()
+    {
+        float time = (float) this.scale.from(this.getContext().mouseX);
+        ColorCode code = new ColorCode();
+
+        code.start = time;
+        code.end = time + 0.3F;
+        code.color = Colors.HSVtoRGB((float) Math.random(), 1F, 1F).getRGBColor();
+
+        return code;
     }
 
     public boolean isEditing()
@@ -212,6 +220,16 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
         {
             if (context.mouseButton == 0)
             {
+                if (Window.isCtrlPressed())
+                {
+                    this.dragged = this.createNewCode();
+
+                    this.colorCodes.add(this.dragged);
+                    this.setCurrent(this.dragged);
+
+                    return true;
+                }
+
                 if (this.current != null)
                 {
                     Area codeArea = this.getColorCodeArea(this.current);
@@ -255,6 +273,7 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
     @Override
     protected boolean subMouseReleased(UIContext context)
     {
+        this.dragged = null;
         this.navigating = false;
         this.dragging = -2;
 
@@ -295,7 +314,11 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
 
     private void handleMouse(UIContext context)
     {
-        if (this.navigating)
+        if (this.dragged != null)
+        {
+            this.dragged.end = (float) this.scale.from(context.mouseX);
+        }
+        else if (this.navigating)
         {
             int mouseX = context.mouseX;
             double offset = (mouseX - lastX) / this.scale.getZoom();
