@@ -32,7 +32,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         super(UIKeys.FILM_REPLAY_TITLE);
 
         this.callback = callback;
-        this.replays = new UIReplayList((l) -> this.callback.accept(l.get(0)), filmPanel);
+        this.replays = new UIReplayList((l) -> this.callback.accept(l.get(0)), this, filmPanel);
 
         this.pickEdit = new UINestedEdit((editing) ->
         {

@@ -8,7 +8,6 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.ValueForm;
-import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
@@ -30,7 +29,6 @@ import org.joml.Vector3d;
 
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * This GUI is responsible for drawing replays available in the 
@@ -39,11 +37,13 @@ import java.util.function.Supplier;
 public class UIReplayList extends UIList<Replay>
 {
     public UIFilmPanel panel;
+    public UIReplaysOverlayPanel overlay;
 
-    public UIReplayList(Consumer<List<Replay>> callback, UIFilmPanel panel)
+    public UIReplayList(Consumer<List<Replay>> callback, UIReplaysOverlayPanel overlay, UIFilmPanel panel)
     {
         super(callback);
 
+        this.overlay = overlay;
         this.panel = panel;
 
         this.context((menu) ->
@@ -63,17 +63,6 @@ public class UIReplayList extends UIList<Replay>
                 menu.action(Icons.REMOVE, UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE, this::removeReplay);
             }
         });
-
-        Supplier<Boolean> active = () -> !this.getCurrent().isEmpty();
-
-        this.keys().register(Keys.FORMS_PICK, () ->
-        {
-            this.openFormEditor(this.getCurrentFirst().form, false, null);
-        }).active(active);
-        this.keys().register(Keys.FORMS_EDIT, () ->
-        {
-            this.openFormEditor(this.getCurrentFirst().form, true, null);
-        }).active(active);
     }
 
     public void openFormEditor(ValueForm form, boolean editing, Consumer<Form> consumer)
@@ -93,6 +82,10 @@ public class UIReplayList extends UIList<Replay>
             if (consumer != null)
             {
                 consumer.accept(f);
+            }
+            else
+            {
+                this.overlay.pickEdit.setForm(f);
             }
         });
 
