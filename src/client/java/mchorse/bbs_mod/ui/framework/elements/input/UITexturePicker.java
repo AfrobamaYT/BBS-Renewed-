@@ -375,7 +375,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         }
 
         this.picker.setCurrent(link);
-        this.text.setText(link.toString());
+        this.text.setText(link == null ? "" : link.toString());
     }
 
     protected void toggleMulti()
