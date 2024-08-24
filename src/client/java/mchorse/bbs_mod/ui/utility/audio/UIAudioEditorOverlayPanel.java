@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.ui.utility.audio;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.audio.SoundPlayer;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -62,7 +62,9 @@ public class UIAudioEditorOverlayPanel extends UIOverlayPanel
     private void saveColors()
     {
         Link audio = this.audioEditor.getAudio();
+        SoundManager sounds = BBSModClient.getSounds();
 
-        BBSModClient.getSounds().saveColorCodes(new Link(audio.source, audio.path + ".json"), this.audioEditor.getColorCodes());
+        sounds.saveColorCodes(new Link(audio.source, audio.path + ".json"), this.audioEditor.getColorCodes());
+        sounds.deleteSound(audio);
     }
 }
