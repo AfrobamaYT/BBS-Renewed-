@@ -71,4 +71,27 @@ public class MatrixStackUtils
         stack.peek().getPositionMatrix().mul(matrix);
         stack.peek().getNormalMatrix().mul(normal);
     }
+
+    public static void scaleBack(MatrixStack matrices)
+    {
+        Matrix4f position = matrices.peek().getPositionMatrix();
+
+        float scaleX = (float) Math.sqrt(position.m00() * position.m00() + position.m10() * position.m10() + position.m20() * position.m20());
+        float scaleY = (float) Math.sqrt(position.m01() * position.m01() + position.m11() * position.m11() + position.m21() * position.m21());
+        float scaleZ = (float) Math.sqrt(position.m02() * position.m02() + position.m12() * position.m12() + position.m22() * position.m22());
+
+        float max = Math.max(scaleX, Math.max(scaleY, scaleZ));
+
+        position.m00(position.m00() / max);
+        position.m10(position.m10() / max);
+        position.m20(position.m20() / max);
+
+        position.m01(position.m01() / max);
+        position.m11(position.m11() / max);
+        position.m21(position.m21() / max);
+
+        position.m02(position.m02() / max);
+        position.m12(position.m12() / max);
+        position.m22(position.m22() / max);
+    }
 }

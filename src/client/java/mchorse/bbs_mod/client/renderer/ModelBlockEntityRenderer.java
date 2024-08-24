@@ -103,6 +103,10 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
             if (this.canRenderAxes(entity))
             {
+                matrices.push();
+
+                MatrixStackUtils.scaleBack(matrices);
+
                 BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
                 builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
@@ -111,6 +115,8 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
                 RenderSystem.disableDepthTest();
                 RenderSystem.setShader(GameRenderer::getPositionColorProgram);
                 BufferRenderer.drawWithGlobalProgram(builder.end());
+
+                matrices.pop();
             }
 
             matrices.pop();
