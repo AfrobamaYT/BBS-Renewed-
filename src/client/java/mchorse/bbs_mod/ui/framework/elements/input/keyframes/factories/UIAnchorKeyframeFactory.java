@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -32,16 +33,22 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
 
     public static void displayActors(UIContext context, List<IEntity> entities, int value, Consumer<Integer> callback)
     {
+        List<UIFilmPanel> children = context.menu.main.getChildren(UIFilmPanel.class);
+        UIFilmPanel panel = children.isEmpty() ? null : children.get(0);
+        List<Replay> replays = panel != null ? panel.getData().replays.getList() : null;
+
         context.replaceContextMenu((menu) ->
         {
             menu.action(Icons.CLOSE, UIKeys.GENERAL_NONE, Colors.NEGATIVE, () -> callback.accept(-1));
 
             for (int i = 0; i < entities.size(); i++)
             {
-                IEntity entity = entities.get(i);
-                Form form = entity.getForm();
                 final int actor = i;
-                IKey label = IKey.raw(i + (form == null ? "" : " - " + form.getIdOrName()));
+                IEntity entity = entities.get(i);
+                Replay replay = replays == null ? null : replays.get(i);
+                Form form = entity.getForm();
+                String stringLabel = i + (replay != null ? " - " + replay.getName() : (form == null ? "" : " - " + form.getIdOrName()));
+                IKey label = IKey.raw(stringLabel);
 
                 menu.action(Icons.CLOSE, label, actor == value ? BBSSettings.primaryColor(0) : 0, () -> callback.accept(actor));
             }
