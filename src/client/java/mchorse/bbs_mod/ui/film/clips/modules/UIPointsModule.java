@@ -35,6 +35,7 @@ public class UIPointsModule extends UIAbstractModule
         this.picker = picker;
 
         this.scroll.direction = ScrollDirection.HORIZONTAL;
+        this.scroll.cancelScrolling();
 
         this.context((menu) ->
         {

@@ -385,7 +385,7 @@ public class Scroll
             }
         }
 
-        return isInside && (this.cancelScrollEdge || lastScroll != this.scroll);
+        return isInside && ((this.cancelScrollEdge && this.scrollSize > this.direction.getSide(this.area)) || lastScroll != this.scroll);
     }
 
     public void mouseReleased(UIContext context)

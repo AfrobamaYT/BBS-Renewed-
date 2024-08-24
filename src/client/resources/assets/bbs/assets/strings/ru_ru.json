@@ -1,6 +1,8 @@
 {
     "bbs.config.appearance.force_qwerty": "Отображать QWERTY",
     "bbs.config.appearance.force_qwerty-comment": "Использовать QWERTY (вместо AZERTY, QWERTZ или ЙЦУКЕ) вне зависимо от того какая расскладка клавиатуры у пользователя включена в данный момент для отображения нажатых клавиш и комбинаций в меню F9",
+    "bbs.config.appearance.freeze_models": "Заморозить модель",
+    "bbs.config.appearance.freeze_models-comment": "Когда эта опция включена, то модели не будут следить за мышкой",
     "bbs.config.appearance.fov": "Поле зрения",
     "bbs.config.appearance.fov-comment": "Опция управляющая полем зрения камеры в меню мира и панели анимаций",
     "bbs.config.appearance.hsv_color_picker": "HSV пипетка",

@@ -28,6 +28,7 @@ public class BBSSettings
     public static ValueFloat fov;
     public static ValueBoolean hsvColorPicker;
     public static ValueBoolean forceQwerty;
+    public static ValueBoolean freezeModels;
 
     public static ValueBoolean enableCursorRendering;
     public static ValueBoolean enableMouseButtonRendering;
@@ -114,6 +115,7 @@ public class BBSSettings
         fov = builder.getFloat("fov", 40, 0, 180);
         hsvColorPicker = builder.getBoolean("hsv_color_picker", true);
         forceQwerty = builder.getBoolean("force_qwerty", false);
+        freezeModels = builder.getBoolean("freeze_models", false);
 
         favoriteColors = new ValueColors("favorite_colors");
         builder.register(favoriteColors);
