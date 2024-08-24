@@ -43,6 +43,16 @@ public abstract class ClipContext <T extends Clip, E>
      */
     public int count;
 
+    /**
+     * How many blocks did camera moved
+     */
+    public double distance;
+
+    /**
+     * Speed in between frames
+     */
+    public double velocity;
+
     public Map<String, Object> clipData = new HashMap<>();
 
     public ClipContext setup(int ticks, float transition)

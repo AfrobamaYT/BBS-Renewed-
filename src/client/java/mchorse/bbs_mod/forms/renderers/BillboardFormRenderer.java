@@ -7,21 +7,29 @@ import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.Quad;
 import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+
+import java.util.function.Supplier;
 
 public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 {
@@ -38,32 +46,40 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        Link t = this.form.texture.get(context.getTransition());
+        MatrixStack stack = context.batcher.getContext().getMatrices();
 
-        if (t == null)
-        {
-            return;
-        }
+        stack.push();
 
-        Texture texture = context.render.getTextures().getTexture(t);
+        Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
-        float min = Math.min(texture.width, texture.height);
-        int ow = (x2 - x1) - 4;
-        int oh = (y2 - y1) - 4;
+        this.applyTransforms(uiMatrix, context.getTransition());
+        MatrixStackUtils.multiply(stack, uiMatrix);
+        stack.translate(0F, 1F, 0F);
+        stack.scale(1.5F, 1.5F, 1.5F);
 
-        int w = (int) ((texture.width / min) * ow);
-        int h = (int) ((texture.height / min) * ow);
+        this.renderModel(GameRenderer::getRenderTypeEntityTranslucentProgram,
+            stack,
+            OverlayTexture.DEFAULT_UV, LightmapTextureManager.MAX_LIGHT_COORDINATE, Colors.WHITE,
+            context.getTransition()
+        );
 
-        int x = x1 + (ow - w) / 2 + 2;
-        int y = y1 + (oh - h) / 2 + 2;
-
-        context.batcher.fullTexturedBox(texture, x, y, w, h);
+        stack.pop();
     }
 
     @Override
     public void render3D(FormRenderingContext context)
     {
-        Link t = this.form.texture.get(context.getTransition());
+        Supplier<ShaderProgram> shader = this.getShader(context,
+            GameRenderer::getRenderTypeEntityTranslucentProgram,
+            BBSShaders::getPickerBillboardProgram
+        );
+
+        this.renderModel(shader, context.stack, context.overlay, context.light, context.color, context.getTransition());
+    }
+
+    private void renderModel(Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
+    {
+        Link t = this.form.texture.get(transition);
 
         if (t == null)
         {
@@ -78,7 +94,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         float oh = h;
 
         /* TL = top left, BR = bottom right*/
-        Vector4f crop = this.form.crop.get(context.getTransition());
+        Vector4f crop = this.form.crop.get(transition);
         float uvTLx = crop.x / w;
         float uvTLy = crop.y / h;
         float uvBRx = 1 - crop.z / w;
@@ -94,7 +110,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         float uvFinalBRx = uvBRx;
         float uvFinalBRy = uvBRy;
 
-        if (this.form.resizeCrop.get(context.getTransition()))
+        if (this.form.resizeCrop.get(transition))
         {
             uvFinalTLx = uvFinalTLy = 0F;
             uvFinalBRx = uvFinalBRy = 1F;
@@ -116,9 +132,9 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         quad.p3.set(TLx, BRy, 0);
         quad.p4.set(BRx, BRy, 0);
 
-        float offsetX = this.form.offsetX.get(context.getTransition());
-        float offsetY = this.form.offsetY.get(context.getTransition());
-        float rotation = this.form.rotation.get(context.getTransition());
+        float offsetX = this.form.offsetX.get(transition);
+        float offsetY = this.form.offsetY.get(transition);
+        float rotation = this.form.rotation.get(transition);
 
         if (offsetX != 0F || offsetY != 0F || rotation != 0F)
         {
@@ -134,21 +150,21 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             uvQuad.transform(matrix);
         }
 
-        this.renderQuad(texture, context);
+        this.renderQuad(texture, shader, matrices, overlay, light, overlayColor, transition);
     }
 
-    private void renderQuad(Texture texture, FormRenderingContext context)
+    private void renderQuad(Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        Color color = this.form.color.get(context.getTransition()).copy();
-        Matrix4f matrix = context.stack.peek().getPositionMatrix();
-        Matrix3f normal = context.stack.peek().getNormalMatrix();
+        Color color = this.form.color.get(transition).copy();
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        Matrix3f normal = matrices.peek().getNormalMatrix();
 
-        color.mul(context.color);
+        color.mul(overlayColor);
 
-        if (this.form.billboard.get(context.getTransition()))
+        if (this.form.billboard.get(transition))
         {
-            Matrix4f modelMatrix = context.stack.peek().getPositionMatrix();
+            Matrix4f modelMatrix = matrices.peek().getPositionMatrix();
             Vector3f scale = Vectors.TEMP_3F;
 
             modelMatrix.getScale(scale);
@@ -159,7 +175,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
             modelMatrix.scale(scale);
 
-            context.stack.peek().getNormalMatrix().identity();
+            matrices.peek().getNormalMatrix().identity();
         }
 
         GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
@@ -168,32 +184,27 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         gameRenderer.getOverlayTexture().setupOverlayColor();
 
         BBSModClient.getTextures().bindTexture(texture);
-        RenderSystem.setShader(this.getShader(context,
-            GameRenderer::getRenderTypeEntityTranslucentProgram,
-            BBSShaders::getPickerBillboardProgram
-        ));
+        RenderSystem.setShader(shader);
 
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
-        int overlay = context.overlay;
-
         /* Front */
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
 
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
 
         /* Back */
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
 
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(context.light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
 

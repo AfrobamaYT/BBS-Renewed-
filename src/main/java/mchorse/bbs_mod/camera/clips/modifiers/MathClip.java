@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.camera.clips.modifiers;
 
-import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValueExpression;
 import mchorse.bbs_mod.math.IExpression;
@@ -23,8 +22,6 @@ import mchorse.bbs_mod.utils.clips.ClipContext;
  */
 public class MathClip extends ComponentClip
 {
-    private static Position next = new Position();
-
     public MathBuilder builder = new MathBuilder();
 
     public Variable varTicks;
@@ -34,6 +31,7 @@ public class MathClip extends ComponentClip
     public Variable varProgress;
     public Variable varFactor;
     public Variable varVelocity;
+    public Variable varDistance;
 
     public Variable varValue;
 
@@ -61,6 +59,7 @@ public class MathClip extends ComponentClip
         this.varProgress = this.builder.register("p");
         this.varFactor = this.builder.register("f");
         this.varVelocity = this.builder.register("v");
+        this.varDistance = this.builder.register("dt");
 
         this.varValue = this.builder.register("value");
 
@@ -81,15 +80,10 @@ public class MathClip extends ComponentClip
 
         if (expression != null)
         {
-            context.applyUnderneath(context.ticks + 1, context.transition, next);
-
             int duration = this.duration.get();
-            double dx = next.point.x - position.point.x;
-            double dy = next.point.y - position.point.y;
-            double dz = next.point.z - position.point.z;
-            double velocity = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-            this.varVelocity.set(velocity);
+            this.varVelocity.set(context.velocity);
+            this.varDistance.set(context.distance);
 
             this.varTicks.set(context.ticks);
             this.varOffset.set(context.relativeTick);
