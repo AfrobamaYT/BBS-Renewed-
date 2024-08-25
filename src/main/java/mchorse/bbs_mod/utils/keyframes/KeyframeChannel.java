@@ -329,7 +329,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         {
             Keyframe<T> value = new Keyframe<>(keyframe.getId(), keyframe.getFactory());
 
-            value.setValue(keyframe.getFactory().copy(keyframe.getValue()));
+            value.copy(keyframe);
             this.add(value);
         }
 

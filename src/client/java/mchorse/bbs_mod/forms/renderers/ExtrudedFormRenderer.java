@@ -48,7 +48,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         this.applyTransforms(uiMatrix, context.getTransition());
         MatrixStackUtils.multiply(stack, uiMatrix);
         stack.translate(0F, 1F, 0F);
-        stack.scale(1.5F, 1.5F, 1.5F);
+        stack.scale(1.5F, 1.5F, 4F);
 
         /* Shading fix */
         stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
