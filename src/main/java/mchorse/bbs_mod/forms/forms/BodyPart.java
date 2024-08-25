@@ -5,7 +5,6 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
-import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.Objects;
@@ -38,6 +37,11 @@ public class BodyPart implements IMapSerializable
         {
             this.form.setParent(manager == null ? null : manager.getOwner());
         }
+    }
+
+    public BodyPartManager getManager()
+    {
+        return this.manager;
     }
 
     public Form getForm()

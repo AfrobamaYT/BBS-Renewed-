@@ -189,7 +189,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
             /* Ctrl + clicking to pick the parent bone to attach to */
             BodyPart part = this.forms.getCurrentFirst().part;
 
-            if (part != null && this.bone.getList().contains(pair.b) && part.getForm().getParent() == pair.a)
+            if (part != null && this.bone.getList().contains(pair.b) && part.getManager().getOwner() == pair.a)
             {
                 this.bone.setCurrentScroll(part.bone = pair.b);
             }
