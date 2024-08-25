@@ -43,7 +43,7 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.name = new UITextbox(120, (t) -> this.form.name.set(t));
 
         this.transform = new UIPropTransform();
-        this.transform.relative(this).x(0.5F).y(1F, -10).anchor(0.5F, 1F);
+        this.transform.enableHotkeys().relative(this).x(0.5F).y(1F, -10).anchor(0.5F, 1F);
 
         this.hitbox = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_HITBOX, (b) -> this.form.hitbox.set(b.getValue()));
         this.hitboxWidth = new UITrackpad((v) -> this.form.hitboxWidth.set(v.floatValue()));
