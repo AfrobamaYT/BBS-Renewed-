@@ -201,6 +201,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             Link link = this.form.texture.get(context.getTransition());
             Link texture = link == null ? model.texture : link;
             Color color = this.form.color.get(context.getTransition());
+            float scale = this.form.uiScale.get() * model.uiScale;
 
             CubicModelAnimator.resetPose(model.model);
 
@@ -208,6 +209,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             model.model.apply(this.getPose(context.getTransition()));
 
             MatrixStackUtils.multiply(stack, uiMatrix);
+            stack.scale(scale, scale, scale);
 
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);

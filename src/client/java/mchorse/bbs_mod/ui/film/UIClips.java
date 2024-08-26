@@ -163,6 +163,7 @@ public class UIClips extends UIElement
         Supplier<Boolean> canUseKeybinds = () -> this.delegate.canUseKeybinds() && !this.hasEmbeddedView();
         Supplier<Boolean> canUseKeybindsSelected = () -> this.delegate.getClip() != null && canUseKeybinds.get();
 
+        this.keys().register(Keys.KEYFRAMES_MAXIMIZE, this::resetView).category(KEYS_CATEGORY);
         this.keys().register(Keys.DESELECT, () -> this.pickClip(null)).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
         this.keys().register(Keys.ADD_ON_TOP, this::showAddsOnTop).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
         this.keys().register(Keys.ADD_AT_CURSOR, this::showAddsAtCursor).category(KEYS_CATEGORY).active(canUseKeybinds);
@@ -723,12 +724,17 @@ public class UIClips extends UIElement
         this.clips = clips;
         this.addPreview = null;
 
-        this.scale.anchor(0F);
-
         this.updateScrollSize();
         this.vertical.scrollToEnd();
         this.clearSelection();
         this.embedView(null);
+
+        this.resetView();
+    }
+
+    private void resetView()
+    {
+        this.scale.anchor(0F);
 
         if (clips != null)
         {

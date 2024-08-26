@@ -27,6 +27,7 @@ public abstract class Form implements IMapSerializable
     public final BooleanProperty lighting = new BooleanProperty(this, "lighting", true);
     public final StringProperty name = new StringProperty(this, "name", "");
     public final TransformProperty transform = new TransformProperty(this, "transform", new Transform());
+    public final FloatProperty uiScale = new FloatProperty(this, "uiScale", 1F);
     public final BodyPartManager parts = new BodyPartManager(this);
     public final AnchorProperty anchor = new AnchorProperty(this, "anchor");
 
@@ -46,11 +47,13 @@ public abstract class Form implements IMapSerializable
     public Form()
     {
         this.name.cantAnimate();
+        this.uiScale.cantAnimate();
 
         this.register(this.visible);
         this.register(this.lighting);
         this.register(this.name);
         this.register(this.transform);
+        this.register(this.uiScale);
         this.register(this.anchor);
 
         this.hitbox.cantAnimate();

@@ -447,6 +447,7 @@
     "bbs.ui.forms.editors.general.lighting": "Освещение",
     "bbs.ui.forms.editors.general.lighting-tooltip": "Используеться ли освещение по типу от факела, от неба, от времени дня и т.д.",
     "bbs.ui.forms.editors.general.visible": "Видимый",
+    "bbs.ui.forms.editors.general.ui_scale": "Масштаб ГУИ",
     "bbs.ui.forms.editors.item.title": "Настройки предмета",
     "bbs.ui.forms.editors.item.transforms": "Трансформации предметов",
     "bbs.ui.forms.editors.label.anchor": "Якорная точка текста",

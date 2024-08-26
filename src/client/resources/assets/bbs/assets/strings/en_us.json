@@ -454,6 +454,7 @@
     "bbs.ui.forms.editors.general.lighting": "Lighting",
     "bbs.ui.forms.editors.general.lighting-tooltip": "Whether lighting is applied to the form like torch light, sky light, time of the day, etc.",
     "bbs.ui.forms.editors.general.visible": "Visible",
+    "bbs.ui.forms.editors.general.ui_scale": "UI scale",
     "bbs.ui.forms.editors.item.title": "Item",
     "bbs.ui.forms.editors.item.transforms": "Item transforms",
     "bbs.ui.forms.editors.label.anchor": "Label anchor",

@@ -56,6 +56,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         MatrixStackUtils.multiply(stack, uiMatrix);
         stack.translate(0F, 1F, 0F);
         stack.scale(1.5F, 1.5F, 1.5F);
+        stack.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
 
         this.renderModel(GameRenderer::getRenderTypeEntityTranslucentProgram,
             stack,

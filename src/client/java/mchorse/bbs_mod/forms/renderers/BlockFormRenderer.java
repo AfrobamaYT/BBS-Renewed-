@@ -32,6 +32,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         matrices.push();
         MatrixStackUtils.multiply(matrices, uiMatrix);
+        matrices.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
         matrices.translate(-0.5F, 0F, -0.5F);
 
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
