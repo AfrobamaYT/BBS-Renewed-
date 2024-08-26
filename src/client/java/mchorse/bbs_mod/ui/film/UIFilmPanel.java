@@ -390,11 +390,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                         continue;
                     }
 
-                    KeyframeChannel<Double> channel = (KeyframeChannel<Double>) value;
+                    KeyframeChannel channel = (KeyframeChannel) value;
 
                     if (!channel.isEmpty())
                     {
-                        KeyframeChannel<Double> newChannel = (KeyframeChannel<Double>) copy.keyframes.get(channel.getId());
+                        KeyframeChannel newChannel = (KeyframeChannel) copy.keyframes.get(channel.getId());
 
                         newChannel.insert(0, channel.interpolate(tick));
                     }
