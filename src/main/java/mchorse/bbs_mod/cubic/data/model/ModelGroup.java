@@ -13,6 +13,8 @@ import java.util.List;
 public class ModelGroup implements IMapSerializable
 {
     public final String id;
+    public Model owner;
+    public ModelGroup parent;
     public List<ModelGroup> children = new ArrayList<>();
     public List<ModelCube> cubes = new ArrayList<>();
     public List<ModelMesh> meshes = new ArrayList<>();

@@ -38,22 +38,24 @@ public class Model implements IMapSerializable
 
     public void initialize()
     {
-        this.fillGroups(this.topGroups);
+        this.fillGroups(this.topGroups, null);
 
         this.orderedGroups = Collections.unmodifiableList(this.orderedGroups);
     }
 
-    private void fillGroups(List<ModelGroup> groups)
+    private void fillGroups(List<ModelGroup> groups, ModelGroup parent)
     {
         for (ModelGroup group : groups)
         {
             this.namedGroups.put(group.id, group);
             this.orderedGroups.add(group);
 
+            group.parent = parent;
+            group.owner = this;
             group.index = this.nextIndex;
             this.nextIndex += 1;
 
-            this.fillGroups(group.children);
+            this.fillGroups(group.children, group);
         }
     }
 

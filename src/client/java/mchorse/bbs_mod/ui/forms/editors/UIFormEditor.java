@@ -16,6 +16,7 @@ import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.forms.IUIFormList;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
@@ -194,15 +195,19 @@ public class UIFormEditor extends UIElement implements IUIFormList
                 this.bone.setCurrentScroll(part.bone = pair.b);
             }
         }
-        else
-        {
-            this.forms.setCurrentForm(pair.a);
-            this.pickForm(this.forms.getCurrentFirst());
+        else if (Window.isAltPressed()) UIReplaysEditor.offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickFormBone(pair.a, bone));
+        else if (Window.isShiftPressed()) UIReplaysEditor.offerHierarchy(this.getContext(), pair.a, pair.b, (bone) -> this.pickFormBone(pair.a, bone));
+        else this.pickFormBone(pair.a, pair.b);
+    }
 
-            if (!pair.b.isEmpty())
-            {
-                this.editor.pickBone(pair.b);
-            }
+    private void pickFormBone(Form form, String bone)
+    {
+        this.forms.setCurrentForm(form);
+        this.pickForm(this.forms.getCurrentFirst());
+
+        if (!bone.isEmpty())
+        {
+            this.editor.pickBone(bone);
         }
     }
 
