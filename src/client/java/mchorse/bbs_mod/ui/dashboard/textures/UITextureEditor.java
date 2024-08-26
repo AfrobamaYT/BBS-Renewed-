@@ -13,6 +13,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.Pixels;
@@ -23,6 +24,7 @@ public class UITextureEditor extends UIPixelsEditor
 {
     public UIElement savebar;
     public UIIcon save;
+    public UIIcon resize;
 
     private Link texture;
     private boolean dirty;
@@ -34,8 +36,31 @@ public class UITextureEditor extends UIPixelsEditor
         this.savebar = new UIElement();
         this.savebar.relative(this).x(1F).h(30).anchorX(1F).row(0).resize().padding(5);
         this.save = new UIIcon(() -> this.dirty ? Icons.SAVE : Icons.SAVED, (b) -> this.saveTexture());
+        this.resize = new UIIcon(Icons.FULLSCREEN, (b) ->
+        {
+            Pixels pixels = this.getPixels();
+            UIResizeTextureOverlayPanel overlayPanel = new UIResizeTextureOverlayPanel(pixels.width, pixels.height, (size) ->
+            {
+                boolean editing = this.isEditing();
+                Pixels newPixels = Pixels.fromSize(
+                    MathUtils.clamp(size.x, 1, 4096),
+                    MathUtils.clamp(size.y, 1, 4096)
+                );
+
+                newPixels.draw(pixels, 0, 0, newPixels.width, newPixels.height);
+                pixels.delete();
+
+                this.fillPixels(newPixels);
+                this.setDirty(false);
+                this.setEditing(editing);
+            });
+
+            UIOverlay.addOverlay(this.getContext(), overlayPanel);
+        });
+        this.resize.tooltip(UIKeys.TEXTURES_RESIZE);
 
         this.savebar.add(this.save);
+        this.toolbar.add(this.resize);
 
         this.add(this.savebar);
     }

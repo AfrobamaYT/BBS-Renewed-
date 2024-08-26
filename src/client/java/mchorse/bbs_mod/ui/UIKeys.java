@@ -604,6 +604,9 @@ public class UIKeys
     public static final IKey TEXTURES_REFRESH = L10n.lang("bbs.ui.textures.refresh");
     public static final IKey TEXTURES_SAVE = L10n.lang("bbs.ui.textures.save");
     public static final IKey TEXTURES_SAVE_WRONG_PATH = L10n.lang("bbs.ui.textures.save_wrong_path");
+    public static final IKey TEXTURES_RESIZE = L10n.lang("bbs.ui.textures.resize");
+    public static final IKey TEXTURES_RESIZE_TITLE = L10n.lang("bbs.ui.textures.resize-title");
+    public static final IKey TEXTURES_RESIZE_DESCRIPTION = L10n.lang("bbs.ui.textures.resize-description");
     public static final IKey TEXTURES_TITLE = L10n.lang("bbs.ui.textures.title");
     public static final IKey TEXTURES_TOOLTIP = L10n.lang("bbs.ui.textures.tooltip");
     public static final IKey TEXTURES_VIEWER_BRIGHTNESS = L10n.lang("bbs.ui.textures.viewer.brightness");
