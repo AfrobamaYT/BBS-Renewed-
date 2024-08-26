@@ -370,14 +370,14 @@ public class Scale
 
     public double getZoomFactor(double zoom)
     {
-        double factor = 5D;
+        double factor = 25D;
 
         if (zoom < 0.2D) factor = 0.005D;
         else if (zoom < 1) factor = 0.025D;
         else if (zoom < 2) factor = 0.1D;
         else if (zoom < 15) factor = 0.5D;
-        else if (zoom <= 50) factor = 1D;
-        else if (zoom <= 250) factor = 2.5D;
+        else if (zoom <= 50) factor = 2.5D;
+        else if (zoom <= 100) factor = 5D;
 
         return factor;
     }
