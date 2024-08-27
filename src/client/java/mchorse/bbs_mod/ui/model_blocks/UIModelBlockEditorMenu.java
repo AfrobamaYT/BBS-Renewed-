@@ -113,6 +113,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         {
             properties.setFormFirstPerson(f);
         }
+
+        this.pickEdit.setForm(f);
     }
 
     @Override
