@@ -12,7 +12,6 @@ public abstract class Clip extends ValueGroup
     public final ValueInt layer = new ValueInt("layer", 0, 0, Integer.MAX_VALUE);
     public final ValueInt tick = new ValueInt("tick", 0, 0, Integer.MAX_VALUE);
     public final ValueInt duration = new ValueInt("duration", 1, 1, Integer.MAX_VALUE);
-    public final ValueBoolean additive = new ValueBoolean("additive", false);
     public final Envelope envelope = new Envelope("envelope");
 
     public Clip()
@@ -24,7 +23,6 @@ public abstract class Clip extends ValueGroup
         this.add(this.layer);
         this.add(this.tick);
         this.add(this.duration);
-        this.add(this.additive);
         this.add(this.envelope);
     }
 

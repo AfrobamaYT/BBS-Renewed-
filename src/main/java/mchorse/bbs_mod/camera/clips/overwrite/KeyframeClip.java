@@ -3,6 +3,7 @@ package mchorse.bbs_mod.camera.clips.overwrite;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.CameraClip;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -23,6 +24,7 @@ public class KeyframeClip extends CameraClip
     public final KeyframeChannel<Double> pitch = new KeyframeChannel<>("pitch", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> roll = new KeyframeChannel<>("roll", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> fov = new KeyframeChannel<>("fov", KeyframeFactories.DOUBLE);
+    public final ValueBoolean additive = new ValueBoolean("additive", false);
 
     public KeyframeChannel<Double>[] channels;
 
@@ -36,6 +38,8 @@ public class KeyframeClip extends CameraClip
         {
             this.add(channel);
         }
+
+        this.add(this.additive);
     }
 
     @Override
@@ -57,13 +61,26 @@ public class KeyframeClip extends CameraClip
     {
         float t = context.relativeTick + context.transition;
 
-        if (!this.x.isEmpty()) position.point.x = this.x.interpolate(t);
-        if (!this.y.isEmpty()) position.point.y = this.y.interpolate(t);
-        if (!this.z.isEmpty()) position.point.z = this.z.interpolate(t);
-        if (!this.yaw.isEmpty()) position.angle.yaw = this.yaw.interpolate(t).floatValue();
-        if (!this.pitch.isEmpty()) position.angle.pitch = this.pitch.interpolate(t).floatValue();
-        if (!this.roll.isEmpty()) position.angle.roll = this.roll.interpolate(t).floatValue();
-        if (!this.fov.isEmpty()) position.angle.fov = this.fov.interpolate(t).floatValue();
+        if (this.additive.get())
+        {
+            if (!this.x.isEmpty()) position.point.x += this.x.interpolate(0F) - this.x.interpolate(t);
+            if (!this.y.isEmpty()) position.point.y += this.y.interpolate(0F) - this.y.interpolate(t);
+            if (!this.z.isEmpty()) position.point.z += this.z.interpolate(0F) - this.z.interpolate(t);
+            if (!this.yaw.isEmpty()) position.angle.yaw     += this.yaw.interpolate(0F).floatValue()   - this.yaw.interpolate(t).floatValue();
+            if (!this.pitch.isEmpty()) position.angle.pitch += this.pitch.interpolate(0F).floatValue() - this.pitch.interpolate(t).floatValue();
+            if (!this.roll.isEmpty()) position.angle.roll   += this.roll.interpolate(0F).floatValue()  - this.roll.interpolate(t).floatValue();
+            if (!this.fov.isEmpty()) position.angle.fov     += this.fov.interpolate(0F).floatValue()   - this.fov.interpolate(t).floatValue();
+        }
+        else
+        {
+            if (!this.x.isEmpty()) position.point.x = this.x.interpolate(t);
+            if (!this.y.isEmpty()) position.point.y = this.y.interpolate(t);
+            if (!this.z.isEmpty()) position.point.z = this.z.interpolate(t);
+            if (!this.yaw.isEmpty()) position.angle.yaw = this.yaw.interpolate(t).floatValue();
+            if (!this.pitch.isEmpty()) position.angle.pitch = this.pitch.interpolate(t).floatValue();
+            if (!this.roll.isEmpty()) position.angle.roll = this.roll.interpolate(t).floatValue();
+            if (!this.fov.isEmpty()) position.angle.fov = this.fov.interpolate(t).floatValue();
+        }
     }
 
     @Override

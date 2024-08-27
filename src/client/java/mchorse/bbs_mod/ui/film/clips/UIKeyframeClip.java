@@ -7,6 +7,7 @@ import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.utils.clips.Clips;
 
@@ -14,10 +15,24 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
 {
     public UIButton edit;
     public UIKeyframeEditor keyframes;
+    public UIToggle additive;
 
     public UIKeyframeClip(KeyframeClip clip, IUIClipsDelegate editor)
     {
         super(clip, editor);
+    }
+
+    @Override
+    protected void addEnvelopes()
+    {
+        super.addEnvelopes();
+
+        this.additive = new UIToggle(UIKeys.CAMERA_PANELS_ADDITIVE, (b) ->
+        {
+            this.clip.additive.set(b.getValue());
+        });
+
+        this.panels.add(this.additive);
     }
 
     @Override
@@ -77,5 +92,6 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
 
         this.updateDuration(this.clip.duration.get());
         this.keyframes.setClip(this.clip);
+        this.additive.setValue(this.clip.additive.get());
     }
 }

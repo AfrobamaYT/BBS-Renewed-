@@ -28,40 +28,6 @@ public abstract class CameraClip extends Clip
             return;
         }
 
-        if (this.additive.get())
-        {
-            /* TODO: fix it */
-            Position b = new Position();
-            Position a = new Position();
-
-            b.set(position);
-            this.applyClip(context, b);
-
-            ClipContext newContext = new CameraClipContext();
-
-            newContext.ticks = this.tick.get();
-            newContext.relativeTick = 0;
-            newContext.transition = context.transition;
-            newContext.currentLayer = this.layer.get();
-            newContext.clips = context.clips;
-            newContext.playing = context.playing;
-            newContext.count = context.count;
-
-            a.set(position);
-            this.applyClip(newContext, a);
-
-            position.point.x += b.point.x - a.point.x;
-            position.point.y += b.point.y - a.point.y;
-            position.point.z += b.point.z - a.point.z;
-
-            position.angle.yaw += b.angle.yaw - a.angle.yaw;
-            position.angle.pitch += b.angle.pitch - a.angle.pitch;
-            position.angle.roll += b.angle.roll - a.angle.roll;
-            position.angle.fov += b.angle.fov - a.angle.fov;
-
-            return;
-        }
-
         float factor = this.envelope.factorEnabled(this.duration.get(), context.relativeTick + context.transition);
 
         if (factor == 1)
