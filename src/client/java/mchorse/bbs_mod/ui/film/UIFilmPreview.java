@@ -172,7 +172,7 @@ public class UIFilmPreview extends UIElement
         File videos = BBSRendering.getVideoFolder();
         UIContext context = this.getContext();
 
-        if (AudioRenderer.renderAudio(new File(videos, name), audioClips, camera.calculateDuration()))
+        if (AudioRenderer.renderAudio(new File(videos, name), audioClips, camera.calculateDuration(), 48000))
         {
             UIOverlay.addOverlay(context, new UIMessageFolderOverlayPanel(UIKeys.GENERAL_SUCCESS, UIKeys.FILM_RENDER_AUDIO_SUCCESS, videos));
         }

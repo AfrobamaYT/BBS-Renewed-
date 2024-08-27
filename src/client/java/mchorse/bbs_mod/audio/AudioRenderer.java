@@ -8,7 +8,6 @@ import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.lwjgl.system.MemoryUtil;
@@ -99,7 +98,7 @@ public class AudioRenderer
         }
     }
 
-    public static boolean renderAudio(File file, List<AudioClip> clips, int totalDuration)
+    public static boolean renderAudio(File file, List<AudioClip> clips, int totalDuration, int sampleRate)
     {
         float total = totalDuration / 20F;
         Map<AudioClip, Wave> map = new HashMap<>();
@@ -121,46 +120,21 @@ public class AudioRenderer
             return false;
         }
 
-        int totalBytes = (int) (total * map.values().iterator().next().byteRate);
+        int byteRate = sampleRate * 2;
+        int totalBytes = (int) (total * byteRate);
         byte[] bytes = new byte[totalBytes + totalBytes % 2];
+        Wave finalWave = new Wave(1, 1, sampleRate, 16, bytes);
         ByteBuffer buffer = MemoryUtil.memAlloc(2);
 
         for (AudioClip clip : clips)
         {
             try
             {
-                Wave wave = map.get(clip);
-
-                int offset = (int) (TimeUtils.toSeconds(clip.tick.get()) * wave.byteRate);
-                int length = (int) (TimeUtils.toSeconds(clip.duration.get()) * wave.byteRate);
-                int start = (int) (TimeUtils.toSeconds(clip.offset.get()) * wave.byteRate);
-
-                offset -= offset % 2;
-                start -= start % 2;
-
-                length = Math.min(wave.data.length, MathUtils.clamp(length, 0, bytes.length - offset));
-                length -= length % 2;
-
-                for (int i = 0; i < length; i += 2)
-                {
-                    buffer.position(0);
-                    buffer.put(wave.data[start + i]);
-                    buffer.put(wave.data[start + i + 1]);
-
-                    int waveShort = buffer.getShort(0);
-
-                    buffer.position(0);
-                    buffer.put(bytes[offset + i]);
-                    buffer.put(bytes[offset + i + 1]);
-
-                    int bytesShort = buffer.getShort(0);
-                    int finalShort = waveShort + bytesShort;
-
-                    buffer.putShort(0, (short) MathUtils.clamp(finalShort, Short.MIN_VALUE, Short.MAX_VALUE));
-
-                    bytes[offset + i + 1] = buffer.get(1);
-                    bytes[offset + i] =     buffer.get(0);
-                }
+                finalWave.add(buffer, map.get(clip),
+                    TimeUtils.toSeconds(clip.tick.get()),
+                    TimeUtils.toSeconds(clip.offset.get()),
+                    TimeUtils.toSeconds(clip.duration.get())
+                );
             }
             catch (Exception e)
             {
@@ -168,12 +142,11 @@ public class AudioRenderer
             }
         }
 
+        MemoryUtil.memFree(buffer);
+
         try
         {
-            Wave lastWave = map.values().iterator().next();
-            Wave wave = new Wave(lastWave.audioFormat, lastWave.numChannels, lastWave.sampleRate, lastWave.bitsPerSample, bytes);
-
-            WaveWriter.write(file, wave);
+            WaveWriter.write(file, finalWave);
 
             return true;
         }

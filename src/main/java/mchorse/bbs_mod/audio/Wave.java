@@ -2,6 +2,7 @@ package mchorse.bbs_mod.audio;
 
 import mchorse.bbs_mod.audio.wav.WaveCue;
 import mchorse.bbs_mod.audio.wav.WaveList;
+import mchorse.bbs_mod.utils.MathUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.system.MemoryUtil;
 
@@ -155,5 +156,50 @@ public class Wave
         }
 
         return cues;
+    }
+
+    public void add(ByteBuffer buffer, Wave wave, float offset, float shift, float duration)
+    {
+        int waveStart = this.truncate((int) (shift * wave.byteRate));
+        int start = this.truncate((int) (offset * this.byteRate));
+        int end = this.truncate((int) ((offset + duration) * this.byteRate));
+
+        end = this.truncate(Math.min(end, this.data.length));
+
+        float ratio = (float) wave.byteRate / (float) this.byteRate;
+
+        for (int i = 0; start + i < end; i += 2)
+        {
+            int a = this.truncate(waveStart + (int) (i * ratio));
+            int b = start + i;
+
+            if (a >= wave.data.length)
+            {
+                break;
+            }
+
+            buffer.position(0);
+            buffer.put(wave.data[a]);
+            buffer.put(wave.data[a + 1]);
+
+            int waveShort = buffer.getShort(0);
+
+            buffer.position(0);
+            buffer.put(this.data[b]);
+            buffer.put(this.data[b + 1]);
+
+            int bytesShort = buffer.getShort(0);
+            int finalShort = waveShort + bytesShort;
+
+            buffer.putShort(0, (short) MathUtils.clamp(finalShort, Short.MIN_VALUE, Short.MAX_VALUE));
+
+            this.data[b + 1] = buffer.get(1);
+            this.data[b] =     buffer.get(0);
+        }
+    }
+
+    private int truncate(int offset)
+    {
+        return offset - offset % 2;
     }
 }
