@@ -862,14 +862,17 @@ public class UIElement implements IUIElement
         return GridResizer.apply(this, margin);
     }
 
-    public BoundsResizer bounds(UIElement target, int margin)
+    public BoundsResizer bounds(UIElement target, int padding)
     {
-        if (this.flex.post instanceof BoundsResizer)
+        if (this.flex.post instanceof BoundsResizer boundsResizer)
         {
-            return (BoundsResizer) this.flex.post;
+            boundsResizer.target = target;
+            boundsResizer.padding = padding;
+
+            return boundsResizer;
         }
 
-        return BoundsResizer.apply(this, target, margin);
+        return BoundsResizer.apply(this, target, padding);
     }
 
     /* Hierarchy */

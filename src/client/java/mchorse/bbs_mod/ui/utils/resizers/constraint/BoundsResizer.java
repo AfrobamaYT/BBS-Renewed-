@@ -48,7 +48,11 @@ public class BoundsResizer extends DecoratedResizer
         {
             area.x = MathUtils.clamp(area.x, this.viewport.globalX(viewport.x) + this.padding, this.viewport.globalX(viewport.ex()) - area.w - this.padding);
             area.y = MathUtils.clamp(area.y, this.viewport.globalY(viewport.y) + this.padding, this.viewport.globalY(viewport.ey()) - area.h - this.padding);
+
+            System.out.println(this.target + " " + viewport);
         }
+
+        System.out.println(this.viewport + " " + this.target);
 
         this.viewport.reset();
     }

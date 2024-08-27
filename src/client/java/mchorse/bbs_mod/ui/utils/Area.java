@@ -363,4 +363,10 @@ public class Area implements IResizer
     {
         return this.h;
     }
+
+    @Override
+    public String toString()
+    {
+        return this.x + " " + this.y + " " + this.w + " " + this.h;
+    }
 }

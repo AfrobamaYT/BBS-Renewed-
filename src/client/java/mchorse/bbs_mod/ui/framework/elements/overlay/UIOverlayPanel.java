@@ -134,10 +134,18 @@ public class UIOverlayPanel extends UIElement
     {
         if (this.moving && (context.mouseX != this.lastX || context.mouseY != this.lastY))
         {
-            this.flex.x.offset += context.mouseX - this.lastX;
-            this.flex.y.offset += context.mouseY - this.lastY;
+            int dx = context.mouseX - this.lastX;
+            int dy = context.mouseY - this.lastY;
+            int lastX = this.area.x;
+            int lastY = this.area.y;
+
+            this.flex.x.offset += dx;
+            this.flex.y.offset += dy;
 
             this.getParent().resize();
+
+            if (lastX == this.area.x) this.flex.x.offset -= dx;
+            if (lastY == this.area.y) this.flex.y.offset -= dy;
 
             this.lastX = context.mouseX;
             this.lastY = context.mouseY;
