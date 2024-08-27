@@ -13,6 +13,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
@@ -85,12 +86,13 @@ public class UISubtitleRenderer
                 continue;
             }
 
-            String label = subtitle.label;
+            String label = StringUtils.processColoredText(subtitle.label);
             int w = 0;
             int h = 0;
             int x = (int) (width * subtitle.windowX + subtitle.x);
             int y = (int) (height * subtitle.windowY + subtitle.y);
             float scale = subtitle.size;
+            int subColor = subtitle.color & Colors.RGB;
 
             List<String> strings = subtitle.maxWidth <= 10 ? Arrays.asList(label) : font.wrap(label, subtitle.maxWidth);
 
@@ -119,11 +121,11 @@ public class UISubtitleRenderer
 
                 if (Colors.getAlpha(subtitle.backgroundColor) > 0)
                 {
-                    context.batcher.textCard(string, xx, yy, Colors.setA(subtitle.color, 1F), Colors.mulA(subtitle.backgroundColor, alpha), subtitle.backgroundOffset);
+                    context.batcher.textCard(string, xx, yy, Colors.setA(subColor, 1F), Colors.mulA(subtitle.backgroundColor, alpha), subtitle.backgroundOffset);
                 }
                 else
                 {
-                    context.batcher.textShadow(string, xx, yy, Colors.setA(subtitle.color, 1F));
+                    context.batcher.textShadow(string, xx, yy, Colors.setA(subColor, 1F));
                 }
 
                 yy += subtitle.lineHeight;

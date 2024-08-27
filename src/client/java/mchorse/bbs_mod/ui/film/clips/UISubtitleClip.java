@@ -59,6 +59,7 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
         {
             value.set(c);
         }));
+        this.color.withAlpha();
 
         this.windowX = new UITrackpad((v) -> this.editor.editMultiple(this.clip.windowX, (value) ->
         {
