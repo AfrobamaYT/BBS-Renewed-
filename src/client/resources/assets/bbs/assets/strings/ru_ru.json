@@ -531,7 +531,7 @@
     "bbs.ui.pick": "Выбрать",
     "bbs.ui.pose.context.copy": "Скопировать позу",
     "bbs.ui.pose.context.fix": "Зафиксировать",
-    "bbs.ui.pose.context.fix-tooltip": "Когда 1, анимации модели будут отключены\nWhen enabled disables the influence of the model's animation",
+    "bbs.ui.pose.context.fix-tooltip": "Когда 1, анимации модели будут отключены",
     "bbs.ui.pose.context.name": "Имя...",
     "bbs.ui.pose.context.paste": "Вставить позу",
     "bbs.ui.pose.context.reset": "Сбросить позу",

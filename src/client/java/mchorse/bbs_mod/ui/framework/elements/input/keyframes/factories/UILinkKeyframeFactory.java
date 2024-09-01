@@ -15,7 +15,10 @@ public class UILinkKeyframeFactory extends UIKeyframeFactory<Link>
 
         this.scroll.add(new UIButton(UIKeys.GENERIC_KEYFRAMES_LINK_PICK_TEXTURE, (b) ->
         {
-            UITexturePicker.open(this.getParentContainer(), this.keyframe.getValue(), this.keyframe::setValue);
+            UITexturePicker.open(this.getParentContainer(), this.keyframe.getValue(), (l) ->
+            {
+                this.editor.getGraph().setValue(l, true);
+            });
         }));
     }
 }
