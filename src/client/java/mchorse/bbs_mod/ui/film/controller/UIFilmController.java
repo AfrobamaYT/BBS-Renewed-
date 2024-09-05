@@ -512,12 +512,13 @@ public class UIFilmController extends UIElement
             {
                 this.getContext().replaceContextMenu((menu) ->
                 {
+                    menu.autoKeys();
+
                     for (IEntity entity : this.hoveredEntities)
                     {
-                        Form form = entity.getForm();
-                        String name = form == null ? "-" : form.getIdOrName();
+                        int index = this.entities.indexOf(entity);
 
-                        menu.action(Icons.POSE, IKey.raw(name), () -> this.pickEntity(entity));
+                        menu.action(Icons.POSE, IKey.raw(this.panel.getData().replays.getList().get(index).getName()), () -> this.pickEntity(entity));
                     }
                 });
 
