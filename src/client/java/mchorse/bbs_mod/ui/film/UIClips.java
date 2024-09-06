@@ -54,7 +54,6 @@ public class UIClips extends UIElement
 
     private static final int MARGIN = 10;
     private static final int LAYER_HEIGHT = 20;
-    private static final int LAYERS = 20;
 
     private static final Area CLIP_AREA = new Area();
 
@@ -88,6 +87,7 @@ public class UIClips extends UIElement
     private UIElement embedded;
 
     private Vector3i addPreview;
+    private int layers;
 
     private UIClipRenderers renderers = new UIClipRenderers();
 
@@ -724,7 +724,6 @@ public class UIClips extends UIElement
         this.clips = clips;
         this.addPreview = null;
 
-        this.updateScrollSize();
         this.vertical.scrollToEnd();
         this.clearSelection();
         this.embedView(null);
@@ -780,6 +779,16 @@ public class UIClips extends UIElement
         }
 
         return this.vertical.scrollSize - this.vertical.area.h - (int) this.vertical.scroll;
+    }
+
+    public void updateLayers()
+    {
+        this.layers = 20;
+
+        for (Clip clip : this.clips.get())
+        {
+            this.layers = Math.max(this.layers, clip.layer.get() + 1);
+        }
     }
 
     public int fromGraphX(int mouseX)
@@ -849,13 +858,13 @@ public class UIClips extends UIElement
 
         this.vertical.area.copy(this.area);
         this.vertical.area.h -= MARGIN;
-
-        this.updateScrollSize();
     }
 
-    private void updateScrollSize()
+    public void updateScrollSize()
     {
-        this.vertical.scrollSize = this.clips == null ? 0 : LAYERS * LAYER_HEIGHT;
+        this.updateLayers();
+
+        this.vertical.scrollSize = this.clips == null ? 0 : this.layers * LAYER_HEIGHT;
         this.vertical.clamp();
     }
 
@@ -1052,6 +1061,8 @@ public class UIClips extends UIElement
     @Override
     public void render(UIContext context)
     {
+        this.updateScrollSize();
+
         if (this.clips != null && !this.hasEmbeddedView())
         {
             this.vertical.drag(context);
@@ -1132,7 +1143,7 @@ public class UIClips extends UIElement
                 }
 
                 if (newTick < 0) relativeX = 0;
-                if (newLayer < 0 || newLayer >= LAYERS) relativeY = 0;
+                if (newLayer < 0 || newLayer >= this.layers) relativeY = 0;
             }
         }
 
@@ -1225,7 +1236,7 @@ public class UIClips extends UIElement
         area.render(batcher, Colors.A50);
         batcher.clip(this.vertical.area, context);
 
-        for (int i = 0; i < LAYERS; i++)
+        for (int i = 0; i < this.layers; i++)
         {
             int ly = this.toLayerY(i);
 
