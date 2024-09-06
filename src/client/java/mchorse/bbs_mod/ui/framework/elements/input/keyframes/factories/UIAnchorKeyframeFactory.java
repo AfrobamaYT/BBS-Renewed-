@@ -76,20 +76,14 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
     {
         UIFilmPanel panel = this.getPanel();
         int index = this.keyframe.getValue().actor;
+        IEntity entity = CollectionUtils.getSafe(panel.getController().entities, index);
 
-        if (!CollectionUtils.inRange(panel.getController().entities, index))
+        if (entity == null || entity.getForm() == null)
         {
             return;
         }
 
-        IEntity entity = panel.getController().entities.get(index);
         Form form = entity.getForm();
-
-        if (form == null)
-        {
-            return;
-        }
-
         Map<String, Matrix4f> map = new HashMap<>();
         MatrixStack stack = new MatrixStack();
 

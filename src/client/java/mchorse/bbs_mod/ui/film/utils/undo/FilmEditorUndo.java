@@ -17,6 +17,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
     public ClipsData actionClips;
     public ClipsData voiceLinesClips;
     public int panel;
+    public int replay = -1;
 
     /* Replays */
     private KeyframeState propertiesBefore = new KeyframeState();
@@ -32,22 +33,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         UIClips cameraClips = editor.cameraEditor.clips;
         UIClips voiceLineClips = editor.screenplayEditor.editor.clips;
 
-        if (editor.screenplayEditor.isVisible())
-        {
-            this.panel = 3;
-        }
-        else if (editor.actionEditor.isVisible())
-        {
-            this.panel = 2;
-        }
-        else if (editor.replayEditor.isVisible())
-        {
-            this.panel = 1;
-        }
-        else
-        {
-            this.panel = 0;
-        }
+        this.panel = editor.getPanelIndex();
 
         this.tick = editor.getCursor();
         this.cameraClips = new ClipsData(cameraClips);

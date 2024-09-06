@@ -56,10 +56,7 @@ public abstract class ValueList <T extends BaseValue> extends BaseValueGroup
         {
             int index = Integer.parseInt(key);
 
-            if (CollectionUtils.inRange(this.list, index))
-            {
-                return this.list.get(index);
-            }
+            return CollectionUtils.getSafe(this.list, index);
         }
         catch (Exception e)
         {}

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +23,21 @@ public class CollectionUtils
     public static boolean inRange(Collection collection, int index)
     {
         return index >= 0 && index < collection.size();
+    }
+
+    public static <T> T getSafe(List<T> list, int index)
+    {
+        return getSafe(list, index, null);
+    }
+
+    public static <T> T getSafe(List<T> list, int index, T defaultValue)
+    {
+        if (inRange(list, index))
+        {
+            return list.get(index);
+        }
+
+        return defaultValue;
     }
 
     public static <K, V> K getKey(Map<K, V> map, V value)

@@ -209,14 +209,7 @@ public class UIFilmController extends UIElement
 
     public IEntity getCurrentEntity()
     {
-        int index = this.panel.replayEditor.replays.replays.getIndex();
-
-        if (CollectionUtils.inRange(this.entities, index))
-        {
-            return this.entities.get(index);
-        }
-
-        return null;
+        return CollectionUtils.getSafe(this.entities, this.panel.replayEditor.replays.replays.getIndex());
     }
 
     public int getPovMode()
@@ -855,6 +848,9 @@ public class UIFilmController extends UIElement
 
     private void updateEntities(Film film, RunnerCameraController runner, UIContext context)
     {
+        /* Plus 1 is necessary because apparently the render ticks comes before
+         * the update tick, so in order to force the correct animation, I have to
+         * increment the tick, so it would appear correctly */
         boolean isPlaying = this.isPlaying();
         int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
 
@@ -874,14 +870,10 @@ public class UIFilmController extends UIElement
             }
 
             List<Replay> replays = film.replays.getList();
+            Replay replay = CollectionUtils.getSafe(replays, i);
 
-            if (CollectionUtils.inRange(replays, i))
+            if (replay != null)
             {
-                /* Plus 1 is necessary because apparently the render ticks comes before
-                 * the update tick, so in order to force the correct animation, I have to
-                 * increment the tick, so it would appear correctly */
-                Replay replay = replays.get(i);
-
                 if (entity != this.controlled || (this.recording && this.recordingCountdown <= 0 && this.recordingGroups != null))
                 {
                     replay.applyFrame(ticks, entity, entity == this.controlled ? this.recordingGroups : null);

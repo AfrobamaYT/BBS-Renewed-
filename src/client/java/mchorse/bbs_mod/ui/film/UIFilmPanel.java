@@ -246,7 +246,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.JUMP_BACKWARD, () -> this.setCursor(this.getCursor() - BBSSettings.editorJump.get())).active(active).category(editor);
         this.keys().register(Keys.FILM_CONTROLLER_CYCLE_EDITORS, () ->
         {
-            this.showPanel(this.panels.get(MathUtils.cycler(this.getPanelIndex() + (Window.isShiftPressed() ? -1 : 1), 0, this.panels.size() - 1)));
+            this.showPanel(MathUtils.cycler(this.getPanelIndex() + (Window.isShiftPressed() ? -1 : 1), 0, this.panels.size() - 1));
             UIUtils.playClick();
         }).category(editor);
 
@@ -308,6 +308,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         return -1;
+    }
+
+    public void showPanel(int index)
+    {
+        this.showPanel(this.panels.get(index));
     }
 
     public void showPanel(UIElement element)
@@ -467,10 +472,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private void applyRecordedKeyframes(Recorder recorder, Film film)
     {
         int replayId = recorder.exception;
+        Replay rp = CollectionUtils.getSafe(film.replays.getList(), replayId);
 
-        if (CollectionUtils.inRange(film.replays.getList(), replayId))
+        if (rp != null)
         {
-            BaseValue.edit(film.replays.getList().get(replayId), (replay) ->
+            BaseValue.edit(rp, (replay) ->
             {
                 replay.keyframes.copy(recorder.keyframes);
             });

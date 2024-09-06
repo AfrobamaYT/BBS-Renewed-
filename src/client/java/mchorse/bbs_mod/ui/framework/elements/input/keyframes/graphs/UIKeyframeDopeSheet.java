@@ -164,12 +164,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int dopeSheetY = this.getDopeSheetY();
         int index = (mouseY - dopeSheetY) / (int) this.trackHeight;
 
-        if (CollectionUtils.inRange(this.sheets, index))
-        {
-            return this.sheets.get(index);
-        }
-
-        return null;
+        return CollectionUtils.getSafe(this.sheets, index);
     }
 
     @Override

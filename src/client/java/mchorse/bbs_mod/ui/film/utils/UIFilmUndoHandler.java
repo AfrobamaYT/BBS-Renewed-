@@ -10,6 +10,7 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.KeyframeState;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
@@ -33,6 +34,7 @@ public class UIFilmUndoHandler
     private List<Integer> cachedVoicelineSelection = new ArrayList<>();
     private KeyframeState cachedKeyframeState;
     private boolean cacheMarkLastUndoNoMerging;
+    private int lastReplay = -2;
 
     private Timer undoTimer = new Timer(1000);
     private Timer actionsTimer = new Timer(100);
@@ -69,7 +71,8 @@ public class UIFilmUndoHandler
         {
             ValueChangeUndo change = (ValueChangeUndo) anotherUndo;
 
-            this.panel.showPanel(change.panel == 1 ? this.panel.replayEditor : (change.panel == 2 ? this.panel.actionEditor : (change.panel == 3 ? this.panel.screenplayEditor : this.panel.cameraEditor)));
+            this.panel.showPanel(change.panel);
+            this.panel.replayEditor.setReplay(CollectionUtils.getSafe(this.panel.getFilm().replays.getList(), change.replay));
 
             List<Integer> cameraSelection = change.cameraClips.getSelection(redo);
             List<Integer> voiceLineSelection = change.voiceLinesClips.getSelection(redo);
@@ -122,6 +125,7 @@ public class UIFilmUndoHandler
         if (this.cachedActionSelection.isEmpty()) this.cachedActionSelection.addAll(this.panel.actionEditor.clips.getSelection());
         if (this.cachedVoicelineSelection.isEmpty()) this.cachedVoicelineSelection.addAll(this.panel.screenplayEditor.editor.clips.getSelection());
         if (this.cachedKeyframeState == null && this.panel.replayEditor.keyframeEditor != null) this.cachedKeyframeState = this.panel.replayEditor.keyframeEditor.view.cacheState();
+        if (this.lastReplay == -2) this.lastReplay = this.panel.getFilm().replays.getList().indexOf(this.panel.replayEditor.getReplay());
 
         if (!this.cachedValues.containsKey(baseValue)) this.cachedValues.put(baseValue, baseValue.toData());
 
@@ -149,6 +153,7 @@ public class UIFilmUndoHandler
             BaseValue value = entry.getKey();
             ValueChangeUndo undo = new ValueChangeUndo(value.getPath(), entry.getValue(), value.toData());
 
+            undo.replay = this.lastReplay;
             undo.editor(this.panel);
             undo.selectedBefore(this.cachedCameraSelection, this.cachedActionSelection, this.cachedVoicelineSelection, this.cachedKeyframeState);
             changeUndos.add(undo);
@@ -177,6 +182,7 @@ public class UIFilmUndoHandler
 
         this.cachedValues.clear();
         this.cachedKeyframeState = null;
+        this.lastReplay = -2;
 
         this.undoTimer.mark();
 

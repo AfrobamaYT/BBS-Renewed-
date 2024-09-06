@@ -155,11 +155,10 @@ public class FilmController
 
     public static Matrix4f getEntityMatrix(List<IEntity> entities, Camera camera, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
     {
-        int entityIndex = selector.actor;
+        IEntity entity = CollectionUtils.getSafe(entities, selector.actor);
 
-        if (CollectionUtils.inRange(entities, entityIndex))
+        if (entity != null)
         {
-            IEntity entity = entities.get(entityIndex);
             Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, camera, transition));
 
             Map<String, Matrix4f> map = new HashMap<>();
@@ -262,10 +261,10 @@ public class FilmController
             }
 
             List<Replay> replays = film.replays.getList();
+            Replay replay = CollectionUtils.getSafe(replays, i);
 
-            if (CollectionUtils.inRange(replays, i))
+            if (replay != null)
             {
-                Replay replay = replays.get(i);
                 int ticks = this.tick;
 
                 replay.applyFrame(ticks, entity, null);
