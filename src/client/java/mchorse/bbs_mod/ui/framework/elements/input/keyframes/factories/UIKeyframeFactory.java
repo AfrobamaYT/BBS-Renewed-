@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -129,6 +130,18 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     public void setValue(Object value)
     {
         this.editor.getGraph().setValue(value, true);
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        /* 🤮🤮🤮 */
+        if (this.keyframe.getTick() != (long) this.tick.getValue())
+        {
+            this.tick.setValue(this.keyframe.getTick());
+        }
+
+        super.render(context);
     }
 
     public static interface IUIKeyframeFactoryFactory <T>
