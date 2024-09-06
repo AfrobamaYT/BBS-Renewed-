@@ -283,8 +283,6 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         if (this.hovered != null && context.mouseButton == 0)
         {
             this.fill(this.hovered, true);
-
-            return true;
         }
 
         return false;
