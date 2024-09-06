@@ -14,7 +14,6 @@ import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 public class ItemFormRenderer extends FormRenderer<ItemForm>
 {
@@ -58,7 +57,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         if (context.isPicking())
         {
-            consumers.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
+            CustomVertexConsumerProvider.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
             {
                 this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                 RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
@@ -69,7 +68,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
-        consumers.clearRunnables();
+        CustomVertexConsumerProvider.clearRunnables();
 
         context.stack.pop();
 

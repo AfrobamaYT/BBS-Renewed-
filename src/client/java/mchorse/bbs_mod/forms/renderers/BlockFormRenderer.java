@@ -59,7 +59,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         if (context.isPicking())
         {
-            consumers.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
+            CustomVertexConsumerProvider.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
             {
                 this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                 RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
@@ -70,7 +70,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
-        consumers.clearRunnables();
+        CustomVertexConsumerProvider.clearRunnables();
 
         context.stack.pop();
 

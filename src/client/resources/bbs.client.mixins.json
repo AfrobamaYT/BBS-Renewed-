@@ -19,7 +19,8 @@
         "iris.SystemTimeUniformsTimerMixin",
         "InGameHudMixin",
         "KeyboardMixin",
-        "ResourceReloadLoggerMixin"
+        "ResourceReloadLoggerMixin",
+        "RenderLayerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
