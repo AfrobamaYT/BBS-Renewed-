@@ -105,7 +105,7 @@ public class Interpolations
         @Override
         public double interpolate(InterpContext context)
         {
-            return Lerps.cubicHermite(context.a0 + context.args.v1, context.a, context.b, context.b0 + context.args.v2, context.x);
+            return Lerps.cubicHermite(context.a0, context.a, context.b, context.b0, context.x);
         }
     };
 
