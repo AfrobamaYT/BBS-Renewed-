@@ -467,6 +467,7 @@
     "bbs.ui.keyframes.keys.category": "Editor de fotogramas clave",
     "bbs.ui.keyframes.keys.select_left": "Seleccionar a la izquierda",
     "bbs.ui.keyframes.keys.select_right": "Seleccionar a la derecha",
+    "bbs.ui.keyframes.keys.select_same": "Seleccionar por el mismo valor",
     "bbs.ui.keyframes.keys.toggle_interp": "Alternar selección de interpolación",
     "bbs.ui.keyframes.value": "Valor",
     "bbs.ui.keys.list": "Lista de atajos de teclado",

@@ -145,6 +145,36 @@ public class UIKeyframes extends UIElement
 
             this.selectAfter(context.mouseX, context.mouseY, 1);
         }).category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_SAME, () ->
+        {
+            UIContext context = this.getContext();
+            Keyframe keyframe = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
+
+            if (keyframe != null)
+            {
+                if (!Window.isShiftPressed())
+                {
+                    this.currentGraph.clearSelection();
+                }
+
+                for (UIKeyframeSheet sheet : this.currentGraph.getSheets())
+                {
+                    List<Keyframe> list = sheet.channel.getList();
+
+                    for (int i = 0; i < list.size(); i++)
+                    {
+                        Keyframe kf = list.get(i);
+
+                        if (kf.getFactory().compare(keyframe.getValue(), kf.getValue()))
+                        {
+                            sheet.selection.add(i);
+                        }
+                    }
+                }
+
+                this.currentGraph.pickSelected();
+            }
+        }).category(category);
     }
 
     private void selectAfter(int mouseX, int mouseY, int direction)

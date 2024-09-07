@@ -37,9 +37,14 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
     }
 
     @Override
-    public boolean compare(ItemStack a, ItemStack b)
+    public boolean compare(Object a, Object b)
     {
-        return ItemStack.areEqual(a, b);
+        if (a instanceof ItemStack itemA && b instanceof ItemStack itemB)
+        {
+            return ItemStack.areEqual(itemA, itemB);
+        }
+
+        return false;
     }
 
     @Override

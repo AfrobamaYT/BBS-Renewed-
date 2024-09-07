@@ -469,6 +469,7 @@
     "bbs.ui.keyframes.keys.category": "Editor de quadros-chave",
     "bbs.ui.keyframes.keys.select_left": "Selecionar à esquerda",
     "bbs.ui.keyframes.keys.select_right": "Selecionar à direita",
+    "bbs.ui.keyframes.keys.select_same": "Selecionar pelo mesmo valor",
     "bbs.ui.keyframes.keys.toggle_interp": "Alternar seleção de interpolação",
     "bbs.ui.keyframes.value": "Valor",
     "bbs.ui.keys.list": "Lista de Atalhos",

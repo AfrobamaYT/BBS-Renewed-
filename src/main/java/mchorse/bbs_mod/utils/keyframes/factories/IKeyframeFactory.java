@@ -13,7 +13,7 @@ public interface IKeyframeFactory <T>
 
     public T createEmpty();
 
-    public default boolean compare(T a, T b)
+    public default boolean compare(Object a, Object b)
     {
         return Objects.equals(a, b);
     }

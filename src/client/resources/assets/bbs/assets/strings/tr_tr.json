@@ -510,6 +510,7 @@
     "bbs.ui.keyframes.keys.category": "Keyframe düzenleyicisi",
     "bbs.ui.keyframes.keys.select_left": "Sol tarafı seç",
     "bbs.ui.keyframes.keys.select_right": "Sağ tarafı seç",
+    "bbs.ui.keyframes.keys.select_same": "Aynı değer ile seç",
     "bbs.ui.keyframes.keys.toggle_easing": "Geçişleri aç/kapa",
     "bbs.ui.keyframes.keys.toggle_interp": "İnterpolasyon seçmeyi aç/kapa",
     "bbs.ui.keyframes.tick": "Tick",

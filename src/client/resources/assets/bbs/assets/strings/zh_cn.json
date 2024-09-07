@@ -517,6 +517,7 @@
     "bbs.ui.keyframes.keys.category": "关键帧编辑器",
     "bbs.ui.keyframes.keys.select_left": "选择左侧",
     "bbs.ui.keyframes.keys.select_right": "选择右侧",
+    "bbs.ui.keyframes.keys.select_same": "选择相同的值",
     "bbs.ui.keyframes.keys.toggle_easing": "切换缓动",
     "bbs.ui.keyframes.keys.toggle_interp": "切换插值选择",
     "bbs.ui.keys.list": "按键列表",

@@ -458,6 +458,7 @@
     "bbs.ui.keyframes.keys.category": "Editeur d'image clé",
     "bbs.ui.keyframes.keys.select_left": "Sélectionner à gauche",
     "bbs.ui.keyframes.keys.select_right": "Sélectionner à droite",
+    "bbs.ui.keyframes.keys.select_same": "Sélectionner la même valeur",
     "bbs.ui.keyframes.keys.toggle_interp": "Sélection d'interpolation",
     "bbs.ui.keyframes.value": "Valeur",
     "bbs.ui.keys.list": "Liste de raccourcis",

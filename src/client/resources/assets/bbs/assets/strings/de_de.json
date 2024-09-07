@@ -454,6 +454,7 @@
     "bbs.ui.keyframes.keys.category": "Keyframe-Editor",
     "bbs.ui.keyframes.keys.select_left": "Zur Linken auswählen",
     "bbs.ui.keyframes.keys.select_right": "Zur Rechten auswählen",
+    "bbs.ui.keyframes.keys.select_same": "Durch Wert auswählen",
     "bbs.ui.keyframes.keys.toggle_interp": "Interpolations-Selektion umschalten",
     "bbs.ui.keyframes.value": "Wert",
     "bbs.ui.keys.list": "Tastenkombinationsliste",
