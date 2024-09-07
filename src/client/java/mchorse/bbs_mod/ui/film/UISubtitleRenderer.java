@@ -9,7 +9,6 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.graphics.Framebuffer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -47,14 +46,13 @@ public class UISubtitleRenderer
         });
     }
 
-    public static void renderSubtitles(UIContext context, List<Subtitle> subtitles)
+    public static void renderSubtitles(MatrixStack stack, Batcher2D batcher, List<Subtitle> subtitles)
     {
         if (subtitles.isEmpty())
         {
             return;
         }
 
-        MatrixStack stack = context.batcher.getContext().getMatrices();
         ShaderProgram program = BBSShaders.getSubtitlesProgram();
         GlUniform blur = program.getUniform("Blur");
         GlUniform textureSize = program.getUniform("TextureSize");
@@ -121,11 +119,11 @@ public class UISubtitleRenderer
 
                 if (Colors.getAlpha(subtitle.backgroundColor) > 0)
                 {
-                    context.batcher.textCard(string, xx, yy, Colors.setA(subColor, 1F), Colors.mulA(subtitle.backgroundColor, alpha), subtitle.backgroundOffset);
+                    batcher.textCard(string, xx, yy, Colors.setA(subColor, 1F), Colors.mulA(subtitle.backgroundColor, alpha), subtitle.backgroundOffset);
                 }
                 else
                 {
-                    context.batcher.textShadow(string, xx, yy, Colors.setA(subColor, 1F));
+                    batcher.textShadow(string, xx, yy, Colors.setA(subColor, 1F));
                 }
 
                 yy += subtitle.lineHeight;
@@ -157,7 +155,7 @@ public class UISubtitleRenderer
             RenderSystem.enableBlend();
             RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
 
-            context.batcher.texturedBox(supplier, texture.id, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
+            batcher.texturedBox(supplier, texture.id, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
 
             stack.pop();
         }

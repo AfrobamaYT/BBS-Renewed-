@@ -7,6 +7,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
+import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
@@ -15,6 +16,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
+import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -205,12 +207,22 @@ public class BBSRendering
 
     public static void onWorldRenderEnd()
     {
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (BBSModClient.getCameraController().getCurrent() instanceof PlayCameraController controller)
+        {
+            DrawContext drawContext = new DrawContext(mc, mc.getBufferBuilders().getEntityVertexConsumers());
+            Batcher2D batcher = new Batcher2D(drawContext);
+
+            UISubtitleRenderer.renderSubtitles(batcher.getContext().getMatrices(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
+        }
+
         if (!customSize)
         {
             return;
         }
 
-        Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
+        Framebuffer framebuffer = mc.getFramebuffer();
         UIBaseMenu currentMenu = UIScreen.getCurrentMenu();
         Texture texture = getTexture();
 
@@ -218,7 +230,7 @@ public class BBSRendering
         {
             if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
             {
-                UISubtitleRenderer.renderSubtitles(currentMenu.context, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
+                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.getContext().getMatrices(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
             }
         }
 
@@ -227,14 +239,14 @@ public class BBSRendering
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
         texture.unbind();
 
-        Window window = MinecraftClient.getInstance().getWindow();
+        Window window = mc.getWindow();
 
         renderingWorld = false;
 
         framebuffer.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
         framebuffer.beginWrite(true);
 
-        if (texture != null && width != 0)
+        if (width != 0)
         {
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
