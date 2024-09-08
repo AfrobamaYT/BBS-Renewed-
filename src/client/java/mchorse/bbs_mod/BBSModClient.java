@@ -280,7 +280,7 @@ public class BBSModClient implements ClientModInitializer
                 requestToggleRecording = false;
             }
 
-            if (videoRecorder.isRecording())
+            if (videoRecorder.isRecording() && BBSRendering.canRender)
             {
                 videoRecorder.recordFrame();
             }

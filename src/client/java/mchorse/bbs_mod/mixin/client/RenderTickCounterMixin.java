@@ -48,11 +48,14 @@ public class RenderTickCounterMixin
                 this.tickDelta -= (float) i;
 
                 videoRecorder.serverTicks += i;
+                BBSRendering.canRender = true;
 
                 info.setReturnValue(i);
             }
             else
             {
+                BBSRendering.canRender = false;
+
                 info.setReturnValue(0);
             }
 

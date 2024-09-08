@@ -47,6 +47,8 @@ public class BBSRendering
      */
     public static final Set<ModelBlockEntity> capturedModelBlocks = new HashSet<>();
 
+    public static boolean canRender;
+
     public static boolean renderingWorld;
     public static int lastAction;
 

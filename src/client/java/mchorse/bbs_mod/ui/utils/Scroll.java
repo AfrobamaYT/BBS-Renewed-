@@ -68,6 +68,7 @@ public class Scroll
     public final Area area;
 
     private float scrollbarRatio;
+    private double targetScroll;
 
     public static void bar(Batcher2D batcher, int x1, int y1, int x2, int y2, int color)
     {
@@ -169,8 +170,7 @@ public class Scroll
      */
     public void scrollBy(double x)
     {
-        this.scroll += x;
-        this.clamp();
+        this.scrollTo(this.targetScroll + x);
     }
 
     /**
@@ -178,7 +178,8 @@ public class Scroll
      */
     public void scrollTo(double x)
     {
-        this.scroll = x;
+        this.targetScroll = x;
+
         this.clamp();
     }
 
@@ -218,11 +219,11 @@ public class Scroll
 
         if (this.scrollSize <= size)
         {
-            this.scroll = 0;
+            this.targetScroll = 0;
         }
         else
         {
-            this.scroll = MathUtils.clamp(this.scroll, 0, this.scrollSize - size);
+            this.targetScroll = MathUtils.clamp(this.targetScroll, 0, this.scrollSize - size);
         }
     }
 
@@ -417,6 +418,8 @@ public class Scroll
      */
     public void drag(int x, int y)
     {
+        this.scroll = Lerps.lerp(this.scroll, this.targetScroll, 0.2F);
+
         if (this.dragging)
         {
             int scrollbar = this.getScrollbar();
@@ -424,7 +427,7 @@ public class Scroll
             float progress = (this.direction.getMouse(x, y) - (this.direction.getPosition(this.area, 0F) + scrollbar * this.scrollbarRatio)) / (float) h;
             float to = progress * (this.scrollSize - this.direction.getSide(this.area));
 
-            this.scrollTo((int) Lerps.lerp(this.scroll, to, 0.2F));
+            this.scrollTo(to);
         }
     }
 
