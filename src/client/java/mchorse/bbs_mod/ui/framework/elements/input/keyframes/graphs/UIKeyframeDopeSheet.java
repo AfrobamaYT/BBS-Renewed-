@@ -56,7 +56,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     public int getDopeSheetY()
     {
-        return this.keyframes.area.y + TOP_MARGIN - (int) this.dopeSheet.scroll;
+        return this.keyframes.area.y + TOP_MARGIN - (int) this.dopeSheet.getScroll();
     }
 
     public int getDopeSheetY(int sheet)
@@ -566,13 +566,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     public void saveState(MapType extra)
     {
         extra.putDouble("track_height", this.trackHeight);
-        extra.putDouble("scroll", this.dopeSheet.scroll);
+        extra.putDouble("scroll", this.dopeSheet.getScroll());
     }
 
     @Override
     public void restoreState(MapType extra)
     {
         this.setTrackHeight(extra.getDouble("track_height"));
-        this.dopeSheet.scroll = extra.getDouble("scroll");
+        this.dopeSheet.scrollTo(extra.getDouble("scroll"));
     }
 }

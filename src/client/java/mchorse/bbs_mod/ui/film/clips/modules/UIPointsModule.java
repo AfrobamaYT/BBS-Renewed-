@@ -214,7 +214,7 @@ public class UIPointsModule extends UIAbstractModule
         for (int i = 0; i < c; i++)
         {
             String label = String.valueOf(i);
-            int xx = this.area.x + i * this.scroll.scrollItemSize - (int) this.scroll.scroll;
+            int xx = this.area.x + i * this.scroll.scrollItemSize - (int) this.scroll.getScroll();
             int w = context.batcher.getFont().getWidth(label);
 
             context.batcher.box(xx, y, xx + 20, y + 20, this.index == i ? 0xffcc1170 : 0xffff2280);
@@ -230,18 +230,18 @@ public class UIPointsModule extends UIAbstractModule
 
         if (scroll != 0)
         {
-            int bx = this.area.x + (int) (this.scroll.scroll / (float) (this.scroll.scrollSize - this.area.w) * (mw - scroll));
+            int bx = this.area.x + (int) (this.scroll.getScroll() / (float) (this.scroll.scrollSize - this.area.w) * (mw - scroll));
             int by = y + this.area.h + 2;
 
             context.batcher.box(bx, by, bx + scroll, by + 2, Colors.A50);
         }
 
-        if (this.scroll.scroll > 0 && this.scroll.scrollSize >= this.area.w - 40)
+        if (this.scroll.getScroll() > 0 && this.scroll.scrollSize >= this.area.w - 40)
         {
             context.batcher.gradientHBox(x, y, x + 4, y + this.area.h, Colors.A50, 0);
         }
 
-        if (this.scroll.scroll < this.scroll.scrollSize - this.area.w && this.scroll.scrollSize >= this.area.w)
+        if (this.scroll.getScroll() < this.scroll.scrollSize - this.area.w && this.scroll.scrollSize >= this.area.w)
         {
             context.batcher.gradientHBox(x + this.area.w - 4, y, x + this.area.w, y + this.area.h, 0, Colors.A50);
         }

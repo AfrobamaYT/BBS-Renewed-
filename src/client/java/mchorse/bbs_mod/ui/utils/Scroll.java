@@ -31,7 +31,7 @@ public class Scroll
     /**
      * Scroll position 
      */
-    public double scroll;
+    private double scroll;
 
     /**
      * Whether this scroll area gets dragged 
@@ -157,6 +157,11 @@ public class Scroll
     public void setSize(int items)
     {
         this.scrollSize = items * this.scrollItemSize;
+    }
+
+    public double getScroll()
+    {
+        return this.scroll;
     }
 
     /**

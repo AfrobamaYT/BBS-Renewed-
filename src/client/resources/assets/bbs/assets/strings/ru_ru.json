@@ -749,6 +749,8 @@
     "bbs.ui.video_settings.height": "Высота",
     "bbs.ui.video_settings.motion_blur": "Размытие в движении",
     "bbs.ui.video_settings.motion_blur-tooltip": "Чем больше число тем лучше качество размытия движения но также уйдёт больше времени на запись видео",
+    "bbs.ui.video_settings.held_frames": "Задержка кадров",
+    "bbs.ui.video_settings.held_frames-tooltip": "Увеличьте, если вам нужно исправить артифакты аккумулятивных шейдеров (по типу трассировки лучей или путей)",
     "bbs.ui.video_settings.path": "Путь экспортирования",
     "bbs.ui.video_settings.presets.shorts_1080p": "1080p для Шортс (1080x1920 - 60 FPS)",
     "bbs.ui.video_settings.resolution": "Разрешение кадра",

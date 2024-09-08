@@ -63,7 +63,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     {
         if (editor != null)
         {
-            SCROLLS.put(editor.keyframe.getFactory(), (int) editor.scroll.scroll.scroll);
+            SCROLLS.put(editor.keyframe.getFactory(), (int) editor.scroll.scroll.getScroll());
         }
     }
 
@@ -74,7 +74,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
         if (uiEditor != null)
         {
-            uiEditor.scroll.scroll.scroll = SCROLLS.getOrDefault(keyframe.getFactory(), 0);
+            uiEditor.scroll.scroll.scrollTo(SCROLLS.getOrDefault(keyframe.getFactory(), 0));
         }
 
         return uiEditor;

@@ -15,9 +15,9 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.StringGroupMatcher;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.undo.UndoManager;
 import org.joml.Vector2d;
 import org.lwjgl.glfw.GLFW;
@@ -741,8 +741,8 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
         x -= this.area.x + this.padding;
         y -= this.area.y + this.padding;
 
-        x += this.horizontal.scroll - this.getShiftX();
-        y += this.vertical.scroll;
+        x += this.horizontal.getScroll() - this.getShiftX();
+        y += this.vertical.getScroll();
 
         /* Wrapped and unwrapped move to cursor require two different versions
          * of the same operation due to complexity of wrapped data structure */
@@ -877,8 +877,8 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
         Vector2d pos = this.getCursorPosition(this.getFont(), this.cursor);
 
-        pos.x += this.horizontal.scroll;
-        pos.y += this.vertical.scroll;
+        pos.x += this.horizontal.getScroll();
+        pos.y += this.vertical.getScroll();
 
         int w = 4;
         int h = this.lineHeight;
@@ -1373,8 +1373,8 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
         {
             T textLine = this.text.get(i);
             String line = textLine.text;
-            int newX = x - (int) this.horizontal.scroll + this.getShiftX();
-            int newY = y - (int) this.vertical.scroll;
+            int newX = x - (int) this.horizontal.getScroll() + this.getShiftX();
+            int newY = y - (int) this.vertical.getScroll();
 
             if (newY > this.area.ey())
             {
@@ -1541,8 +1541,8 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
             pos.y = cursor.line * this.lineHeight;
         }
 
-        pos.x = pos.x - this.horizontal.scroll + this.getShiftX();
-        pos.y = pos.y - this.vertical.scroll;
+        pos.x = pos.x - this.horizontal.getScroll() + this.getShiftX();
+        pos.y = pos.y - this.vertical.getScroll();
 
         return pos;
     }

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.mixin.client.iris;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.VideoRecorder;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
@@ -19,6 +20,8 @@ public class SystemTimeUniformsTimerMixin
     @Shadow(remap = false)
     private float lastFrameTime;
 
+    private int heldFrames;
+
     @Inject(method = "beginFrame", at = @At("HEAD"), cancellable = true, remap = false)
     public void onBeginFrame(CallbackInfo info)
     {
@@ -28,10 +31,24 @@ public class SystemTimeUniformsTimerMixin
         {
             float videoFrameRate = BBSRendering.getVideoFrameRate();
 
-            this.lastFrameTime = 20F / videoFrameRate;
-            this.frameTimeCounter += 1F / videoFrameRate;
+            if (this.heldFrames == 0)
+            {
+                this.lastFrameTime = 20F / videoFrameRate;
+                this.frameTimeCounter += 1F / videoFrameRate;
+            }
+
+            this.heldFrames += 1;
+
+            if (this.heldFrames >= BBSSettings.videoSettings.heldFrames.get())
+            {
+                this.heldFrames = 0;
+            }
 
             info.cancel();
+        }
+        else
+        {
+            this.heldFrames = 0;
         }
     }
 }

@@ -685,6 +685,8 @@
     "bbs.ui.video_settings.height": "Höhe",
     "bbs.ui.video_settings.motion_blur": "Bewegungsunschärfe",
     "bbs.ui.video_settings.motion_blur-tooltip": "Je höher die Nummer, desto besser is die Qualität der Bewegungsunschärfe, aber es dauert auch länger aufzunehmen.",
+    "bbs.ui.video_settings.held_frames": "Gehaltene Frames",
+    "bbs.ui.video_settings.held_frames-tooltip": "Erhöhe falls du das Bild stabilisieren musst  wegen kumulativen Shadern (wie RT oder PT)",
     "bbs.ui.video_settings.path": "Export-Pfad",
     "bbs.ui.video_settings.presets.shorts_1080p": "1080p für Shorts (1080x1920 - 60 FPS)",
     "bbs.ui.video_settings.resolution": "Frame Auflösung",

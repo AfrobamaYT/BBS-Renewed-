@@ -199,7 +199,7 @@ public class UIFormList extends UIElement
 
         if (this.lastUpdate != categories.getLastUpdate())
         {
-            this.lastScroll = (int) this.forms.scroll.scroll;
+            this.lastScroll = (int) this.forms.scroll.getScroll();
 
             Form selected = this.getSelected();
 

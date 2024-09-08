@@ -544,7 +544,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         if (this.lastChecked.checkRepeat())
         {
             File file = BBSMod.getProvider().getFile(this.picker.path);
-            int scroll = (int) this.picker.scroll.scroll;
+            int scroll = (int) this.picker.scroll.getScroll();
 
             if (file != null)
             {
