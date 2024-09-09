@@ -713,6 +713,8 @@
     "bbs.ui.video_settings.height": "Altura",
     "bbs.ui.video_settings.motion_blur": "Desfoque de movimento",
     "bbs.ui.video_settings.motion_blur-tooltip": "Quanto maior o número, melhor a qualidade do desfoque de movimento, mas também mais tempo levará para gravar",
+    "bbs.ui.video_settings.held_frames": "Quadros retidos",
+    "bbs.ui.video_settings.held_frames-tooltip": "Aumenta, se precisares de estabilizar a imagem de shaders acumulativos (como a RT ou a PT)",
     "bbs.ui.video_settings.path": "Caminho de exportagem",
     "bbs.ui.video_settings.resolution": "Resolução da tela",
     "bbs.ui.video_settings.title": "Configurações de exportagem de vídeo",

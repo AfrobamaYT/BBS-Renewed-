@@ -713,6 +713,8 @@
     "bbs.ui.video_settings.height": "Altura",
     "bbs.ui.video_settings.motion_blur": "Desenfoque de movimiento",
     "bbs.ui.video_settings.motion_blur-tooltip": "Cuanto mayor sea el número, mejor calidad del desenfoque de movimiento, pero también más tiempo tardará en grabarse",
+    "bbs.ui.video_settings.held_frames": "Retener fotogramas",
+    "bbs.ui.video_settings.held_frames-tooltip": "Aumenta el valor si necesitas estabilizar la imagen de sombreadores acumulativos (como RT o PT)",
     "bbs.ui.video_settings.path": "Ruta de exportación",
     "bbs.ui.video_settings.resolution": "Resolución de fotograma",
     "bbs.ui.video_settings.title": "Configuración de exportación de vídeo",

@@ -773,6 +773,8 @@
     "bbs.ui.video_settings.height": "Yükseklik",
     "bbs.ui.video_settings.motion_blur": "Hareket bulanıklığı",
     "bbs.ui.video_settings.motion_blur-tooltip": "Sayı ne kadar büyük olursa, hareket bulanıklığı kalitesi o kadar iyi olur, ancak aynı zamanda kayıt o kadar uzun sürer",
+    "bbs.ui.video_settings.held_frames": "Dondurulmuş kareler",
+    "bbs.ui.video_settings.held_frames-tooltip": "Birikimli gölgelendiricilerin (Ray Tracing veya Path Tracing gibi) görünümünü dengelemeniz gerekiyorsa artırın",
     "bbs.ui.video_settings.path": "Yolu dışa aktar",
     "bbs.ui.video_settings.presets.1080p": "1080p (1920x1080 - 60 FPS)",
     "bbs.ui.video_settings.presets.1440p": "1440p (2560x1440 - 60 FPS)",
