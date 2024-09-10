@@ -689,6 +689,8 @@
     "bbs.ui.video_settings.height": "Hauteur",
     "bbs.ui.video_settings.motion_blur": "Flou de mouvement",
     "bbs.ui.video_settings.motion_blur-tooltip": "Le plus grand nombre sera la meilleur qualitée de flou de mouvement, le plus long ça va prendre à enregistrer",
+    "bbs.ui.video_settings.held_frames": "Images maintenues",
+    "bbs.ui.video_settings.held_frames-tooltip": "Augmentez la valeur si vous avez besoin de stabiliser l'image avec des shaders cumulatifs (comme Ray Tracing ou Path Tracing)",
     "bbs.ui.video_settings.path": "Chemin d'exportation",
     "bbs.ui.video_settings.presets.1080p": "1080p (1920x1080 - 60 IPS)",
     "bbs.ui.video_settings.presets.1440p": "1440p (2560x1440 - 60 IPS)",
