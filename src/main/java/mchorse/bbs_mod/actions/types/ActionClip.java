@@ -26,6 +26,11 @@ public abstract class ActionClip extends Clip
 
     public final void applyClient(IEntity entity, Film film, Replay replay, int tick)
     {
+        if (!this.enabled.get())
+        {
+            return;
+        }
+
         int relaive = tick - this.tick.get();
         int frequency = this.frequency.get();
 
@@ -47,6 +52,11 @@ public abstract class ActionClip extends Clip
 
     public final void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
     {
+        if (!this.enabled.get())
+        {
+            return;
+        }
+
         int relaive = tick - this.tick.get();
         int frequency = this.frequency.get();
 
