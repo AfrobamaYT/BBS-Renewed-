@@ -4,36 +4,32 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.VertexFormat;
 import org.lwjgl.opengl.GL11;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immediate
 {
-    private static Map<VertexFormat, Runnable> runnables = new HashMap<>();
+    private static Runnable runnables;
 
     private boolean ui;
 
     public static void drawLayer(RenderLayer layer)
     {
-        Runnable runnable = runnables.get(layer.getVertexFormat());
-
-        if (runnable != null)
+        if (runnables != null)
         {
-            runnable.run();
+            runnables.run();
         }
     }
 
-    public static void hijackVertexFormat(VertexFormat format, Runnable runnable)
+    public static void hijackVertexFormat(Runnable runnable)
     {
-        runnables.put(format, runnable);
+        runnables = runnable;
     }
 
     public static void clearRunnables()
     {
-        runnables.clear();
+        runnables = null;
     }
 
     public CustomVertexConsumerProvider(BufferBuilder fallback, Map<RenderLayer, BufferBuilder> layers)

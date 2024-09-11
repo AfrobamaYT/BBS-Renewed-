@@ -79,7 +79,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (context.isPicking())
         {
-            CustomVertexConsumerProvider.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_LIGHT, () ->
+            CustomVertexConsumerProvider.hijackVertexFormat(() ->
             {
                 this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                 RenderSystem.setShader(BBSShaders::getPickerModelsProgram);

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.ITickable;
@@ -8,6 +9,7 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.mixin.LimbAnimatorAccessor;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
@@ -18,6 +20,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
@@ -27,11 +30,8 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
     private String lastId = "";
     public float prevHandSwing;
-    private double prevX = Float.MIN_VALUE;
-    private double prevZ = Float.MIN_VALUE;
     private float prevYawHead;
     private float prevPitch;
-
 
     public MobFormRenderer(MobForm form)
     {
@@ -75,6 +75,11 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             MatrixStackUtils.multiply(stack, uiMatrix);
             stack.scale(scale, scale, scale);
 
+            if (!this.form.mobID.get().equals("minecraft:ender_dragon"))
+            {
+                stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            }
+
             stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
             stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
@@ -99,10 +104,27 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
             int light = context.light;
 
+            if (context.isPicking())
+            {
+                CustomVertexConsumerProvider.hijackVertexFormat(() ->
+                {
+                    this.setupTarget(context, BBSShaders.getPickerModelsProgram());
+                    RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
+                });
+
+                light = 0;
+            }
+
             context.stack.push();
+
+            if (this.form.mobID.get().equals("minecraft:ender_dragon"))
+            {
+                context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            }
 
             MinecraftClient.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), context.stack, consumers, light);
             consumers.draw();
+            CustomVertexConsumerProvider.clearRunnables();
 
             context.stack.pop();
 
@@ -117,12 +139,6 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
         if (this.entity != null)
         {
-            if (this.prevX == Float.MIN_VALUE)
-            {
-                this.prevX = entity.getX();
-                this.prevZ = entity.getZ();
-            }
-
             this.entity.tick();
 
             if (this.entity instanceof LivingEntity livingEntity)
@@ -165,8 +181,6 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             this.entity.setSprinting(entity.isSprinting());
             this.entity.age = entity.getAge();
 
-            this.prevX = entity.getX();
-            this.prevZ = entity.getZ();
             this.prevYawHead = entity.getHeadYaw() - entity.getBodyYaw();
             this.prevPitch = entity.getPitch();
         }

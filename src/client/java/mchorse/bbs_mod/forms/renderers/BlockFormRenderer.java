@@ -59,7 +59,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         if (context.isPicking())
         {
-            CustomVertexConsumerProvider.hijackVertexFormat(VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL, () ->
+            CustomVertexConsumerProvider.hijackVertexFormat(() ->
             {
                 this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                 RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
