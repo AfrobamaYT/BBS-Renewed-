@@ -20,6 +20,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.ArrayList;
@@ -192,7 +193,7 @@ public class UIFormCategory extends UIElement
     {
         super.render(context);
 
-        context.batcher.textCard(this.category.title.get(), this.area.x + 26, this.area.y + 6);
+        context.batcher.textCard(StringUtils.processColoredText(this.category.title.get()), this.area.x + 26, this.area.y + 6);
 
         if (this.category.hidden)
         {
