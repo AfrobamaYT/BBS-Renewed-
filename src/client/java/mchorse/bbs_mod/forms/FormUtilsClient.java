@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
+import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.forms.renderers.AnchorFormRenderer;
@@ -18,6 +19,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.forms.renderers.ItemFormRenderer;
 import mchorse.bbs_mod.forms.renderers.LabelFormRenderer;
+import mchorse.bbs_mod.forms.renderers.MobFormRenderer;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.renderers.ParticleFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -74,6 +76,7 @@ public class FormUtilsClient
         register(BlockForm.class, BlockFormRenderer::new);
         register(ItemForm.class, ItemFormRenderer::new);
         register(AnchorForm.class, AnchorFormRenderer::new);
+        register(MobForm.class, MobFormRenderer::new);
     }
 
     private static void assignBufferBuilder(Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> builderStorage, RenderLayer layer) {

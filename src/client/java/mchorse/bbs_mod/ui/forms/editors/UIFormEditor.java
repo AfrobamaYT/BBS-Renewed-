@@ -11,6 +11,7 @@ import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
+import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -27,6 +28,7 @@ import mchorse.bbs_mod.ui.forms.editors.forms.UIExtrudedForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIItemForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UILabelForm;
+import mchorse.bbs_mod.ui.forms.editors.forms.UIMobForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIModelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIParticleForm;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIPickableFormRenderer;
@@ -90,6 +92,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         register(BlockForm.class, UIBlockForm::new);
         register(ItemForm.class, UIItemForm::new);
         register(AnchorForm.class, UIAnchorForm::new);
+        register(MobForm.class, UIMobForm::new);
     }
 
     public static void register(Class clazz, Supplier<UIForm> supplier)

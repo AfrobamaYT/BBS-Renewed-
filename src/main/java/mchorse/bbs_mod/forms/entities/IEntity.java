@@ -4,6 +4,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LimbAnimator;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -159,6 +160,8 @@ public interface IEntity
             prevExtraVariables[i] = entity.getPrevExtraVariables()[i];
         }
     }
+
+    public LimbAnimator getLimbAnimator();
 
     public float getLimbPos(float tickDelta);
 

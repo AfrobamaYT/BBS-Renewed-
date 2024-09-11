@@ -377,7 +377,7 @@ public class Scroll
         scroll = -scroll;
 
         boolean isInside = this.area.isInside(x, y);
-        double lastScroll = this.scroll;
+        double lastScroll = this.targetScroll;
 
         if (isInside)
         {
@@ -391,7 +391,7 @@ public class Scroll
             }
         }
 
-        return isInside && ((this.cancelScrollEdge && this.scrollSize > this.direction.getSide(this.area)) || lastScroll != this.scroll);
+        return isInside && ((this.cancelScrollEdge && this.scrollSize > this.direction.getSide(this.area)) || lastScroll != this.targetScroll);
     }
 
     public void mouseReleased(UIContext context)

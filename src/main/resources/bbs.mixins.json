@@ -11,7 +11,8 @@
         "ItemStackMixin",
         "WorldMixin",
         "LivingEntityMixin",
-        "ServerPlayerEntityMixin"
+        "ServerPlayerEntityMixin",
+        "LimbAnimatorAccessor"
     ],
     "injectors": {
         "defaultRequire": 1

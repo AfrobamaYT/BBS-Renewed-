@@ -48,6 +48,7 @@ import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
+import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.morphing.Morph;
@@ -296,7 +297,8 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("extruded"), ExtrudedForm.class, null)
             .register(Link.bbs("block"), BlockForm.class, null)
             .register(Link.bbs("item"), ItemForm.class, null)
-            .register(Link.bbs("anchor"), AnchorForm.class, null);
+            .register(Link.bbs("anchor"), AnchorForm.class, null)
+            .register(Link.bbs("mob"), MobForm.class, null);
 
         films = new FilmManager(() -> new File(worldFolder, "bbs/films"));
 

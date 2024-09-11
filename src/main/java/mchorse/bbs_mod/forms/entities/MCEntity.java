@@ -6,6 +6,7 @@ import mchorse.bbs_mod.utils.AABB;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LimbAnimator;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
@@ -21,7 +22,6 @@ public class MCEntity implements IEntity
 
     private float[] extraVariables = new float[10];
     private float[] prevExtraVariables = new float[10];
-
 
     public MCEntity(Entity mcEntity)
     {
@@ -424,6 +424,17 @@ public class MCEntity implements IEntity
         {
             this.prevExtraVariables[i] = this.extraVariables[i];
         }
+    }
+
+    @Override
+    public LimbAnimator getLimbAnimator()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.limbAnimator;
+        }
+
+        return null;
     }
 
     @Override
