@@ -20,6 +20,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
     public Consumer<Form> callback;
 
     private UIFormCategory lastSelected;
+    private boolean background = true;
     private boolean cantExit;
     private boolean immersive;
 
@@ -77,6 +78,11 @@ public class UIFormPalette extends UIElement implements IUIFormList
                 this.toggleEditor();
             }
         });
+    }
+
+    public void noBackground()
+    {
+        this.background = false;
     }
 
     public void cantExit()
@@ -196,9 +202,12 @@ public class UIFormPalette extends UIElement implements IUIFormList
     @Override
     public void render(UIContext context)
     {
-        if (!this.immersive || this.list.isVisible())
+        if (this.background)
         {
-            this.area.render(context.batcher, Colors.A75);
+            if (!this.immersive || this.list.isVisible())
+            {
+                this.area.render(context.batcher, Colors.A75);
+            }
         }
 
         super.render(context);

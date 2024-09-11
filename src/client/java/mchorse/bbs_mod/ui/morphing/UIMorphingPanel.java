@@ -32,6 +32,7 @@ public class UIMorphingPanel extends UIDashboardPanel
         this.palette.immersive();
         this.palette.full(this);
         this.palette.editor.renderer.full(dashboard.getRoot());
+        this.palette.noBackground();
 
         this.demorph = new UIIcon(Icons.POSE, (b) ->
         {
@@ -55,7 +56,7 @@ public class UIMorphingPanel extends UIDashboardPanel
     @Override
     public boolean needsBackground()
     {
-        return false;
+        return !this.palette.editor.isEditing();
     }
 
     @Override
