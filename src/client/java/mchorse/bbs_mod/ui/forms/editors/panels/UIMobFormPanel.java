@@ -4,6 +4,8 @@ import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextarea;
+import mchorse.bbs_mod.ui.framework.elements.input.text.utils.TextLine;
 import net.minecraft.entity.EntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
@@ -17,6 +19,7 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
     private static List<String> mobIDs;
 
     public UISearchList<String> mobID;
+    public UITextarea<TextLine> mobNBT;
 
     static
     {
@@ -36,10 +39,12 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
 
         this.mobID = new UISearchList<>(new UIStringList((l) -> this.form.mobID.set(l.get(0))));
         this.mobID.list.background().add(mobIDs);
-
         this.mobID.h(20 + 16 * 8);
 
-        this.options.add(this.mobID);
+        this.mobNBT = new UITextarea<>((t) -> this.form.mobNBT.set(t));
+        this.mobNBT.background().h(160);
+
+        this.options.add(this.mobID, this.mobNBT);
     }
 
     @Override
@@ -48,5 +53,6 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
         super.startEdit(form);
 
         this.mobID.list.setCurrentScroll(this.form.mobID.get());
+        this.mobNBT.setText(this.form.mobNBT.get());
     }
 }

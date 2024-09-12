@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.brigadier.StringReader;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -17,6 +18,8 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -29,6 +32,8 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     private Entity entity;
 
     private String lastId = "";
+    private String lastNBT = "";
+
     public float prevHandSwing;
     private float prevYawHead;
     private float prevPitch;
@@ -41,10 +46,12 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     private void ensureEntity()
     {
         String id = this.form.mobID.get();
+        String nbt = this.form.mobNBT.get();
 
-        if (!this.lastId.equals(id))
+        if (!this.lastId.equals(id) || !this.lastNBT.equals(nbt))
         {
             this.lastId = id;
+            this.lastNBT = nbt;
             this.entity = null;
         }
 
@@ -53,7 +60,22 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             return;
         }
 
+        NbtCompound compound = new NbtCompound();
+
+        try
+        {
+            compound = (new StringNbtReader(new StringReader(nbt))).parseCompound();
+        }
+        catch (Exception e)
+        {}
+
         this.entity = Registries.ENTITY_TYPE.get(new Identifier(id)).create(MinecraftClient.getInstance().world);
+
+        if (this.entity != null)
+        {
+            compound.putString("id", id);
+            this.entity.readNbt(compound);
+        }
     }
 
     @Override
