@@ -708,6 +708,8 @@
     "bbs.ui.texture.editor.size_h": "Custom height",
     "bbs.ui.texture.editor.size_w": "Custom width",
     "bbs.ui.texture.multiskin": "Multi-skin",
+    "bbs.ui.texture.keys.find_all": "Find all texture paths",
+    "bbs.ui.texture.find-title": "Find texture",
     "bbs.ui.texture.no_data": "No data available...",
     "bbs.ui.texture.open_folder": "Open folder",
     "bbs.ui.texture.pick_texture": "Pick texture",

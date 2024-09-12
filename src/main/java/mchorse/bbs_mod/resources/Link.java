@@ -51,7 +51,7 @@ public class Link
         String parent = StringUtils.parentPath(this.path);
 
         return parent.isEmpty()
-            ? new Link("", "")
+            ? new Link(this.source, "")
             : new Link(this.source, parent);
     }
 

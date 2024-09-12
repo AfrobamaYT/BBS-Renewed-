@@ -8,7 +8,9 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.importers.IImportPathProvider;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.textures.UITextureEditor;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -19,6 +21,8 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIFileLinkList;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIFilteredLinkList;
 import mchorse.bbs_mod.ui.framework.elements.input.multilink.UIMultiLinkEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -33,6 +37,9 @@ import mchorse.bbs_mod.utils.resources.MultiLink;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -109,7 +116,8 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         this.folder = new UIIcon(Icons.FOLDER, (b) -> this.openFolder());
         this.folder.tooltip(UIKeys.TEXTURE_OPEN_FOLDER, Direction.BOTTOM);
         this.pixelEdit = new UIIcon(Icons.EDIT, (b) -> this.togglePixelEditor());
-        this.picker = new UIFileLinkList(this::selectCurrent) {
+        this.picker = new UIFileLinkList(this::selectCurrent)
+        {
             @Override
             public void setPath(Link folder, boolean fastForward)
             {
@@ -154,6 +162,35 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         this.add(this.multi, this.multiList, this.right, this.editor, this.buttons);
 
         this.callback = callback;
+
+        this.keys().register(Keys.TEXTURE_PICKER_FIND, () ->
+        {
+            Collection<Link> links = BBSMod.getProvider().getLinksFromPath(Link.assets(""));
+            List<String> list = new ArrayList<>();
+
+            for (Link link : links)
+            {
+                String string = link.toString();
+
+                if (string.endsWith(".png"))
+                {
+                    list.add(string);
+                }
+            }
+
+            UIListOverlayPanel panel = new UIListOverlayPanel(UIKeys.TEXTURE_FIND_TITLE, (s) ->
+            {
+                Link link = Link.create(s);
+
+                this.fill(link);
+                this.selectCurrent(link);
+            });
+
+            panel.addValues(list);
+            panel.setValue(this.current.toString());
+
+            UIOverlay.addOverlay(this.getContext(), panel);
+        });
 
         this.fill(null);
         this.markContainer().eventPropagataion(EventPropagation.BLOCK);

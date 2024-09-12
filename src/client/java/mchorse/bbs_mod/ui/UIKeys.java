@@ -628,6 +628,8 @@ public class UIKeys
     public static final IKey TEXTURE_EDITOR_SIZE_H = L10n.lang("bbs.ui.texture.editor.size_h");
     public static final IKey TEXTURE_EDITOR_SIZE_W = L10n.lang("bbs.ui.texture.editor.size_w");
     public static final IKey TEXTURE_MULTISKIN = L10n.lang("bbs.ui.texture.multiskin");
+    public static final IKey TEXTURE_KEYS_FIND_ALL = L10n.lang("bbs.ui.texture.keys.find_all");
+    public static final IKey TEXTURE_FIND_TITLE = L10n.lang("bbs.ui.texture.find-title");
     public static final IKey TEXTURE_NO_DATA = L10n.lang( "bbs.ui.texture.no_data");
     public static final IKey TEXTURE_OPEN_FOLDER = L10n.lang("bbs.ui.texture.open_folder");
     public static final IKey TEXTURE_PICK_TEXTURE = L10n.lang("bbs.ui.texture.pick_texture");
