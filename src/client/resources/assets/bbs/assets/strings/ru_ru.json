@@ -173,6 +173,8 @@
     "bbs.ui.camera.editor.keys.editor.freeze_paused": "Заморозить во время паузы",
     "bbs.ui.camera.editor.keys.editor.jump_backward": "Прыгнуть назад",
     "bbs.ui.camera.editor.keys.editor.jump_forward": "Прыгнуть вперед",
+    "bbs.ui.camera.editor.keys.editor.fade_in": "Установить появление на месте курсора",
+    "bbs.ui.camera.editor.keys.editor.fade_out": "Установить затухание на месте курсора",
     "bbs.ui.camera.editor.keys.editor.next": "Перейти к следующему кадру",
     "bbs.ui.camera.editor.keys.editor.next_clip": "Перейти к следующему клипу",
     "bbs.ui.camera.editor.keys.editor.plause": "Запуск/пауза",

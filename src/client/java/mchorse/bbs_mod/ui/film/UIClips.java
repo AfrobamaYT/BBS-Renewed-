@@ -185,6 +185,22 @@ public class UIClips extends UIElement
         this.keys().register(Keys.CLIP_ENABLE, this::toggleEnabled).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SELECT_AFTER, this::selectAfter).category(KEYS_CATEGORY).active(canUseKeybinds);
         this.keys().register(Keys.CLIP_SELECT_BEFORE, this::selectBefore).category(KEYS_CATEGORY).active(canUseKeybinds);
+        this.keys().register(Keys.FADE_IN, () ->
+        {
+            Clip clip = this.delegate.getClip();
+            int tick = Math.max(0, this.delegate.getCursor() - clip.tick.get());
+
+            clip.envelope.fadeIn.set((float) tick);
+            this.delegate.fillData();
+        }).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
+        this.keys().register(Keys.FADE_OUT, () ->
+        {
+            Clip clip = this.delegate.getClip();
+            int tick = Math.max(0, clip.tick.get() + clip.duration.get() - this.delegate.getCursor());
+
+            clip.envelope.fadeOut.set((float) tick);
+            this.delegate.fillData();
+        }).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
     }
 
     public IFactory<Clip, ClipFactoryData> getFactory()

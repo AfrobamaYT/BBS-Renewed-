@@ -38,6 +38,8 @@ public class UIKeys
     public static final IKey CAMERA_EDITOR_KEYS_CLIPS_TITLE = L10n.lang("bbs.ui.camera.editor.keys.clips.title");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_JUMP_BACKWARD = L10n.lang("bbs.ui.camera.editor.keys.editor.jump_backward");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_JUMP_FORWARD = L10n.lang("bbs.ui.camera.editor.keys.editor.jump_forward");
+    public static final IKey CAMERA_EDITOR_KEYS_EDITOR_FADE_IN = L10n.lang("bbs.ui.camera.editor.keys.editor.fade_in");
+    public static final IKey CAMERA_EDITOR_KEYS_EDITOR_FADE_OUT = L10n.lang("bbs.ui.camera.editor.keys.editor.fade_out");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_NEXT = L10n.lang("bbs.ui.camera.editor.keys.editor.next");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_NEXT_CLIP = L10n.lang("bbs.ui.camera.editor.keys.editor.next_clip");
     public static final IKey CAMERA_EDITOR_KEYS_EDITOR_PLAUSE = L10n.lang("bbs.ui.camera.editor.keys.editor.plause");

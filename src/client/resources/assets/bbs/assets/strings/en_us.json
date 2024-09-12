@@ -172,6 +172,8 @@
     "bbs.ui.camera.editor.keys.clips.title": "Clips",
     "bbs.ui.camera.editor.keys.editor.jump_backward": "Jump backward",
     "bbs.ui.camera.editor.keys.editor.jump_forward": "Jump forward",
+    "bbs.ui.camera.editor.keys.editor.fade_in": "Set fade in from cursor",
+    "bbs.ui.camera.editor.keys.editor.fade_out": "Set fade out from cursor",
     "bbs.ui.camera.editor.keys.editor.next": "Jump to next frame",
     "bbs.ui.camera.editor.keys.editor.next_clip": "Jump to next clip",
     "bbs.ui.camera.editor.keys.editor.plause": "Play/pause",
