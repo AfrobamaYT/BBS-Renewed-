@@ -93,6 +93,11 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
             float scale = this.form.uiScale.get();
 
+            float width = this.entity.getWidth();
+            float height = this.entity.getHeight();
+
+            scale = Math.min(scale * 1.8F / Math.max(width, height), 1F);
+
             this.applyTransforms(uiMatrix, context.getTransition());
             MatrixStackUtils.multiply(stack, uiMatrix);
             stack.scale(scale, scale, scale);
