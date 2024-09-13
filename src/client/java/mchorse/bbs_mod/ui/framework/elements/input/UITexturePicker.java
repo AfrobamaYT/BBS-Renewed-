@@ -172,7 +172,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
             {
                 String string = link.toString();
 
-                if (string.endsWith(".png"))
+                if (string.endsWith(".png") && !string.contains(":textures/banners/"))
                 {
                     list.add(string);
                 }
