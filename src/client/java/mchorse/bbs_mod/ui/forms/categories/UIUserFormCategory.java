@@ -49,11 +49,7 @@ public class UIUserFormCategory extends UIFormCategory
                 MapType data = Window.getClipboardMap();
                 Form form = FormUtils.fromData(data);
 
-                menu.action(Icons.PASTE, UIKeys.FORMS_CATEGORIES_CONTEXT_PASTE_FORM, () ->
-                {
-                    this.category.addForm(form);
-                    userForms.writeUserCategories((UserFormCategory) this.category);
-                });
+                menu.action(Icons.PASTE, UIKeys.FORMS_CATEGORIES_CONTEXT_PASTE_FORM, () -> this.category.addForm(form));
             }
             catch (Exception e)
             {}
@@ -64,7 +60,6 @@ public class UIUserFormCategory extends UIFormCategory
                 {
                     this.category.removeForm(this.selected);
                     this.select(null, false);
-                    userForms.writeUserCategories((UserFormCategory) this.category);
                 });
             }
             else
@@ -89,7 +84,6 @@ public class UIUserFormCategory extends UIFormCategory
                     );
 
                     UIOverlay.addOverlay(this.getContext(), panel);
-                    userForms.writeUserCategories();
                 });
             }
         });

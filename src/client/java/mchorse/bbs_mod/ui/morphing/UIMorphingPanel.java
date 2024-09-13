@@ -33,6 +33,7 @@ public class UIMorphingPanel extends UIDashboardPanel
         this.palette.full(this);
         this.palette.editor.renderer.full(dashboard.getRoot());
         this.palette.noBackground();
+        this.palette.canModify();
 
         this.demorph = new UIIcon(Icons.POSE, (b) ->
         {

@@ -74,7 +74,7 @@ public class ExtraFormSection extends FormSection
         this.fillMobs(this.mobsHostile, mobHostileIds);
         this.fillMobs(this.mobsMisc, mobMiscIds);
 
-        this.categories = Arrays.asList(this.mobsAnimals, this.mobsNeutral, this.mobsHostile, this.mobsMisc, this.extra);
+        this.categories = Arrays.asList(this.extra, this.mobsAnimals, this.mobsNeutral, this.mobsHostile, this.mobsMisc);
     }
 
     private void fillMobs(FormCategory category, List<String> ids)

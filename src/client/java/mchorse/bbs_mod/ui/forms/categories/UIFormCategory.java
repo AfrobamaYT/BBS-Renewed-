@@ -71,8 +71,7 @@ public class UIFormCategory extends UIElement
                     UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str)));
-                        userForms.writeUserCategories();
+                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str), userForms));
                         list.setupForms(BBSModClient.getFormCategories());
                     }
                 ));
@@ -95,7 +94,6 @@ public class UIFormCategory extends UIElement
                             m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
                             {
                                 formCategory.addForm(FormUtils.copy(this.selected));
-                                userForms.writeUserCategories();
                             });
                         }
                     });

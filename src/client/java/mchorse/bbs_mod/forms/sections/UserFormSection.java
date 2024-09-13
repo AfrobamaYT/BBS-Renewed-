@@ -58,7 +58,7 @@ public class UserFormSection extends FormSection
 
             for (String key : data.keys())
             {
-                UserFormCategory category = new UserFormCategory(IKey.raw(key));
+                UserFormCategory category = new UserFormCategory(IKey.raw(key), this);
 
                 category.fromData(data.getMap(key));
                 this.categories.add(category);
@@ -82,7 +82,7 @@ public class UserFormSection extends FormSection
                 break;
             }
 
-            UserFormCategory category = new UserFormCategory(IKey.EMPTY);
+            UserFormCategory category = new UserFormCategory(IKey.EMPTY, this);
 
             try
             {
@@ -169,6 +169,7 @@ public class UserFormSection extends FormSection
 
         this.categories.add(index, category);
         this.parent.markDirty();
+        this.writeUserCategories();
     }
 
     public void removeUserCategory(UserFormCategory category)

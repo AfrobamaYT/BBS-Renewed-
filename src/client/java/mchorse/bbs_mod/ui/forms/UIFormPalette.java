@@ -23,6 +23,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
     private boolean background = true;
     private boolean cantExit;
     private boolean immersive;
+    private boolean canModify;
 
     public static UIFormPalette open(UIElement parent, boolean editing, Form form, Consumer<Form> callback)
     {
@@ -93,6 +94,11 @@ public class UIFormPalette extends UIElement implements IUIFormList
         this.eventPropagataion(EventPropagation.PASS);
     }
 
+    public void canModify()
+    {
+        this.canModify = true;
+    }
+
     public boolean isImmersive()
     {
         return this.immersive;
@@ -152,7 +158,7 @@ public class UIFormPalette extends UIElement implements IUIFormList
         {
             Form form = this.editor.finish();
 
-            if (this.lastSelected.category.canModify(form))
+            if (this.canModify && this.lastSelected.category.canModify(form))
             {
                 int index = this.lastSelected.category.getForms().indexOf(this.lastSelected.selected);
 
