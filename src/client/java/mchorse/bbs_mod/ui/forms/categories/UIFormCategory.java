@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.categories;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.categories.FormCategory;
@@ -25,6 +26,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UIFormCategory extends UIElement
 {
@@ -47,7 +49,8 @@ public class UIFormCategory extends UIElement
 
         this.context((menu) ->
         {
-            UserFormSection userForms = BBSModClient.getFormCategories().getUserForms();
+            FormCategories formCategories = BBSModClient.getFormCategories();
+            UserFormSection userForms = formCategories.getUserForms();
 
             menu.action(Icons.EDIT, UIKeys.GENERAL_EDIT, () ->
             {
@@ -71,8 +74,8 @@ public class UIFormCategory extends UIElement
                     UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str), userForms));
-                        list.setupForms(BBSModClient.getFormCategories());
+                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str), formCategories.visibility.get(UUID.randomUUID().toString()), userForms));
+                        list.setupForms(formCategories);
                     }
                 ));
             });
@@ -147,7 +150,7 @@ public class UIFormCategory extends UIElement
             {
                 if (x < this.area.x + 30 + context.batcher.getFont().getWidth(this.category.title.get()))
                 {
-                    this.category.hidden = !this.category.hidden;
+                    this.category.visible.set(!this.category.visible.get());
 
                     return true;
                 }
@@ -193,13 +196,13 @@ public class UIFormCategory extends UIElement
 
         context.batcher.textCard(StringUtils.processColoredText(this.category.title.get()), this.area.x + 26, this.area.y + 6);
 
-        if (this.category.hidden)
+        if (this.category.visible.get())
         {
-            context.batcher.icon(Icons.MOVE_UP, this.area.x + 16, this.area.y + 4, 0.5F, 0F);
+            context.batcher.icon(Icons.MOVE_DOWN, this.area.x + 16, this.area.y + 5, 0.5F, 0F);
         }
         else
         {
-            context.batcher.icon(Icons.MOVE_DOWN, this.area.x + 16, this.area.y + 5, 0.5F, 0F);
+            context.batcher.icon(Icons.MOVE_UP, this.area.x + 16, this.area.y + 4, 0.5F, 0F);
         }
 
         List<Form> forms = this.getForms();
@@ -208,7 +211,7 @@ public class UIFormCategory extends UIElement
         int i = 0;
         int perRow = this.area.w / CELL_WIDTH;
 
-        if (!forms.isEmpty() && !this.category.hidden)
+        if (!forms.isEmpty() && this.category.visible.get())
         {
             for (Form form : forms)
             {

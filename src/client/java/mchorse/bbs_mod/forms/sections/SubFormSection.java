@@ -25,9 +25,9 @@ public abstract class SubFormSection extends FormSection
 
     protected abstract Form create(String key);
 
-    protected FormCategory createCategory(IKey uiKey)
+    protected FormCategory createCategory(IKey uiKey, String id)
     {
-        return new FormCategory(uiKey);
+        return new FormCategory(uiKey, this.parent.visibility.get(id));
     }
 
     protected abstract boolean isEqual(Form form, String key);
@@ -52,7 +52,7 @@ public abstract class SubFormSection extends FormSection
                 uiKey = IKey.comp(Arrays.asList(uiKey, IKey.raw(" (" + newKey + ")")));
             }
 
-            return this.createCategory(uiKey);
+            return this.createCategory(uiKey, key);
         });
     }
 

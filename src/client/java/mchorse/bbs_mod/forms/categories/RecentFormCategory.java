@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms.categories;
 
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
@@ -8,9 +9,9 @@ import mchorse.bbs_mod.ui.forms.categories.UIRecentFormCategory;
 
 public class RecentFormCategory extends FormCategory
 {
-    public RecentFormCategory()
+    public RecentFormCategory(ValueBoolean visibility)
     {
-        super(UIKeys.FORMS_CATEGORIES_RECENT);
+        super(UIKeys.FORMS_CATEGORIES_RECENT, visibility);
     }
 
     @Override

@@ -7,6 +7,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.utils.CollectionUtils;
@@ -18,13 +19,14 @@ import java.util.List;
 public class FormCategory implements IMapSerializable
 {
     public IKey title;
-    public boolean hidden;
+    public final ValueBoolean visible;
 
     private final List<Form> forms = new ArrayList<>();
 
-    public FormCategory(IKey title)
+    public FormCategory(IKey title, ValueBoolean visible)
     {
         this.title = title;
+        this.visible = visible;
     }
 
     public boolean canModify(Form form)
@@ -76,7 +78,10 @@ public class FormCategory implements IMapSerializable
             this.title = IKey.raw(data.getString("title"));
         }
 
-        this.hidden = data.getBool("hidden");
+        if (data.has("id"))
+        {
+            this.visible.setId(data.getString("id"));
+        }
 
         for (BaseType formData : data.getList("forms"))
         {
@@ -98,7 +103,7 @@ public class FormCategory implements IMapSerializable
         ListType forms = new ListType();
 
         data.putString("title", this.title.get());
-        data.putBool("hidden", this.hidden);
+        data.putString("id", this.visible.getId());
         data.put("forms", forms);
 
         for (int i = 0; i < this.forms.size(); i++)

@@ -16,11 +16,15 @@ import java.util.List;
 
 public class FormCategories implements IWatchDogListener
 {
+    public final VisibilityManager visibility = new VisibilityManager();
+
     private List<IFormSection> sections = new ArrayList<>();
     private RecentFormSection recentForms = new RecentFormSection(this);
     private UserFormSection userForms = new UserFormSection(this);
 
     private long lastUpdate;
+
+    /* Setup */
 
     public void setup()
     {
@@ -36,6 +40,7 @@ public class FormCategories implements IWatchDogListener
         }
 
         this.markDirty();
+        this.visibility.read();
     }
 
     public long getLastUpdate()

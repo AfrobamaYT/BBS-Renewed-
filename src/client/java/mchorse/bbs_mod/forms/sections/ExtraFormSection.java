@@ -9,7 +9,6 @@ import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.MobForm;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import net.minecraft.block.Blocks;
@@ -41,7 +40,7 @@ public class ExtraFormSection extends FormSection
     @Override
     public void initiate()
     {
-        FormCategory extra = new FormCategory(UIKeys.FORMS_CATEGORIES_EXTRA);
+        FormCategory extra = new FormCategory(UIKeys.FORMS_CATEGORIES_EXTRA, this.parent.visibility.get("extra"));
         AnchorForm anchor = new AnchorForm();
         BillboardForm billboard = new BillboardForm();
         LabelForm label = new LabelForm();
@@ -63,10 +62,10 @@ public class ExtraFormSection extends FormSection
         extra.addForm(item);
         extra.addForm(mob);
 
-        this.mobsAnimals = new FormCategory(IKey.raw("Mobs (animals)"));
-        this.mobsNeutral = new FormCategory(IKey.raw("Mobs (neutral)"));
-        this.mobsHostile = new FormCategory(IKey.raw("Mobs (hostile)"));
-        this.mobsMisc = new FormCategory(IKey.raw("Mobs (miscellaneous)"));
+        this.mobsAnimals = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_ANIMALS, this.parent.visibility.get("mobs_animals"));
+        this.mobsNeutral = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_NEUTRAL, this.parent.visibility.get("mobs_neutral"));
+        this.mobsHostile = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_HOSTILE, this.parent.visibility.get("mobs_hostile"));
+        this.mobsMisc = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_MISC, this.parent.visibility.get("mobs_misc"));
         this.extra = extra;
 
         this.fillMobs(this.mobsAnimals, mobAnimalsIds);

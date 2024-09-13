@@ -271,6 +271,10 @@ public class UIKeys
     public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_FORM = L10n.lang("bbs.ui.forms.categories.context.remove_form");
     public static final IKey FORMS_CATEGORIES_CONTEXT_RENAME_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.rename_category");
     public static final IKey FORMS_CATEGORIES_EXTRA = L10n.lang("bbs.ui.forms.categories.extra");
+    public static final IKey FORMS_CATEGORIES_MOBS_ANIMALS = L10n.lang("bbs.ui.forms.categories.mobs_animals");
+    public static final IKey FORMS_CATEGORIES_MOBS_NEUTRAL = L10n.lang("bbs.ui.forms.categories.mobs_neutral");
+    public static final IKey FORMS_CATEGORIES_MOBS_HOSTILE = L10n.lang("bbs.ui.forms.categories.mobs_hostile");
+    public static final IKey FORMS_CATEGORIES_MOBS_MISC = L10n.lang("bbs.ui.forms.categories.mobs_misc");
     public static final IKey FORMS_CATEGORIES_MODELS = L10n.lang("bbs.ui.forms.categories.models");
     public static final IKey FORMS_CATEGORIES_PARTICLES = L10n.lang("bbs.ui.forms.categories.particles");
     public static final IKey FORMS_CATEGORIES_RECENT = L10n.lang("bbs.ui.forms.categories.recent");

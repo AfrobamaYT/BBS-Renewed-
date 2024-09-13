@@ -14,15 +14,11 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UserFormSection extends FormSection
 {
     public List<UserFormCategory> categories = new ArrayList<>();
-
-    public static File getOldUserCategoriesFile()
-    {
-        return BBSMod.getSettingsPath("forms.json");
-    }
 
     public static File getUserCategoriesFile(int index)
     {
@@ -37,36 +33,11 @@ public class UserFormSection extends FormSection
     @Override
     public void initiate()
     {
-        File oldCategories = getOldUserCategoriesFile();
         File folder = getUserCategoriesFile(0).getParentFile();
 
         if (folder.isDirectory())
         {
             this.loadNewCategories();
-        }
-        else if (oldCategories.isFile())
-        {
-            this.loadOldCategories(oldCategories);
-        }
-    }
-
-    private void loadOldCategories(File oldCategories)
-    {
-        try
-        {
-            MapType data = (MapType) DataToString.read(oldCategories);
-
-            for (String key : data.keys())
-            {
-                UserFormCategory category = new UserFormCategory(IKey.raw(key), this);
-
-                category.fromData(data.getMap(key));
-                this.categories.add(category);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
         }
     }
 
@@ -82,7 +53,7 @@ public class UserFormSection extends FormSection
                 break;
             }
 
-            UserFormCategory category = new UserFormCategory(IKey.EMPTY, this);
+            UserFormCategory category = new UserFormCategory(IKey.EMPTY, this.parent.visibility.get(UUID.randomUUID().toString()), this);
 
             try
             {
@@ -183,6 +154,7 @@ public class UserFormSection extends FormSection
 
         this.categories.remove(category);
         this.parent.markDirty();
+        this.parent.visibility.remove(category.visible.getId());
 
         this.writeUserCategories();
     }
