@@ -106,6 +106,8 @@ public class ClientNetwork
             Entity entity = client.world.getEntityById(id);
             Morph morph = Morph.getMorph(entity);
 
+            System.out.println(entity + " " + finalForm);
+
             if (morph != null)
             {
                 morph.setForm(finalForm);

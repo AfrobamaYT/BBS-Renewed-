@@ -71,6 +71,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
@@ -97,6 +98,8 @@ import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class BBSMod implements ModInitializer
@@ -120,6 +123,8 @@ public class BBSMod implements ModInitializer
 
     /* Data */
     private static FilmManager films;
+
+    private static List<Runnable> runnables = new ArrayList<>();
 
     private static MapFactory<Clip, ClipFactoryData> factoryCameraClips;
     private static MapFactory<Clip, ClipFactoryData> factoryScreenplayClips;
@@ -393,9 +398,35 @@ public class BBSMod implements ModInitializer
             actions.tick();
         });
 
+        ServerTickEvents.END_SERVER_TICK.register((server) ->
+        {
+            for (Runnable runnable : runnables)
+            {
+                runnable.run();
+            }
+
+            runnables.clear();
+        });
+
         ServerLifecycleEvents.SERVER_STOPPED.register((server) ->
         {
             actions.reset();
+        });
+
+        EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) ->
+        {
+            runnables.add(() ->
+            {
+                if (trackedEntity instanceof ServerPlayerEntity playerTwo)
+                {
+                    Morph morph = Morph.getMorph(trackedEntity);
+
+                    if (morph != null)
+                    {
+                        ServerNetwork.sendMorph(player, playerTwo.getId(), morph.getForm());
+                    }
+                }
+            });
         });
     }
 
