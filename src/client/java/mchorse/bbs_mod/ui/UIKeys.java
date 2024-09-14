@@ -424,6 +424,7 @@ public class UIKeys
     public static final IKey MODEL_BLOCKS_TRANSFORM_INVENTORY = L10n.lang("bbs.ui.model_blocks.transform.inventory");
     public static final IKey MODEL_BLOCKS_TRANSFORM_THIRD_PERSON = L10n.lang("bbs.ui.model_blocks.transform.third_person");
     public static final IKey MORPHING_DEMORPH = L10n.lang("bbs.ui.morphing.demorph");
+    public static final IKey MORPHING_FROM_MOB = L10n.lang("bbs.ui.morphing.from_mob");
     public static final IKey MORPHING_TITLE = L10n.lang("bbs.ui.morphing.title");
     public static final IKey OVERLAYS_SOUNDS_MAIN = L10n.lang("bbs.ui.overlays.sounds.main");
     public static final IKey PANELS_CONTEXT_COPY = L10n.lang("bbs.ui.panels.context.copy");

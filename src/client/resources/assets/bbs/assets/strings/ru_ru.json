@@ -516,6 +516,7 @@
     "bbs.ui.model_blocks.transform.inventory": "Трансформация в инвентаре (GUI)",
     "bbs.ui.model_blocks.transform.third_person": "Трансформация от третьего лица",
     "bbs.ui.morphing.demorph": "Разморфиться",
+    "bbs.ui.morphing.from_mob": "Создать форму из моба на котороый Вы смотрите",
     "bbs.ui.morphing.title": "Морфинг",
     "bbs.ui.none": "<->",
     "bbs.ui.ok": "Ок",

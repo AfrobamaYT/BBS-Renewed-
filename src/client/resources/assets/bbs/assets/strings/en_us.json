@@ -519,6 +519,7 @@
     "bbs.ui.model_blocks.transform.inventory": "Inventory (GUI) transform",
     "bbs.ui.model_blocks.transform.third_person": "Third person transform",
     "bbs.ui.morphing.demorph": "Demorph",
+    "bbs.ui.morphing.from_mob": "Create a form from a mob you're currently looking at",
     "bbs.ui.morphing.title": "Morphing",
     "bbs.ui.none": "<none>",
     "bbs.ui.ok": "Ok",

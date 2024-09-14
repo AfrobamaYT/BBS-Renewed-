@@ -43,6 +43,7 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
 
         this.mobNBT = new UITextarea<>((t) -> this.form.mobNBT.set(t));
         this.mobNBT.background().h(160);
+        this.mobNBT.wrap();
 
         this.options.add(this.mobID, this.mobNBT);
     }

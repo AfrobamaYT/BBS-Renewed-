@@ -15,6 +15,7 @@ import mchorse.bbs_mod.network.ServerNetwork;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -28,6 +29,7 @@ public class BBSCommands
         LiteralArgumentBuilder<ServerCommandSource> bbs = CommandManager.literal("bbs").requires((source) -> source.hasPermissionLevel(2));
 
         registerMorphCommand(bbs, environment);
+        registerMorphEntityCommand(bbs, environment);
         registerFilmsCommand(bbs, environment);
         registerDCCommand(bbs, environment);
 
@@ -61,6 +63,31 @@ public class BBSCommands
         morph.then(target
             .executes(BBSCommands::morphCommandDemorph)
             .then(form.executes(BBSCommands::morphCommandMorph)));
+
+        bbs.then(morph);
+    }
+
+    private static void registerMorphEntityCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> morph = CommandManager.literal("morph_entity");
+
+        morph.executes((source) ->
+        {
+            Entity entity = source.getSource().getEntity();
+
+            if (entity instanceof ServerPlayerEntity player)
+            {
+                Form form = Morph.getMobForm(player);
+
+                if (form != null)
+                {
+                    ServerNetwork.sendMorphToTracked(player, form);
+                    Morph.getMorph(entity).setForm(FormUtils.copy(form));
+                }
+            }
+
+            return 1;
+        });
 
         bbs.then(morph);
     }
