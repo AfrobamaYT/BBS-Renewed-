@@ -381,11 +381,17 @@ public class BBSModClient implements ClientModInitializer
 
         File steve = BBSMod.getAssetsPath("models/player/steve");
         File alex = BBSMod.getAssetsPath("models/player/alex");
+        File steveBends = BBSMod.getAssetsPath("models/player/steve_bends");
+        File alexBends = BBSMod.getAssetsPath("models/player/alex_bends");
         boolean steveExists = steve.exists();
         boolean alexExists = alex.exists();
+        boolean steveBendsExists = steveBends.exists();
+        boolean alexBendsExists = alexBends.exists();
 
         steve.mkdirs();
         alex.mkdirs();
+        steveBends.mkdirs();
+        alexBends.mkdirs();
 
         if (isForge)
         {
@@ -401,6 +407,20 @@ public class BBSModClient implements ClientModInitializer
                 this.copy("/assets/bbs/assets/models/player/alex/config.json", new File(alex, "config.json"));
                 this.copy("/assets/bbs/assets/models/player/alex/alex.bbs.json", new File(alex, "alex.bbs.json"));
                 this.copy("/assets/bbs/assets/models/player/alex/alex.png", new File(alex, "alex.png"));
+            }
+
+            if (!steveBendsExists)
+            {
+                this.copy("/assets/bbs/assets/models/player/steve_bends/config.json", new File(steveBends, "config.json"));
+                this.copy("/assets/bbs/assets/models/player/steve_bends/steve_by_michaelcreeper_.bbs.json", new File(steveBends, "steve_by_michaelcreeper_.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/steve_bends/steve.png", new File(steveBends, "steve.png"));
+            }
+
+            if (!alexBendsExists)
+            {
+                this.copy("/assets/bbs/assets/models/player/alex_bends/config.json", new File(alexBends, "config.json"));
+                this.copy("/assets/bbs/assets/models/player/alex_bends/alex_by_michaelcreeper_.bbs.json", new File(alexBends, "alex_by_michaelcreeper_.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/alex_bends/alex.png", new File(alexBends, "alex.png"));
             }
         }
     }
