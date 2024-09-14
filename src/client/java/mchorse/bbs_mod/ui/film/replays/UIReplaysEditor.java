@@ -141,6 +141,13 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("user1", Icons.PARTICLE);
     }
 
+    public static Icon getIcon(String key)
+    {
+        String topLevel = StringUtils.fileName(key);
+
+        return ICONS.getOrDefault(topLevel, Icons.NONE);
+    }
+
     public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
     {
         if (!bone.isEmpty() && form instanceof ModelForm modelForm)
@@ -339,7 +346,7 @@ public class UIReplaysEditor extends UIElement
                 boolean separator = topLevel.equals("visible");
                 UIKeyframeSheet sheet = new UIKeyframeSheet(COLORS.getOrDefault(topLevel, Colors.ACTIVE), separator, property, formProperty);
 
-                sheets.add(sheet.icon(ICONS.get(topLevel)));
+                sheets.add(sheet.icon(getIcon(key)));
             }
         }
 
@@ -394,7 +401,7 @@ public class UIReplaysEditor extends UIElement
                 continue;
             }
 
-            manager.action(Icons.POINTER, IKey.raw(formProperty.getKey()), () ->
+            manager.action(getIcon(formProperty.getKey()), IKey.raw(formProperty.getKey()), () ->
             {
                 this.pickProperty(bone, StringUtils.combinePaths(path, formProperty.getKey()), shift);
             });
