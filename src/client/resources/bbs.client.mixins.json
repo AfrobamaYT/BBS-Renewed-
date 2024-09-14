@@ -20,7 +20,8 @@
         "InGameHudMixin",
         "KeyboardMixin",
         "ResourceReloadLoggerMixin",
-        "RenderLayerMixin"
+        "RenderLayerMixin",
+        "ClientWorldPropertiesMixin"
     ],
     "injectors": {
         "defaultRequire": 1

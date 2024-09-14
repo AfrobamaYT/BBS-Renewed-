@@ -6,7 +6,9 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.camera.clips.misc.CurveClip;
 import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
+import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -329,5 +331,27 @@ public class BBSRendering
         }
 
         IrisUtils.trackTexture(texture);
+    }
+
+    /* Time of day */
+
+    public static boolean canModifyTime()
+    {
+        if (BBSModClient.getCameraController().getCurrent() instanceof CameraWorkCameraController controller)
+        {
+            return CurveClip.getValues(controller.getContext()).containsKey("sun_rotation");
+        }
+
+        return true;
+    }
+
+    public static long getTimeOfDay()
+    {
+        if (BBSModClient.getCameraController().getCurrent() instanceof CameraWorkCameraController controller)
+        {
+            return (long) (CurveClip.getValues(controller.getContext()).get("sun_rotation") * 1000L);
+        }
+
+        return 0L;
     }
 }

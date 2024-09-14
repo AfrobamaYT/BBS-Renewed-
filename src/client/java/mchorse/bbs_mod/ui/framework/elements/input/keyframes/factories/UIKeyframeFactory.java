@@ -136,7 +136,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     public void render(UIContext context)
     {
         /* 🤮🤮🤮 */
-        if (this.keyframe.getTick() != (long) this.tick.getValue())
+        if (!this.tick.isFocused() && this.keyframe.getTick() != (long) this.tick.getValue())
         {
             this.tick.setValue(this.keyframe.getTick());
         }
