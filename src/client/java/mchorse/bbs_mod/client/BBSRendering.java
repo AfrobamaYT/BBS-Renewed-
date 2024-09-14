@@ -56,6 +56,7 @@ public class BBSRendering
 
     private static boolean customSize;
     private static boolean iris;
+    private static boolean optifine;
 
     private static int width;
     private static int height;
@@ -169,6 +170,17 @@ public class BBSRendering
     public static void setup()
     {
         iris = FabricLoader.getInstance().isModLoaded("iris");
+
+        try
+        {
+            Class.forName("net/optifine/shaders/Shaders");
+
+            optifine = true;
+        }
+        catch (Exception e)
+        {
+            optifine = FabricLoader.getInstance().isModLoaded("optifabric");
+        }
 
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
         {
@@ -301,6 +313,11 @@ public class BBSRendering
         }
 
         BBSModClient.getFilms().render(worldRenderContext);
+    }
+
+    public static boolean isOptifinePresent()
+    {
+        return optifine;
     }
 
     public static boolean isIrisShadersEnabled()

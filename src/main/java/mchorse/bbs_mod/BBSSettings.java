@@ -103,7 +103,7 @@ public class BBSSettings
     {
         builder.category("appearance");
 
-        version = builder.getString("version", "");
+        version = builder.getString("version", BBSMod.SIGNIFICANT_VERSION);
         version.invisible();
 
         language = new ValueLanguage("language");

@@ -6,6 +6,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.OrbitCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
@@ -141,6 +142,14 @@ public class UIDashboard extends UIBaseMenu
             ));
 
             BBSSettings.version.set(version);
+        }
+
+        if (BBSRendering.isOptifinePresent())
+        {
+            UIOverlay.addOverlay(this.context, new UIMessageOverlayPanel(
+                UIKeys.DASHBOARD_OPTIFINE_EW_TITLE,
+                UIKeys.DASHBOARD_OPTIFINE_EW_DESCRIPTION
+            ));
         }
     }
 

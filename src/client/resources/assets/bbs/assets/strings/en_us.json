@@ -325,6 +325,8 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Toggle dashboard's visibility",
     "bbs.ui.dashboard.version_warning-description": "IMPORTANT: the version was significantly changed! This means any old data could be corrupted like films, model blocks, etc. USE with caution AT YOUR OWN RISK!\n\nBack up files just in case!",
     "bbs.ui.dashboard.version_warning-title": "Version changed!",
+    "bbs.ui.dashboard.optifine_ew-description": "IMPORTANT: BBS mod doesn't support Optifine! Optifine may break specific BBS mod features, USE AT YOUR OWN RISK!\n\nAs alternative, try installing Sodium and Iris.",
+    "bbs.ui.dashboard.optifine_ew-title": "Optifine DETECTED!",
     "bbs.ui.dupe": "Duplicate",
     "bbs.ui.edit": "Edit",
     "bbs.ui.error": "Error",
