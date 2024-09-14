@@ -412,14 +412,14 @@ public class BBSModClient implements ClientModInitializer
             if (!steveBendsExists)
             {
                 this.copy("/assets/bbs/assets/models/player/steve_bends/config.json", new File(steveBends, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/steve_bends/steve_by_michaelcreeper_.bbs.json", new File(steveBends, "steve_by_michaelcreeper_.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/steve_bends/steve_bends_by_michaelcreeper_.bbs.json", new File(steveBends, "steve_bends_by_michaelcreeper_.bbs.json"));
                 this.copy("/assets/bbs/assets/models/player/steve_bends/steve.png", new File(steveBends, "steve.png"));
             }
 
             if (!alexBendsExists)
             {
                 this.copy("/assets/bbs/assets/models/player/alex_bends/config.json", new File(alexBends, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/alex_bends/alex_by_michaelcreeper_.bbs.json", new File(alexBends, "alex_by_michaelcreeper_.bbs.json"));
+                this.copy("/assets/bbs/assets/models/player/alex_bends/alex_bends_by_michaelcreeper_.bbs.json", new File(alexBends, "alex_bends_by_michaelcreeper_.bbs.json"));
                 this.copy("/assets/bbs/assets/models/player/alex_bends/alex.png", new File(alexBends, "alex.png"));
             }
         }

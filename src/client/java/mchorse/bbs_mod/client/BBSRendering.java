@@ -170,17 +170,7 @@ public class BBSRendering
     public static void setup()
     {
         iris = FabricLoader.getInstance().isModLoaded("iris");
-
-        try
-        {
-            Class.forName("net/optifine/shaders/Shaders");
-
-            optifine = true;
-        }
-        catch (Exception e)
-        {
-            optifine = FabricLoader.getInstance().isModLoaded("optifabric");
-        }
+        optifine = FabricLoader.getInstance().isModLoaded("optifabric");
 
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
         {
