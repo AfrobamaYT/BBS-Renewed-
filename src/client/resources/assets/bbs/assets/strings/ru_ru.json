@@ -500,6 +500,7 @@
     "bbs.ui.keyframes.keys.select_left": "Выделить налево",
     "bbs.ui.keyframes.keys.select_right": "Выделить направо",
     "bbs.ui.keyframes.keys.select_same": "Выделить одинаковые",
+    "bbs.ui.keyframes.keys.scale_time": "Масштабировать время",
     "bbs.ui.keyframes.keys.toggle_interp": "Включить выбор интерполяции",
     "bbs.ui.keyframes.tick": "Тик",
     "bbs.ui.keyframes.value": "Значение",

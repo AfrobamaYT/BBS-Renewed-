@@ -503,6 +503,7 @@
     "bbs.ui.keyframes.keys.select_left": "Select to the left",
     "bbs.ui.keyframes.keys.select_right": "Select to the right",
     "bbs.ui.keyframes.keys.select_same": "Select by same value",
+    "bbs.ui.keyframes.keys.scale_time": "Scale time",
     "bbs.ui.keyframes.keys.toggle_interp": "Toggle interpolation selection",
     "bbs.ui.keyframes.tick": "Tick",
     "bbs.ui.keyframes.value": "Value",
