@@ -12,4 +12,10 @@ public class MobForm extends Form
         this.register(this.mobID);
         this.register(this.mobNBT);
     }
+
+    @Override
+    protected String getDefaultDisplayName()
+    {
+        return this.mobID.get().isEmpty() ? super.getDefaultDisplayName() : this.mobID.get();
+    }
 }

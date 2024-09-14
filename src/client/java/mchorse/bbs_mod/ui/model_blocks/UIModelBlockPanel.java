@@ -149,6 +149,22 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         return false;
     }
 
+    @Override
+    public void appear()
+    {
+        super.appear();
+
+        this.dashboard.orbitKeysUI.setEnabled(() -> this.getChildren(UIFormPalette.class).isEmpty());
+    }
+
+    @Override
+    public void disappear()
+    {
+        super.disappear();
+
+        this.dashboard.orbitKeysUI.setEnabled(null);
+    }
+
     public ModelBlockEntity getModelBlock()
     {
         return this.modelBlock;
@@ -166,9 +182,6 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
             transform.translate.set(0F, 0F, 0F);
             palette.editor.renderer.setTransform(new Matrix4f(transform.createMatrix()));
-
-            // this.dashboard. disable stuff
-
         }
     }
 

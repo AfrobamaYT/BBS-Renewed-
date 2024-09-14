@@ -4,13 +4,21 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.utils.Area;
 
+import java.util.function.Supplier;
+
 public class UIOrbitCameraKeys implements IUIElement
 {
     private UIOrbitCamera orbitCamera;
+    private Supplier<Boolean> enabled;
 
     public UIOrbitCameraKeys(UIOrbitCamera orbitCamera)
     {
         this.orbitCamera = orbitCamera;
+    }
+
+    public void setEnabled(Supplier<Boolean> enabled)
+    {
+        this.enabled = enabled;
     }
 
     @Override
@@ -20,7 +28,14 @@ public class UIOrbitCameraKeys implements IUIElement
     @Override
     public boolean isEnabled()
     {
-        return this.orbitCamera.isEnabled();
+        boolean enabled = true;
+
+        if (this.enabled != null)
+        {
+            enabled = this.enabled.get();
+        }
+
+        return enabled && this.orbitCamera.isEnabled();
     }
 
     @Override
