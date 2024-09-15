@@ -56,6 +56,7 @@ public class ParticleEmitter
     public Matrix3f rotation = new Matrix3f();
 
     /* Runtime properties */
+    public float spawnRemainder;
     public int index;
     public int age;
     public int lifetime;
@@ -268,6 +269,7 @@ public class ParticleEmitter
             return;
         }
 
+        this.spawnRemainder = 0F;
         this.index = 0;
         this.age = 0;
         this.playing = true;
@@ -352,22 +354,22 @@ public class ParticleEmitter
     /**
      * Spawn a particle
      */
-    public void spawnParticle()
+    public void spawnParticle(float offset)
     {
         if (!this.running)
         {
             return;
         }
 
-        this.particles.add(this.createParticle(false));
+        this.particles.add(this.createParticle(offset));
     }
 
     /**
      * Create a new particle
      */
-    private Particle createParticle(boolean forceRelative)
+    private Particle createParticle(float offset)
     {
-        Particle particle = new Particle(this.index);
+        Particle particle = new Particle(this.index, offset);
 
         this.index += 1;
 
@@ -420,7 +422,7 @@ public class ParticleEmitter
 
             if (this.uiParticle == null || this.uiParticle.dead)
             {
-                this.uiParticle = this.createParticle(true);
+                this.uiParticle = this.createParticle(0F);
             }
 
             this.rotation.identity();

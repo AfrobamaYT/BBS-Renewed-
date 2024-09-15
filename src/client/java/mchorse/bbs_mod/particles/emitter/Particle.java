@@ -13,7 +13,8 @@ public class Particle
     public float random4 = (float) Math.random();
 
     /* States */
-    public int index;
+    public final int index;
+    public final float offset;
     public int age;
     public int lifetime;
     public boolean dead;
@@ -51,9 +52,10 @@ public class Particle
 
     private Vector3d global = new Vector3d();
 
-    public Particle(int index)
+    public Particle(int index, float offset)
     {
         this.index = index;
+        this.offset = offset;
 
         this.speed.set((float) Math.random() - 0.5F, (float) Math.random() - 0.5F, (float) Math.random() - 0.5F);
         this.speed.normalize();
@@ -61,7 +63,7 @@ public class Particle
 
     public double getAge(float transition)
     {
-        return (this.age + transition) / 20.0;
+        return (this.age + this.offset + transition) / 20.0;
     }
 
     public Vector3d getGlobalPosition(ParticleEmitter emitter)
@@ -125,6 +127,11 @@ public class Particle
                 this.matrix.transform(vec);
             }
 
+            if (this.age == 0)
+            {
+                vec.mul(1F + this.offset);
+            }
+
             this.position.x += vec.x / 20F;
             this.position.y += vec.y / 20F;
             this.position.z += vec.z / 20F;
@@ -135,7 +142,7 @@ public class Particle
             this.dead = true;
         }
 
-        this.age ++;
+        this.age += 1;
     }
 
     public void setupMatrix(ParticleEmitter emitter)

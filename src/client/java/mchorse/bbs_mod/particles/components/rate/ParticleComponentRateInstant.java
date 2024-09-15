@@ -60,7 +60,7 @@ public class ParticleComponentRateInstant extends ParticleComponentRate implemen
 
             for (int i = 0, c = particles; i < c; i ++)
             {
-                emitter.spawnParticle();
+                emitter.spawnParticle(0F);
             }
         }
     }

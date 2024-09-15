@@ -7,14 +7,11 @@ import mchorse.bbs_mod.math.molang.MolangException;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
-import mchorse.bbs_mod.particles.components.IComponentParticleRender;
+import mchorse.bbs_mod.particles.components.IComponentEmitterUpdate;
 import mchorse.bbs_mod.particles.components.ParticleComponentBase;
-import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
-import net.minecraft.client.render.BufferBuilder;
-import org.joml.Matrix4f;
 
-public class ParticleComponentRateSteady extends ParticleComponentRate implements IComponentParticleRender
+public class ParticleComponentRateSteady extends ParticleComponentRate implements IComponentEmitterUpdate
 {
     public static final MolangExpression DEFAULT_PARTICLES = new MolangValue(null, new Constant(50));
 
@@ -48,44 +45,33 @@ public class ParticleComponentRateSteady extends ParticleComponentRate implement
     }
 
     @Override
-    public void preRender(ParticleEmitter emitter, float transition)
-    {}
-
-    @Override
-    public void render(ParticleEmitter emitter, Particle particle, BufferBuilder builder, Matrix4f matrix, float transition)
-    {}
-
-    @Override
-    public void renderUI(Particle particle, BufferBuilder builder, Matrix4f matrix, float transition)
-    {}
-
-    @Override
-    public void postRender(ParticleEmitter emitter, float transition)
+    public void update(ParticleEmitter emitter)
     {
         if (emitter.playing && !emitter.paused)
         {
-            double particles = emitter.getAge(transition) * this.spawnRate.get();
-            double diff = particles - emitter.index;
-            double spawn = Math.round(diff);
+            emitter.setEmitterVariables(0);
 
-            if (spawn > 0)
+            float spawnRate = (float) (this.spawnRate.get() / 20D);
+            int max = (int) this.particles.get();
+            int particles = (int) Math.floor(spawnRate);
+
+            while (emitter.spawnRemainder >= 1F)
             {
-                emitter.setEmitterVariables(transition);
-
-                for (int i = 0; i < spawn; i++)
-                {
-                    if (emitter.particles.size() < this.particles.get())
-                    {
-                        emitter.spawnParticle();
-                    }
-                }
+                emitter.spawnRemainder -= 1;
+                particles += 1;
             }
-        }
-    }
 
-    @Override
-    public int getSortingIndex()
-    {
-        return 10;
+            for (int i = 0; i < particles; i++)
+            {
+                if (emitter.particles.size() >= max)
+                {
+                    break;
+                }
+
+                emitter.spawnParticle(i / (float) particles);
+            }
+
+            emitter.spawnRemainder += spawnRate % 1F;
+        }
     }
 }
