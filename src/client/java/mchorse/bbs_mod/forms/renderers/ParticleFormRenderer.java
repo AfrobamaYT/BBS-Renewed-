@@ -36,11 +36,11 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
         return this.emitter;
     }
 
-    public void ensureEmitter(World world)
+    public void ensureEmitter(World world, float transition)
     {
         if (!this.checked)
         {
-            ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get());
+            ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get(transition));
 
             if (scheme != null)
             {
@@ -56,7 +56,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
         {
             boolean lastPaused = this.emitter.paused;
 
-            this.emitter.paused = this.form.paused.get();
+            this.emitter.paused = this.form.paused.get(transition);
 
             if (lastPaused != this.emitter.paused && !this.emitter.paused && this.emitter.age > 0 && !this.restart)
             {
@@ -68,7 +68,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        this.ensureEmitter(MinecraftClient.getInstance().world);
+        this.ensureEmitter(MinecraftClient.getInstance().world, context.getTransition());
 
         ParticleEmitter emitter = this.emitter;
 
@@ -93,7 +93,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     @Override
     public void render3D(FormRenderingContext context)
     {
-        this.ensureEmitter(MinecraftClient.getInstance().world);
+        this.ensureEmitter(MinecraftClient.getInstance().world, context.transition);
 
         ParticleEmitter emitter = this.emitter;
 
@@ -147,7 +147,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     @Override
     public void tick(IEntity entity)
     {
-        this.ensureEmitter(entity.getWorld());
+        this.ensureEmitter(entity.getWorld(), 0F);
 
         if (this.emitter != null)
         {
