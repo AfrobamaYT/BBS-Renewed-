@@ -114,7 +114,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
 
         if (ticks < prev.getTick())
         {
-            return new KeyframeSegment(prev, prev);
+            return new KeyframeSegment<>(prev, prev);
         }
 
         int size = this.list.size();
@@ -122,7 +122,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
 
         if (ticks >= last.getTick())
         {
-            return new KeyframeSegment(last, last);
+            return new KeyframeSegment<>(last, last);
         }
 
         /* Use binary search to find the proper segment */

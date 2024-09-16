@@ -51,7 +51,7 @@ public class ProceduralAnimator implements IAnimator
     /**
      * Create an action playback based on given arguments. This method
      * is used for creating actions so it was easier to tell which
-     * actions are missing. Beside that, you can pass an old action so
+     * actions are missing. Besides that, you can pass an old action so
      * in form merging situation it wouldn't interrupt animation.
      */
     public ActionPlayback createAction(ActionPlayback old, ActionConfig config, boolean looping, int priority)

@@ -10,23 +10,30 @@ import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
  */
 public class KeyframeSegment <T>
 {
-    public final Keyframe<T> a;
-    public final Keyframe<T> b;
+    public Keyframe<T> a;
+    public Keyframe<T> b;
 
-    public final Keyframe<T> preA;
-    public final Keyframe<T> postB;
+    public Keyframe<T> preA;
+    public Keyframe<T> postB;
     public int duration;
     public float offset;
     public float x;
 
-    public static <T> T interpolate(Keyframe<T> a, Keyframe<T> b, float x)
-    {
-        IKeyframeFactory<T> factory = a.getFactory();
-
-        return factory.copy(factory.interpolate(a.getValue(), a.getValue(), b.getValue(), b.getValue(), a.getInterpolation().wrap(), x));
-    }
+    public KeyframeSegment()
+    {}
 
     public KeyframeSegment(Keyframe<T> a, Keyframe<T> b)
+    {
+        this.fill(a, b);
+    }
+
+    public void setup(Keyframe<T> a, Keyframe<T> b, float ticks)
+    {
+        this.fill(a, b);
+        this.setup(ticks);
+    }
+
+    public void fill(Keyframe<T> a, Keyframe<T> b)
     {
         this.a = a;
         this.b = b;

@@ -11,13 +11,13 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
-import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -399,6 +399,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
         UIKeyframeSheet sheet = this.sheet;
         List keyframes = sheet.channel.getKeyframes();
+        KeyframeSegment segment = new KeyframeSegment();
 
         /* Render graph */
         LineBuilder lineBuilder = new LineBuilder(0.7F);
@@ -421,12 +422,6 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 int px = this.keyframes.toGraphX(prev.getTick());
                 int py = this.toGraphY(sheet.channel.getFactory().getY(prev.getValue()));
 
-                int ppy = py;
-                int pny = y;
-
-                if (CollectionUtils.inRange(keyframes, i - 2)) ppy = this.toGraphY(sheet.channel.getFactory().getY(((Keyframe) keyframes.get(i - 2)).getValue()));
-                if (CollectionUtils.inRange(keyframes, i + 1)) pny = this.toGraphY(sheet.channel.getFactory().getY(((Keyframe) keyframes.get(i + 1)).getValue()));
-
                 if (interp == Interpolations.CONST)
                 {
                     lineBuilder.add(x, py);
@@ -436,10 +431,13 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 {
                     float steps = 50F;
 
-                    for (int j = 1; j < steps; j++)
+                    for (int j = 1; j <= steps; j++)
                     {
                         float a = j / steps;
-                        float interpolate = (float) prev.getInterpolation().interpolate(IInterp.context.set(ppy, py, y, pny, a));
+
+                        segment.setup(prev, frame, prev.getTick() + a * (frame.getTick() - prev.getTick()));
+
+                        float interpolate = this.toGraphY((float) frame.getFactory().getY(segment.createInterpolated()));
 
                         lineBuilder.add(Lerps.lerp(px, x, a), interpolate);
                     }
