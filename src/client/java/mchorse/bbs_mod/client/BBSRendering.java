@@ -349,7 +349,7 @@ public class BBSRendering
             return CurveClip.getValues(controller.getContext()).containsKey("sun_rotation");
         }
 
-        return true;
+        return false;
     }
 
     public static long getTimeOfDay()
