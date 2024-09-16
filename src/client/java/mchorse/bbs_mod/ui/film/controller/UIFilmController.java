@@ -1198,6 +1198,11 @@ public class UIFilmController extends UIElement
         {
             Keyframe<?> keyframe = keyframes.get(index);
 
+            if (keyframe.getTick() == this.getTick())
+            {
+                continue;
+            }
+
             replay.applyFrame((int) keyframe.getTick(), entity);
             replay.applyProperties((int) keyframe.getTick(), entity.getForm(), isPlaying);
 
