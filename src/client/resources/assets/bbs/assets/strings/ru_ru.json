@@ -750,6 +750,8 @@
     "bbs.ui.transforms.context.paste_scale": "Вставить размер",
     "bbs.ui.transforms.context.paste_translation": "Вставить перемещение",
     "bbs.ui.transforms.context.reset": "Сбросить трансформацию",
+    "bbs.ui.transforms.context.switch_local": "Переключить локальный режим",
+    "bbs.ui.transforms.context.switch_global": "Переключить глобальный режим",
     "bbs.ui.transforms.editing": "Редактируеться...",
     "bbs.ui.transforms.keys.category": "Трансформации",
     "bbs.ui.transforms.rotate": "Поворот",

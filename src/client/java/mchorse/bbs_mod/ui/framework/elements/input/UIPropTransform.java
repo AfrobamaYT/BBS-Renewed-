@@ -8,12 +8,14 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
+import org.joml.Matrix3f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -34,12 +36,56 @@ public class UIPropTransform extends UITransform
     private int lastX;
     private Vector3f cache = new Vector3f();
     private Timer checker = new Timer(30);
-    
+
+    private boolean local;
+
     private UITransformHandler handler;
 
     public UIPropTransform()
     {
         this.handler = new UITransformHandler(this);
+
+        this.context((menu) ->
+        {
+            menu.action(
+                this.local ? Icons.FULLSCREEN : Icons.MINIMIZE,
+                this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL,
+                this::toggleLocal
+            );
+
+            menu.actions.add(0, menu.actions.remove(menu.actions.size() - 1));
+        });
+    }
+
+    @Override
+    public UITransform verticalCompact()
+    {
+        UITransform transform = super.verticalCompact();
+
+        this.iconT.callback = (b) -> this.toggleLocal();
+        this.iconT.hoverColor = Colors.LIGHTEST_GRAY;
+        this.iconT.setEnabled(true);
+        this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
+
+        return transform;
+    }
+
+    private void toggleLocal()
+    {
+        this.local = !this.local;
+
+        if (!this.local)
+        {
+            this.fillT(this.transform.translate.x, this.transform.translate.y, this.transform.translate.z);
+        }
+
+        this.tx.forcedLabel(this.local ? UIKeys.GENERAL_X : null);
+        this.ty.forcedLabel(this.local ? UIKeys.GENERAL_Y : null);
+        this.tz.forcedLabel(this.local ? UIKeys.GENERAL_Z : null);
+        this.tx.relative(this.local);
+        this.ty.relative(this.local);
+        this.tz.relative(this.local);
+        this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
     }
 
     public UIPropTransform(Consumer<Transform> callback)
@@ -130,6 +176,39 @@ public class UIPropTransform extends UITransform
         if (this.handler.hasParent())
         {
             this.handler.removeFromParent();
+        }
+    }
+
+    @Override
+    protected void internalSetT(double x, Axis axis)
+    {
+        if (this.local)
+        {
+            try
+            {
+                Vector3f vector3f = new Vector3f(
+                    (float) (axis == Axis.X ? x : 0D),
+                    (float) (axis == Axis.Y ? x : 0D),
+                    (float) (axis == Axis.Z ? x : 0D)
+                );
+                Matrix3f matrix = this.transform.createRotationMatrix();
+
+                matrix.transform(vector3f);
+
+                this.setT(
+                    this.transform.translate.x + vector3f.x,
+                    this.transform.translate.y + vector3f.y,
+                    this.transform.translate.z + vector3f.z
+                );
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+        else
+        {
+            super.internalSetT(x, axis);
         }
     }
 
@@ -239,9 +318,27 @@ public class UIPropTransform extends UITransform
 
                 float factor = this.mode == 0 ? 0.05F : (this.mode == 1 ? 0.01F : MathUtils.toRad(0.5F));
 
-                if (this.axis == Axis.X || all) vector.x += factor * dx;
-                if (this.axis == Axis.Y || all) vector.y += factor * dx;
-                if (this.axis == Axis.Z || all) vector.z += factor * dx;
+                if (this.local)
+                {
+                    Vector3f vector3f = new Vector3f(
+                        (float) (this.axis == Axis.X ? factor * dx : 0D),
+                        (float) (this.axis == Axis.Y ? factor * dx : 0D),
+                        (float) (this.axis == Axis.Z ? factor * dx : 0D)
+                    );
+                    Matrix3f matrix = this.transform.createRotationMatrix();
+
+                    matrix.transform(vector3f);
+
+                    vector.x += vector3f.x;
+                    vector.y += vector3f.y;
+                    vector.z += vector3f.z;
+                }
+                else
+                {
+                    if (this.axis == Axis.X || all) vector.x += factor * dx;
+                    if (this.axis == Axis.Y || all) vector.y += factor * dx;
+                    if (this.axis == Axis.Z || all) vector.z += factor * dx;
+                }
 
                 this.setTransform(this.transform);
 

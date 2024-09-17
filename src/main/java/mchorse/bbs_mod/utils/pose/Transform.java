@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -48,6 +49,20 @@ public class Transform implements IMapSerializable
         this.scale.set(1, 1, 1);
         this.rotate.set(0, 0, 0);
         this.rotate2.set(0, 0, 0);
+    }
+
+    public Matrix3f createRotationMatrix()
+    {
+        Matrix3f matrix = new Matrix3f();
+
+        matrix.rotateZ(this.rotate.z);
+        matrix.rotateY(this.rotate.y);
+        matrix.rotateX(this.rotate.x);
+        matrix.rotateZ(this.rotate2.z);
+        matrix.rotateY(this.rotate2.y);
+        matrix.rotateX(this.rotate2.x);
+
+        return matrix;
     }
 
     public Matrix4f createMatrix()

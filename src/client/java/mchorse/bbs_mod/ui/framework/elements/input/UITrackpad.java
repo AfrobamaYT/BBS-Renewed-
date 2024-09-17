@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.input;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.settings.values.ValueDouble;
 import mchorse.bbs_mod.settings.values.ValueFloat;
@@ -42,6 +43,9 @@ public class UITrackpad extends UIBaseTextbox
     public double max = Float.POSITIVE_INFINITY;
     public boolean integer;
     public boolean delayedInput;
+
+    public boolean relative;
+    public IKey forcedLabel;
 
     /* Value dragging fields */
     private boolean wasInside;
@@ -168,6 +172,20 @@ public class UITrackpad extends UIBaseTextbox
         return this;
     }
 
+    public UITrackpad relative(boolean relative)
+    {
+        this.relative = relative;
+
+        return this;
+    }
+
+    public UITrackpad forcedLabel(IKey label)
+    {
+        this.forcedLabel = label;
+
+        return this;
+    }
+
     /* Values presets */
 
     public UITrackpad degrees()
@@ -233,11 +251,17 @@ public class UITrackpad extends UIBaseTextbox
      */
     public void setValueAndNotify(double value)
     {
-        this.setValue(value);
+        double oldValue = this.value;
 
+        this.setValue(value);
+        this.accept(value, oldValue);
+    }
+
+    private void accept(double value, double oldValue)
+    {
         if (this.callback != null)
         {
-            this.callback.accept(this.value);
+            this.callback.accept(this.relative ? value - oldValue : value);
         }
     }
 
@@ -421,11 +445,13 @@ public class UITrackpad extends UIBaseTextbox
         {
             try
             {
+                double oldValue = this.value;
+
                 this.setValueInternal(text.isEmpty() ? 0 : Double.parseDouble(text));
 
-                if (this.callback != null && !this.delayedInput)
+                if (!this.delayedInput)
                 {
-                    this.callback.accept(this.value);
+                    this.accept(this.value, oldValue);
                 }
             }
             catch (Exception e)
@@ -470,11 +496,13 @@ public class UITrackpad extends UIBaseTextbox
         {
             try
             {
+                double oldValue = this.value;
+
                 this.setValueInternal(text.isEmpty() ? 0 : Double.parseDouble(text));
 
-                if (this.callback != null && !this.delayedInput)
+                if (!this.delayedInput)
                 {
-                    this.callback.accept(this.value);
+                    this.accept(this.value, oldValue);
                 }
             }
             catch (Exception e)
@@ -521,7 +549,7 @@ public class UITrackpad extends UIBaseTextbox
             }
 
             FontRenderer font = context.batcher.getFont();
-            String label = this.textbox.getText();
+            String label = this.forcedLabel == null ? this.textbox.getText() : this.forcedLabel.get();
             int lx = this.area.mx(font.getWidth(label));
             int ly = this.area.my() - font.getHeight() / 2;
 

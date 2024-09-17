@@ -85,14 +85,17 @@ public class FilmController
         AnchorProperty.Anchor value = form.anchor.get();
         AnchorProperty.Anchor last = form.anchor.getLast();
         Matrix4f target = null;
-        Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, camera, transition);
+        double cx = camera.getPos().x;
+        double cy = camera.getPos().y;
+        double cz = camera.getPos().z;
+        Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, cx, cy, cz, transition);
         float opacity = 1F;
 
         if (last == null)
         {
             AnchorProperty.Anchor current = value;
 
-            Matrix4f matrix = getEntityMatrix(entities, camera, current, defaultMatrix, transition);
+            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, current, defaultMatrix, transition);
 
             if (matrix != defaultMatrix)
             {
@@ -102,8 +105,8 @@ public class FilmController
         }
         else if (value != null)
         {
-            Matrix4f matrix = getEntityMatrix(entities, camera, value, defaultMatrix, transition);
-            Matrix4f lastMatrix = getEntityMatrix(entities, camera, last, defaultMatrix, transition);
+            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value, defaultMatrix, transition);
+            Matrix4f lastMatrix = getEntityMatrix(entities, cx, cy, cz, last, defaultMatrix, transition);
 
             if (matrix != lastMatrix)
             {
@@ -153,13 +156,13 @@ public class FilmController
         stack.pop();
     }
 
-    public static Matrix4f getEntityMatrix(List<IEntity> entities, Camera camera, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
+    public static Matrix4f getEntityMatrix(List<IEntity> entities, double cameraX, double cameraY, double cameraZ, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
     {
         IEntity entity = CollectionUtils.getSafe(entities, selector.actor);
 
         if (entity != null)
         {
-            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, camera, transition));
+            Matrix4f basic = new Matrix4f(getMatrixForRenderWithRotation(entity, cameraX, cameraY, cameraZ, transition));
 
             Map<String, Matrix4f> map = new HashMap<>();
             MatrixStack stack = new MatrixStack();
@@ -184,11 +187,11 @@ public class FilmController
         return defaultMatrix;
     }
 
-    public static Matrix4f getMatrixForRenderWithRotation(IEntity entity, net.minecraft.client.render.Camera camera, float tickDelta)
+    public static Matrix4f getMatrixForRenderWithRotation(IEntity entity, double cameraX, double cameraY, double cameraZ, float tickDelta)
     {
-        double x = Lerps.lerp(entity.getPrevX(), entity.getX(), tickDelta) - camera.getPos().x;
-        double y = Lerps.lerp(entity.getPrevY(), entity.getY(), tickDelta) - camera.getPos().y;
-        double z = Lerps.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - camera.getPos().z;
+        double x = Lerps.lerp(entity.getPrevX(), entity.getX(), tickDelta) - cameraX;
+        double y = Lerps.lerp(entity.getPrevY(), entity.getY(), tickDelta) - cameraY;
+        double z = Lerps.lerp(entity.getPrevZ(), entity.getZ(), tickDelta) - cameraZ;
 
         Matrix4f matrix = new Matrix4f();
 

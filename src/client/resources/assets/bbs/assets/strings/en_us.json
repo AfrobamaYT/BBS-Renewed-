@@ -758,6 +758,8 @@
     "bbs.ui.transforms.context.paste_scale": "Paste scale",
     "bbs.ui.transforms.context.paste_translation": "Paste translation",
     "bbs.ui.transforms.context.reset": "Reset transformation",
+    "bbs.ui.transforms.context.switch_local": "Switch to local",
+    "bbs.ui.transforms.context.switch_global": "Switch to global",
     "bbs.ui.transforms.editing": "Editing...",
     "bbs.ui.transforms.keys.category": "Transformations",
     "bbs.ui.transforms.rotate": "Rotate",
