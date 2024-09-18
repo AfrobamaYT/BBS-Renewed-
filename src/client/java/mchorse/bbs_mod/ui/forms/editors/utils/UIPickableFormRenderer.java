@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
@@ -24,6 +25,8 @@ import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 
+import java.util.function.Supplier;
+
 public class UIPickableFormRenderer extends UIFormRenderer
 {
     public UIFormEditor formEditor;
@@ -33,6 +36,9 @@ public class UIPickableFormRenderer extends UIFormRenderer
     private StencilFormFramebuffer stencil = new StencilFormFramebuffer();
     private StencilMap stencilMap = new StencilMap();
 
+    private IEntity target;
+    private Supplier<Boolean> renderForm;
+
     public UIPickableFormRenderer(UIFormEditor formEditor)
     {
         this.formEditor = formEditor;
@@ -41,6 +47,16 @@ public class UIPickableFormRenderer extends UIFormRenderer
     public void updatable()
     {
         this.update = true;
+    }
+
+    public void setRenderForm(Supplier<Boolean> renderForm)
+    {
+        this.renderForm = renderForm;
+    }
+
+    public void setTarget(IEntity target)
+    {
+        this.target = target;
     }
 
     private void ensureFramebuffer()
@@ -84,14 +100,17 @@ public class UIPickableFormRenderer extends UIFormRenderer
         }
 
         FormRenderingContext formContext = FormRenderingContext
-            .set(this.entity, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
+            .set(this.target == null ? this.entity : this.target, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
             .camera(this.camera);
 
-        FormUtilsClient.render(this.form, formContext);
-
-        if (this.form.hitbox.get())
+        if (this.renderForm == null || this.renderForm.get())
         {
-            this.renderFormHitbox(context);
+            FormUtilsClient.render(this.form, formContext);
+
+            if (this.form.hitbox.get())
+            {
+                this.renderFormHitbox(context);
+            }
         }
 
         this.renderAxes(context);
@@ -156,7 +175,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
     {
         super.update();
 
-        if (this.update)
+        if (this.update && this.target != null)
         {
             this.form.update(this.entity);
         }
@@ -199,6 +218,15 @@ public class UIPickableFormRenderer extends UIFormRenderer
             }
 
             context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
+        }
+    }
+
+    @Override
+    protected void renderGrid(UIContext context)
+    {
+        if (this.renderForm == null || this.renderForm.get())
+        {
+            super.renderGrid(context);
         }
     }
 }

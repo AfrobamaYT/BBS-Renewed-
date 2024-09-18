@@ -515,6 +515,7 @@
     "bbs.ui.language.pick.title": "Язык",
     "bbs.ui.model_blocks.global": "Глобальный",
     "bbs.ui.model_blocks.keys.move_to": "Переместить",
+    "bbs.ui.model_blocks.keys.toggle_rendering": "Переключить отрисовку в мире",
     "bbs.ui.model_blocks.shadow": "Тень",
     "bbs.ui.model_blocks.title": "Блок-модели",
     "bbs.ui.model_blocks.transform.first_person": "Трансформация от первого лица",

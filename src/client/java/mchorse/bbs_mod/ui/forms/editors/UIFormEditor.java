@@ -124,6 +124,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.forms.context(this::createFormContextMenu);
 
         this.bodyPartData = UI.scrollView(5, 10);
+        this.bodyPartData.scroll.cancelScrolling();
         this.bodyPartData.relative(this.formsArea).w(1F).y(0.5F).h(0.5F);
 
         this.pick = new UIButton(UIKeys.FORMS_EDITOR_PICK_FORM, (b) ->

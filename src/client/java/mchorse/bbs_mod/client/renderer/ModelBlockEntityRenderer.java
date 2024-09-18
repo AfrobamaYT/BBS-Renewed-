@@ -150,7 +150,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         {
             if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)
             {
-                return !modelBlockPanel.isEditing(entity);
+                return !modelBlockPanel.isEditing(entity) || UIModelBlockPanel.toggleRendering;
             }
         }
 
