@@ -167,10 +167,52 @@ public class Draw
         fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
     }
 
+    public static void axes(MatrixStack stack, float length, float thickness)
+    {
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        Draw.axes(builder, stack, length, thickness);
+
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        BufferRenderer.drawWithGlobalProgram(builder.end());
+    }
+
     public static void axes(BufferBuilder builder, MatrixStack stack, float length, float thickness)
     {
         fillBox(builder, stack, thickness, -thickness, -thickness, length, thickness, thickness, 1, 0, 0, 1);
         fillBox(builder, stack, -thickness, -thickness, -thickness, thickness, length, thickness, 0, 1, 0, 1);
         fillBox(builder, stack, -thickness, -thickness, thickness, thickness, thickness, length, 0, 0, 1, 1);
+    }
+
+    public static void coolerAxes(MatrixStack stack, float axisSize, float axisOffset)
+    {
+        final float outlineSize = axisSize + 0.005F;
+        final float outlineOffset = axisOffset + 0.005F;
+
+        coolerAxes(stack, axisSize, axisOffset, outlineSize, outlineOffset);
+    }
+
+    public static void coolerAxes(MatrixStack stack, float axisSize, float axisOffset, float outlineSize, float outlineOffset)
+    {
+        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+
+        Draw.fillBox(builder, stack, 0, -outlineOffset, -outlineOffset, outlineSize, outlineOffset, outlineOffset, 0, 0, 0);
+        Draw.fillBox(builder, stack, -outlineOffset, 0, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);
+        Draw.fillBox(builder, stack, -outlineOffset, -outlineOffset, 0, outlineOffset, outlineOffset, outlineSize, 0, 0, 0);
+        Draw.fillBox(builder, stack, -outlineOffset, -outlineOffset, -outlineOffset, outlineOffset, outlineOffset, outlineOffset, 0, 0, 0);
+
+        Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, 1, 0, 0);
+        Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, 0, 1, 0);
+        Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, 0, 0, 1);
+        Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, 1, 1, 1);
+
+        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.disableDepthTest();
+
+        BufferRenderer.drawWithGlobalProgram(builder.end());
     }
 }

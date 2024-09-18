@@ -11,6 +11,7 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmController;
+import mchorse.bbs_mod.film.FilmControllerContext;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -33,6 +34,11 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIRecordOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UITransformKeyframeFactory;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -1102,8 +1108,9 @@ public class UIFilmController extends UIElement
         for (int i = 0; i < this.entities.size(); i++)
         {
             IEntity entity = this.entities.get(i);
+            boolean isCurrent = entity == this.getCurrentEntity();
 
-            if (this.getPovMode() == CAMERA_MODE_FIRST_PERSON && entity == this.getCurrentEntity() && this.orbit.enabled)
+            if (this.getPovMode() == CAMERA_MODE_FIRST_PERSON && isCurrent && this.orbit.enabled)
             {
                 continue;
             }
@@ -1117,7 +1124,15 @@ public class UIFilmController extends UIElement
                 value = replay.properties.get("pose");
             }
 
-            FilmController.renderEntity(this.entities, context, entity, null, isPlaying ? context.tickDelta() : 0F, replay.shadow.get(), replay.shadowSize.get());
+            String bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
+
+            FilmControllerContext filmContext = FilmControllerContext.instance
+                .setup(this.entities, entity, context)
+                .transition(isPlaying ? context.tickDelta() : 0F)
+                .shadow(replay.shadow.get(), replay.shadowSize.get())
+                .bone(bone);
+
+            FilmController.renderEntity(filmContext);
 
             if (value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
             {
@@ -1125,7 +1140,7 @@ public class UIFilmController extends UIElement
 
                 if (!onionSkin.all.get())
                 {
-                    canRender = canRender && entity == this.getCurrentEntity();
+                    canRender = canRender && isCurrent;
                 }
 
                 if (canRender)
@@ -1189,6 +1204,44 @@ public class UIFilmController extends UIElement
         RenderSystem.disableDepthTest();
     }
 
+    private String getBone()
+    {
+        UIKeyframeEditor keyframeEditor = this.panel.replayEditor.keyframeEditor;
+
+        if (keyframeEditor != null)
+        {
+            UIKeyframeFactory editor = keyframeEditor.editor;
+            String bone = null;
+
+            if (editor instanceof UIPoseKeyframeFactory pose)
+            {
+                UIKeyframeSheet sheet = keyframeEditor.getSheet(editor.getKeyframe());
+                String currentFirst = pose.poseEditor.groups.getCurrentFirst();
+
+                if (sheet != null && sheet.id.endsWith("pose"))
+                {
+                    bone = sheet.id.endsWith("/pose") ? sheet.id.substring(0, sheet.id.lastIndexOf('/') + 1) + currentFirst : currentFirst;
+                }
+            }
+            else if (editor instanceof UITransformKeyframeFactory)
+            {
+                UIKeyframeSheet sheet = keyframeEditor.getSheet(editor.getKeyframe());
+
+                if (sheet != null && sheet.id.endsWith("transform"))
+                {
+                    bone = sheet.id.endsWith("/transform") ? sheet.id.substring(0, sheet.id.lastIndexOf('/')) : "";
+                }
+            }
+
+            if (bone != null)
+            {
+                return bone;
+            }
+        }
+
+        return null;
+    }
+
     private void renderOnion(Replay replay, int index, int direction, KeyframeChannel<?> pose, int color, int frames, WorldRenderContext context, boolean isPlaying, IEntity entity)
     {
         List<? extends Keyframe<?>> keyframes = pose.getKeyframes();
@@ -1206,7 +1259,9 @@ public class UIFilmController extends UIElement
             replay.applyFrame((int) keyframe.getTick(), entity);
             replay.applyProperties((int) keyframe.getTick(), entity.getForm(), isPlaying);
 
-            FilmController.renderEntity(this.entities, context, entity, null, 1F, Colors.setA(color, alpha), false, 0F);
+            FilmController.renderEntity(FilmControllerContext.instance
+                .setup(this.entities, entity, context)
+                .color(Colors.setA(color, alpha)));
 
             frames -= 1;
             alpha *= alpha;
@@ -1295,7 +1350,10 @@ public class UIFilmController extends UIElement
 
         this.stencilMap.setup();
         this.stencil.apply();
-        FilmController.renderEntity(this.entities, renderContext, entity, this.stencilMap, isPlaying ? renderContext.tickDelta() : 0, false, 0F);
+        FilmController.renderEntity(FilmControllerContext.instance
+            .setup(this.entities, entity, renderContext)
+            .transition(isPlaying ? renderContext.tickDelta() : 0)
+            .stencil(this.stencilMap));
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
         int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);

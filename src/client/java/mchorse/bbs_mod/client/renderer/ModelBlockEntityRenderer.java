@@ -14,14 +14,8 @@ import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
@@ -104,18 +98,8 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             if (this.canRenderAxes(entity))
             {
                 matrices.push();
-
                 MatrixStackUtils.scaleBack(matrices);
-
-                BufferBuilder builder = Tessellator.getInstance().getBuffer();
-
-                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-                Draw.axes(builder, matrices, 0.5F, 0.01F);
-
-                RenderSystem.disableDepthTest();
-                RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-                BufferRenderer.drawWithGlobalProgram(builder.end());
-
+                Draw.coolerAxes(matrices, 0.5F, 0.01F, 0.51F, 0.02F);
                 matrices.pop();
             }
 

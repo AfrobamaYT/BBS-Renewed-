@@ -13,12 +13,11 @@ import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
-import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
+import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -27,7 +26,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
@@ -55,23 +53,14 @@ public class FilmController
 
     /* Rendering helpers */
 
-    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, boolean shadow, float shadowRadius)
+    public static void renderEntity(FilmControllerContext context)
     {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, context.tickDelta(), Colors.WHITE, shadow, shadowRadius);
-    }
+        List<IEntity> entities = context.entities;
+        IEntity entity = context.entity;
+        Camera camera = context.camera;
+        MatrixStack stack = context.stack;
+        float transition = context.transition;
 
-    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition, boolean shadow, float shadowRadius)
-    {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, Colors.WHITE, shadow, shadowRadius);
-    }
-
-    public static void renderEntity(List<IEntity> entities, WorldRenderContext context, IEntity entity, StencilMap map, float transition, int color, boolean shadow, float shadowRadius)
-    {
-        renderEntity(entities, entity, context.camera(), context.matrixStack(), context.consumers(), map, transition, color, shadow, shadowRadius);
-    }
-
-    public static void renderEntity(List<IEntity> entities, IEntity entity, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, StencilMap map, float transition, int color, boolean shadow, float shadowRadius)
-    {
         Form form = entity.getForm();
 
         if (form == null)
@@ -79,8 +68,11 @@ public class FilmController
             return;
         }
 
-        Vector3d position = Vectors.TEMP_3D.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ())
-            .lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
+        Vector3d position = Vectors.TEMP_3D.set(
+            Lerps.lerp(entity.getPrevX(), entity.getX(), transition),
+            Lerps.lerp(entity.getPrevY(), entity.getY(), transition),
+            Lerps.lerp(entity.getPrevZ(), entity.getZ(), transition)
+        );
 
         AnchorProperty.Anchor value = form.anchor.get();
         AnchorProperty.Anchor last = form.anchor.getLast();
@@ -136,21 +128,40 @@ public class FilmController
         FormRenderingContext formContext = FormRenderingContext
             .set(entity, stack, light, overlay, transition)
             .camera(camera)
-            .stencilMap(map)
-            .color(color);
+            .stencilMap(context.map)
+            .color(context.color);
 
         stack.push();
         MatrixStackUtils.multiply(stack, target == null ? defaultMatrix : target);
         FormUtilsClient.render(form, formContext);
+
+        if (context.bone != null)
+        {
+            Form root = FormUtils.getRoot(form);
+            MatrixStack tempStack = new MatrixStack();
+            Map<String, Matrix4f> map = new HashMap<>();
+
+            FormUtilsClient.getRenderer(root).collectMatrices(entity, tempStack, map, "", transition);
+
+            Matrix4f matrix = map.get(context.bone);
+
+            if (matrix != null)
+            {
+                MatrixStackUtils.multiply(stack, matrix);
+                Draw.coolerAxes(stack, 0.25F, 0.01F, 0.26F, 0.02F);
+                RenderSystem.enableDepthTest();
+            }
+        }
+
         stack.pop();
 
         stack.push();
 
-        if (map == null && opacity > 0F && shadow)
+        if (context.map == null && opacity > 0F && context.shadowRadius > 0F)
         {
-            stack.translate(position.x - camera.getPos().x, position.y - camera.getPos().y, position.z - camera.getPos().z);
+            stack.translate(position.x - cx, position.y - cy, position.z - cz);
 
-            ModelBlockEntityRenderer.renderShadow(consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, shadowRadius, opacity);
+            ModelBlockEntityRenderer.renderShadow(context.consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, context.shadowRadius, opacity);
         }
 
         stack.pop();
@@ -290,7 +301,9 @@ public class FilmController
 
             Replay replay = this.film.replays.getList().get(i);
 
-            renderEntity(this.entities, context, this.entities.get(i), null, replay.shadow.get(), replay.shadowSize.get());
+            renderEntity(FilmControllerContext.instance
+                .setup(this.entities, this.entities.get(i), context)
+                .shadow(replay.shadow.get(), replay.shadowSize.get()));
         }
 
         RenderSystem.disableDepthTest();

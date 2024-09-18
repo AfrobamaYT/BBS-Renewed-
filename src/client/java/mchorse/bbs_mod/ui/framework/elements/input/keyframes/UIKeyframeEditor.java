@@ -98,4 +98,22 @@ public class UIKeyframeEditor extends UIElement
 
         this.pickKeyframe(null);
     }
+
+    public UIKeyframeSheet getSheet(Keyframe keyframe)
+    {
+        if (keyframe == null)
+        {
+            return null;
+        }
+
+        for (UIKeyframeSheet sheet : this.view.getGraph().getSheets())
+        {
+            if (sheet.channel == keyframe.getParent())
+            {
+                return sheet;
+            }
+        }
+
+        return null;
+    }
 }

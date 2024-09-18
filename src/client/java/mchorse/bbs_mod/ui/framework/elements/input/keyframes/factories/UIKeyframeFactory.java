@@ -115,6 +115,11 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.duration.setValue(converter == null ? keyframe.getDuration() : converter.to(keyframe.getDuration()));
     }
 
+    public Keyframe<T> getKeyframe()
+    {
+        return keyframe;
+    }
+
     public void setTick(double tick)
     {
         IAxisConverter converter = this.editor.getConverter();
