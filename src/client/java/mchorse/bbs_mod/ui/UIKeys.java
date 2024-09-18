@@ -697,6 +697,11 @@ public class UIKeys
     public static final IKey VIDEO_SETTINGS_WIDTH = L10n.lang("bbs.ui.video_settings.width");
     public static final IKey VOICE_COLORS_OPEN = L10n.lang("bbs.ui.voice_colors.open");
     public static final IKey VOICE_COLORS_TITLE = L10n.lang("bbs.ui.voice_colors.title");
+    public static final IKey VOICE_MODEL_OPEN = L10n.lang("bbs.ui.voice_model.open");
+    public static final IKey VOICE_MODEL_TITLE = L10n.lang("bbs.ui.voice_model-title");
+    public static final IKey VOICE_MODEL_PICK_MODEL = L10n.lang("bbs.ui.voice_model.pick_model");
+    public static final IKey VOICE_MODEL_STABILITY = L10n.lang("bbs.ui.voice_model.stability");
+    public static final IKey VOICE_MODEL_SIMILARITY = L10n.lang("bbs.ui.voice_model.similarity");
     public static final IKey VOICE_LINE_ACTION_NO_VOICE = L10n.lang("bbs.ui.voice_line.action.no_voice");
     public static final IKey VOICE_LINE_COMPILE = L10n.lang("bbs.ui.voice_line.compile");
     public static final IKey VOICE_LINE_FOUNTAIN = L10n.lang("bbs.ui.voice_line.fountain");

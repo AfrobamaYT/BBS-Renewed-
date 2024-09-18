@@ -23,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -31,10 +32,12 @@ public class ElevenLabsAPI implements Runnable
 {
     public static final String TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech/";
     public static final String VOICES_URL = "https://api.elevenlabs.io/v1/voices";
+    public static final String MODELS_URL = "https://api.elevenlabs.io/v1/models";
 
     private static Thread thread;
 
-    private static Map<String, ElevenLabsVoice> voices = new HashMap<>();
+    private static Map<String, ElevenLabsVoice> voices = new LinkedHashMap<>();
+    private static Map<String, ElevenLabsModel> models = new LinkedHashMap<>();
 
     private final String token;
     private final File folder;
@@ -106,6 +109,61 @@ public class ElevenLabsAPI implements Runnable
         }
     }
 
+    public static Map<String, ElevenLabsModel> getModels()
+    {
+        if (models.isEmpty())
+        {
+            try
+            {
+                fetchModels();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return models;
+    }
+
+    private static void fetchModels() throws Exception
+    {
+        HttpURLConnection connection = (HttpURLConnection) new URL(MODELS_URL).openConnection();
+        String token = getToken();
+
+        connection.setInstanceFollowRedirects(true);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("xi-api-key", token);
+
+        int responseCode = connection.getResponseCode();
+
+        String json = new String(readConnection(connection));
+        ListType data = DataToString.listFromString(json);
+
+        if (responseCode != HttpURLConnection.HTTP_OK)
+        {
+            throw new IllegalStateException("Couldn't get a list of models! " + responseCode);
+        }
+
+        if (data != null)
+        {
+            for (BaseType type : data)
+            {
+                if (!type.isMap())
+                {
+                    continue;
+                }
+
+                MapType map = type.asMap();
+                ElevenLabsModel model = new ElevenLabsModel();
+
+                model.fromData(map);
+                models.put(model.id, model);
+            }
+        }
+    }
+
     private static String getToken()
     {
         return BBSSettings.elevenLabsToken.get();
@@ -127,7 +185,7 @@ public class ElevenLabsAPI implements Runnable
                 }
                 else if (result.status == ElevenLabsResult.Status.ERROR)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_GENERATING.format(result.message), Colors.RED);
+                    context.notify(result.message, Colors.RED);
                 }
                 else if (result.status == ElevenLabsResult.Status.TOKEN_MISSING)
                 {
@@ -182,11 +240,11 @@ public class ElevenLabsAPI implements Runnable
         MapType data = new MapType();
         MapType voiceSettings = new MapType();
 
-        voiceSettings.putFloat("stability", 0.5F);
-        voiceSettings.putFloat("similarity_boost", 0.5F);
+        voiceSettings.putFloat("stability", BBSSettings.elevenVoiceModel.stability.get());
+        voiceSettings.putFloat("similarity_boost", BBSSettings.elevenVoiceModel.similarity.get());
 
         data.putString("text", voiceLine);
-        data.putString("model_id", "eleven_monolingual_v1");
+        data.putString("model_id", BBSSettings.elevenVoiceModel.id.get());
         data.put("voice_settings", voiceSettings);
 
         String json = DataToString.toString(data, true);

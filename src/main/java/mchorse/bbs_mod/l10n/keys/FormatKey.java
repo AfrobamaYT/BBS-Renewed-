@@ -29,4 +29,10 @@ public class FormatKey implements IKey
             return key;
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return this.get();
+    }
 }
