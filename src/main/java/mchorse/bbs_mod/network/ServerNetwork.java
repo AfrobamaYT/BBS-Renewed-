@@ -309,6 +309,8 @@ public class ServerNetwork
                         actionPlayer.goTo(tick);
                     }
                 }
+
+                sendStopFilm(player, filmId);
             }
             else if (state == ActionState.STOP)
             {
