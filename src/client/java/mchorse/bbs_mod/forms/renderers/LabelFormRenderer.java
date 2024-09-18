@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.BufferBuilder;
@@ -20,6 +21,7 @@ import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.List;
 
@@ -67,6 +69,22 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
     public void render3D(FormRenderingContext context)
     {
         context.stack.push();
+
+        if (this.form.billboard.get(context.transition))
+        {
+            Matrix4f modelMatrix = context.stack.peek().getPositionMatrix();
+            Vector3f scale = Vectors.TEMP_3F;
+
+            modelMatrix.getScale(scale);
+
+            modelMatrix.m00(1).m01(0).m02(0);
+            modelMatrix.m10(0).m11(1).m12(0);
+            modelMatrix.m20(0).m21(0).m22(1);
+
+            modelMatrix.scale(scale);
+
+            context.stack.peek().getNormalMatrix().identity();
+        }
 
         TextRenderer renderer = MinecraftClient.getInstance().textRenderer;
         CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();

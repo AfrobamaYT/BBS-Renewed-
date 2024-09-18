@@ -10,6 +10,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 public class LabelForm extends Form
 {
     public final StringProperty text = new StringProperty(this, "text", "Hello, World!");
+    public final BooleanProperty billboard = new BooleanProperty(this, "billboard", false);
     public final ColorProperty color = new ColorProperty(this, "color", Color.white());
 
     public final IntegerProperty max = new IntegerProperty(this, "max", -1);
@@ -31,6 +32,7 @@ public class LabelForm extends Form
         super();
 
         this.register(this.text);
+        this.register(this.billboard);
         this.register(this.color);
         this.register(this.max);
         this.register(this.anchorX);
