@@ -59,7 +59,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             UIFormPalette.open(this.main, edit, this.getForm(), this::setForm);
         });
         this.transform = new UIPropTransform();
-        this.transform.enableHotkeys().verticalCompact();
+        this.transform.enableHotkeys();
         this.transform.relative(this.viewport).x(10).y(0.5F).wh(200, 95).anchor(0F, 0.5F);
 
         this.pickEdit.relative(this.transform).y(-5).w(1F).anchor(0F, 1F);

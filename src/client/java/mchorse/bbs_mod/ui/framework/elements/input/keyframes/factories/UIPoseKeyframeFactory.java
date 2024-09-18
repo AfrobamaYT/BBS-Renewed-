@@ -66,8 +66,6 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         {
             super();
 
-            this.transform.verticalCompactNoIcons();
-
             this.keyframe = keyframe;
 
             ((UIPoseTransforms) this.transform).setKeyframe(keyframe);

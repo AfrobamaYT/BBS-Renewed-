@@ -39,9 +39,6 @@ public abstract class UITransform extends UIElement
     protected UIIcon iconR;
     protected UIIcon iconR2;
 
-    protected boolean vertical;
-
-    private boolean renderLabels = true;
     private boolean uniformDrag;
 
     public UITransform()
@@ -102,20 +99,25 @@ public abstract class UITransform extends UIElement
         this.r2z.tooltip(raw.format(UIKeys.TRANSFORMS_ROTATE2, UIKeys.GENERAL_Z));
         this.r2z.textbox.setColor(Colors.BLUE);
 
-        UIElement first = new UIElement();
-        UIElement second = new UIElement();
-        UIElement third = new UIElement();
+        this.w(1F).column().stretch().vertical();
 
-        first.relative(this).w(1F).h(20).row().height(20);
-        first.add(this.tx, this.sx, this.rx, this.r2x);
+        this.iconT = new UIIcon(Icons.ALL_DIRECTIONS, null);
+        this.iconS = new UIIcon(Icons.SCALE, null);
+        this.iconR = new UIIcon(Icons.REFRESH, null);
+        this.iconR2 = new UIIcon(Icons.REFRESH, null);
 
-        second.relative(this).y(0.5F, -10).w(1F).h(20).row().height(20);
-        second.add(this.ty, this.sy, this.ry, this.r2y);
+        this.iconT.disabledColor = this.iconS.disabledColor = this.iconR.disabledColor = this.iconR2.disabledColor = Colors.WHITE;
+        this.iconT.hoverColor = this.iconS.hoverColor = this.iconR.hoverColor = this.iconR2.hoverColor = Colors.WHITE;
 
-        third.relative(this).y(1F, -20).w(1F).h(20).row().height(20);
-        third.add(this.tz, this.sz, this.rz, this.r2z);
+        this.iconT.setEnabled(false);
+        this.iconS.setEnabled(false);
+        this.iconR.setEnabled(false);
+        this.iconR2.setEnabled(false);
 
-        this.add(first, second, third);
+        this.add(UI.row(this.iconT, this.tx, this.ty, this.tz));
+        this.add(UI.row(this.iconS, this.sx, this.sy, this.sz));
+        this.add(UI.row(this.iconR, this.rx, this.ry, this.rz));
+        this.add(UI.row(this.iconR2, this.r2x, this.r2y, this.r2z));
 
         this.context((menu) ->
         {
@@ -147,71 +149,6 @@ public abstract class UITransform extends UIElement
     protected boolean isUniformScale()
     {
         return this.uniformDrag || Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
-    }
-
-    public UITransform noLabels()
-    {
-        this.renderLabels = false;
-
-        return this;
-    }
-
-    public UITransform verticalCompact()
-    {
-        this.vertical = true;
-
-        for (UITrackpad trackpad : this.getChildren(UITrackpad.class))
-        {
-            trackpad.removeFromParent();
-        }
-
-        this.removeAll();
-        this.resetFlex().w(1F).column().stretch().vertical();
-
-        UIIcon translate = new UIIcon(Icons.ALL_DIRECTIONS, null);
-        UIIcon scale = new UIIcon(Icons.SCALE, null);
-        UIIcon rotate = new UIIcon(Icons.REFRESH, null);
-        UIIcon rotate2 = new UIIcon(Icons.REFRESH, null);
-
-        translate.disabledColor = scale.disabledColor = rotate.disabledColor = rotate2.disabledColor = Colors.WHITE;
-        translate.hoverColor = scale.hoverColor = rotate.hoverColor = rotate2.hoverColor = Colors.WHITE;
-
-        translate.setEnabled(false);
-        scale.setEnabled(false);
-        rotate.setEnabled(false);
-        rotate2.setEnabled(false);
-
-        this.add(UI.row(translate, this.tx, this.ty, this.tz));
-        this.add(UI.row(scale, this.sx, this.sy, this.sz));
-        this.add(UI.row(rotate, this.rx, this.ry, this.rz));
-        this.add(UI.row(rotate2, this.r2x, this.r2y, this.r2z));
-
-        this.iconT = translate;
-        this.iconS = scale;
-        this.iconR = rotate;
-        this.iconR2 = rotate2;
-
-        return this;
-    }
-
-    public UITransform verticalCompactNoIcons()
-    {
-        this.vertical = true;
-
-        for (UITrackpad trackpad : this.getChildren(UITrackpad.class))
-        {
-            trackpad.removeFromParent();
-        }
-
-        this.removeAll();
-        this.resetFlex().w(1F).column().stretch().vertical();
-
-        this.add(UI.row(this.tx, this.ty, this.tz));
-        this.add(UI.row(this.sx, this.sy, this.sz));
-        this.add(UI.row(this.rx, this.ry, this.rz));
-        this.add(UI.row(this.r2x, this.r2y, this.r2z));
-
-        return this;
     }
 
     private void syncScale(double value)
@@ -468,18 +405,5 @@ public abstract class UITransform extends UIElement
         }
 
         return super.subKeyPressed(context);
-    }
-
-    @Override
-    public void render(UIContext context)
-    {
-        if (!this.vertical && this.renderLabels)
-        {
-            context.batcher.textShadow(UIKeys.TRANSFORMS_TRANSLATE.get(), this.tx.area.x, this.tx.area.y - 12);
-            context.batcher.textShadow(UIKeys.TRANSFORMS_SCALE.get(), this.sx.area.x, this.sx.area.y - 12);
-            context.batcher.textShadow(UIKeys.TRANSFORMS_ROTATE.get(), this.rx.area.x, this.rx.area.y - 12);
-        }
-
-        super.render(context);
     }
 }

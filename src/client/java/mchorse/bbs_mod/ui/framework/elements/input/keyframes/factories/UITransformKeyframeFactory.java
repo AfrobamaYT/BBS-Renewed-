@@ -14,7 +14,7 @@ public class UITransformKeyframeFactory extends UIKeyframeFactory<Transform>
         super(keyframe, editor);
 
         this.transform = new UIPropTransform(keyframe::setValue);
-        this.transform.enableHotkeys().verticalCompactNoIcons();
+        this.transform.enableHotkeys();
         this.transform.setTransform(keyframe.getValue());
 
         this.scroll.add(this.transform);

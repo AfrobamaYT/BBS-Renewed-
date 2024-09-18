@@ -91,7 +91,6 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
         {
             value.set(t.copy());
         }));
-        this.transform.verticalCompact().noLabels();
 
         this.lineHeight = new UITrackpad((v) -> this.editor.editMultiple(this.clip.lineHeight, (value) ->
         {

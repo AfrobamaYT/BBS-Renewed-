@@ -148,7 +148,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
         this.bone.background().h(16 * 6);
 
         this.transform = new UIPropTransform();
-        this.transform.verticalCompactNoIcons();
 
         this.editArea = new UIElement();
         this.editArea.full(this);

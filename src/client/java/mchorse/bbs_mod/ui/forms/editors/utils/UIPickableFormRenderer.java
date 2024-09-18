@@ -131,7 +131,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
 
         /* Draw axes */
         RenderSystem.disableDepthTest();
-        Draw.coolerAxes(stack, 1F, 0.005F);
+        Draw.coolerAxes(stack, 0.25F, 0.01F, 0.26F, 0.02F);
         RenderSystem.enableDepthTest();
 
         stack.pop();

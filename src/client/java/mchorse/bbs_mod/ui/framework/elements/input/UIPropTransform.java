@@ -55,19 +55,11 @@ public class UIPropTransform extends UITransform
 
             menu.actions.add(0, menu.actions.remove(menu.actions.size() - 1));
         });
-    }
-
-    @Override
-    public UITransform verticalCompact()
-    {
-        UITransform transform = super.verticalCompact();
 
         this.iconT.callback = (b) -> this.toggleLocal();
         this.iconT.hoverColor = Colors.LIGHTEST_GRAY;
         this.iconT.setEnabled(true);
         this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
-
-        return transform;
     }
 
     private void toggleLocal()
@@ -318,7 +310,7 @@ public class UIPropTransform extends UITransform
 
                 float factor = this.mode == 0 ? 0.05F : (this.mode == 1 ? 0.01F : MathUtils.toRad(0.5F));
 
-                if (this.local)
+                if (this.local && this.mode == 0)
                 {
                     Vector3f vector3f = new Vector3f(
                         (float) (this.axis == Axis.X ? factor * dx : 0D),

@@ -116,7 +116,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         });
 
         this.transform = new UIPropTransform();
-        this.transform.enableHotkeys().verticalCompact();
+        this.transform.enableHotkeys();
 
         this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.global, this.transform);
         this.scrollView.scroll.opposite().cancelScrolling();
