@@ -17,10 +17,9 @@ public class BBSShaders
     private static ShaderProgram multiLink;
     private static ShaderProgram subtitles;
 
-    private static ShaderProgram extrudedProgram;
-
     private static ShaderProgram pickerPreview;
     private static ShaderProgram pickerBillboard;
+    private static ShaderProgram pickerBillboardNoShading;
     private static ShaderProgram pickerParticles;
     private static ShaderProgram pickerModels;
 
@@ -34,10 +33,9 @@ public class BBSShaders
         if (multiLink != null) multiLink.close();
         if (subtitles != null) subtitles.close();
 
-        if (extrudedProgram != null) extrudedProgram.close();
-
         if (pickerPreview != null) pickerPreview.close();
         if (pickerBillboard != null) pickerBillboard.close();
+        if (pickerBillboardNoShading != null) pickerBillboardNoShading.close();
         if (pickerParticles != null) pickerParticles.close();
         if (pickerModels != null) pickerModels.close();
 
@@ -48,10 +46,9 @@ public class BBSShaders
             multiLink = new ShaderProgram(factory, "multilink", VertexFormats.POSITION_TEXTURE_COLOR);
             subtitles = new ShaderProgram(factory, "subtitles", VertexFormats.POSITION_TEXTURE_COLOR);
 
-            extrudedProgram = new ShaderProgram(factory, "extruded", VertexFormats.POSITION_TEXTURE_COLOR_NORMAL);
-
             pickerPreview = new ShaderProgram(factory, "picker_preview", VertexFormats.POSITION_TEXTURE_COLOR);
             pickerBillboard = new ShaderProgram(factory, "picker_billboard", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            pickerBillboardNoShading = new ShaderProgram(factory, "picker_billboard_no_shading", VertexFormats.POSITION_TEXTURE_LIGHT_COLOR);
             pickerParticles = new ShaderProgram(factory, "picker_particles", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
             pickerModels = new ShaderProgram(factory, "picker_models", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
         }
@@ -71,11 +68,6 @@ public class BBSShaders
         return subtitles;
     }
 
-    public static ShaderProgram getExtrudedProgram()
-    {
-        return extrudedProgram;
-    }
-
     public static ShaderProgram getPickerPreviewProgram()
     {
         return pickerPreview;
@@ -84,6 +76,11 @@ public class BBSShaders
     public static ShaderProgram getPickerBillboardProgram()
     {
         return pickerBillboard;
+    }
+
+    public static ShaderProgram getPickerBillboardNoShadingProgram()
+    {
+        return pickerBillboardNoShading;
     }
 
     public static ShaderProgram getPickerParticlesProgram()

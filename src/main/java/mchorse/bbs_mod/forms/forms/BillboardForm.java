@@ -19,12 +19,14 @@ public class BillboardForm extends Form
     public final FloatProperty offsetX = new FloatProperty(this, "offsetX", 0F);
     public final FloatProperty offsetY = new FloatProperty(this, "offsetY", 0F);
     public final FloatProperty rotation = new FloatProperty(this, "rotation", 0F);
+    public final BooleanProperty shading = new BooleanProperty(this, "shading", true);
 
     public BillboardForm()
     {
         super();
 
         this.resizeCrop.cantAnimate();
+        this.shading.cantAnimate();
 
         this.register(this.texture);
         this.register(this.billboard);
@@ -34,6 +36,7 @@ public class BillboardForm extends Form
         this.register(this.offsetX);
         this.register(this.offsetY);
         this.register(this.rotation);
+        this.register(this.shading);
     }
 
     @Override

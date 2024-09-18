@@ -21,6 +21,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
@@ -58,7 +59,9 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         stack.scale(1.5F, 1.5F, 1.5F);
         stack.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
 
-        this.renderModel(GameRenderer::getRenderTypeEntityTranslucentProgram,
+        VertexFormat format = VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL;
+
+        this.renderModel(format, GameRenderer::getRenderTypeEntityTranslucentProgram,
             stack,
             OverlayTexture.DEFAULT_UV, LightmapTextureManager.MAX_LIGHT_COORDINATE, Colors.WHITE,
             context.getTransition()
@@ -70,15 +73,17 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     @Override
     public void render3D(FormRenderingContext context)
     {
+        boolean shading = this.form.shading.get();
+        VertexFormat format = shading ? VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL : VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
         Supplier<ShaderProgram> shader = this.getShader(context,
-            GameRenderer::getRenderTypeEntityTranslucentProgram,
-            BBSShaders::getPickerBillboardProgram
+            shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexLightmapColorProgram,
+            shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
 
-        this.renderModel(shader, context.stack, context.overlay, context.light, context.color, context.getTransition());
+        this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition());
     }
 
-    private void renderModel(Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
+    private void renderModel(VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
         Link t = this.form.texture.get(transition);
 
@@ -151,10 +156,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             uvQuad.transform(matrix);
         }
 
-        this.renderQuad(texture, shader, matrices, overlay, light, overlayColor, transition);
+        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition);
     }
 
-    private void renderQuad(Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Color color = this.form.color.get(transition).copy();
@@ -187,29 +192,39 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         BBSModClient.getTextures().bindTexture(texture);
         RenderSystem.setShader(shader);
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, format);
 
         /* Front */
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, normal, 1F).next();
+        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, normal, 1F).next();
+        this.fill(format, builder, matrix, quad.p1.x, quad.p1.y, color, uvQuad.p1.x, uvQuad.p1.y, overlay, light, normal, 1F).next();
 
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, 1F).next();
+        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, normal, 1F).next();
+        this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, normal, 1F).next();
+        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, normal, 1F).next();
 
         /* Back */
-        builder.vertex(matrix, quad.p1.x, quad.p1.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p1.x, uvQuad.p1.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        this.fill(format, builder, matrix, quad.p1.x, quad.p1.y, color, uvQuad.p1.x, uvQuad.p1.y, overlay, light, normal, -1F).next();
+        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, normal, -1F).next();
+        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, normal, -1F).next();
 
-        builder.vertex(matrix, quad.p2.x, quad.p2.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p2.x, uvQuad.p2.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p4.x, quad.p4.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p4.x, uvQuad.p4.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
-        builder.vertex(matrix, quad.p3.x, quad.p3.y, 0F).color(color.r, color.g, color.b, color.a).texture(uvQuad.p3.x, uvQuad.p3.y).overlay(overlay).light(light).normal(normal, 0F, 0F, -1F).next();
+        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, normal, -1F).next();
+        this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, normal, -1F).next();
+        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, normal, -1F).next();
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
 
         gameRenderer.getLightmapTextureManager().disable();
         gameRenderer.getOverlayTexture().teardownOverlayColor();
+    }
+
+    private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, Matrix3f normal, float nz)
+    {
+        if (format == VertexFormats.POSITION_TEXTURE_LIGHT_COLOR)
+        {
+            return consumer.vertex(matrix, x, y, 0F).texture(u, v).light(light).color(color.r, color.g, color.b, color.a);
+        }
+
+        return consumer.vertex(matrix, x, y, 0F).color(color.r, color.g, color.b, color.a).texture(u, v).overlay(overlay).light(light).normal(normal, 0F, 0F, nz);
     }
 }
