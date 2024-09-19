@@ -7,6 +7,7 @@ import org.joml.Vector4f;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class StringUtils
 {
@@ -199,6 +200,39 @@ public class StringUtils
 
             return builder.toString();
         }
+    }
+
+    public static String findCommonPrefix(List<String> strings)
+    {
+        if (strings == null || strings.isEmpty())
+        {
+            return "";
+        }
+
+        String shortest = strings.get(0);
+
+        for (String s : strings)
+        {
+            if (s.length() < shortest.length())
+            {
+                shortest = s;
+            }
+        }
+
+        for (int i = 0; i < shortest.length(); i++)
+        {
+            char currentChar = shortest.charAt(i);
+
+            for (String s : strings)
+            {
+                if (s.charAt(i) != currentChar)
+                {
+                    return shortest.substring(0, i);
+                }
+            }
+        }
+
+        return shortest;
     }
 
     /* Stringify vectors */

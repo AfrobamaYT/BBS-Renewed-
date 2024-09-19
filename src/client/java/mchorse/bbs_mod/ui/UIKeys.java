@@ -120,6 +120,7 @@ public class UIKeys
     public static final IKey CAMERA_PANELS_MATH = L10n.lang("bbs.ui.camera.panels.math");
     public static final IKey CAMERA_PANELS_METRICS = L10n.lang("bbs.ui.camera.panels.metrics");
     public static final IKey CAMERA_PANELS_OFFSET = L10n.lang("bbs.ui.camera.panels.offset");
+    public static final IKey CAMERA_PANELS_CURVES_SUN_ROTATION = L10n.lang("bbs.ui.camera.panels.curves.sun_rotation");
     public static final IKey CAMERA_PANELS_PATH_POINTS = L10n.lang("bbs.ui.camera.panels.path_points");
     public static final IKey CAMERA_PANELS_PITCH = L10n.lang("bbs.ui.camera.panels.pitch");
     public static final IKey CAMERA_PANELS_POINT = L10n.lang("bbs.ui.camera.panels.point");
@@ -258,6 +259,8 @@ public class UIKeys
     public static final IKey FILM_TELEPORT_TITLE = L10n.lang("bbs.ui.film.teleport-title");
     public static final IKey FILM_TELEPORT_CONTEXT_PLAYER = L10n.lang("bbs.ui.film.teleport.context.player");
     public static final IKey FILM_TITLE = L10n.lang("bbs.ui.film.title");
+    public static final IKey FILM_OPEN_HISTORY = L10n.lang("bbs.ui.film.open_history");
+    public static final IKey FILM_HISTORY_TITLE = L10n.lang("bbs.ui.film.history-title");
     public static final IKey FILM_TOGGLE_LAYOUT = L10n.lang("bbs.ui.film.toggle_layout");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");

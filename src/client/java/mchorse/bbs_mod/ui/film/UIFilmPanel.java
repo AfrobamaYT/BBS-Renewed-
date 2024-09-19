@@ -36,6 +36,7 @@ import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.screenplay.UIScreenplayEditor;
 import mchorse.bbs_mod.ui.film.utils.UIFilmUndoHandler;
+import mchorse.bbs_mod.ui.film.utils.undo.UIUndoHistoryOverlay;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -91,6 +92,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIScreenplayEditor screenplayEditor;
 
     /* Icon bar buttons */
+    public UIIcon openHistory;
     public UIIcon toggleHorizontal;
     public UIIcon openCameraEditor;
     public UIIcon openReplayEditor;
@@ -197,6 +199,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.screenplayEditor.full(this.main).setVisible(false);
 
         /* Icon bar buttons */
+        this.openHistory = new UIIcon(Icons.LIST, (b) ->
+        {
+            UIOverlay.addOverlay(this.getContext(), new UIUndoHistoryOverlay(this), 200, 0.6F);
+        });
+        this.openHistory.tooltip(UIKeys.FILM_OPEN_HISTORY, Direction.LEFT);
         this.toggleHorizontal = new UIIcon(() -> BBSSettings.editorLayoutSettings.isHorizontal() ? Icons.EXCHANGE : Icons.CONVERT, (b) ->
         {
             BBSSettings.editorLayoutSettings.setHorizontal(!BBSSettings.editorLayoutSettings.isHorizontal());
@@ -214,7 +221,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.openScreenplayEditor.tooltip(UIKeys.FILM_OPEN_VOICE_LINE_EDITOR, Direction.LEFT);
 
         /* Setup elements */
-        this.iconBar.add(this.toggleHorizontal.marginTop(9), this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openActionEditor, this.openScreenplayEditor);
+        this.iconBar.add(this.openHistory, this.toggleHorizontal.marginTop(9), this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openActionEditor, this.openScreenplayEditor);
 
         this.editor.add(this.main, new UIRenderable(this::renderIcons));
         this.main.add(this.cameraEditor, this.replayEditor, this.actionEditor, this.screenplayEditor, this.editArea, this.preview, this.draggableMain);
@@ -606,6 +613,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         this.preview.replays.setEnabled(data != null);
+        this.openHistory.setEnabled(data != null);
         this.toggleHorizontal.setEnabled(data != null);
         this.openCameraEditor.setEnabled(data != null);
         this.openReplayEditor.setEnabled(data != null);
@@ -823,7 +831,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void renderDividers(UIContext context)
     {
-        Area a1 = this.saveIcon.area;
+        Area a1 = this.openHistory.area;
         Area a2 = this.toggleHorizontal.area;
 
         context.batcher.box(a1.x + 3, a1.ey() + 4, a1.ex() - 3, a1.ey() + 5, 0x22ffffff);

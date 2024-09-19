@@ -56,6 +56,11 @@ public class UndoManager<T>
 
     /* Getters */
 
+    public List<IUndo<T>> getUndos()
+    {
+        return this.undos;
+    }
+
     public IUndo<T> getCurrentUndo()
     {
         if (this.position >= 0 && this.position < this.undos.size())
@@ -66,9 +71,9 @@ public class UndoManager<T>
         return null;
     }
 
-    public int getCurrentUndos()
+    public int getCurrentUndoIndex()
     {
-        return this.position + 1;
+        return this.position;
     }
 
     public int getTotalUndos()

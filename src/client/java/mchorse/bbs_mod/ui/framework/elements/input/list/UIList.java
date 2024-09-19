@@ -5,7 +5,6 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.utils.Scroll;
-import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 
@@ -62,7 +61,6 @@ public abstract class UIList <T> extends UIElement
     public boolean sorting;
 
     public int background;
-    protected boolean postDraw;
 
     private String filter = "";
     private List<Pair<T, Integer>> filtered = new ArrayList<>();
@@ -113,23 +111,11 @@ public abstract class UIList <T> extends UIElement
         return this;
     }
 
-    public UIList<T> horizontal()
-    {
-        this.scroll.direction = ScrollDirection.HORIZONTAL;
-
-        return this;
-    }
-
     public UIList<T> cancelScrollEdge()
     {
         this.scroll.cancelScrollEdge = true;
 
         return this;
-    }
-
-    public boolean isHorizontal()
-    {
-        return this.scroll.direction == ScrollDirection.HORIZONTAL;
     }
 
     /* Filtering elements */
@@ -245,9 +231,7 @@ public abstract class UIList <T> extends UIElement
             return -1;
         }
 
-        return this.isHorizontal()
-            ? (context.mouseX - this.area.x) / this.scroll.scrollItemSize
-            : (context.mouseY - this.area.y) / this.scroll.scrollItemSize;
+        return (context.mouseY - this.area.y + (int) this.scroll.getScroll()) / this.scroll.scrollItemSize;
     }
 
     public void deselect()
@@ -624,21 +608,6 @@ public abstract class UIList <T> extends UIElement
                     break;
                 }
             }
-
-            if (this.postDraw)
-            {
-                i = 0;
-
-                for (Pair<T, Integer> element : this.filtered)
-                {
-                    i = this.renderElement(context, element.a, i, element.b, true);
-
-                    if (i == -1)
-                    {
-                        break;
-                    }
-                }
-            }
         }
         else
         {
@@ -651,21 +620,6 @@ public abstract class UIList <T> extends UIElement
                     break;
                 }
             }
-
-            if (this.postDraw)
-            {
-                i = 0;
-
-                for (T element : this.list)
-                {
-                    i = this.renderElement(context, element, i, i, true);
-
-                    if (i == -1)
-                    {
-                        break;
-                    }
-                }
-            }
         }
     }
 
@@ -675,38 +629,27 @@ public abstract class UIList <T> extends UIElement
         int mouseY = context.mouseY;
         int s = this.scroll.scrollItemSize;
 
-        int xSide = this.isHorizontal() ? this.scroll.scrollItemSize : this.area.w;
-        int ySide = this.isHorizontal() ? this.area.h : this.scroll.scrollItemSize;
+        int xSide = this.area.w;
+        int ySide = this.scroll.scrollItemSize;
 
         int x = this.area.x;
         int y = this.area.y + i * s - (int) this.scroll.getScroll();
 
-        int axis = y;
         int low = this.area.y;
-        int high = this.area.ey();
+        int high =this.area.ey();
 
-        if (this.isHorizontal())
-        {
-            x = this.area.x + i * s - (int) this.scroll.getScroll();
-            y = this.area.y;
-
-            axis = x;
-            low = this.area.x;
-            high = this.area.ex();
-        }
-
-        if (axis + s < low || (!this.isFiltering() && this.isDragging() && this.dragging == i))
+        if (y + s < low || (!this.isFiltering() && this.isDragging() && this.dragging == i))
         {
             return i + 1;
         }
 
-        if (axis >= high)
+        if (y >= high)
         {
             return -1;
         }
 
         boolean hover = mouseX >= x && mouseY >= y && mouseX < x + xSide && mouseY < y + ySide;
-        boolean selected = this.current.indexOf(index) != -1;
+        boolean selected = this.current.contains(index);
 
         if (postDraw)
         {
@@ -733,14 +676,7 @@ public abstract class UIList <T> extends UIElement
     {
         if (selected)
         {
-            if (this.isHorizontal())
-            {
-                context.batcher.box(x, y, x + this.scroll.scrollItemSize, y + this.area.h, Colors.A50 | BBSSettings.primaryColor.get());
-            }
-            else
-            {
-                context.batcher.box(x, y, x + this.area.w, y + this.scroll.scrollItemSize, Colors.A50 | BBSSettings.primaryColor.get());
-            }
+            context.batcher.box(x, y, x + this.area.w, y + this.scroll.scrollItemSize, Colors.A50 | BBSSettings.primaryColor.get());
         }
 
         this.renderElementPart(context, element, i, x, y, hover, selected);

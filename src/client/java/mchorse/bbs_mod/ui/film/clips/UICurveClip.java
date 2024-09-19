@@ -42,7 +42,7 @@ public class UICurveClip extends UIClip<CurveClip>
         {
             this.getContext().replaceContextMenu((menu) ->
             {
-                this.addOption(menu, IKey.raw("Sun rotation"), "sun_rotation", Icons.SUN);
+                this.addOption(menu, UIKeys.CAMERA_PANELS_CURVES_SUN_ROTATION, "sun_rotation", Icons.SUN);
             });
         });
 
