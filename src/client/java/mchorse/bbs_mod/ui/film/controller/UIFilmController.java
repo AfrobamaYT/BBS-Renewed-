@@ -1124,13 +1124,13 @@ public class UIFilmController extends UIElement
                 value = replay.properties.get("pose");
             }
 
-            String bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
+            Pair<String, Boolean> bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
 
             FilmControllerContext filmContext = FilmControllerContext.instance
                 .setup(this.entities, entity, context)
                 .transition(isPlaying ? context.tickDelta() : 0F)
                 .shadow(replay.shadow.get(), replay.shadowSize.get())
-                .bone(bone);
+                .bone(bone == null ? null : bone.a, bone != null && bone.b);
 
             FilmController.renderEntity(filmContext);
 
@@ -1204,7 +1204,7 @@ public class UIFilmController extends UIElement
         RenderSystem.disableDepthTest();
     }
 
-    private String getBone()
+    private Pair<String, Boolean> getBone()
     {
         UIKeyframeEditor keyframeEditor = this.panel.replayEditor.keyframeEditor;
 
@@ -1212,6 +1212,7 @@ public class UIFilmController extends UIElement
         {
             UIKeyframeFactory editor = keyframeEditor.editor;
             String bone = null;
+            boolean local = false;
 
             if (editor instanceof UIPoseKeyframeFactory pose)
             {
@@ -1221,6 +1222,7 @@ public class UIFilmController extends UIElement
                 if (sheet != null && sheet.id.endsWith("pose"))
                 {
                     bone = sheet.id.endsWith("/pose") ? sheet.id.substring(0, sheet.id.lastIndexOf('/') + 1) + currentFirst : currentFirst;
+                    local = pose.poseEditor.transform.isLocal();
                 }
             }
             else if (editor instanceof UITransformKeyframeFactory)
@@ -1235,7 +1237,7 @@ public class UIFilmController extends UIElement
 
             if (bone != null)
             {
-                return bone;
+                return new Pair<>(bone, local);
             }
         }
 

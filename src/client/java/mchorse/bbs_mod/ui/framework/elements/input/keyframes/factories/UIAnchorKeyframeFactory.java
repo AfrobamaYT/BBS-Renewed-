@@ -87,7 +87,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
         Map<String, Matrix4f> map = new HashMap<>();
         MatrixStack stack = new MatrixStack();
 
-        FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, map, "", 0);
+        FormUtilsClient.getRenderer(form).collectMatrices(entity, null, stack, map, "", 0);
 
         List<String> attachments = new ArrayList<>(map.keySet());
 

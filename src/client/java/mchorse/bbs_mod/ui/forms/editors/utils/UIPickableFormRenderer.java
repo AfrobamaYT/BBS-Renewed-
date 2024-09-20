@@ -54,6 +54,11 @@ public class UIPickableFormRenderer extends UIFormRenderer
         this.renderForm = renderForm;
     }
 
+    public IEntity getTargetEntity()
+    {
+        return this.target == null ? this.entity : this.target;
+    }
+
     public void setTarget(IEntity target)
     {
         this.target = target;

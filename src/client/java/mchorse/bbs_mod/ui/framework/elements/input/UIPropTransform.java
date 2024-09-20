@@ -37,6 +37,7 @@ public class UIPropTransform extends UITransform
     private Vector3f cache = new Vector3f();
     private Timer checker = new Timer(30);
 
+    private boolean model;
     private boolean local;
 
     private UITransformHandler handler;
@@ -62,6 +63,23 @@ public class UIPropTransform extends UITransform
         this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
     }
 
+    public UIPropTransform(Consumer<Transform> callback)
+    {
+        this();
+
+        this.callback = callback;
+    }
+
+    public void setModel()
+    {
+        this.model = true;
+    }
+
+    public boolean isLocal()
+    {
+        return this.local;
+    }
+
     private void toggleLocal()
     {
         this.local = !this.local;
@@ -80,11 +98,19 @@ public class UIPropTransform extends UITransform
         this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
     }
 
-    public UIPropTransform(Consumer<Transform> callback)
+    private Vector3f calculateLocalVector(double factor, Axis axis)
     {
-        this();
+        Vector3f vector3f = new Vector3f(
+            (float) (axis == Axis.X ? factor : 0D),
+            (float) (axis == Axis.Y ? factor : 0D),
+            (float) (axis == Axis.Z ? factor : 0D)
+        );
+        /* I have no fucking idea why I have to rotate it 180 degrees by X axis... but it works! */
+        Matrix3f matrix = new Matrix3f().rotateX(this.model ? MathUtils.PI : 0F).mul(this.transform.createRotationMatrix());
 
-        this.callback = callback;
+        matrix.transform(vector3f);
+
+        return vector3f;
     }
 
     public UIPropTransform enableHotkeys()
@@ -178,14 +204,7 @@ public class UIPropTransform extends UITransform
         {
             try
             {
-                Vector3f vector3f = new Vector3f(
-                    (float) (axis == Axis.X ? x : 0D),
-                    (float) (axis == Axis.Y ? x : 0D),
-                    (float) (axis == Axis.Z ? x : 0D)
-                );
-                Matrix3f matrix = this.transform.createRotationMatrix();
-
-                matrix.transform(vector3f);
+                Vector3f vector3f = this.calculateLocalVector(x, axis);
 
                 this.setT(
                     this.transform.translate.x + vector3f.x,
@@ -312,14 +331,7 @@ public class UIPropTransform extends UITransform
 
                 if (this.local && this.mode == 0)
                 {
-                    Vector3f vector3f = new Vector3f(
-                        (float) (this.axis == Axis.X ? factor * dx : 0D),
-                        (float) (this.axis == Axis.Y ? factor * dx : 0D),
-                        (float) (this.axis == Axis.Z ? factor * dx : 0D)
-                    );
-                    Matrix3f matrix = this.transform.createRotationMatrix();
-
-                    matrix.transform(vector3f);
+                    Vector3f vector3f = this.calculateLocalVector(factor * dx, this.axis);
 
                     vector.x += vector3f.x;
                     vector.y += vector3f.y;

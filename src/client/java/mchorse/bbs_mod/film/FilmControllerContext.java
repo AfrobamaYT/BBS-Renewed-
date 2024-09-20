@@ -26,6 +26,7 @@ public class FilmControllerContext
     public float shadowRadius;
 
     public String bone;
+    public boolean local;
 
     private FilmControllerContext()
     {}
@@ -36,6 +37,7 @@ public class FilmControllerContext
         this.shadowRadius = 0F;
         this.color = Colors.WHITE;
         this.bone = null;
+        this.local = false;
     }
 
     public FilmControllerContext setup(List<IEntity> entities, IEntity entity, WorldRenderContext context)
@@ -101,9 +103,10 @@ public class FilmControllerContext
         return this;
     }
 
-    public FilmControllerContext bone(String bone)
+    public FilmControllerContext bone(String bone, boolean local)
     {
         this.bone = bone;
+        this.local = local;
 
         return this;
     }

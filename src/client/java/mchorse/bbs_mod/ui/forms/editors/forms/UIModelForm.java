@@ -7,6 +7,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIActionsFormPanel;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIModelFormPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.utils.StringUtils;
 import org.joml.Matrix4f;
 
@@ -38,7 +39,8 @@ public class UIModelForm extends UIForm<ModelForm>
     public Matrix4f getOrigin(float transition)
     {
         String path = FormUtils.getPath(this.form);
+        UIPoseEditor poseEditor = this.modelPanel.poseEditor;
 
-        return this.getOrigin(transition, StringUtils.combinePaths(path, this.modelPanel.poseEditor.groups.getCurrentFirst()));
+        return this.getOrigin(transition, StringUtils.combinePaths(path, poseEditor.groups.getCurrentFirst()), poseEditor.transform.isLocal());
     }
 }

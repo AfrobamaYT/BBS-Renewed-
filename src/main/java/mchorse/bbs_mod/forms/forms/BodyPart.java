@@ -75,6 +75,8 @@ public class BodyPart implements IMapSerializable
         {
             this.form.update(this.useTarget ? target : this.entity);
         }
+
+        this.entity.update();
     }
 
     public BodyPart copy()

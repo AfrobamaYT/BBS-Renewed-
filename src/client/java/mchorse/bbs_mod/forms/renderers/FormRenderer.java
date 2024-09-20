@@ -184,7 +184,7 @@ public abstract class FormRenderer <T extends Form>
         context.entity = oldEntity;
     }
 
-    public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
+    public void collectMatrices(IEntity entity, String target, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
         stack.push();
         this.applyTransforms(stack, transition);
@@ -202,7 +202,7 @@ public abstract class FormRenderer <T extends Form>
                 stack.push();
                 MatrixStackUtils.applyTransform(stack, part.getTransform());
 
-                FormUtilsClient.getRenderer(form).collectMatrices(entity, stack, matrices, StringUtils.combinePaths(prefix, String.valueOf(i)), transition);
+                FormUtilsClient.getRenderer(form).collectMatrices(entity, target, stack, matrices, StringUtils.combinePaths(prefix, String.valueOf(i)), transition);
 
                 stack.pop();
             }

@@ -277,7 +277,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         /* Render items */
-        this.captureMatrices(model);
+        this.captureMatrices(model, null);
 
         this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, overlay, light);
         this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, overlay, light);
@@ -364,10 +364,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void captureMatrices(CubicModel model)
+    private void captureMatrices(CubicModel model, String target)
     {
         MatrixStack stack = new MatrixStack();
-        CubicMatrixRenderer renderer = new CubicMatrixRenderer(model.model);
+        CubicMatrixRenderer renderer = new CubicMatrixRenderer(model.model, target);
 
         CubicRenderer.processRenderModel(renderer, null, stack, model.model);
 
@@ -390,8 +390,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public void renderBodyParts(FormRenderingContext context)
     {
-        CubicModel model = this.getModel();
-
         context.stack.push();
 
         for (BodyPart part : this.form.parts.getAll())
@@ -419,7 +417,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     }
 
     @Override
-    public void collectMatrices(IEntity entity, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
+    public void collectMatrices(IEntity entity, String target, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
         CubicModel model = this.getModel();
 
@@ -432,12 +430,23 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         if (this.animator != null && model != null)
         {
             CubicModelAnimator.resetPose(model.model);
+            String localTarget = target;
+
+            if (target != null && !prefix.isEmpty())
+            {
+                String fullPrefix = prefix + "/";
+
+                if (localTarget.startsWith(fullPrefix) && localTarget.indexOf('/', localTarget.length()) == -1)
+                {
+                    localTarget = localTarget.substring(fullPrefix.length());
+                }
+            }
 
             this.animator.applyActions(entity, model, transition);
             model.model.apply(this.getPose(transition));
 
             stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
-            this.captureMatrices(model);
+            this.captureMatrices(model, localTarget);
         }
 
         for (Map.Entry<String, Matrix4f> entry : this.bones.entrySet())
@@ -476,7 +485,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
                 if (formRenderer != null)
                 {
-                    formRenderer.collectMatrices(entity, stack, matrices, StringUtils.combinePaths(prefix, String.valueOf(i)), transition);
+                    formRenderer.collectMatrices(part.useTarget ? entity : part.getEntity(), target, stack, matrices, StringUtils.combinePaths(prefix, String.valueOf(i)), transition);
                 }
 
                 stack.pop();

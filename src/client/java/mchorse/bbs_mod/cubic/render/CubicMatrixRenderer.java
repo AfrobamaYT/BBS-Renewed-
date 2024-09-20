@@ -8,19 +8,37 @@ import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CubicMatrixRenderer implements ICubicRenderer
 {
     public List<Matrix4f> matrices;
+    public String target;
 
-    public CubicMatrixRenderer(Model model)
+    public CubicMatrixRenderer(Model model, String target)
     {
         this.matrices = new ArrayList<>();
+        this.target = target;
 
         for (int i = 0; i < model.getAllGroupKeys().size(); i++)
         {
             this.matrices.add(new Matrix4f());
         }
+    }
+
+    @Override
+    public void applyGroupTransformations(MatrixStack stack, ModelGroup group)
+    {
+        ICubicRenderer.translateGroup(stack, group);
+        ICubicRenderer.moveToGroupPivot(stack, group);
+
+        if (!Objects.equals(group.id, this.target))
+        {
+            ICubicRenderer.rotateGroup(stack, group);
+        }
+
+        ICubicRenderer.scaleGroup(stack, group);
+        ICubicRenderer.moveBackFromGroupPivot(stack, group);
     }
 
     @Override

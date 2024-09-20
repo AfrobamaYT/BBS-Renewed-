@@ -33,16 +33,16 @@ public abstract class UIForm <T extends Form> extends UIPanelBase<UIFormPanel<T>
 
     public Matrix4f getOrigin(float transition)
     {
-        return this.getOrigin(transition, FormUtils.getPath(this.form));
+        return this.getOrigin(transition, FormUtils.getPath(this.form), false);
     }
 
-    protected Matrix4f getOrigin(float transition, String path)
+    protected Matrix4f getOrigin(float transition, String path, boolean local)
     {
         Form root = FormUtils.getRoot(this.form);
         MatrixStack stack = new MatrixStack();
         Map<String, Matrix4f> map = new HashMap<>();
 
-        FormUtilsClient.getRenderer(root).collectMatrices(this.editor.renderer.getEntity(), stack, map, "", transition);
+        FormUtilsClient.getRenderer(root).collectMatrices(this.editor.renderer.getTargetEntity(), local ? null : path, stack, map, "", transition);
 
         Matrix4f matrix = map.get(path);
 
