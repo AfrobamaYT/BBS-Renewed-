@@ -38,7 +38,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
                 link = model.texture;
             }
 
-            UITexturePicker.open(this.editor.editor, link, (l) -> this.form.texture.set(l));
+            UITexturePicker.open(this.getContext(), link, (l) -> this.form.texture.set(l));
         });
 
         this.options.add(this.pick, this.color, this.poseEditor);

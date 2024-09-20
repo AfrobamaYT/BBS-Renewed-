@@ -35,7 +35,7 @@ public class UIBillboardFormPanel extends UIFormPanel<BillboardForm>
 
         this.pick = new UIButton(UIKeys.FORMS_EDITORS_BILLBOARD_PICK_TEXTURE, (b) ->
         {
-            UITexturePicker.open(this.editor.editor, this.form.texture.get(), (l) -> this.form.texture.set(l));
+            UITexturePicker.open(this.getContext(), this.form.texture.get(), (l) -> this.form.texture.set(l));
         });
         this.billboard = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_TITLE, false, (b) -> this.form.billboard.set(b.getValue()));
         this.openCrop = new UIButton(UIKeys.FORMS_EDITORS_BILLBOARD_EDIT_CROP, (b) ->

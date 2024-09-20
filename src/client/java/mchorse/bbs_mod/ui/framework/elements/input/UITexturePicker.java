@@ -8,7 +8,6 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.importers.IImportPathProvider;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -76,6 +75,11 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
     private Timer lastTyped = new Timer(1000);
     private Timer lastChecked = new Timer(1000);
     private String typed = "";
+
+    public static UITexturePicker open(UIContext context, Link current, Consumer<Link> callback)
+    {
+        return open(context.menu.main, current, callback);
+    }
 
     public static UITexturePicker open(UIElement parent, Link current, Consumer<Link> callback)
     {

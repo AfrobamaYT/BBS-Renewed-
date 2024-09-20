@@ -8,7 +8,6 @@ import mchorse.bbs_mod.particles.ParticleScheme;
 import mchorse.bbs_mod.particles.components.appearance.ParticleComponentAppearanceBillboard;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UICirculate;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
@@ -35,8 +34,7 @@ public class UIParticleSchemeGeneralSection extends UIParticleSchemeSection
 
         this.pick = new UIButton(UIKeys.SNOWSTORM_GENERAL_PICK, (b) ->
         {
-            UIElement container = this.getParentContainer();
-            UITexturePicker.open(container, this.scheme.texture, (link) ->
+            UITexturePicker.open(this.getContext(), this.scheme.texture, (link) ->
             {
                 if (link == null)
                 {

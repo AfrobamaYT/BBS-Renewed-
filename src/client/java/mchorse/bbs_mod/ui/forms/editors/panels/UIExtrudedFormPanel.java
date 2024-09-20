@@ -19,7 +19,7 @@ public class UIExtrudedFormPanel extends UIFormPanel<ExtrudedForm>
 
         this.pick = new UIButton(UIKeys.FORMS_EDITORS_BILLBOARD_PICK_TEXTURE, (b) ->
         {
-            UITexturePicker.open(this.editor.editor, this.form.texture.get(), (l) -> this.form.texture.set(l));
+            UITexturePicker.open(this.getContext(), this.form.texture.get(), (l) -> this.form.texture.set(l));
         });
         this.color = new UIColor((c) -> this.form.color.set(Color.rgba(c)));
         this.color.withAlpha();

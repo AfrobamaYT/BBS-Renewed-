@@ -27,7 +27,7 @@ public class UIParticleForm extends UIForm<ParticleForm>
                 texture = emitter.scheme.texture;
             }
 
-            UITexturePicker.open(this.editor, texture, (l) -> this.form.texture.set(l));
+            UITexturePicker.open(this.getContext(), texture, (l) -> this.form.texture.set(l));
         }).marginBottom(6);
 
         this.registerDefaultPanels();

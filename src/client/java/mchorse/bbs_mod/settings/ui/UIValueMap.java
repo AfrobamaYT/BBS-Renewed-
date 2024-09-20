@@ -128,7 +128,7 @@ public class UIValueMap
         {
             UIButton pick = new UIButton(UIKeys.TEXTURE_PICK_TEXTURE, (button) ->
             {
-                UITexturePicker.open(ui, value.get(), value::set);
+                UITexturePicker.open(ui.getContext(), value.get(), value::set);
             });
 
             pick.w(90);
