@@ -16,6 +16,9 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -32,26 +35,9 @@ public class BBSCommands
         registerMorphEntityCommand(bbs, environment);
         registerFilmsCommand(bbs, environment);
         registerDCCommand(bbs, environment);
+        registerOnHead(bbs, environment);
 
         dispatcher.register(bbs);
-    }
-
-    private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
-    {
-        LiteralArgumentBuilder<ServerCommandSource> dc = CommandManager.literal("dc");
-        LiteralArgumentBuilder<ServerCommandSource> shutdown = CommandManager.literal("shutdown");
-        LiteralArgumentBuilder<ServerCommandSource> start = CommandManager.literal("start");
-        LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
-
-        bbs.then(
-            dc.then(
-                start.executes(BBSCommands::DCCommandStart)
-            ).then(
-                stop.executes(BBSCommands::DCCommandStop)
-            ).then(
-                shutdown.executes(BBSCommands::DCCommandShutdown)
-            )
-        );
     }
 
     private static void registerMorphCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
@@ -139,6 +125,27 @@ public class BBSCommands
         );
 
         bbs.then(scene);
+    }
+
+    private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> dc = CommandManager.literal("dc");
+        LiteralArgumentBuilder<ServerCommandSource> shutdown = CommandManager.literal("shutdown");
+        LiteralArgumentBuilder<ServerCommandSource> start = CommandManager.literal("start");
+        LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
+
+        bbs.then(
+            dc.then(start.executes(BBSCommands::DCCommandStart))
+                .then(stop.executes(BBSCommands::DCCommandStop))
+                .then(shutdown.executes(BBSCommands::DCCommandShutdown))
+        );
+    }
+
+    private static void registerOnHead(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> onHead = CommandManager.literal("on_head");
+
+        bbs.then(onHead.executes(BBSCommands::onHead));
     }
 
     /**
@@ -231,6 +238,21 @@ public class BBSCommands
     private static int DCCommandStop(CommandContext<ServerCommandSource> source)
     {
         BBSMod.getActions().stopDamage(source.getSource().getWorld());
+
+        return 1;
+    }
+
+    private static int onHead(CommandContext<ServerCommandSource> source)
+    {
+        if (source.getSource().getEntity() instanceof LivingEntity livingEntity)
+        {
+            ItemStack stack = livingEntity.getEquippedStack(EquipmentSlot.MAINHAND);
+
+            if (!stack.isEmpty())
+            {
+                livingEntity.equipStack(EquipmentSlot.HEAD, stack.copy());
+            }
+        }
 
         return 1;
     }
