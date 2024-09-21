@@ -434,6 +434,8 @@
     "bbs.ui.forms.editor.context.copy": "Copy this body part",
     "bbs.ui.forms.editor.context.paste": "Paste this body part",
     "bbs.ui.forms.editor.context.remove": "Remove this body part",
+    "bbs.ui.forms.editor.context.move_up": "Move body part up",
+    "bbs.ui.forms.editor.context.move_down": "Move body part down",
     "bbs.ui.forms.editor.finish": "Finish editing",
     "bbs.ui.forms.editor.model.pick_texture": "Pick a texture...",
     "bbs.ui.forms.editor.pick_form": "Pick form...",

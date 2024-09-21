@@ -341,6 +341,8 @@ public class UIKeys
     public static final IKey FORMS_EDITOR_CONTEXT_COPY = L10n.lang("bbs.ui.forms.editor.context.copy");
     public static final IKey FORMS_EDITOR_CONTEXT_PASTE = L10n.lang("bbs.ui.forms.editor.context.paste");
     public static final IKey FORMS_EDITOR_CONTEXT_REMOVE = L10n.lang("bbs.ui.forms.editor.context.remove");
+    public static final IKey FORMS_EDITOR_CONTEXT_MOVE_UP = L10n.lang("bbs.ui.forms.editor.context.move_up");
+    public static final IKey FORMS_EDITOR_CONTEXT_MOVE_DOWN = L10n.lang("bbs.ui.forms.editor.context.move_down");
     public static final IKey FORMS_EDITOR_FINISH = L10n.lang("bbs.ui.forms.editor.finish");
     public static final IKey FORMS_EDITOR_MODEL_PICK_TEXTURE = L10n.lang("bbs.ui.forms.editor.model.pick_texture");
     public static final IKey FORMS_EDITOR_PICK_FORM = L10n.lang("bbs.ui.forms.editor.pick_form");

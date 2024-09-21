@@ -433,6 +433,8 @@
     "bbs.ui.forms.editor.context.copy": "Скопировать эту часть тела",
     "bbs.ui.forms.editor.context.paste": "Вставить эту часть тела",
     "bbs.ui.forms.editor.context.remove": "Удалить эту часть тела",
+    "bbs.ui.forms.editor.context.move_up": "Передвниуть часть тела вверх",
+    "bbs.ui.forms.editor.context.move_down": "Передвниуть часть тела вниз",
     "bbs.ui.forms.editor.finish": "Закончить редактирование",
     "bbs.ui.forms.editor.model.pick_texture": "Выбрать текстуру...",
     "bbs.ui.forms.editor.pick_form": "Выбрать форму...",

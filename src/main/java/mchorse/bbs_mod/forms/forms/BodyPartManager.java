@@ -49,6 +49,14 @@ public class BodyPartManager implements IMapSerializable
             part.setManager(null);
         }
     }
+    
+    public void moveBodyPart(BodyPart part, int index)
+    {
+        if (this.parts.remove(part))
+        {
+            this.parts.add(index, part);
+        }
+    }
 
     public void update(IEntity target)
     {
