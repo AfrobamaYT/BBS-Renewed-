@@ -729,7 +729,7 @@ public class UIKeyframes extends UIElement
     @Override
     protected boolean subMouseScrolled(UIContext context)
     {
-        if (this.area.isInside(context) && !this.navigating)
+        if (this.area.isInside(context) && !this.navigating && !this.scaling)
         {
             this.currentGraph.mouseScrolled(context);
 
