@@ -78,7 +78,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
 
     public static UITexturePicker open(UIContext context, Link current, Consumer<Link> callback)
     {
-        return open(context.menu.main, current, callback);
+        return open(context.menu.overlay, current, callback);
     }
 
     public static UITexturePicker open(UIElement parent, Link current, Consumer<Link> callback)
