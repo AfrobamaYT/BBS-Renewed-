@@ -82,15 +82,6 @@ public class Interpolations
     public static final IInterp BOUNCE_OUT = new EasingInterp("bounce_out", GLFW.GLFW_KEY_O, Easings.out(Easings.BOUNCE));
     public static final IInterp BOUNCE_INOUT = new EasingInterp("bounce_inout", GLFW.GLFW_KEY_O, Easings.inOut(Easings.BOUNCE));
 
-    public static final IInterp CIRCULAR = new BaseInterp("circle", GLFW.GLFW_KEY_P)
-    {
-        @Override
-        public double interpolate(InterpContext context)
-        {
-            return Lerps.cubicHermite(context.a, context.a, context.b, context.b, context.x);
-        }
-    };
-
     public static final IInterp CUBIC = new BaseInterp("cubic", GLFW.GLFW_KEY_K)
     {
         @Override
@@ -153,7 +144,6 @@ public class Interpolations
         MAP.put(BOUNCE_IN.getKey(), BOUNCE_IN);
         MAP.put(BOUNCE_OUT.getKey(), BOUNCE_OUT);
         MAP.put(BOUNCE_INOUT.getKey(), BOUNCE_INOUT);
-        MAP.put(CIRCULAR.getKey(), CIRCULAR);
         MAP.put(CUBIC.getKey(), CUBIC);
         MAP.put(HERMITE.getKey(), HERMITE);
         MAP.put(BEZIER.getKey(), BEZIER);

@@ -12,13 +12,10 @@ import mchorse.bbs_mod.ui.film.clips.modules.UIPointModule;
 import mchorse.bbs_mod.ui.film.clips.modules.UIPointsModule;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
-import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.tooltips.InterpolationTooltip;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.MathUtils;
-import org.joml.Vector2d;
 
 public class UIPathClip extends UIClip<PathClip>
 {
@@ -26,10 +23,6 @@ public class UIPathClip extends UIClip<PathClip>
     public UIAngleModule angle;
     public UIButton interpPoint;
     public UIButton interpAngle;
-
-    public UIToggle autoCenter;
-    public UITrackpad circularX;
-    public UITrackpad circularZ;
 
     public UIPointsModule points;
 
@@ -58,26 +51,6 @@ public class UIPathClip extends UIClip<PathClip>
         });
         this.interpAngle.tooltip(new InterpolationTooltip(1F, 0.5F, () -> this.clip.interpolationAngle.wrap()));
 
-        this.autoCenter = new UIToggle(UIKeys.CAMERA_PANELS_AUTO_CENTER, (b) ->
-        {
-            this.clip.circularAutoCenter.set(b.getValue());
-
-            if (!b.getValue())
-            {
-                Vector2d center = this.clip.calculateCenter(new Vector2d());
-
-                this.circularX.setValue(center.x);
-                this.circularZ.setValue(center.y);
-                this.clip.circularX.set(center.x);
-                this.clip.circularZ.set(center.y);
-            }
-        });
-
-        this.circularX = new UITrackpad((value) -> this.clip.circularX.set(value));
-        this.circularX.tooltip(UIKeys.CAMERA_PANELS_CIRCULAR_X);
-        this.circularZ = new UITrackpad((value) -> this.clip.circularZ.set(value));
-        this.circularZ.tooltip(UIKeys.CAMERA_PANELS_CIRCULAR_Z);
-
         this.points = new UIPointsModule(this.editor, this::pickPoint);
         this.points.h(20);
     }
@@ -90,13 +63,7 @@ public class UIPathClip extends UIClip<PathClip>
         this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_PATH_POINTS).marginTop(12));
         this.panels.add(this.points, UI.row(this.interpPoint, this.interpAngle).marginBottom(6));
         this.panels.add(this.point.marginTop(12), this.angle.marginTop(6));
-        this.panels.add(UIClip.label(UIKeys.CAMERA_PANELS_CIRCULAR).marginTop(6), this.autoCenter, UI.row(this.circularX, this.circularZ));
         this.panels.context((menu) -> UICameraUtils.positionContextMenu(menu, editor, this.position));
-    }
-
-    private void updateSpeedPanel()
-    {
-        this.resize();
     }
 
     private ValuePosition getPosition(int index)
@@ -156,11 +123,6 @@ public class UIPathClip extends UIClip<PathClip>
 
         this.point.fill(this.position.getPoint());
         this.angle.fill(this.position.getAngle());
-        this.updateSpeedPanel();
-
-        this.autoCenter.setValue(this.clip.circularAutoCenter.get());
-        this.circularX.setValue(this.clip.circularX.get());
-        this.circularZ.setValue(this.clip.circularZ.get());
 
         this.points.index = index;
     }

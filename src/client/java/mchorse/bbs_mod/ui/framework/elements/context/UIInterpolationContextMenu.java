@@ -84,7 +84,6 @@ public class UIInterpolationContextMenu extends UIContextMenu
         INTERP_ICON_MAP.put(Interpolations.CIRCLE_IN, Icons.INTERP_CIRCLE_IN);
         INTERP_ICON_MAP.put(Interpolations.CIRCLE_OUT, Icons.INTERP_CIRCLE_OUT);
         INTERP_ICON_MAP.put(Interpolations.CIRCLE_INOUT, Icons.INTERP_CIRCLE_INOUT);
-        INTERP_ICON_MAP.put(Interpolations.CIRCULAR, Icons.INTERP_CIRCLE_INOUT);
         INTERP_ICON_MAP.put(Interpolations.CUBIC, Icons.INTERP_CUBIC_INOUT);
         INTERP_ICON_MAP.put(Interpolations.HERMITE, Icons.INTERP_CUBIC_INOUT);
         INTERP_ICON_MAP.put(Interpolations.BEZIER, Icons.INTERP_BEZIER);

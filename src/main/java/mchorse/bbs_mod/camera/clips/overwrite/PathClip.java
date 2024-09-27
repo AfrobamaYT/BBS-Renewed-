@@ -7,16 +7,12 @@ import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.values.ValuePositions;
-import mchorse.bbs_mod.settings.values.ValueBoolean;
-import mchorse.bbs_mod.settings.values.ValueDouble;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.interps.Interpolations;
-import mchorse.bbs_mod.utils.interps.Lerps;
-import org.joml.Vector2d;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,8 +25,6 @@ import java.util.List;
  */
 public class PathClip extends CameraClip
 {
-    public static final Vector2d VECTOR = new Vector2d();
-
     /**
      * List of points in this fixture
      */
@@ -39,15 +33,6 @@ public class PathClip extends CameraClip
     public final Interpolation interpolationPoint = new Interpolation("interpPoint", Interpolations.MAP, Interpolations.HERMITE);
     public final Interpolation interpolationAngle = new Interpolation("interpAngle", Interpolations.MAP, Interpolations.HERMITE);
 
-    public final ValueBoolean circularAutoCenter = new ValueBoolean("circularAutoCenter", true);
-    public final ValueDouble circularX = new ValueDouble("circularX", 0D);
-    public final ValueDouble circularZ = new ValueDouble("circularZ",0D);
-
-    /* Speed related cache data */
-    private float lastTick;
-    private Point lastPoint = new Point(0, 0, 0);
-    private Point tmpPoint = new Point(0, 0, 0);
-
     public PathClip()
     {
         super();
@@ -55,10 +40,6 @@ public class PathClip extends CameraClip
         this.add(this.points);
         this.add(this.interpolationPoint);
         this.add(this.interpolationAngle);
-
-        this.add(this.circularAutoCenter);
-        this.add(this.circularX);
-        this.add(this.circularZ);
     }
 
     public Position getPoint(int index)
@@ -130,141 +111,16 @@ public class PathClip extends CameraClip
      */
     private void applyPoint(Point point, int index, float progress)
     {
-        double x = 0, y = 0, z = 0;
-
         Position p0 = this.getPoint(index - 1);
         Position p1 = this.getPoint(index);
         Position p2 = this.getPoint(index + 1);
         Position p3 = this.getPoint(index + 2);
 
-        if (this.interpolationPoint.getInterp() == Interpolations.CIRCULAR)
-        {
-            int size = this.size();
-
-            if (index >= size)
-            {
-                x = p2.point.x;
-                y = p2.point.y;
-                z = p2.point.z;
-            }
-            else if (index < 0)
-            {
-                x = p1.point.x;
-                y = p1.point.y;
-                z = p1.point.z;
-            }
-            else
-            {
-                Vector2d center = this.getCenter();
-
-                double mx = center.x;
-                double mz = center.y;
-
-                Vector2d a0 = this.calculateCircular(mx, mz, index - 1);
-                Vector2d a1 = this.calculateCircular(mx, mz, index);
-                Vector2d a2 = this.calculateCircular(mx, mz, index + 1);
-                Vector2d a3 = this.calculateCircular(mx, mz, index + 2);
-
-                double a = Lerps.cubicHermite(a0.x, a1.x, a2.x, a3.x, progress);
-                double d = Lerps.cubicHermite(a0.y, a1.y, a2.y, a3.y, progress);
-
-                a = a / 180 * Math.PI;
-
-                x = mx + Math.cos(a) * d;
-                y = Lerps.cubicHermite(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress);
-                z = mz + Math.sin(a) * d;
-            }
-        }
-        else
-        {
-            x = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress));
-            y = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress));
-            z = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress));
-        }
+        double x = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.x, p1.point.x, p2.point.x, p3.point.x, progress));
+        double y = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.y, p1.point.y, p2.point.y, p3.point.y, progress));
+        double z = this.interpolationPoint.interpolate(IInterp.context.set(p0.point.z, p1.point.z, p2.point.z, p3.point.z, progress));
 
         point.set(x, y, z);
-    }
-
-    private Vector2d calculateCircular(double mx, double mz, int index)
-    {
-        int size = this.size();
-
-        double a = 0;
-        double d = 0;
-        double lastA = 0;
-
-        if (index < 0)
-        {
-            index = 0;
-        }
-        else if (index >= size)
-        {
-            index = size - 1;
-        }
-
-        for (int i = 0; i < size; i++)
-        {
-            Position p = this.points.get(i);
-
-            double dx = p.point.x - mx;
-            double dz = p.point.z - mz;
-
-            d = Math.sqrt(dx * dx + dz * dz);
-            a = Math.atan2(dz, dx) / Math.PI * 180;
-
-            if (a < 0)
-            {
-                a = 360 + a;
-            }
-
-            double originalA = a;
-
-            if (Math.abs(a - lastA) > 180)
-            {
-                a = Lerps.normalizeYaw(lastA, a);
-            }
-
-            if (i == index)
-            {
-                break;
-            }
-
-            lastA = originalA;
-        }
-
-        return new Vector2d(a, d);
-    }
-
-    public Vector2d getCenter()
-    {
-        if (this.circularAutoCenter.get())
-        {
-            this.calculateCenter(VECTOR);
-        }
-        else
-        {
-            VECTOR.set(this.circularX.get(), this.circularZ.get());
-        }
-
-        return VECTOR;
-    }
-
-    public Vector2d calculateCenter(Vector2d vector)
-    {
-        vector.set(0, 0);
-
-        for (int i = 0; i < this.size(); i++)
-        {
-            Position position = this.points.get(i);
-
-            vector.x += position.point.x;
-            vector.y += position.point.z;
-        }
-
-        vector.x /= this.size();
-        vector.y /= this.size();
-
-        return vector;
     }
 
     /**
