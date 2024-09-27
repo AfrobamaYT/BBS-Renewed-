@@ -20,6 +20,8 @@ import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.particles.ParticleManager;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.resources.packs.URLRepository;
+import mchorse.bbs_mod.resources.packs.URLSourcePack;
 import mchorse.bbs_mod.selectors.EntitySelectors;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -211,6 +213,11 @@ public class BBSModClient implements ClientModInitializer
         selectors = new EntitySelectors();
         selectors.read();
         films = new Films();
+
+        URLRepository repository = new URLRepository(new File(parentFile, "url_cache"));
+
+        provider.register(new URLSourcePack("http", repository));
+        provider.register(new URLSourcePack("https", repository));
 
         KeybindSettings.registerClasses();
 

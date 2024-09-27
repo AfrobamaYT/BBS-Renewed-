@@ -47,7 +47,6 @@ public class ExtraFormSection extends FormSection
         ExtrudedForm extruded = new ExtrudedForm();
         BlockForm block = new BlockForm();
         ItemForm item = new ItemForm();
-        MobForm mob = new MobForm();
 
         billboard.texture.set(Link.assets("textures/error.png"));
         extruded.texture.set(Link.assets("textures/error.png"));
@@ -60,7 +59,6 @@ public class ExtraFormSection extends FormSection
         extra.addForm(extruded);
         extra.addForm(block);
         extra.addForm(item);
-        extra.addForm(mob);
 
         this.mobsAnimals = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_ANIMALS, this.parent.visibility.get("mobs_animals"));
         this.mobsNeutral = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_NEUTRAL, this.parent.visibility.get("mobs_neutral"));
