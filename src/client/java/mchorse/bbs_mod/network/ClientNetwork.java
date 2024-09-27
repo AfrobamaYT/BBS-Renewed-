@@ -53,10 +53,10 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CLICKED_MODEL_BLOCK_PACKET, (client, handler, buf, responseSender) -> handleClientModelBlockPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAYER_FORM_PACKET, (client, handler, buf, responseSender) -> handlePlayerFormPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(client, buf));
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(buf));
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(client, buf));
     }
 
     /* Handlers */
@@ -106,8 +106,6 @@ public class ClientNetwork
             Entity entity = client.world.getEntityById(id);
             Morph morph = Morph.getMorph(entity);
 
-            System.out.println(entity + " " + finalForm);
-
             if (morph != null)
             {
                 morph.setForm(finalForm);
@@ -130,37 +128,37 @@ public class ClientNetwork
         });
     }
 
-    private static void handleManagerDataPacket(PacketByteBuf buf)
+    private static void handleManagerDataPacket(MinecraftClient client, PacketByteBuf buf)
     {
         int callbackId = buf.readInt();
         RepositoryOperation op = RepositoryOperation.values()[buf.readInt()];
         BaseType data = DataStorageUtils.readFromPacket(buf);
 
-        Consumer<BaseType> callback = callbacks.remove(callbackId);
-
-        if (callback != null)
-        {
-            callback.accept(data);
-        }
-    }
-
-    private static void handleStopFilmPacket(PacketByteBuf buf)
-    {
-        String filmId = buf.readString();
-
         MinecraftClient.getInstance().execute(() ->
         {
-            Films.stopFilm(filmId);
+            Consumer<BaseType> callback = callbacks.remove(callbackId);
+
+            if (callback != null)
+            {
+                callback.accept(data);
+            }
         });
     }
 
-    private static void handleRecordedActionsPacket(PacketByteBuf buf)
+    private static void handleStopFilmPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        String filmId = buf.readString();
+
+        client.execute(() -> Films.stopFilm(filmId));
+    }
+
+    private static void handleRecordedActionsPacket(MinecraftClient client, PacketByteBuf buf)
     {
         String filmId = buf.readString();
         int replayId = buf.readInt();
         BaseType data = DataStorageUtils.readFromPacket(buf);
 
-        MinecraftClient.getInstance().execute(() ->
+        client.execute(() ->
         {
             BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
         });

@@ -53,7 +53,7 @@ public abstract class ClipContext <T extends Clip, E>
      */
     public double velocity;
 
-    public Map<String, Object> clipData = new HashMap<>();
+    public final Map<String, Object> clipData = new HashMap<>();
 
     public ClipContext setup(int ticks, float transition)
     {

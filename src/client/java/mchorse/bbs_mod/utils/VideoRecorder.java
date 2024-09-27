@@ -104,6 +104,8 @@ public class VideoRecorder
             args.add(BBSSettings.videoEncoderPath.get());
             args.addAll(Arrays.asList(params.split(" ")));
 
+            System.out.println("Recording video with following arguments: " + args);
+
             ProcessBuilder builder = new ProcessBuilder(args);
             File log = path.resolve(movieName.concat(".log")).toFile();
 
