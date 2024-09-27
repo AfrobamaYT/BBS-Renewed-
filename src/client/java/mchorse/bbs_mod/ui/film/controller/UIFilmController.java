@@ -226,7 +226,7 @@ public class UIFilmController extends UIElement
     public void setPov(int pov)
     {
         this.pov = pov;
-        this.orbit.enabled = this.getPovMode() != 0;
+        this.orbit.enabled = this.getPovMode() > 1;
     }
 
     private int getMouseMode()
