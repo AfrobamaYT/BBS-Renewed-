@@ -314,7 +314,7 @@ public class UIScreenplayEditor extends UIElement
 
             if (Window.isCtrlPressed())
             {
-                Film film = this.panel.getFilm();
+                Film film = this.panel.getData();
                 int layer = film.camera.getTopLayer();
 
                 AudioClientClip clip = new AudioClientClip();

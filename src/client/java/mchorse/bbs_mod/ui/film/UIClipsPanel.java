@@ -68,7 +68,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     @Override
     public Film getFilm()
     {
-        return this.filmPanel.getFilm();
+        return this.filmPanel.getData();
     }
 
     @Override

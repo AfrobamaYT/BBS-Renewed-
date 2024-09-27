@@ -394,6 +394,8 @@
     "bbs.ui.film.open_history": "Open undo/redo history...",
     "bbs.ui.film.history-title": "Undo history",
     "bbs.ui.film.toggle_layout": "Toggle layout",
+    "bbs.ui.film.no_camera-title": "No camera...",
+    "bbs.ui.film.no_camera-description": "It appears like you didn't setup the camera. This feature doesn't work without camera. Please setup at least one camera clip in the camera editor!",
     "bbs.ui.forms.categories.add_category-description": "Type in the name for the form category:",
     "bbs.ui.forms.categories.add_category-title": "Add category",
     "bbs.ui.forms.categories.context.add_category": "Add category...",

@@ -258,6 +258,8 @@ public class UIKeys
     public static final IKey FILM_OPEN_HISTORY = L10n.lang("bbs.ui.film.open_history");
     public static final IKey FILM_HISTORY_TITLE = L10n.lang("bbs.ui.film.history-title");
     public static final IKey FILM_TOGGLE_LAYOUT = L10n.lang("bbs.ui.film.toggle_layout");
+    public static final IKey FILM_NO_CAMERA_TITLE = L10n.lang("bbs.ui.film.no_camera-title");
+    public static final IKey FILM_NO_CAMERA_DESCRIPTION = L10n.lang("bbs.ui.film.no_camera-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION = L10n.lang("bbs.ui.forms.categories.add_category-description");
     public static final IKey FORMS_CATEGORIES_ADD_CATEGORY_TITLE = L10n.lang("bbs.ui.forms.categories.add_category-title");
     public static final IKey FORMS_CATEGORIES_CONTEXT_ADD_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.add_category");

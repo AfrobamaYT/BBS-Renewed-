@@ -72,7 +72,7 @@ public class UIFilmUndoHandler
             ValueChangeUndo change = (ValueChangeUndo) anotherUndo;
 
             this.panel.showPanel(change.panel);
-            this.panel.replayEditor.setReplay(CollectionUtils.getSafe(this.panel.getFilm().replays.getList(), change.replay));
+            this.panel.replayEditor.setReplay(CollectionUtils.getSafe(this.panel.getData().replays.getList(), change.replay));
 
             List<Integer> cameraSelection = change.cameraClips.getSelection(redo);
             List<Integer> voiceLineSelection = change.voiceLinesClips.getSelection(redo);
@@ -125,7 +125,7 @@ public class UIFilmUndoHandler
         if (this.cachedActionSelection.isEmpty()) this.cachedActionSelection.addAll(this.panel.actionEditor.clips.getSelection());
         if (this.cachedVoicelineSelection.isEmpty()) this.cachedVoicelineSelection.addAll(this.panel.screenplayEditor.editor.clips.getSelection());
         if (this.cachedKeyframeState == null && this.panel.replayEditor.keyframeEditor != null) this.cachedKeyframeState = this.panel.replayEditor.keyframeEditor.view.cacheState();
-        if (this.lastReplay == -2) this.lastReplay = this.panel.getFilm().replays.getList().indexOf(this.panel.replayEditor.getReplay());
+        if (this.lastReplay == -2) this.lastReplay = this.panel.getData().replays.getList().indexOf(this.panel.replayEditor.getReplay());
 
         if (!this.cachedValues.containsKey(baseValue)) this.cachedValues.put(baseValue, baseValue.toData());
 
@@ -204,9 +204,9 @@ public class UIFilmUndoHandler
         if (this.actionsTimer.checkReset())
         {
             Replay replay = this.panel.replayEditor.getReplay();
-            int index = this.panel.getFilm().replays.getList().indexOf(replay);
+            int index = this.panel.getData().replays.getList().indexOf(replay);
 
-            ClientNetwork.sendActions(this.panel.getFilm().getId(), index, replay.actions);
+            ClientNetwork.sendActions(this.panel.getData().getId(), index, replay.actions);
         }
     }
 

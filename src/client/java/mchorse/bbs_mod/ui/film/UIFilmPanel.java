@@ -40,6 +40,7 @@ import mchorse.bbs_mod.ui.film.utils.undo.UIUndoHistoryOverlay;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
@@ -867,11 +868,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         ClientNetwork.sendActionState(id, state, tick);
     }
 
-    public Film getFilm()
-    {
-        return this.data;
-    }
-
     public Camera getCamera()
     {
         return this.camera;
@@ -961,5 +957,20 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             ClientNetwork.sendTeleport((int) posX, (int) posY, (int) posZ);
         }
+    }
+
+    public boolean checkShowNoCamera()
+    {
+        boolean noCamera = this.getData().camera.calculateDuration() <= 0;
+
+        if (noCamera)
+        {
+            UIOverlay.addOverlay(this.getContext(), new UIMessageOverlayPanel(
+                UIKeys.FILM_NO_CAMERA_TITLE,
+                UIKeys.FILM_NO_CAMERA_DESCRIPTION
+            ));
+        }
+
+        return noCamera;
     }
 }

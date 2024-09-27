@@ -73,9 +73,12 @@ public class UIFilmPreview extends UIElement
         {
             menu.action(Icons.PLAY, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAY_FILM, () ->
             {
-                this.panel.dashboard.closeThisMenu();
+                if (!this.panel.checkShowNoCamera())
+                {
+                    this.panel.dashboard.closeThisMenu();
 
-                Films.playFilm(this.panel.getFilm(), true);
+                    Films.playFilm(this.panel.getData(), true);
+                }
             });
 
             menu.action(Icons.PAUSE, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_FREEZE_PAUSED, !this.panel.getController().isPaused() ? BBSSettings.primaryColor(0) : 0, () ->
@@ -102,6 +105,11 @@ public class UIFilmPreview extends UIElement
         this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
         this.recordVideo = new UIIcon(Icons.VIDEO_CAMERA, (b) ->
         {
+            if (this.panel.checkShowNoCamera())
+            {
+                return;
+            }
+
             if (!FFMpegUtils.checkFFMpeg())
             {
                 UIMessageOverlayPanel panel = new UIMessageOverlayPanel(UIKeys.GENERAL_WARNING, UIKeys.GENERAL_FFMPEG_ERROR_DESCRIPTION);

@@ -50,7 +50,7 @@ public class UIReplayList extends UIList<Replay>
         {
             menu.action(Icons.ADD, UIKeys.SCENE_REPLAYS_CONTEXT_ADD, this::addReplay);
 
-            int duration = this.panel.getFilm().camera.calculateDuration();
+            int duration = this.panel.getData().camera.calculateDuration();
 
             if (duration > 0)
             {
@@ -112,7 +112,7 @@ public class UIReplayList extends UIList<Replay>
     private void fromCamera(int duration)
     {
         Position position = new Position();
-        Clips camera = this.panel.getFilm().camera;
+        Clips camera = this.panel.getData().camera;
         CameraClipContext context = new CameraClipContext();
 
         Film film = this.panel.getData();

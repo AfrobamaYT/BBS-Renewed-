@@ -497,11 +497,11 @@ public class BBSModClient implements ClientModInitializer
             else
             {
                 Replay replay = panel.replayEditor.getReplay();
-                int index = panel.getFilm().replays.getList().indexOf(replay);
+                int index = panel.getData().replays.getList().indexOf(replay);
 
                 if (index >= 0)
                 {
-                    getFilms().startRecording(panel.getFilm(), index);
+                    getFilms().startRecording(panel.getData(), index);
                 }
             }
         }
