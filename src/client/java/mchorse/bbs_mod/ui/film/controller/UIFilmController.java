@@ -1263,7 +1263,8 @@ public class UIFilmController extends UIElement
 
             FilmController.renderEntity(FilmControllerContext.instance
                 .setup(this.entities, entity, context)
-                .color(Colors.setA(color, alpha)));
+                .color(Colors.setA(color, alpha))
+                .transition(0F));
 
             frames -= 1;
             alpha *= alpha;
