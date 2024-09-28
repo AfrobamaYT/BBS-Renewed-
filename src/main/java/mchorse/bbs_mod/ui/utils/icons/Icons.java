@@ -170,6 +170,7 @@ public class Icons
     public static final Icon ONION_SKIN = register(new Icon(ATLAS, "onion_skin", 240, 128));
 
     public static final Icon SUN = register(new Icon(ATLAS, "sun", 0, 144));
+    public static final Icon STOPWATCH = register(new Icon(ATLAS, "stopwatch", 16, 144));
 
     public static final Icon INTERP_LINEAR = register(new Icon(ATLAS, "interp_linear", 0, 192));
     public static final Icon INTERP_CONST = register(new Icon(ATLAS, "interp_const", 16, 192));

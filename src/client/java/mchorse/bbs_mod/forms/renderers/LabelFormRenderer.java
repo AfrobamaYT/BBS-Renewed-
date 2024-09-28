@@ -97,7 +97,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (context.isPicking())
         {
-            CustomVertexConsumerProvider.hijackVertexFormat(() ->
+            CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
             {
                 this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                 RenderSystem.setShader(BBSShaders::getPickerModelsProgram);

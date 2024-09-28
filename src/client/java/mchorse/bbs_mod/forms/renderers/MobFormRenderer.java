@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.brigadier.StringReader;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -9,6 +10,7 @@ import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.mixin.LimbAnimatorAccessor;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -41,6 +43,16 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     public MobFormRenderer(MobForm form)
     {
         super(form);
+    }
+
+    private void bindTexture(float transition)
+    {
+        Link link = this.form.texture.get(transition);
+
+        if (link != null)
+        {
+            BBSModClient.getTextures().bindTexture(link);
+        }
     }
 
     private void ensureEntity()
@@ -109,10 +121,14 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
             stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
+            CustomVertexConsumerProvider.hijackVertexFormat((layer) -> this.bindTexture(context.getTransition()));
+
             consumers.setUI(true);
             MinecraftClient.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), stack, consumers, LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE);
             consumers.draw();
             consumers.setUI(false);
+
+            CustomVertexConsumerProvider.clearRunnables();
 
             stack.pop();
 
@@ -132,13 +148,18 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             if (context.isPicking())
             {
-                CustomVertexConsumerProvider.hijackVertexFormat(() ->
+                CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
                 {
+                    this.bindTexture(context.getTransition());
                     this.setupTarget(context, BBSShaders.getPickerModelsProgram());
                     RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
                 });
 
                 light = 0;
+            }
+            else
+            {
+                CustomVertexConsumerProvider.hijackVertexFormat((layer) -> this.bindTexture(context.getTransition()));
             }
 
             context.stack.push();

@@ -1,7 +1,11 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
 import mchorse.bbs_mod.forms.forms.MobForm;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextarea;
@@ -18,6 +22,7 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
 {
     private static List<String> mobIDs;
 
+    public UIButton pick;
     public UISearchList<String> mobID;
     public UITextarea<TextLine> mobNBT;
 
@@ -37,6 +42,13 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
     {
         super(editor);
 
+        this.pick = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_TEXTURE, (b) ->
+        {
+            Link link = this.form.texture.get();
+
+            UITexturePicker.open(this.getContext(), link, (l) -> this.form.texture.set(l));
+        });
+
         this.mobID = new UISearchList<>(new UIStringList((l) -> this.form.mobID.set(l.get(0))));
         this.mobID.list.background().add(mobIDs);
         this.mobID.h(20 + 16 * 8);
@@ -45,7 +57,7 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
         this.mobNBT.background().h(160);
         this.mobNBT.wrap();
 
-        this.options.add(this.mobID, this.mobNBT);
+        this.options.add(this.pick, this.mobID, this.mobNBT);
     }
 
     @Override

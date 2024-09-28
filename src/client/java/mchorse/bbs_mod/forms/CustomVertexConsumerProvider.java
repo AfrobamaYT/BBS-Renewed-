@@ -7,10 +7,11 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immediate
 {
-    private static Runnable runnables;
+    private static Consumer<RenderLayer> runnables;
 
     private boolean ui;
 
@@ -18,11 +19,11 @@ public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immedia
     {
         if (runnables != null)
         {
-            runnables.run();
+            runnables.accept(layer);
         }
     }
 
-    public static void hijackVertexFormat(Runnable runnable)
+    public static void hijackVertexFormat(Consumer<RenderLayer> runnable)
     {
         runnables = runnable;
     }
