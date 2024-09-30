@@ -33,6 +33,7 @@ public class UITextureManagerOverlayPanel extends UIOverlayPanel
     public UIIcon copy;
     public UIIcon export;
     public UIIcon refresh;
+    public UIIcon extractFrames;
 
     public UISearchList<Link> textures;
 
@@ -88,8 +89,10 @@ public class UITextureManagerOverlayPanel extends UIOverlayPanel
         this.export.tooltip(UIKeys.TEXTURES_EXPORT, Direction.LEFT);
         this.refresh = new UIIcon(Icons.REFRESH, (b) -> this.remove());
         this.refresh.tooltip(UIKeys.TEXTURES_REFRESH, Direction.LEFT);
+        this.extractFrames = new UIIcon(Icons.UPLOAD, (b) -> this.extractFrames());
+        this.extractFrames.tooltip(UIKeys.TEXTURES_EXTRACT_FRAMES_TITLE, Direction.LEFT);
 
-        this.icons.add(this.linear, this.copy, this.export, this.refresh);
+        this.icons.add(this.linear, this.copy, this.export, this.refresh, this.extractFrames);
         this.content.add(this.textures);
     }
 
@@ -166,6 +169,11 @@ public class UITextureManagerOverlayPanel extends UIOverlayPanel
         BBSModClient.getTextures().textures.remove(this.panel.getLink()).delete();
 
         this.panel.pickLink(this.textures.list.getCurrentFirst());
+    }
+
+    private void extractFrames()
+    {
+        UIOverlay.addOverlay(this.getContext(), new UITextureExtractOverlayPanel(this.panel), 200, 231);
     }
 
     @Override

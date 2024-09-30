@@ -230,6 +230,10 @@ public class Pixels
         }
     }
 
+    /**
+     * D = destination (this)
+     * S = source
+     */
     public void drawPixels(Pixels source, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2)
     {
         int dirX = dx2 - dx1 < 0 ? -1 : 1;
