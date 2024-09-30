@@ -563,6 +563,8 @@
     "bbs.ui.right_click": "Right click here...",
     "bbs.ui.save": "Save",
     "bbs.ui.scene.replays.context.add": "Add a replay",
+    "bbs.ui.scene.replays.context.copy": "Copy replay",
+    "bbs.ui.scene.replays.context.paste": "Paste replay",
     "bbs.ui.scene.replays.context.dupe": "Duplicate a replay",
     "bbs.ui.scene.replays.context.edit_form": "Edit form...",
     "bbs.ui.scene.replays.context.from_camera": "From camera...",

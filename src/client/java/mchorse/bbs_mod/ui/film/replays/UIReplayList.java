@@ -3,11 +3,14 @@ package mchorse.bbs_mod.ui.film.replays;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.settings.values.ValueForm;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
@@ -49,6 +52,33 @@ public class UIReplayList extends UIList<Replay>
         this.context((menu) ->
         {
             menu.action(Icons.ADD, UIKeys.SCENE_REPLAYS_CONTEXT_ADD, this::addReplay);
+
+            if (this.isSelected())
+            {
+                menu.action(Icons.COPY, UIKeys.SCENE_REPLAYS_CONTEXT_COPY, () ->
+                {
+                    Replay replay = this.panel.replayEditor.getReplay();
+
+                    Window.setClipboard((MapType) replay.toData(), "_CopyReplay");
+                });
+            }
+
+            MapType copyReplay = Window.getClipboardMap("_CopyReplay");
+
+            if (copyReplay != null)
+            {
+                menu.action(Icons.PASTE, UIKeys.SCENE_REPLAYS_CONTEXT_PASTE, () ->
+                {
+                    Film film = this.panel.getData();
+                    Replay replay = film.replays.addReplay();
+
+                    BaseValue.edit(replay, (r) -> r.fromData(copyReplay));
+
+                    this.update();
+                    this.panel.replayEditor.setReplay(replay);
+                    this.updateFilmEditor();
+                });
+            }
 
             int duration = this.panel.getData().camera.calculateDuration();
 

@@ -558,6 +558,8 @@
     "bbs.ui.right_click": "ПКМ здесь...",
     "bbs.ui.save": "Сохранить",
     "bbs.ui.scene.replays.context.add": "Добавить запись",
+    "bbs.ui.scene.replays.context.copy": "Скопировать запись",
+    "bbs.ui.scene.replays.context.paste": "Вставить запись",
     "bbs.ui.scene.replays.context.dupe": "Дублировать запись",
     "bbs.ui.scene.replays.context.edit_form": "Отредактировать форму...",
     "bbs.ui.scene.replays.context.from_camera": "Из камеры...",
