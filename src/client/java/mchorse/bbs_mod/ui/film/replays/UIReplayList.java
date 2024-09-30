@@ -55,29 +55,14 @@ public class UIReplayList extends UIList<Replay>
 
             if (this.isSelected())
             {
-                menu.action(Icons.COPY, UIKeys.SCENE_REPLAYS_CONTEXT_COPY, () ->
-                {
-                    Replay replay = this.panel.replayEditor.getReplay();
-
-                    Window.setClipboard((MapType) replay.toData(), "_CopyReplay");
-                });
+                menu.action(Icons.COPY, UIKeys.SCENE_REPLAYS_CONTEXT_COPY, this::copyReplay);
             }
 
             MapType copyReplay = Window.getClipboardMap("_CopyReplay");
 
             if (copyReplay != null)
             {
-                menu.action(Icons.PASTE, UIKeys.SCENE_REPLAYS_CONTEXT_PASTE, () ->
-                {
-                    Film film = this.panel.getData();
-                    Replay replay = film.replays.addReplay();
-
-                    BaseValue.edit(replay, (r) -> r.fromData(copyReplay));
-
-                    this.update();
-                    this.panel.replayEditor.setReplay(replay);
-                    this.updateFilmEditor();
-                });
+                menu.action(Icons.PASTE, UIKeys.SCENE_REPLAYS_CONTEXT_PASTE, () -> this.pasteReplay(copyReplay));
             }
 
             int duration = this.panel.getData().camera.calculateDuration();
@@ -93,6 +78,25 @@ public class UIReplayList extends UIList<Replay>
                 menu.action(Icons.REMOVE, UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE, this::removeReplay);
             }
         });
+    }
+
+    private void copyReplay()
+    {
+        Replay replay = this.panel.replayEditor.getReplay();
+
+        Window.setClipboard((MapType) replay.toData(), "_CopyReplay");
+    }
+
+    private void pasteReplay(MapType data)
+    {
+        Film film = this.panel.getData();
+        Replay replay = film.replays.addReplay();
+
+        BaseValue.edit(replay, (r) -> r.fromData(data));
+
+        this.update();
+        this.panel.replayEditor.setReplay(replay);
+        this.updateFilmEditor();
     }
 
     public void openFormEditor(ValueForm form, boolean editing, Consumer<Form> consumer)

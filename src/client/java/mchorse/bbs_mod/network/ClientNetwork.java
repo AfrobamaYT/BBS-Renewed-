@@ -268,13 +268,13 @@ public class ClientNetwork
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTIONS_UPLOAD, buf);
     }
 
-    public static void sendTeleport(int x, int y, int z)
+    public static void sendTeleport(double x, double y, double z)
     {
         PacketByteBuf buf = PacketByteBufs.create();
 
-        buf.writeInt(x);
-        buf.writeInt(y);
-        buf.writeInt(z);
+        buf.writeDouble(x);
+        buf.writeDouble(y);
+        buf.writeDouble(z);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_TP, buf);
     }

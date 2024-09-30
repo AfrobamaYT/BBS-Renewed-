@@ -575,6 +575,7 @@
     "bbs.ui.selectors.context.remove": "Remove this entity selector",
     "bbs.ui.selectors.entity_id": "Entity ID",
     "bbs.ui.selectors.name_tag": "Name tag",
+    "bbs.ui.selectors.nbt": "NBT",
     "bbs.ui.selectors.title": "Entity selectors",
     "bbs.ui.snowstorm.appearance.animated": "Animated",
     "bbs.ui.snowstorm.appearance.fps": "Animation frames per second",

@@ -7,11 +7,12 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
-import mchorse.bbs_mod.ui.framework.elements.utils.UIText;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.function.Supplier;
@@ -43,19 +44,10 @@ public class UISupportersPanel extends UIDashboardPanel
         scrollView.full(this);
 
         /* Resources */
-        UIButton tutorials = new UIButton(UIKeys.SUPPORTERS_TUTORIALS, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_TUTORIALS_LINK.get()));
-        UIButton community = new UIButton(UIKeys.SUPPORTERS_COMMUNITY, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_COMMUNITY_LINK.get()));
-        UIButton wiki = new UIButton(UIKeys.SUPPORTERS_WIKI, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_WIKI_LINK.get()));
-        UIButton donate = new UIButton(UIKeys.SUPPORTERS_DONATE, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_DONATE_LINK.get()));
-
         Supplier<Integer> color = () -> BBSSettings.primaryColor(Colors.A50);
 
-        column.add(new UIText().text(UIKeys.SUPPORTERS_INTRO).marginTop(20));
-        column.add(UI.row(tutorials, community, wiki).marginBottom(12));
-        column.add(new UIText().text(UIKeys.SUPPORTERS_CALL_TO_ACTION));
-        column.add(donate.marginBottom(12));
-        column.add(new UIText().text(UIKeys.SUPPORTERS_GRATITUDE));
-        column.add(UI.label(UIKeys.SUPPORTERS_CC).background(color).marginTop(12).marginBottom(6));
+        column.add(UI.label(UIKeys.SUPPORTERS_GRATITUDE));
+        column.add(UI.label(UIKeys.SUPPORTERS_CC).background(color).marginTop(6).marginBottom(6));
         column.add(this.ccSupporters);
         column.add(UI.label(UIKeys.SUPPORTERS_SUPER_SUPPORTERS).background(color).marginTop(12).marginBottom(6));
         column.add(this.superSupporters);
@@ -84,7 +76,19 @@ public class UISupportersPanel extends UIDashboardPanel
 
         scrollView.add(row);
 
-        this.add(scrollView);
+        UIIcon tutorials = new UIIcon(Icons.HELP, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_TUTORIALS_LINK.get()));
+        UIIcon community = new UIIcon(Icons.USER, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_COMMUNITY_LINK.get()));
+        UIIcon wiki = new UIIcon(Icons.FILE, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_WIKI_LINK.get()));
+        UIIcon donate = new UIIcon(Icons.HEART_ALT, (b) -> UIUtils.openWebLink(UIKeys.SUPPORTERS_DONATE_LINK.get()));
+        UIElement icons = UI.column(0, tutorials, community, wiki, donate);
+
+        tutorials.tooltip(UIKeys.SUPPORTERS_TUTORIALS, Direction.RIGHT);
+        community.tooltip(UIKeys.SUPPORTERS_COMMUNITY, Direction.RIGHT);
+        wiki.tooltip(UIKeys.SUPPORTERS_WIKI, Direction.RIGHT);
+        donate.tooltip(UIKeys.SUPPORTERS_DONATE, Direction.RIGHT);
+        icons.relative(this).w(20).column(0).vertical().stretch();
+
+        this.add(scrollView, icons);
     }
 
     public UIElement createSupporter(Supporter supporter)

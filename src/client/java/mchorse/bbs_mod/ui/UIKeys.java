@@ -470,6 +470,7 @@ public class UIKeys
     public static final IKey SELECTORS_CONTEXT_REMOVE = L10n.lang("bbs.ui.selectors.context.remove");
     public static final IKey SELECTORS_ENTITY_ID = L10n.lang("bbs.ui.selectors.entity_id");
     public static final IKey SELECTORS_NAME_TAG = L10n.lang("bbs.ui.selectors.name_tag");
+    public static final IKey SELECTORS_NBT = L10n.lang("bbs.ui.selectors.nbt");
     public static final IKey SELECTORS_TITLE = L10n.lang("bbs.ui.selectors.title");
     public static final IKey SNOWSTORM_APPEARANCE_ANIMATED = L10n.lang("bbs.ui.snowstorm.appearance.animated");
     public static final IKey SNOWSTORM_APPEARANCE_FPS = L10n.lang("bbs.ui.snowstorm.appearance.fps");

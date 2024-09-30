@@ -1,18 +1,23 @@
 package mchorse.bbs_mod.ui.selectors;
 
+import com.mojang.brigadier.StringReader;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.selectors.EntitySelector;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
+import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextarea;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
+import mchorse.bbs_mod.ui.framework.elements.input.text.utils.TextLine;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
@@ -25,6 +30,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
     public UINestedEdit form;
     public UITextbox entity;
     public UITextbox name;
+    public UITextarea<TextLine> nbt;
 
     private EntitySelector current;
     private boolean changed;
@@ -34,7 +40,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         super(UIKeys.SELECTORS_TITLE);
 
         this.selectors = new UISelectorList((l) -> this.setSelector(l.get(0), false));
-        this.selectors.background(Colors.A100);
         this.selectors.setList(BBSModClient.getSelectors().selectors);
         this.selectors.update();
 
@@ -72,6 +77,22 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
 
             BBSModClient.getSelectors().update();
         });
+        this.nbt = new UITextarea<>((t) ->
+        {
+            try
+            {
+                this.current.nbt = (new StringNbtReader(new StringReader(t))).parseCompound();
+                this.changed = true;
+
+                BBSModClient.getSelectors().update();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        });
+
+        this.nbt.background().wrap().h(80);
 
         this.selectors.context((menu) ->
         {
@@ -106,10 +127,12 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
             UI.label(UIKeys.SELECTORS_ENTITY_ID).marginTop(6),
             this.entity,
             UI.label(UIKeys.SELECTORS_NAME_TAG).marginTop(6),
-            this.name
+            this.name,
+            UI.label(UIKeys.SELECTORS_NBT).marginTop(6),
+            this.nbt
         );
 
-        this.selectors.relative(this.content).x(10).w(1F, -20).hTo(this.column.area);
+        this.selectors.relative(this.content).w(1F).hTo(this.column.area);
         this.column.relative(this.content).y(1F).w(1F).anchor(0F, 1F);
 
         this.add(this.column, this.selectors);
@@ -136,11 +159,20 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
             this.form.setForm(selector.form);
             this.entity.setText(selector.entity == null ? "" : selector.entity.toString());
             this.name.setText(selector.name);
+            this.nbt.setText(selector.nbt == null ? "" : selector.nbt.toString());
         }
 
         if (select)
         {
             this.selectors.setCurrentScroll(selector);
         }
+    }
+
+    @Override
+    protected void renderBackground(UIContext context)
+    {
+        super.renderBackground(context);
+
+        this.content.area.render(context.batcher, Colors.A100);
     }
 }

@@ -333,9 +333,9 @@ public class ServerNetwork
 
     private static void handleTeleportPlayer(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        int x = buf.readInt();
-        int y = buf.readInt();
-        int z = buf.readInt();
+        double x = buf.readDouble();
+        double y = buf.readDouble();
+        double z = buf.readDouble();
 
         server.execute(() -> player.teleport(x, y, z, false));
     }
