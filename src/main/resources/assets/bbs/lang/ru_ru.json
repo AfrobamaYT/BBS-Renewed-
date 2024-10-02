@@ -10,5 +10,6 @@
     "key.bbs.play_film": "Проиграть фильм",
     "key.bbs.record_replay": "Записать текующую запись",
     "key.bbs.record_video": "Записать видео",
+    "key.bbs.teleport": "Телепортироваться к тек. записи",
     "category.bbs.main": "BBS мод"
 }

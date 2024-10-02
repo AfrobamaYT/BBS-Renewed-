@@ -941,21 +941,27 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public void teleportToCamera()
     {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
         Vector3d cameraPos = this.getCamera().position;
         double posX = Math.floor(cameraPos.x);
         double posY = Math.floor(cameraPos.y);
         double posZ = Math.floor(cameraPos.z);
 
+        this.teleport(posX, posY, posZ);
+    }
+
+    public void teleport(double x, double y, double z)
+    {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
         if (!ClientNetwork.isIsBBSModOnServer())
         {
             String name = player.getGameProfile().getName();
 
-            player.networkHandler.sendCommand("tp " + name + " " + posX + " " + posY + " " + posZ);
+            player.networkHandler.sendCommand("tp " + name + " " + x + " " + y + " " + z);
         }
         else
         {
-            ClientNetwork.sendTeleport((int) posX, (int) posY, (int) posZ);
+            ClientNetwork.sendTeleport(x, y, z);
         }
     }
 

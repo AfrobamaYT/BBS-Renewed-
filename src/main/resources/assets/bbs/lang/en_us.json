@@ -10,5 +10,6 @@
     "key.bbs.play_film": "Play film",
     "key.bbs.record_replay": "Record current replay",
     "key.bbs.record_video": "Record video",
+    "key.bbs.teleport": "Teleport to current replay",
     "category.bbs.main": "BBS mod"
 }

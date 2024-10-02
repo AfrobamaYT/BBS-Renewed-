@@ -86,6 +86,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyOpenReplays;
     private static KeyBinding keyOpenMorphing;
     private static KeyBinding keyDemorph;
+    private static KeyBinding keyTeleport;
 
     private static UIDashboard dashboard;
 
@@ -261,6 +262,7 @@ public class BBSModClient implements ClientModInitializer
         keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
         keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
         keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
+        keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
@@ -337,6 +339,7 @@ public class BBSModClient implements ClientModInitializer
                 dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
             }
             while (keyDemorph.wasPressed()) ClientNetwork.sendPlayerForm(null);
+            while (keyTeleport.wasPressed()) this.keyTeleport();
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
@@ -530,6 +533,16 @@ public class BBSModClient implements ClientModInitializer
                     panel.openOverlay.clickItself();
                 }
             }
+        }
+    }
+
+    private void keyTeleport()
+    {
+        UIDashboard dashboard = getDashboard();
+
+        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel)
+        {
+            panel.replayEditor.teleport();
         }
     }
 

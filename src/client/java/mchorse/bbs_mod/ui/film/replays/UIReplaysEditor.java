@@ -14,6 +14,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
@@ -50,6 +51,7 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
@@ -529,6 +531,31 @@ public class UIReplaysEditor extends UIElement
         {
             lastFilm = this.film.getId();
             lastReplay = this.replays.replays.getIndex();
+        }
+    }
+
+    public void teleport()
+    {
+        if (this.filmPanel.getData() == null)
+        {
+            return;
+        }
+
+        Replay replay = this.getReplay();
+
+        if (replay != null)
+        {
+            int index = this.film.replays.getList().indexOf(replay);
+            IEntity entity = this.filmPanel.getController().entities.get(index);
+
+            this.filmPanel.teleport(entity.getX(), entity.getY(), entity.getZ());
+
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
+            player.setYaw(entity.getYaw());
+            player.setHeadYaw(entity.getHeadYaw());
+            player.setBodyYaw(entity.getBodyYaw());
+            player.setPitch(entity.getPitch());
         }
     }
 }
