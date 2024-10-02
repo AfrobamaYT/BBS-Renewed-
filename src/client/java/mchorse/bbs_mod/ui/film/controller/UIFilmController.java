@@ -862,7 +862,7 @@ public class UIFilmController extends UIElement
          * the update tick, so in order to force the correct animation, I have to
          * increment the tick, so it would appear correctly */
         boolean isPlaying = this.isPlaying();
-        int ticks = runner.ticks + (runner.isRunning() ? 1 : 0);
+        int tick = runner.ticks + (runner.isRunning() ? 1 : 0);
 
         for (int i = 0; i < this.entities.size(); i++)
         {
@@ -881,6 +881,7 @@ public class UIFilmController extends UIElement
 
             List<Replay> replays = film.replays.getList();
             Replay replay = CollectionUtils.getSafe(replays, i);
+            int ticks = replay.getTick(tick);
 
             if (replay != null)
             {
@@ -909,7 +910,7 @@ public class UIFilmController extends UIElement
                 entity.setPrevBodyYaw(entity.getBodyYaw());
                 entity.setPrevPitch(entity.getPitch());
 
-                int diff = Math.abs(this.lastTick - ticks);
+                int diff = Math.abs(this.lastTick - tick);
 
                 while (diff > 0)
                 {
@@ -925,7 +926,7 @@ public class UIFilmController extends UIElement
             }
         }
 
-        this.lastTick = ticks;
+        this.lastTick = tick;
     }
 
     private void updateControls()
@@ -1122,6 +1123,7 @@ public class UIFilmController extends UIElement
             ValueOnionSkin onionSkin = this.getOnionSkin();
             Replay replay = this.panel.getData().replays.getList().get(i);
             BaseValue value = replay.properties.get(onionSkin.group.get());
+            int ticks = replay.getTick(tick);
 
             if (value == null)
             {
@@ -1149,15 +1151,15 @@ public class UIFilmController extends UIElement
 
                 if (canRender)
                 {
-                    KeyframeSegment<?> segment = pose.findSegment(tick);
+                    KeyframeSegment<?> segment = pose.findSegment(ticks);
 
                     if (segment != null)
                     {
                         this.renderOnion(replay, pose.getKeyframes().indexOf(segment.a), -1, pose, onionSkin.preColor.get(), onionSkin.preFrames.get(), context, isPlaying, entity);
                         this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, onionSkin.postColor.get(), onionSkin.postFrames.get(), context, isPlaying, entity);
 
-                        replay.applyFrame(tick, entity, null);
-                        replay.applyProperties(tick, entity.getForm(), isPlaying);
+                        replay.applyFrame(ticks, entity, null);
+                        replay.applyProperties(ticks, entity.getForm(), isPlaying);
 
                         if (!isPlaying)
                         {

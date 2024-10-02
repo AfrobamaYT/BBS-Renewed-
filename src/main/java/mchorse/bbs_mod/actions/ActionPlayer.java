@@ -64,12 +64,8 @@ public class ActionPlayer
             }
 
             Replay replay = list.get(i);
-            List<Clip> clips = replay.actions.getClips(this.tick);
 
-            for (Clip clip : clips)
-            {
-                ((ActionClip) clip).apply(fakePlayer, this.film, replay, this.tick);
-            }
+            replay.applyActions(fakePlayer, this.film, this.tick);
         }
     }
 

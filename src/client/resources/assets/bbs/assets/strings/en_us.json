@@ -383,6 +383,8 @@
     "bbs.ui.film.replay.replay": "Replay",
     "bbs.ui.film.replay.shadow": "Shadow",
     "bbs.ui.film.replay.shadow_size": "Shadow radius",
+    "bbs.ui.film.replay.looping": "Looping",
+    "bbs.ui.film.replay.looping-tooltip": "Setting to 0, disables replay's looping. Setting to any positive value, will make the replay loop. Keep in mind that looping doesn't change the duration of the film.",
     "bbs.ui.film.replay.title": "Replays",
     "bbs.ui.film.screenshot": "Take a screenshot",
     "bbs.ui.film.screenshot-description": "Your screenshot was successfully taken! Click the icon on the right to open the folder...",

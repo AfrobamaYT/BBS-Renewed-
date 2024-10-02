@@ -382,6 +382,8 @@
     "bbs.ui.film.replay.replay": "Запись",
     "bbs.ui.film.replay.shadow": "Тень",
     "bbs.ui.film.replay.shadow_size": "Радиус тени",
+    "bbs.ui.film.replay.looping": "Зацикленность",
+    "bbs.ui.film.replay.looping-tooltip": "Установив 0, отключает зацикленность у записи. Установив на любое положительное число, включит регион зацикленности у записи. Имейте ввиду что зацикленность не меняет общую длину фильма.",
     "bbs.ui.film.replay.title": "Записи",
     "bbs.ui.film.screenshot": "Сделать скриншот",
     "bbs.ui.film.screenshot-description": "Ваш скриншот был успешно сохранён. Нажмите на иконку справа чтобы открыть папку...",

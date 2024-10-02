@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -11,6 +12,7 @@ import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.settings.values.ValueFloat;
 import mchorse.bbs_mod.settings.values.ValueForm;
 import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.settings.values.ValueString;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -30,6 +32,7 @@ public class Replay extends ValueGroup
     public final ValueString label = new ValueString("label", "");
     public final ValueBoolean shadow = new ValueBoolean("shadow", true);
     public final ValueFloat shadowSize = new ValueFloat("shadow_size", 0.5F);
+    public final ValueInt looping = new ValueInt("looping", 0);
 
     public Replay(String id)
     {
@@ -43,6 +46,7 @@ public class Replay extends ValueGroup
         this.add(this.label);
         this.add(this.shadow);
         this.add(this.shadowSize);
+        this.add(this.looping);
     }
 
     public String getName()
@@ -128,8 +132,20 @@ public class Replay extends ValueGroup
         }
     }
 
+    public void applyActions(SuperFakePlayer fakePlayer, Film film, int tick)
+    {
+        List<Clip> clips = this.actions.getClips(tick);
+
+        for (Clip clip : clips)
+        {
+            ((ActionClip) clip).apply(fakePlayer, film, this, tick);
+        }
+    }
+
     public void applyClientActions(int tick, IEntity entity, Film film)
     {
+        tick = this.getTick(tick);
+
         List<Clip> clips = this.actions.getClips(tick);
 
         for (Clip clip : clips)
@@ -139,5 +155,10 @@ public class Replay extends ValueGroup
                 actionClip.applyClient(entity, film, this, tick);
             }
         }
+    }
+
+    public int getTick(int tick)
+    {
+        return this.looping.get() > 0 ? tick % this.looping.get() : tick;
     }
 }
