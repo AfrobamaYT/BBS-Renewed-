@@ -205,8 +205,8 @@ public class Animator implements IAnimator
     protected void controlActions(IEntity target)
     {
         Vec3d velocity = target.getVelocity();
-        double dx = velocity.x;
-        double dz = velocity.z;
+        double dx = target.getX() - this.prevX;
+        double dz = target.getZ() - this.prevZ;
         final float threshold = 0.01F;
         boolean moves = Math.abs(dx) > threshold || Math.abs(dz) > threshold;
 
