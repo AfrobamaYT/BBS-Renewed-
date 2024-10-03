@@ -68,7 +68,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
                 MatrixStackUtils.applyTransform(matrices, transform);
 
                 RenderSystem.enableDepthTest();
-                FormUtilsClient.render(form, FormRenderingContext.set(item.formEntity, matrices, light, overlay, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true)));
+                FormUtilsClient.render(form, FormRenderingContext.set(item.formEntity, matrices, light, overlay, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false)));
                 RenderSystem.disableDepthTest();
 
                 matrices.pop();

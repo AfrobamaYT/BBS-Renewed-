@@ -1132,7 +1132,7 @@ public class UIFilmController extends UIElement
 
             FilmControllerContext filmContext = FilmControllerContext.instance
                 .setup(this.entities, entity, context)
-                .transition(isPlaying ? context.tickCounter().getTickDelta(true) : 0F)
+                .transition(isPlaying ? context.tickCounter().getTickDelta(false) : 0F)
                 .shadow(replay.shadow.get(), replay.shadowSize.get())
                 .bone(bone == null ? null : bone.a, bone != null && bone.b);
 
@@ -1359,7 +1359,7 @@ public class UIFilmController extends UIElement
         this.stencil.apply();
         FilmController.renderEntity(FilmControllerContext.instance
             .setup(this.entities, entity, renderContext)
-            .transition(isPlaying ? renderContext.tickCounter().getTickDelta(true) : 0)
+            .transition(isPlaying ? renderContext.tickCounter().getTickDelta(false) : 0)
             .stencil(this.stencilMap));
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);

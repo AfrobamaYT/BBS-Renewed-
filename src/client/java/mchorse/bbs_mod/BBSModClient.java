@@ -344,7 +344,7 @@ public class BBSModClient implements ClientModInitializer
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
         {
-            BBSRendering.renderHud(drawContext, tickDelta.getTickDelta(true));
+            BBSRendering.renderHud(drawContext, tickDelta.getTickDelta(false));
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->

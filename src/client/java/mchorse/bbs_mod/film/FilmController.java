@@ -319,7 +319,7 @@ public class FilmController
         RenderSystem.enableDepthTest();
 
         this.context.clipData.clear();
-        this.context.setup(tick, context.tickCounter().getTickDelta(true));
+        this.context.setup(tick, context.tickCounter().getTickDelta(false));
 
         for (Clip clip : clips)
         {

@@ -21,7 +21,8 @@
         "KeyboardMixin",
         "ResourceReloadLoggerMixin",
         "RenderLayerMixin",
-        "ClientWorldPropertiesMixin"
+        "ClientWorldPropertiesMixin",
+        "RenderTickCounterAccessor"
     ],
     "injectors": {
         "defaultRequire": 1

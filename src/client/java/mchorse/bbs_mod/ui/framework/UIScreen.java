@@ -6,6 +6,7 @@ import mchorse.bbs_mod.importers.IImportPathProvider;
 import mchorse.bbs_mod.importers.ImporterContext;
 import mchorse.bbs_mod.importers.Importers;
 import mchorse.bbs_mod.importers.types.IImporter;
+import mchorse.bbs_mod.mixin.client.RenderTickCounterAccessor;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -15,6 +16,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -196,7 +198,9 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.render(context, mouseX, mouseY, delta);
 
-        this.menu.context.setTransition(this.client.getRenderTickCounter().getTickDelta(true));
+        RenderTickCounter tick = this.client.getRenderTickCounter();
+
+        this.menu.context.setTransition(tick instanceof RenderTickCounterAccessor accessor ? accessor.bbs$getTickDelta() : tick.getTickDelta(false));
         this.menu.renderMenu(this.context, mouseX, mouseY);
     }
 
