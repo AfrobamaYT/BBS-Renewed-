@@ -69,7 +69,6 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
-import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -1049,7 +1048,7 @@ public class UIFilmController extends UIElement
         MatrixStackUtils.cacheMatrices();
 
         RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorter.BY_Z);
-        RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.panel.lastView).invert());
+        /* TODO: 1.21 RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.panel.lastView).invert()); */
 
         /* Render the stencil */
         MatrixStack worldStack = this.worldRenderContext.matrixStack();
@@ -1134,7 +1133,7 @@ public class UIFilmController extends UIElement
 
             FilmControllerContext filmContext = FilmControllerContext.instance
                 .setup(this.entities, entity, context)
-                .transition(isPlaying ? context.tickDelta() : 0F)
+                .transition(isPlaying ? context.tickCounter().getTickDelta(true) : 0F)
                 .shadow(replay.shadow.get(), replay.shadowSize.get())
                 .bone(bone == null ? null : bone.a, bone != null && bone.b);
 
@@ -1361,7 +1360,7 @@ public class UIFilmController extends UIElement
         this.stencil.apply();
         FilmController.renderEntity(FilmControllerContext.instance
             .setup(this.entities, entity, renderContext)
-            .transition(isPlaying ? renderContext.tickDelta() : 0)
+            .transition(isPlaying ? renderContext.tickCounter().getTickDelta(true) : 0)
             .stencil(this.stencilMap));
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);

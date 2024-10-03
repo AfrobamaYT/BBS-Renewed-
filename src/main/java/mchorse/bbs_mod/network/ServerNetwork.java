@@ -1,11 +1,13 @@
 package mchorse.bbs_mod.network;
 
+import io.netty.buffer.ByteBuf;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.actions.ActionManager;
 import mchorse.bbs_mod.actions.ActionPlayer;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
+import mchorse.bbs_mod.data.storage.DataStorage;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ByteType;
 import mchorse.bbs_mod.data.types.ListType;
@@ -15,66 +17,132 @@ import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.network.payloads.ClientClickedModelPayload;
+import mchorse.bbs_mod.network.payloads.ClientHandshakePayload;
+import mchorse.bbs_mod.network.payloads.ClientManagerDataPayload;
+import mchorse.bbs_mod.network.payloads.ClientPlayFilmPayload;
+import mchorse.bbs_mod.network.payloads.ClientPlayerFormPayload;
+import mchorse.bbs_mod.network.payloads.ClientRecordedActionsPayload;
+import mchorse.bbs_mod.network.payloads.ClientStopFilmPayload;
+import mchorse.bbs_mod.network.payloads.ServerActionControlPayload;
+import mchorse.bbs_mod.network.payloads.ServerActionRecordingPayload;
+import mchorse.bbs_mod.network.payloads.ServerActionsUploadPayload;
+import mchorse.bbs_mod.network.payloads.ServerManagerDataPayload;
+import mchorse.bbs_mod.network.payloads.ServerModelBlockFormPayload;
+import mchorse.bbs_mod.network.payloads.ServerModelBlockTransformsPayload;
+import mchorse.bbs_mod.network.payloads.ServerPlayerFormPayload;
+import mchorse.bbs_mod.network.payloads.ServerPlayerTPPayload;
+import mchorse.bbs_mod.network.payloads.ServerToggleFilmPayload;
 import mchorse.bbs_mod.utils.CollectionUtils;
-import mchorse.bbs_mod.utils.EnumUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 public class ServerNetwork
 {
-    public static final Identifier CLIENT_CLICKED_MODEL_BLOCK_PACKET = new Identifier(BBSMod.MOD_ID, "c1");
-    public static final Identifier CLIENT_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "c2");
-    public static final Identifier CLIENT_PLAY_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c3");
-    public static final Identifier CLIENT_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "c4");
-    public static final Identifier CLIENT_STOP_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c5");
-    public static final Identifier CLIENT_HANDSHAKE = new Identifier(BBSMod.MOD_ID, "c6");
-    public static final Identifier CLIENT_RECORDED_ACTIONS = new Identifier(BBSMod.MOD_ID, "c7");
+    public static final PacketCodec<ByteBuf, BaseType> BASE_TYPE = new PacketCodec<ByteBuf, BaseType>()
+    {
+        public BaseType decode(ByteBuf byteBuf)
+        {
+            if (!byteBuf.readBoolean())
+            {
+                return null;
+            }
 
-    public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
-    public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
-    public static final Identifier SERVER_PLAYER_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s3");
-    public static final Identifier SERVER_MANAGER_DATA_PACKET = new Identifier(BBSMod.MOD_ID, "s4");
-    public static final Identifier SERVER_ACTION_RECORDING = new Identifier(BBSMod.MOD_ID, "s5");
-    public static final Identifier SERVER_TOGGLE_FILM = new Identifier(BBSMod.MOD_ID, "s6");
-    public static final Identifier SERVER_ACTION_CONTROL = new Identifier(BBSMod.MOD_ID, "s7");
-    public static final Identifier SERVER_ACTIONS_UPLOAD = new Identifier(BBSMod.MOD_ID, "s8");
-    public static final Identifier SERVER_PLAYER_TP = new Identifier(BBSMod.MOD_ID, "s9");
+            byte[] bytes = new byte[byteBuf.readInt()];
+
+            byteBuf.readBytes(bytes);
+            ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+
+            try
+            {
+                return DataStorage.readFromStream(stream);
+            }
+            catch (IOException e)
+            {}
+
+            return null;
+        }
+
+        public void encode(ByteBuf byteBuf, BaseType type)
+        {
+            try
+            {
+                byteBuf.writeBoolean(type != null);
+
+                if (type != null)
+                {
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+                    DataStorage.writeToStream(stream, type);
+
+                    byteBuf.writeInt(stream.size());
+                    byteBuf.writeBytes(stream.toByteArray());
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    };
 
     public static void setup()
     {
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_MODEL_BLOCK_FORM_PACKET, (server, player, handler, buf, responder) -> handleModelBlockFormPacket(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, (server, player, handler, buf, responder) -> handleModelBlockTransformsPacket(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_FORM_PACKET, (server, player, handler, buf, responder) -> handlePlayerFormPacket(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_MANAGER_DATA_PACKET, (server, player, handler, buf, responder) -> handleManagerDataPacket(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_RECORDING, (server, player, handler, buf, responder) -> handleActionRecording(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_TOGGLE_FILM, (server, player, handler, buf, responder) -> handleToggleFilm(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_CONTROL, (server, player, handler, buf, responder) -> handleActionControl(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTIONS_UPLOAD, (server, player, handler, buf, responder) -> handleActionsUpload(server, player, buf));
-        ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_TP, (server, player, handler, buf, responder) -> handleTeleportPlayer(server, player, buf));
+        PayloadTypeRegistry.playS2C().register(ClientClickedModelPayload.ID, ClientClickedModelPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientPlayerFormPayload.ID, ClientPlayerFormPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientPlayFilmPayload.ID, ClientPlayFilmPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientManagerDataPayload.ID, ClientManagerDataPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientStopFilmPayload.ID, ClientStopFilmPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientHandshakePayload.ID, ClientHandshakePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientRecordedActionsPayload.ID, ClientRecordedActionsPayload.CODEC);
+
+        PayloadTypeRegistry.playC2S().register(ServerModelBlockFormPayload.ID, ServerModelBlockFormPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerModelBlockTransformsPayload.ID, ServerModelBlockTransformsPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerPlayerFormPayload.ID, ServerPlayerFormPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerManagerDataPayload.ID, ServerManagerDataPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerActionRecordingPayload.ID, ServerActionRecordingPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerToggleFilmPayload.ID, ServerToggleFilmPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerActionControlPayload.ID, ServerActionControlPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerActionsUploadPayload.ID, ServerActionsUploadPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerPlayerTPPayload.ID, ServerPlayerTPPayload.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(ServerModelBlockFormPayload.ID, (payload, context) -> handleModelBlockFormPacket(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerModelBlockTransformsPayload.ID, (payload, context) -> handleModelBlockTransformsPacket(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerPlayerFormPayload.ID, (payload, context) -> handlePlayerFormPacket(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerManagerDataPayload.ID, (payload, context) -> handleManagerDataPacket(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerActionRecordingPayload.ID, (payload, context) -> handleActionRecording(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerToggleFilmPayload.ID, (payload, context) -> handleToggleFilm(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerActionControlPayload.ID, (payload, context) -> handleActionControl(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerActionsUploadPayload.ID, (payload, context) -> handleActionsUpload(context.server(), context.player(), payload));
+        ServerPlayNetworking.registerGlobalReceiver(ServerPlayerTPPayload.ID, (payload, context) -> handleTeleportPlayer(context.server(), context.player(), payload));
     }
 
     /* Handlers */
 
-    private static void handleModelBlockFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleModelBlockFormPacket(MinecraftServer server, ServerPlayerEntity player, ServerModelBlockFormPayload buf)
     {
-        BlockPos pos = buf.readBlockPos();
+        BlockPos pos = buf.pos();
 
         try
         {
-            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+            MapType data = (MapType) buf.data();
 
             server.execute(() ->
             {
@@ -91,17 +159,20 @@ public class ServerNetwork
         {}
     }
 
-    private static void handleModelBlockTransformsPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleModelBlockTransformsPacket(MinecraftServer server, ServerPlayerEntity player, ServerModelBlockTransformsPayload buf)
     {
         try
         {
-            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+            MapType data = (MapType) buf.data();
 
             server.execute(() ->
             {
                 ItemStack stack = player.getEquippedStack(EquipmentSlot.MAINHAND).copy();
 
-                stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+                stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, stack.get(DataComponentTypes.BLOCK_ENTITY_DATA).apply((d) ->
+                {
+                    d.put("Properties", DataStorageUtils.toNbt(data));
+                }));
 
                 player.equipStack(EquipmentSlot.MAINHAND, stack);
             });
@@ -110,9 +181,9 @@ public class ServerNetwork
         {}
     }
 
-    private static void handlePlayerFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handlePlayerFormPacket(MinecraftServer server, ServerPlayerEntity player, ServerPlayerFormPayload buf)
     {
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+        MapType data = (MapType) buf.data();
         Form form = null;
 
         try
@@ -132,11 +203,11 @@ public class ServerNetwork
         });
     }
 
-    private static void handleManagerDataPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleManagerDataPacket(MinecraftServer server, ServerPlayerEntity player, ServerManagerDataPayload buf)
     {
-        int callbackId = buf.readInt();
-        RepositoryOperation op = RepositoryOperation.values()[buf.readInt()];
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+        int callbackId = buf.id();
+        RepositoryOperation op = buf.getOp();
+        MapType data = (MapType) buf.data();
         FilmManager films = BBSMod.getFilms();
 
         if (op == RepositoryOperation.LOAD)
@@ -178,12 +249,12 @@ public class ServerNetwork
         }
     }
 
-    private static void handleActionRecording(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleActionRecording(MinecraftServer server, ServerPlayerEntity player, ServerActionRecordingPayload buf)
     {
-        String filmId = buf.readString();
-        int replayId = buf.readInt();
-        int tick = buf.readInt();
-        boolean recording = buf.readBoolean();
+        String filmId = buf.filmId();
+        int replayId = buf.replayId();
+        int tick = buf.tick();
+        boolean recording = buf.recording();
 
         server.execute(() ->
         {
@@ -216,10 +287,10 @@ public class ServerNetwork
         });
     }
 
-    private static void handleToggleFilm(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleToggleFilm(MinecraftServer server, ServerPlayerEntity player, ServerToggleFilmPayload buf)
     {
-        String filmId = buf.readString();
-        boolean withCamera = buf.readBoolean();
+        String filmId = buf.id();
+        boolean withCamera = buf.camera();
 
         server.execute(() ->
         {
@@ -241,12 +312,12 @@ public class ServerNetwork
         });
     }
 
-    private static void handleActionControl(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleActionControl(MinecraftServer server, ServerPlayerEntity player, ServerActionControlPayload buf)
     {
         ActionManager actions = BBSMod.getActions();
-        String filmId = buf.readString();
-        ActionState state = EnumUtils.getValue(buf.readByte(), ActionState.values(), ActionState.STOP);
-        int tick = buf.readInt();
+        String filmId = buf.filmId();
+        ActionState state = buf.getState();
+        int tick = buf.tick();
 
         server.execute(() ->
         {
@@ -319,11 +390,11 @@ public class ServerNetwork
         });
     }
 
-    private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, ServerActionsUploadPayload buf)
     {
-        String filmId = buf.readString();
-        int replayId = buf.readInt();
-        BaseType data = DataStorageUtils.readFromPacket(buf);
+        String filmId = buf.filmId();
+        int replayId = buf.replayId();
+        BaseType data = buf.data();
 
         server.execute(() ->
         {
@@ -331,30 +402,16 @@ public class ServerNetwork
         });
     }
 
-    private static void handleTeleportPlayer(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    private static void handleTeleportPlayer(MinecraftServer server, ServerPlayerEntity player, ServerPlayerTPPayload buf)
     {
-        double x = buf.readDouble();
-        double y = buf.readDouble();
-        double z = buf.readDouble();
-
-        server.execute(() -> player.teleport(x, y, z, false));
+        server.execute(() -> player.teleport(buf.x(), buf.y(), buf.z(), false));
     }
 
     /* API */
 
     public static void sendMorph(ServerPlayerEntity player, int playerId, Form form)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeInt(playerId);
-        buf.writeBoolean(form != null);
-
-        if (form != null)
-        {
-            DataStorageUtils.writeToPacket(buf, FormUtils.toData(form));
-        }
-
-        ServerPlayNetworking.send(player, CLIENT_PLAYER_FORM_PACKET, buf);
+        ServerPlayNetworking.send(player, new ClientPlayerFormPayload(playerId, FormUtils.toData(form)));
     }
 
     public static void sendMorphToTracked(ServerPlayerEntity player, Form form)
@@ -369,11 +426,7 @@ public class ServerNetwork
 
     public static void sendClickedModelBlock(ServerPlayerEntity player, BlockPos pos)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeBlockPos(pos);
-
-        ServerPlayNetworking.send(player, CLIENT_CLICKED_MODEL_BLOCK_PACKET, buf);
+        ServerPlayNetworking.send(player, new ClientClickedModelPayload(pos));
     }
 
     public static void sendPlayFilm(ServerWorld world, String filmId, boolean withCamera)
@@ -386,15 +439,11 @@ public class ServerNetwork
             {
                 BBSMod.getActions().play(world, film, 0);
 
-                PacketByteBuf newBuf = PacketByteBufs.create();
-
-                newBuf.writeString(filmId);
-                newBuf.writeBoolean(withCamera);
-                DataStorageUtils.writeToPacket(newBuf, film.toData());
+                ClientPlayFilmPayload payload = new ClientPlayFilmPayload(filmId, withCamera, film.toData());
 
                 for (ServerPlayerEntity otherPlayer : world.getPlayers())
                 {
-                    ServerPlayNetworking.send(otherPlayer, CLIENT_PLAY_FILM_PACKET, newBuf);
+                    ServerPlayNetworking.send(otherPlayer, payload);
                 }
             }
         }
@@ -414,13 +463,7 @@ public class ServerNetwork
             {
                 BBSMod.getActions().play(player.getServerWorld(), film, 0);
 
-                PacketByteBuf buf = PacketByteBufs.create();
-
-                buf.writeString(filmId);
-                buf.writeBoolean(withCamera);
-                DataStorageUtils.writeToPacket(buf, film.toData());
-
-                ServerPlayNetworking.send(player, CLIENT_PLAY_FILM_PACKET, buf);
+                ServerPlayNetworking.send(player, new ClientPlayFilmPayload(filmId, withCamera, film.toData()));
             }
         }
         catch (Exception e)
@@ -431,32 +474,16 @@ public class ServerNetwork
 
     public static void sendStopFilm(ServerPlayerEntity player, String filmId)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeString(filmId);
-
-        ServerPlayNetworking.send(player, CLIENT_STOP_FILM_PACKET, buf);
+        ServerPlayNetworking.send(player, new ClientStopFilmPayload(filmId));
     }
 
     public static void sendManagerData(ServerPlayerEntity player, int callbackId, RepositoryOperation op, BaseType data)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeInt(callbackId);
-        buf.writeInt(op.ordinal());
-        DataStorageUtils.writeToPacket(buf, data);
-
-        ServerPlayNetworking.send(player, CLIENT_MANAGER_DATA_PACKET, buf);
+        ServerPlayNetworking.send(player, new ClientManagerDataPayload(callbackId, op.ordinal(), data));
     }
 
     public static void sendRecordedActions(ServerPlayerEntity player, String filmId, int replayId, Clips clips)
     {
-        PacketByteBuf newBuf = PacketByteBufs.create();
-
-        newBuf.writeString(filmId);
-        newBuf.writeInt(replayId);
-        DataStorageUtils.writeToPacket(newBuf, clips.toData());
-
-        ServerPlayNetworking.send(player, CLIENT_RECORDED_ACTIONS, newBuf);
+        ServerPlayNetworking.send(player, new ClientRecordedActionsPayload(filmId, replayId, clips.toData()));
     }
 }

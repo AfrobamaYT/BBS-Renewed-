@@ -21,7 +21,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
@@ -68,8 +67,10 @@ public class ModelBlock extends Block implements BlockEntityProvider, Waterlogga
             ItemStack stack = new ItemStack(this);
             NbtCompound compound = new NbtCompound();
 
+            /* TODO: 1.21
             compound.put("BlockEntityTag", modelBlock.createNbtWithId());
             stack.setNbt(compound);
+             */
 
             return stack;
         }
@@ -109,19 +110,14 @@ public class ModelBlock extends Block implements BlockEntityProvider, Waterlogga
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit)
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit)
     {
-        if (hand == Hand.MAIN_HAND)
+        if (player instanceof ServerPlayerEntity serverPlayer)
         {
-            if (player instanceof ServerPlayerEntity serverPlayer)
-            {
-                ServerNetwork.sendClickedModelBlock(serverPlayer, pos);
-            }
-
-            return ActionResult.SUCCESS;
+            ServerNetwork.sendClickedModelBlock(serverPlayer, pos);
         }
 
-        return super.onUse(state, world, pos, player, hand, hit);
+        return ActionResult.SUCCESS;
     }
 
     /* Waterloggable implementation */

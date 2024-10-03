@@ -20,7 +20,7 @@ public class ActorEntityRenderer extends LivingEntityRenderer<ActorEntity, Playe
     @Override
     public Identifier getTexture(ActorEntity entity)
     {
-        return new Identifier("minecraft:textures/entity/player/wide/steve.png");
+        return Identifier.of("minecraft:textures/entity/player/wide/steve.png");
     }
 
     @Override

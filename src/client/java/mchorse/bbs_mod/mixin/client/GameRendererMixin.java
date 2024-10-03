@@ -70,13 +70,13 @@ public class GameRendererMixin
         }
     }
 
-    @Inject(method = "render(FJZ)V", at = @At("HEAD"))
+    @Inject(method = "render(Lnet/minecraft/client/render/RenderTickCounter;Z)V", at = @At("HEAD"))
     public void onRender(CallbackInfo info)
     {
         BBSRendering.onWorldRenderBegin();
     }
 
-    @Inject(method = "render(FJZ)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V", ordinal = 0))
+    @Inject(method = "render(Lnet/minecraft/client/render/RenderTickCounter;Z)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V", ordinal = 0))
     public void beforeRenderGUI(CallbackInfo info)
     {
         BBSRendering.onWorldRenderEnd();

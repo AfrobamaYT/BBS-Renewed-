@@ -93,11 +93,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             RenderSystem.setShader(shader);
 
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             Matrix4f matrix = matrices.peek().getPositionMatrix();
-            Matrix3f normal = matrices.peek().getNormalMatrix();
-
-            buffer.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
             for (int i = 0; i < data.getCount(); i++)
             {
@@ -108,8 +105,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                     .texture(data.data[offset + 3], data.data[offset + 4])
                     .overlay(overlay)
                     .light(light)
-                    .normal(normal, data.data[offset + 5], data.data[offset + 6], data.data[offset + 7])
-                    .next();
+                    .normal(matrices.peek(), data.data[offset + 5], data.data[offset + 6], data.data[offset + 7]);
             }
 
             RenderSystem.defaultBlendFunc();

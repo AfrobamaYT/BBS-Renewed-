@@ -19,7 +19,7 @@ public class ParticleComponentExpireNotInBlocks extends ParticleComponentExpireB
 
         for (String block : this.blocks)
         {
-            if (current.getBlock().getLootTableId().toString().equals(block))
+            if (current.getBlock().getLootTableKey().getValue().toString().equals(block))
             {
                 return;
             }

@@ -487,7 +487,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof LivingEntity living)
         {
-            return living.getRoll();
+            return 0; // TODO: 1.21 living.getRoll();
         }
 
         return 0;

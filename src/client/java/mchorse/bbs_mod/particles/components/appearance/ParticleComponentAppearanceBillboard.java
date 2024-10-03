@@ -365,8 +365,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         builder.vertex(matrix, vertex.x, vertex.y, vertex.z)
             .texture(u, v)
             .color(particle.r, particle.g, particle.b, particle.a)
-            .light(this.light)
-            .next();
+            .light(this.light);
     }
 
     @Override
@@ -416,8 +415,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
     {
         builder.vertex(matrix, vertex.x, vertex.y, 0F)
             .texture(u, v)
-            .color(particle.r, particle.g, particle.b, particle.a)
-            .next();
+            .color(particle.r, particle.g, particle.b, particle.a);
     }
 
     public void calculateUVs(Particle particle, ParticleEmitter emitter, float transition)

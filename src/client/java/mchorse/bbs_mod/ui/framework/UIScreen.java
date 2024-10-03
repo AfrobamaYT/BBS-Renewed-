@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.framework;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.importers.IImportPathProvider;
@@ -113,6 +112,7 @@ public class UIScreen extends Screen implements IFileDropListener
     public void onDisplayed()
     {
         this.lastGuiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
+        this.client = MinecraftClient.getInstance();
 
         MinecraftClient.getInstance().options.getGuiScale().setValue(BBSModClient.getGUIScale());
         MinecraftClient.getInstance().onResolutionChanged();
@@ -196,7 +196,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.render(context, mouseX, mouseY, delta);
 
-        this.menu.context.setTransition(this.client.getTickDelta());
+        this.menu.context.setTransition(this.client.getRenderTickCounter().getTickDelta(true));
         this.menu.renderMenu(this.context, mouseX, mouseY);
     }
 

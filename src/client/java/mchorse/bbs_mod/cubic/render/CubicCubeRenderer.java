@@ -200,6 +200,6 @@ public class CubicCubeRenderer implements ICubicRenderer
             builder.light(this.light);
         }
 
-        builder.normal(this.normal.x, this.normal.y, this.normal.z).next();
+        builder.normal(this.normal.x, this.normal.y, this.normal.z);
     }
 }

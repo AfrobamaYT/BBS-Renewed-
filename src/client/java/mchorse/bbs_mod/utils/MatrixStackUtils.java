@@ -7,6 +7,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 public class MatrixStackUtils
 {
@@ -14,7 +15,6 @@ public class MatrixStackUtils
 
     private static Matrix4f oldProjection = new Matrix4f();
     private static Matrix4f oldMV = new Matrix4f();
-    private static Matrix3f oldInverse = new Matrix3f();
 
     public static void scaleStack(MatrixStack stack, float x, float y, float z)
     {
@@ -27,29 +27,27 @@ public class MatrixStackUtils
         /* Cache the global stuff */
         oldProjection.set(RenderSystem.getProjectionMatrix());
         oldMV.set(RenderSystem.getModelViewMatrix());
-        oldInverse.set(RenderSystem.getInverseViewRotationMatrix());
 
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
+        Matrix4fStack renderStack = RenderSystem.getModelViewStack();
 
-        renderStack.push();
-        renderStack.loadIdentity();
+        renderStack.pushMatrix();
+        renderStack.identity();
         RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        renderStack.popMatrix();
     }
 
     public static void restoreMatrices()
     {
         /* Return back to orthographic projection */
         RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
-        RenderSystem.setInverseViewRotationMatrix(oldInverse);
 
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
+        Matrix4fStack renderStack = RenderSystem.getModelViewStack();
 
-        renderStack.push();
-        renderStack.loadIdentity();
+        renderStack.pushMatrix();
+        renderStack.identity();
         MatrixStackUtils.multiply(renderStack, oldMV);
         RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
+        renderStack.popMatrix();
     }
 
     public static void applyTransform(MatrixStack stack, Transform transform)
@@ -70,6 +68,11 @@ public class MatrixStackUtils
 
         stack.peek().getPositionMatrix().mul(matrix);
         stack.peek().getNormalMatrix().mul(normal);
+    }
+
+    public static void multiply(Matrix4fStack stack, Matrix4f matrix)
+    {
+        stack.mul(matrix);
     }
 
     public static void scaleBack(MatrixStack matrices)

@@ -33,10 +33,9 @@ public class Draw
         float fd = (float) d;
         float t = 1 / 96F + (float) (Math.sqrt(w * w + h + h + d + d) / 2000);
 
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         /* Pillars: fillBox(builder, -t, -t, -t, t, t, t, r, g, b, a); */
         fillBox(builder, stack, -t, -t, -t, t, t + fh, t, r, g, b, a);
@@ -79,13 +78,13 @@ public class Draw
         Matrix4f matrix4f = stack.peek().getPositionMatrix();
 
         /* 1 - BL, 2 - BR, 3 - TR, 4 - TL */
-        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a).normal(nx, ny, nz).next();
-        builder.vertex(matrix4f, x1, y1, z1).texture(u2, v2).color(r, g, b, a).normal(nx, ny, nz).next();
-        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a).normal(nx, ny, nz).next();
+        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a).normal(nx, ny, nz);
+        builder.vertex(matrix4f, x1, y1, z1).texture(u2, v2).color(r, g, b, a).normal(nx, ny, nz);
+        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a).normal(nx, ny, nz);
 
-        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a).normal(nx, ny, nz).next();
-        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a).normal(nx, ny, nz).next();
-        builder.vertex(matrix4f, x3, y3, z3).texture(u1, v1).color(r, g, b, a).normal(nx, ny, nz).next();
+        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a).normal(nx, ny, nz);
+        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a).normal(nx, ny, nz);
+        builder.vertex(matrix4f, x3, y3, z3).texture(u1, v1).color(r, g, b, a).normal(nx, ny, nz);
     }
 
     /**
@@ -106,9 +105,9 @@ public class Draw
         Matrix4f matrix4f = stack.peek().getPositionMatrix();
 
         /* 1 - BL, 2 - BR, 3 - TR, 4 - TL */
-        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x1, y1, z1).texture(u2, v2).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a);
+        builder.vertex(matrix4f, x1, y1, z1).texture(u2, v2).color(r, g, b, a);
+        builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a);
 
         builder.vertex(matrix4f, x2, y2, z2).texture(u1, v2).color(r, g, b, a);
         builder.vertex(matrix4f, x4, y4, z4).texture(u2, v1).color(r, g, b, a);
@@ -120,12 +119,12 @@ public class Draw
         Matrix4f matrix4f = stack.peek().getPositionMatrix();
 
         /* 1 - BR, 2 - BL, 3 - TL, 4 - TR */
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a).next();
-        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a).next();
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
+        builder.vertex(matrix4f, x2, y2, z2).color(r, g, b, a);
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
+        builder.vertex(matrix4f, x1, y1, z1).color(r, g, b, a);
+        builder.vertex(matrix4f, x3, y3, z3).color(r, g, b, a);
+        builder.vertex(matrix4f, x4, y4, z4).color(r, g, b, a);
     }
 
     public static void fillBoxTo(BufferBuilder builder, MatrixStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a)
@@ -169,9 +168,8 @@ public class Draw
 
     public static void axes(MatrixStack stack, float length, float thickness)
     {
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
         Draw.axes(builder, stack, length, thickness);
 
         RenderSystem.disableDepthTest();
@@ -196,9 +194,7 @@ public class Draw
 
     public static void coolerAxes(MatrixStack stack, float axisSize, float axisOffset, float outlineSize, float outlineOffset)
     {
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
-
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         Draw.fillBox(builder, stack, 0, -outlineOffset, -outlineOffset, outlineSize, outlineOffset, outlineOffset, 0, 0, 0);
         Draw.fillBox(builder, stack, -outlineOffset, 0, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);

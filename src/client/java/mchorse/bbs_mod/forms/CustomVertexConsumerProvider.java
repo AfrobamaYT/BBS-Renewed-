@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.forms;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.BufferAllocator;
 import org.lwjgl.opengl.GL11;
 
-import java.util.Map;
+import java.util.SequencedMap;
 import java.util.function.Consumer;
 
 public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immediate
@@ -33,9 +33,9 @@ public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immedia
         runnables = null;
     }
 
-    public CustomVertexConsumerProvider(BufferBuilder fallback, Map<RenderLayer, BufferBuilder> layers)
+    public CustomVertexConsumerProvider(BufferAllocator allocator, SequencedMap<RenderLayer, BufferAllocator> sequencedMap)
     {
-        super(fallback, layers);
+        super(allocator, sequencedMap);
     }
 
     public void setUI(boolean ui)

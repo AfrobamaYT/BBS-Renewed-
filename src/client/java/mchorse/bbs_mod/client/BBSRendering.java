@@ -254,14 +254,12 @@ public class BBSRendering
 
         if (width != 0)
         {
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
+            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 
-            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-
-            builder.vertex(-1F, -1F, 0F).texture(0F, 0F).color(Colors.WHITE).next();
-            builder.vertex(-1F, 1F, 0F).texture(0F, 1F).color(Colors.WHITE).next();
-            builder.vertex(1F, 1F, 0F).texture(1F, 1F).color(Colors.WHITE).next();
-            builder.vertex(1F, -1F, 0F).texture(1F, 0F).color(Colors.WHITE).next();
+            builder.vertex(-1F, -1F, 0F).texture(0F, 0F).color(Colors.WHITE);
+            builder.vertex(-1F, 1F, 0F).texture(0F, 1F).color(Colors.WHITE);
+            builder.vertex(1F, 1F, 0F).texture(1F, 1F).color(Colors.WHITE);
+            builder.vertex(1F, -1F, 0F).texture(1F, 0F).color(Colors.WHITE);
 
             RenderSystem.disableCull();
             RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
@@ -273,15 +271,15 @@ public class BBSRendering
         }
     }
 
-    public static void onRenderChunkLayer(MatrixStack stack)
+    public static void onRenderChunkLayer()
     {
         WorldRenderContextImpl worldRenderContext = new WorldRenderContextImpl();
         MinecraftClient mc = MinecraftClient.getInstance();
 
         worldRenderContext.prepare(
-            mc.worldRenderer, stack, mc.getTickDelta(), mc.getRenderTime(), false,
+            mc.worldRenderer, mc.getRenderTickCounter(), false,
             mc.gameRenderer.getCamera(), mc.gameRenderer, mc.gameRenderer.getLightmapTextureManager(),
-            RenderSystem.getProjectionMatrix(), mc.getBufferBuilders().getEntityVertexConsumers(), null, false, mc.world
+            RenderSystem.getProjectionMatrix(), RenderSystem.getModelViewMatrix(), mc.getBufferBuilders().getEntityVertexConsumers(), null, false, mc.world
         );
 
         if (isIrisShadersEnabled())

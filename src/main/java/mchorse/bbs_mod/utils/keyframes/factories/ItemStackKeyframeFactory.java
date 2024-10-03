@@ -19,12 +19,17 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
         DataResult<Pair<ItemStack, NbtElement>> decode = ItemStack.CODEC.decode(NbtOps.INSTANCE, DataStorageUtils.toNbt(data));
         Optional<Pair<ItemStack, NbtElement>> result = decode.result();
 
-        return result.map(Pair::getFirst).orElse(null);
+        return result.map(Pair::getFirst).orElse(ItemStack.EMPTY);
     }
 
     @Override
     public BaseType toData(ItemStack value)
     {
+        if (value == null)
+        {
+            value = ItemStack.EMPTY;
+        }
+
         Optional<NbtElement> result = ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, value).result();
 
         return result.map(DataStorageUtils::fromNbt).orElse(null);
@@ -50,7 +55,7 @@ public class ItemStackKeyframeFactory implements IKeyframeFactory<ItemStack>
     @Override
     public ItemStack copy(ItemStack value)
     {
-        return value.copy();
+        return value == null ? ItemStack.EMPTY : value.copy();
     }
 
     @Override

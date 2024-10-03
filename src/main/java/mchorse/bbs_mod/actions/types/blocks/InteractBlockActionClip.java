@@ -7,7 +7,6 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.utils.clips.Clip;
-import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 
 public class InteractBlockActionClip extends ActionClip
@@ -30,7 +29,7 @@ public class InteractBlockActionClip extends ActionClip
 
         BlockHitResult result = this.hit.getHitResult();
 
-        player.getWorld().getBlockState(result.getBlockPos()).onUse(player.getWorld(), player, this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND, result);
+        player.getWorld().getBlockState(result.getBlockPos()).onUse(player.getWorld(), player, result);
     }
 
     @Override
