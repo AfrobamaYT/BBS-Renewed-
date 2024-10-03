@@ -2,8 +2,8 @@ package mchorse.bbs_mod.utils.clips;
 
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public abstract class ClipContext <T extends Clip, E>
@@ -53,7 +53,7 @@ public abstract class ClipContext <T extends Clip, E>
      */
     public double velocity;
 
-    public final Map<String, Object> clipData = new HashMap<>();
+    public final Map<String, Object> clipData = new ConcurrentHashMap<>();
 
     public ClipContext setup(int ticks, float transition)
     {
