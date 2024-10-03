@@ -9,6 +9,7 @@ import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;
+import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 import mchorse.bbs_mod.vox.VoxModelLoader;
@@ -25,6 +26,8 @@ import java.util.Set;
 
 public class ModelManager implements IWatchDogListener
 {
+    public static final String MODELS_PREFIX = "models/";
+
     public final Map<String, CubicModel> models = new HashMap<>();
     public final List<IModelLoader> loaders = new ArrayList<>();
     public final AssetProvider provider;
@@ -91,7 +94,7 @@ public class ModelManager implements IWatchDogListener
     public CubicModel loadModel(String id)
     {
         CubicModel model = null;
-        Link modelLink = Link.assets("models/" + id);
+        Link modelLink = Link.assets(MODELS_PREFIX + id);
         Collection<Link> links = this.provider.getLinksFromPath(modelLink, false);
         MapType config = this.loadConfig(modelLink);
 
@@ -140,6 +143,11 @@ public class ModelManager implements IWatchDogListener
 
     public boolean isRelodable(Link link)
     {
+        if (!link.path.startsWith(MODELS_PREFIX))
+        {
+            return false;
+        }
+
         if (link.path.contains("/animations/"))
         {
             return false;
@@ -167,9 +175,7 @@ public class ModelManager implements IWatchDogListener
 
         if (this.isRelodable(link))
         {
-            int index = link.path.lastIndexOf('/');
-            int secondIndex = link.path.lastIndexOf('/', index - 1);
-            String key = link.path.substring(secondIndex + 1, index);
+            String key = StringUtils.parentPath(link.path.substring(MODELS_PREFIX.length()));
 
             this.models.remove(key);
         }

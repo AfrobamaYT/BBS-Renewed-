@@ -30,7 +30,9 @@ public class ModelLoader implements Runnable
     {
         while (!this.queue.isEmpty())
         {
-            this.manager.loadModel(this.queue.poll());
+            String model = this.queue.poll();
+
+            this.manager.loadModel(model);
         }
 
         this.thread = null;

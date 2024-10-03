@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.sections;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.categories.FormCategory;
 import mchorse.bbs_mod.forms.categories.ModelFormCategory;
@@ -19,9 +20,6 @@ import java.util.Objects;
 
 public class ModelFormSection extends SubFormSection
 {
-
-    public static final String MODELS_PREFIX = "models/";
-
     public ModelFormSection(FormCategories parent)
     {
         super(parent);
@@ -83,7 +81,7 @@ public class ModelFormSection extends SubFormSection
             this.initiate();
             this.parent.markDirty();
         }
-        else if (link.path.startsWith(MODELS_PREFIX))
+        else if (link.path.startsWith(ModelManager.MODELS_PREFIX))
         {
             String extension = this.getExtension(link);
 
@@ -92,7 +90,7 @@ public class ModelFormSection extends SubFormSection
                 return;
             }
 
-            String key = link.path.substring(MODELS_PREFIX.length());
+            String key = link.path.substring(ModelManager.MODELS_PREFIX.length());
 
             key = key.substring(0, key.length() - extension.length());
 

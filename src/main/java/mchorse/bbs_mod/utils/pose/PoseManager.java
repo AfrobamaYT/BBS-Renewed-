@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils.pose;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
 
@@ -56,7 +57,7 @@ public class PoseManager
 
     private static File getPosesFile(String group)
     {
-        File poses = BBSMod.getAssetsPath("models/" + group + "/");
+        File poses = BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + group + "/");
 
         poses.mkdirs();
 

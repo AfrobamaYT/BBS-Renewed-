@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.categories;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -63,7 +64,7 @@ public class UIFormCategory extends UIElement
                 {
                     ModelForm form = (ModelForm) this.selected;
 
-                    UIUtils.openFolder(BBSMod.getAssetsPath("models/" + form.model.get() + "/"));
+                    UIUtils.openFolder(BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + form.model.get() + "/"));
                 });
             }
 

@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.categories;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.CubicLoader;
 import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.categories.FormCategory;
@@ -43,7 +44,7 @@ public class UIModelFormCategory extends UIFormCategory
 
                     try
                     {
-                        File path = BBSMod.getAssetsPath("models/" + modelForm.model.get() + "/exported._bbs.json");
+                        File path = BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + modelForm.model.get() + "/exported._bbs.json");
 
                         IOUtils.writeText(path, DataToString.toString(map, true));
 
