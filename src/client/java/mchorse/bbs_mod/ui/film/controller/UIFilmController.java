@@ -1048,14 +1048,13 @@ public class UIFilmController extends UIElement
         MatrixStackUtils.cacheMatrices();
 
         RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorter.BY_Z);
-        /* TODO: 1.21 RenderSystem.setInverseViewRotationMatrix(new Matrix3f(this.panel.lastView).invert()); */
 
         /* Render the stencil */
         MatrixStack worldStack = this.worldRenderContext.matrixStack();
 
         worldStack.push();
         worldStack.loadIdentity();
-        MatrixStackUtils.multiply(worldStack, this.panel.lastView);
+        MatrixStackUtils.multiply(worldStack, BBSRendering.camera);
         this.renderStencil(this.worldRenderContext, this.getContext());
         worldStack.pop();
 

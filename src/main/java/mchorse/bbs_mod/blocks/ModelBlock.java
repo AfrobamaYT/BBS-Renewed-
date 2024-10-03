@@ -11,12 +11,13 @@ import net.minecraft.block.Waterloggable;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
@@ -65,12 +66,8 @@ public class ModelBlock extends Block implements BlockEntityProvider, Waterlogga
         if (entity instanceof ModelBlockEntity modelBlock)
         {
             ItemStack stack = new ItemStack(this);
-            NbtCompound compound = new NbtCompound();
 
-            /* TODO: 1.21
-            compound.put("BlockEntityTag", modelBlock.createNbtWithId());
-            stack.setNbt(compound);
-             */
+            stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, NbtComponent.of(modelBlock.createNbtWithId(world.getRegistryManager())));
 
             return stack;
         }

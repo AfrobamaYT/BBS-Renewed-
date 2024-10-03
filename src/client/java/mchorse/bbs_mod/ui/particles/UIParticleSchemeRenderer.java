@@ -66,7 +66,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
         stack.push();
         stack.loadIdentity();
-        stack.multiplyPositionMatrix(RenderSystem.getModelViewMatrix()); // TODO: 1.21
+        stack.multiplyPositionMatrix(this.camera.view);
 
         this.emitter.render(GameRenderer::getParticleProgram, stack, context.getTransition());
 

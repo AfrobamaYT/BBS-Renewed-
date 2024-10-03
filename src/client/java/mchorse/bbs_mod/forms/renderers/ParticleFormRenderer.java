@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -110,7 +109,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             this.updateTexture(context.getTransition());
 
-            Matrix4f matrix = new Matrix4f(RenderSystem.getModelViewMatrix()).invert();
+            Matrix4f matrix = new Matrix4f(BBSRendering.camera).invert();
 
             matrix.mul(context.stack.peek().getPositionMatrix());
 
@@ -121,7 +120,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             context.stack.push();
             context.stack.loadIdentity();
-            context.stack.multiplyPositionMatrix(new Matrix4f(RenderSystem.getModelViewMatrix()));
+            context.stack.multiplyPositionMatrix(BBSRendering.camera);
 
             emitter.lastGlobal.set(translation);
             emitter.rotation.set(matrix);

@@ -54,6 +54,8 @@ public class BBSRendering
     public static boolean renderingWorld;
     public static int lastAction;
 
+    public static final Matrix4f camera = new Matrix4f();
+
     private static boolean customSize;
     private static boolean iris;
     private static boolean optifine;

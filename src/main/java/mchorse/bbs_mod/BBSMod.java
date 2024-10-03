@@ -40,6 +40,7 @@ import mchorse.bbs_mod.camera.clips.overwrite.DollyClip;
 import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
+import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormArchitect;
@@ -180,9 +181,8 @@ public class BBSMod implements ModInitializer
         properties.setForm(form);
         properties.getTransformFirstPerson().translate.set(0F, 0F, -0.25F);
 
-        /* TODO: 1.21
-        NbtCompound compound = entity.createNbtWithId();
-         */
+        nbt.putString("id", Identifier.of(MOD_ID, "model_block_entity").toString());
+        nbt.put("Properties", DataStorageUtils.toNbt(properties.toData()));
 
         stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, NbtComponent.of(nbt));
 
