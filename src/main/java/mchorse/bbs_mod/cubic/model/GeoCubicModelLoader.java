@@ -26,6 +26,11 @@ public class GeoCubicModelLoader implements IModelLoader
         List<Link> modelAnimation = IModelLoader.getLinks(recursiveLinks, ".animation.json");
         Link modelTexture = IModelLoader.getLink(model.combine("model.png"), recursiveLinks, ".png");
 
+        if (modelGeo.isEmpty())
+        {
+            return null;
+        }
+
         try (InputStream geoStream = BBSMod.getProvider().getAsset(modelGeo.get(0)))
         {
             JsonObject modelJson = JsonParser.parseString(IOUtils.readText(geoStream)).getAsJsonObject();
