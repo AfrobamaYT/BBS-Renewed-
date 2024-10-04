@@ -72,10 +72,12 @@ public class URLSourcePack implements ISourcePack
             InputStream inputStream = downloadImage(link);
             File outFile = this.repository.convertInputStream(url, inputStream);
 
-            return new FileInputStream(outFile);
+            return outFile == null ? null : new FileInputStream(outFile);
         }
         catch (Exception e)
-        {}
+        {
+            URLTextureErrorCallback.EVENT.invoker().onError(url, URLError.HTTP_ERROR);
+        }
 
         return null;
     }

@@ -20,21 +20,26 @@ import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.particles.ParticleManager;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.resources.packs.URLError;
 import mchorse.bbs_mod.resources.packs.URLRepository;
 import mchorse.bbs_mod.resources.packs.URLSourcePack;
+import mchorse.bbs_mod.resources.packs.URLTextureErrorCallback;
 import mchorse.bbs_mod.selectors.EntitySelectors;
 import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.ui.utils.keys.KeybindSettings;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.VideoRecorder;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.watchdog.WatchDog;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -357,6 +362,25 @@ public class BBSModClient implements ClientModInitializer
             Window window = MinecraftClient.getInstance().getWindow();
 
             originalFramebufferScale = window.getFramebufferWidth() / window.getWidth();
+        });
+
+        URLTextureErrorCallback.EVENT.register((url, error) ->
+        {
+            UIBaseMenu menu = UIScreen.getCurrentMenu();
+
+            if (menu != null)
+            {
+                url = url.substring(0, MathUtils.clamp(url.length(), 0, 40));
+
+                if (error == URLError.FFMPEG)
+                {
+                    menu.context.notify(UIKeys.TEXTURE_URL_ERROR_FFMPEG.format(url), Colors.RED);
+                }
+                else if (error == URLError.HTTP_ERROR)
+                {
+                    menu.context.notify(UIKeys.TEXTURE_URL_ERROR_HTTP.format(url), Colors.RED);
+                }
+            }
         });
 
         BBSRendering.setup();

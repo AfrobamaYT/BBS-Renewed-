@@ -75,11 +75,18 @@ public class URLRepository
 
         IOUtils.copy(stream, new FileOutputStream(buffer));
 
-        FFMpegUtils.execute(this.folder, "-i", "buffer", uuid);
+        if (FFMpegUtils.execute(this.folder, "-i", "buffer", uuid))
+        {
+            this.cache.put(url, value);
+            this.saveCache();
 
-        this.cache.put(url, value);
-        this.saveCache();
+            return value;
+        }
+        else
+        {
+            URLTextureErrorCallback.EVENT.invoker().onError(url, URLError.FFMPEG);
+        }
 
-        return value;
+        return null;
     }
 }

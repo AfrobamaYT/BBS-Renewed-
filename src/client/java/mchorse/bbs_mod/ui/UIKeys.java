@@ -658,6 +658,8 @@ public class UIKeys
     public static final IKey TEXTURE_NO_DATA = L10n.lang( "bbs.ui.texture.no_data");
     public static final IKey TEXTURE_OPEN_FOLDER = L10n.lang("bbs.ui.texture.open_folder");
     public static final IKey TEXTURE_PICK_TEXTURE = L10n.lang("bbs.ui.texture.pick_texture");
+    public static final IKey TEXTURE_URL_ERROR_FFMPEG = L10n.lang("bbs.ui.texture.url_error_ffmpeg");
+    public static final IKey TEXTURE_URL_ERROR_HTTP = L10n.lang("bbs.ui.texture.url_error_http");
     public static final IKey TRANSFORMS_CONTEXT_COPY = L10n.lang("bbs.ui.transforms.context.copy");
     public static final IKey TRANSFORMS_CONTEXT_PASTE = L10n.lang("bbs.ui.transforms.context.paste");
     public static final IKey TRANSFORMS_CONTEXT_PASTE_ROTATION = L10n.lang("bbs.ui.transforms.context.paste_rotation");

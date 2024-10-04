@@ -726,6 +726,8 @@
     "bbs.ui.texture.no_data": "Данные недоступны...",
     "bbs.ui.texture.open_folder": "Открыть папку",
     "bbs.ui.texture.pick_texture": "Выбрать текстуру",
+    "bbs.ui.texture.url_error_http": "Ресурс по \"%s\" URL не смог был скачан из-за HTTP ошибки...",
+    "bbs.ui.texture.url_error_ffmpeg": "Ресурс по \"%s\" URL не смог был скачан из-за ffmpeg не установлен...",
     "bbs.ui.textures.copy": "Скопировать путь текстуры в буфер обмена",
     "bbs.ui.textures.discard-description": "Вы редактировали эту текстуру. Вы уверены, что хотите переключиться на другую? Переключение на другую текстуру отменит все изменения в этой...",
     "bbs.ui.textures.discard-title": "Подождите!",

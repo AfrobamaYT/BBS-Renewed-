@@ -735,6 +735,8 @@
     "bbs.ui.texture.no_data": "No data available...",
     "bbs.ui.texture.open_folder": "Open folder",
     "bbs.ui.texture.pick_texture": "Pick texture",
+    "bbs.ui.texture.url_error_http": "URL \"%s\" couldn't be downloaded due to HTTP error...",
+    "bbs.ui.texture.url_error_ffmpeg": "URL \"%s\" couldn't be downloaded because ffmpeg isn't installed...",
     "bbs.ui.textures.copy": "Copy texture's path to copy-paste buffer",
     "bbs.ui.textures.discard-description": "You edited this texture. Are you sure you want to switch to another one? Switching to another texture will discard any changes...",
     "bbs.ui.textures.discard-title": "Wait!",
