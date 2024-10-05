@@ -20,6 +20,8 @@ public class BBSSettings
 {
     public static ValueString version;
 
+    public static ValueBoolean unlimitedPacketSize;
+
     public static ValueColors favoriteColors;
     public static ValueLanguage language;
     public static ValueInt primaryColor;
@@ -103,13 +105,14 @@ public class BBSSettings
 
     public static void register(SettingsBuilder builder)
     {
+        unlimitedPacketSize = builder.category("tweaks").getBoolean("unlimited_packet_size", false);
+
         builder.category("appearance");
 
         version = builder.getString("version", BBSMod.SIGNIFICANT_VERSION);
         version.invisible();
 
-        language = new ValueLanguage("language");
-        builder.register(language);
+        builder.register(language = new ValueLanguage("language"));
         primaryColor = builder.getInt("primary_color", Colors.ACTIVE).color();
         enableTrackpadIncrements = builder.getBoolean("trackpad_increments", true);
         userIntefaceScale = builder.getInt("ui_scale", 2, 0, 4);

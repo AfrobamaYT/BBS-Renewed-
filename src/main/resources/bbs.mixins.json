@@ -12,7 +12,8 @@
         "WorldMixin",
         "LivingEntityMixin",
         "ServerPlayerEntityMixin",
-        "LimbAnimatorAccessor"
+        "LimbAnimatorAccessor",
+        "PayloadHelperMixin"
     ],
     "injectors": {
         "defaultRequire": 1
