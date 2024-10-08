@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.forms.properties;
 
-import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
@@ -45,14 +45,14 @@ public abstract class BaseTweenProperty <T> extends BaseProperty<T>
     }
 
     @Override
-    protected void propertyFromData(MapType data, String key)
+    public BaseType toData()
     {
-        this.set(this.factory.fromData(data.get(key)));
+        return this.factory.toData(this.value);
     }
 
     @Override
-    public void toData(MapType data)
+    public void fromData(BaseType data)
     {
-        data.put(this.getKey(), this.factory.toData(this.value));
+        this.set(this.factory.fromData(data));
     }
 }

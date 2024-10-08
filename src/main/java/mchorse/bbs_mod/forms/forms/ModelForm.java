@@ -1,11 +1,13 @@
 package mchorse.bbs_mod.forms.forms;
 
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.properties.ActionsConfigProperty;
 import mchorse.bbs_mod.forms.properties.ColorProperty;
 import mchorse.bbs_mod.forms.properties.LinkProperty;
 import mchorse.bbs_mod.forms.properties.PoseProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
+import mchorse.bbs_mod.forms.triggers.StateTriggers;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
 
@@ -16,6 +18,7 @@ public class ModelForm extends Form
     public final PoseProperty pose = new PoseProperty(this, "pose", new Pose());
     public final ActionsConfigProperty actions = new ActionsConfigProperty(this, "actions", new ActionsConfig());
     public final ColorProperty color = new ColorProperty(this, "color", Color.white());
+    public final StateTriggers triggers = new StateTriggers();
 
     public ModelForm()
     {
@@ -29,8 +32,37 @@ public class ModelForm extends Form
     }
 
     @Override
+    public boolean equals(Object obj)
+    {
+        boolean result = super.equals(obj);
+
+        if (result && obj instanceof ModelForm form)
+        {
+            result = result && this.triggers.equals(form.triggers);
+        }
+
+        return result;
+    }
+
+    @Override
     public String getDefaultDisplayName()
     {
         return this.model.get();
+    }
+
+    @Override
+    public void fromData(MapType data)
+    {
+        super.fromData(data);
+
+        this.triggers.fromData(data.getMap("stateTriggers"));
+    }
+
+    @Override
+    public void toData(MapType data)
+    {
+        super.toData(data);
+
+        data.put("stateTriggers", this.triggers.toData());
     }
 }

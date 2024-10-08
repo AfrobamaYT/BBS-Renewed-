@@ -2,16 +2,13 @@ package mchorse.bbs_mod.film;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.camera.clips.CameraClipContext;
-import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
-import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.MathUtils;
-import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -26,11 +23,10 @@ import net.minecraft.client.render.VertexFormats;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
-import java.util.List;
-
 public class Recorder extends FilmController
 {
     public ReplayKeyframes keyframes = new ReplayKeyframes("keyframes");
+    public FormProperties properties = new FormProperties("properties");
 
     private Matrix4f perspective = new Matrix4f();
 

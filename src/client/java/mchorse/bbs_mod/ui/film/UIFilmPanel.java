@@ -18,6 +18,7 @@ import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -487,6 +488,21 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             BaseValue.edit(rp, (replay) ->
             {
                 replay.keyframes.copy(recorder.keyframes);
+
+                Form form = replay.form.get();
+
+                if (form != null)
+                {
+                    for (Map.Entry<String, KeyframeChannel> entry : recorder.properties.properties.entrySet())
+                    {
+                        KeyframeChannel channel = replay.properties.getOrCreate(form, entry.getKey());
+
+                        if (channel != null && entry.getValue() != null)
+                        {
+                            channel.copyKeyframes(entry.getValue());
+                        }
+                    }
+                }
             });
 
             this.save();

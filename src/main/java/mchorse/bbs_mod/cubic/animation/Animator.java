@@ -394,4 +394,12 @@ public class Animator implements IAnimator
             }
         }
     }
+
+    @Override
+    public void playAnimation(String name)
+    {
+        Animation animation = this.model.animations.get(name);
+
+        this.addAction(new ActionPlayback(animation, new ActionConfig(), false, -1));
+    }
 }

@@ -1,11 +1,13 @@
 package mchorse.bbs_mod.forms.properties;
 
+import mchorse.bbs_mod.data.IDataSerializable;
 import mchorse.bbs_mod.data.IMapSerializable;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.interps.IInterp;
 
-public interface IFormProperty <T> extends IMapSerializable
+public interface IFormProperty <T> extends IDataSerializable<BaseType>
 {
     /**
      * Get this property's key (which is used for serialization).

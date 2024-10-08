@@ -9,7 +9,11 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -57,6 +61,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_FORM_TRIGGER, (client, handler, buf, responseSender) -> handleFormTriggerPacket(client, buf));
     }
 
     /* Handlers */
@@ -161,6 +166,31 @@ public class ClientNetwork
         client.execute(() ->
         {
             BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
+        });
+    }
+
+    private static void handleFormTriggerPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        int id = buf.readInt();
+        String triggerId = buf.readString();
+
+        client.execute(() ->
+        {
+            Entity entity = client.world.getEntityById(id);
+            Morph morph = Morph.getMorph(entity);
+
+            if (morph.getForm() instanceof ModelForm modelForm)
+            {
+                for (StateTrigger trigger : modelForm.triggers.triggers)
+                {
+                    if (trigger.id.equals(triggerId))
+                    {
+                        ((ModelFormRenderer) FormUtilsClient.getRenderer(modelForm)).triggerState(trigger);
+
+                        return;
+                    }
+                }
+            }
         });
     }
 
@@ -277,5 +307,14 @@ public class ClientNetwork
         buf.writeDouble(z);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_TP, buf);
+    }
+
+    public static void sendFormTrigger(String triggerId)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(triggerId);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_FORM_TRIGGER, buf);
     }
 }

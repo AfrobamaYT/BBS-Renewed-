@@ -290,6 +290,10 @@ public class ProceduralAnimator implements IAnimator
         }
     }
 
+    @Override
+    public void playAnimation(String name)
+    {}
+
     protected float lerpAngle(float a, float b, float magnitude)
     {
         float factor = (magnitude - b) % (360);

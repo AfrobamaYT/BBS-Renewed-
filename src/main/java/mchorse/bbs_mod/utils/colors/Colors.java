@@ -29,6 +29,7 @@ public class Colors
     public static final int CYAN = 0x33ffff;
     public static final int MAGENTA = 0xff66ff;
     public static final int DEEP_PINK = 0xff1493;
+    public static final int PINK = 0xff9da1;
     public static final int ORANGE = 0xff8822;
 
     /* General purpose colors */

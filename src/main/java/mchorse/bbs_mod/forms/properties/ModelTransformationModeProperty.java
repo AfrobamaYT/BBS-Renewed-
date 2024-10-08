@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms.properties;
 
-import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.StringType;
 import mchorse.bbs_mod.forms.forms.Form;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 
@@ -12,15 +13,15 @@ public class ModelTransformationModeProperty extends BaseProperty<ModelTransform
     }
 
     @Override
-    public void toData(MapType data)
+    public BaseType toData()
     {
-        data.putString(this.key, (this.value == null ? ModelTransformationMode.NONE : this.value).asString());
+        return new StringType((this.value == null ? ModelTransformationMode.NONE : this.value).asString());
     }
 
     @Override
-    protected void propertyFromData(MapType data, String key)
+    public void fromData(BaseType data)
     {
-        String string = data.getString(key);
+        String string = data.isString() ? data.asString() : "";
 
         this.set(ModelTransformationMode.NONE);
 

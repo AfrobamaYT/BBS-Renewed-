@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.actions.ActionManager;
 import mchorse.bbs_mod.actions.ActionPlayer;
 import mchorse.bbs_mod.actions.ActionState;
+import mchorse.bbs_mod.actions.types.FormTriggerActionClip;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
@@ -42,6 +43,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_STOP_FILM_PACKET = new Identifier(BBSMod.MOD_ID, "c5");
     public static final Identifier CLIENT_HANDSHAKE = new Identifier(BBSMod.MOD_ID, "c6");
     public static final Identifier CLIENT_RECORDED_ACTIONS = new Identifier(BBSMod.MOD_ID, "c7");
+    public static final Identifier CLIENT_FORM_TRIGGER = new Identifier(BBSMod.MOD_ID, "c8");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -52,6 +54,7 @@ public class ServerNetwork
     public static final Identifier SERVER_ACTION_CONTROL = new Identifier(BBSMod.MOD_ID, "s7");
     public static final Identifier SERVER_ACTIONS_UPLOAD = new Identifier(BBSMod.MOD_ID, "s8");
     public static final Identifier SERVER_PLAYER_TP = new Identifier(BBSMod.MOD_ID, "s9");
+    public static final Identifier SERVER_FORM_TRIGGER = new Identifier(BBSMod.MOD_ID, "s10");
 
     public static void setup()
     {
@@ -64,6 +67,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTION_CONTROL, (server, player, handler, buf, responder) -> handleActionControl(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ACTIONS_UPLOAD, (server, player, handler, buf, responder) -> handleActionsUpload(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_PLAYER_TP, (server, player, handler, buf, responder) -> handleTeleportPlayer(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_FORM_TRIGGER, (server, player, handler, buf, responder) -> handleFormTrigger(server, player, buf));
     }
 
     /* Handlers */
@@ -338,6 +342,32 @@ public class ServerNetwork
         double z = buf.readDouble();
 
         server.execute(() -> player.teleport(x, y, z, false));
+    }
+
+    private static void handleFormTrigger(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        String string = buf.readString();
+        PacketByteBuf newBuf = PacketByteBufs.create();
+
+        newBuf.writeInt(player.getId());
+        newBuf.writeString(string);
+
+        for (ServerPlayerEntity otherPlayer : PlayerLookup.tracking(player))
+        {
+            ServerPlayNetworking.send(otherPlayer, CLIENT_FORM_TRIGGER, newBuf);
+        }
+
+        server.execute(() ->
+        {
+            BBSMod.getActions().addAction(player, () ->
+            {
+                FormTriggerActionClip action = new FormTriggerActionClip();
+
+                action.trigger.set(string);
+
+                return action;
+            });
+        });
     }
 
     /* API */

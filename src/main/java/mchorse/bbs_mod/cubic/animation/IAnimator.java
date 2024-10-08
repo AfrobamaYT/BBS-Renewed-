@@ -13,5 +13,7 @@ public interface IAnimator
 
     public void applyActions(IEntity entity, CubicModel cubicModel, float transition);
 
+    public void playAnimation(String name);
+
     public void update(IEntity entity);
 }

@@ -15,6 +15,7 @@ import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
+import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -22,6 +23,8 @@ import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.properties.IFormProperty;
+import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -65,6 +68,25 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     private long lastCheck;
 
     private IEntity entity = new StubEntity();
+
+    public void triggerState(StateTrigger trigger)
+    {
+        if (!trigger.action.isEmpty())
+        {
+            this.ensureAnimator(0F);
+            this.getAnimator().playAnimation(trigger.action);
+        }
+
+        for (String key : trigger.states.keys())
+        {
+            IFormProperty property = FormUtils.getProperty(this.form, key);
+
+            if (property != null)
+            {
+                property.fromData(trigger.states.get(key));
+            }
+        }
+    }
 
     @Override
     protected void applyTransforms(MatrixStack stack, float transition)

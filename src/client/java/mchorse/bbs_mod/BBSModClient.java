@@ -1,5 +1,6 @@
 package mchorse.bbs_mod;
 
+import mchorse.bbs_mod.actions.types.FormTriggerClientActionClip;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
@@ -13,9 +14,16 @@ import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormCategories;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.categories.UserFormCategory;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
 import mchorse.bbs_mod.l10n.L10n;
+import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.particles.ParticleManager;
 import mchorse.bbs_mod.resources.AssetProvider;
@@ -60,6 +68,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -189,6 +198,58 @@ public class BBSModClient implements ClientModInitializer
         return Math.max(originalFramebufferScale, 1);
     }
 
+    public static void onEndKey(long window, int key, int scancode, int action, int modifiers, CallbackInfo info)
+    {
+        if (action != GLFW.GLFW_PRESS)
+        {
+            return;
+        }
+
+        Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+
+        /* State trigger */
+        if (morph != null && morph.getForm() instanceof ModelForm modelForm)
+        {
+            for (StateTrigger trigger : modelForm.triggers.triggers)
+            {
+                if (trigger.hotkey == key)
+                {
+                    ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(modelForm);
+
+                    BBSModClient.getFilms().recordTrigger(modelForm, trigger);
+                    renderer.triggerState(trigger);
+                    ClientNetwork.sendFormTrigger(trigger.id);
+
+                    return;
+                }
+            }
+        }
+
+        /* Change form based on the hotkey */
+        for (Form form : BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).getForms())
+        {
+            if (form.hotkey.get() == key)
+            {
+                ClientNetwork.sendPlayerForm(form);
+
+                return;
+            }
+        }
+
+        for (UserFormCategory category : BBSModClient.getFormCategories().getUserForms().categories)
+        {
+            for (Form form : category.getForms())
+            {
+                if (form.hotkey.get() == key)
+                {
+                    ClientNetwork.sendPlayerForm(form);
+
+                    return;
+                }
+            }
+        }
+    }
+
     @Override
     public void onInitializeClient()
     {
@@ -257,6 +318,10 @@ public class BBSModClient implements ClientModInitializer
         /* Replace audio clip with client version that plays audio */
         BBSMod.getFactoryCameraClips()
             .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825));
+
+        /* Replace form trigger action clip with client version that plays animation */
+        BBSMod.getFactoryActionClips()
+            .register(Link.bbs("form_trigger"), FormTriggerClientActionClip.class, new ClipFactoryData(Icons.KEY_CAP, Colors.PINK));
 
         /* Keybinds */
         keyDashboard = this.createKey("dashboard", GLFW.GLFW_KEY_0);

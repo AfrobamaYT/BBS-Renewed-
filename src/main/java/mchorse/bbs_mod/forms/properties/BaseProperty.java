@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.forms.properties;
 
-import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -155,15 +154,4 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
 
         return false;
     }
-
-    @Override
-    public void fromData(MapType data)
-    {
-        if (data.has(this.getKey()))
-        {
-            this.propertyFromData(data, this.getKey());
-        }
-    }
-
-    protected abstract void propertyFromData(MapType data, String key);
 }

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.forms;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.IMapSerializable;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormArchitect;
 import mchorse.bbs_mod.forms.ITickable;
@@ -214,7 +215,7 @@ public abstract class Form implements IMapSerializable
 
         for (IFormProperty property : this.properties.values())
         {
-            property.toData(data);
+            data.put(property.getKey(), property.toData());
         }
     }
 
@@ -225,7 +226,12 @@ public abstract class Form implements IMapSerializable
 
         for (IFormProperty property : this.properties.values())
         {
-            property.fromData(data);
+            BaseType type = data.get(property.getKey());
+
+            if (type != null)
+            {
+                property.fromData(type);
+            }
         }
     }
 }

@@ -1,7 +1,12 @@
 package mchorse.bbs_mod.ui.utils.pose;
 
+import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
+import mchorse.bbs_mod.cubic.animation.IAnimator;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
@@ -78,6 +83,20 @@ public class UIActionsConfigEditor extends UIElement
         {
             this.callback.run();
         }
+    }
+
+    public void setConfigs(ActionsConfig configs, ModelForm form)
+    {
+        ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(form);
+        CubicModel model = renderer.getModel();
+
+        renderer.ensureAnimator(0F);
+
+        IAnimator animator = renderer.getAnimator();
+        Collection<String> animations = model != null ? model.animations.animations.keySet() : null;
+        Collection<String> actions = animator != null ? animator.getActions() : null;
+
+        this.setConfigs(configs, animations, actions);
     }
 
     public void setConfigs(ActionsConfig configs, Collection<String> animations, Collection<String> actions)
