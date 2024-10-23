@@ -8,10 +8,14 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import mchorse.bbs_mod.data.DataToString;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ServerNetwork;
+import mchorse.bbs_mod.settings.Settings;
+import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -36,6 +40,7 @@ public class BBSCommands
         registerFilmsCommand(bbs, environment);
         registerDCCommand(bbs, environment);
         registerOnHead(bbs, environment);
+        registerConfig(bbs, environment);
 
         dispatcher.register(bbs);
     }
@@ -146,6 +151,62 @@ public class BBSCommands
         LiteralArgumentBuilder<ServerCommandSource> onHead = CommandManager.literal("on_head");
 
         bbs.then(onHead.executes(BBSCommands::onHead));
+    }
+
+    private static void registerConfig(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> config = CommandManager.literal("config");
+
+        config.requires((ctx) -> ctx.hasPermissionLevel(4)).then(
+            CommandManager.literal("set").then(
+                CommandManager.argument("option", StringArgumentType.word())
+                    .suggests((ctx, builder) ->
+                    {
+                        Settings settings = BBSMod.getSettings().modules.get("bbs");
+
+                        if (settings != null)
+                        {
+                            for (ValueGroup value : settings.categories.values())
+                            {
+                                for (BaseValue baseValue : value.getAll())
+                                {
+                                    builder.suggest(value.getId() + "." + baseValue.getId());
+                                }
+                            }
+                        }
+
+                        return builder.buildFuture();
+                    })
+                    .then(
+                        CommandManager.argument("value", StringArgumentType.greedyString()).executes((ctx) ->
+                        {
+                            Settings settings = BBSMod.getSettings().modules.get("bbs");
+
+                            if (settings != null)
+                            {
+                                String option = StringArgumentType.getString(ctx, "option");
+                                String value = StringArgumentType.getString(ctx, "value");
+                                BaseType valueType = DataToString.fromString(value);
+                                String[] split = option.split("\\.");
+
+                                if (valueType != null && split.length >= 2)
+                                {
+                                    BaseValue baseValue = settings.get(split[0], split[1]);
+
+                                    if (baseValue != null)
+                                    {
+                                        baseValue.fromData(valueType);
+                                    }
+                                }
+                            }
+
+                            return 1;
+                        })
+                    )
+            )
+        );
+
+        bbs.then(config);
     }
 
     /**
