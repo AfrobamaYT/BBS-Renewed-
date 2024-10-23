@@ -64,10 +64,18 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
             light = 0;
         }
+        else
+        {
+            CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
+            {
+                RenderSystem.setShaderColor(1F, 0F, 1F, 1F);
+            });
+        }
 
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
         CustomVertexConsumerProvider.clearRunnables();
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
         context.stack.pop();
 

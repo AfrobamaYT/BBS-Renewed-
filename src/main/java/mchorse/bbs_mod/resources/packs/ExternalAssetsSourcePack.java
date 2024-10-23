@@ -47,6 +47,11 @@ public class ExternalAssetsSourcePack implements ISourcePack
         this.folder = folder;
     }
 
+    public File getFolder()
+    {
+        return folder;
+    }
+
     public ExternalAssetsSourcePack providesFiles()
     {
         this.providesFiles = true;
@@ -93,7 +98,7 @@ public class ExternalAssetsSourcePack implements ISourcePack
                 path = path.substring(1);
             }
 
-            return new Link(this.source, path.replaceAll("\\\\", "/"));
+            return new Link(this.getPrefix(), path.replaceAll("\\\\", "/"));
         }
 
         return null;

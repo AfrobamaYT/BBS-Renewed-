@@ -22,6 +22,8 @@ public class UILinkPropertyEditor extends UIFormPropertyEditor<Link, LinkPropert
     {
         this.pickTexture = new UIButton(UIKeys.TEXTURE_PICK_TEXTURE, (b) ->
         {
+            // TODO: Fix overlay panel being too small
+            // TODO: Fix property
             UITexturePicker.open(this.getContext(), property.get(), this::setValue);
         });
 

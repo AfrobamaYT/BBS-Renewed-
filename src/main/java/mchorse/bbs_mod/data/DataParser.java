@@ -61,11 +61,6 @@ public class DataParser
         return parseNumeric(string, size);
     }
 
-    public static BaseType parseNumeric(String string)
-    {
-        return parseNumeric(string, string.length());
-    }
-
     public static BaseType parseNumeric(String string, int size)
     {
         if (string.equals("null"))
@@ -109,7 +104,14 @@ public class DataParser
                 return new DoubleType(Double.parseDouble(string));
             }
 
-            return new IntType(Integer.parseInt(string));
+            try
+            {
+                return new IntType(Integer.parseInt(string));
+            }
+            catch (Exception e)
+            {
+                return new LongType(Long.parseLong(string));
+            }
         }
         catch (Exception e)
         {}

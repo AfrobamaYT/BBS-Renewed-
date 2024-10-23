@@ -149,6 +149,13 @@ public class StringUtils
         return lastDot >= 0 ? path.substring(0, lastDot) : path;
     }
 
+    public static String extension(String path)
+    {
+        int lastDot = path.lastIndexOf('.');
+
+        return lastDot >= 0 ? path.substring(lastDot + 1) : "";
+    }
+
     public static String replaceExtension(String path, String extension)
     {
         path = removeExtension(path);

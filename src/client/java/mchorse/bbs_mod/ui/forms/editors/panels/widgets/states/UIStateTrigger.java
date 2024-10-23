@@ -34,7 +34,7 @@ public class UIStateTrigger extends UIElement
 
         this.states = new UIButton(IKey.raw("Edit states..."), (b) ->
         {
-            UIOverlay.addOverlay(this.getContext(), new UIFormStatesOverlayPanel(this.modelForm, trigger));
+            UIOverlay.addOverlay(this.getContext(), new UIFormStatesOverlayPanel(this.modelForm, trigger), 0.5F, 0.9F);
         });
 
         this.column().vertical().stretch();

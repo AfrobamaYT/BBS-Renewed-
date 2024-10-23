@@ -66,15 +66,14 @@ public class RayTracing
     {
         BlockHitResult blockHit = rayTrace(world, pos, direction, d);
 
-        Vec3d org = pos;
-        double dist1 = blockHit != null ? blockHit.getPos().squaredDistanceTo(org) : d * d;
+        double dist1 = blockHit != null ? blockHit.getPos().squaredDistanceTo(pos) : d * d;
         Vec3d dir = direction.normalize();
-        Vec3d posDir = org.add(dir.x * d, dir.y * d, dir.z * d);
+        Vec3d posDir = pos.add(dir.x * d, dir.y * d, dir.z * d);
         Box box = new Box(pos.x - 0.5D, pos.y - 0.5D, pos.z - 0.5D, pos.x + 0.5D, pos.y + 0.5D, pos.z + 0.5D)
             .stretch(dir.multiply(d))
             .expand(1D, 1D, 1D);
 
-        EntityHitResult entityHit = ProjectileUtil.raycast(entity, org, posDir, box, e -> !e.isSpectator() && e.canHit(), dist1);
+        EntityHitResult entityHit = ProjectileUtil.raycast(entity, pos, posDir, box, e -> !e.isSpectator() && e.canHit(), dist1);
 
         return entityHit == null || entityHit.getType() == HitResult.Type.MISS ? blockHit : entityHit;
     }

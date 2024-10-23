@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.network;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSResources;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
@@ -15,6 +17,10 @@ import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.morphing.Morph;
+import mchorse.bbs_mod.resources.ISourcePack;
+import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
+import mchorse.bbs_mod.resources.cache.ResourceCache;
+import mchorse.bbs_mod.resources.cache.ResourceEntry;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
@@ -30,7 +36,12 @@ import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -38,16 +49,24 @@ public class ClientNetwork
 {
     private static int ids = 0;
     private static Map<Integer, Consumer<BaseType>> callbacks = new HashMap<>();
+
+    private static String serverId;
     private static boolean isBBSModOnServer;
 
     public static void resetHandshake()
     {
+        serverId = "";
         isBBSModOnServer = false;
     }
 
     public static boolean isIsBBSModOnServer()
     {
         return isBBSModOnServer;
+    }
+
+    public static String getServerId()
+    {
+        return serverId;
     }
 
     /* Network */
@@ -59,9 +78,10 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_PLAY_FILM_PACKET, (client, handler, buf, responseSender) -> handlePlayFilmPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_MANAGER_DATA_PACKET, (client, handler, buf, responseSender) -> handleManagerDataPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_STOP_FILM_PACKET, (client, handler, buf, responseSender) -> handleStopFilmPacket(client, buf));
-        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> isBBSModOnServer = true);
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_HANDSHAKE, (client, handler, buf, responseSender) -> handleHandshakePacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_FORM_TRIGGER, (client, handler, buf, responseSender) -> handleFormTriggerPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ASSET, (client, handler, buf, responseSender) -> handleAssetPacket(client, buf));
     }
 
     /* Handlers */
@@ -157,6 +177,28 @@ public class ClientNetwork
         client.execute(() -> Films.stopFilm(filmId));
     }
 
+    private static void handleHandshakePacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        serverId = buf.readString();
+        isBBSModOnServer = true;
+
+        if (!serverId.isEmpty())
+        {
+            List<ResourceEntry> assets = new ArrayList<>();
+            int c = buf.readInt();
+
+            for (int i = 0; i < c; i++)
+            {
+                String path = buf.readString();
+                long l = buf.readLong();
+
+                assets.add(new ResourceEntry(path, l));
+            }
+
+            BBSResources.setup(client, serverId, new ResourceCache(assets));
+        }
+    }
+
     private static void handleRecordedActionsPacket(MinecraftClient client, PacketByteBuf buf)
     {
         String filmId = buf.readString();
@@ -192,6 +234,40 @@ public class ClientNetwork
                 }
             }
         });
+    }
+
+    private static void handleAssetPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        String path = buf.readString();
+        int index = buf.readInt();
+        int total = buf.readInt();
+        int size = buf.readInt();
+        byte[] bytes = new byte[size];
+
+        buf.readBytes(bytes);
+
+        ISourcePack sourcePack = BBSMod.getDynamicSourcePack().getSourcePack();
+
+        if (sourcePack instanceof CacheAssetsSourcePack pack)
+        {
+            File file = new File(pack.getFolder(), path);
+
+            file.getParentFile().mkdirs();
+
+            try (OutputStream stream = new FileOutputStream(file, index != 0))
+            {
+                stream.write(bytes);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            if (index != total - 1)
+            {
+                client.execute(() -> sendRequestAsset(path, index + 1));
+            }
+        }
     }
 
     /* API */
@@ -316,5 +392,15 @@ public class ClientNetwork
         buf.writeString(triggerId);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_FORM_TRIGGER, buf);
+    }
+
+    public static void sendRequestAsset(String asset, int index)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(asset);
+        buf.writeInt(index);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_REQUEST_ASSET, buf);
     }
 }

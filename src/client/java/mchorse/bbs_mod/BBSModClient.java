@@ -48,7 +48,6 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.ScreenshotRecorder;
 import mchorse.bbs_mod.utils.VideoRecorder;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.watchdog.WatchDog;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -85,7 +84,6 @@ public class BBSModClient implements ClientModInitializer
 
     private static ModelManager models;
     private static FormCategories formCategories;
-    private static WatchDog watchDog;
     private static ScreenshotRecorder screenshotRecorder;
     private static VideoRecorder videoRecorder;
     private static EntitySelectors selectors;
@@ -268,18 +266,13 @@ public class BBSModClient implements ClientModInitializer
 
         models = new ModelManager(provider);
         formCategories = new FormCategories();
-        formCategories.setup();
-        watchDog = new WatchDog(BBSMod.getAssetsFolder(), false, (runnable) -> MinecraftClient.getInstance().execute(runnable));
-        watchDog.register(textures);
-        watchDog.register(models);
-        watchDog.register(sounds);
-        watchDog.register(formCategories);
-        watchDog.start();
         screenshotRecorder = new ScreenshotRecorder(new File(parentFile, "screenshots"));
         videoRecorder = new VideoRecorder();
         selectors = new EntitySelectors();
         selectors.read();
         films = new Films();
+
+        BBSResources.init(parentFile);
 
         URLRepository repository = new URLRepository(new File(parentFile, "url_cache"));
 
@@ -371,6 +364,7 @@ public class BBSModClient implements ClientModInitializer
             films = new Films();
 
             ClientNetwork.resetHandshake();
+            BBSResources.reset();
         });
 
         ClientTickEvents.START_CLIENT_TICK.register((client) ->
@@ -417,11 +411,7 @@ public class BBSModClient implements ClientModInitializer
             BBSRendering.renderHud(drawContext, tickDelta);
         });
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register((e) ->
-        {
-            watchDog.stop();
-        });
-
+        ClientLifecycleEvents.CLIENT_STOPPING.register((e) -> BBSResources.stopWatchdog());
         ClientLifecycleEvents.CLIENT_STARTED.register((e) ->
         {
             Window window = MinecraftClient.getInstance().getWindow();

@@ -56,7 +56,10 @@ import mchorse.bbs_mod.forms.forms.ParticleForm;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ServerNetwork;
 import mchorse.bbs_mod.resources.AssetProvider;
+import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
+import mchorse.bbs_mod.resources.packs.DynamicSourcePack;
 import mchorse.bbs_mod.resources.packs.ExternalAssetsSourcePack;
 import mchorse.bbs_mod.resources.packs.InternalAssetsSourcePack;
 import mchorse.bbs_mod.settings.Settings;
@@ -74,7 +77,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
@@ -118,6 +120,8 @@ public class BBSMod implements ModInitializer
 
     /* Core services */
     private static AssetProvider provider;
+    private static DynamicSourcePack dynamicSourcePack;
+    private static ExternalAssetsSourcePack originalSourcePack;
 
     /* Foundation services */
     private static SettingsManager settings;
@@ -206,6 +210,17 @@ public class BBSMod implements ModInitializer
      */
     public static File getAssetsFolder()
     {
+        ISourcePack sourcePack = getDynamicSourcePack().getSourcePack();
+
+        if (sourcePack instanceof CacheAssetsSourcePack pack)
+        {
+            return pack.getFolder();
+        }
+        else if (sourcePack instanceof ExternalAssetsSourcePack pack)
+        {
+            return pack.getFolder();
+        }
+
         return assetsFolder;
     }
 
@@ -216,7 +231,7 @@ public class BBSMod implements ModInitializer
 
     public static File getAssetsPath(String path)
     {
-        return new File(assetsFolder, path);
+        return new File(getAssetsFolder(), path);
     }
 
     /**
@@ -246,6 +261,16 @@ public class BBSMod implements ModInitializer
     public static AssetProvider getProvider()
     {
         return provider;
+    }
+
+    public static DynamicSourcePack getDynamicSourcePack()
+    {
+        return dynamicSourcePack;
+    }
+
+    public static ExternalAssetsSourcePack getOriginalSourcePack()
+    {
+        return originalSourcePack;
     }
 
     public static SettingsManager getSettings()
@@ -290,8 +315,10 @@ public class BBSMod implements ModInitializer
 
         actions = new ActionManager();
 
+        originalSourcePack = new ExternalAssetsSourcePack("assets", assetsFolder).providesFiles();
+        dynamicSourcePack = new DynamicSourcePack(originalSourcePack);
         provider = new AssetProvider();
-        provider.register(new ExternalAssetsSourcePack("assets", assetsFolder).providesFiles());
+        provider.register(dynamicSourcePack);
         provider.register(new InternalAssetsSourcePack());
 
         settings = new SettingsManager();
@@ -392,7 +419,7 @@ public class BBSMod implements ModInitializer
 
         ServerPlayConnectionEvents.JOIN.register((a, b, c) ->
         {
-            b.sendPacket(ServerNetwork.CLIENT_HANDSHAKE, PacketByteBufs.empty());
+            ServerNetwork.sendHandshake(b);
         });
 
         ActionHandler.registerHandlers(actions);

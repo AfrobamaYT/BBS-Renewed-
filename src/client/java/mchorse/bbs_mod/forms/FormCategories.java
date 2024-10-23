@@ -28,6 +28,7 @@ public class FormCategories implements IWatchDogListener
 
     public void setup()
     {
+        this.sections.clear();
         this.sections.add(this.recentForms);
         this.sections.add(this.userForms);
         this.sections.add(new ModelFormSection(this));
