@@ -33,6 +33,8 @@ public class UserFormSection extends FormSection
     @Override
     public void initiate()
     {
+        this.categories.clear();
+
         File folder = getUserCategoriesFile(0).getParentFile();
 
         if (folder.isDirectory())

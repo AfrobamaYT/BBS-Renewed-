@@ -3,6 +3,7 @@ package mchorse.bbs_mod.network;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSResources;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
@@ -18,6 +19,7 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.resources.ISourcePack;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
 import mchorse.bbs_mod.resources.cache.ResourceCache;
 import mchorse.bbs_mod.resources.cache.ResourceEntry;
@@ -26,23 +28,29 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class ClientNetwork
@@ -82,6 +90,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_RECORDED_ACTIONS, (client, handler, buf, responseSender) -> handleRecordedActionsPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_FORM_TRIGGER, (client, handler, buf, responseSender) -> handleFormTriggerPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ASSET, (client, handler, buf, responseSender) -> handleAssetPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_REQUEST_ASSET, (client, handler, buf, responseSender) -> handleRequestAssetPacket(client, buf));
     }
 
     /* Handlers */
@@ -267,7 +276,27 @@ public class ClientNetwork
             {
                 client.execute(() -> sendRequestAsset(path, index + 1));
             }
+            else if (index == total - 1)
+            {
+                Set<String> requested = BBSResources.getRequested();
+
+                requested.remove(path);
+
+                if (requested.isEmpty())
+                {
+                    BBSModClient.getFormCategories().setup();
+                }
+            }
         }
+    }
+
+    private static void handleRequestAssetPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        String path = buf.readString();
+        Link link = Link.assets(path);
+        int index = buf.readInt();
+
+        sendAsset(link, index);
     }
 
     /* API */
@@ -402,5 +431,34 @@ public class ClientNetwork
         buf.writeInt(index);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_REQUEST_ASSET, buf);
+    }
+
+    public static void sendAsset(Link link, int index)
+    {
+        try
+        {
+            InputStream stream = BBSMod.getDynamicSourcePack().getAsset(link);
+            byte[] bytes = IOUtils.readBytes(stream);
+
+            int placeholder = 1000;
+            int bufferSize = (BBSSettings.unlimitedPacketSize.get() ? 1048576 : 32767) - placeholder;
+            int total = (int) Math.ceil(bytes.length / (float) bufferSize);
+            int offset = index * bufferSize;
+
+            PacketByteBuf buf = PacketByteBufs.create();
+            int size = Math.min(bufferSize, bytes.length - offset);
+
+            buf.writeString(link.path);
+            buf.writeInt(index);
+            buf.writeInt(total);
+            buf.writeInt(size);
+            buf.writeBytes(bytes, offset, size);
+
+            ClientPlayNetworking.send(ServerNetwork.SERVER_ASSET, buf);
+        }
+        catch (IOException e)
+        {
+            System.err.println("Failed to read asset: " + link);
+        }
     }
 }

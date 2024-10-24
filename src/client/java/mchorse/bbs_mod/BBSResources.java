@@ -17,6 +17,13 @@ public class BBSResources
     private static File server;
     private static WatchDog watchDog;
 
+    private static Set<String> requested = new HashSet<>();
+
+    public static Set<String> getRequested()
+    {
+        return requested;
+    }
+
     public static void init(File bbs)
     {
         server = new File(bbs, "server");
@@ -41,9 +48,10 @@ public class BBSResources
 
     public static void setup(MinecraftClient client, String id, ResourceCache cache)
     {
+        requested.clear();
+
         File folder = new File(server, id);
         File cacheFile = new File(server, id + ".cache.json");
-        Set<String> strings = new HashSet<>();
         ResourceCache oldCache = new ResourceCache();
 
         if (cacheFile.exists())
@@ -66,7 +74,7 @@ public class BBSResources
 
             if (entry == null || newEntry.lastModified() > entry.lastModified())
             {
-                strings.add(newEntry.path());
+                requested.add(newEntry.path());
             }
         }
 
@@ -74,11 +82,14 @@ public class BBSResources
 
         client.execute(() ->
         {
-            for (String path : strings)
+            for (String path : requested)
             {
                 ClientNetwork.sendRequestAsset(path, 0);
+            }
 
-                System.out.println("Requesting: " + path);
+            if (requested.isEmpty())
+            {
+                BBSModClient.getFormCategories().setup();
             }
         });
     }
