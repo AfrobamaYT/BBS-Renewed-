@@ -20,6 +20,7 @@ import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
+import mchorse.bbs_mod.resources.cache.ResourceTracker;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.EnumUtils;
 import mchorse.bbs_mod.utils.IOUtils;
@@ -38,6 +39,7 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -407,8 +409,34 @@ public class ServerNetwork
 
     private static void handleAssetPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
+        if (!BBSSettings.serverAssetManager.get().equals(player.getUuid().toString()))
+        {
+            player.sendMessage(Text.literal("You don't have permission to upload files"), true);
+
+            return;
+        }
+
         String path = buf.readString();
         int index = buf.readInt();
+
+        /* If index is -1, we gotta delete the file */
+        if (index == -1)
+        {
+            ISourcePack sourcePack = BBSMod.getDynamicSourcePack().getSourcePack();
+
+            if (sourcePack instanceof CacheAssetsSourcePack pack)
+            {
+                File file = new File(pack.getFolder(), path);
+
+                if (file.exists())
+                {
+                    file.delete();
+                }
+            }
+
+            return;
+        }
+
         int total = buf.readInt();
         int size = buf.readInt();
         byte[] bytes = new byte[size];
@@ -436,6 +464,12 @@ public class ServerNetwork
             {
                 server.execute(() -> sendRequestAsset(player, path, index + 1));
             }
+            else
+            {
+                System.out.println("[Server] Received completely: " + path);
+            }
+
+            BBSMod.getResourceTracker().timer.mark();
         }
     }
 
@@ -561,6 +595,16 @@ public class ServerNetwork
 
     public static void sendHandshake(MinecraftServer server, PacketSender packetSender)
     {
+        packetSender.sendPacket(ServerNetwork.CLIENT_HANDSHAKE, createHandshakeBuf(server));
+    }
+
+    public static void sendHandshake(MinecraftServer server, ServerPlayerEntity player)
+    {
+        ServerPlayNetworking.send(player, ServerNetwork.CLIENT_HANDSHAKE, createHandshakeBuf(server));
+    }
+
+    private static PacketByteBuf createHandshakeBuf(MinecraftServer server)
+    {
         PacketByteBuf buf = PacketByteBufs.create();
         String id = BBSSettings.serverId.get().trim();
 
@@ -599,7 +643,7 @@ public class ServerNetwork
             }
         }
 
-        packetSender.sendPacket(ServerNetwork.CLIENT_HANDSHAKE, buf);
+        return buf;
     }
 
     public static void sendAsset(ServerPlayerEntity player, Link link, int index)

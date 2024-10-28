@@ -24,17 +24,29 @@ public class BBSResources
         return requested;
     }
 
+    public static void resetResources()
+    {
+        MinecraftClient.getInstance().execute(() ->
+        {
+            BBSModClient.getModels().reload();
+            BBSModClient.getTextures().delete();
+            BBSModClient.getSounds().deleteSounds();
+
+            BBSModClient.getFormCategories().setup();
+        });
+    }
+
     public static void init(File bbs)
     {
         server = new File(bbs, "server");
         server.mkdirs();
 
-        setupWatchdog();
+        setupWatchdog(false);
 
         BBSModClient.getFormCategories().setup();
     }
 
-    public static void setupWatchdog()
+    public static void setupWatchdog(boolean sender)
     {
         File assetsFolder = BBSMod.getAssetsFolder();
 
@@ -43,6 +55,12 @@ public class BBSResources
         watchDog.register(BBSModClient.getModels());
         watchDog.register(BBSModClient.getSounds());
         watchDog.register(BBSModClient.getFormCategories());
+
+        if (sender)
+        {
+            watchDog.register(new BBSResourceListener());
+        }
+
         watchDog.start();
     }
 
@@ -66,7 +84,7 @@ public class BBSResources
         BBSMod.getDynamicSourcePack().setSecondary(local);
 
         stopWatchdog();
-        setupWatchdog();
+        setupWatchdog(true);
 
         for (ResourceEntry newEntry : cache.cache)
         {
@@ -89,7 +107,7 @@ public class BBSResources
 
             if (requested.isEmpty())
             {
-                BBSModClient.getFormCategories().setup();
+                resetResources();
             }
         });
     }
@@ -103,7 +121,7 @@ public class BBSResources
             BBSMod.getDynamicSourcePack().setSecondary(null);
 
             stopWatchdog();
-            setupWatchdog();
+            setupWatchdog(false);
         }
     }
 

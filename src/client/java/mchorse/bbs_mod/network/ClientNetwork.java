@@ -33,12 +33,10 @@ import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.File;
@@ -278,13 +276,15 @@ public class ClientNetwork
             }
             else if (index == total - 1)
             {
+                System.out.println("[Client] Received completely: " + path);
+
                 Set<String> requested = BBSResources.getRequested();
 
                 requested.remove(path);
 
                 if (requested.isEmpty())
                 {
-                    BBSModClient.getFormCategories().setup();
+                    BBSResources.resetResources();
                 }
             }
         }
@@ -435,6 +435,18 @@ public class ClientNetwork
 
     public static void sendAsset(Link link, int index)
     {
+        if (index < 0)
+        {
+            PacketByteBuf buf = PacketByteBufs.create();
+
+            buf.writeString(link.path);
+            buf.writeInt(-1);
+
+            ClientPlayNetworking.send(ServerNetwork.SERVER_ASSET, buf);
+
+            return;
+        }
+
         try
         {
             InputStream stream = BBSMod.getDynamicSourcePack().getAsset(link);

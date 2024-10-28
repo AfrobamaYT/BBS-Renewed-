@@ -39,8 +39,9 @@ public class BBSCommands
         registerMorphEntityCommand(bbs, environment);
         registerFilmsCommand(bbs, environment);
         registerDCCommand(bbs, environment);
-        registerOnHead(bbs, environment);
-        registerConfig(bbs, environment);
+        registerOnHeadCommand(bbs, environment);
+        registerConfigCommand(bbs, environment);
+        registerServerCommand(bbs, environment);
 
         dispatcher.register(bbs);
     }
@@ -146,14 +147,14 @@ public class BBSCommands
         );
     }
 
-    private static void registerOnHead(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerOnHeadCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> onHead = CommandManager.literal("on_head");
 
         bbs.then(onHead.executes(BBSCommands::onHead));
     }
 
-    private static void registerConfig(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerConfigCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> config = CommandManager.literal("config");
 
@@ -207,6 +208,24 @@ public class BBSCommands
         );
 
         bbs.then(config);
+    }
+
+    private static void registerServerCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        LiteralArgumentBuilder<ServerCommandSource> server = CommandManager.literal("server");
+
+        server.then(
+            CommandManager.literal("assets").executes((ctx) ->
+            {
+                ServerPlayerEntity player = ctx.getSource().getPlayer();
+
+                ServerNetwork.sendHandshake(ctx.getSource().getServer(), player);
+
+                return 1;
+            })
+        );
+
+        bbs.then(server);
     }
 
     /**

@@ -59,6 +59,7 @@ import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
+import mchorse.bbs_mod.resources.cache.ResourceTracker;
 import mchorse.bbs_mod.resources.packs.DynamicSourcePack;
 import mchorse.bbs_mod.resources.packs.ExternalAssetsSourcePack;
 import mchorse.bbs_mod.resources.packs.InternalAssetsSourcePack;
@@ -169,6 +170,8 @@ public class BBSMod implements ModInitializer
         .build();
 
     private static File worldFolder;
+
+    private static ResourceTracker resourceTracker;
 
     private static ItemStack createModelBlockStack(Link texture)
     {
@@ -303,6 +306,11 @@ public class BBSMod implements ModInitializer
         return factoryActionClips;
     }
 
+    public static ResourceTracker getResourceTracker()
+    {
+        return resourceTracker;
+    }
+
     @Override
     public void onInitialize()
     {
@@ -415,6 +423,7 @@ public class BBSMod implements ModInitializer
             }
         });
 
+        ServerLifecycleEvents.SERVER_STARTING.register((event) -> resourceTracker = new ResourceTracker(event));
         ServerLifecycleEvents.SERVER_STARTED.register((event) -> worldFolder = event.getSavePath(WorldSavePath.ROOT).toFile());
         ServerPlayConnectionEvents.JOIN.register((a, b, c) -> ServerNetwork.sendHandshake(c, b));
 
@@ -433,6 +442,7 @@ public class BBSMod implements ModInitializer
             }
 
             runnables.clear();
+            resourceTracker.tick();
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register((server) ->

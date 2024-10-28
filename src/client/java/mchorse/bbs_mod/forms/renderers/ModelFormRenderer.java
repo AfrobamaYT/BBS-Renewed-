@@ -74,7 +74,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         if (!trigger.action.isEmpty())
         {
             this.ensureAnimator(0F);
-            this.getAnimator().playAnimation(trigger.action);
+
+            IAnimator animator = this.getAnimator();
+
+            if (animator != null)
+            {
+                animator.playAnimation(trigger.action);
+            }
         }
 
         for (String key : trigger.states.keys())

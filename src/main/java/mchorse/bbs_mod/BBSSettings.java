@@ -21,6 +21,7 @@ public class BBSSettings
     public static ValueString version;
 
     public static ValueString serverId;
+    public static ValueString serverAssetManager;
     public static ValueBoolean unlimitedPacketSize;
 
     public static ValueColors favoriteColors;
@@ -108,6 +109,8 @@ public class BBSSettings
     {
         serverId = builder.category("tweaks").getString("server_id", "");
         serverId.invisible();
+        serverAssetManager = builder.getString("asset_manager", "");
+        serverAssetManager.invisible();
         unlimitedPacketSize = builder.getBoolean("unlimited_packet_size", false);
 
         builder.category("appearance");

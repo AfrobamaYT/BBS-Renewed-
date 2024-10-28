@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Iterator;
 
 public class CacheAssetsSourcePack implements ISourcePack
 {
@@ -86,6 +87,24 @@ public class CacheAssetsSourcePack implements ISourcePack
             }
 
             ExternalAssetsSourcePack.getLinksFromPathRecursively(folder, links, link, path, recursive ? 9999 : 1);
+        }
+
+        Iterator<Link> it = links.iterator();
+
+        /* Remove irrelevant entries */
+        while (it.hasNext())
+        {
+            Link next = it.next();
+
+            if (!this.cache.has(next.path))
+            {
+                if (next.path.endsWith("/") && next.path.startsWith(link.path))
+                {
+                    continue;
+                }
+
+                it.remove();
+            }
         }
     }
 }
