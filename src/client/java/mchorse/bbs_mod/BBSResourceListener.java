@@ -5,6 +5,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class BBSResourceListener implements IWatchDogListener
@@ -12,9 +13,14 @@ public class BBSResourceListener implements IWatchDogListener
     @Override
     public void accept(Path path, WatchDogEvent event)
     {
+        if (!BBSResources.canDetectChanges())
+        {
+            return;
+        }
+
         Link link = BBSMod.getProvider().getLink(path.toFile());
 
-        if (link == null)
+        if (link == null || Files.isDirectory(path))
         {
             return;
         }

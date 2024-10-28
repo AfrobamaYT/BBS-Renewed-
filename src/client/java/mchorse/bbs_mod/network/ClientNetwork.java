@@ -287,6 +287,8 @@ public class ClientNetwork
                     BBSResources.resetResources();
                 }
             }
+
+            BBSResources.markUpdate();
         }
     }
 

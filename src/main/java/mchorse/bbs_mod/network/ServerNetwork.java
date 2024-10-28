@@ -19,8 +19,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
-import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
-import mchorse.bbs_mod.resources.cache.ResourceTracker;
+import mchorse.bbs_mod.resources.packs.ExternalAssetsSourcePack;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.EnumUtils;
 import mchorse.bbs_mod.utils.IOUtils;
@@ -409,7 +408,7 @@ public class ServerNetwork
 
     private static void handleAssetPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        if (!BBSSettings.serverAssetManager.get().equals(player.getUuid().toString()))
+        if (!BBSSettings.serverAssetManager.get().equals(player.getUuidAsString()))
         {
             player.sendMessage(Text.literal("You don't have permission to upload files"), true);
 
@@ -424,7 +423,7 @@ public class ServerNetwork
         {
             ISourcePack sourcePack = BBSMod.getDynamicSourcePack().getSourcePack();
 
-            if (sourcePack instanceof CacheAssetsSourcePack pack)
+            if (sourcePack instanceof ExternalAssetsSourcePack pack)
             {
                 File file = new File(pack.getFolder(), path);
 
@@ -445,7 +444,7 @@ public class ServerNetwork
 
         ISourcePack sourcePack = BBSMod.getDynamicSourcePack().getSourcePack();
 
-        if (sourcePack instanceof CacheAssetsSourcePack pack)
+        if (sourcePack instanceof ExternalAssetsSourcePack pack)
         {
             File file = new File(pack.getFolder(), path);
 

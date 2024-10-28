@@ -18,10 +18,21 @@ public class BBSResources
     private static WatchDog watchDog;
 
     private static Set<String> requested = new HashSet<>();
+    private static long lastUpdate;
 
     public static Set<String> getRequested()
     {
         return requested;
+    }
+
+    public static void markUpdate()
+    {
+        lastUpdate = System.currentTimeMillis();
+    }
+
+    public static boolean canDetectChanges()
+    {
+        return System.currentTimeMillis() - lastUpdate > 1000L;
     }
 
     public static void resetResources()

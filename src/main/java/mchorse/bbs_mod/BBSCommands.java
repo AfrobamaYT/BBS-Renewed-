@@ -197,6 +197,7 @@ public class BBSCommands
                                     if (baseValue != null)
                                     {
                                         baseValue.fromData(valueType);
+                                        settings.saveLater();
                                     }
                                 }
                             }
@@ -217,12 +218,22 @@ public class BBSCommands
         server.then(
             CommandManager.literal("assets").executes((ctx) ->
             {
-                ServerPlayerEntity player = ctx.getSource().getPlayer();
-
-                ServerNetwork.sendHandshake(ctx.getSource().getServer(), player);
+                for (ServerPlayerEntity player : ctx.getSource().getServer().getPlayerManager().getPlayerList())
+                {
+                    ServerNetwork.sendHandshake(ctx.getSource().getServer(), player);
+                }
 
                 return 1;
             })
+        ).then(
+            CommandManager.literal("asset_manager").then(CommandManager.argument("manager", EntityArgumentType.player()).executes((ctx) ->
+            {
+                ServerPlayerEntity player = EntityArgumentType.getPlayer(ctx, "manager");
+
+                BBSSettings.serverAssetManager.set(player.getUuidAsString());
+
+                return 1;
+            }))
         );
 
         bbs.then(server);
