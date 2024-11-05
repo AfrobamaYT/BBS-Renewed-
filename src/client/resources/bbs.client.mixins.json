@@ -21,8 +21,7 @@
         "KeyboardMixin",
         "ResourceReloadLoggerMixin",
         "RenderLayerMixin",
-        "ClientWorldPropertiesMixin",
-        "CustomPayloadS2CPacketMixin"
+        "ClientWorldPropertiesMixin"
     ],
     "injectors": {
         "defaultRequire": 1
