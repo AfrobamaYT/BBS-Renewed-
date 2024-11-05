@@ -58,11 +58,13 @@ public class ClientNetwork
 
     private static String serverId;
     private static boolean isBBSModOnServer;
+    private static boolean unlimitedPacketSize;
 
     public static void resetHandshake()
     {
         serverId = "";
         isBBSModOnServer = false;
+        unlimitedPacketSize = false;
     }
 
     public static boolean isIsBBSModOnServer()
@@ -73,6 +75,11 @@ public class ClientNetwork
     public static String getServerId()
     {
         return serverId;
+    }
+
+    public static boolean isUnlimitedPacketSize()
+    {
+        return unlimitedPacketSize;
     }
 
     /* Network */
@@ -186,8 +193,9 @@ public class ClientNetwork
 
     private static void handleHandshakePacket(MinecraftClient client, PacketByteBuf buf)
     {
-        serverId = buf.readString();
         isBBSModOnServer = true;
+        serverId = buf.readString();
+        unlimitedPacketSize = buf.readBoolean();
 
         if (!serverId.isEmpty())
         {

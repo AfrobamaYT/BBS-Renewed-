@@ -614,6 +614,7 @@ public class ServerNetwork
         }
 
         buf.writeString(id);
+        buf.writeBoolean(BBSSettings.unlimitedPacketSize.get());
 
         if (!id.isEmpty())
         {
