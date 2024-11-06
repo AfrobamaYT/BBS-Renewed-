@@ -235,10 +235,20 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
                 if (all.size() > 1)
                 {
-                    int index = all.indexOf(current.part);
+                    int index = -1;
 
-                    if (index != 0) menu.action(Icons.ARROW_UP, UIKeys.FORMS_EDITOR_CONTEXT_MOVE_UP, () -> this.moveBodyPart(current, -1));
-                    if (index != all.size() - 1) menu.action(Icons.ARROW_DOWN, UIKeys.FORMS_EDITOR_CONTEXT_MOVE_DOWN, () -> this.moveBodyPart(current, 1));
+                    for (int i = 0; i < all.size(); i++)
+                    {
+                        if (all.get(i) == current.part)
+                        {
+                            index = i;
+
+                            break;
+                        }
+                    }
+
+                    if (index > 0) menu.action(Icons.ARROW_UP, UIKeys.FORMS_EDITOR_CONTEXT_MOVE_UP, () -> this.moveBodyPart(current, -1));
+                    if (index < all.size() - 1) menu.action(Icons.ARROW_DOWN, UIKeys.FORMS_EDITOR_CONTEXT_MOVE_DOWN, () -> this.moveBodyPart(current, 1));
                 }
             }
 

@@ -8,6 +8,7 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -44,9 +45,17 @@ public class BodyPartManager implements IMapSerializable
 
     public void removeBodyPart(BodyPart part)
     {
-        if (this.parts.remove(part))
+        Iterator<BodyPart> it = this.parts.iterator();
+
+        while (it.hasNext())
         {
-            part.setManager(null);
+            BodyPart next = it.next();
+
+            if (next == part)
+            {
+                it.remove();
+                next.setManager(null);
+            }
         }
     }
     
