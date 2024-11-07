@@ -19,12 +19,16 @@ import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.network.ClientPlayerEntity;
+import org.joml.Vector3d;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -153,6 +157,15 @@ public class Films
             if (ClientNetwork.isIsBBSModOnServer())
             {
                 ClientNetwork.sendActionRecording(recorder.film.getId(), recorder.exception, recorder.tick, false);
+            }
+
+            Vector3d pos = recorder.lastPosition;
+
+            if (pos != null)
+            {
+                Vector4f rot = recorder.lastRotation;
+
+                PlayerUtils.teleport(pos.x, pos.y, pos.z, rot.z, rot.y);
             }
         }
 

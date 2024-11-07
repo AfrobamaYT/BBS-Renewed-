@@ -42,6 +42,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
+import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -547,10 +548,9 @@ public class UIReplaysEditor extends UIElement
         {
             int index = this.film.replays.getList().indexOf(replay);
             IEntity entity = this.filmPanel.getController().entities.get(index);
-
-            this.filmPanel.teleport(entity.getX(), entity.getY(), entity.getZ());
-
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
+            PlayerUtils.teleport(entity.getX(), entity.getY(), entity.getZ(), entity.getHeadYaw(), entity.getPitch());
 
             player.setYaw(entity.getYaw());
             player.setHeadYaw(entity.getHeadYaw());

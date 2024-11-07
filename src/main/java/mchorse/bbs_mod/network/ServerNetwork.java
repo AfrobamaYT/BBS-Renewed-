@@ -367,8 +367,17 @@ public class ServerNetwork
         double x = buf.readDouble();
         double y = buf.readDouble();
         double z = buf.readDouble();
+        float yaw = buf.readFloat();
+        float pitch = buf.readFloat();
 
-        server.execute(() -> player.teleport(x, y, z, false));
+        server.execute(() ->
+        {
+            player.teleport(x, y, z, false);
+            player.setYaw(yaw);
+            player.setHeadYaw(yaw);
+            player.setBodyYaw(yaw);
+            player.setPitch(pitch);
+        });
     }
 
     private static void handleFormTrigger(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)

@@ -13,6 +13,7 @@ import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
@@ -21,6 +22,7 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import org.joml.Vector4f;
 
 public class Recorder extends FilmController
@@ -29,6 +31,9 @@ public class Recorder extends FilmController
     public FormProperties properties = new FormProperties("properties");
 
     private Matrix4f perspective = new Matrix4f();
+
+    public Vector3d lastPosition;
+    public Vector4f lastRotation;
 
     public Recorder(Film film, int replayId)
     {
@@ -40,9 +45,17 @@ public class Recorder extends FilmController
 
     public void update()
     {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
+        if (this.lastPosition == null)
+        {
+            this.lastPosition = new Vector3d(player.getX(), player.getY(), player.getZ());
+            this.lastRotation = new Vector4f(player.getYaw(), player.getPitch(), player.getHeadYaw(), player.getBodyYaw());
+        }
+
         if (this.tick >= 0)
         {
-            Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+            Morph morph = Morph.getMorph(player);
 
             this.keyframes.record(this.tick, morph.entity, null);
         }
