@@ -365,6 +365,8 @@ public class BBSModClient implements ClientModInitializer
 
             ClientNetwork.resetHandshake();
             BBSResources.reset();
+            films.reset();
+            cameraController.reset();
         });
 
         ClientTickEvents.START_CLIENT_TICK.register((client) ->

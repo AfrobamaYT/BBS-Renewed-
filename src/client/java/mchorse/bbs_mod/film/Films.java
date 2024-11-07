@@ -26,7 +26,6 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.network.ClientPlayerEntity;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
 
@@ -287,5 +286,12 @@ public class Films
 
             AudioRenderer.renderAll(batcher2D, audioClips, recorder.tick + tickDelta, x, y, w, BBSSettings.audioWaveformHeight.get(), sw, sh);
         }
+    }
+
+    public void reset()
+    {
+        controllers.clear();
+
+        recorder = null;
     }
 }

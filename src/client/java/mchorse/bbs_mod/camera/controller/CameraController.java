@@ -158,4 +158,9 @@ public class CameraController implements ICameraController
         this.camera.rotation.set(MathUtils.toRad(cameraEntity.getPitch()), MathUtils.toRad(cameraEntity.getHeadYaw()), 0);
         this.camera.fov = MathUtils.toRad(MinecraftClient.getInstance().options.getFov().getValue());
     }
+
+    public void reset()
+    {
+        this.current = null;
+    }
 }
