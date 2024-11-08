@@ -141,7 +141,7 @@ public class FilmController
             MatrixStack tempStack = new MatrixStack();
             Map<String, Matrix4f> map = new HashMap<>();
 
-            FormUtilsClient.getRenderer(root).collectMatrices(entity, context.local ? context.bone : null, tempStack, map, "", transition);
+            FormUtilsClient.getRenderer(root).collectMatrices(entity, context.local ? null : context.bone, tempStack, map, "", transition);
 
             Matrix4f matrix = map.get(context.bone);
 
