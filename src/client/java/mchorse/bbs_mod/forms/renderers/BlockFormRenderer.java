@@ -5,8 +5,10 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.BlockForm;
+import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -66,9 +68,19 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
             light = 0;
         }
+        else
+        {
+            CustomVertexConsumerProvider.hijackVertexFormat((l) ->
+            {
+                RenderSystem.enableBlend();
+            });
+        }
 
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, Colors.COLOR.set(context.color)));
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
+        consumers.setSubstitute(null);
+
         CustomVertexConsumerProvider.clearRunnables();
 
         context.stack.pop();

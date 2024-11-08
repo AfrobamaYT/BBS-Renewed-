@@ -5,8 +5,10 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ItemForm;
+import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -66,16 +68,18 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         }
         else
         {
-            CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
+            CustomVertexConsumerProvider.hijackVertexFormat((l) ->
             {
-                RenderSystem.setShaderColor(1F, 0F, 1F, 1F);
+                RenderSystem.enableBlend();
             });
         }
 
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, Colors.COLOR.set(context.color)));
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
+        consumers.setSubstitute(null);
+
         CustomVertexConsumerProvider.clearRunnables();
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
         context.stack.pop();
 
