@@ -68,7 +68,7 @@ public class Keyframe <T> extends ValueGroup
     public void setDuration(int duration)
     {
         this.preNotifyParent();
-        this.duration = duration;
+        this.duration = Math.max(0, duration);
         this.postNotifyParent();
     }
 
