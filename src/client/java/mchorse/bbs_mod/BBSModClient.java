@@ -569,8 +569,9 @@ public class BBSModClient implements ClientModInitializer
     private void keyRecordReplay()
     {
         UIDashboard dashboard = getDashboard();
+        UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
 
-        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+        if (panel != null && panel.getData() != null)
         {
             Recorder recorder = getFilms().getRecorder();
 
@@ -595,24 +596,21 @@ public class BBSModClient implements ClientModInitializer
     {
         UIDashboard dashboard = getDashboard();
 
-        if (dashboard != null)
+        UIScreen.open(dashboard);
+
+        if (dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
         {
-            UIScreen.open(dashboard);
+            panel.preview.openReplays();
+        }
+        else
+        {
+            UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
 
-            if (dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
+            dashboard.setPanel(panel);
+
+            if (!panel.overlay.canBeSeen())
             {
-                panel.preview.openReplays();
-            }
-            else
-            {
-                UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
-
-                dashboard.setPanel(panel);
-
-                if (!panel.overlay.canBeSeen())
-                {
-                    panel.openOverlay.clickItself();
-                }
+                panel.openOverlay.clickItself();
             }
         }
     }
@@ -620,8 +618,9 @@ public class BBSModClient implements ClientModInitializer
     private void keyTeleport()
     {
         UIDashboard dashboard = getDashboard();
+        UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
 
-        if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel)
+        if (panel != null)
         {
             panel.replayEditor.teleport();
         }
