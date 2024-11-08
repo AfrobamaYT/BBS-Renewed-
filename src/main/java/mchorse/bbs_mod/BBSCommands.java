@@ -49,7 +49,7 @@ public class BBSCommands
     private static void registerMorphCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
     {
         LiteralArgumentBuilder<ServerCommandSource> morph = CommandManager.literal("morph");
-        RequiredArgumentBuilder<ServerCommandSource, EntitySelector> target = CommandManager.argument("target", EntityArgumentType.player());
+        RequiredArgumentBuilder<ServerCommandSource, EntitySelector> target = CommandManager.argument("target", EntityArgumentType.players());
         RequiredArgumentBuilder<ServerCommandSource, String> form = CommandManager.argument("form", StringArgumentType.greedyString());
 
         morph.then(target
@@ -259,15 +259,18 @@ public class BBSCommands
      */
     private static int morphCommandMorph(CommandContext<ServerCommandSource> source) throws CommandSyntaxException
     {
-        ServerPlayerEntity entity = EntityArgumentType.getPlayer(source, "target");
+        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(source, "target");
         String formData = StringArgumentType.getString(source, "form");
 
         try
         {
             Form form = FormUtils.fromData(DataToString.mapFromString(formData));
 
-            ServerNetwork.sendMorphToTracked(entity, form);
-            Morph.getMorph(entity).setForm(FormUtils.copy(form));
+            for (ServerPlayerEntity player : players)
+            {
+                ServerNetwork.sendMorphToTracked(player, form);
+                Morph.getMorph(player).setForm(FormUtils.copy(form));
+            }
 
             return 1;
         }

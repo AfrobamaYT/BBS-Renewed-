@@ -4,6 +4,8 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.model.ModelManager;
+import mchorse.bbs_mod.data.DataStringifier;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -24,6 +26,7 @@ import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.MinecraftClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,6 +104,17 @@ public class UIFormCategory extends UIElement
                             });
                         }
                     });
+                });
+                menu.action(Icons.COPY, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_COMMAND, () ->
+                {
+                    MapType data = FormUtils.toData(this.selected);
+                    DataStringifier stringifier = new DataStringifier();
+                    String name = MinecraftClient.getInstance().player.getGameProfile().getName();
+
+                    stringifier.jsonLike();
+                    stringifier.indent = "";
+
+                    Window.setClipboard("/bbs morph " + name + " " + stringifier.toString(data));
                 });
             }
         });

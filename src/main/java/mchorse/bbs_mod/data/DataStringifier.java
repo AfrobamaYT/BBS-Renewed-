@@ -88,7 +88,12 @@ public class DataStringifier
                 builder.append(key);
             }
 
-            builder.append(": ");
+            builder.append(":");
+
+            if (!this.indent.isEmpty())
+            {
+                builder.append(' ');
+            }
 
             toString(map.get(key), builder, indent + this.indent);
 
@@ -135,7 +140,7 @@ public class DataStringifier
             {
                 builder.append(',');
 
-                if (compact)
+                if (compact && !this.indent.isEmpty())
                 {
                     builder.append(' ');
                 }
