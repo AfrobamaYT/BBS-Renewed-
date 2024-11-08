@@ -28,7 +28,7 @@ public class UIUndoList <T> extends UIList<IUndo<T>>
     {
         if (element instanceof ValueChangeUndo undo)
         {
-            return undo.name;
+            return undo.name.toString();
         }
         else if (element instanceof CompoundUndo<T> compoundUndo)
         {
@@ -38,7 +38,7 @@ public class UIUndoList <T> extends UIList<IUndo<T>>
             {
                 if (undo instanceof ValueChangeUndo valueUndo)
                 {
-                    keys.add(valueUndo.name);
+                    keys.add(valueUndo.name.toString());
                 }
             }
 

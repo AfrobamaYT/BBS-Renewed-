@@ -3,6 +3,7 @@ package mchorse.bbs_mod.settings.values.base;
 import mchorse.bbs_mod.data.IDataSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.settings.values.IValueListener;
+import mchorse.bbs_mod.utils.DataPath;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,14 +198,19 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
         return strings;
     }
 
-    public String getPath()
+    public DataPath getPath()
     {
-        return String.join(".", this.getPathSegments());
+        List<String> segments = this.getPathSegments();
+        DataPath path = new DataPath(false);
+
+        path.strings.addAll(segments);
+
+        return path;
     }
 
-    public String getRelativePath(BaseValue ancestor)
+    public DataPath getRelativePath(BaseValue ancestor)
     {
-        List<String> strings = new ArrayList<>();
+        DataPath strings = new DataPath(false);
         BaseValue value = this;
 
         while (value != null)
@@ -213,18 +219,18 @@ public abstract class BaseValue implements IDataSerializable<BaseType>
 
             if (!id.isEmpty())
             {
-                strings.add(id);
+                strings.strings.add(id);
             }
 
             value = value.getParent();
 
             if (value == ancestor)
             {
-                strings.add(value.getId());
+                strings.strings.add(value.getId());
 
-                Collections.reverse(strings);
+                Collections.reverse(strings.strings);
 
-                return String.join(".", strings);
+                return strings;
             }
         }
 

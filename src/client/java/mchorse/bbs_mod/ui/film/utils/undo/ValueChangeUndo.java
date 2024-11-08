@@ -3,24 +3,25 @@ package mchorse.bbs_mod.ui.film.utils.undo;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.undo.IUndo;
 
 public class ValueChangeUndo extends FilmEditorUndo
 {
-    public String name;
+    public DataPath name;
     public BaseType oldValue;
     public BaseType newValue;
 
     private boolean mergable = true;
 
-    public ValueChangeUndo(String name, BaseType oldValue, BaseType newValue)
+    public ValueChangeUndo(DataPath name, BaseType oldValue, BaseType newValue)
     {
         this.name = name;
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
 
-    public String getName()
+    public DataPath getName()
     {
         return this.name;
     }

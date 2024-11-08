@@ -9,6 +9,7 @@ import mchorse.bbs_mod.settings.values.ValueInt;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.factory.IFactory;
@@ -200,7 +201,7 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     @Override
     public <T extends BaseValue> void editMultiple(T property, Consumer<T> consumer)
     {
-        String path = property.getRelativePath(this.getClip());
+        DataPath path = property.getRelativePath(this.getClip());
 
         for (Clip clip : this.clips.getClipsFromSelection())
         {
