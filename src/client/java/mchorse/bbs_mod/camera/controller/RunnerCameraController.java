@@ -11,7 +11,6 @@ public class RunnerCameraController extends CameraWorkCameraController
 {
     public int ticks;
 
-    private float lastTransition = 0;
     private Position manual;
     private UIFilmPanel panel;
 
@@ -75,11 +74,6 @@ public class RunnerCameraController extends CameraWorkCameraController
     @Override
     public void setup(Camera camera, float transition)
     {
-        if (this.context.playing)
-        {
-            this.lastTransition = transition;
-        }
-
         if (this.manual != null)
         {
             this.manual.apply(camera);
@@ -89,7 +83,7 @@ public class RunnerCameraController extends CameraWorkCameraController
             /* kms */
             boolean free = this.panel.getController().getPovMode() == UIFilmController.CAMERA_MODE_FREE;
 
-            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : this.lastTransition);
+            this.apply(free ? null : camera, this.ticks, this.context.playing ? transition : 0F);
         }
 
         this.panel.getController().handleCamera(camera, transition);

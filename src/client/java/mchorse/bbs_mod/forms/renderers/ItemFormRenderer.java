@@ -68,10 +68,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         }
         else
         {
-            CustomVertexConsumerProvider.hijackVertexFormat((l) ->
-            {
-                RenderSystem.enableBlend();
-            });
+            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
         }
 
         consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, Colors.COLOR.set(context.color)));
