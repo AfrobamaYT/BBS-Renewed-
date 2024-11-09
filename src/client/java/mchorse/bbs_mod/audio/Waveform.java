@@ -216,27 +216,32 @@ public class Waveform
      */
     public void render(Batcher2D batcher, int color, int x, int y, int w, int h, float startTime, float endTime)
     {
-        float offset = 0;
+        float pixelsPerSecond = w / (endTime - startTime);
+        float xOffset = x - (startTime * pixelsPerSecond);
+        float timeOffset = 0F;
+
+        batcher.clip(x, y, w, h, 0, 0);
 
         for (Texture sprite : this.sprites)
         {
-            float spriteTime = sprite.width / (float) this.pixelsPerSecond;
-            float spriteStart = offset;
-            float spriteEnd = offset + spriteTime;
+            float duration = sprite.width / (float) this.pixelsPerSecond;
+            float timeEnd = timeOffset + duration;
 
-            if (spriteStart > endTime)
+            float spriteW = duration * pixelsPerSecond;
+            float u1 = 0F;
+            float u2 = sprite.width;
+
+            if (timeOffset >= endTime)
             {
                 break;
             }
 
-            int u1 = (int) ((startTime - spriteStart) * this.pixelsPerSecond);
-            int u2 = (int) ((endTime - spriteStart) * this.pixelsPerSecond);
-            int w2 = w;
+            batcher.texturedBox(sprite, color, xOffset, y, spriteW, h, u1, 0, u2, sprite.height, sprite.width, sprite.height);
 
-            batcher.texturedBox(sprite, color, x, y, w2, h, u1, 0, u2, sprite.height, sprite.width, sprite.height);
-
-            offset = spriteEnd;
-            x += u2 - u1;
+            timeOffset = timeEnd;
+            xOffset += spriteW;
         }
+
+        batcher.unclip(0, 0);
     }
 }

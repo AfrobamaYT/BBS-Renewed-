@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.graphics.texture;
 
-import com.mojang.blaze3d.platform.GlConst;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.TextureUtil;
 import mchorse.bbs_mod.utils.resources.Pixels;
