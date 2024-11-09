@@ -48,6 +48,14 @@ public class UIAudioEditorOverlayPanel extends UIOverlayPanel
         this.keys().register(Keys.SAVE, this::saveColors);
     }
 
+    @Override
+    public void onClose()
+    {
+        this.saveColors();
+
+        super.onClose();
+    }
+
     private void pickAudio()
     {
         UIOverlay.addOverlay(this.getContext(), new UISoundOverlayPanel(this::openAudio));
