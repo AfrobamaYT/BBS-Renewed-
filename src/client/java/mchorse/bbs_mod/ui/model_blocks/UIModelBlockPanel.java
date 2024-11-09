@@ -24,7 +24,9 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.model_blocks.camera.ImmersiveModelBlockCameraController;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.AABB;
+import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -66,9 +68,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         super(dashboard);
 
-        this.modelBlocks = new UIModelBlockEntityList((l) ->
+        this.modelBlocks = new UIModelBlockEntityList((l) -> this.fill(l.get(0), false));
+        this.modelBlocks.context((menu) ->
         {
-            this.fill(l.get(0), false);
+            if (this.modelBlock != null) menu.action(UIKeys.MODEL_BLOCKS_KEYS_TELEPORT, this::teleport);
         });
         this.modelBlocks.background();
         this.modelBlocks.h(UIStringList.DEFAULT_HEIGHT * 9);
@@ -145,7 +148,20 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             }
         }).active(() -> this.modelBlock != null);
 
+        this.keys().register(Keys.MODEL_BLOCKS_TELEPORT, () -> this.teleport());
+
         this.add(this.scrollView);
+    }
+
+    private void teleport()
+    {
+        if (this.modelBlock != null)
+        {
+            BlockPos pos = this.modelBlock.getPos();
+
+            PlayerUtils.teleport(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+            UIUtils.playClick();
+        }
     }
 
     @Override
