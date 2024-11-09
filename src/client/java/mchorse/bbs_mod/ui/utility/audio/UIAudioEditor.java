@@ -182,7 +182,8 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
             this.player = new SoundPlayer(this.buffer);
 
             this.player.setRelative(true);
-            this.player.stop();
+            this.player.play();
+            this.player.pause();
 
             this.setCurrent(null);
         }
