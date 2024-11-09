@@ -188,9 +188,11 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
         {
             this.entity.tick();
 
+            this.entity.prevPitch = this.prevPitch;
+            this.entity.prevYaw = 0F;
+
             if (this.entity instanceof LivingEntity livingEntity)
             {
-                livingEntity.prevPitch = this.prevPitch;
                 livingEntity.prevHeadYaw = this.prevYawHead;
                 livingEntity.prevBodyYaw = 0F;
 
@@ -218,6 +220,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
                 this.prevHandSwing = handSwingProgress;
             }
 
+            this.entity.setYaw(0F);
             this.entity.setHeadYaw(entity.getHeadYaw() - entity.getBodyYaw());
             this.entity.setPitch(entity.getPitch());
             this.entity.setBodyYaw(0F);
