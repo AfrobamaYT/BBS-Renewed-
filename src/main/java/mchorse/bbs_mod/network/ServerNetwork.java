@@ -372,7 +372,8 @@ public class ServerNetwork
 
         server.execute(() ->
         {
-            player.teleport(x, y, z, false);
+            boolean wow = player.teleport(x, y, z, false);
+
             player.setYaw(yaw);
             player.setHeadYaw(yaw);
             player.setBodyYaw(yaw);

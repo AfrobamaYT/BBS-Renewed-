@@ -958,12 +958,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public void teleportToCamera()
     {
-        Vector3d cameraPos = this.getCamera().position;
-        double x = Math.floor(cameraPos.x);
-        double y = Math.floor(cameraPos.y);
-        double z = Math.floor(cameraPos.z);
+        Camera camera = this.getCamera();
+        Vector3d cameraPos = camera.position;
+        double x = cameraPos.x;
+        double y = cameraPos.y;
+        double z = cameraPos.z;
 
-        PlayerUtils.teleport(x, y, z);
+        PlayerUtils.teleport(x, y, z, MathUtils.toDeg(camera.rotation.y) - 180F, MathUtils.toDeg(camera.rotation.x));
     }
 
     public boolean checkShowNoCamera()
