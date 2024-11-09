@@ -11,6 +11,7 @@ import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.mixin.LevelPropertiesAccessor;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ServerNetwork;
 import mchorse.bbs_mod.settings.Settings;
@@ -23,30 +24,36 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.SaveProperties;
+import net.minecraft.world.level.LevelInfo;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 public class BBSCommands
 {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment)
     {
-        LiteralArgumentBuilder<ServerCommandSource> bbs = CommandManager.literal("bbs").requires((source) -> source.hasPermissionLevel(2));
+        Predicate<ServerCommandSource> hasPermissions = (source) -> source.hasPermissionLevel(2);
+        LiteralArgumentBuilder<ServerCommandSource> bbs = CommandManager.literal("bbs").requires((source) -> true);
 
-        registerMorphCommand(bbs, environment);
-        registerMorphEntityCommand(bbs, environment);
-        registerFilmsCommand(bbs, environment);
-        registerDCCommand(bbs, environment);
-        registerOnHeadCommand(bbs, environment);
-        registerConfigCommand(bbs, environment);
-        registerServerCommand(bbs, environment);
+        registerMorphCommand(bbs, environment, hasPermissions);
+        registerMorphEntityCommand(bbs, environment, hasPermissions);
+        registerFilmsCommand(bbs, environment, hasPermissions);
+        registerDCCommand(bbs, environment, hasPermissions);
+        registerOnHeadCommand(bbs, environment, hasPermissions);
+        registerConfigCommand(bbs, environment, hasPermissions);
+        registerServerCommand(bbs, environment, hasPermissions);
+        registerCheatsCommand(bbs, environment);
 
         dispatcher.register(bbs);
     }
 
-    private static void registerMorphCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerMorphCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> morph = CommandManager.literal("morph");
         RequiredArgumentBuilder<ServerCommandSource, EntitySelector> target = CommandManager.argument("target", EntityArgumentType.players());
@@ -56,10 +63,10 @@ public class BBSCommands
             .executes(BBSCommands::morphCommandDemorph)
             .then(form.executes(BBSCommands::morphCommandMorph)));
 
-        bbs.then(morph);
+        bbs.then(morph.requires(hasPermissions));
     }
 
-    private static void registerMorphEntityCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerMorphEntityCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> morph = CommandManager.literal("morph_entity");
 
@@ -81,10 +88,10 @@ public class BBSCommands
             return 1;
         });
 
-        bbs.then(morph);
+        bbs.then(morph.requires(hasPermissions));
     }
 
-    private static void registerFilmsCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerFilmsCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> scene = CommandManager.literal("films");
         LiteralArgumentBuilder<ServerCommandSource> play = CommandManager.literal("play");
@@ -130,10 +137,10 @@ public class BBSCommands
             )
         );
 
-        bbs.then(scene);
+        bbs.then(scene.requires(hasPermissions));
     }
 
-    private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerDCCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> dc = CommandManager.literal("dc");
         LiteralArgumentBuilder<ServerCommandSource> shutdown = CommandManager.literal("shutdown");
@@ -141,20 +148,20 @@ public class BBSCommands
         LiteralArgumentBuilder<ServerCommandSource> stop = CommandManager.literal("stop");
 
         bbs.then(
-            dc.then(start.executes(BBSCommands::DCCommandStart))
+            dc.requires(hasPermissions).then(start.executes(BBSCommands::DCCommandStart))
                 .then(stop.executes(BBSCommands::DCCommandStop))
                 .then(shutdown.executes(BBSCommands::DCCommandShutdown))
         );
     }
 
-    private static void registerOnHeadCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerOnHeadCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> onHead = CommandManager.literal("on_head");
 
-        bbs.then(onHead.executes(BBSCommands::onHead));
+        bbs.then(onHead.requires(hasPermissions).executes(BBSCommands::onHead));
     }
 
-    private static void registerConfigCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerConfigCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> config = CommandManager.literal("config");
 
@@ -208,10 +215,10 @@ public class BBSCommands
             )
         );
 
-        bbs.then(config);
+        bbs.then(config.requires(hasPermissions));
     }
 
-    private static void registerServerCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerServerCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         LiteralArgumentBuilder<ServerCommandSource> server = CommandManager.literal("server");
 
@@ -236,7 +243,47 @@ public class BBSCommands
             }))
         );
 
-        bbs.then(server);
+        bbs.then(server.requires(hasPermissions));
+    }
+
+    private static void registerCheatsCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        if (environment.dedicated)
+        {
+            return;
+        }
+
+        bbs.then(
+            CommandManager.literal("cheats").then(
+                CommandManager.argument("enabled", BoolArgumentType.bool()).executes((ctx) ->
+                {
+                    MinecraftServer server = ctx.getSource().getServer();
+                    boolean enabled = BoolArgumentType.getBool(ctx, "enabled");
+                    SaveProperties saveProperties = server.getSaveProperties();
+
+                    if (saveProperties instanceof LevelPropertiesAccessor accessor)
+                    {
+                        LevelInfo levelInfo = saveProperties.getLevelInfo();
+
+                        accessor.bbs$setLevelInfo(new LevelInfo(levelInfo.getLevelName(),
+                            levelInfo.getGameMode(),
+                            levelInfo.isHardcore(),
+                            levelInfo.getDifficulty(),
+                            enabled,
+                            levelInfo.getGameRules(),
+                            levelInfo.getDataConfiguration()
+                        ));
+
+                        for (ServerPlayerEntity serverPlayerEntity : server.getPlayerManager().getPlayerList())
+                        {
+                            server.getCommandManager().sendCommandTree(serverPlayerEntity);
+                        }
+                    }
+
+                    return 1;
+                })
+            )
+        );
     }
 
     /**
