@@ -14,6 +14,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -135,7 +136,7 @@ public class FilmController
         MatrixStackUtils.multiply(stack, target == null ? defaultMatrix : target);
         FormUtilsClient.render(form, formContext);
 
-        if (context.bone != null)
+        if (context.bone != null && UIBaseMenu.renderAxes)
         {
             Form root = FormUtils.getRoot(form);
             MatrixStack tempStack = new MatrixStack();

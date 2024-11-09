@@ -9,6 +9,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.mixin.client.EntityRendererDispatcherInvoker;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -95,7 +96,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
                 .camera(camera));
             RenderSystem.disableDepthTest();
 
-            if (this.canRenderAxes(entity))
+            if (this.canRenderAxes(entity) && UIBaseMenu.renderAxes)
             {
                 matrices.push();
                 MatrixStackUtils.scaleBack(matrices);

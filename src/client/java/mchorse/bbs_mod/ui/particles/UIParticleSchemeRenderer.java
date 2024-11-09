@@ -5,6 +5,7 @@ import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.particles.ParticleScheme;
 import mchorse.bbs_mod.particles.components.expiration.ParticleComponentKillPlane;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
 import net.minecraft.client.MinecraftClient;
@@ -137,6 +138,9 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
     {
         super.renderGrid(context);
 
-        Draw.coolerAxes(context.batcher.getContext().getMatrices(), 1F, 0.01F, 1.01F, 0.02F);
+        if (UIBaseMenu.renderAxes)
+        {
+            Draw.coolerAxes(context.batcher.getContext().getMatrices(), 1F, 0.01F, 1.01F, 0.02F);
+        }
     }
 }

@@ -11,6 +11,7 @@ import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
+import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
@@ -154,9 +155,12 @@ public class UIPickableFormRenderer extends UIFormRenderer
         }
 
         /* Draw axes */
-        RenderSystem.disableDepthTest();
-        Draw.coolerAxes(stack, 0.25F, 0.01F, 0.26F, 0.02F);
-        RenderSystem.enableDepthTest();
+        if (UIBaseMenu.renderAxes)
+        {
+            RenderSystem.disableDepthTest();
+            Draw.coolerAxes(stack, 0.25F, 0.01F, 0.26F, 0.02F);
+            RenderSystem.enableDepthTest();
+        }
 
         stack.pop();
     }

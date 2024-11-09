@@ -19,6 +19,8 @@ import org.lwjgl.opengl.GL11;
  */
 public abstract class UIBaseMenu
 {
+    public static boolean renderAxes = true;
+
     private static InputRenderer inputRenderer = new InputRenderer();
 
     private UIRootElement root;
@@ -42,6 +44,7 @@ public abstract class UIBaseMenu
         this.overlay = new UIElement();
         this.overlay.full(this.viewport);
         this.overlay.keys().register(Keys.KEYBINDS, () -> this.context.toggleKeybinds());
+        this.overlay.keys().register(Keys.TRANSFORMATIONS_TOGGLE_AXES, () -> renderAxes = !renderAxes);
         this.root.add(this.main, this.overlay);
 
         this.context.keybinds.relative(this.viewport).wh(0.5F, 1F);
