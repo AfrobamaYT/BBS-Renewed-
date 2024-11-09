@@ -173,6 +173,7 @@ public class UIKeys
     public static final IKey CAMERA_TIMELINE_CONTEXT_SHIFT_DURATION = L10n.lang("bbs.ui.camera.timeline.context.shift_duration");
     public static final IKey CAMERA_TIMELINE_KEYS_CLIPS = L10n.lang("bbs.ui.camera.timeline.keys.clips");
     public static final IKey CAMERA_TIMELINE_KEYS_ENABLED = L10n.lang("bbs.ui.camera.timeline.keys.enabled");
+    public static final IKey CAMERA_TIMELINE_CANT_FIT_NOTIFICATION = L10n.lang("bbs.ui.camera.timeline.cant_fit-notification");
     public static final IKey CAMERA_TOOLTIPS_OPEN_VIDEOS = L10n.lang("bbs.ui.camera.tooltips.open_videos");
     public static final IKey CAMERA_TOOLTIPS_RECORD = L10n.lang("bbs.ui.camera.tooltips.record");
     public static final IKey COLOR_CONTEXT_FAVORITES_ADD = L10n.lang("bbs.ui.color.context.favorites.add");

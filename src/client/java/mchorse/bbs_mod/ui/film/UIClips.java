@@ -240,7 +240,7 @@ public class UIClips extends UIElement
 
     private void showAddsAtCursor(UIContext context, int mouseX, int mouseY)
     {
-        this.showAddClips(context, this.fromGraphX(mouseX), this.fromLayerY(mouseY), BBSSettings.getDefaultDuration());
+        this.showAddClips(context, this.checkSize(this.fromGraphX(mouseX), this.fromLayerY(mouseY), BBSSettings.getDefaultDuration()));
     }
 
     private void showAddsAtTick()
@@ -252,7 +252,7 @@ public class UIClips extends UIElement
 
     private void showAddsAtTick(UIContext context, int mouseX, int mouseY)
     {
-        this.showAddClips(context, this.delegate.getCursor(), this.fromLayerY(mouseY), BBSSettings.getDefaultDuration());
+        this.showAddClips(context, this.checkSize(this.delegate.getCursor(), this.fromLayerY(mouseY), BBSSettings.getDefaultDuration()));
     }
 
     private void showAddsOnTop()
@@ -260,11 +260,58 @@ public class UIClips extends UIElement
         Clip clip = this.delegate.getClip();
         UIContext context = this.getContext();
 
-        this.showAddClips(context, clip.tick.get(), clip.layer.get() + 1, clip.duration.get());
+        this.showAddClips(context, this.checkSize(clip.tick.get(), clip.layer.get() + 1, clip.duration.get()));
     }
 
-    private void showAddClips(UIContext context, int tick, int layer, int duration)
+    private Vector3i checkSize(int tick, int layer, int duration)
     {
+        for (Clip clip : this.clips.get())
+        {
+            if (clip.layer.get() == layer)
+            {
+                int l1 = clip.tick.get();
+                int r1 = l1 + clip.duration.get();
+                int l2 = tick;
+                int r2 = l2 + duration;
+
+                if (MathUtils.isInside(l1, r1, l2, r2))
+                {
+                    if (l1 < r2 && r2 <= r1)
+                    {
+                        int diff = r2 - l1;
+
+                        duration -= diff;
+                    }
+                    else if (l2 < r1 && r1 <= r2)
+                    {
+                        int diff = r1 - l2;
+
+                        tick = r1;
+                        duration -= diff;
+                    }
+                }
+            }
+        }
+
+        if (duration <= 0)
+        {
+            return null;
+        }
+
+        return new Vector3i(tick, layer, duration);
+    }
+
+    private void showAddClips(UIContext context, Vector3i preview)
+    {
+        if (preview == null)
+        {
+            this.addPreview = null;
+
+            this.getContext().notify(UIKeys.CAMERA_TIMELINE_CANT_FIT_NOTIFICATION, Colors.RED);
+
+            return;
+        }
+
         context.replaceContextMenu((add) ->
         {
             IKey addCategory = UIKeys.CAMERA_TIMELINE_KEYS_CLIPS;
@@ -274,7 +321,7 @@ public class UIClips extends UIElement
             {
                 IKey typeKey = UIKeys.CAMERA_TIMELINE_CONTEXT_ADD_CLIP_TYPE.format(UIKeys.C_CLIP.get(type));
                 ClipFactoryData data = this.factory.getData(type);
-                ContextAction action = add.action(data.icon, typeKey, data.color, () -> this.addClip(type, tick, layer, duration));
+                ContextAction action = add.action(data.icon, typeKey, data.color, () -> this.addClip(type, preview.x, preview.y, preview.z));
 
                 if (i < 30)
                 {
@@ -301,7 +348,7 @@ public class UIClips extends UIElement
             add.onClose((m) -> this.addPreview = null);
         });
 
-        this.addPreview = new Vector3i(tick, layer, duration);
+        this.addPreview = preview;
     }
 
     private void addClip(Link type, int tick, int layer, int duration)
