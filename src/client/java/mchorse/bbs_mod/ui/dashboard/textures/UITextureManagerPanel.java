@@ -86,8 +86,10 @@ public class UITextureManagerPanel extends UISidebarDashboardPanel
             if (file != null)
             {
                 Pixels newPixels = Pixels.fromSize(w, h);
+                int sx1 = x * i;
+                int sy1 = y * i;
 
-                newPixels.drawPixels(pixels, 0, 0, w, h, x * (frames - 1), y * (frames - 1), w, h);
+                newPixels.drawPixels(pixels, 0, 0, w, h, sx1, sy1, sx1 + w, sy1 + h);
 
                 try
                 {
@@ -97,6 +99,8 @@ public class UITextureManagerPanel extends UISidebarDashboardPanel
                 {
                     e.printStackTrace();
                 }
+
+                newPixels.delete();
             }
         }
     }

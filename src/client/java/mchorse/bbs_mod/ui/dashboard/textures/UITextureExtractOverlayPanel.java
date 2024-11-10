@@ -40,7 +40,7 @@ public class UITextureExtractOverlayPanel extends UIOverlayPanel
             this.panel.extractTexture(
                 (int) this.frames.getValue(),
                 (int) this.frameWidth.getValue(), (int) this.frameHeight.getValue(),
-                (int) this.frameStepX.getValue(), (int) this.frameStepX.getValue()
+                (int) this.frameStepX.getValue(), (int) this.frameStepY.getValue()
             );
 
             this.close();
