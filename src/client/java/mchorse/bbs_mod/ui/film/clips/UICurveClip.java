@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.clips;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.CurveClip;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
@@ -52,6 +53,7 @@ public class UICurveClip extends UIClip<CurveClip>
             this.keyframes.view.resetView();
             this.keyframes.view.editSheet(this.keyframes.view.getGraph().getSheets().get(0));
         });
+        this.edit.keys().register(Keys.FORMS_EDIT, () -> this.edit.clickItself());
     }
 
     private void addOption(ContextMenuManager menu, IKey label, String key, Icon icon)

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.film.clips;
 
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.data.Position;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
@@ -52,6 +53,7 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
             this.editor.embedView(this.keyframes);
             this.keyframes.view.resetView();
         });
+        this.edit.keys().register(Keys.FORMS_EDIT, () -> this.edit.clickItself());
     }
 
     @Override

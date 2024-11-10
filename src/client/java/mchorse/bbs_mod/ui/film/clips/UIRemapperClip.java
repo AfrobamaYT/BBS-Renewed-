@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film.clips;
 
 import mchorse.bbs_mod.camera.clips.modifiers.RemapperClip;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
@@ -38,6 +39,8 @@ public class UIRemapperClip extends UIClip<RemapperClip>
             this.keyframes.view.resetView();
             this.keyframes.view.editSheet(this.keyframes.view.getGraph().getSheets().get(0));
         });
+
+        this.edit.keys().register(Keys.FORMS_EDIT, () -> this.edit.clickItself());
     }
 
     @Override
