@@ -5,6 +5,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.MultiLink;
 import mchorse.bbs_mod.utils.resources.MultiLinkThread;
 import mchorse.bbs_mod.utils.resources.Pixels;
@@ -42,7 +43,33 @@ public class TextureManager implements IWatchDogListener
         {
             try
             {
-                this.error = this.getTexture(Link.assets("textures/error.png"));
+                Pixels pixels = Pixels.fromSize(16, 16);
+                Color a = new Color().set(0xff009fe0);
+                Color b = new Color().set(0xffe00073);
+
+                for (int x = 0; x < pixels.width; x++)
+                {
+                    for (int y = 0; y < pixels.height; y++)
+                    {
+                        Color color = a;
+
+                        if ((x / 4) % 2 == 0 ^ (y / 4) % 2 == 0)
+                        {
+                            color = b;
+                        }
+
+                        pixels.setColor(x, y, color);
+                    }
+                }
+
+                pixels.rewindBuffer();
+
+                Texture texture = new Texture();
+                texture.setFilter(GL11.GL_NEAREST);
+                texture.uploadTexture(pixels);
+                texture.unbind();
+
+                this.error = texture;
             }
             catch (Exception e)
             {
@@ -216,6 +243,13 @@ public class TextureManager implements IWatchDogListener
 
         this.textures.clear();
         this.extruder.deleteAll();
+
+        if (this.error != null)
+        {
+            this.error.delete();
+
+            this.error = null;
+        }
     }
 
     public void delete()
