@@ -373,7 +373,7 @@ public class ParticleEmitter
 
         this.index += 1;
 
-        this.setParticleVariables(particle, 0);
+        this.setParticleVariables(particle, offset);
         particle.setupMatrix(this);
 
         for (IComponentParticleInitialize component : this.scheme.particleInitializes)

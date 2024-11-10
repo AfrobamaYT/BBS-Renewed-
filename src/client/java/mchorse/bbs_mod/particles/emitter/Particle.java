@@ -63,7 +63,7 @@ public class Particle
 
     public double getAge(float transition)
     {
-        return (this.age + this.offset + transition) / 20.0;
+        return (this.age + transition) / 20D;
     }
 
     public Vector3d getGlobalPosition(ParticleEmitter emitter)
