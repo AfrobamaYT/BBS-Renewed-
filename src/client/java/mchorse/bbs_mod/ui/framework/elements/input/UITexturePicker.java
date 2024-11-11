@@ -191,7 +191,11 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
             });
 
             panel.addValues(list);
-            panel.setValue(this.current.toString());
+
+            if (this.current != null)
+            {
+                panel.setValue(this.current.toString());
+            }
 
             UIOverlay.addOverlay(this.getContext(), panel);
         });
