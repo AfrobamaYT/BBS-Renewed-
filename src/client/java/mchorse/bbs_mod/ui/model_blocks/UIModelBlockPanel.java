@@ -16,6 +16,7 @@ import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
 import mchorse.bbs_mod.ui.forms.UIToggleEditorEvent;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.events.UIRemovedEvent;
@@ -63,10 +64,28 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     private Set<ModelBlockEntity> toSave = new HashSet<>();
 
     private ImmersiveModelBlockCameraController cameraController;
+    private UIElement keyDude;
 
     public UIModelBlockPanel(UIDashboard dashboard)
     {
         super(dashboard);
+
+        this.keyDude = new UIElement();
+        this.keyDude.keys().register(Keys.MODEL_BLOCKS_MOVE_TO, () ->
+        {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            Camera camera = mc.gameRenderer.getCamera();
+            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.world, camera.getPos(), RayTracing.fromVector3f(this.mouseDirection), 64F);
+
+            if (blockHitResult.getType() != HitResult.Type.MISS)
+            {
+                Vec3d hit = blockHitResult.getPos();
+                BlockPos pos = this.modelBlock.getPos();
+
+                this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
+                this.fillData();
+            }
+        }).active(() -> this.modelBlock != null);
 
         this.modelBlocks = new UIModelBlockEntityList((l) -> this.fill(l.get(0), false));
         this.modelBlocks.context((menu) ->
@@ -132,23 +151,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.fill(null, false);
 
-        this.keys().register(Keys.MODEL_BLOCKS_MOVE_TO, () ->
-        {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            Camera camera = mc.gameRenderer.getCamera();
-            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.world, camera.getPos(), RayTracing.fromVector3f(this.mouseDirection), 64F);
-
-            if (blockHitResult.getType() != HitResult.Type.MISS)
-            {
-                Vec3d hit = blockHitResult.getPos();
-                BlockPos pos = this.modelBlock.getPos();
-
-                this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
-                this.fillData();
-            }
-        }).active(() -> this.modelBlock != null);
-
-        this.keys().register(Keys.MODEL_BLOCKS_TELEPORT, () -> this.teleport());
+        this.keys().register(Keys.MODEL_BLOCKS_TELEPORT, this::teleport);
 
         this.add(this.scrollView);
     }
@@ -175,6 +178,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         super.appear();
 
+        this.getContext().menu.main.add(this.keyDude);
         this.dashboard.orbitKeysUI.setEnabled(() -> this.getChildren(UIFormPalette.class).isEmpty());
     }
 
@@ -183,6 +187,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         super.disappear();
 
+        this.keyDude.removeFromParent();
         this.dashboard.orbitKeysUI.setEnabled(null);
     }
 
