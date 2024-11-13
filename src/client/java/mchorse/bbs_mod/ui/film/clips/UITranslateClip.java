@@ -38,5 +38,6 @@ public class UITranslateClip extends UIClip<TranslateClip>
         super.fillData();
 
         this.point.fill(this.clip.translate);
+        this.active.setValue(this.clip.active.get());
     }
 }
