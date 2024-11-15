@@ -412,24 +412,33 @@ public class UIClips extends UIElement
         List<Clip> newClips = new ArrayList<>();
         int min = Integer.MAX_VALUE;
 
-        for (BaseType type : clipsList)
+        try
         {
-            MapType typeMap = type.asMap();
-            Clip clip = this.factory.fromData(typeMap);
+            for (BaseType type : clipsList)
+            {
+                MapType typeMap = type.asMap();
+                Clip clip = this.factory.fromData(typeMap);
 
-            min = Math.min(min, clip.tick.get());
+                min = Math.min(min, clip.tick.get());
 
-            newClips.add(clip);
+                newClips.add(clip);
+            }
+
+            for (Clip clip : newClips)
+            {
+                clip.tick.set(tick + (clip.tick.get() - min));
+                this.clips.addClip(clip);
+                this.addSelected(clip);
+            }
+
+            this.pickLastSelectedClip();
         }
-
-        for (Clip clip : newClips)
+        catch (Exception e)
         {
-            clip.tick.set(tick + (clip.tick.get() - min));
-            this.clips.addClip(clip);
-            this.addSelected(clip);
-        }
+            e.printStackTrace();
 
-        this.pickLastSelectedClip();
+            this.getContext().notify(UIKeys.CAMERA_TIMELINE_INCOMPATIBLE_PASTE, Colors.RED);
+        }
     }
 
     /**
