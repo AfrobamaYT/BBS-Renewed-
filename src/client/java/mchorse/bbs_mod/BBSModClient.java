@@ -58,6 +58,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -73,7 +74,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -452,10 +455,10 @@ public class BBSModClient implements ClientModInitializer
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
 
-        this.setupPlayerSkins();
+        this.setupModels();
     }
 
-    private void setupPlayerSkins()
+    private void setupModels()
     {
         boolean isForge = false;
 
@@ -470,49 +473,34 @@ public class BBSModClient implements ClientModInitializer
 
         BBSMod.getAudioFolder().mkdirs();
 
-        File steve = BBSMod.getAssetsPath("models/player/steve");
-        File alex = BBSMod.getAssetsPath("models/player/alex");
-        File steveBends = BBSMod.getAssetsPath("models/player/steve_bends");
-        File alexBends = BBSMod.getAssetsPath("models/player/alex_bends");
-        boolean steveExists = steve.exists();
-        boolean alexExists = alex.exists();
-        boolean steveBendsExists = steveBends.exists();
-        boolean alexBendsExists = alexBends.exists();
+        /* Whenever we're in a dev environment,  */
+        isForge = isForge || FabricLoader.getInstance().isDevelopmentEnvironment();
 
-        steve.mkdirs();
-        alex.mkdirs();
-        steveBends.mkdirs();
-        alexBends.mkdirs();
+        this.insert(isForge, "/assets/bbs/assets/models/player/steve/", BBSMod.getAssetsPath("models/player/steve"), Arrays.asList("config.json", "steve.bbs.json", "steve.png"));
+        this.insert(isForge, "/assets/bbs/assets/models/player/alex/", BBSMod.getAssetsPath("models/player/alex"), Arrays.asList("config.json", "alex.bbs.json", "alex.png"));
+        this.insert(isForge, "/assets/bbs/assets/models/player/steve_bends/", BBSMod.getAssetsPath("models/player/steve_bends"), Arrays.asList("config.json", "steve_bends_by_michaelcreeper_.bbs.json", "steve.png"));
+        this.insert(isForge, "/assets/bbs/assets/models/player/alex_bends/", BBSMod.getAssetsPath("models/player/alex_bends"), Arrays.asList("config.json", "alex_bends_by_michaelcreeper_.bbs.json", "alex.png"));
+        this.insert(isForge, "/assets/bbs/assets/models/player/eyes/", BBSMod.getAssetsPath("models/player/eyes"), Arrays.asList("eyes.bbs.json", "poses.json", "alex.png", "steve.png"));
+        this.insert(isForge, "/assets/bbs/assets/models/player/eyes_1px/", BBSMod.getAssetsPath("models/player/eyes_1px"), Arrays.asList("eyes_1px.bbs.json", "poses.json", "alex.png", "steve.png"));
+    }
 
-        if (isForge)
+    private void insert(boolean isForge, String basePath, File folder, List<String> files)
+    {
+        boolean folderExists = folder.exists();
+
+        folder.mkdirs();
+
+        if (isForge && !folderExists)
         {
-            if (!steveExists)
-            {
-                this.copy("/assets/bbs/assets/models/player/steve/config.json", new File(steve, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/steve/steve.bbs.json", new File(steve, "steve.bbs.json"));
-                this.copy("/assets/bbs/assets/models/player/steve/steve.png", new File(steve, "steve.png"));
-            }
+            this.copy(basePath, folder, files);
+        }
+    }
 
-            if (!alexExists)
-            {
-                this.copy("/assets/bbs/assets/models/player/alex/config.json", new File(alex, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/alex/alex.bbs.json", new File(alex, "alex.bbs.json"));
-                this.copy("/assets/bbs/assets/models/player/alex/alex.png", new File(alex, "alex.png"));
-            }
-
-            if (!steveBendsExists)
-            {
-                this.copy("/assets/bbs/assets/models/player/steve_bends/config.json", new File(steveBends, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/steve_bends/steve_bends_by_michaelcreeper_.bbs.json", new File(steveBends, "steve_bends_by_michaelcreeper_.bbs.json"));
-                this.copy("/assets/bbs/assets/models/player/steve_bends/steve.png", new File(steveBends, "steve.png"));
-            }
-
-            if (!alexBendsExists)
-            {
-                this.copy("/assets/bbs/assets/models/player/alex_bends/config.json", new File(alexBends, "config.json"));
-                this.copy("/assets/bbs/assets/models/player/alex_bends/alex_bends_by_michaelcreeper_.bbs.json", new File(alexBends, "alex_bends_by_michaelcreeper_.bbs.json"));
-                this.copy("/assets/bbs/assets/models/player/alex_bends/alex.png", new File(alexBends, "alex.png"));
-            }
+    private void copy(String basePath, File folder, List<String> files)
+    {
+        for (String file : files)
+        {
+            this.copy(basePath + file, new File(folder, file));
         }
     }
 
