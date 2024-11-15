@@ -59,8 +59,6 @@
     "bbs.config.editor.loop-comment": "การเล่นซ้ำแบบวนซ้ำของคลิปที่เลือกในปัจจุบันหรือพื้นที่การวนซ้ำ (คุณสามารถใช้ปุ่ม [ และ ] เพื่อเลือกพื้นที่ หรือใช้ Alt + คลิกแล้วลากบนไทม์ไลน์)",
     "bbs.config.editor.periodic_save": "การบันทึกเป็นระยะๆ",
     "bbs.config.editor.periodic_save-comment": "จำนวนวินาทีที่ใช้ในการกระตุ้นการบันทึกอัตโนมัติซ้ำๆ หากต้องการปิดการบันทึกอัตโนมัติเป็นระยะ ให้ตั้งค่าตัวเลือกนี้เป็น 0",
-    "bbs.config.editor.position": "ตำแหน่งการแสดงผล",
-    "bbs.config.editor.position-comment": "แสดงคุณสมบัติของกล้องเมื่อเปิดใช้งานโหมดซิงค์",
     "bbs.config.editor.rule_of_thirds": "ตารางกฎ 3 ส่วน",
     "bbs.config.editor.rule_of_thirds-comment": "แสดงเส้นแนวตารางกฎ 3 ส่วน",
     "bbs.config.editor.seconds": "ใช้หน่วยเวลาเป็นวินาที",

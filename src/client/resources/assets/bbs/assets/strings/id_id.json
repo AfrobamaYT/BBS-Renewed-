@@ -55,8 +55,6 @@
     "bbs.config.editor.loop-comment": "Memutar ulang klip yang dipilih saat ini atau wilayah yang diulang (Anda dapat menggunakan tombol [ dan ] untuk memilih wilayah, atau Alt + klik seret pada timeline)",
     "bbs.config.editor.periodic_save": "Simpan berkala",
     "bbs.config.editor.periodic_save-comment": "Jumlah detik yang memicu penyimpanan otomatis berulang kali. Untuk menonaktifkan penyimpanan berkala, atur opsi ke 0",
-    "bbs.config.editor.position": "Tampilkan posisi",
-    "bbs.config.editor.position-comment": "Tampilkan properti kamera saat mode sinkronisasi diaktifkan",
     "bbs.config.editor.rule_of_thirds": "Aturan sepertiga",
     "bbs.config.editor.rule_of_thirds-comment": "Tampilkan panduan aturan sepertiga",
     "bbs.config.editor.seconds": "Gunakan detik",

@@ -57,7 +57,6 @@ public class BBSSettings
     public static ValueInt duration;
     public static ValueBoolean editorLoop;
     public static ValueInt editorJump;
-    public static ValueBoolean editorDisplayPosition;
     public static ValueInt editorGuidesColor;
     public static ValueBoolean editorRuleOfThirds;
     public static ValueBoolean editorCenterLines;
@@ -154,7 +153,6 @@ public class BBSSettings
         duration = builder.category("editor").getInt("duration", 30, 1, 1000);
         editorJump = builder.getInt("jump", 5, 1, 1000);
         editorLoop = builder.getBoolean("loop", false);
-        editorDisplayPosition = builder.getBoolean("position", false);
         editorGuidesColor = builder.getInt("guides_color", 0xcccc0000).colorAlpha();
         editorRuleOfThirds = builder.getBoolean("rule_of_thirds", false);
         editorCenterLines = builder.getBoolean("center_lines", false);

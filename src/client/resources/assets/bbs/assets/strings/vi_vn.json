@@ -59,8 +59,6 @@
     "bbs.config.editor.loop-comment": "Lặp lại phát clip hoặc vùng lặp hiện đã chọn (bạn có thể sử dụng phím [ và ] để chọn vùng, hoặc Alt + kéo thả trên dòng thời gian)",
     "bbs.config.editor.periodic_save": "Lưu định kỳ",
     "bbs.config.editor.periodic_save-comment": "Số giây kích hoạt lưu tự động định kỳ. Để tắt lưu định kỳ, đặt giá trị này về 0",
-    "bbs.config.editor.position": "Hiển thị vị trí",
-    "bbs.config.editor.position-comment": "Hiển thị thuộc tính máy ảnh khi chế độ đồng bộ được bật",
     "bbs.config.editor.rule_of_thirds": "Quy tắc một phần ba",
     "bbs.config.editor.rule_of_thirds-comment": "Hiển thị các hướng dẫn quy tắc một phần ba",
     "bbs.config.editor.seconds": "Sử dụng giây",

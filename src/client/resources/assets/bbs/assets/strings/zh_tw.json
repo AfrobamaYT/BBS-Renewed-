@@ -58,8 +58,6 @@
     "bbs.config.editor.loop-comment": "循環播放當前選擇的剪輯或循環區域（您可以使用 [ 和 ] 鍵或通過 Alt + 鼠標左鍵拖動時間軸選擇區域）",
     "bbs.config.editor.periodic_save": "定時保存",
     "bbs.config.editor.periodic_save-comment": "觸發自動定時保存的秒數。若要禁用定時保存，請將該選項設置為 0",
-    "bbs.config.editor.position": "顯示位置",
-    "bbs.config.editor.position-comment": "啟用同步模式時顯示相機屬性",
     "bbs.config.editor.rule_of_thirds": "三分法",
     "bbs.config.editor.rule_of_thirds-comment": "顯示三分法參考線",
     "bbs.config.editor.seconds": "使用秒",

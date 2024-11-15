@@ -49,8 +49,6 @@
     "bbs.config.editor.jump-comment": "Πόσες μονάδες χρόνου αλλάζει τα keybinds για την μετακίνηση του ποντικιου του Timeline (πάνω και κάτω βέλη)",
     "bbs.config.editor.loop": "Επανάληψη αναπαραγωγής",
     "bbs.config.editor.loop-comment": "Επαναλαμβάνει την αναπαραγωγή του επιλεγμένου κλιπ ή περιοχής επανάληψης (μπορείτε να χρησιμοποιήσετε τα πλήκτρα [ και ] για να επιλέξετε την περιοχή, ή Alt + κλικ σύρσιμο στο χρονογράφημα)",
-    "bbs.config.editor.position": "Θέση εμφάνισης",
-    "bbs.config.editor.position-comment": "Εμφάνιση των ιδιοτήτων της κάμερας όταν ο λειτουργικός τρόπος συγχρονισμού είναι ενεργοποιημένος",
     "bbs.config.editor.rule_of_thirds": "Κανόνας τρίτων",
     "bbs.config.editor.rule_of_thirds-comment": "Εμφάνιση οδηγών του κανόνα των τρίτων",
     "bbs.config.editor.seconds": "Χρήση δευτερολέπτων",

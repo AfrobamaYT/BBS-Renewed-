@@ -30,7 +30,7 @@ public class CubicModelAnimator
 
     private static void resetGroup(ModelGroup group)
     {
-        group.current.copy(group.initial);
+        group.reset();
 
         for (ModelGroup childGroup : group.children)
         {

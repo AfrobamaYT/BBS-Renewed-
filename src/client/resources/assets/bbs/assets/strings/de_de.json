@@ -52,8 +52,6 @@
     "bbs.config.editor.loop-comment": "Wiederholt das Abspielen des aktuell ausgewählten Clips oder der Wiederhol Region (du kannst die [ und ] Tasten benutzen um eine Region auszuwählen, oder Alt + ziehen auf der Timeline)",
     "bbs.config.editor.periodic_save": "Periodisches Speichern",
     "bbs.config.editor.periodic_save-comment": "Nummer an Sekunden die Periodisches Speichern immer wieder ausführt. Um Periodisches Speichern auszustellen, setze diese Option zu 0.",
-    "bbs.config.editor.position": "Zeige Position",
-    "bbs.config.editor.position-comment": "Zeige Kamera-Parameter when Sync-Modus aktiviert ist",
     "bbs.config.editor.rule_of_thirds": "Drittel-Regel",
     "bbs.config.editor.rule_of_thirds-comment": "Zeige Hilfen für die Drittel-Regel",
     "bbs.config.editor.seconds": "Benutze Sekunden",

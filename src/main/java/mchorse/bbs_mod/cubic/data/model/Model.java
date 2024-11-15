@@ -85,21 +85,20 @@ public class Model implements IMapSerializable
                 group.current.lerp(group.initial, transform.fix);
             }
 
-            if (group != null)
-            {
-                group.current.translate.add(transform.translate);
-                group.current.scale.add(transform.scale).sub(1, 1, 1);
-                group.current.rotate.add(
-                    (float) Math.toDegrees(transform.rotate.x),
-                    (float) Math.toDegrees(transform.rotate.y),
-                    (float) Math.toDegrees(transform.rotate.z)
-                );
-                group.current.rotate2.add(
-                    (float) Math.toDegrees(transform.rotate2.x),
-                    (float) Math.toDegrees(transform.rotate2.y),
-                    (float) Math.toDegrees(transform.rotate2.z)
-                );
-            }
+            group.lighting = transform.lighting;
+            group.color.copy(transform.color);
+            group.current.translate.add(transform.translate);
+            group.current.scale.add(transform.scale).sub(1, 1, 1);
+            group.current.rotate.add(
+                (float) Math.toDegrees(transform.rotate.x),
+                (float) Math.toDegrees(transform.rotate.y),
+                (float) Math.toDegrees(transform.rotate.z)
+            );
+            group.current.rotate2.add(
+                (float) Math.toDegrees(transform.rotate2.x),
+                (float) Math.toDegrees(transform.rotate2.y),
+                (float) Math.toDegrees(transform.rotate2.z)
+            );
         }
     }
 

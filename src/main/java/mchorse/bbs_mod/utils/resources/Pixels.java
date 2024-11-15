@@ -66,7 +66,7 @@ public class Pixels
             {
                 int i = x + y * width;
 
-                pixels.setColor(x, y, Colors.COLOR.set(data[i], true));
+                pixels.setColor(x, y, Colors.COLOR.set(data[i]));
             }
         }
 

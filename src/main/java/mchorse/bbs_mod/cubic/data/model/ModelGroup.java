@@ -5,6 +5,7 @@ import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import java.util.ArrayList;
@@ -21,12 +22,21 @@ public class ModelGroup implements IMapSerializable
     public boolean visible = true;
     public int index = -1;
 
+    public float lighting = 0F;
+    public Color color = new Color().set(1F, 1F, 1F);
     public Transform initial = new Transform();
     public Transform current = new Transform();
 
     public ModelGroup(String id)
     {
         this.id = id;
+    }
+
+    public void reset()
+    {
+        this.lighting = 0F;
+        this.color.set(1F, 1F, 1F);
+        this.current.copy(this.initial);
     }
 
     @Override

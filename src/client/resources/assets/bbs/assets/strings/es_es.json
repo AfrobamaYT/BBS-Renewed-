@@ -57,8 +57,6 @@
     "bbs.config.editor.loop-comment": "Reproducción en bucle del clip o región en bucle actualmente seleccionado (puedes usar las teclas [y] para seleccionar la región, o Alt + hacer clic en arrastrar en la línea de tiempo)",
     "bbs.config.editor.periodic_save": "Guardado periódico",
     "bbs.config.editor.periodic_save-comment": "Número de segundos que activa el guardado automático repetidamente. Para deshabilitar el guardado periódico, establece la opción en 0",
-    "bbs.config.editor.position": "Posición de visualización",
-    "bbs.config.editor.position-comment": "Mostrar propiedades de la cámara cuando el modo de sincronización está habilitado",
     "bbs.config.editor.rule_of_thirds": "Regla de tercios",
     "bbs.config.editor.rule_of_thirds-comment": "Mostrar guías de regla de tercios",
     "bbs.config.editor.seconds": "Usar segundos",

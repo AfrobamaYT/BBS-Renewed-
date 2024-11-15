@@ -59,8 +59,6 @@
     "bbs.config.editor.loop-comment": "Seçili klibin veya döngü bölgesinin oynatılmasını döngüye alır (bölgeyi seçmek için [ ve ] tuşlarını kullanabilir veya zaman çizelgesinde Alt + tıkla + sürükleyebilirsiniz)",
     "bbs.config.editor.periodic_save": "Periyodik kaydetme",
     "bbs.config.editor.periodic_save-comment": "Otomatik kaydetmeyi düzenli olarak tetikleyen saniye sayısı. Periyodik kaydetmeyi devre dışı bırakmak için seçeneği 0 olarak ayarlayın",
-    "bbs.config.editor.position": "Ekran konumu",
-    "bbs.config.editor.position-comment": "Senkronizasyon modu etkinleştirildiğinde kamera özelliklerini göster",
     "bbs.config.editor.rule_of_thirds": "Üçler kuralı",
     "bbs.config.editor.rule_of_thirds-comment": "Üçler kuralı rehberini göster",
     "bbs.config.editor.seconds": "Saniye birimini kullan",

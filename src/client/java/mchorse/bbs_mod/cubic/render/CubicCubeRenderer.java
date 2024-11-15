@@ -7,7 +7,9 @@ import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -187,7 +189,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         stack.peek().getPositionMatrix().transform(this.vertex);
 
         builder.vertex(this.vertex.x, this.vertex.y, this.vertex.z)
-            .color(this.r, this.g, this.b, this.a)
+            .color(this.r * group.color.r, this.g * group.color.g, this.b * group.color.b, this.a * group.color.a)
             .texture(vertex.uv.x, vertex.uv.y)
             .overlay(this.overlay);
 
@@ -197,7 +199,10 @@ public class CubicCubeRenderer implements ICubicRenderer
         }
         else
         {
-            builder.light(this.light);
+            int u = (int) Lerps.lerp(this.light & '\uffff', LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, MathUtils.clamp(group.lighting, 0F, 1F));
+            int v = this.light >> 16 & '\uffff';
+
+            builder.light(u, v);
         }
 
         builder.normal(this.normal.x, this.normal.y, this.normal.z).next();

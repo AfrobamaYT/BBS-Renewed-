@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.utils.pose;
 
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
@@ -9,6 +12,8 @@ public class PoseTransform extends Transform
     private static PoseTransform DEFAULT = new PoseTransform();
 
     public float fix;
+    public final Color color = new Color().set(Colors.WHITE);
+    public float lighting;
 
     @Override
     public void identity()
@@ -16,14 +21,23 @@ public class PoseTransform extends Transform
         super.identity();
 
         this.fix = 0F;
+        this.color.set(Colors.WHITE);
+        this.lighting = 0F;
     }
 
     @Override
     public void lerp(Transform transform, float a)
     {
-        if (transform instanceof PoseTransform)
+        if (transform instanceof PoseTransform pose)
         {
-            this.fix = Lerps.lerp(this.fix, ((PoseTransform) transform).fix, a);
+            this.fix = Lerps.lerp(this.fix, pose.fix, a);
+
+            this.color.r = Lerps.lerp(this.color.r, pose.color.r, a);
+            this.color.g = Lerps.lerp(this.color.g, pose.color.g, a);
+            this.color.b = Lerps.lerp(this.color.b, pose.color.b, a);
+            this.color.a = Lerps.lerp(this.color.a, pose.color.a, a);
+
+            this.lighting = Lerps.lerp(this.lighting, pose.lighting, a);
         }
 
         super.lerp(transform, a);
@@ -34,14 +48,22 @@ public class PoseTransform extends Transform
     {
         super.lerp(preA, a, b, postB, interp, x);
 
-        if (preA instanceof PoseTransform)
+        if (preA instanceof PoseTransform preA1)
         {
-            this.fix = (float) interp.interpolate(IInterp.context.set(
-                ((PoseTransform) preA).fix,
-                ((PoseTransform) a).fix,
-                ((PoseTransform) b).fix,
-                ((PoseTransform) postB).fix, x
-            ));
+            PoseTransform a1 = (PoseTransform) a;
+            PoseTransform b1 = (PoseTransform) b;
+            PoseTransform postB1 = (PoseTransform) postB;
+
+            this.fix = (float) interp.interpolate(IInterp.context.set(preA1.fix, a1.fix, b1.fix, postB1.fix, x));
+
+            this.color.set(
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.color.r, a1.color.r, b1.color.r, postB1.color.r, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.color.g, a1.color.g, b1.color.g, postB1.color.g, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.color.b, a1.color.b, b1.color.b, postB1.color.b, x)), 0F, 1F),
+                (float) MathUtils.clamp(interp.interpolate(IInterp.context.set(preA1.color.a, a1.color.a, b1.color.a, postB1.color.a, x)), 0F, 1F)
+            );
+
+            this.lighting = (float) interp.interpolate(IInterp.context.set(preA1.lighting, a1.lighting, b1.lighting, postB1.lighting, x));
         }
     }
 
@@ -50,9 +72,11 @@ public class PoseTransform extends Transform
     {
         boolean result = super.equals(obj);
 
-        if (obj instanceof PoseTransform)
+        if (obj instanceof PoseTransform poseTransform)
         {
-            result = result && this.fix == ((PoseTransform) obj).fix;
+            result = result && this.fix == poseTransform.fix;
+            result = result && this.color.equals(poseTransform.color);
+            result = result && this.lighting == poseTransform.lighting;
         }
 
         return result;
@@ -71,9 +95,11 @@ public class PoseTransform extends Transform
     @Override
     public void copy(Transform transform)
     {
-        if (transform instanceof PoseTransform)
+        if (transform instanceof PoseTransform poseTransform)
         {
-            this.fix = ((PoseTransform) transform).fix;
+            this.fix = poseTransform.fix;
+            this.color.copy(poseTransform.color);
+            this.lighting = poseTransform.lighting;
         }
 
         super.copy(transform);
@@ -85,6 +111,8 @@ public class PoseTransform extends Transform
         super.toData(data);
 
         data.putFloat("fix", this.fix);
+        data.putInt("color", this.color.getARGBColor());
+        data.putFloat("lighting", this.lighting);
     }
 
     @Override
@@ -93,6 +121,8 @@ public class PoseTransform extends Transform
         super.fromData(data);
 
         this.fix = data.getFloat("fix");
+        this.color.set(data.getInt("color", Colors.WHITE));
+        this.lighting = data.getFloat("lighting");
     }
 
     @Override

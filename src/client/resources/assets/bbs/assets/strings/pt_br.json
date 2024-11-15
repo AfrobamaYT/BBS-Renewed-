@@ -58,8 +58,6 @@
     "bbs.config.editor.loop-comment": "Reproduz em loop o clipe ou região em loop atualmente selecionados (você pode usar as teclas [ e ] para selecionar a região, ou Alt + click em arrastar na timeline)",
     "bbs.config.editor.periodic_save": "Salvamento periódico",
     "bbs.config.editor.periodic_save-comment": "Número de segundos que aciona o salvamento automático repetidamente. Para desabilitar o salvamento periódico, defina a opção como 0",
-    "bbs.config.editor.position": "Posição da exibição",
-    "bbs.config.editor.position-comment": "Mostra as propriadas da câmara quando o modo sincronização está ativo",
     "bbs.config.editor.rule_of_thirds": "Regra de terços",
     "bbs.config.editor.rule_of_thirds-comment": "Mostra as guias da regra de thirds",
     "bbs.config.editor.seconds": "Usar Segundos",

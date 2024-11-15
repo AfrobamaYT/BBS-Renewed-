@@ -59,8 +59,6 @@
     "bbs.config.editor.loop-comment": "Зациклює відтворення обраного кліпа або область (використовуйте клавіші [ та ] щоб обрати область, або Alt + ЛКМ на таймлайні)",
     "bbs.config.editor.periodic_save": "Переодичне збереження",
     "bbs.config.editor.periodic_save-comment": "Кількість секунд, через які повторюється автоматичне збереження. Щоб вимкнути періодичне збереження, встановіть значення 0",
-    "bbs.config.editor.position": "Показувати позицію",
-    "bbs.config.editor.position-comment": "Показати позицію камери коли увімкнений режим синхронізації",
     "bbs.config.editor.rule_of_thirds": "Правило третин",
     "bbs.config.editor.rule_of_thirds-comment": "Показує Правило третин",
     "bbs.config.editor.seconds": "Використовувати секунди",
