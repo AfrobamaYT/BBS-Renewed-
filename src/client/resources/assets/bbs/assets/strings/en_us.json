@@ -376,6 +376,7 @@
     "bbs.ui.film.replay.context.add": "Add a replay here",
     "bbs.ui.film.replay.context.move_here": "Move replay here",
     "bbs.ui.film.replay.label": "Replay display name",
+    "bbs.ui.film.replay.name_tag": "Name tag",
     "bbs.ui.film.replay.orbit.camera": "Camera",
     "bbs.ui.film.replay.orbit.first_person": "First-person",
     "bbs.ui.film.replay.orbit.free": "Free",

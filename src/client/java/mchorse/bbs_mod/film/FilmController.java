@@ -18,16 +18,20 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
 import net.minecraft.world.World;
@@ -148,24 +152,62 @@ public class FilmController
 
             if (matrix != null)
             {
+                stack.push();
                 MatrixStackUtils.multiply(stack, matrix);
                 Draw.coolerAxes(stack, 0.25F, 0.01F, 0.26F, 0.02F);
                 RenderSystem.enableDepthTest();
+                stack.pop();
             }
         }
 
         stack.pop();
 
-        stack.push();
-
         if (context.map == null && opacity > 0F && context.shadowRadius > 0F)
         {
+            stack.push();
             stack.translate(position.x - cx, position.y - cy, position.z - cz);
 
             ModelBlockEntityRenderer.renderShadow(context.consumers, stack, transition, position.x, position.y, position.z, 0F, 0F, 0F, context.shadowRadius, opacity);
+
+            stack.pop();
         }
 
-        stack.pop();
+        if (!context.nameTag.isEmpty() && context.map == null)
+        {
+            stack.push();
+            stack.translate(position.x - cx, position.y - cy, position.z - cz);
+
+            renderNameTag(entity, Text.literal(StringUtils.processColoredText(context.nameTag)), stack, context.consumers, light);
+
+            stack.pop();
+        }
+    }
+
+    private static void renderNameTag(IEntity entity, Text text, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light)
+    {
+        boolean sneaking = !entity.isSneaking();
+        float hitboxH = (float) entity.getPickingHitbox().h + 0.5F;
+
+        matrices.push();
+        matrices.translate(0F, hitboxH, 0F);
+        matrices.multiply(MinecraftClient.getInstance().getEntityRenderDispatcher().getRotation());
+        matrices.scale(-0.025F, -0.025F, 0.025F);
+
+        Matrix4f matrix4f = matrices.peek().getPositionMatrix();
+        TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
+
+        float opacity = MinecraftClient.getInstance().options.getTextBackgroundOpacity(0.25F);
+        int background = (int) (opacity * 255F) << 24;
+        float h = (float) (-textRenderer.getWidth(text) / 2);
+
+        textRenderer.draw(text, h, 0, 0x20ffffff, false, matrix4f, vertexConsumers, sneaking ? TextRenderer.TextLayerType.SEE_THROUGH : TextRenderer.TextLayerType.NORMAL, background, light);
+
+        if (sneaking)
+        {
+            textRenderer.draw(text, h, 0, -1, false, matrix4f, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, light);
+        }
+
+        matrices.pop();
     }
 
     public static Matrix4f getEntityMatrix(List<IEntity> entities, double cameraX, double cameraY, double cameraZ, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
@@ -304,7 +346,8 @@ public class FilmController
 
             renderEntity(FilmControllerContext.instance
                 .setup(this.entities, this.entities.get(i), context)
-                .shadow(replay.shadow.get(), replay.shadowSize.get()));
+                .shadow(replay.shadow.get(), replay.shadowSize.get())
+                .nameTag(replay.nameTag.get()));
         }
 
         RenderSystem.disableDepthTest();

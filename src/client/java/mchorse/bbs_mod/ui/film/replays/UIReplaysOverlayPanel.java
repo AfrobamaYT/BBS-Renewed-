@@ -22,6 +22,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
     public UIElement properties;
     public UINestedEdit pickEdit;
     public UITextbox label;
+    public UITextbox nameTag;
     public UIToggle shadow;
     public UITrackpad shadowSize;
     public UITrackpad looping;
@@ -44,6 +45,8 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         this.pickEdit.edit.tooltip(UIKeys.SCENE_REPLAYS_CONTEXT_EDIT_FORM);
         this.label = new UITextbox(1000, (s) -> filmPanel.replayEditor.getReplay().label.set(s));
         this.label.textbox.setPlaceholder(UIKeys.FILM_REPLAY_LABEL);
+        this.nameTag = new UITextbox(1000, (s) -> filmPanel.replayEditor.getReplay().nameTag.set(s));
+        this.nameTag.textbox.setPlaceholder(UIKeys.FILM_REPLAY_NAME_TAG);
         this.shadow = new UIToggle(UIKeys.FILM_REPLAY_SHADOW, (b) -> filmPanel.replayEditor.getReplay().shadow.set(b.getValue()));
         this.shadowSize = new UITrackpad((v) -> filmPanel.replayEditor.getReplay().shadowSize.set(v.floatValue()));
         this.shadowSize.tooltip(UIKeys.FILM_REPLAY_SHADOW_SIZE);
@@ -51,7 +54,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         this.looping.limit(0).integer().tooltip(UIKeys.FILM_REPLAY_LOOPING_TOOLTIP);
 
         this.properties = UI.column(5, 6,
-            UI.label(UIKeys.FILM_REPLAY_REPLAY), this.pickEdit, this.label,
+            UI.label(UIKeys.FILM_REPLAY_REPLAY), this.pickEdit, this.label, this.nameTag,
             this.shadow, this.shadowSize,
             UI.label(UIKeys.FILM_REPLAY_LOOPING), this.looping
         );
@@ -70,6 +73,7 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         {
             this.pickEdit.setForm(replay.form.get());
             this.label.setText(replay.label.get());
+            this.nameTag.setText(replay.nameTag.get());
             this.shadow.setValue(replay.shadow.get());
             this.shadowSize.setValue(replay.shadowSize.get());
             this.looping.setValue(replay.looping.get());

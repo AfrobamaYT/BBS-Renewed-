@@ -30,6 +30,7 @@ public class Replay extends ValueGroup
     public final Clips actions = new Clips("actions", BBSMod.getFactoryActionClips());
 
     public final ValueString label = new ValueString("label", "");
+    public final ValueString nameTag = new ValueString("name_tag", "");
     public final ValueBoolean shadow = new ValueBoolean("shadow", true);
     public final ValueFloat shadowSize = new ValueFloat("shadow_size", 0.5F);
     public final ValueInt looping = new ValueInt("looping", 0);
@@ -44,6 +45,7 @@ public class Replay extends ValueGroup
         this.add(this.actions);
 
         this.add(this.label);
+        this.add(this.nameTag);
         this.add(this.shadow);
         this.add(this.shadowSize);
         this.add(this.looping);

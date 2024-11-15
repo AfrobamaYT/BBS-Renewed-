@@ -28,6 +28,8 @@ public class FilmControllerContext
     public String bone;
     public boolean local;
 
+    public String nameTag = "";
+
     private FilmControllerContext()
     {}
 
@@ -38,6 +40,7 @@ public class FilmControllerContext
         this.color = Colors.WHITE;
         this.bone = null;
         this.local = false;
+        this.nameTag = "";
     }
 
     public FilmControllerContext setup(List<IEntity> entities, IEntity entity, WorldRenderContext context)
@@ -107,6 +110,13 @@ public class FilmControllerContext
     {
         this.bone = bone;
         this.local = local;
+
+        return this;
+    }
+
+    public FilmControllerContext nameTag(String nameTag)
+    {
+        this.nameTag = nameTag;
 
         return this;
     }

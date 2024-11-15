@@ -388,8 +388,15 @@ public class StubEntity implements IEntity
     @Override
     public AABB getPickingHitbox()
     {
+        Form form = this.getForm();
         float w = 0.6F;
         float h = 1.8F;
+
+        if (form != null && form.hitbox.get())
+        {
+            w = form.hitboxWidth.get();
+            h = form.hitboxHeight.get();
+        }
 
         return new AABB(
             this.getX() - w / 2, this.getY(), this.getZ() - w / 2,
