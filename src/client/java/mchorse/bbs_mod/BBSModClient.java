@@ -473,7 +473,8 @@ public class BBSModClient implements ClientModInitializer
 
         BBSMod.getAudioFolder().mkdirs();
 
-        /* Whenever we're in a dev environment,  */
+        /* Whenever we're in a dev environment, resource assets can't be found
+         * directly, so we have to copy files this crude way */
         isForge = isForge || FabricLoader.getInstance().isDevelopmentEnvironment();
 
         this.insert(isForge, "/assets/bbs/assets/models/player/steve/", BBSMod.getAssetsPath("models/player/steve"), Arrays.asList("config.json", "steve.bbs.json", "steve.png"));
