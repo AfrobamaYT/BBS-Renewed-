@@ -8,7 +8,7 @@ import mchorse.bbs_mod.forms.forms.BlockForm;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
-import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -18,6 +18,8 @@ import org.joml.Matrix4f;
 
 public class BlockFormRenderer extends FormRenderer<BlockForm>
 {
+    public static final Color color = new Color();
+
     public BlockFormRenderer(BlockForm form)
     {
         super(form);
@@ -41,10 +43,14 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
         matrices.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
+        Color set = this.form.color.get(context.getTransition());
+
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, set));
         consumers.setUI(true);
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), matrices, consumers, LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
         consumers.draw();
         consumers.setUI(false);
+        consumers.setSubstitute(null);
 
         matrices.pop();
     }
@@ -76,7 +82,12 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
             });
         }
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, Colors.COLOR.set(context.color)));
+        Color set = this.form.color.get(context.transition);
+
+        color.set(context.color);
+        color.mul(set);
+
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, color));
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
         consumers.setSubstitute(null);

@@ -155,6 +155,14 @@ public class Color
         this.a *= newColor.a;
     }
 
+    public void mul(Color set)
+    {
+        this.r *= set.r;
+        this.g *= set.g;
+        this.b *= set.b;
+        this.a *= set.a;
+    }
+
     @Override
     public boolean equals(Object obj)
     {

@@ -8,7 +8,7 @@ import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
-import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -40,10 +40,14 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         matrices.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
         matrices.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
+        Color set = this.form.color.get(context.getTransition());
+
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, set));
         consumers.setUI(true);
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV, matrices, consumers, MinecraftClient.getInstance().world, 0);
         consumers.draw();
         consumers.setUI(false);
+        consumers.setSubstitute(null);
 
         matrices.pop();
     }
@@ -71,7 +75,12 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
             CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
         }
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, Colors.COLOR.set(context.color)));
+        Color set = this.form.color.get(context.transition);
+
+        BlockFormRenderer.color.set(context.color);
+        BlockFormRenderer.color.mul(set);
+
+        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, BlockFormRenderer.color));
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
         consumers.setSubstitute(null);
