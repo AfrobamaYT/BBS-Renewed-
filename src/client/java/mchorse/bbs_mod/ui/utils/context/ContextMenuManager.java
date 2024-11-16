@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.utils.context;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu;
@@ -47,6 +48,11 @@ public class ContextMenuManager
         }
 
         return this.action(new ContextAction(icon, label, runnable));
+    }
+
+    public ContextAction action(Icon icon, IKey label, boolean hightlight, Runnable runnable)
+    {
+        return this.action(icon, label, hightlight ? BBSSettings.primaryColor(0) : 0, runnable);
     }
 
     public ContextAction action(Icon icon, IKey label, int color, Runnable runnable)

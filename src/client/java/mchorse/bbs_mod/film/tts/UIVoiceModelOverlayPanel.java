@@ -30,7 +30,7 @@ public class UIVoiceModelOverlayPanel extends UIOverlayPanel
                 {
                     String key = entry.getValue().id;
 
-                    menu.action(Icons.VOICE, IKey.raw(entry.getValue().name), this.model.id.get().equals(key) ? BBSSettings.primaryColor(0) : 0, () ->
+                    menu.action(Icons.VOICE, IKey.raw(entry.getValue().name), this.model.id.get().equals(key), () ->
                     {
                         this.model.id.set(key);
                     });

@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -50,7 +49,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
                 String stringLabel = i + (replay != null ? " - " + replay.getName() : (form == null ? "" : " - " + form.getIdOrName()));
                 IKey label = IKey.raw(stringLabel);
 
-                menu.action(Icons.CLOSE, label, actor == value ? BBSSettings.primaryColor(0) : 0, () -> callback.accept(actor));
+                menu.action(Icons.CLOSE, label, actor == value, () -> callback.accept(actor));
             }
         });
     }
@@ -104,14 +103,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
         {
             for (String attachment : attachments)
             {
-                if (attachment.equals(value))
-                {
-                    menu.action(Icons.LIMB, IKey.raw(attachment), BBSSettings.primaryColor(0), () -> this.setAttachment(attachment));
-                }
-                else
-                {
-                    menu.action(Icons.LIMB, IKey.raw(attachment), () -> this.setAttachment(attachment));
-                }
+                menu.action(Icons.LIMB, IKey.raw(attachment), attachment.equals(value), () -> this.setAttachment(attachment));
             }
         });
     }

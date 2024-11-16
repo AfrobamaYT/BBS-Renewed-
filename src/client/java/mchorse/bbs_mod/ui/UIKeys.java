@@ -234,6 +234,7 @@ public class UIKeys
     public static final IKey FILM_OPEN_VOICE_LINE_EDITOR = L10n.lang("bbs.ui.film.open_voice_line_editor");
     public static final IKey FILM_RECORDING = L10n.lang("bbs.ui.film.recording");
     public static final IKey FILM_RENDER_AUDIO = L10n.lang("bbs.ui.film.render_audio");
+    public static final IKey FILM_RESET_REPLAYS = L10n.lang("bbs.ui.film.reset_replays");
     public static final IKey FILM_RENDER_AUDIO_ERROR = L10n.lang("bbs.ui.film.render_audio.error");
     public static final IKey FILM_RENDER_AUDIO_SUCCESS = L10n.lang("bbs.ui.film.render_audio.success");
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");

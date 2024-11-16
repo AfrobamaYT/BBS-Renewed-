@@ -676,14 +676,12 @@ public class UIFilmController extends UIElement
 
         this.getContext().replaceContextMenu((menu) ->
         {
-            int color = BBSSettings.primaryColor(0);
-
-            menu.autoKeys().action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == CAMERA_MODE_CAMERA ? color : 0, () -> this.setPov(0));
-            menu.action(Icons.REFRESH, UIKeys.FILM_REPLAY_ORBIT_FREE, this.pov == CAMERA_MODE_FREE ? color : 0, () -> this.setPov(1));
-            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == CAMERA_MODE_ORBIT ? color : 0, () -> this.setPov(2));
-            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == CAMERA_MODE_FIRST_PERSON ? color : 0, () -> this.setPov(3));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == CAMERA_MODE_THIRD_PERSON_BACK ? color : 0, () -> this.setPov(4));
-            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == CAMERA_MODE_THIRD_PERSON_FRONT ? color : 0, () -> this.setPov(5));
+            menu.autoKeys().action(Icons.CAMERA, UIKeys.FILM_REPLAY_ORBIT_CAMERA, this.pov == CAMERA_MODE_CAMERA, () -> this.setPov(0));
+            menu.action(Icons.REFRESH, UIKeys.FILM_REPLAY_ORBIT_FREE, this.pov == CAMERA_MODE_FREE, () -> this.setPov(1));
+            menu.action(Icons.ORBIT, UIKeys.FILM_REPLAY_ORBIT_ORBIT, this.pov == CAMERA_MODE_ORBIT, () -> this.setPov(2));
+            menu.action(Icons.VISIBLE, UIKeys.FILM_REPLAY_ORBIT_FIRST_PERSON, this.pov == CAMERA_MODE_FIRST_PERSON, () -> this.setPov(3));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_BACK, this.pov == CAMERA_MODE_THIRD_PERSON_BACK, () -> this.setPov(4));
+            menu.action(Icons.POSE, UIKeys.FILM_REPLAY_ORBIT_THIRD_PERSON_FRONT, this.pov == CAMERA_MODE_THIRD_PERSON_FRONT, () -> this.setPov(5));
         });
     }
 

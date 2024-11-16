@@ -83,7 +83,7 @@ public class UIFilmPreview extends UIElement
                 }
             });
 
-            menu.action(Icons.PAUSE, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_FREEZE_PAUSED, !this.panel.getController().isPaused() ? BBSSettings.primaryColor(0) : 0, () ->
+            menu.action(Icons.PAUSE, UIKeys.CAMERA_EDITOR_KEYS_EDITOR_FREEZE_PAUSED, !this.panel.getController().isPaused(), () ->
             {
                 this.panel.getController().setPaused(!this.panel.getController().isPaused());
             });
@@ -92,10 +92,7 @@ public class UIFilmPreview extends UIElement
         this.teleport.tooltip(UIKeys.FILM_TELEPORT_TITLE);
         this.teleport.context((menu) ->
         {
-            menu.action(Icons.MOVE_TO, UIKeys.FILM_TELEPORT_CONTEXT_PLAYER, this.panel.playerToCamera ? BBSSettings.primaryColor(0) : 0, () ->
-            {
-                this.panel.playerToCamera = !this.panel.playerToCamera;
-            });
+            menu.action(Icons.MOVE_TO, UIKeys.FILM_TELEPORT_CONTEXT_PLAYER, this.panel.playerToCamera, () -> this.panel.playerToCamera = !this.panel.playerToCamera);
         });
         this.flight = new UIIcon(Icons.PLANE, (b) -> this.panel.toggleFlight());
         this.flight.tooltip(UIKeys.CAMERA_EDITOR_KEYS_MODES_FLIGHT);
@@ -149,6 +146,10 @@ public class UIFilmPreview extends UIElement
             menu.action(Icons.FILM, UIKeys.CAMERA_TOOLTIPS_OPEN_VIDEOS, () -> this.panel.recorder.openMovies());
 
             menu.action(Icons.SOUND, UIKeys.FILM_RENDER_AUDIO, this::renderAudio);
+            menu.action(Icons.REFRESH, UIKeys.FILM_RESET_REPLAYS, this.panel.recorder.resetReplays, () ->
+            {
+                this.panel.recorder.resetReplays = !this.panel.recorder.resetReplays;
+            });
         });
 
         this.icons.add(this.replays, this.onionSkin, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);

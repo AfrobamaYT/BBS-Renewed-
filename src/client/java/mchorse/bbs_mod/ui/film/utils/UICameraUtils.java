@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.film.utils;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Angle;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
@@ -37,16 +36,7 @@ public class UICameraUtils
         {
             for (IInterp interpolation : values)
             {
-                ContextAction action;
-
-                if (interpolation == current)
-                {
-                    action = menu.action(Icons.ADD, InterpolationUtils.getName(interpolation), BBSSettings.primaryColor.get(), () -> consumer.accept(interpolation));
-                }
-                else
-                {
-                    action = menu.action(Icons.ADD, InterpolationUtils.getName(interpolation), () -> consumer.accept(interpolation));
-                }
+                ContextAction action = menu.action(Icons.ADD, InterpolationUtils.getName(interpolation), interpolation == current, () -> consumer.accept(interpolation));
 
                 InterpolationUtils.setupKeybind(interpolation, action, KEYS_CATEGORY);
             }

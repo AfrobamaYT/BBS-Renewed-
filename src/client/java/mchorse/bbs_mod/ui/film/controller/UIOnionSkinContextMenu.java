@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.film.controller;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.ValueOnionSkin;
@@ -61,7 +60,7 @@ public class UIOnionSkinContextMenu extends UIContextMenu
 
                 for (String property : replay.properties.properties.keySet())
                 {
-                    menu.action(Icons.FOLDER, IKey.raw(property), this.onionSkin.group.get().equals(property) ? BBSSettings.primaryColor(0) : 0, () ->
+                    menu.action(Icons.FOLDER, IKey.raw(property), this.onionSkin.group.get().equals(property), () ->
                     {
                         this.onionSkin.group.set(property);
                         this.group.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_GROUP.format(property));

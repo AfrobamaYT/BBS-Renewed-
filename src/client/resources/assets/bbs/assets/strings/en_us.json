@@ -374,6 +374,7 @@
     "bbs.ui.film.render_audio": "Render audio (from audio clips)",
     "bbs.ui.film.render_audio.error": "Audio clips couldn't be rendered! See the latest.log for more information...",
     "bbs.ui.film.render_audio.success": "The audio clips were successfully rendered!",
+    "bbs.ui.film.reset_replays": "Reset replays upon recording",
     "bbs.ui.film.replay.context.add": "Add a replay here",
     "bbs.ui.film.replay.context.move_here": "Move replay here",
     "bbs.ui.film.replay.label": "Replay display name",

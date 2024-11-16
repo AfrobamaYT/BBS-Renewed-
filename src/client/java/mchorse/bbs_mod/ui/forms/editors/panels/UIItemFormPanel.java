@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -28,7 +27,7 @@ public class UIItemFormPanel extends UIFormPanel<ItemForm>
                 {
                     if (this.form.modelTransform.get() == value)
                     {
-                        menu.action(Icons.LINE, IKey.raw(value.asString()), BBSSettings.primaryColor(0), () -> {});
+                        menu.action(Icons.LINE, IKey.raw(value.asString()), true, () -> {});
                     }
                     else
                     {

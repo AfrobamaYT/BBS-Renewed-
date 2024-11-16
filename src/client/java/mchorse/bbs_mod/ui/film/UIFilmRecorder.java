@@ -22,6 +22,8 @@ public class UIFilmRecorder extends UIElement
     private UIExit exit = new UIExit(this);
     private int end;
 
+    public boolean resetReplays = true;
+
     public UIFilmRecorder(UIFilmPanel editor)
     {
         super();
@@ -85,7 +87,12 @@ public class UIFilmRecorder extends UIElement
 
         this.editor.setCursor(looping ? Math.min(min, max) : 0);
         this.editor.notifyServer(ActionState.RESTART);
-        this.editor.getController().createEntities();
+
+        if (this.resetReplays)
+        {
+            this.editor.getController().createEntities();
+        }
+
         this.editor.togglePlayback();
         context.menu.main.setEnabled(false);
         context.menu.overlay.add(this);

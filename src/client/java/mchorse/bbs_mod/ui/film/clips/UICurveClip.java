@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.film.clips;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.CurveClip;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
@@ -58,7 +57,7 @@ public class UICurveClip extends UIClip<CurveClip>
 
     private void addOption(ContextMenuManager menu, IKey label, String key, Icon icon)
     {
-        menu.action(icon, label, this.clip.key.get().equals(key) ? BBSSettings.primaryColor(0) : 0, () -> this.clip.key.set(key));
+        menu.action(icon, label, this.clip.key.get().equals(key), () -> this.clip.key.set(key));
     }
 
     @Override
