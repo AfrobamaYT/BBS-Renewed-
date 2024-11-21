@@ -1,8 +1,13 @@
 package mchorse.bbs_mod.utils;
 
+import com.mojang.authlib.GameProfile;
 import mchorse.bbs_mod.network.ClientNetwork;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class PlayerUtils
 {
@@ -37,6 +42,31 @@ public class PlayerUtils
         else
         {
             ClientNetwork.sendTeleport(player, x, y, z);
+        }
+    }
+
+    public static class ProtectedAccess extends PlayerEntity
+    {
+        public static TrackedData<Byte> getModelParts()
+        {
+            return PLAYER_MODEL_PARTS;
+        }
+
+        public ProtectedAccess(World world, BlockPos pos, float yaw, GameProfile gameProfile)
+        {
+            super(world, pos, yaw, gameProfile);
+        }
+
+        @Override
+        public boolean isSpectator()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isCreative()
+        {
+            return false;
         }
     }
 }
