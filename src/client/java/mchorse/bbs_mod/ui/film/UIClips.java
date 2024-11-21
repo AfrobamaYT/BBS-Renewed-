@@ -427,6 +427,7 @@ public class UIClips extends UIElement
             for (Clip clip : newClips)
             {
                 clip.tick.set(tick + (clip.tick.get() - min));
+                clip.layer.set(this.clips.findFreeLayer(clip));
                 this.clips.addClip(clip);
                 this.addSelected(clip);
             }

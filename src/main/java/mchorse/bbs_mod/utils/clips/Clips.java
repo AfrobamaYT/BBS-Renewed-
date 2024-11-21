@@ -29,6 +29,33 @@ public class Clips extends ValueGroup
         return this.factory;
     }
 
+    public int findFreeLayer(Clip clip)
+    {
+        int layer = clip.layer.get();
+
+        main: while (true)
+        {
+            for (Clip newClip : this.clips)
+            {
+                float a1 = clip.tick.get();
+                float a2 = a1 + clip.duration.get();
+                float b1 = newClip.tick.get();
+                float b2 = b1 + newClip.duration.get();
+
+                if (layer == newClip.layer.get() && MathUtils.isInside(a1, a2, b1, b2))
+                {
+                    layer += 1;
+
+                    continue main;
+                }
+            }
+
+            break;
+        }
+
+        return layer;
+    }
+
     public void sortLayers()
     {
         for (Clip clip : this.clips)
