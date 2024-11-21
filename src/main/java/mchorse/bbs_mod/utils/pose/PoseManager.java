@@ -4,9 +4,12 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.IOUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class PoseManager
 {
@@ -23,9 +26,9 @@ public class PoseManager
 
         newPoses = new MapType();
 
-        try
+        try (InputStream stream = BBSMod.getProvider().getAsset(getPosesFile(group)))
         {
-            newPoses = (MapType) DataToString.read(getPosesFile(group));
+            newPoses = DataToString.mapFromString(IOUtils.readText(stream));
         }
         catch (FileNotFoundException e)
         {}
@@ -52,15 +55,18 @@ public class PoseManager
 
         newPoses.put(key, pose);
 
-        DataToString.writeSilently(getPosesFile(group), newPoses, true);
+        File file = BBSMod.getProvider().getFile(getPosesFile(group));
+
+        if (file != null)
+        {
+            file.getParentFile().mkdirs();
+
+            DataToString.writeSilently(file, newPoses, true);
+        }
     }
 
-    private static File getPosesFile(String group)
+    private static Link getPosesFile(String group)
     {
-        File poses = BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + group + "/");
-
-        poses.mkdirs();
-
-        return new File(poses, "poses.json");
+        return Link.assets(ModelManager.MODELS_PREFIX + group + "/poses.json");
     }
 }

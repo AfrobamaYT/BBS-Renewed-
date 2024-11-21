@@ -8,8 +8,8 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioClientClip extends AudioClip
 {
@@ -20,7 +20,7 @@ public class AudioClientClip extends AudioClip
 
     public static Map<Link, Float> getPlayback(ClipContext context)
     {
-        return (Map<Link, Float>) context.clipData.computeIfAbsent("audio", (v) -> new HashMap<Link, Float>());
+        return (Map<Link, Float>) context.clipData.computeIfAbsent("audio", (v) -> new ConcurrentHashMap<>());
     }
 
     public static void manageSounds(ClipContext context)
