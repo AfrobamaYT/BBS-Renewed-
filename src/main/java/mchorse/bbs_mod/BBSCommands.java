@@ -277,6 +277,7 @@ public class BBSCommands
                         for (ServerPlayerEntity serverPlayerEntity : server.getPlayerManager().getPlayerList())
                         {
                             server.getCommandManager().sendCommandTree(serverPlayerEntity);
+                            ServerNetwork.sendCheatsPermission(serverPlayerEntity, enabled);
                         }
                     }
 

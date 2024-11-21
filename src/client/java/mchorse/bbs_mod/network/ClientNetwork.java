@@ -97,6 +97,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_FORM_TRIGGER, (client, handler, buf, responseSender) -> handleFormTriggerPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ASSET, (client, handler, buf, responseSender) -> handleAssetPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_REQUEST_ASSET, (client, handler, buf, responseSender) -> handleRequestAssetPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CHEATS_PERMISSION, (client, handler, buf, responseSender) -> handleCheatsPermissionPacket(client, buf));
     }
 
     /* Handlers */
@@ -308,6 +309,13 @@ public class ClientNetwork
         int index = buf.readInt();
 
         sendAsset(link, index);
+    }
+
+    private static void handleCheatsPermissionPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        boolean cheats = buf.readBoolean();
+
+        client.player.setClientPermissionLevel(cheats ? 4 : 0);
     }
 
     /* API */

@@ -67,6 +67,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_FORM_TRIGGER = new Identifier(BBSMod.MOD_ID, "c8");
     public static final Identifier CLIENT_ASSET = new Identifier(BBSMod.MOD_ID, "c9");
     public static final Identifier CLIENT_REQUEST_ASSET = new Identifier(BBSMod.MOD_ID, "c10");
+    public static final Identifier CLIENT_CHEATS_PERMISSION = new Identifier(BBSMod.MOD_ID, "c11");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -693,5 +694,14 @@ public class ServerNetwork
         buf.writeInt(index);
 
         ServerPlayNetworking.send(player, ServerNetwork.CLIENT_REQUEST_ASSET, buf);
+    }
+
+    public static void sendCheatsPermission(ServerPlayerEntity player, boolean cheats)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeBoolean(cheats);
+
+        ServerPlayNetworking.send(player, ServerNetwork.CLIENT_CHEATS_PERMISSION, buf);
     }
 }
