@@ -4,6 +4,7 @@ import mchorse.bbs_mod.actions.types.FormTriggerClientActionClip;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
+import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
@@ -313,7 +314,8 @@ public class BBSModClient implements ClientModInitializer
 
         /* Replace audio clip with client version that plays audio */
         BBSMod.getFactoryCameraClips()
-            .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825));
+                .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825))
+                .register(Link.bbs("tracker"), TrackerClientClip.class, new ClipFactoryData(Icons.VISIBLE, 0xffc825));
 
         /* Replace form trigger action clip with client version that plays animation */
         BBSMod.getFactoryActionClips()
