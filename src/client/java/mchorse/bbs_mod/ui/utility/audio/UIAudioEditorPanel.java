@@ -5,25 +5,25 @@ import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.Keys;
-import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.dashboard.panels.UISidebarDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
-import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UISoundOverlayPanel;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 
-public class UIAudioEditorOverlayPanel extends UIOverlayPanel
+public class UIAudioEditorPanel extends UISidebarDashboardPanel
 {
     public UIIcon pickAudio;
     public UIIcon plause;
     public UIIcon saveColors;
     public UIAudioEditor audioEditor;
 
-    public UIAudioEditorOverlayPanel()
+    public UIAudioEditorPanel(UIDashboard dashboard)
     {
-        super(UIKeys.AUDIO_TITLE);
+        super(dashboard);
 
-        this.pickAudio = new UIIcon(Icons.MORE, (b) -> this.pickAudio());
+        this.pickAudio = new UIIcon(Icons.MORE, (b) -> UIOverlay.addOverlay(this.getContext(), new UISoundOverlayPanel(this::openAudio)));
         this.plause = new UIIcon(() ->
         {
             SoundPlayer player = this.audioEditor.getPlayer();
@@ -37,29 +37,21 @@ public class UIAudioEditorOverlayPanel extends UIOverlayPanel
         }, (b) -> this.audioEditor.togglePlayback());
         this.saveColors = new UIIcon(Icons.SAVED, (b) -> this.saveColors());
         this.audioEditor = new UIAudioEditor();
-        this.audioEditor.full(this.content);
+        this.audioEditor.full(this.editor);
 
-        this.icons.add(this.pickAudio, this.plause, this.saveColors);
-        this.content.add(this.audioEditor);
+        this.iconBar.add(this.pickAudio, this.plause, this.saveColors);
+        this.add(this.audioEditor);
 
         this.openAudio(null);
 
         this.keys().register(Keys.PLAUSE, this.audioEditor::togglePlayback);
         this.keys().register(Keys.SAVE, this::saveColors);
+        this.keys().register(Keys.OPEN_DATA_MANAGER, this.pickAudio::clickItself);
     }
 
     @Override
-    public void onClose()
-    {
-        this.saveColors();
-
-        super.onClose();
-    }
-
-    private void pickAudio()
-    {
-        UIOverlay.addOverlay(this.getContext(), new UISoundOverlayPanel(this::openAudio));
-    }
+    public void requestNames()
+    {}
 
     private void openAudio(Link link)
     {

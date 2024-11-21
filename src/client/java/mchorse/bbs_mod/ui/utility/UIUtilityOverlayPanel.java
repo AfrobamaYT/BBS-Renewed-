@@ -6,6 +6,7 @@ import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.l10n.L10nUtils;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -14,7 +15,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIMessageFolderOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
-import mchorse.bbs_mod.ui.utility.audio.UIAudioEditorOverlayPanel;
+import mchorse.bbs_mod.ui.utility.audio.UIAudioEditorPanel;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
@@ -132,7 +133,10 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
 
         this.close();
 
-        UIOverlay.addOverlay(context, new UIAudioEditorOverlayPanel(), 0.6F, 0.9F);
+        for (UIDashboardPanels child : context.menu.getRoot().getChildren(UIDashboardPanels.class))
+        {
+            child.setPanel(child.getPanel(UIAudioEditorPanel.class));
+        }
     }
 
     private void analyzeLanguageStrings()

@@ -14,7 +14,6 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.ui.framework.elements.IUITreeEventListener;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -26,7 +25,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UIAudioEditor extends UIElement implements IUITreeEventListener
+public class UIAudioEditor extends UIElement
 {
     private static final Area AREA = new Area();
 
@@ -292,16 +291,6 @@ public class UIAudioEditor extends UIElement implements IUITreeEventListener
         }
 
         return super.subMouseScrolled(context);
-    }
-
-    @Override
-    public void onAddedToTree(UIElement element)
-    {}
-
-    @Override
-    public void onRemovedFromTree(UIElement element)
-    {
-        this.delete();
     }
 
     @Override
