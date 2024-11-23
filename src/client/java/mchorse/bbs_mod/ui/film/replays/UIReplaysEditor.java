@@ -377,17 +377,15 @@ public class UIReplaysEditor extends UIElement
                 if (clip != null)
                 {
                     IUIClipRenderer<Clip> renderer = cameraEditor.clips.getRenderers().get(clip);
-
                     Scale scale = view.getXAxis();
-                    float offset = clip.tick.get();
-                    int duration = clip.duration.get();
-
-                    int x1 = (int) scale.to(offset);
-                    int x2 = (int) scale.to(offset + duration);
                     Area area = new Area();
 
-                    area.setPoints(x1, view.area.y + shift, x2, view.area.y + shift + 20);
+                    float offset = clip.tick.get();
+                    int duration = clip.duration.get();
+                    int x1 = (int) scale.to(offset);
+                    int x2 = (int) scale.to(offset + duration);
 
+                    area.setPoints(x1, view.area.y + shift, x2, view.area.y + shift + 20);
                     renderer.renderClip(context, cameraEditor.clips, clip, area, true, true);
                 }
             });

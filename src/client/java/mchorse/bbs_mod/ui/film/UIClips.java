@@ -43,7 +43,9 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class UIClips extends UIElement
@@ -89,6 +91,11 @@ public class UIClips extends UIElement
     private int layers;
 
     private UIClipRenderers renderers = new UIClipRenderers();
+
+    private List<Clip> grabbedClips = Collections.emptyList();
+    private List<Clip> otherClips = Collections.emptyList();
+    private Set<Integer> snappingPoints = new HashSet<>();
+    private List<Vector3i> grabbedData = new ArrayList<>();
 
     /**
      * Render cursor that displays the full duration of the camera work,
@@ -1011,8 +1018,24 @@ public class UIClips extends UIElement
 
                 this.grabMode = this.getClipHandle(clip, context, LAYER_HEIGHT);
                 this.grabbing = true;
+                this.grabbedClips = this.getClipsFromSelection();
+                this.otherClips = new ArrayList<>(this.clips.get());
+                this.otherClips.removeIf(this.grabbedClips::contains);
+                this.snappingPoints.clear();
+
+                for (Clip otherClip : this.otherClips)
+                {
+                    this.snappingPoints.add(otherClip.tick.get());
+                    this.snappingPoints.add(otherClip.tick.get() + otherClip.duration.get());
+                }
+
                 this.lastX = mouseX;
                 this.lastY = mouseY;
+
+                for (Clip selectedClip : this.getClipsFromSelection())
+                {
+                    this.grabbedData.add(new Vector3i(selectedClip.tick.get(), selectedClip.duration.get(), selectedClip.layer.get()));
+                }
 
                 return true;
             }
@@ -1132,6 +1155,11 @@ public class UIClips extends UIElement
         this.scrolling = false;
         this.selectingLoop = -1;
 
+        this.grabbedClips = Collections.emptyList();
+        this.otherClips = Collections.emptyList();
+        this.snappingPoints.clear();
+        this.grabbedData.clear();
+
         return super.subMouseReleased(context);
     }
 
@@ -1174,28 +1202,23 @@ public class UIClips extends UIElement
         }
         else if (this.grabbing)
         {
-            List<Clip> clips = this.getClipsFromSelection();
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
 
-            this.dragClips(clips, relativeX, relativeY);
-
-            this.lastX = mouseX;
-            this.lastY = mouseY;
+            this.dragClips(relativeX, relativeY);
         }
     }
 
-    private void dragClips(List<Clip> clips, int relativeX, int relativeY)
+    private void dragClips(int relativeX, int relativeY)
     {
         /* Collect the rest of clips for collision */
-        List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
-
-        others.removeIf(clips::contains);
+        List<Clip> others = Window.isAltPressed() ? Collections.emptyList() : this.otherClips;
 
         /* Checking whether it's possible to move clips */
-        for (Clip clip : clips)
+        for (int i = 0; i < this.grabbedClips.size(); i++)
         {
-            Vector3i newClipData = this.applyGrab(clip, relativeX, relativeY);
+            Vector3i grabbedData = this.grabbedData.get(i);
+            Vector3i newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY);
 
             int newTick = newClipData.x;
             int newDuration = newClipData.y;
@@ -1210,11 +1233,15 @@ public class UIClips extends UIElement
                 int newRight = newTick + newDuration;
                 boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
 
-                if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
+                if (intersect && other.layer.get() == newLayer)
+                {
+                    relativeX = 0;
+                    relativeY = 0;
+                }
             }
 
             if (newTick < 0) relativeX = 0;
-            if (newLayer < 0 || newLayer >= this.layers) relativeY = 0;
+            if (newLayer >= this.layers) relativeY = 0;
         }
 
         if (relativeX == 0 && relativeY == 0)
@@ -1222,10 +1249,12 @@ public class UIClips extends UIElement
             return;
         }
 
-        for (Clip clip : clips)
+        /* Move clips */
+        for (int i = 0; i < this.grabbedClips.size(); i++)
         {
-            /* Move clips */
-            Vector3i newClipData = this.applyGrab(clip, relativeX, relativeY);
+            Clip clip = this.grabbedClips.get(i);
+            Vector3i grabbedData = this.grabbedData.get(i);
+            Vector3i newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY);
 
             clip.tick.set(newClipData.x);
             clip.duration.set(newClipData.y);
@@ -1235,15 +1264,30 @@ public class UIClips extends UIElement
         this.delegate.fillData();
     }
 
-    private Vector3i applyGrab(Clip clip, int relativeX, int relativeY)
+    private Vector3i applyGrab(int newTick, int newDuration, int newLayer, int relativeX, int relativeY)
     {
-        int newTick = clip.tick.get();
-        int newDuration = clip.duration.get();
-        int newLayer = clip.layer.get();
-
         if (this.grabMode == 0)
         {
-            newTick += relativeX;
+            int n = this.snap(newTick + relativeX);
+
+            if (n != newTick + relativeX)
+            {
+                newTick = n;
+            }
+            else
+            {
+                n = this.snap(newTick + newDuration + relativeX);
+
+                if (n != newTick + newDuration + relativeX)
+                {
+                    newTick = n - newDuration;
+                }
+                else
+                {
+                    newTick += relativeX;
+                }
+            }
+
             newLayer += relativeY;
         }
         else if (this.grabMode == 1 && newDuration - relativeX > 0)
@@ -1253,15 +1297,46 @@ public class UIClips extends UIElement
                 relativeX -= newTick + relativeX;
             }
 
-            newTick += relativeX;
-            newDuration -= relativeX;
+            int n = this.snap(newTick + relativeX);
+
+            if (n != newTick + relativeX)
+            {
+                newDuration -= n - newTick;
+                newTick = n;
+            }
+            else
+            {
+                newTick += relativeX;
+                newDuration -= relativeX;
+            }
         }
         else if (this.grabMode == 2)
         {
-            newDuration = Math.max(newDuration + relativeX, 1);
+            newDuration = newDuration + relativeX;
+            newDuration = Math.max(this.snap(newTick + newDuration) - newTick, 1);
         }
 
         return new Vector3i(newTick, newDuration, newLayer);
+    }
+
+    private int snap(int tick)
+    {
+        if (Window.isAltPressed())
+        {
+            return tick;
+        }
+
+        for (int point : this.snappingPoints)
+        {
+            int pointX = this.toGraphX(point);
+
+            if (Math.abs(this.toGraphX(tick) - pointX) <= 10)
+            {
+                return point;
+            }
+        }
+
+        return tick;
     }
 
     private void captureSelection(Area area)
