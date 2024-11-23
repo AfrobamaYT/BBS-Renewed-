@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.actions;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.types.ActionClip;
+import mchorse.bbs_mod.actions.types.AttackActionClip;
 import mchorse.bbs_mod.actions.types.SwipeActionClip;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clips;
@@ -47,6 +49,14 @@ public class ActionRecorder
         if (player.handSwingTicks == -1)
         {
             this.add(new SwipeActionClip());
+
+            if (BBSSettings.recordingSwipeDamage.get())
+            {
+                AttackActionClip clip = new AttackActionClip();
+
+                clip.damage.set(2F);
+                this.add(clip);
+            }
         }
 
         this.tick += 1;

@@ -79,6 +79,8 @@
     "bbs.config.recording.countdown-comment": "Recording countdown (in seconds)",
     "bbs.config.recording.next": "Next variables",
     "bbs.config.recording.next-comment": "In command action clips, you can specify ${next_x/y/z} variable to get future position. This option allows to specify how many ticks in the future",
+    "bbs.config.recording.swipe_damage": "Swipe damage",
+    "bbs.config.recording.swipe_damage-comment": "When swipe action clip gets recorded, insert also an automatic attack action clip",
     "bbs.config.recording.title": "Recording",
     "bbs.config.recording.tooltip": "Here is everything related to player recording system",
     "bbs.config.scrollbars.sensitivity": "Scrolling sensitivity",

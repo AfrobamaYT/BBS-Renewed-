@@ -69,6 +69,7 @@ public class BBSSettings
 
     public static ValueFloat recordingCountdown;
     public static ValueInt recordingNextVariable;
+    public static ValueBoolean recordingSwipeDamage;
 
     public static ValueBoolean damageControl;
 
@@ -165,6 +166,7 @@ public class BBSSettings
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingNextVariable = builder.getInt("next", 1, 1, 100);
+        recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
 
         damageControl = builder.category("dc").getBoolean("enabled", true);
 
