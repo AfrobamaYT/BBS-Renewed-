@@ -1184,40 +1184,33 @@ public class UIClips extends UIElement
     private void dragClips(List<Clip> clips, int relativeX, int relativeY)
     {
         /* Collect the rest of clips for collision */
-        if (this.grabMode == 0)
+        List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
+
+        others.removeIf(clips::contains);
+
+        /* Checking whether it's possible to move clips */
+        for (Clip clip : clips)
         {
-            List<Clip> others = Window.isAltPressed() ? new ArrayList<>() : new ArrayList<>(this.clips.get());
-            Iterator<Clip> it = others.iterator();
+            Vector3i newClipData = this.applyGrab(clip, relativeX, relativeY);
 
-            while (it.hasNext())
+            int newTick = newClipData.x;
+            int newDuration = newClipData.y;
+            int newLayer = newClipData.z;
+
+            /* Detect clips collisions */
+            for (Clip other : others)
             {
-                if (clips.contains(it.next()))
-                {
-                    it.remove();
-                }
+                int otherTick = other.tick.get();
+                int otherRight = otherTick + other.duration.get();
+
+                int newRight = newTick + newDuration;
+                boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
+
+                if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
             }
 
-            /* Checking whether it's possible to move clips */
-            for (Clip clip : clips)
-            {
-                int newTick = clip.tick.get() + relativeX;
-                int newLayer = clip.layer.get() + relativeY;
-
-                /* Detect clips collisions */
-                for (Clip other : others)
-                {
-                    int otherTick = other.tick.get();
-                    int otherRight = otherTick + other.duration.get();
-
-                    int newRight = newTick + clip.duration.get();
-                    boolean intersect = MathUtils.isInside(newTick, newRight, otherTick, otherRight);
-
-                    if (intersect && other.layer.get() == newLayer) relativeX = relativeY = 0;
-                }
-
-                if (newTick < 0) relativeX = 0;
-                if (newLayer < 0 || newLayer >= this.layers) relativeY = 0;
-            }
+            if (newTick < 0) relativeX = 0;
+            if (newLayer < 0 || newLayer >= this.layers) relativeY = 0;
         }
 
         if (relativeX == 0 && relativeY == 0)
@@ -1228,31 +1221,43 @@ public class UIClips extends UIElement
         for (Clip clip : clips)
         {
             /* Move clips */
-            if (this.grabMode == 0)
-            {
-                int newTick = clip.tick.get() + relativeX;
-                int newLayer = clip.layer.get() + relativeY;
+            Vector3i newClipData = this.applyGrab(clip, relativeX, relativeY);
 
-                clip.tick.set(newTick);
-                clip.layer.set(newLayer);
-            }
-            else if (this.grabMode == 1 && clip.duration.get() - relativeX > 0)
-            {
-                if (clip.tick.get() + relativeX < 0)
-                {
-                    relativeX -= clip.tick.get() + relativeX;
-                }
-
-                clip.tick.set(clip.tick.get() + relativeX);
-                clip.duration.set(clip.duration.get() - relativeX);
-            }
-            else if (this.grabMode == 2)
-            {
-                clip.duration.set(Math.max(clip.duration.get() + relativeX, 1));
-            }
+            clip.tick.set(newClipData.x);
+            clip.duration.set(newClipData.y);
+            clip.layer.set(newClipData.z);
         }
 
         this.delegate.fillData();
+    }
+
+    private Vector3i applyGrab(Clip clip, int relativeX, int relativeY)
+    {
+        int newTick = clip.tick.get();
+        int newDuration = clip.duration.get();
+        int newLayer = clip.layer.get();
+
+        if (this.grabMode == 0)
+        {
+            newTick += relativeX;
+            newLayer += relativeY;
+        }
+        else if (this.grabMode == 1 && newDuration - relativeX > 0)
+        {
+            if (newTick + relativeX < 0)
+            {
+                relativeX -= newTick + relativeX;
+            }
+
+            newTick += relativeX;
+            newDuration -= relativeX;
+        }
+        else if (this.grabMode == 2)
+        {
+            newDuration = Math.max(newDuration + relativeX, 1);
+        }
+
+        return new Vector3i(newTick, newDuration, newLayer);
     }
 
     private void captureSelection(Area area)
