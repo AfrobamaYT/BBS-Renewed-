@@ -43,7 +43,6 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -201,6 +200,11 @@ public class UIClips extends UIElement
             clip.envelope.fadeOut.set((float) tick);
             this.delegate.fillData();
         }).category(KEYS_CATEGORY).active(canUseKeybindsSelected);
+    }
+
+    public UIClipRenderers getRenderers()
+    {
+        return this.renderers;
     }
 
     public IFactory<Clip, ClipFactoryData> getFactory()

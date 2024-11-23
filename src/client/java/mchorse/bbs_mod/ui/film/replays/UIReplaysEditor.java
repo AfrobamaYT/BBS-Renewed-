@@ -24,7 +24,9 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.clips.renderer.IUIClipRenderer;
 import mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes;
 import mchorse.bbs_mod.ui.film.utils.undo.ValueChangeUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -208,14 +210,15 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    public static void renderBackground(UIContext context, UIKeyframes keyframes, Clips camera, int clipOffset)
+    public static boolean renderBackground(UIContext context, UIKeyframes keyframes, Clips camera, int clipOffset)
     {
         if (!BBSSettings.audioWaveformVisible.get())
         {
-            return;
+            return false;
         }
 
         Scale scale = keyframes.getXAxis();
+        boolean renderedOnce = false;
 
         for (Clip clip : camera.get())
         {
@@ -247,9 +250,13 @@ public class UIReplaysEditor extends UIElement
                     int x2 = (int) scale.to(offset + duration);
 
                     wave.render(context.batcher, Colors.WHITE, x1, keyframes.area.y + 15, x2 - x1, 20, TimeUtils.toSeconds(audioOffset), TimeUtils.toSeconds(audioOffset + duration));
+
+                    renderedOnce = true;
                 }
             }
         }
+
+        return renderedOnce;
     }
 
     public UIReplaysEditor(UIFilmPanel filmPanel)
@@ -358,7 +365,32 @@ public class UIReplaysEditor extends UIElement
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute()).target(this.filmPanel.editArea);
             this.keyframeEditor.full(this);
 
-            this.keyframeEditor.view.backgroundRenderer((context) -> renderBackground(context, this.keyframeEditor.view, this.film.camera, 0));
+            this.keyframeEditor.view.backgroundRenderer((context) ->
+            {
+                UIKeyframes view = this.keyframeEditor.view;
+                boolean yes = renderBackground(context, view, this.film.camera, 0);
+                int shift = yes ? 35 : 15;
+
+                UIClipsPanel cameraEditor = this.filmPanel.cameraEditor;
+                Clip clip = cameraEditor.getClip();
+
+                if (clip != null)
+                {
+                    IUIClipRenderer<Clip> renderer = cameraEditor.clips.getRenderers().get(clip);
+
+                    Scale scale = view.getXAxis();
+                    float offset = clip.tick.get();
+                    int duration = clip.duration.get();
+
+                    int x1 = (int) scale.to(offset);
+                    int x2 = (int) scale.to(offset + duration);
+                    Area area = new Area();
+
+                    area.setPoints(x1, view.area.y + shift, x2, view.area.y + shift + 20);
+
+                    renderer.renderClip(context, cameraEditor.clips, clip, area, true, true);
+                }
+            });
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
 
             for (UIKeyframeSheet sheet : sheets)
