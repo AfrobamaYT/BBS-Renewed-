@@ -10,6 +10,7 @@ import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import net.minecraft.client.MinecraftClient;
 import org.joml.Matrix3f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -329,7 +330,11 @@ public class OrbitCamera
 
         if (this.velocityPosition.lengthSquared() > 0)
         {
-            this.position.add(this.rotateVector(this.velocityPosition.x, 0, this.velocityPosition.z).add(0, this.velocityPosition.y, 0).mul(this.getSpeed()));
+            float lastFrameDuration = MinecraftClient.getInstance().getLastFrameDuration() * 5F;
+
+            this.position.add(this.rotateVector(this.velocityPosition.x, 0, this.velocityPosition.z)
+                .add(0, this.velocityPosition.y, 0)
+                .mul(this.getSpeed() * lastFrameDuration));
 
             changed = true;
         }
