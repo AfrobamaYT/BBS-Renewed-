@@ -1134,7 +1134,8 @@ public class UIFilmController extends UIElement
                 .setup(this.entities, entity, context)
                 .transition(isPlaying ? context.tickDelta() : 0F)
                 .shadow(replay.shadow.get(), replay.shadowSize.get())
-                .bone(bone == null ? null : bone.a, bone != null && bone.b);
+                .bone(bone == null ? null : bone.a, bone != null && bone.b)
+                .nameTag(replay.nameTag.get());
 
             FilmController.renderEntity(filmContext);
 
