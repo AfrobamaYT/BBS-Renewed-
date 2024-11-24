@@ -677,10 +677,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
      */
     public void setFlight(boolean flight)
     {
-        this.runner.setManual(flight ? this.position : null);
-
         if (!this.isRunning() || !flight)
         {
+            this.runner.setManual(flight ? this.position : null);
             this.dashboard.orbitUI.setControl(flight);
 
             /* Marking the latest undo as unmergeable */
