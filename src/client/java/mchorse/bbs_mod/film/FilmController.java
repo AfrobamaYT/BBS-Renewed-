@@ -181,6 +181,8 @@ public class FilmController
 
             stack.pop();
         }
+
+        RenderSystem.enableDepthTest();
     }
 
     private static void renderNameTag(IEntity entity, Text text, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light)
