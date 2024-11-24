@@ -257,7 +257,11 @@ public class UIAudioEditor extends UIElement
                 }
 
                 this.dragging = -1;
-                this.player.setPlaybackPosition((float) this.scale.from(context.mouseX));
+
+                if (this.player != null)
+                {
+                    this.player.setPlaybackPosition((float) this.scale.from(context.mouseX));
+                }
             }
             else if (context.mouseButton == 2)
             {
