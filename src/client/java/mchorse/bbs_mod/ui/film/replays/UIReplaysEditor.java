@@ -303,6 +303,7 @@ public class UIReplaysEditor extends UIElement
     {
         this.replay = replay;
 
+        this.filmPanel.getController().orbit.reset();
         this.replays.setReplay(replay);
         this.filmPanel.actionEditor.setClips(replay == null ? null : replay.actions);
         this.updateChannelsList();

@@ -726,6 +726,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     @Override
     public void render(UIContext context)
     {
+        this.controller.orbit.update(context);
+
         if (this.undoHandler != null)
         {
             this.undoHandler.submitUndo();

@@ -556,21 +556,6 @@ public class UIFilmController extends UIElement
     }
 
     @Override
-    protected boolean subMouseScrolled(UIContext context)
-    {
-        Area area = this.panel.preview.getViewport();
-
-        if (area.isInside(context) && this.orbit.enabled)
-        {
-            this.orbit.handleDistance(context);
-
-            return true;
-        }
-
-        return super.subMouseScrolled(context);
-    }
-
-    @Override
     protected boolean subMouseReleased(UIContext context)
     {
         if (this.canControl())
@@ -619,6 +604,10 @@ public class UIFilmController extends UIElement
 
                 return true;
             }
+        }
+        else if (this.orbit.enabled && this.orbit.keyPressed(context))
+        {
+            return true;
         }
 
         return super.subKeyPressed(context);
@@ -715,7 +704,7 @@ public class UIFilmController extends UIElement
 
         Vector3d position = new Vector3d();
         Vector3f rotation = new Vector3f();
-        float distance = this.orbit.getDistance();
+        float distance = 5F;
 
         position.set(controller.getPrevX(), controller.getPrevY(), controller.getPrevZ());
         position.lerp(new Vector3d(controller.getX(), controller.getY(), controller.getZ()), transition);
