@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.utils;
 
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -8,12 +9,12 @@ import java.util.function.Supplier;
 
 public class UIOrbitCameraKeys implements IUIElement
 {
-    private UIOrbitCamera orbitCamera;
+    private UIDashboard dashboard;
     private Supplier<Boolean> enabled;
 
-    public UIOrbitCameraKeys(UIOrbitCamera orbitCamera)
+    public UIOrbitCameraKeys(UIDashboard dashboard)
     {
-        this.orbitCamera = orbitCamera;
+        this.dashboard = dashboard;
     }
 
     public void setEnabled(Supplier<Boolean> enabled)
@@ -35,7 +36,7 @@ public class UIOrbitCameraKeys implements IUIElement
             enabled = this.enabled.get();
         }
 
-        return enabled && this.orbitCamera.isEnabled();
+        return enabled && this.dashboard.orbitUI.isEnabled();
     }
 
     @Override
@@ -70,7 +71,12 @@ public class UIOrbitCameraKeys implements IUIElement
             return null;
         }
 
-        return this.orbitCamera.getControl() && this.orbitCamera.orbit.keyPressed(context) ? this : null;
+        if (this.dashboard.getPanels().panel instanceof IUIOrbitKeysHandler handler && handler.handleKeyPressed(context))
+        {
+            return this;
+        }
+
+        return this.dashboard.orbitUI.getControl() && this.dashboard.orbit.keyPressed(context) ? this : null;
     }
 
     @Override

@@ -33,6 +33,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDataDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UICRUDOverlayPanel;
+import mchorse.bbs_mod.ui.dashboard.utils.IUIOrbitKeysHandler;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.screenplay.UIScreenplayEditor;
@@ -71,7 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSupported
+public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSupported, IUIOrbitKeysHandler
 {
     private static VoiceLines voiceLines = new VoiceLines(null);
 
@@ -982,5 +983,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         return noCamera;
+    }
+
+    @Override
+    public boolean handleKeyPressed(UIContext context)
+    {
+        return this.isFlying() && this.controller.orbit.keyPressed(context);
     }
 }

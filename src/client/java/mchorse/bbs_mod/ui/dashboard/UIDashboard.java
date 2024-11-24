@@ -59,7 +59,7 @@ public class UIDashboard extends UIBaseMenu
 
     /* Camera data */
     public final UIOrbitCamera orbitUI = new UIOrbitCamera();
-    public final UIOrbitCameraKeys orbitKeysUI = new UIOrbitCameraKeys(this.orbitUI);
+    public final UIOrbitCameraKeys orbitKeysUI = new UIOrbitCameraKeys(this);
     public final OrbitCamera orbit = this.orbitUI.orbit;
     public final OrbitCameraController camera = new OrbitCameraController(this.orbit, 5);
 

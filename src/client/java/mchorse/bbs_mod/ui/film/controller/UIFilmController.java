@@ -527,12 +527,10 @@ public class UIFilmController extends UIElement
 
                 return true;
             }
-        }
-        else if (context.mouseButton == 2)
-        {
+
             Area area = this.panel.preview.getViewport();
 
-            if (area.isInside(context) && this.orbit.enabled)
+            if (area.isInside(context) && this.panel.isFlying() && this.orbit.enabled)
             {
                 this.orbit.start(context);
 
@@ -604,10 +602,6 @@ public class UIFilmController extends UIElement
 
                 return true;
             }
-        }
-        else if (this.orbit.enabled && this.orbit.keyPressed(context))
-        {
-            return true;
         }
 
         return super.subKeyPressed(context);

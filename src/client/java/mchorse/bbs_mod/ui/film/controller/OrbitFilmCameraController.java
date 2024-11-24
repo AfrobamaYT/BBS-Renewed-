@@ -60,10 +60,11 @@ public class OrbitFilmCameraController implements ICameraController
         int x = this.getFactor(context, Keys.FLIGHT_LEFT, Keys.FLIGHT_RIGHT, this.velocityPosition.x);
         int y = this.getFactor(context, Keys.FLIGHT_UP, Keys.FLIGHT_DOWN, this.velocityPosition.y);
         int z = this.getFactor(context, Keys.FLIGHT_FORWARD, Keys.FLIGHT_BACKWARD, this.velocityPosition.z);
+        boolean changed = x != this.velocityPosition.x || y != this.velocityPosition.y || z != this.velocityPosition.z;
 
         this.velocityPosition.set(x, y, z);
 
-        return x != 0 || y != 0 || z != 0;
+        return changed;
     }
 
     protected int getFactor(UIContext context, KeyCombo positive, KeyCombo negative, int x)
@@ -96,7 +97,6 @@ public class OrbitFilmCameraController implements ICameraController
             this.rotation.add(
                 -(y - this.last.y) / (50F * (1 / this.getSpeed())),
                 -(x - this.last.x) / (50F * (1 / this.getSpeed()))
-
             );
 
             this.last.set(x, y);
