@@ -180,6 +180,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.getContext().menu.main.add(this.keyDude);
         this.dashboard.orbitKeysUI.setEnabled(() -> this.getChildren(UIFormPalette.class).isEmpty());
+
+        if (this.cameraController != null)
+        {
+            BBSModClient.getCameraController().add(this.cameraController);
+        }
     }
 
     @Override
@@ -189,6 +194,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.keyDude.removeFromParent();
         this.dashboard.orbitKeysUI.setEnabled(null);
+
+        if (this.cameraController != null)
+        {
+            BBSModClient.getCameraController().remove(this.cameraController);
+        }
     }
 
     public ModelBlockEntity getModelBlock()
