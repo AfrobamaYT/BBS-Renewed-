@@ -23,7 +23,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     public UIClips clips;
     public UIFilmPanel filmPanel;
 
-    private IFactory<Clip, ClipFactoryData> factory;
     private UIClip panel;
 
     private UIElement target;
@@ -31,7 +30,6 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
     public UIClipsPanel(UIFilmPanel panel, IFactory<Clip, ClipFactoryData> factory)
     {
         this.filmPanel = panel;
-        this.factory = factory;
         this.clips = new UIClips(this, factory);
 
         this.add(this.clips.full(this));
@@ -145,6 +143,8 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
 
         this.clips.w(1F, this.target == null ? -160 : 0);
         this.resize();
+
+        this.filmPanel.pickClip(clip, this);
     }
 
     @Override

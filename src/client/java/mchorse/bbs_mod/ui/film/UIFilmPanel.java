@@ -308,6 +308,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
     }
 
+    public void pickClip(Clip clip, UIClipsPanel panel)
+    {
+        if (panel == this.cameraEditor)
+        {
+            this.setFlight(false);
+        }
+    }
+
     public int getPanelIndex()
     {
         for (int i = 0; i < this.panels.size(); i++)
