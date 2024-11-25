@@ -124,7 +124,7 @@ public class OrbitFilmCameraController implements ICameraController
 
     protected float getSpeed()
     {
-        return (Window.isCtrlPressed() ? this.high : (Window.isAltPressed() ? this.low : this.normal));
+        return (Window.isCtrlPressed() ? this.high : (Window.isAltPressed() ? this.low : this.normal)) * (float) this.controller.panel.dashboard.orbit.speed.getValue();
     }
 
     protected Vector3f rotateVector(float x, float y, float z)
