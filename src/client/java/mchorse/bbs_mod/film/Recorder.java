@@ -6,6 +6,8 @@ import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
+import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -32,13 +34,15 @@ public class Recorder extends FilmController
 
     private Matrix4f perspective = new Matrix4f();
 
+    public Form lastForm;
     public Vector3d lastPosition;
     public Vector4f lastRotation;
 
-    public Recorder(Film film, int replayId)
+    public Recorder(Film film, Form form, int replayId)
     {
         super(film);
 
+        this.lastForm = FormUtils.copy(form);
         this.exception = replayId;
         this.tick = -TimeUtils.toTick(BBSSettings.recordingCountdown.get());
     }

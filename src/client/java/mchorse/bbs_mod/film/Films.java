@@ -9,16 +9,19 @@ import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
+import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -129,11 +132,20 @@ public class Films
 
     public void startRecording(Film film, int replayId)
     {
-        this.recorder = new Recorder(film, replayId);
+        Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+
+        this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId);
 
         if (ClientNetwork.isIsBBSModOnServer())
         {
             ClientNetwork.sendActionRecording(film.getId(), replayId, this.recorder.tick, true);
+        }
+
+        Replay replay = CollectionUtils.getSafe(film.replays.getList(), replayId);
+
+        if (replay != null)
+        {
+            ClientNetwork.sendPlayerForm(replay.form.get());
         }
     }
 
@@ -165,6 +177,7 @@ public class Films
                 Vector4f rot = recorder.lastRotation;
 
                 PlayerUtils.teleport(pos.x, pos.y, pos.z, rot.z, rot.y);
+                ClientNetwork.sendPlayerForm(recorder.lastForm);
             }
         }
 
