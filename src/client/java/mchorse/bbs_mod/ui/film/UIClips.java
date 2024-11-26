@@ -1143,11 +1143,6 @@ public class UIClips extends UIElement
             this.pickLastSelectedClip();
         }
 
-        if (this.grabbing)
-        {
-            this.delegate.markLastUndoNoMerging();
-        }
-
         this.grabMode = 0;
         this.grabbing = false;
         this.selecting = false;

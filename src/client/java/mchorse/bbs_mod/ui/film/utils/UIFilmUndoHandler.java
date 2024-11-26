@@ -45,7 +45,7 @@ public class UIFilmUndoHandler
     {
         this.panel = panel;
 
-        this.undoManager = new UndoManager<>(50);
+        this.undoManager = new UndoManager<>(100);
         this.undoManager.setCallback(this::handleUndos);
     }
 
@@ -126,7 +126,6 @@ public class UIFilmUndoHandler
         if (this.cachedVoicelineSelection.isEmpty()) this.cachedVoicelineSelection.addAll(this.panel.screenplayEditor.editor.clips.getSelection());
         if (this.cachedKeyframeState == null && this.panel.replayEditor.keyframeEditor != null) this.cachedKeyframeState = this.panel.replayEditor.keyframeEditor.view.cacheState();
         if (this.lastReplay == -2) this.lastReplay = this.panel.getData().replays.getList().indexOf(this.panel.replayEditor.getReplay());
-
         if (!this.cachedValues.containsKey(baseValue)) this.cachedValues.put(baseValue, baseValue.toData());
 
         if ((flag & IValueListener.FLAG_UNMERGEABLE) != 0)
