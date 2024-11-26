@@ -74,7 +74,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
 
         if (uiEditor != null)
         {
-            uiEditor.scroll.scroll.scrollTo(SCROLLS.getOrDefault(keyframe.getFactory(), 0));
+            uiEditor.scroll.scroll.setScroll(SCROLLS.getOrDefault(keyframe.getFactory(), 0));
         }
 
         return uiEditor;

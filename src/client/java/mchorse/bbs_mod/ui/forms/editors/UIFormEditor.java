@@ -349,7 +349,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
             this.bone.setCurrentScroll(entry.part.bone);
             this.transform.setTransform(entry.part.getTransform());
 
-            this.bodyPartData.scroll.scrollTo(0);
+            this.bodyPartData.scroll.setScroll(0);
             this.bodyPartData.resize();
         }
 

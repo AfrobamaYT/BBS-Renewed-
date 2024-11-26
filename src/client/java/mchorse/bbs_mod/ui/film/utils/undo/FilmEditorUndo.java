@@ -87,7 +87,7 @@ public abstract class FilmEditorUndo implements IUndo<ValueGroup>
         public void apply(UIClips clips)
         {
             clips.scale.view(this.viewMin, this.viewMax);
-            clips.vertical.scrollTo(this.scroll);
+            clips.vertical.setScroll(this.scroll);
         }
     }
 }

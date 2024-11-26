@@ -603,7 +603,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
                 }
             }
 
-            this.picker.scroll.scrollTo(scroll);
+            this.picker.scroll.setScroll(scroll);
         }
 
         /* Draw the background */

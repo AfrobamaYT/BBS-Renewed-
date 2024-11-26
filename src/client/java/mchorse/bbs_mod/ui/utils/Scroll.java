@@ -166,6 +166,16 @@ public class Scroll
     }
 
     /**
+     * Force set scroll
+     */
+    public void setScroll(double x)
+    {
+        this.scroll = this.targetScroll = x;
+
+        this.clamp();
+    }
+
+    /**
      * Scroll by relative amount 
      */
     public void scrollBy(double x)

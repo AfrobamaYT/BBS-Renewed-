@@ -573,6 +573,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     public void restoreState(MapType extra)
     {
         this.setTrackHeight(extra.getDouble("track_height"));
-        this.dopeSheet.scrollTo(extra.getDouble("scroll"));
+        this.dopeSheet.setScroll(extra.getDouble("scroll"));
     }
 }

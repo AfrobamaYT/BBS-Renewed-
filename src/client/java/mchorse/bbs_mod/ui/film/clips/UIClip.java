@@ -135,7 +135,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
 
         if (clipEditor != null)
         {
-            clipEditor.panels.scroll.scrollTo(SCROLLS.getOrDefault(clip.getClass(), 0));
+            clipEditor.panels.scroll.setScroll(SCROLLS.getOrDefault(clip.getClass(), 0));
         }
 
         return clipEditor;
