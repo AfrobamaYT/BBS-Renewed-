@@ -476,7 +476,7 @@ public class ServerNetwork
 
             if (index != total - 1)
             {
-                server.execute(() -> sendRequestAsset(player, path, index + 1));
+                sendRequestAsset(player, path, index + 1);
             }
             else
             {
@@ -685,7 +685,7 @@ public class ServerNetwork
             byte[] bytes = IOUtils.readBytes(stream);
 
             int placeholder = 1000;
-            int bufferSize = (BBSSettings.unlimitedPacketSize.get() ? 1048576 : 32767) - placeholder;
+            int bufferSize = 32767 - placeholder;
             int total = (int) Math.ceil(bytes.length / (float) bufferSize);
             int offset = index * bufferSize;
 

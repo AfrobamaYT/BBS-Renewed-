@@ -1,6 +1,7 @@
 package mchorse.bbs_mod;
 
 import mchorse.bbs_mod.network.ClientNetwork;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
 import mchorse.bbs_mod.resources.cache.ResourceCache;
 import mchorse.bbs_mod.resources.cache.ResourceEntry;
@@ -8,7 +9,9 @@ import mchorse.bbs_mod.utils.watchdog.WatchDog;
 import net.minecraft.client.MinecraftClient;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class BBSResources
@@ -19,6 +22,9 @@ public class BBSResources
 
     private static Set<String> requested = new HashSet<>();
     private static long lastUpdate;
+
+    private static int lastAssetUpdate = -1;
+    private static Map<Link, Boolean> assetUpdates = new HashMap<>();
 
     public static Set<String> getRequested()
     {
@@ -49,6 +55,9 @@ public class BBSResources
 
     public static void init(File bbs)
     {
+        assetUpdates.clear();
+        lastAssetUpdate = -1;
+
         server = new File(bbs, "server");
         server.mkdirs();
 
@@ -69,7 +78,11 @@ public class BBSResources
 
         if (sender)
         {
-            watchDog.register(new BBSResourceListener());
+            watchDog.register(new BBSResourceListener((link, delete) ->
+            {
+                assetUpdates.put(link, delete);
+                lastAssetUpdate = 10;
+            }));
         }
 
         watchDog.start();
@@ -133,6 +146,9 @@ public class BBSResources
 
             stopWatchdog();
             setupWatchdog(false);
+
+            assetUpdates.clear();
+            lastAssetUpdate = -1;
         }
     }
 
@@ -142,6 +158,21 @@ public class BBSResources
         {
             watchDog.stop();
             watchDog = null;
+        }
+    }
+
+    public static void update()
+    {
+        lastAssetUpdate -= 1;
+
+        if (lastAssetUpdate == 0)
+        {
+            for (Map.Entry<Link, Boolean> entry : assetUpdates.entrySet())
+            {
+                ClientNetwork.sendAsset(entry.getKey(), entry.getValue() ? -1 : 0);
+            }
+
+            assetUpdates.clear();
         }
     }
 }

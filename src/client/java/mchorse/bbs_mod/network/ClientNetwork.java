@@ -3,7 +3,6 @@ package mchorse.bbs_mod.network;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSResources;
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
@@ -518,7 +517,7 @@ public class ClientNetwork
             byte[] bytes = IOUtils.readBytes(stream);
 
             int placeholder = 1000;
-            int bufferSize = (BBSSettings.unlimitedPacketSize.get() ? 1048576 : 32767) - placeholder;
+            int bufferSize = 32767 - placeholder;
             int total = (int) Math.ceil(bytes.length / (float) bufferSize);
             int offset = index * bufferSize;
 

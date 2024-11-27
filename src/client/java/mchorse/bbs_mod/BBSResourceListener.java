@@ -1,6 +1,5 @@
 package mchorse.bbs_mod;
 
-import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
@@ -10,6 +9,13 @@ import java.nio.file.Path;
 
 public class BBSResourceListener implements IWatchDogListener
 {
+    private IAssetNotifier notifier;
+
+    public BBSResourceListener(IAssetNotifier notifier)
+    {
+        this.notifier = notifier;
+    }
+
     @Override
     public void accept(Path path, WatchDogEvent event)
     {
@@ -25,13 +31,14 @@ public class BBSResourceListener implements IWatchDogListener
             return;
         }
 
-        if (event == WatchDogEvent.CREATED || event == WatchDogEvent.MODIFIED)
+        if (this.notifier != null)
         {
-            ClientNetwork.sendAsset(link, 0);
+            this.notifier.notifyAsset(link, event == WatchDogEvent.DELETED);
         }
-        else
-        {
-            ClientNetwork.sendAsset(link, -1);
-        }
+    }
+
+    public static interface IAssetNotifier
+    {
+        public void notifyAsset(Link link, boolean delete);
     }
 }

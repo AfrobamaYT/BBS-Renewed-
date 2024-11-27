@@ -394,6 +394,8 @@ public class BBSModClient implements ClientModInitializer
                 modelBlockItemRenderer.update();
             }
 
+            BBSResources.update();
+
             while (keyDashboard.wasPressed()) UIScreen.open(getDashboard());
             while (keyModelBlockEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
             while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
