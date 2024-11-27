@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.framework;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.importers.IImportPathProvider;
@@ -11,7 +10,6 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.FFMpegUtils;
-import mchorse.bbs_mod.utils.colors.Colors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -207,7 +205,7 @@ public class UIScreen extends Screen implements IFileDropListener
         {
             if (!FFMpegUtils.checkFFMpeg())
             {
-                this.menu.context.notify(UIKeys.IMPORTER_FFMPEG_NOTIFICATION, Colors.RED);
+                this.menu.context.notifyError(UIKeys.IMPORTER_FFMPEG_NOTIFICATION);
 
                 return;
             }
@@ -252,7 +250,7 @@ public class UIScreen extends Screen implements IFileDropListener
                         UIUtils.openFolder(context.getDestination(importer));
                     }
 
-                    this.menu.context.notify(UIKeys.IMPORTER_SUCCESS_NOTIFICATION.format(importer.getName()), Colors.mulRGB(Colors.GREEN, 0.75F));
+                    this.menu.context.notifySuccess(UIKeys.IMPORTER_SUCCESS_NOTIFICATION.format(importer.getName()));
 
                     return;
                 }

@@ -196,7 +196,7 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
                 this.savingTimer.mark(seconds * 1000L);
 
                 this.save();
-                context.notify(UIKeys.PANELS_SAVED_NOTIFICATION.format(this.data.getId()), Colors.mulRGB(Colors.GREEN, 0.75F));
+                context.notifySuccess(UIKeys.PANELS_SAVED_NOTIFICATION.format(this.data.getId()));
             }
         }
     }

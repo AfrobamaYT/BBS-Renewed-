@@ -244,7 +244,7 @@ public class UIFilmController extends UIElement
         {
             mode = 1;
 
-            this.getContext().notify(UIKeys.FILM_CONTROLLER_SERVER_WARNING, Colors.RED);
+            this.getContext().notifyError(UIKeys.FILM_CONTROLLER_SERVER_WARNING);
         }
 
         this.mouseMode = mode;

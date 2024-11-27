@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class ServerNetwork
 {
@@ -68,6 +69,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_ASSET = new Identifier(BBSMod.MOD_ID, "c9");
     public static final Identifier CLIENT_REQUEST_ASSET = new Identifier(BBSMod.MOD_ID, "c10");
     public static final Identifier CLIENT_CHEATS_PERMISSION = new Identifier(BBSMod.MOD_ID, "c11");
+    public static final Identifier CLIENT_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "c12");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -81,6 +83,7 @@ public class ServerNetwork
     public static final Identifier SERVER_FORM_TRIGGER = new Identifier(BBSMod.MOD_ID, "s10");
     public static final Identifier SERVER_REQUEST_ASSET = new Identifier(BBSMod.MOD_ID, "s11");
     public static final Identifier SERVER_ASSET = new Identifier(BBSMod.MOD_ID, "s12");
+    public static final Identifier SERVER_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "s13");
 
     public static void setup()
     {
@@ -96,6 +99,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_FORM_TRIGGER, (server, player, handler, buf, responder) -> handleFormTrigger(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_REQUEST_ASSET, (server, player, handler, buf, responder) -> handleRequestAssets(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ASSET, (server, player, handler, buf, responder) -> handleAssetPacket(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_SHARED_FORM, (server, player, handler, buf, responder) -> handleSharedFormPacket(server, player, buf));
     }
 
     /* Handlers */
@@ -483,6 +487,22 @@ public class ServerNetwork
         }
     }
 
+    private static void handleSharedFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        UUID playerUuid = buf.readUuid();
+        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+
+        server.execute(() ->
+        {
+            ServerPlayerEntity otherPlayer = server.getPlayerManager().getPlayer(playerUuid);
+
+            if (otherPlayer != null)
+            {
+                sendSharedForm(otherPlayer, data);
+            }
+        });
+    }
+
     /* API */
 
     public static void sendMorph(ServerPlayerEntity player, int playerId, Form form)
@@ -703,5 +723,19 @@ public class ServerNetwork
         buf.writeBoolean(cheats);
 
         ServerPlayNetworking.send(player, ServerNetwork.CLIENT_CHEATS_PERMISSION, buf);
+    }
+
+    public static void sendSharedForm(ServerPlayerEntity player, MapType data)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeBoolean(data != null);
+
+        if (data != null)
+        {
+            DataStorageUtils.writeToPacket(buf, data);
+        }
+
+        ServerPlayNetworking.send(player, CLIENT_SHARED_FORM, buf);
     }
 }

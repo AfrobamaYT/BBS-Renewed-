@@ -15,7 +15,6 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.PNGEncoder;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.Pixels;
 
 import java.io.File;
@@ -121,7 +120,7 @@ public class UITextureEditor extends UIPixelsEditor
 
         if (!link.source.equals("assets") || !link.path.endsWith(".png"))
         {
-            this.getContext().notify(UIKeys.TEXTURES_SAVE_WRONG_PATH, Colors.RED);
+            this.getContext().notifyError(UIKeys.TEXTURES_SAVE_WRONG_PATH);
 
             return;
         }
@@ -154,7 +153,7 @@ public class UITextureEditor extends UIPixelsEditor
         {
             e.printStackTrace();
 
-            this.getContext().notify(UIKeys.TEXTURES_EXPORT_OVERLAY_ERROR.format(file.getName()), Colors.RED);
+            this.getContext().notifyError(UIKeys.TEXTURES_EXPORT_OVERLAY_ERROR.format(file.getName()));
         }
     }
 

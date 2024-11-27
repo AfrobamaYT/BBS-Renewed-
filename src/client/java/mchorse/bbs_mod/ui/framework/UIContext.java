@@ -16,6 +16,7 @@ import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -190,6 +191,21 @@ public class UIContext implements IViewportStack
     }
 
     /* Tooltip */
+
+    public void notifyInfo(IKey message)
+    {
+        this.notify(message, Colors.BLUE);
+    }
+
+    public void notifySuccess(IKey message)
+    {
+        this.notify(message, Colors.mulRGB(Colors.GREEN, 0.75F));
+    }
+
+    public void notifyError(IKey message)
+    {
+        this.notify(message, Colors.RED);
+    }
 
     public void notify(IKey message, int background)
     {

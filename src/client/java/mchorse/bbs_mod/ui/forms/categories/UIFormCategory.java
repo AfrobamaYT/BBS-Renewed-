@@ -16,6 +16,7 @@ import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.sections.UserFormSection;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -27,8 +28,10 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.PlayerListEntry;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -116,6 +119,30 @@ public class UIFormCategory extends UIElement
 
                     Window.setClipboard("/bbs morph " + name + " " + stringifier.toString(data));
                 });
+
+                Collection<PlayerListEntry> playerList = MinecraftClient.getInstance().getNetworkHandler().getPlayerList();
+
+                if (playerList.size() > 1)
+                {
+                    menu.action(Icons.ARROW_RIGHT, UIKeys.FORMS_CATEGORIES_CONTEXT_SHARE_FORM, () ->
+                    {
+                        this.getContext().replaceContextMenu((newMenu) ->
+                        {
+                            for (PlayerListEntry entry : playerList)
+                            {
+                                if (entry.getProfile().getId().equals(MinecraftClient.getInstance().getGameProfile().getId()))
+                                {
+                                    continue;
+                                }
+
+                                newMenu.action(Icons.ARROW_RIGHT, IKey.raw(entry.getProfile().getName()), () ->
+                                {
+                                    ClientNetwork.sendSharedForm(this.selected, entry.getProfile().getId());
+                                });
+                            }
+                        });
+                    });
+                }
             }
         });
 

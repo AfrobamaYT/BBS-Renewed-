@@ -23,11 +23,13 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
 import mchorse.bbs_mod.resources.cache.ResourceCache;
 import mchorse.bbs_mod.resources.cache.ResourceEntry;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
@@ -50,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class ClientNetwork
@@ -98,6 +101,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ASSET, (client, handler, buf, responseSender) -> handleAssetPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_REQUEST_ASSET, (client, handler, buf, responseSender) -> handleRequestAssetPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CHEATS_PERMISSION, (client, handler, buf, responseSender) -> handleCheatsPermissionPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_SHARED_FORM, (client, handler, buf, responseSender) -> handleShareFormPacket(client, buf));
     }
 
     /* Handlers */
@@ -315,7 +319,42 @@ public class ClientNetwork
     {
         boolean cheats = buf.readBoolean();
 
-        client.player.setClientPermissionLevel(cheats ? 4 : 0);
+        client.execute(() ->
+        {
+            client.player.setClientPermissionLevel(cheats ? 4 : 0);
+        });
+    }
+
+    private static void handleShareFormPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        Form form = null;
+
+        if (buf.readBoolean())
+        {
+            form = FormUtils.fromData((MapType) DataStorageUtils.readFromPacket(buf));
+        }
+
+        final Form finalForm = form;
+
+        if (finalForm == null)
+        {
+            return;
+        }
+
+        client.execute(() ->
+        {
+            UIBaseMenu menu = UIScreen.getCurrentMenu();
+            UIDashboard dashboard = BBSModClient.getDashboard();
+
+            if (menu == null)
+            {
+                UIScreen.open(dashboard);
+            }
+
+            dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
+            BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).addForm(finalForm);
+            dashboard.context.notifyInfo(UIKeys.FORMS_SHARED_NOTIFICATION.format(finalForm.getDisplayName()));
+        });
     }
 
     /* API */
@@ -498,5 +537,16 @@ public class ClientNetwork
         {
             System.err.println("Failed to read asset: " + link);
         }
+    }
+
+    public static void sendSharedForm(Form form, UUID uuid)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+        MapType mapType = FormUtils.toData(form);
+
+        buf.writeUuid(uuid);
+        DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_SHARED_FORM, buf);
     }
 }

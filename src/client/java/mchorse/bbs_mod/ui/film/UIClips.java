@@ -318,7 +318,7 @@ public class UIClips extends UIElement
         {
             this.addPreview = null;
 
-            this.getContext().notify(UIKeys.CAMERA_TIMELINE_CANT_FIT_NOTIFICATION, Colors.RED);
+            this.getContext().notifyError(UIKeys.CAMERA_TIMELINE_CANT_FIT_NOTIFICATION);
 
             return;
         }
@@ -449,7 +449,7 @@ public class UIClips extends UIElement
         {
             e.printStackTrace();
 
-            this.getContext().notify(UIKeys.CAMERA_TIMELINE_INCOMPATIBLE_PASTE, Colors.RED);
+            this.getContext().notifyError(UIKeys.CAMERA_TIMELINE_INCOMPATIBLE_PASTE);
         }
     }
 

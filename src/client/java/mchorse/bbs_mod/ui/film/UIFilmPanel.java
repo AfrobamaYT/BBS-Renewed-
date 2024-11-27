@@ -249,7 +249,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.keys().register(Keys.LOOPING, () ->
         {
             BBSSettings.editorLoop.set(!BBSSettings.editorLoop.get());
-            this.getContext().notify(UIKeys.CAMERA_EDITOR_KEYS_LOOPING_TOGGLE_NOTIFICATION, Colors.ACTIVE);
+            this.getContext().notifyInfo(UIKeys.CAMERA_EDITOR_KEYS_LOOPING_TOGGLE_NOTIFICATION);
         }).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MIN, () -> this.cameraEditor.clips.setLoopMin()).active(active).category(looping);
         this.keys().register(Keys.LOOPING_SET_MAX, () -> this.cameraEditor.clips.setLoopMax()).active(active).category(looping);
@@ -764,7 +764,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             if (distance > value * 12)
             {
-                this.getContext().notify(UIKeys.FILM_TELEPORT_DESCRIPTION, Colors.RED);
+                this.getContext().notifyError(UIKeys.FILM_TELEPORT_DESCRIPTION);
             }
 
             this.entered = false;

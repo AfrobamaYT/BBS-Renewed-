@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,25 +176,25 @@ public class ElevenLabsAPI implements Runnable
             {
                 if (result.status == ElevenLabsResult.Status.INITIALIZED)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_COMMENCING, Colors.BLUE);
+                    context.notifyInfo(UIKeys.VOICE_LINE_NOTIFICATIONS_COMMENCING);
                 }
                 else if (result.status == ElevenLabsResult.Status.GENERATED)
                 {
-                    context.notify(result.message, Colors.BLUE);
+                    context.notifyInfo(result.message);
                 }
                 else if (result.status == ElevenLabsResult.Status.ERROR)
                 {
-                    context.notify(result.message, Colors.RED);
+                    context.notifyError(result.message);
                 }
                 else if (result.status == ElevenLabsResult.Status.TOKEN_MISSING)
                 {
-                    context.notify(UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_TOKEN, Colors.RED);
+                    context.notifyError(UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_TOKEN);
                 }
                 else if (result.status == ElevenLabsResult.Status.VOICE_IS_MISSING)
                 {
-                    context.notify(!result.missingVoices.isEmpty()
+                    context.notifyError(!result.missingVoices.isEmpty()
                         ? UIKeys.VOICE_LINE_NOTIFICATIONS_MISSING_VOICES.format(String.join(", ", result.missingVoices))
-                        : UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_LOADING_VOICES, Colors.RED);
+                        : UIKeys.VOICE_LINE_NOTIFICATIONS_ERROR_LOADING_VOICES);
                 }
 
                 callback.accept(result);
