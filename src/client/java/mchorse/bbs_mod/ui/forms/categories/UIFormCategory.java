@@ -130,7 +130,7 @@ public class UIFormCategory extends UIElement
                         {
                             for (PlayerListEntry entry : playerList)
                             {
-                                if (entry.getProfile().getId().equals(MinecraftClient.getInstance().getGameProfile().getId()))
+                                if (entry.getProfile().getId().equals(MinecraftClient.getInstance().player.getGameProfile().getId()))
                                 {
                                     continue;
                                 }
