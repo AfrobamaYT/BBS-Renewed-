@@ -448,6 +448,7 @@ public class BBSMod implements ModInitializer
         ServerLifecycleEvents.SERVER_STOPPED.register((server) ->
         {
             actions.reset();
+            ServerNetwork.reset();
         });
 
         EntityTrackingEvents.START_TRACKING.register((trackedEntity, player) ->

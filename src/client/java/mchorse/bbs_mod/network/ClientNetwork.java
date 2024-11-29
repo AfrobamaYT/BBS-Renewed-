@@ -58,16 +58,16 @@ public class ClientNetwork
 {
     private static int ids = 0;
     private static Map<Integer, Consumer<BaseType>> callbacks = new HashMap<>();
+    private static ClientPacketCrusher crusher = new ClientPacketCrusher();
 
     private static String serverId;
     private static boolean isBBSModOnServer;
-    private static boolean unlimitedPacketSize;
 
     public static void resetHandshake()
     {
         serverId = "";
         isBBSModOnServer = false;
-        unlimitedPacketSize = false;
+        crusher.reset();
     }
 
     public static boolean isIsBBSModOnServer()
@@ -78,11 +78,6 @@ public class ClientNetwork
     public static String getServerId()
     {
         return serverId;
-    }
-
-    public static boolean isUnlimitedPacketSize()
-    {
-        return unlimitedPacketSize;
     }
 
     /* Network */
@@ -135,57 +130,58 @@ public class ClientNetwork
 
     private static void handlePlayerFormPacket(MinecraftClient client, PacketByteBuf buf)
     {
-        int id = buf.readInt();
-        Form form = null;
-
-        if (buf.readBoolean())
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            form = FormUtils.fromData((MapType) DataStorageUtils.readFromPacket(buf));
-        }
+            int id = packetByteBuf.readInt();
+            Form form = FormUtils.fromData(DataStorageUtils.readFromBytes(bytes));
 
-        final Form finalForm = form;
+            final Form finalForm = form;
 
-        client.execute(() ->
-        {
-            Entity entity = client.world.getEntityById(id);
-            Morph morph = Morph.getMorph(entity);
-
-            if (morph != null)
+            client.execute(() ->
             {
-                morph.setForm(finalForm);
-            }
+                Entity entity = client.world.getEntityById(id);
+                Morph morph = Morph.getMorph(entity);
+
+                if (morph != null)
+                {
+                    morph.setForm(finalForm);
+                }
+            });
         });
     }
 
     private static void handlePlayFilmPacket(MinecraftClient client, PacketByteBuf buf)
     {
-        String filmId = buf.readString();
-        boolean withCamera = buf.readBoolean();
-        Film film = new Film();
-
-        film.setId(filmId);
-        film.fromData(DataStorageUtils.readFromPacket(buf));
-
-        client.execute(() ->
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            Films.playFilm(film, withCamera);
+            String filmId = packetByteBuf.readString();
+            boolean withCamera = packetByteBuf.readBoolean();
+            Film film = new Film();
+
+            film.setId(filmId);
+            film.fromData(DataStorageUtils.readFromBytes(bytes));
+
+            client.execute(() -> Films.playFilm(film, withCamera));
         });
     }
 
     private static void handleManagerDataPacket(MinecraftClient client, PacketByteBuf buf)
     {
-        int callbackId = buf.readInt();
-        RepositoryOperation op = RepositoryOperation.values()[buf.readInt()];
-        BaseType data = DataStorageUtils.readFromPacket(buf);
-
-        MinecraftClient.getInstance().execute(() ->
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            Consumer<BaseType> callback = callbacks.remove(callbackId);
+            int callbackId = packetByteBuf.readInt();
+            RepositoryOperation op = RepositoryOperation.values()[packetByteBuf.readInt()];
+            BaseType data = DataStorageUtils.readFromBytes(bytes);
 
-            if (callback != null)
+            client.execute(() ->
             {
-                callback.accept(data);
-            }
+                Consumer<BaseType> callback = callbacks.remove(callbackId);
+
+                if (callback != null)
+                {
+                    callback.accept(data);
+                }
+            });
         });
     }
 
@@ -200,7 +196,6 @@ public class ClientNetwork
     {
         isBBSModOnServer = true;
         serverId = buf.readString();
-        unlimitedPacketSize = buf.readBoolean();
 
         if (!serverId.isEmpty())
         {
@@ -221,13 +216,16 @@ public class ClientNetwork
 
     private static void handleRecordedActionsPacket(MinecraftClient client, PacketByteBuf buf)
     {
-        String filmId = buf.readString();
-        int replayId = buf.readInt();
-        BaseType data = DataStorageUtils.readFromPacket(buf);
-
-        client.execute(() ->
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
+            String filmId = packetByteBuf.readString();
+            int replayId = packetByteBuf.readInt();
+            BaseType data = DataStorageUtils.readFromBytes(bytes);
+
+            client.execute(() ->
+            {
+                BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
+            });
         });
     }
 
@@ -326,33 +324,29 @@ public class ClientNetwork
 
     private static void handleShareFormPacket(MinecraftClient client, PacketByteBuf buf)
     {
-        Form form = null;
-
-        if (buf.readBoolean())
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            form = FormUtils.fromData((MapType) DataStorageUtils.readFromPacket(buf));
-        }
+            final Form finalForm = FormUtils.fromData(DataStorageUtils.readFromBytes(bytes));
 
-        final Form finalForm = form;
-
-        if (finalForm == null)
-        {
-            return;
-        }
-
-        client.execute(() ->
-        {
-            UIBaseMenu menu = UIScreen.getCurrentMenu();
-            UIDashboard dashboard = BBSModClient.getDashboard();
-
-            if (menu == null)
+            if (finalForm == null)
             {
-                UIScreen.open(dashboard);
+                return;
             }
 
-            dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
-            BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).addForm(finalForm);
-            dashboard.context.notifyInfo(UIKeys.FORMS_SHARED_NOTIFICATION.format(finalForm.getDisplayName()));
+            client.execute(() ->
+            {
+                UIBaseMenu menu = UIScreen.getCurrentMenu();
+                UIDashboard dashboard = BBSModClient.getDashboard();
+
+                if (menu == null)
+                {
+                    UIScreen.open(dashboard);
+                }
+
+                dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
+                BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).addForm(finalForm);
+                dashboard.context.notifyInfo(UIKeys.FORMS_SHARED_NOTIFICATION.format(finalForm.getDisplayName()));
+            });
         });
     }
 
@@ -360,31 +354,24 @@ public class ClientNetwork
     
     public static void sendModelBlockForm(BlockPos pos, ModelBlockEntity modelBlock)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeBlockPos(pos);
-        DataStorageUtils.writeToPacket(buf, modelBlock.getProperties().toData());
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_FORM_PACKET, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_MODEL_BLOCK_FORM_PACKET, modelBlock.getProperties().toData(), (packetByteBuf) ->
+        {
+            packetByteBuf.writeBlockPos(pos);
+        });
     }
 
     public static void sendPlayerForm(Form form)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
         MapType mapType = FormUtils.toData(form);
 
-        DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_PLAYER_FORM_PACKET, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_PLAYER_FORM_PACKET, mapType == null ? new MapType() : mapType, (packetByteBuf) ->
+        {});
     }
 
     public static void sendModelBlockTransforms(MapType data)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        DataStorageUtils.writeToPacket(buf, data);
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_MODEL_BLOCK_TRANSFORMS_PACKET, data, (packetByteBuf) ->
+        {});
     }
 
     public static void sendManagerDataLoad(String id, Consumer<BaseType> consumer)
@@ -407,13 +394,11 @@ public class ClientNetwork
 
     public static void sendManagerData(int callbackId, RepositoryOperation op, BaseType data)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeInt(callbackId);
-        buf.writeInt(op.ordinal());
-        DataStorageUtils.writeToPacket(buf, data);
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_MANAGER_DATA_PACKET, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_MANAGER_DATA_PACKET, data, (packetByteBuf) ->
+        {
+            packetByteBuf.writeInt(callbackId);
+            packetByteBuf.writeInt(op.ordinal());
+        });
     }
 
     public static void sendActionRecording(String filmId, int replayId, int tick, boolean state)
@@ -451,13 +436,11 @@ public class ClientNetwork
 
     public static void sendActions(String filmId, int replayId, Clips actions)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeString(filmId);
-        buf.writeInt(replayId);
-        DataStorageUtils.writeToPacket(buf, actions.toData());
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_ACTIONS_UPLOAD, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_ACTIONS_UPLOAD, actions.toData(), (packetByteBuf) ->
+        {
+            packetByteBuf.writeString(filmId);
+            packetByteBuf.writeInt(replayId);
+        });
     }
 
     public static void sendTeleport(PlayerEntity entity, double x, double y, double z)
@@ -540,12 +523,11 @@ public class ClientNetwork
 
     public static void sendSharedForm(Form form, UUID uuid)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
         MapType mapType = FormUtils.toData(form);
 
-        buf.writeUuid(uuid);
-        DataStorageUtils.writeToPacket(buf, mapType == null ? new MapType() : mapType);
-
-        ClientPlayNetworking.send(ServerNetwork.SERVER_SHARED_FORM, buf);
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_SHARED_FORM, mapType == null ? new MapType() : mapType, (packetByteBuf) ->
+        {
+            packetByteBuf.writeUuid(uuid);
+        });
     }
 }

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -18,6 +19,16 @@ public class FormUtils
     public static final String PATH_SEPARATOR = "/";
 
     private static final List<String> path = new ArrayList<>();
+
+    public static Form fromData(BaseType data)
+    {
+        if (data instanceof MapType map)
+        {
+            return fromData(map);
+        }
+
+        return null;
+    }
 
     public static Form fromData(MapType data)
     {

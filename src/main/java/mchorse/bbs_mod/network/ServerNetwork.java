@@ -33,6 +33,7 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
@@ -85,6 +86,13 @@ public class ServerNetwork
     public static final Identifier SERVER_ASSET = new Identifier(BBSMod.MOD_ID, "s12");
     public static final Identifier SERVER_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "s13");
 
+    private static ServerPacketCrusher crusher = new ServerPacketCrusher();
+
+    public static void reset()
+    {
+        crusher.reset();
+    }
+
     public static void setup()
     {
         ServerPlayNetworking.registerGlobalReceiver(SERVER_MODEL_BLOCK_FORM_PACKET, (server, player, handler, buf, responder) -> handleModelBlockFormPacket(server, player, buf));
@@ -106,112 +114,126 @@ public class ServerNetwork
 
     private static void handleModelBlockFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        BlockPos pos = buf.readBlockPos();
-
-        try
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
+            BlockPos pos = buf.readBlockPos();
 
-            server.execute(() ->
+            try
             {
-                World world = player.getWorld();
-                BlockEntity be = world.getBlockEntity(pos);
+                MapType data = (MapType) DataStorageUtils.readFromBytes(bytes);
 
-                if (be instanceof ModelBlockEntity modelBlock)
+                server.execute(() ->
                 {
-                    modelBlock.updateForm(data, world);
-                }
-            });
-        }
-        catch (Exception e)
-        {}
+                    World world = player.getWorld();
+                    BlockEntity be = world.getBlockEntity(pos);
+
+                    if (be instanceof ModelBlockEntity modelBlock)
+                    {
+                        modelBlock.updateForm(data, world);
+                    }
+                });
+            }
+            catch (Exception e)
+            {}
+        });
     }
 
     private static void handleModelBlockTransformsPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        try
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
-
-            server.execute(() ->
+            try
             {
-                ItemStack stack = player.getEquippedStack(EquipmentSlot.MAINHAND).copy();
+                MapType data = (MapType) DataStorageUtils.readFromBytes(bytes);
 
-                stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+                server.execute(() ->
+                {
+                    ItemStack stack = player.getEquippedStack(EquipmentSlot.MAINHAND).copy();
 
-                player.equipStack(EquipmentSlot.MAINHAND, stack);
-            });
-        }
-        catch (Exception e)
-        {}
+                    stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+
+                    player.equipStack(EquipmentSlot.MAINHAND, stack);
+                });
+            }
+            catch (Exception e)
+            {}
+        });
     }
 
     private static void handlePlayerFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
-        Form form = null;
-
-        try
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            form = BBSMod.getForms().fromData(data);
-        }
-        catch (Exception e)
-        {}
+            Form form = null;
 
-        final Form finalForm = form;
+            try
+            {
+                if (DataStorageUtils.readFromBytes(bytes) instanceof MapType data)
+                {
+                    form = BBSMod.getForms().fromData(data);
+                }
+            }
+            catch (Exception e)
+            {}
 
-        server.execute(() ->
-        {
-            Morph.getMorph(player).setForm(FormUtils.copy(finalForm));
+            final Form finalForm = form;
 
-            sendMorphToTracked(player, finalForm);
+            server.execute(() ->
+            {
+                Morph.getMorph(player).setForm(FormUtils.copy(finalForm));
+
+                sendMorphToTracked(player, finalForm);
+            });
         });
     }
 
     private static void handleManagerDataPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        int callbackId = buf.readInt();
-        RepositoryOperation op = RepositoryOperation.values()[buf.readInt()];
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
-        FilmManager films = BBSMod.getFilms();
+        crusher.receive(buf, (bytes, packetByteBuf) ->
+        {
+            MapType data = (MapType) DataStorageUtils.readFromBytes(bytes);
+            int callbackId = packetByteBuf.readInt();
+            RepositoryOperation op = RepositoryOperation.values()[packetByteBuf.readInt()];
+            FilmManager films = BBSMod.getFilms();
 
-        if (op == RepositoryOperation.LOAD)
-        {
-            String id = data.getString("id");
-            Film film = films.load(id);
+            if (op == RepositoryOperation.LOAD)
+            {
+                String id = data.getString("id");
+                Film film = films.load(id);
 
-            sendManagerData(player, callbackId, op, film.toData());
-        }
-        else if (op == RepositoryOperation.SAVE)
-        {
-            films.save(data.getString("id"), data.getMap("data"));
-        }
-        else if (op == RepositoryOperation.RENAME)
-        {
-            films.rename(data.getString("from"), data.getString("to"));
-        }
-        else if (op == RepositoryOperation.DELETE)
-        {
-            films.delete(data.getString("id"));
-        }
-        else if (op == RepositoryOperation.KEYS)
-        {
-            ListType list = DataStorageUtils.stringListToData(films.getKeys());
+                sendManagerData(player, callbackId, op, film.toData());
+            }
+            else if (op == RepositoryOperation.SAVE)
+            {
+                films.save(data.getString("id"), data.getMap("data"));
+            }
+            else if (op == RepositoryOperation.RENAME)
+            {
+                films.rename(data.getString("from"), data.getString("to"));
+            }
+            else if (op == RepositoryOperation.DELETE)
+            {
+                films.delete(data.getString("id"));
+            }
+            else if (op == RepositoryOperation.KEYS)
+            {
+                ListType list = DataStorageUtils.stringListToData(films.getKeys());
 
-            sendManagerData(player, callbackId, op, list);
-        }
-        else if (op == RepositoryOperation.ADD_FOLDER)
-        {
-            sendManagerData(player, callbackId, op, new ByteType(films.addFolder(data.getString("folder"))));
-        }
-        else if (op == RepositoryOperation.RENAME_FOLDER)
-        {
-            sendManagerData(player, callbackId, op, new ByteType(films.renameFolder(data.getString("from"), data.getString("to"))));
-        }
-        else if (op == RepositoryOperation.DELETE_FOLDER)
-        {
-            sendManagerData(player, callbackId, op, new ByteType(films.deleteFolder(data.getString("folder"))));
-        }
+                sendManagerData(player, callbackId, op, list);
+            }
+            else if (op == RepositoryOperation.ADD_FOLDER)
+            {
+                sendManagerData(player, callbackId, op, new ByteType(films.addFolder(data.getString("folder"))));
+            }
+            else if (op == RepositoryOperation.RENAME_FOLDER)
+            {
+                sendManagerData(player, callbackId, op, new ByteType(films.renameFolder(data.getString("from"), data.getString("to"))));
+            }
+            else if (op == RepositoryOperation.DELETE_FOLDER)
+            {
+                sendManagerData(player, callbackId, op, new ByteType(films.deleteFolder(data.getString("folder"))));
+            }
+        });
     }
 
     private static void handleActionRecording(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
@@ -357,13 +379,16 @@ public class ServerNetwork
 
     private static void handleActionsUpload(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        String filmId = buf.readString();
-        int replayId = buf.readInt();
-        BaseType data = DataStorageUtils.readFromPacket(buf);
-
-        server.execute(() ->
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            BBSMod.getActions().updatePlayers(filmId, replayId, data);
+            String filmId = packetByteBuf.readString();
+            int replayId = packetByteBuf.readInt();
+            BaseType data = DataStorageUtils.readFromBytes(bytes);
+
+            server.execute(() ->
+            {
+                BBSMod.getActions().updatePlayers(filmId, replayId, data);
+            });
         });
     }
 
@@ -489,17 +514,20 @@ public class ServerNetwork
 
     private static void handleSharedFormPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
     {
-        UUID playerUuid = buf.readUuid();
-        MapType data = (MapType) DataStorageUtils.readFromPacket(buf);
-
-        server.execute(() ->
+        crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            ServerPlayerEntity otherPlayer = server.getPlayerManager().getPlayer(playerUuid);
+            UUID playerUuid = packetByteBuf.readUuid();
+            MapType data = (MapType) DataStorageUtils.readFromBytes(bytes);
 
-            if (otherPlayer != null)
+            server.execute(() ->
             {
-                sendSharedForm(otherPlayer, data);
-            }
+                ServerPlayerEntity otherPlayer = server.getPlayerManager().getPlayer(playerUuid);
+
+                if (otherPlayer != null)
+                {
+                    sendSharedForm(otherPlayer, data);
+                }
+            });
         });
     }
 
@@ -507,17 +535,10 @@ public class ServerNetwork
 
     public static void sendMorph(ServerPlayerEntity player, int playerId, Form form)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeInt(playerId);
-        buf.writeBoolean(form != null);
-
-        if (form != null)
+        crusher.send(player, CLIENT_PLAYER_FORM_PACKET, FormUtils.toData(form), (packetByteBuf) ->
         {
-            DataStorageUtils.writeToPacket(buf, FormUtils.toData(form));
-        }
-
-        ServerPlayNetworking.send(player, CLIENT_PLAYER_FORM_PACKET, buf);
+            packetByteBuf.writeInt(playerId);
+        });
     }
 
     public static void sendMorphToTracked(ServerPlayerEntity player, Form form)
@@ -549,16 +570,13 @@ public class ServerNetwork
             {
                 BBSMod.getActions().play(world, film, 0);
 
-                PacketByteBuf newBuf = PacketByteBufs.create();
+                BaseType data = film.toData();
 
-                newBuf.writeString(filmId);
-                newBuf.writeBoolean(withCamera);
-                DataStorageUtils.writeToPacket(newBuf, film.toData());
-
-                for (ServerPlayerEntity otherPlayer : world.getPlayers())
+                crusher.send(world.getPlayers().stream().map((p) -> (PlayerEntity) p).toList(), CLIENT_PLAY_FILM_PACKET, data, (packetByteBuf) ->
                 {
-                    ServerPlayNetworking.send(otherPlayer, CLIENT_PLAY_FILM_PACKET, newBuf);
-                }
+                    packetByteBuf.writeString(filmId);
+                    packetByteBuf.writeBoolean(withCamera);
+                });
             }
         }
         catch (Exception e)
@@ -577,13 +595,11 @@ public class ServerNetwork
             {
                 BBSMod.getActions().play(player.getServerWorld(), film, 0);
 
-                PacketByteBuf buf = PacketByteBufs.create();
-
-                buf.writeString(filmId);
-                buf.writeBoolean(withCamera);
-                DataStorageUtils.writeToPacket(buf, film.toData());
-
-                ServerPlayNetworking.send(player, CLIENT_PLAY_FILM_PACKET, buf);
+                crusher.send(player, CLIENT_PLAY_FILM_PACKET, film.toData(), (packetByteBuf) ->
+                {
+                    packetByteBuf.writeString(filmId);
+                    packetByteBuf.writeBoolean(withCamera);
+                });
             }
         }
         catch (Exception e)
@@ -603,24 +619,20 @@ public class ServerNetwork
 
     public static void sendManagerData(ServerPlayerEntity player, int callbackId, RepositoryOperation op, BaseType data)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeInt(callbackId);
-        buf.writeInt(op.ordinal());
-        DataStorageUtils.writeToPacket(buf, data);
-
-        ServerPlayNetworking.send(player, CLIENT_MANAGER_DATA_PACKET, buf);
+        crusher.send(player, CLIENT_MANAGER_DATA_PACKET, data, (packetByteBuf) ->
+        {
+            packetByteBuf.writeInt(callbackId);
+            packetByteBuf.writeInt(op.ordinal());
+        });
     }
 
     public static void sendRecordedActions(ServerPlayerEntity player, String filmId, int replayId, Clips clips)
     {
-        PacketByteBuf newBuf = PacketByteBufs.create();
-
-        newBuf.writeString(filmId);
-        newBuf.writeInt(replayId);
-        DataStorageUtils.writeToPacket(newBuf, clips.toData());
-
-        ServerPlayNetworking.send(player, CLIENT_RECORDED_ACTIONS, newBuf);
+        crusher.send(player, CLIENT_RECORDED_ACTIONS, clips.toData(), (packetByteBuf) ->
+        {
+            packetByteBuf.writeString(filmId);
+            packetByteBuf.writeInt(replayId);
+        });
     }
 
     public static void sendHandshake(MinecraftServer server, PacketSender packetSender)
@@ -645,7 +657,6 @@ public class ServerNetwork
         }
 
         buf.writeString(id);
-        buf.writeBoolean(BBSSettings.unlimitedPacketSize.get());
 
         if (!id.isEmpty())
         {
@@ -727,15 +738,7 @@ public class ServerNetwork
 
     public static void sendSharedForm(ServerPlayerEntity player, MapType data)
     {
-        PacketByteBuf buf = PacketByteBufs.create();
-
-        buf.writeBoolean(data != null);
-
-        if (data != null)
-        {
-            DataStorageUtils.writeToPacket(buf, data);
-        }
-
-        ServerPlayNetworking.send(player, CLIENT_SHARED_FORM, buf);
+        crusher.send(player, CLIENT_SHARED_FORM, data, (packetByteBuf) ->
+        {});
     }
 }

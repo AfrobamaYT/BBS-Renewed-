@@ -21,7 +21,6 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtLong;
 import net.minecraft.nbt.NbtShort;
 import net.minecraft.nbt.NbtString;
-import net.minecraft.network.PacketByteBuf;
 import org.joml.Matrix3f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -37,9 +36,50 @@ import java.util.List;
 
 public class DataStorageUtils
 {
+    private static final byte[] EMPTY = new byte[0];
+
     /* PacketByteBuf */
 
-    public static void writeToPacket(PacketByteBuf packet, BaseType type)
+    public static byte[] writeToBytes(BaseType type)
+    {
+        if (type == null)
+        {
+            return EMPTY;
+        }
+
+        try
+        {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+            DataStorage.writeToStream(stream, type);
+
+            return stream.toByteArray();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return EMPTY;
+    }
+
+    public static BaseType readFromBytes(byte[] bytes)
+    {
+        try
+        {
+            ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+
+            return DataStorage.readFromStream(stream);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /* public static void writeToPacket(PacketByteBuf packet, BaseType type)
     {
         try
         {
@@ -69,7 +109,7 @@ public class DataStorageUtils
         }
 
         return null;
-    }
+    } */
 
     /* NBT */
 

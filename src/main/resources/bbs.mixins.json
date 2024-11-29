@@ -13,7 +13,6 @@
         "LivingEntityMixin",
         "ServerPlayerEntityMixin",
         "LimbAnimatorAccessor",
-        "PayloadHelperMixin",
         "LevelPropertiesAccessor"
     ],
     "injectors": {
