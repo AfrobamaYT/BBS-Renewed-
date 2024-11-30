@@ -1208,16 +1208,17 @@ public class UIClips extends UIElement
     {
         /* Collect the rest of clips for collision */
         List<Clip> others = Window.isAltPressed() ? Collections.emptyList() : this.otherClips;
+        boolean snapped = true;
 
         /* Checking whether it's possible to move clips */
         for (int i = 0; i < this.grabbedClips.size(); i++)
         {
             Vector3i grabbedData = this.grabbedData.get(i);
-            Vector3i newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY);
+            SnappingResult newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY, snapped);
 
-            int newTick = newClipData.x;
-            int newDuration = newClipData.y;
-            int newLayer = newClipData.z;
+            int newTick = newClipData.tick;
+            int newDuration = newClipData.duration;
+            int newLayer = newClipData.layer;
 
             /* Detect clips collisions */
             for (Clip other : others)
@@ -1237,6 +1238,14 @@ public class UIClips extends UIElement
 
             if (newTick < 0) relativeX = 0;
             if (newLayer >= this.layers) relativeY = 0;
+
+            if (newClipData.snapping)
+            {
+                snapped = false;
+
+                relativeX = newClipData.tick - grabbedData.x;
+                relativeY = newClipData.layer - grabbedData.z;
+            }
         }
 
         if (relativeX == 0 && relativeY == 0)
@@ -1249,33 +1258,37 @@ public class UIClips extends UIElement
         {
             Clip clip = this.grabbedClips.get(i);
             Vector3i grabbedData = this.grabbedData.get(i);
-            Vector3i newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY);
+            SnappingResult newClipData = this.applyGrab(grabbedData.x, grabbedData.y, grabbedData.z, relativeX, relativeY, true);
 
-            clip.tick.set(newClipData.x);
-            clip.duration.set(newClipData.y);
-            clip.layer.set(newClipData.z);
+            clip.tick.set(newClipData.tick);
+            clip.duration.set(newClipData.duration);
+            clip.layer.set(newClipData.layer);
         }
 
         this.delegate.fillData();
     }
 
-    private Vector3i applyGrab(int newTick, int newDuration, int newLayer, int relativeX, int relativeY)
+    private SnappingResult applyGrab(int newTick, int newDuration, int newLayer, int relativeX, int relativeY, boolean doISnap)
     {
+        boolean snapping = false;
+
         if (this.grabMode == 0)
         {
-            int n = this.snap(newTick + relativeX);
+            int n = this.snap(newTick + relativeX, doISnap);
 
             if (n != newTick + relativeX)
             {
                 newTick = n;
+                snapping = true;
             }
             else
             {
-                n = this.snap(newTick + newDuration + relativeX);
+                n = this.snap(newTick + newDuration + relativeX, doISnap);
 
                 if (n != newTick + newDuration + relativeX)
                 {
                     newTick = n - newDuration;
+                    snapping = true;
                 }
                 else
                 {
@@ -1292,12 +1305,13 @@ public class UIClips extends UIElement
                 relativeX -= newTick + relativeX;
             }
 
-            int n = this.snap(newTick + relativeX);
+            int n = this.snap(newTick + relativeX, doISnap);
 
             if (n != newTick + relativeX)
             {
                 newDuration -= n - newTick;
                 newTick = n;
+                snapping = true;
             }
             else
             {
@@ -1308,15 +1322,23 @@ public class UIClips extends UIElement
         else if (this.grabMode == 2)
         {
             newDuration = newDuration + relativeX;
-            newDuration = Math.max(this.snap(newTick + newDuration) - newTick, 1);
+
+            int snap = this.snap(newTick + newDuration, doISnap);
+
+            newDuration = Math.max(snap - newTick, 1);
+
+            if (snap != newTick + newDuration)
+            {
+                snapping = true;
+            }
         }
 
-        return new Vector3i(newTick, newDuration, newLayer);
+        return new SnappingResult(newTick, newDuration, newLayer, snapping);
     }
 
-    private int snap(int tick)
+    private int snap(int tick, boolean doISnap)
     {
-        if (Window.isAltPressed())
+        if (Window.isAltPressed() || !doISnap)
         {
             return tick;
         }
@@ -1573,6 +1595,22 @@ public class UIClips extends UIElement
             context.batcher.gradientVBox(minX, y, maxX, this.area.ey(), Colors.mulRGB(0x0000ffff, alpha), Colors.mulRGB(0xaa0088ff, alpha));
             context.batcher.box(minX, y, minX + 1, this.area.ey(), color);
             context.batcher.box(maxX - 1, y, maxX, this.area.ey(), color);
+        }
+    }
+
+    public static class SnappingResult
+    {
+        public int tick;
+        public int duration;
+        public int layer;
+        public boolean snapping;
+
+        public SnappingResult(int tick, int duration, int layer, boolean snapping)
+        {
+            this.tick = tick;
+            this.duration = duration;
+            this.layer = layer;
+            this.snapping = snapping;
         }
     }
 }
