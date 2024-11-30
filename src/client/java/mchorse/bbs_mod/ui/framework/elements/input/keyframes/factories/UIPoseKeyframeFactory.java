@@ -11,9 +11,12 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
+
+import java.util.function.Consumer;
 
 public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 {
@@ -23,7 +26,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
     {
         super(keyframe, editor);
 
-        this.poseEditor = new UIPoseFactoryEditor(keyframe);
+        this.poseEditor = new UIPoseFactoryEditor(editor, keyframe);
 
         UIKeyframeSheet sheet = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) sheet.property.getForm();
@@ -60,15 +63,40 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 
     public static class UIPoseFactoryEditor extends UIPoseEditor
     {
+        private UIKeyframes editor;
         private Keyframe<Pose> keyframe;
 
-        public UIPoseFactoryEditor(Keyframe<Pose> keyframe)
+        public static void apply(UIKeyframes editor, Keyframe keyframe, String group, Consumer<PoseTransform> consumer)
+        {
+            for (UIKeyframeSheet sheet : editor.getGraph().getSheets())
+            {
+                if (sheet.channel.getFactory() != keyframe.getFactory())
+                {
+                    continue;
+                }
+
+                for (Keyframe kf : sheet.selection.getSelected())
+                {
+                    if (kf.getValue() instanceof Pose pose)
+                    {
+                        PoseTransform poseT = pose.get(group);
+
+                        kf.preNotifyParent();
+                        consumer.accept(poseT);
+                        kf.postNotifyParent();
+                    }
+                }
+            }
+        }
+
+        public UIPoseFactoryEditor(UIKeyframes editor, Keyframe<Pose> keyframe)
         {
             super();
 
+            this.editor = editor;
             this.keyframe = keyframe;
 
-            ((UIPoseTransforms) this.transform).setKeyframe(keyframe);
+            ((UIPoseTransforms) this.transform).setKeyframe(this);
         }
 
         @Override
@@ -86,67 +114,89 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         @Override
         protected void setFix(PoseTransform transform, float value)
         {
-            this.keyframe.preNotifyParent();
-            super.setFix(transform, value);
-            this.keyframe.postNotifyParent();
+            apply(this.editor, this.keyframe, this.getGroup(), (poseT) -> poseT.fix = value);
         }
 
         @Override
         protected void setColor(PoseTransform transform, int value)
         {
-            this.keyframe.preNotifyParent();
-            super.setColor(transform, value);
-            this.keyframe.postNotifyParent();
+            apply(this.editor, this.keyframe, this.getGroup(), (poseT) -> poseT.color.set(value));
         }
 
         @Override
         protected void setLighting(PoseTransform poseTransform, boolean value)
         {
-            this.keyframe.preNotifyParent();
-            super.setLighting(poseTransform, value);
-            this.keyframe.postNotifyParent();
+            apply(this.editor, this.keyframe, this.getGroup(), (poseT) -> poseT.lighting = value ? 0F : 1F);
         }
     }
 
     public static class UIPoseTransforms extends UIPropTransform
     {
-        private Keyframe<Pose> keyframe;
+        private UIPoseFactoryEditor editor;
 
-        public void setKeyframe(Keyframe<Pose> keyframe)
+        public void setKeyframe(UIPoseFactoryEditor editor)
         {
-            this.keyframe = keyframe;
+            this.editor = editor;
         }
 
         @Override
         public void setT(double x, double y, double z)
         {
-            this.keyframe.preNotifyParent();
-            super.setT(x, y, z);
-            this.keyframe.postNotifyParent();
+            float dx = (float) (x - this.getTransform().translate.x);
+            float dy = (float) (y - this.getTransform().translate.y);
+            float dz = (float) (z - this.getTransform().translate.z);
+
+            UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.getGroup(), (poseT) ->
+            {
+                poseT.translate.x += dx;
+                poseT.translate.y += dy;
+                poseT.translate.z += dz;
+            });
         }
 
         @Override
         public void setS(double x, double y, double z)
         {
-            this.keyframe.preNotifyParent();
-            super.setS(x, y, z);
-            this.keyframe.postNotifyParent();
+            float dx = (float) (x - this.getTransform().scale.x);
+            float dy = (float) (y - this.getTransform().scale.y);
+            float dz = (float) (z - this.getTransform().scale.z);
+
+            UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.getGroup(), (poseT) ->
+            {
+                poseT.scale.x += dx;
+                poseT.scale.y += dy;
+                poseT.scale.z += dz;
+            });
         }
 
         @Override
         public void setR(double x, double y, double z)
         {
-            this.keyframe.preNotifyParent();
-            super.setR(x, y, z);
-            this.keyframe.postNotifyParent();
+            float dx = MathUtils.toRad((float) x) - this.getTransform().rotate.x;
+            float dy = MathUtils.toRad((float) y) - this.getTransform().rotate.y;
+            float dz = MathUtils.toRad((float) z) - this.getTransform().rotate.z;
+
+            UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.getGroup(), (poseT) ->
+            {
+                poseT.rotate.x += dx;
+                poseT.rotate.y += dy;
+                poseT.rotate.z += dz;
+            });
         }
 
         @Override
         public void setR2(double x, double y, double z)
         {
-            this.keyframe.preNotifyParent();
-            super.setR2(x, y, z);
-            this.keyframe.postNotifyParent();
+            float dx = MathUtils.toRad((float) x) - this.getTransform().rotate2.x;
+            float dy = MathUtils.toRad((float) y) - this.getTransform().rotate2.y;
+            float dz = MathUtils.toRad((float) z) - this.getTransform().rotate2.z;
+
+            UIPoseFactoryEditor.apply(this.editor.editor, this.editor.keyframe, this.editor.getGroup(), (poseT) ->
+            {
+                poseT.rotate2.x += dx;
+                poseT.rotate2.y += dy;
+                poseT.rotate2.z += dz;
+            });
         }
     }
 }

@@ -251,7 +251,7 @@ public class UIPropTransform extends UITransform
         this.submit();
     }
 
-    private void submit()
+    protected void submit()
     {
         if (this.callback != null)
         {

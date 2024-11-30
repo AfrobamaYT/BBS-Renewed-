@@ -69,6 +69,11 @@ public class UIPoseEditor extends UIElement
         this.add(this.groups, UI.label(UIKeys.POSE_CONTEXT_FIX), this.fix, UI.row(this.color, this.lighting), this.transform);
     }
 
+    public String getGroup()
+    {
+        return this.groups.getCurrentFirst();
+    }
+
     public void setPose(Pose pose, String group)
     {
         this.pose = pose;

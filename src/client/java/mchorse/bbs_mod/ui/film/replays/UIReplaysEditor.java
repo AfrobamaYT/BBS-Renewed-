@@ -478,7 +478,10 @@ public class UIReplaysEditor extends UIElement
         {
             Keyframe closest = segment.getClosest();
 
-            this.keyframeEditor.view.getGraph().selectKeyframe(closest);
+            if (this.keyframeEditor.view.getGraph().getSelected() != closest)
+            {
+                this.keyframeEditor.view.getGraph().selectKeyframe(closest);
+            }
 
             if (this.keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory)
             {
