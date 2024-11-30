@@ -525,17 +525,26 @@ public class UIFilmController extends UIElement
                     }
                 });
 
+                Area area = this.panel.preview.getViewport();
+
+                if (area.isInside(context) && this.panel.isFlying() && this.orbit.enabled)
+                {
+                    this.orbit.start(context);
+
+                    return true;
+                }
+
                 return true;
             }
+        }
 
-            Area area = this.panel.preview.getViewport();
+        Area area = this.panel.preview.getViewport();
 
-            if (area.isInside(context) && this.panel.isFlying() && this.orbit.enabled)
-            {
-                this.orbit.start(context);
+        if (area.isInside(context) && this.panel.isFlying() && this.orbit.enabled)
+        {
+            this.orbit.start(context);
 
-                return true;
-            }
+            return true;
         }
 
         return super.subMouseClicked(context);

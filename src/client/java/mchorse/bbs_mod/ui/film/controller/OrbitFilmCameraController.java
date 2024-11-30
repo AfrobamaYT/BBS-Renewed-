@@ -28,6 +28,9 @@ public class OrbitFilmCameraController implements ICameraController
     private Vector2i last = new Vector2i();
     private Vector3f position = new Vector3f();
 
+    private float distance;
+    private boolean center;
+
     protected Vector3i velocityPosition = new Vector3i();
 
     protected float low = 0.05F;
@@ -41,13 +44,31 @@ public class OrbitFilmCameraController implements ICameraController
 
     public void start(UIContext context)
     {
-        this.orbiting = true;
-        this.last.set(context.mouseX, context.mouseY);
+        this.center = context.mouseButton != 0;
+
+        if (context.mouseButton == 0)
+        {
+            this.orbiting = true;
+            this.last.set(context.mouseX, context.mouseY);
+        }
+        else if (context.mouseButton == 2)
+        {
+            this.orbiting = true;
+            this.distance = this.position.distance(new Vector3f());
+
+            this.last.set(context.mouseX, context.mouseY);
+        }
     }
 
     public void stop()
     {
+        if (this.center)
+        {
+            this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x).mul(this.distance));
+        }
+
         this.orbiting = false;
+        this.center = false;
     }
 
     public boolean keyPressed(UIContext context)
@@ -112,11 +133,15 @@ public class OrbitFilmCameraController implements ICameraController
 
         boolean changed = false;
 
-        if (this.velocityPosition.lengthSquared() > 0)
+        if (this.velocityPosition.lengthSquared() > 0 && !this.center)
         {
             this.position.add(this.rotateVector(-this.velocityPosition.x, this.velocityPosition.y, -this.velocityPosition.z, this.rotation.y, this.rotation.x).mul(this.getSpeed()));
 
             changed = true;
+        }
+        else if (this.center)
+        {
+            this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x).mul(this.distance));
         }
 
         return changed;
@@ -158,6 +183,11 @@ public class OrbitFilmCameraController implements ICameraController
         {
             float renderYaw = MathUtils.toRad(-Lerps.lerp(entity.getPrevBodyYaw(), entity.getBodyYaw(), transition) + 180F);
             Vector3f offset = this.rotateVector(this.position.x, this.position.y, this.position.z, renderYaw, 0F);
+
+            if (this.center)
+            {
+                offset = this.rotateVector(0F, 0F, 1F, this.rotation.y + renderYaw, this.rotation.x).mul(this.distance);
+            }
 
             camera.position.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ());
             camera.position.lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
