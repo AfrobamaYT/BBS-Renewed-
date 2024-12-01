@@ -1022,6 +1022,7 @@ public class UIClips extends UIElement
                 this.otherClips = new ArrayList<>(this.clips.get());
                 this.otherClips.removeIf(this.grabbedClips::contains);
                 this.snappingPoints.clear();
+                this.snappingPoints.add(0);
 
                 for (Clip otherClip : this.otherClips)
                 {

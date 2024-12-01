@@ -3,19 +3,31 @@ package mchorse.bbs_mod.ui.film.controller;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;
+import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.film.FilmController;
+import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.forms.renderers.FormRenderer;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.joml.Vectors;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class OrbitFilmCameraController implements ICameraController
 {
@@ -189,10 +201,52 @@ public class OrbitFilmCameraController implements ICameraController
                 offset = this.rotateVector(0F, 0F, 1F, this.rotation.y + renderYaw, this.rotation.x).mul(this.distance);
             }
 
-            camera.position.set(entity.getPrevX(), entity.getPrevY(), entity.getPrevZ());
-            camera.position.lerp(new Vector3d(entity.getX(), entity.getY(), entity.getZ()), transition);
+            Form form = entity.getForm();
+            double h = entity.getPickingHitbox().h / 2;
+            double x = Lerps.lerp(entity.getPrevX(), entity.getX(), transition);
+            double y = Lerps.lerp(entity.getPrevY(), entity.getY(), transition) + h;
+            double z = Lerps.lerp(entity.getPrevZ(), entity.getZ(), transition);
+
+            if (form != null)
+            {
+                Map<String, Matrix4f> map = new HashMap<>();
+                MatrixStack stack = new MatrixStack();
+                FormRenderer renderer = FormUtilsClient.getRenderer(form);
+                String group = "anchor";
+
+                if (form instanceof ModelForm modelForm)
+                {
+                    CubicModel model = ModelFormRenderer.getModel(modelForm);
+
+                    if (model != null)
+                    {
+                        String anchor = model.getAnchor();
+
+                        group = anchor.isEmpty() ? group : anchor;
+                    }
+                }
+
+                renderer.collectMatrices(entity, "", stack, map, "", transition);
+
+                Matrix4f anchor = map.get(group);
+
+                if (anchor != null)
+                {
+                    Matrix4f defaultMatrix = FilmController.getMatrixForRenderWithRotation(entity, x, y, z, transition);
+                    Matrix4f matrix = FilmController.getEntityMatrix(this.controller.entities, x, y, z, form.anchor.get(), defaultMatrix, transition);
+
+                    matrix.mul(anchor);
+
+                    Vector3f translate = matrix.getTranslation(Vectors.TEMP_3F);
+
+                    x += translate.x;
+                    y += translate.y - h;
+                    z += translate.z;
+                }
+            }
+
+            camera.position.set(x, y, z);
             camera.position.add(offset);
-            camera.position.add(0, entity.getPickingHitbox().h / 2, 0);
             camera.rotation.set(-this.rotation.x, -(this.rotation.y + renderYaw), 0);
         }
     }

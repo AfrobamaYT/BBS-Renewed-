@@ -23,6 +23,7 @@ public class CubicModel
     public String poseGroup;
     public boolean procedural;
     public boolean culling = true;
+    public String anchorGroup = "";
 
     public Vector3f scale = new Vector3f(1F);
     public float uiScale = 1F;
@@ -40,6 +41,16 @@ public class CubicModel
 
         this.loadTime = System.currentTimeMillis();
         this.poseGroup = id;
+    }
+
+    public String getAnchor()
+    {
+        if (this.anchorGroup.isEmpty() && this.model.topGroups.size() == 1)
+        {
+            return this.model.topGroups.get(0).id;
+        }
+
+        return this.anchorGroup;
     }
 
     public void applyConfig(MapType config)
@@ -62,5 +73,6 @@ public class CubicModel
             this.sneakingPose = new Pose();
             this.sneakingPose.fromData(config.getMap("sneaking_pose"));
         }
+        if (config.has("anchor")) this.anchorGroup = config.getString("anchor");
     }
 }

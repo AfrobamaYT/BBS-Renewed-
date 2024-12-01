@@ -55,7 +55,7 @@ public class UIDataUtils
     {
         MinecraftClient mc = MinecraftClient.getInstance();
 
-        if (!mc.getGameProfile().getName().equals("ethob0t"))
+        if (mc.player == null || !mc.player.getGameProfile().getName().equals("ethob0t"))
         {
             return;
         }
