@@ -1201,7 +1201,7 @@ public class UIFilmController extends UIElement
         RenderSystem.disableDepthTest();
     }
 
-    private Pair<String, Boolean> getBone()
+    public Pair<String, Boolean> getBone()
     {
         UIKeyframeEditor keyframeEditor = this.panel.replayEditor.keyframeEditor;
 

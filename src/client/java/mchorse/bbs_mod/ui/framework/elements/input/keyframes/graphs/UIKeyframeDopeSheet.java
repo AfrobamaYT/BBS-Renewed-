@@ -341,7 +341,49 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             return;
         }
 
-        if (Window.isCtrlPressed())
+        if (this.keyframes.isStacking())
+        {
+            List<UIKeyframeSheet> sheets = new ArrayList<>();
+            long currentTick = Math.round(this.keyframes.fromGraphX(context.mouseX));
+
+            for (UIKeyframeSheet sheet : this.getSheets())
+            {
+                if (sheet.selection.hasAny())
+                {
+                    sheets.add(sheet);
+                }
+            }
+
+            for (UIKeyframeSheet current : sheets)
+            {
+                List<Keyframe> selected = current.selection.getSelected();
+                int mmin = Integer.MAX_VALUE;
+                int mmax = Integer.MIN_VALUE;
+
+                for (Keyframe keyframe : selected)
+                {
+                    mmin = Math.min((int) keyframe.getTick(), mmin);
+                    mmax = Math.max((int) keyframe.getTick(), mmax);
+                }
+
+                int length = mmax - mmin + this.keyframes.getStackOffset();
+                int times = (int) Math.max(1, Math.ceil((currentTick - mmax) / (float) length));
+                int x = 0;
+
+                for (int i = 0; i < times; i++)
+                {
+                    for (Keyframe keyframe : selected)
+                    {
+                        long tick = mmax + this.keyframes.getStackOffset() + (keyframe.getTick() - mmin) + x;
+
+                        this.renderPreviewKeyframe(context, current, tick, Colors.YELLOW);
+                    }
+
+                    x += length;
+                }
+            }
+        }
+        else if (Window.isCtrlPressed())
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 

@@ -354,13 +354,46 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             return;
         }
 
-        if (Window.isCtrlPressed())
+        long currentTick = Math.round(this.keyframes.fromGraphX(context.mouseX));
+
+        if (this.keyframes.isStacking())
+        {
+            UIKeyframeSheet current = this.sheet;
+            List<Keyframe> selected = current.selection.getSelected();
+            IKeyframeFactory factory = current.channel.getFactory();
+            int mMin = Integer.MAX_VALUE;
+            int mMax = Integer.MIN_VALUE;
+
+            for (Keyframe keyframe : selected)
+            {
+                mMin = Math.min((int) keyframe.getTick(), mMin);
+                mMax = Math.max((int) keyframe.getTick(), mMax);
+            }
+
+            int length = mMax - mMin + this.keyframes.getStackOffset();
+            int times = (int) Math.max(1, Math.ceil((currentTick - mMax) / (float) length));
+            int x = 0;
+
+            for (int i = 0; i < times; i++)
+            {
+                for (Keyframe keyframe : selected)
+                {
+                    int y = (int) this.yAxis.to(factory.getY(keyframe.getValue()));
+                    long tick = mMax + this.keyframes.getStackOffset() + (keyframe.getTick() - mMin) + x;
+
+                    this.renderPreviewKeyframe(context, current, tick, y, Colors.YELLOW);
+                }
+
+                x += length;
+            }
+        }
+        else if (Window.isCtrlPressed())
         {
             UIKeyframeSheet sheet = this.getSheet(context.mouseY);
 
             if (sheet != null)
             {
-                this.renderPreviewKeyframe(context, sheet, Math.round(this.keyframes.fromGraphX(context.mouseX)), context.mouseY, Colors.WHITE);
+                this.renderPreviewKeyframe(context, sheet, currentTick, context.mouseY, Colors.WHITE);
             }
         }
         else if (Window.isAltPressed())
@@ -375,7 +408,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 Keyframe keyframe = selected.get(i);
                 int y = (int) this.yAxis.to(factory.getY(keyframe.getValue()));
 
-                this.renderPreviewKeyframe(context, current, Math.round(this.keyframes.fromGraphX(context.mouseX)) + (keyframe.getTick() - first.getTick()), y, Colors.YELLOW);
+                this.renderPreviewKeyframe(context, current, currentTick + (keyframe.getTick() - first.getTick()), y, Colors.YELLOW);
             }
         }
     }
