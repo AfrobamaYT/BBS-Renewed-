@@ -61,7 +61,15 @@ public abstract class BaseManager <T extends ValueGroup> extends FolderManager<T
     {
         try
         {
-            this.storage.save(this.getFile(id), data);
+            File file = this.getFile(id);
+            File otherFile = new File(file.getAbsolutePath() + "~");
+            File tmpFile = new File(file.getAbsolutePath() + "~1");
+
+            this.storage.save(otherFile, data);
+
+            tmpFile.delete();
+            file.renameTo(tmpFile);
+            otherFile.renameTo(file);
 
             return true;
         }

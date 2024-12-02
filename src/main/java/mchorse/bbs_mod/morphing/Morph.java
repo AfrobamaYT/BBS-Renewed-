@@ -25,11 +25,6 @@ public class Morph
     private Form form;
     public final MCEntity entity;
 
-    public Morph(Entity entity)
-    {
-        this.entity = new MCEntity(entity);
-    }
-
     public static Form getMobForm(PlayerEntity player)
     {
         HitResult hitResult = RayTracing.rayTraceEntity(player, player.getWorld(), player.getEyePos(), player.getRotationVector(), 64);
@@ -67,6 +62,11 @@ public class Morph
         }
 
         return null;
+    }
+
+    public Morph(Entity entity)
+    {
+        this.entity = new MCEntity(entity);
     }
 
     public Form getForm()
