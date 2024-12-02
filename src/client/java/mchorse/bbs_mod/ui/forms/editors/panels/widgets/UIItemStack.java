@@ -40,6 +40,16 @@ public class UIItemStack extends UIElement
 
                 this.setStack(stack);
             });
+
+            menu.action(Icons.CLOSE, UIKeys.ITEM_STACK_CONTEXT_RESET, () ->
+            {
+                if (this.callback != null)
+                {
+                    this.callback.accept(ItemStack.EMPTY);
+                }
+
+                this.setStack(ItemStack.EMPTY);
+            });
         });
 
         this.h(20);

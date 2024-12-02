@@ -510,6 +510,7 @@
     "bbs.ui.importer.success-notification": "Drag&dropped files were successfully processed by %s!",
     "bbs.ui.importer.wav": "WAV",
     "bbs.ui.item_stack.context.paste": "Paste player's main item",
+    "bbs.ui.item_stack.context.reset": "Reset item stack",
     "bbs.ui.keyframes.context.copy": "Copy keyframes",
     "bbs.ui.keyframes.context.edit_track": "Edit track %s",
     "bbs.ui.keyframes.context.exit_track": "Exit track",
