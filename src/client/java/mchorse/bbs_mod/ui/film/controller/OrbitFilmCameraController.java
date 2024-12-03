@@ -16,7 +16,6 @@ import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.MathUtils;
-import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.util.math.MatrixStack;
@@ -215,13 +214,7 @@ public class OrbitFilmCameraController implements ICameraController
                 FormRenderer renderer = FormUtilsClient.getRenderer(form);
                 String group = "anchor";
 
-                Pair<String, Boolean> bone = this.controller.getBone();
-
-                if (bone != null)
-                {
-                    group = bone.a;
-                }
-                else if (form instanceof ModelForm modelForm)
+                if (form instanceof ModelForm modelForm)
                 {
                     CubicModel model = ModelFormRenderer.getModel(modelForm);
 
