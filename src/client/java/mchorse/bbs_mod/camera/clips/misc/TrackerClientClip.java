@@ -7,7 +7,6 @@ import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MatrixUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
@@ -38,7 +37,7 @@ public class TrackerClientClip extends TrackerClip
             this.position.copy(position);
         }
 
-        IEntity entity = CollectionUtils.getSafe(entities, this.selector.get());
+        IEntity entity = entities.get(0);
         Form form = entity == null ? null : entity.getForm();
 
         if (form == null)
