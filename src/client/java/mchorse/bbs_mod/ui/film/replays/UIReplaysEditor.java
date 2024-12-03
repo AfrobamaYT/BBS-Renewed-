@@ -564,6 +564,13 @@ public class UIReplaysEditor extends UIElement
             }
         }
 
+        if (area.isInside(context) && this.filmPanel.getController().orbit.enabled)
+        {
+            this.filmPanel.getController().orbit.start(context);
+
+            return true;
+        }
+
         return false;
     }
 

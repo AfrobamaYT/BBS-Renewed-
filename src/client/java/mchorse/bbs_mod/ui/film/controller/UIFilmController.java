@@ -529,15 +529,6 @@ public class UIFilmController extends UIElement
             }
         }
 
-        Area area = this.panel.preview.getViewport();
-
-        if (area.isInside(context) && this.orbit.enabled)
-        {
-            this.orbit.start(context);
-
-            return true;
-        }
-
         return super.subMouseClicked(context);
     }
 
