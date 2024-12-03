@@ -125,12 +125,12 @@ public class CubicCubeRenderer implements ICubicRenderer
 
             if (quad.vertices.size() == 4)
             {
-                this.writeVertex(builder, stack, group, quad.vertices.get(0));
-                this.writeVertex(builder, stack, group, quad.vertices.get(1));
-                this.writeVertex(builder, stack, group, quad.vertices.get(2));
-                this.writeVertex(builder, stack, group, quad.vertices.get(0));
-                this.writeVertex(builder, stack, group, quad.vertices.get(2));
-                this.writeVertex(builder, stack, group, quad.vertices.get(3));
+                this.writeVertex(builder, stack, group, quad.vertices.get(0), this.normal);
+                this.writeVertex(builder, stack, group, quad.vertices.get(1), this.normal);
+                this.writeVertex(builder, stack, group, quad.vertices.get(2), this.normal);
+                this.writeVertex(builder, stack, group, quad.vertices.get(0), this.normal);
+                this.writeVertex(builder, stack, group, quad.vertices.get(2), this.normal);
+                this.writeVertex(builder, stack, group, quad.vertices.get(3), this.normal);
             }
         }
 
@@ -144,9 +144,6 @@ public class CubicCubeRenderer implements ICubicRenderer
         rotate(stack, mesh.rotate);
         moveBackFromPivot(stack, mesh.origin);
 
-        Vector3f a = new Vector3f();
-        Vector3f b = new Vector3f();
-
         for (int i = 0, c = mesh.vertices.size() / 3; i < c; i++)
         {
             Vector3f p1 = mesh.vertices.get(i * 3);
@@ -157,33 +154,31 @@ public class CubicCubeRenderer implements ICubicRenderer
             Vector2f uv2 = mesh.uvs.get(i * 3 + 1);
             Vector2f uv3 = mesh.uvs.get(i * 3 + 2);
 
-            /* Calculate normal */
-            Vector3f normal = new Vector3f();
-
-            a.set(p2).sub(p1);
-            b.set(p3).sub(p1);
-
-            a.cross(b, normal);
-            normal.normalize();
-
-            this.normal.set(normal.x, normal.y, normal.z);
-            stack.peek().getNormalMatrix().transform(this.normal);
+            Vector3f n1 = mesh.normals.get(i * 3);
+            Vector3f n2 = mesh.normals.get(i * 3 + 1);
+            Vector3f n3 = mesh.normals.get(i * 3 + 2);
 
             /* Write vertices */
+            this.normal.set(n1.x, n1.y, n1.z);
+            stack.peek().getNormalMatrix().transform(this.normal);
             this.modelVertex.set(p1, uv1, model);
-            this.writeVertex(builder, stack, group, this.modelVertex);
+            this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
 
+            this.normal.set(n2.x, n2.y, n2.z);
+            stack.peek().getNormalMatrix().transform(this.normal);
             this.modelVertex.set(p2, uv2, model);
-            this.writeVertex(builder, stack, group, this.modelVertex);
+            this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
 
+            this.normal.set(n3.x, n3.y, n3.z);
+            stack.peek().getNormalMatrix().transform(this.normal);
             this.modelVertex.set(p3, uv3, model);
-            this.writeVertex(builder, stack, group, this.modelVertex);
+            this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
         }
 
         stack.pop();
     }
 
-    protected void writeVertex(BufferBuilder builder, MatrixStack stack, ModelGroup group, ModelVertex vertex)
+    protected void writeVertex(BufferBuilder builder, MatrixStack stack, ModelGroup group, ModelVertex vertex, Vector3f normal)
     {
         this.vertex.set(vertex.vertex.x, vertex.vertex.y, vertex.vertex.z, 1);
         stack.peek().getPositionMatrix().transform(this.vertex);
@@ -205,6 +200,6 @@ public class CubicCubeRenderer implements ICubicRenderer
             builder.light(u, v);
         }
 
-        builder.normal(this.normal.x, this.normal.y, this.normal.z).next();
+        builder.normal(normal.x, normal.y, normal.z).next();
     }
 }

@@ -3,6 +3,7 @@ package mchorse.bbs_mod.cubic.model;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.cubic.obj.OBJModelLoader;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangParser;
@@ -43,6 +44,7 @@ public class ModelManager implements IWatchDogListener
         MolangHelper.registerVars(this.parser);
 
         this.loaders.add(new CubicModelLoader());
+        this.loaders.add(new OBJModelLoader());
         this.loaders.add(new GeoCubicModelLoader());
         this.loaders.add(new VoxModelLoader());
     }
@@ -155,6 +157,7 @@ public class ModelManager implements IWatchDogListener
 
         return link.path.endsWith(".bbs.json")
             || link.path.endsWith(".geo.json")
+            || link.path.endsWith(".obj")
             || link.path.endsWith(".animation.json")
             || link.path.endsWith(".vox");
     }

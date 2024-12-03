@@ -157,11 +157,7 @@ public class VoxBuilder
         Vector3f vertex = this.process(x, y, z, vox);
 
         mesh.vertices.add(new Vector3f(vertex));
-
-        /* mesh.normData[tris * 3] = normal.x;
-        mesh.normData[tris * 3 + 1] = normal.y;
-        mesh.normData[tris * 3 + 2] = normal.z; */
-
+        mesh.normals.add(normal);
         mesh.uvs.add(new Vector2f(u, v));
     }
 

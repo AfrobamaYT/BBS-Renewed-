@@ -15,6 +15,7 @@ public class ModelMesh implements IMapSerializable
     public Vector3f origin = new Vector3f();
     public Vector3f rotate = new Vector3f();
     public List<Vector3f> vertices = new ArrayList<>();
+    public List<Vector3f> normals = new ArrayList<>();
     public List<Vector2f> uvs = new ArrayList<>();
 
     @Override
@@ -28,6 +29,8 @@ public class ModelMesh implements IMapSerializable
 
         ListType vertices = data.getList("vertices");
         ListType uvs = data.getList("uvs");
+        Vector3f a = new Vector3f();
+        Vector3f b = new Vector3f();
 
         if (vertices.size() / 3 == uvs.size() / 2)
         {
@@ -38,6 +41,24 @@ public class ModelMesh implements IMapSerializable
 
                 this.vertices.add(new Vector3f(vertices.getFloat(indexV), vertices.getFloat(indexV + 1), vertices.getFloat(indexV + 2)).add(this.origin));
                 this.uvs.add(new Vector2f(uvs.getFloat(indexU), uvs.getFloat(indexU + 1)));
+            }
+
+            for (int i = 0, c = this.vertices.size() / 3; i < c; i++)
+            {
+                Vector3f p1 = this.vertices.get(i * 3);
+                Vector3f p2 = this.vertices.get(i * 3 + 1);
+                Vector3f p3 = this.vertices.get(i * 3 + 2);
+                Vector3f normal = new Vector3f();
+
+                a.set(p2).sub(p1);
+                b.set(p3).sub(p1);
+
+                a.cross(b, normal);
+                normal.normalize();
+
+                this.normals.add(normal);
+                this.normals.add(normal);
+                this.normals.add(normal);
             }
         }
     }
