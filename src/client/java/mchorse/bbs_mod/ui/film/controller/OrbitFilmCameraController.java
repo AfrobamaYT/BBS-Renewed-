@@ -76,7 +76,7 @@ public class OrbitFilmCameraController implements ICameraController
     {
         if (this.center)
         {
-            this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x).mul(this.distance));
+            this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x, false).mul(this.distance));
         }
 
         this.orbiting = false;
@@ -164,19 +164,19 @@ public class OrbitFilmCameraController implements ICameraController
         return (Window.isCtrlPressed() ? this.high : (Window.isAltPressed() ? this.low : this.normal)) * (float) this.controller.panel.dashboard.orbit.speed.getValue();
     }
 
-    protected Vector3f rotateVector(float x, float y, float z)
+    protected Vector3f rotateVector(float x, float y, float z, float yaw, float pitch)
     {
-        return this.rotateVector(x, y, z, MathUtils.PI - this.rotation.y, this.rotation.x);
+        return this.rotateVector(x, y, z, yaw, pitch, BBSSettings.editorHorizontalFlight.get());
     }
 
-    protected Vector3f rotateVector(float x, float y, float z, float yaw, float pitch)
+    protected Vector3f rotateVector(float x, float y, float z, float yaw, float pitch, boolean horizontal)
     {
         Matrix3f rotation = new Matrix3f();
         Vector3f rotate = new Vector3f(x, y, z);
 
         rotation.rotateY(yaw);
 
-        if (!BBSSettings.editorHorizontalFlight.get())
+        if (!horizontal)
         {
             rotation.rotateX(pitch);
         }
@@ -198,7 +198,7 @@ public class OrbitFilmCameraController implements ICameraController
 
             if (this.center)
             {
-                offset = this.rotateVector(0F, 0F, 1F, this.rotation.y + renderYaw, this.rotation.x).mul(this.distance);
+                offset = this.rotateVector(0F, 0F, 1F, this.rotation.y + renderYaw, this.rotation.x, false).mul(this.distance);
             }
 
             Form form = entity.getForm();
