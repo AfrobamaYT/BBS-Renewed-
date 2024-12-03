@@ -168,6 +168,7 @@
     "bbs.ui.camera.clips.bbs:subtitle": "Subtitle",
     "bbs.ui.camera.clips.bbs:swipe": "Swipe arm",
     "bbs.ui.camera.clips.bbs:translate": "Translate",
+    "bbs.ui.camera.clips.bbs:tracker": "Tracker",
     "bbs.ui.camera.clips.bbs:use_block_item": "Use item on block",
     "bbs.ui.camera.clips.bbs:use_item": "Use item",
     "bbs.ui.camera.clips.bbs:voice_line": "Voice line",

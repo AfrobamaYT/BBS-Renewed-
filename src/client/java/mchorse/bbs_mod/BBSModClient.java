@@ -314,8 +314,8 @@ public class BBSModClient implements ClientModInitializer
 
         /* Replace audio clip with client version that plays audio */
         BBSMod.getFactoryCameraClips()
-                .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825))
-                .register(Link.bbs("tracker"), TrackerClientClip.class, new ClipFactoryData(Icons.VISIBLE, 0xffc825));
+            .register(Link.bbs("audio"), AudioClientClip.class, new ClipFactoryData(Icons.SOUND, 0xffc825))
+            .register(Link.bbs("tracker"), TrackerClientClip.class, new ClipFactoryData(Icons.USER, 0x4cedfc));
 
         /* Replace form trigger action clip with client version that plays animation */
         BBSMod.getFactoryActionClips()
