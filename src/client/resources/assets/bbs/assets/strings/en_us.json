@@ -207,6 +207,7 @@
     "bbs.ui.camera.flight.left": "Move left",
     "bbs.ui.camera.flight.right": "Move right",
     "bbs.ui.camera.flight.up": "Move upward",
+    "bbs.ui.camera.flight.orbit": "Orbit hold",
     "bbs.ui.camera.panels.additive": "Additive",
     "bbs.ui.camera.panels.angle": "Angle",
     "bbs.ui.camera.panels.at_block": "Look at block",

@@ -995,6 +995,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     @Override
     public boolean handleKeyPressed(UIContext context)
     {
-        return this.isFlying() && this.controller.orbit.keyPressed(context);
+        return this.preview.area.isInside(context) && this.controller.orbit.keyPressed(context);
     }
 }

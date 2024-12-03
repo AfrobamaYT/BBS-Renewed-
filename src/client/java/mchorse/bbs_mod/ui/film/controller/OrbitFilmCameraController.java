@@ -25,6 +25,7 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,19 +57,18 @@ public class OrbitFilmCameraController implements ICameraController
 
     public void start(UIContext context)
     {
-        this.center = context.mouseButton != 0;
-
-        if (context.mouseButton == 0)
+        if (context.mouseButton != 2)
         {
-            this.orbiting = true;
-            this.last.set(context.mouseX, context.mouseY);
+            return;
         }
-        else if (context.mouseButton == 2)
-        {
-            this.orbiting = true;
-            this.distance = this.position.distance(new Vector3f());
 
-            this.last.set(context.mouseX, context.mouseY);
+        this.center = Window.isKeyPressed(GLFW.GLFW_KEY_Z);
+        this.orbiting = true;
+        this.last.set(context.mouseX, context.mouseY);
+
+        if (this.center)
+        {
+            this.distance = this.position.distance(new Vector3f());
         }
     }
 
