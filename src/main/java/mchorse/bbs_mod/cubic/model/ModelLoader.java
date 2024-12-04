@@ -32,7 +32,14 @@ public class ModelLoader implements Runnable
         {
             String model = this.queue.poll();
 
-            this.manager.loadModel(model);
+            try
+            {
+                this.manager.loadModel(model);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         }
 
         this.thread = null;

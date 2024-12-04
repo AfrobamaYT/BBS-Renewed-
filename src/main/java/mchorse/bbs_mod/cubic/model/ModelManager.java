@@ -97,7 +97,7 @@ public class ModelManager implements IWatchDogListener
     {
         CubicModel model = null;
         Link modelLink = Link.assets(MODELS_PREFIX + id);
-        Collection<Link> links = this.provider.getLinksFromPath(modelLink, false);
+        Collection<Link> links = this.provider.getLinksFromPath(modelLink, true);
         MapType config = this.loadConfig(modelLink);
 
         for (IModelLoader loader : this.loaders)

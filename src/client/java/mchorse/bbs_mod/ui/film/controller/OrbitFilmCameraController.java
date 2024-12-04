@@ -25,7 +25,6 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class OrbitFilmCameraController implements ICameraController
             return;
         }
 
-        this.center = Window.isKeyPressed(GLFW.GLFW_KEY_Z);
+        this.center = Window.isKeyPressed(Keys.FLIGHT_ORBIT.getMainKey());
         this.orbiting = true;
         this.last.set(context.mouseX, context.mouseY);
 

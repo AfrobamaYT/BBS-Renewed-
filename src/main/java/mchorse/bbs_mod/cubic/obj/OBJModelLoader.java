@@ -61,7 +61,7 @@ public class OBJModelLoader implements IModelLoader
 
         for (Link link : modelsOBJ)
         {
-            if (link.path.contains("/shapes/"))
+            if (!link.path.contains("/shapes/"))
             {
                 continue;
             }
@@ -118,25 +118,30 @@ public class OBJModelLoader implements IModelLoader
                     group.meshes.add(modelMesh);
                 }
 
-                for (Map.Entry<String, List<MeshOBJ>> shapeEntry : value.shapes.entrySet())
+                Map<String, List<MeshOBJ>> shapes = value.shapes;
+
+                if (shapes != null)
                 {
-                    int h = 0;
-
-                    for (MeshOBJ mesh : shapeEntry.getValue())
+                    for (Map.Entry<String, List<MeshOBJ>> shapeEntry : shapes.entrySet())
                     {
-                        ModelMesh modelMesh = CollectionUtils.getSafe(group.meshes, h);
-                        ModelData data = new ModelData();
+                        int h = 0;
 
-                        for (int i = 0, c = mesh.triangles; i < c; i++)
+                        for (MeshOBJ mesh : shapeEntry.getValue())
                         {
-                            data.vertices.add(new Vector3f(mesh.posData[i * 3] * 16F, mesh.posData[i * 3 + 1] * 16F, mesh.posData[i * 3 + 2] * 16F));
-                            data.normals.add(new Vector3f(mesh.normData[i * 3], mesh.normData[i * 3 + 1], mesh.normData[i * 3 + 2]));
-                            data.uvs.add(new Vector2f(mesh.texData[i * 2], mesh.texData[i * 2 + 1]));
+                            ModelMesh modelMesh = CollectionUtils.getSafe(group.meshes, h);
+                            ModelData data = new ModelData();
+
+                            for (int i = 0, c = mesh.triangles; i < c; i++)
+                            {
+                                data.vertices.add(new Vector3f(mesh.posData[i * 3] * 16F, mesh.posData[i * 3 + 1] * 16F, mesh.posData[i * 3 + 2] * 16F));
+                                data.normals.add(new Vector3f(mesh.normData[i * 3], mesh.normData[i * 3 + 1], mesh.normData[i * 3 + 2]));
+                                data.uvs.add(new Vector2f(mesh.texData[i * 2], mesh.texData[i * 2 + 1]));
+                            }
+
+                            modelMesh.data.put(shapeEntry.getKey(), data);
+
+                            h += 1;
                         }
-
-                        modelMesh.data.put(shapeEntry.getKey(), data);
-
-                        h += 1;
                     }
                 }
 

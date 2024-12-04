@@ -2,10 +2,12 @@ package mchorse.bbs_mod.cubic.render;
 
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
+import mchorse.bbs_mod.cubic.data.model.ModelData;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
+import mchorse.bbs_mod.obj.ShapeKey;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.BufferBuilder;
@@ -17,8 +19,23 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CubicCubeRenderer implements ICubicRenderer
 {
+    private final static Vector3f v1 = new Vector3f();
+    private final static Vector3f v2 = new Vector3f();
+    private final static Vector3f v3 = new Vector3f();
+
+    private final static Vector3f n1 = new Vector3f();
+    private final static Vector3f n2 = new Vector3f();
+    private final static Vector3f n3 = new Vector3f();
+
+    private final static Vector2f u1 = new Vector2f();
+    private final static Vector2f u2 = new Vector2f();
+    private final static Vector2f u3 = new Vector2f();
+
     private static Matrix4f modelM = new Matrix4f();
     private static Matrix3f normalM = new Matrix3f();
 
@@ -144,34 +161,62 @@ public class CubicCubeRenderer implements ICubicRenderer
         rotate(stack, mesh.rotate);
         moveBackFromPivot(stack, mesh.origin);
 
+        List<ShapeKey> keys = new ArrayList<>();
+        ShapeKey key = new ShapeKey();
+
+        keys.add(key);
+
+        key.name = "cool";
+        key.value = 1F;
+
         for (int i = 0, c = mesh.baseData.vertices.size() / 3; i < c; i++)
         {
-            Vector3f p1 = mesh.baseData.vertices.get(i * 3);
-            Vector3f p2 = mesh.baseData.vertices.get(i * 3 + 1);
-            Vector3f p3 = mesh.baseData.vertices.get(i * 3 + 2);
+            v1.set(mesh.baseData.vertices.get(i * 3));
+            v2.set(mesh.baseData.vertices.get(i * 3 + 1));
+            v3.set(mesh.baseData.vertices.get(i * 3 + 2));
 
-            Vector2f uv1 = mesh.baseData.uvs.get(i * 3);
-            Vector2f uv2 = mesh.baseData.uvs.get(i * 3 + 1);
-            Vector2f uv3 = mesh.baseData.uvs.get(i * 3 + 2);
+            n1.set(mesh.baseData.normals.get(i * 3));
+            n2.set(mesh.baseData.normals.get(i * 3 + 1));
+            n3.set(mesh.baseData.normals.get(i * 3 + 2));
 
-            Vector3f n1 = mesh.baseData.normals.get(i * 3);
-            Vector3f n2 = mesh.baseData.normals.get(i * 3 + 1);
-            Vector3f n3 = mesh.baseData.normals.get(i * 3 + 2);
+            u1.set(mesh.baseData.uvs.get(i * 3));
+            u2.set(mesh.baseData.uvs.get(i * 3 + 1));
+            u3.set(mesh.baseData.uvs.get(i * 3 + 2));
+
+            for (ShapeKey shapeKey : keys)
+            {
+                ModelData data = mesh.data.get(shapeKey.name);
+
+                if (data != null)
+                {
+                    v1.lerp(data.vertices.get(i * 3), shapeKey.value);
+                    v2.lerp(data.vertices.get(i * 3 + 1), shapeKey.value);
+                    v3.lerp(data.vertices.get(i * 3 + 2), shapeKey.value);
+
+                    n1.lerp(data.normals.get(i * 3), shapeKey.value);
+                    n2.lerp(data.normals.get(i * 3 + 1), shapeKey.value);
+                    n3.lerp(data.normals.get(i * 3 + 2), shapeKey.value);
+
+                    u1.lerp(data.uvs.get(i * 3), shapeKey.value);
+                    u2.lerp(data.uvs.get(i * 3 + 1), shapeKey.value);
+                    u3.lerp(data.uvs.get(i * 3 + 2), shapeKey.value);
+                }
+            }
 
             /* Write vertices */
             this.normal.set(n1.x, n1.y, n1.z);
             stack.peek().getNormalMatrix().transform(this.normal);
-            this.modelVertex.set(p1, uv1, model);
+            this.modelVertex.set(v1, u1, model);
             this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
 
             this.normal.set(n2.x, n2.y, n2.z);
             stack.peek().getNormalMatrix().transform(this.normal);
-            this.modelVertex.set(p2, uv2, model);
+            this.modelVertex.set(v2, u2, model);
             this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
 
             this.normal.set(n3.x, n3.y, n3.z);
             stack.peek().getNormalMatrix().transform(this.normal);
-            this.modelVertex.set(p3, uv3, model);
+            this.modelVertex.set(v3, u3, model);
             this.writeVertex(builder, stack, group, this.modelVertex, this.normal);
         }
 
