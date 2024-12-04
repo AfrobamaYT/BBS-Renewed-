@@ -277,7 +277,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
-        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking);
+        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get());
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 

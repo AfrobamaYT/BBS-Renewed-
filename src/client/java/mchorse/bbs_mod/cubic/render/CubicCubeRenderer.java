@@ -7,7 +7,8 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
-import mchorse.bbs_mod.obj.ShapeKey;
+import mchorse.bbs_mod.obj.shapes.ShapeKey;
+import mchorse.bbs_mod.obj.shapes.ShapeKeys;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.BufferBuilder;
@@ -18,9 +19,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class CubicCubeRenderer implements ICubicRenderer
 {
@@ -52,12 +50,14 @@ public class CubicCubeRenderer implements ICubicRenderer
 
     private ModelVertex modelVertex = new ModelVertex();
     private boolean picking;
+    private ShapeKeys shapeKeys;
 
-    public CubicCubeRenderer(int light, int overlay, boolean picking)
+    public CubicCubeRenderer(int light, int overlay, boolean picking, ShapeKeys shapeKeys)
     {
         this.light = light;
         this.overlay = overlay;
         this.picking = picking;
+        this.shapeKeys = shapeKeys;
     }
 
     public static void moveToPivot(MatrixStack stack, Vector3f pivot)
@@ -161,45 +161,57 @@ public class CubicCubeRenderer implements ICubicRenderer
         rotate(stack, mesh.rotate);
         moveBackFromPivot(stack, mesh.origin);
 
-        List<ShapeKey> keys = new ArrayList<>();
-        ShapeKey key = new ShapeKey();
+        ModelData baseData = mesh.baseData;
 
-        keys.add(key);
-
-        key.name = "cool";
-        key.value = 1F;
-
-        for (int i = 0, c = mesh.baseData.vertices.size() / 3; i < c; i++)
+        for (int i = 0, c = baseData.vertices.size() / 3; i < c; i++)
         {
-            v1.set(mesh.baseData.vertices.get(i * 3));
-            v2.set(mesh.baseData.vertices.get(i * 3 + 1));
-            v3.set(mesh.baseData.vertices.get(i * 3 + 2));
+            v1.set(baseData.vertices.get(i * 3));
+            v2.set(baseData.vertices.get(i * 3 + 1));
+            v3.set(baseData.vertices.get(i * 3 + 2));
 
-            n1.set(mesh.baseData.normals.get(i * 3));
-            n2.set(mesh.baseData.normals.get(i * 3 + 1));
-            n3.set(mesh.baseData.normals.get(i * 3 + 2));
+            n1.set(baseData.normals.get(i * 3));
+            n2.set(baseData.normals.get(i * 3 + 1));
+            n3.set(baseData.normals.get(i * 3 + 2));
 
-            u1.set(mesh.baseData.uvs.get(i * 3));
-            u2.set(mesh.baseData.uvs.get(i * 3 + 1));
-            u3.set(mesh.baseData.uvs.get(i * 3 + 2));
+            u1.set(baseData.uvs.get(i * 3));
+            u2.set(baseData.uvs.get(i * 3 + 1));
+            u3.set(baseData.uvs.get(i * 3 + 2));
 
-            for (ShapeKey shapeKey : keys)
+            for (ShapeKey shapeKey : this.shapeKeys.shapeKeys)
             {
                 ModelData data = mesh.data.get(shapeKey.name);
 
                 if (data != null)
                 {
-                    v1.lerp(data.vertices.get(i * 3), shapeKey.value);
-                    v2.lerp(data.vertices.get(i * 3 + 1), shapeKey.value);
-                    v3.lerp(data.vertices.get(i * 3 + 2), shapeKey.value);
+                    if (shapeKey.relative)
+                    {
+                        /* final = temporary + lerp(initial, current, x) - initial */
+                        this.relativeShift(v1, baseData.vertices.get(i * 3), data.vertices.get(i * 3), shapeKey.value);
+                        this.relativeShift(v2, baseData.vertices.get(i * 3 + 1), data.vertices.get(i * 3 + 1), shapeKey.value);
+                        this.relativeShift(v3, baseData.vertices.get(i * 3 + 2), data.vertices.get(i * 3 + 2), shapeKey.value);
 
-                    n1.lerp(data.normals.get(i * 3), shapeKey.value);
-                    n2.lerp(data.normals.get(i * 3 + 1), shapeKey.value);
-                    n3.lerp(data.normals.get(i * 3 + 2), shapeKey.value);
+                        this.relativeShift(n1, baseData.normals.get(i * 3), data.normals.get(i * 3), shapeKey.value);
+                        this.relativeShift(n2, baseData.normals.get(i * 3 + 1), data.normals.get(i * 3 + 1), shapeKey.value);
+                        this.relativeShift(n3, baseData.normals.get(i * 3 + 2), data.normals.get(i * 3 + 2), shapeKey.value);
 
-                    u1.lerp(data.uvs.get(i * 3), shapeKey.value);
-                    u2.lerp(data.uvs.get(i * 3 + 1), shapeKey.value);
-                    u3.lerp(data.uvs.get(i * 3 + 2), shapeKey.value);
+                        this.relativeShift(u1, baseData.uvs.get(i * 3), data.uvs.get(i * 3), shapeKey.value);
+                        this.relativeShift(u2, baseData.uvs.get(i * 3 + 1), data.uvs.get(i * 3 + 1), shapeKey.value);
+                        this.relativeShift(u3, baseData.uvs.get(i * 3 + 2), data.uvs.get(i * 3 + 2), shapeKey.value);
+                    }
+                    else
+                    {
+                        v1.lerp(data.vertices.get(i * 3), shapeKey.value);
+                        v2.lerp(data.vertices.get(i * 3 + 1), shapeKey.value);
+                        v3.lerp(data.vertices.get(i * 3 + 2), shapeKey.value);
+
+                        n1.lerp(data.normals.get(i * 3), shapeKey.value);
+                        n2.lerp(data.normals.get(i * 3 + 1), shapeKey.value);
+                        n3.lerp(data.normals.get(i * 3 + 2), shapeKey.value);
+
+                        u1.lerp(data.uvs.get(i * 3), shapeKey.value);
+                        u2.lerp(data.uvs.get(i * 3 + 1), shapeKey.value);
+                        u3.lerp(data.uvs.get(i * 3 + 2), shapeKey.value);
+                    }
                 }
             }
 
@@ -221,6 +233,19 @@ public class CubicCubeRenderer implements ICubicRenderer
         }
 
         stack.pop();
+    }
+
+    private void relativeShift(Vector3f temp, Vector3f initial, Vector3f current, float x)
+    {
+        temp.x = temp.x + Lerps.lerp(initial.x, current.x, x) - initial.x;
+        temp.y = temp.y + Lerps.lerp(initial.y, current.y, x) - initial.y;
+        temp.z = temp.z + Lerps.lerp(initial.z, current.z, x) - initial.z;
+    }
+
+    private void relativeShift(Vector2f temp, Vector2f initial, Vector2f current, float x)
+    {
+        temp.x = temp.x + Lerps.lerp(initial.x, current.x, x) - initial.x;
+        temp.y = temp.y + Lerps.lerp(initial.y, current.y, x) - initial.y;
     }
 
     protected void writeVertex(BufferBuilder builder, MatrixStack stack, ModelGroup group, ModelVertex vertex, Vector3f normal)

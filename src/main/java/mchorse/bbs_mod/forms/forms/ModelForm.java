@@ -6,8 +6,10 @@ import mchorse.bbs_mod.forms.properties.ActionsConfigProperty;
 import mchorse.bbs_mod.forms.properties.ColorProperty;
 import mchorse.bbs_mod.forms.properties.LinkProperty;
 import mchorse.bbs_mod.forms.properties.PoseProperty;
+import mchorse.bbs_mod.forms.properties.ShapeKeysProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.triggers.StateTriggers;
+import mchorse.bbs_mod.obj.shapes.ShapeKeys;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
 
@@ -18,6 +20,7 @@ public class ModelForm extends Form
     public final PoseProperty pose = new PoseProperty(this, "pose", new Pose());
     public final ActionsConfigProperty actions = new ActionsConfigProperty(this, "actions", new ActionsConfig());
     public final ColorProperty color = new ColorProperty(this, "color", Color.white());
+    public final ShapeKeysProperty shapeKeys = new ShapeKeysProperty(this, "shape_keys", new ShapeKeys());
     public final StateTriggers triggers = new StateTriggers();
 
     public ModelForm()
@@ -29,6 +32,7 @@ public class ModelForm extends Form
         this.register(this.pose);
         this.register(this.actions);
         this.register(this.color);
+        this.register(this.shapeKeys);
     }
 
     @Override

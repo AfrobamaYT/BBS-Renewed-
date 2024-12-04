@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,7 @@ public class Model implements IMapSerializable
 
     private Map<String, ModelGroup> namedGroups = new HashMap<>();
     private List<ModelGroup> orderedGroups = new ArrayList<>();
+    private Set<String> shapeKeys = new HashSet<>();
     private int nextIndex;
 
     public Model(MolangParser parser)
@@ -36,11 +38,24 @@ public class Model implements IMapSerializable
         this.parser = parser;
     }
 
+    public Set<String> getShapeKeys()
+    {
+        return shapeKeys;
+    }
+
     public void initialize()
     {
         this.fillGroups(this.topGroups, null);
 
         this.orderedGroups = Collections.unmodifiableList(this.orderedGroups);
+
+        for (ModelGroup orderedGroup : this.orderedGroups)
+        {
+            for (ModelMesh mesh : orderedGroup.meshes)
+            {
+                this.shapeKeys.addAll(mesh.data.keySet());
+            }
+        }
     }
 
     private void fillGroups(List<ModelGroup> groups, ModelGroup parent)

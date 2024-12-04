@@ -21,6 +21,7 @@ public class KeyframeFactories
     public static final BlockStateKeyframeFactory BLOCK_STATE = new BlockStateKeyframeFactory();
     public static final ItemStackKeyframeFactory ITEM_STACK = new ItemStackKeyframeFactory();
     public static final ActionsConfigKeyframeFactory ACTIONS_CONFIG = new ActionsConfigKeyframeFactory();
+    public static final ShapeKeysKeyframeFactory SHAPE_KEYS = new ShapeKeysKeyframeFactory();
 
     public static boolean isNumeric(IKeyframeFactory factory)
     {
@@ -45,5 +46,6 @@ public class KeyframeFactories
         FACTORIES.put("block_state", BLOCK_STATE);
         FACTORIES.put("item_stack", ITEM_STACK);
         FACTORIES.put("actions_config", ACTIONS_CONFIG);
+        FACTORIES.put("shape_keys", SHAPE_KEYS);
     }
 }

@@ -111,6 +111,7 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("transform", Colors.GREEN);
         COLORS.put("color", Colors.INACTIVE);
         COLORS.put("lighting", Colors.YELLOW);
+        COLORS.put("shape_keys", Colors.PINK);
         COLORS.put("actions", Colors.MAGENTA);
 
         COLORS.put("item_main_hand", Colors.ORANGE);
@@ -134,6 +135,7 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("color", Icons.BUCKET);
         ICONS.put("lighting", Icons.LIGHT);
         ICONS.put("actions", Icons.CONVERT);
+        ICONS.put("shape_keys", Icons.HEART);
         ICONS.put("text", Icons.FONT);
 
         ICONS.put("stick_lx", Icons.LEFT_STICK);

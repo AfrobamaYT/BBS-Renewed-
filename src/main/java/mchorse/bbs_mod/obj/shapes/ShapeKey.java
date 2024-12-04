@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.obj;
+package mchorse.bbs_mod.obj.shapes;
 
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;

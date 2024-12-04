@@ -52,4 +52,17 @@ public class CollectionUtils
 
         return null;
     }
+
+    public static <T> int getIndex(List<T> list, T value)
+    {
+        for (int i = 0; i < list.size(); i++)
+        {
+            if (list.get(i) == value)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
+import mchorse.bbs_mod.ui.utils.shapes.UIShapeKeys;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Color;
 
@@ -18,6 +19,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
 {
     public UIColor color;
     public UIPoseEditor poseEditor;
+    public UIShapeKeys shapeKeys;
 
     public UIButton pick;
 
@@ -28,6 +30,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         this.color = new UIColor((c) -> this.form.color.set(new Color().set(c))).withAlpha();
         this.color.direction(Direction.LEFT);
         this.poseEditor = new UIPoseEditor();
+        this.shapeKeys = new UIShapeKeys();
         this.pick = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_TEXTURE, (b) ->
         {
             Link link = this.form.texture.get();
@@ -59,6 +62,16 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         this.poseEditor.setPose(form.pose.get(), model == null ? this.form.model.get() : model.poseGroup);
         this.poseEditor.fillGroups(FormUtilsClient.getBones(this.form));
         this.color.setColor(form.color.get().getARGBColor());
+
+        this.shapeKeys.removeFromParent();
+
+        if (model != null && !model.model.getShapeKeys().isEmpty())
+        {
+            this.options.add(this.shapeKeys);
+            this.shapeKeys.setShapeKeys(model.model.getShapeKeys(), this.form.shapeKeys.get());
+        }
+
+        this.options.resize();
     }
 
     @Override
