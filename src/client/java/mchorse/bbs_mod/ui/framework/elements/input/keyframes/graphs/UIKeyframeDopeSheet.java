@@ -231,11 +231,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             int y = (int) (this.sheets.indexOf(sheet) * this.trackHeight) + TOP_MARGIN;
 
             this.keyframes.getXAxis().shiftIntoMiddle(x);
-
-            if (y < this.keyframes.area.y || y > this.keyframes.area.y)
-            {
-                this.dopeSheet.scrollIntoView(y, (int) (this.trackHeight * 2), (int) (this.trackHeight * 2));
-            }
+            this.dopeSheet.scrollTo((int) (y - (this.dopeSheet.area.h - this.trackHeight) / 2));
         }
     }
 
