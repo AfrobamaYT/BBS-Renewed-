@@ -156,9 +156,9 @@ public class VoxBuilder
 
         Vector3f vertex = this.process(x, y, z, vox);
 
-        mesh.vertices.add(new Vector3f(vertex));
-        mesh.normals.add(normal);
-        mesh.uvs.add(new Vector2f(u, v));
+        mesh.baseData.vertices.add(new Vector3f(vertex));
+        mesh.baseData.normals.add(normal);
+        mesh.baseData.uvs.add(new Vector2f(u, v));
     }
 
     private Vector3f process(int x, int y, int z, Vox vox)

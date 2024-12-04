@@ -7,22 +7,21 @@ import mchorse.bbs_mod.data.types.MapType;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ModelMesh implements IMapSerializable
 {
     public Vector3f origin = new Vector3f();
     public Vector3f rotate = new Vector3f();
-    public List<Vector3f> vertices = new ArrayList<>();
-    public List<Vector3f> normals = new ArrayList<>();
-    public List<Vector2f> uvs = new ArrayList<>();
+    public ModelData baseData = new ModelData();
+    public Map<String, ModelData> data = new HashMap<>();
 
     @Override
     public void fromData(MapType data)
     {
-        this.vertices.clear();
-        this.uvs.clear();
+        this.baseData.clear();
+        this.data.clear();
 
         this.origin.set(DataStorageUtils.vector3fFromData(data.getList("origin"), this.origin));
         this.rotate.set(DataStorageUtils.vector3fFromData(data.getList("rotate"), this.rotate));
@@ -39,15 +38,15 @@ public class ModelMesh implements IMapSerializable
                 int indexV = i * 3;
                 int indexU = i * 2;
 
-                this.vertices.add(new Vector3f(vertices.getFloat(indexV), vertices.getFloat(indexV + 1), vertices.getFloat(indexV + 2)).add(this.origin));
-                this.uvs.add(new Vector2f(uvs.getFloat(indexU), uvs.getFloat(indexU + 1)));
+                this.baseData.vertices.add(new Vector3f(vertices.getFloat(indexV), vertices.getFloat(indexV + 1), vertices.getFloat(indexV + 2)).add(this.origin));
+                this.baseData.uvs.add(new Vector2f(uvs.getFloat(indexU), uvs.getFloat(indexU + 1)));
             }
 
-            for (int i = 0, c = this.vertices.size() / 3; i < c; i++)
+            for (int i = 0, c = this.baseData.vertices.size() / 3; i < c; i++)
             {
-                Vector3f p1 = this.vertices.get(i * 3);
-                Vector3f p2 = this.vertices.get(i * 3 + 1);
-                Vector3f p3 = this.vertices.get(i * 3 + 2);
+                Vector3f p1 = this.baseData.vertices.get(i * 3);
+                Vector3f p2 = this.baseData.vertices.get(i * 3 + 1);
+                Vector3f p3 = this.baseData.vertices.get(i * 3 + 2);
                 Vector3f normal = new Vector3f();
 
                 a.set(p2).sub(p1);
@@ -56,9 +55,9 @@ public class ModelMesh implements IMapSerializable
                 a.cross(b, normal);
                 normal.normalize();
 
-                this.normals.add(normal);
-                this.normals.add(normal);
-                this.normals.add(normal);
+                this.baseData.normals.add(normal);
+                this.baseData.normals.add(normal);
+                this.baseData.normals.add(normal);
             }
         }
     }
@@ -69,14 +68,14 @@ public class ModelMesh implements IMapSerializable
         ListType vertices = new ListType();
         ListType uvs = new ListType();
 
-        for (Vector3f v : this.vertices)
+        for (Vector3f v : this.baseData.vertices)
         {
             vertices.addFloat(v.x);
             vertices.addFloat(v.y);
             vertices.addFloat(v.z);
         }
 
-        for (Vector2f v : this.uvs)
+        for (Vector2f v : this.baseData.uvs)
         {
             uvs.addFloat(v.x);
             uvs.addFloat(v.y);

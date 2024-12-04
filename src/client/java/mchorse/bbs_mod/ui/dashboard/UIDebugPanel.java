@@ -1,13 +1,19 @@
 package mchorse.bbs_mod.ui.dashboard;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
+import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.resources.Pixels;
+
+import java.io.File;
 
 public class UIDebugPanel extends UIDashboardPanel
 {
@@ -93,6 +99,31 @@ public class UIDebugPanel extends UIDashboardPanel
             {
                 e.printStackTrace();
             } */
+
+            try
+            {
+                Pixels newP = Pixels.fromSize(32, 512);
+
+                for (int i = 0; i < 16; i++)
+                {
+                    Link link = Link.assets("textures/abc/sonic_boom_" + i + ".png");
+                    Pixels pixels = Pixels.fromPNGStream(BBSMod.getProvider().getAsset(link));
+
+                    newP.draw(pixels, 0, i * 32);
+
+                    pixels.delete();
+                }
+
+                newP.rewindBuffer();
+
+                File file = BBSMod.getProvider().getFile(Link.assets("textures/sonic_boom.png"));
+
+                PNGEncoder.writeToFile(newP, file);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         });
 
         this.button.relative(this).xy(10, 10).w(80);

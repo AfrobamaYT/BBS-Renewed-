@@ -150,7 +150,7 @@ public class ModelManager implements IWatchDogListener
             return false;
         }
 
-        if (link.path.contains("/animations/"))
+        if (link.path.contains("/animations/") || link.path.contains("/shapes/"))
         {
             return false;
         }

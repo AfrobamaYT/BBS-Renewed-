@@ -144,19 +144,19 @@ public class CubicCubeRenderer implements ICubicRenderer
         rotate(stack, mesh.rotate);
         moveBackFromPivot(stack, mesh.origin);
 
-        for (int i = 0, c = mesh.vertices.size() / 3; i < c; i++)
+        for (int i = 0, c = mesh.baseData.vertices.size() / 3; i < c; i++)
         {
-            Vector3f p1 = mesh.vertices.get(i * 3);
-            Vector3f p2 = mesh.vertices.get(i * 3 + 1);
-            Vector3f p3 = mesh.vertices.get(i * 3 + 2);
+            Vector3f p1 = mesh.baseData.vertices.get(i * 3);
+            Vector3f p2 = mesh.baseData.vertices.get(i * 3 + 1);
+            Vector3f p3 = mesh.baseData.vertices.get(i * 3 + 2);
 
-            Vector2f uv1 = mesh.uvs.get(i * 3);
-            Vector2f uv2 = mesh.uvs.get(i * 3 + 1);
-            Vector2f uv3 = mesh.uvs.get(i * 3 + 2);
+            Vector2f uv1 = mesh.baseData.uvs.get(i * 3);
+            Vector2f uv2 = mesh.baseData.uvs.get(i * 3 + 1);
+            Vector2f uv3 = mesh.baseData.uvs.get(i * 3 + 2);
 
-            Vector3f n1 = mesh.normals.get(i * 3);
-            Vector3f n2 = mesh.normals.get(i * 3 + 1);
-            Vector3f n3 = mesh.normals.get(i * 3 + 2);
+            Vector3f n1 = mesh.baseData.normals.get(i * 3);
+            Vector3f n2 = mesh.baseData.normals.get(i * 3 + 1);
+            Vector3f n3 = mesh.baseData.normals.get(i * 3 + 2);
 
             /* Write vertices */
             this.normal.set(n1.x, n1.y, n1.z);
