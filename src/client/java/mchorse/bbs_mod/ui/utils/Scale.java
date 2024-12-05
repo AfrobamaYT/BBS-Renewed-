@@ -53,6 +53,14 @@ public class Scale
         return this;
     }
 
+    public void copy(Scale scale)
+    {
+        this.shift = scale.shift;
+        this.zoom = scale.zoom;
+        this.mult = scale.mult;
+        this.anchor = scale.anchor;
+    }
+
     /* Convenience methods */
 
     public void set(double shift, double zoom)

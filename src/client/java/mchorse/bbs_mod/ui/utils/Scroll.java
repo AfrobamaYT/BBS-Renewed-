@@ -237,6 +237,13 @@ public class Scroll
         }
     }
 
+    public void copy(Scroll scroll)
+    {
+        this.scroll = scroll.scroll;
+        this.targetScroll = scroll.targetScroll;
+        this.scrollSize = scroll.scrollSize;
+    }
+
     /**
      * Get index of the cursor based on the {@link #scrollItemSize}.  
      */

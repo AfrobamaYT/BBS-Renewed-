@@ -42,6 +42,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
@@ -336,9 +337,13 @@ public class UIReplaysEditor extends UIElement
 
     public void updateChannelsList()
     {
+        UIKeyframes lastEditor = null;
+
         if (this.keyframeEditor != null)
         {
             this.keyframeEditor.removeFromParent();
+
+            lastEditor = this.keyframeEditor.view;
         }
 
         if (this.replay == null)
@@ -377,6 +382,12 @@ public class UIReplaysEditor extends UIElement
         {
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute()).target(this.filmPanel.editArea);
             this.keyframeEditor.full(this);
+
+            /* Reset */
+            if (lastEditor != null)
+            {
+                this.keyframeEditor.view.copyViewport(lastEditor);
+            }
 
             this.keyframeEditor.view.backgroundRenderer((context) ->
             {
@@ -427,7 +438,7 @@ public class UIReplaysEditor extends UIElement
 
         this.resize();
 
-        if (this.keyframeEditor != null)
+        if (this.keyframeEditor != null && lastEditor == null)
         {
             this.keyframeEditor.view.resetView();
         }

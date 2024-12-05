@@ -992,6 +992,13 @@ public class UIKeyframes extends UIElement
         this.currentGraph.pickSelected();
     }
 
+    public void copyViewport(UIKeyframes lastEditor)
+    {
+        this.getDopeSheet().setTrackHeight(lastEditor.getDopeSheet().getTrackHeight());
+        this.getXAxis().copy(lastEditor.getXAxis());
+        this.getDopeSheet().getYAxis().copy(lastEditor.getDopeSheet().getYAxis());
+    }
+
     private static class PastedKeyframes
     {
         public IKeyframeFactory factory;

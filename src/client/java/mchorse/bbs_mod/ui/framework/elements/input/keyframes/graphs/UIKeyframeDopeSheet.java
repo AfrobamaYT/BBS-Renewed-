@@ -43,7 +43,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         this.setTrackHeight(16);
     }
 
-    private void setTrackHeight(double height)
+    public double getTrackHeight()
+    {
+        return this.trackHeight;
+    }
+
+    public void setTrackHeight(double height)
     {
         this.trackHeight = MathUtils.clamp(height, 8D, 100D);
         this.dopeSheet.scrollSpeed = (int) this.trackHeight * 2;
@@ -53,6 +58,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     /* Graphing */
+
+    public Scroll getYAxis()
+    {
+        return this.dopeSheet;
+    }
 
     public int getDopeSheetY()
     {
