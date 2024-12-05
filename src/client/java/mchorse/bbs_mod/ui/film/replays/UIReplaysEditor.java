@@ -412,10 +412,7 @@ public class UIReplaysEditor extends UIElement
 
                     if (sheet.channel.getFactory() == KeyframeFactories.POSE)
                     {
-                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () ->
-                        {
-                            this.coolFeature(modelForm, sheet);
-                        });
+                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.coolFeature(modelForm, sheet));
                     }
                 }
             });

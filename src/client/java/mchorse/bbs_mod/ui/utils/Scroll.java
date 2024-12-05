@@ -428,7 +428,11 @@ public class Scroll
      */
     public void drag(int x, int y)
     {
-        this.scroll = Lerps.lerp(this.scroll, this.targetScroll, 0.2F);
+        float delta = MinecraftClient.getInstance().getLastFrameDuration();
+
+        /* The higher the FPS, the smaller the lerp factor is,
+         * the lower the FPS, the bigger the factor is */
+        this.scroll = Lerps.lerp(this.scroll, this.targetScroll, Math.min(1F, delta / 2.5F));
 
         if (this.dragging)
         {
