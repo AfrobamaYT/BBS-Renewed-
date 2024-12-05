@@ -261,6 +261,12 @@ public class UIKeys
     public static final IKey FILM_REPLAY_SHADOW = L10n.lang("bbs.ui.film.replay.shadow");
     public static final IKey FILM_REPLAY_SHADOW_SIZE = L10n.lang("bbs.ui.film.replay.shadow_size");
     public static final IKey FILM_REPLAY_TITLE = L10n.lang("bbs.ui.film.replay.title");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_TITLE = L10n.lang("bbs.ui.film.replay.animation_to_pose.title");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_ONLY_KEYFRAMES = L10n.lang("bbs.ui.film.replay.animation_to_pose.only_keyframes");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_ONLY_KEYFRAMES_TOOLTIP = L10n.lang("bbs.ui.film.replay.animation_to_pose.only_keyframes-tooltip");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_LENGTH = L10n.lang("bbs.ui.film.replay.animation_to_pose.length");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_STEP = L10n.lang("bbs.ui.film.replay.animation_to_pose.step");
+    public static final IKey FILM_REPLAY_ANIMATION_TO_POSE_GENERATE = L10n.lang("bbs.ui.film.replay.animation_to_pose.generate");
     public static final IKey FILM_RESET_REPLAYS = L10n.lang("bbs.ui.film.reset_replays");
     public static final IKey FILM_SCREENSHOT = L10n.lang("bbs.ui.film.screenshot");
     public static final IKey FILM_SCREENSHOT_DESCRIPTION = L10n.lang("bbs.ui.film.screenshot-description");

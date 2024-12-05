@@ -178,6 +178,7 @@ public class CubicCubeRenderer implements ICubicRenderer
             u2.set(baseData.uvs.get(i * 3 + 1));
             u3.set(baseData.uvs.get(i * 3 + 2));
 
+            /* Apply shape keys */
             for (Map.Entry<String, Float> entry : this.shapeKeys.shapeKeys.entrySet())
             {
                 ModelData data = mesh.data.get(entry.getKey());

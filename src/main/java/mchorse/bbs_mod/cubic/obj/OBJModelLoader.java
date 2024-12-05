@@ -15,8 +15,6 @@ import mchorse.bbs_mod.obj.OBJParser;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.StringUtils;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -34,7 +32,7 @@ public class OBJModelLoader implements IModelLoader
         CubicModel newModel = new CubicModel(id, null, new Animations(models.parser), modelTexture);
         Map<String, MeshesOBJ> compile = new HashMap<>();
 
-        /* Load the base */
+        /* Load the base OBJ file */
         for (Link link : modelsOBJ)
         {
             String path = link.path.substring(model.path.length() + 1);
@@ -59,6 +57,7 @@ public class OBJModelLoader implements IModelLoader
             }
         }
 
+        /* Load shapes from shapes folder */
         for (Link link : modelsOBJ)
         {
             if (!link.path.contains("/shapes/"))
@@ -95,6 +94,7 @@ public class OBJModelLoader implements IModelLoader
             }
         }
 
+        /* Construct the model from compiled data */
         if (!compile.isEmpty())
         {
             Model modelModel = new Model(models.parser);
@@ -108,48 +108,15 @@ public class OBJModelLoader implements IModelLoader
                 {
                     ModelMesh modelMesh = new ModelMesh();
 
-                    for (int i = 0, c = mesh.triangles; i < c; i++)
-                    {
-                        modelMesh.baseData.vertices.add(new Vector3f(mesh.posData[i * 3] * 16F, mesh.posData[i * 3 + 1] * 16F, mesh.posData[i * 3 + 2] * 16F));
-                        modelMesh.baseData.normals.add(new Vector3f(mesh.normData[i * 3], mesh.normData[i * 3 + 1], mesh.normData[i * 3 + 2]));
-                        modelMesh.baseData.uvs.add(new Vector2f(mesh.texData[i * 2], mesh.texData[i * 2 + 1]));
-                    }
-
+                    modelMesh.baseData.fill(mesh);
                     group.meshes.add(modelMesh);
                 }
 
-                Map<String, List<MeshOBJ>> shapes = value.shapes;
-
-                if (shapes != null)
-                {
-                    for (Map.Entry<String, List<MeshOBJ>> shapeEntry : shapes.entrySet())
-                    {
-                        int h = 0;
-
-                        for (MeshOBJ mesh : shapeEntry.getValue())
-                        {
-                            ModelMesh modelMesh = CollectionUtils.getSafe(group.meshes, h);
-                            ModelData data = new ModelData();
-
-                            for (int i = 0, c = mesh.triangles; i < c; i++)
-                            {
-                                data.vertices.add(new Vector3f(mesh.posData[i * 3] * 16F, mesh.posData[i * 3 + 1] * 16F, mesh.posData[i * 3 + 2] * 16F));
-                                data.normals.add(new Vector3f(mesh.normData[i * 3], mesh.normData[i * 3 + 1], mesh.normData[i * 3 + 2]));
-                                data.uvs.add(new Vector2f(mesh.texData[i * 2], mesh.texData[i * 2 + 1]));
-                            }
-
-                            modelMesh.data.put(shapeEntry.getKey(), data);
-
-                            h += 1;
-                        }
-                    }
-                }
-
+                this.fillShapes(value.shapes, group);
                 modelModel.topGroups.add(group);
             }
 
             newModel.model = modelModel;
-
             modelModel.textureWidth = 1;
             modelModel.textureHeight = 1;
             modelModel.initialize();
@@ -163,5 +130,29 @@ public class OBJModelLoader implements IModelLoader
         newModel.applyConfig(config);
 
         return newModel;
+    }
+
+    private void fillShapes(Map<String, List<MeshOBJ>> shapes, ModelGroup group)
+    {
+        if (shapes == null)
+        {
+            return;
+        }
+
+        for (Map.Entry<String, List<MeshOBJ>> shapeEntry : shapes.entrySet())
+        {
+            int h = 0;
+
+            for (MeshOBJ mesh : shapeEntry.getValue())
+            {
+                ModelMesh modelMesh = CollectionUtils.getSafe(group.meshes, h);
+                ModelData data = new ModelData();
+
+                data.fill(mesh);
+                modelMesh.data.put(shapeEntry.getKey(), data);
+
+                h += 1;
+            }
+        }
     }
 }

@@ -40,9 +40,9 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
-import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
@@ -70,6 +70,7 @@ import net.minecraft.world.World;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -421,9 +422,9 @@ public class UIReplaysEditor extends UIElement
                     int mouseY = this.getContext().mouseY;
                     UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(mouseY);
 
-                    if (sheet.channel.getFactory() == KeyframeFactories.POSE)
+                    if (sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
                     {
-                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.coolFeature(modelForm, sheet));
+                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.animationToPoses(modelForm, sheet));
                     }
                 }
             });
@@ -444,55 +445,85 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    private void coolFeature(ModelForm modelForm, UIKeyframeSheet sheet)
+    private void animationToPoses(ModelForm modelForm, UIKeyframeSheet sheet)
     {
         CubicModel model = ModelFormRenderer.getModel(modelForm);
-        Animation animation = model.animations.get("animation.godzillaant.walk");
+
+        if (model != null)
+        {
+            UIOverlay.addOverlay(this.getContext(), new UIAnimationToPoseOverlayPanel(this, modelForm, sheet), 200, 197);
+        }
+    }
+
+    public void animationToPoseKeyframes(ModelForm modelForm, UIKeyframeSheet sheet, String animationKey, boolean onlyKeyframes, int length, int step)
+    {
+        CubicModel model = ModelFormRenderer.getModel(modelForm);
+        Animation animation = model.animations.get(animationKey);
 
         if (animation != null)
         {
             int current = this.filmPanel.getCursor();
             IEntity entity = this.filmPanel.getController().getCurrentEntity();
-            Set<Integer> integers = new HashSet<>();
 
-            for (AnimationPart value : animation.parts.values())
+            this.keyframeEditor.view.getDopeSheet().clearSelection();
+
+            if (onlyKeyframes)
             {
-                for (AnimationVector keyframe : value.position.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
-                for (AnimationVector keyframe : value.rotation.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
-                for (AnimationVector keyframe : value.scale.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
-            }
+                Set<Integer> integers = new HashSet<>();
 
-            for (int i : integers)
-            {
-                MolangHelper.setMolangVariables(model.model.parser, entity, i, 0F);
-                CubicModelAnimator.resetPose(model.model);
-                CubicModelAnimator.animate(model.model, animation, i, 1F, false);
-
-                Pose pose = new Pose();
-
-                for (String key : model.model.getAllGroupKeys())
+                for (AnimationPart value : animation.parts.values())
                 {
-                    PoseTransform poseTransform = pose.get(key);
-                    ModelGroup group = model.model.getGroup(key);
-
-                    poseTransform.copy(group.current);
-                    poseTransform.translate.sub(group.initial.translate);
-                    poseTransform.rotate.sub(group.initial.rotate);
-
-                    poseTransform.rotate.x = MathUtils.toRad(poseTransform.rotate.x);
-                    poseTransform.rotate.y = MathUtils.toRad(poseTransform.rotate.y);
-                    poseTransform.rotate.z = MathUtils.toRad(poseTransform.rotate.z);
+                    for (AnimationVector keyframe : value.position.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
+                    for (AnimationVector keyframe : value.rotation.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
+                    for (AnimationVector keyframe : value.scale.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
                 }
 
-                this.keyframeEditor.view.getDopeSheet().clearSelection();
-                sheet.selection.clear();
+                List<Integer> list = new ArrayList<>(integers);
 
-                int insert = sheet.channel.insert(current + i, pose);
+                Collections.sort(list);
 
-                sheet.selection.add(insert);
-                this.keyframeEditor.view.getDopeSheet().pickSelected();
+                for (int i : list)
+                {
+                    this.fillAnimationPose(sheet, i, model, entity, animation, current);
+                }
             }
+            else
+            {
+                for (int i = 0; i < length; i += step)
+                {
+                    this.fillAnimationPose(sheet, i, model, entity, animation, current);
+                }
+            }
+
+            this.keyframeEditor.view.getDopeSheet().pickSelected();
         }
+    }
+
+    private void fillAnimationPose(UIKeyframeSheet sheet, int i, CubicModel model, IEntity entity, Animation animation, int current)
+    {
+        MolangHelper.setMolangVariables(model.model.parser, entity, i, 0F);
+        CubicModelAnimator.resetPose(model.model);
+        CubicModelAnimator.animate(model.model, animation, i, 1F, false);
+
+        Pose pose = new Pose();
+
+        for (String key : model.model.getAllGroupKeys())
+        {
+            PoseTransform poseTransform = pose.get(key);
+            ModelGroup group = model.model.getGroup(key);
+
+            poseTransform.copy(group.current);
+            poseTransform.translate.sub(group.initial.translate);
+            poseTransform.rotate.sub(group.initial.rotate);
+
+            poseTransform.rotate.x = MathUtils.toRad(poseTransform.rotate.x);
+            poseTransform.rotate.y = MathUtils.toRad(poseTransform.rotate.y);
+            poseTransform.rotate.z = MathUtils.toRad(poseTransform.rotate.z);
+        }
+
+        int insert = sheet.channel.insert(current + i, pose);
+
+        sheet.selection.add(insert);
     }
 
     public void pickForm(Form form, String bone)
