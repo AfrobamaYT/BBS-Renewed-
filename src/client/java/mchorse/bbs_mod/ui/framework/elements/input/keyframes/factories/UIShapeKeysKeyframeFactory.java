@@ -10,6 +10,8 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.shapes.UIShapeKeys;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
+import java.util.Set;
+
 public class UIShapeKeysKeyframeFactory extends UIKeyframeFactory<ShapeKeys>
 {
     private UIShapeKeys shapeKeys;
@@ -24,8 +26,13 @@ public class UIShapeKeysKeyframeFactory extends UIKeyframeFactory<ShapeKeys>
         ModelForm form = (ModelForm) sheet.property.getForm();
         CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
 
-        this.shapeKeys.setShapeKeys(model.model.getShapeKeys(), keyframe.getValue());
-        this.scroll.add(this.shapeKeys);
+        Set<String> shapeKeys = model.model.getShapeKeys();
+
+        if (!shapeKeys.isEmpty())
+        {
+            this.shapeKeys.setShapeKeys(shapeKeys, keyframe.getValue());
+            this.scroll.add(this.shapeKeys);
+        }
     }
 
     public static class UIShapeKeysEditor extends UIShapeKeys
