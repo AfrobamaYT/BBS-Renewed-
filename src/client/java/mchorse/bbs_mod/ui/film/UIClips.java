@@ -1022,7 +1022,23 @@ public class UIClips extends UIElement
                 this.otherClips = new ArrayList<>(this.clips.get());
                 this.otherClips.removeIf(this.grabbedClips::contains);
                 this.snappingPoints.clear();
-                this.snappingPoints.add(0);
+
+                /* TODO: generalize this code. Check also other places getMult() */
+                int mult = this.scale.getMult() * 2;
+                int start = (int) this.scale.getMinValue();
+                int end = (int) this.scale.getMaxValue();
+                int max = Integer.MAX_VALUE;
+
+                start -= start % mult;
+                end -= end % mult;
+
+                start = MathUtils.clamp(start, 0, max);
+                end = MathUtils.clamp(end, mult, max);
+
+                for (int j = start; j <= end; j += mult)
+                {
+                    this.snappingPoints.add(j);
+                }
 
                 for (Clip otherClip : this.otherClips)
                 {

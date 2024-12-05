@@ -206,7 +206,6 @@ public class ActionPlayback
         float tick = this.getTick(transition);
 
         MolangHelper.setMolangVariables(armature.parser, target, tick, transition);
-
         CubicModelAnimator.animate(armature, this.action, tick, blend, skipInitial);
     }
 
