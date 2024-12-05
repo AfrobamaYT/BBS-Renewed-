@@ -5,7 +5,6 @@ import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import net.minecraft.entity.LivingEntity;
 
 public class ActionPlayback
 {
@@ -21,11 +20,6 @@ public class ActionPlayback
     private Fade fading = Fade.FINISHED;
     public boolean playing = true;
     public int priority;
-
-    public ActionPlayback(Animation action, ActionConfig config)
-    {
-        this(action, config, true);
-    }
 
     public ActionPlayback(Animation action, ActionConfig config, boolean looping)
     {
@@ -159,7 +153,7 @@ public class ActionPlayback
 
         if (!this.config.loop)
         {
-            looping = false;
+             looping = false;
         }
 
         if (!looping && this.fading != Fade.OUT && this.ticks >= this.duration)
@@ -184,9 +178,16 @@ public class ActionPlayback
 
     public float getTick(float transition)
     {
+        boolean looping = this.looping;
+
+        if (!this.config.loop)
+        {
+            looping = false;
+        }
+
         float ticks = this.ticks + (float) (transition * this.speed);
 
-        if (this.looping)
+        if (looping)
         {
             if (ticks >= this.duration && this.speed > 0)
             {
