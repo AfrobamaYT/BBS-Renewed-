@@ -1,25 +1,20 @@
 package mchorse.bbs_mod.obj.shapes;
 
 import mchorse.bbs_mod.data.IMapSerializable;
-import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ShapeKeys implements IMapSerializable
 {
-    public final List<ShapeKey> shapeKeys = new ArrayList<>();
+    public final Map<String, Float> shapeKeys = new HashMap<>();
 
     public ShapeKeys copy()
     {
         ShapeKeys keys = new ShapeKeys();
 
-        for (ShapeKey shapeKey : this.shapeKeys)
-        {
-            keys.shapeKeys.add(shapeKey.copy());
-        }
+        keys.shapeKeys.putAll(this.shapeKeys);
 
         return keys;
     }
@@ -38,11 +33,11 @@ public class ShapeKeys implements IMapSerializable
     @Override
     public void toData(MapType data)
     {
-        ListType keys = new ListType();
+        MapType keys = new MapType();
 
-        for (ShapeKey key : this.shapeKeys)
+        for (Map.Entry<String, Float> entry : this.shapeKeys.entrySet())
         {
-            keys.add(key.toData());
+            keys.putFloat(entry.getKey(), entry.getValue());
         }
 
         data.put("keys", keys);
@@ -53,17 +48,11 @@ public class ShapeKeys implements IMapSerializable
     {
         this.shapeKeys.clear();
 
-        ListType list = data.getList("keys");
+        MapType keys = data.getMap("keys");
 
-        for (BaseType keyType : list)
+        for (String key : keys.keys())
         {
-            if (keyType instanceof MapType map)
-            {
-                ShapeKey key = new ShapeKey();
-
-                key.fromData(map);
-                this.shapeKeys.add(key);
-            }
+            this.shapeKeys.put(key, keys.getFloat(key));
         }
     }
 }

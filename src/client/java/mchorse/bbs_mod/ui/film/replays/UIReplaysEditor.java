@@ -135,7 +135,7 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("color", Icons.BUCKET);
         ICONS.put("lighting", Icons.LIGHT);
         ICONS.put("actions", Icons.CONVERT);
-        ICONS.put("shape_keys", Icons.HEART);
+        ICONS.put("shape_keys", Icons.HEART_ALT);
         ICONS.put("text", Icons.FONT);
 
         ICONS.put("stick_lx", Icons.LEFT_STICK);

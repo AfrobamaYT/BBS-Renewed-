@@ -244,7 +244,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            this.renderModel(this.entity, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false);
+            this.renderModel(this.entity, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
 
             /* Render body parts */
             stack.push();
@@ -260,7 +260,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking)
+    private void renderModel(IEntity target, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
     {
         if (!model.culling)
         {
@@ -277,7 +277,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
-        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get());
+        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 
@@ -381,7 +381,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 GameRenderer::getRenderTypeEntityTranslucentProgram,
                 BBSShaders::getPickerModelsProgram));
 
-            this.renderModel(context.entity, context.stack, model, context.light, context.overlay, color, false, context.isPicking());
+            this.renderModel(context.entity, context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
         }
     }
 

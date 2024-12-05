@@ -43,6 +43,11 @@ public abstract class UIList <T> extends UIElement
     /**
      * Callback which gets invoked when user dropped a list element (when sorting option is enabled)
      */
+    public Consumer<UIList<T>> beforeDropCallback;
+
+    /**
+     * Callback which gets invoked when user dropped a list element (when sorting option is enabled)
+     */
     public Consumer<UIList<T>> afterDropCallback;
 
     /**
@@ -100,6 +105,13 @@ public abstract class UIList <T> extends UIElement
     public UIList<T> sorting()
     {
         this.sorting = true;
+
+        return this;
+    }
+
+    public UIList<T> beforeDrop(Consumer<UIList<T>> beforeDropCallback)
+    {
+        this.beforeDropCallback = beforeDropCallback;
 
         return this;
     }
@@ -548,6 +560,11 @@ public abstract class UIList <T> extends UIElement
 
                 if (index != this.dragging && this.exists(index))
                 {
+                    if (this.beforeDropCallback != null)
+                    {
+                        this.beforeDropCallback.accept(this);
+                    }
+
                     T value = this.list.remove(this.dragging);
 
                     this.list.add(index, value);

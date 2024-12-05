@@ -7,7 +7,6 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
-import mchorse.bbs_mod.obj.shapes.ShapeKey;
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
@@ -19,6 +18,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+
+import java.util.Map;
 
 public class CubicCubeRenderer implements ICubicRenderer
 {
@@ -177,41 +178,25 @@ public class CubicCubeRenderer implements ICubicRenderer
             u2.set(baseData.uvs.get(i * 3 + 1));
             u3.set(baseData.uvs.get(i * 3 + 2));
 
-            for (ShapeKey shapeKey : this.shapeKeys.shapeKeys)
+            for (Map.Entry<String, Float> entry : this.shapeKeys.shapeKeys.entrySet())
             {
-                ModelData data = mesh.data.get(shapeKey.name);
+                ModelData data = mesh.data.get(entry.getKey());
+                float value = entry.getValue();
 
                 if (data != null)
                 {
-                    if (shapeKey.relative)
-                    {
-                        /* final = temporary + lerp(initial, current, x) - initial */
-                        this.relativeShift(v1, baseData.vertices.get(i * 3), data.vertices.get(i * 3), shapeKey.value);
-                        this.relativeShift(v2, baseData.vertices.get(i * 3 + 1), data.vertices.get(i * 3 + 1), shapeKey.value);
-                        this.relativeShift(v3, baseData.vertices.get(i * 3 + 2), data.vertices.get(i * 3 + 2), shapeKey.value);
+                    /* final = temporary + lerp(initial, current, x) - initial */
+                    this.relativeShift(v1, baseData.vertices.get(i * 3), data.vertices.get(i * 3), value);
+                    this.relativeShift(v2, baseData.vertices.get(i * 3 + 1), data.vertices.get(i * 3 + 1), value);
+                    this.relativeShift(v3, baseData.vertices.get(i * 3 + 2), data.vertices.get(i * 3 + 2), value);
 
-                        this.relativeShift(n1, baseData.normals.get(i * 3), data.normals.get(i * 3), shapeKey.value);
-                        this.relativeShift(n2, baseData.normals.get(i * 3 + 1), data.normals.get(i * 3 + 1), shapeKey.value);
-                        this.relativeShift(n3, baseData.normals.get(i * 3 + 2), data.normals.get(i * 3 + 2), shapeKey.value);
+                    this.relativeShift(n1, baseData.normals.get(i * 3), data.normals.get(i * 3), value);
+                    this.relativeShift(n2, baseData.normals.get(i * 3 + 1), data.normals.get(i * 3 + 1), value);
+                    this.relativeShift(n3, baseData.normals.get(i * 3 + 2), data.normals.get(i * 3 + 2), value);
 
-                        this.relativeShift(u1, baseData.uvs.get(i * 3), data.uvs.get(i * 3), shapeKey.value);
-                        this.relativeShift(u2, baseData.uvs.get(i * 3 + 1), data.uvs.get(i * 3 + 1), shapeKey.value);
-                        this.relativeShift(u3, baseData.uvs.get(i * 3 + 2), data.uvs.get(i * 3 + 2), shapeKey.value);
-                    }
-                    else
-                    {
-                        v1.lerp(data.vertices.get(i * 3), shapeKey.value);
-                        v2.lerp(data.vertices.get(i * 3 + 1), shapeKey.value);
-                        v3.lerp(data.vertices.get(i * 3 + 2), shapeKey.value);
-
-                        n1.lerp(data.normals.get(i * 3), shapeKey.value);
-                        n2.lerp(data.normals.get(i * 3 + 1), shapeKey.value);
-                        n3.lerp(data.normals.get(i * 3 + 2), shapeKey.value);
-
-                        u1.lerp(data.uvs.get(i * 3), shapeKey.value);
-                        u2.lerp(data.uvs.get(i * 3 + 1), shapeKey.value);
-                        u3.lerp(data.uvs.get(i * 3 + 2), shapeKey.value);
-                    }
+                    this.relativeShift(u1, baseData.uvs.get(i * 3), data.uvs.get(i * 3), value);
+                    this.relativeShift(u2, baseData.uvs.get(i * 3 + 1), data.uvs.get(i * 3 + 1), value);
+                    this.relativeShift(u3, baseData.uvs.get(i * 3 + 2), data.uvs.get(i * 3 + 2), value);
                 }
             }
 

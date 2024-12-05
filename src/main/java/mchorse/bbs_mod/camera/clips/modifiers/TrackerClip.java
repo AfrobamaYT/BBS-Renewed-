@@ -15,7 +15,7 @@ public class TrackerClip extends EntityClip
     public final ValueString group = new ValueString("group", "");
     public final ValueBoolean lookAt = new ValueBoolean("look_at", false);
     public final ValueBoolean relative = new ValueBoolean("relative");
-    public final ValueInt active = new ValueInt("active", 0, 0, 0b11111111);
+    public final ValueInt active = new ValueInt("active", 0b111111, 0, 0b111111);
 
     public TrackerClip()
     {
