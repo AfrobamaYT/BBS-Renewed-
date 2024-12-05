@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 public class UIBitToggle extends UIElement
 {
-    public static final IKey PLUS = IKey.raw(" + ");
+    public static final IKey PLUS = IKey.constant(" + ");
     private int value;
     public List<Bit> bits = new ArrayList<>();
     public Consumer<Integer> callback;

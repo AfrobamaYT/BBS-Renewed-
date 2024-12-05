@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.forms.editors.forms;
 
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.ModelForm;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIActionsFormPanel;
@@ -24,7 +23,7 @@ public class UIModelForm extends UIForm<ModelForm>
 
         this.registerPanel(this.defaultPanel, UIKeys.FORMS_EDITORS_MODEL_POSE, Icons.POSE);
         this.registerPanel(new UIActionsFormPanel(this), UIKeys.FORMS_EDITORS_ACTIONS_TITLE, Icons.MORE);
-        this.registerPanel(new UIStateTriggersFormPanel(this), IKey.raw("State triggers"), Icons.KEY_CAP);
+        this.registerPanel(new UIStateTriggersFormPanel(this), UIKeys.STATE_TRIGGERS_TITLE, Icons.KEY_CAP);
         this.registerDefaultPanels();
 
         this.defaultPanel.keys().register(Keys.FORMS_PICK_TEXTURE, () ->

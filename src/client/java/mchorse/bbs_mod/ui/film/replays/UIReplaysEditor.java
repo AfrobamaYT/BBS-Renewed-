@@ -9,6 +9,11 @@ import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.CubicModelAnimator;
+import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.cubic.data.animation.Animation;
+import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
+import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -53,6 +58,9 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.pose.PoseTransform;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
@@ -62,8 +70,10 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class UIReplaysEditor extends UIElement
@@ -172,7 +182,7 @@ public class UIReplaysEditor extends UIElement
                 {
                     for (ModelGroup modelGroup : groups)
                     {
-                        menu.action(Icons.LIMB, IKey.raw(modelGroup.id), () -> consumer.accept(modelGroup.id));
+                        menu.action(Icons.LIMB, IKey.constant(modelGroup.id), () -> consumer.accept(modelGroup.id));
                     }
 
                     menu.autoKeys();
@@ -203,7 +213,7 @@ public class UIReplaysEditor extends UIElement
                 {
                     for (ModelGroup modelGroup : groups)
                     {
-                        menu.action(Icons.LIMB, IKey.raw(modelGroup.id), () -> consumer.accept(modelGroup.id));
+                        menu.action(Icons.LIMB, IKey.constant(modelGroup.id), () -> consumer.accept(modelGroup.id));
                     }
 
                     menu.autoKeys();
@@ -393,6 +403,22 @@ public class UIReplaysEditor extends UIElement
                 }
             });
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
+            this.keyframeEditor.view.context((menu) ->
+            {
+                if (this.replay.form.get() instanceof ModelForm modelForm)
+                {
+                    int mouseY = this.getContext().mouseY;
+                    UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(mouseY);
+
+                    if (sheet.channel.getFactory() == KeyframeFactories.POSE)
+                    {
+                        menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () ->
+                        {
+                            this.coolFeature(modelForm, sheet);
+                        });
+                    }
+                }
+            });
 
             for (UIKeyframeSheet sheet : sheets)
             {
@@ -407,6 +433,57 @@ public class UIReplaysEditor extends UIElement
         if (this.keyframeEditor != null)
         {
             this.keyframeEditor.view.resetView();
+        }
+    }
+
+    private void coolFeature(ModelForm modelForm, UIKeyframeSheet sheet)
+    {
+        CubicModel model = ModelFormRenderer.getModel(modelForm);
+        Animation animation = model.animations.get("animation.godzillaant.walk");
+
+        if (animation != null)
+        {
+            int current = this.filmPanel.getCursor();
+            IEntity entity = this.filmPanel.getController().getCurrentEntity();
+            Set<Integer> integers = new HashSet<>();
+
+            for (AnimationPart value : animation.parts.values())
+            {
+                for (AnimationVector keyframe : value.position.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
+                for (AnimationVector keyframe : value.rotation.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
+                for (AnimationVector keyframe : value.scale.keyframes) integers.add(TimeUtils.toTick((float) keyframe.time));
+            }
+
+            for (int i : integers)
+            {
+                MolangHelper.setMolangVariables(model.model.parser, entity, i, 0F);
+                CubicModelAnimator.resetPose(model.model);
+                CubicModelAnimator.animate(model.model, animation, i, 1F, false);
+
+                Pose pose = new Pose();
+
+                for (String key : model.model.getAllGroupKeys())
+                {
+                    PoseTransform poseTransform = pose.get(key);
+                    ModelGroup group = model.model.getGroup(key);
+
+                    poseTransform.copy(group.current);
+                    poseTransform.translate.sub(group.initial.translate);
+                    poseTransform.rotate.sub(group.initial.rotate);
+
+                    poseTransform.rotate.x = MathUtils.toRad(poseTransform.rotate.x);
+                    poseTransform.rotate.y = MathUtils.toRad(poseTransform.rotate.y);
+                    poseTransform.rotate.z = MathUtils.toRad(poseTransform.rotate.z);
+                }
+
+                this.keyframeEditor.view.getDopeSheet().clearSelection();
+                sheet.selection.clear();
+
+                int insert = sheet.channel.insert(current + i, pose);
+
+                sheet.selection.add(insert);
+                this.keyframeEditor.view.getDopeSheet().pickSelected();
+            }
         }
     }
 
@@ -437,7 +514,7 @@ public class UIReplaysEditor extends UIElement
                 continue;
             }
 
-            manager.action(getIcon(formProperty.getKey()), IKey.raw(formProperty.getKey()), () ->
+            manager.action(getIcon(formProperty.getKey()), IKey.constant(formProperty.getKey()), () ->
             {
                 this.pickProperty(bone, StringUtils.combinePaths(path, formProperty.getKey()), shift);
             });

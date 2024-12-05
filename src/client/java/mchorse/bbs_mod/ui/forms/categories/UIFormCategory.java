@@ -81,7 +81,7 @@ public class UIFormCategory extends UIElement
                     UIKeys.FORMS_CATEGORIES_ADD_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        userForms.addUserCategory(new UserFormCategory(IKey.raw(str), formCategories.visibility.get(UUID.randomUUID().toString()), userForms));
+                        userForms.addUserCategory(new UserFormCategory(IKey.constant(str), formCategories.visibility.get(UUID.randomUUID().toString()), userForms));
                         list.setupForms(formCategories);
                     }
                 ));
@@ -135,7 +135,7 @@ public class UIFormCategory extends UIElement
                                     continue;
                                 }
 
-                                newMenu.action(Icons.ARROW_RIGHT, IKey.raw(entry.getProfile().getName()), () ->
+                                newMenu.action(Icons.ARROW_RIGHT, IKey.constant(entry.getProfile().getName()), () ->
                                 {
                                     ClientNetwork.sendSharedForm(this.selected, entry.getProfile().getId());
                                 });

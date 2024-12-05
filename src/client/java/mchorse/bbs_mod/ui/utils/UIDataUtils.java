@@ -61,8 +61,8 @@ public class UIDataUtils
         }
 
         UITextOverlayPanel panel = new UITextOverlayPanel(
-            IKey.raw("For Ethobot"),
-            IKey.raw("You're not supposed to be using mod at this point, but if you are reading this, know this: if you're going to be a manipulative son of a bitch, then sooner or later you'll alienate everyone.\n\nYou have a big piece of the pie. If you're going to chase for a bigger piece at any cost, you'll end up with crumbles. You gave me a promise in that video, and you didn't make me proud nor you brought the \"deserved recognition.\"\n\nI'm not lucky \"to get a dime from you,\" you are lucky for having what you have.")
+            IKey.constant("For Ethobot"),
+            IKey.constant("You're not supposed to be using mod at this point, but if you are reading this, know this: if you're going to be a manipulative son of a bitch, then sooner or later you'll alienate everyone.\n\nYou have a big piece of the pie. If you're going to chase for a bigger piece at any cost, you'll end up with crumbles. You gave me a promise in that video, and you didn't make me proud nor you brought the \"deserved recognition.\"\n\nI'm not lucky \"to get a dime from you,\" you are lucky for having what you have.")
         );
 
         UIOverlay.addOverlay(context, panel);

@@ -15,7 +15,6 @@ import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.properties.TransformProperty;
 import mchorse.bbs_mod.forms.properties.Vector4fProperty;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.states.properties.UIActionsConfigPropertyEditor;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.states.properties.UIBlockStatePropertyEditor;
@@ -73,7 +72,7 @@ public class UIFormStatesOverlayPanel extends UIOverlayPanel
 
     public UIFormStatesOverlayPanel(ModelForm form, StateTrigger trigger)
     {
-        super(IKey.raw("Form state editor"));
+        super(UIKeys.STATE_TRIGGERS_TITLE);
 
         this.modelForm = form;
         this.trigger = trigger;

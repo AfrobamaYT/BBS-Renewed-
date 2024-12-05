@@ -104,11 +104,11 @@ public class UIVoicelineClip extends UIClip<VoicelineClip>
 
                 if (color != 0xffffff)
                 {
-                    menu.action(Icons.VOICE, IKey.raw(name), color, () -> this.setVoice(name));
+                    menu.action(Icons.VOICE, IKey.constant(name), color, () -> this.setVoice(name));
                 }
                 else
                 {
-                    menu.action(Icons.VOICE, IKey.raw(name), () -> this.setVoice(name));
+                    menu.action(Icons.VOICE, IKey.constant(name), () -> this.setVoice(name));
                 }
             }
 
@@ -139,7 +139,7 @@ public class UIVoicelineClip extends UIClip<VoicelineClip>
                     continue;
                 }
 
-                m.action(Icons.SOUND, IKey.raw(file.getName()), () ->
+                m.action(Icons.SOUND, IKey.constant(file.getName()), () ->
                 {
                     this.clip.variant.set(file.getName());
                 });

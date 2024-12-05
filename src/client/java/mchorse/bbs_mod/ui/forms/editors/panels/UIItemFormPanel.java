@@ -31,11 +31,11 @@ public class UIItemFormPanel extends UIFormPanel<ItemForm>
                 {
                     if (this.form.modelTransform.get() == value)
                     {
-                        menu.action(Icons.LINE, IKey.raw(value.asString()), true, () -> {});
+                        menu.action(Icons.LINE, IKey.constant(value.asString()), true, () -> {});
                     }
                     else
                     {
-                        menu.action(Icons.LINE, IKey.raw(value.asString()), () -> this.setModelTransform(value));
+                        menu.action(Icons.LINE, IKey.constant(value.asString()), () -> this.setModelTransform(value));
                     }
                 }
             });
@@ -50,7 +50,7 @@ public class UIItemFormPanel extends UIFormPanel<ItemForm>
     {
         this.form.modelTransform.set(value);
 
-        this.modelTransform.label = IKey.raw(value.asString());
+        this.modelTransform.label = IKey.constant(value.asString());
     }
 
     @Override

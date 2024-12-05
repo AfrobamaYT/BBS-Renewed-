@@ -544,7 +544,7 @@ public class UIClips extends UIElement
             {
                 Form form = replay.form.get();
 
-                menu.action(Icons.EDITOR, IKey.raw(form == null ? "-" : form.getIdOrName()), () ->
+                menu.action(Icons.EDITOR, IKey.constant(form == null ? "-" : form.getIdOrName()), () ->
                 {
                     KeyframeClip clip = new KeyframeClip();
 
@@ -1023,21 +1023,28 @@ public class UIClips extends UIElement
                 this.otherClips.removeIf(this.grabbedClips::contains);
                 this.snappingPoints.clear();
 
-                /* TODO: generalize this code. Check also other places getMult() */
-                int mult = this.scale.getMult() * 2;
-                int start = (int) this.scale.getMinValue();
-                int end = (int) this.scale.getMaxValue();
-                int max = Integer.MAX_VALUE;
-
-                start -= start % mult;
-                end -= end % mult;
-
-                start = MathUtils.clamp(start, 0, max);
-                end = MathUtils.clamp(end, mult, max);
-
-                for (int j = start; j <= end; j += mult)
+                if (BBSSettings.editorSnapToMarkers.get())
                 {
-                    this.snappingPoints.add(j);
+                    /* TODO: generalize this code. Check also other places getMult() */
+                    int mult = this.scale.getMult() * 2;
+                    int start = (int) this.scale.getMinValue();
+                    int end = (int) this.scale.getMaxValue();
+                    int max = Integer.MAX_VALUE;
+
+                    start -= start % mult;
+                    end -= end % mult;
+
+                    start = MathUtils.clamp(start, 0, max);
+                    end = MathUtils.clamp(end, mult, max);
+
+                    for (int j = start; j <= end; j += mult)
+                    {
+                        this.snappingPoints.add(j);
+                    }
+                }
+                else
+                {
+                    this.snappingPoints.add(0);
                 }
 
                 for (Clip otherClip : this.otherClips)

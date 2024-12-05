@@ -11,7 +11,6 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.state.property.Property;
@@ -92,13 +91,13 @@ public class UIBlockStateEditor extends UIElement
 
         for (Property p : state.getProperties())
         {
-            UIButton button = new UIButton(IKey.raw(state.get(p).toString()), (b) ->
+            UIButton button = new UIButton(IKey.constant(state.get(p).toString()), (b) ->
             {
                 this.getContext().replaceContextMenu((menu) ->
                 {
                     for (Object v : p.getValues())
                     {
-                        IKey raw = IKey.raw(v.toString());
+                        IKey raw = IKey.constant(v.toString());
 
                         menu.action(Icons.BLOCK, raw, () ->
                         {
@@ -110,7 +109,7 @@ public class UIBlockStateEditor extends UIElement
                 });
             });
 
-            button.tooltip(IKey.raw(p.getName()));
+            button.tooltip(IKey.constant(p.getName()));
 
             this.properties.add(button);
         }

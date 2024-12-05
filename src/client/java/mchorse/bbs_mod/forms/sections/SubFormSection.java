@@ -49,7 +49,7 @@ public abstract class SubFormSection extends FormSection
 
             if (!newKey.isEmpty())
             {
-                uiKey = IKey.comp(Arrays.asList(uiKey, IKey.raw(" (" + newKey + ")")));
+                uiKey = IKey.comp(Arrays.asList(uiKey, IKey.constant(" (" + newKey + ")")));
             }
 
             return this.createCategory(uiKey, key);

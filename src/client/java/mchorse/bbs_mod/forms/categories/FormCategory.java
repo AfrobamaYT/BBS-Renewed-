@@ -75,7 +75,7 @@ public class FormCategory implements IMapSerializable
     {
         if (data.has("title"))
         {
-            this.title = IKey.raw(data.getString("title"));
+            this.title = IKey.constant(data.getString("title"));
         }
 
         if (data.has("id"))

@@ -47,7 +47,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
                 Replay replay = replays == null ? null : replays.get(i);
                 Form form = entity.getForm();
                 String stringLabel = i + (replay != null ? " - " + replay.getName() : (form == null ? "" : " - " + form.getIdOrName()));
-                IKey label = IKey.raw(stringLabel);
+                IKey label = IKey.constant(stringLabel);
 
                 menu.action(Icons.CLOSE, label, actor == value, () -> callback.accept(actor));
             }
@@ -103,7 +103,7 @@ public class UIAnchorKeyframeFactory extends UIKeyframeFactory<AnchorProperty.An
         {
             for (String attachment : attachments)
             {
-                menu.action(Icons.LIMB, IKey.raw(attachment), attachment.equals(value), () -> this.setAttachment(attachment));
+                menu.action(Icons.LIMB, IKey.constant(attachment), attachment.equals(value), () -> this.setAttachment(attachment));
             }
         });
     }

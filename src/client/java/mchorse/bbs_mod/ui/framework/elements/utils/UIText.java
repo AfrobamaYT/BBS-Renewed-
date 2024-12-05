@@ -57,7 +57,7 @@ public class UIText extends UIElement implements ITextColoring
 
     public UIText text(String text)
     {
-        return this.text(IKey.raw(text));
+        return this.text(IKey.constant(text));
     }
 
     public UIText text(IKey text)

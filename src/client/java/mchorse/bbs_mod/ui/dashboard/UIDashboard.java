@@ -257,7 +257,7 @@ public class UIDashboard extends UIBaseMenu
 
         if (FabricLoader.getInstance().isDevelopmentEnvironment())
         {
-            this.panels.registerPanel(new UIDebugPanel(this), IKey.raw("Sandbox"), Icons.CODE);
+            this.panels.registerPanel(new UIDebugPanel(this), IKey.constant("Sandbox"), Icons.CODE);
         }
 
         this.setPanel(this.getPanel(UISupportersPanel.class));

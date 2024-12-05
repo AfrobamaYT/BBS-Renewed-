@@ -65,6 +65,7 @@ public class BBSSettings
     public static ValueBoolean editorHorizontalFlight;
     public static ValueEditorLayout editorLayoutSettings;
     public static ValueOnionSkin editorOnionSkin;
+    public static ValueBoolean editorSnapToMarkers;
 
     public static ValueFloat recordingCountdown;
     public static ValueInt recordingNextVariable;
@@ -160,6 +161,7 @@ public class BBSSettings
         editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
         builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
         builder.register(editorOnionSkin = new ValueOnionSkin("onion_skin"));
+        editorSnapToMarkers = builder.getBoolean("snap_to_markers", false);
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingNextVariable = builder.getInt("next", 1, 1, 100);

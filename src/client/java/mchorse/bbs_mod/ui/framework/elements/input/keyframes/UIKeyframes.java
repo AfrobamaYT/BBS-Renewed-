@@ -158,6 +158,11 @@ public class UIKeyframes extends UIElement
         this.keys().register(Keys.KEYFRAMES_STACK_KEYFRAMES, () -> this.stackKeyframes(false)).inside().category(category);
     }
 
+    public UIKeyframeDopeSheet getDopeSheet()
+    {
+        return this.dopeSheet;
+    }
+
     private void selectAfter(int mouseX, int mouseY, int direction)
     {
         int tick = (int) Math.round(this.fromGraphX(mouseX));

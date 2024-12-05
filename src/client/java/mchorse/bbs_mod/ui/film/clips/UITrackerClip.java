@@ -55,9 +55,9 @@ public class UITrackerClip extends UIClip<TrackerClip>
         this.selector.tooltip(UIKeys.CAMERA_PANELS_TARGET_TOOLTIP);
         this.group = new UIButton(UIKeys.GENERIC_KEYFRAMES_ANCHOR_PICK_ATTACHMENT, (b) -> this.displayGroups());
 
-        this.point = new UIPointModule(editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
-        this.angle = new UIPointModule(editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
-        this.lookAt = new UIToggle(IKey.raw("Look at"), b -> this.clip.lookAt.set(b.getValue()));
+        this.point = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
+        this.angle = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_ANGLE).contextMenu();
+        this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, b -> this.clip.lookAt.set(b.getValue()));
         this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, b -> this.clip.relative.set(b.getValue()));
         this.active = new UIBitToggle((value) -> this.clip.active.set(value)).all();
         this.active.bits.remove(this.active.bits.size() - 1);
@@ -96,7 +96,7 @@ public class UITrackerClip extends UIClip<TrackerClip>
         {
             for (String attachment : groups)
             {
-                menu.action(Icons.LIMB, IKey.raw(attachment), attachment.equals(value), () -> this.clip.group.set(attachment));
+                menu.action(Icons.LIMB, IKey.constant(attachment), attachment.equals(value), () -> this.clip.group.set(attachment));
             }
         });
     }

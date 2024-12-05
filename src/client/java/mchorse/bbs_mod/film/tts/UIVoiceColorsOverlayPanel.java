@@ -27,7 +27,7 @@ public class UIVoiceColorsOverlayPanel extends UIOverlayPanel
                 continue;
             }
 
-            UILabel label = new UILabel(IKey.raw(voice.name)).labelAnchor(0F, 0.5F);
+            UILabel label = new UILabel(IKey.constant(voice.name)).labelAnchor(0F, 0.5F);
             UIColor color = new UIColor((c) -> this.colors.setColor(voice.name, c));
 
             color.setColor(this.colors.getColor(voice.name));

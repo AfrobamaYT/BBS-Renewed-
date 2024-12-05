@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels.widgets.states;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.UIKeybind;
@@ -32,7 +33,7 @@ public class UIStateTrigger extends UIElement
         this.actions.h(16 * 5);
         this.actions.setCurrentScroll(trigger.action);
 
-        this.states = new UIButton(IKey.raw("Edit states..."), (b) ->
+        this.states = new UIButton(UIKeys.STATE_TRIGGERS_EDIT, (b) ->
         {
             UIOverlay.addOverlay(this.getContext(), new UIFormStatesOverlayPanel(this.modelForm, trigger), 0.5F, 0.9F);
         });

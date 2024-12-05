@@ -60,7 +60,7 @@ public class UIOnionSkinContextMenu extends UIContextMenu
 
                 for (String property : replay.properties.properties.keySet())
                 {
-                    menu.action(Icons.FOLDER, IKey.raw(property), this.onionSkin.group.get().equals(property), () ->
+                    menu.action(Icons.FOLDER, IKey.constant(property), this.onionSkin.group.get().equals(property), () ->
                     {
                         this.onionSkin.group.set(property);
                         this.group.tooltip(UIKeys.FILM_CONTROLLER_ONION_SKIN_GROUP.format(property));

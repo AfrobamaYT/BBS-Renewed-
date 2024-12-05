@@ -34,7 +34,7 @@ public class UIUserFormCategory extends UIFormCategory
                     UIKeys.FORMS_CATEGORIES_RENAME_CATEGORY_DESCRIPTION,
                     (str) ->
                     {
-                        this.getCategory().title = IKey.raw(str);
+                        this.getCategory().title = IKey.constant(str);
                         userForms.writeUserCategories();
                     }
                 );

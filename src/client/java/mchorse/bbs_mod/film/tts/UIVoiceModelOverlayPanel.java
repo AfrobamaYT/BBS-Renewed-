@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.film.tts;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
@@ -30,7 +29,7 @@ public class UIVoiceModelOverlayPanel extends UIOverlayPanel
                 {
                     String key = entry.getValue().id;
 
-                    menu.action(Icons.VOICE, IKey.raw(entry.getValue().name), this.model.id.get().equals(key), () ->
+                    menu.action(Icons.VOICE, IKey.constant(entry.getValue().name), this.model.id.get().equals(key), () ->
                     {
                         this.model.id.set(key);
                     });

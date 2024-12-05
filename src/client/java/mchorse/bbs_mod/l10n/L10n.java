@@ -110,7 +110,7 @@ public class L10n
 
         for (Pair<String, String> pair : this.supportedLanguages)
         {
-            labels.add(new Label<>(IKey.raw(pair.a), pair.b));
+            labels.add(new Label<>(IKey.constant(pair.a), pair.b));
         }
 
         return labels;

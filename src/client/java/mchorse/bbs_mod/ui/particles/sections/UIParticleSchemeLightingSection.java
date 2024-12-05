@@ -69,7 +69,7 @@ public class UIParticleSchemeLightingSection extends UIParticleSchemeSection
         });
         this.color.withAlpha();
 
-        this.r = new UIButton(IKey.raw("R"), (b) ->
+        this.r = new UIButton(IKey.constant("R"), (b) ->
         {
             Solid solid = this.getSolid();
 
@@ -77,7 +77,7 @@ public class UIParticleSchemeLightingSection extends UIParticleSchemeSection
         });
         this.r.color(Colors.RED).tooltip(UIKeys.SNOWSTORM_LIGHTING_RED);
 
-        this.g = new UIButton(IKey.raw("G"), (b) ->
+        this.g = new UIButton(IKey.constant("G"), (b) ->
         {
             Solid solid = this.getSolid();
 
@@ -85,7 +85,7 @@ public class UIParticleSchemeLightingSection extends UIParticleSchemeSection
         });
         this.g.color(Colors.GREEN).tooltip(UIKeys.SNOWSTORM_LIGHTING_GREEN);
 
-        this.b = new UIButton(IKey.raw("B"), (b) ->
+        this.b = new UIButton(IKey.constant("B"), (b) ->
         {
             Solid solid = this.getSolid();
 
@@ -93,7 +93,7 @@ public class UIParticleSchemeLightingSection extends UIParticleSchemeSection
         });
         this.b.color(Colors.BLUE).tooltip(UIKeys.SNOWSTORM_LIGHTING_BLUE);
 
-        this.a = new UIButton(IKey.raw("A"), (b) ->
+        this.a = new UIButton(IKey.constant("A"), (b) ->
         {
             Solid solid = this.getSolid();
 

@@ -45,7 +45,7 @@ public abstract class UITransform extends UIElement
     {
         super();
 
-        IKey raw = IKey.raw("%s (%s)");
+        IKey raw = IKey.constant("%s (%s)");
 
         this.tx = new UITrackpad((value) -> this.internalSetT(value, Axis.X)).block();
         this.tx.tooltip(raw.format(UIKeys.TRANSFORMS_TRANSLATE, UIKeys.GENERAL_X));

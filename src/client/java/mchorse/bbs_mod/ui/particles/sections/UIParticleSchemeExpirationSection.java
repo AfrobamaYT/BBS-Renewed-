@@ -52,25 +52,25 @@ public class UIParticleSchemeExpirationSection extends UIParticleSchemeSection
             this.plane.a = value.floatValue();
             this.editor.dirty();
         });
-        this.a.tooltip(IKey.raw("Ax"));
+        this.a.tooltip(IKey.constant("Ax"));
         this.b = new UITrackpad((value) ->
         {
             this.plane.b = value.floatValue();
             this.editor.dirty();
         });
-        this.b.tooltip(IKey.raw("By"));
+        this.b.tooltip(IKey.constant("By"));
         this.c = new UITrackpad((value) ->
         {
             this.plane.c = value.floatValue();
             this.editor.dirty();
         });
-        this.c.tooltip(IKey.raw("Cz"));
+        this.c.tooltip(IKey.constant("Cz"));
         this.d = new UITrackpad((value) ->
         {
             this.plane.d = value.floatValue();
             this.editor.dirty();
         });
-        this.d.tooltip(IKey.raw("D"));
+        this.d.tooltip(IKey.constant("D"));
 
         this.fields.add(UI.row(5, 0, 20, UI.label(UIKeys.SNOWSTORM_MODE, 20).labelAnchor(0, 0.5F), this.mode));
         this.fields.add(this.expression);

@@ -521,7 +521,7 @@ public class UIFilmController extends UIElement
                     {
                         int index = this.entities.indexOf(entity);
 
-                        menu.action(Icons.POSE, IKey.raw(this.panel.getData().replays.getList().get(index).getName()), () -> this.pickEntity(entity));
+                        menu.action(Icons.POSE, IKey.constant(this.panel.getData().replays.getList().get(index).getName()), () -> this.pickEntity(entity));
                     }
                 });
 

@@ -30,7 +30,7 @@ public class UIDebugPanel extends UIDashboardPanel
         for (int i = 0; i < 20; i++)
         {
             KeyframeChannel<Double> channel = new KeyframeChannel<>("baboy", KeyframeFactories.DOUBLE);
-            UIKeyframeSheet sheet = new UIKeyframeSheet("baboy_" + i, IKey.raw("Baboy " + i), Colors.HSVtoRGB((float) Math.random(), 1F, 1F).getRGBColor(), false, channel, null);
+            UIKeyframeSheet sheet = new UIKeyframeSheet("baboy_" + i, IKey.constant("Baboy " + i), Colors.HSVtoRGB((float) Math.random(), 1F, 1F).getRGBColor(), false, channel, null);
 
             channel.insert(0L, 0D);
             channel.insert(20L + (long) (Math.random() * 18 - 9), 0D);
@@ -41,7 +41,7 @@ public class UIDebugPanel extends UIDashboardPanel
             this.keyframes.addSheet(sheet);
         }
 
-        this.button = new UIButton(IKey.raw("Hello"), (b) ->
+        this.button = new UIButton(IKey.constant("Hello"), (b) ->
         {
             /* File file = BBSMod.getAssetsPath("textures/skin.png");
             Vector2i vector2i = PNGEncoder.readSize(file);

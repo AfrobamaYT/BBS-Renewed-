@@ -95,7 +95,7 @@ public class UISupportersPanel extends UIDashboardPanel
     {
         if (supporter.hasOnlyName())
         {
-            return UI.label(IKey.raw(supporter.name), Batcher2D.getDefaultTextRenderer().getHeight() + 4).labelAnchor(0F, 0.5F);
+            return UI.label(IKey.constant(supporter.name), Batcher2D.getDefaultTextRenderer().getHeight() + 4).labelAnchor(0F, 0.5F);
         }
         else if (supporter.hasNoBanner())
         {

@@ -80,7 +80,7 @@ public class UIFilmRecorder extends UIElement
         }
         catch (Exception e)
         {
-            UIOverlay.addOverlay(context, new UIMessageOverlayPanel(UIKeys.GENERAL_ERROR, IKey.raw(e.getMessage())));
+            UIOverlay.addOverlay(context, new UIMessageOverlayPanel(UIKeys.GENERAL_ERROR, IKey.constant(e.getMessage())));
 
             return;
         }

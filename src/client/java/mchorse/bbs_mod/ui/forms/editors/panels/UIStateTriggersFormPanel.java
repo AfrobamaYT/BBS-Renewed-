@@ -5,7 +5,7 @@ import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
-import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.forms.editors.panels.widgets.states.UIStateTrigger;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -23,7 +23,7 @@ public class UIStateTriggersFormPanel extends UIFormPanel<ModelForm>
 
         this.options.context((menu) ->
         {
-            menu.action(Icons.ADD, IKey.raw("Add trigger"), () ->
+            menu.action(Icons.ADD, UIKeys.STATE_TRIGGERS_CONTEXT_ADD, () ->
             {
                 StateTrigger trigger = new StateTrigger();
 
@@ -59,7 +59,7 @@ public class UIStateTriggersFormPanel extends UIFormPanel<ModelForm>
         uiTrigger.marginBottom(12);
         uiTrigger.context((menu) ->
         {
-            menu.action(Icons.REMOVE, IKey.raw("Remove trigger"), () ->
+            menu.action(Icons.REMOVE, UIKeys.STATE_TRIGGERS_CONTEXT_REMOVE, () ->
             {
                 this.form.triggers.triggers.remove(trigger);
                 uiTrigger.removeFromParent();
@@ -76,7 +76,7 @@ public class UIStateTriggersFormPanel extends UIFormPanel<ModelForm>
 
         if (this.options.getChildren().isEmpty())
         {
-            String label = IKey.raw("Right click here to add a state trigger...").get();
+            String label = UIKeys.STATE_TRIGGERS_RMB_HERE.get();
             List<String> wrap = context.batcher.getFont().wrap(label, this.options.area.w - 10);
 
             int x = this.options.area.mx();

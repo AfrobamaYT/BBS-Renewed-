@@ -26,7 +26,7 @@ public class UIKeyframeSheet
 
     public UIKeyframeSheet(int color, boolean separator, KeyframeChannel channel, IFormProperty property)
     {
-        this(channel.getId(), IKey.raw(channel.getId()), color, separator, channel, property);
+        this(channel.getId(), IKey.constant(channel.getId()), color, separator, channel, property);
     }
 
     public UIKeyframeSheet(String id, IKey title, int color, boolean separator, KeyframeChannel channel, IFormProperty property)
