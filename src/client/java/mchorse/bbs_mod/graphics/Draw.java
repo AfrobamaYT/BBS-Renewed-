@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.graphics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Angle;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -196,6 +197,13 @@ public class Draw
 
     public static void coolerAxes(MatrixStack stack, float axisSize, float axisOffset, float outlineSize, float outlineOffset)
     {
+        float scale = BBSSettings.axesScale.get();
+
+        axisSize *= scale;
+        axisOffset *= scale;
+        outlineSize *= scale;
+        outlineOffset *= scale;
+
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
         builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
