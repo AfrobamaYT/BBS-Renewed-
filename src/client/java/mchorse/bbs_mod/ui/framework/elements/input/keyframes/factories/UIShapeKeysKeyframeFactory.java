@@ -20,17 +20,16 @@ public class UIShapeKeysKeyframeFactory extends UIKeyframeFactory<ShapeKeys>
     {
         super(keyframe, editor);
 
-        this.shapeKeys = new UIShapeKeysEditor(this);
-
         UIKeyframeSheet sheet = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) sheet.property.getForm();
         CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
-
         Set<String> shapeKeys = model.model.getShapeKeys();
+
+        this.shapeKeys = new UIShapeKeysEditor(this);
 
         if (!shapeKeys.isEmpty())
         {
-            this.shapeKeys.setShapeKeys(shapeKeys, keyframe.getValue());
+            this.shapeKeys.setShapeKeys(model.poseGroup, shapeKeys, keyframe.getValue());
             this.scroll.add(this.shapeKeys);
         }
     }
@@ -42,6 +41,12 @@ public class UIShapeKeysKeyframeFactory extends UIKeyframeFactory<ShapeKeys>
         public UIShapeKeysEditor(UIShapeKeysKeyframeFactory editor)
         {
             this.editor = editor;
+        }
+
+        @Override
+        protected void changedShapeKeys(Runnable runnable)
+        {
+            super.changedShapeKeys(runnable);
         }
 
         @Override

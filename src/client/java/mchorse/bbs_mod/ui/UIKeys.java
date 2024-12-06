@@ -619,6 +619,11 @@ public class UIKeys
     public static final IKey STATE_TRIGGERS_TITLE = L10n.lang("bbs.ui.state_triggers.title");
     public static final IKey STATE_TRIGGERS_RMB_HERE = L10n.lang("bbs.ui.state_triggers.rmb_here");
     public static final IKey SHAPE_KEYS_TITLE = L10n.lang("bbs.ui.shape_keys.title");
+    public static final IKey SHAPE_KEYS_CONTEXT_COPY = L10n.lang("bbs.ui.shape_keys.context.copy");
+    public static final IKey SHAPE_KEYS_CONTEXT_NAME = L10n.lang("bbs.ui.shape_keys.context.name");
+    public static final IKey SHAPE_KEYS_CONTEXT_PASTE = L10n.lang("bbs.ui.shape_keys.context.paste");
+    public static final IKey SHAPE_KEYS_CONTEXT_RESET = L10n.lang("bbs.ui.shape_keys.context.reset");
+    public static final IKey SHAPE_KEYS_CONTEXT_SAVE = L10n.lang("bbs.ui.shape_keys.context.save");
     public static final IKey SUPPORTERS_CALL_TO_ACTION = L10n.lang("bbs.ui.supporters.call_to_action");
     public static final IKey SUPPORTERS_CC = L10n.lang("bbs.ui.supporters.cc");
     public static final IKey SUPPORTERS_COMMUNITY = L10n.lang("bbs.ui.supporters.community");

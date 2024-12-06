@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.pose.PoseManager;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 
 import java.util.Collection;
@@ -30,7 +31,7 @@ public class UIPoseEditor extends UIElement
         this.groups = new UIStringList((l) -> this.pickBone(l.get(0)));
         this.groups.background().h(UIStringList.DEFAULT_HEIGHT * 8 - 8);
         this.groups.scroll.cancelScrolling();
-        this.groups.context(() -> new UIPosesContextMenu(this.group, () -> this.pose.toData(), (data) ->
+        this.groups.context(() -> new UIDataContextMenu(PoseManager.INSTANCE, this.group, () -> this.pose.toData(), (data) ->
         {
             String current = this.groups.getCurrentFirst();
 

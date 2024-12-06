@@ -68,7 +68,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         if (model != null && !model.model.getShapeKeys().isEmpty())
         {
             this.options.add(this.shapeKeys);
-            this.shapeKeys.setShapeKeys(model.model.getShapeKeys(), this.form.shapeKeys.get());
+            this.shapeKeys.setShapeKeys(model.poseGroup, model.model.getShapeKeys(), this.form.shapeKeys.get());
         }
 
         this.options.resize();

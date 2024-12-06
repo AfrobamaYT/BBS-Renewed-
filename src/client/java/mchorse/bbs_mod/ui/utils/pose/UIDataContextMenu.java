@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.utils.pose;
 
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -11,12 +12,12 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.pose.PoseManager;
+import mchorse.bbs_mod.utils.pose.DataManager;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class UIPosesContextMenu extends UIContextMenu
+public class UIDataContextMenu extends UIContextMenu
 {
     public UIIcon copy;
     public UIIcon paste;
@@ -27,23 +28,26 @@ public class UIPosesContextMenu extends UIContextMenu
     public UITextbox name;
     public UIIcon save;
 
+    private DataManager manager;
     private String group;
     private MapType data;
     private Supplier<MapType> supplier;
     private Consumer<MapType> callback;
+    private String copyGroup = "_CopyPose";
 
-    public UIPosesContextMenu(String group, Supplier<MapType> supplier, Consumer<MapType> callback)
+    public UIDataContextMenu(DataManager manager, String group, Supplier<MapType> supplier, Consumer<MapType> callback)
     {
+        this.manager = manager;
         this.group = group;
         this.supplier = supplier;
         this.callback = callback;
-        this.data = PoseManager.getPoses(group);
+        this.data = this.manager.getData(group);
 
-        this.copy = new UIIcon(Icons.COPY, (b) -> Window.setClipboard(this.supplier.get(), "_ModelCopyPose"));
+        this.copy = new UIIcon(Icons.COPY, (b) -> Window.setClipboard(this.supplier.get(), this.copyGroup));
         this.copy.tooltip(UIKeys.POSE_CONTEXT_COPY);
         this.paste = new UIIcon(Icons.PASTE, (b) ->
         {
-            MapType data = Window.getClipboardMap("_ModelCopyPose");
+            MapType data = Window.getClipboardMap(this.copyGroup);
 
             if (data != null)
             {
@@ -59,9 +63,9 @@ public class UIPosesContextMenu extends UIContextMenu
 
             if (!name.isEmpty())
             {
-                PoseManager.savePose(this.group, name, this.supplier.get());
+                this.manager.saveData(this.group, name, this.supplier.get());
 
-                this.data = PoseManager.getPoses(group);
+                this.data = this.manager.getData(group);
 
                 this.fillPoses();
                 this.name.setText("");
@@ -84,6 +88,18 @@ public class UIPosesContextMenu extends UIContextMenu
         this.add(this.poses);
 
         this.fillPoses();
+    }
+
+    public UIDataContextMenu tooltips(String copyGroup, IKey copy, IKey paste, IKey reset, IKey save, IKey name)
+    {
+        this.copyGroup = copyGroup;
+        this.copy.tooltip(copy);
+        this.paste.tooltip(paste);
+        this.reset.tooltip(reset);
+        this.save.tooltip(save);
+        this.name.placeholder(name);
+
+        return this;
     }
 
     private void send(MapType map)
