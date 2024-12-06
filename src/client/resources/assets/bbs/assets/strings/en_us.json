@@ -730,6 +730,7 @@
     "bbs.ui.state_triggers.edit": "Particles",
     "bbs.ui.state_triggers.title": "State triggers",
     "bbs.ui.state_triggers.rmb_here": "Right click here to add a state trigger...",
+    "bbs.ui.shape_keys.title": "Shape keys",
     "bbs.ui.success": "Success",
     "bbs.ui.supporters.call_to_action": "If you would like to support BBS mod financially, consider donating me on Patreon!",
     "bbs.ui.supporters.cc": "Content Creators",

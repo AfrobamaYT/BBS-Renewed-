@@ -20,13 +20,13 @@ public class ModelData
         this.uvs.clear();
     }
 
-    public void fill(MeshOBJ mesh)
+    public void fill(MeshOBJ mesh, int tx, int ty)
     {
         for (int i = 0, c = mesh.triangles; i < c; i++)
         {
             this.vertices.add(new Vector3f(mesh.posData[i * 3] * 16F, mesh.posData[i * 3 + 1] * 16F, mesh.posData[i * 3 + 2] * 16F));
             this.normals.add(new Vector3f(mesh.normData[i * 3], mesh.normData[i * 3 + 1], mesh.normData[i * 3 + 2]));
-            this.uvs.add(new Vector2f(mesh.texData[i * 2], mesh.texData[i * 2 + 1]));
+            this.uvs.add(new Vector2f(mesh.texData[i * 2] * tx, mesh.texData[i * 2 + 1] * ty));
         }
     }
 }

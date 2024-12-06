@@ -1,9 +1,11 @@
 package mchorse.bbs_mod.ui.utils.shapes;
 
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
+import mchorse.bbs_mod.ui.utils.UI;
 
 import java.util.Set;
 
@@ -17,12 +19,13 @@ public class UIShapeKeys extends UIElement
     public UIShapeKeys()
     {
         this.list = new UIStringList((l) -> this.pick(l.get(0), false));
-        this.list.background().h(this.list.scroll.scrollItemSize * 4);
+        this.list.background().h(this.list.scroll.scrollItemSize * 6);
+        this.list.cancelScrollEdge();
         this.value = new UITrackpad((v) -> this.setValue(v.floatValue()));
 
         this.column().vertical().stretch();
 
-        this.add(this.list, this.value);
+        this.add(UI.label(UIKeys.SHAPE_KEYS_TITLE), this.list, this.value);
     }
 
     public void setShapeKeys(Set<String> keys, ShapeKeys shapeKeys)

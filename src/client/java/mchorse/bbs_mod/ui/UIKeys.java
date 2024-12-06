@@ -618,6 +618,7 @@ public class UIKeys
     public static final IKey STATE_TRIGGERS_EDIT = L10n.lang("bbs.ui.state_triggers.edit");
     public static final IKey STATE_TRIGGERS_TITLE = L10n.lang("bbs.ui.state_triggers.title");
     public static final IKey STATE_TRIGGERS_RMB_HERE = L10n.lang("bbs.ui.state_triggers.rmb_here");
+    public static final IKey SHAPE_KEYS_TITLE = L10n.lang("bbs.ui.shape_keys.title");
     public static final IKey SUPPORTERS_CALL_TO_ACTION = L10n.lang("bbs.ui.supporters.call_to_action");
     public static final IKey SUPPORTERS_CC = L10n.lang("bbs.ui.supporters.cc");
     public static final IKey SUPPORTERS_COMMUNITY = L10n.lang("bbs.ui.supporters.community");

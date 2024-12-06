@@ -9,7 +9,6 @@ import mchorse.bbs_mod.utils.pose.PoseTransform;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,14 +39,17 @@ public class Model implements IMapSerializable
 
     public Set<String> getShapeKeys()
     {
-        return shapeKeys;
+        return this.shapeKeys;
     }
 
     public void initialize()
     {
-        this.fillGroups(this.topGroups, null);
+        this.nextIndex = 0;
+        this.namedGroups.clear();
+        this.orderedGroups.clear();
+        this.shapeKeys.clear();
 
-        this.orderedGroups = Collections.unmodifiableList(this.orderedGroups);
+        this.fillGroups(this.topGroups, null);
 
         for (ModelGroup orderedGroup : this.orderedGroups)
         {
