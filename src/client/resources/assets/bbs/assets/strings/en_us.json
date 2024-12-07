@@ -519,6 +519,8 @@
     "bbs.ui.importer.gif": "GIF to PNG sequence",
     "bbs.ui.importer.jpeg": "JPEG to PNG",
     "bbs.ui.importer.mpeg": "MP4/MP3 to WAV",
+    "bbs.ui.importer.flac": "FLAC to WAV",
+    "bbs.ui.importer.aiff": "AIFF to WAV",
     "bbs.ui.importer.old_skin": "64x32 skin to 64x64 skin",
     "bbs.ui.importer.png": "PNG",
     "bbs.ui.importer.success-notification": "Drag&dropped files were successfully processed by %s!",

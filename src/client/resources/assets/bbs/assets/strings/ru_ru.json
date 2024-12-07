@@ -518,6 +518,8 @@
     "bbs.ui.importer.gif": "GIF в последовательность PNG",
     "bbs.ui.importer.jpeg": "JPEG to последовательность PNG",
     "bbs.ui.importer.mpeg": "MP4/MP3 в WAV",
+    "bbs.ui.importer.flac": "FLAC в WAV",
+    "bbs.ui.importer.aiff": "AIFF в WAV",
     "bbs.ui.importer.old_skin": "64x32 скин в 64x64 скин",
     "bbs.ui.importer.success-notification": "Скинутые файлы были успешно обработаны через %s!",
     "bbs.ui.item_stack.context.paste": "Вставить основной предмет игрока",

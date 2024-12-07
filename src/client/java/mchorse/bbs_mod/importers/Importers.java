@@ -3,10 +3,12 @@ package mchorse.bbs_mod.importers;
 import mchorse.bbs_mod.importers.types.GIFImporter;
 import mchorse.bbs_mod.importers.types.IImporter;
 import mchorse.bbs_mod.importers.types.JPEGImporter;
-import mchorse.bbs_mod.importers.types.MPEGImporter;
 import mchorse.bbs_mod.importers.types.OldSkinImporter;
 import mchorse.bbs_mod.importers.types.PNGImporter;
+import mchorse.bbs_mod.importers.types.ToWAVImporter;
 import mchorse.bbs_mod.importers.types.WAVImporter;
+import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.UIKeys;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +20,7 @@ import java.util.List;
  * Following importers would be nice to have:
  *
  * - Gif to sequence of PNGs
- * - mp3/mp4 to wav
+ * - mp3/mp4/flac/aiff to wav
  * - PNG 1.7 skin to PNG 1.8 skin
  * - Models (as folders, as multiple files, etc.)
  * - Jpeg to PNG
@@ -32,7 +34,9 @@ public class Importers
     static
     {
         importers.add(new JPEGImporter());
-        importers.add(new MPEGImporter());
+        importers.add(new ToWAVImporter(UIKeys.IMPORTER_MPEG, ".mp3", ".mp4"));
+        importers.add(new ToWAVImporter(UIKeys.IMPORTER_FLAC, ".flac"));
+        importers.add(new ToWAVImporter(UIKeys.IMPORTER_AIFF, ".aiff"));
         importers.add(new GIFImporter());
         importers.add(new OldSkinImporter());
         importers.add(new PNGImporter());
