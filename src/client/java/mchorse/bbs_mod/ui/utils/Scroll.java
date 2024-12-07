@@ -195,7 +195,7 @@ public class Scroll
 
     public void scrollToEnd()
     {
-        this.scrollTo(Integer.MAX_VALUE);
+        this.setScroll(Integer.MAX_VALUE);
     }
 
     public void scrollIntoView(int x)
@@ -235,6 +235,8 @@ public class Scroll
         {
             this.targetScroll = MathUtils.clamp(this.targetScroll, 0, this.scrollSize - size);
         }
+
+        this.scroll = this.targetScroll;
     }
 
     public void copy(Scroll scroll)

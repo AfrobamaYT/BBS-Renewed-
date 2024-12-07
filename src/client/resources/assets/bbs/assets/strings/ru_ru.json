@@ -158,6 +158,7 @@
     "bbs.ui.camera.clips.bbs:dolly": "Рельс",
     "bbs.ui.camera.clips.bbs:drag": "Сглаживание",
     "bbs.ui.camera.clips.bbs:drop_item": "Выкинуть предмет",
+    "bbs.ui.camera.clips.bbs:form_trigger": "Триггер формы",
     "bbs.ui.camera.clips.bbs:idle": "Вид",
     "bbs.ui.camera.clips.bbs:interact_block": "Взаимодействовать с предметом",
     "bbs.ui.camera.clips.bbs:keyframe": "Ключ",

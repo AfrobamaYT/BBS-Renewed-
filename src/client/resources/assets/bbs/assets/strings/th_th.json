@@ -786,7 +786,6 @@
     "interpolations.bounce_in": "เด้งเข้า",
     "interpolations.bounce_inout": "เด้งเข้า/เด้งออก",
     "interpolations.bounce_out": "เด้งออก",
-    "interpolations.circle": "วงกลม",
     "interpolations.circle_in": "วงกลมใน",
     "interpolations.circle_inout": "วงกลมเข้า/ออก",
     "interpolations.circle_out": "วงกลมออก",

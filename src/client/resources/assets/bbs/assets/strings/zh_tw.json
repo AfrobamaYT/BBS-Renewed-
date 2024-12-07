@@ -791,7 +791,6 @@
     "interpolations.bounce_in": "彈跳淡入",
     "interpolations.bounce_inout": "彈跳淡入/淡出",
     "interpolations.bounce_out": "彈跳淡出",
-    "interpolations.circle": "圓曲線",
     "interpolations.circle_in": "圓曲線淡入",
     "interpolations.circle_inout": "圓曲線淡入/淡出",
     "interpolations.circle_out": "圓曲線淡出",
