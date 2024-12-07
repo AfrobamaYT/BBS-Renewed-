@@ -82,8 +82,8 @@ public class Keys
     public static final KeyCombo KEYFRAMES_SELECT_SAME = new KeyCombo("select_same", UIKeys.KEYFRAMES_KEYS_SELECT_SAME, GLFW.GLFW_KEY_L).categoryKey("keyframes");
     public static final KeyCombo KEYFRAMES_SCALE_TIME = new KeyCombo("scale_time", UIKeys.KEYFRAMES_KEYS_SCALE_TIME, GLFW.GLFW_KEY_V).categoryKey("keyframes");
     public static final KeyCombo KEYFRAMES_STACK_KEYFRAMES = new KeyCombo("stack_keyframes", UIKeys.KEYFRAMES_KEYS_STACK_KEYFRAMES, GLFW.GLFW_KEY_B).categoryKey("keyframes");
-    public static final KeyCombo KEYFRAMES_SELECT_PREV = new KeyCombo("select_prev", UIKeys.KEYFRAMES_KEYS_SELECT_PREV, GLFW.GLFW_KEY_LEFT_BRACKET).categoryKey("keyframes");
-    public static final KeyCombo KEYFRAMES_SELECT_NEXT = new KeyCombo("select_next", UIKeys.KEYFRAMES_KEYS_SELECT_NEXT, GLFW.GLFW_KEY_RIGHT_BRACKET).categoryKey("keyframes");
+    public static final KeyCombo KEYFRAMES_SELECT_PREV = new KeyCombo("select_prev", UIKeys.KEYFRAMES_KEYS_SELECT_PREV, GLFW.GLFW_KEY_LEFT_BRACKET).repeatable().categoryKey("keyframes");
+    public static final KeyCombo KEYFRAMES_SELECT_NEXT = new KeyCombo("select_next", UIKeys.KEYFRAMES_KEYS_SELECT_NEXT, GLFW.GLFW_KEY_RIGHT_BRACKET).repeatable().categoryKey("keyframes");
 
     /* World menu */
     public static final KeyCombo CYCLE_PANELS = new KeyCombo("cycle_panels", UIKeys.WORLD_KEYS_CYCLE_PANELS, GLFW.GLFW_KEY_TAB).categoryKey("world");

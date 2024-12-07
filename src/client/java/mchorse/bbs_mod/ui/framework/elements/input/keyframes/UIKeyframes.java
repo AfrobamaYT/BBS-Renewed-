@@ -23,6 +23,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import org.lwjgl.glfw.GLFW;
@@ -175,8 +176,18 @@ public class UIKeyframes extends UIElement
         if (keyframe == null)
         {
             UIContext context = this.getContext();
+            UIKeyframeSheet sheet = this.getGraph().getSheet(context.mouseY);
+            KeyframeSegment segment = sheet.channel.find((float) this.fromGraphX(context.mouseX));
 
-            keyframe = this.getGraph().findKeyframe(context.mouseX, context.mouseY);
+            if (segment != null)
+            {
+                keyframe = direction < 0 ? segment.a : segment.b;
+
+                graph.clearSelection();
+                graph.selectKeyframe(keyframe);
+
+                return;
+            }
         }
 
         if (keyframe != null)
@@ -184,11 +195,10 @@ public class UIKeyframes extends UIElement
             KeyframeChannel channel = (KeyframeChannel) keyframe.getParent();
             int existingIndex = channel.getKeyframes().indexOf(keyframe);
             int index = MathUtils.cycler(existingIndex + direction, 0, channel.getAll().size() - 1);
-
-            Keyframe keyframe1 = channel.get(index);
+            Keyframe nextKeyframe = channel.get(index);
 
             graph.clearSelection();
-            graph.selectKeyframe(keyframe1);
+            graph.selectKeyframe(nextKeyframe);
         }
     }
 
