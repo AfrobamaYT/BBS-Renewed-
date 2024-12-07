@@ -249,6 +249,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         super.open();
 
         this.updateList();
+
+        if (this.modelBlock.isRemoved())
+        {
+            this.fill(null, true);
+        }
     }
 
     @Override
