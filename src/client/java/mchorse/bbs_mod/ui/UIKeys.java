@@ -424,6 +424,8 @@ public class UIKeys
     public static final IKey KEYFRAMES_KEYS_CATEGORY = L10n.lang("bbs.ui.keyframes.keys.category");
     public static final IKey KEYFRAMES_KEYS_SCALE_TIME = L10n.lang("bbs.ui.keyframes.keys.scale_time");
     public static final IKey KEYFRAMES_KEYS_STACK_KEYFRAMES = L10n.lang("bbs.ui.keyframes.keys.stack_keyframes");
+    public static final IKey KEYFRAMES_KEYS_SELECT_PREV = L10n.lang("bbs.ui.keyframes.keys.select_prev");
+    public static final IKey KEYFRAMES_KEYS_SELECT_NEXT = L10n.lang("bbs.ui.keyframes.keys.select_next");
     public static final IKey KEYFRAMES_KEYS_SELECT_LEFT = L10n.lang("bbs.ui.keyframes.keys.select_left");
     public static final IKey KEYFRAMES_KEYS_SELECT_RIGHT = L10n.lang("bbs.ui.keyframes.keys.select_right");
     public static final IKey KEYFRAMES_KEYS_SELECT_SAME = L10n.lang("bbs.ui.keyframes.keys.select_same");

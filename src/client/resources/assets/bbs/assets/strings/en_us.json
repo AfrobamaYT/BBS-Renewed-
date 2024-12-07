@@ -539,6 +539,8 @@
     "bbs.ui.keyframes.keys.category": "Keyframes editor",
     "bbs.ui.keyframes.keys.scale_time": "Scale time",
     "bbs.ui.keyframes.keys.stack_keyframes": "Stack keyframes",
+    "bbs.ui.keyframes.keys.select_prev": "Select previous keyframe",
+    "bbs.ui.keyframes.keys.select_next": "Seleect next keyframe",
     "bbs.ui.keyframes.keys.select_left": "Select to the left",
     "bbs.ui.keyframes.keys.select_right": "Select to the right",
     "bbs.ui.keyframes.keys.select_same": "Select by same value",

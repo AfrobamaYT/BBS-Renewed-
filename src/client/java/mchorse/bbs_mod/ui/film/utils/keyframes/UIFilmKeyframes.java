@@ -54,6 +54,19 @@ public class UIFilmKeyframes extends UIKeyframes
     }
 
     @Override
+    protected void selectNextKeyframe(int direction)
+    {
+        super.selectNextKeyframe(direction);
+
+        Keyframe keyframe = this.getGraph().getSelected();
+
+        if (keyframe != null)
+        {
+            this.editor.setCursor((int) keyframe.getTick());
+        }
+    }
+
+    @Override
     protected void moveNoKeyframes(UIContext context)
     {
         if (this.editor != null)

@@ -18,9 +18,11 @@ import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import org.lwjgl.glfw.GLFW;
@@ -156,11 +158,38 @@ public class UIKeyframes extends UIElement
         this.keys().register(Keys.KEYFRAMES_SELECT_SAME, this::selectSame).category(category).active(canModify);
         this.keys().register(Keys.KEYFRAMES_SCALE_TIME, this::scaleTime).inside().category(category);
         this.keys().register(Keys.KEYFRAMES_STACK_KEYFRAMES, () -> this.stackKeyframes(false)).inside().category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_PREV, () -> this.selectNextKeyframe(-1)).category(category);
+        this.keys().register(Keys.KEYFRAMES_SELECT_NEXT, () -> this.selectNextKeyframe(1)).category(category);
     }
 
     public UIKeyframeDopeSheet getDopeSheet()
     {
         return this.dopeSheet;
+    }
+
+    protected void selectNextKeyframe(int direction)
+    {
+        IUIKeyframeGraph graph = this.getGraph();
+        Keyframe keyframe = graph.getSelected();
+
+        if (keyframe == null)
+        {
+            UIContext context = this.getContext();
+
+            keyframe = this.getGraph().findKeyframe(context.mouseX, context.mouseY);
+        }
+
+        if (keyframe != null)
+        {
+            KeyframeChannel channel = (KeyframeChannel) keyframe.getParent();
+            int existingIndex = channel.getKeyframes().indexOf(keyframe);
+            int index = MathUtils.cycler(existingIndex + direction, 0, channel.getAll().size() - 1);
+
+            Keyframe keyframe1 = channel.get(index);
+
+            graph.clearSelection();
+            graph.selectKeyframe(keyframe1);
+        }
     }
 
     private void selectAfter(int mouseX, int mouseY, int direction)
