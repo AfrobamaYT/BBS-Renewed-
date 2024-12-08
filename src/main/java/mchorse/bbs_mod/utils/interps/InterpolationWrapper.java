@@ -10,6 +10,12 @@ public class InterpolationWrapper implements IInterp
     }
 
     @Override
+    public boolean has(IInterp interp)
+    {
+        return this.interpolation.getInterp().has(interp);
+    }
+
+    @Override
     public double interpolate(InterpContext context)
     {
         return this.interpolation.interpolate(context);

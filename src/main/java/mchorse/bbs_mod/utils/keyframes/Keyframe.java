@@ -12,6 +12,11 @@ public class Keyframe <T> extends ValueGroup
     private long tick;
     private T value;
 
+    public float lx = 5;
+    public float ly;
+    public float rx = 5;
+    public float ry;
+
     /**
      * Forced duration that would be used instead of the difference
      * between two keyframes, if not 0
@@ -118,6 +123,10 @@ public class Keyframe <T> extends ValueGroup
         data.putInt("duration", this.duration);
         data.put("value", this.factory.toData(this.value));
         data.put("interp", this.interp.toData());
+        if (this.lx != 5F) data.putFloat("lx", this.lx);
+        if (this.ly != 0F) data.putFloat("ly", this.ly);
+        if (this.rx != 5F) data.putFloat("rx", this.rx);
+        if (this.ry != 0F) data.putFloat("ry", this.ry);
 
         return data;
     }
@@ -136,5 +145,9 @@ public class Keyframe <T> extends ValueGroup
         if (map.has("duration")) this.duration = map.getInt("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
         if (map.has("interp")) this.interp.fromData(map.get("interp"));
+        if (map.has("lx")) this.lx = map.getFloat("lx");
+        if (map.has("ly")) this.ly = map.getFloat("ly");
+        if (map.has("rx")) this.rx = map.getFloat("rx");
+        if (map.has("ry")) this.ry = map.getFloat("ry");
     }
 }

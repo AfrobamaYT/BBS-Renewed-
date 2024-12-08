@@ -2,6 +2,7 @@ package mchorse.bbs_mod.utils.keyframes.factories;
 
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 import java.util.Objects;
 
@@ -19,6 +20,11 @@ public interface IKeyframeFactory <T>
     }
 
     public T copy(T value);
+
+    public default T interpolate(Keyframe<T> preA, Keyframe<T> a, Keyframe<T> b, Keyframe<T> postB, IInterp interpolation, float x)
+    {
+        return this.interpolate(preA.getValue(), a.getValue(), b.getValue(), postB.getValue(), interpolation, x);
+    }
 
     public T interpolate(T preA, T a, T b, T postB, IInterp interpolation, float x);
 

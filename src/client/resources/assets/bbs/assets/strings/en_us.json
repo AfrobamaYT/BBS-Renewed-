@@ -547,6 +547,8 @@
     "bbs.ui.keyframes.keys.toggle_interp": "Toggle interpolation selection",
     "bbs.ui.keyframes.tick": "Tick",
     "bbs.ui.keyframes.value": "Value",
+    "bbs.ui.keyframes.left_handle": "Left handle",
+    "bbs.ui.keyframes.right_handle": "Right handle",
     "bbs.ui.keys.list": "Keybind list",
     "bbs.ui.language.credits": "Translated by McHorse",
     "bbs.ui.language.pick": "Pick language...",

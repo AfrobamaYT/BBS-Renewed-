@@ -432,6 +432,8 @@ public class UIKeys
     public static final IKey KEYFRAMES_KEYS_TOGGLE_INTERP = L10n.lang("bbs.ui.keyframes.keys.toggle_interp");
     public static final IKey KEYFRAMES_TICK = L10n.lang("bbs.ui.keyframes.tick");
     public static final IKey KEYFRAMES_VALUE = L10n.lang("bbs.ui.keyframes.value");
+    public static final IKey KEYFRAMES_LEFT_HANDLE = L10n.lang("bbs.ui.keyframes.left_handle");
+    public static final IKey KEYFRAMES_RIGHT_HANDLE = L10n.lang("bbs.ui.keyframes.right_handle");
     public static final IKey KEYS_LIST = L10n.lang("bbs.ui.keys.list");
     public static final IKey LANGUAGE_CREDITS = L10n.lang("bbs.ui.language.credits");
     public static final IKey LANGUAGE_EDITOR_CONTEXT_COPY_KEY = L10n.lang("studio.ui.language.editor.context.copy_key");

@@ -544,6 +544,8 @@
     "bbs.ui.keyframes.keys.toggle_interp": "Включить выбор интерполяции",
     "bbs.ui.keyframes.tick": "Тик",
     "bbs.ui.keyframes.value": "Значение",
+    "bbs.ui.keyframes.left_handle": "Левый контрольная точка",
+    "bbs.ui.keyframes.right_handle": "Правая контрольная точка",
     "bbs.ui.keys.list": "Список горячих клавиш",
     "bbs.ui.language.credits": "Автор перевода: Kirkus и McHorse",
     "bbs.ui.language.pick": "Выбрать язык...",

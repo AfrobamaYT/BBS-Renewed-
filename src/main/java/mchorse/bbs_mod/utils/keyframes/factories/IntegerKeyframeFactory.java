@@ -3,6 +3,9 @@ package mchorse.bbs_mod.utils.keyframes.factories;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.IntType;
 import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.keyframes.BezierUtils;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 public class IntegerKeyframeFactory implements IKeyframeFactory<Integer>
 {
@@ -28,6 +31,23 @@ public class IntegerKeyframeFactory implements IKeyframeFactory<Integer>
     public Integer copy(Integer value)
     {
         return value;
+    }
+
+    @Override
+    public Integer interpolate(Keyframe<Integer> preA, Keyframe<Integer> a, Keyframe<Integer> b, Keyframe<Integer> postB, IInterp interpolation, float x)
+    {
+        if (interpolation.has(Interpolations.BEZIER))
+        {
+            return (int) BezierUtils.get(
+                a.getValue(), b.getValue(),
+                a.getTick(), b.getTick(),
+                a.rx, a.ry,
+                a.lx, a.ly,
+                x
+            );
+        }
+
+        return IKeyframeFactory.super.interpolate(preA, a, b, postB, interpolation, x);
     }
 
     @Override
