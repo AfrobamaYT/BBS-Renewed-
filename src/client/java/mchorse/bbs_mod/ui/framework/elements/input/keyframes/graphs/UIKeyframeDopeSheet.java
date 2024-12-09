@@ -304,6 +304,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int offset = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
 
         this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offset, false);
+        this.keyframes.triggerChange();
     }
 
     /* Rendering */

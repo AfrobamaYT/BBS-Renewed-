@@ -289,6 +289,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
         this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX, false);
         this.setValue(factory.yToValue(this.fromGraphY(context.mouseY) - offsetY), false);
+        this.keyframes.triggerChange();
     }
 
     @Override

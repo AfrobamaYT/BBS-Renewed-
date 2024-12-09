@@ -60,6 +60,8 @@ public class UIKeyframes extends UIElement
     private int originalT;
     private Object originalV;
 
+    private Runnable changeCallback;
+
     /* Fields */
 
     private final UIKeyframeDopeSheet dopeSheet = new UIKeyframeDopeSheet(this);
@@ -161,6 +163,21 @@ public class UIKeyframes extends UIElement
         this.keys().register(Keys.KEYFRAMES_STACK_KEYFRAMES, () -> this.stackKeyframes(false)).inside().category(category);
         this.keys().register(Keys.KEYFRAMES_SELECT_PREV, () -> this.selectNextKeyframe(-1)).category(category);
         this.keys().register(Keys.KEYFRAMES_SELECT_NEXT, () -> this.selectNextKeyframe(1)).category(category);
+    }
+
+    public UIKeyframes changed(Runnable runnable)
+    {
+        this.changeCallback = runnable;
+
+        return this;
+    }
+
+    public void triggerChange()
+    {
+        if (this.changeCallback != null)
+        {
+            this.changeCallback.run();
+        }
     }
 
     public UIKeyframeDopeSheet getDopeSheet()

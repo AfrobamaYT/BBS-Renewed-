@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -124,8 +123,9 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     public void setTick(double tick)
     {
         IAxisConverter converter = this.editor.getConverter();
+        long time = (long) (converter == null ? tick : converter.from(tick));
 
-        this.editor.getGraph().setTick((long) (converter == null ? tick : converter.from(tick)), false);
+        this.editor.getGraph().setTick(time, false);
     }
 
     public void setDuration(int value)
@@ -138,16 +138,11 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.editor.getGraph().setValue(value, true);
     }
 
-    @Override
-    public void render(UIContext context)
+    public void update()
     {
-        /* 🤮🤮🤮 */
-        if (!this.tick.isFocused() && this.keyframe.getTick() != (long) this.tick.getValue())
-        {
-            this.tick.setValue(this.keyframe.getTick());
-        }
+        IAxisConverter converter = this.editor.getConverter();
 
-        super.render(context);
+        this.tick.setValue(converter == null ? keyframe.getTick() : converter.to(keyframe.getTick()));
     }
 
     public static interface IUIKeyframeFactoryFactory <T>

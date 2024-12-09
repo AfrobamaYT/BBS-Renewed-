@@ -29,6 +29,14 @@ public class UIKeyframeEditor extends UIElement
     {
         this.view = factory.apply(this::pickKeyframe);
 
+        this.view.changed(() ->
+        {
+            if (this.editor != null)
+            {
+                this.editor.update();
+            }
+        });
+
         this.add(this.view.full(this));
     }
 

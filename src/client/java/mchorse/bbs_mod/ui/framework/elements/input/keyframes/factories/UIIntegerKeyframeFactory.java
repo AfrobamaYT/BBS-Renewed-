@@ -21,20 +21,32 @@ public class UIIntegerKeyframeFactory extends UIKeyframeFactory<Integer>
     {
         super(keyframe, editor);
 
-        this.value = new UITrackpad((v) -> this.setValue(v.intValue()));
-        this.value.integer().setValue(keyframe.getValue());
+        this.value = new UITrackpad(this::setValue).integer();
         this.lx = new UITrackpad((v) -> BaseValue.edit(this.keyframe, (kf) -> kf.lx = v.floatValue()));
-        this.lx.setValue(keyframe.lx);
         this.ly = new UITrackpad((v) -> BaseValue.edit(this.keyframe, (kf) -> kf.ly = v.floatValue()));
-        this.ly.setValue(keyframe.ly);
         this.rx = new UITrackpad((v) -> BaseValue.edit(this.keyframe, (kf) -> kf.rx = v.floatValue()));
-        this.rx.setValue(keyframe.rx);
         this.ry = new UITrackpad((v) -> BaseValue.edit(this.keyframe, (kf) -> kf.ry = v.floatValue()));
+        this.value.setValue(keyframe.getValue());
+        this.lx.setValue(keyframe.lx);
+        this.ly.setValue(keyframe.ly);
+        this.rx.setValue(keyframe.rx);
         this.ry.setValue(keyframe.ry);
 
         this.scroll.add(this.value,
             UI.row(new UIIcon(Icons.LEFT_HANDLE, null).tooltip(UIKeys.KEYFRAMES_LEFT_HANDLE), this.lx, this.ly),
             UI.row(new UIIcon(Icons.RIGHT_HANDLE, null).tooltip(UIKeys.KEYFRAMES_RIGHT_HANDLE), this.rx, this.ry)
         );
+    }
+
+    @Override
+    public void update()
+    {
+        super.update();
+
+        this.value.setValue(keyframe.getValue());
+        this.lx.setValue(keyframe.lx);
+        this.ly.setValue(keyframe.ly);
+        this.rx.setValue(keyframe.rx);
+        this.ry.setValue(keyframe.ry);
     }
 }
