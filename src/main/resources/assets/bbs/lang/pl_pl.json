@@ -1,0 +1,14 @@
+{
+    "block.bbs.model": "Model bloku",
+    "itemGroup.bbs.main": "Mod BBS",
+
+    "key.bbs.block_editor": "Edytor modelu bloku",
+    "key.bbs.dashboard": "Panel sterowania",
+    "key.bbs.demorph": "Demorfuj",
+    "key.bbs.open_replays": "Otwórz bieżące powtórki",
+    "key.bbs.open_morphing": "Otwórz menu morfingu",
+    "key.bbs.play_film": "Odtwórz film",
+    "key.bbs.record_replay": "Nagraj bieżącą powtórkę",
+    "key.bbs.record_video": "Nagraj wideo",
+    "category.bbs.main": "Mod BBS"
+}
