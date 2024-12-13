@@ -300,7 +300,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV)
     {
         int offset = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
 

@@ -214,7 +214,7 @@ public interface IUIKeyframeGraph
 
     public void handleMouse(UIContext context, int lastX, int lastY);
 
-    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV);
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV);
 
     /* Rendering */
 

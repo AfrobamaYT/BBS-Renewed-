@@ -47,7 +47,7 @@ public class UIKeyframes extends UIElement
     private boolean selecting;
     private boolean navigating;
     private int dragging = -1;
-    private KeyframeType draggingType = KeyframeType.REGULAR;
+    private Pair<Keyframe, KeyframeType> draggingData;
     private boolean scaling;
     private long scalingAnchor;
     private Map<Keyframe, Long> scaleTicks = new HashMap<>();
@@ -839,7 +839,12 @@ public class UIKeyframes extends UIElement
         if (!this.selecting)
         {
             this.dragging = 0;
-            this.draggingType = pair == null ? KeyframeType.REGULAR : pair.b;
+            this.draggingData = pair;
+
+            if (pair != null && pair.b != KeyframeType.REGULAR)
+            {
+                found = pair.a;
+            }
 
             this.cacheKeyframes();
 
@@ -976,7 +981,7 @@ public class UIKeyframes extends UIElement
         {
             if (this.currentGraph.getSelected() != null)
             {
-                this.currentGraph.dragKeyframes(context, this.draggingType, this.originalX, this.originalY, this.originalT, this.originalV);
+                this.currentGraph.dragKeyframes(context, this.draggingData, this.originalX, this.originalY, this.originalT, this.originalV);
             }
             else
             {

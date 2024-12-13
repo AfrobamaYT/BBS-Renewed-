@@ -297,11 +297,17 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV)
     {
-        IKeyframeFactory factory = this.sheet.channel.getFactory();
+        if (type == null)
+        {
+            return;
+        }
 
-        if (type == KeyframeType.REGULAR)
+        IKeyframeFactory factory = this.sheet.channel.getFactory();
+        Keyframe keyframe = type.a;
+
+        if (type.b == KeyframeType.REGULAR)
         {
             int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
             double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
@@ -312,32 +318,26 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             this.setTick(fx, false);
             this.setValue(fy, false);
         }
-        else if (type == KeyframeType.LEFT_HANDLE)
+        else if (type.b == KeyframeType.LEFT_HANDLE)
         {
-            for (Keyframe keyframe : this.sheet.selection.getSelected())
-            {
-                keyframe.lx = -(float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
-                keyframe.ly = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
+            keyframe.lx = -(float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
+            keyframe.ly = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
 
-                if (!Window.isShiftPressed())
-                {
-                    keyframe.rx = keyframe.lx;
-                    keyframe.ry = -keyframe.ly;
-                }
+            if (!Window.isShiftPressed())
+            {
+                keyframe.rx = keyframe.lx;
+                keyframe.ry = -keyframe.ly;
             }
         }
-        else if (type == KeyframeType.RIGHT_HANDLE)
+        else if (type.b == KeyframeType.RIGHT_HANDLE)
         {
-            for (Keyframe keyframe : this.sheet.selection.getSelected())
-            {
-                keyframe.rx = (float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
-                keyframe.ry = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
+            keyframe.rx = (float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
+            keyframe.ry = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
 
-                if (!Window.isShiftPressed())
-                {
-                    keyframe.lx = keyframe.rx;
-                    keyframe.ly = -keyframe.ry;
-                }
+            if (!Window.isShiftPressed())
+            {
+                keyframe.lx = keyframe.rx;
+                keyframe.ly = -keyframe.ry;
             }
         }
 
