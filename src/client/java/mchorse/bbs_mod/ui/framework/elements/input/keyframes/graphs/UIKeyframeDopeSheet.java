@@ -13,6 +13,7 @@ import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import net.minecraft.client.render.BufferBuilder;
@@ -192,7 +193,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     @Override
-    public Keyframe findKeyframe(int mouseX, int mouseY)
+    public Pair<Keyframe, KeyframeType> findKeyframe(int mouseX, int mouseY)
     {
         UIKeyframeSheet sheet = this.getSheet(mouseY);
 
@@ -212,7 +213,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
             if (this.isNear(x, y, mouseX, mouseY, false))
             {
-                return keyframe;
+                return new Pair<>(keyframe, KeyframeType.REGULAR);
             }
         }
 
@@ -299,7 +300,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV)
     {
         int offset = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
 

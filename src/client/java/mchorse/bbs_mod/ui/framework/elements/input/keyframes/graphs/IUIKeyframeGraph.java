@@ -5,6 +5,7 @@ import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.utils.Area;
+import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -148,7 +149,7 @@ public interface IUIKeyframeGraph
         this.pickKeyframe(null);
     }
 
-    public Keyframe findKeyframe(int mouseX, int mouseY);
+    public Pair<Keyframe, KeyframeType> findKeyframe(int mouseX, int mouseY);
 
     public default void pickSelected()
     {
@@ -213,7 +214,7 @@ public interface IUIKeyframeGraph
 
     public void handleMouse(UIContext context, int lastX, int lastY);
 
-    public void dragKeyframes(UIContext context, int originalX, int originalY, int originalT, Object originalV);
+    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV);
 
     /* Rendering */
 

@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.IUIKeyframeGraph;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.KeyframeType;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeGraph;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -46,6 +47,7 @@ public class UIKeyframes extends UIElement
     private boolean selecting;
     private boolean navigating;
     private int dragging = -1;
+    private KeyframeType draggingType = KeyframeType.REGULAR;
     private boolean scaling;
     private long scalingAnchor;
     private Map<Keyframe, Long> scaleTicks = new HashMap<>();
@@ -237,7 +239,7 @@ public class UIKeyframes extends UIElement
     private void selectSame()
     {
         UIContext context = this.getContext();
-        Keyframe keyframe = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
+        Pair<Keyframe, KeyframeType> keyframe = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
 
         if (keyframe != null)
         {
@@ -254,7 +256,7 @@ public class UIKeyframes extends UIElement
                 {
                     Keyframe kf = list.get(i);
 
-                    if (kf.getFactory().compare(keyframe.getValue(), kf.getValue()))
+                    if (kf.getFactory().compare(keyframe.a.getValue(), kf.getValue()))
                     {
                         sheet.selection.add(i);
                     }
@@ -773,11 +775,11 @@ public class UIKeyframes extends UIElement
 
     private void removeOrCreateKeyframe(UIContext context)
     {
-        Keyframe keyframe = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
+        Pair<Keyframe, KeyframeType> keyframe = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
 
         if (keyframe != null)
         {
-            this.currentGraph.removeKeyframe(keyframe);
+            this.currentGraph.removeKeyframe(keyframe.a);
         }
         else
         {
@@ -804,7 +806,8 @@ public class UIKeyframes extends UIElement
     private void pickOrStartSelectingKeyframes(UIContext context)
     {
         /* Picking keyframe or initiating selection */
-        Keyframe found = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
+        Pair<Keyframe, KeyframeType> pair = this.currentGraph.findKeyframe(context.mouseX, context.mouseY);
+        Keyframe found = pair == null ? null : pair.a;
         boolean shift = Window.isShiftPressed();
 
         if (shift && found == null)
@@ -836,6 +839,7 @@ public class UIKeyframes extends UIElement
         if (!this.selecting)
         {
             this.dragging = 0;
+            this.draggingType = pair == null ? KeyframeType.REGULAR : pair.b;
 
             this.cacheKeyframes();
 
@@ -972,7 +976,7 @@ public class UIKeyframes extends UIElement
         {
             if (this.currentGraph.getSelected() != null)
             {
-                this.currentGraph.dragKeyframes(context, this.originalX, this.originalY, this.originalT, this.originalV);
+                this.currentGraph.dragKeyframes(context, this.draggingType, this.originalX, this.originalY, this.originalT, this.originalV);
             }
             else
             {

@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
+import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -185,7 +186,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     }
 
     @Override
-    public Keyframe findKeyframe(int mouseX, int mouseY)
+    public Pair<Keyframe, KeyframeType> findKeyframe(int mouseX, int mouseY)
     {
         List keyframes = this.sheet.channel.getKeyframes();
 
@@ -197,7 +198,23 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
             if (this.isNear(x, y, mouseX, mouseY))
             {
-                return keyframe;
+                return new Pair<>(keyframe, KeyframeType.REGULAR);
+            }
+
+            int lx = this.keyframes.toGraphX(keyframe.getTick() - keyframe.lx);
+            int ly = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()) + keyframe.ly);
+
+            if (this.isNear(lx, ly, mouseX, mouseY))
+            {
+                return new Pair<>(keyframe, KeyframeType.LEFT_HANDLE);
+            }
+
+            int rx = this.keyframes.toGraphX(keyframe.getTick() + keyframe.rx);
+            int ry = this.toGraphY(keyframe.getFactory().getY(keyframe.getValue()) + keyframe.ry);
+
+            if (this.isNear(rx, ry, mouseX, mouseY))
+            {
+                return new Pair<>(keyframe, KeyframeType.RIGHT_HANDLE);
             }
         }
 
@@ -280,15 +297,50 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, KeyframeType type, int originalX, int originalY, int originalT, Object originalV)
     {
         IKeyframeFactory factory = this.sheet.channel.getFactory();
 
-        int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
-        double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
+        if (type == KeyframeType.REGULAR)
+        {
+            int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
+            double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
 
-        this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX, false);
-        this.setValue(factory.yToValue(this.fromGraphY(context.mouseY) - offsetY), false);
+            long fx = Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX;
+            Object fy = factory.yToValue(this.fromGraphY(context.mouseY) - offsetY);
+
+            this.setTick(fx, false);
+            this.setValue(fy, false);
+        }
+        else if (type == KeyframeType.LEFT_HANDLE)
+        {
+            for (Keyframe keyframe : this.sheet.selection.getSelected())
+            {
+                keyframe.lx = -(float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
+                keyframe.ly = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
+
+                if (!Window.isShiftPressed())
+                {
+                    keyframe.rx = keyframe.lx;
+                    keyframe.ry = -keyframe.ly;
+                }
+            }
+        }
+        else if (type == KeyframeType.RIGHT_HANDLE)
+        {
+            for (Keyframe keyframe : this.sheet.selection.getSelected())
+            {
+                keyframe.rx = (float) ((this.keyframes.fromGraphX(context.mouseX)) - keyframe.getTick());
+                keyframe.ry = (float) (this.fromGraphY(context.mouseY) - factory.getY(originalV));
+
+                if (!Window.isShiftPressed())
+                {
+                    keyframe.lx = keyframe.rx;
+                    keyframe.ly = -keyframe.ry;
+                }
+            }
+        }
+
         this.keyframes.triggerChange();
     }
 
