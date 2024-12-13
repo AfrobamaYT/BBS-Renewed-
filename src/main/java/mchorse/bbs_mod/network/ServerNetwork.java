@@ -22,7 +22,6 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.packs.ExternalAssetsSourcePack;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.EnumUtils;
-import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
@@ -49,6 +48,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -441,7 +441,7 @@ public class ServerNetwork
     {
         String path = buf.readString();
         Link link = Link.assets(path);
-        int index = buf.readInt();
+        long index = buf.readLong();
 
         sendAsset(player, link, index);
     }
@@ -456,10 +456,10 @@ public class ServerNetwork
         }
 
         String path = buf.readString();
-        int index = buf.readInt();
+        long offset = buf.readLong();
 
         /* If index is -1, we gotta delete the file */
-        if (index == -1)
+        if (offset < 0)
         {
             ISourcePack sourcePack = BBSMod.getDynamicSourcePack().getSourcePack();
 
@@ -476,8 +476,8 @@ public class ServerNetwork
             return;
         }
 
-        int total = buf.readInt();
         int size = buf.readInt();
+        boolean last = buf.readBoolean();
         byte[] bytes = new byte[size];
 
         buf.readBytes(bytes);
@@ -490,7 +490,7 @@ public class ServerNetwork
 
             file.getParentFile().mkdirs();
 
-            try (OutputStream stream = new FileOutputStream(file, index != 0))
+            try (OutputStream stream = new FileOutputStream(file, offset != 0))
             {
                 stream.write(bytes);
             }
@@ -499,9 +499,9 @@ public class ServerNetwork
                 e.printStackTrace();
             }
 
-            if (index != total - 1)
+            if (!last)
             {
-                sendRequestAsset(player, path, index + 1);
+                sendRequestAsset(player, path, offset);
             }
             else
             {
@@ -688,26 +688,37 @@ public class ServerNetwork
         return buf;
     }
 
-    public static void sendAsset(ServerPlayerEntity player, Link link, int index)
+    public static void sendAsset(ServerPlayerEntity player, Link link, long offset)
     {
         try
         {
-            InputStream stream = BBSMod.getOriginalSourcePack().getAsset(link);
-            byte[] bytes = IOUtils.readBytes(stream);
-
+            File file = BBSMod.getDynamicSourcePack().getFile(link);
             int placeholder = 1000;
             int bufferSize = 32767 - placeholder;
-            int total = (int) Math.ceil(bytes.length / (float) bufferSize);
-            int offset = index * bufferSize;
-
             PacketByteBuf buf = PacketByteBufs.create();
-            int size = Math.min(bufferSize, bytes.length - offset);
+            byte[] bytes = new byte[bufferSize];
+            int read;
+
+            if (file != null)
+            {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+
+                randomAccessFile.seek(offset);
+                read = randomAccessFile.read(bytes);
+            }
+            else
+            {
+                InputStream stream = BBSMod.getDynamicSourcePack().getAsset(link);
+
+                stream.skip(offset);
+                read = stream.read(bytes);
+            }
 
             buf.writeString(link.path);
-            buf.writeInt(index);
-            buf.writeInt(total);
-            buf.writeInt(size);
-            buf.writeBytes(bytes, offset, size);
+            buf.writeLong(offset + read);
+            buf.writeInt(read);
+            buf.writeBoolean(read != bytes.length);
+            buf.writeBytes(bytes, 0, read);
 
             ServerPlayNetworking.send(player, CLIENT_ASSET, buf);
         }
@@ -717,12 +728,12 @@ public class ServerNetwork
         }
     }
 
-    public static void sendRequestAsset(ServerPlayerEntity player, String asset, int index)
+    public static void sendRequestAsset(ServerPlayerEntity player, String asset, long offset)
     {
         PacketByteBuf buf = PacketByteBufs.create();
 
         buf.writeString(asset);
-        buf.writeInt(index);
+        buf.writeLong(offset);
 
         ServerPlayNetworking.send(player, ServerNetwork.CLIENT_REQUEST_ASSET, buf);
     }

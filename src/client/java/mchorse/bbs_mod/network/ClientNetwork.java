@@ -29,7 +29,6 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
-import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -46,6 +45,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -257,9 +257,9 @@ public class ClientNetwork
     private static void handleAssetPacket(MinecraftClient client, PacketByteBuf buf)
     {
         String path = buf.readString();
-        int index = buf.readInt();
-        int total = buf.readInt();
+        long offset = buf.readLong();
         int size = buf.readInt();
+        boolean last = buf.readBoolean();
         byte[] bytes = new byte[size];
 
         buf.readBytes(bytes);
@@ -272,7 +272,7 @@ public class ClientNetwork
 
             file.getParentFile().mkdirs();
 
-            try (OutputStream stream = new FileOutputStream(file, index != 0))
+            try (OutputStream stream = new FileOutputStream(file, offset != 0))
             {
                 stream.write(bytes);
             }
@@ -281,11 +281,11 @@ public class ClientNetwork
                 e.printStackTrace();
             }
 
-            if (index != total - 1)
+            if (!last)
             {
-                client.execute(() -> sendRequestAsset(path, index + 1));
+                client.execute(() -> sendRequestAsset(path, offset));
             }
-            else if (index == total - 1)
+            else
             {
                 System.out.println("[Client] Received completely: " + path);
 
@@ -307,9 +307,9 @@ public class ClientNetwork
     {
         String path = buf.readString();
         Link link = Link.assets(path);
-        int index = buf.readInt();
+        long offset = buf.readLong();
 
-        sendAsset(link, index);
+        sendAsset(link, offset);
     }
 
     private static void handleCheatsPermissionPacket(MinecraftClient client, PacketByteBuf buf)
@@ -470,19 +470,19 @@ public class ClientNetwork
         ClientPlayNetworking.send(ServerNetwork.SERVER_FORM_TRIGGER, buf);
     }
 
-    public static void sendRequestAsset(String asset, int index)
+    public static void sendRequestAsset(String asset, long offset)
     {
         PacketByteBuf buf = PacketByteBufs.create();
 
         buf.writeString(asset);
-        buf.writeInt(index);
+        buf.writeLong(offset);
 
         ClientPlayNetworking.send(ServerNetwork.SERVER_REQUEST_ASSET, buf);
     }
 
-    public static void sendAsset(Link link, int index)
+    public static void sendAsset(Link link, long offset)
     {
-        if (index < 0)
+        if (offset < 0)
         {
             PacketByteBuf buf = PacketByteBufs.create();
 
@@ -496,22 +496,33 @@ public class ClientNetwork
 
         try
         {
-            InputStream stream = BBSMod.getDynamicSourcePack().getAsset(link);
-            byte[] bytes = IOUtils.readBytes(stream);
-
+            File file = BBSMod.getDynamicSourcePack().getFile(link);
             int placeholder = 1000;
             int bufferSize = 32767 - placeholder;
-            int total = (int) Math.ceil(bytes.length / (float) bufferSize);
-            int offset = index * bufferSize;
-
             PacketByteBuf buf = PacketByteBufs.create();
-            int size = Math.min(bufferSize, bytes.length - offset);
+            byte[] bytes = new byte[bufferSize];
+            int read;
+
+            if (file != null)
+            {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+
+                randomAccessFile.seek(offset);
+                read = randomAccessFile.read(bytes);
+            }
+            else
+            {
+                InputStream stream = BBSMod.getDynamicSourcePack().getAsset(link);
+
+                stream.skip(offset);
+                read = stream.read(bytes);
+            }
 
             buf.writeString(link.path);
-            buf.writeInt(index);
-            buf.writeInt(total);
-            buf.writeInt(size);
-            buf.writeBytes(bytes, offset, size);
+            buf.writeLong(offset + read);
+            buf.writeInt(read);
+            buf.writeBoolean(read != bytes.length);
+            buf.writeBytes(bytes, 0, read);
 
             ClientPlayNetworking.send(ServerNetwork.SERVER_ASSET, buf);
         }

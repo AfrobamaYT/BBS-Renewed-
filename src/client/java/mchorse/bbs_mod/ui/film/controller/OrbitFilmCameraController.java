@@ -125,10 +125,11 @@ public class OrbitFilmCameraController implements ICameraController
         {
             int x = context.mouseX;
             int y = context.mouseY;
+            float v = 1F; /* 1F / this.getSpeed(); */
 
             this.rotation.add(
-                -(y - this.last.y) / (50F * (1 / this.getSpeed())),
-                -(x - this.last.x) / (50F * (1 / this.getSpeed()))
+                -(y - this.last.y) / (50F * v),
+                -(x - this.last.x) / (50F * v)
             );
 
             this.last.set(x, y);

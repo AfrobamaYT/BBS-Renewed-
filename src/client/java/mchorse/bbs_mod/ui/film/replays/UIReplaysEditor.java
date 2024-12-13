@@ -26,6 +26,7 @@ import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -425,6 +426,7 @@ public class UIReplaysEditor extends UIElement
                     if (sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
                     {
                         menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.animationToPoses(modelForm, sheet));
+                        // TODO: menu.action(Icons.UPLOAD, IKey.raw("Copy as .bbs.json animation"), () -> this.copyAaBBSJSON(sheet));
                     }
                 }
             });
@@ -442,6 +444,36 @@ public class UIReplaysEditor extends UIElement
         if (this.keyframeEditor != null && lastEditor == null)
         {
             this.keyframeEditor.view.resetView();
+        }
+    }
+
+    private void copyAaBBSJSON(UIKeyframeSheet sheet)
+    {
+        MolangParser parser = BBSModClient.getModels().parser;
+        Animation animation = new Animation("exported_animation", parser);
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
+        List<Keyframe> selected = sheet.selection.getSelected();
+
+        for (Keyframe keyframe : selected)
+        {
+            min = Math.min(min, (int) keyframe.getTick());
+            max = Math.max(min, (int) keyframe.getTick());
+        }
+
+        for (Keyframe keyframe : selected)
+        {
+            if (keyframe.getValue() instanceof Pose pose)
+            {
+                for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
+                {
+                    String key = entry.getKey();
+                    PoseTransform value = entry.getValue();
+                    AnimationPart part = new AnimationPart(parser);
+
+                    animation.parts.put(key, part);
+                }
+            }
         }
     }
 
