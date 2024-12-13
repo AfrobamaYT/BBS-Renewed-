@@ -261,7 +261,7 @@ public class UITrackpad extends UIBaseTextbox
     {
         if (this.callback != null)
         {
-            this.callback.accept(this.relative ? value - oldValue : value);
+            this.callback.accept(this.relative ? value - oldValue : this.value);
         }
     }
 
