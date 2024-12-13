@@ -423,7 +423,7 @@ public class UIReplaysEditor extends UIElement
                     int mouseY = this.getContext().mouseY;
                     UIKeyframeSheet sheet = this.keyframeEditor.view.getGraph().getSheet(mouseY);
 
-                    if (sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
+                    if (sheet != null && sheet.channel.getFactory() == KeyframeFactories.POSE && sheet.id.equals("pose"))
                     {
                         menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.animationToPoses(modelForm, sheet));
                         // TODO: menu.action(Icons.UPLOAD, IKey.raw("Copy as .bbs.json animation"), () -> this.copyAaBBSJSON(sheet));
