@@ -89,19 +89,21 @@ public class UIKeyframeSheet
 
     public void setValue(Object value, Object selectedValue, boolean dirty)
     {
+        Number valueNumber = value instanceof Number ? (Number) value : 0D;
+
         for (Keyframe keyframe : this.selection.getSelected())
         {
             if (selectedValue instanceof Double)
             {
-                keyframe.setValue((double) keyframe.getValue() + (double) value - (double) selectedValue);
+                keyframe.setValue((double) keyframe.getValue() + valueNumber.doubleValue() - (double) selectedValue);
             }
             else if (selectedValue instanceof Float)
             {
-                keyframe.setValue((float) keyframe.getValue() + (float) value - (float) selectedValue);
+                keyframe.setValue((float) keyframe.getValue() + valueNumber.floatValue() - (float) selectedValue);
             }
             else if (selectedValue instanceof Integer)
             {
-                keyframe.setValue((int) keyframe.getValue() + (int) value - (int) selectedValue);
+                keyframe.setValue((int) keyframe.getValue() + valueNumber.intValue() - (int) selectedValue);
             }
             else
             {
