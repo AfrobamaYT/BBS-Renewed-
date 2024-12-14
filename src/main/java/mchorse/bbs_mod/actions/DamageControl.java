@@ -44,7 +44,7 @@ public class DamageControl
             }
         }
 
-        this.blocks.add(new BlockCapture(pos, state, entity == null ? null : entity.createNbtWithId()));
+        this.blocks.add(new BlockCapture(new BlockPos(pos), state, entity == null ? null : entity.createNbtWithId()));
     }
 
     public void addEntity(Entity entity)
