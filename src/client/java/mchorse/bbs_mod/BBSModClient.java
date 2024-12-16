@@ -67,6 +67,7 @@ import net.minecraft.client.util.Window;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.resource.ResourceManager;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;

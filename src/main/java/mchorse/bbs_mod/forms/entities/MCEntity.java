@@ -34,6 +34,10 @@ public class MCEntity implements IEntity
     }
 
     @Override
+    public void setWorld(World world)
+    {}
+
+    @Override
     public World getWorld()
     {
         return this.mcEntity.getWorld();

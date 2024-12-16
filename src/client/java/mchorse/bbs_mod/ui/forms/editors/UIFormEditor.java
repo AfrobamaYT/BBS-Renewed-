@@ -15,6 +15,7 @@ import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.ParticleForm;
+import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -32,6 +33,7 @@ import mchorse.bbs_mod.ui.forms.editors.forms.UILabelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIMobForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIModelForm;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIParticleForm;
+import mchorse.bbs_mod.ui.forms.editors.forms.UIVanillaParticleForm;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIPickableFormRenderer;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
@@ -95,6 +97,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
         register(ItemForm.class, UIItemForm::new);
         register(AnchorForm.class, UIAnchorForm::new);
         register(MobForm.class, UIMobForm::new);
+        register(VanillaParticleForm.class, UIVanillaParticleForm::new);
     }
 
     public static void register(Class clazz, Supplier<UIForm> supplier)
@@ -483,4 +486,5 @@ public class UIFormEditor extends UIElement implements IUIFormList
             this.callback.accept(form);
         }
     }
+
 }

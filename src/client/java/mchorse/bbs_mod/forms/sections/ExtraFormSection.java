@@ -9,6 +9,7 @@ import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.forms.MobForm;
+import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import net.minecraft.block.Blocks;
@@ -47,6 +48,7 @@ public class ExtraFormSection extends FormSection
         ExtrudedForm extruded = new ExtrudedForm();
         BlockForm block = new BlockForm();
         ItemForm item = new ItemForm();
+        VanillaParticleForm vanillaParticle = new VanillaParticleForm();
 
         billboard.texture.set(Link.assets("textures/error.png"));
         extruded.texture.set(Link.assets("textures/error.png"));
@@ -59,6 +61,7 @@ public class ExtraFormSection extends FormSection
         extra.addForm(extruded);
         extra.addForm(block);
         extra.addForm(item);
+        extra.addForm(vanillaParticle);
 
         this.mobsAnimals = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_ANIMALS, this.parent.visibility.get("mobs_animals"));
         this.mobsNeutral = new FormCategory(UIKeys.FORMS_CATEGORIES_MOBS_NEUTRAL, this.parent.visibility.get("mobs_neutral"));

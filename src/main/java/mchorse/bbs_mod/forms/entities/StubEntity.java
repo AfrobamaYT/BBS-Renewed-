@@ -67,6 +67,12 @@ public class StubEntity implements IEntity
     }
 
     @Override
+    public void setWorld(World world)
+    {
+        this.world = world;
+    }
+
+    @Override
     public World getWorld()
     {
         return this.world;

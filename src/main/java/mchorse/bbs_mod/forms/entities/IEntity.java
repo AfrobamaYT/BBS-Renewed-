@@ -15,6 +15,8 @@ import net.minecraft.world.World;
  */
 public interface IEntity
 {
+    public void setWorld(World world);
+
     public World getWorld();
 
     public Form getForm();
