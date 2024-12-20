@@ -19,14 +19,15 @@ import java.util.function.Supplier;
 
 public class UIDataContextMenu extends UIContextMenu
 {
+    public UIElement row;
     public UIIcon copy;
     public UIIcon paste;
     public UIIcon reset;
+    public UIIcon save;
 
     public UIStringList poses;
 
     public UITextbox name;
-    public UIIcon save;
 
     private DataManager manager;
     private String group;
@@ -77,13 +78,13 @@ public class UIDataContextMenu extends UIContextMenu
         this.name = new UITextbox().filename();
         this.name.placeholder(UIKeys.POSE_CONTEXT_NAME);
 
-        UIElement row = UI.row(this.copy, this.paste, this.reset, this.save);
+        this.row = UI.row(this.copy, this.paste, this.reset, this.save);
 
-        row.relative(this).xy(5, 5).w(1F, -10).h(20);
+        this.row.relative(this).xy(5, 5).w(1F, -10).h(20);
         this.name.relative(this).xy(5, 25).w(1F, -10).h(20);
         this.poses.relative(this).xy(5, 45).w(1F, -10).hTo(this.area, 1F, -5);
 
-        this.add(row);
+        this.add(this.row);
         this.add(this.name);
         this.add(this.poses);
 
