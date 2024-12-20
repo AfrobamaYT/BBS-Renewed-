@@ -13,8 +13,11 @@ import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
+
+import java.util.function.Function;
 
 public class BlockFormRenderer extends FormRenderer<BlockForm>
 {
@@ -87,7 +90,14 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         color.set(context.color);
         color.mul(set);
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, color));
+        Function<VertexConsumer, VertexConsumer> consumer = (b) -> new RecolorVertexConsumer(b, color);
+
+        if (color.r >= 1F && color.g >= 1F && color.b >= 1F && color.a >= 1F)
+        {
+            consumer = null;
+        }
+
+        consumers.setSubstitute(consumer);
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
         consumers.setSubstitute(null);
