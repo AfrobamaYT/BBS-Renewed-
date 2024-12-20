@@ -118,7 +118,11 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
                         .rotateX(sv)
                         .transform(v.set(velocityX, velocityY, velocityZ));
 
-                    world.addParticle(effect, true, this.pos.x, this.pos.y, this.pos.z, v.x, v.y, v.z);
+                    double x = this.pos.x + ((Math.random() * 2F - 1F) * this.form.offsetX.get(0F));
+                    double y = this.pos.y + ((Math.random() * 2F - 1F) * this.form.offsetY.get(0F));
+                    double z = this.pos.z + ((Math.random() * 2F - 1F) * this.form.offsetZ.get(0F));
+
+                    world.addParticle(effect, true, x, y, z, v.x, v.y, v.z);
                 }
 
                 this.tick = frequency;

@@ -15,6 +15,9 @@ public class VanillaParticleForm extends Form
     public final IntegerProperty frequency = new IntegerProperty(this, "frequency", 5);
     public final FloatProperty scatteringYaw = new FloatProperty(this, "scattering_yaw", 0F);
     public final FloatProperty scatteringPitch = new FloatProperty(this, "scattering_pitch", 0F);
+    public final FloatProperty offsetX = new FloatProperty(this, "offset_x", 0F);
+    public final FloatProperty offsetY = new FloatProperty(this, "offset_y", 0F);
+    public final FloatProperty offsetZ = new FloatProperty(this, "offset_z", 0F);
 
     public VanillaParticleForm()
     {
@@ -27,5 +30,8 @@ public class VanillaParticleForm extends Form
         this.register(this.frequency);
         this.register(this.scatteringYaw);
         this.register(this.scatteringPitch);
+        this.register(this.offsetX);
+        this.register(this.offsetY);
+        this.register(this.offsetZ);
     }
 }

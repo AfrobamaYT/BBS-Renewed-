@@ -17,6 +17,9 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
     public UITrackpad frequency;
     public UITrackpad scatteringYaw;
     public UITrackpad scatteringPitch;
+    public UITrackpad offsetX;
+    public UITrackpad offsetY;
+    public UITrackpad offsetZ;
 
     public UIVanillaParticleFormPanel(UIForm editor)
     {
@@ -33,10 +36,17 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         this.scatteringYaw.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_HORIZONTAL);
         this.scatteringPitch = new UITrackpad((v) -> this.form.scatteringPitch.set(v.floatValue()));
         this.scatteringPitch.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_VERTICAL);
+        this.offsetX = new UITrackpad((v) -> this.form.offsetX.set(v.floatValue()));
+        this.offsetX.tooltip(UIKeys.GENERAL_X);
+        this.offsetY = new UITrackpad((v) -> this.form.offsetY.set(v.floatValue()));
+        this.offsetY.tooltip(UIKeys.GENERAL_Y);
+        this.offsetZ = new UITrackpad((v) -> this.form.offsetZ.set(v.floatValue()));
+        this.offsetZ.tooltip(UIKeys.GENERAL_Z);
 
         this.options.add(this.settings, this.paused.marginTop(6), UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_VELOCITY).marginTop(6), this.velocity);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_EMISSION).marginTop(6), this.count, this.frequency);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_SCATTER).marginTop(6), this.scatteringYaw, this.scatteringPitch);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_OFFSET).marginTop(6), this.offsetX, this.offsetY, this.offsetZ);
     }
 
     @Override
@@ -51,5 +61,8 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         this.frequency.setValue(form.frequency.get());
         this.scatteringYaw.setValue(form.scatteringYaw.get());
         this.scatteringPitch.setValue(form.scatteringPitch.get());
+        this.offsetX.setValue(form.offsetX.get());
+        this.offsetY.setValue(form.offsetY.get());
+        this.offsetZ.setValue(form.offsetZ.get());
     }
 }
