@@ -58,7 +58,7 @@ public class KeyframeSelection
 
         if (direction < 0)
         {
-            for (int i = 0; i < keyframes.size() - 1; i++)
+            for (int i = 0; i < keyframes.size(); i++)
             {
                 Keyframe keyframe = (Keyframe) keyframes.get(i);
 
