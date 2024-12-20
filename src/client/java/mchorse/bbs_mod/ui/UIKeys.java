@@ -91,6 +91,7 @@ public class UIKeys
     public static final IKey CAMERA_PANELS_COPY_ENTITY = L10n.lang("bbs.ui.camera.panels.copy_entity");
     public static final IKey CAMERA_PANELS_COPY_ENTITY_TOOLTIP = L10n.lang("bbs.ui.camera.panels.copy_entity_tooltip");
     public static final IKey CAMERA_PANELS_CURVES_SUN_ROTATION = L10n.lang("bbs.ui.camera.panels.curves.sun_rotation");
+    public static final IKey CAMERA_PANELS_FOCUS_DISTANCE = L10n.lang("bbs.ui.camera.panels.focus_distance");
     public static final IKey CAMERA_PANELS_DETERMINISTIC = L10n.lang("bbs.ui.camera.panels.deterministic");
     public static final IKey CAMERA_PANELS_DETERMINISTIC_TOOLTIP = L10n.lang("bbs.ui.camera.panels.deterministic_tooltip");
     public static final IKey CAMERA_PANELS_DISTANCE = L10n.lang("bbs.ui.camera.panels.distance");

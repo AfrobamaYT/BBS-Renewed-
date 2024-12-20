@@ -81,7 +81,7 @@ public class DragClip extends ComponentClip
             int offset = this.tick.get();
 
             this.original.copy(position);
-            context.applyUnderneath(offset, 0, this.current);
+            context.applyUnderneath(offset, 0F, this.current);
             position.copy(this.current);
 
             float rate = this.rate.get() / 20F;
@@ -91,7 +91,7 @@ public class DragClip extends ComponentClip
             {
                 float tick = i / rate;
 
-                context.applyUnderneath(offset + (int) tick, tick % 1, this.current);
+                context.applyUnderneath(offset + (int) tick, tick % 1F, this.current);
 
                 if (isX) position.point.x = Lerps.lerp(position.point.x, this.current.point.x, factor);
                 if (isY) position.point.y = Lerps.lerp(position.point.y, this.current.point.y, factor);

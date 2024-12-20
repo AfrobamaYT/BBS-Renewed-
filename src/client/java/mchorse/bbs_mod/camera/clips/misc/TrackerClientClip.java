@@ -32,7 +32,7 @@ public class TrackerClientClip extends TrackerClip
             return;
         }
 
-        if (!context.applyUnderneath(this.tick.get(), 0, this.position))
+        if (!context.applyUnderneath(this.tick.get(), 0F, this.position))
         {
             this.position.copy(position);
         }
