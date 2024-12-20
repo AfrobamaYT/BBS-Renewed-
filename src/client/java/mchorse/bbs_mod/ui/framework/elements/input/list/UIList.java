@@ -338,6 +338,7 @@ public abstract class UIList <T> extends UIElement
         if (!this.current.isEmpty())
         {
             this.scroll.setScroll(this.current.get(0) * this.scroll.scrollItemSize);
+            this.scroll.updateTarget();
         }
     }
 

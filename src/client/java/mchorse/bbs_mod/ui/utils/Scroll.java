@@ -235,7 +235,10 @@ public class Scroll
         {
             this.targetScroll = MathUtils.clamp(this.targetScroll, 0, this.scrollSize - size);
         }
+    }
 
+    public void updateTarget()
+    {
         this.scroll = this.targetScroll;
     }
 
