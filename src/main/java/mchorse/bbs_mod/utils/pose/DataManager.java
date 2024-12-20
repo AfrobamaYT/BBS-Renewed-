@@ -14,6 +14,11 @@ public abstract class DataManager
 {
     private MapType data = new MapType();
 
+    public void clear()
+    {
+        this.data = new MapType();
+    }
+
     public MapType getData(String group)
     {
         MapType newData;

@@ -10,6 +10,8 @@ import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;
 import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.pose.PoseManager;
+import mchorse.bbs_mod.utils.pose.ShapeKeysManager;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
 import mchorse.bbs_mod.vox.VoxModelLoader;
@@ -139,6 +141,8 @@ public class ModelManager implements IWatchDogListener
     public void reload()
     {
         this.models.clear();
+        PoseManager.INSTANCE.clear();
+        ShapeKeysManager.INSTANCE.clear();
     }
 
     public boolean isRelodable(Link link)
