@@ -2,12 +2,11 @@ package mchorse.bbs_mod.importers;
 
 import mchorse.bbs_mod.importers.types.GIFImporter;
 import mchorse.bbs_mod.importers.types.IImporter;
-import mchorse.bbs_mod.importers.types.JPEGImporter;
 import mchorse.bbs_mod.importers.types.OldSkinImporter;
 import mchorse.bbs_mod.importers.types.PNGImporter;
+import mchorse.bbs_mod.importers.types.ToPNGImporter;
 import mchorse.bbs_mod.importers.types.ToWAVImporter;
 import mchorse.bbs_mod.importers.types.WAVImporter;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 
 import java.util.ArrayList;
@@ -33,7 +32,8 @@ public class Importers
 
     static
     {
-        importers.add(new JPEGImporter());
+        importers.add(new ToPNGImporter(UIKeys.IMPORTER_JPEG, ".jpg", ".jpeg"));
+        importers.add(new ToPNGImporter(UIKeys.IMPORTER_WEBP, ".webp"));
         importers.add(new ToWAVImporter(UIKeys.IMPORTER_MPEG, ".mp3", ".mp4"));
         importers.add(new ToWAVImporter(UIKeys.IMPORTER_FLAC, ".flac"));
         importers.add(new ToWAVImporter(UIKeys.IMPORTER_AIFF, ".aiff"));

@@ -79,10 +79,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         }
         else
         {
-            CustomVertexConsumerProvider.hijackVertexFormat((l) ->
-            {
-                RenderSystem.enableBlend();
-            });
+            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
         }
 
         Color set = this.form.color.get(context.transition);

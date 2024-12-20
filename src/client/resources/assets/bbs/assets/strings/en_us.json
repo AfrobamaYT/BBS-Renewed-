@@ -531,6 +531,7 @@
     "bbs.ui.importer.flac": "FLAC to WAV",
     "bbs.ui.importer.gif": "GIF to PNG sequence",
     "bbs.ui.importer.jpeg": "JPEG to PNG",
+    "bbs.ui.importer.webp": "WEBP to PNG",
     "bbs.ui.importer.mpeg": "MP4/MP3 to WAV",
     "bbs.ui.importer.old_skin": "64x32 skin to 64x64 skin",
     "bbs.ui.importer.png": "PNG",

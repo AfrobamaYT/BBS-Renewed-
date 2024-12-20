@@ -414,6 +414,7 @@ public class UIKeys
     public static final IKey IMPORTER_MPEG = L10n.lang("bbs.ui.importer.mpeg");
     public static final IKey IMPORTER_FLAC = L10n.lang("bbs.ui.importer.flac");
     public static final IKey IMPORTER_AIFF = L10n.lang("bbs.ui.importer.aiff");
+    public static final IKey IMPORTER_WEBP = L10n.lang("bbs.ui.importer.webp");
     public static final IKey IMPORTER_OLD_SKIN = L10n.lang("bbs.ui.importer.old_skin");
     public static final IKey IMPORTER_PNG = L10n.lang("bbs.ui.importer.png");
     public static final IKey IMPORTER_SUCCESS_NOTIFICATION = L10n.lang("bbs.ui.importer.success-notification");
