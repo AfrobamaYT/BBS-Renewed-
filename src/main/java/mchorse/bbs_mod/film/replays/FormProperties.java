@@ -4,6 +4,7 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.properties.BaseTweenProperty;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -24,13 +25,22 @@ public class FormProperties extends ValueGroup
     public KeyframeChannel getOrCreate(Form form, String key)
     {
         BaseValue value = this.get(key);
-
-        if (value instanceof KeyframeChannel)
-        {
-            return (KeyframeChannel) value;
-        }
-
         IFormProperty property = FormUtils.getProperty(form, key);
+
+        if (value instanceof KeyframeChannel channel)
+        {
+            if (property instanceof BaseTweenProperty p)
+            {
+                if (channel.getFactory() == p.getFactory())
+                {
+                    return channel;
+                }
+            }
+            else
+            {
+                return channel;
+            }
+        }
 
         return property != null ? this.create(property) : null;
     }

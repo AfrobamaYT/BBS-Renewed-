@@ -25,7 +25,7 @@ public abstract class Form implements IMapSerializable
     private Form parent;
 
     public final BooleanProperty visible = new BooleanProperty(this, "visible", true);
-    public final BooleanProperty lighting = new BooleanProperty(this, "lighting", true);
+    public final FloatProperty lighting = new FloatProperty(this, "lighting", 1F);
     public final StringProperty name = new StringProperty(this, "name", "");
     public final TransformProperty transform = new TransformProperty(this, "transform", new Transform());
     public final FloatProperty uiScale = new FloatProperty(this, "uiScale", 1F);

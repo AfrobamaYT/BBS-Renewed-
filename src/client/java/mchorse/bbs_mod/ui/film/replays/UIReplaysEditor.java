@@ -140,6 +140,11 @@ public class UIReplaysEditor extends UIElement
         COLORS.put("frequency", Colors.RED);
         COLORS.put("count", Colors.GREEN);
 
+        COLORS.put("settings", Colors.MAGENTA);
+        COLORS.put("offset_x", Colors.RED);
+        COLORS.put("offset_y", Colors.GREEN);
+        COLORS.put("offset_z", Colors.BLUE);
+
         ICONS.put("x", Icons.X);
         ICONS.put("y", Icons.Y);
         ICONS.put("z", Icons.Z);
@@ -166,6 +171,8 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("paused", Icons.TIME);
         ICONS.put("frequency", Icons.STOPWATCH);
         ICONS.put("count", Icons.BUCKET);
+
+        ICONS.put("settings", Icons.GEAR);
     }
 
     public static Icon getIcon(String key)

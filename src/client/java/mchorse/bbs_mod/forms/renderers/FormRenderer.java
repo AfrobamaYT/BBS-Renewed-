@@ -7,9 +7,11 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.keys.KeyCodes;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -86,10 +88,15 @@ public abstract class FormRenderer <T extends Form>
         context.stack.push();
         this.applyTransforms(context.stack, context.getTransition());
 
-        if (!this.form.lighting.get(context.getTransition()))
-        {
-            context.light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
-        }
+        float lf = 1F - MathUtils.clamp(this.form.lighting.get(context.getTransition()), 0F, 1F);
+        int u = context.light & '\uffff';
+        int v = context.light >> 16 & '\uffff';
+
+        u = (int) Lerps.lerp(u, LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, lf);
+
+        int packedLight = u | v << 16;
+
+        context.light = packedLight;
 
         this.render3D(context);
 

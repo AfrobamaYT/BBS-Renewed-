@@ -39,7 +39,7 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hotkey.single().tooltip(UIKeys.FORMS_EDITORS_GENERAL_HOTKEY);
 
         this.visible = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_VISIBLE, (b) -> this.form.visible.set(b.getValue()));
-        this.lighting = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, (b) -> this.form.lighting.set(b.getValue()));
+        this.lighting = new UIToggle(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING, (b) -> this.form.lighting.set(b.getValue() ? 1F : 0F));
         this.lighting.tooltip(UIKeys.FORMS_EDITORS_GENERAL_LIGHTING_TOOLTIP);
         this.uiScale = new UITrackpad((v) -> this.form.uiScale.set(v.floatValue()));
         this.uiScale.limit(0.01D, 100D);
@@ -74,7 +74,7 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hotkey.setKeyCombo(new KeyCombo(IKey.EMPTY, form.hotkey.get()));
 
         this.visible.setValue(form.visible.get());
-        this.lighting.setValue(form.lighting.get());
+        this.lighting.setValue(form.lighting.get() > 0F);
         this.uiScale.setValue(form.uiScale.get());
         this.name.setText(form.name.get());
         this.transform.setTransform(form.transform.get());
