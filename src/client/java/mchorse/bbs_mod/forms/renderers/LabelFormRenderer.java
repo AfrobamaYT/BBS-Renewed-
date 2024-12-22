@@ -190,6 +190,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             return;
         }
 
+        for (int i = 0; i < lines.size(); i++)
+        {
+            lines.set(i, lines.get(i).trim());
+        }
+
         for (String line : lines)
         {
             w = Math.max(renderer.getWidth(line) - 1, w);
