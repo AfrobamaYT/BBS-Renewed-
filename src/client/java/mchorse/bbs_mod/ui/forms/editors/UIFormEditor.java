@@ -180,7 +180,6 @@ public class UIFormEditor extends UIElement implements IUIFormList
             }
         });
 
-        this.bodyPartData.add(this.pick, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(8), this.bone, this.transform.marginTop(8));
         this.formsArea.add(background, this.forms, this.bodyPartData);
         this.editArea.add(this.finish, this.toggleSidebar);
         this.add(this.editArea, this.formsArea);
@@ -345,11 +344,23 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
         if (entry.part != null)
         {
+            this.bodyPartData.removeAll();
+
             this.useTarget.setValue(entry.part.useTarget);
             this.bone.clear();
             this.bone.add(FormUtilsClient.getBones(entry.form));
             this.bone.sort();
             this.bone.setCurrentScroll(entry.part.bone);
+
+            if (!this.bone.getList().isEmpty())
+            {
+                this.bodyPartData.add(this.pick, this.useTarget, UI.label(UIKeys.FORMS_EDITOR_BONE).marginTop(8), this.bone, this.transform);
+            }
+            else
+            {
+                this.bodyPartData.add(this.pick, this.useTarget, this.transform);
+            }
+
             this.transform.setTransform(entry.part.getTransform());
 
             this.bodyPartData.scroll.setScroll(0);
