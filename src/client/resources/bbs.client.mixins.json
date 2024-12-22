@@ -21,7 +21,9 @@
         "KeyboardMixin",
         "ResourceReloadLoggerMixin",
         "RenderLayerMixin",
-        "ClientWorldPropertiesMixin"
+        "ClientWorldPropertiesMixin",
+        "sodium.SodiumBufferBuilderAccessor",
+        "sodium.ModelVertexMixin"
     ],
     "injectors": {
         "defaultRequire": 1

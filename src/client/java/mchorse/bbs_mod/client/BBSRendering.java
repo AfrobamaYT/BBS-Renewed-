@@ -11,6 +11,7 @@ import mchorse.bbs_mod.camera.clips.misc.SubtitleClip;
 import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
+import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -19,8 +20,10 @@ import mchorse.bbs_mod.ui.film.UISubtitleRenderer;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
+import mchorse.bbs_mod.utils.sodium.SodiumUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
@@ -31,6 +34,7 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.Window;
@@ -41,6 +45,7 @@ import org.lwjgl.opengl.GL11;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
 public class BBSRendering
 {
@@ -56,6 +61,7 @@ public class BBSRendering
 
     private static boolean customSize;
     private static boolean iris;
+    private static boolean sodium;
     private static boolean optifine;
 
     private static int width;
@@ -170,6 +176,7 @@ public class BBSRendering
     public static void setup()
     {
         iris = FabricLoader.getInstance().isModLoaded("iris");
+        sodium = FabricLoader.getInstance().isModLoaded("sodium");
         optifine = FabricLoader.getInstance().isModLoaded("optifabric");
 
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
@@ -360,5 +367,15 @@ public class BBSRendering
         }
 
         return 0L;
+    }
+
+    public static Function<VertexConsumer, VertexConsumer> getColorConsumer(Color color)
+    {
+        if (sodium)
+        {
+            return (b) -> SodiumUtils.createVertexBuffer(b, color);
+        }
+
+        return (b) -> new RecolorVertexConsumer(b, color);
     }
 }

@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -44,6 +45,11 @@ public class CustomVertexConsumerProvider extends VertexConsumerProvider.Immedia
     public void setSubstitute(Function<VertexConsumer, VertexConsumer> substitute)
     {
         this.substitute = substitute;
+
+        if (this.substitute == null)
+        {
+            RecolorVertexConsumer.newColor = null;
+        }
     }
 
     public void setUI(boolean ui)

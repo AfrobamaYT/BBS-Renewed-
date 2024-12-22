@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -48,7 +49,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         Color set = this.form.color.get(context.getTransition());
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, set));
+        consumers.setSubstitute(BBSRendering.getColorConsumer(set));
         consumers.setUI(true);
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), matrices, consumers, LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV);
         consumers.draw();
@@ -87,14 +88,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
         color.set(context.color);
         color.mul(set);
 
-        Function<VertexConsumer, VertexConsumer> consumer = (b) -> new RecolorVertexConsumer(b, color);
-
-        if (color.r >= 1F && color.g >= 1F && color.b >= 1F && color.a >= 1F)
-        {
-            consumer = null;
-        }
-
-        consumers.setSubstitute(consumer);
+        consumers.setSubstitute(BBSRendering.getColorConsumer(set));
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(this.form.blockState.get(context.getTransition()), context.stack, consumers, light, context.overlay);
         consumers.draw();
         consumers.setSubstitute(null);

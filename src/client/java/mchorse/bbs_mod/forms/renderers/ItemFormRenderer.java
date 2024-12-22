@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ItemForm;
-import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.colors.Color;
@@ -42,7 +42,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         Color set = this.form.color.get(context.getTransition());
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, set));
+        consumers.setSubstitute(BBSRendering.getColorConsumer(set));
         consumers.setUI(true);
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, OverlayTexture.DEFAULT_UV, matrices, consumers, MinecraftClient.getInstance().world, 0);
         consumers.draw();
@@ -80,7 +80,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         BlockFormRenderer.color.set(context.color);
         BlockFormRenderer.color.mul(set);
 
-        consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, BlockFormRenderer.color));
+        consumers.setSubstitute(BBSRendering.getColorConsumer(BlockFormRenderer.color));
         MinecraftClient.getInstance().getItemRenderer().renderItem(this.form.stack.get(context.getTransition()), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
         consumers.draw();
         consumers.setSubstitute(null);

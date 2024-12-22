@@ -3,6 +3,7 @@ package mchorse.bbs_mod.forms.renderers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
@@ -24,7 +25,6 @@ import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
-import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -344,7 +344,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                     RenderSystem.enableBlend();
                 });
 
-                consumers.setSubstitute((b) -> new RecolorVertexConsumer(b, color));
+                consumers.setSubstitute(BBSRendering.getColorConsumer(color));
                 MinecraftClient.getInstance().getItemRenderer().renderItem(null, itemStack, mode, mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);
                 consumers.draw();
                 consumers.setSubstitute(null);

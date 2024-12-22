@@ -5,8 +5,10 @@ import net.minecraft.client.render.VertexConsumer;
 
 public class RecolorVertexConsumer implements VertexConsumer
 {
-    private VertexConsumer consumer;
-    private Color color;
+    public static Color newColor;
+
+    protected VertexConsumer consumer;
+    protected Color color;
 
     public RecolorVertexConsumer(VertexConsumer consumer, Color color)
     {
