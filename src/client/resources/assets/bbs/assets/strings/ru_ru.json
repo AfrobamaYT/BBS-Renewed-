@@ -322,6 +322,7 @@
     "bbs.ui.camera.timeline.keys.clips": "Добавить клипы",
     "bbs.ui.camera.timeline.keys.enabled": "Переключить видимость",
     "bbs.ui.camera.tooltips.open_videos": "Открыть папку с видео...",
+    "bbs.ui.camera.tooltips.open_video_settings": "Открыть настройки видео...",
     "bbs.ui.camera.tooltips.record": "Записать видео",
     "bbs.ui.color.context.favorites.add": "Добавить к любимым",
     "bbs.ui.color.context.favorites.remove": "Удалить из любимых",
