@@ -70,6 +70,7 @@ public class UILabelFormPanel extends UIFormPanel<LabelForm>
         this.max.setValue(form.max.get());
         this.anchorX.setValue(form.anchorX.get());
         this.anchorY.setValue(form.anchorY.get());
+        this.anchorLines.setValue(form.anchorLines.get());
 
         this.shadowX.setValue(form.shadowX.get());
         this.shadowY.setValue(form.shadowY.get());
