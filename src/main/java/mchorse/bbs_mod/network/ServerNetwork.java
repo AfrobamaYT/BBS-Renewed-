@@ -402,7 +402,7 @@ public class ServerNetwork
 
         server.execute(() ->
         {
-            boolean wow = player.teleport(x, y, z, false);
+            player.requestTeleport(x, y, z);
 
             player.setYaw(yaw);
             player.setHeadYaw(yaw);
