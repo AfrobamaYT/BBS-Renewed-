@@ -39,7 +39,10 @@ public abstract class UITransform extends UIElement
     protected UIIcon iconR;
     protected UIIcon iconR2;
 
+    protected UIElement scaleRow;
+
     private boolean uniformDrag;
+    private boolean uniformScale;
 
     public UITransform()
     {
@@ -102,7 +105,8 @@ public abstract class UITransform extends UIElement
         this.w(1F).column().stretch().vertical();
 
         this.iconT = new UIIcon(Icons.ALL_DIRECTIONS, null);
-        this.iconS = new UIIcon(Icons.SCALE, null);
+        this.iconS = new UIIcon(Icons.SCALE, (b) -> this.toggleUniformScale());
+        this.iconS.tooltip(UIKeys.TRANSFORMS_UNIFORM_SCALE);
         this.iconR = new UIIcon(Icons.REFRESH, null);
         this.iconR2 = new UIIcon(Icons.REFRESH, null);
 
@@ -110,12 +114,11 @@ public abstract class UITransform extends UIElement
         this.iconT.hoverColor = this.iconS.hoverColor = this.iconR.hoverColor = this.iconR2.hoverColor = Colors.WHITE;
 
         this.iconT.setEnabled(false);
-        this.iconS.setEnabled(false);
         this.iconR.setEnabled(false);
         this.iconR2.setEnabled(false);
 
         this.add(UI.row(this.iconT, this.tx, this.ty, this.tz));
-        this.add(UI.row(this.iconS, this.sx, this.sy, this.sz));
+        this.add(this.scaleRow = UI.row(this.iconS, this.sx, this.sy, this.sz));
         this.add(UI.row(this.iconR, this.rx, this.ry, this.rz));
         this.add(UI.row(this.iconR2, this.r2x, this.r2y, this.r2z));
 
@@ -144,6 +147,29 @@ public abstract class UITransform extends UIElement
         });
 
         this.wh(190, 70);
+    }
+
+    protected void toggleUniformScale()
+    {
+        this.uniformScale = !this.uniformScale;
+
+        this.scaleRow.removeAll();
+
+        if (this.uniformScale)
+        {
+            this.scaleRow.add(this.iconS, this.sx);
+        }
+        else
+        {
+            this.scaleRow.add(this.iconS, this.sx, this.sy, this.sz);
+        }
+
+        UIElement parentContainer = this.getParentContainer();
+
+        if (parentContainer != null)
+        {
+            parentContainer.resize();
+        }
     }
 
     protected boolean isUniformScale()
@@ -232,6 +258,15 @@ public abstract class UITransform extends UIElement
     {
         try
         {
+            if (this.uniformScale && axis == Axis.X)
+            {
+                this.setS(x, x, x);
+                this.sy.setValue(x);
+                this.sz.setValue(x);
+
+                return;
+            }
+
             this.setS(
                 axis == Axis.X ? x : this.sx.value,
                 axis == Axis.Y ? x : this.sy.value,

@@ -726,6 +726,7 @@ public class UIKeys
     public static final IKey TRANSFORMS_ROTATE = L10n.lang("bbs.ui.transforms.rotate");
     public static final IKey TRANSFORMS_ROTATE2 = L10n.lang("bbs.ui.transforms.rotate2");
     public static final IKey TRANSFORMS_SCALE = L10n.lang("bbs.ui.transforms.scale");
+    public static final IKey TRANSFORMS_UNIFORM_SCALE = L10n.lang("bbs.ui.transforms.uniform_scale");
     public static final IKey TRANSFORMS_TRANSLATE = L10n.lang("bbs.ui.transforms.translate");
     public static final IKey UTILITY_ANALYZE_LANG = L10n.lang("studio.ui.utility.analyze_lang");
     public static final IKey UTILITY_AUDIO = L10n.lang("studio.ui.utility.audio");

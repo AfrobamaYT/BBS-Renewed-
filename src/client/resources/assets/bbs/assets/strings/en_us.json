@@ -841,6 +841,7 @@
     "bbs.ui.transforms.rotate": "Rotate",
     "bbs.ui.transforms.rotate2": "Rotate (2nd)",
     "bbs.ui.transforms.scale": "Scale",
+    "bbs.ui.transforms.uniform_scale": "Toggle uniform scale",
     "bbs.ui.transforms.translate": "Translate",
     "bbs.ui.video_settings.args": "Encoder arguments",
     "bbs.ui.video_settings.edit": "Edit settings...",

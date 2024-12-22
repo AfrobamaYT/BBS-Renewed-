@@ -834,6 +834,7 @@
     "bbs.ui.transforms.rotate": "Поворот",
     "bbs.ui.transforms.rotate2": "Вращение (2-ое)",
     "bbs.ui.transforms.scale": "Размер",
+    "bbs.ui.transforms.uniform_scale": "Переключить равномерный масштаб",
     "bbs.ui.transforms.translate": "Перемещение",
     "bbs.ui.video_settings.args": "Аргумента кодировшика",
     "bbs.ui.video_settings.edit": "Редактировать настройки...",

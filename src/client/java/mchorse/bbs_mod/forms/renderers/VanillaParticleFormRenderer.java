@@ -26,9 +26,8 @@ import org.joml.Vector3f;
 
 public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleForm> implements ITickable
 {
-    public static final Link ANCHOR_PREVIEW = Link.assets("textures/anchor.png");
+    public static final Link PARTICLE_PREVIEW = new Link("minecraft", "textures/particle/flame.png");
 
-    private Vector3f vec = new Vector3f();
     private Vector3d pos = new Vector3d();
     private Vector3f vel = new Vector3f();
     private int tick;
@@ -41,14 +40,19 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
     @Override
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        Texture texture = context.render.getTextures().getTexture(ANCHOR_PREVIEW);
+        Texture texture = context.render.getTextures().getTexture(PARTICLE_PREVIEW);
 
-        int w = texture.width;
-        int h = texture.height;
-        int x = (x1 + x2) / 2;
-        int y = (y1 + y2) / 2;
+        float min = Math.min(texture.width, texture.height);
+        int ow = (x2 - x1) - 4;
+        int oh = (y2 - y1) - 4;
 
-        context.batcher.fullTexturedBox(texture, x - w / 2, y - h / 2, w, h);
+        int w = (int) ((texture.width / min) * ow);
+        int h = (int) ((texture.height / min) * ow);
+
+        int x = x1 + (ow - w) / 2 + 2;
+        int y = y1 + (oh - h) / 2 + 2;
+
+        context.batcher.fullTexturedBox(texture, x, y, w, h);
     }
 
     @Override
