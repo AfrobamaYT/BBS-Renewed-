@@ -602,6 +602,7 @@
     "bbs.ui.pose.context.copy": "Скопировать позу",
     "bbs.ui.pose.context.fix": "Зафиксировать",
     "bbs.ui.pose.context.fix-tooltip": "Когда 1, анимации модели будут отключены",
+    "bbs.ui.pose.context.flip_pose": "Отзеркалить позу",
     "bbs.ui.pose.context.name": "Имя...",
     "bbs.ui.pose.context.paste": "Вставить позу",
     "bbs.ui.pose.context.reset": "Сбросить позу",

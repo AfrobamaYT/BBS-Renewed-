@@ -2,12 +2,14 @@ package mchorse.bbs_mod.ui.utils.pose;
 
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseManager;
@@ -31,13 +33,29 @@ public class UIPoseEditor extends UIElement
         this.groups = new UIStringList((l) -> this.pickBone(l.get(0)));
         this.groups.background().h(UIStringList.DEFAULT_HEIGHT * 8 - 8);
         this.groups.scroll.cancelScrolling();
-        this.groups.context(() -> new UIDataContextMenu(PoseManager.INSTANCE, this.group, () -> this.pose.toData(), (data) ->
+        this.groups.context(() ->
         {
-            String current = this.groups.getCurrentFirst();
+            UIDataContextMenu menu = new UIDataContextMenu(PoseManager.INSTANCE, this.group, () -> this.pose.toData(), (data) ->
+            {
+                String current = this.groups.getCurrentFirst();
 
-            this.changedPose(() -> this.pose.fromData(data));
-            this.pickBone(current);
-        }));
+                this.changedPose(() -> this.pose.fromData(data));
+                this.pickBone(current);
+            });
+
+            UIIcon flip = new UIIcon(Icons.CONVERT, (b) ->
+            {
+                String current = this.groups.getCurrentFirst();
+
+                this.changedPose(() -> this.pose.flip());
+                this.pickBone(current);
+            });
+
+            flip.tooltip(UIKeys.POSE_CONTEXT_FLIP_POSE);
+            menu.row.addBefore(menu.save, flip);
+
+            return menu;
+        });
         this.fix = new UITrackpad((v) ->
         {
             if (this.transform.getTransform() instanceof PoseTransform poseTransform)

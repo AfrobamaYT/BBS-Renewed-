@@ -2,19 +2,78 @@ package mchorse.bbs_mod.utils.pose;
 
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Pose implements IMapSerializable
 {
     private static Set<String> keys = new HashSet<>();
+    private static List<Pair<Pattern, String>> patterns = new ArrayList<>();
 
     public boolean staticPose;
 
     public final Map<String, PoseTransform> transforms = new HashMap<>();
+
+    static
+    {
+        patterns.add(new Pair<>(Pattern.compile("^right([_.].+)$"), "left$1"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])right$"), "$1left"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])right([_.].+)$"), "$1left$2"));
+        patterns.add(new Pair<>(Pattern.compile("^r([_.].+)$"), "l$1"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])r$"), "$1l"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])r([_.].+)$"), "$1l$2"));
+    }
+
+    public void flip()
+    {
+        List<Pair<String, String>> list = new ArrayList<>();
+
+        for (String key : this.transforms.keySet())
+        {
+            for (Pair<Pattern, String> pair : patterns)
+            {
+                Matcher matcher = pair.a.matcher(key);
+
+                if (matcher.matches())
+                {
+                    list.add(new Pair<>(matcher.replaceAll(pair.b), key));
+                }
+            }
+        }
+
+        for (Pair<String, String> pair : list)
+        {
+            PoseTransform l = this.transforms.get(pair.a);
+            PoseTransform r = this.transforms.get(pair.b);
+
+            if (l == null)
+            {
+                l = new PoseTransform();
+
+                this.transforms.put(pair.a, l);
+            }
+
+            this.transforms.remove(pair.a);
+            this.transforms.remove(pair.b);
+            this.transforms.put(pair.a, r);
+            this.transforms.put(pair.b, l);
+
+            r.translate.mul(-1F, 1F, 1F);
+            r.rotate.mul(1F, -1F, -1F);
+            r.rotate2.mul(1F, -1F, -1F);
+            l.translate.mul(-1F, 1F, 1F);
+            l.rotate.mul(1F, -1F, -1F);
+            l.rotate2.mul(1F, -1F, -1F);
+        }
+    }
 
     public PoseTransform get(String name)
     {

@@ -128,6 +128,10 @@ public class UIDataContextMenu extends UIContextMenu
     public void setMouse(UIContext context)
     {
         /* Padding from both side + 4 icon 20px + 3 margin 5px */
-        this.xy(context.mouseX(), context.mouseY()).w(10 + 80 + 15).h(10 + 40 + UIStringList.DEFAULT_HEIGHT * 8).bounds(context.menu.overlay, 5);
+        int size = this.row.getChildren().size();
+
+        int i = size * 20 + (size - 1) * 5;
+
+        this.xy(context.mouseX(), context.mouseY()).w(10 + i).h(10 + 40 + UIStringList.DEFAULT_HEIGHT * 8).bounds(context.menu.overlay, 5);
     }
 }
