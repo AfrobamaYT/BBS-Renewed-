@@ -26,11 +26,11 @@ public class DollyZoomClip extends CameraClip
             this.position.copy(position);
         }
 
-        float focus = this.focus.get();
+        float focus = -this.focus.get();
         double dist = focus - focus * Math.tan(Math.toRadians(Math.max(this.position.angle.fov, 0.01F) / 2D)) / Math.tan(Math.toRadians(Math.max(position.angle.fov, 0.01F) / 2D));
 
         position.point.x += dist * Math.cos(Math.toRadians(position.angle.pitch)) * Math.sin(Math.toRadians(-position.angle.yaw));
-        position.point.y -= dist * Math.sin(Math.toRadians(position.angle.pitch));
+        position.point.y += dist * Math.sin(Math.toRadians(position.angle.pitch));
         position.point.z += dist * Math.cos(Math.toRadians(position.angle.pitch)) * Math.cos(Math.toRadians(-position.angle.yaw));
     }
 
