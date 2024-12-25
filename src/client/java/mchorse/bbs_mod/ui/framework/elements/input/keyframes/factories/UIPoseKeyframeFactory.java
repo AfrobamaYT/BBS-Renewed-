@@ -35,7 +35,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         if (model != null)
         {
             this.poseEditor.setPose(keyframe.getValue(), model.poseGroup);
-            this.poseEditor.fillGroups(model.model.getAllGroupKeys());
+            this.poseEditor.fillGroups(model.model.getAllGroupKeys(), model.flippedParts);
         }
 
         this.scroll.add(this.poseEditor);

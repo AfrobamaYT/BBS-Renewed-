@@ -16,6 +16,7 @@ import mchorse.bbs_mod.utils.pose.PoseManager;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class UIPoseEditor extends UIElement
 {
@@ -27,6 +28,7 @@ public class UIPoseEditor extends UIElement
 
     private String group = "";
     private Pose pose;
+    private Map<String, String> flippedParts;
 
     public UIPoseEditor()
     {
@@ -47,7 +49,7 @@ public class UIPoseEditor extends UIElement
             {
                 String current = this.groups.getCurrentFirst();
 
-                this.changedPose(() -> this.pose.flip());
+                this.changedPose(() -> this.pose.flip(this.flippedParts));
                 this.pickBone(current);
             });
 
@@ -99,8 +101,10 @@ public class UIPoseEditor extends UIElement
         this.group = group;
     }
 
-    public void fillGroups(Collection<String> groups)
+    public void fillGroups(Collection<String> groups, Map<String, String> flippedParts)
     {
+        this.flippedParts = flippedParts;
+
         this.groups.clear();
         this.groups.add(groups);
         this.groups.sort();

@@ -32,27 +32,44 @@ public class Pose implements IMapSerializable
         patterns.add(new Pair<>(Pattern.compile("^(.+[_.])r([_.].+)$"), "$1l$2"));
     }
 
-    public void flip()
+    public void flip(Map<String, String> flippedParts)
     {
         List<Pair<String, String>> list = new ArrayList<>();
 
-        for (String key : this.transforms.keySet())
+        if (flippedParts == null || flippedParts.isEmpty())
         {
-            for (Pair<Pattern, String> pair : patterns)
+            for (String key : this.transforms.keySet())
             {
-                Matcher matcher = pair.a.matcher(key);
-
-                if (matcher.matches())
+                for (Pair<Pattern, String> pair : patterns)
                 {
-                    list.add(new Pair<>(matcher.replaceAll(pair.b), key));
+                    Matcher matcher = pair.a.matcher(key);
+
+                    if (matcher.matches())
+                    {
+                        list.add(new Pair<>(matcher.replaceAll(pair.b), key));
+                    }
                 }
             }
         }
+        else
+        {
+            for (Map.Entry<String, String> entry : flippedParts.entrySet())
+            {
+                list.add(new Pair<>(entry.getValue(), entry.getKey()));
+            }
+        }
+
+        Set<String> bones = new HashSet<>(this.transforms.keySet());
 
         for (Pair<String, String> pair : list)
         {
             PoseTransform l = this.transforms.get(pair.a);
             PoseTransform r = this.transforms.get(pair.b);
+
+            if (r == null)
+            {
+                continue;
+            }
 
             if (l == null)
             {
@@ -72,6 +89,18 @@ public class Pose implements IMapSerializable
             l.translate.mul(-1F, 1F, 1F);
             l.rotate.mul(1F, -1F, -1F);
             l.rotate2.mul(1F, -1F, -1F);
+
+            bones.remove(pair.a);
+            bones.remove(pair.b);
+        }
+
+        for (String bone : bones)
+        {
+            PoseTransform poseTransform = this.transforms.get(bone);
+
+            poseTransform.translate.mul(-1F, 1F, 1F);
+            poseTransform.rotate.mul(1F, -1F, -1F);
+            poseTransform.rotate2.mul(1F, -1F, -1F);
         }
     }
 

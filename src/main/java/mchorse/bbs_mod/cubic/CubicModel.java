@@ -10,7 +10,9 @@ import mchorse.bbs_mod.utils.pose.Pose;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CubicModel
 {
@@ -31,6 +33,7 @@ public class CubicModel
 
     public List<String> itemsMain = new ArrayList<>();
     public List<String> itemsOff = new ArrayList<>();
+    public Map<String, String> flippedParts = new HashMap<>();
 
     public CubicModel(String id, Model model, Animations animations, Link texture)
     {
@@ -74,5 +77,19 @@ public class CubicModel
             this.sneakingPose.fromData(config.getMap("sneaking_pose"));
         }
         if (config.has("anchor")) this.anchorGroup = config.getString("anchor");
+        if (config.has("flipped_parts"))
+        {
+            MapType map = config.getMap("flipped_parts");
+
+            for (String key : map.keys())
+            {
+                String string = map.getString(key);
+
+                if (!string.trim().isEmpty())
+                {
+                    this.flippedParts.put(key, string);
+                }
+            }
+        }
     }
 }
