@@ -349,7 +349,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Перезапуск дій",
     "bbs.ui.film.controller.keys.start_recording": "Почати запис",
     "bbs.ui.film.controller.keys.toggle_control": "Перемикнути керування актором",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Перемкнути режим орбіти",
     "bbs.ui.film.controller.onion_skin.all-description": "Увімкнути пошаровий скін на усі записи",
     "bbs.ui.film.controller.onion_skin.group": "Група: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Перемкнути пошаровий скін",

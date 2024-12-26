@@ -352,7 +352,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "เริ่มการดำเนินการใหม่",
     "bbs.ui.film.controller.keys.start_recording": "เริ่มการบันทึก",
     "bbs.ui.film.controller.keys.toggle_control": "สลับการควบคุมตัวละคร",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "สลับโหมดวงโคจร",
     "bbs.ui.film.controller.onion_skin.all-description": "เปิดใช้งานสกินหัวหอมสำหรับการเล่นซ้ำทั้งหมด",
     "bbs.ui.film.controller.onion_skin.group": "กลุ่ม: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "สลับสกินหัวหอม",

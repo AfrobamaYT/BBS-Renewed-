@@ -344,7 +344,6 @@
     "bbs.ui.film.controller.keys.start_recording": "Kaydı başlat",
     "bbs.ui.film.controller.keys.toggle_control": "Aktör kontrolünü aç/kapa",
     "bbs.ui.film.controller.keys.toggle_orbit": "Εναλλαγή τροχιάς",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Yörünge modunu aç/kapa",
     "bbs.ui.film.controller.onion_skin.all-description": "Onion skin'i tüm kayıtlar için etkinleştir",
     "bbs.ui.film.controller.onion_skin.group": "Grup: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Onion skin'i aç/kapa",

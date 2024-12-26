@@ -332,7 +332,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Aktionen neustarten",
     "bbs.ui.film.controller.keys.start_recording": "Aufnehmen",
     "bbs.ui.film.controller.keys.toggle_control": "Schauspieler-Kontrolle umschalten",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Orbit-Modus umschalten",
     "bbs.ui.film.controller.onion_skin.all-description": "Aktiviere Onion Skin für alle Aufnahmen",
     "bbs.ui.film.controller.onion_skin.group": "Gruppe: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Onion Skin umschalten",

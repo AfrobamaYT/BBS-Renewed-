@@ -332,7 +332,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Mulai ulang tindakan",
     "bbs.ui.film.controller.keys.start_recording": "Mulai merekam",
     "bbs.ui.film.controller.keys.toggle_control": "Aktifkan/nonaktifkan kontrol aktor",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Aktifkan/nonaktifkan mode orbit",
     "bbs.ui.film.controller.onion_skin.all-description": "Aktifkan onion skin untuk semua replay",
     "bbs.ui.film.controller.onion_skin.group": "Grup: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Aktifkan/nonaktifkan onion skin",

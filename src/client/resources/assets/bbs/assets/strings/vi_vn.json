@@ -346,7 +346,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Khởi động lại hành động",
     "bbs.ui.film.controller.keys.start_recording": "Bắt đầu ghi âm",
     "bbs.ui.film.controller.keys.toggle_control": "Chuyển đổi điều khiển diễn viên",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Chuyển đổi chế độ quỹ đạo",
     "bbs.ui.film.controller.onion_skin.all-description": "Bật onion skin cho tất cả các phát lại",
     "bbs.ui.film.controller.onion_skin.group": "Nhóm: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Chuyển đổi onion skin",

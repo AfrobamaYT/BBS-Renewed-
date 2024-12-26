@@ -266,7 +266,6 @@
     "bbs.ui.film.controller.keys.start_recording": "Έναρξη καταγραφής",
     "bbs.ui.film.controller.keys.toggle_control": "Εναλλαγή ελέγχου ηθοποιού",
     "bbs.ui.film.controller.keys.toggle_orbit": "Εναλλαγή τροχιάς",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Εναλλαγή λειτουργίας τροχιάς",
     "bbs.ui.film.controller.record-description": "Επιλέξτε μια ομάδα κλειδιών πλαισίου που θέλετε να καταγράψετε:",
     "bbs.ui.film.controller.record-title": "Καταγραφή",
     "bbs.ui.film.controller.ticks": "%s τικ",

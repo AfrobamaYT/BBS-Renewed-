@@ -339,7 +339,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Reniciar ações",
     "bbs.ui.film.controller.keys.start_recording": "Iniciar gravação",
     "bbs.ui.film.controller.keys.toggle_control": "Alternar controle do ator",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Alternar orbit mode",
     "bbs.ui.film.controller.onion_skin.all-description": "Habilitar onion skin para todas as reproduções",
     "bbs.ui.film.controller.onion_skin.group": "Grupo: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Alternar onion skin",

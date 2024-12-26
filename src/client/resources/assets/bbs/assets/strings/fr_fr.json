@@ -337,7 +337,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Redémarrer les actions",
     "bbs.ui.film.controller.keys.start_recording": "Lancer l'enregistrement",
     "bbs.ui.film.controller.keys.toggle_control": "Basculer sur le controle de l'acteur",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Basculer en mode orbit",
     "bbs.ui.film.controller.onion_skin.all-description": "Activer la pelure d'onion pour tout les replays",
     "bbs.ui.film.controller.onion_skin.group": "Groupe: %s",
     "bbs.ui.film.controller.onion_skin.next": "Images et couleurs suivantes",

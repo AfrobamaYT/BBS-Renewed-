@@ -368,7 +368,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Reiniciar acciones",
     "bbs.ui.film.controller.keys.start_recording": "Empezar a grabar",
     "bbs.ui.film.controller.keys.toggle_control": "Habilitar control de actor",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Alternar modo de órbita",
     "bbs.ui.film.controller.onion_skin.all-description": "Habilitar la función de piel de cebolla para todas las reproducciones (onion skin)",
     "bbs.ui.film.controller.onion_skin.group": "Grupo: %s",
     "bbs.ui.film.controller.onion_skin.next": "Color de los próximos frames",

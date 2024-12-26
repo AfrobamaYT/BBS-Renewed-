@@ -100,7 +100,7 @@ public class UIFilmPreview extends UIElement
         this.control = new UIIcon(Icons.POSE, (b) -> this.panel.getController().toggleControl());
         this.control.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_CONTROL);
         this.perspective = new UIIcon(this.panel.getController()::getOrbitModeIcon, (b) -> this.panel.getController().toggleOrbitMode());
-        this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
+        this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_CHANGE_CAMERA_MODE);
         this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
         this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
         this.recordVideo = new UIIcon(Icons.VIDEO_CAMERA, (b) ->

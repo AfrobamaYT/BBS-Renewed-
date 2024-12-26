@@ -342,7 +342,6 @@
     "bbs.ui.film.controller.keys.restart_actions": "Zresetuj akcje",
     "bbs.ui.film.controller.keys.start_recording": "Rozpocznij nagrywanie",
     "bbs.ui.film.controller.keys.toggle_control": "Przełącz kontrolę aktora",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "Przełącz tryb orbitowania",
     "bbs.ui.film.controller.onion_skin.all-description": "Włącz podgląd klatek dla wszystkich powtórek",
     "bbs.ui.film.controller.onion_skin.group": "Grupa: %s",
     "bbs.ui.film.controller.onion_skin.keys.toggle": "Przełącz podgląd klatek",

@@ -369,7 +369,6 @@
     "bbs.ui.film.controller.keys.start_recording": "开始录制",
     "bbs.ui.film.controller.keys.toggle_control": "切换演员控制",
     "bbs.ui.film.controller.keys.toggle_orbit": "切换视角模式",
-    "bbs.ui.film.controller.keys.toggle_orbit_mode": "切换视角模式",
     "bbs.ui.film.controller.onion_skin.all-description": "为所有回放启用洋葱皮",
     "bbs.ui.film.controller.onion_skin.group": "组: %s",
     "bbs.ui.film.controller.onion_skin.next": "后几帧及颜色",
