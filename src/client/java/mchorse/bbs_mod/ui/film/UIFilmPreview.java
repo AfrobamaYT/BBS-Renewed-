@@ -14,7 +14,6 @@ import mchorse.bbs_mod.settings.ui.UIVideoSettingsOverlayPanel;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanels;
-import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.controller.UIOnionSkinContextMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -25,7 +24,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
-import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCodes;
 import mchorse.bbs_mod.utils.Direction;
@@ -101,7 +99,7 @@ public class UIFilmPreview extends UIElement
         this.flight.tooltip(UIKeys.CAMERA_EDITOR_KEYS_MODES_FLIGHT);
         this.control = new UIIcon(Icons.POSE, (b) -> this.panel.getController().toggleControl());
         this.control.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_CONTROL);
-        this.perspective = new UIIcon(this::getOrbitModeIcon, (b) -> this.panel.getController().toggleOrbitMode());
+        this.perspective = new UIIcon(this.panel.getController()::getOrbitModeIcon, (b) -> this.panel.getController().toggleOrbitMode());
         this.perspective.tooltip(UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORBIT_MODE);
         this.recordReplay = new UIIcon(Icons.SPHERE, (b) -> this.panel.getController().pickRecording());
         this.recordReplay.tooltip(UIKeys.FILM_REPLAY_RECORD);
@@ -158,19 +156,6 @@ public class UIFilmPreview extends UIElement
 
         this.icons.add(this.replays, this.onionSkin, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
         this.add(this.icons);
-    }
-
-    private Icon getOrbitModeIcon()
-    {
-        int povMode = this.panel.getController().getPovMode();
-
-        if (povMode == UIFilmController.CAMERA_MODE_FREE) return Icons.REFRESH;
-        else if (povMode == UIFilmController.CAMERA_MODE_ORBIT) return Icons.ORBIT;
-        else if (povMode == UIFilmController.CAMERA_MODE_FIRST_PERSON) return Icons.VISIBLE;
-        else if (povMode == UIFilmController.CAMERA_MODE_THIRD_PERSON_BACK) return Icons.POSE;
-        else if (povMode == UIFilmController.CAMERA_MODE_THIRD_PERSON_FRONT) return Icons.POSE;
-
-        return Icons.CAMERA;
     }
 
     public void openReplays()
@@ -324,7 +309,6 @@ public class UIFilmPreview extends UIElement
         if (this.panel.getController().isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordReplay.area);
         if (this.panel.recorder.isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordVideo.area);
         if (this.panel.getController().getOnionSkin().enabled.get()) UIDashboardPanels.renderHighlight(context.batcher, this.onionSkin.area);
-
         if (this.panel.getController().isControlling())
         {
             String s = UIKeys.FILM_CONTROLLER_CONTROL_MODE_TOOLTIP.format(KeyCodes.getName(Keys.FILM_CONTROLLER_TOGGLE_CONTROL.getMainKey())).get();
