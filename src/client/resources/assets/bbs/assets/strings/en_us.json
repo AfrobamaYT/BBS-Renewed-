@@ -599,6 +599,7 @@
     "bbs.ui.panels.modals.rename": "Type in a new name:",
     "bbs.ui.panels.modals.rename_folder": "Type in a new name for selected folder:",
     "bbs.ui.panels.modals.rename_folder-title": "Rename this folder",
+    "bbs.ui.panels.modals.empty": "Empty value isn't allowed!",
     "bbs.ui.panels.particles": "Particles",
     "bbs.ui.panels.saved-notification": "%s was saved!",
     "bbs.ui.paste": "Paste",

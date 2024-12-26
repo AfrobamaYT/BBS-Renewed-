@@ -494,6 +494,7 @@ public class UIKeys
     public static final IKey PANELS_MODALS_RENAME = L10n.lang("bbs.ui.panels.modals.rename");
     public static final IKey PANELS_MODALS_RENAME_FOLDER = L10n.lang("bbs.ui.panels.modals.rename_folder");
     public static final IKey PANELS_MODALS_RENAME_FOLDER_TITLE = L10n.lang("bbs.ui.panels.modals.rename_folder-title");
+    public static final IKey PANELS_MODALS_EMPTY = L10n.lang("bbs.ui.panels.modals.empty");
     public static final IKey PANELS_PARTICLES = L10n.lang("bbs.ui.panels.particles");
     public static final IKey PANELS_SAVED_NOTIFICATION = L10n.lang("bbs.ui.panels.saved-notification");
     public static final IKey POSE_CONTEXT_COPY = L10n.lang("bbs.ui.pose.context.copy");

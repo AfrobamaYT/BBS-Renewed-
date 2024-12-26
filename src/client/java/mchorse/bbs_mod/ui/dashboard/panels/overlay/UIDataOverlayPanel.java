@@ -70,6 +70,13 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void addNewData(String name, MapType mapType)
     {
+        if (name.trim().isEmpty())
+        {
+            this.getContext().notifyError(UIKeys.PANELS_MODALS_EMPTY);
+
+            return;
+        }
+
         if (!this.namesList.hasInHierarchy(name))
         {
             this.panel.save();
@@ -95,6 +102,13 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void addNewFolder(String path)
     {
+        if (path.trim().isEmpty())
+        {
+            this.getContext().notifyError(UIKeys.PANELS_MODALS_EMPTY);
+
+            return;
+        }
+
         this.panel.getType().getRepository().addFolder(path, (bool) ->
         {
             if (bool)
@@ -112,6 +126,13 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void dupeData(String name)
     {
+        if (name.trim().isEmpty())
+        {
+            this.getContext().notifyError(UIKeys.PANELS_MODALS_EMPTY);
+
+            return;
+        }
+
         if (this.panel.getData() != null && !this.namesList.hasInHierarchy(name))
         {
             this.panel.save();
@@ -127,6 +148,13 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void renameData(String name)
     {
+        if (name.trim().isEmpty())
+        {
+            this.getContext().notifyError(UIKeys.PANELS_MODALS_EMPTY);
+
+            return;
+        }
+
         if (this.panel.getData() != null && !this.namesList.hasInHierarchy(name))
         {
             this.panel.getType().getRepository().rename(this.panel.getData().getId(), name);
@@ -141,6 +169,13 @@ public class UIDataOverlayPanel <T extends ValueGroup> extends UICRUDOverlayPane
     @Override
     protected void renameFolder(String name)
     {
+        if (name.trim().isEmpty())
+        {
+            this.getContext().notifyError(UIKeys.PANELS_MODALS_EMPTY);
+
+            return;
+        }
+
         String path = this.namesList.getCurrentFirst().toString();
 
         this.panel.getType().getRepository().renameFolder(path, name, (bool) ->

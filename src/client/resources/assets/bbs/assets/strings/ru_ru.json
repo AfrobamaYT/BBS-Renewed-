@@ -596,6 +596,7 @@
     "bbs.ui.panels.modals.rename": "Введите новое имя:",
     "bbs.ui.panels.modals.rename_folder": "Введите новое имя для выбранной папки:",
     "bbs.ui.panels.modals.rename_folder-title": "Переименовать папку",
+    "bbs.ui.panels.modals.empty": "Пустое значение не дозволено!",
     "bbs.ui.panels.particles": "Частицы",
     "bbs.ui.panels.saved-notification": "%s был сохранён!",
     "bbs.ui.paste": "Вставить",
