@@ -569,7 +569,14 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
+            if (this.isControlling() && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            {
+                this.toggleControl();
+                UIUtils.playClick();
+
+                return true;
+            }
+            else if (context.getKeyAction() == KeyAction.PRESSED && context.getKeyCode() >= GLFW.GLFW_KEY_1 && context.getKeyCode() <= GLFW.GLFW_KEY_6)
             {
                 /* Switch mouse input mode */
                 this.setMouseMode(context.getKeyCode() - GLFW.GLFW_KEY_1);
