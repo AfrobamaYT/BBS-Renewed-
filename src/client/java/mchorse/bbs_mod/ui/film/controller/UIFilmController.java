@@ -968,7 +968,7 @@ public class UIFilmController extends UIElement
                 context.batcher.box(bx - 4, by - 4, bx + 4, by + 4, color);
             }
 
-            /* Render reording overlay */
+            /* Render recording overlay */
             if (this.recording)
             {
                 int x = area.x + 5 + 16;
@@ -987,8 +987,8 @@ public class UIFilmController extends UIElement
             }
         }
 
-        int x = area.ex() - 5;
-        int y = area.ey() - 5 - font.getHeight();
+        int x = area.ex() - 4;
+        int y = area.y + 5;
 
         if (this.panel.isFlying())
         {
@@ -997,7 +997,7 @@ public class UIFilmController extends UIElement
 
             context.batcher.textCard(label, x - w, y, Colors.WHITE, Colors.A50);
 
-            y += font.getHeight() + 2;
+            y += font.getHeight() + 7;
         }
 
         Replay replay = this.panel.replayEditor.getReplay();
