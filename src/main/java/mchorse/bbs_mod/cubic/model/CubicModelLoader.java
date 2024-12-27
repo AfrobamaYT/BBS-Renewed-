@@ -21,8 +21,10 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CubicModelLoader implements IModelLoader
 {
@@ -60,6 +62,8 @@ public class CubicModelLoader implements IModelLoader
         /* Construct the model from compiled data */
         if (!compile.isEmpty())
         {
+            HashSet<String> declined = new HashSet<>();
+
             if (newModel.model == null)
             {
                 newModel.model = new Model(models.parser);
@@ -87,10 +91,15 @@ public class CubicModelLoader implements IModelLoader
                     group.meshes.add(modelMesh);
                 }
 
-                this.fillShapes(value.shapes, group, newModel.model.textureWidth, newModel.model.textureHeight);
+                this.fillShapes(declined, value.shapes, group, newModel.model.textureWidth, newModel.model.textureHeight);
             }
 
             newModel.model.initialize();
+
+            for (String s : declined)
+            {
+                System.out.println("Model \"" + model + "\" has shape keys \"" + s + "\" that have invalid shape keys (triangle count doesn't match)!");
+            }
         }
 
         if (newModel.model == null || newModel.model.topGroups.isEmpty())
@@ -106,6 +115,57 @@ public class CubicModelLoader implements IModelLoader
         newModel.applyConfig(config);
 
         return newModel;
+    }
+
+    private void validateShapeKeys(Link model, Map<String, MeshesOBJ> compile)
+    {
+        Set<String> toRemove = new HashSet<>();
+
+        main: for (MeshesOBJ value : compile.values())
+        {
+            List<MeshOBJ> meshes = value.meshes;
+
+            if (value.shapes == null)
+            {
+                continue;
+            }
+
+            for (Map.Entry<String, List<MeshOBJ>> entry : value.shapes.entrySet())
+            {
+                List<MeshOBJ> shapeMeshes = entry.getValue();
+
+                if (meshes.size() != shapeMeshes.size())
+                {
+                    toRemove.add(entry.getKey());
+
+                    continue main;
+                }
+
+                for (int i = 0; i < meshes.size(); i++)
+                {
+                    String key = entry.getKey();
+                    MeshOBJ shapeMesh = shapeMeshes.get(i);
+                    MeshOBJ mesh = meshes.get(i);
+
+                    if (mesh.triangles != shapeMesh.triangles)
+                    {
+                        toRemove.add(key);
+
+                        continue main;
+                    }
+                }
+            }
+        }
+
+        for (String s : toRemove)
+        {
+            System.err.println("Model " + model + " has shape keys \"" + s + "\" that doesn't match the base OBJ file!");
+
+            for (MeshesOBJ value : compile.values())
+            {
+                value.shapes.remove(s);
+            }
+        }
     }
 
     /**
@@ -180,7 +240,7 @@ public class CubicModelLoader implements IModelLoader
         return compile;
     }
 
-    private void fillShapes(Map<String, List<MeshOBJ>> shapes, ModelGroup group, int tw, int th)
+    private void fillShapes(Set<String> declined, Map<String, List<MeshOBJ>> shapes, ModelGroup group, int tw, int th)
     {
         if (shapes == null)
         {
@@ -197,7 +257,18 @@ public class CubicModelLoader implements IModelLoader
                 ModelData data = new ModelData();
 
                 data.fill(mesh, tw, th);
-                modelMesh.data.put(shapeEntry.getKey(), data);
+
+                if (
+                    data.vertices.size() == modelMesh.baseData.vertices.size() &&
+                    data.normals.size() == modelMesh.baseData.normals.size() &&
+                    data.uvs.size() == modelMesh.baseData.uvs.size()
+                ) {
+                    modelMesh.data.put(shapeEntry.getKey(), data);
+                }
+                else
+                {
+                    declined.add(shapeEntry.getKey());
+                }
 
                 i += 1;
             }
