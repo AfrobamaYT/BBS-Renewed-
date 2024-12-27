@@ -973,6 +973,7 @@
     "studio.ui.utility.audio": "Audio",
     "studio.ui.utility.compile_lang": "Compile",
     "studio.ui.utility.compile_lang-description": "Language files were compiled to export folder. Would you like to open it?",
+    "studio.ui.utility.execute_default_commands": "Execute default commands",
     "studio.ui.utility.lang": "Language strings",
     "studio.ui.utility.lang_editor": "Open language editor...",
     "studio.ui.utility.open_audio_editor": "Open audio editor...",

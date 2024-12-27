@@ -962,6 +962,7 @@
     "studio.ui.utility.audio": "Аудио",
     "studio.ui.utility.compile_lang": "Скомпилировать",
     "studio.ui.utility.compile_lang-description": "Языковые файлы были скомпилированы в папку экспорта. Желаете её открыть?",
+    "studio.ui.utility.execute_default_commands": "Выполнить дефолтные команды",
     "studio.ui.utility.lang": "Языковые строки",
     "studio.ui.utility.lang_editor": "Открыть редактор языков...",
     "studio.ui.utility.open_audio_editor": "Открыть редактор аудио...",

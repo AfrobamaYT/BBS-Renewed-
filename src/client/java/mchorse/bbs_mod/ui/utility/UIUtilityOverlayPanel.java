@@ -24,6 +24,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Window;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 public class UIUtilityOverlayPanel extends UIOverlayPanel
 {
@@ -102,13 +104,32 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         UIButton compile = new UIButton(UIKeys.UTILITY_COMPILE_LANG, (b) -> this.compileLanguageStrings());
         UIButton langEditor = new UIButton(UIKeys.UTILITY_LANG_EDITOR, (b) -> this.openLangEditor());
         UIButton openAudioEditor = new UIButton(UIKeys.UTILITY_OPEN_AUDIO_EDITOR, (b) -> this.openAudioEditor());
+        UIButton defaultCommands = new UIButton(UIKeys.UTILITY_EXECUTE_DEFAULT_COMMANDS, (b) -> this.executeDefaultCommands());
 
         this.view.add(UI.label(UIKeys.UTILITY_OPEN_FOLDER), UI.row(openGameDirectory, openModelsDirectory, openAudioDirectory).marginBottom(8));
-        this.view.add(UI.label(UIKeys.UTILITY_RELOAD_LABEL), UI.row(textures, language, models, sounds, terrain).marginBottom(8));
+        this.view.add(UI.label(UIKeys.UTILITY_RELOAD_LABEL), UI.row(textures, language, models, sounds, terrain));
+        this.view.add(defaultCommands.marginBottom(8));
         this.view.add(UI.column(UI.label(UIKeys.UTILITY_RESIZE_WINDOW), UI.row(this.width, this.height)).marginBottom(8));
         this.view.add(UI.label(UIKeys.UTILITY_LANG_LABEL), UI.row(analyze, compile), langEditor.marginBottom(8));
         this.view.add(UI.label(UIKeys.UTILITY_AUDIO), openAudioEditor);
         this.content.add(this.view);
+    }
+
+    private void executeDefaultCommands()
+    {
+        List<String> commands = Arrays.asList(
+            "gamerule doDaylightCycle false",
+            "gamerule doWeatherCycle false",
+            "gamerule doWardenSpawning false",
+            "gamerule doMobSpawning false",
+            "gamerule doTraderSpawning false",
+            "kill @e[type=!minecraft:player,type=!minecraft:item_frame,type=!minecraft:item]"
+        );
+
+        for (String command : commands)
+        {
+            MinecraftClient.getInstance().player.networkHandler.sendCommand(command);
+        }
     }
 
     private void openFolder(File gameFolder)

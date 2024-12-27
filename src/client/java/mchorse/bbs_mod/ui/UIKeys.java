@@ -736,6 +736,7 @@ public class UIKeys
     public static final IKey UTILITY_AUDIO = L10n.lang("studio.ui.utility.audio");
     public static final IKey UTILITY_COMPILE_LANG = L10n.lang("studio.ui.utility.compile_lang");
     public static final IKey UTILITY_COMPILE_LANG_DESCRIPTION = L10n.lang("studio.ui.utility.compile_lang-description");
+    public static final IKey UTILITY_EXECUTE_DEFAULT_COMMANDS = L10n.lang("studio.ui.utility.execute_default_commands");
     public static final IKey UTILITY_LANG_EDITOR = L10n.lang("studio.ui.utility.lang_editor");
     public static final IKey UTILITY_LANG_LABEL = L10n.lang("studio.ui.utility.lang");
     public static final IKey UTILITY_OPEN_AUDIO_EDITOR = L10n.lang("studio.ui.utility.open_audio_editor");
