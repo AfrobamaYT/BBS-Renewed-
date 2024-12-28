@@ -19,6 +19,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Intersectionf;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -41,6 +42,7 @@ public class OrbitFilmCameraController implements ICameraController
     private Vector3f position = new Vector3f();
 
     private float distance;
+    private float offsetY;
     private boolean center;
 
     protected Vector3i velocityPosition = new Vector3i();
@@ -67,7 +69,17 @@ public class OrbitFilmCameraController implements ICameraController
 
         if (this.center)
         {
-            this.distance = this.position.distance(new Vector3f());
+            Vector3f rayDirection = this.rotateVector(0F, 0F, -1F, this.rotation.y, this.rotation.x, false);
+            Vector3f normal = Vectors.TEMP_3F.set(rayDirection).mul(-1F, 0F, -1F).normalize();
+
+            float t = Intersectionf.intersectRayPlane(this.position, rayDirection, new Vector3f(0, this.offsetY, 0), normal, 0.0001F);
+            Vector3f p = new Vector3f(rayDirection).mul(t).add(this.position);
+
+            p.x = 0;
+            p.z = 0;
+
+            this.distance = this.position.distance(p);
+            this.offsetY = p.y;
         }
     }
 
@@ -76,6 +88,7 @@ public class OrbitFilmCameraController implements ICameraController
         if (this.center)
         {
             this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x, false).mul(this.distance));
+            this.position.add(0, this.offsetY, 0);
         }
 
         this.orbiting = false;
@@ -154,6 +167,7 @@ public class OrbitFilmCameraController implements ICameraController
         else if (this.center)
         {
             this.position.set(this.rotateVector(0F, 0F, 1F, this.rotation.y, this.rotation.x).mul(this.distance));
+            this.position.add(0, this.offsetY, 0);
         }
 
         return changed;
@@ -199,6 +213,7 @@ public class OrbitFilmCameraController implements ICameraController
             if (this.center)
             {
                 offset = this.rotateVector(0F, 0F, 1F, this.rotation.y + renderYaw, this.rotation.x, false).mul(this.distance);
+                offset.add(0, this.offsetY, 0);
             }
 
             Form form = entity.getForm();
