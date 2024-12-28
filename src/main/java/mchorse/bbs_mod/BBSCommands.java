@@ -2,6 +2,7 @@ package mchorse.bbs_mod;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -20,6 +21,7 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.Vec3ArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -28,7 +30,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.SaveProperties;
+import net.minecraft.world.World;
 import net.minecraft.world.level.LevelInfo;
 
 import java.util.Collection;
@@ -49,6 +53,7 @@ public class BBSCommands
         registerConfigCommand(bbs, environment, hasPermissions);
         registerServerCommand(bbs, environment, hasPermissions);
         registerCheatsCommand(bbs, environment);
+        registerBoomCommand(bbs, environment);
 
         dispatcher.register(bbs);
     }
@@ -283,6 +288,29 @@ public class BBSCommands
 
                     return 1;
                 })
+            )
+        );
+    }
+
+    private static void registerBoomCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    {
+        bbs.then(
+            CommandManager.literal("boom").then(
+                CommandManager.argument("pos", Vec3ArgumentType.vec3()).then(
+                    CommandManager.argument("radius", FloatArgumentType.floatArg(1)).then(
+                        CommandManager.argument("fire", BoolArgumentType.bool()).executes((ctx) ->
+                        {
+                            ServerCommandSource source = ctx.getSource();
+                            Vec3d pos = Vec3ArgumentType.getVec3(ctx, "pos");
+                            float radius = FloatArgumentType.getFloat(ctx, "radius");
+                            boolean fire = BoolArgumentType.getBool(ctx, "fire");
+
+                            source.getWorld().createExplosion(null, pos.x, pos.y, pos.z, radius, fire, World.ExplosionSourceType.BLOCK);
+
+                            return 1;
+                        })
+                    )
+                )
             )
         );
     }
