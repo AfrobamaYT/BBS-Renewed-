@@ -321,6 +321,8 @@ public class UIFilmController extends UIElement
 
     public void toggleControl()
     {
+        this.getContext().unfocus();
+
         boolean replacePlayer = ClientNetwork.isIsBBSModOnServer();
 
         if (this.controlled != null)
