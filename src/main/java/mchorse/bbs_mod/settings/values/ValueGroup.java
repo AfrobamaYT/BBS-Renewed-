@@ -33,6 +33,16 @@ public class ValueGroup extends BaseValueGroup
         }
     }
 
+    public void remove(BaseValue child)
+    {
+        BaseValue baseValue = this.children.get(child.getId());
+
+        if (baseValue == child)
+        {
+            this.children.remove(child.getId());
+        }
+    }
+
     @Override
     public List<BaseValue> getAll()
     {

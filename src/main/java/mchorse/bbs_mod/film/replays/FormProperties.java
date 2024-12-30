@@ -4,11 +4,12 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.forms.properties.BaseTweenProperty;
 import mchorse.bbs_mod.forms.properties.IFormProperty;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,17 +30,7 @@ public class FormProperties extends ValueGroup
 
         if (value instanceof KeyframeChannel channel)
         {
-            if (property instanceof BaseTweenProperty p)
-            {
-                if (channel.getFactory() == p.getFactory())
-                {
-                    return channel;
-                }
-            }
-            else
-            {
-                return channel;
-            }
+            return channel;
         }
 
         return property != null ? this.create(property) : null;
@@ -87,6 +78,22 @@ public class FormProperties extends ValueGroup
             KeyframeChannel property = new KeyframeChannel(key, null);
 
             property.fromData(mapType);
+
+            /* Patch 1.1.1 changes to lighting property */
+            if (key.endsWith("lighting") && property.getFactory() == KeyframeFactories.BOOLEAN)
+            {
+                KeyframeChannel newProperty = new KeyframeChannel(key, KeyframeFactories.FLOAT);
+
+                for (Object keyframe : property.getKeyframes())
+                {
+                    Keyframe kf = (Keyframe) keyframe;
+                    Boolean v = (Boolean) kf.getValue();
+
+                    newProperty.insert(kf.getTick(), v ? 1F : 0F);
+                }
+
+                property = newProperty;
+            }
 
             if (property.getFactory() != null)
             {
