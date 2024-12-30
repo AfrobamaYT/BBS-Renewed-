@@ -47,6 +47,7 @@ public class BBSSettings
     public static ValueInt scrollbarShadow;
     public static ValueInt scrollbarWidth;
     public static ValueFloat scrollingSensitivity;
+    public static ValueBoolean scrollingSmoothness;
 
     public static ValueBoolean multiskinMultiThreaded;
 
@@ -143,6 +144,7 @@ public class BBSSettings
         scrollbarShadow = builder.category("scrollbars").getInt("shadow", Colors.A50).colorAlpha();
         scrollbarWidth = builder.getInt("width", 4, 2, 10);
         scrollingSensitivity = builder.getFloat("sensitivity", 1F, 0F, 10F);
+        scrollingSmoothness = builder.getBoolean("smoothness", true);
 
         multiskinMultiThreaded = builder.category("multiskin").getBoolean("multithreaded", true);
 
