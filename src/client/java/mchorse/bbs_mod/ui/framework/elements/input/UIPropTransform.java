@@ -327,21 +327,30 @@ public class UIPropTransform extends UITransform
                 Vector3f vector = this.getValue();
                 boolean all = Window.isAltPressed();
 
-                float factor = this.mode == 0 ? 0.05F : (this.mode == 1 ? 0.01F : MathUtils.toRad(0.5F));
+                float factor = this.mode == 0 ? 0.05F : (this.mode == 1 ? 0.01F : 0.5F);
 
                 if (this.local && this.mode == 0)
                 {
                     Vector3f vector3f = this.calculateLocalVector(factor * dx, this.axis);
 
-                    vector.x += vector3f.x;
-                    vector.y += vector3f.y;
-                    vector.z += vector3f.z;
+                    this.setT(vector.x + vector3f.x, vector.y + vector3f.y, vector.z + vector3f.z);
                 }
                 else
                 {
-                    if (this.axis == Axis.X || all) vector.x += factor * dx;
-                    if (this.axis == Axis.Y || all) vector.y += factor * dx;
-                    if (this.axis == Axis.Z || all) vector.z += factor * dx;
+                    Vector3f vector3f = new Vector3f(vector);
+
+                    if (this.mode == 2)
+                    {
+                        vector3f.mul(180F / MathUtils.PI);
+                    }
+
+                    if (this.axis == Axis.X || all) vector3f.x += factor * dx;
+                    if (this.axis == Axis.Y || all) vector3f.y += factor * dx;
+                    if (this.axis == Axis.Z || all) vector3f.z += factor * dx;
+
+                    if (this.mode == 0) this.setT(vector3f.x, vector3f.y, vector3f.z);
+                    if (this.mode == 1) this.setS(vector3f.x, vector3f.y, vector3f.z);
+                    if (this.mode == 2) this.setR(vector3f.x, vector3f.y, vector3f.z);
                 }
 
                 this.setTransform(this.transform);
@@ -388,7 +397,11 @@ public class UIPropTransform extends UITransform
                 else if (context.mouseButton == 1)
                 {
                     this.transform.disable();
-                    this.transform.getValue().set(this.transform.cache);
+
+                    if (this.transform.mode == 0) this.transform.setT(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
+                    if (this.transform.mode == 1) this.transform.setS(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
+                    if (this.transform.mode == 2) this.transform.setR(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
+
                     this.transform.submit();
                     this.transform.setTransform(this.transform.transform);
 
