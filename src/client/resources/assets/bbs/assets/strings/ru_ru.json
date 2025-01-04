@@ -67,6 +67,8 @@
     "bbs.config.editor.seconds-comment": "Когда включено, то показывает секунды вместо тиков в редакоре камеры",
     "bbs.config.editor.snap_to_markers": "Привязка к тикам",
     "bbs.config.editor.snap_to_markers-comment": "Когда включено, клипы будут также привязываться к маркерам тиков",
+    "bbs.config.editor.clip_preview": "Предпросмотр клипов",
+    "bbs.config.editor.clip_preview-comment": "Когда включено, Вы сможете увидеть выделенный клип в данный момент в редакторе ключевых кадров",
     "bbs.config.editor.title": "Редактор камеры",
     "bbs.config.editor.tooltip": "Параметры конфигурации, которые используются в редакторе камеры",
     "bbs.config.elevenlabs.all_voices": "Все голоса",

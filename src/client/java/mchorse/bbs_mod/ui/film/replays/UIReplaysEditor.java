@@ -414,7 +414,7 @@ public class UIReplaysEditor extends UIElement
                 UIClipsPanel cameraEditor = this.filmPanel.cameraEditor;
                 Clip clip = cameraEditor.getClip();
 
-                if (clip != null)
+                if (clip != null && BBSSettings.editorClipPreview.get())
                 {
                     IUIClipRenderer<Clip> renderer = cameraEditor.clips.getRenderers().get(clip);
                     Scale scale = view.getXAxis();
