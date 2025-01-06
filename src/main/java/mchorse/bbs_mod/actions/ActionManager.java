@@ -3,8 +3,8 @@ package mchorse.bbs_mod.actions;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.film.replays.Replay;
-import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.clips.Clips;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -55,15 +55,18 @@ public class ActionManager
 
     /* Actions playback */
 
-    public void updatePlayers(String filmId, int replayId, BaseType data)
+    public void updatePlayers(String filmId, String key, BaseType data)
     {
         for (ActionPlayer player : this.players)
         {
-            if (player.film.getId().equals(filmId) && CollectionUtils.inRange(player.film.replays.getList(), replayId))
+            if (player.film.getId().equals(filmId))
             {
-                Replay replay = player.film.replays.getList().get(replayId);
+                BaseValue baseValue = player.film.getRecursively(new DataPath(key));
 
-                replay.actions.fromData(data);
+                if (baseValue != null)
+                {
+                    baseValue.fromData(data);
+                }
             }
         }
     }

@@ -35,6 +35,8 @@ public class Replay extends ValueGroup
     public final ValueFloat shadowSize = new ValueFloat("shadow_size", 0.5F);
     public final ValueInt looping = new ValueInt("looping", 0);
 
+    public final ValueBoolean actor = new ValueBoolean("actor", false);
+
     public Replay(String id)
     {
         super(id);
@@ -49,6 +51,8 @@ public class Replay extends ValueGroup
         this.add(this.shadow);
         this.add(this.shadowSize);
         this.add(this.looping);
+
+        this.add(this.actor);
     }
 
     public String getName()

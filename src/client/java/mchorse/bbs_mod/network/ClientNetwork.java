@@ -22,6 +22,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.cache.CacheAssetsSourcePack;
 import mchorse.bbs_mod.resources.cache.ResourceCache;
 import mchorse.bbs_mod.resources.cache.ResourceEntry;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -29,7 +30,6 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
-import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -434,12 +434,12 @@ public class ClientNetwork
         ClientPlayNetworking.send(ServerNetwork.SERVER_ACTION_CONTROL, buf);
     }
 
-    public static void sendActions(String filmId, int replayId, Clips actions)
+    public static void sendSyncData(String filmId, BaseValue data)
     {
-        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_ACTIONS_UPLOAD, actions.toData(), (packetByteBuf) ->
+        crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_FILM_DATA_SYNC, data.toData(), (packetByteBuf) ->
         {
             packetByteBuf.writeString(filmId);
-            packetByteBuf.writeInt(replayId);
+            packetByteBuf.writeString(data.getPath().toString());
         });
     }
 

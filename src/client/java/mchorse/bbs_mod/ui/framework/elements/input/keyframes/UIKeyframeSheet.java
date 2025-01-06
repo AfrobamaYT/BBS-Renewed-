@@ -95,15 +95,15 @@ public class UIKeyframeSheet
         {
             if (selectedValue instanceof Double)
             {
-                keyframe.setValue((double) keyframe.getValue() + valueNumber.doubleValue() - (double) selectedValue);
+                keyframe.setValue((double) keyframe.getValue() + valueNumber.doubleValue() - (double) selectedValue, dirty);
             }
             else if (selectedValue instanceof Float)
             {
-                keyframe.setValue((float) keyframe.getValue() + valueNumber.floatValue() - (float) selectedValue);
+                keyframe.setValue((float) keyframe.getValue() + valueNumber.floatValue() - (float) selectedValue, dirty);
             }
             else if (selectedValue instanceof Integer)
             {
-                keyframe.setValue((int) keyframe.getValue() + valueNumber.intValue() - (int) selectedValue);
+                keyframe.setValue((int) keyframe.getValue() + valueNumber.intValue() - (int) selectedValue, dirty);
             }
             else
             {

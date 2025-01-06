@@ -2,7 +2,6 @@ package mchorse.bbs_mod.ui.film.utils;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.settings.values.IValueListener;
 import mchorse.bbs_mod.settings.values.ValueGroup;
@@ -20,9 +19,11 @@ import mchorse.bbs_mod.utils.undo.UndoManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class UIFilmUndoHandler
 {
@@ -38,6 +39,7 @@ public class UIFilmUndoHandler
 
     private Timer undoTimer = new Timer(1000);
     private Timer actionsTimer = new Timer(100);
+    private Set<BaseValue> syncData = new HashSet<>();
 
     private UIFilmPanel panel;
 
@@ -159,6 +161,7 @@ public class UIFilmUndoHandler
 
             if (this.isReplayActions(value))
             {
+                this.syncData.add(value);
                 this.actionsTimer.mark();
             }
         }
@@ -195,15 +198,29 @@ public class UIFilmUndoHandler
 
         if (this.actionsTimer.checkReset())
         {
-            Replay replay = this.panel.replayEditor.getReplay();
-            int index = this.panel.getData().replays.getList().indexOf(replay);
+            for (BaseValue syncData : this.syncData)
+            {
+                ClientNetwork.sendSyncData(this.panel.getData().getId(), syncData);
+            }
 
-            ClientNetwork.sendActions(this.panel.getData().getId(), index, replay.actions);
+            this.syncData.clear();
         }
     }
 
     private boolean isReplayActions(BaseValue value)
     {
+        String path = value.getPath().toString();
+
+        if (
+            path.endsWith("/replays") ||
+            path.contains("/keyframes/x") ||
+            path.contains("/keyframes/y") ||
+            path.contains("/keyframes/z") ||
+            path.endsWith("/actor")
+        ) {
+            return true;
+        }
+
         while (value != null)
         {
             if (value instanceof Clips clips && clips.getFactory() == BBSMod.getFactoryActionClips())
