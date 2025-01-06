@@ -1,20 +1,26 @@
 package mchorse.bbs_mod.client.renderer;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.entity.ActorEntity;
-import mchorse.bbs_mod.utils.MatrixStackUtils;
+import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.client.render.entity.model.EntityModelLayers;
-import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RotationAxis;
 
-public class ActorEntityRenderer extends LivingEntityRenderer<ActorEntity, PlayerEntityModel<ActorEntity>>
+public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
 {
     public ActorEntityRenderer(EntityRendererFactory.Context ctx)
     {
-        super(ctx, new PlayerEntityModel(ctx.getPart(EntityModelLayers.PLAYER), false), 0.5F);
+        super(ctx);
+
+        this.shadowRadius = 0.5F;
     }
 
     @Override
@@ -24,20 +30,41 @@ public class ActorEntityRenderer extends LivingEntityRenderer<ActorEntity, Playe
     }
 
     @Override
-    protected boolean hasLabel(ActorEntity livingEntity)
+    public void render(ActorEntity livingEntity, float yaw, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light)
     {
-        return super.hasLabel(livingEntity) && (livingEntity.hasCustomName() && livingEntity == this.dispatcher.targetedEntity);
+        matrices.push();
+
+        float bodyYaw = MathHelper.lerpAngleDegrees(tickDelta, livingEntity.prevBodyYaw, livingEntity.bodyYaw);
+        int overlay = LivingEntityRenderer.getOverlay(livingEntity, 0F);
+
+        this.setupTransforms(livingEntity, matrices, bodyYaw, tickDelta);
+
+        RenderSystem.enableDepthTest();
+        FormUtilsClient.render(livingEntity.getForm(), FormRenderingContext.set(livingEntity.getEntity(), matrices, light, overlay, tickDelta));
+        RenderSystem.disableDepthTest();
+
+        matrices.pop();
+
+        super.render(livingEntity, yaw, tickDelta, matrices, vertexConsumers, light);
     }
 
-    @Override
-    public void render(ActorEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i)
+    protected boolean isVisible(ActorEntity entity)
     {
-        float gg = 0.9375F;
+        return !entity.isInvisible();
+    }
 
-        MatrixStackUtils.scaleStack(matrixStack, gg, gg, gg);
+    protected void setupTransforms(ActorEntity entity, MatrixStack matrices, float bodyYaw, float tickDelta)
+    {
+        if (!entity.isInPose(EntityPose.SLEEPING))
+        {
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F - bodyYaw));
+        }
 
-        this.getModel().sneaking = livingEntity.isInSneakingPose();
+        if (entity.deathTime > 0)
+        {
+            float deathAngle = (entity.deathTime + tickDelta - 1F) / 20F * 1.6F;
 
-        super.render(livingEntity, f, g, matrixStack, vertexConsumerProvider, i);
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(Math.min(MathHelper.sqrt(deathAngle), 1F) * 90F));
+        }
     }
 }
