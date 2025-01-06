@@ -91,7 +91,6 @@ public class FilmController
         if (last == null)
         {
             AnchorProperty.Anchor current = value;
-
             Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, current, defaultMatrix, transition);
 
             if (matrix != defaultMatrix)
@@ -346,10 +345,13 @@ public class FilmController
 
             Replay replay = this.film.replays.getList().get(i);
 
-            renderEntity(FilmControllerContext.instance
-                .setup(this.entities, this.entities.get(i), context)
-                .shadow(replay.shadow.get(), replay.shadowSize.get())
-                .nameTag(replay.nameTag.get()));
+            if (!replay.actor.get())
+            {
+                renderEntity(FilmControllerContext.instance
+                    .setup(this.entities, this.entities.get(i), context)
+                    .shadow(replay.shadow.get(), replay.shadowSize.get())
+                    .nameTag(replay.nameTag.get()));
+            }
         }
 
         RenderSystem.disableDepthTest();

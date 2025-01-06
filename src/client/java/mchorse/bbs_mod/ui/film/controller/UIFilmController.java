@@ -1130,16 +1130,19 @@ public class UIFilmController extends UIElement
                 value = replay.properties.get("pose");
             }
 
-            Pair<String, Boolean> bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
+            if (!replay.actor.get())
+            {
+                Pair<String, Boolean> bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
 
-            FilmControllerContext filmContext = FilmControllerContext.instance
-                .setup(this.entities, entity, context)
-                .transition(isPlaying ? context.tickDelta() : 0F)
-                .shadow(replay.shadow.get(), replay.shadowSize.get())
-                .bone(bone == null ? null : bone.a, bone != null && bone.b)
-                .nameTag(replay.nameTag.get());
+                FilmControllerContext filmContext = FilmControllerContext.instance
+                    .setup(this.entities, entity, context)
+                    .transition(isPlaying ? context.tickDelta() : 0F)
+                    .shadow(replay.shadow.get(), replay.shadowSize.get())
+                    .bone(bone == null ? null : bone.a, bone != null && bone.b)
+                    .nameTag(replay.nameTag.get());
 
-            FilmController.renderEntity(filmContext);
+                FilmController.renderEntity(filmContext);
+            }
 
             if (value instanceof KeyframeChannel<?> pose && entity instanceof StubEntity)
             {
