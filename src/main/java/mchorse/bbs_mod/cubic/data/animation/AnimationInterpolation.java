@@ -72,6 +72,8 @@ public class AnimationInterpolation
         double post = destination;
 
         if (vector.next != null) interpolation = vector.next.interp;
+        if (vector.interp == Interpolations.CONST) interpolation = vector.interp;
+
         if (vector.prev != null) pre = MolangHelper.getValue(vector.prev.getStart(axis), component, axis);
         if (vector.next != null) post = MolangHelper.getValue(vector.next.getEnd(axis), component, axis);
 
