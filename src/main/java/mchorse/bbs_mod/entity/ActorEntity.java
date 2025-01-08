@@ -2,7 +2,7 @@ package mchorse.bbs_mod.entity;
 
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.network.ServerNetwork;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -10,6 +10,7 @@ import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Arm;
 import net.minecraft.world.World;
 
@@ -33,11 +34,6 @@ public class ActorEntity extends LivingEntity
     public ActorEntity(EntityType<? extends LivingEntity> entityType, World world)
     {
         super(entityType, world);
-
-        ModelForm model = new ModelForm();
-
-        model.model.set("player/steve");
-        this.form = model;
     }
 
     public MCEntity getEntity()
@@ -48,6 +44,11 @@ public class ActorEntity extends LivingEntity
     public Form getForm()
     {
         return this.form;
+    }
+
+    public void setForm(Form form)
+    {
+        this.form = form;
     }
 
     @Override
@@ -92,6 +93,20 @@ public class ActorEntity extends LivingEntity
         {
             this.discard();
         }
+    }
+
+    @Override
+    public void onStartedTrackingBy(ServerPlayerEntity player)
+    {
+        super.onStartedTrackingBy(player);
+
+        ServerNetwork.sendActorForm(player, this);
+    }
+
+    @Override
+    public void onStoppedTrackingBy(ServerPlayerEntity player)
+    {
+        super.onStoppedTrackingBy(player);
     }
 
     @Override

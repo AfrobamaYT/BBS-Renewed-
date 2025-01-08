@@ -8,6 +8,7 @@ import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -96,6 +97,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_REQUEST_ASSET, (client, handler, buf, responseSender) -> handleRequestAssetPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CHEATS_PERMISSION, (client, handler, buf, responseSender) -> handleCheatsPermissionPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_SHARED_FORM, (client, handler, buf, responseSender) -> handleShareFormPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ACTOR_FORM, (client, handler, buf, responseSender) -> handleActorFormPacket(client, buf));
     }
 
     /* Handlers */
@@ -346,6 +348,31 @@ public class ClientNetwork
                 dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
                 BBSModClient.getFormCategories().getRecentForms().getCategories().get(0).addForm(finalForm);
                 dashboard.context.notifyInfo(UIKeys.FORMS_SHARED_NOTIFICATION.format(finalForm.getDisplayName()));
+            });
+        });
+    }
+
+    private static void handleActorFormPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        crusher.receive(buf, (bytes, packetByteBuf) ->
+        {
+            final Form finalForm = FormUtils.fromData(DataStorageUtils.readFromBytes(bytes));
+
+            if (finalForm == null)
+            {
+                return;
+            }
+
+            int entityId = buf.readInt();
+
+            client.execute(() ->
+            {
+                Entity entity = client.world.getEntityById(entityId);
+
+                if (entity instanceof ActorEntity actor)
+                {
+                    actor.setForm(finalForm);
+                }
             });
         });
     }
