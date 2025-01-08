@@ -3,18 +3,24 @@ package mchorse.bbs_mod.entity;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.network.ServerNetwork;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.packet.s2c.play.ItemPickupAnimationS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Arm;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
 import java.util.Collections;
+import java.util.List;
 
 public class ActorEntity extends LivingEntity
 {
@@ -81,6 +87,30 @@ public class ActorEntity extends LivingEntity
         if (this.form != null)
         {
             this.form.update(this.entity);
+        }
+
+        if (this.getWorld().isClient)
+        {
+            return;
+        }
+
+        Box box = this.getBoundingBox().expand(1D, 0.5D, 1D);
+        List<Entity> list = this.getWorld().getOtherEntities(this, box);
+
+        for (Entity entity : list)
+        {
+            if (entity instanceof ItemEntity itemEntity)
+            {
+                ItemStack itemStack = itemEntity.getStack();
+                int i = itemStack.getCount();
+
+                if (!entity.isRemoved())
+                {
+                    ((ServerWorld) this.getWorld()).getChunkManager().sendToOtherNearbyPlayers(entity, new ItemPickupAnimationS2CPacket(entity.getId(), this.getId(), i));
+                }
+
+                entity.discard();
+            }
         }
     }
 
