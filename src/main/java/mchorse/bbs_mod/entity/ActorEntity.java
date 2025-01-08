@@ -19,8 +19,9 @@ import net.minecraft.util.Arm;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ActorEntity extends LivingEntity
 {
@@ -36,6 +37,8 @@ public class ActorEntity extends LivingEntity
     private boolean despawn;
     private MCEntity entity = new MCEntity(this);
     private Form form;
+
+    private Map<EquipmentSlot, ItemStack> equipment = new HashMap<>();
 
     public ActorEntity(EntityType<? extends LivingEntity> entityType, World world)
     {
@@ -58,20 +61,28 @@ public class ActorEntity extends LivingEntity
     }
 
     @Override
+    public Iterable<ItemStack> getHandItems()
+    {
+        return List.of(this.getEquippedStack(EquipmentSlot.MAINHAND), this.getEquippedStack(EquipmentSlot.OFFHAND));
+    }
+
+    @Override
     public Iterable<ItemStack> getArmorItems()
     {
-        return Collections.emptyList();
+        return List.of(this.getEquippedStack(EquipmentSlot.FEET), this.getEquippedStack(EquipmentSlot.LEGS), this.getEquippedStack(EquipmentSlot.CHEST), this.getEquippedStack(EquipmentSlot.HEAD));
     }
 
     @Override
     public ItemStack getEquippedStack(EquipmentSlot slot)
     {
-        return ItemStack.EMPTY;
+        return this.equipment.getOrDefault(slot, ItemStack.EMPTY);
     }
 
     @Override
     public void equipStack(EquipmentSlot slot, ItemStack stack)
-    {}
+    {
+        this.equipment.put(slot, stack == null ? ItemStack.EMPTY : stack);
+    }
 
     @Override
     public Arm getMainArm()
