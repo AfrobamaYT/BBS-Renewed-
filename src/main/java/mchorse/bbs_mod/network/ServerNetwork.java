@@ -342,6 +342,7 @@ public class ServerNetwork
             else if (state == ActionState.RESTART)
             {
                 ActionPlayer actionPlayer = actions.getPlayer(filmId);
+                int originalTick = 0;
 
                 if (actionPlayer == null)
                 {
@@ -356,7 +357,8 @@ public class ServerNetwork
                 {
                     actions.stop(filmId);
 
-                    actionPlayer = actions.play(player.getServerWorld(), actionPlayer.film, 0);
+                    originalTick = actionPlayer.tick;
+                    actionPlayer = actions.play(player.getServerWorld(), actionPlayer.film, tick);
                 }
 
                 if (actionPlayer != null)
@@ -366,7 +368,7 @@ public class ServerNetwork
 
                     if (tick != 0)
                     {
-                        actionPlayer.goTo(tick);
+                        actionPlayer.goTo(originalTick, tick);
                     }
                 }
 

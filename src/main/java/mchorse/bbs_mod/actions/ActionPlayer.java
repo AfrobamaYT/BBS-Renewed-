@@ -61,21 +61,9 @@ public class ActionPlayer
 
             ActorEntity actor = new ActorEntity(BBSMod.ACTOR_ENTITY, this.world);
 
-            double x = replay.keyframes.x.interpolate(0F);
-            double y = replay.keyframes.y.interpolate(0F);
-            double z = replay.keyframes.z.interpolate(0F);
-            float yawHead = replay.keyframes.headYaw.interpolate(0F).floatValue() + 180F;
-            float yawBody = replay.keyframes.bodyYaw.interpolate(0F).floatValue();
-            float pitch = replay.keyframes.pitch.interpolate(0F).floatValue();
-
-            actor.setPosition(x, y, z);
-            actor.setYaw(yawHead);
-            actor.setHeadYaw(yawHead);
-            actor.setPitch(pitch);
-            actor.setBodyYaw(yawBody);
             actor.setForm(FormUtils.copy(replay.form.get()));
-            actor.setSneaking(replay.keyframes.sneaking.interpolate(0F) > 0);
 
+            this.apply(actor, replay, this.tick, false);
             this.actors.put(replay.getId(), actor);
             this.world.spawnEntity(actor);
         }
@@ -86,6 +74,33 @@ public class ActionPlayer
         return this.world;
     }
 
+    public void apply(ActorEntity actor, Replay replay, float tick, boolean ticking)
+    {
+        double x = replay.keyframes.x.interpolate(tick);
+        double y = replay.keyframes.y.interpolate(tick);
+        double z = replay.keyframes.z.interpolate(tick);
+        float yawHead = replay.keyframes.headYaw.interpolate(tick).floatValue() + 180F;
+        float yawBody = replay.keyframes.bodyYaw.interpolate(tick).floatValue();
+        float pitch = replay.keyframes.pitch.interpolate(tick).floatValue();
+
+        Vec3d pos = actor.getPos();
+
+        if (ticking)
+        {
+            actor.move(MovementType.SELF, new Vec3d(x - pos.x, y - pos.y, z - pos.z));
+        }
+
+        actor.setPosition(x, y, z);
+        actor.setYaw(yawHead);
+        actor.setHeadYaw(yawHead);
+        actor.setPitch(pitch);
+        actor.setBodyYaw(yawBody);
+        actor.setSneaking(replay.keyframes.sneaking.interpolate(tick) > 0);
+        actor.setOnGround(replay.keyframes.grounded.interpolate(tick) > 0);
+
+        actor.fallDistance = replay.keyframes.fall.interpolate(tick).floatValue();
+    }
+
     public boolean tick()
     {
         for (Map.Entry<String, ActorEntity> entry : this.actors.entrySet())
@@ -94,25 +109,7 @@ public class ActionPlayer
 
             if (replay != null)
             {
-                double x = replay.keyframes.x.interpolate(this.tick);
-                double y = replay.keyframes.y.interpolate(this.tick);
-                double z = replay.keyframes.z.interpolate(this.tick);
-                float yawHead = replay.keyframes.headYaw.interpolate(this.tick).floatValue() + 180F;
-                float yawBody = replay.keyframes.bodyYaw.interpolate(this.tick).floatValue();
-                float pitch = replay.keyframes.pitch.interpolate(this.tick).floatValue();
-                ActorEntity actor = entry.getValue();
-
-                Vec3d pos = actor.getPos();
-
-                actor.move(MovementType.SELF, new Vec3d(x - pos.x, y - pos.y, z - pos.z));
-                actor.setPosition(x, y, z);
-                actor.setYaw(yawHead);
-                actor.setHeadYaw(yawHead);
-                actor.setPitch(pitch);
-                actor.setBodyYaw(yawBody);
-                actor.setSneaking(replay.keyframes.sneaking.interpolate(this.tick) > 0);
-
-                actor.fallDistance = replay.keyframes.fall.interpolate(this.tick).floatValue();
+                this.apply(entry.getValue(), replay, this.tick, true);
             }
         }
 
@@ -166,8 +163,25 @@ public class ActionPlayer
 
     public void goTo(int tick)
     {
-        if (this.tick != tick)
+        this.goTo(this.tick, tick);
+    }
+
+    public void goTo(int from, int tick)
+    {
+        for (Map.Entry<String, ActorEntity> entry : this.actors.entrySet())
         {
+            Replay replay = (Replay) this.film.replays.get(entry.getKey());
+
+            if (replay != null)
+            {
+                this.apply(entry.getValue(), replay, this.tick, false);
+            }
+        }
+
+        if (from != tick)
+        {
+            this.tick = from;
+
             while (this.tick != tick)
             {
                 this.tick += this.tick > tick ? -1 : 1;

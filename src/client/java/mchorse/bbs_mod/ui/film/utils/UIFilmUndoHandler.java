@@ -216,7 +216,8 @@ public class UIFilmUndoHandler
             path.contains("/keyframes/x") ||
             path.contains("/keyframes/y") ||
             path.contains("/keyframes/z") ||
-            path.endsWith("/actor")
+            path.endsWith("/actor") ||
+            path.endsWith("/keyframes")
         ) {
             return true;
         }
