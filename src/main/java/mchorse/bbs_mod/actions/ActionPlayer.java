@@ -8,7 +8,9 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.DataPath;
+import net.minecraft.entity.MovementType;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
 import java.util.List;
@@ -100,12 +102,17 @@ public class ActionPlayer
                 float pitch = replay.keyframes.pitch.interpolate(this.tick).floatValue();
                 ActorEntity actor = entry.getValue();
 
+                Vec3d pos = actor.getPos();
+
+                actor.move(MovementType.SELF, new Vec3d(x - pos.x, y - pos.y, z - pos.z));
                 actor.setPosition(x, y, z);
                 actor.setYaw(yawHead);
                 actor.setHeadYaw(yawHead);
                 actor.setPitch(pitch);
                 actor.setBodyYaw(yawBody);
                 actor.setSneaking(replay.keyframes.sneaking.interpolate(this.tick) > 0);
+
+                actor.fallDistance = replay.keyframes.fall.interpolate(this.tick).floatValue();
             }
         }
 
