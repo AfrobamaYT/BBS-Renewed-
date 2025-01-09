@@ -156,8 +156,9 @@ public class ActionPlayer
             }
 
             Replay replay = list.get(i);
+            ActorEntity actor = this.actors.get(replay.getId());
 
-            replay.applyActions(fakePlayer, this.film, this.tick);
+            replay.applyActions(actor, fakePlayer, this.film, this.tick);
         }
     }
 

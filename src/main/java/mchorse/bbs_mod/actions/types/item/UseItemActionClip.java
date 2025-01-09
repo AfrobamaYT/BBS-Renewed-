@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.actions.types.item;
 
 import mchorse.bbs_mod.actions.SuperFakePlayer;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -10,7 +11,7 @@ import net.minecraft.util.Hand;
 public class UseItemActionClip extends ItemActionClip
 {
     @Override
-    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(ActorEntity actor, SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         Hand hand = this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND;
 

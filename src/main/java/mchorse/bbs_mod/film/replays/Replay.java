@@ -3,6 +3,7 @@ package mchorse.bbs_mod.film.replays;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.actions.types.ActionClip;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -138,13 +139,13 @@ public class Replay extends ValueGroup
         }
     }
 
-    public void applyActions(SuperFakePlayer fakePlayer, Film film, int tick)
+    public void applyActions(ActorEntity actor, SuperFakePlayer fakePlayer, Film film, int tick)
     {
         List<Clip> clips = this.actions.getClips(tick);
 
         for (Clip clip : clips)
         {
-            ((ActionClip) clip).apply(fakePlayer, film, this, tick);
+            ((ActionClip) clip).apply(actor, fakePlayer, film, this, tick);
         }
     }
 

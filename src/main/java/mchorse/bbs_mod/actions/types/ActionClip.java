@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.actions.types;
 
 import mchorse.bbs_mod.actions.SuperFakePlayer;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
@@ -50,7 +51,7 @@ public abstract class ActionClip extends Clip
     protected void applyClientAction(IEntity entity, Film film, Replay replay, int tick)
     {}
 
-    public final void apply(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public final void apply(ActorEntity actor, SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         if (!this.enabled.get())
         {
@@ -64,16 +65,16 @@ public abstract class ActionClip extends Clip
         {
             if (relaive == 0)
             {
-                this.applyAction(player, film, replay, tick);
+                this.applyAction(actor, player, film, replay, tick);
             }
         }
         else if (relaive % frequency == 0)
         {
-            this.applyAction(player, film, replay, tick);
+            this.applyAction(actor, player, film, replay, tick);
         }
     }
 
-    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(ActorEntity actor, SuperFakePlayer player, Film film, Replay replay, int tick)
     {}
 
     protected void applyPositionRotation(SuperFakePlayer player, Replay replay, int tick)

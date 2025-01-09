@@ -95,6 +95,8 @@ public class ActorEntity extends LivingEntity
     {
         super.tick();
 
+        this.tickHandSwing();
+
         if (this.getWorld().isClient)
         {
             return;

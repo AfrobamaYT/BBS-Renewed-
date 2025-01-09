@@ -918,6 +918,7 @@ public class UIFilmController extends UIElement
                         if (anEntity instanceof ActorEntity actor)
                         {
                             replay.applyProperties(ticks, actor.getForm(), runner.isRunning());
+                            replay.applyClientActions(ticks, new MCEntity(anEntity), this.panel.getData());
                         }
                     }
                 }

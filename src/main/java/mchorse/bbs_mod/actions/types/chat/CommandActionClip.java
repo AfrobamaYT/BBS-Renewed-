@@ -3,6 +3,7 @@ package mchorse.bbs_mod.actions.types.chat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.actions.types.ActionClip;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ValueString;
@@ -18,7 +19,7 @@ public class CommandActionClip extends ActionClip
     }
 
     @Override
-    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(ActorEntity actor, SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         this.applyPositionRotation(player, replay, tick);
 

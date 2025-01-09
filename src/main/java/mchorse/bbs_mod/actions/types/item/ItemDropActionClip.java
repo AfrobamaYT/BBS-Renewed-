@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.actions.types.item;
 
 import mchorse.bbs_mod.actions.SuperFakePlayer;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.ValueDouble;
@@ -30,7 +31,7 @@ public class ItemDropActionClip extends ItemActionClip
     }
 
     @Override
-    public void applyAction(SuperFakePlayer player, Film film, Replay replay, int tick)
+    public void applyAction(ActorEntity actor, SuperFakePlayer player, Film film, Replay replay, int tick)
     {
         this.applyPositionRotation(player, replay, tick);
 

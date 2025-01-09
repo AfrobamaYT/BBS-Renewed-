@@ -11,6 +11,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.properties.AnchorProperty;
@@ -345,6 +346,7 @@ public class FilmController
                         if (anEntity instanceof ActorEntity actor)
                         {
                             replay.applyProperties(ticks, actor.getForm(), true);
+                            replay.applyClientActions(ticks, new MCEntity(anEntity), this.film);
                         }
                     }
                 }
