@@ -115,12 +115,11 @@ public class ActorEntity extends LivingEntity
                 ItemStack itemStack = itemEntity.getStack();
                 int i = itemStack.getCount();
 
-                if (!entity.isRemoved())
+                if (!entity.isRemoved() && !itemEntity.cannotPickup())
                 {
                     ((ServerWorld) this.getWorld()).getChunkManager().sendToOtherNearbyPlayers(entity, new ItemPickupAnimationS2CPacket(entity.getId(), this.getId(), i));
+                    entity.discard();
                 }
-
-                entity.discard();
             }
         }
     }

@@ -40,6 +40,7 @@ public class ItemDropActionClip extends ItemActionClip
             this.velocityX.get(), this.velocityY.get(), this.velocityZ.get()
         );
 
+        entity.setToDefaultPickupDelay();
         player.getWorld().spawnEntity(entity);
     }
 
