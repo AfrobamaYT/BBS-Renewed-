@@ -33,13 +33,17 @@ import org.joml.Vector3d;
 import org.joml.Vector4f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Films
 {
     private List<FilmController> controllers = new ArrayList<FilmController>();
     private Recorder recorder;
+
+    public Map<String, Map<String, Integer>> actors = new HashMap<>();
 
     /* Static helpers */
 
@@ -220,6 +224,11 @@ public class Films
         }
 
         return null;
+    }
+
+    public void updateActors(String filmId, Map<String, Integer> actors)
+    {
+        this.actors.put(filmId, actors);
     }
 
     public void update()

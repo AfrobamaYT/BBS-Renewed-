@@ -98,6 +98,7 @@ public class ClientNetwork
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_CHEATS_PERMISSION, (client, handler, buf, responseSender) -> handleCheatsPermissionPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_SHARED_FORM, (client, handler, buf, responseSender) -> handleShareFormPacket(client, buf));
         ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ACTOR_FORM, (client, handler, buf, responseSender) -> handleActorFormPacket(client, buf));
+        ClientPlayNetworking.registerGlobalReceiver(ServerNetwork.CLIENT_ACTORS, (client, handler, buf, responseSender) -> handleActorsPacket(client, buf));
     }
 
     /* Handlers */
@@ -374,6 +375,29 @@ public class ClientNetwork
                     actor.setForm(finalForm);
                 }
             });
+        });
+    }
+
+    private static void handleActorsPacket(MinecraftClient client, PacketByteBuf buf)
+    {
+        Map<String, Integer> actors = new HashMap<>();
+        String filmId = buf.readString();
+
+        for (int i = 0, c = buf.readInt(); i < c; i++)
+        {
+            String key = buf.readString();
+            int entityId = buf.readInt();
+
+            actors.put(key, entityId);
+        }
+
+        client.execute(() ->
+        {
+            UIDashboard dashboard = BBSModClient.getDashboard();
+            UIFilmPanel panel = dashboard.getPanel(UIFilmPanel.class);
+
+            panel.updateActors(filmId, actors);
+            BBSModClient.getFilms().updateActors(filmId, actors);
         });
     }
 

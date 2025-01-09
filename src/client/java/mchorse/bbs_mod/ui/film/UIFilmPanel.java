@@ -13,6 +13,7 @@ import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
@@ -1000,6 +1001,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         return noCamera;
+    }
+
+    public void updateActors(String filmId, Map<String, Integer> actors)
+    {
+        if (this.data != null && this.data.getId().equals(filmId))
+        {
+            this.controller.updateActors(actors);
+        }
     }
 
     @Override

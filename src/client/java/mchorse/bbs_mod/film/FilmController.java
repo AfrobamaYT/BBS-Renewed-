@@ -1,10 +1,12 @@
 package mchorse.bbs_mod.film;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -31,6 +33,7 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.LightType;
@@ -328,6 +331,23 @@ public class FilmController
                 replay.applyFrame(ticks, entity, null);
                 replay.applyProperties(ticks, entity.getForm(), true);
                 replay.applyClientActions(ticks, entity, this.film);
+
+                Map<String, Integer> actors = BBSModClient.getFilms().actors.get(this.film.getId());
+
+                if (actors != null)
+                {
+                    Integer entityId = actors.get(replay.getId());
+
+                    if (entityId != null)
+                    {
+                        Entity anEntity = MinecraftClient.getInstance().world.getEntityById(entityId);
+
+                        if (anEntity instanceof ActorEntity actor)
+                        {
+                            replay.applyProperties(ticks, actor.getForm(), true);
+                        }
+                    }
+                }
             }
         }
     }

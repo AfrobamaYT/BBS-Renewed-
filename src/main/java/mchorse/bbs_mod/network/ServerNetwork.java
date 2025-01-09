@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class ServerNetwork
@@ -73,6 +74,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_CHEATS_PERMISSION = new Identifier(BBSMod.MOD_ID, "c11");
     public static final Identifier CLIENT_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "c12");
     public static final Identifier CLIENT_ACTOR_FORM = new Identifier(BBSMod.MOD_ID, "c13");
+    public static final Identifier CLIENT_ACTORS = new Identifier(BBSMod.MOD_ID, "sc4");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -763,5 +765,21 @@ public class ServerNetwork
         {
             packetByteBuf.writeInt(actor.getId());
         });
+    }
+
+    public static void sendActors(ServerPlayerEntity player, String filmId, Map<String, ActorEntity> actors)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeString(filmId);
+        buf.writeInt(actors.size());
+
+        for (Map.Entry<String, ActorEntity> entry : actors.entrySet())
+        {
+            buf.writeString(entry.getKey());
+            buf.writeInt(entry.getValue().getId());
+        }
+
+        ServerPlayNetworking.send(player, CLIENT_ACTORS, buf);
     }
 }

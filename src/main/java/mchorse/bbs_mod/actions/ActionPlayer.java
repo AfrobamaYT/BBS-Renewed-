@@ -6,11 +6,13 @@ import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.network.ServerNetwork;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.DataPath;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.MovementType;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 
@@ -50,6 +52,8 @@ public class ActionPlayer
             entity.discard();
         }
 
+        this.actors.clear();
+
         List<Replay> list = this.film.replays.getList();
 
         for (int i = 0; i < list.size(); i++)
@@ -68,6 +72,11 @@ public class ActionPlayer
             this.apply(actor, replay, this.tick, false);
             this.actors.put(replay.getId(), actor);
             this.world.spawnEntity(actor);
+        }
+
+        for (ServerPlayerEntity player : this.world.getPlayers())
+        {
+            ServerNetwork.sendActors(player, this.film.getId(), this.actors);
         }
     }
 

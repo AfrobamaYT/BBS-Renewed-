@@ -9,6 +9,7 @@ import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.film.FilmControllerContext;
@@ -68,6 +69,7 @@ import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
 import org.joml.Matrix3f;
@@ -82,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class UIFilmController extends UIElement
@@ -96,6 +99,7 @@ public class UIFilmController extends UIElement
     public final UIFilmPanel panel;
 
     public final List<IEntity> entities = new ArrayList<>();
+    private Map<String, Integer> actors;
 
     /* Character control */
     private IEntity controlled;
@@ -310,6 +314,11 @@ public class UIFilmController extends UIElement
 
         this.panel.getRunner().getContext().entities.clear();
         this.panel.getRunner().getContext().entities.addAll(this.entities);
+    }
+
+    public void updateActors(Map<String, Integer> actors)
+    {
+        this.actors = actors;
     }
 
     /* Character control state */
@@ -897,6 +906,21 @@ public class UIFilmController extends UIElement
 
                 replay.applyProperties(ticks, entity.getForm(), runner.isRunning());
                 replay.applyClientActions(ticks, entity, this.panel.getData());
+
+                if (this.actors != null)
+                {
+                    Integer entityId = this.actors.get(replay.getId());
+
+                    if (entityId != null)
+                    {
+                        Entity anEntity = MinecraftClient.getInstance().world.getEntityById(entityId);
+
+                        if (anEntity instanceof ActorEntity actor)
+                        {
+                            replay.applyProperties(ticks, actor.getForm(), runner.isRunning());
+                        }
+                    }
+                }
             }
 
             /* Special pausing logic */
