@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -269,7 +270,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     @Override
     public void mouseScrolled(UIContext context)
     {
-        if (Window.isShiftPressed())
+        if (context.mouseWheelHorizontal != 0)
+        {
+            double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheelHorizontal) / this.keyframes.getXAxis().getZoom();
+
+            this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
+        }
+        else if (Window.isShiftPressed())
         {
             this.dopeSheet.mouseScroll(context);
         }
@@ -280,13 +287,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         else if (context.mouseWheel != 0D)
         {
             this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
-        }
-
-        if (context.mouseWheelHorizontal != 0)
-        {
-            double offsetX = (25F * context.mouseWheelHorizontal) / this.keyframes.getXAxis().getZoom();
-
-            this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
         }
     }
 

@@ -91,6 +91,8 @@
     "bbs.config.recording.tooltip": "Here is everything related to player recording system",
     "bbs.config.scrollbars.sensitivity": "Scrolling sensitivity",
     "bbs.config.scrollbars.sensitivity-comment": "Allows you to change the factor of how much faster or slower mouse wheel scrolling",
+    "bbs.config.scrollbars.sensitivity_horizontal": "Scrolling sensitivity (horizontal)",
+    "bbs.config.scrollbars.sensitivity_horizontal-comment": "Allows you to change the factor of how much faster or slower mouse wheel scrolling horizontally",
     "bbs.config.scrollbars.shadow": "Shadow color",
     "bbs.config.scrollbars.shadow-comment": "Allows you to set shadow color of scrollbars",
     "bbs.config.scrollbars.smoothness": "Scrolling smoothness",

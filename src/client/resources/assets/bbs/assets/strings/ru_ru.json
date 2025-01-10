@@ -91,6 +91,8 @@
     "bbs.config.recording.tooltip": "Здесь есть всё, что касается системы записи игрока",
     "bbs.config.scrollbars.sensitivity": "Чуствительность прокрутки",
     "bbs.config.scrollbars.sensitivity-comment": "Позволяет Вам изменить коэффициент прокрутки колёсика мышки",
+    "bbs.config.scrollbars.sensitivity_horizontal": "Чуствительность прокрутки (гориз.)",
+    "bbs.config.scrollbars.sensitivity_horizontal-comment": "Позволяет Вам изменить коэффициент горизонтальной прокрутки колёсика мышки",
     "bbs.config.scrollbars.smoothness": "Сглаживание прокрутки",
     "bbs.config.scrollbars.smoothness-comment": "Позволяет Вам переключаться между моментальным и сглаженным режимом прокрутки",
     "bbs.config.scrollbars.shadow": "Цвет тени",

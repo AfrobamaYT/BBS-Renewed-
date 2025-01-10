@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
@@ -264,33 +265,35 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @Override
     public void mouseScrolled(UIContext context)
     {
-        boolean x = Window.isShiftPressed();
-        boolean y = Window.isCtrlPressed();
-        boolean none = !x && !y;
-
-        /* Scaling X */
-        if (x && !y || none)
-        {
-            if (context.mouseWheel != 0D)
-            {
-                this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
-            }
-        }
-
-        /* Scaling Y */
-        if (y && !x || none)
-        {
-            if (context.mouseWheel != 0D)
-            {
-                this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel));
-            }
-        }
-
         if (context.mouseWheelHorizontal != 0)
         {
-            double offsetX = (25F * context.mouseWheelHorizontal) / this.keyframes.getXAxis().getZoom();
+            double offsetX = (25F * BBSSettings.scrollingSensitivityHorizontal.get() * context.mouseWheelHorizontal) / this.keyframes.getXAxis().getZoom();
 
             this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
+        }
+        else
+        {
+            boolean x = Window.isShiftPressed();
+            boolean y = Window.isCtrlPressed();
+            boolean none = !x && !y;
+
+            /* Scaling X */
+            if (x && !y || none)
+            {
+                if (context.mouseWheel != 0D)
+                {
+                    this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
+                }
+            }
+
+            /* Scaling Y */
+            if (y && !x || none)
+            {
+                if (context.mouseWheel != 0D)
+                {
+                    this.yAxis.zoomAnchor(Scale.getAnchorY(context, this.keyframes.area), Math.copySign(this.yAxis.getZoomFactor(), context.mouseWheel));
+                }
+            }
         }
     }
 
