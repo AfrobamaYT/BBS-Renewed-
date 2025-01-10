@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CubicModel
+public class CubicModel implements ICubicModel
 {
     public final String id;
     public Model model;
@@ -22,6 +22,7 @@ public class CubicModel
     public Link texture;
     public long loadTime;
 
+    /* Model's additional properties */
     public String poseGroup;
     public boolean procedural;
     public boolean culling = true;
@@ -44,6 +45,24 @@ public class CubicModel
 
         this.loadTime = System.currentTimeMillis();
         this.poseGroup = id;
+    }
+
+    @Override
+    public Model getModel()
+    {
+        return this.model;
+    }
+
+    @Override
+    public Pose getSneakingPose()
+    {
+        return this.sneakingPose;
+    }
+
+    @Override
+    public Animations getAnimations()
+    {
+        return this.animations;
     }
 
     public String getAnchor()

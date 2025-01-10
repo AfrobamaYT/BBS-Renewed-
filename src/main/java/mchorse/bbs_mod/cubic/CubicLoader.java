@@ -65,18 +65,18 @@ public class CubicLoader
         return info;
     }
 
-    public static MapType toData(CubicModel model)
+    public static MapType toData(ICubicModel model)
     {
         MapType data = new MapType();
 
-        if (model.model != null)
+        if (model.getModel() != null)
         {
-            data.put("model", model.model.toData());
+            data.put("model", model.getModel().toData());
         }
 
-        if (model.animations != null)
+        if (model.getAnimations() != null)
         {
-            data.put("animations", model.animations.toData());
+            data.put("animations", model.getAnimations().toData());
         }
 
         return data;

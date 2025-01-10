@@ -14,7 +14,6 @@ import mchorse.bbs_mod.utils.pose.PoseManager;
 import mchorse.bbs_mod.utils.pose.ShapeKeysManager;
 import mchorse.bbs_mod.utils.watchdog.IWatchDogListener;
 import mchorse.bbs_mod.utils.watchdog.WatchDogEvent;
-import mchorse.bbs_mod.vox.VoxModelLoader;
 
 import java.io.InputStream;
 import java.nio.file.Path;

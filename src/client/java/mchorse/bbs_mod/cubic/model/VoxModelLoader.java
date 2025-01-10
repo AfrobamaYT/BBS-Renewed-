@@ -1,17 +1,18 @@
-package mchorse.bbs_mod.vox;
+package mchorse.bbs_mod.cubic.model;
 
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
-import mchorse.bbs_mod.cubic.model.IModelLoader;
-import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
+import mchorse.bbs_mod.vox.VoxBuilder;
+import mchorse.bbs_mod.vox.VoxDocument;
+import mchorse.bbs_mod.vox.VoxReader;
 
 import java.io.File;
 import java.io.InputStream;

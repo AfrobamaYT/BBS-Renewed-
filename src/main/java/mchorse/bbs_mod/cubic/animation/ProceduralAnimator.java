@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.cubic.animation;
 
-import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
+import mchorse.bbs_mod.cubic.ICubicModel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -23,7 +23,7 @@ public class ProceduralAnimator implements IAnimator
     public ActionPlayback basePre;
     public ActionPlayback basePost;
 
-    private CubicModel model;
+    private ICubicModel model;
 
     @Override
     public List<String> getActions()
@@ -32,7 +32,7 @@ public class ProceduralAnimator implements IAnimator
     }
 
     @Override
-    public void setup(CubicModel model, ActionsConfig actions, boolean fade)
+    public void setup(ICubicModel model, ActionsConfig actions, boolean fade)
     {
         this.model = model;
 
@@ -56,8 +56,7 @@ public class ProceduralAnimator implements IAnimator
      */
     public ActionPlayback createAction(ActionPlayback old, ActionConfig config, boolean looping, int priority)
     {
-        CubicModel model = this.model;
-        Animations animations = model == null ? null : model.animations;
+        Animations animations = this.model == null ? null : this.model.getAnimations();
 
         if (animations == null)
         {
@@ -100,7 +99,7 @@ public class ProceduralAnimator implements IAnimator
     }
 
     @Override
-    public void applyActions(IEntity target, CubicModel armature, float transition)
+    public void applyActions(IEntity target, ICubicModel armature, float transition)
     {
         if (target == null)
         {
@@ -109,10 +108,10 @@ public class ProceduralAnimator implements IAnimator
 
         if (this.basePre != null)
         {
-            this.basePre.apply(target, armature.model, transition, 1F, false);
+            this.basePre.apply(target, armature.getModel(), transition, 1F, false);
         }
 
-        Model model = armature.model;
+        Model model = armature.getModel();
         ItemStack main = target.getEquipmentStack(EquipmentSlot.MAINHAND);
         ItemStack offhand = target.getEquipmentStack(EquipmentSlot.OFFHAND);
 
@@ -146,7 +145,7 @@ public class ProceduralAnimator implements IAnimator
 
         if (target.isSneaking())
         {
-            model.apply(armature.sneakingPose);
+            model.apply(armature.getSneakingPose());
         }
 
         for (ModelGroup group : model.getAllGroups())
@@ -286,7 +285,7 @@ public class ProceduralAnimator implements IAnimator
 
         if (this.basePost != null)
         {
-            this.basePost.apply(target, armature.model, transition, 1F, false);
+            this.basePost.apply(target, armature.getModel(), transition, 1F, false);
         }
     }
 

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.animation;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ICubicModel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -53,7 +53,7 @@ public class Animator implements IAnimator
     public boolean wasOnGround = true;
     public int jumpingCounter;
 
-    private CubicModel model;
+    private ICubicModel model;
 
     @Override
     public List<String> getActions()
@@ -65,7 +65,7 @@ public class Animator implements IAnimator
     }
 
     @Override
-    public void setup(CubicModel model, ActionsConfig actions, boolean fade)
+    public void setup(ICubicModel model, ActionsConfig actions, boolean fade)
     {
         this.model = model;
 
@@ -115,8 +115,7 @@ public class Animator implements IAnimator
      */
     public ActionPlayback createAction(ActionPlayback old, ActionConfig config, boolean looping, int priority)
     {
-        CubicModel model = this.model;
-        Animations animations = model == null ? null : model.animations;
+        Animations animations = this.model == null ? null : this.model.getAnimations();
 
         if (animations == null)
         {
@@ -358,39 +357,39 @@ public class Animator implements IAnimator
      * Apply currently running action pipeline onto given armature
      */
     @Override
-    public void applyActions(IEntity target, CubicModel armature, float transition)
+    public void applyActions(IEntity target, ICubicModel armature, float transition)
     {
         if (this.basePre != null)
         {
-            this.basePre.apply(target, armature.model, transition, 1F, false);
+            this.basePre.apply(target, armature.getModel(), transition, 1F, false);
         }
 
         if (this.lastActive != null && this.active.isFading())
         {
-            this.lastActive.apply(target, armature.model, transition, 1F, false);
+            this.lastActive.apply(target, armature.getModel(), transition, 1F, false);
         }
 
         if (this.active != null)
         {
             float fade = this.active.isFading() ? this.active.getFadeFactor(transition) : 1F;
 
-            this.active.apply(target, armature.model, transition, fade, false);
+            this.active.apply(target, armature.getModel(), transition, fade, false);
         }
 
         if (this.basePost != null)
         {
-            this.basePost.apply(target, armature.model, transition, 1F, false);
+            this.basePost.apply(target, armature.getModel(), transition, 1F, false);
         }
 
         for (ActionPlayback action : this.actions)
         {
             if (action.isFading())
             {
-                action.apply(target, armature.model, transition, action.getFadeFactor(transition), true);
+                action.apply(target, armature.getModel(), transition, action.getFadeFactor(transition), true);
             }
             else
             {
-                action.apply(target, armature.model, transition, 1F, true);
+                action.apply(target, armature.getModel(), transition, 1F, true);
             }
         }
     }
@@ -398,7 +397,7 @@ public class Animator implements IAnimator
     @Override
     public void playAnimation(String name)
     {
-        Animation animation = this.model.animations.get(name);
+        Animation animation = this.model.getAnimations().get(name);
 
         this.addAction(new ActionPlayback(animation, new ActionConfig(), false, -1));
     }
