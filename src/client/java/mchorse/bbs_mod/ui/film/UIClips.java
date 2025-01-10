@@ -1146,6 +1146,11 @@ public class UIClips extends UIElement
                 this.scale.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scale.getZoomFactor(), context.mouseWheel));
             }
 
+            if (context.mouseWheelHorizontal != 0D)
+            {
+                this.scale.setShift(this.scale.getShift() - (context.mouseWheelHorizontal * 25F) / this.scale.getZoom());
+            }
+
             return true;
         }
 
