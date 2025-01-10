@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
@@ -10,6 +11,8 @@ import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.ui.utils.shapes.UIShapeKeys;
 import mchorse.bbs_mod.utils.Direction;
@@ -21,12 +24,27 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
     public UIPoseEditor poseEditor;
     public UIShapeKeys shapeKeys;
 
+    public UIButton pickModel;
     public UIButton pick;
 
     public UIModelFormPanel(UIForm editor)
     {
         super(editor);
 
+        this.pickModel = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_MODEL, (b) ->
+        {
+            UIListOverlayPanel list = new UIListOverlayPanel(UIKeys.FORMS_EDITOR_MODEL_MODELS, (l) ->
+            {
+                this.form.model.set(l);
+                this.editor.startEdit(this.form);
+            });
+
+            list.addValues(BBSModClient.getModels().getAvailableKeys());
+            list.list.list.sort();
+            list.setValue(this.form.model.get());
+
+            UIOverlay.addOverlay(this.getContext(), list);
+        });
         this.color = new UIColor((c) -> this.form.color.set(new Color().set(c))).withAlpha();
         this.color.direction(Direction.LEFT);
         this.poseEditor = new UIPoseEditor();
@@ -44,7 +62,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
             UITexturePicker.open(this.getContext(), link, (l) -> this.form.texture.set(l));
         });
 
-        this.options.add(this.pick, this.color, this.poseEditor);
+        this.options.add(this.pickModel, this.pick, this.color, this.poseEditor);
     }
 
     private void pickGroup(String group)

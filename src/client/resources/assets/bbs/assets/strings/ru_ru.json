@@ -468,6 +468,8 @@
     "bbs.ui.forms.editor.context.remove": "Удалить эту часть тела",
     "bbs.ui.forms.editor.finish": "Закончить редактирование",
     "bbs.ui.forms.editor.model.pick_texture": "Выбрать текстуру...",
+    "bbs.ui.forms.editor.model.pick_model": "Выбрать модель...",
+    "bbs.ui.forms.editor.model.models": "Модели",
     "bbs.ui.forms.editor.pick_form": "Выбрать форму...",
     "bbs.ui.forms.editor.toggle_tree": "Переключить список форм",
     "bbs.ui.forms.editor.use_target": "Использовать цель",
