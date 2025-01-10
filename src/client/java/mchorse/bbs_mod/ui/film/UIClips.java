@@ -1141,7 +1141,7 @@ public class UIClips extends UIElement
             {
                 this.vertical.mouseScroll(context);
             }
-            else
+            else if (context.mouseWheel != 0D)
             {
                 this.scale.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scale.getZoomFactor(), context.mouseWheel));
             }

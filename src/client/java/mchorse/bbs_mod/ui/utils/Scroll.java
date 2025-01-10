@@ -407,7 +407,7 @@ public class Scroll
             {
                 this.scrollBy(scroll * BBSSettings.scrollingSensitivity.get());
             }
-            else
+            else if (scroll != 0D)
             {
                 this.scrollBy((int) (Math.copySign(this.scrollSpeed, scroll) * BBSSettings.scrollingSensitivity.get()));
             }

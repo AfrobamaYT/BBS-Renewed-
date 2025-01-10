@@ -289,7 +289,10 @@ public class UIAudioEditor extends UIElement
     {
         if (this.area.isInside(context))
         {
-            this.scale.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scale.getZoomFactor(), context.mouseWheel));
+            if (context.mouseWheel != 0D)
+            {
+                this.scale.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scale.getZoomFactor(), context.mouseWheel));
+            }
 
             return true;
         }

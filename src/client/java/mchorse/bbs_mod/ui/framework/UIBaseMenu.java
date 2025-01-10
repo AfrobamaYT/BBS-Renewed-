@@ -117,11 +117,11 @@ public abstract class UIBaseMenu
         return result;
     }
 
-    public boolean mouseScrolled(int x, int y, double scroll)
+    public boolean mouseScrolled(int x, int y, double h, double v)
     {
         boolean result = false;
 
-        this.context.setMouseWheel(x, y, scroll);
+        this.context.setMouseWheel(x, y, v, h);
 
         if (this.root.isEnabled())
         {

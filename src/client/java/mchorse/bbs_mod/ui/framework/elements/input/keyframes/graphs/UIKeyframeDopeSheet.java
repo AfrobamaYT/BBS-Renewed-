@@ -277,9 +277,16 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         {
             this.setTrackHeight(this.trackHeight - context.mouseWheel);
         }
-        else
+        else if (context.mouseWheel != 0D)
         {
             this.keyframes.getXAxis().zoomAnchor(Scale.getAnchorX(context, this.keyframes.area), Math.copySign(this.keyframes.getXAxis().getZoomFactor(), context.mouseWheel));
+        }
+
+        if (context.mouseWheelHorizontal != 0)
+        {
+            double offsetX = (25F * context.mouseWheelHorizontal) / this.keyframes.getXAxis().getZoom();
+
+            this.keyframes.getXAxis().setShift(this.keyframes.getXAxis().getShift() - offsetX);
         }
     }
 

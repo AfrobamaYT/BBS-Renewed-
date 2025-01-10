@@ -39,6 +39,7 @@ public class UIContext implements IViewportStack
     public int mouseY;
     public int mouseButton;
     public double mouseWheel;
+    public double mouseWheelHorizontal;
 
     /* Keyboard states */
     private int keyCode;
@@ -100,10 +101,11 @@ public class UIContext implements IViewportStack
         this.mouseButton = mouseButton;
     }
 
-    public void setMouseWheel(int mouseX, int mouseY, double mouseWheel)
+    public void setMouseWheel(int mouseX, int mouseY, double mouseWheel, double mouseWheelHorizontal)
     {
         this.setMouse(mouseX, mouseY);
         this.mouseWheel = mouseWheel;
+        this.mouseWheelHorizontal = mouseWheelHorizontal;
     }
 
     public void setKeyEvent(int keyCode, int scanCode, int action)

@@ -99,8 +99,11 @@ public abstract class UICanvas extends UIElement
 
     protected void zoom(UIContext context, int scroll)
     {
-        this.scaleX.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scaleX.getZoomFactor(), scroll));
-        this.scaleY.zoomAnchor(Scale.getAnchorY(context, this.area), Math.copySign(this.scaleY.getZoomFactor(), scroll));
+        if (scroll != 0D)
+        {
+            this.scaleX.zoomAnchor(Scale.getAnchorX(context, this.area), Math.copySign(this.scaleX.getZoomFactor(), scroll));
+            this.scaleY.zoomAnchor(Scale.getAnchorY(context, this.area), Math.copySign(this.scaleY.getZoomFactor(), scroll));
+        }
     }
 
     @Override
