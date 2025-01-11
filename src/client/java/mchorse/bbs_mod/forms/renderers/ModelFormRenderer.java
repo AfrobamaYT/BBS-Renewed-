@@ -246,7 +246,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-            this.renderModel(this.entity, GameRenderer.getRenderTypeEntityTranslucentCullProgram(), stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
+            this.renderModel(this.entity, GameRenderer::getRenderTypeEntityTranslucentCullProgram, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
 
             /* Render body parts */
             stack.push();
@@ -262,7 +262,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, ShaderProgram program, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
+    private void renderModel(IEntity target, Supplier<ShaderProgram> program, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
     {
         if (!model.culling)
         {
@@ -279,7 +279,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         MatrixStack newStack = new MatrixStack();
         boolean isVao = model.model.getShapeKeys().isEmpty();
         CubicCubeRenderer renderProcessor = isVao
-            ? new CubicVAORenderer(program, model, light, overlay, picking, this.form.shapeKeys.get(transition))
+            ? new CubicVAORenderer(program.get(), model, light, overlay, picking, this.form.shapeKeys.get(transition))
             : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
@@ -301,6 +301,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
         else
         {
+            RenderSystem.setShader(program);
+
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
             builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
@@ -396,7 +398,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             BBSModClient.getTextures().bindTexture(texture);
             Supplier<ShaderProgram> shader = this.getShader(context, GameRenderer::getRenderTypeEntityTranslucentProgram, BBSShaders::getPickerModelsProgram);
 
-            this.renderModel(context.entity, shader.get(), context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
+            this.renderModel(context.entity, shader, context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
         }
     }
 
