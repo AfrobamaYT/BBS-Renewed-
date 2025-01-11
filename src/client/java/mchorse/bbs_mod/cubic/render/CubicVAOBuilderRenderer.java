@@ -10,6 +10,7 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.data.model.ModelMesh;
 import mchorse.bbs_mod.cubic.data.model.ModelQuad;
 import mchorse.bbs_mod.cubic.data.model.ModelVertex;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Vector2f;
@@ -41,18 +42,6 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
     private Vector3f normal = new Vector3f();
     private Vector4f vertex = new Vector4f();
 
-    private static float[] toArray(List<Float> floats)
-    {
-        float[] array = new float[floats.size()];
-
-        for (int i = 0; i < array.length; i++)
-        {
-            array[i] = floats.get(i);
-        }
-
-        return array;
-    }
-
     public CubicVAOBuilderRenderer(Map<ModelGroup, ModelVAO> model)
     {
         this.model = model;
@@ -81,20 +70,15 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
 
         if (!vertices.isEmpty())
         {
-            float[] v = toArray(vertices);
-            float[] n = toArray(normals);
-            float[] u = toArray(uvs);
-            float[] t = calculateTangents(v, n, u);
+            float[] v = CollectionUtils.toArray(vertices);
+            float[] n = CollectionUtils.toArray(normals);
+            float[] u = CollectionUtils.toArray(uvs);
+            float[] t = BBSRendering.calculateTangents(v, n, u);
 
             this.model.put(group, new ModelVAO(new ModelVAOData(v, n, t, u)));
         }
 
         return false;
-    }
-
-    private float[] calculateTangents(float[] v, float[] n, float[] u)
-    {
-        return BBSRendering.calculateTangents(v, n, u);
     }
 
     private void renderCube(List<Float> vertices, List<Float> normals, List<Float> uvs, MatrixStack stack, ModelGroup group, ModelCube cube)

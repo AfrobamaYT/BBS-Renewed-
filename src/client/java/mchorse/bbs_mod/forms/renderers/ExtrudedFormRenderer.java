@@ -3,8 +3,9 @@ package mchorse.bbs_mod.forms.renderers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.render.ModelVAO;
+import mchorse.bbs_mod.client.render.ModelVAORenderer;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
-import mchorse.bbs_mod.graphics.texture.TextureExtruder;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -13,16 +14,10 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
@@ -55,7 +50,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
-        this.renderModel(GameRenderer::getRenderTypeEntityTranslucentProgram,
+        this.renderModel(BBSShaders::getModel,
             stack,
             OverlayTexture.DEFAULT_UV, LightmapTextureManager.MAX_LIGHT_COORDINATE, Colors.WHITE,
             context.getTransition()
@@ -69,7 +64,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     protected void render3D(FormRenderingContext context)
     {
         Supplier<ShaderProgram> shader = this.getShader(context,
-            GameRenderer::getRenderTypeEntityTranslucentProgram,
+            BBSShaders::getModel,
             BBSShaders::getPickerBillboardProgram
         );
 
@@ -79,7 +74,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     private void renderModel(Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
         Link texture = this.form.texture.get(transition);
-        TextureExtruder.CachedExtrudedData data = BBSModClient.getTextures().getExtruder().get(texture);
+        ModelVAO data = BBSModClient.getTextures().getExtruder().get(texture);
 
         if (data != null)
         {
@@ -91,30 +86,11 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             gameRenderer.getOverlayTexture().setupOverlayColor();
             BBSModClient.getTextures().bindTexture(texture);
 
-            RenderSystem.setShader(shader);
-
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            Matrix4f matrix = matrices.peek().getPositionMatrix();
-            Matrix3f normal = matrices.peek().getNormalMatrix();
-
-            buffer.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
-
-            for (int i = 0; i < data.getCount(); i++)
-            {
-                int offset = i * 8;
-
-                buffer.vertex(matrix, data.data[offset], data.data[offset + 1], data.data[offset + 2])
-                    .color(color.r * formColor.r, color.g * formColor.g, color.b * formColor.b, color.a * formColor.a)
-                    .texture(data.data[offset + 3], data.data[offset + 4])
-                    .overlay(overlay)
-                    .light(light)
-                    .normal(normal, data.data[offset + 5], data.data[offset + 6], data.data[offset + 7])
-                    .next();
-            }
-
             RenderSystem.defaultBlendFunc();
             RenderSystem.enableBlend();
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
+
+            ModelVAORenderer.render(shader.get(), data, matrices, color.r * formColor.r, color.g * formColor.g, color.b * formColor.b, color.a * formColor.a, light, overlay);
+
             RenderSystem.disableBlend();
 
             gameRenderer.getLightmapTextureManager().disable();

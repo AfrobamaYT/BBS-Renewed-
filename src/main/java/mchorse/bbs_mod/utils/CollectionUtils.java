@@ -65,4 +65,16 @@ public class CollectionUtils
 
         return -1;
     }
+
+    public static float[] toArray(List<Float> floats)
+    {
+        float[] array = new float[floats.size()];
+
+        for (int i = 0; i < array.length; i++)
+        {
+            array[i] = floats.get(i);
+        }
+
+        return array;
+    }
 }

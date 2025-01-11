@@ -1,7 +1,11 @@
 package mchorse.bbs_mod.graphics.texture;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.render.ModelVAO;
+import mchorse.bbs_mod.client.render.ModelVAOData;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.resources.Pixels;
 
@@ -12,7 +16,7 @@ import java.util.Map;
 
 public class TextureExtruder
 {
-    private Map<Link, CachedExtrudedData> extruded = new HashMap<>();
+    private Map<Link, ModelVAO> extruded = new HashMap<>();
 
     /**
      * Fill a quad for {@link net.minecraft.client.render.VertexFormats#POSITION_TEXTURE_COLOR_NORMAL}. Points should
@@ -27,87 +31,85 @@ public class TextureExtruder
      * I.e. bottom left, bottom right, top left, top right, where left is -X and right is +X,
      * in case of a quad on fixed on Z axis.
      */
-    public static void fillTexturedNormalQuad(List<Float> vertices, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float u1, float v1, float u2, float v2, float nx, float ny, float nz)
+    public static void fillTexturedNormalQuad(List<Float> vertices, List<Float> normals, List<Float> uvs, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float u1, float v1, float u2, float v2, float nx, float ny, float nz)
     {
         /* 1 - BL, 2 - BR, 3 - TR, 4 - TL */
         vertices.add(x2);
         vertices.add(y2);
         vertices.add(z2);
-        vertices.add(u1);
-        vertices.add(v2);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
+        uvs.add(u1);
+        uvs.add(v2);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
 
         vertices.add(x1);
         vertices.add(y1);
         vertices.add(z1);
-        vertices.add(u2);
-        vertices.add(v2);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
+        uvs.add(u2);
+        uvs.add(v2);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
 
         vertices.add(x4);
         vertices.add(y4);
         vertices.add(z4);
-        vertices.add(u2);
-        vertices.add(v1);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
+        uvs.add(u2);
+        uvs.add(v1);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
 
         vertices.add(x2);
         vertices.add(y2);
         vertices.add(z2);
-        vertices.add(u1);
-        vertices.add(v2);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
+        uvs.add(u1);
+        uvs.add(v2);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
 
         vertices.add(x4);
         vertices.add(y4);
         vertices.add(z4);
-        vertices.add(u2);
-        vertices.add(v1);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
+        uvs.add(u2);
+        uvs.add(v1);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
 
         vertices.add(x3);
         vertices.add(y3);
         vertices.add(z3);
-        vertices.add(u1);
-        vertices.add(v1);
-        vertices.add(nx);
-        vertices.add(ny);
-        vertices.add(nz);
-    }
-
-    public static float[] fromList(List<Float> list)
-    {
-        float[] floats = new float[list.size()];
-
-        for (int i = 0; i < floats.length; i++)
-        {
-            floats[i] = list.get(i);
-        }
-
-        return floats;
+        uvs.add(u1);
+        uvs.add(v1);
+        normals.add(nx);
+        normals.add(ny);
+        normals.add(nz);
     }
 
     public void delete(Link key)
     {
-        this.extruded.remove(key);
+        ModelVAO remove = this.extruded.remove(key);
+
+        if (remove != null)
+        {
+            remove.delete();
+        }
     }
 
     public void deleteAll()
     {
+        for (ModelVAO value : this.extruded.values())
+        {
+            value.delete();
+        }
+
         this.extruded.clear();
     }
 
-    public CachedExtrudedData get(Link key)
+    public ModelVAO get(Link key)
     {
         if (this.extruded.containsKey(key))
         {
@@ -132,7 +134,7 @@ public class TextureExtruder
             return null;
         }
 
-        CachedExtrudedData buffer = this.generate(pixels);
+        ModelVAO buffer = this.generate(pixels);
 
         pixels.delete();
         this.extruded.put(key, buffer);
@@ -140,9 +142,11 @@ public class TextureExtruder
         return buffer;
     }
 
-    private CachedExtrudedData generate(Pixels pixels)
+    private ModelVAO generate(Pixels pixels)
     {
         List<Float> vertices = new ArrayList<>();
+        List<Float> normals = new ArrayList<>();
+        List<Float> uvs = new ArrayList<>();
 
         float px = 0.5F;
         float py = 0.5F;
@@ -164,7 +168,7 @@ public class TextureExtruder
         float nx = -px;
         float ny = -py;
 
-        fillTexturedNormalQuad(vertices,
+        fillTexturedNormalQuad(vertices, normals, uvs,
             px, ny, d,
             nx, ny, d,
             nx, py, d,
@@ -173,7 +177,7 @@ public class TextureExtruder
             0F, 0F, 1F
         );
 
-        fillTexturedNormalQuad(vertices,
+        fillTexturedNormalQuad(vertices, normals, uvs,
             nx, ny, -d,
             px, ny, -d,
             px, py, -d,
@@ -188,15 +192,25 @@ public class TextureExtruder
             {
                 if (this.hasPixel(pixels, i, j))
                 {
-                    this.generateNeighbors(pixels, vertices, px, py, i, j, d);
+                    this.generateNeighbors(pixels, vertices, normals, uvs, px, py, i, j, d);
                 }
             }
         }
 
-        return new CachedExtrudedData(fromList(vertices));
+        if (!vertices.isEmpty())
+        {
+            float[] v = CollectionUtils.toArray(vertices);
+            float[] n = CollectionUtils.toArray(normals);
+            float[] u = CollectionUtils.toArray(uvs);
+            float[] t = BBSRendering.calculateTangents(v, n, u);
+
+            return new ModelVAO(new ModelVAOData(v, n, t, u));
+        }
+
+        return null;
     }
 
-    private void generateNeighbors(Pixels pixels, List<Float> vertices, float px, float py, int x, int y, float d)
+    private void generateNeighbors(Pixels pixels, List<Float> vertices, List<Float> normals, List<Float> uvs, float px, float py, int x, int y, float d)
     {
         float w = pixels.width;
         float h = pixels.height;
@@ -207,7 +221,7 @@ public class TextureExtruder
 
         if (!this.hasPixel(pixels, x - 1, y) || x == 0)
         {
-            fillTexturedNormalQuad(vertices,
+            fillTexturedNormalQuad(vertices, normals, uvs,
                 x * sx - px, -(y + 1) * sy + py, -d,
                 x * sx - px, -y * sy + py, -d,
                 x * sx - px, -y * sy + py, d,
@@ -219,7 +233,7 @@ public class TextureExtruder
 
         if (!this.hasPixel(pixels, x + 1, y) || x == w - 1)
         {
-            fillTexturedNormalQuad(vertices,
+            fillTexturedNormalQuad(vertices, normals, uvs,
                 (x + 1) * sx - px, -(y + 1) * sy + py, d,
                 (x + 1) * sx - px, -y * sy + py, d,
                 (x + 1) * sx - px, -y * sy + py, -d,
@@ -231,7 +245,7 @@ public class TextureExtruder
 
         if (!this.hasPixel(pixels, x, y - 1) || y == 0)
         {
-            fillTexturedNormalQuad(vertices,
+            fillTexturedNormalQuad(vertices, normals, uvs,
                 (x + 1) * sx - px, -y * sy + py, d,
                 x * sx - px, -y * sy + py, d,
                 x * sx - px, -y * sy + py, -d,
@@ -244,7 +258,7 @@ public class TextureExtruder
 
         if (!this.hasPixel(pixels, x, y + 1) || y == h - 1)
         {
-            fillTexturedNormalQuad(vertices,
+            fillTexturedNormalQuad(vertices, normals, uvs,
                 (x + 1) * sx - px, -(y + 1) * sy + py, -d,
                 x * sx - px, -(y + 1) * sy + py, -d,
                 x * sx - px, -(y + 1) * sy + py, d,
@@ -260,20 +274,5 @@ public class TextureExtruder
         Color pixel = pixels.getColor(x, y);
 
         return pixel != null && pixel.a >= 1;
-    }
-
-    public static class CachedExtrudedData
-    {
-        public float[] data;
-
-        public CachedExtrudedData(float[] data)
-        {
-            this.data = data;
-        }
-
-        public int getCount()
-        {
-            return this.data.length / (3 + 2 + 3);
-        }
     }
 }
