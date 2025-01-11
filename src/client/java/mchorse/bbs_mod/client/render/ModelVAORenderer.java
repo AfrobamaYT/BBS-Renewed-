@@ -4,21 +4,18 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.client.render.gl.Attributes;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL30;
 
 public class ModelVAORenderer
 {
-    public static void render(ShaderProgram shader, ModelVAO modelVAO, MatrixStack stack, int packedLight)
+    public static void render(ShaderProgram shader, ModelVAO modelVAO, MatrixStack stack, float r, float g, float b, float a, int light, int overlay)
     {
-        // Постоянные параметры для каждой вершины
-        GL30.glVertexAttrib4f(Attributes.COLOR, 1F, 1F, 1F, 1F);
-        GL30.glVertexAttribI2i(Attributes.OVERLAY_UV, OverlayTexture.field_32953, OverlayTexture.field_32955);
-        GL30.glVertexAttribI2i(Attributes.LIGHTMAP_UV, packedLight & '\uffff', packedLight >> 16 & '\uffff');
+        GL30.glVertexAttrib4f(Attributes.COLOR, r, g, b, a);
+        GL30.glVertexAttribI2i(Attributes.OVERLAY_UV, overlay & '\uffff', overlay >> 16 & '\uffff');
+        GL30.glVertexAttribI2i(Attributes.LIGHTMAP_UV, light & '\uffff', light >> 16 & '\uffff');
 
-        // Необходимо сделать копию текущих параметров, чтобы ничего не сломать при последующей отрисовке
         int currentVAO = GL30.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int currentElementArrayBuffer = GL30.glGetInteger(GL30.GL_ELEMENT_ARRAY_BUFFER_BINDING);
 
@@ -50,7 +47,10 @@ public class ModelVAORenderer
             shader.modelViewMat.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().getPositionMatrix()));
         }
 
-        // TODO: Model view matrix трансформирует только позицию, так что стоит дополнительно добавить NormalMat. При включенных шейдерах Iris уже имеет такую матрицу, так что для обычной отрисовки нужно добавить её в шейдер
+        /* NormalMat is present by default in Iris' shaders, but when there is no Iris,
+         * the BBS mod's model.json shader is being used instead that provides NormalMat
+         * uniform.
+         */
         GlUniform normalUniform = shader.getUniform("NormalMat");
 
         if (normalUniform != null)
