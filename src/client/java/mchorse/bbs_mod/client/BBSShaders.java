@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public class BBSShaders
 {
+    private static ShaderProgram model;
     private static ShaderProgram multiLink;
     private static ShaderProgram subtitles;
 
@@ -30,7 +31,8 @@ public class BBSShaders
 
     public static void setup()
     {
-        if (multiLink != null) multiLink.close();
+        if (model != null) model.close();
+        if (subtitles != null) subtitles.close();
         if (subtitles != null) subtitles.close();
 
         if (pickerPreview != null) pickerPreview.close();
@@ -43,6 +45,7 @@ public class BBSShaders
         {
             ResourceFactory factory = new ProxyResourceFactory(MinecraftClient.getInstance().getResourceManager());
 
+            model = new ShaderProgram(factory, "model", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
             multiLink = new ShaderProgram(factory, "multilink", VertexFormats.POSITION_TEXTURE_COLOR);
             subtitles = new ShaderProgram(factory, "subtitles", VertexFormats.POSITION_TEXTURE_COLOR);
 
@@ -56,6 +59,11 @@ public class BBSShaders
         {
             e.printStackTrace();
         }
+    }
+
+    public static ShaderProgram getModel()
+    {
+        return model;
     }
 
     public static ShaderProgram getMultilinkProgram()

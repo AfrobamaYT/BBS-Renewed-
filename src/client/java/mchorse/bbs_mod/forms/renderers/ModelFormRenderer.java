@@ -246,7 +246,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-            this.renderModel(this.entity, GameRenderer::getRenderTypeEntityTranslucentCullProgram, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
+            Supplier<ShaderProgram> shader = BBSRendering.isIrisShadersEnabled() ? GameRenderer::getRenderTypeEntityTranslucentCullProgram : BBSShaders::getModel;
+
+            this.renderModel(this.entity, shader, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
 
             /* Render body parts */
             stack.push();
@@ -396,7 +398,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
 
             BBSModClient.getTextures().bindTexture(texture);
-            Supplier<ShaderProgram> shader = this.getShader(context, GameRenderer::getRenderTypeEntityTranslucentProgram, BBSShaders::getPickerModelsProgram);
+
+            Supplier<ShaderProgram> mainShader = BBSRendering.isIrisShadersEnabled() ? GameRenderer::getRenderTypeEntityTranslucentCullProgram : BBSShaders::getModel;
+            Supplier<ShaderProgram> shader = this.getShader(context, mainShader, BBSShaders::getPickerModelsProgram);
 
             this.renderModel(context.entity, shader, context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
         }
