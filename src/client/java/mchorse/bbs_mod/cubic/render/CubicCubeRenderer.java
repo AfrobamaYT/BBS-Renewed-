@@ -38,10 +38,10 @@ public class CubicCubeRenderer implements ICubicRenderer
     private static Matrix4f modelM = new Matrix4f();
     private static Matrix3f normalM = new Matrix3f();
 
-    protected float r = 1;
-    protected float g = 1;
-    protected float b = 1;
-    protected float a = 1;
+    protected float r = 1F;
+    protected float g = 1F;
+    protected float b = 1F;
+    protected float a = 1F;
     protected int light;
     protected int overlay;
 
@@ -129,7 +129,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         return false;
     }
 
-    private void renderCube(BufferBuilder builder, MatrixStack stack, ModelGroup group, ModelCube cube)
+    protected void renderCube(BufferBuilder builder, MatrixStack stack, ModelGroup group, ModelCube cube)
     {
         stack.push();
         moveToPivot(stack, cube.pivot);
@@ -155,7 +155,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         stack.pop();
     }
 
-    private void renderMesh(BufferBuilder builder, MatrixStack stack, Model model, ModelGroup group, ModelMesh mesh)
+    protected void renderMesh(BufferBuilder builder, MatrixStack stack, Model model, ModelGroup group, ModelMesh mesh)
     {
         stack.push();
         moveToPivot(stack, mesh.origin);

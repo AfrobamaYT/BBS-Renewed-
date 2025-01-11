@@ -1,6 +1,5 @@
 package mchorse.bbs_mod;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.actions.types.FormTriggerClientActionClip;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
@@ -8,7 +7,6 @@ import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.render.ModelRenderer;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
@@ -65,18 +63,11 @@ import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -262,30 +253,9 @@ public class BBSModClient implements ClientModInitializer
         }
     }
 
-    public static int lightTexture = 0;
-
     @Override
     public void onInitializeClient()
     {
-        RenderSystem.recordRenderCall(() ->
-        {
-            lightTexture = MinecraftClient.getInstance().getTextureManager().getTexture(new Identifier("dynamic/light_map_1")).getGlId();
-        });
-
-        WorldRenderEvents.AFTER_TRANSLUCENT.register((context) ->
-        {
-            World world = context.world();
-            BlockPos pos = new BlockPos(0, -58, 0);
-            int light = LightmapTextureManager.pack(world.getLightLevel(LightType.BLOCK, pos), world.getLightLevel(LightType.SKY, pos));
-            MatrixStack stack = context.matrixStack();
-            Vec3d cameraPos = context.camera().getPos();
-
-            stack.push();
-            stack.translate(-cameraPos.x + pos.getX(), -cameraPos.y + pos.getY(), -cameraPos.z + pos.getZ());
-            ModelRenderer.render(stack, light);
-            stack.pop();
-        });
-
         AssetProvider provider = BBSMod.getProvider();
 
         textures = new TextureManager(provider);

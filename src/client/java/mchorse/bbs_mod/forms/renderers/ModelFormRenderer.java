@@ -15,6 +15,7 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
+import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -35,6 +36,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -57,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITickable
 {
@@ -242,9 +245,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            this.renderModel(this.entity, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
+            this.renderModel(this.entity, GameRenderer.getRenderTypeEntityTranslucentCullProgram(), stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
 
             /* Render body parts */
             stack.push();
@@ -260,7 +262,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
+    private void renderModel(IEntity target, ShaderProgram program, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
     {
         if (!model.culling)
         {
@@ -269,15 +271,16 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
         GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
 
         gameRenderer.getLightmapTextureManager().enable();
         gameRenderer.getOverlayTexture().setupOverlayColor();
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
 
         MatrixStack newStack = new MatrixStack();
-        CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
+        boolean isVao = model.model.getShapeKeys().isEmpty();
+        CubicCubeRenderer renderProcessor = isVao
+            ? new CubicVAORenderer(program, model, light, overlay, picking, this.form.shapeKeys.get(transition))
+            : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 
@@ -292,10 +295,21 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
 
-        CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
+        if (isVao)
+        {
+            CubicRenderer.processRenderModel(renderProcessor, null, newStack, model.model);
+        }
+        else
+        {
+            BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
+            BufferRenderer.drawWithGlobalProgram(builder.end());
+        }
+
         newStack.pop();
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
         gameRenderer.getLightmapTextureManager().disable();
         gameRenderer.getOverlayTexture().teardownOverlayColor();
         RenderSystem.disableBlend();
@@ -380,11 +394,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
 
             BBSModClient.getTextures().bindTexture(texture);
-            RenderSystem.setShader(this.getShader(context,
-                GameRenderer::getRenderTypeEntityTranslucentProgram,
-                BBSShaders::getPickerModelsProgram));
+            Supplier<ShaderProgram> shader = this.getShader(context, GameRenderer::getRenderTypeEntityTranslucentProgram, BBSShaders::getPickerModelsProgram);
 
-            this.renderModel(context.entity, context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
+            this.renderModel(context.entity, shader.get(), context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
         }
     }
 

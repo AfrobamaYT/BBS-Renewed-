@@ -116,6 +116,8 @@ public class ModelManager implements IWatchDogListener
         else
         {
             System.out.println("Model \"" + id + "\" was loaded!");
+
+            model.setup();
         }
 
         this.models.put(id, model);
@@ -139,6 +141,11 @@ public class ModelManager implements IWatchDogListener
 
     public void reload()
     {
+        for (CubicModel model : this.models.values())
+        {
+            model.delete();
+        }
+
         this.models.clear();
         PoseManager.INSTANCE.clear();
         ShapeKeysManager.INSTANCE.clear();
@@ -180,8 +187,12 @@ public class ModelManager implements IWatchDogListener
         if (this.isRelodable(link))
         {
             String key = StringUtils.parentPath(link.path.substring(MODELS_PREFIX.length()));
+            CubicModel model = this.models.remove(key);
 
-            this.models.remove(key);
+            if (model != null)
+            {
+                model.delete();
+            }
         }
     }
 }

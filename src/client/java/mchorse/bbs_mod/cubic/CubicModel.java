@@ -1,12 +1,18 @@
 package mchorse.bbs_mod.cubic;
 
+import mchorse.bbs_mod.client.render.ModelVAO;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
+import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.cubic.render.CubicRenderer;
+import mchorse.bbs_mod.cubic.render.CubicVAOBuilderRenderer;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.pose.Pose;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -36,6 +42,8 @@ public class CubicModel implements ICubicModel
     public List<String> itemsOff = new ArrayList<>();
     public Map<String, String> flippedParts = new HashMap<>();
 
+    private Map<ModelGroup, ModelVAO> vaos = new HashMap<>();
+
     public CubicModel(String id, Model model, Animations animations, Link texture)
     {
         this.id = id;
@@ -63,6 +71,11 @@ public class CubicModel implements ICubicModel
     public Animations getAnimations()
     {
         return this.animations;
+    }
+
+    public Map<ModelGroup, ModelVAO> getVaos()
+    {
+        return this.vaos;
     }
 
     public String getAnchor()
@@ -110,5 +123,29 @@ public class CubicModel implements ICubicModel
                 }
             }
         }
+    }
+
+    public void setup()
+    {
+        /* VAOs should be only generated if there are no shape keys */
+        if (!this.model.getShapeKeys().isEmpty())
+        {
+            return;
+        }
+
+        MinecraftClient.getInstance().execute(() ->
+        {
+            CubicRenderer.processRenderModel(new CubicVAOBuilderRenderer(this.vaos), null, new MatrixStack(), this.model);
+        });
+    }
+
+    public void delete()
+    {
+        for (ModelVAO value : this.vaos.values())
+        {
+            value.delete();
+        }
+
+        this.vaos.clear();
     }
 }
