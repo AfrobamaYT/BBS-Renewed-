@@ -20,6 +20,7 @@ public class ModelVAORenderer
 
         // Необходимо сделать копию текущих параметров, чтобы ничего не сломать при последующей отрисовке
         int currentVAO = GL30.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int currentElementArrayBuffer = GL30.glGetInteger(GL30.GL_ELEMENT_ARRAY_BUFFER_BINDING);
 
         RenderSystem.setShader(() -> shader);
         setupUniforms(stack, shader);
@@ -29,6 +30,7 @@ public class ModelVAORenderer
         shader.unbind();
 
         GL30.glBindVertexArray(currentVAO);
+        GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer);
     }
 
     private static void setupUniforms(MatrixStack stack, ShaderProgram shader)

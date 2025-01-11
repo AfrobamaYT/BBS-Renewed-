@@ -347,6 +347,16 @@ public class BBSRendering
         IrisUtils.trackTexture(texture);
     }
 
+    public static float[] calculateTangents(float[] v, float[] n, float[] u)
+    {
+        if (!iris)
+        {
+            return v;
+        }
+
+        return IrisUtils.calculateTangents(v, n, u);
+    }
+
     /* Time of day */
 
     public static boolean canModifyTime()

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.cubic.render;
 
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.render.ModelVAO;
 import mchorse.bbs_mod.client.render.ModelVAOData;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -83,11 +84,17 @@ public class CubicVAOBuilderRenderer implements ICubicRenderer
             float[] v = toArray(vertices);
             float[] n = toArray(normals);
             float[] u = toArray(uvs);
+            float[] t = calculateTangents(v, n, u);
 
-            this.model.put(group, new ModelVAO(new ModelVAOData(v, n, v, u)));
+            this.model.put(group, new ModelVAO(new ModelVAOData(v, n, t, u)));
         }
 
         return false;
+    }
+
+    private float[] calculateTangents(float[] v, float[] n, float[] u)
+    {
+        return BBSRendering.calculateTangents(v, n, u);
     }
 
     private void renderCube(List<Float> vertices, List<Float> normals, List<Float> uvs, MatrixStack stack, ModelGroup group, ModelCube cube)
