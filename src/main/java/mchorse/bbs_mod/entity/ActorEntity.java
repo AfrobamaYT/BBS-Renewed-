@@ -97,14 +97,14 @@ public class ActorEntity extends LivingEntity
 
         this.tickHandSwing();
 
-        if (this.getWorld().isClient)
-        {
-            return;
-        }
-
         if (this.form != null)
         {
             this.form.update(this.entity);
+        }
+
+        if (this.getWorld().isClient)
+        {
+            return;
         }
 
         Box box = this.getBoundingBox().expand(1D, 0.5D, 1D);
