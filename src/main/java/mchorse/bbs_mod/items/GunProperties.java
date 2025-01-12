@@ -1,0 +1,151 @@
+package mchorse.bbs_mod.items;
+
+import mchorse.bbs_mod.blocks.entities.ModelProperties;
+import mchorse.bbs_mod.data.DataStorageUtils;
+import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.forms.ExtrudedForm;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.pose.Transform;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+
+public class GunProperties extends ModelProperties
+{
+    /* Gun properties */
+    public boolean launch;
+    public float launchPower;
+    public float scatterX;
+    public float scatterY;
+    public int projectiles;
+
+    /* Projectile properties */
+    public final Transform projectileTransform = new Transform();
+    public Form projectileForm;
+    public float speed = 1F;
+    public float friction = 0.99F;
+    public float gravity = 0.05F;
+    public float hitboxW = 0.2F;
+    public float hitboxH = 0.2F;
+    public boolean yaw = true;
+    public boolean pitch = true;
+    public int fadeIn;
+    public int fadeOut;
+
+    /* Impact properties */
+    public Form impactForm;
+    public boolean bounce;
+    public int bounceHits = 1;
+    public float bounceDamping = 0.5F;
+    public boolean vanish = true;
+    public float damage;
+    public boolean collideBlocks = true;
+    public boolean collideEntities = true;
+
+    public static GunProperties get(ItemStack stack)
+    {
+        NbtCompound nbt = stack.getNbt();
+        GunProperties properties = new GunProperties();
+
+        if (nbt == null)
+        {
+            ExtrudedForm form = new ExtrudedForm();
+            Transform tp = properties.getTransformThirdPerson();
+            Transform fp = properties.getTransformFirstPerson();
+
+            form.transform.get().translate.set(0F, 0.5F, 0F);
+            form.texture.set(Link.assets("textures/gun.png"));
+            properties.setForm(form);
+
+            fp.translate.set(0.25F, 0.125F, -0.25F);
+            fp.rotate.y = -MathUtils.PI / 2;
+            fp.rotate2.z = MathUtils.PI / 4;
+
+            tp.translate.y = 0.375F;
+            tp.translate.z = 0.125F;
+            tp.scale.set(0.666F);
+            tp.rotate.y = -MathUtils.PI / 2;
+            tp.rotate2.z = MathUtils.PI / 4;
+
+            return properties;
+        }
+
+        BaseType data = DataStorageUtils.readFromNbtCompound(nbt, "GunData");
+
+        if (data.isMap())
+        {
+            properties.fromData(data.asMap());
+        }
+
+        return properties;
+    }
+
+    @Override
+    public void fromData(MapType data)
+    {
+        super.fromData(data);
+
+        this.launch = data.getBool("launch");
+        this.launchPower = data.getFloat("launchPower");
+        this.scatterX = data.getFloat("scatterX");
+        this.scatterY = data.getFloat("scatterY");
+        this.projectiles = data.getInt("projectiles");
+
+        this.projectileTransform.fromData(data.getMap("projectileTransform"));
+        this.projectileForm = FormUtils.fromData(data.get("projectileForm"));
+        this.speed = data.getFloat("speed", 1F);
+        this.friction = data.getFloat("friction", 0.99F);
+        this.gravity = data.getFloat("gravity", 0.05F);
+        this.hitboxW = data.getFloat("hitboxW", 0.2F);
+        this.hitboxH = data.getFloat("hitboxH", 0.2F);
+        this.yaw = data.getBool("yaw", true);
+        this.pitch = data.getBool("pitch", true);
+        this.fadeIn = data.getInt("fadeIn");
+        this.fadeOut = data.getInt("fadeOut");
+
+        this.impactForm = FormUtils.fromData(data.get("impactForm"));
+        this.bounce = data.getBool("bounce");
+        this.bounceHits = data.getInt("bounceHits", 1);
+        this.bounceDamping = data.getFloat("bounceDamping", 0.5F);
+        this.vanish = data.getBool("vanish", true);
+        this.damage = data.getFloat("damage");
+        this.collideBlocks = data.getBool("collideBlocks", true);
+        this.collideEntities = data.getBool("collideEntities", true);
+    }
+
+    @Override
+    public void toData(MapType data)
+    {
+        super.toData(data);
+
+        data.putBool("launch", this.launch);
+        data.putFloat("launchPower", this.launchPower);
+        data.putFloat("scatterX", this.scatterX);
+        data.putFloat("scatterY", this.scatterY);
+        data.putInt("projectiles", this.projectiles);
+
+        data.put("projectileTransform", this.projectileTransform.toData());
+        if (this.projectileForm != null) data.put("projectileForm", FormUtils.toData(this.projectileForm));
+        data.putFloat("speed", this.speed);
+        data.putFloat("friction", this.friction);
+        data.putFloat("gravity", this.gravity);
+        data.putFloat("hitboxW", this.hitboxW);
+        data.putFloat("hitboxH", this.hitboxH);
+        data.putBool("yaw", this.yaw);
+        data.putBool("pitch", this.pitch);
+        data.putInt("fadeIn", this.fadeIn);
+        data.putInt("fadeOut", this.fadeOut);
+
+        if (this.impactForm != null) data.put("impactForm", FormUtils.toData(this.impactForm));
+        data.putBool("bounce", this.bounce);
+        data.putInt("bounceHits", this.bounceHits);
+        data.putFloat("bounceDamping", this.bounceDamping);
+        data.putBool("vanish", this.vanish);
+        data.putFloat("damage", this.damage);
+        data.putBool("collideBlocks", this.collideBlocks);
+        data.putBool("collideEntities", this.collideEntities);
+    }
+}

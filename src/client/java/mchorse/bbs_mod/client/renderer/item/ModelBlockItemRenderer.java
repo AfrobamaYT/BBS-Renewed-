@@ -54,13 +54,13 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         if (item != null)
         {
             ModelProperties properties = item.entity.getProperties();
-            Form form = this.getForm(properties, mode);
+            Form form = properties.getForm(mode);
 
             if (form != null)
             {
                 item.expiration = 20;
 
-                Transform transform = this.getTransform(properties, mode);
+                Transform transform = properties.getTransform(mode);
 
                 matrices.push();
                 matrices.translate(0.5F, 0F, 0.5F);
@@ -73,46 +73,6 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
                 matrices.pop();
             }
         }
-    }
-
-    private Form getForm(ModelProperties properties, ModelTransformationMode mode)
-    {
-        Form form = properties.getForm();
-
-        if (mode == ModelTransformationMode.GUI && properties.getFormInventory() != null)
-        {
-            form = properties.getFormInventory();
-        }
-        else if ((mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND || mode == ModelTransformationMode.THIRD_PERSON_RIGHT_HAND) && properties.getFormThirdPerson() != null)
-        {
-            form = properties.getFormThirdPerson();
-        }
-        else if ((mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND) && properties.getFormFirstPerson() != null)
-        {
-            form = properties.getFormFirstPerson();
-        }
-
-        return form;
-    }
-
-    private Transform getTransform(ModelProperties properties, ModelTransformationMode mode)
-    {
-        Transform transform = properties.getTransformThirdPerson();
-
-        if (mode == ModelTransformationMode.GUI)
-        {
-            transform = properties.getTransformInventory();
-        }
-        else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
-        {
-            transform = properties.getTransformFirstPerson();
-        }
-        else if (mode == ModelTransformationMode.GROUND)
-        {
-            transform = properties.getTransform();
-        }
-
-        return transform;
     }
 
     public Item get(ItemStack stack)
