@@ -45,6 +45,7 @@ import mchorse.bbs_mod.camera.clips.overwrite.IdleClip;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.camera.clips.overwrite.PathClip;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormArchitect;
 import mchorse.bbs_mod.forms.forms.AnchorForm;
@@ -147,6 +148,13 @@ public class BBSMod implements ModInitializer
         new Identifier(MOD_ID, "actor"),
         FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, ActorEntity::new)
             .dimensions(EntityDimensions.fixed(0.6F, 1.8F))
+            .build());
+
+    public static final EntityType<GunProjectileEntity> GUN_PROJECTILE_ENTITY = Registry.register(
+        Registries.ENTITY_TYPE,
+        new Identifier(MOD_ID, "gun_projectile"),
+        FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, GunProjectileEntity::new)
+            .dimensions(EntityDimensions.fixed(0.25F, 0.25F))
             .build());
 
     public static final Block MODEL_BLOCK = new ModelBlock(FabricBlockSettings.create()

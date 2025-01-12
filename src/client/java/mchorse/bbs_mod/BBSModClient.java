@@ -7,8 +7,9 @@ import mchorse.bbs_mod.camera.clips.misc.AudioClientClip;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
+import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
+import mchorse.bbs_mod.client.renderer.entity.GunProjectileEntityRenderer;
 import mchorse.bbs_mod.client.renderer.item.GunItemRenderer;
 import mchorse.bbs_mod.client.renderer.item.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
@@ -460,6 +461,7 @@ public class BBSModClient implements ClientModInitializer
 
         /* Entity renderers */
         EntityRendererRegistry.register(BBSMod.ACTOR_ENTITY, ActorEntityRenderer::new);
+        EntityRendererRegistry.register(BBSMod.GUN_PROJECTILE_ENTITY, GunProjectileEntityRenderer::new);
 
         BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 

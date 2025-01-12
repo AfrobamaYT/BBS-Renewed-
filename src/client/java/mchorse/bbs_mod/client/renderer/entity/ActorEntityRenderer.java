@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.client.renderer;
+package mchorse.bbs_mod.client.renderer.entity;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.entity.ActorEntity;
@@ -39,9 +39,11 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
 
         this.setupTransforms(livingEntity, matrices, bodyYaw, tickDelta);
 
+        RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
         FormUtilsClient.render(livingEntity.getForm(), FormRenderingContext.set(livingEntity.getEntity(), matrices, light, overlay, tickDelta));
         RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
 
         matrices.pop();
 
