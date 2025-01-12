@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.client.renderer.item;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -73,12 +74,21 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
 
     public Item get(ItemStack stack)
     {
+        if (stack == null || stack.getItem() != BBSMod.GUN_ITEM)
+        {
+            return null;
+        }
+
         if (this.map.containsKey(stack))
         {
             return this.map.get(stack);
         }
 
-        return new Item(GunProperties.get(stack));
+        Item item = new Item(GunProperties.get(stack));
+
+        this.map.put(stack, item);
+
+        return item;
     }
 
     public static class Item

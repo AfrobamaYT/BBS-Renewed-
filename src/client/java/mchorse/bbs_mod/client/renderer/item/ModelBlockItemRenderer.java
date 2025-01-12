@@ -77,6 +77,11 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
     public Item get(ItemStack stack)
     {
+        if (stack == null || stack.getItem() != BBSMod.MODEL_BLOCK_ITEM)
+        {
+            return null;
+        }
+
         if (this.map.containsKey(stack))
         {
             return this.map.get(stack);

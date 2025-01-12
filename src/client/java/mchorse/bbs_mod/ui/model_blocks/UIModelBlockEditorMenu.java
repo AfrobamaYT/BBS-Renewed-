@@ -5,7 +5,6 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.camera.OrbitDistanceCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
-import mchorse.bbs_mod.client.renderer.item.ModelBlockItemRenderer;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -36,14 +35,14 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public UIIcon firstPerson;
     public UIIcon inventory;
 
-    private ModelBlockItemRenderer.Item item;
+    private ModelProperties properties;
 
     private UIOrbitCamera uiOrbitCamera;
     private OrbitCameraController orbitCameraController;
 
-    public UIModelBlockEditorMenu(ModelBlockItemRenderer.Item item)
+    public UIModelBlockEditorMenu(ModelProperties properties)
     {
-        this.item = item;
+        this.properties = properties;
 
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
 
@@ -64,11 +63,11 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         this.pickEdit.relative(this.transform).y(-5).w(1F).anchor(0F, 1F);
 
-        this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setTransform(this.item.entity.getProperties().getTransformThirdPerson()));
+        this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setTransform(this.properties.getTransformThirdPerson()));
         this.thirdPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_THIRD_PERSON);
-        this.firstPerson = new UIIcon(Icons.LIMB, (b) -> this.setTransform(this.item.entity.getProperties().getTransformFirstPerson()));
+        this.firstPerson = new UIIcon(Icons.LIMB, (b) -> this.setTransform(this.properties.getTransformFirstPerson()));
         this.firstPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_FIRST_PERSON);
-        this.inventory = new UIIcon(Icons.SPHERE, (b) -> this.setTransform(this.item.entity.getProperties().getTransformInventory()));
+        this.inventory = new UIIcon(Icons.SPHERE, (b) -> this.setTransform(this.properties.getTransformInventory()));
         this.inventory.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_INVENTORY);
 
         UIElement bar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory);
@@ -78,40 +77,36 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         this.main.add(this.uiOrbitCamera, this.transform, this.pickEdit, bar);
 
-        this.setTransform(item.entity.getProperties().getTransformThirdPerson());
+        this.setTransform(properties.getTransformThirdPerson());
     }
 
     private Form getForm()
     {
-        ModelProperties properties = this.item.entity.getProperties();
-
-        if (this.transform.getTransform() == properties.getTransformThirdPerson())
+        if (this.transform.getTransform() == this.properties.getTransformThirdPerson())
         {
-            return properties.getFormThirdPerson();
+            return this.properties.getFormThirdPerson();
         }
-        else if (this.transform.getTransform() == properties.getTransformInventory())
+        else if (this.transform.getTransform() == this.properties.getTransformInventory())
         {
-            return properties.getFormInventory();
+            return this.properties.getFormInventory();
         }
 
-        return properties.getFormFirstPerson();
+        return this.properties.getFormFirstPerson();
     }
 
     private void setForm(Form f)
     {
-        ModelProperties properties = this.item.entity.getProperties();
-
-        if (this.transform.getTransform() == properties.getTransformThirdPerson())
+        if (this.transform.getTransform() == this.properties.getTransformThirdPerson())
         {
-            properties.setFormThirdPerson(f);
+            this.properties.setFormThirdPerson(f);
         }
-        else if (this.transform.getTransform() == properties.getTransformInventory())
+        else if (this.transform.getTransform() == this.properties.getTransformInventory())
         {
-            properties.setFormInventory(f);
+            this.properties.setFormInventory(f);
         }
         else
         {
-            properties.setFormFirstPerson(f);
+            this.properties.setFormFirstPerson(f);
         }
 
         this.pickEdit.setForm(f);
@@ -129,14 +124,14 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         super.onClose(nextMenu);
 
         BBSModClient.getCameraController().remove(this.orbitCameraController);
-        ClientNetwork.sendModelBlockTransforms(this.item.entity.getProperties().toData());
+        ClientNetwork.sendModelBlockTransforms(this.properties.toData());
     }
 
     private void setTransform(Transform transform)
     {
-        this.uiOrbitCamera.setEnabled(transform == this.item.entity.getProperties().getTransformThirdPerson());
+        this.uiOrbitCamera.setEnabled(transform == this.properties.getTransformThirdPerson());
 
-        if (transform == this.item.entity.getProperties().getTransformThirdPerson())
+        if (transform == this.properties.getTransformThirdPerson())
         {
             MinecraftClient.getInstance().options.setPerspective(Perspective.THIRD_PERSON_FRONT);
             BBSModClient.getCameraController().add(this.orbitCameraController);
@@ -158,18 +153,17 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         context.batcher.gradientVBox(0, 0, this.width, 20, Colors.A75, 0);
 
-        ModelProperties properties = this.item.entity.getProperties();
         Transform transform = this.transform.getTransform();
 
-        if (transform == properties.getTransformThirdPerson())
+        if (transform == this.properties.getTransformThirdPerson())
         {
             this.renderHighlight(context.batcher, this.thirdPerson.area);
         }
-        else if (transform == properties.getTransformFirstPerson())
+        else if (transform == this.properties.getTransformFirstPerson())
         {
             this.renderHighlight(context.batcher, this.firstPerson.area);
         }
-        else if (transform == properties.getTransformInventory())
+        else if (transform == this.properties.getTransformInventory())
         {
             this.renderHighlight(context.batcher, this.inventory.area);
         }

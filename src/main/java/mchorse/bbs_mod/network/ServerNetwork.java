@@ -154,7 +154,8 @@ public class ServerNetwork
                 {
                     ItemStack stack = player.getEquippedStack(EquipmentSlot.MAINHAND).copy();
 
-                    stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+                    if (stack.getItem() == BBSMod.MODEL_BLOCK_ITEM) stack.getNbt().getCompound("BlockEntityTag").put("Properties", DataStorageUtils.toNbt(data));
+                    else if (stack.getItem() == BBSMod.GUN_ITEM) stack.getOrCreateNbt().put("GunData", DataStorageUtils.toNbt(data));
 
                     player.equipStack(EquipmentSlot.MAINHAND, stack);
                 });

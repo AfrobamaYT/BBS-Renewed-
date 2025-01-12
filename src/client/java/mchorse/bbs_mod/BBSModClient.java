@@ -68,7 +68,6 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
@@ -546,15 +545,16 @@ public class BBSModClient implements ClientModInitializer
     private void keyOpenModelBlockEditor(MinecraftClient mc)
     {
         ItemStack stack = mc.player.getEquippedStack(EquipmentSlot.MAINHAND);
+        ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
+        GunItemRenderer.Item gunItem = gunItemRenderer.get(stack);
 
-        if (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() == BBSMod.MODEL_BLOCK)
+        if (item != null)
         {
-            ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
-
-            if (item != null)
-            {
-                UIScreen.open(new UIModelBlockEditorMenu(item));
-            }
+            UIScreen.open(new UIModelBlockEditorMenu(item.entity.getProperties()));
+        }
+        else if (gunItem != null)
+        {
+            UIScreen.open(new UIModelBlockEditorMenu(gunItem.properties));
         }
     }
 
