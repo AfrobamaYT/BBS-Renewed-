@@ -1,5 +1,6 @@
 {
     "block.bbs.model": "Model block",
+    "item.bbs.gun": "BBS gun",
     "itemGroup.bbs.main": "BBS mod",
 
     "key.bbs.block_editor": "Model block editor",

@@ -146,12 +146,6 @@ public class ActorEntity extends LivingEntity
     }
 
     @Override
-    public void onStoppedTrackingBy(ServerPlayerEntity player)
-    {
-        super.onStoppedTrackingBy(player);
-    }
-
-    @Override
     public void readCustomDataFromNbt(NbtCompound nbt)
     {
         super.readCustomDataFromNbt(nbt);

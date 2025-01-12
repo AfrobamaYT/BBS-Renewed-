@@ -9,7 +9,8 @@ import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.ActorEntityRenderer;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
-import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
+import mchorse.bbs_mod.client.renderer.item.GunItemRenderer;
+import mchorse.bbs_mod.client.renderer.item.ModelBlockItemRenderer;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
@@ -109,6 +110,7 @@ public class BBSModClient implements ClientModInitializer
 
     private static CameraController cameraController = new CameraController();
     private static ModelBlockItemRenderer modelBlockItemRenderer = new ModelBlockItemRenderer();
+    private static GunItemRenderer gunItemRenderer = new GunItemRenderer();
     private static Films films;
 
     private static boolean requestToggleRecording;
@@ -395,6 +397,7 @@ public class BBSModClient implements ClientModInitializer
             {
                 films.update();
                 modelBlockItemRenderer.update();
+                gunItemRenderer.update();
             }
 
             BBSResources.update();
@@ -461,6 +464,7 @@ public class BBSModClient implements ClientModInitializer
         BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
+        BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, gunItemRenderer);
 
         this.setupModels();
     }

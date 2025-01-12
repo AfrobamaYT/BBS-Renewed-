@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.model_blocks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.Draw;
@@ -310,7 +311,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     private void fillData()
     {
-        ModelBlockEntity.Properties properties = this.modelBlock.getProperties();
+        ModelProperties properties = this.modelBlock.getProperties();
 
         this.pickEdit.setForm(properties.getForm());
         this.transform.setTransform(properties.getTransform());

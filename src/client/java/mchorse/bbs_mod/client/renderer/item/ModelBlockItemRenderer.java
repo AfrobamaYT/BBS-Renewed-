@@ -1,8 +1,9 @@
-package mchorse.bbs_mod.client.renderer;
+package mchorse.bbs_mod.client.renderer.item;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -52,7 +53,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
         if (item != null)
         {
-            ModelBlockEntity.Properties properties = item.entity.getProperties();
+            ModelProperties properties = item.entity.getProperties();
             Form form = this.getForm(properties, mode);
 
             if (form != null)
@@ -74,7 +75,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         }
     }
 
-    private Form getForm(ModelBlockEntity.Properties properties, ModelTransformationMode mode)
+    private Form getForm(ModelProperties properties, ModelTransformationMode mode)
     {
         Form form = properties.getForm();
 
@@ -94,7 +95,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         return form;
     }
 
-    private Transform getTransform(ModelBlockEntity.Properties properties, ModelTransformationMode mode)
+    private Transform getTransform(ModelProperties properties, ModelTransformationMode mode)
     {
         Transform transform = properties.getTransformThirdPerson();
 

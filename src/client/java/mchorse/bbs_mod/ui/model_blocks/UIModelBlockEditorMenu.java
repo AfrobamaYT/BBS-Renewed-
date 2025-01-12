@@ -2,10 +2,10 @@ package mchorse.bbs_mod.ui.model_blocks;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
+import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.camera.OrbitDistanceCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
-import mchorse.bbs_mod.client.renderer.ModelBlockItemRenderer;
+import mchorse.bbs_mod.client.renderer.item.ModelBlockItemRenderer;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -83,7 +83,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
     private Form getForm()
     {
-        ModelBlockEntity.Properties properties = this.item.entity.getProperties();
+        ModelProperties properties = this.item.entity.getProperties();
 
         if (this.transform.getTransform() == properties.getTransformThirdPerson())
         {
@@ -99,7 +99,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
     private void setForm(Form f)
     {
-        ModelBlockEntity.Properties properties = this.item.entity.getProperties();
+        ModelProperties properties = this.item.entity.getProperties();
 
         if (this.transform.getTransform() == properties.getTransformThirdPerson())
         {
@@ -158,7 +158,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         context.batcher.gradientVBox(0, 0, this.width, 20, Colors.A75, 0);
 
-        ModelBlockEntity.Properties properties = this.item.entity.getProperties();
+        ModelProperties properties = this.item.entity.getProperties();
         Transform transform = this.transform.getTransform();
 
         if (transform == properties.getTransformThirdPerson())
