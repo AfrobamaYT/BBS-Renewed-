@@ -24,6 +24,7 @@ public class GunItem extends Item
         ItemStack stack = user.getStackInHand(hand);
         GunProperties properties = this.getProperties(stack);
 
+        /* Launch the player */
         if (properties.launch)
         {
             Vec3d rotationVector = user.getRotationVector().multiply(properties.launchPower);
@@ -40,12 +41,20 @@ public class GunItem extends Item
             return new TypedActionResult<>(ActionResult.SUCCESS, stack);
         }
 
-        GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
+        /* Shoot projectiles */
+        int projectiles = Math.max(properties.projectiles, 1);
 
-        projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
-        projectile.setVelocity(user, user.getPitch(), user.getHeadYaw(), 0F, 1F, 0F);
+        for (int i = 0; i < projectiles; i++)
+        {
+            GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
+            float yaw = user.getHeadYaw() + (float) (properties.scatterY * (Math.random() - 0.5D));
+            float pitch = user.getPitch() + (float) (properties.scatterX * (Math.random() - 0.5D));
 
-        world.spawnEntity(projectile);
+            projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
+            projectile.setVelocity(user, pitch, yaw, 0F, 1F, 0F);
+
+            world.spawnEntity(projectile);
+        }
 
         return new TypedActionResult<>(ActionResult.SUCCESS, stack);
     }
@@ -54,8 +63,9 @@ public class GunItem extends Item
     {
         GunProperties properties = new GunProperties(); // GunProperties.get(stack);
 
-        properties.launch = true;
-        properties.launchPower = -1F;
+        properties.projectiles = 5;
+        properties.scatterX = 45;
+        properties.scatterY = 45;
 
         return properties;
     }
