@@ -5,8 +5,10 @@ import mchorse.bbs_mod.entity.GunProjectileEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 public class GunItem extends Item
@@ -19,6 +21,25 @@ public class GunItem extends Item
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand)
     {
+        ItemStack stack = user.getStackInHand(hand);
+        GunProperties properties = this.getProperties(stack);
+
+        if (properties.launch)
+        {
+            Vec3d rotationVector = user.getRotationVector().multiply(properties.launchPower);
+
+            if (properties.launchAdditive)
+            {
+                user.addVelocity(rotationVector);
+            }
+            else
+            {
+                user.setVelocity(rotationVector);
+            }
+
+            return new TypedActionResult<>(ActionResult.SUCCESS, stack);
+        }
+
         GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
 
         projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
@@ -26,6 +47,16 @@ public class GunItem extends Item
 
         world.spawnEntity(projectile);
 
-        return super.use(world, user, hand);
+        return new TypedActionResult<>(ActionResult.SUCCESS, stack);
+    }
+
+    private GunProperties getProperties(ItemStack stack)
+    {
+        GunProperties properties = new GunProperties(); // GunProperties.get(stack);
+
+        properties.launch = true;
+        properties.launchPower = -1F;
+
+        return properties;
     }
 }

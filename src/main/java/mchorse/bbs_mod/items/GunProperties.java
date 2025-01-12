@@ -18,6 +18,7 @@ public class GunProperties extends ModelProperties
     /* Gun properties */
     public boolean launch;
     public float launchPower;
+    public boolean launchAdditive;
     public float scatterX;
     public float scatterY;
     public int projectiles;
@@ -90,6 +91,7 @@ public class GunProperties extends ModelProperties
 
         this.launch = data.getBool("launch");
         this.launchPower = data.getFloat("launchPower");
+        this.launchAdditive = data.getBool("launchAdditive");
         this.scatterX = data.getFloat("scatterX");
         this.scatterY = data.getFloat("scatterY");
         this.projectiles = data.getInt("projectiles");
@@ -123,6 +125,7 @@ public class GunProperties extends ModelProperties
 
         data.putBool("launch", this.launch);
         data.putFloat("launchPower", this.launchPower);
+        data.putBool("launchAdditive", this.launchAdditive);
         data.putFloat("scatterX", this.scatterX);
         data.putFloat("scatterY", this.scatterY);
         data.putInt("projectiles", this.projectiles);
