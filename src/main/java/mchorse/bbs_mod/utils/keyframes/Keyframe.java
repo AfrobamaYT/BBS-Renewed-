@@ -9,7 +9,7 @@ import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 
 public class Keyframe <T> extends ValueGroup
 {
-    private long tick;
+    private float tick;
     private T value;
 
     public float lx = 5;
@@ -26,7 +26,7 @@ public class Keyframe <T> extends ValueGroup
 
     private final IKeyframeFactory<T> factory;
 
-    public Keyframe(String id, IKeyframeFactory<T> factory, long tick, T value)
+    public Keyframe(String id, IKeyframeFactory<T> factory, float tick, T value)
     {
         this(id, factory);
 
@@ -46,17 +46,17 @@ public class Keyframe <T> extends ValueGroup
         return this.factory;
     }
 
-    public long getTick()
+    public float getTick()
     {
         return this.tick;
     }
 
-    public void setTick(long tick)
+    public void setTick(float tick)
     {
         this.setTick(tick, false);
     }
 
-    public void setTick(long tick, boolean dirty)
+    public void setTick(float tick, boolean dirty)
     {
         if (dirty) this.preNotifyParent();
 
@@ -119,7 +119,7 @@ public class Keyframe <T> extends ValueGroup
     {
         MapType data = new MapType();
 
-        data.putLong("tick", this.tick);
+        data.putFloat("tick", this.tick);
         data.putInt("duration", this.duration);
         data.put("value", this.factory.toData(this.value));
         data.put("interp", this.interp.toData());
@@ -141,7 +141,7 @@ public class Keyframe <T> extends ValueGroup
 
         MapType map = data.asMap();
 
-        if (map.has("tick")) this.tick = map.getLong("tick");
+        if (map.has("tick")) this.tick = map.getFloat("tick");
         if (map.has("duration")) this.duration = map.getInt("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
         if (map.has("interp")) this.interp.fromData(map.get("interp"));

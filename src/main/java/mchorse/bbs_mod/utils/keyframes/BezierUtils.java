@@ -5,7 +5,7 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class BezierUtils
 {
-    public static double get(double aValue, double bValue, long aTick, long bTick, float aRx, float aRy, float bLx, float bLy, float x)
+    public static double get(double aValue, double bValue, float aTick, float bTick, float aRx, float aRy, float bLx, float bLy, float x)
     {
         if (x <= 0) return aValue;
         if (x >= 1) return bValue;

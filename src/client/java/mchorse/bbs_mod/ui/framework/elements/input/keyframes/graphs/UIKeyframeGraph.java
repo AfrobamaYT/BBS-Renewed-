@@ -175,8 +175,13 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @Override
     public boolean addKeyframe(int mouseX, int mouseY)
     {
-        long tick = Math.round(this.keyframes.fromGraphX(mouseX));
+        float tick = (float) this.keyframes.fromGraphX(mouseX);
         UIKeyframeSheet sheet = this.sheet;
+
+        if (!Window.isShiftPressed())
+        {
+            tick = Math.round(tick);
+        }
 
         if (sheet != null)
         {
@@ -313,7 +318,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, float originalT, Object originalV)
     {
         if (type == null)
         {
@@ -325,10 +330,10 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
         if (type.b == KeyframeType.REGULAR)
         {
-            int offsetX = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
+            float offsetX = (float) this.keyframes.fromGraphX(originalX) - originalT;
             double offsetY = this.fromGraphY(originalY) - factory.getY(originalV);
 
-            long fx = Math.round(this.keyframes.fromGraphX(context.mouseX)) - offsetX;
+            float fx = (float) this.keyframes.fromGraphX(context.mouseX) - offsetX;
             Object fy = factory.yToValue(this.fromGraphY(context.mouseY) - offsetY);
 
             this.setTick(fx, false);
@@ -423,7 +428,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             return;
         }
 
-        long currentTick = Math.round(this.keyframes.fromGraphX(context.mouseX));
+        float currentTick = (float) this.keyframes.fromGraphX(context.mouseX);
 
         if (this.keyframes.isStacking())
         {
@@ -448,7 +453,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 for (Keyframe keyframe : selected)
                 {
                     int y = (int) this.yAxis.to(factory.getY(keyframe.getValue()));
-                    long tick = mMax + this.keyframes.getStackOffset() + (keyframe.getTick() - mMin) + x;
+                    float tick = mMax + this.keyframes.getStackOffset() + (keyframe.getTick() - mMin) + x;
 
                     this.renderPreviewKeyframe(context, current, tick, y, Colors.YELLOW);
                 }
@@ -462,7 +467,14 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
             if (sheet != null)
             {
-                this.renderPreviewKeyframe(context, sheet, currentTick, context.mouseY, Colors.WHITE);
+                float tick = currentTick;
+
+                if (!Window.isShiftPressed())
+                {
+                    tick = Math.round(tick);
+                }
+
+                this.renderPreviewKeyframe(context, sheet, tick, context.mouseY, Colors.WHITE);
             }
         }
         else if (Window.isAltPressed())
@@ -598,7 +610,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         {
             Keyframe frame = (Keyframe) keyframes.get(i);
             Keyframe prev = i > 0 ? (Keyframe) keyframes.get(i - 1) : null;
-            long tick = frame.getTick();
+            float tick = frame.getTick();
             int x1 = this.keyframes.toGraphX(tick);
             int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
             int y = this.toGraphY(sheet.channel.getFactory().getY(frame.getValue()));

@@ -182,8 +182,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     @Override
     public boolean addKeyframe(int mouseX, int mouseY)
     {
-        long tick = Math.round(this.keyframes.fromGraphX(mouseX));
+        float tick = (float) this.keyframes.fromGraphX(mouseX);
         UIKeyframeSheet sheet = this.getSheet(mouseY);
+
+        if (!Window.isShiftPressed())
+        {
+            tick = Math.round(tick);
+        }
 
         if (sheet != null)
         {
@@ -307,11 +312,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     }
 
     @Override
-    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV)
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, float originalT, Object originalV)
     {
-        int offset = (int) (Math.round(this.keyframes.fromGraphX(originalX)) - originalT);
+        float offset = (float) (this.keyframes.fromGraphX(originalX) - originalT);
 
-        this.setTick(Math.round(this.keyframes.fromGraphX(context.mouseX)) - offset, false);
+        this.setTick((float) this.keyframes.fromGraphX(context.mouseX) - offset, false);
         this.keyframes.triggerChange();
     }
 
@@ -359,7 +364,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         if (this.keyframes.isStacking())
         {
             List<UIKeyframeSheet> sheets = new ArrayList<>();
-            long currentTick = Math.round(this.keyframes.fromGraphX(context.mouseX));
+            float currentTick = (float) this.keyframes.fromGraphX(context.mouseX);
 
             for (UIKeyframeSheet sheet : this.getSheets())
             {
@@ -389,7 +394,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 {
                     for (Keyframe keyframe : selected)
                     {
-                        long tick = mmax + this.keyframes.getStackOffset() + (keyframe.getTick() - mmin) + x;
+                        float tick = mmax + this.keyframes.getStackOffset() + (keyframe.getTick() - mmin) + x;
 
                         this.renderPreviewKeyframe(context, current, tick, Colors.YELLOW);
                     }
@@ -404,7 +409,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
             if (sheet != null)
             {
-                this.renderPreviewKeyframe(context, sheet, Math.round(this.keyframes.fromGraphX(context.mouseX)), Colors.WHITE);
+                float tick = (float) this.keyframes.fromGraphX(context.mouseX);
+
+                if (!Window.isShiftPressed())
+                {
+                    tick = Math.round(tick);
+                }
+
+                this.renderPreviewKeyframe(context, sheet, tick, Colors.WHITE);
             }
         }
         else if (Window.isAltPressed() && !Window.isShiftPressed())
@@ -517,13 +529,20 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             {
                 Keyframe previous = (Keyframe) keyframes.get(j - 1);
                 Keyframe frame = (Keyframe) keyframes.get(j);
+                int c = Colors.YELLOW | Colors.A25;
+                int xx = this.keyframes.toGraphX(previous.getTick());
+                int xxx = this.keyframes.toGraphX(frame.getTick());
 
                 if (previous.getFactory().compare(previous.getValue(), frame.getValue()))
                 {
-                    int c = Colors.YELLOW | Colors.A25;
-                    int xx = this.keyframes.toGraphX(previous.getTick());
-
                     context.batcher.fillRect(builder, matrix, xx, my - 2, this.keyframes.toGraphX(frame.getTick()) - xx, 4, c, c, c, c);
+                }
+
+                if (Math.abs(xxx - xx) < 5)
+                {
+                    c = Colors.YELLOW | Colors.A50;
+
+                    context.batcher.fillRect(builder, matrix, xx - 2, my + 5, xxx - xx + 4, 2, c, c, c, c);
                 }
             }
 
@@ -533,7 +552,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             for (int j = 0; j < keyframes.size(); j++)
             {
                 Keyframe frame = (Keyframe) keyframes.get(j);
-                long tick = frame.getTick();
+                float tick = frame.getTick();
                 int x1 = this.keyframes.toGraphX(tick);
                 int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
 

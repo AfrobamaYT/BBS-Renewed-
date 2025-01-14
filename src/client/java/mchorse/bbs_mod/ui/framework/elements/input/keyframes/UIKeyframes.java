@@ -37,9 +37,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * - Editing inside
- */
 public class UIKeyframes extends UIElement
 {
     /* Editing states */
@@ -49,8 +46,8 @@ public class UIKeyframes extends UIElement
     private int dragging = -1;
     private Pair<Keyframe, KeyframeType> draggingData;
     private boolean scaling;
-    private long scalingAnchor;
-    private Map<Keyframe, Long> scaleTicks = new HashMap<>();
+    private float scalingAnchor;
+    private Map<Keyframe, Float> scaleTicks = new HashMap<>();
 
     private boolean stacking;
     private int stackOffset;
@@ -59,7 +56,7 @@ public class UIKeyframes extends UIElement
     private int lastY;
     private int originalX;
     private int originalY;
-    private int originalT;
+    private float originalT;
     private Object originalV;
 
     private Runnable changeCallback;
@@ -89,6 +86,7 @@ public class UIKeyframes extends UIElement
             UIContext context = this.getContext();
             int mouseX = context.mouseX;
             int mouseY = context.mouseY;
+            boolean hasSelected = this.currentGraph.getSelected() != null;
 
             if (this.isEditing())
             {
@@ -110,7 +108,7 @@ public class UIKeyframes extends UIElement
             menu.action(Icons.MAXIMIZE, UIKeys.KEYFRAMES_CONTEXT_MAXIMIZE, this::resetView);
             menu.action(Icons.FULLSCREEN, UIKeys.KEYFRAMES_CONTEXT_SELECT_ALL, () -> this.currentGraph.selectAll());
 
-            if (this.currentGraph.getSelected() != null)
+            if (hasSelected)
             {
                 menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, () -> this.currentGraph.removeSelected());
                 menu.action(Icons.COPY, UIKeys.KEYFRAMES_CONTEXT_COPY, this::copyKeyframes);
@@ -123,7 +121,27 @@ public class UIKeyframes extends UIElement
                 final Map<String, PastedKeyframes> keyframes = pasted;
                 double offset = this.fromGraphX(mouseX);
 
-                menu.action(Icons.PASTE, UIKeys.KEYFRAMES_CONTEXT_PASTE, () -> this.pasteKeyframes(keyframes, (long) offset, mouseY));
+                menu.action(Icons.PASTE, UIKeys.KEYFRAMES_CONTEXT_PASTE, () -> this.pasteKeyframes(keyframes, (float) offset, mouseY));
+            }
+
+            if (hasSelected)
+            {
+                menu.action(Icons.OUTLINE_SPHERE, UIKeys.KEYFRAMES_CONTEXT_ROUND, () ->
+                {
+                    for (UIKeyframeSheet sheet : this.getGraph().getSheets())
+                    {
+                        sheet.channel.preNotifyParent();
+
+                        for (Object keyframe : sheet.channel.getKeyframes())
+                        {
+                            Keyframe kf = (Keyframe) keyframe;
+
+                            kf.setTick(Math.round(kf.getTick()), false);
+                        }
+
+                        sheet.channel.postNotifyParent();
+                    }
+                });
             }
         });
 
@@ -144,7 +162,7 @@ public class UIKeyframes extends UIElement
                 double offset = this.fromGraphX(context.mouseX);
                 int mouseY = context.mouseY;
 
-                this.pasteKeyframes(pasted, (long) offset, mouseY);
+                this.pasteKeyframes(pasted, (float) offset, mouseY);
             }
         }).inside().category(category).active(canModify);
         this.keys().register(Keys.DELETE, () -> this.currentGraph.removeSelected()).inside().category(category).active(canModify);
@@ -223,7 +241,7 @@ public class UIKeyframes extends UIElement
 
     private void selectAfter(int mouseX, int mouseY, int direction)
     {
-        int tick = (int) Math.round(this.fromGraphX(mouseX));
+        float tick = (float) this.fromGraphX(mouseX);
 
         if (!Window.isShiftPressed())
         {
@@ -304,7 +322,7 @@ public class UIKeyframes extends UIElement
             {
                 UIContext context = this.getContext();
                 List<UIKeyframeSheet> sheets = new ArrayList<>();
-                long currentTick = Math.round(this.fromGraphX(context.mouseX));
+                float currentTick = (float) this.fromGraphX(context.mouseX);
 
                 for (UIKeyframeSheet sheet : this.getGraph().getSheets())
                 {
@@ -336,7 +354,7 @@ public class UIKeyframes extends UIElement
                     {
                         for (Keyframe keyframe : selected)
                         {
-                            long tick = mMax + this.getStackOffset() + (keyframe.getTick() - mMin) + x;
+                            float tick = mMax + this.getStackOffset() + (keyframe.getTick() - mMin) + x;
                             int index = current.channel.insert(tick, keyframe.getFactory().copy(keyframe.getValue()));
                             Keyframe kf = current.channel.get(index);
 
@@ -513,7 +531,7 @@ public class UIKeyframes extends UIElement
     /**
      * Paste copied keyframes to clipboard
      */
-    protected void pasteKeyframes(Map<String, PastedKeyframes> keyframes, long offset, int mouseY)
+    protected void pasteKeyframes(Map<String, PastedKeyframes> keyframes, float offset, int mouseY)
     {
         List<UIKeyframeSheet> sheets = this.currentGraph.getSheets();
 
@@ -549,14 +567,14 @@ public class UIKeyframes extends UIElement
         this.currentGraph.pickSelected();
     }
 
-    private void pasteKeyframesTo(UIKeyframeSheet sheet, PastedKeyframes pastedKeyframes, long offset)
+    private void pasteKeyframesTo(UIKeyframeSheet sheet, PastedKeyframes pastedKeyframes, float offset)
     {
         if (sheet.channel.getFactory() != pastedKeyframes.factory)
         {
             return;
         }
 
-        long firstX = pastedKeyframes.keyframes.get(0).getTick();
+        float firstX = pastedKeyframes.keyframes.get(0).getTick();
         List<Keyframe> toSelect = new ArrayList<>();
 
         for (Keyframe keyframe : pastedKeyframes.keyframes)
@@ -850,7 +868,7 @@ public class UIKeyframes extends UIElement
 
             if (found != null)
             {
-                this.originalT = (int) found.getTick();
+                this.originalT = found.getTick();
                 this.originalV = found.getFactory().copy(found.getValue());
             }
         }
@@ -912,7 +930,7 @@ public class UIKeyframes extends UIElement
                 this.stackKeyframes(true);
             }
 
-            for (Map.Entry<Keyframe, Long> entry : this.scaleTicks.entrySet())
+            for (Map.Entry<Keyframe, Float> entry : this.scaleTicks.entrySet())
             {
                 entry.getKey().setTick(entry.getValue(), true);
             }
@@ -960,15 +978,15 @@ public class UIKeyframes extends UIElement
 
         if (this.scaling)
         {
-            int tick = (int) Math.round(this.fromGraphX(context.mouseX));
-            int originalTick = (int) Math.round(this.fromGraphX(this.originalX));
-            float ratio = (tick - this.scalingAnchor) / (float) (originalTick - this.scalingAnchor);
+            float tick = (float) this.fromGraphX(context.mouseX);
+            float originalTick = (float) this.fromGraphX(this.originalX);
+            float ratio = (tick - this.scalingAnchor) / (originalTick - this.scalingAnchor);
 
-            for (Map.Entry<Keyframe, Long> entry : this.scaleTicks.entrySet())
+            for (Map.Entry<Keyframe, Float> entry : this.scaleTicks.entrySet())
             {
                 Keyframe keyframe = entry.getKey();
-                long oldTick = entry.getValue();
-                long newTick = this.scalingAnchor + Math.round((oldTick - this.scalingAnchor) * ratio);
+                float oldTick = entry.getValue();
+                float newTick = this.scalingAnchor + (oldTick - this.scalingAnchor) * ratio;
 
                 keyframe.setTick(newTick, true);
             }

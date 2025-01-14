@@ -559,6 +559,7 @@
     "bbs.ui.keyframes.context.remove": "Удалить ключевой(ые) кадр(ы)",
     "bbs.ui.keyframes.context.select_all": "Выбрать всё",
     "bbs.ui.keyframes.context.simplify": "Упростить",
+    "bbs.ui.keyframes.context.round": "Округлить тики кадров",
     "bbs.ui.keyframes.forced_duration": "Принуждённая длина",
     "bbs.ui.keyframes.keys.category": "Редактор ключевых кадров",
     "bbs.ui.keyframes.keys.scale_time": "Масштабировать время",

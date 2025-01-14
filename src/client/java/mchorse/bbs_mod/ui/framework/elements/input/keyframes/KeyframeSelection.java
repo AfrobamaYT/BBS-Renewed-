@@ -50,7 +50,7 @@ public class KeyframeSelection
         }
     }
 
-    public void after(int tick, int direction)
+    public void after(float tick, int direction)
     {
         this.selected.clear();
 

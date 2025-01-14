@@ -91,7 +91,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.scroll.full(this);
 
         this.tick = new UITrackpad(this::setTick);
-        this.tick.limit(Integer.MIN_VALUE, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_TICK);
+        this.tick.limit(Float.MIN_VALUE, Float.MAX_VALUE).tooltip(UIKeys.KEYFRAMES_TICK);
         this.tick.getEvents().register(UITrackpadDragStartEvent.class, (e) -> this.editor.cacheKeyframes());
         this.tick.getEvents().register(UITrackpadDragEndEvent.class, (e) -> this.editor.submitKeyframes());
         this.duration = new UITrackpad((v) -> this.setDuration(v.intValue()));
@@ -124,7 +124,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     public void setTick(double tick)
     {
         IAxisConverter converter = this.editor.getConverter();
-        long time = (long) (converter == null ? tick : converter.from(tick));
+        float time = (float) (converter == null ? tick : converter.from(tick));
 
         this.editor.getGraph().setTick(time, false);
     }
@@ -143,7 +143,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
     {
         IAxisConverter converter = this.editor.getConverter();
 
-        this.tick.setValue(converter == null ? keyframe.getTick() : converter.to(keyframe.getTick()));
+        this.tick.setValue(converter == null ? this.keyframe.getTick() : converter.to(this.keyframe.getTick()));
     }
 
     public static interface IUIKeyframeFactoryFactory <T>

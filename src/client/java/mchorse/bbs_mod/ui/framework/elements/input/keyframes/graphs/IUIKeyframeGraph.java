@@ -42,7 +42,7 @@ public interface IUIKeyframeGraph
         this.pickSelected();
     }
 
-    public default void selectAfter(int tick, int direction)
+    public default void selectAfter(float tick, int direction)
     {
         for (UIKeyframeSheet sheet : this.getSheets())
         {
@@ -92,7 +92,7 @@ public interface IUIKeyframeGraph
 
     public boolean addKeyframe(int mouseX, int mouseY);
 
-    public default Keyframe addKeyframe(UIKeyframeSheet sheet, long tick, Object value)
+    public default Keyframe addKeyframe(UIKeyframeSheet sheet, float tick, Object value)
     {
         KeyframeSegment segment = sheet.channel.find(tick);
         Interpolation interpolation = null;
@@ -160,10 +160,10 @@ public interface IUIKeyframeGraph
 
     public void selectKeyframe(Keyframe keyframe);
 
-    public default void setTick(long tick, boolean dirty)
+    public default void setTick(float tick, boolean dirty)
     {
         Keyframe selected = this.getSelected();
-        long diff = tick - selected.getTick();
+        float diff = tick - selected.getTick();
 
         for (UIKeyframeSheet sheet : this.getSheets())
         {
@@ -214,7 +214,7 @@ public interface IUIKeyframeGraph
 
     public void handleMouse(UIContext context, int lastX, int lastY);
 
-    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, int originalT, Object originalV);
+    public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, float originalT, Object originalV);
 
     /* Rendering */
 

@@ -71,7 +71,7 @@ public class UIKeyframeSheet
         return lastSelection;
     }
 
-    public void setTickBy(long diff, boolean dirty)
+    public void setTickBy(float diff, boolean dirty)
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {

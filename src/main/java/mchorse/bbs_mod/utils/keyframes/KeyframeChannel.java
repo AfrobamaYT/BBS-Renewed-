@@ -190,7 +190,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
      *
      * Also, it returns index at which it was inserted.
      */
-    public int insert(long tick, T value)
+    public int insert(float tick, T value)
     {
         this.preNotifyParent();
 
@@ -274,7 +274,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         this.postNotifyParent();
     }
 
-    public void moveX(long offset)
+    public void moveX(float offset)
     {
         this.preNotifyParent();
 
