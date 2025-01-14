@@ -73,6 +73,8 @@ public class BBSSettings
     public static ValueInt recordingNextVariable;
     public static ValueBoolean recordingSwipeDamage;
 
+    public static ValueString entitySelectorsPropertyWhitelist;
+
     public static ValueBoolean damageControl;
 
     public static ValueBoolean audioWaveformVisible;
@@ -169,6 +171,8 @@ public class BBSSettings
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingNextVariable = builder.getInt("next", 1, 1, 100);
         recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
+
+        entitySelectorsPropertyWhitelist = builder.category("entity_selectors").getString("whitelist", "CustomName,Name");
 
         damageControl = builder.category("dc").getBoolean("enabled", true);
 

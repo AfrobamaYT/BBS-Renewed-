@@ -33,7 +33,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
     public UITextarea<TextLine> nbt;
 
     private EntitySelector current;
-    private boolean changed;
 
     public UISelectorsOverlayPanel()
     {
@@ -48,7 +47,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
             UIFormPalette.open(this.getParent(UIOverlay.class), editing, this.current.form, true, (form) ->
             {
                 this.current.form = FormUtils.copy(form);
-                this.changed = true;
 
                 BBSModClient.getSelectors().update();
             });
@@ -66,14 +64,11 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
                 this.current.entity = null;
             }
 
-            this.changed = true;
-
             BBSModClient.getSelectors().update();
         });
         this.name = new UITextbox(100, (t) ->
         {
             this.current.name = t;
-            this.changed = true;
 
             BBSModClient.getSelectors().update();
         });
@@ -82,7 +77,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
             try
             {
                 this.current.nbt = (new StringNbtReader(new StringReader(t))).parseCompound();
-                this.changed = true;
 
                 BBSModClient.getSelectors().update();
             }
@@ -103,8 +97,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
                 this.selectors.add(element);
                 this.setSelector(element, true);
                 BBSModClient.getSelectors().update();
-
-                this.changed = true;
             });
 
             if (this.current != null)
@@ -116,8 +108,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
                     list.remove(this.current);
                     this.setSelector(list.isEmpty() ? null : list.get(0), true);
                     BBSModClient.getSelectors().update();
-
-                    this.changed = true;
                 });
             }
         });
@@ -138,14 +128,6 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         this.add(this.column, this.selectors);
 
         this.setSelector(this.selectors.getList().isEmpty() ? null : this.selectors.getList().get(0), true);
-
-        this.onClose((panel) ->
-        {
-            if (this.changed)
-            {
-                BBSModClient.getSelectors().save();
-            }
-        });
     }
 
     private void setSelector(EntitySelector selector, boolean select)
