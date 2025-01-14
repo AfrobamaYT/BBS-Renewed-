@@ -5,6 +5,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
 import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.cubic.CubicModelAnimator;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
@@ -12,6 +13,8 @@ import mchorse.bbs_mod.cubic.animation.Animator;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.cubic.model.ArmorSlot;
+import mchorse.bbs_mod.cubic.model.ArmorType;
 import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
@@ -328,8 +331,47 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (!picking)
         {
+            for (Map.Entry<ArmorType, ArmorSlot> entry : model.armorSlots.entrySet())
+            {
+                this.renderArmor(target, stack, entry.getKey(), entry.getValue(), color, overlay, light);
+            }
+
             this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, color, overlay, light);
             this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, color, overlay, light);
+        }
+    }
+
+    private void renderArmor(IEntity target, MatrixStack stack, ArmorType type, ArmorSlot armorSlot, Color color, int overlay, int light)
+    {
+        Matrix4f matrix = this.bones.get(armorSlot.group);
+
+        if (matrix != null)
+        {
+            CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
+
+            stack.push();
+            MatrixStackUtils.multiply(stack, matrix);
+
+            stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90F));
+            stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
+            stack.translate(0F, 0.125F, 0F);
+
+            stack.push();
+            MatrixStackUtils.applyTransform(stack, armorSlot.transform);
+
+            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
+
+            consumers.setSubstitute(BBSRendering.getColorConsumer(color));
+            ActorEntityRenderer.armorRenderer.renderArmorSlot(stack, consumers, target, type.slot, type, light);
+            consumers.draw();
+            consumers.setSubstitute(null);
+
+            CustomVertexConsumerProvider.clearRunnables();
+
+            stack.pop();
+            stack.pop();
+
+            RenderSystem.enableDepthTest();
         }
     }
 
@@ -357,10 +399,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
                 stack.translate(0F, 0.125F, 0F);
 
-                CustomVertexConsumerProvider.hijackVertexFormat((l) ->
-                {
-                    RenderSystem.enableBlend();
-                });
+                CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
 
                 consumers.setSubstitute(BBSRendering.getColorConsumer(color));
                 MinecraftClient.getInstance().getItemRenderer().renderItem(null, itemStack, mode, mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);

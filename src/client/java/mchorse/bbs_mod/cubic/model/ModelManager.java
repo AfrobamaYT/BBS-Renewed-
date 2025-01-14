@@ -143,7 +143,10 @@ public class ModelManager implements IWatchDogListener
     {
         for (CubicModel model : this.models.values())
         {
-            model.delete();
+            if (model != null)
+            {
+                model.delete();
+            }
         }
 
         this.models.clear();

@@ -4,6 +4,35 @@
 	"items_main": ["right_arm_item"],
 	"items_off": ["left_arm_item"],
 	"scale": [0.9375, 0.9375, 0.9375],
+	"armor_slots": {
+		"helmet": {
+			"group": "armor_helmet"
+		},
+		"chest": {
+			"group": "armor_chest"
+		},
+		"leggings": {
+			"group": "armor_leggings"
+		},
+		"left_arm": {
+			"group": "armor_left_arm"
+		},
+		"right_arm": {
+			"group": "armor_right_arm"
+		},
+		"left_leg": {
+			"group": "armor_left_leg"
+		},
+		"right_leg": {
+			"group": "armor_right_leg"
+		},
+		"left_boot": {
+			"group": "armor_left_boot"
+		},
+		"right_boot":{
+			"group": "armor_right_boot"
+		}
+	},
 	"sneaking_pose": {
 	    "static": false,
 	    "pose": {

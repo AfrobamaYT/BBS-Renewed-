@@ -62,7 +62,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -484,10 +483,6 @@ public class BBSModClient implements ClientModInitializer
         {}
 
         BBSMod.getAudioFolder().mkdirs();
-
-        /* Whenever we're in a dev environment, resource assets can't be found
-         * directly, so we have to copy files this crude way */
-        isForge = isForge || FabricLoader.getInstance().isDevelopmentEnvironment();
 
         this.insert(isForge, "/assets/bbs/assets/models/player/steve/", BBSMod.getAssetsPath("models/player/steve"), Arrays.asList("config.json", "steve.bbs.json", "steve.png"));
         this.insert(isForge, "/assets/bbs/assets/models/player/alex/", BBSMod.getAssetsPath("models/player/alex"), Arrays.asList("config.json", "alex.bbs.json", "alex.png"));

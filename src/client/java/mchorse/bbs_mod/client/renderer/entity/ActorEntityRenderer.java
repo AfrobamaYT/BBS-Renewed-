@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.client.renderer.entity;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import mchorse.bbs_mod.cubic.render.vanilla.ArmorRenderer;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
@@ -8,6 +9,8 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
+import net.minecraft.client.render.entity.model.ArmorEntityModel;
+import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.util.Identifier;
@@ -16,9 +19,17 @@ import net.minecraft.util.math.RotationAxis;
 
 public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
 {
+    public static ArmorRenderer armorRenderer;
+
     public ActorEntityRenderer(EntityRendererFactory.Context ctx)
     {
         super(ctx);
+
+        armorRenderer = new ArmorRenderer(
+            new ArmorEntityModel(ctx.getPart(EntityModelLayers.PLAYER_INNER_ARMOR)),
+            new ArmorEntityModel(ctx.getPart(EntityModelLayers.PLAYER_OUTER_ARMOR)),
+            ctx.getModelManager()
+        );
 
         this.shadowRadius = 0.5F;
     }

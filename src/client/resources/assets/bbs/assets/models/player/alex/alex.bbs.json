@@ -23,6 +23,10 @@
 					}
 				]
 			},
+			"armor_helmet": {
+				"origin": [0, 24, 0],
+				"parent": "head"
+			},
 			"head": {
 				"origin": [0, 24, 0],
 				"parent": "low_body",
@@ -44,6 +48,10 @@
 			},
 			"left_arm_item": {
 				"origin": [-5.5, 12, 0],
+				"parent": "left_arm"
+			},
+			"armor_left_arm": {
+				"origin": [-5, 22, 0],
 				"parent": "left_arm"
 			},
 			"left_arm": {
@@ -83,6 +91,10 @@
 				"origin": [5.5, 12, 0],
 				"parent": "right_arm"
 			},
+			"armor_right_arm": {
+				"origin": [5, 22, 0],
+				"parent": "right_arm"
+			},
 			"right_arm": {
 				"origin": [6, 22, 0],
 				"parent": "body",
@@ -115,6 +127,14 @@
 						}
 					}
 				]
+			},
+			"armor_chest": {
+				"origin": [0, 24, 0],
+				"parent": "torso"
+			},
+			"armor_leggings": {
+				"origin": [0, 24, 0],
+				"parent": "torso"
 			},
 			"torso": {
 				"origin": [0, 24, 0],
@@ -157,6 +177,14 @@
 				"origin": [0, 12, 0],
 				"parent": "anchor"
 			},
+			"armor_left_leg": {
+				"origin": [-2, 12, 0],
+				"parent": "left_leg"
+			},
+			"armor_left_boot": {
+				"origin": [-2, 12, 0],
+				"parent": "left_leg"
+			},
 			"left_leg": {
 				"origin": [-2, 12, 0],
 				"parent": "anchor",
@@ -189,6 +217,14 @@
 						}
 					}
 				]
+			},
+			"armor_right_leg": {
+				"origin": [2, 12, 0],
+				"parent": "right_leg"
+			},
+			"armor_right_boot": {
+				"origin": [2, 12, 0],
+				"parent": "right_leg"
 			},
 			"right_leg": {
 				"origin": [2, 12, 0],

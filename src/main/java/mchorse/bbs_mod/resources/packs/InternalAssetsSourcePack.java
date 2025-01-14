@@ -3,6 +3,7 @@ package mchorse.bbs_mod.resources.packs;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.DataPath;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,6 +107,19 @@ public class InternalAssetsSourcePack implements ISourcePack
             if (new File(subFile, this.internalPrefix).exists())
             {
                 return subFile;
+            }
+        }
+
+        /* In development environment, the assets are separate from classes, and for this
+         * reason for the files to be found, I have to use this ugly workaround. Also, I
+         * don't think it works outside of IntelliJ, so RIP... */
+        if (FabricLoader.getInstance().isDevelopmentEnvironment())
+        {
+            File resources = new File(file.getParentFile().getParentFile().getParentFile(), "resources/client/");
+
+            if (resources.isDirectory())
+            {
+                return resources;
             }
         }
 
