@@ -18,8 +18,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 public class BBSSettings
 {
-    public static ValueString version;
-
     public static ValueString serverId;
     public static ValueString serverAssetManager;
 
@@ -116,9 +114,6 @@ public class BBSSettings
 
         builder.getCategory().invisible();
         builder.category("appearance");
-
-        version = builder.getString("version", BBSMod.SIGNIFICANT_VERSION);
-        version.invisible();
 
         builder.register(language = new ValueLanguage("language"));
         primaryColor = builder.getInt("primary_color", Colors.ACTIVE).color();

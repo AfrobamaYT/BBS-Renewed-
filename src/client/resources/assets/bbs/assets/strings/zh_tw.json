@@ -334,8 +334,6 @@
     "bbs.ui.context.key": "選項 \"%s\"",
     "bbs.ui.context.key_category": "下拉菜單",
     "bbs.ui.dashboard.category": "儀表盤",
-    "bbs.ui.dashboard.version_warning-description": "重要：版本有重大！這意味著所有舊數據都有可能會損壞，例如影片、模型方塊等。請謹慎使用，風險自負！\n\n以防萬一，請備份文件！",
-    "bbs.ui.dashboard.version_warning-title": "版本改動！",
     "bbs.ui.dashboard.context.toggle_visibility": "切換儀表盤是否可見",
     "bbs.ui.ffmpeg.error-description": "FFmpeg 未設置或不存在。請在 BBS 模組的設置中配置 FFmpeg 的路徑，或點擊 ? 按鈕閱讀指南。",
     "bbs.ui.ffmpeg.error-guide": "在瀏覽器中打開指南",

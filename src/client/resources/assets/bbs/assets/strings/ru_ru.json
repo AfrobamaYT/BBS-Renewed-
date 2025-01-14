@@ -342,8 +342,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Включить видимость приборной модели",
     "bbs.ui.dashboard.optifine_ew-description": "ВНИМАНИЕ: ББС мод не поддерживает Optifine! Optifine может сломать определённые фичи ББС мода, ИСПОЛЬЗУЙТЕ НА СВОЙ РИСК!\n\nКак альтернатива, можете попробовать установить Sodium и Iris.",
     "bbs.ui.dashboard.optifine_ew-title": "Optifine ОБНАРУЖЕН!",
-    "bbs.ui.dashboard.version_warning-description": "ВНИМАНИЕ: версия категорисечки изменилась! Это значит что любые старые данные из прошлых версиях могут быть повреждены типа фильмы, блок модели и т.д. ИСПОЛЬЗУЙТИ с осторожностью НА СВОЙ РИСК И СТРАХ!\n\nСделайте бэкап на всякий случай!",
-    "bbs.ui.dashboard.version_warning-title": "Версия изменилась!",
     "bbs.ui.dupe": "Дублировать",
     "bbs.ui.edit": "Редактировать",
     "bbs.ui.error": "Ошибка",

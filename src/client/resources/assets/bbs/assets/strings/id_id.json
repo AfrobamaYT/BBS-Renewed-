@@ -313,8 +313,6 @@
     "bbs.ui.copy": "Salin",
     "bbs.ui.dashboard.category": "Dasbor",
     "bbs.ui.dashboard.context.toggle_visibility": "Aktifkan/nonaktifkan visibilitas dasbor",
-    "bbs.ui.dashboard.version_warning-description": "PENTING: versinya telah berubah secara signifikan! Ini berarti data lama bisa rusak seperti film, model blok, dll. GUNAKAN dengan hati-hati ATAS RISIKO ANDA SENDIRI!\n\nCadangkan file untuk berjaga-jaga!",
-    "bbs.ui.dashboard.version_warning-title": "Versi berubah!",
     "bbs.ui.dupe": "Duplikat",
     "bbs.ui.edit": "Edit",
     "bbs.ui.error": "Kesalahan",

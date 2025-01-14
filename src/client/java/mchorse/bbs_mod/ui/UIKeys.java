@@ -193,8 +193,6 @@ public class UIKeys
     public static final IKey DASHBOARD_CONTEXT_TOGGLE_VISIBILITY = L10n.lang("bbs.ui.dashboard.context.toggle_visibility");
     public static final IKey DASHBOARD_OPTIFINE_EW_DESCRIPTION = L10n.lang("bbs.ui.dashboard.optifine_ew-description");
     public static final IKey DASHBOARD_OPTIFINE_EW_TITLE = L10n.lang("bbs.ui.dashboard.optifine_ew-title");
-    public static final IKey DASHBOARD_VERSION_WARNING_DESCRIPTION = L10n.lang("bbs.ui.dashboard.version_warning-description");
-    public static final IKey DASHBOARD_VERSION_WARNING_TITLE = L10n.lang("bbs.ui.dashboard.version_warning-title");
     public static final IKey ENGINE_KEYSTROKES_POSITION_AUTO = L10n.lang("bbs.keystrokes_position.auto");
     public static final IKey ENGINE_KEYSTROKES_POSITION_BOTTOM_LEFT = L10n.lang("bbs.keystrokes_position.bottom_left");
     public static final IKey ENGINE_KEYSTROKES_POSITION_BOTTOM_RIGHT = L10n.lang("bbs.keystrokes_position.bottom_right");

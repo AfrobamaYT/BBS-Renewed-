@@ -324,8 +324,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Przełącz widoczność panela sterowania",
     "bbs.ui.dashboard.optifine_ew-description": "WAŻNE: BBS mod nie obsługuje Optifine! Optifine może złamać określone funkcje BBS mod, UŻYWAJ NA WŁASNE RYZYKO!\n\nAlternatywnie, spróbuj zainstalować Sodium i Iris.",
     "bbs.ui.dashboard.optifine_ew-title": "WYKRYTO Optifine!",
-    "bbs.ui.dashboard.version_warning-description": "WAŻNE: wersja została znacząco zmieniona! Oznacza to, że wszelkie stare dane mogą zostać uszkodzone, takie jak filmy, modele bloków itp. UŻYWAJ ostrożnie NA WŁASNE RYZYKO!\n\nNa wszelki wypadek wykonaj kopię zapasową plików!",
-    "bbs.ui.dashboard.version_warning-title": "Wersja zmieniona!",
     "bbs.ui.dupe": "Duplikuj",
     "bbs.ui.edit": "Edytuj",
     "bbs.ui.error": "Błąd",

@@ -306,8 +306,6 @@
     "bbs.ui.config.title": "Paramètres",
     "bbs.ui.context.key_category": "Menu contextuel",
     "bbs.ui.dashboard.category": "Tableau de bord",
-    "bbs.ui.dashboard.version_warning-description": "IMPORTANT: cette version a significativement changé! Cela veut dire que les anciennes données peuvent etre corrompues comme les films, blocs de modèle, etc. UTILISEZ avec précausion A VOS PROPRE RISQUES!\n\nSauvegardez une copie si jamais!",
-    "bbs.ui.dashboard.version_warning-title": "Version changée!",
     "bbs.ui.dashboard.context.toggle_visibility": "Rendre visible le tableau de bord",
     "bbs.ui.ffmpeg.error-description": "ffmpeg n'a pas été installé, ou n'a pas été trouvé. Configurez le chemin dans les paramètre de BBS mod ou lisez le guide en cliquant sur le boutton \"?\".",
     "bbs.ui.ffmpeg.error-guide": "Ouvrir le guide dans le navigateur",

@@ -331,8 +331,6 @@
     "bbs.ui.dashboard.category": "Tablero principal",
     "bbs.ui.dashboard.optifine_ew-description": "IMPORTANTE: ¡El mod BBS no es compatible con Optifine! Optifine puede dañar funciones específicas del mod BBS. ¡UTILÍZALO BAJO TU PROPIA RESPONSABILIDAD!\n\nComo alternativa, intenta instalar Sodium e Iris.",
     "bbs.ui.dashboard.optifine_ew-title": "¡Optifine DETECTADO!",
-    "bbs.ui.dashboard.version_warning-description": "IMPORTANTE: ¡La versión cambió significativamente! Esto significa que cualquier dato antiguo podría corromperse, como películas, bloques de modelos, etc. ¡ÚSALO con precaución BAJO TU PROPIO RIESGO!\n\n¡Haz una copia de seguridad de los archivos por si acaso!",
-    "bbs.ui.dashboard.version_warning-title": "¡Versión cambiada!",
     "bbs.ui.dashboard.context.toggle_visibility": "Habilitar la visibilidad del panel",
     "bbs.ui.ffmpeg.error-description": "ffmpeg no se configuró o no se encontró. Configura la ruta a ffmpeg en la configuración del mod BBS o lee la guía haciendo clic en el botón ?",
     "bbs.ui.ffmpeg.error-guide": "Abrir guía en el navegador",

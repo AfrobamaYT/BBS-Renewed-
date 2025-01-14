@@ -314,8 +314,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Sichtbarkeit des Dashboards umschalten",
     "bbs.ui.dashboard.optifine_ew-description": "WICHTIG: BBS mod unterstützt Optifine nicht! Optifine könnte einige spezifische BBS Mod Features zerstören, BEI EIGENEM RISIKO BENUTZEN!\n\nAls Alternative kannst du probieren Sodium und Iris zu installieren.",
     "bbs.ui.dashboard.optifine_ew-title": "Optifine ERKANNT!",
-    "bbs.ui.dashboard.version_warning-description": "WICHTIG: Diese Version hat signifikante Veränderungen! Das heißt jegliche alte Daten könnten korrupiert worden sein, wie Filme, Modell-Blöcke, etc. FAHRE FOHRT mit Vorsicht AUF EIGENEM RISIKO!",
-    "bbs.ui.dashboard.version_warning-title": "Version geändert!",
     "bbs.ui.dupe": "Duplizieren",
     "bbs.ui.edit": "Bearbeiten",
     "bbs.ui.error": "Fehler",

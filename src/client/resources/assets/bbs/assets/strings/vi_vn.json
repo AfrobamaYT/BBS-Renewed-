@@ -328,8 +328,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Chuyển đổi hiển thị của bảng điều khiển",
     "bbs.ui.dashboard.optifine_ew-description": "QUANG TRỌNG: BBS mod không hỗ trợ Optifine! Optifine có thể phá vài chức năng của BBS, SỬ DỤNG VỚI RỦI RO!\n\nHãy tải các fork của sodium và Iris",
     "bbs.ui.dashboard.optifine_ew-title": "PHÁT HIỆN Optifine!",
-    "bbs.ui.dashboard.version_warning-description": "QUAN TRỌNG: Phiên bản đã thay đổi đáng kể! Điều này có nghĩa là dữ liệu cũ có thể bị hỏng như phim, khối mô hình, v.v. SỬ DỤNG thận trọng VÀO TỰ RỦI RO CỦA BẠN!\n\nSao lưu các tệp để an toàn!",
-    "bbs.ui.dashboard.version_warning-title": "Phiên bản đã thay đổi!",
     "bbs.ui.dupe": "nhân bản",
     "bbs.ui.edit": "Chỉnh sửa",
     "bbs.ui.error": "Lỗi",

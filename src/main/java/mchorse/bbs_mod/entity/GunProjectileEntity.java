@@ -4,17 +4,20 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.resources.Link;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.world.World;
 
 public class GunProjectileEntity extends PersistentProjectileEntity
 {
     private boolean despawn;
+    private GunProperties properties;
     private Form form;
     private IEntity entity = new StubEntity();
 
@@ -27,6 +30,11 @@ public class GunProjectileEntity extends PersistentProjectileEntity
         modelForm.model.set("player/steve");
         modelForm.texture.set(Link.assets("models/player/steve/steve.png"));
         this.form = modelForm;
+    }
+
+    public void setProperties(GunProperties properties)
+    {
+        this.properties = properties;
     }
 
     public Form getForm()
@@ -70,6 +78,12 @@ public class GunProjectileEntity extends PersistentProjectileEntity
         {
             this.discard();
         }
+    }
+
+    @Override
+    public void onStartedTrackingBy(ServerPlayerEntity player)
+    {
+        super.onStartedTrackingBy(player);
     }
 
     @Override

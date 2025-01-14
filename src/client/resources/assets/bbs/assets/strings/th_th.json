@@ -333,8 +333,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "สลับการแสดงผลของแดชบอร์ด",
     "bbs.ui.dashboard.optifine_ew-description": "สำคัญ: ม็อด BBS ไม่รองรับ Optifine! การใช้ Optifine อาจทำให้ฟีเจอร์บางอย่างของโมด BBS ไม่ทำงาน, ใช้ตามความเสี่ยงของคุณเอง! \n\nเป็นทางเลือกที่ดี ให้คุณลองติดตั้ง Sodium และ Iris มาใช่แทน",
     "bbs.ui.dashboard.optifine_ew-title": "ตรวจพบ Optifine!",
-    "bbs.ui.dashboard.version_warning-description": "สำคัญ: เวอร์ชันมีการเปลี่ยนแปลงอย่างมีนัยสำคัญ! นี่หมายความว่าข้อมูลเก่าอาจเสียหายได้ เช่น ภาพยนตร์, บล็อกโมเดล ฯลฯ ใช้ด้วยความระมัดระวังโดยรับผิดชอบความเสี่ยงด้วยตัวคุณเอง!\n\nสำรองไฟล์ไว้เผื่อกรณีฉุกเฉิน!",
-    "bbs.ui.dashboard.version_warning-title": "เวอร์ชันมีการเปลี่ยนแปลงแล้ว!",
     "bbs.ui.dupe": "ทำซ้ำ",
     "bbs.ui.edit": "แก้ไข",
     "bbs.ui.error": "Error | ข้อผิดพลาด",

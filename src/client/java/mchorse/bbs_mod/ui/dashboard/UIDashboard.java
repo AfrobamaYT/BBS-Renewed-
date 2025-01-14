@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.dashboard;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
@@ -127,23 +126,11 @@ public class UIDashboard extends UIBaseMenu
             UIOverlay.addOverlay(this.context, new UIUtilityOverlayPanel(UIKeys.UTILITY_TITLE, null), 240, 160);
         });
 
-        this.checkSignificantVersion();
+        this.showAnnoyingPopups();
     }
 
-    private void checkSignificantVersion()
+    private void showAnnoyingPopups()
     {
-        String version = BBSMod.SIGNIFICANT_VERSION;
-
-        if (!version.equals(BBSSettings.version.get()))
-        {
-            UIOverlay.addOverlay(this.context, new UIMessageOverlayPanel(
-                UIKeys.DASHBOARD_VERSION_WARNING_TITLE,
-                UIKeys.DASHBOARD_VERSION_WARNING_DESCRIPTION
-            ));
-
-            BBSSettings.version.set(version);
-        }
-
         if (BBSRendering.isOptifinePresent())
         {
             UIOverlay.addOverlay(this.context, new UIMessageOverlayPanel(

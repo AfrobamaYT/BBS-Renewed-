@@ -331,8 +331,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Увімкнути видимість панелі приладів",
     "bbs.ui.dashboard.optifine_ew-description": "ВАЖЛИВО: BBS mod не підтримує Optifine! Optifine може порушити певні функції BBS-моду, ВИКОРИСТОВУЙТЕ НА ВЛАСНИЙ РИЗИК!\n\nЯк альтернативу, спробуйте встановити Sodium та Iris.",
     "bbs.ui.dashboard.optifine_ew-title": "Виявленно Optifine!",
-    "bbs.ui.dashboard.version_warning-description": "ВАЖЛИВО: версія була суттєво змінена! Це означає, що будь-які старі дані можуть бути пошкоджені, наприклад, записи, блоки моделі тощо. Використовуйте з обережністю на свій страх та ризик!\n\nПро всяк випадок зробіть резервну копію файлів!",
-    "bbs.ui.dashboard.version_warning-title": "Версію змінено!",
     "bbs.ui.dupe": "Дублювати",
     "bbs.ui.edit": "Редагувати",
     "bbs.ui.error": "Помилка",

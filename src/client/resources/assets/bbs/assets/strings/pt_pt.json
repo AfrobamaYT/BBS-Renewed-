@@ -321,8 +321,6 @@
     "bbs.ui.dashboard.context.toggle_visibility": "Alternar visibilidade do painel",
     "bbs.ui.dashboard.optifine_ew-description": "IMPORTANTE: O BBS mod não suporta Optifine! O Optifine talvez quebre recursos especificos do BBS mod, USE POR SUA CONTA EM RISCO!\n\nComo alternativa, experiemente instalar o Sodium e o Iris.",
     "bbs.ui.dashboard.optifine_ew-title": "Optifine DETECTADO",
-    "bbs.ui.dashboard.version_warning-description": "IMPORTANTE: A versão foi alterada significativamente! Isso significa que quaisquer dados antigos podem ser corrompidos, como filmes, blocos de modelo, etc. USE com cuidado POR SUA CONTA E RISCO!\n\nFaça backup dos seus arquivos por precaução!",
-    "bbs.ui.dashboard.version_warning-title": "Versão alterada!",
     "bbs.ui.dupe": "Duplicar",
     "bbs.ui.edit": "Editar",
     "bbs.ui.error": "Erro",

@@ -334,8 +334,6 @@
     "bbs.ui.context.key": "选项 \"%s\"",
     "bbs.ui.context.key_category": "下拉菜单",
     "bbs.ui.dashboard.category": "仪表盘",
-    "bbs.ui.dashboard.version_warning-description": "重要：版本有重大！这意味着所有旧数据都有可能会损坏，例如影片、模型方块等。请谨慎使用，风险自负！\n\n以防万一，请备份文件！",
-    "bbs.ui.dashboard.version_warning-title": "版本改动！",
     "bbs.ui.dashboard.context.toggle_visibility": "切换仪表盘是否可见",
     "bbs.ui.ffmpeg.error-description": "FFmpeg 未设置或不存在。请在 BBS 模组的设置中配置 FFmpeg 的路径，或点击 ? 按钮阅读指南。",
     "bbs.ui.ffmpeg.error-guide": "在浏览器中打开指南",

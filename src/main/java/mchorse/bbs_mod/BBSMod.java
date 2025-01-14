@@ -116,7 +116,6 @@ import java.util.function.Consumer;
 public class BBSMod implements ModInitializer
 {
     public static final String MOD_ID = "bbs";
-    public static final String SIGNIFICANT_VERSION = "ea7";
 
     private static ActionManager actions;
 

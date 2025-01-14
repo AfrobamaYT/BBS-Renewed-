@@ -324,8 +324,6 @@
     "bbs.ui.copy": "Kopyala",
     "bbs.ui.dashboard.category": "Gösterge paneli",
     "bbs.ui.dashboard.context.toggle_visibility": "Gösterge panelinin görünürlüğünü seç",
-    "bbs.ui.dashboard.version_warning-description": "ÖNEMLİ: Sürüm önemli ölçüde değiştirildi! Bu, filmler, model blokları vb. gibi eski verilerin bozulabileceği anlamına gelir. RİSKİ GÖZE ALARAK DİKKATLİ KULLANIN!\n\nHer ihtimale karşı dosyaları yedekleyin!",
-    "bbs.ui.dashboard.version_warning-title": "Versiyon değiştirildi!",
     "bbs.ui.dupe": "Çoğalt",
     "bbs.ui.edit": "Düzenle",
     "bbs.ui.error": "Hata",

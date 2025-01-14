@@ -50,6 +50,7 @@ public class GunItem extends Item
             float yaw = user.getHeadYaw() + (float) (properties.scatterY * (Math.random() - 0.5D));
             float pitch = user.getPitch() + (float) (properties.scatterX * (Math.random() - 0.5D));
 
+            projectile.setProperties(properties);
             projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
             projectile.setVelocity(user, pitch, yaw, 0F, 1F, 0F);
 
