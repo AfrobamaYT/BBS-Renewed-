@@ -129,6 +129,10 @@ public class UIReplaysEditor extends UIElement
 
         COLORS.put("item_main_hand", Colors.ORANGE);
         COLORS.put("item_off_hand", Colors.ORANGE);
+        COLORS.put("item_head", Colors.ORANGE);
+        COLORS.put("item_chest", Colors.ORANGE);
+        COLORS.put("item_legs", Colors.ORANGE);
+        COLORS.put("item_feet", Colors.ORANGE);
 
         COLORS.put("user1", Colors.RED);
         COLORS.put("user2", Colors.ORANGE);

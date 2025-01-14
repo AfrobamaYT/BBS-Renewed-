@@ -24,7 +24,7 @@ public class ReplayKeyframes extends ValueGroup
     public static final String GROUP_EXTRA1 = "extra1";
     public static final String GROUP_EXTRA2 = "extra2";
 
-    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "item_main_hand", "item_off_hand", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
+    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "item_main_hand", "item_off_hand", "item_head", "item_chest", "item_legs", "item_feet", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
 
     public final KeyframeChannel<Double> x = new KeyframeChannel<>("x", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> y = new KeyframeChannel<>("y", KeyframeFactories.DOUBLE);
@@ -60,6 +60,10 @@ public class ReplayKeyframes extends ValueGroup
 
     public final KeyframeChannel<ItemStack> mainHand = new KeyframeChannel<>("item_main_hand", KeyframeFactories.ITEM_STACK);
     public final KeyframeChannel<ItemStack> offHand = new KeyframeChannel<>("item_off_hand", KeyframeFactories.ITEM_STACK);
+    public final KeyframeChannel<ItemStack> armorHead = new KeyframeChannel<>("item_head", KeyframeFactories.ITEM_STACK);
+    public final KeyframeChannel<ItemStack> armorChest = new KeyframeChannel<>("item_chest", KeyframeFactories.ITEM_STACK);
+    public final KeyframeChannel<ItemStack> armorLegs = new KeyframeChannel<>("item_legs", KeyframeFactories.ITEM_STACK);
+    public final KeyframeChannel<ItemStack> armorFeet = new KeyframeChannel<>("item_feet", KeyframeFactories.ITEM_STACK);
 
     public ReplayKeyframes(String id)
     {
@@ -93,6 +97,10 @@ public class ReplayKeyframes extends ValueGroup
 
         this.add(this.mainHand);
         this.add(this.offHand);
+        this.add(this.armorHead);
+        this.add(this.armorChest);
+        this.add(this.armorLegs);
+        this.add(this.armorFeet);
     }
 
     public void record(int tick, IEntity entity, List<String> groups)
@@ -169,6 +177,10 @@ public class ReplayKeyframes extends ValueGroup
         {
             this.mainHand.insert(tick, entity.getEquipmentStack(EquipmentSlot.MAINHAND).copy());
             this.offHand.insert(tick, entity.getEquipmentStack(EquipmentSlot.OFFHAND).copy());
+            this.armorHead.insert(tick, entity.getEquipmentStack(EquipmentSlot.HEAD).copy());
+            this.armorChest.insert(tick, entity.getEquipmentStack(EquipmentSlot.CHEST).copy());
+            this.armorLegs.insert(tick, entity.getEquipmentStack(EquipmentSlot.LEGS).copy());
+            this.armorFeet.insert(tick, entity.getEquipmentStack(EquipmentSlot.FEET).copy());
         }
     }
 
@@ -266,6 +278,10 @@ public class ReplayKeyframes extends ValueGroup
 
         entity.setEquipmentStack(EquipmentSlot.MAINHAND, this.mainHand.interpolate(tick));
         entity.setEquipmentStack(EquipmentSlot.OFFHAND, this.offHand.interpolate(tick));
+        entity.setEquipmentStack(EquipmentSlot.HEAD, this.armorHead.interpolate(tick));
+        entity.setEquipmentStack(EquipmentSlot.CHEST, this.armorChest.interpolate(tick));
+        entity.setEquipmentStack(EquipmentSlot.LEGS, this.armorLegs.interpolate(tick));
+        entity.setEquipmentStack(EquipmentSlot.FEET, this.armorFeet.interpolate(tick));
     }
 
     /**

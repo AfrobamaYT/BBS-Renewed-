@@ -22,7 +22,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.trim.ArmorTrim;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
 
 import java.util.Map;
 
@@ -53,15 +52,14 @@ public class ArmorRenderer
                 BipedEntityModel bipedModel = this.getModel(armorSlot);
                 ModelPart part = this.getPart(bipedModel, type);
 
-                matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-90F));
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
-                matrices.translate(0F, 0F, 2F / 16F);
+                bipedModel.setVisible(true);
+
                 part.pivotX = part.pivotY = part.pivotZ = 0F;
                 part.pitch = part.yaw = part.roll = 0F;
+                part.xScale = part.yScale = part.zScale = 1F;
 
-                if (armorItem instanceof DyeableArmorItem)
+                if (armorItem instanceof DyeableArmorItem dyeableArmorItem)
                 {
-                    DyeableArmorItem dyeableArmorItem = (DyeableArmorItem)armorItem;
                     int color = dyeableArmorItem.getColor(itemStack);
                     float r = (float)(color >> 16 & 255) / 255.0F;
                     float g = (float)(color >> 8 & 255) / 255.0F;

@@ -331,13 +331,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (!picking)
         {
+            this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, color, overlay, light);
+            this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, color, overlay, light);
+
             for (Map.Entry<ArmorType, ArmorSlot> entry : model.armorSlots.entrySet())
             {
                 this.renderArmor(target, stack, entry.getKey(), entry.getValue(), color, overlay, light);
             }
-
-            this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, color, overlay, light);
-            this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, color, overlay, light);
         }
     }
 
@@ -351,26 +351,19 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             stack.push();
             MatrixStackUtils.multiply(stack, matrix);
-
-            stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90F));
-            stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
-            stack.translate(0F, 0.125F, 0F);
-
-            stack.push();
             MatrixStackUtils.applyTransform(stack, armorSlot.transform);
+            stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(180F));
 
             CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
 
-            consumers.setSubstitute(BBSRendering.getColorConsumer(color));
             ActorEntityRenderer.armorRenderer.renderArmorSlot(stack, consumers, target, type.slot, type, light);
             consumers.draw();
-            consumers.setSubstitute(null);
 
             CustomVertexConsumerProvider.clearRunnables();
 
             stack.pop();
-            stack.pop();
 
+            RenderSystem.enableBlend();
             RenderSystem.enableDepthTest();
         }
     }
@@ -394,7 +387,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
                 stack.push();
                 MatrixStackUtils.multiply(stack, matrix);
-
                 stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90F));
                 stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
                 stack.translate(0F, 0.125F, 0F);
