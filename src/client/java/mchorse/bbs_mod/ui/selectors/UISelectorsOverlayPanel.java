@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.forms.UIFormPalette;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextarea;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.input.text.utils.TextLine;
@@ -27,6 +28,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
     public UISelectorList selectors;
 
     public UIElement column;
+    public UIToggle enabled;
     public UINestedEdit form;
     public UITextbox entity;
     public UITextbox name;
@@ -41,6 +43,13 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         this.selectors = new UISelectorList((l) -> this.setSelector(l.get(0), false));
         this.selectors.setList(BBSModClient.getSelectors().selectors);
         this.selectors.update();
+
+        this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) ->
+        {
+            this.current.enabled = b.getValue();
+
+            BBSModClient.getSelectors().update();
+        });
 
         this.form = new UINestedEdit((editing) ->
         {
@@ -113,6 +122,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         });
 
         this.column = UI.column(5, 10,
+            this.enabled,
             this.form,
             UI.label(UIKeys.SELECTORS_ENTITY_ID).marginTop(6),
             this.entity,
@@ -138,6 +148,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
 
         if (selector != null)
         {
+            this.enabled.setValue(selector.enabled);
             this.form.setForm(selector.form);
             this.entity.setText(selector.entity == null ? "" : selector.entity.toString());
             this.name.setText(selector.name);

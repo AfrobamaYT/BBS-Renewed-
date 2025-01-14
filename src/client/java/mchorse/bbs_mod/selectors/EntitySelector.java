@@ -19,6 +19,7 @@ import java.util.Objects;
 
 public class EntitySelector implements IMapSerializable
 {
+    public boolean enabled = true;
     public Form form;
     public Identifier entity;
     public String name = "";
@@ -26,6 +27,11 @@ public class EntitySelector implements IMapSerializable
 
     public boolean matches(LivingEntity mcEntity)
     {
+        if (!this.enabled)
+        {
+            return false;
+        }
+
         Identifier id = Registries.ENTITY_TYPE.getId(mcEntity.getType());
 
         if (!id.equals(this.entity))
@@ -44,8 +50,6 @@ public class EntitySelector implements IMapSerializable
                 return false;
             }
         }
-
-        System.out.println(displayName);
 
         if (displayName != null && !this.name.isEmpty())
         {
@@ -82,6 +86,7 @@ public class EntitySelector implements IMapSerializable
     {
         this.nbt = null;
 
+        if (data.has("enabled")) this.enabled = data.getBool("enabled");
         if (data.has("form")) this.form = FormUtils.fromData(data.getMap("form"));
         if (data.has("entity")) this.entity = new Identifier(data.getString("entity"));
         if (data.has("name")) this.name = data.getString("name");
@@ -101,6 +106,7 @@ public class EntitySelector implements IMapSerializable
     @Override
     public void toData(MapType data)
     {
+        data.putBool("enabled", this.enabled);
         if (this.form != null) data.put("form", FormUtils.toData(this.form));
         if (this.entity != null) data.putString("entity", this.entity.toString());
         if (!this.name.isEmpty()) data.putString("name", this.name);
