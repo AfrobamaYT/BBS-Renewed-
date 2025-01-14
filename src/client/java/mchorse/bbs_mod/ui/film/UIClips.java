@@ -809,6 +809,7 @@ public class UIClips extends UIElement
         this.addPreview = null;
 
         this.vertical.scrollToEnd();
+        this.vertical.updateTarget();
         this.clearSelection();
         this.embedView(null);
 
