@@ -5,6 +5,7 @@ import mchorse.bbs_mod.cubic.CubicModel;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
@@ -36,6 +37,17 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
             UIListOverlayPanel list = new UIListOverlayPanel(UIKeys.FORMS_EDITOR_MODEL_MODELS, (l) ->
             {
                 this.form.model.set(l);
+
+                if (Window.isCtrlPressed())
+                {
+                    CubicModel model = ModelFormRenderer.getModel(this.form);
+
+                    if (model != null)
+                    {
+                        this.form.texture.set(model.texture);
+                    }
+                }
+
                 this.editor.startEdit(this.form);
             });
 
