@@ -13,7 +13,7 @@ public class UIBlockStateKeyframeFactory extends UIKeyframeFactory<BlockState>
     {
         super(keyframe, editor);
 
-        this.editor = new UIBlockStateEditor(keyframe::setValue);
+        this.editor = new UIBlockStateEditor(this::setValue);
         this.editor.setBlockState(keyframe.getValue());
 
         this.scroll.add(this.editor);
