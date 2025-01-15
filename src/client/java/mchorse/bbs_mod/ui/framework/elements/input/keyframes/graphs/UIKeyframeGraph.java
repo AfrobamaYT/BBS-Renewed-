@@ -336,6 +336,11 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             float fx = (float) this.keyframes.fromGraphX(context.mouseX) - offsetX;
             Object fy = factory.yToValue(this.fromGraphY(context.mouseY) - offsetY);
 
+            if (!Window.isShiftPressed())
+            {
+                fx = Math.round(this.keyframes.fromGraphX(context.mouseX) - offsetX);
+            }
+
             this.setTick(fx, false);
             this.setValue(fy, false);
         }

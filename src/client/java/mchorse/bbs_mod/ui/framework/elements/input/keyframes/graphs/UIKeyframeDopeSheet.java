@@ -315,8 +315,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, float originalT, Object originalV)
     {
         float offset = (float) (this.keyframes.fromGraphX(originalX) - originalT);
+        float tick = (float) this.keyframes.fromGraphX(context.mouseX) - offset;
 
-        this.setTick((float) this.keyframes.fromGraphX(context.mouseX) - offset, false);
+        if (!Window.isShiftPressed())
+        {
+            tick = Math.round(this.keyframes.fromGraphX(context.mouseX) - offset);
+        }
+
+        this.setTick(tick, false);
         this.keyframes.triggerChange();
     }
 
