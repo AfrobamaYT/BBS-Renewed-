@@ -17,8 +17,8 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     protected T postValue;
 
     private boolean playing = true;
-    protected int ticks = -1;
-    protected int duration;
+    protected float ticks = -1;
+    protected float duration;
     protected IInterp interpolation = Interpolations.LINEAR;
 
     protected boolean canAnimate = true;
@@ -86,7 +86,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     }
 
     @Override
-    public void tween(T preValue, T oldValue, T newValue, T postValue, int duration, IInterp interpolation, int offset, boolean playing)
+    public void tween(T preValue, T oldValue, T newValue, T postValue, float duration, IInterp interpolation, float offset, boolean playing)
     {
         this.preValue = preValue == null ? oldValue : preValue;
         this.lastValue = oldValue;
@@ -114,7 +114,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
             return 1;
         }
 
-        return 1 - (this.ticks - (this.playing ? transition : 0)) / (float) this.duration;
+        return 1 - (this.ticks - (this.playing ? transition : 0)) / this.duration;
     }
 
     @Override

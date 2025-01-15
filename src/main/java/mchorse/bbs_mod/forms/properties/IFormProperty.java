@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.data.IDataSerializable;
-import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -48,7 +47,7 @@ public interface IFormProperty <T> extends IDataSerializable<BaseType>
     /**
      * Tween this property to new value. Some properties may not fully support tweening!
      */
-    public void tween(T preValue, T oldValue, T newValue, T postValue, int duration, IInterp interpolation, int offset, boolean playing);
+    public void tween(T preValue, T oldValue, T newValue, T postValue, float duration, IInterp interpolation, float offset, boolean playing);
 
     /**
      * Check whether this property is in progress of tweening.

@@ -120,7 +120,7 @@ public class Replay extends ValueGroup
             }
             else
             {
-                property.tween(segment.preA.getValue(), segment.a.getValue(), segment.b.getValue(), segment.postB.getValue(), segment.duration, segment.a.getInterpolation().wrap(), (int) segment.offset, playing);
+                property.tween(segment.preA.getValue(), segment.a.getValue(), segment.b.getValue(), segment.postB.getValue(), segment.duration, segment.a.getInterpolation().wrap(), segment.offset, playing);
             }
         }
         else
