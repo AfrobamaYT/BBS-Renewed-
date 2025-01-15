@@ -21,7 +21,7 @@ public class Keyframe <T> extends ValueGroup
      * Forced duration that would be used instead of the difference
      * between two keyframes, if not 0
      */
-    private int duration;
+    private float duration;
     private final Interpolation interp = new Interpolation("interp", Interpolations.MAP);
 
     private final IKeyframeFactory<T> factory;
@@ -65,12 +65,12 @@ public class Keyframe <T> extends ValueGroup
         if (dirty) this.postNotifyParent();
     }
 
-    public int getDuration()
+    public float getDuration()
     {
         return this.duration;
     }
 
-    public void setDuration(int duration)
+    public void setDuration(float duration)
     {
         this.preNotifyParent();
         this.duration = Math.max(0, duration);
@@ -120,7 +120,7 @@ public class Keyframe <T> extends ValueGroup
         MapType data = new MapType();
 
         data.putFloat("tick", this.tick);
-        data.putInt("duration", this.duration);
+        data.putFloat("duration", this.duration);
         data.put("value", this.factory.toData(this.value));
         data.put("interp", this.interp.toData());
         if (this.lx != 5F) data.putFloat("lx", this.lx);
@@ -142,7 +142,7 @@ public class Keyframe <T> extends ValueGroup
         MapType map = data.asMap();
 
         if (map.has("tick")) this.tick = map.getFloat("tick");
-        if (map.has("duration")) this.duration = map.getInt("duration");
+        if (map.has("duration")) this.duration = map.getFloat("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
         if (map.has("interp")) this.interp.fromData(map.get("interp"));
         if (map.has("lx")) this.lx = map.getFloat("lx");

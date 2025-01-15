@@ -79,7 +79,7 @@ public class UIKeyframeSheet
         }
     }
 
-    public void setDuration(int duration)
+    public void setDuration(float duration)
     {
         for (Keyframe keyframe : this.selection.getSelected())
         {

@@ -58,7 +58,7 @@ public class KeyframeSegment <T>
 
     public void setup(float ticks)
     {
-        int forcedDuration = this.a.getDuration();
+        float forcedDuration = this.a.getDuration();
 
         this.duration = forcedDuration > 0 ? forcedDuration : this.b.getTick() - this.a.getTick();
         this.offset = ticks - this.a.getTick();

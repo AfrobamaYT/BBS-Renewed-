@@ -94,8 +94,8 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.tick.limit(Float.MIN_VALUE, Float.MAX_VALUE).tooltip(UIKeys.KEYFRAMES_TICK);
         this.tick.getEvents().register(UITrackpadDragStartEvent.class, (e) -> this.editor.cacheKeyframes());
         this.tick.getEvents().register(UITrackpadDragEndEvent.class, (e) -> this.editor.submitKeyframes());
-        this.duration = new UITrackpad((v) -> this.setDuration(v.intValue()));
-        this.duration.limit(0, Integer.MAX_VALUE, true).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
+        this.duration = new UITrackpad((v) -> this.setDuration(v.floatValue()));
+        this.duration.limit(0, Float.MAX_VALUE).tooltip(UIKeys.KEYFRAMES_FORCED_DURATION);
         this.interp = new UIIcon(Icons.GRAPH, (b) ->
         {
             Interpolation interp = this.keyframe.getInterpolation();
@@ -129,7 +129,7 @@ public abstract class UIKeyframeFactory <T> extends UIElement
         this.editor.getGraph().setTick(time, false);
     }
 
-    public void setDuration(int value)
+    public void setDuration(float value)
     {
         this.editor.getGraph().setDuration(value);
     }
