@@ -21,6 +21,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -49,6 +50,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public UIIcon gun;
     public UIIcon projectile;
     public UIIcon impact;
+    public UIIcon commands;
 
     public Map<UIElement, UIIcon> sections = new HashMap<>();
     public UIElement currentSection;
@@ -58,6 +60,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public UIElement sectionGun;
     public UIElement sectionProjectile;
     public UIElement sectionImpact;
+    public UIElement sectionCommands;
 
     /* Data */
     private ModelProperties properties;
@@ -126,6 +129,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             scatterY.setValue(gun.scatterY);
             scatterY.tooltip(IKey.raw("Vertical scatter"));
             projectiles.setValue(gun.projectiles);
+            projectiles.limit(1).integer();
 
             this.sectionGun = UI.scrollView(5, 10,
                 launch, launchPower, launchAdditive,
@@ -165,9 +169,9 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             pitch.setValue(gun.pitch);
             pitch.tooltip(IKey.raw("Vertical rotation"));
             fadeIn.setValue(gun.fadeIn);
-            fadeIn.tooltip(IKey.raw("Fade in"));
+            fadeIn.limit(0).integer().tooltip(IKey.raw("Fade in"));
             fadeOut.setValue(gun.fadeOut);
-            fadeOut.tooltip(IKey.raw("Fade out"));
+            fadeOut.limit(0).integer().tooltip(IKey.raw("Fade out"));
 
             this.sectionProjectile = UI.scrollView(5, 10,
                 UI.label(IKey.raw("Projectile form")).background(), projectileForm,
@@ -219,6 +223,31 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.sectionImpact.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
             this.impact = new UIIcon(Icons.DOWNLOAD, (b) -> this.setSection(this.sectionImpact));
             this.impact.tooltip(IKey.raw("Impact options"));
+
+            /* Commands */
+            UITextbox cmdFiring = new UITextbox(10000, (t) -> gun.cmdFiring = t);
+            UITextbox cmdImpact = new UITextbox(10000, (t) -> gun.cmdImpact = t);
+            UITextbox cmdVanish = new UITextbox(10000, (t) -> gun.cmdVanish = t);
+            UITextbox cmdTicking = new UITextbox(10000, (t) -> gun.cmdTicking = t);
+            UITrackpad ticking = new UITrackpad((v) -> gun.ticking = v.intValue());
+
+            cmdFiring.setText(gun.cmdFiring);
+            cmdImpact.setText(gun.cmdImpact);
+            cmdVanish.setText(gun.cmdVanish);
+            cmdTicking.setText(gun.cmdTicking);
+            ticking.limit(0).integer().setValue(gun.ticking);
+            ticking.tooltip(IKey.raw("How frequently ticking command will be executed. 0 means never."));
+
+            this.sectionCommands = UI.scrollView(5, 10,
+                UI.label(IKey.raw("When fired")).background(), cmdFiring,
+                UI.label(IKey.raw("On impact")).background(), cmdImpact,
+                UI.label(IKey.raw("On death")).background(), cmdVanish,
+                UI.label(IKey.raw("On tick")).background(), cmdTicking,
+                ticking
+            );
+            this.sectionCommands.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
+            this.commands = new UIIcon(Icons.CONSOLE, (b) -> this.setSection(this.sectionCommands));
+            this.commands.tooltip(IKey.raw("Commands"));
         }
 
         this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setSection(this.sectionTp));
@@ -232,7 +261,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.sections.put(this.sectionFp, this.firstPerson);
         this.sections.put(this.sectionInventory, this.inventory);
 
-        this.iconBar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact);
+        this.iconBar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact, this.commands);
         this.iconBar.row().resize();
         this.iconBar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
@@ -244,8 +273,9 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.sections.put(this.sectionGun, this.gun);
             this.sections.put(this.sectionProjectile, this.projectile);
             this.sections.put(this.sectionImpact, this.impact);
+            this.sections.put(this.sectionCommands, this.commands);
 
-            this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact);
+            this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact, this.sectionCommands);
         }
 
         int index = Math.min(lastSection, this.sections.size() - 1);

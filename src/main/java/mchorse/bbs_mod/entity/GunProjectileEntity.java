@@ -87,6 +87,18 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     }
 
     @Override
+    protected int getPermissionLevel()
+    {
+        return 2;
+    }
+
+    @Override
+    public boolean shouldReceiveFeedback()
+    {
+        return false;
+    }
+
+    @Override
     public boolean shouldRender(double distance)
     {
         double d = this.getBoundingBox().getAverageSideLength() * 10D;
@@ -117,8 +129,20 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         {
             this.lifeLeft += 1;
 
+            int ticking = this.properties.ticking;
+
+            if (ticking > 0 && this.lifeLeft % ticking == 0 && !this.properties.cmdTicking.isEmpty())
+            {
+                this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdTicking);
+            }
+
             if (this.lifeLeft >= this.properties.lifeSpan)
             {
+                if (!this.properties.cmdVanish.isEmpty())
+                {
+                    this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdVanish);
+                }
+
                 this.discard();
             }
         }
@@ -311,6 +335,11 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
             this.prevYaw += 180F;
         }
+
+        if (!this.properties.cmdImpact.isEmpty())
+        {
+            this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdImpact);
+        }
     }
 
     public void deflect()
@@ -339,21 +368,11 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
 
         this.stuck = true;
-    }
 
-    private void onBlockCollide(BlockState state, BlockPos blockPos)
-    {
-        this.stuckBlockState = this.getWorld().getBlockState(blockPos);
-
-        Vec3d velocity = new Vec3d(blockPos.getX(), blockPos.getY(), blockPos.getZ()).subtract(this.getX(), this.getY(), this.getZ());
-
-        this.setVelocity(velocity);
-
-        Vec3d gravity = velocity.normalize().multiply(0.05D);
-
-        this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
-
-        this.stuck = true;
+        if (!this.properties.cmdImpact.isEmpty())
+        {
+            this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdImpact);
+        }
     }
 
     protected void onHit(LivingEntity target)

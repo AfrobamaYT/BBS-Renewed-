@@ -47,6 +47,13 @@ public class GunProperties extends ModelProperties
     public boolean collideBlocks = true;
     public boolean collideEntities = true;
 
+    /* Commands */
+    public String cmdFiring = "";
+    public String cmdImpact = "";
+    public String cmdVanish = "";
+    public String cmdTicking = "";
+    public int ticking;
+
     public static GunProperties get(ItemStack stack)
     {
         NbtCompound nbt = stack.getNbt();
@@ -163,6 +170,12 @@ public class GunProperties extends ModelProperties
         this.knockback = data.getFloat("knockback");
         this.collideBlocks = data.getBool("collideBlocks", true);
         this.collideEntities = data.getBool("collideEntities", true);
+
+        this.cmdFiring = data.getString("cmdFiring");
+        this.cmdImpact = data.getString("cmdImpact");
+        this.cmdVanish = data.getString("cmdVanish");
+        this.cmdTicking = data.getString("cmdTicking");
+        this.ticking = data.getInt("ticking");
     }
 
     @Override
@@ -197,5 +210,11 @@ public class GunProperties extends ModelProperties
         data.putFloat("knockback", this.knockback);
         data.putBool("collideBlocks", this.collideBlocks);
         data.putBool("collideEntities", this.collideEntities);
+
+        data.putString("cmdFiring", this.cmdFiring);
+        data.putString("cmdImpact", this.cmdImpact);
+        data.putString("cmdVanish", this.cmdVanish);
+        data.putString("cmdTicking", this.cmdTicking);
+        data.putInt("ticking", this.ticking);
     }
 }

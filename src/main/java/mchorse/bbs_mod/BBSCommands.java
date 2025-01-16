@@ -53,7 +53,7 @@ public class BBSCommands
         registerConfigCommand(bbs, environment, hasPermissions);
         registerServerCommand(bbs, environment, hasPermissions);
         registerCheatsCommand(bbs, environment);
-        registerBoomCommand(bbs, environment);
+        registerBoomCommand(bbs, environment, hasPermissions);
 
         dispatcher.register(bbs);
     }
@@ -292,10 +292,10 @@ public class BBSCommands
         );
     }
 
-    private static void registerBoomCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment)
+    private static void registerBoomCommand(LiteralArgumentBuilder<ServerCommandSource> bbs, CommandManager.RegistrationEnvironment environment, Predicate<ServerCommandSource> hasPermissions)
     {
         bbs.then(
-            CommandManager.literal("boom").then(
+            CommandManager.literal("boom").requires(hasPermissions).then(
                 CommandManager.argument("pos", Vec3ArgumentType.vec3()).then(
                     CommandManager.argument("radius", FloatArgumentType.floatArg(1)).then(
                         CommandManager.argument("fire", BoolArgumentType.bool()).executes((ctx) ->

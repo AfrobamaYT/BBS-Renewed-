@@ -61,6 +61,11 @@ public class GunItem extends Item
 
                 world.spawnEntity(projectile);
             }
+
+            if (!properties.cmdFiring.isEmpty())
+            {
+                user.getServer().getCommandManager().executeWithPrefix(user.getCommandSource(), properties.cmdFiring);
+            }
         }
 
         return new TypedActionResult<>(ActionResult.SUCCESS, stack);
