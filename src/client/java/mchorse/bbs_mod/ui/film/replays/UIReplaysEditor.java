@@ -334,9 +334,18 @@ public class UIReplaysEditor extends UIElement
 
     public void setReplay(Replay replay)
     {
+        this.setReplay(replay, true);
+    }
+
+    public void setReplay(Replay replay, boolean resetOrbit)
+    {
         this.replay = replay;
 
-        this.filmPanel.getController().orbit.reset();
+        if (resetOrbit)
+        {
+            this.filmPanel.getController().orbit.reset();
+        }
+
         this.replays.setReplay(replay);
         this.filmPanel.actionEditor.setClips(replay == null ? null : replay.actions);
         this.updateChannelsList();
