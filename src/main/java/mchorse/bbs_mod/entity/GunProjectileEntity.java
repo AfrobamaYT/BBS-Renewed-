@@ -29,7 +29,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
@@ -140,26 +139,6 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         BlockState blockState = this.getWorld().getBlockState(blockPos);
         Vec3d pos;
 
-        if (!blockState.isAir() && this.properties.collideBlocks)
-        {
-            VoxelShape voxelShape = blockState.getCollisionShape(this.getWorld(), blockPos);
-
-            if (!voxelShape.isEmpty())
-            {
-                pos = this.getPos();
-
-                for (Box box : voxelShape.getBoundingBoxes())
-                {
-                    if (box.offset(blockPos).contains(pos))
-                    {
-                        this.stuck = true;
-
-                        break;
-                    }
-                }
-            }
-        }
-
         if (this.isTouchingWaterOrRain() || blockState.isOf(Blocks.POWDER_SNOW))
         {
             this.extinguish();
@@ -178,7 +157,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
             pos = oldPos.add(v);
 
-            HitResult hitResult = this.getWorld().raycast(new RaycastContext(oldPos, pos, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, this));
+            HitResult hitResult = ProjectileUtil.getCollision(this, this::canHit, RaycastContext.ShapeType.COLLIDER);
 
             if (hitResult.getType() != HitResult.Type.MISS)
             {
@@ -352,6 +331,21 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         super.onBlockHit(blockHitResult);
 
         Vec3d velocity = blockHitResult.getPos().subtract(this.getX(), this.getY(), this.getZ());
+
+        this.setVelocity(velocity);
+
+        Vec3d gravity = velocity.normalize().multiply(0.05D);
+
+        this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
+
+        this.stuck = true;
+    }
+
+    private void onBlockCollide(BlockState state, BlockPos blockPos)
+    {
+        this.stuckBlockState = this.getWorld().getBlockState(blockPos);
+
+        Vec3d velocity = new Vec3d(blockPos.getX(), blockPos.getY(), blockPos.getZ()).subtract(this.getX(), this.getY(), this.getZ());
 
         this.setVelocity(velocity);
 

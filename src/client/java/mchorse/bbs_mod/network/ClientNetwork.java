@@ -418,6 +418,7 @@ public class ClientNetwork
             if (entity instanceof GunProjectileEntity projectile)
             {
                 projectile.setProperties(properties);
+                projectile.calculateDimensions();
             }
         });
     }

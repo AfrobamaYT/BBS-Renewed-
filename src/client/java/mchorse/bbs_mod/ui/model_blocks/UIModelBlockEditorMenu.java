@@ -25,6 +25,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -39,6 +40,9 @@ import java.util.function.Supplier;
 
 public class UIModelBlockEditorMenu extends UIBaseMenu
 {
+    private static int lastSection;
+
+    public UIElement iconBar;
     public UIIcon thirdPerson;
     public UIIcon firstPerson;
     public UIIcon inventory;
@@ -144,7 +148,6 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             UITrackpad speed = new UITrackpad((v) -> gun.speed = v.floatValue());
             UITrackpad friction = new UITrackpad((v) -> gun.friction = v.floatValue());
             UITrackpad gravity = new UITrackpad((v) -> gun.gravity = v.floatValue());
-            UITrackpad hitbox = new UITrackpad((v) -> gun.hitbox = v.floatValue());
             UIToggle yaw = new UIToggle(IKey.raw("Yaw"), (b) -> gun.yaw = b.getValue());
             UIToggle pitch = new UIToggle(IKey.raw("Pitch"), (b) -> gun.pitch = b.getValue());
             UITrackpad fadeIn = new UITrackpad((v) -> gun.fadeIn = v.intValue());
@@ -157,7 +160,6 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             speed.setValue(gun.speed);
             friction.setValue(gun.friction);
             gravity.setValue(gun.gravity);
-            hitbox.setValue(gun.hitbox);
             yaw.setValue(gun.yaw);
             yaw.tooltip(IKey.raw("Horizontal rotation"));
             pitch.setValue(gun.pitch);
@@ -175,7 +177,6 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
                 UI.label(IKey.raw("Speed")).background().marginTop(6), speed,
                 UI.label(IKey.raw("Friction")).background(), friction,
                 UI.label(IKey.raw("Gravity")).background(), gravity,
-                UI.label(IKey.raw("Hitbox radius")).background().marginTop(6), hitbox,
                 UI.label(IKey.raw("Rotations")).background().marginTop(6), UI.row(yaw, pitch),
                 UI.label(IKey.raw("Scale fading")).background().marginTop(6), UI.row(fadeIn, fadeOut)
             );
@@ -231,12 +232,11 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.sections.put(this.sectionFp, this.firstPerson);
         this.sections.put(this.sectionInventory, this.inventory);
 
-        UIElement bar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact);
+        this.iconBar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact);
+        this.iconBar.row().resize();
+        this.iconBar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
-        bar.row().resize();
-        bar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
-
-        this.main.add(this.uiOrbitCamera, bar);
+        this.main.add(this.uiOrbitCamera, this.iconBar);
         this.main.add(this.sectionTp, this.sectionFp, this.sectionInventory);
 
         if (gun != null)
@@ -248,7 +248,9 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact);
         }
 
-        this.setSection(this.sectionTp);
+        int index = Math.min(lastSection, this.sections.size() - 1);
+        
+        this.setSection(CollectionUtils.getKey(this.sections, (UIIcon) this.iconBar.getChildren().get(index)));
     }
 
     private UIElement createTransform(Transform transform, Supplier<Form> formSupplier, Consumer<Form> formConsumer)
@@ -281,6 +283,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public void onClose(UIBaseMenu nextMenu)
     {
         super.onClose(nextMenu);
+
+        lastSection = this.iconBar.getChildren().indexOf(this.sections.get(this.currentSection));
 
         BBSModClient.getCameraController().remove(this.orbitCameraController);
         ClientNetwork.sendModelBlockTransforms(this.properties.toData());

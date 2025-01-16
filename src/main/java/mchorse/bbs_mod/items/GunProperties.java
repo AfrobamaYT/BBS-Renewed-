@@ -32,7 +32,6 @@ public class GunProperties extends ModelProperties
     public float speed = 1F;
     public float friction = 0.99F;
     public float gravity = 0.05F;
-    public float hitbox = 0.2F;
     public boolean yaw = true;
     public boolean pitch = true;
     public int fadeIn;
@@ -96,7 +95,6 @@ public class GunProperties extends ModelProperties
         this.speed = buf.readFloat();
         this.friction = buf.readFloat();
         this.gravity = buf.readFloat();
-        this.hitbox = buf.readFloat();
         this.yaw = buf.readBoolean();
         this.pitch = buf.readBoolean();
         this.fadeIn = buf.readInt();
@@ -119,7 +117,6 @@ public class GunProperties extends ModelProperties
         buf.writeFloat(this.speed);
         buf.writeFloat(this.friction);
         buf.writeFloat(this.gravity);
-        buf.writeFloat(this.hitbox);
         buf.writeBoolean(this.yaw);
         buf.writeBoolean(this.pitch);
         buf.writeInt(this.fadeIn);
@@ -153,7 +150,6 @@ public class GunProperties extends ModelProperties
         this.speed = data.getFloat("speed", 1F);
         this.friction = data.getFloat("friction", 0.99F);
         this.gravity = data.getFloat("gravity", 0.05F);
-        this.hitbox = data.getFloat("hitbox", 0.2F);
         this.yaw = data.getBool("yaw", true);
         this.pitch = data.getBool("pitch", true);
         this.fadeIn = data.getInt("fadeIn");
@@ -188,7 +184,6 @@ public class GunProperties extends ModelProperties
         data.putFloat("speed", this.speed);
         data.putFloat("friction", this.friction);
         data.putFloat("gravity", this.gravity);
-        data.putFloat("hitbox", this.hitbox);
         data.putBool("yaw", this.yaw);
         data.putBool("pitch", this.pitch);
         data.putInt("fadeIn", this.fadeIn);
