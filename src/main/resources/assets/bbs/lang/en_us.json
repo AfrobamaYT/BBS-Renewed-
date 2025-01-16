@@ -3,7 +3,7 @@
     "item.bbs.gun": "BBS gun",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.block_editor": "Model block editor",
+    "key.bbs.item_editor": "Item editor",
     "key.bbs.dashboard": "Dashboard",
     "key.bbs.demorph": "Demorph",
     "key.bbs.open_replays": "Open current replays",

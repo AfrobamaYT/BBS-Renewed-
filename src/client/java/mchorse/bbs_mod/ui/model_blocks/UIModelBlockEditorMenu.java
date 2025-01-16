@@ -249,7 +249,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         }
 
         int index = Math.min(lastSection, this.sections.size() - 1);
-        
+
         this.setSection(CollectionUtils.getKey(this.sections, (UIIcon) this.iconBar.getChildren().get(index)));
     }
 

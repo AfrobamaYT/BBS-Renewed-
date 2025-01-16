@@ -96,7 +96,7 @@ public class BBSModClient implements ClientModInitializer
     private static ParticleManager particles;
 
     private static KeyBinding keyDashboard;
-    private static KeyBinding keyModelBlockEditor;
+    private static KeyBinding keyItemEditor;
     private static KeyBinding keyPlayFilm;
     private static KeyBinding keyRecordReplay;
     private static KeyBinding keyRecordVideo;
@@ -325,7 +325,7 @@ public class BBSModClient implements ClientModInitializer
 
         /* Keybinds */
         keyDashboard = this.createKey("dashboard", GLFW.GLFW_KEY_0);
-        keyModelBlockEditor = this.createKey("block_editor", GLFW.GLFW_KEY_HOME);
+        keyItemEditor = this.createKey("item_editor", GLFW.GLFW_KEY_HOME);
         keyPlayFilm = this.createKey("play_film", GLFW.GLFW_KEY_RIGHT_CONTROL);
         keyRecordReplay = this.createKey("record_replay", GLFW.GLFW_KEY_RIGHT_ALT);
         keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
@@ -402,7 +402,7 @@ public class BBSModClient implements ClientModInitializer
             BBSResources.update();
 
             while (keyDashboard.wasPressed()) UIScreen.open(getDashboard());
-            while (keyModelBlockEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
+            while (keyItemEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
             while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
             while (keyRecordVideo.wasPressed()) requestToggleRecording = true;
