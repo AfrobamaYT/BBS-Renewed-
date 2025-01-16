@@ -4,6 +4,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
+import mchorse.bbs_mod.items.GunProperties;
+import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
@@ -31,11 +33,16 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
     {
         matrices.push();
 
+        GunProperties properties = projectile.getProperties();
+        int out = properties.expiration - 2;
+
         float bodyYaw = MathHelper.lerpAngleDegrees(tickDelta, projectile.prevYaw, projectile.getYaw());
         float pitch = MathHelper.lerpAngleDegrees(tickDelta, projectile.prevPitch, projectile.getPitch());
+        float scale = Lerps.envelope(projectile.age + tickDelta, 0, properties.fadeIn, out - properties.fadeOut, out);
 
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(bodyYaw));
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-pitch));
+        if (properties.yaw) matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(bodyYaw));
+        if (properties.pitch) matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-pitch));
+        matrices.scale(scale, scale, scale);
 
         RenderSystem.enableDepthTest();
         FormUtilsClient.render(projectile.getForm(), FormRenderingContext.set(projectile.getEntity(), matrices, light, OverlayTexture.DEFAULT_UV, tickDelta));
