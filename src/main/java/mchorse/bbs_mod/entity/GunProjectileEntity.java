@@ -36,7 +36,7 @@ import net.minecraft.world.World;
 public class GunProjectileEntity extends ProjectileEntity implements IEntityFormProvider
 {
     private boolean despawn;
-    private GunProperties properties;
+    private GunProperties properties = new GunProperties();
     private Form form;
     private IEntity entity = new StubEntity();
 
@@ -53,11 +53,14 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     protected void initDataTracker()
     {}
 
+    public GunProperties getProperties()
+    {
+        return this.properties;
+    }
+
     public void setProperties(GunProperties properties)
     {
         this.properties = properties;
-
-        this.setForm(FormUtils.copy(this.properties.projectileForm));
     }
 
     @Override
@@ -386,6 +389,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     {
         super.onStartedTrackingBy(player);
         ServerNetwork.sendEntityForm(player, this);
+        ServerNetwork.sendGunProperties(player, this);
     }
 
     @Override

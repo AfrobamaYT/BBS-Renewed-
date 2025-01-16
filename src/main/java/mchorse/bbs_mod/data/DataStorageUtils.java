@@ -21,6 +21,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtLong;
 import net.minecraft.nbt.NbtShort;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.network.PacketByteBuf;
 import org.joml.Matrix3f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
@@ -79,7 +80,7 @@ public class DataStorageUtils
         return null;
     }
 
-    /* public static void writeToPacket(PacketByteBuf packet, BaseType type)
+    public static void writeToPacket(PacketByteBuf packet, BaseType type)
     {
         try
         {
@@ -109,7 +110,7 @@ public class DataStorageUtils
         }
 
         return null;
-    } */
+    }
 
     /* NBT */
 

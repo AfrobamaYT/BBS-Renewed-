@@ -12,6 +12,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.PacketByteBuf;
 
 public class GunProperties extends ModelProperties
 {
@@ -38,8 +39,7 @@ public class GunProperties extends ModelProperties
 
     /* Impact properties */
     public Form impactForm;
-    public boolean bounce;
-    public int bounceHits = 1;
+    public int bounces;
     public float bounceDamping = 0.5F;
     public boolean vanish = true;
     public float damage;
@@ -85,6 +85,52 @@ public class GunProperties extends ModelProperties
         return properties;
     }
 
+    public void fromNetwork(PacketByteBuf buf)
+    {
+        BaseType type = DataStorageUtils.readFromPacket(buf);
+
+        this.projectileTransform.fromData(type != null && type.isMap() ? type.asMap() : new MapType());
+        this.expiration = buf.readInt();
+        this.speed = buf.readFloat();
+        this.friction = buf.readFloat();
+        this.gravity = buf.readFloat();
+        this.hitbox = buf.readFloat();
+        this.yaw = buf.readBoolean();
+        this.pitch = buf.readBoolean();
+        this.fadeIn = buf.readInt();
+        this.fadeOut = buf.readInt();
+
+        this.bounces = buf.readInt();
+        this.bounceDamping = buf.readFloat();
+        this.vanish = buf.readBoolean();
+        this.damage = buf.readFloat();
+        this.knockback = buf.readFloat();
+        this.collideBlocks = buf.readBoolean();
+        this.collideEntities = buf.readBoolean();
+    }
+
+    public void toNetwork(PacketByteBuf buf)
+    {
+        DataStorageUtils.writeToPacket(buf, this.projectileTransform.toData());
+        buf.writeInt(this.expiration);
+        buf.writeFloat(this.speed);
+        buf.writeFloat(this.friction);
+        buf.writeFloat(this.gravity);
+        buf.writeFloat(this.hitbox);
+        buf.writeBoolean(this.yaw);
+        buf.writeBoolean(this.pitch);
+        buf.writeInt(this.fadeIn);
+        buf.writeInt(this.fadeOut);
+
+        buf.writeInt(this.bounces);
+        buf.writeFloat(this.bounceDamping);
+        buf.writeBoolean(this.vanish);
+        buf.writeFloat(this.damage);
+        buf.writeFloat(this.knockback);
+        buf.writeBoolean(this.collideBlocks);
+        buf.writeBoolean(this.collideEntities);
+    }
+
     @Override
     public void fromData(MapType data)
     {
@@ -110,8 +156,7 @@ public class GunProperties extends ModelProperties
         this.fadeOut = data.getInt("fadeOut");
 
         this.impactForm = FormUtils.fromData(data.get("impactForm"));
-        this.bounce = data.getBool("bounce");
-        this.bounceHits = data.getInt("bounceHits", 1);
+        this.bounces = data.getInt("bounces");
         this.bounceDamping = data.getFloat("bounceDamping", 0.5F);
         this.vanish = data.getBool("vanish", true);
         this.damage = data.getFloat("damage");
@@ -145,8 +190,7 @@ public class GunProperties extends ModelProperties
         data.putInt("fadeOut", this.fadeOut);
 
         if (this.impactForm != null) data.put("impactForm", FormUtils.toData(this.impactForm));
-        data.putBool("bounce", this.bounce);
-        data.putInt("bounceHits", this.bounceHits);
+        data.putInt("bounces", this.bounces);
         data.putFloat("bounceDamping", this.bounceDamping);
         data.putBool("vanish", this.vanish);
         data.putFloat("damage", this.damage);

@@ -186,8 +186,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
                 gun.impactForm = FormUtils.copy(f);
                 this.sectionImpact.getChildren(UINestedEdit.class).get(0).setForm(f);
             }));
-            UIToggle bounce = new UIToggle(IKey.raw("Bounce"), (b) -> gun.bounce = b.getValue());
-            UITrackpad bounceHits = new UITrackpad((v) -> gun.bounceHits = v.intValue());
+            UITrackpad bounceHits = new UITrackpad((v) -> gun.bounces = v.intValue());
             UITrackpad bounceDamping = new UITrackpad((v) -> gun.bounceDamping = v.floatValue());
             UIToggle vanish = new UIToggle(IKey.raw("Vanish"), (b) -> gun.vanish = b.getValue());
             UITrackpad damage = new UITrackpad((v) -> gun.damage = v.floatValue());
@@ -196,8 +195,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             UIToggle collideEntities = new UIToggle(IKey.raw("Entities"), (b) -> gun.collideEntities = b.getValue());
 
             impactForm.setForm(gun.impactForm);
-            bounce.setValue(gun.bounce);
-            bounceHits.setValue(gun.bounceHits);
+            bounceHits.setValue(gun.bounces);
             bounceDamping.setValue(gun.bounceDamping);
             vanish.setValue(gun.vanish);
             damage.setValue(gun.damage);
@@ -207,9 +205,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
             this.sectionImpact = UI.scrollView(5, 10,
                 UI.label(IKey.raw("Impact form")).background(), impactForm,
-                bounce.marginTop(6),
-                UI.label(IKey.raw("Bounce hits")).background().marginTop(6), bounceHits,
-                UI.label(IKey.raw("Bounce damping")).background().marginTop(6), bounceDamping,
+                UI.label(IKey.raw("Bounces")).background().marginTop(6), bounceHits,
+                UI.label(IKey.raw("Bounce damping")).background(), bounceDamping,
                 vanish.marginTop(6),
                 UI.label(IKey.raw("Damage")).background().marginTop(6), damage,
                 UI.label(IKey.raw("Knockback")).background().marginTop(6), knockback,
@@ -318,7 +315,6 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     protected void preRenderMenu(UIRenderingContext context)
     {
         super.preRenderMenu(context);
-
         context.batcher.gradientVBox(0, 0, this.width, 20, Colors.A75, 0);
 
         UIIcon icon = this.sections.get(this.currentSection);

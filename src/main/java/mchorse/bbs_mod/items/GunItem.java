@@ -2,6 +2,7 @@ package mchorse.bbs_mod.items;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
+import mchorse.bbs_mod.forms.FormUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -41,20 +42,24 @@ public class GunItem extends Item
             return new TypedActionResult<>(ActionResult.SUCCESS, stack);
         }
 
-        /* Shoot projectiles */
-        int projectiles = Math.max(properties.projectiles, 1);
-
-        for (int i = 0; i < projectiles; i++)
+        if (!world.isClient)
         {
-            GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
-            float yaw = user.getHeadYaw() + (float) (properties.scatterY * (Math.random() - 0.5D));
-            float pitch = user.getPitch() + (float) (properties.scatterX * (Math.random() - 0.5D));
+            /* Shoot projectiles */
+            int projectiles = Math.max(properties.projectiles, 1);
 
-            projectile.setProperties(properties);
-            projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
-            projectile.setVelocity(user, pitch, yaw, 0F, 1F, 0F);
+            for (int i = 0; i < projectiles; i++)
+            {
+                GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
+                float yaw = user.getHeadYaw() + (float) (properties.scatterY * (Math.random() - 0.5D));
+                float pitch = user.getPitch() + (float) (properties.scatterX * (Math.random() - 0.5D));
 
-            world.spawnEntity(projectile);
+                projectile.setProperties(properties);
+                projectile.setForm(FormUtils.copy(properties.projectileForm));
+                projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
+                projectile.setVelocity(user, pitch, yaw, 0F, 1F, 0F);
+
+                world.spawnEntity(projectile);
+            }
         }
 
         return new TypedActionResult<>(ActionResult.SUCCESS, stack);

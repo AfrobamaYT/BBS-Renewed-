@@ -13,11 +13,13 @@ import mchorse.bbs_mod.data.types.ByteType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.entity.IEntityFormProvider;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
@@ -75,7 +77,8 @@ public class ServerNetwork
     public static final Identifier CLIENT_CHEATS_PERMISSION = new Identifier(BBSMod.MOD_ID, "c11");
     public static final Identifier CLIENT_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "c12");
     public static final Identifier CLIENT_ENTITY_FORM = new Identifier(BBSMod.MOD_ID, "c13");
-    public static final Identifier CLIENT_ACTORS = new Identifier(BBSMod.MOD_ID, "sc4");
+    public static final Identifier CLIENT_ACTORS = new Identifier(BBSMod.MOD_ID, "c14");
+    public static final Identifier CLIENT_GUN_PROPERTIES = new Identifier(BBSMod.MOD_ID, "c15");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
     public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = new Identifier(BBSMod.MOD_ID, "s2");
@@ -783,5 +786,16 @@ public class ServerNetwork
         }
 
         ServerPlayNetworking.send(player, CLIENT_ACTORS, buf);
+    }
+
+    public static void sendGunProperties(ServerPlayerEntity player, GunProjectileEntity projectile)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+        GunProperties properties = projectile.getProperties();
+
+        buf.writeInt(projectile.getEntityId());
+        properties.toNetwork(buf);
+
+        ServerPlayNetworking.send(player, CLIENT_GUN_PROPERTIES, buf);
     }
 }
