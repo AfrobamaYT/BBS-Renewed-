@@ -23,7 +23,8 @@
         "RenderLayerMixin",
         "ClientWorldPropertiesMixin",
         "sodium.SodiumBufferBuilderAccessor",
-        "sodium.ModelVertexMixin"
+        "sodium.ColorAttributeMixin",
+        "iris.EntityVertexMixin"
     ],
     "injectors": {
         "defaultRequire": 1

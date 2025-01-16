@@ -2,16 +2,16 @@ package mchorse.bbs_mod.mixin.client.sodium;
 
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.caffeinemc.mods.sodium.api.vertex.format.common.ModelVertex;
+import net.caffeinemc.mods.sodium.api.vertex.attributes.common.ColorAttribute;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin(ModelVertex.class)
-public class ModelVertexMixin
+@Mixin(ColorAttribute.class)
+public class ColorAttributeMixin
 {
-    @ModifyVariable(method = "write", at = @At("HEAD"), ordinal = 0, remap = false)
-    private static int onWrite(int color)
+    @ModifyVariable(method = "set", at = @At("HEAD"), ordinal = 0, remap = false)
+    private static int onSet(int color)
     {
         if (RecolorVertexConsumer.newColor != null)
         {
