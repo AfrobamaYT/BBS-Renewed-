@@ -5,6 +5,7 @@ import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.items.GunProperties;
+import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -43,6 +44,7 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         if (properties.yaw) matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(bodyYaw));
         if (properties.pitch) matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-pitch));
         matrices.scale(scale, scale, scale);
+        MatrixStackUtils.applyTransform(matrices, properties.projectileTransform);
 
         RenderSystem.enableDepthTest();
         FormUtilsClient.render(projectile.getForm(), FormRenderingContext.set(projectile.getEntity(), matrices, light, OverlayTexture.DEFAULT_UV, tickDelta));
