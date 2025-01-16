@@ -70,7 +70,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
     {
         if (!entity.isInPose(EntityPose.SLEEPING))
         {
-            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F - bodyYaw));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
         }
 
         if (entity.deathTime > 0)

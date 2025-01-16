@@ -90,7 +90,7 @@ public class ActionPlayer
         double x = replay.keyframes.x.interpolate(tick);
         double y = replay.keyframes.y.interpolate(tick);
         double z = replay.keyframes.z.interpolate(tick);
-        float yawHead = replay.keyframes.headYaw.interpolate(tick).floatValue() + 180F;
+        float yawHead = replay.keyframes.headYaw.interpolate(tick).floatValue();
         float yawBody = replay.keyframes.bodyYaw.interpolate(tick).floatValue();
         float pitch = replay.keyframes.pitch.interpolate(tick).floatValue();
 
