@@ -5,7 +5,10 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.camera.OrbitDistanceCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
+import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.items.GunProperties;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCamera;
@@ -15,7 +18,9 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIRenderingContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
+import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
@@ -27,16 +32,34 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 public class UIModelBlockEditorMenu extends UIBaseMenu
 {
-    public UINestedEdit pickEdit;
-    public UIPropTransform transform;
     public UIIcon thirdPerson;
     public UIIcon firstPerson;
     public UIIcon inventory;
+    public UIIcon gun;
+    public UIIcon projectile;
+    public UIIcon impact;
 
+    public Map<UIElement, UIIcon> sections = new HashMap<>();
+    public UIElement currentSection;
+    public UIElement sectionTp;
+    public UIElement sectionFp;
+    public UIElement sectionInventory;
+    public UIElement sectionGun;
+    public UIElement sectionProjectile;
+    public UIElement sectionImpact;
+
+    /* Data */
     private ModelProperties properties;
+    private GunProperties gunProperties;
 
+    /* Camera */
     private UIOrbitCamera uiOrbitCamera;
     private OrbitCameraController orbitCameraController;
 
@@ -44,72 +67,208 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     {
         this.properties = properties;
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (properties instanceof GunProperties gunProperties)
+        {
+            this.gunProperties = gunProperties;
+        }
 
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        OrbitDistanceCamera orbit = new OrbitDistanceCamera();
+
+        orbit.distance.setX(14);
         this.uiOrbitCamera = new UIOrbitCamera();
         this.uiOrbitCamera.setControl(true);
-        this.uiOrbitCamera.orbit = new OrbitDistanceCamera();
+        this.uiOrbitCamera.orbit = orbit;
         this.orbitCameraController = new OrbitCameraController(this.uiOrbitCamera.orbit);
         this.orbitCameraController.camera.position.set(player.getPos().x, player.getPos().y + 1D, player.getPos().z);
         this.orbitCameraController.camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
 
-        this.pickEdit = new UINestedEdit((edit) ->
+        /* Initiate sections */
+        this.sectionTp = this.createTransform(
+            this.properties.getTransformThirdPerson(),
+            () -> this.properties.getFormThirdPerson(),
+            (f) -> this.properties.setFormThirdPerson(f)
+        );
+
+        this.sectionFp = this.createTransform(
+            this.properties.getTransformFirstPerson(),
+            () -> this.properties.getFormFirstPerson(),
+            (f) -> this.properties.setFormFirstPerson(f)
+        );
+
+        this.sectionInventory = this.createTransform(
+            this.properties.getTransformInventory(),
+            () -> this.properties.getFormInventory(),
+            (f) -> this.properties.setFormInventory(f)
+        );
+
+        GunProperties gun = this.gunProperties;
+
+        if (gun != null)
         {
-            UIFormPalette.open(this.main, edit, this.getForm(), this::setForm);
-        });
-        this.transform = new UIPropTransform();
-        this.transform.enableHotkeys();
-        this.transform.relative(this.viewport).x(10).y(0.5F).wh(200, 95).anchor(0F, 0.5F);
+            /* Gun properties */
+            UIToggle launch = new UIToggle(IKey.raw("Launch"), (b) -> gun.launch = b.getValue());
+            UITrackpad launchPower = new UITrackpad((v) -> gun.launchPower = v.floatValue());
+            UIToggle launchAdditive = new UIToggle(IKey.raw("Additive"), (b) -> gun.launchAdditive = b.getValue());
+            UITrackpad scatterX = new UITrackpad((v) -> gun.scatterX = v.floatValue());
+            UITrackpad scatterY = new UITrackpad((v) -> gun.scatterY = v.floatValue());
+            UITrackpad projectiles = new UITrackpad((v) -> gun.projectiles = v.intValue()).limit(1).integer();
 
-        this.pickEdit.relative(this.transform).y(-5).w(1F).anchor(0F, 1F);
+            launch.setValue(gun.launch);
+            launchPower.setValue(gun.launchPower);
+            launchAdditive.setValue(gun.launchAdditive);
+            scatterX.setValue(gun.scatterX);
+            scatterX.tooltip(IKey.raw("Horizontal scatter"));
+            scatterY.setValue(gun.scatterY);
+            scatterY.tooltip(IKey.raw("Vertical scatter"));
+            projectiles.setValue(gun.projectiles);
 
-        this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setTransform(this.properties.getTransformThirdPerson()));
+            this.sectionGun = UI.scrollView(5, 10,
+                launch, launchPower, launchAdditive,
+                UI.label(IKey.raw("Scatter")).background().marginTop(6), UI.row(scatterX, scatterY),
+                UI.label(IKey.raw("Projectiles")).background().marginTop(6), projectiles
+            );
+            this.sectionGun.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
+            this.gun = new UIIcon(Icons.GEAR, (b) -> this.setSection(this.sectionGun));
+            this.gun.tooltip(IKey.raw("Gun shooting options"));
+
+            /* Projectile */
+            UINestedEdit projectileForm = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, gun.projectileForm, (f) ->
+            {
+                gun.projectileForm = FormUtils.copy(f);
+                this.sectionProjectile.getChildren(UINestedEdit.class).get(0).setForm(f);
+            }));
+            UIPropTransform projectileTransform = new UIPropTransform();
+            UITrackpad expiration = new UITrackpad((v) -> gun.expiration = v.intValue());
+            UITrackpad speed = new UITrackpad((v) -> gun.speed = v.floatValue());
+            UITrackpad friction = new UITrackpad((v) -> gun.friction = v.floatValue());
+            UITrackpad gravity = new UITrackpad((v) -> gun.gravity = v.floatValue());
+            UITrackpad hitbox = new UITrackpad((v) -> gun.hitbox = v.floatValue());
+            UIToggle yaw = new UIToggle(IKey.raw("Yaw"), (b) -> gun.yaw = b.getValue());
+            UIToggle pitch = new UIToggle(IKey.raw("Pitch"), (b) -> gun.pitch = b.getValue());
+            UITrackpad fadeIn = new UITrackpad((v) -> gun.fadeIn = v.intValue());
+            UITrackpad fadeOut = new UITrackpad((v) -> gun.fadeOut = v.intValue());
+
+            projectileForm.setForm(gun.projectileForm);
+            projectileTransform.setTransform(gun.projectileTransform);
+            expiration.setValue(gun.expiration);
+            speed.setValue(gun.speed);
+            friction.setValue(gun.friction);
+            gravity.setValue(gun.gravity);
+            hitbox.setValue(gun.hitbox);
+            yaw.setValue(gun.yaw);
+            yaw.tooltip(IKey.raw("Horizontal rotation"));
+            pitch.setValue(gun.pitch);
+            pitch.tooltip(IKey.raw("Vertical rotation"));
+            fadeIn.setValue(gun.fadeIn);
+            fadeIn.tooltip(IKey.raw("Fade in"));
+            fadeOut.setValue(gun.fadeOut);
+            fadeOut.tooltip(IKey.raw("Fade out"));
+
+            this.sectionProjectile = UI.scrollView(5, 10,
+                UI.label(IKey.raw("Projectile form")).background(), projectileForm,
+                UI.label(IKey.raw("Projectile transform")).background().marginTop(6), projectileTransform,
+                UI.label(IKey.raw("Life span")).background().marginTop(6), expiration,
+                UI.label(IKey.raw("Speed")).background().marginTop(6), speed,
+                UI.label(IKey.raw("Friction")).background(), friction,
+                UI.label(IKey.raw("Gravity")).background(), gravity,
+                UI.label(IKey.raw("Hitbox radius")).background().marginTop(6), hitbox,
+                UI.label(IKey.raw("Rotations")).background().marginTop(6), UI.row(yaw, pitch),
+                UI.label(IKey.raw("Scale fading")).background().marginTop(6), UI.row(fadeIn, fadeOut)
+            );
+            this.sectionProjectile.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
+            this.projectile = new UIIcon(Icons.BULLET, (b) -> this.setSection(this.sectionProjectile));
+            this.projectile.tooltip(IKey.raw("Projectile options"));
+
+            /* Impact */
+            UINestedEdit impactForm = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, gun.impactForm, (f) ->
+            {
+                gun.impactForm = FormUtils.copy(f);
+                this.sectionImpact.getChildren(UINestedEdit.class).get(0).setForm(f);
+            }));
+            UIToggle bounce = new UIToggle(IKey.raw("Bounce"), (b) -> gun.bounce = b.getValue());
+            UITrackpad bounceHits = new UITrackpad((v) -> gun.bounceHits = v.intValue());
+            UITrackpad bounceDamping = new UITrackpad((v) -> gun.bounceDamping = v.floatValue());
+            UIToggle vanish = new UIToggle(IKey.raw("Vanish"), (b) -> gun.vanish = b.getValue());
+            UITrackpad damage = new UITrackpad((v) -> gun.damage = v.floatValue());
+            UITrackpad knockback = new UITrackpad((v) -> gun.knockback = v.floatValue());
+            UIToggle collideBlocks = new UIToggle(IKey.raw("Blocks"), (b) -> gun.collideBlocks = b.getValue());
+            UIToggle collideEntities = new UIToggle(IKey.raw("Entities"), (b) -> gun.collideEntities = b.getValue());
+
+            impactForm.setForm(gun.impactForm);
+            bounce.setValue(gun.bounce);
+            bounceHits.setValue(gun.bounceHits);
+            bounceDamping.setValue(gun.bounceDamping);
+            vanish.setValue(gun.vanish);
+            damage.setValue(gun.damage);
+            knockback.setValue(gun.knockback);
+            collideBlocks.setValue(gun.collideBlocks);
+            collideEntities.setValue(gun.collideEntities);
+
+            this.sectionImpact = UI.scrollView(5, 10,
+                UI.label(IKey.raw("Impact form")).background(), impactForm,
+                bounce.marginTop(6),
+                UI.label(IKey.raw("Bounce hits")).background().marginTop(6), bounceHits,
+                UI.label(IKey.raw("Bounce damping")).background().marginTop(6), bounceDamping,
+                vanish.marginTop(6),
+                UI.label(IKey.raw("Damage")).background().marginTop(6), damage,
+                UI.label(IKey.raw("Knockback")).background().marginTop(6), knockback,
+                UI.label(IKey.raw("Collision")).background().marginTop(6), UI.row(collideBlocks, collideEntities)
+            );
+            this.sectionImpact.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
+            this.impact = new UIIcon(Icons.DOWNLOAD, (b) -> this.setSection(this.sectionImpact));
+            this.impact.tooltip(IKey.raw("Impact options"));
+        }
+
+        this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setSection(this.sectionTp));
         this.thirdPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_THIRD_PERSON);
-        this.firstPerson = new UIIcon(Icons.LIMB, (b) -> this.setTransform(this.properties.getTransformFirstPerson()));
+        this.firstPerson = new UIIcon(Icons.LIMB, (b) -> this.setSection(this.sectionFp));
         this.firstPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_FIRST_PERSON);
-        this.inventory = new UIIcon(Icons.SPHERE, (b) -> this.setTransform(this.properties.getTransformInventory()));
+        this.inventory = new UIIcon(Icons.SPHERE, (b) -> this.setSection(this.sectionInventory));
         this.inventory.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_INVENTORY);
 
-        UIElement bar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory);
+        this.sections.put(this.sectionTp, this.thirdPerson);
+        this.sections.put(this.sectionFp, this.firstPerson);
+        this.sections.put(this.sectionInventory, this.inventory);
+
+        UIElement bar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact);
 
         bar.row().resize();
         bar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
-        this.main.add(this.uiOrbitCamera, this.transform, this.pickEdit, bar);
+        this.main.add(this.uiOrbitCamera, bar);
+        this.main.add(this.sectionTp, this.sectionFp, this.sectionInventory);
 
-        this.setTransform(properties.getTransformThirdPerson());
+        if (gun != null)
+        {
+            this.sections.put(this.sectionGun, this.gun);
+            this.sections.put(this.sectionProjectile, this.projectile);
+            this.sections.put(this.sectionImpact, this.impact);
+
+            this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact);
+        }
+
+        this.setSection(this.sectionTp);
     }
 
-    private Form getForm()
+    private UIElement createTransform(Transform transform, Supplier<Form> formSupplier, Consumer<Form> formConsumer)
     {
-        if (this.transform.getTransform() == this.properties.getTransformThirdPerson())
+        UIElement section = UI.column();
+        UINestedEdit uiPickEdit = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, formSupplier.get(), (f) ->
         {
-            return this.properties.getFormThirdPerson();
-        }
-        else if (this.transform.getTransform() == this.properties.getTransformInventory())
-        {
-            return this.properties.getFormInventory();
-        }
+            formConsumer.accept(FormUtils.copy(f));
+            section.getChildren(UINestedEdit.class).get(0).setForm(f);
+        }));
+        UIPropTransform uiTransform = new UIPropTransform();
 
-        return this.properties.getFormFirstPerson();
-    }
+        uiPickEdit.setForm(formSupplier.get());
+        uiTransform.enableHotkeys().h(95);
+        uiTransform.setTransform(transform);
 
-    private void setForm(Form f)
-    {
-        if (this.transform.getTransform() == this.properties.getTransformThirdPerson())
-        {
-            this.properties.setFormThirdPerson(f);
-        }
-        else if (this.transform.getTransform() == this.properties.getTransformInventory())
-        {
-            this.properties.setFormInventory(f);
-        }
-        else
-        {
-            this.properties.setFormFirstPerson(f);
-        }
+        section.add(uiPickEdit, uiTransform);
+        section.relative(this.viewport).x(1F, -10).y(0.5F).w(200).anchor(1F, 0.5F);
 
-        this.pickEdit.setForm(f);
+        return section;
     }
 
     @Override
@@ -127,23 +286,32 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         ClientNetwork.sendModelBlockTransforms(this.properties.toData());
     }
 
-    private void setTransform(Transform transform)
+    private void setSection(UIElement element)
     {
-        this.uiOrbitCamera.setEnabled(transform == this.properties.getTransformThirdPerson());
-
-        if (transform == this.properties.getTransformThirdPerson())
+        if (element != this.currentSection)
         {
-            MinecraftClient.getInstance().options.setPerspective(Perspective.THIRD_PERSON_FRONT);
-            BBSModClient.getCameraController().add(this.orbitCameraController);
-        }
-        else
-        {
-            MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
-            BBSModClient.getCameraController().remove(this.orbitCameraController);
+            this.uiOrbitCamera.setEnabled(element == this.sectionTp);
+
+            if (element == this.sectionTp)
+            {
+                MinecraftClient.getInstance().options.setPerspective(Perspective.THIRD_PERSON_FRONT);
+                BBSModClient.getCameraController().add(this.orbitCameraController);
+            }
+            else
+            {
+                MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
+                BBSModClient.getCameraController().remove(this.orbitCameraController);
+            }
         }
 
-        this.transform.setTransform(transform);
-        this.pickEdit.setForm(this.getForm());
+        for (UIElement uiElement : this.sections.keySet())
+        {
+            uiElement.setVisible(false);
+        }
+
+        element.setVisible(true);
+
+        this.currentSection = element;
     }
 
     @Override
@@ -153,19 +321,11 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         context.batcher.gradientVBox(0, 0, this.width, 20, Colors.A75, 0);
 
-        Transform transform = this.transform.getTransform();
+        UIIcon icon = this.sections.get(this.currentSection);
 
-        if (transform == this.properties.getTransformThirdPerson())
+        if (icon != null)
         {
-            this.renderHighlight(context.batcher, this.thirdPerson.area);
-        }
-        else if (transform == this.properties.getTransformFirstPerson())
-        {
-            this.renderHighlight(context.batcher, this.firstPerson.area);
-        }
-        else if (transform == this.properties.getTransformInventory())
-        {
-            this.renderHighlight(context.batcher, this.inventory.area);
+            this.renderHighlight(context.batcher, icon.area);
         }
     }
 

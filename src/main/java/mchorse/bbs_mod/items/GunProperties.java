@@ -24,13 +24,13 @@ public class GunProperties extends ModelProperties
     public int projectiles;
 
     /* Projectile properties */
-    public final Transform projectileTransform = new Transform();
     public Form projectileForm;
+    public final Transform projectileTransform = new Transform();
+    public int expiration = 100;
     public float speed = 1F;
     public float friction = 0.99F;
     public float gravity = 0.05F;
-    public float hitboxW = 0.2F;
-    public float hitboxH = 0.2F;
+    public float hitbox = 0.2F;
     public boolean yaw = true;
     public boolean pitch = true;
     public int fadeIn;
@@ -43,6 +43,7 @@ public class GunProperties extends ModelProperties
     public float bounceDamping = 0.5F;
     public boolean vanish = true;
     public float damage;
+    public float knockback;
     public boolean collideBlocks = true;
     public boolean collideEntities = true;
 
@@ -96,13 +97,13 @@ public class GunProperties extends ModelProperties
         this.scatterY = data.getFloat("scatterY");
         this.projectiles = data.getInt("projectiles");
 
-        this.projectileTransform.fromData(data.getMap("projectileTransform"));
         this.projectileForm = FormUtils.fromData(data.get("projectileForm"));
+        this.projectileTransform.fromData(data.getMap("projectileTransform"));
+        this.expiration = data.getInt("expiration");
         this.speed = data.getFloat("speed", 1F);
         this.friction = data.getFloat("friction", 0.99F);
         this.gravity = data.getFloat("gravity", 0.05F);
-        this.hitboxW = data.getFloat("hitboxW", 0.2F);
-        this.hitboxH = data.getFloat("hitboxH", 0.2F);
+        this.hitbox = data.getFloat("hitbox", 0.2F);
         this.yaw = data.getBool("yaw", true);
         this.pitch = data.getBool("pitch", true);
         this.fadeIn = data.getInt("fadeIn");
@@ -114,6 +115,7 @@ public class GunProperties extends ModelProperties
         this.bounceDamping = data.getFloat("bounceDamping", 0.5F);
         this.vanish = data.getBool("vanish", true);
         this.damage = data.getFloat("damage");
+        this.knockback = data.getFloat("knockback");
         this.collideBlocks = data.getBool("collideBlocks", true);
         this.collideEntities = data.getBool("collideEntities", true);
     }
@@ -130,13 +132,13 @@ public class GunProperties extends ModelProperties
         data.putFloat("scatterY", this.scatterY);
         data.putInt("projectiles", this.projectiles);
 
-        data.put("projectileTransform", this.projectileTransform.toData());
         if (this.projectileForm != null) data.put("projectileForm", FormUtils.toData(this.projectileForm));
+        data.put("projectileTransform", this.projectileTransform.toData());
+        data.putInt("expiration", this.expiration);
         data.putFloat("speed", this.speed);
         data.putFloat("friction", this.friction);
         data.putFloat("gravity", this.gravity);
-        data.putFloat("hitboxW", this.hitboxW);
-        data.putFloat("hitboxH", this.hitboxH);
+        data.putFloat("hitbox", this.hitbox);
         data.putBool("yaw", this.yaw);
         data.putBool("pitch", this.pitch);
         data.putInt("fadeIn", this.fadeIn);
@@ -148,6 +150,7 @@ public class GunProperties extends ModelProperties
         data.putFloat("bounceDamping", this.bounceDamping);
         data.putBool("vanish", this.vanish);
         data.putFloat("damage", this.damage);
+        data.putFloat("knockback", this.knockback);
         data.putBool("collideBlocks", this.collideBlocks);
         data.putBool("collideEntities", this.collideEntities);
     }

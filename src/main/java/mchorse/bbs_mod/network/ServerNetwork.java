@@ -13,6 +13,7 @@ import mchorse.bbs_mod.data.types.ByteType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.entity.IEntityFormProvider;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.forms.FormUtils;
@@ -73,7 +74,7 @@ public class ServerNetwork
     public static final Identifier CLIENT_REQUEST_ASSET = new Identifier(BBSMod.MOD_ID, "c10");
     public static final Identifier CLIENT_CHEATS_PERMISSION = new Identifier(BBSMod.MOD_ID, "c11");
     public static final Identifier CLIENT_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "c12");
-    public static final Identifier CLIENT_ACTOR_FORM = new Identifier(BBSMod.MOD_ID, "c13");
+    public static final Identifier CLIENT_ENTITY_FORM = new Identifier(BBSMod.MOD_ID, "c13");
     public static final Identifier CLIENT_ACTORS = new Identifier(BBSMod.MOD_ID, "sc4");
 
     public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = new Identifier(BBSMod.MOD_ID, "s1");
@@ -760,11 +761,11 @@ public class ServerNetwork
         {});
     }
 
-    public static void sendActorForm(ServerPlayerEntity player, ActorEntity actor)
+    public static void sendEntityForm(ServerPlayerEntity player, IEntityFormProvider actor)
     {
-        crusher.send(player, CLIENT_ACTOR_FORM, FormUtils.toData(actor.getForm()), (packetByteBuf) ->
+        crusher.send(player, CLIENT_ENTITY_FORM, FormUtils.toData(actor.getForm()), (packetByteBuf) ->
         {
-            packetByteBuf.writeInt(actor.getId());
+            packetByteBuf.writeInt(actor.getEntityId());
         });
     }
 

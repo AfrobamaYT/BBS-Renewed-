@@ -62,12 +62,6 @@ public class GunItem extends Item
 
     private GunProperties getProperties(ItemStack stack)
     {
-        GunProperties properties = new GunProperties(); // GunProperties.get(stack);
-
-        properties.projectiles = 5;
-        properties.scatterX = 45;
-        properties.scatterY = 45;
-
-        return properties;
+        return GunProperties.get(stack);
     }
 }
