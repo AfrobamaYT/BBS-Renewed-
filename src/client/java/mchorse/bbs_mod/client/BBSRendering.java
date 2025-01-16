@@ -197,12 +197,12 @@ public class BBSRendering
 
     public static void onWorldRenderBegin()
     {
+        renderingWorld = true;
+
         if (!customSize)
         {
             return;
         }
-
-        renderingWorld = true;
 
         Window window = MinecraftClient.getInstance().getWindow();
         Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
@@ -232,6 +232,8 @@ public class BBSRendering
 
         if (!customSize)
         {
+            renderingWorld = false;
+
             return;
         }
 
@@ -315,6 +317,11 @@ public class BBSRendering
     public static boolean isOptifinePresent()
     {
         return optifine;
+    }
+
+    public static boolean isRenderingWorld()
+    {
+        return renderingWorld;
     }
 
     public static boolean isIrisShadersEnabled()

@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.render.ModelVAO;
 import mchorse.bbs_mod.client.render.ModelVAORenderer;
@@ -63,10 +64,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     @Override
     protected void render3D(FormRenderingContext context)
     {
-        Supplier<ShaderProgram> shader = this.getShader(context,
-            BBSShaders::getModel,
-            BBSShaders::getPickerBillboardProgram
-        );
+        Supplier<ShaderProgram> main = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld() ? GameRenderer::getRenderTypeEntityTranslucentCullProgram : BBSShaders::getModel;
+        Supplier<ShaderProgram> shader = this.getShader(context, main, BBSShaders::getPickerBillboardProgram);
 
         this.renderModel(shader, context.stack, context.overlay, context.light, context.color, context.getTransition());
     }
@@ -82,12 +81,13 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
             Color formColor = this.form.color.get(transition);
 
-            gameRenderer.getLightmapTextureManager().enable();
-            gameRenderer.getOverlayTexture().setupOverlayColor();
             BBSModClient.getTextures().bindTexture(texture);
 
-            RenderSystem.defaultBlendFunc();
             RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+
+            gameRenderer.getLightmapTextureManager().enable();
+            gameRenderer.getOverlayTexture().setupOverlayColor();
 
             ModelVAORenderer.render(shader.get(), data, matrices, color.r * formColor.r, color.g * formColor.g, color.b * formColor.b, color.a * formColor.a, light, overlay);
 

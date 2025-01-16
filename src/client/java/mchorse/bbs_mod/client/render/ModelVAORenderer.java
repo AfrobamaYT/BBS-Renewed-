@@ -19,7 +19,6 @@ public class ModelVAORenderer
         int currentVAO = GL30.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int currentElementArrayBuffer = GL30.glGetInteger(GL30.GL_ELEMENT_ARRAY_BUFFER_BINDING);
 
-        RenderSystem.setShader(() -> shader);
         setupUniforms(stack, shader);
 
         shader.bind();
