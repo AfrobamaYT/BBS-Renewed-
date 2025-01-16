@@ -139,7 +139,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
                 this.sectionProjectile.getChildren(UINestedEdit.class).get(0).setForm(f);
             }));
             UIPropTransform projectileTransform = new UIPropTransform();
-            UITrackpad expiration = new UITrackpad((v) -> gun.expiration = v.intValue());
+            UIToggle useTarget = new UIToggle(IKey.raw("Use target"), (b) -> gun.useTarget = b.getValue());
+            UITrackpad lifeSpan = new UITrackpad((v) -> gun.lifeSpan = v.intValue());
             UITrackpad speed = new UITrackpad((v) -> gun.speed = v.floatValue());
             UITrackpad friction = new UITrackpad((v) -> gun.friction = v.floatValue());
             UITrackpad gravity = new UITrackpad((v) -> gun.gravity = v.floatValue());
@@ -151,7 +152,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
             projectileForm.setForm(gun.projectileForm);
             projectileTransform.setTransform(gun.projectileTransform);
-            expiration.setValue(gun.expiration);
+            useTarget.setValue(gun.useTarget);
+            lifeSpan.setValue(gun.lifeSpan);
             speed.setValue(gun.speed);
             friction.setValue(gun.friction);
             gravity.setValue(gun.gravity);
@@ -168,7 +170,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.sectionProjectile = UI.scrollView(5, 10,
                 UI.label(IKey.raw("Projectile form")).background(), projectileForm,
                 UI.label(IKey.raw("Projectile transform")).background().marginTop(6), projectileTransform,
-                UI.label(IKey.raw("Life span")).background().marginTop(6), expiration,
+                useTarget.marginTop(6),
+                UI.label(IKey.raw("Life span")).background().marginTop(6), lifeSpan,
                 UI.label(IKey.raw("Speed")).background().marginTop(6), speed,
                 UI.label(IKey.raw("Friction")).background(), friction,
                 UI.label(IKey.raw("Gravity")).background(), gravity,

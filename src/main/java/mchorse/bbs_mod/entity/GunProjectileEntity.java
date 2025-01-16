@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.entity;
 
-import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.items.GunProperties;
@@ -38,7 +38,8 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     private boolean despawn;
     private GunProperties properties = new GunProperties();
     private Form form;
-    private IEntity entity = new StubEntity();
+    private IEntity stub = new StubEntity();
+    private IEntity target = new MCEntity(this);
 
     private boolean stuck;
     private int lifeLeft;
@@ -83,7 +84,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
     public IEntity getEntity()
     {
-        return this.entity;
+        return this.properties.useTarget ? this.target : this.stub;
     }
 
     @Override
@@ -106,25 +107,24 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     {
         super.tick();
 
-        this.entity.update();
+        this.getEntity().update();
 
         if (this.form != null)
         {
-            this.form.update(this.entity);
+            this.form.update(this.getEntity());
         }
 
         if (!this.getWorld().isClient)
         {
             this.lifeLeft += 1;
 
-            if (this.lifeLeft >= this.properties.expiration)
+            if (this.lifeLeft >= this.properties.lifeSpan)
             {
                 this.discard();
             }
         }
 
         /* Movement code */
-        boolean noClip = this.noClip;
         Vec3d v = this.getVelocity();
 
         if (this.prevPitch == 0F && this.prevYaw == 0F)
@@ -140,7 +140,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         BlockState blockState = this.getWorld().getBlockState(blockPos);
         Vec3d pos;
 
-        if (!blockState.isAir() && !noClip)
+        if (!blockState.isAir() && this.properties.collideBlocks)
         {
             VoxelShape voxelShape = blockState.getCollisionShape(this.getWorld(), blockPos);
 
@@ -165,7 +165,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
             this.extinguish();
         }
 
-        if (this.stuck && !noClip)
+        if (this.stuck && this.properties.collideBlocks)
         {
             if (this.stuckBlockState != blockState && this.shouldFall())
             {
@@ -192,7 +192,11 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
                 hitResult = entityHitResult;
             }
 
-            if (!noClip)
+            boolean canCollide =
+                (this.properties.collideBlocks && hitResult.getType() == HitResult.Type.BLOCK) ||
+                (this.properties.collideEntities && hitResult.getType() == HitResult.Type.ENTITY);
+
+            if (canCollide)
             {
                 this.onCollision(hitResult);
 
@@ -206,16 +210,13 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
             double z = this.getZ() + v.z;
             double d = v.horizontalLength();
 
-            this.setYaw(noClip
-                ? MathUtils.toDeg((float) MathHelper.atan2(-v.x, -v.z))
-                : MathUtils.toDeg((float) MathHelper.atan2(v.x, v.z))
-            );
+            this.setYaw(MathUtils.toDeg((float) MathHelper.atan2(v.x, v.z)));
             this.setPitch(MathUtils.toDeg((float) MathHelper.atan2(v.y, d)));
             this.setPitch(updateRotation(this.prevPitch, this.getPitch()));
             this.setYaw(updateRotation(this.prevYaw, this.getYaw()));
 
-            float friction = 0.99F;
-            float gravity = 0.05F;
+            float friction = this.properties.friction;
+            float gravity = this.properties.gravity;
 
             if (this.isTouchingWater())
             {
@@ -229,15 +230,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
                 friction = 0.6F;
             }
 
-            this.setVelocity(v.multiply(friction));
-
-            if (!this.hasNoGravity() && !noClip)
-            {
-                Vec3d velocity = this.getVelocity();
-
-                this.setVelocity(velocity.x, velocity.y - gravity, velocity.z);
-            }
-
+            this.setVelocity(v.multiply(friction).subtract(0, gravity, 0));
             this.setPosition(x, y, z);
             this.checkBlockCollision();
         }

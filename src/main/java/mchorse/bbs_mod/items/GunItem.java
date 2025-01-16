@@ -56,7 +56,7 @@ public class GunItem extends Item
                 projectile.setProperties(properties);
                 projectile.setForm(FormUtils.copy(properties.projectileForm));
                 projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
-                projectile.setVelocity(user, pitch, yaw, 0F, 1F, 0F);
+                projectile.setVelocity(user, pitch, yaw, 0F, properties.speed, 0F);
 
                 world.spawnEntity(projectile);
             }

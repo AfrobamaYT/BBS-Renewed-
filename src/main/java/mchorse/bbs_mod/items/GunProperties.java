@@ -27,7 +27,8 @@ public class GunProperties extends ModelProperties
     /* Projectile properties */
     public Form projectileForm;
     public final Transform projectileTransform = new Transform();
-    public int expiration = 100;
+    public boolean useTarget;
+    public int lifeSpan = 100;
     public float speed = 1F;
     public float friction = 0.99F;
     public float gravity = 0.05F;
@@ -90,7 +91,8 @@ public class GunProperties extends ModelProperties
         BaseType type = DataStorageUtils.readFromPacket(buf);
 
         this.projectileTransform.fromData(type != null && type.isMap() ? type.asMap() : new MapType());
-        this.expiration = buf.readInt();
+        this.useTarget = buf.readBoolean();
+        this.lifeSpan = buf.readInt();
         this.speed = buf.readFloat();
         this.friction = buf.readFloat();
         this.gravity = buf.readFloat();
@@ -112,7 +114,8 @@ public class GunProperties extends ModelProperties
     public void toNetwork(PacketByteBuf buf)
     {
         DataStorageUtils.writeToPacket(buf, this.projectileTransform.toData());
-        buf.writeInt(this.expiration);
+        buf.writeBoolean(this.useTarget);
+        buf.writeInt(this.lifeSpan);
         buf.writeFloat(this.speed);
         buf.writeFloat(this.friction);
         buf.writeFloat(this.gravity);
@@ -145,7 +148,8 @@ public class GunProperties extends ModelProperties
 
         this.projectileForm = FormUtils.fromData(data.get("projectileForm"));
         this.projectileTransform.fromData(data.getMap("projectileTransform"));
-        this.expiration = data.getInt("expiration");
+        this.useTarget = data.getBool("useTarget");
+        this.lifeSpan = data.getInt("lifeSpan");
         this.speed = data.getFloat("speed", 1F);
         this.friction = data.getFloat("friction", 0.99F);
         this.gravity = data.getFloat("gravity", 0.05F);
@@ -179,7 +183,8 @@ public class GunProperties extends ModelProperties
 
         if (this.projectileForm != null) data.put("projectileForm", FormUtils.toData(this.projectileForm));
         data.put("projectileTransform", this.projectileTransform.toData());
-        data.putInt("expiration", this.expiration);
+        data.putBool("useTarget", this.useTarget);
+        data.putInt("lifeSpan", this.lifeSpan);
         data.putFloat("speed", this.speed);
         data.putFloat("friction", this.friction);
         data.putFloat("gravity", this.gravity);

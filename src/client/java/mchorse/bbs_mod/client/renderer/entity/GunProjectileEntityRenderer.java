@@ -34,7 +34,7 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         matrices.push();
 
         GunProperties properties = projectile.getProperties();
-        int out = properties.expiration - 2;
+        int out = properties.lifeSpan - 2;
 
         float bodyYaw = MathHelper.lerpAngleDegrees(tickDelta, projectile.prevYaw, projectile.getYaw());
         float pitch = MathHelper.lerpAngleDegrees(tickDelta, projectile.prevPitch, projectile.getPitch());
