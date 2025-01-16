@@ -11,7 +11,6 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.DataPath;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.MovementType;
-import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
@@ -95,8 +94,6 @@ public class ActionPlayer
         float pitch = replay.keyframes.pitch.interpolate(tick).floatValue();
 
         Vec3d pos = actor.getPos();
-        ItemStack mainHand = replay.keyframes.mainHand.interpolate(tick);
-        ItemStack offHand = replay.keyframes.offHand.interpolate(tick);
 
         if (ticking)
         {
@@ -110,8 +107,12 @@ public class ActionPlayer
         actor.setBodyYaw(yawBody);
         actor.setSneaking(replay.keyframes.sneaking.interpolate(tick) > 0);
         actor.setOnGround(replay.keyframes.grounded.interpolate(tick) > 0);
-        actor.equipStack(EquipmentSlot.MAINHAND, mainHand);
-        actor.equipStack(EquipmentSlot.OFFHAND, offHand);
+        actor.equipStack(EquipmentSlot.MAINHAND, replay.keyframes.mainHand.interpolate(tick));
+        actor.equipStack(EquipmentSlot.OFFHAND, replay.keyframes.offHand.interpolate(tick));
+        actor.equipStack(EquipmentSlot.HEAD, replay.keyframes.armorHead.interpolate(tick));
+        actor.equipStack(EquipmentSlot.CHEST, replay.keyframes.armorChest.interpolate(tick));
+        actor.equipStack(EquipmentSlot.LEGS, replay.keyframes.armorLegs.interpolate(tick));
+        actor.equipStack(EquipmentSlot.FEET, replay.keyframes.armorFeet.interpolate(tick));
 
         actor.fallDistance = replay.keyframes.fall.interpolate(tick).floatValue();
     }
