@@ -160,6 +160,11 @@ public class CubicModel implements ICubicModel
         });
     }
 
+    public boolean isVAORendered()
+    {
+        return this.model.getShapeKeys().isEmpty();
+    }
+
     public void delete()
     {
         for (ModelVAO value : this.vaos.values())

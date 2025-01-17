@@ -249,9 +249,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             BBSModClient.getTextures().bindTexture(texture);
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-            Supplier<ShaderProgram> shader = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld() ? GameRenderer::getRenderTypeEntityTranslucentCullProgram : BBSShaders::getModel;
+            Supplier<ShaderProgram> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
+                ? GameRenderer::getRenderTypeEntityTranslucentCullProgram
+                : BBSShaders::getModel;
 
-            this.renderModel(this.entity, shader, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
+            this.renderModel(this.entity, mainShader, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, false, context.getTransition());
 
             /* Render body parts */
             stack.push();
@@ -282,7 +284,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         gameRenderer.getOverlayTexture().setupOverlayColor();
 
         MatrixStack newStack = new MatrixStack();
-        boolean isVao = model.model.getShapeKeys().isEmpty();
+        boolean isVao = model.isVAORendered();
         CubicCubeRenderer renderProcessor = isVao
             ? new CubicVAORenderer(program.get(), model, light, overlay, picking, this.form.shapeKeys.get(transition))
             : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
@@ -430,7 +432,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             BBSModClient.getTextures().bindTexture(texture);
 
-            Supplier<ShaderProgram> mainShader = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld() ? GameRenderer::getRenderTypeEntityTranslucentCullProgram : BBSShaders::getModel;
+            Supplier<ShaderProgram> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
+                ? GameRenderer::getRenderTypeEntityTranslucentCullProgram
+                : BBSShaders::getModel;
             Supplier<ShaderProgram> shader = this.getShader(context, mainShader, BBSShaders::getPickerModelsProgram);
 
             this.renderModel(context.entity, shader, context.stack, model, context.light, context.overlay, color, false, context.isPicking(), context.getTransition());
