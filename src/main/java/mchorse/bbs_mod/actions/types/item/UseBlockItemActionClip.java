@@ -5,6 +5,7 @@ import mchorse.bbs_mod.actions.values.ValueBlockHitResult;
 import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.items.GunItem;
 import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
@@ -27,10 +28,14 @@ public class UseBlockItemActionClip extends ItemActionClip
         Hand hand = this.hand.get() ? Hand.MAIN_HAND : Hand.OFF_HAND;
         ItemStack copy = this.itemStack.get().copy();
 
+        GunItem.actor = actor;
+
         this.applyPositionRotation(player, replay, tick);
         player.setStackInHand(hand, copy);
         this.itemStack.get().useOnBlock(new ItemUsageContext(player.getWorld(), player, hand, copy, this.hit.getHitResult()));
         player.setStackInHand(hand, ItemStack.EMPTY);
+
+        GunItem.actor = null;
     }
 
     @Override

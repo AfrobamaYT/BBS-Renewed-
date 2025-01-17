@@ -3,6 +3,7 @@ package mchorse.bbs_mod.items;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -14,6 +15,8 @@ import net.minecraft.world.World;
 
 public class GunItem extends Item
 {
+    public static Entity actor;
+
     public GunItem(Settings settings)
     {
         super(settings);
@@ -46,6 +49,7 @@ public class GunItem extends Item
         {
             /* Shoot projectiles */
             int projectiles = Math.max(properties.projectiles, 1);
+            Entity owner = actor == null ? user : actor;
 
             for (int i = 0; i < projectiles; i++)
             {
@@ -56,7 +60,7 @@ public class GunItem extends Item
                 projectile.setProperties(properties);
                 projectile.setForm(FormUtils.copy(properties.projectileForm));
                 projectile.setPos(user.getX(), user.getY() + user.getEyeHeight(user.getPose()), user.getZ());
-                projectile.setVelocity(user, pitch, yaw, 0F, properties.speed, 0F);
+                projectile.setVelocity(owner, pitch, yaw, 0F, properties.speed, 0F);
                 projectile.calculateDimensions();
 
                 world.spawnEntity(projectile);
