@@ -7,12 +7,15 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
+import mchorse.bbs_mod.forms.forms.utils.ParticleSettings;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 
 public class GunProperties extends ModelProperties
 {
@@ -62,8 +65,21 @@ public class GunProperties extends ModelProperties
         if (nbt == null)
         {
             ExtrudedForm form = new ExtrudedForm();
+            VanillaParticleForm projectileForm = new VanillaParticleForm();
+            ParticleSettings value = new ParticleSettings();
+
             Transform tp = properties.getTransformThirdPerson();
             Transform fp = properties.getTransformFirstPerson();
+
+            value.particle = new Identifier("minecraft:falling_water");
+            projectileForm.settings.set(value);
+            projectileForm.frequency.set(1);
+            projectileForm.offsetX.set(0.1F);
+            projectileForm.offsetY.set(0.1F);
+            projectileForm.offsetZ.set(0.1F);
+
+            properties.useTarget = true;
+            properties.projectileForm = projectileForm;
 
             form.transform.get().translate.set(0F, 0.5F, 0F);
             form.texture.set(Link.assets("textures/gun.png"));

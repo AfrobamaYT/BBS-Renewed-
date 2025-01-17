@@ -51,6 +51,20 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         super(type, world);
     }
 
+    private void vanish()
+    {
+        this.discard();
+        this.executeCommand(this.properties.cmdVanish);
+    }
+
+    private void executeCommand(String command)
+    {
+        if (!command.isEmpty())
+        {
+            this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), command);
+        }
+    }
+
     @Override
     protected void initDataTracker()
     {}
@@ -132,19 +146,14 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
             int ticking = this.properties.ticking;
 
-            if (ticking > 0 && this.lifeLeft % ticking == 0 && !this.properties.cmdTicking.isEmpty())
+            if (ticking > 0 && this.lifeLeft % ticking == 0)
             {
-                this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdTicking);
+                this.executeCommand(this.properties.cmdTicking);
             }
 
             if (this.lifeLeft >= this.properties.lifeSpan)
             {
-                if (!this.properties.cmdVanish.isEmpty())
-                {
-                    this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdVanish);
-                }
-
-                this.discard();
+                this.vanish();
             }
         }
 
@@ -337,10 +346,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
             this.prevYaw += 180F;
         }
 
-        if (!this.properties.cmdImpact.isEmpty())
-        {
-            this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdImpact);
-        }
+        this.executeCommand(this.properties.cmdImpact);
     }
 
     public void deflect()
@@ -376,6 +382,11 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         {
             this.stuckBlockState = this.getWorld().getBlockState(blockHitResult.getBlockPos());
             this.stuck = true;
+
+            if (this.properties.vanish)
+            {
+                this.vanish();
+            }
         }
 
         this.setVelocity(velocity);
@@ -383,15 +394,16 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         Vec3d gravity = velocity.normalize().multiply(0.05D);
 
         this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
-
-        if (!this.properties.cmdImpact.isEmpty())
-        {
-            this.getServer().getCommandManager().executeWithPrefix(this.getCommandSource(), this.properties.cmdImpact);
-        }
+        this.executeCommand(this.properties.cmdImpact);
     }
 
     protected void onHit(LivingEntity target)
-    {}
+    {
+        if (this.bounces <= 0 && this.properties.vanish)
+        {
+            this.vanish();
+        }
+    }
 
     @Override
     protected Entity.MoveEffect getMoveEffect()
