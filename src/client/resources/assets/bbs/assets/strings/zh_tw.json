@@ -75,8 +75,6 @@
     "bbs.config.multiskin.tooltip": "與多重皮膚功能相關的選項",
     "bbs.config.recording.countdown": "錄製倒計時",
     "bbs.config.recording.countdown-comment": "錄製倒計時（以秒為單位）",
-    "bbs.config.recording.next": "往後變量",
-    "bbs.config.recording.next-comment": "在「命令」行為剪輯中，可以指定 ${next_x/y/z} 變量來獲取之後的位置。該選項用於指定位置變量在未來有多少刻的時長。",
     "bbs.config.recording.title": "錄製",
     "bbs.config.recording.tooltip": "與玩家錄製系統相關的所有內容",
     "bbs.config.scrollbars.sensitivity": "滾動靈敏度",

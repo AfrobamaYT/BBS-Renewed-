@@ -70,7 +70,6 @@ public class BBSSettings
     public static ValueBoolean editorClipPreview;
 
     public static ValueFloat recordingCountdown;
-    public static ValueInt recordingNextVariable;
     public static ValueBoolean recordingSwipeDamage;
 
     public static ValueString entitySelectorsPropertyWhitelist;
@@ -169,7 +168,6 @@ public class BBSSettings
         editorClipPreview = builder.getBoolean("clip_preview", true);
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
-        recordingNextVariable = builder.getInt("next", 1, 1, 100);
         recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
 
         entitySelectorsPropertyWhitelist = builder.category("entity_selectors").getString("whitelist", "CustomName,Name");

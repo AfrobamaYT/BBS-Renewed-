@@ -77,8 +77,6 @@
     "bbs.config.multiskin.tooltip": "Opcje dotyczące funkcji Multi-skinów",
     "bbs.config.recording.countdown": "Odliczanie nagrywania",
     "bbs.config.recording.countdown-comment": "Odliczanie nagrywania (w sekundach)",
-    "bbs.config.recording.next": "Następna zmienna",
-    "bbs.config.recording.next-comment": "W klipach akcji poleceń można określić zmienną ${next_x/y/z}, aby uzyskać przyszłą pozycję. Opcja ta pozwala określić, ile ticków w przyszłości",
     "bbs.config.recording.swipe_damage": "Obrażenia od machnięcia",
     "bbs.config.recording.swipe_damage-comment": "Gdy klip akcji machnięcia jest nagrany, wstaw również automatycznie klip akcji ataku",
     "bbs.config.recording.title": "Nagrywanie",

@@ -80,8 +80,6 @@
     "bbs.config.multiskin.tooltip": "Налаштування що торкаються функції Мульти-скіна",
     "bbs.config.recording.countdown": "Відлік запису",
     "bbs.config.recording.countdown-comment": "Відлік до початку запису (в секундах)",
-    "bbs.config.recording.next": "Наступні змінні",
-    "bbs.config.recording.next-comment": "У кліпа Команда ви можете вказати змінну ${next_x/y/z} для отримання майбутньої позиції запису. Ця опція дозволяє вказати, скільки тиків у майбутньому матимуть змінні позиції\n",
     "bbs.config.recording.swipe_damage": "Пошкодження від змахування",
     "bbs.config.recording.swipe_damage-comment": "Коли буде записано кліп дії змахування, вставить також кліп дії автоматичної атаки",
     "bbs.config.recording.title": "Запис",

@@ -80,8 +80,6 @@
     "bbs.config.multiskin.tooltip": "Các tùy chọn liên quan đến tính năng nhiều giao diện",
     "bbs.config.recording.countdown": "Đếm ngược ghi hình",
     "bbs.config.recording.countdown-comment": "Thời gian đếm ngược ghi hình (tính bằng giây)",
-    "bbs.config.recording.next": "Các biến tiếp theo",
-    "bbs.config.recording.next-comment": "Trong các clip hành động lệnh, bạn có thể chỉ định biến ${next_x/y/z} để lấy vị trí tương lai. Tùy chọn này cho phép chỉ định bao nhiêu tick trong tương lai",
     "bbs.config.recording.swipe_damage": "Sát thương quét",
     "bbs.config.recording.swipe_damage-comment": "Khi hành động quét được quay lại, hãy tự động chèn thêm một clip hành động tấn công",
     "bbs.config.recording.title": "Ghi hình",

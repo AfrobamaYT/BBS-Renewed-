@@ -76,8 +76,6 @@
     "bbs.config.multiskin.tooltip": "Opciones relacionadas con la función Multi-skin",
     "bbs.config.recording.countdown": "Cuenta regresiva de grabación",
     "bbs.config.recording.countdown-comment": "Cuenta regresiva de grabación (en segundos)",
-    "bbs.config.recording.next": "Próximas variables",
-    "bbs.config.recording.next-comment": "En los clips de acción de comando, puedes especificar la variable ${next_x/y/z} para obtener la posición futura. Esta opción permite especificar cuántos ticks en el futuro tendrán las variables de posición",
     "bbs.config.recording.swipe_damage": "Daño al golpear",
     "bbs.config.recording.swipe_damage-comment": "Cuando se graba un clip de acción de golpeo, se inserta también un clip de acción de ataque automático",
     "bbs.config.recording.title": "Grabación",

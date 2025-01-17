@@ -73,8 +73,6 @@
     "bbs.config.multiskin.tooltip": "Cette option concerne la fonctionnalité des multi-skins",
     "bbs.config.recording.countdown": "Compte à rebours d'enregistrement",
     "bbs.config.recording.countdown-comment": "Compte à rebours d'enregistrement (en secondes)",
-    "bbs.config.recording.next": "Variables suivantes",
-    "bbs.config.recording.next-comment": "Dans les action clips \"Commande\", vous pouvez spécifiez la variable ${next_x/y/z} pour obtenir les positions suivantes. Cette option vous permet de préciser combien de ticks dans le futur les variables de position vont avoir.",
     "bbs.config.recording.title": "Enregistrement",
     "bbs.config.recording.tooltip": "Concerne le systeme d'enregistrement du joueur",
     "bbs.config.scrollbars.sensitivity": "Sensibilitée de défilement",

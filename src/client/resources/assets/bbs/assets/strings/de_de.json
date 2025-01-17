@@ -78,8 +78,6 @@
     "bbs.config.multiskin.tooltip": "Optionen für Multi-Skin",
     "bbs.config.recording.countdown": "Aufnahme Countdown",
     "bbs.config.recording.countdown-comment": "Aufnahme Countdown (in Sekunden)",
-    "bbs.config.recording.next": "Nächste Variablen",
-    "bbs.config.recording.next-comment": "In Befehls-Aktions-Clips kannst du die ${next_x/y/z} Variable benutzen um eine zukünftige Position zu erhalten. Diese Option erlaubt dir einzustellen wie viele Ticks in der Zukunft.",
     "bbs.config.recording.swipe_damage": "Schlag-Schaden",
     "bbs.config.recording.swipe_damage-comment": "Wenn ein Schlag-Clip aufgenommen wird, fügt es automatisch einen Attack-Aktions Clip ein",
     "bbs.config.recording.title": "Aufnahme",

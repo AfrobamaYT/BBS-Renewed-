@@ -81,8 +81,6 @@
     "bbs.config.multiskin.tooltip": "ตัวเลือกที่เกี่ยวข้องกับฟีเจอร์หลายสกิน",
     "bbs.config.recording.countdown": "การนับถอยหลังก่อนการบันทึก",
     "bbs.config.recording.countdown-comment": "การนับถอยหลังก่อนการบันทึก (เป็นวินาที)",
-    "bbs.config.recording.next": "ตัวแปรถัดไป",
-    "bbs.config.recording.next-comment": "ในคลิปคำสั่งการกระทำ คุณสามารถระบุตัวแปร ${next_x/y/z} เพื่อรับตำแหน่งในอนาคตได้ ตัวเลือกนี้ช่วยให้สามารถระบุจำนวนติ๊กในอนาคตได้",
     "bbs.config.recording.swipe_damage": "ความเสียหายจากการฟาด",
     "bbs.config.recording.swipe_damage-comment": "เมื่อคลิปการฟาดถูกสร้างเสร็จ, ระบบจะเพิ่มคลิปการโจมตีอัตโนมัติทันที",
     "bbs.config.recording.title": "การบันทึก",

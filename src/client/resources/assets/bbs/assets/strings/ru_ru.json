@@ -87,8 +87,6 @@
     "bbs.config.multiskin.tooltip": "Настройки касающиеся функции Мульти-скин",
     "bbs.config.recording.countdown": "Отсчёт записи",
     "bbs.config.recording.countdown-comment": "Отсчёт начала записи (в секундах)",
-    "bbs.config.recording.next": "Следующие переменные",
-    "bbs.config.recording.next-comment": "В клипе действие команды, Вы можете воспользоваться ${next_x/y/z} переменными чтобы получить будущую позицию записи. Эта опция позволяет вам указать сколько тиков в будущее эти переменные будут хранить позицию",
     "bbs.config.recording.swipe_damage": "Урон взмаха",
     "bbs.config.recording.swipe_damage-comment": "Когда клип взмахнуть был записан, автоматически также вставлять клип аттаки",
     "bbs.config.recording.title": "Запись",

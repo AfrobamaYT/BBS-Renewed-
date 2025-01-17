@@ -73,8 +73,6 @@
     "bbs.config.multiskin.tooltip": "Opsi terkait fitur Multi-skin",
     "bbs.config.recording.countdown": "Hitung mundur perekaman",
     "bbs.config.recording.countdown-comment": "Hitung mundur perekaman (dalam detik)",
-    "bbs.config.recording.next": "Variabel berikutnya",
-    "bbs.config.recording.next-comment": "Dalam klip aksi perintah, Anda dapat menentukan variabel ${next_x/y/z} untuk mendapatkan posisi masa depan. Opsi ini memungkinkan untuk menentukan berapa banyak tick di masa depan",
     "bbs.config.recording.title": "Perekaman",
     "bbs.config.recording.tooltip": "Semua yang terkait dengan sistem perekaman pemain",
     "bbs.config.dc.enabled": "Diaktifkan",

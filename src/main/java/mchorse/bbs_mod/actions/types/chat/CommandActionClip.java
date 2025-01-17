@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.actions.types.chat;
 
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.SuperFakePlayer;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.entity.ActorEntity;
@@ -24,19 +23,6 @@ public class CommandActionClip extends ActionClip
         this.applyPositionRotation(player, replay, tick);
 
         String command = this.command.get();
-
-        if (command.contains("$"))
-        {
-            int i = BBSSettings.recordingNextVariable.get();
-            double x = replay.keyframes.x.interpolate(tick + i);
-            double y = replay.keyframes.y.interpolate(tick + i);
-            double z = replay.keyframes.z.interpolate(tick + i);
-
-            command = command
-                .replaceAll("\\$\\{next_x\\}", String.valueOf(x))
-                .replaceAll("\\$\\{next_y\\}", String.valueOf(y))
-                .replaceAll("\\$\\{next_z\\}", String.valueOf(z));
-        }
 
         player.getServer().getCommandManager().executeWithPrefix(player.getCommandSource(), command);
     }

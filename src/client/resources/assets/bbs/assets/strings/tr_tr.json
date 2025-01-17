@@ -77,8 +77,6 @@
     "bbs.config.multiskin.tooltip": "Çoklu-skin ile ilgili seçenekler",
     "bbs.config.recording.countdown": "Kayıt geriye sayımı",
     "bbs.config.recording.countdown-comment": "Kayıt geri sayımı (saniye cinsinden)",
-    "bbs.config.recording.next": "Sonraki değişkenler",
-    "bbs.config.recording.next-comment": "Komut eylem kliplerinde, gelecekteki konumu almak için ${next_x/y/z} değişkenini belirtebilirsiniz. Bu seçenek, konum değişkenlerinin gelecekte kaç tick alacağını belirtmenizi sağlar",
     "bbs.config.recording.title": "Kayıt alma",
     "bbs.config.recording.tooltip": "Oyuncu kayıt sistemiyle ilgili her şey",
     "bbs.config.scrollbars.sensitivity": "Kaydırma hassasiyeti",
