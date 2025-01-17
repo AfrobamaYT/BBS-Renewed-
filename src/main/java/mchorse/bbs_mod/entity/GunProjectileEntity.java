@@ -27,6 +27,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -42,6 +43,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
     private boolean stuck;
     private int lifeLeft;
+    private int bounces;
     private BlockState stuckBlockState;
 
     public GunProjectileEntity(EntityType<? extends ProjectileEntity> type, World world)
@@ -61,6 +63,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     public void setProperties(GunProperties properties)
     {
         this.properties = properties;
+        this.bounces = properties.bounces;
     }
 
     @Override
@@ -101,16 +104,14 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     @Override
     public boolean shouldRender(double distance)
     {
-        double d = this.getBoundingBox().getAverageSideLength() * 10D;
+        double d = this.getBoundingBox().getAverageSideLength();
 
         if (Double.isNaN(d))
         {
             d = 1D;
         }
 
-        d *= 64D * getRenderDistanceMultiplier();
-
-        return distance < d * d;
+        return distance < (d * 256D) * (d * 256D);
     }
 
     @Override
@@ -355,19 +356,33 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     @Override
     protected void onBlockHit(BlockHitResult blockHitResult)
     {
-        this.stuckBlockState = this.getWorld().getBlockState(blockHitResult.getBlockPos());
-
         super.onBlockHit(blockHitResult);
 
         Vec3d velocity = blockHitResult.getPos().subtract(this.getX(), this.getY(), this.getZ());
+
+        if (this.bounces > 0)
+        {
+            this.bounces -= 1;
+
+            velocity = this.getVelocity();
+
+            float damp = this.properties.bounceDamping;
+
+            if (blockHitResult.getSide().getAxis() == Direction.Axis.X) velocity = velocity.multiply(-damp, damp, damp);
+            if (blockHitResult.getSide().getAxis() == Direction.Axis.Y) velocity = velocity.multiply(damp, -damp, damp);
+            if (blockHitResult.getSide().getAxis() == Direction.Axis.Z) velocity = velocity.multiply(damp, damp, -damp);
+        }
+        else
+        {
+            this.stuckBlockState = this.getWorld().getBlockState(blockHitResult.getBlockPos());
+            this.stuck = true;
+        }
 
         this.setVelocity(velocity);
 
         Vec3d gravity = velocity.normalize().multiply(0.05D);
 
         this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
-
-        this.stuck = true;
 
         if (!this.properties.cmdImpact.isEmpty())
         {

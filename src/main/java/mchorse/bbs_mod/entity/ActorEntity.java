@@ -69,6 +69,19 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider
     }
 
     @Override
+    public boolean shouldRender(double distance)
+    {
+        double d = this.getBoundingBox().getAverageSideLength();
+
+        if (Double.isNaN(d))
+        {
+            d = 1D;
+        }
+
+        return distance < (d * 256D) * (d * 256D);
+    }
+
+    @Override
     public Iterable<ItemStack> getHandItems()
     {
         return List.of(this.getEquippedStack(EquipmentSlot.MAINHAND), this.getEquippedStack(EquipmentSlot.OFFHAND));
