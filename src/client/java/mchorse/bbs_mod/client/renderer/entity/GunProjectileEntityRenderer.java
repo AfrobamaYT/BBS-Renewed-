@@ -7,6 +7,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
@@ -47,7 +48,9 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         MatrixStackUtils.applyTransform(matrices, properties.projectileTransform);
 
         RenderSystem.enableDepthTest();
-        FormUtilsClient.render(projectile.getForm(), FormRenderingContext.set(projectile.getEntity(), matrices, light, OverlayTexture.DEFAULT_UV, tickDelta));
+        FormUtilsClient.render(projectile.getForm(), FormRenderingContext
+            .set(projectile.getEntity(), matrices, light, OverlayTexture.DEFAULT_UV, tickDelta)
+            .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
         RenderSystem.disableDepthTest();
 
         matrices.pop();
