@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.entity;
 
+import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -7,6 +8,7 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.network.ServerNetwork;
 import mchorse.bbs_mod.utils.MathUtils;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -45,6 +47,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     private int lifeLeft;
     private int bounces;
     private BlockState stuckBlockState;
+    private boolean impacted;
 
     public GunProjectileEntity(EntityType<? extends ProjectileEntity> type, World world)
     {
@@ -55,6 +58,28 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     {
         this.discard();
         this.executeCommand(this.properties.cmdVanish);
+    }
+
+    private void impact()
+    {
+        if (this.getWorld().isClient)
+        {
+            return;
+        }
+
+        if (!this.impacted)
+        {
+            this.setForm(FormUtils.copy(this.properties.impactForm));
+
+            for (ServerPlayerEntity otherPlayer : PlayerLookup.tracking(this))
+            {
+                ServerNetwork.sendEntityForm(otherPlayer, this);
+            }
+
+            this.impacted = true;
+        }
+
+        this.executeCommand(this.properties.cmdImpact);
     }
 
     private void executeCommand(String command)
@@ -345,8 +370,6 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
 
             this.prevYaw += 180F;
         }
-
-        this.executeCommand(this.properties.cmdImpact);
     }
 
     public void deflect()
@@ -394,7 +417,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         Vec3d gravity = velocity.normalize().multiply(0.05D);
 
         this.setPos(this.getX() - gravity.x, this.getY() - gravity.y, this.getZ() - gravity.z);
-        this.executeCommand(this.properties.cmdImpact);
+        this.impact();
     }
 
     protected void onHit(LivingEntity target)
@@ -402,6 +425,10 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         if (this.bounces <= 0 && this.properties.vanish)
         {
             this.vanish();
+        }
+        else
+        {
+            this.impact();
         }
     }
 
