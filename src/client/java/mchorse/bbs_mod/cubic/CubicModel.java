@@ -28,7 +28,6 @@ public class CubicModel implements ICubicModel
     public Model model;
     public Animations animations;
     public Link texture;
-    public long loadTime;
 
     /* Model's additional properties */
     public String poseGroup;
@@ -54,7 +53,6 @@ public class CubicModel implements ICubicModel
         this.animations = animations;
         this.texture = texture;
 
-        this.loadTime = System.currentTimeMillis();
         this.poseGroup = id;
     }
 

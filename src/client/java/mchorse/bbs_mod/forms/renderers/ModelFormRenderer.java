@@ -72,7 +72,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private ActionsConfig lastConfigs;
     private IAnimator animator;
-    private long lastCheck;
+    private CubicModel lastModel;
 
     private IEntity entity = new StubEntity();
 
@@ -176,7 +176,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void resetAnimator()
     {
         this.animator = null;
-        this.lastCheck = 0;
+        this.lastModel = null;
     }
 
     public void ensureAnimator(float transition)
@@ -184,7 +184,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         CubicModel model = this.getModel();
         ActionsConfig actionsConfig = this.form.actions.get(transition);
 
-        if (model == null || this.lastCheck >= model.loadTime)
+        if (model == null || this.lastModel == model)
         {
             /* Update the config */
             if (this.animator != null && !Objects.equals(actionsConfig, this.lastConfigs))
@@ -203,7 +203,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         this.lastConfigs = new ActionsConfig();
         this.lastConfigs.copy(actionsConfig);
-        this.lastCheck = model.loadTime;
+        this.lastModel = model;
     }
 
     @Override
