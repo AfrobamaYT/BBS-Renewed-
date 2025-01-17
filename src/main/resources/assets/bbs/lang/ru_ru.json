@@ -1,5 +1,6 @@
 {
     "block.bbs.model": "Блок-модель",
+    "item.bbs.gun": "BBS ружьё",
     "itemGroup.bbs.main": "BBS мод",
 
     "key.bbs.item_editor": "Редактор предметов",

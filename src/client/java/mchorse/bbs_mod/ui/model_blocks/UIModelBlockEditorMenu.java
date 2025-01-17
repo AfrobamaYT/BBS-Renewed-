@@ -8,7 +8,6 @@ import mchorse.bbs_mod.camera.controller.OrbitCameraController;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.items.GunProperties;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCamera;
@@ -114,9 +113,9 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         if (gun != null)
         {
             /* Gun properties */
-            UIToggle launch = new UIToggle(IKey.raw("Launch"), (b) -> gun.launch = b.getValue());
+            UIToggle launch = new UIToggle(UIKeys.GUN_ITEM_LAUNCH, (b) -> gun.launch = b.getValue());
             UITrackpad launchPower = new UITrackpad((v) -> gun.launchPower = v.floatValue());
-            UIToggle launchAdditive = new UIToggle(IKey.raw("Additive"), (b) -> gun.launchAdditive = b.getValue());
+            UIToggle launchAdditive = new UIToggle(UIKeys.GUN_ITEM_ADDITIVE, (b) -> gun.launchAdditive = b.getValue());
             UITrackpad scatterX = new UITrackpad((v) -> gun.scatterX = v.floatValue());
             UITrackpad scatterY = new UITrackpad((v) -> gun.scatterY = v.floatValue());
             UITrackpad projectiles = new UITrackpad((v) -> gun.projectiles = v.intValue()).limit(1).integer();
@@ -125,20 +124,20 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             launchPower.setValue(gun.launchPower);
             launchAdditive.setValue(gun.launchAdditive);
             scatterX.setValue(gun.scatterX);
-            scatterX.tooltip(IKey.raw("Horizontal scatter"));
+            scatterX.tooltip(UIKeys.GUN_ITEM_SCATTER_H);
             scatterY.setValue(gun.scatterY);
-            scatterY.tooltip(IKey.raw("Vertical scatter"));
+            scatterY.tooltip(UIKeys.GUN_ITEM_SCATTER_V);
             projectiles.setValue(gun.projectiles);
             projectiles.limit(1).integer();
 
             this.sectionGun = UI.scrollView(5, 10,
                 launch, launchPower, launchAdditive,
-                UI.label(IKey.raw("Scatter")).background().marginTop(6), UI.row(scatterX, scatterY),
-                UI.label(IKey.raw("Projectiles")).background().marginTop(6), projectiles
+                UI.label(UIKeys.GUN_ITEM_SCATTER).background().marginTop(6), UI.row(scatterX, scatterY),
+                UI.label(UIKeys.GUN_ITEM_PROJECTILES).background().marginTop(6), projectiles
             );
             this.sectionGun.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
             this.gun = new UIIcon(Icons.GEAR, (b) -> this.setSection(this.sectionGun));
-            this.gun.tooltip(IKey.raw("Gun shooting options"));
+            this.gun.tooltip(UIKeys.GUN_ITEM_TITLE);
 
             /* Projectile */
             UINestedEdit projectileForm = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, gun.projectileForm, (f) ->
@@ -147,13 +146,13 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
                 this.sectionProjectile.getChildren(UINestedEdit.class).get(0).setForm(f);
             }));
             UIPropTransform projectileTransform = new UIPropTransform();
-            UIToggle useTarget = new UIToggle(IKey.raw("Use target"), (b) -> gun.useTarget = b.getValue());
+            UIToggle useTarget = new UIToggle(UIKeys.GUN_PROJECTILE_USE_TARGET, (b) -> gun.useTarget = b.getValue());
             UITrackpad lifeSpan = new UITrackpad((v) -> gun.lifeSpan = v.intValue());
             UITrackpad speed = new UITrackpad((v) -> gun.speed = v.floatValue());
             UITrackpad friction = new UITrackpad((v) -> gun.friction = v.floatValue());
             UITrackpad gravity = new UITrackpad((v) -> gun.gravity = v.floatValue());
-            UIToggle yaw = new UIToggle(IKey.raw("Yaw"), (b) -> gun.yaw = b.getValue());
-            UIToggle pitch = new UIToggle(IKey.raw("Pitch"), (b) -> gun.pitch = b.getValue());
+            UIToggle yaw = new UIToggle(UIKeys.GUN_PROJECTILE_YAW, (b) -> gun.yaw = b.getValue());
+            UIToggle pitch = new UIToggle(UIKeys.GUN_PROJECTILE_PITCH, (b) -> gun.pitch = b.getValue());
             UITrackpad fadeIn = new UITrackpad((v) -> gun.fadeIn = v.intValue());
             UITrackpad fadeOut = new UITrackpad((v) -> gun.fadeOut = v.intValue());
 
@@ -165,28 +164,28 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             friction.setValue(gun.friction);
             gravity.setValue(gun.gravity);
             yaw.setValue(gun.yaw);
-            yaw.tooltip(IKey.raw("Horizontal rotation"));
+            yaw.tooltip(UIKeys.GUN_PROJECTILE_YAW_TOOLTIP);
             pitch.setValue(gun.pitch);
-            pitch.tooltip(IKey.raw("Vertical rotation"));
+            pitch.tooltip(UIKeys.GUN_PROJECTILE_PITCH_TOOLTIP);
             fadeIn.setValue(gun.fadeIn);
-            fadeIn.limit(0).integer().tooltip(IKey.raw("Fade in"));
+            fadeIn.limit(0).integer().tooltip(UIKeys.GUN_PROJECTILE_FADE_IN);
             fadeOut.setValue(gun.fadeOut);
-            fadeOut.limit(0).integer().tooltip(IKey.raw("Fade out"));
+            fadeOut.limit(0).integer().tooltip(UIKeys.GUN_PROJECTILE_FADE_OUT);
 
             this.sectionProjectile = UI.scrollView(5, 10,
-                UI.label(IKey.raw("Projectile form")).background(), projectileForm,
-                UI.label(IKey.raw("Projectile transform")).background().marginTop(6), projectileTransform,
+                UI.label(UIKeys.GUN_PROJECTILE_FORM).background(), projectileForm,
+                UI.label(UIKeys.GUN_PROJECTILE_TRANSFORM).background().marginTop(6), projectileTransform,
                 useTarget.marginTop(6),
-                UI.label(IKey.raw("Life span")).background().marginTop(6), lifeSpan,
-                UI.label(IKey.raw("Speed")).background().marginTop(6), speed,
-                UI.label(IKey.raw("Friction")).background(), friction,
-                UI.label(IKey.raw("Gravity")).background(), gravity,
-                UI.label(IKey.raw("Rotations")).background().marginTop(6), UI.row(yaw, pitch),
-                UI.label(IKey.raw("Scale fading")).background().marginTop(6), UI.row(fadeIn, fadeOut)
+                UI.label(UIKeys.GUN_PROJECTILE_LIFE_SPAN).background().marginTop(6), lifeSpan,
+                UI.label(UIKeys.GUN_PROJECTILE_SPEED).background().marginTop(6), speed,
+                UI.label(UIKeys.GUN_PROJECTILE_FRICTION).background(), friction,
+                UI.label(UIKeys.GUN_PROJECTILE_GRAVITY).background(), gravity,
+                UI.label(UIKeys.GUN_PROJECTILE_ROTATIONS).background().marginTop(6), UI.row(yaw, pitch),
+                UI.label(UIKeys.GUN_PROJECTILE_FADING).background().marginTop(6), UI.row(fadeIn, fadeOut)
             );
             this.sectionProjectile.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
             this.projectile = new UIIcon(Icons.BULLET, (b) -> this.setSection(this.sectionProjectile));
-            this.projectile.tooltip(IKey.raw("Projectile options"));
+            this.projectile.tooltip(UIKeys.GUN_PROJECTILE_TITLE);
 
             /* Impact */
             UINestedEdit impactForm = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, gun.impactForm, (f) ->
@@ -196,11 +195,11 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             }));
             UITrackpad bounceHits = new UITrackpad((v) -> gun.bounces = v.intValue());
             UITrackpad bounceDamping = new UITrackpad((v) -> gun.bounceDamping = v.floatValue());
-            UIToggle vanish = new UIToggle(IKey.raw("Vanish"), (b) -> gun.vanish = b.getValue());
+            UIToggle vanish = new UIToggle(UIKeys.GUN_IMPACT_VANISH, (b) -> gun.vanish = b.getValue());
             UITrackpad damage = new UITrackpad((v) -> gun.damage = v.floatValue());
             UITrackpad knockback = new UITrackpad((v) -> gun.knockback = v.floatValue());
-            UIToggle collideBlocks = new UIToggle(IKey.raw("Blocks"), (b) -> gun.collideBlocks = b.getValue());
-            UIToggle collideEntities = new UIToggle(IKey.raw("Entities"), (b) -> gun.collideEntities = b.getValue());
+            UIToggle collideBlocks = new UIToggle(UIKeys.GUN_IMPACT_BLOCKS, (b) -> gun.collideBlocks = b.getValue());
+            UIToggle collideEntities = new UIToggle(UIKeys.GUN_IMPACT_ENTITIES, (b) -> gun.collideEntities = b.getValue());
 
             impactForm.setForm(gun.impactForm);
             bounceHits.setValue(gun.bounces);
@@ -212,17 +211,17 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             collideEntities.setValue(gun.collideEntities);
 
             this.sectionImpact = UI.scrollView(5, 10,
-                UI.label(IKey.raw("Impact form")).background(), impactForm,
-                UI.label(IKey.raw("Bounces")).background().marginTop(6), bounceHits,
-                UI.label(IKey.raw("Bounce damping")).background(), bounceDamping,
+                UI.label(UIKeys.GUN_IMPACT_FORM).background(), impactForm,
+                UI.label(UIKeys.GUN_IMPACT_BOUNCES).background().marginTop(6), bounceHits,
+                UI.label(UIKeys.GUN_IMPACT_BOUNCE_DAMPING).background(), bounceDamping,
                 vanish.marginTop(6),
-                UI.label(IKey.raw("Damage")).background().marginTop(6), damage,
-                UI.label(IKey.raw("Knockback")).background().marginTop(6), knockback,
-                UI.label(IKey.raw("Collision")).background().marginTop(6), UI.row(collideBlocks, collideEntities)
+                UI.label(UIKeys.GUN_IMPACT_DAMAGE).background().marginTop(6), damage,
+                UI.label(UIKeys.GUN_IMPACT_KNOCKBACK).background().marginTop(6), knockback,
+                UI.label(UIKeys.GUN_IMPACT_COLLISION).background().marginTop(6), UI.row(collideBlocks, collideEntities)
             );
             this.sectionImpact.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
             this.impact = new UIIcon(Icons.DOWNLOAD, (b) -> this.setSection(this.sectionImpact));
-            this.impact.tooltip(IKey.raw("Impact options"));
+            this.impact.tooltip(UIKeys.GUN_IMPACT_TITLE);
 
             /* Commands */
             UITextbox cmdFiring = new UITextbox(10000, (t) -> gun.cmdFiring = t);
@@ -236,18 +235,18 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             cmdVanish.setText(gun.cmdVanish);
             cmdTicking.setText(gun.cmdTicking);
             ticking.limit(0).integer().setValue(gun.ticking);
-            ticking.tooltip(IKey.raw("How frequently ticking command will be executed. 0 means never."));
+            ticking.tooltip(UIKeys.GUN_COMMANDS_TICKING_TOOLTIP);
 
             this.sectionCommands = UI.scrollView(5, 10,
-                UI.label(IKey.raw("When fired")).background(), cmdFiring,
-                UI.label(IKey.raw("On impact")).background(), cmdImpact,
-                UI.label(IKey.raw("On death")).background(), cmdVanish,
-                UI.label(IKey.raw("On tick")).background(), cmdTicking,
+                UI.label(UIKeys.GUN_COMMANDS_FIRING).background(), cmdFiring,
+                UI.label(UIKeys.GUN_COMMANDS_IMPACT).background(), cmdImpact,
+                UI.label(UIKeys.GUN_COMMANDS_VANISH).background(), cmdVanish,
+                UI.label(UIKeys.GUN_COMMANDS_TICKING).background(), cmdTicking,
                 ticking
             );
             this.sectionCommands.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
             this.commands = new UIIcon(Icons.CONSOLE, (b) -> this.setSection(this.sectionCommands));
-            this.commands.tooltip(IKey.raw("Commands"));
+            this.commands.tooltip(UIKeys.GUN_COMMANDS_TITLE);
         }
 
         this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setSection(this.sectionTp));
