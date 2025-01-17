@@ -213,15 +213,22 @@ public class UIFilmUndoHandler
 
         if (
             path.endsWith("/replays") ||
+            path.endsWith("/keyframes") ||
             path.contains("/keyframes/x") ||
             path.contains("/keyframes/y") ||
             path.contains("/keyframes/z") ||
             path.contains("/keyframes/item_main_hand") ||
             path.contains("/keyframes/item_off_hand") ||
             path.endsWith("/actor") ||
-            path.endsWith("/form") ||
-            path.endsWith("/keyframes")
+            path.endsWith("/form")
         ) {
+            return true;
+        }
+
+        /* Specifically for overwriting full replay like what's done when recording
+         * data in the world! */
+        if (value.getParent() != null && value.getParent().getId().equals("replays"))
+        {
             return true;
         }
 
