@@ -20,6 +20,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.ArrayList;
@@ -315,24 +316,29 @@ public class UIAudioEditor extends UIElement
         {
             this.dragged.end = (float) this.scale.from(context.mouseX);
         }
-        else if (this.navigating)
+        else
         {
-            int mouseX = context.mouseX;
-            double offset = (mouseX - lastX) / this.scale.getZoom();
+            float zoom = (float) this.scale.getZoom();
 
-            this.scale.setShift(this.scale.getShift() - offset);
-        }
-        else if (this.dragging >= 0)
-        {
-            int mouseX = context.mouseX;
-            double offset = (mouseX - lastX) / this.scale.getZoom();
+            if (this.navigating)
+            {
+                int mouseX = context.mouseX;
+                double offset = (mouseX - lastX) / zoom;
 
-            if (this.dragging == 0 || this.dragging == 1) this.current.start += offset;
-            if (this.dragging == 0 || this.dragging == 2) this.current.end += offset;
-        }
-        else if (this.dragging == -1 && this.player != null)
-        {
-            this.player.setPlaybackPosition((float) this.scale.from(context.mouseX));
+                this.scale.setShift(this.scale.getShift() - offset);
+            }
+            else if (this.dragging >= 0)
+            {
+                int mouseX = context.mouseX;
+                float offset = (mouseX - lastX) / zoom;
+
+                if (this.dragging == 0 || this.dragging == 1) this.current.start = MathUtils.clamp(this.current.start + offset, 0, this.current.end - 6F / zoom);
+                if (this.dragging == 0 || this.dragging == 2) this.current.end = MathUtils.clamp(this.current.end + offset, this.current.start + 6F / zoom, Float.MAX_VALUE);
+            }
+            else if (this.dragging == -1 && this.player != null)
+            {
+                this.player.setPlaybackPosition((float) this.scale.from(context.mouseX));
+            }
         }
 
         this.lastX = context.mouseX;
