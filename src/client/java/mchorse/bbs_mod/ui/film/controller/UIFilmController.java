@@ -917,6 +917,11 @@ public class UIFilmController extends UIElement
 
                         if (anEntity instanceof ActorEntity actor)
                         {
+                            /* Force synchronize entity angles */
+                            actor.setYaw(replay.keyframes.yaw.interpolate(ticks).floatValue());
+                            actor.setHeadYaw(replay.keyframes.headYaw.interpolate(ticks).floatValue());
+                            actor.setBodyYaw(replay.keyframes.bodyYaw.interpolate(ticks).floatValue());
+                            actor.setPitch(replay.keyframes.pitch.interpolate(ticks).floatValue());
                             replay.applyProperties(ticks, actor.getForm(), runner.isRunning());
                             replay.applyClientActions(ticks, new MCEntity(anEntity), this.panel.getData());
                         }
