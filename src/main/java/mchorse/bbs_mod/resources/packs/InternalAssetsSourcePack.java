@@ -1,9 +1,11 @@
 package mchorse.bbs_mod.resources.packs;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.DataPath;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,7 +88,45 @@ public class InternalAssetsSourcePack implements ISourcePack
             }
         }
         catch (Exception e)
-        {}
+        {
+            e.printStackTrace();
+
+            /* Forge throws some exception due to the way Connector works, it can't find the
+             * jar file for some reason... so I have to resort to such ugly piece of code for
+             * it to work correctly. I should probably ask on Connector's Discord what I can do,
+             * but whatever for now... */
+            String version = "";
+
+            for (ModContainer allMod : FabricLoader.getInstance().getAllMods())
+            {
+                if (allMod.getMetadata().getId().equals(BBSMod.MOD_ID))
+                {
+                    version = allMod.getMetadata().getVersion().getFriendlyString();
+
+                    break;
+                }
+            }
+
+            if (version.isEmpty())
+            {
+                return;
+            }
+
+            File mods = new File(FabricLoader.getInstance().getGameDir().toFile(), "mods");
+
+            if (mods.isDirectory())
+            {
+                for (File file : mods.listFiles())
+                {
+                    String name = file.getName();
+
+                    if (name.startsWith("bbs") && name.contains(version) && name.endsWith(".jar"))
+                    {
+                        this.getLinksFromZipFile(file, link, links, recursive);
+                    }
+                }
+            }
+        }
     }
 
     /**

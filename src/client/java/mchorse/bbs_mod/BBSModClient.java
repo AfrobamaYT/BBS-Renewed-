@@ -68,17 +68,11 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
-import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -465,66 +459,6 @@ public class BBSModClient implements ClientModInitializer
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, gunItemRenderer);
-
-        this.setupModels();
-    }
-
-    private void setupModels()
-    {
-        boolean isForge = false;
-
-        try
-        {
-            Class.forName("net.minecraftforge.common.MinecraftForge");
-
-            isForge = true;
-        }
-        catch (Exception e)
-        {}
-
-        BBSMod.getAudioFolder().mkdirs();
-
-        this.insert(isForge, "/assets/bbs/assets/models/player/steve/", BBSMod.getAssetsPath("models/player/steve"), Arrays.asList("config.json", "steve.bbs.json", "steve.png"));
-        this.insert(isForge, "/assets/bbs/assets/models/player/alex/", BBSMod.getAssetsPath("models/player/alex"), Arrays.asList("config.json", "alex.bbs.json", "alex.png"));
-        this.insert(isForge, "/assets/bbs/assets/models/player/steve_bends/", BBSMod.getAssetsPath("models/player/steve_bends"), Arrays.asList("config.json", "steve_bends_by_michaelcreeper_.bbs.json", "steve.png"));
-        this.insert(isForge, "/assets/bbs/assets/models/player/alex_bends/", BBSMod.getAssetsPath("models/player/alex_bends"), Arrays.asList("config.json", "alex_bends_by_michaelcreeper_.bbs.json", "alex.png"));
-        this.insert(isForge, "/assets/bbs/assets/models/player/eyes/", BBSMod.getAssetsPath("models/player/eyes"), Arrays.asList("eyes.bbs.json", "poses.json", "alex.png", "steve.png"));
-        this.insert(isForge, "/assets/bbs/assets/models/player/eyes_1px/", BBSMod.getAssetsPath("models/player/eyes_1px"), Arrays.asList("eyes_1px.bbs.json", "poses.json", "alex.png", "steve.png"));
-    }
-
-    private void insert(boolean isForge, String basePath, File folder, List<String> files)
-    {
-        boolean folderExists = folder.exists();
-
-        folder.mkdirs();
-
-        if (isForge && !folderExists)
-        {
-            this.copy(basePath, folder, files);
-        }
-    }
-
-    private void copy(String basePath, File folder, List<String> files)
-    {
-        for (String file : files)
-        {
-            this.copy(basePath + file, new File(folder, file));
-        }
-    }
-
-    private void copy(String s, File file)
-    {
-        InputStream stream = BBSModClient.class.getResourceAsStream(s);
-
-        try
-        {
-            IOUtils.copy(stream, new FileOutputStream(file));
-        }
-        catch (IOException e)
-        {
-            System.out.println("Failed to copy " + s + " to " + file.getAbsolutePath());
-            e.printStackTrace();
-        }
     }
 
     private KeyBinding createKey(String id, int key)

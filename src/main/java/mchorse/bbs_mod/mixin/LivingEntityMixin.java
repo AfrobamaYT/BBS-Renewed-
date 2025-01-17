@@ -31,4 +31,10 @@ public class LivingEntityMixin
             });
         }
     }
+
+    /* @Inject(method = "swingHand(Lnet/minecraft/util/Hand;Z)V", at = @At("HEAD"), cancellable = true)
+    public void onSwingHand(Hand hand, boolean fromServerPlayer, CallbackInfo info)
+    {
+        info.cancel();
+    } */
 }
