@@ -122,8 +122,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
             "gamerule doWeatherCycle false",
             "gamerule doWardenSpawning false",
             "gamerule doMobSpawning false",
-            "gamerule doTraderSpawning false",
-            "kill @e[type=!minecraft:player,type=!minecraft:item_frame,type=!minecraft:item]"
+            "gamerule doTraderSpawning false"
         );
 
         for (String command : commands)

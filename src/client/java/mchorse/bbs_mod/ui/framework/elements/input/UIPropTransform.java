@@ -61,6 +61,8 @@ public class UIPropTransform extends UITransform
         this.iconT.hoverColor = Colors.LIGHTEST_GRAY;
         this.iconT.setEnabled(true);
         this.iconT.tooltip(this.local ? UIKeys.TRANSFORMS_CONTEXT_SWITCH_GLOBAL : UIKeys.TRANSFORMS_CONTEXT_SWITCH_LOCAL);
+
+        this.noCulling();
     }
 
     public UIPropTransform(Consumer<Transform> callback)
