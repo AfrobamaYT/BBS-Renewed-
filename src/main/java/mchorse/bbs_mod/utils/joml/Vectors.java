@@ -38,6 +38,9 @@ public class Vectors
 
     /* Integer version */
 
+    /**
+     * @param aspect Width / Height
+     */
     public static Vector2i resize(float aspect, int w, int h)
     {
         Vector2i resized = new Vector2i(w, h);

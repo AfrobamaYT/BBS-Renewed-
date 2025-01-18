@@ -13,13 +13,13 @@ import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.entity.ActorEntity;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.VoiceLines;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -58,6 +58,7 @@ import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -65,6 +66,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
+import org.joml.Vector2i;
 import org.joml.Vector3d;
 
 import java.io.File;
@@ -118,6 +120,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private Timer flightEditTime = new Timer(100);
 
     private List<UIElement> panels = new ArrayList<>();
+    private UIElement secretPlay;
 
     public static VoiceLines getVoiceLines()
     {
@@ -271,6 +274,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.panels.add(this.replayEditor);
         this.panels.add(this.actionEditor);
         this.panels.add(this.screenplayEditor);
+
+        this.secretPlay = new UIElement();
+        this.secretPlay.keys().register(Keys.PLAUSE, () -> this.preview.plause.clickItself()).active(() -> !this.isFlying() && !this.canBeSeen()).category(editor);
     }
 
     private void setupEditorFlex(boolean resize)
@@ -538,6 +544,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.fillData();
         this.setFlight(false);
         cameraController.add(this.runner);
+
+        this.getContext().menu.getRoot().add(this.secretPlay);
     }
 
     @Override
@@ -558,6 +566,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.replayEditor.close();
 
         this.notifyServer(ActionState.STOP);
+
+        this.secretPlay.removeFromParent();
     }
 
     @Override
@@ -581,12 +591,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     @Override
     public boolean needsBackground()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean canToggleVisibility()
     {
         return false;
     }
@@ -722,6 +726,27 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     /* Rendering code */
+
+    @Override
+    public void renderPanelBackground(UIContext context)
+    {
+        super.renderPanelBackground(context);
+
+        Texture texture = BBSRendering.getTexture();
+
+        if (texture != null)
+        {
+            int w = context.menu.width;
+            int h = context.menu.height;
+            Vector2i resize = Vectors.resize(texture.width / (float) texture.height, w, h);
+            Area area = new Area();
+
+            area.setSize(resize.x, resize.y);
+            area.setPos((w - area.w) / 2, (h - area.h) / 2);
+
+            context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+        }
+    }
 
     @Override
     protected void renderBackground(UIContext context)
