@@ -53,7 +53,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
     private void bindTexture(float transition)
     {
-        Link link = this.form.texture.get(transition);
+        Link link = this.form.texture.get();
 
         if (link != null)
         {

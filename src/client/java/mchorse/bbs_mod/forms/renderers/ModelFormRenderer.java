@@ -170,7 +170,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     public Pose getPose(float transition)
     {
-        return this.form.pose.get(transition);
+        return this.form.pose.get();
     }
 
     public void resetAnimator()
@@ -182,7 +182,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     public void ensureAnimator(float transition)
     {
         CubicModel model = this.getModel();
-        ActionsConfig actionsConfig = this.form.actions.get(transition);
+        ActionsConfig actionsConfig = this.form.actions.get();
 
         if (model == null || this.lastModel == model)
         {
@@ -233,9 +233,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             this.applyTransforms(uiMatrix, context.getTransition());
 
-            Link link = this.form.texture.get(context.getTransition());
+            Link link = this.form.texture.get();
             Link texture = link == null ? model.texture : link;
-            Color color = this.form.color.get(context.getTransition());
+            Color color = this.form.color.get();
             float scale = this.form.uiScale.get() * model.uiScale;
 
             CubicModelAnimator.resetPose(model.model);
@@ -286,8 +286,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         MatrixStack newStack = new MatrixStack();
         boolean isVao = model.isVAORendered();
         CubicCubeRenderer renderProcessor = isVao
-            ? new CubicVAORenderer(program.get(), model, light, overlay, picking, this.form.shapeKeys.get(transition))
-            : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get(transition));
+            ? new CubicVAORenderer(program.get(), model, light, overlay, picking, this.form.shapeKeys.get())
+            : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get());
 
         renderProcessor.setColor(color.r, color.g, color.b, color.a);
 
@@ -418,9 +418,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (this.animator != null && model != null)
         {
-            Link link = this.form.texture.get(context.getTransition());
+            Link link = this.form.texture.get();
             Link texture = link == null ? model.texture : link;
-            Color color = this.form.color.get(context.getTransition()).copy();
+            Color color = this.form.color.get().copy();
 
             color.mul(context.color);
             CubicModelAnimator.resetPose(model.model);

@@ -84,7 +84,6 @@ public class FilmController
         );
 
         AnchorProperty.Anchor value = form.anchor.get();
-        AnchorProperty.Anchor last = form.anchor.getLast();
         Matrix4f target = null;
         double cx = camera.getPos().x;
         double cy = camera.getPos().y;
@@ -92,7 +91,7 @@ public class FilmController
         Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, cx, cy, cz, transition);
         float opacity = 1F;
 
-        if (last == null)
+        /* if (last == null)
         {
             AnchorProperty.Anchor current = value;
             Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, current, defaultMatrix, transition);
@@ -103,14 +102,14 @@ public class FilmController
                 opacity = 0F;
             }
         }
-        else if (value != null)
+        else */if (value != null)
         {
-            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value, defaultMatrix, transition);
-            Matrix4f lastMatrix = getEntityMatrix(entities, cx, cy, cz, last, defaultMatrix, transition);
+            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value.actor, value.attachment, defaultMatrix, transition);
+            Matrix4f lastMatrix = getEntityMatrix(entities, cx, cy, cz, value.previousActor, value.previousAttachment, defaultMatrix, transition);
 
             if (matrix != lastMatrix)
             {
-                float factor = form.anchor.getTweenFactorInterpolated(transition);
+                float factor = value.x;
 
                 target = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
                 opacity = 1F - factor;
@@ -215,9 +214,9 @@ public class FilmController
         matrices.pop();
     }
 
-    public static Matrix4f getEntityMatrix(List<IEntity> entities, double cameraX, double cameraY, double cameraZ, AnchorProperty.Anchor selector, Matrix4f defaultMatrix, float transition)
+    public static Matrix4f getEntityMatrix(List<IEntity> entities, double cameraX, double cameraY, double cameraZ, int actor, String attachment, Matrix4f defaultMatrix, float transition)
     {
-        IEntity entity = CollectionUtils.getSafe(entities, selector.actor);
+        IEntity entity = CollectionUtils.getSafe(entities, actor);
 
         if (entity != null)
         {
@@ -232,7 +231,7 @@ public class FilmController
             {
                 FormUtilsClient.getRenderer(form).collectMatrices(entity, null, stack, map, "", transition);
 
-                Matrix4f matrix = map.get(selector.attachment);
+                Matrix4f matrix = map.get(attachment);
 
                 if (matrix != null)
                 {
@@ -330,7 +329,6 @@ public class FilmController
                 int ticks = this.tick;
 
                 replay.applyFrame(ticks, entity, null);
-                replay.applyProperties(ticks, entity.getForm(), true);
                 replay.applyClientActions(ticks, entity, this.film);
 
                 Map<String, Integer> actors = BBSModClient.getFilms().actors.get(this.film.getId());
@@ -350,7 +348,6 @@ public class FilmController
                             actor.setHeadYaw(replay.keyframes.headYaw.interpolate(ticks).floatValue());
                             actor.setBodyYaw(replay.keyframes.bodyYaw.interpolate(ticks).floatValue());
                             actor.setPitch(replay.keyframes.pitch.interpolate(ticks).floatValue());
-                            replay.applyProperties(ticks, actor.getForm(), true);
                             replay.applyClientActions(ticks, new MCEntity(anEntity), this.film);
                         }
                     }
@@ -371,11 +368,32 @@ public class FilmController
             }
 
             Replay replay = this.film.replays.getList().get(i);
+            IEntity entity = this.entities.get(i);
+
+            /* Apply property */
+            replay.applyProperties(this.tick + context.tickDelta(), entity.getForm());
+
+            Map<String, Integer> actors = BBSModClient.getFilms().actors.get(this.film.getId());
+
+            if (actors != null)
+            {
+                Integer entityId = actors.get(replay.getId());
+
+                if (entityId != null)
+                {
+                    Entity anEntity = MinecraftClient.getInstance().world.getEntityById(entityId);
+
+                    if (anEntity instanceof ActorEntity actor)
+                    {
+                        replay.applyProperties(this.tick + context.tickDelta(), actor.getForm());
+                    }
+                }
+            }
 
             if (!replay.actor.get())
             {
                 renderEntity(FilmControllerContext.instance
-                    .setup(this.entities, this.entities.get(i), context)
+                    .setup(this.entities, entity, context)
                     .shadow(replay.shadow.get(), replay.shadowSize.get())
                     .nameTag(replay.nameTag.get()));
             }

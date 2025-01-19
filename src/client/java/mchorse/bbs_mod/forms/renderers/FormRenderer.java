@@ -76,7 +76,7 @@ public abstract class FormRenderer <T extends Form>
     public final void render(FormRenderingContext context)
     {
         int light = context.light;
-        Boolean visible = this.form.visible.get(context.getTransition());
+        Boolean visible = this.form.visible.get();
 
         if (!visible)
         {
@@ -88,7 +88,7 @@ public abstract class FormRenderer <T extends Form>
         context.stack.push();
         this.applyTransforms(context.stack, context.getTransition());
 
-        float lf = 1F - MathUtils.clamp(this.form.lighting.get(context.getTransition()), 0F, 1F);
+        float lf = 1F - MathUtils.clamp(this.form.lighting.get(), 0F, 1F);
         int u = context.light & '\uffff';
         int v = context.light >> 16 & '\uffff';
 
@@ -114,12 +114,12 @@ public abstract class FormRenderer <T extends Form>
 
     protected void applyTransforms(MatrixStack stack, float transition)
     {
-        MatrixStackUtils.applyTransform(stack, this.form.transform.get(transition));
+        MatrixStackUtils.applyTransform(stack, this.form.transform.get());
     }
 
     protected void applyTransforms(Matrix4f matrix, float transition)
     {
-        matrix.mul(this.form.transform.get(transition).createMatrix());
+        matrix.mul(this.form.transform.get().createMatrix());
     }
 
     protected Supplier<ShaderProgram> getShader(FormRenderingContext context, Supplier<ShaderProgram> normal, Supplier<ShaderProgram> picking)

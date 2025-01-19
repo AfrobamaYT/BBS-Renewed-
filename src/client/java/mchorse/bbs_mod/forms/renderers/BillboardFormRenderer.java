@@ -85,7 +85,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
     private void renderModel(VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
-        Link t = this.form.texture.get(transition);
+        Link t = this.form.texture.get();
 
         if (t == null)
         {
@@ -100,7 +100,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         float oh = h;
 
         /* TL = top left, BR = bottom right*/
-        Vector4f crop = this.form.crop.get(transition);
+        Vector4f crop = this.form.crop.get();
         float uvTLx = crop.x / w;
         float uvTLy = crop.y / h;
         float uvBRx = 1 - crop.z / w;
@@ -116,7 +116,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         float uvFinalBRx = uvBRx;
         float uvFinalBRy = uvBRy;
 
-        if (this.form.resizeCrop.get(transition))
+        if (this.form.resizeCrop.get())
         {
             uvFinalTLx = uvFinalTLy = 0F;
             uvFinalBRx = uvFinalBRy = 1F;
@@ -138,9 +138,9 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         quad.p3.set(TLx, BRy, 0);
         quad.p4.set(BRx, BRy, 0);
 
-        float offsetX = this.form.offsetX.get(transition);
-        float offsetY = this.form.offsetY.get(transition);
-        float rotation = this.form.rotation.get(transition);
+        float offsetX = this.form.offsetX.get();
+        float offsetY = this.form.offsetY.get();
+        float rotation = this.form.rotation.get();
 
         if (offsetX != 0F || offsetY != 0F || rotation != 0F)
         {
@@ -162,13 +162,13 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     private void renderQuad(VertexFormat format, Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        Color color = this.form.color.get(transition).copy();
+        Color color = this.form.color.get().copy();
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         Matrix3f normal = matrices.peek().getNormalMatrix();
 
         color.mul(overlayColor);
 
-        if (this.form.billboard.get(transition))
+        if (this.form.billboard.get())
         {
             Matrix4f modelMatrix = matrices.peek().getPositionMatrix();
             Vector3f scale = Vectors.TEMP_3F;

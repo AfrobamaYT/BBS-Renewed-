@@ -48,7 +48,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        int color = this.form.color.get(context.getTransition()).getARGBColor();
+        int color = this.form.color.get().getARGBColor();
         String text = StringUtils.processColoredText(this.form.text.get());
         List<String> wrap = context.batcher.getFont().wrap(text, x2 - x1 - 4);
 
@@ -70,7 +70,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
     {
         context.stack.push();
 
-        if (this.form.billboard.get(context.transition))
+        if (this.form.billboard.get())
         {
             Matrix4f modelMatrix = context.stack.peek().getPositionMatrix();
             Vector3f scale = Vectors.TEMP_3F;
@@ -106,7 +106,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             light = 0;
         }
 
-        if (this.form.max.get(context.getTransition()) <= 10)
+        if (this.form.max.get() <= 10)
         {
             this.renderString(context, consumers, renderer, light);
         }
@@ -129,11 +129,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         float transition = context.getTransition();
         int w = renderer.getWidth(content) - 1;
         int h = renderer.fontHeight - 2;
-        int x = (int) (-w * this.form.anchorX.get(transition));
-        int y = (int) (-h * this.form.anchorY.get(transition));
+        int x = (int) (-w * this.form.anchorX.get());
+        int y = (int) (-h * this.form.anchorY.get());
 
-        Color shadowColor = this.form.shadowColor.get(transition).copy();
-        Color color = this.form.color.get(transition).copy();
+        Color shadowColor = this.form.shadowColor.get().copy();
+        Color color = this.form.color.get().copy();
 
         color.mul(context.color);
         shadowColor.mul(context.color);
@@ -144,8 +144,8 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             context.stack.translate(0F, 0F, -0.1F);
             renderer.draw(
                 content,
-                x + this.form.shadowX.get(transition),
-                y + this.form.shadowY.get(transition),
+                x + this.form.shadowX.get(),
+                y + this.form.shadowY.get(),
                 shadowColor.getARGBColor(), false,
                 context.stack.peek().getPositionMatrix(),
                 consumers,
@@ -181,7 +181,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         int w = 0;
         int h = renderer.fontHeight - 2;
         String content = StringUtils.processColoredText(this.form.text.get());
-        List<String> lines = FontRenderer.wrap(renderer, content, this.form.max.get(transition));
+        List<String> lines = FontRenderer.wrap(renderer, content, this.form.max.get());
 
         if (lines.size() <= 1)
         {
@@ -203,11 +203,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         h -= 12;
 
-        int x = (int) (-w * this.form.anchorX.get(transition));
-        int y = (int) (-h * this.form.anchorY.get(transition));
+        int x = (int) (-w * this.form.anchorX.get());
+        int y = (int) (-h * this.form.anchorY.get());
         int y2 = y;
 
-        Color shadowColor = this.form.shadowColor.get(transition).copy();
+        Color shadowColor = this.form.shadowColor.get().copy();
 
         shadowColor.mul(context.color);
 
@@ -218,12 +218,12 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
             for (String line : lines)
             {
-                int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.getWidth(line)) * this.form.anchorX.get(transition)) : 0);
+                int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.getWidth(line)) * this.form.anchorX.get()) : 0);
 
                 renderer.draw(
                     line,
-                    x2 + this.form.shadowX.get(transition),
-                    y2 + this.form.shadowY.get(transition),
+                    x2 + this.form.shadowX.get(),
+                    y2 + this.form.shadowY.get(),
                     shadowColor.getARGBColor(), false,
                     context.stack.peek().getPositionMatrix(),
                     consumers,
@@ -240,7 +240,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             y2 = y;
         }
 
-        Color cColor = this.form.color.get(transition);
+        Color cColor = this.form.color.get();
 
         cColor.mul(context.color);
 
@@ -248,7 +248,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         for (String line : lines)
         {
-            int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.getWidth(line)) * this.form.anchorX.get(transition)) : 0);
+            int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.getWidth(line)) * this.form.anchorX.get()) : 0);
 
             renderer.draw(
                 line,
@@ -274,8 +274,8 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
     private void renderShadow(FormRenderingContext context, int x, int y, int w, int h)
     {
-        float offset = this.form.offset.get(context.getTransition());
-        Color color = this.form.background.get(context.getTransition()).copy();
+        float offset = this.form.offset.get();
+        Color color = this.form.background.get().copy();
 
         color.mul(context.color);
 

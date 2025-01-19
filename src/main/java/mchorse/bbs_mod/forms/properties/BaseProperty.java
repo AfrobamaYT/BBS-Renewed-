@@ -1,8 +1,6 @@
 package mchorse.bbs_mod.forms.properties;
 
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.utils.interps.IInterp;
-import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.Objects;
@@ -11,15 +9,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
 {
     protected Form form;
     protected String key;
-    protected T preValue;
     protected T value;
-    protected T lastValue;
-    protected T postValue;
-
-    private boolean playing = true;
-    protected float ticks = -1;
-    protected float duration;
-    protected IInterp interpolation = Interpolations.LINEAR;
 
     protected boolean canAnimate = true;
 
@@ -50,12 +40,7 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     @Override
     public void set(T value)
     {
-        this.preValue = value;
-        this.postValue = value;
         this.value = value;
-        this.lastValue = value;
-
-        this.ticks = -1;
     }
 
     @Override
@@ -65,65 +50,8 @@ public abstract class BaseProperty <T> implements IFormProperty<T>
     }
 
     @Override
-    public T get(float transition)
-    {
-        return this.value;
-    }
-
-    @Override
-    public T getLast()
-    {
-        return this.lastValue;
-    }
-
-    @Override
     public void update()
-    {
-        if (this.ticks >= 0 && this.playing)
-        {
-            this.ticks -= 1;
-        }
-    }
-
-    @Override
-    public void tween(T preValue, T oldValue, T newValue, T postValue, float duration, IInterp interpolation, float offset, boolean playing)
-    {
-        this.preValue = preValue == null ? oldValue : preValue;
-        this.lastValue = oldValue;
-        this.value = newValue;
-        this.postValue = postValue == null ? newValue : postValue;
-
-        this.ticks = this.duration = duration;
-        this.interpolation = interpolation == null ? Interpolations.LINEAR : interpolation;
-        this.playing = playing;
-
-        this.ticks -= offset;
-    }
-
-    @Override
-    public boolean isTweening()
-    {
-        return this.ticks > 0;
-    }
-
-    @Override
-    public float getTweenFactor(float transition)
-    {
-        if (!this.isTweening())
-        {
-            return 1;
-        }
-
-        return 1 - (this.ticks - (this.playing ? transition : 0)) / this.duration;
-    }
-
-    @Override
-    public float getTweenFactorInterpolated(float transition)
-    {
-        float factor = this.getTweenFactor(transition);
-
-        return this.interpolation == null ? factor : this.interpolation.interpolate(0F, 1F, factor);
-    }
+    {}
 
     @Override
     public boolean canCreateChannel()

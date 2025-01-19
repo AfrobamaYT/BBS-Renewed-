@@ -22,17 +22,6 @@ public abstract class BaseTweenProperty <T> extends BaseProperty<T>
     }
 
     @Override
-    public T get(float transition)
-    {
-        if (this.isTweening())
-        {
-            return this.factory.interpolate(this.preValue, this.lastValue, this.value, this.postValue, this.interpolation, this.getTweenFactor(transition));
-        }
-
-        return super.get(transition);
-    }
-
-    @Override
     public boolean canCreateChannel()
     {
         return this.canAnimate;

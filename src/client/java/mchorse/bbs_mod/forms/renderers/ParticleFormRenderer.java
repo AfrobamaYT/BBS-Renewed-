@@ -40,7 +40,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     {
         if (!this.checked)
         {
-            ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get(transition));
+            ParticleScheme scheme = BBSModClient.getParticles().load(this.form.effect.get());
 
             if (scheme != null)
             {
@@ -56,7 +56,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
         {
             boolean lastPaused = this.emitter.paused;
 
-            this.emitter.paused = this.form.paused.get(transition);
+            this.emitter.paused = this.form.paused.get();
 
             if (lastPaused != this.emitter.paused && !this.emitter.paused && this.emitter.age > 0 && !this.restart)
             {
@@ -100,12 +100,12 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
         if (emitter != null)
         {
             emitter.setUserVariables(
-                this.form.user1.get(context.getTransition()),
-                this.form.user2.get(context.getTransition()),
-                this.form.user3.get(context.getTransition()),
-                this.form.user4.get(context.getTransition()),
-                this.form.user5.get(context.getTransition()),
-                this.form.user6.get(context.getTransition())
+                this.form.user1.get(),
+                this.form.user2.get(),
+                this.form.user3.get(),
+                this.form.user4.get(),
+                this.form.user5.get(),
+                this.form.user6.get()
             );
 
             this.updateTexture(context.getTransition());
@@ -140,7 +140,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
     {
         if (this.emitter != null)
         {
-            this.emitter.texture = this.form.texture.get(transition);
+            this.emitter.texture = this.form.texture.get();
         }
     }
 

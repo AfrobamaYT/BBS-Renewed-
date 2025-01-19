@@ -83,19 +83,19 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
     public void tick(IEntity entity)
     {
         World world = entity.getWorld();
-        boolean paused = this.form.paused.get(0F);
+        boolean paused = this.form.paused.get();
 
         if (world != null && !paused)
         {
-            float velocity = this.form.velocity.get(0F);
-            int count = this.form.count.get(0F);
-            int frequency = this.form.frequency.get(0F);
+            float velocity = this.form.velocity.get();
+            int count = this.form.count.get();
+            int frequency = this.form.frequency.get();
 
             if (this.tick <= 0)
             {
                 Matrix3f m = Matrices.TEMP_3F;
                 Vector3f v = Vectors.TEMP_3F;
-                ParticleSettings settings = this.form.settings.get(0F);
+                ParticleSettings settings = this.form.settings.get();
                 ParticleType type = Registries.PARTICLE_TYPE.get(settings.particle);
                 ParticleEffect effect = ParticleTypes.FLAME;
 
@@ -114,17 +114,17 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
                     float velocityX = this.vel.x * velocity;
                     float velocityY = this.vel.y * velocity;
                     float velocityZ = this.vel.z * velocity;
-                    float sh = MathUtils.toRad(this.form.scatteringYaw.get(0F)) * (float) (Math.random() - 0.5D);
-                    float sv = MathUtils.toRad(this.form.scatteringPitch.get(0F)) * (float) (Math.random() - 0.5D);
+                    float sh = MathUtils.toRad(this.form.scatteringYaw.get()) * (float) (Math.random() - 0.5D);
+                    float sv = MathUtils.toRad(this.form.scatteringPitch.get()) * (float) (Math.random() - 0.5D);
 
                     m.identity()
                         .rotateY(sh)
                         .rotateX(sv)
                         .transform(v.set(velocityX, velocityY, velocityZ));
 
-                    double x = this.pos.x + ((Math.random() * 2F - 1F) * this.form.offsetX.get(0F));
-                    double y = this.pos.y + ((Math.random() * 2F - 1F) * this.form.offsetY.get(0F));
-                    double z = this.pos.z + ((Math.random() * 2F - 1F) * this.form.offsetZ.get(0F));
+                    double x = this.pos.x + ((Math.random() * 2F - 1F) * this.form.offsetX.get());
+                    double y = this.pos.y + ((Math.random() * 2F - 1F) * this.form.offsetY.get());
+                    double z = this.pos.z + ((Math.random() * 2F - 1F) * this.form.offsetZ.get());
 
                     world.addParticle(effect, true, x, y, z, v.x, v.y, v.z);
                 }

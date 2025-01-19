@@ -72,14 +72,14 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
     private void renderModel(Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
     {
-        Link texture = this.form.texture.get(transition);
+        Link texture = this.form.texture.get();
         ModelVAO data = BBSModClient.getTextures().getExtruder().get(texture);
 
         if (data != null)
         {
             Color color = Colors.COLOR.set(overlayColor, true);
             GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
-            Color formColor = this.form.color.get(transition);
+            Color formColor = this.form.color.get();
 
             BBSModClient.getTextures().bindTexture(texture);
 

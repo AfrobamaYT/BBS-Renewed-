@@ -85,7 +85,7 @@ public class Replay extends ValueGroup
         this.keyframes.apply(tick, actor, groups);
     }
 
-    public void applyProperties(int tick, Form form, boolean playing)
+    public void applyProperties(float tick, Form form)
     {
         if (form == null)
         {
@@ -96,12 +96,12 @@ public class Replay extends ValueGroup
         {
             if (value instanceof KeyframeChannel)
             {
-                this.applyProperty(tick, playing, form, (KeyframeChannel) value);
+                this.applyProperty(tick, form, (KeyframeChannel) value);
             }
         }
     }
 
-    private void applyProperty(int tick, boolean playing, Form form, KeyframeChannel value)
+    private void applyProperty(float tick, Form form, KeyframeChannel value)
     {
         IFormProperty property = FormUtils.getProperty(form, value.getId());
 
@@ -114,14 +114,7 @@ public class Replay extends ValueGroup
 
         if (segment != null)
         {
-            if (segment.isSame())
-            {
-                property.set(segment.a.getValue());
-            }
-            else
-            {
-                property.tween(segment.preA.getValue(), segment.a.getValue(), segment.b.getValue(), segment.postB.getValue(), segment.duration, segment.a.getInterpolation().wrap(), segment.offset, playing);
-            }
+            property.set(segment.createInterpolated());
         }
         else
         {

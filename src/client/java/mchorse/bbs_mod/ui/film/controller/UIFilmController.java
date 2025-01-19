@@ -297,7 +297,7 @@ public class UIFilmController extends UIElement
 
                 entity.setForm(FormUtils.copy(replay.form.get()));
                 replay.applyFrame(this.getTick(), entity);
-                replay.applyProperties(this.getTick(), entity.getForm(), this.panel.getRunner().isRunning());
+                replay.applyProperties(this.getTick(), entity.getForm());
                 replay.applyClientActions(this.getTick(), entity, film);
                 entity.setPrevX(entity.getX());
                 entity.setPrevY(entity.getY());
@@ -904,7 +904,6 @@ public class UIFilmController extends UIElement
                     replay.keyframes.record(runner.ticks, entity, this.recordingGroups);
                 }
 
-                replay.applyProperties(ticks, entity.getForm(), runner.isRunning());
                 replay.applyClientActions(ticks, entity, this.panel.getData());
 
                 if (this.actors != null)
@@ -922,7 +921,6 @@ public class UIFilmController extends UIElement
                             actor.setHeadYaw(replay.keyframes.headYaw.interpolate(ticks).floatValue());
                             actor.setBodyYaw(replay.keyframes.bodyYaw.interpolate(ticks).floatValue());
                             actor.setPitch(replay.keyframes.pitch.interpolate(ticks).floatValue());
-                            replay.applyProperties(ticks, actor.getForm(), runner.isRunning());
                             replay.applyClientActions(ticks, new MCEntity(anEntity), this.panel.getData());
                         }
                     }
@@ -1135,6 +1133,7 @@ public class UIFilmController extends UIElement
     {
         boolean isPlaying = this.isPlaying();
         int tick = this.getTick();
+        float transition = isPlaying ? context.tickDelta() : 0F;
 
         this.worldRenderContext = context;
 
@@ -1160,13 +1159,31 @@ public class UIFilmController extends UIElement
                 value = replay.properties.get("pose");
             }
 
+            replay.applyProperties(ticks + transition, entity.getForm());
+
+            if (this.actors != null)
+            {
+                Integer entityId = this.actors.get(replay.getId());
+
+                if (entityId != null)
+                {
+                    Entity anEntity = MinecraftClient.getInstance().world.getEntityById(entityId);
+
+                    if (anEntity instanceof ActorEntity actor)
+                    {
+                        /* Force synchronize entity angles */
+                        replay.applyProperties(ticks + transition, actor.getForm());
+                    }
+                }
+            }
+
             if (!replay.actor.get())
             {
                 Pair<String, Boolean> bone = isCurrent && !this.panel.recorder.isRecording() ? this.getBone() : null;
 
                 FilmControllerContext filmContext = FilmControllerContext.instance
                     .setup(this.entities, entity, context)
-                    .transition(isPlaying ? context.tickDelta() : 0F)
+                    .transition(transition)
                     .shadow(replay.shadow.get(), replay.shadowSize.get())
                     .bone(bone == null ? null : bone.a, bone != null && bone.b)
                     .nameTag(replay.nameTag.get());
@@ -1193,7 +1210,7 @@ public class UIFilmController extends UIElement
                         this.renderOnion(replay, pose.getKeyframes().indexOf(segment.b), 1, pose, onionSkin.postColor.get(), onionSkin.postFrames.get(), context, isPlaying, entity);
 
                         replay.applyFrame(ticks, entity, null);
-                        replay.applyProperties(ticks, entity.getForm(), isPlaying);
+                        replay.applyProperties(ticks + transition, entity.getForm());
 
                         if (!isPlaying)
                         {
@@ -1299,7 +1316,7 @@ public class UIFilmController extends UIElement
             }
 
             replay.applyFrame((int) keyframe.getTick(), entity);
-            replay.applyProperties((int) keyframe.getTick(), entity.getForm(), isPlaying);
+            replay.applyProperties((int) keyframe.getTick(), entity.getForm());
 
             FilmController.renderEntity(FilmControllerContext.instance
                 .setup(this.entities, entity, context)
