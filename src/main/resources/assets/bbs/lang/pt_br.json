@@ -1,7 +1,9 @@
 {
     "block.bbs.model": "Bloco de Modelo",
+    "item.bbs.gun": "Arma BBS",
     "itemGroup.bbs.main": "BBS mod",
 
+    "key.bbs.item_editor": "Editor de itens",
     "key.bbs.dashboard": "Painel de Controle",
     "key.bbs.demorph": "Destransformar",
     "key.bbs.open_replays": "Abrir Replays atuais",
@@ -9,5 +11,6 @@
     "key.bbs.play_film": "Reproduzir filme",
     "key.bbs.record_replay": "Gravar replay atual",
     "key.bbs.record_video": "Gravar vídeo",
+    "key.bbs.teleport": "Teleporta para a reprodução atual",
     "category.bbs.main": "BBS mod"
 }
