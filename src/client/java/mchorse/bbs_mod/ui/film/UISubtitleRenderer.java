@@ -77,7 +77,7 @@ public class UISubtitleRenderer
 
         for (Subtitle subtitle : subtitles)
         {
-            float alpha = Colors.getAlpha(subtitle.color);
+            float alpha = Colors.getA(subtitle.color);
 
             if (alpha <= 0)
             {
@@ -90,7 +90,7 @@ public class UISubtitleRenderer
             int x = (int) (width * subtitle.windowX + subtitle.x);
             int y = (int) (height * subtitle.windowY + subtitle.y);
             float scale = subtitle.size;
-            int subColor = subtitle.color & Colors.RGB;
+            int subColor = subtitle.color;
 
             List<String> strings = subtitle.maxWidth <= 10 ? Arrays.asList(label) : font.wrap(label, subtitle.maxWidth);
 
@@ -117,7 +117,7 @@ public class UISubtitleRenderer
 
                 int xx = 5 + (w - font.getWidth(string)) / 2;
 
-                if (Colors.getAlpha(subtitle.backgroundColor) > 0)
+                if (Colors.getA(subtitle.backgroundColor) > 0)
                 {
                     batcher.textCard(string, xx, yy, Colors.setA(subColor, 1F), Colors.mulA(subtitle.backgroundColor, alpha), subtitle.backgroundOffset);
                 }

@@ -1304,7 +1304,7 @@ public class UIFilmController extends UIElement
     private void renderOnion(Replay replay, int index, int direction, KeyframeChannel<?> pose, int color, int frames, WorldRenderContext context, boolean isPlaying, IEntity entity)
     {
         List<? extends Keyframe<?>> keyframes = pose.getKeyframes();
-        float alpha = Colors.getAlpha(color);
+        float alpha = Colors.getA(color);
 
         for (; CollectionUtils.inRange(keyframes, index) && frames > 0; index += direction)
         {

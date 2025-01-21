@@ -76,9 +76,8 @@ public class SubtitleClip extends CameraClip
     protected void applyClip(ClipContext context, Position position)
     {
         List<Subtitle> subtitles = getSubtitles(context);
-        float alpha = Colors.getAlpha(this.color.get());
-        float factor = this.envelope.factorEnabled(this.duration.get(), context.relativeTick + context.transition) * (alpha <= 0 ? 1F : alpha);
-        int color = Colors.setA(this.color.get(), factor);
+        float factor = this.envelope.factorEnabled(this.duration.get(), context.relativeTick + context.transition);
+        int color = Colors.setA(this.color.get(), factor * Colors.getA(this.color.get()));
 
         this.subtitle.update(this.title.get(), this.x.get(), this.y.get(), this.size.get(), this.anchorX.get(), this.anchorY.get(), color);
         this.subtitle.updateWindow(this.windowX.get(), this.windowY.get());

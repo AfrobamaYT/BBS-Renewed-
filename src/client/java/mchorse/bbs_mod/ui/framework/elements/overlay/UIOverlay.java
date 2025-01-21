@@ -170,7 +170,7 @@ public class UIOverlay extends UIElement
     @Override
     public void render(UIContext context)
     {
-        if (Colors.getAlpha(this.background) > 0F)
+        if (Colors.getA(this.background) > 0F)
         {
             this.area.render(context.batcher, this.background);
         }

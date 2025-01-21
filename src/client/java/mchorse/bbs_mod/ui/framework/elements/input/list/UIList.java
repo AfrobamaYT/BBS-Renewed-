@@ -591,7 +591,7 @@ public abstract class UIList <T> extends UIElement
     {
         this.scroll.drag(context);
 
-        if (Colors.getAlpha(this.background) > 0)
+        if (Colors.getA(this.background) > 0)
         {
             this.area.render(context.batcher, this.background);
         }

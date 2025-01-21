@@ -53,18 +53,25 @@ public class Colors
         return COLOR.getARGBColor();
     }
 
-    public static int mulA(int color, float factor)
+    public static float getA(int color)
     {
         COLOR.set(color);
-        COLOR.a *= factor;
 
-        return COLOR.getARGBColor();
+        return COLOR.a;
     }
 
     public static int setA(int color, float alpha)
     {
         COLOR.set(color);
         COLOR.a = alpha;
+
+        return COLOR.getARGBColor();
+    }
+
+    public static int mulA(int color, float factor)
+    {
+        COLOR.set(color);
+        COLOR.a *= factor;
 
         return COLOR.getARGBColor();
     }
@@ -124,13 +131,6 @@ public class Colors
         }
 
         throw new Exception("Given color \"" + color + "\" can't be parsed!");
-    }
-
-    public static float getAlpha(int color)
-    {
-        COLOR.set(color);
-
-        return COLOR.a;
     }
 
     public static Color HSVtoRGB(float h, float s, float v)
