@@ -212,6 +212,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, normal, -1F).next();
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, normal, -1F).next();
 
+        RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
         BufferRenderer.drawWithGlobalProgram(builder.end());
 

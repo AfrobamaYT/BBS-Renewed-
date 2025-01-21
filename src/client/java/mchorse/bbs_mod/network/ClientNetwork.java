@@ -33,6 +33,7 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -511,8 +512,15 @@ public class ClientNetwork
     {
         crusher.send(MinecraftClient.getInstance().player, ServerNetwork.SERVER_FILM_DATA_SYNC, data.toData(), (packetByteBuf) ->
         {
+            DataPath path = data.getPath();
+
             packetByteBuf.writeString(filmId);
-            packetByteBuf.writeString(data.getPath().toString());
+            packetByteBuf.writeInt(path.strings.size());
+
+            for (String string : path.strings)
+            {
+                packetByteBuf.writeString(string);
+            }
         });
     }
 

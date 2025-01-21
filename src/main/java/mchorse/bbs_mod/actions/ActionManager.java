@@ -3,6 +3,7 @@ package mchorse.bbs_mod.actions;
 import mchorse.bbs_mod.actions.types.ActionClip;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.clips.Clips;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -54,7 +55,7 @@ public class ActionManager
 
     /* Actions playback */
 
-    public void syncData(String filmId, String key, BaseType data)
+    public void syncData(String filmId, DataPath key, BaseType data)
     {
         for (ActionPlayer player : this.players)
         {

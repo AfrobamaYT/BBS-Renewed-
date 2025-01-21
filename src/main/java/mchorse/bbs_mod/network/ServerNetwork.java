@@ -25,6 +25,7 @@ import mchorse.bbs_mod.resources.ISourcePack;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.resources.packs.ExternalAssetsSourcePack;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.EnumUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.StringUtils;
@@ -393,12 +394,18 @@ public class ServerNetwork
         crusher.receive(buf, (bytes, packetByteBuf) ->
         {
             String filmId = packetByteBuf.readString();
-            String key = packetByteBuf.readString();
+            List<String> path = new ArrayList<>();
+
+            for (int i = 0, c = buf.readInt(); i < c; i++)
+            {
+                path.add(buf.readString());
+            }
+
             BaseType data = DataStorageUtils.readFromBytes(bytes);
 
             server.execute(() ->
             {
-                BBSMod.getActions().syncData(filmId, key, data);
+                BBSMod.getActions().syncData(filmId, new DataPath(path), data);
             });
         });
     }

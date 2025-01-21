@@ -163,9 +163,9 @@ public class ActionPlayer
         }
     }
 
-    public void syncData(String key, BaseType data)
+    public void syncData(DataPath key, BaseType data)
     {
-        BaseValue baseValue = this.film.getRecursively(new DataPath(key));
+        BaseValue baseValue = this.film.getRecursively(key);
 
         if (baseValue != null)
         {

@@ -10,6 +10,11 @@ public class DataPath
     public List<String> strings = new ArrayList<>();
     public boolean folder;
 
+    public DataPath(List<String> strings)
+    {
+        this.strings.addAll(strings);
+    }
+
     public DataPath(String path)
     {
         this.set(path);
