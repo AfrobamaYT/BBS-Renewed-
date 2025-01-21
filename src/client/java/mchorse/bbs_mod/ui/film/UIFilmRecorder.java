@@ -60,6 +60,11 @@ public class UIFilmRecorder extends UIElement
 
     public void startRecording(int duration, Texture texture)
     {
+        this.startRecording(duration, texture.id, texture.width, texture.height);
+    }
+
+    public void startRecording(int duration, int id, int w, int h)
+    {
         VideoRecorder recorder = this.getRecorder();
         UIContext context = this.getUIContext();
 
@@ -76,7 +81,7 @@ public class UIFilmRecorder extends UIElement
 
         try
         {
-            recorder.startRecording(texture.id, texture.width, texture.height);
+            recorder.startRecording(id, w, h);
         }
         catch (Exception e)
         {

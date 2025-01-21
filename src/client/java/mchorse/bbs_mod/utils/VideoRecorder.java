@@ -5,7 +5,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.File;
@@ -49,6 +49,8 @@ public class VideoRecorder
     {
         return this.counter;
     }
+
+    private int pbo = -1;
 
     /**
      * Start recording the video using ffmpeg
@@ -106,6 +108,11 @@ public class VideoRecorder
 
             System.out.println("Recording video with following arguments: " + args);
 
+            this.pbo = GL30.glGenBuffers();
+            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbo);
+            GL30.glBufferData(GL30.GL_PIXEL_PACK_BUFFER, width * height * 3, GL30.GL_STREAM_READ);
+            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
+
             ProcessBuilder builder = new ProcessBuilder(args);
             File log = path.resolve(movieName.concat(".log")).toFile();
 
@@ -145,6 +152,9 @@ public class VideoRecorder
             return;
         }
 
+        GL30.glDeleteBuffers(this.pbo);
+
+        this.pbo = -1;
         this.textureId = -1;
 
         if (this.buffer != null)
@@ -193,15 +203,23 @@ public class VideoRecorder
             return;
         }
 
-        this.buffer.rewind();
-        GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.textureId);
-        GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL12.GL_BGR, GL11.GL_UNSIGNED_BYTE, this.buffer);
-        this.buffer.rewind();
-
         try
         {
-            this.channel.write(this.buffer);
+            GL30.glPixelStorei(GL30.GL_PACK_ALIGNMENT, 1);
+            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, this.pbo);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, this.textureId);
+            GL30.glGetTexImage(GL30.GL_TEXTURE_2D, 0, GL30.GL_BGR, GL30.GL_UNSIGNED_BYTE, 0);
+
+            ByteBuffer mappedBuffer = GL30.glMapBuffer(GL30.GL_PIXEL_PACK_BUFFER, GL30.GL_READ_ONLY);
+
+            if (mappedBuffer != null)
+            {
+                this.channel.write(mappedBuffer);
+
+                GL30.glUnmapBuffer(GL30.GL_PIXEL_PACK_BUFFER);
+            }
+
+            GL30.glBindBuffer(GL30.GL_PIXEL_PACK_BUFFER, 0);
         }
         catch (Exception e)
         {
