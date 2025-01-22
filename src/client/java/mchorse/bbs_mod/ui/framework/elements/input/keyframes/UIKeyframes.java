@@ -988,6 +988,11 @@ public class UIKeyframes extends UIElement
                 float oldTick = entry.getValue();
                 float newTick = this.scalingAnchor + (oldTick - this.scalingAnchor) * ratio;
 
+                if (Window.isCtrlPressed())
+                {
+                    newTick = Math.round(newTick);
+                }
+
                 keyframe.setTick(newTick, true);
             }
         }
