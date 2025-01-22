@@ -10,6 +10,8 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class UIKeys
 {
+
+
     public static final IKey ACTIONS_ATTACK_DAMAGE = L10n.lang("bbs.ui.actions.attack.damage");
     public static final IKey ACTIONS_BLOCK_DIRECTION = L10n.lang("bbs.ui.actions.block.direction");
     public static final IKey ACTIONS_BLOCK_DIRECTION_DOWN = L10n.lang("bbs.ui.actions.block.direction.down");
@@ -255,6 +257,8 @@ public class UIKeys
     public static final IKey FILM_REPLAY_CONTEXT_ADD = L10n.lang("bbs.ui.film.replay.context.add");
     public static final IKey FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES = L10n.lang("bbs.ui.film.replay.context.animation_to_keyframes");
     public static final IKey FILM_REPLAY_CONTEXT_MOVE_HERE = L10n.lang("bbs.ui.film.replay.context.move_here");
+    public static final IKey FILM_REPLAY_FILTER_SHEETS = L10n.lang("bbs.ui.film.replay.filter_sheets");
+    public static final IKey FILM_REPLAY_FILTER_SHEETS_TITLE = L10n.lang("bbs.ui.film.replay.filter_sheets-title");
     public static final IKey FILM_REPLAY_LABEL = L10n.lang("bbs.ui.film.replay.label");
     public static final IKey FILM_REPLAY_LOOPING = L10n.lang("bbs.ui.film.replay.looping");
     public static final IKey FILM_REPLAY_LOOPING_TOOLTIP = L10n.lang("bbs.ui.film.replay.looping-tooltip");
@@ -414,7 +418,6 @@ public class UIKeys
     public static final IKey GENERIC_KEYFRAMES_LINK_PICK_TEXTURE = L10n.lang("bbs.ui.generic_keyframes.link.pick_texture");
     public static final IKey GRAPH_HELP = L10n.lang("bbs.ui.graph.help");
     public static final IKey GRAPH_TOOLTIP = L10n.lang("bbs.ui.graph.tooltip");
-
     public static final IKey GUN_COMMANDS_FIRING = L10n.lang("bbs.ui.gun.commands.firing");
     public static final IKey GUN_COMMANDS_IMPACT = L10n.lang("bbs.ui.gun.commands.impact");
     public static final IKey GUN_COMMANDS_TICKING = L10n.lang("bbs.ui.gun.commands.ticking");
@@ -454,7 +457,6 @@ public class UIKeys
     public static final IKey GUN_PROJECTILE_USE_TARGET = L10n.lang("bbs.ui.gun.projectile.use_target");
     public static final IKey GUN_PROJECTILE_YAW = L10n.lang("bbs.ui.gun.projectile.yaw");
     public static final IKey GUN_PROJECTILE_YAW_TOOLTIP = L10n.lang("bbs.ui.gun.projectile.yaw-tooltip");
-
     public static final IKey IMPORTER_AIFF = L10n.lang("bbs.ui.importer.aiff");
     public static final IKey IMPORTER_FFMPEG_NOTIFICATION = L10n.lang("bbs.ui.importer.ffmpeg-notification");
     public static final IKey IMPORTER_FLAC = L10n.lang("bbs.ui.importer.flac");

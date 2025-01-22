@@ -12,6 +12,7 @@ import mchorse.bbs_mod.settings.values.ValueLanguage;
 import mchorse.bbs_mod.settings.values.ValueLink;
 import mchorse.bbs_mod.settings.values.ValueOnionSkin;
 import mchorse.bbs_mod.settings.values.ValueString;
+import mchorse.bbs_mod.settings.values.ValueStringKeys;
 import mchorse.bbs_mod.settings.values.ValueVideoSettings;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -22,6 +23,7 @@ public class BBSSettings
     public static ValueString serverAssetManager;
 
     public static ValueColors favoriteColors;
+    public static ValueStringKeys disabledSheets;
     public static ValueLanguage language;
     public static ValueInt primaryColor;
     public static ValueBoolean enableTrackpadIncrements;
@@ -128,7 +130,9 @@ public class BBSSettings
         axesScale = builder.getFloat("axes_scale", 1F, 0F, 2F);
 
         favoriteColors = new ValueColors("favorite_colors");
+        disabledSheets = new ValueStringKeys("disabled_sheets");
         builder.register(favoriteColors);
+        builder.register(disabledSheets);
 
         enableCursorRendering = builder.category("tutorials").getBoolean("cursor", false);
         enableMouseButtonRendering = builder.getBoolean("mouse_buttons", false);

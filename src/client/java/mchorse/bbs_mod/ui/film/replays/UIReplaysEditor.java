@@ -41,6 +41,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
@@ -74,8 +75,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -95,6 +98,7 @@ public class UIReplaysEditor extends UIElement
     private UIFilmPanel filmPanel;
     private Film film;
     private Replay replay;
+    private Set<String> keys = new LinkedHashSet<>();
 
     static
     {
@@ -184,6 +188,13 @@ public class UIReplaysEditor extends UIElement
         String topLevel = StringUtils.fileName(key);
 
         return ICONS.getOrDefault(topLevel, Icons.NONE);
+    }
+
+    public static int getColor(String key)
+    {
+        String topLevel = StringUtils.fileName(key);
+
+        return COLORS.getOrDefault(topLevel, Colors.ACTIVE);
     }
 
     public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
@@ -388,7 +399,7 @@ public class UIReplaysEditor extends UIElement
             BaseValue value = this.replay.keyframes.get(key);
             KeyframeChannel channel = (KeyframeChannel) value;
 
-            sheets.add(new UIKeyframeSheet(COLORS.getOrDefault(key, Colors.ACTIVE), false, channel, null).icon(ICONS.get(key)));
+            sheets.add(new UIKeyframeSheet(getColor(key), false, channel, null).icon(ICONS.get(key)));
         }
 
         /* Form properties */
@@ -399,12 +410,44 @@ public class UIReplaysEditor extends UIElement
             if (property != null)
             {
                 IFormProperty formProperty = FormUtils.getProperty(this.replay.form.get(), key);
-                String topLevel = StringUtils.fileName(key);
-                boolean separator = topLevel.equals("visible");
-                UIKeyframeSheet sheet = new UIKeyframeSheet(COLORS.getOrDefault(topLevel, Colors.ACTIVE), separator, property, formProperty);
+                UIKeyframeSheet sheet = new UIKeyframeSheet(getColor(key), false, property, formProperty);
 
                 sheets.add(sheet.icon(getIcon(key)));
             }
+        }
+
+        this.keys.clear();
+
+        for (UIKeyframeSheet sheet : sheets)
+        {
+            this.keys.add(StringUtils.fileName(sheet.id));
+        }
+
+        sheets.removeIf((v) ->
+        {
+            for (String s : BBSSettings.disabledSheets.get())
+            {
+                if (v.id.endsWith(s))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        Object lastForm = null;
+
+        for (UIKeyframeSheet sheet : sheets)
+        {
+            Object form = sheet.property == null ? null : sheet.property.getForm();
+
+            if (!Objects.equals(lastForm, form))
+            {
+                sheet.separator = true;
+            }
+
+            lastForm = form;
         }
 
         if (!sheets.isEmpty())
@@ -455,6 +498,22 @@ public class UIReplaysEditor extends UIElement
                         menu.action(Icons.POSE, UIKeys.FILM_REPLAY_CONTEXT_ANIMATION_TO_KEYFRAMES, () -> this.animationToPoses(modelForm, sheet));
                         // TODO: menu.action(Icons.UPLOAD, IKey.raw("Copy as .bbs.json animation"), () -> this.copyAaBBSJSON(sheet));
                     }
+                }
+
+                if (this.keyframeEditor.view.getGraph() instanceof UIKeyframeDopeSheet)
+                {
+                    menu.action(Icons.FILTER, UIKeys.FILM_REPLAY_FILTER_SHEETS, () ->
+                    {
+                        UIKeyframeSheetFilterOverlayPanel panel = new UIKeyframeSheetFilterOverlayPanel(BBSSettings.disabledSheets.get(), this.keys);
+
+                        UIOverlay.addOverlay(this.getContext(), panel);
+
+                        panel.onClose((e) ->
+                        {
+                            this.updateChannelsList();
+                            BBSSettings.disabledSheets.set(BBSSettings.disabledSheets.get());
+                        });
+                    });
                 }
             });
 

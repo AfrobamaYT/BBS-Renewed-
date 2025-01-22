@@ -16,7 +16,7 @@ public class UIKeyframeSheet
     public final String id;
     public final IKey title;
     public final int color;
-    public final boolean separator;
+    public boolean separator;
 
     private Icon icon;
 

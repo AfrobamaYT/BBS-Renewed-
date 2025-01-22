@@ -405,6 +405,8 @@
     "bbs.ui.film.replay.context.add": "Добавить тут запись",
     "bbs.ui.film.replay.context.animation_to_keyframes": "Анимация в ключевые кадры позы...",
     "bbs.ui.film.replay.context.move_here": "Переместить запись сюда",
+    "bbs.ui.film.replay.filter_sheets": "Отфилтровать треки...",
+    "bbs.ui.film.replay.filter_sheets-title": "Треки ключевых кадров",
     "bbs.ui.film.replay.label": "Ярлык записи",
     "bbs.ui.film.replay.looping": "Зацикленность",
     "bbs.ui.film.replay.looping-tooltip": "Установив 0, отключает зацикленность у записи. Установив на любое положительное число, включит регион зацикленности у записи. Имейте ввиду что зацикленность не меняет общую длину фильма.",
