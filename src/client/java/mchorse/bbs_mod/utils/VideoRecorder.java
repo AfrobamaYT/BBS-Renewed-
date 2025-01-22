@@ -4,12 +4,14 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.UIUtils;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.File;
+import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
@@ -127,7 +129,27 @@ public class VideoRecorder
 
             this.process = builder.start();
 
+            // Java wraps the process output stream into a BufferedOutputStream,
+            // but its little buffer is just slowing everything down with the
+            // huge amount of data we're dealing here, so unwrap it with this little
+            // hack.
             OutputStream os = this.process.getOutputStream();
+
+            if (os instanceof FilterOutputStream)
+            {
+                try
+                {
+                    Field outField = FilterOutputStream.class.getDeclaredField("out");
+
+                    outField.setAccessible(true);
+
+                    os = (OutputStream) outField.get(os);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
 
             this.channel = Channels.newChannel(os);
             this.recording = true;
@@ -166,25 +188,33 @@ public class VideoRecorder
 
         try
         {
-            if (this.channel.isOpen())
+            if (this.channel != null && this.channel.isOpen())
             {
                 this.channel.close();
             }
+
+            this.channel = null;
         }
-        catch (Exception e)
+        catch (IOException ex)
         {
-            e.printStackTrace();
+            ex.printStackTrace();
         }
 
         try
         {
-            this.process.waitFor(1, TimeUnit.MINUTES);
-            this.process.destroy();
+            if (this.process != null)
+            {
+                this.process.waitFor(1, TimeUnit.MINUTES);
+                this.process.destroy();
+            }
+
+            this.process = null;
         }
-        catch (Exception e)
+        catch (InterruptedException ex)
         {
-            e.printStackTrace();
+            ex.printStackTrace();
         }
+
 
         this.recording = false;
 
