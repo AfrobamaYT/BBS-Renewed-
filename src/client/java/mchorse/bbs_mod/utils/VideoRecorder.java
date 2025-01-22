@@ -6,6 +6,7 @@ import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
+import sun.misc.Unsafe;
 
 import java.io.File;
 import java.io.FilterOutputStream;
@@ -134,6 +135,11 @@ public class VideoRecorder
             // huge amount of data we're dealing here, so unwrap it with this little
             // hack.
             OutputStream os = this.process.getOutputStream();
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+
+            theUnsafe.setAccessible(true);
+
+            Unsafe unsafe = (Unsafe) theUnsafe.get(null);
 
             if (os instanceof FilterOutputStream)
             {
@@ -141,9 +147,7 @@ public class VideoRecorder
                 {
                     Field outField = FilterOutputStream.class.getDeclaredField("out");
 
-                    outField.setAccessible(true);
-
-                    os = (OutputStream) outField.get(os);
+                    os = (OutputStream) unsafe.getObject(os, unsafe.objectFieldOffset(outField));
                 }
                 catch (Exception e)
                 {
