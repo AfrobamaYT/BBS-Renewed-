@@ -21,7 +21,7 @@ public class SubtitleClip extends CameraClip
     public ValueFloat size = new ValueFloat("size", 10F);
     public ValueFloat anchorX = new ValueFloat("anchorX", 0.5F);
     public ValueFloat anchorY = new ValueFloat("anchorY", 0.5F);
-    public ValueInt color = new ValueInt("color", 0xffffff);
+    public ValueInt color = new ValueInt("color", Colors.WHITE);
     public ValueFloat windowX = new ValueFloat("windowX", 0.5F);
     public ValueFloat windowY = new ValueFloat("windowY", 0.5F);
     public ValueInt background = new ValueInt("background", 0);
