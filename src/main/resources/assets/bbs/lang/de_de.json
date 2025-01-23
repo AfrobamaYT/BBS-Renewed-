@@ -1,13 +1,16 @@
 {
-    "block.bbs.model": "Model-Block",
+    "block.bbs.model": "Modell-Block",
+    "item.bbs.gun": "BBS Pistole",
     "itemGroup.bbs.main": "BBS Mod",
 
+    "key.bbs.item_editor": "Gegenstands-Editor",
     "key.bbs.dashboard": "Dashboard",
     "key.bbs.demorph": "Entmorphen",
     "key.bbs.open_replays": "Öffne aktuelle Aufnahmen",
-    "key.bbs.open_morphing": "Öffne Morph-Menü",
+    "key.bbs.open_morphing": "Öffne Morphing-Menü",
     "key.bbs.play_film": "Film abspielen",
-    "key.bbs.record_replay": "Aktuelle Aufnahme aufnehmen",
-    "key.bbs.record_video": "Video aufnehmen",
+    "key.bbs.record_replay": "Aktuelle Aufnahme aufzeichnen",
+    "key.bbs.record_video": "Video aufzeichnen",
+    "key.bbs.teleport": "Zu aktueller Aufnahme teleportieren",
     "category.bbs.main": "BBS Mod"
 }
