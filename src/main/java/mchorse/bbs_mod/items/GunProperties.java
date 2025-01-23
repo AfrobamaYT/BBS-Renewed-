@@ -64,48 +64,57 @@ public class GunProperties extends ModelProperties
 
         if (nbt == null)
         {
-            ExtrudedForm form = new ExtrudedForm();
-            VanillaParticleForm projectileForm = new VanillaParticleForm();
-            ParticleSettings value = new ParticleSettings();
-
-            Transform tp = properties.getTransformThirdPerson();
-            Transform fp = properties.getTransformFirstPerson();
-
-            value.particle = new Identifier("minecraft:falling_water");
-            projectileForm.settings.set(value);
-            projectileForm.frequency.set(1);
-            projectileForm.offsetX.set(0.1F);
-            projectileForm.offsetY.set(0.1F);
-            projectileForm.offsetZ.set(0.1F);
-
-            properties.useTarget = true;
-            properties.projectileForm = projectileForm;
-
-            form.transform.get().translate.set(0F, 0.5F, 0F);
-            form.texture.set(Link.assets("textures/gun.png"));
-            properties.setForm(form);
-
-            fp.translate.set(0.25F, 0.125F, -0.25F);
-            fp.rotate.y = -MathUtils.PI / 2;
-            fp.rotate2.z = MathUtils.PI / 4;
-
-            tp.translate.y = 0.375F;
-            tp.translate.z = 0.125F;
-            tp.scale.set(0.666F);
-            tp.rotate.y = -MathUtils.PI / 2;
-            tp.rotate2.z = MathUtils.PI / 4;
+            setupDefault(properties);
 
             return properties;
         }
 
         BaseType data = DataStorageUtils.readFromNbtCompound(nbt, "GunData");
 
-        if (data.isMap())
+        if (data != null && data.isMap())
         {
             properties.fromData(data.asMap());
         }
+        else
+        {
+            setupDefault(properties);
+        }
 
         return properties;
+    }
+
+    private static void setupDefault(GunProperties properties)
+    {
+        ExtrudedForm form = new ExtrudedForm();
+        VanillaParticleForm projectileForm = new VanillaParticleForm();
+        ParticleSettings value = new ParticleSettings();
+
+        Transform tp = properties.getTransformThirdPerson();
+        Transform fp = properties.getTransformFirstPerson();
+
+        value.particle = new Identifier("minecraft:falling_water");
+        projectileForm.settings.set(value);
+        projectileForm.frequency.set(1);
+        projectileForm.offsetX.set(0.1F);
+        projectileForm.offsetY.set(0.1F);
+        projectileForm.offsetZ.set(0.1F);
+
+        properties.useTarget = true;
+        properties.projectileForm = projectileForm;
+
+        form.transform.get().translate.set(0F, 0.5F, 0F);
+        form.texture.set(Link.assets("textures/gun.png"));
+        properties.setForm(form);
+
+        fp.translate.set(0.25F, 0.125F, -0.25F);
+        fp.rotate.y = -MathUtils.PI / 2;
+        fp.rotate2.z = MathUtils.PI / 4;
+
+        tp.translate.y = 0.375F;
+        tp.translate.z = 0.125F;
+        tp.scale.set(0.666F);
+        tp.rotate.y = -MathUtils.PI / 2;
+        tp.rotate2.z = MathUtils.PI / 4;
     }
 
     public void fromNetwork(PacketByteBuf buf)
