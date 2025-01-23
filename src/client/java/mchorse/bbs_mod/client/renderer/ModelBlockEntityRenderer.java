@@ -2,6 +2,7 @@ package mchorse.bbs_mod.client.renderer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.entity.ActorEntity;
@@ -148,6 +149,11 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
     private boolean canRender(ModelBlockEntity entity)
     {
+        if (!BBSSettings.renderAllModelBlocks.get())
+        {
+            return false;
+        }
+
         if (UIScreen.getCurrentMenu() instanceof UIDashboard dashboard)
         {
             if (dashboard.getPanels().panel instanceof UIModelBlockPanel modelBlockPanel)

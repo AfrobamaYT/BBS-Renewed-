@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.model_blocks;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.blocks.entities.ModelProperties;
 import mchorse.bbs_mod.camera.CameraUtils;
@@ -335,7 +336,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             return true;
         }
 
-        if (this.hovered != null && context.mouseButton == 0)
+        if (this.hovered != null && context.mouseButton == 0 && BBSSettings.clickModelBlocks.get())
         {
             this.fill(this.hovered, true);
         }

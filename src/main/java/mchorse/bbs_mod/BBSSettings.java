@@ -74,6 +74,9 @@ public class BBSSettings
     public static ValueFloat recordingCountdown;
     public static ValueBoolean recordingSwipeDamage;
 
+    public static ValueBoolean renderAllModelBlocks;
+    public static ValueBoolean clickModelBlocks;
+
     public static ValueString entitySelectorsPropertyWhitelist;
 
     public static ValueBoolean damageControl;
@@ -173,6 +176,9 @@ public class BBSSettings
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
+
+        renderAllModelBlocks = builder.category("model_blocks").getBoolean("render_all", true);
+        clickModelBlocks = builder.getBoolean("click", true);
 
         entitySelectorsPropertyWhitelist = builder.category("entity_selectors").getString("whitelist", "CustomName,Name");
 
