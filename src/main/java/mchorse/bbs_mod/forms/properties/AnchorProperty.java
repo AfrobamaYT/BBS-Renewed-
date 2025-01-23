@@ -17,7 +17,7 @@ public class AnchorProperty extends BaseTweenProperty<AnchorProperty.Anchor>
         public int actor = -1;
         public String attachment = "";
 
-        public int previousActor = -1;
+        public int previousActor = -2;
         public String previousAttachment = "";
         public float x;
 

@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FilmController
 {
@@ -91,10 +92,12 @@ public class FilmController
         Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, cx, cy, cz, transition);
         float opacity = 1F;
 
-        /* if (last == null)
+        boolean same = value.previousActor == -2 ||
+            (value.actor == value.previousActor && Objects.equals(value.attachment, value.previousAttachment));
+
+        if (same)
         {
-            AnchorProperty.Anchor current = value;
-            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, current, defaultMatrix, transition);
+            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value.actor, value.attachment, defaultMatrix, transition);
 
             if (matrix != defaultMatrix)
             {
@@ -102,7 +105,7 @@ public class FilmController
                 opacity = 0F;
             }
         }
-        else */if (value != null)
+        else
         {
             Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value.actor, value.attachment, defaultMatrix, transition);
             Matrix4f lastMatrix = getEntityMatrix(entities, cx, cy, cz, value.previousActor, value.previousAttachment, defaultMatrix, transition);
@@ -112,7 +115,10 @@ public class FilmController
                 float factor = value.x;
 
                 target = factor >= 1F ? matrix : Matrices.lerp(lastMatrix, matrix, factor);
-                opacity = 1F - factor;
+
+                if (value.actor == -1 && value.previousActor >= 0) opacity = factor;
+                else if (value.actor >= 0 && value.previousActor == -1) opacity = 1F - factor;
+                else opacity = 0F;
             }
         }
 
