@@ -32,7 +32,7 @@ public class ValueStringKeys extends BaseValueBasic<Set<String>>
     {
         this.value.clear();
 
-        if (data.isList())
+        if (!data.isList())
         {
             return;
         }
