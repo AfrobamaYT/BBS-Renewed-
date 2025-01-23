@@ -1,7 +1,9 @@
 {
-    "block.bbs.model": "Model block",
+    "block.bbs.model": "Khối mô hình",
+    "item.bbs.gun": "Súng BBS",
     "itemGroup.bbs.main": "BBS mod",
 
+    "key.bbs.item_editor": "chỉnh vật phẩm",
     "key.bbs.dashboard": "Bảng điều khiển",
     "key.bbs.demorph": "Gỡ biến đổi",
     "key.bbs.open_replays": "Mở phát lại",
@@ -9,5 +11,6 @@
     "key.bbs.play_film": "Play film",
     "key.bbs.record_replay": "Quay phát lại",
     "key.bbs.record_video": "Quay video",
+    "key.bbs.teleport": "Dịch chuyển đến phát lại hiện tại",
     "category.bbs.main": "BBS mod"
 }
