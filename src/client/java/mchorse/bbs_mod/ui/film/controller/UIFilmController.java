@@ -66,7 +66,6 @@ import net.minecraft.client.Mouse;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
@@ -503,14 +502,6 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            InputUtil.Key utilKey = InputUtil.Type.MOUSE.createFromCode(context.mouseButton);
-
-            if (this.canControlWithKeyboard(utilKey))
-            {
-                KeyBinding.setKeyPressed(utilKey, true);
-                KeyBinding.onKeyPressed(utilKey);
-            }
-
             return true;
         }
 
@@ -561,13 +552,6 @@ public class UIFilmController extends UIElement
     {
         if (this.canControl())
         {
-            InputUtil.Key utilKey = InputUtil.Type.MOUSE.createFromCode(context.mouseButton);
-
-            if (this.canControlWithKeyboard(utilKey))
-            {
-                KeyBinding.setKeyPressed(utilKey, false);
-            }
-
             return true;
         }
 
@@ -600,16 +584,6 @@ public class UIFilmController extends UIElement
 
             if (this.canControlWithKeyboard(utilKey))
             {
-                if (context.getKeyAction() == KeyAction.RELEASED)
-                {
-                    KeyBinding.setKeyPressed(utilKey, false);
-                }
-                else
-                {
-                    KeyBinding.setKeyPressed(utilKey, true);
-                    KeyBinding.onKeyPressed(utilKey);
-                }
-
                 return true;
             }
         }
