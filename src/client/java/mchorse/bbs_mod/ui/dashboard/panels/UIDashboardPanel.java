@@ -49,10 +49,10 @@ public class UIDashboardPanel extends UIElement
     public void close()
     {}
 
-    public void lastRender(WorldRenderContext context)
+    public void update()
     {}
 
-    public void update()
+    public void startRenderFrame(float tickDelta)
     {}
 
     public void renderInWorld(WorldRenderContext context)

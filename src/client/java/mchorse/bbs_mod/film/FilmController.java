@@ -362,10 +362,8 @@ public class FilmController
         }
     }
 
-    public void render(WorldRenderContext context)
+    public void startRenderFrame(float transition)
     {
-        RenderSystem.enableDepthTest();
-
         for (int i = 0; i < this.entities.size(); i++)
         {
             if (i == this.exception)
@@ -377,7 +375,7 @@ public class FilmController
             IEntity entity = this.entities.get(i);
 
             /* Apply property */
-            replay.applyProperties(this.tick + context.tickDelta(), entity.getForm());
+            replay.applyProperties(this.tick + transition, entity.getForm());
 
             Map<String, Integer> actors = BBSModClient.getFilms().actors.get(this.film.getId());
 
@@ -391,10 +389,26 @@ public class FilmController
 
                     if (anEntity instanceof ActorEntity actor)
                     {
-                        replay.applyProperties(this.tick + context.tickDelta(), actor.getForm());
+                        replay.applyProperties(this.tick + transition, actor.getForm());
                     }
                 }
             }
+        }
+    }
+
+    public void render(WorldRenderContext context)
+    {
+        RenderSystem.enableDepthTest();
+
+        for (int i = 0; i < this.entities.size(); i++)
+        {
+            if (i == this.exception)
+            {
+                continue;
+            }
+
+            Replay replay = this.film.replays.getList().get(i);
+            IEntity entity = this.entities.get(i);
 
             if (!replay.actor.get())
             {

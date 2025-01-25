@@ -197,6 +197,15 @@ public class BBSRendering
 
     public static void onWorldRenderBegin()
     {
+        BBSModClient.getFilms().startRenderFrame(MinecraftClient.getInstance().getTickDelta());
+
+        UIBaseMenu menu = UIScreen.getCurrentMenu();
+
+        if (menu != null)
+        {
+            menu.startRenderFrame(MinecraftClient.getInstance().getTickDelta());
+        }
+
         renderingWorld = true;
 
         if (!customSize)

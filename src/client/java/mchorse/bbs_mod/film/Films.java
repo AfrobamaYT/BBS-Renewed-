@@ -231,6 +231,14 @@ public class Films
         this.actors.put(filmId, actors);
     }
 
+    public void startRenderFrame(float transition)
+    {
+        for (FilmController controller : this.controllers)
+        {
+            controller.startRenderFrame(transition);
+        }
+    }
+
     public void update()
     {
         this.controllers.removeIf((film) ->

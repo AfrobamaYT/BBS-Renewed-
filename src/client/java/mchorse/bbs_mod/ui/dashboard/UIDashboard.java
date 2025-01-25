@@ -307,6 +307,17 @@ public class UIDashboard extends UIBaseMenu
         }
     }
 
+    @Override
+    public void startRenderFrame(float tickDelta)
+    {
+        super.startRenderFrame(tickDelta);
+
+        if (this.panels.panel != null)
+        {
+            this.panels.panel.startRenderFrame(tickDelta);
+        }
+    }
+
     public void renderInWorld(WorldRenderContext context)
     {
         super.renderInWorld(context);

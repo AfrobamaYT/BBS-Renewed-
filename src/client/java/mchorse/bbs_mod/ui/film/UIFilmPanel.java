@@ -905,6 +905,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     @Override
+    public void startRenderFrame(float tickDelta)
+    {
+        super.startRenderFrame(tickDelta);
+
+        this.controller.startRenderFrame(tickDelta);
+    }
+
+    @Override
     public void renderInWorld(WorldRenderContext context)
     {
         super.renderInWorld(context);

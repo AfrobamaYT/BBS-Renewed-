@@ -244,6 +244,9 @@ public abstract class UIBaseMenu
     protected void preRenderMenu(UIRenderingContext context)
     {}
 
+    public void startRenderFrame(float tickDelta)
+    {}
+
     public void renderInWorld(WorldRenderContext context)
     {}
 
