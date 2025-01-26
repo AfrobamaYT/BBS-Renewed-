@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.ui.utils.pose;
+package mchorse.bbs_mod.ui.utils.presets;
 
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -12,7 +12,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.pose.DataManager;
+import mchorse.bbs_mod.utils.presets.DataManager;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -25,7 +25,7 @@ public class UIDataContextMenu extends UIContextMenu
     public UIIcon reset;
     public UIIcon save;
 
-    public UIStringList poses;
+    public UIStringList entries;
 
     public UITextbox name;
 
@@ -74,7 +74,7 @@ public class UIDataContextMenu extends UIContextMenu
         });
         this.save.tooltip(UIKeys.POSE_CONTEXT_SAVE);
 
-        this.poses = new UIStringList((l) -> this.send(this.data.getMap(l.get(0))));
+        this.entries = new UIStringList((l) -> this.send(this.data.getMap(l.get(0))));
         this.name = new UITextbox().filename();
         this.name.placeholder(UIKeys.POSE_CONTEXT_NAME);
 
@@ -82,11 +82,11 @@ public class UIDataContextMenu extends UIContextMenu
 
         this.row.relative(this).xy(5, 5).w(1F, -10).h(20);
         this.name.relative(this).xy(5, 25).w(1F, -10).h(20);
-        this.poses.relative(this).xy(5, 45).w(1F, -10).hTo(this.area, 1F, -5);
+        this.entries.relative(this).xy(5, 45).w(1F, -10).hTo(this.area, 1F, -5);
 
         this.add(this.row);
         this.add(this.name);
-        this.add(this.poses);
+        this.add(this.entries);
 
         this.fillPoses();
     }
@@ -113,9 +113,9 @@ public class UIDataContextMenu extends UIContextMenu
 
     private void fillPoses()
     {
-        this.poses.clear();
-        this.poses.add(this.data.keys());
-        this.poses.sort();
+        this.entries.clear();
+        this.entries.add(this.data.keys());
+        this.entries.sort();
     }
 
     @Override

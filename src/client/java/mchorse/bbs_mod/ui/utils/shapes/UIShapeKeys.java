@@ -6,7 +6,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
-import mchorse.bbs_mod.ui.utils.pose.UIDataContextMenu;
+import mchorse.bbs_mod.ui.utils.presets.UIDataContextMenu;
 import mchorse.bbs_mod.utils.pose.ShapeKeysManager;
 
 import java.util.Set;

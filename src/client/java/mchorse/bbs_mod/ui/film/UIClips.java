@@ -31,12 +31,14 @@ import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.presets.UIPresetContextMenu;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.factory.IFactory;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.presets.PresetManager;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -135,6 +137,12 @@ public class UIClips extends UIElement
             int mouseX = context.mouseX;
             int mouseY = context.mouseY;
             boolean hasSelected = this.delegate.getClip() != null;
+            int tick = this.fromGraphX(mouseX);
+
+            menu.custom(
+                new UIPresetContextMenu(PresetManager.CLIPS, "_CopyClips", this::copyClips, (data) -> this.paste(data, tick))
+                    .labels(UIKeys.CAMERA_TIMELINE_CONTEXT_COPY, UIKeys.CAMERA_TIMELINE_CONTEXT_PASTE)
+            );
 
             if (this.fromLayerY(mouseY) < 0)
             {
@@ -142,13 +150,6 @@ public class UIClips extends UIElement
             }
 
             menu.action(Icons.ADD, UIKeys.CAMERA_TIMELINE_CONTEXT_ADD, () -> this.showAdds(mouseX, mouseY));
-
-            if (hasSelected)
-            {
-                menu.action(Icons.COPY, UIKeys.CAMERA_TIMELINE_CONTEXT_COPY, this::copyClips);
-            }
-
-            this.addPaste(menu, this.fromGraphX(mouseX));
 
             if (hasSelected)
             {
@@ -387,7 +388,7 @@ public class UIClips extends UIElement
         this.pickClip(clip);
     }
 
-    private void copyClips()
+    private MapType copyClips()
     {
         MapType data = new MapType();
         ListType clips = new ListType();
@@ -399,17 +400,7 @@ public class UIClips extends UIElement
             clips.add(this.factory.toData(clip));
         }
 
-        Window.setClipboard(data, "_CopyClips");
-    }
-
-    private void addPaste(ContextMenuManager menu, int tick)
-    {
-        MapType data = Window.getClipboardMap("_CopyClips");
-
-        if (data != null)
-        {
-            menu.action(Icons.PASTE, UIKeys.CAMERA_TIMELINE_CONTEXT_PASTE, () -> this.paste(data, tick));
-        }
+        return data;
     }
 
     /**

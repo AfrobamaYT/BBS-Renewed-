@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.utils.pose;
+package mchorse.bbs_mod.utils.presets;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.data.DataToString;

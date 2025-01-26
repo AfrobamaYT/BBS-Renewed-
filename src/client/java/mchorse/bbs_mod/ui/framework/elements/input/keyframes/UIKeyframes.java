@@ -18,6 +18,7 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Scale;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.presets.UIPresetContextMenu;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
@@ -27,6 +28,7 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+import mchorse.bbs_mod.utils.presets.PresetManager;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -87,6 +89,14 @@ public class UIKeyframes extends UIElement
             int mouseX = context.mouseX;
             int mouseY = context.mouseY;
             boolean hasSelected = this.currentGraph.getSelected() != null;
+            double offset = this.fromGraphX(mouseX);
+
+            menu.custom(
+                new UIPresetContextMenu(PresetManager.KEYFRAMES, "_CopyKeyframes",
+                    this::serializeKeyframes,
+                    (data) -> this.pasteKeyframes(this.parseKeyframes(data), (float) offset, mouseY))
+                    .labels(UIKeys.KEYFRAMES_CONTEXT_COPY, UIKeys.KEYFRAMES_CONTEXT_PASTE)
+            );
 
             if (this.isEditing())
             {
@@ -111,21 +121,6 @@ public class UIKeyframes extends UIElement
             if (hasSelected)
             {
                 menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, () -> this.currentGraph.removeSelected());
-                menu.action(Icons.COPY, UIKeys.KEYFRAMES_CONTEXT_COPY, this::copyKeyframes);
-            }
-
-            Map<String, PastedKeyframes> pasted = this.parseKeyframes();
-
-            if (pasted != null)
-            {
-                final Map<String, PastedKeyframes> keyframes = pasted;
-                double offset = this.fromGraphX(mouseX);
-
-                menu.action(Icons.PASTE, UIKeys.KEYFRAMES_CONTEXT_PASTE, () -> this.pasteKeyframes(keyframes, (float) offset, mouseY));
-            }
-
-            if (hasSelected)
-            {
                 menu.action(Icons.OUTLINE_SPHERE, UIKeys.KEYFRAMES_CONTEXT_ROUND, () ->
                 {
                     for (UIKeyframeSheet sheet : this.getGraph().getSheets())

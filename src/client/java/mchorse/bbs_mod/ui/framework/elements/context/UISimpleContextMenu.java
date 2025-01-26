@@ -22,7 +22,7 @@ public class UISimpleContextMenu extends UIContextMenu
             }
         });
 
-        this.actions.cancelScrollEdge().relative(this).w(1, 0).h(1, 0);
+        this.actions.cancelScrollEdge().full(this);
         this.add(this.actions);
     }
 

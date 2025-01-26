@@ -10,8 +10,6 @@ import mchorse.bbs_mod.utils.interps.Interpolations;
 
 public class UIKeys
 {
-
-
     public static final IKey ACTIONS_ATTACK_DAMAGE = L10n.lang("bbs.ui.actions.attack.damage");
     public static final IKey ACTIONS_BLOCK_DIRECTION = L10n.lang("bbs.ui.actions.block.direction");
     public static final IKey ACTIONS_BLOCK_DIRECTION_DOWN = L10n.lang("bbs.ui.actions.block.direction.down");
@@ -551,6 +549,12 @@ public class UIKeys
     public static final IKey POSE_CONTEXT_PASTE = L10n.lang("bbs.ui.pose.context.paste");
     public static final IKey POSE_CONTEXT_RESET = L10n.lang("bbs.ui.pose.context.reset");
     public static final IKey POSE_CONTEXT_SAVE = L10n.lang("bbs.ui.pose.context.save");
+    public static final IKey PRESETS_OPEN = L10n.lang("bbs.ui.presets.open");
+    public static final IKey PRESETS_SAVE = L10n.lang("bbs.ui.presets.save");
+    public static final IKey PRESETS_SAVE_DESCRIPTION = L10n.lang("bbs.ui.presets.save-description");
+    public static final IKey PRESETS_SAVE_TITLE = L10n.lang("bbs.ui.presets.save-title");
+    public static final IKey PRESETS_TITLE = L10n.lang("bbs.ui.presets.title");
+    public static final IKey PRESETS_VIEW = L10n.lang("bbs.ui.presets.view");
     public static final IKey SCENE_REPLAYS_CONTEXT_ADD = L10n.lang("bbs.ui.scene.replays.context.add");
     public static final IKey SCENE_REPLAYS_CONTEXT_COPY = L10n.lang("bbs.ui.scene.replays.context.copy");
     public static final IKey SCENE_REPLAYS_CONTEXT_DUPE = L10n.lang("bbs.ui.scene.replays.context.dupe");

@@ -8,6 +8,7 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.importers.IImportPathProvider;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -27,9 +28,11 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.presets.UIPresetContextMenu;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.presets.PresetManager;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
 import mchorse.bbs_mod.utils.resources.LinkUtils;
 import mchorse.bbs_mod.utils.resources.MultiLink;
@@ -107,14 +110,12 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         this.text = new UITextbox(1000, (str) -> this.selectCurrent(str.isEmpty() ? null : LinkUtils.create(str)));
         this.text.delayedInput().context((menu) ->
         {
-            Link location = this.parseLink();
+            menu.custom(
+                new UIPresetContextMenu(PresetManager.TEXTURES, "_CopyTexture", this::copyLink, (data) -> this.pasteLink(this.parseLink(data)))
+                    .labels(UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE)
+            );
 
-            menu.action(Icons.COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, this::copyLink);
-
-            if (location != null)
-            {
-                menu.action(Icons.PASTE, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE, () -> this.pasteLink(location));
-            }
+            menu.action(Icons.DOWNLOAD, IKey.raw("Download skin..."), null);
         });
         this.close = new UIIcon(Icons.CLOSE, (b) -> this.close());
         this.folder = new UIIcon(Icons.FOLDER, (b) -> this.openFolder());
@@ -205,29 +206,25 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         this.markContainer().eventPropagataion(EventPropagation.BLOCK);
     }
 
-    private Link parseLink()
+    private Link parseLink(MapType map)
     {
-        MapType map = Window.getClipboardMap();
-
         return map == null ? null : LinkUtils.create(map.get("link"));
     }
 
-    private void copyLink()
+    private MapType copyLink()
     {
         BaseType base = LinkUtils.toData(this.multiLink != null ? this.multiLink : this.current);
 
         if (base == null)
         {
-            Window.setClipboard("");
+            return null;
         }
-        else
-        {
-            MapType map = new MapType();
 
-            map.put("link", base);
+        MapType map = new MapType();
 
-            Window.setClipboard(map);
-        }
+        map.put("link", base);
+
+        return map;
     }
 
     private void pasteLink(Link location)

@@ -20,6 +20,14 @@ public class ContextMenuManager
     public List<ContextAction> actions = new ArrayList<>();
     public Consumer<UIRemovedEvent> onClose;
     public boolean autoKeys;
+    public UISimpleContextMenu menu;
+
+    public ContextMenuManager custom(UISimpleContextMenu menu)
+    {
+        this.menu = menu;
+
+        return this;
+    }
 
     public ContextMenuManager onClose(Consumer<UIRemovedEvent> onClose)
     {
@@ -79,7 +87,7 @@ public class ContextMenuManager
 
     public UISimpleContextMenu create()
     {
-        UISimpleContextMenu contextMenu = new UISimpleContextMenu();
+        UISimpleContextMenu contextMenu = this.menu == null ? new UISimpleContextMenu() : this.menu;
 
         contextMenu.actions.add(this.actions);
         contextMenu.getEvents().register(UIRemovedEvent.class, this.onClose);

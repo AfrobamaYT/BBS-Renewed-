@@ -16,6 +16,8 @@ public class UIForms extends UIList<UIForms.FormEntry>
     public UIForms(Consumer<List<FormEntry>> callback)
     {
         super(callback);
+
+        this.scroll.cancelScrolling();
     }
 
     public void setCurrentForm(Form form)

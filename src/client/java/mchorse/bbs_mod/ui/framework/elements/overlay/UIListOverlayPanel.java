@@ -19,15 +19,18 @@ public class UIListOverlayPanel extends UIOverlayPanel
     {
         super(title);
 
-        this.callback = (list) ->
+        this.callback((l) ->
         {
-            if (callback != null)
-            {
-                callback.accept(list.get(0));
-            }
-        };
+            if (callback != null) callback.accept(l.get(0));
+        });
 
-        this.list = new UISearchList<>(new UIStringList(this.callback));
+        this.list = new UISearchList<>(new UIStringList((l) ->
+        {
+            if (this.callback != null)
+            {
+                this.callback.accept(l);
+            }
+        }));
         this.list.relative(this.content).xy(6, 6).w(1F, -12).h(1F, -6);
 
         this.content.add(this.list);
