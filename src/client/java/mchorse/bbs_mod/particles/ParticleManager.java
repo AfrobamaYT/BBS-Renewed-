@@ -25,6 +25,8 @@ public class ParticleManager extends BaseManager<ParticleScheme>
         {
             try
             {
+                System.out.println("Parsing \"" + id + "\" particle effect.");
+
                 ParticleScheme.PARSER.fromData(scheme, data);
             }
             catch (Exception e)

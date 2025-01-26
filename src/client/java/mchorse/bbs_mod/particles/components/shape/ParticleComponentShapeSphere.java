@@ -37,7 +37,7 @@ public class ParticleComponentShapeSphere extends ParticleComponentShapeBase
 
         if (map.has("radius"))
         {
-            this.radius = parser.parseData(map.get("radius"));
+            this.radius = parser.parseDataSilently(map.get("radius"), MolangParser.ONE);
         }
 
         return super.fromData(map, parser);

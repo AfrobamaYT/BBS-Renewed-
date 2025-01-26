@@ -65,9 +65,9 @@ public abstract class ParticleComponentShapeBase extends ParticleComponentBase i
                 if (list.size() >= 3)
                 {
                     this.direction = new ShapeDirectionVector(
-                        parser.parseData(list.get(0)),
-                        parser.parseData(list.get(1)),
-                        parser.parseData(list.get(2))
+                        parser.parseDataSilently(list.get(0)),
+                        parser.parseDataSilently(list.get(1), MolangParser.ONE),
+                        parser.parseDataSilently(list.get(2))
                     );
                 }
             }

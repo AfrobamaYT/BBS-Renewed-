@@ -38,8 +38,8 @@ public class ParticleComponentRateSteady extends ParticleComponentRate implement
 
         MapType map = data.asMap();
 
-        if (map.has("spawn_rate")) this.spawnRate = parser.parseData(map.get("spawn_rate"));
-        if (map.has("max_particles")) this.particles = parser.parseData(map.get("max_particles"));
+        if (map.has("spawn_rate")) this.spawnRate = parser.parseDataSilently(map.get("spawn_rate"), MolangParser.ONE);
+        if (map.has("max_particles")) this.particles = parser.parseDataSilently(map.get("max_particles"), MolangParser.ONE);
 
         return super.fromData(map, parser);
     }

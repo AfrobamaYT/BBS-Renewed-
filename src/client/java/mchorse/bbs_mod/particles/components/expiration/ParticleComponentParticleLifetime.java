@@ -48,7 +48,7 @@ public class ParticleComponentParticleLifetime extends ParticleComponentBase imp
             throw new RuntimeException("No expiration_expression or max_lifetime was found in particle_lifetime_expression component");
         }
 
-        this.expression = parser.parseData(expression);
+        this.expression = parser.parseDataSilently(expression, MolangParser.ONE);
 
         return super.fromData(element, parser);
     }

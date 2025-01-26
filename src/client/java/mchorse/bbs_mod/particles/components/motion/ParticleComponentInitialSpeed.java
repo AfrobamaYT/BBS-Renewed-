@@ -37,7 +37,7 @@ public class ParticleComponentInitialSpeed extends ParticleComponentBase impleme
         }
         else if (BaseType.isPrimitive(data))
         {
-            this.speed = parser.parseData(data);
+            this.speed = parser.parseDataSilently(data, MolangParser.ONE);
         }
 
         return super.fromData(data, parser);

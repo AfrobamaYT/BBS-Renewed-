@@ -35,7 +35,7 @@ public class ParticleComponentLifetimeLooping extends ParticleComponentLifetime
 
         if (element.has("sleep_time"))
         {
-            this.sleepTime = parser.parseData(element.get("sleep_time"));
+            this.sleepTime = parser.parseDataSilently(element.get("sleep_time"));
         }
 
         return super.fromData(element, parser);

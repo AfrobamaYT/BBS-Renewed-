@@ -43,9 +43,9 @@ public class ParticleComponentMotionDynamic extends ParticleComponentMotion impl
             ParticleUtils.vectorFromList(map.getList("linear_acceleration"), this.motionAcceleration, parser);
         }
 
-        if (map.has("linear_drag_coefficient")) this.motionDrag = parser.parseData(map.get("linear_drag_coefficient"));
-        if (map.has("rotation_acceleration")) this.rotationAcceleration = parser.parseData(map.get("rotation_acceleration"));
-        if (map.has("rotation_drag_coefficient")) this.rotationDrag = parser.parseData(map.get("rotation_drag_coefficient"));
+        if (map.has("linear_drag_coefficient")) this.motionDrag = parser.parseDataSilently(map.get("linear_drag_coefficient"));
+        if (map.has("rotation_acceleration")) this.rotationAcceleration = parser.parseDataSilently(map.get("rotation_acceleration"));
+        if (map.has("rotation_drag_coefficient")) this.rotationDrag = parser.parseDataSilently(map.get("rotation_drag_coefficient"));
 
         return super.fromData(map, parser);
     }

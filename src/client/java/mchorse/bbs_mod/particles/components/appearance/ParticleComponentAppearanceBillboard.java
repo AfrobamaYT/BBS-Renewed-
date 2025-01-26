@@ -163,8 +163,8 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
             if (size.size() >= 2)
             {
-                this.sizeW = parser.parseData(size.get(0));
-                this.sizeH = parser.parseData(size.get(1));
+                this.sizeW = parser.parseDataSilently(size.get(0), MolangParser.ONE);
+                this.sizeH = parser.parseDataSilently(size.get(1), MolangParser.ONE);
             }
         }
 
@@ -192,8 +192,8 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
             if (uv.size() >= 2)
             {
-                this.uvX = parser.parseData(uv.get(0));
-                this.uvY = parser.parseData(uv.get(1));
+                this.uvX = parser.parseDataSilently(uv.get(0));
+                this.uvY = parser.parseDataSilently(uv.get(1));
             }
         }
 
@@ -203,8 +203,8 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
             if (uv.size() >= 2)
             {
-                this.uvW = parser.parseData(uv.get(0));
-                this.uvH = parser.parseData(uv.get(1));
+                this.uvW = parser.parseDataSilently(uv.get(0), MolangParser.ONE);
+                this.uvH = parser.parseDataSilently(uv.get(1), MolangParser.ONE);
             }
         }
 
@@ -224,8 +224,8 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
             if (uv.size() >= 2)
             {
-                this.uvX = parser.parseData(uv.get(0));
-                this.uvY = parser.parseData(uv.get(1));
+                this.uvX = parser.parseDataSilently(uv.get(0));
+                this.uvY = parser.parseDataSilently(uv.get(1));
             }
         }
 
@@ -235,8 +235,8 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
             if (uv.size() >= 2)
             {
-                this.uvW = parser.parseData(uv.get(0));
-                this.uvH = parser.parseData(uv.get(1));
+                this.uvW = parser.parseDataSilently(uv.get(0));
+                this.uvH = parser.parseDataSilently(uv.get(1));
             }
         }
 
@@ -252,7 +252,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         }
 
         if (flipbook.has("frames_per_second")) this.fps = flipbook.getFloat("frames_per_second");
-        if (flipbook.has("max_frame")) this.maxFrame = parser.parseData(flipbook.get("max_frame"));
+        if (flipbook.has("max_frame")) this.maxFrame = parser.parseDataSilently(flipbook.get("max_frame"));
         if (flipbook.has("stretch_to_lifetime")) this.stretchFPS = flipbook.getBool("stretch_to_lifetime");
         if (flipbook.has("loop")) this.loop = flipbook.getBool("loop");
     }

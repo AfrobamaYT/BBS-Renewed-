@@ -37,7 +37,7 @@ public abstract class ParticleComponentLifetime extends ParticleComponentBase im
 
         if (map.has(this.getPropertyName()))
         {
-            this.activeTime = parser.parseData(map.get(this.getPropertyName()));
+            this.activeTime = parser.parseDataSilently(map.get(this.getPropertyName()), MolangParser.ONE);
         }
 
         return super.fromData(map, parser);

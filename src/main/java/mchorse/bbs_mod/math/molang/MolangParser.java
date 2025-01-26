@@ -157,6 +157,26 @@ public class MolangParser extends MathBuilder
         return variable;
     }
 
+    public MolangExpression parseDataSilently(BaseType data)
+    {
+        return this.parseDataSilently(data, MolangParser.ZERO);
+    }
+
+    public MolangExpression parseDataSilently(BaseType data, MolangExpression defaultExpression)
+    {
+        try
+        {
+            return this.parseData(data);
+        }
+        catch (Exception e)
+        {
+            System.err.println("Failed to parse MoLang: " + data);
+            e.printStackTrace();
+        }
+
+        return defaultExpression;
+    }
+
     public MolangExpression parseData(BaseType data) throws MolangException
     {
         if (BaseType.isPrimitive(data))
@@ -183,11 +203,11 @@ public class MolangParser extends MathBuilder
         return ZERO;
     }
 
-    public MolangExpression parseGlobalData(BaseType data) throws MolangException
+    public MolangExpression parseGlobalData(BaseType data)
     {
         this.registerAsGlobals = true;
 
-        MolangExpression expression = parseData(data);
+        MolangExpression expression = this.parseDataSilently(data);
 
         this.registerAsGlobals = false;
 
@@ -209,7 +229,7 @@ public class MolangParser extends MathBuilder
             }
         }
 
-        if (lines.size() == 0)
+        if (lines.isEmpty())
         {
             throw new MolangException("Molang expression cannot be blank!");
         }

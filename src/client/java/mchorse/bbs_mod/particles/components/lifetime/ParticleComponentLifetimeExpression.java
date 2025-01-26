@@ -36,7 +36,7 @@ public class ParticleComponentLifetimeExpression extends ParticleComponentLifeti
 
         if (map.has("expiration_expression"))
         {
-            this.expiration = parser.parseData(map.get("expiration_expression"));
+            this.expiration = parser.parseDataSilently(map.get("expiration_expression"));
         }
 
         return super.fromData(map, parser);

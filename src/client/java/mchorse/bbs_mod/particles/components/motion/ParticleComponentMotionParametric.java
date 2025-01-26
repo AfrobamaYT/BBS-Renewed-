@@ -46,7 +46,7 @@ public class ParticleComponentMotionParametric extends ParticleComponentMotion i
 
         if (map.has("rotation"))
         {
-            this.rotation = parser.parseData(map.get("rotation"));
+            this.rotation = parser.parseDataSilently(map.get("rotation"));
         }
 
         return super.fromData(map, parser);

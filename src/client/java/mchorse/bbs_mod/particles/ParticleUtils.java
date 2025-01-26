@@ -25,7 +25,7 @@ public class ParticleUtils
         {
             for (int i = 0; i < expressions.length; i++)
             {
-                expressions[i] = parser.parseData(list.get(i));
+                expressions[i] = parser.parseDataSilently(list.get(i));
             }
         }
     }

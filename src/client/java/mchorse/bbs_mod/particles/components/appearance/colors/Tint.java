@@ -59,13 +59,13 @@ public abstract class Tint
 
             if (array.size() == 3 || alpha)
             {
-                r = parser.parseData(array.get(0));
-                g = parser.parseData(array.get(1));
-                b = parser.parseData(array.get(2));
+                r = parser.parseDataSilently(array.get(0), MolangParser.ONE);
+                g = parser.parseDataSilently(array.get(1), MolangParser.ONE);
+                b = parser.parseDataSilently(array.get(2), MolangParser.ONE);
 
                 if (alpha)
                 {
-                    a = parser.parseData(array.get(3));
+                    a = parser.parseDataSilently(array.get(3), MolangParser.ONE);
                 }
             }
         }
@@ -112,7 +112,7 @@ public abstract class Tint
 
         if (color.has("interpolant"))
         {
-            expression = parser.parseData(color.get("interpolant"));
+            expression = parser.parseDataSilently(color.get("interpolant"));
         }
 
         return new Gradient(colorStops, expression, equal);

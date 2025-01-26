@@ -113,20 +113,9 @@ public class ParticleCurve
 
     public void fromData(MapType data, MolangParser parser) throws MolangException
     {
-        if (data.has("type"))
-        {
-            this.type = ParticleCurveType.fromString(data.getString("type"));
-        }
-
-        if (data.has("input"))
-        {
-            this.input = parser.parseData(data.get("input"));
-        }
-
-        if (data.has("horizontal_range"))
-        {
-            this.range = parser.parseData(data.get("horizontal_range"));
-        }
+        if (data.has("type")) this.type = ParticleCurveType.fromString(data.getString("type"));
+        if (data.has("input")) this.input = parser.parseDataSilently(data.get("input"));
+        if (data.has("horizontal_range")) this.range = parser.parseDataSilently(data.get("horizontal_range"));
 
         if (data.has("nodes"))
         {
@@ -136,7 +125,7 @@ public class ParticleCurve
 
             for (int i = 0, c = nodes.size(); i < c; i ++)
             {
-                this.nodes.add(parser.parseData(nodes.get(i)));
+                this.nodes.add(parser.parseDataSilently(nodes.get(i), MolangParser.ONE));
             }
         }
     }

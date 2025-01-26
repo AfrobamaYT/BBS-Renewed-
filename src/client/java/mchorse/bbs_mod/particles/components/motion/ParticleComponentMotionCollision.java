@@ -58,7 +58,7 @@ public class ParticleComponentMotionCollision extends ParticleComponentBase impl
 
         MapType map = data.asMap();
 
-        if (map.has("enabled")) this.enabled = parser.parseData(map.get("enabled"));
+        if (map.has("enabled")) this.enabled = parser.parseDataSilently(map.get("enabled"));
         if (map.has("collision_drag")) this.collisionDrag = map.getFloat("collision_drag");
         if (map.has("coefficient_of_restitution")) this.bounciness = map.getFloat("coefficient_of_restitution");
         if (map.has("collision_radius")) this.radius = map.getFloat("collision_radius");

@@ -41,7 +41,7 @@ public class ParticleComponentRateInstant extends ParticleComponentRate implemen
 
         if (map.has("num_particles"))
         {
-            this.particles = parser.parseData(map.get("num_particles"));
+            this.particles = parser.parseDataSilently(map.get("num_particles"), MolangParser.ONE);
         }
 
         return super.fromData(map, parser);

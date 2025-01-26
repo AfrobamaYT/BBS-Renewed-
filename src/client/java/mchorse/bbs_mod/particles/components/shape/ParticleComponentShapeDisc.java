@@ -68,9 +68,9 @@ public class ParticleComponentShapeDisc extends ParticleComponentShapeSphere
 
                 if (array.size() >= 3)
                 {
-                    this.normal[0] = parser.parseData(array.get(0));
-                    this.normal[1] = parser.parseData(array.get(1));
-                    this.normal[2] = parser.parseData(array.get(2));
+                    this.normal[0] = parser.parseDataSilently(array.get(0));
+                    this.normal[1] = parser.parseDataSilently(array.get(1), MolangParser.ONE);
+                    this.normal[2] = parser.parseDataSilently(array.get(2));
                 }
             }
         }

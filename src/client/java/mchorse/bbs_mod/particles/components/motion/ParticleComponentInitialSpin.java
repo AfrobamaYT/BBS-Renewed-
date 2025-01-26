@@ -32,8 +32,8 @@ public class ParticleComponentInitialSpin extends ParticleComponentBase implemen
 
         MapType map = data.asMap();
 
-        if (map.has("rotation")) this.rotation = parser.parseData(map.get("rotation"));
-        if (map.has("rotation_rate")) this.rate = parser.parseData(map.get("rotation_rate"));
+        if (map.has("rotation")) this.rotation = parser.parseDataSilently(map.get("rotation"));
+        if (map.has("rotation_rate")) this.rate = parser.parseDataSilently(map.get("rotation_rate"));
 
         return super.fromData(map, parser);
     }
