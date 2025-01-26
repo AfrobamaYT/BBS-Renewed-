@@ -92,12 +92,22 @@ public class FilmController
         Matrix4f defaultMatrix = getMatrixForRenderWithRotation(entity, cx, cy, cz, transition);
         float opacity = 1F;
 
-        boolean same = value.previousActor == -2 ||
-            (value.actor == value.previousActor && Objects.equals(value.attachment, value.previousAttachment));
+        boolean same = value.previousActor == -2
+            || (value.actor == value.previousActor && Objects.equals(value.attachment, value.previousAttachment));
 
         if (same)
         {
             Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value.actor, value.attachment, defaultMatrix, transition);
+
+            if (matrix != defaultMatrix)
+            {
+                target = matrix;
+                opacity = 0F;
+            }
+        }
+        else if (value.x <= 0F && value.previousActor >= -1)
+        {
+            Matrix4f matrix = getEntityMatrix(entities, cx, cy, cz, value.previousActor, value.previousAttachment, defaultMatrix, transition);
 
             if (matrix != defaultMatrix)
             {
