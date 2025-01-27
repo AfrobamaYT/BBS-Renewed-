@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
 import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -73,27 +74,27 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         private UIKeyframes editor;
         private Keyframe<Pose> keyframe;
 
-        public static void apply(UIKeyframes editor, Keyframe keyframe, String group, Consumer<PoseTransform> consumer)
+        public static void apply(UIKeyframes editor, Keyframe keyframe, Consumer<Pose> consumer)
         {
             for (UIKeyframeSheet sheet : editor.getGraph().getSheets())
             {
-                if (sheet.channel.getFactory() != keyframe.getFactory())
-                {
-                    continue;
-                }
+                if (sheet.channel.getFactory() != keyframe.getFactory()) continue;
 
                 for (Keyframe kf : sheet.selection.getSelected())
                 {
                     if (kf.getValue() instanceof Pose pose)
                     {
-                        PoseTransform poseT = pose.get(group);
-
                         kf.preNotifyParent();
-                        consumer.accept(poseT);
+                        consumer.accept(pose);
                         kf.postNotifyParent();
                     }
                 }
             }
+        }
+
+        public static void apply(UIKeyframes editor, Keyframe keyframe, String group, Consumer<PoseTransform> consumer)
+        {
+            apply(editor, keyframe, (pose) -> consumer.accept(pose.get(group)));
         }
 
         public UIPoseFactoryEditor(UIKeyframes editor, Keyframe<Pose> keyframe)
@@ -110,6 +111,24 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         protected UIPropTransform createTransformEditor()
         {
             return new UIPoseTransforms().enableHotkeys();
+        }
+
+        @Override
+        protected void pastePose(MapType data)
+        {
+            String current = this.groups.getCurrentFirst();
+
+            apply(this.editor, this.keyframe, (pose) -> pose.fromData(data));
+            this.pickBone(current);
+        }
+
+        @Override
+        protected void flipPose()
+        {
+            String current = this.groups.getCurrentFirst();
+
+            apply(this.editor, this.keyframe, (pose) -> pose.flip(this.flippedParts));
+            this.pickBone(current);
         }
 
         @Override
