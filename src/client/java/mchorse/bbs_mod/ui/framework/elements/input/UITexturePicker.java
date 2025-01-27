@@ -28,6 +28,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.utils.presets.UICopyPasteController;
 import mchorse.bbs_mod.ui.utils.presets.UIPresetContextMenu;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.Timer;
@@ -79,6 +80,8 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
     private Timer lastChecked = new Timer(1000);
     private String typed = "";
 
+    private UICopyPasteController copyPasteController;
+
     public static UITexturePicker open(UIContext context, Link current, Consumer<Link> callback)
     {
         return open(context.menu.overlay, current, callback);
@@ -106,14 +109,17 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
     {
         super();
 
+        this.copyPasteController = new UICopyPasteController(PresetManager.TEXTURES, "_CopyTexture")
+            .supplier(this::copyLink)
+            .consumer((data, x, y) -> this.pasteLink(this.parseLink(data)))
+            .canCopy(() -> this.current != null);
+
         this.right = new UIElement();
         this.text = new UITextbox(1000, (str) -> this.selectCurrent(str.isEmpty() ? null : LinkUtils.create(str)));
         this.text.delayedInput().context((menu) ->
         {
-            menu.custom(
-                new UIPresetContextMenu(PresetManager.TEXTURES, "_CopyTexture", this::copyLink, (data) -> this.pasteLink(this.parseLink(data)))
-                    .labels(UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE)
-            );
+            menu.custom(new UIPresetContextMenu(this.copyPasteController, 0, 0)
+                .labels(UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE));
 
             menu.action(Icons.DOWNLOAD, IKey.raw("Download skin..."), null);
         });
@@ -127,7 +133,6 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
             public void setPath(Link folder, boolean fastForward)
             {
                 super.setPath(folder, fastForward);
-
                 UITexturePicker.this.updateFolderButton();
             }
         };

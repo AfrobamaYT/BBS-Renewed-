@@ -64,8 +64,14 @@ public class PresetManager
     public List<String> getKeys()
     {
         ArrayList<String> strings = new ArrayList<>();
+        File[] files = this.folder.listFiles();
 
-        for (File file : this.folder.listFiles())
+        if (files == null)
+        {
+            return strings;
+        }
+
+        for (File file : files)
         {
             String name = file.getName();
 

@@ -1,22 +1,14 @@
 package mchorse.bbs_mod.ui.utils.presets;
 
-import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.context.UISimpleContextMenu;
-import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.presets.PresetManager;
-
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class UIPresetContextMenu extends UISimpleContextMenu
 {
@@ -24,24 +16,26 @@ public class UIPresetContextMenu extends UISimpleContextMenu
     public UIIcon copy;
     public UIIcon paste;
 
-    private final PresetManager manager;
-    private final String copyPrefix;
-    private final Supplier<MapType> supplier;
-    private final Consumer<MapType> consumer;
+    private final UICopyPasteController controller;
+    private final int mouseX;
+    private final int mouseY;
 
-    public UIPresetContextMenu(PresetManager manager, String copyPrefix, Supplier<MapType> supplier, Consumer<MapType> consumer)
+    public UIPresetContextMenu(UICopyPasteController controller, int mouseX, int mouseY)
     {
         super();
 
-        this.manager = manager;
-        this.copyPrefix = copyPrefix;
-        this.supplier = supplier;
-        this.consumer = consumer;
+        this.controller = controller;
+        this.mouseX = mouseX;
+        this.mouseY = mouseY;
 
         this.copy = new UIIcon(Icons.COPY, (b) -> this.copy());
+        this.copy.setEnabled(controller.canCopy());
         this.paste = new UIIcon(Icons.PASTE, (b) -> this.paste());
-        UIIcon presets = new UIIcon(Icons.MORE, (b) -> this.openPresets());
+        this.paste.setEnabled(controller.canPaste());
 
+        UIIcon presets = new UIIcon(Icons.MORE, (b) -> this.openPresets(this.mouseX, this.mouseY));
+
+        presets.setEnabled(controller.canPreviewPresets());
         presets.tooltip(UIKeys.PRESETS_VIEW);
 
         this.row = UI.row(0, this.copy, this.paste, presets);
@@ -61,31 +55,19 @@ public class UIPresetContextMenu extends UISimpleContextMenu
 
     private void copy()
     {
-        MapType type = this.supplier.get();
-
-        if (type != null)
-        {
-            Window.setClipboard(type, this.copyPrefix);
-        }
-
+        this.controller.copy();
         this.removeFromParent();
     }
 
     private void paste()
     {
-        MapType type = Window.getClipboardMap(this.copyPrefix);
-
-        if (type != null)
-        {
-            this.consumer.accept(type);
-        }
-
+        this.controller.paste(this.mouseX, this.mouseY);
         this.removeFromParent();
     }
 
-    private void openPresets()
+    private void openPresets(int mouseX, int mouseY)
     {
-        UIOverlay.addOverlay(this.getContext(), new UIPresetsOverlayPanel(this.manager, this.supplier, this.consumer), 240, 0.5F);
+        this.controller.openPresets(this.getContext(), mouseX, mouseY);
         this.removeFromParent();
     }
 
@@ -102,8 +84,6 @@ public class UIPresetContextMenu extends UISimpleContextMenu
     protected void renderBackground(UIContext context)
     {
         super.renderBackground(context);
-
-        int color = BBSSettings.primaryColor.get();
 
         context.batcher.box(this.area.x + 2, this.area.y + 20, this.area.ex() - 2, this.area.y + 21, Colors.mulRGB(Colors.WHITE, 0.1F));
     }
