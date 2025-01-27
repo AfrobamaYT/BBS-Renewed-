@@ -427,7 +427,7 @@ public class UIReplaysEditor extends UIElement
         {
             for (String s : BBSSettings.disabledSheets.get())
             {
-                if (v.id.endsWith(s))
+                if (v.id.equals(s) || v.id.endsWith("/" + s))
                 {
                     return true;
                 }
