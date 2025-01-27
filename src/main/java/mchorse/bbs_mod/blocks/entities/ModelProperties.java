@@ -20,6 +20,7 @@ public class ModelProperties implements IMapSerializable
     private final Transform transformInventory = new Transform();
     private final Transform transformFirstPerson = new Transform();
 
+    private boolean enabled = true;
     private boolean global;
     private boolean shadow;
 
@@ -83,6 +84,16 @@ public class ModelProperties implements IMapSerializable
         return this.transformFirstPerson;
     }
 
+    public boolean isEnabled()
+    {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
+    }
+
     public boolean isGlobal()
     {
         return this.global;
@@ -93,7 +104,7 @@ public class ModelProperties implements IMapSerializable
         this.global = global;
     }
 
-    public boolean getShadow()
+    public boolean isShadow()
     {
         return this.shadow;
     }
@@ -105,19 +116,19 @@ public class ModelProperties implements IMapSerializable
 
     public Form getForm(ModelTransformationMode mode)
     {
-        Form form = this.getForm();
+        Form form = this.form;
 
-        if (mode == ModelTransformationMode.GUI && this.getFormInventory() != null)
+        if (mode == ModelTransformationMode.GUI && this.formInventory != null)
         {
-            form = this.getFormInventory();
+            form = this.formInventory;
         }
-        else if ((mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND || mode == ModelTransformationMode.THIRD_PERSON_RIGHT_HAND) && this.getFormThirdPerson() != null)
+        else if ((mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND || mode == ModelTransformationMode.THIRD_PERSON_RIGHT_HAND) && this.formThirdPerson != null)
         {
-            form = this.getFormThirdPerson();
+            form = this.formThirdPerson;
         }
-        else if ((mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND) && this.getFormFirstPerson() != null)
+        else if ((mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND) && this.formFirstPerson != null)
         {
-            form = this.getFormFirstPerson();
+            form = this.formFirstPerson;
         }
 
         return form;
@@ -125,19 +136,19 @@ public class ModelProperties implements IMapSerializable
 
     public Transform getTransform(ModelTransformationMode mode)
     {
-        Transform transform = this.getTransformThirdPerson();
+        Transform transform = this.transformThirdPerson;
 
         if (mode == ModelTransformationMode.GUI)
         {
-            transform = this.getTransformInventory();
+            transform = this.transformInventory;
         }
         else if (mode == ModelTransformationMode.FIRST_PERSON_LEFT_HAND || mode == ModelTransformationMode.FIRST_PERSON_RIGHT_HAND)
         {
-            transform = this.getTransformFirstPerson();
+            transform = this.transformFirstPerson;
         }
         else if (mode == ModelTransformationMode.GROUND)
         {
-            transform = this.getTransform();
+            transform = this.transform;
         }
 
         return transform;
@@ -156,6 +167,7 @@ public class ModelProperties implements IMapSerializable
         this.transformInventory.fromData(data.getMap("transformInventory"));
         this.transformFirstPerson.fromData(data.getMap("transformFirstPerson"));
 
+        if (data.has("enabled")) this.enabled = data.getBool("enabled");
         this.shadow = data.getBool("shadow");
         this.global = data.getBool("global");
     }
@@ -173,6 +185,7 @@ public class ModelProperties implements IMapSerializable
         data.put("transformInventory", this.transformInventory.toData());
         data.put("transformFirstPerson", this.transformFirstPerson.toData());
 
+        data.putBool("enabled", this.enabled);
         data.putBool("shadow", this.shadow);
         data.putBool("global", this.global);
     }

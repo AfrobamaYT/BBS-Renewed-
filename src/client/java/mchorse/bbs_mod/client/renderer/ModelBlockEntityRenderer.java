@@ -118,7 +118,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
         matrices.pop();
 
-        if (properties.getShadow())
+        if (properties.isShadow())
         {
             float tx = 0.5F + transform.translate.x;
             float ty = transform.translate.y;
@@ -149,6 +149,11 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
     private boolean canRender(ModelBlockEntity entity)
     {
+        if (!entity.getProperties().isEnabled())
+        {
+            return false;
+        }
+
         if (!BBSSettings.renderAllModelBlocks.get())
         {
             return false;

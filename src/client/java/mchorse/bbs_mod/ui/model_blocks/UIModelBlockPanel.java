@@ -55,6 +55,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     public UIScrollView scrollView;
     public UIModelBlockEntityList modelBlocks;
     public UINestedEdit pickEdit;
+    public UIToggle enabled;
     public UIToggle shadow;
     public UIToggle global;
     public UIPropTransform transform;
@@ -137,6 +138,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         });
         this.pickEdit.keybinds();
 
+        this.enabled = new UIToggle(UIKeys.CAMERA_PANELS_ENABLED, (b) -> this.modelBlock.getProperties().setEnabled(b.getValue()));
         this.shadow = new UIToggle(UIKeys.MODEL_BLOCKS_SHADOW, (b) -> this.modelBlock.getProperties().setShadow(b.getValue()));
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
         {
@@ -147,7 +149,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.transform = new UIPropTransform();
         this.transform.enableHotkeys();
 
-        this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.shadow, this.global, this.transform);
+        this.scrollView = UI.scrollView(5, 10, this.modelBlocks, this.pickEdit, this.enabled, this.shadow, this.global, this.transform);
         this.scrollView.scroll.opposite().cancelScrolling();
         this.scrollView.relative(this).w(200).h(1F);
 
@@ -300,6 +302,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         }
 
         this.pickEdit.setVisible(modelBlock != null);
+        this.enabled.setVisible(modelBlock != null);
         this.shadow.setVisible(modelBlock != null);
         this.global.setVisible(modelBlock != null);
         this.transform.setVisible(modelBlock != null);
@@ -316,7 +319,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.pickEdit.setForm(properties.getForm());
         this.transform.setTransform(properties.getTransform());
-        this.shadow.setValue(properties.getShadow());
+        this.enabled.setValue(properties.isEnabled());
+        this.shadow.setValue(properties.isShadow());
         this.global.setValue(properties.isGlobal());
     }
 
