@@ -46,6 +46,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     private static int lastSection;
 
     public UIElement iconBar;
+    public UIIcon def;
     public UIIcon thirdPerson;
     public UIIcon firstPerson;
     public UIIcon inventory;
@@ -56,6 +57,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
     public Map<UIElement, UIIcon> sections = new HashMap<>();
     public UIElement currentSection;
+    public UIElement sectionDefault;
     public UIElement sectionTp;
     public UIElement sectionFp;
     public UIElement sectionInventory;
@@ -124,6 +126,12 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.main.removeAll();
 
         /* Initiate sections */
+        this.sectionDefault = this.createTransform(
+            this.properties.getTransform(),
+            () -> this.properties.getForm(),
+            (f) -> this.properties.setForm(f)
+        );
+
         this.sectionTp = this.createTransform(
             this.properties.getTransformThirdPerson(),
             () -> this.properties.getFormThirdPerson(),
@@ -283,6 +291,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.commands.tooltip(UIKeys.GUN_COMMANDS_TITLE);
         }
 
+        this.def = new UIIcon(Icons.OUTLINE_SPHERE, (b) -> this.setSection(this.sectionDefault));
+        this.def.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_DEFAULT);
         this.thirdPerson = new UIIcon(Icons.POSE, (b) -> this.setSection(this.sectionTp));
         this.thirdPerson.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_THIRD_PERSON);
         this.firstPerson = new UIIcon(Icons.LIMB, (b) -> this.setSection(this.sectionFp));
@@ -290,16 +300,17 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.inventory = new UIIcon(Icons.SPHERE, (b) -> this.setSection(this.sectionInventory));
         this.inventory.tooltip(UIKeys.MODEL_BLOCKS_TRANSFORM_INVENTORY);
 
+        this.sections.put(this.sectionDefault, this.def);
         this.sections.put(this.sectionTp, this.thirdPerson);
         this.sections.put(this.sectionFp, this.firstPerson);
         this.sections.put(this.sectionInventory, this.inventory);
 
-        this.iconBar = UI.row(0, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact, this.commands);
+        this.iconBar = UI.row(0, this.def, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact, this.commands);
         this.iconBar.row().resize();
         this.iconBar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
         this.main.add(this.uiOrbitCamera, this.iconBar);
-        this.main.add(this.sectionTp, this.sectionFp, this.sectionInventory);
+        this.main.add(this.sectionDefault, this.sectionTp, this.sectionFp, this.sectionInventory);
 
         if (gun != null)
         {
