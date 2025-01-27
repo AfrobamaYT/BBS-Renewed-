@@ -422,6 +422,8 @@ public class UIKeys
     public static final IKey GUN_COMMANDS_TICKING_TOOLTIP = L10n.lang("bbs.ui.gun.commands.ticking-tooltip");
     public static final IKey GUN_COMMANDS_TITLE = L10n.lang("bbs.ui.gun.commands.title");
     public static final IKey GUN_COMMANDS_VANISH = L10n.lang("bbs.ui.gun.commands.vanish");
+    public static final IKey GUN_CONTEXT_COPY = L10n.lang("bbs.ui.gun.context.copy");
+    public static final IKey GUN_CONTEXT_PASTE = L10n.lang("bbs.ui.gun.context.paste");
     public static final IKey GUN_IMPACT_BLOCKS = L10n.lang("bbs.ui.gun.impact.blocks");
     public static final IKey GUN_IMPACT_BOUNCES = L10n.lang("bbs.ui.gun.impact.bounces");
     public static final IKey GUN_IMPACT_BOUNCE_DAMPING = L10n.lang("bbs.ui.gun.impact.bounce_damping");

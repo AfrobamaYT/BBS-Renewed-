@@ -555,6 +555,8 @@
     "bbs.ui.gun.commands.ticking-tooltip": "How frequently ticking command will be executed. 0 means never.",
     "bbs.ui.gun.commands.title": "Commands",
     "bbs.ui.gun.commands.vanish": "On death",
+    "bbs.ui.gun.context.copy": "Copy BBS gun",
+    "bbs.ui.gun.context.paste": "Paste BBS gun",
     "bbs.ui.gun.impact.blocks": "Blocks",
     "bbs.ui.gun.impact.bounce_damping": "Bounce damping",
     "bbs.ui.gun.impact.bounces": "Bounces",

@@ -20,6 +20,11 @@ public class UIPresetContextMenu extends UISimpleContextMenu
     private final int mouseX;
     private final int mouseY;
 
+    public UIPresetContextMenu(UICopyPasteController controller)
+    {
+        this(controller, 0, 0);
+    }
+
     public UIPresetContextMenu(UICopyPasteController controller, int mouseX, int mouseY)
     {
         super();
@@ -69,6 +74,12 @@ public class UIPresetContextMenu extends UISimpleContextMenu
     {
         this.controller.openPresets(this.getContext(), mouseX, mouseY);
         this.removeFromParent();
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        return false;
     }
 
     @Override

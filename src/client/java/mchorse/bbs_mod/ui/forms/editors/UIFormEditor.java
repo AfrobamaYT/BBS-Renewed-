@@ -246,7 +246,7 @@ public class UIFormEditor extends UIElement implements IUIFormList
 
         if (current != null)
         {
-            menu.custom(new UIPresetContextMenu(this.copyPasteController, 0, 0)
+            menu.custom(new UIPresetContextMenu(this.copyPasteController)
                 .labels(UIKeys.FORMS_EDITOR_CONTEXT_COPY, UIKeys.FORMS_EDITOR_CONTEXT_PASTE));
 
             if (current.getForm() != null)

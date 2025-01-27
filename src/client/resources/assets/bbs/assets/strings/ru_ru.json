@@ -554,6 +554,8 @@
     "bbs.ui.gun.commands.ticking-tooltip": "Как часто переодическая (потиковая) команда выполняется. 0 значит никогда.",
     "bbs.ui.gun.commands.title": "Команды",
     "bbs.ui.gun.commands.vanish": "По уничтожению",
+    "bbs.ui.gun.context.copy": "Скопировать BBS ружьё",
+    "bbs.ui.gun.context.paste": "Вставить BBS ружьё",
     "bbs.ui.gun.impact.blocks": "Блоки",
     "bbs.ui.gun.impact.bounce_damping": "Коэффициент отскока",
     "bbs.ui.gun.impact.bounces": "Отскоки",

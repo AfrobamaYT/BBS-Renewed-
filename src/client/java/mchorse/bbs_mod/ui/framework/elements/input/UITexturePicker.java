@@ -118,7 +118,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
         this.text = new UITextbox(1000, (str) -> this.selectCurrent(str.isEmpty() ? null : LinkUtils.create(str)));
         this.text.delayedInput().context((menu) ->
         {
-            menu.custom(new UIPresetContextMenu(this.copyPasteController, 0, 0)
+            menu.custom(new UIPresetContextMenu(this.copyPasteController)
                 .labels(UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE));
 
             menu.action(Icons.DOWNLOAD, IKey.raw("Download skin..."), null);
