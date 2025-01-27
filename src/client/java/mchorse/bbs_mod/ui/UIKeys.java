@@ -400,6 +400,7 @@ public class UIKeys
     public static final IKey GENERAL_OK = L10n.lang("bbs.ui.ok");
     public static final IKey GENERAL_PASTE = L10n.lang("bbs.ui.paste");
     public static final IKey GENERAL_PICK = L10n.lang("bbs.ui.pick");
+    public static final IKey GENERAL_PRESETS = L10n.lang("bbs.ui.presets");
     public static final IKey GENERAL_REMOVE = L10n.lang("bbs.ui.remove");
     public static final IKey GENERAL_RENAME = L10n.lang("bbs.ui.rename");
     public static final IKey GENERAL_RIGHT_CLICK = L10n.lang("bbs.ui.right_click");
@@ -557,7 +558,6 @@ public class UIKeys
     public static final IKey PRESETS_SAVE_DESCRIPTION = L10n.lang("bbs.ui.presets.save-description");
     public static final IKey PRESETS_SAVE_TITLE = L10n.lang("bbs.ui.presets.save-title");
     public static final IKey PRESETS_TITLE = L10n.lang("bbs.ui.presets.title");
-    public static final IKey PRESETS_VIEW = L10n.lang("bbs.ui.presets.view");
     public static final IKey SCENE_REPLAYS_CONTEXT_ADD = L10n.lang("bbs.ui.scene.replays.context.add");
     public static final IKey SCENE_REPLAYS_CONTEXT_COPY = L10n.lang("bbs.ui.scene.replays.context.copy");
     public static final IKey SCENE_REPLAYS_CONTEXT_DUPE = L10n.lang("bbs.ui.scene.replays.context.dupe");

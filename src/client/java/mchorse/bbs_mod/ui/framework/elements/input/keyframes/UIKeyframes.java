@@ -165,6 +165,16 @@ public class UIKeyframes extends UIElement
 
             if (this.copyPasteController.paste(context.mouseX, context.mouseY)) UIUtils.playClick();
         }).inside().category(category).active(canModify);
+        this.keys().register(Keys.PRESETS, () ->
+        {
+            UIContext context = this.getContext();
+
+            if (this.copyPasteController.canPreviewPresets())
+            {
+                this.copyPasteController.openPresets(context, context.mouseX, context.mouseY);
+                UIUtils.playClick();
+            }
+        }).category(category).active(canModify);
         this.keys().register(Keys.DELETE, () -> this.currentGraph.removeSelected()).inside().category(category).active(canModify);
         this.keys().register(Keys.KEYFRAMES_SELECT_LEFT, () ->
         {

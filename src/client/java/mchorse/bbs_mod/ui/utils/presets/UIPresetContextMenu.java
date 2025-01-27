@@ -41,7 +41,7 @@ public class UIPresetContextMenu extends UISimpleContextMenu
         UIIcon presets = new UIIcon(Icons.MORE, (b) -> this.openPresets(this.mouseX, this.mouseY));
 
         presets.setEnabled(controller.canPreviewPresets());
-        presets.tooltip(UIKeys.PRESETS_VIEW);
+        presets.tooltip(UIKeys.GENERAL_PRESETS);
 
         this.row = UI.row(0, this.copy, this.paste, presets);
         this.row.relative(this).row().resize();
