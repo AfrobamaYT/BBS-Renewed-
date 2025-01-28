@@ -136,6 +136,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
         this.column.relative(this.content).y(1F).w(1F).anchor(0F, 1F);
 
         this.add(this.column, this.selectors);
+        this.onClose((e) -> BBSModClient.getSelectors().save());
 
         this.setSelector(this.selectors.getList().isEmpty() ? null : this.selectors.getList().get(0), true);
     }
