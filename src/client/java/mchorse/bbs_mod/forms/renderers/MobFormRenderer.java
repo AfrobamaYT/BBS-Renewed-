@@ -181,6 +181,14 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
                 context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
             }
 
+            if (this.entity instanceof LivingEntity entity)
+            {
+                int u = context.overlay & '\uffff';
+                int v = context.overlay >> 16 & '\uffff';
+
+                entity.hurtTime = v != 10 ? 100 : 0;
+            }
+
             MinecraftClient.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), context.stack, consumers, light);
             consumers.draw();
             CustomVertexConsumerProvider.clearRunnables();
