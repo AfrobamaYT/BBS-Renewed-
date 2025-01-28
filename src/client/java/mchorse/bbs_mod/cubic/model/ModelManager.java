@@ -170,7 +170,8 @@ public class ModelManager implements IWatchDogListener
             || link.path.endsWith(".geo.json")
             || link.path.endsWith(".obj")
             || link.path.endsWith(".animation.json")
-            || link.path.endsWith(".vox");
+            || link.path.endsWith(".vox")
+            || link.path.endsWith("/config.json");
     }
 
     /**
