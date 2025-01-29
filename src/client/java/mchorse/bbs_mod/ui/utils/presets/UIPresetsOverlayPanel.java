@@ -47,6 +47,8 @@ public class UIPresetsOverlayPanel extends UIListOverlayPanel
             }
         });
 
+        save.setEnabled(controller.canCopy());
+
         UIIcon folder = new UIIcon(Icons.FOLDER, (b) ->
         {
             UIUtils.openFolder(controller.manager.getFolder());
