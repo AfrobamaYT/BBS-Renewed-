@@ -34,7 +34,7 @@ public class UIPropTransform extends UITransform
     private int mode;
     private Axis axis = Axis.X;
     private int lastX;
-    private Vector3f cache = new Vector3f();
+    private Transform cache = new Transform();
     private Timer checker = new Timer(30);
 
     private boolean model;
@@ -155,7 +155,7 @@ public class UIPropTransform extends UITransform
 
             this.axis = values[MathUtils.cycler(this.axis.ordinal() + 1, 0, values.length - 1)];
 
-            this.getValue().set(this.cache);
+            this.restore(true);
             this.submit();
         }
         else
@@ -167,7 +167,7 @@ public class UIPropTransform extends UITransform
         this.editing = true;
         this.mode = mode;
 
-        this.cache.set(this.getValue());
+        this.cache.copy(this.transform);
 
         if (!this.handler.hasParent())
         {
@@ -189,6 +189,13 @@ public class UIPropTransform extends UITransform
         return this.transform.translate;
     }
 
+    private void restore(boolean fully)
+    {
+        if (this.mode == 0 || fully) this.setT(this.cache.translate.x, this.cache.translate.y, this.cache.translate.z);
+        if (this.mode == 1 || fully) this.setS(this.cache.scale.x, this.cache.scale.y, this.cache.scale.z);
+        if (this.mode == 2 || fully) this.setR(this.cache.rotate.x, this.cache.rotate.y, this.cache.rotate.z);
+    }
+
     private void disable()
     {
         this.editing = false;
@@ -197,6 +204,21 @@ public class UIPropTransform extends UITransform
         {
             this.handler.removeFromParent();
         }
+    }
+
+    public void acceptChanges()
+    {
+        this.disable();
+        this.submit();
+        this.setTransform(this.transform);
+    }
+
+    public void rejectChanges()
+    {
+        this.disable();
+        this.restore(true);
+        this.submit();
+        this.setTransform(this.transform);
     }
 
     @Override
@@ -266,20 +288,15 @@ public class UIPropTransform extends UITransform
     {
         if (this.editing)
         {
-            if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            if (context.isPressed(GLFW.GLFW_KEY_ENTER))
             {
-                this.disable();
-                this.getValue().set(this.cache);
-                this.submit();
-                this.setTransform(this.transform);
+                this.acceptChanges();
 
                 return true;
             }
-            else if (context.isPressed(GLFW.GLFW_KEY_ENTER))
+            else if (context.isPressed(GLFW.GLFW_KEY_ESCAPE))
             {
-                this.disable();
-                this.submit();
-                this.setTransform(this.transform);
+                this.rejectChanges();
 
                 return true;
             }
@@ -390,22 +407,13 @@ public class UIPropTransform extends UITransform
             {
                 if (context.mouseButton == 0)
                 {
-                    this.transform.disable();
-                    this.transform.submit();
-                    this.transform.setTransform(this.transform.transform);
+                    this.transform.acceptChanges();
 
                     return true;
                 }
                 else if (context.mouseButton == 1)
                 {
-                    this.transform.disable();
-
-                    if (this.transform.mode == 0) this.transform.setT(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
-                    if (this.transform.mode == 1) this.transform.setS(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
-                    if (this.transform.mode == 2) this.transform.setR(this.transform.cache.x, this.transform.cache.y, this.transform.cache.z);
-
-                    this.transform.submit();
-                    this.transform.setTransform(this.transform.transform);
+                    this.transform.rejectChanges();
 
                     return true;
                 }
