@@ -72,7 +72,7 @@ public class UIRecordOverlayPanel extends UIMessageOverlayPanel
         this.keys().register(Keys.RECORDING_GROUP_POS_ROT, this.posRot::clickItself);
     }
 
-    private void submit(List<String> groups)
+    public void submit(List<String> groups)
     {
         this.close();
 

@@ -385,6 +385,7 @@
     "bbs.ui.film.groups.left_stick": "Левый стик",
     "bbs.ui.film.groups.only_position": "Только позиция",
     "bbs.ui.film.groups.only_rotation": "Только вращение",
+    "bbs.ui.film.groups.outside": "Снаружи",
     "bbs.ui.film.groups.pos_rot": "Позиция + вращение",
     "bbs.ui.film.groups.right_stick": "Правый стик",
     "bbs.ui.film.groups.triggers": "Триггеры",

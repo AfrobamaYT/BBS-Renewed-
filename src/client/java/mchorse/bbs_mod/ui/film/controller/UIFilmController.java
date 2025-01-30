@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.film.controller;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.camera.Camera;
@@ -35,6 +36,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIRecordOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIKeyframeFactory;
@@ -400,6 +402,21 @@ public class UIFilmController extends UIElement
 
     public void startRecording(List<String> groups)
     {
+        if (groups.contains("outside"))
+        {
+            MinecraftClient.getInstance().setScreen(null);
+
+            Replay replay = this.panel.replayEditor.getReplay();
+            int index = this.panel.getData().replays.getList().indexOf(replay);
+
+            if (index >= 0)
+            {
+                BBSModClient.getFilms().startRecording(this.panel.getData(), index, this.panel.getCursor());
+            }
+
+            return;
+        }
+
         this.recordingTick = this.getTick();
         this.recording = true;
         this.recordingCountdown = 30;
@@ -625,11 +642,18 @@ public class UIFilmController extends UIElement
 
         this.toggleMousePointer(false);
 
-        UIOverlay.addOverlay(this.getContext(), new UIRecordOverlayPanel(
+        UIRecordOverlayPanel panel = new UIRecordOverlayPanel(
             UIKeys.FILM_CONTROLLER_RECORD_TITLE,
             UIKeys.FILM_CONTROLLER_RECORD_DESCRIPTION,
             this::startRecording
-        ));
+        );
+        UIIcon icon = new UIIcon(Icons.UPLOAD, (b) -> panel.submit(Arrays.asList("outside")));
+
+        icon.tooltip(UIKeys.FILM_GROUPS_OUTSIDE);
+        panel.bar.add(icon);
+        panel.keys().register(Keys.RECORDING_GROUP_OUTSIDE, icon::clickItself);
+
+        UIOverlay.addOverlay(this.getContext(), panel);
     }
 
     public Icon getOrbitModeIcon()
