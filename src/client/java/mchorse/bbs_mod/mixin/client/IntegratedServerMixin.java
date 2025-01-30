@@ -1,29 +1,36 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.utils.VideoRecorder;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.function.BooleanSupplier;
 
 @Mixin(IntegratedServer.class)
 public class IntegratedServerMixin
 {
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    public void onTick(CallbackInfo info)
+    @WrapOperation(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;tick(Ljava/util/function/BooleanSupplier;)V"))
+    private void onTick(IntegratedServer server, BooleanSupplier supplier, Operation<Void> original)
     {
         VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
 
         if (videoRecorder.isRecording())
         {
-            if (videoRecorder.lastServerTicks == videoRecorder.serverTicks)
+            while (videoRecorder.lastServerTicks < videoRecorder.serverTicks)
             {
-                info.cancel();
-            }
+                original.call(server, supplier);
 
-            videoRecorder.lastServerTicks = videoRecorder.serverTicks;
+                videoRecorder.lastServerTicks += 1;
+            }
+        }
+        else
+        {
+            original.call(server, supplier);
         }
     }
 }
