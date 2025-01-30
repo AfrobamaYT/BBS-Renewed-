@@ -10,6 +10,7 @@ import mchorse.bbs_mod.utils.factory.IFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 public class Clips extends ValueGroup
@@ -179,6 +180,37 @@ public class Clips extends ValueGroup
         this.clips.remove(clip);
         this.sync();
 
+        this.postNotifyParent();
+    }
+
+    public void copyOver(Clips clips, int tick)
+    {
+        this.preNotifyParent();
+
+        Iterator<Clip> it = this.clips.iterator();
+        int start = tick + clips.findNextTick(0);
+        int end = tick + clips.calculateDuration();
+
+        while (it.hasNext())
+        {
+            Clip next = it.next();
+
+            if (next.tick.get() >= start && next.tick.get() < end)
+            {
+                it.remove();
+            }
+        }
+
+        for (Clip clip : clips.clips)
+        {
+            Clip copy = clip.copy();
+
+            copy.tick.set(tick + copy.tick.get());
+            this.addClip(copy);
+        }
+
+        this.sortLayers();
+        this.sync();
         this.postNotifyParent();
     }
 

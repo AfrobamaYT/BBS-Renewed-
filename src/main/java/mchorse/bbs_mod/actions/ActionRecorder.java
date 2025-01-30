@@ -40,6 +40,15 @@ public class ActionRecorder
         return this.initialTick;
     }
 
+    public Clips composeClips()
+    {
+        Clips clips = this.clips;
+
+        clips.sortLayers();
+
+        return clips;
+    }
+
     public void add(ActionClip clip)
     {
         if (this.countdown > 0)

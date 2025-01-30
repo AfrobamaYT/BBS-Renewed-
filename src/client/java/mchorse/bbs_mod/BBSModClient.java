@@ -517,7 +517,7 @@ public class BBSModClient implements ClientModInitializer
 
                 if (index >= 0)
                 {
-                    getFilms().startRecording(panel.getData(), index);
+                    getFilms().startRecording(panel.getData(), index, panel.getCursor());
                 }
             }
         }

@@ -134,11 +134,11 @@ public class Films
         }
     }
 
-    public void startRecording(Film film, int replayId)
+    public void startRecording(Film film, int replayId, int tick)
     {
         Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
 
-        this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId, 0);
+        this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId, tick);
 
         if (ClientNetwork.isIsBBSModOnServer())
         {

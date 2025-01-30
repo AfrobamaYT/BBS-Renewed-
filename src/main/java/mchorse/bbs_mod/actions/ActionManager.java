@@ -138,16 +138,13 @@ public class ActionManager
         }
     }
 
-    public Clips stopRecording(ServerPlayerEntity entity)
+    public ActionRecorder stopRecording(ServerPlayerEntity entity)
     {
         ActionRecorder remove = this.recorders.remove(entity);
-        Clips clips = remove.getClips();
-
-        clips.sortLayers();
 
         this.stop(remove.getFilm().getId());
 
-        return clips;
+        return remove;
     }
 
     /* Damage control */

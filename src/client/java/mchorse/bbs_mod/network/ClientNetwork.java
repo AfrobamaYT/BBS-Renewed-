@@ -227,11 +227,12 @@ public class ClientNetwork
         {
             String filmId = packetByteBuf.readString();
             int replayId = packetByteBuf.readInt();
+            int tick = packetByteBuf.readInt();
             BaseType data = DataStorageUtils.readFromBytes(bytes);
 
             client.execute(() ->
             {
-                BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, data);
+                BBSModClient.getDashboard().getPanels().getPanel(UIFilmPanel.class).receiveActions(filmId, replayId, tick, data);
             });
         });
     }

@@ -57,6 +57,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -485,7 +486,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.applyRecordedKeyframes(recorder, this.data);
     }
 
-    public void receiveActions(String filmId, int replayId, BaseType clips)
+    public void receiveActions(String filmId, int replayId, int tick, BaseType clips)
     {
         Film film = this.data;
 
@@ -493,7 +494,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             BaseValue.edit(film.replays.getList().get(replayId), IValueListener.FLAG_UNMERGEABLE, (replay) ->
             {
-                replay.actions.fromData(clips);
+                Clips newClips = new Clips("", BBSMod.getFactoryActionClips());
+
+                newClips.fromData(clips);
+                replay.actions.copyOver(newClips, 0);
             });
         }
 
@@ -509,7 +513,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             BaseValue.edit(rp, (replay) ->
             {
-                replay.keyframes.copy(recorder.keyframes);
+                replay.keyframes.copyOver(recorder.keyframes, 0);
 
                 Form form = replay.form.get();
 
@@ -521,7 +525,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
                         if (channel != null && entry.getValue() != null)
                         {
-                            channel.copyKeyframes(entry.getValue());
+                            channel.copyOver(entry.getValue(), 0);
                         }
                     }
                 }

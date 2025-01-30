@@ -577,7 +577,7 @@ public class UIClips extends UIElement
                         // keyframe.setRy(180F + keyframe.getRy());
                     }
 
-                    int size = Math.max(
+                    double size = Math.max(
                         clip.x.getLength(),
                         Math.max(
                             clip.y.getLength(),
@@ -588,7 +588,7 @@ public class UIClips extends UIElement
                         )
                     );
 
-                    this.addClip(clip, this.fromGraphX(mouseX), this.fromLayerY(mouseY), size);
+                    this.addClip(clip, this.fromGraphX(mouseX), this.fromLayerY(mouseY), (int) size);
                 });
             }
         });

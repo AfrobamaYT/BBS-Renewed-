@@ -2,6 +2,7 @@ package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.settings.values.ValueGroup;
+import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -101,6 +102,22 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.armorChest);
         this.add(this.armorLegs);
         this.add(this.armorFeet);
+    }
+
+    public void copyOver(ReplayKeyframes keyframes, int tick)
+    {
+        for (BaseValue baseValue : this.getAll())
+        {
+            if (baseValue instanceof KeyframeChannel<?> channel)
+            {
+                BaseValue keyframe = keyframes.get(baseValue.getId());
+
+                if (keyframe instanceof KeyframeChannel<?> keyframeChannel)
+                {
+                    channel.copyOver(keyframeChannel, tick);
+                }
+            }
+        }
     }
 
     public void record(int tick, IEntity entity, List<String> groups)

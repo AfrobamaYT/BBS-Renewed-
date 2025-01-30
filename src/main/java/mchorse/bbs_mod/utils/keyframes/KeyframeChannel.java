@@ -8,6 +8,7 @@ import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -34,7 +35,7 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
 
     /* Read only */
 
-    public int getLength()
+    public double getLength()
     {
         return this.list.isEmpty() ? 0 : (int) this.list.get(this.list.size() - 1).getTick();
     }
@@ -334,5 +335,44 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         }
 
         this.sort();
+    }
+
+    public void copyOver(KeyframeChannel channel, int tick)
+    {
+        if (this.factory != channel.factory || channel.isEmpty())
+        {
+            return;
+        }
+
+        this.preNotifyParent();
+
+        double length = channel.getLength();
+        double start = tick + ((Keyframe) channel.getKeyframes().get(0)).getTick();
+        double end = tick + length;
+
+        Iterator<Keyframe<T>> it = this.list.iterator();
+
+        if (it.hasNext())
+        {
+            Keyframe<T> next = it.next();
+
+            if (next.getTick() >= start && next.getTick() <= end)
+            {
+                it.remove();
+            }
+        }
+
+        for (Object o : channel.getKeyframes())
+        {
+            Keyframe keyframe = (Keyframe) o;
+            Keyframe value = new Keyframe<>(keyframe.getId(), keyframe.getFactory());
+
+            value.fromData(keyframe.toData());
+            value.setTick(tick + value.getTick());
+            this.list.add(value);
+        }
+
+        this.sync();
+        this.postNotifyParent();
     }
 }
