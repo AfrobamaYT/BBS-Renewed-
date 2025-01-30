@@ -24,6 +24,7 @@ public class ActionPlayer
     public Film film;
     public int tick;
     public boolean playing = true;
+    public int countdown;
     public int exception;
     public boolean syncing;
 
@@ -32,11 +33,12 @@ public class ActionPlayer
 
     private Map<String, ActorEntity> actors = new HashMap<>();
 
-    public ActionPlayer(ServerWorld world, Film film, int tick, int exception)
+    public ActionPlayer(ServerWorld world, Film film, int tick, int countdown, int exception)
     {
         this.world = world;
         this.film = film;
         this.tick = tick;
+        this.countdown = countdown;
         this.exception = exception;
 
         this.duration = film.camera.calculateDuration();
@@ -119,6 +121,13 @@ public class ActionPlayer
 
     public boolean tick()
     {
+        if (this.countdown > 0)
+        {
+            this.countdown -= 1;
+
+            return false;
+        }
+
         for (Map.Entry<String, ActorEntity> entry : this.actors.entrySet())
         {
             Replay replay = (Replay) this.film.replays.get(entry.getKey());

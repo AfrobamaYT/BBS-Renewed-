@@ -251,6 +251,7 @@ public class ServerNetwork
         String filmId = buf.readString();
         int replayId = buf.readInt();
         int tick = buf.readInt();
+        int countdown = buf.readInt();
         boolean recording = buf.readBoolean();
 
         server.execute(() ->
@@ -261,8 +262,8 @@ public class ServerNetwork
 
                 if (film != null)
                 {
-                    BBSMod.getActions().startRecording(film, player, tick);
-                    BBSMod.getActions().play(player.getServerWorld(), film, tick, replayId);
+                    BBSMod.getActions().startRecording(film, player, tick, countdown);
+                    BBSMod.getActions().play(player.getServerWorld(), film, tick, countdown, replayId);
                 }
             }
             else

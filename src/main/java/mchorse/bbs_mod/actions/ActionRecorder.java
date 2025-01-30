@@ -14,11 +14,15 @@ public class ActionRecorder
     private Film film;
     private Clips clips = new Clips("...", BBSMod.getFactoryActionClips());
     private int tick;
+    private int countdown;
+    private int initialTick;
 
-    public ActionRecorder(Film film, int tick)
+    public ActionRecorder(Film film, int tick, int countdown)
     {
         this.film = film;
         this.tick = tick;
+        this.countdown = countdown;
+        this.initialTick = tick;
     }
 
     public Film getFilm()
@@ -31,9 +35,14 @@ public class ActionRecorder
         return this.clips;
     }
 
+    public int getInitialTick()
+    {
+        return this.initialTick;
+    }
+
     public void add(ActionClip clip)
     {
-        if (this.tick < 0)
+        if (this.countdown > 0)
         {
             return;
         }
@@ -46,6 +55,13 @@ public class ActionRecorder
 
     public void tick(ServerPlayerEntity player)
     {
+        if (this.countdown > 0)
+        {
+            this.countdown -= 1;
+
+            return;
+        }
+
         if (player.handSwingTicks == -1)
         {
             this.add(new SwipeActionClip());

@@ -138,11 +138,11 @@ public class Films
     {
         Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
 
-        this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId);
+        this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId, 0);
 
         if (ClientNetwork.isIsBBSModOnServer())
         {
-            ClientNetwork.sendActionRecording(film.getId(), replayId, this.recorder.tick, true);
+            ClientNetwork.sendActionRecording(film.getId(), replayId, this.recorder.tick, this.recorder.countdown, true);
         }
 
         Replay replay = CollectionUtils.getSafe(film.replays.getList(), replayId);
@@ -171,7 +171,7 @@ public class Films
 
             if (ClientNetwork.isIsBBSModOnServer())
             {
-                ClientNetwork.sendActionRecording(recorder.film.getId(), recorder.exception, recorder.tick, false);
+                ClientNetwork.sendActionRecording(recorder.film.getId(), recorder.exception, recorder.tick, 0, false);
             }
 
             Vector3d pos = recorder.lastPosition;
@@ -285,10 +285,9 @@ public class Films
 
         if (recorder != null)
         {
-            int tick = recorder.tick;
-            String label = tick < 0 ?
-                String.valueOf(-TimeUtils.toSeconds(tick)) :
-                UIKeys.FILM_RECORDING.format(tick).get();
+            String label = recorder.hasNotStarted() ?
+                String.valueOf(TimeUtils.toSeconds(recorder.countdown)) :
+                UIKeys.FILM_RECORDING.format(recorder.tick).get();
             int x = 5;
             int y = 5;
             int w = batcher2D.getFont().getWidth(label);

@@ -38,17 +38,34 @@ public class Recorder extends FilmController
     public Vector3d lastPosition;
     public Vector4f lastRotation;
 
-    public Recorder(Film film, Form form, int replayId)
+    public int countdown;
+    public final int initialTick;
+
+    public Recorder(Film film, Form form, int replayId, int tick)
     {
         super(film);
 
         this.lastForm = FormUtils.copy(form);
         this.exception = replayId;
-        this.tick = -TimeUtils.toTick(BBSSettings.recordingCountdown.get());
+        this.tick = tick;
+        this.countdown = TimeUtils.toTick(BBSSettings.recordingCountdown.get());
+        this.initialTick = tick;
+    }
+
+    public boolean hasNotStarted()
+    {
+        return this.countdown > 0;
     }
 
     public void update()
     {
+        if (this.hasNotStarted())
+        {
+            this.countdown -= 1;
+
+            return;
+        }
+
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
 
         if (this.lastPosition == null)

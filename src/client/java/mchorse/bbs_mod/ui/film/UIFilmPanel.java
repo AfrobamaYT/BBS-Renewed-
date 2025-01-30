@@ -475,7 +475,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         Recorder recorder = BBSModClient.getFilms().stopRecording();
 
-        if (recorder == null || recorder.tick < 0)
+        if (recorder == null || recorder.hasNotStarted())
         {
             this.notifyServer(ActionState.RESTART);
 
