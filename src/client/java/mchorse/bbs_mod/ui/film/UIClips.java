@@ -71,6 +71,7 @@ public class UIClips extends UIElement
     public Scale scale = new Scale(this.area, ScrollDirection.HORIZONTAL);
     public Scroll vertical = new Scroll(new Area());
 
+    private boolean canGrab;
     private boolean grabbing;
     private boolean scrubbing;
     private boolean scrolling;
@@ -1030,6 +1031,7 @@ public class UIClips extends UIElement
                 }
 
                 this.grabMode = this.getClipHandle(clip, context, LAYER_HEIGHT);
+                this.canGrab = false;
                 this.grabbing = true;
                 this.grabbedClips = this.getClipsFromSelection();
                 this.otherClips = new ArrayList<>(this.clips.get());
@@ -1241,7 +1243,14 @@ public class UIClips extends UIElement
             int relativeX = this.fromGraphX(mouseX) - this.fromGraphX(this.lastX);
             int relativeY = this.fromLayerY(mouseY) - this.fromLayerY(this.lastY);
 
-            this.dragClips(relativeX, relativeY);
+            if (this.canGrab)
+            {
+                this.dragClips(relativeX, relativeY);
+            }
+            else if (Math.abs(relativeX) > 1 || Math.abs(relativeY) > 1 || Window.isAltPressed())
+            {
+                this.canGrab = true;
+            }
         }
     }
 
