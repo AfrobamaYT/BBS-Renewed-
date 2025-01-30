@@ -11,6 +11,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.UIDataUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.util.function.Consumer;
@@ -90,5 +91,10 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         super.renderBackground(context);
 
         this.content.area.render(context.batcher, Colors.A100);
+
+        if (this.replays.getList().size() < 3)
+        {
+            UIDataUtils.renderRightClickHere(context, this.replays.area);
+        }
     }
 }

@@ -252,11 +252,6 @@ public class UIReplayList extends UIList<Replay>
     @Override
     public void render(UIContext context)
     {
-        if (this.getList().size() < 3)
-        {
-            UIDataUtils.renderRightClickHere(context, this.area);
-        }
-
         super.render(context);
     }
 
