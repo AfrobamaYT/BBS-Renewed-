@@ -60,7 +60,7 @@ public class ParticleComponentKillPlane extends ParticleComponentBase implements
     @Override
     public void update(ParticleEmitter emitter, Particle particle)
     {
-        if (particle.dead)
+        if (particle.isDead())
         {
             return;
         }
@@ -79,7 +79,7 @@ public class ParticleComponentKillPlane extends ParticleComponentBase implements
 
         if ((prev > 0 && now < 0) || (prev < 0 && now > 0))
         {
-            particle.dead = true;
+            particle.setDead();
         }
     }
 

@@ -17,7 +17,7 @@ public class Particle
     public final float offset;
     public int age;
     public int lifetime;
-    public boolean dead;
+    private boolean dead;
     public boolean relativePosition;
     public boolean relativeRotation;
     public boolean manual;
@@ -59,6 +59,16 @@ public class Particle
 
         this.speed.set((float) Math.random() - 0.5F, (float) Math.random() - 0.5F, (float) Math.random() - 0.5F);
         this.speed.normalize();
+    }
+
+    public void setDead()
+    {
+        this.dead = true;
+    }
+
+    public boolean isDead()
+    {
+        return this.dead;
     }
 
     public double getAge(float transition)
@@ -139,7 +149,7 @@ public class Particle
 
         if (this.lifetime >= 0 && this.age >= this.lifetime)
         {
-            this.dead = true;
+            this.setDead();
         }
 
         this.age += 1;

@@ -10,7 +10,7 @@ public class ParticleComponentExpireNotInBlocks extends ParticleComponentExpireB
     @Override
     public void update(ParticleEmitter emitter, Particle particle)
     {
-        if (particle.dead || emitter.world == null)
+        if (particle.isDead() || emitter.world == null)
         {
             return;
         }
@@ -19,12 +19,12 @@ public class ParticleComponentExpireNotInBlocks extends ParticleComponentExpireB
 
         for (String block : this.blocks)
         {
-            if (current.getBlock().getLootTableId().toString().equals(block))
+            if (current.getBlock().getRegistryEntry().registryKey().getValue().toString().equals(block))
             {
                 return;
             }
         }
 
-        particle.dead = true;
+        particle.setDead();
     }
 }

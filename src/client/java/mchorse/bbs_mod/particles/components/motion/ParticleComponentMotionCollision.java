@@ -102,7 +102,7 @@ public class ParticleComponentMotionCollision extends ParticleComponentBase impl
             {
                 if (this.expireOnImpact)
                 {
-                    particle.dead = true;
+                    particle.setDead();
 
                     return;
                 }

@@ -329,7 +329,7 @@ public class ParticleEmitter
 
             this.updateParticle(particle);
 
-            if (particle.dead)
+            if (particle.isDead())
             {
                 it.remove();
             }
@@ -420,7 +420,7 @@ public class ParticleEmitter
         {
             this.bindTexture();
 
-            if (this.uiParticle == null || this.uiParticle.dead)
+            if (this.uiParticle == null || this.uiParticle.isDead())
             {
                 this.uiParticle = this.createParticle(0F);
             }

@@ -58,7 +58,7 @@ public class ParticleComponentParticleLifetime extends ParticleComponentBase imp
     {
         if (!this.max && this.expression.get() != 0)
         {
-            particle.dead = true;
+            particle.setDead();
         }
     }
 
