@@ -129,7 +129,7 @@ public class UIKeyframes extends UIElement
 
             if (hasSelected)
             {
-                menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, () -> this.currentGraph.removeSelected());
+                menu.action(Icons.CONVERT, UIKeys.KEYFRAMES_CONTEXT_SPREAD, this::spreadKeyframes);
                 menu.action(Icons.OUTLINE_SPHERE, UIKeys.KEYFRAMES_CONTEXT_ROUND, () ->
                 {
                     for (UIKeyframeSheet sheet : this.getGraph().getSheets())
@@ -146,6 +146,7 @@ public class UIKeyframes extends UIElement
                         sheet.channel.postNotifyParent();
                     }
                 });
+                menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, () -> this.currentGraph.removeSelected());
             }
         });
 
@@ -193,6 +194,7 @@ public class UIKeyframes extends UIElement
         this.keys().register(Keys.KEYFRAMES_STACK_KEYFRAMES, () -> this.stackKeyframes(false)).inside().category(category);
         this.keys().register(Keys.KEYFRAMES_SELECT_PREV, () -> this.selectNextKeyframe(-1)).category(category);
         this.keys().register(Keys.KEYFRAMES_SELECT_NEXT, () -> this.selectNextKeyframe(1)).category(category);
+        this.keys().register(Keys.KEYFRAMES_SPREAD, this::spreadKeyframes).category(category);
     }
 
     public UIKeyframes changed(Runnable runnable)
@@ -392,6 +394,56 @@ public class UIKeyframes extends UIElement
     public int getStackOffset()
     {
         return this.stackOffset;
+    }
+
+    private void spreadKeyframes()
+    {
+        for (UIKeyframeSheet sheet : this.getGraph().getSheets())
+        {
+            List<Keyframe> selected = sheet.selection.getSelected();
+
+            if (selected.isEmpty())
+            {
+                continue;
+            }
+
+            int min = Integer.MAX_VALUE;
+            int max = Integer.MIN_VALUE;
+
+            for (Keyframe keyframe : selected)
+            {
+                int index = sheet.channel.getKeyframes().indexOf(keyframe);
+
+                min = Math.min(min, index);
+                max = Math.max(max, index);
+            }
+
+            Keyframe minKf = sheet.channel.get(min);
+            Keyframe maxKf = sheet.channel.get(max);
+            int count = max - min;
+            float distance = (maxKf.getTick() - minKf.getTick()) / count;
+
+            sheet.channel.preNotifyParent();
+
+            for (int i = 1; i < count; i++)
+            {
+                int index = i + min;
+                Keyframe kf = sheet.channel.get(index);
+
+                kf.setTick(minKf.getTick() + i * distance);
+            }
+
+            sheet.channel.postNotifyParent();
+
+            sheet.selection.clear();
+
+            for (int i = min; i <= max; i++)
+            {
+                sheet.selection.add(i);
+            }
+        }
+
+        this.getGraph().pickSelected();
     }
 
     /* Sheet editing */
