@@ -121,7 +121,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider
             menu.custom(new UIPresetContextMenu(this.copyPasteController)
                 .labels(UIKeys.TEXTURE_EDITOR_CONTEXT_COPY, UIKeys.TEXTURE_EDITOR_CONTEXT_PASTE));
 
-            menu.action(Icons.DOWNLOAD, IKey.raw("Download skin..."), null);
+            // TODO: menu.action(Icons.DOWNLOAD, IKey.raw("Download skin..."), null);
         });
         this.close = new UIIcon(Icons.CLOSE, (b) -> this.close());
         this.folder = new UIIcon(Icons.FOLDER, (b) -> this.openFolder());
