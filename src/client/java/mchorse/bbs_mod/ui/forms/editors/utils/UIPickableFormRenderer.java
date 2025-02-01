@@ -105,7 +105,7 @@ public class UIPickableFormRenderer extends UIFormRenderer
             return;
         }
 
-        FormRenderingContext formContext = FormRenderingContext
+        FormRenderingContext formContext = new FormRenderingContext()
             .set(this.target == null ? this.entity : this.target, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
             .camera(this.camera);
 

@@ -93,7 +93,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
 
             RenderSystem.enableDepthTest();
-            FormUtilsClient.render(properties.getForm(), FormRenderingContext
+            FormUtilsClient.render(properties.getForm(), new FormRenderingContext()
                 .set(entity.getEntity(), matrices, lightAbove, overlay, tickDelta)
                 .camera(camera));
             RenderSystem.disableDepthTest();

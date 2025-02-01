@@ -9,8 +9,6 @@ import net.minecraft.client.util.math.MatrixStack;
 
 public class FormRenderingContext
 {
-    private static final FormRenderingContext context = new FormRenderingContext();
-
     public IEntity entity;
     public MatrixStack stack;
     public int light;
@@ -21,21 +19,21 @@ public class FormRenderingContext
     public boolean ui;
     public int color;
 
-    private FormRenderingContext()
+    public FormRenderingContext()
     {}
 
-    public static FormRenderingContext set(IEntity entity, MatrixStack stack, int light, int overlay, float transition)
+    public FormRenderingContext set(IEntity entity, MatrixStack stack, int light, int overlay, float transition)
     {
-        context.entity = entity;
-        context.stack = stack;
-        context.light = light;
-        context.overlay = overlay;
-        context.transition = transition;
-        context.stencilMap = null;
-        context.ui = false;
-        context.color = 0xffffffff;
+        this.entity = entity;
+        this.stack = stack;
+        this.light = light;
+        this.overlay = overlay;
+        this.transition = transition;
+        this.stencilMap = null;
+        this.ui = false;
+        this.color = 0xffffffff;
 
-        return context;
+        return this;
     }
 
     public FormRenderingContext camera(Camera camera)

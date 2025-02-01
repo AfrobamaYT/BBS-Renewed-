@@ -148,7 +148,7 @@ public class FilmController
         int light = LightmapTextureManager.pack(torch, sky);
         int overlay = OverlayTexture.packUv(OverlayTexture.getU(0F), OverlayTexture.getV(entity.getHurtTimer() > 0));
 
-        FormRenderingContext formContext = FormRenderingContext
+        FormRenderingContext formContext = new FormRenderingContext()
             .set(entity, stack, light, overlay, transition)
             .camera(camera)
             .stencilMap(context.map)

@@ -46,7 +46,7 @@ public class MorphRenderer
                 matrixStack.push();
                 matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
-                FormUtilsClient.render(morph.getForm(), FormRenderingContext
+                FormUtilsClient.render(morph.getForm(), new FormRenderingContext()
                     .set(morph.entity, matrixStack, i, overlay, g)
                     .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 
@@ -100,7 +100,7 @@ public class MorphRenderer
             matrixStack.push();
             matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-bodyYaw));
 
-            FormUtilsClient.render(form, FormRenderingContext
+            FormUtilsClient.render(form, new FormRenderingContext()
                 .set(owner.entity, matrixStack, i, o, g)
                 .camera(MinecraftClient.getInstance().gameRenderer.getCamera()));
 

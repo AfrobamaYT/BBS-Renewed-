@@ -962,9 +962,10 @@ public class UIFilmController extends UIElement
         if (!this.isMouseLookMode())
         {
             int index = this.getMouseMode() - 1;
+            float[] extraVariables = controller.getExtraVariables();
 
-            controller.getExtraVariables()[index * 2] = this.mouseStick.y;
-            controller.getExtraVariables()[index * 2 + 1] = this.mouseStick.x;
+            extraVariables[index * 2] = this.mouseStick.y;
+            extraVariables[index * 2 + 1] = this.mouseStick.x;
         }
     }
 
