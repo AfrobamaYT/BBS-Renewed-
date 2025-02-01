@@ -35,23 +35,6 @@ import java.util.Set;
 
 public class CubicModelLoader implements IModelLoader
 {
-    public static void sRGBtoRGB(Color srgb)
-    {
-        srgb.r = sRGBElement(srgb.r);
-        srgb.g = sRGBElement(srgb.g);
-        srgb.b = sRGBElement(srgb.b);
-    }
-
-    public static float sRGBElement(float value)
-    {
-        if (value <= 0.04045F)
-        {
-            return value / 12.92F;
-        }
-
-        return (float) Math.pow((value + 0.055D) / 1.055D, 2.4D);
-    }
-
     @Override
     public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {

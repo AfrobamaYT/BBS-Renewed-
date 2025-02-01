@@ -67,11 +67,11 @@ public class Pose implements IMapSerializable
         {
             for (Map.Entry<String, String> entry : flippedParts.entrySet())
             {
-                if (this.transforms.containsKey(entry.getValue()))
+                if (this.transforms.containsKey(entry.getKey()))
                 {
                     list.add(new Pair<>(entry.getValue(), entry.getKey()));
                 }
-                else if (this.transforms.containsKey(entry.getKey()))
+                else if (this.transforms.containsKey(entry.getValue()))
                 {
                     list.add(new Pair<>(entry.getKey(), entry.getValue()));
                 }
