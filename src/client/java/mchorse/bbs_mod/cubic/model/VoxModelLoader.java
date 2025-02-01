@@ -26,7 +26,7 @@ public class VoxModelLoader implements IModelLoader
     public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         Link modelVox = IModelLoader.getLink(model.combine("model.vox"), links, ".vox");
-        Link palette = IModelLoader.getLink(model.combine("palette.png"), links, ".palette");
+        Link palette = IModelLoader.getLink(model.combine("palette.png"), links, ".png");
         Model newModel = new Model(models.parser);
 
         try (InputStream asset = models.provider.getAsset(modelVox))

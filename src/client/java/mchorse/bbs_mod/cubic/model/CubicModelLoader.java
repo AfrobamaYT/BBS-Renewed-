@@ -12,13 +12,20 @@ import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.obj.MeshOBJ;
 import mchorse.bbs_mod.obj.MeshesOBJ;
+import mchorse.bbs_mod.obj.OBJMaterial;
 import mchorse.bbs_mod.obj.OBJParser;
+import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.PNGEncoder;
 import mchorse.bbs_mod.utils.StringUtils;
+import mchorse.bbs_mod.utils.colors.Color;
+import mchorse.bbs_mod.utils.resources.Pixels;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +35,23 @@ import java.util.Set;
 
 public class CubicModelLoader implements IModelLoader
 {
+    public static void sRGBtoRGB(Color srgb)
+    {
+        srgb.r = sRGBElement(srgb.r);
+        srgb.g = sRGBElement(srgb.g);
+        srgb.b = sRGBElement(srgb.b);
+    }
+
+    public static float sRGBElement(float value)
+    {
+        if (value <= 0.04045F)
+        {
+            return value / 12.92F;
+        }
+
+        return (float) Math.pow((value + 0.055D) / 1.055D, 2.4D);
+    }
+
     @Override
     public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
@@ -69,6 +93,8 @@ public class CubicModelLoader implements IModelLoader
                 newModel.model = new Model(models.parser);
                 newModel.model.textureWidth = 1;
                 newModel.model.textureHeight = 1;
+
+                this.tryMakingFlatMaterials(models.provider, model, newModel, compile);
             }
 
             for (Map.Entry<String, MeshesOBJ> entry : compile.entrySet())
@@ -117,55 +143,69 @@ public class CubicModelLoader implements IModelLoader
         return newModel;
     }
 
-    private void validateShapeKeys(Link model, Map<String, MeshesOBJ> compile)
+    private void tryMakingFlatMaterials(AssetProvider provider, Link model, CubicModel newModel, Map<String, MeshesOBJ> compile)
     {
-        Set<String> toRemove = new HashSet<>();
+        List<OBJMaterial> materials = new ArrayList<>();
 
-        main: for (MeshesOBJ value : compile.values())
+        for (MeshesOBJ value : compile.values())
         {
-            List<MeshOBJ> meshes = value.meshes;
-
-            if (value.shapes == null)
+            for (MeshOBJ mesh : value.meshes)
             {
-                continue;
-            }
-
-            for (Map.Entry<String, List<MeshOBJ>> entry : value.shapes.entrySet())
-            {
-                List<MeshOBJ> shapeMeshes = entry.getValue();
-
-                if (meshes.size() != shapeMeshes.size())
+                if (mesh.material == null)
                 {
-                    toRemove.add(entry.getKey());
-
-                    continue main;
+                    continue;
                 }
 
-                for (int i = 0; i < meshes.size(); i++)
+                if (!materials.contains(mesh.material))
                 {
-                    String key = entry.getKey();
-                    MeshOBJ shapeMesh = shapeMeshes.get(i);
-                    MeshOBJ mesh = meshes.get(i);
+                    materials.add(mesh.material);
+                }
 
-                    if (mesh.triangles != shapeMesh.triangles)
-                    {
-                        toRemove.add(key);
-
-                        continue main;
-                    }
+                if (mesh.material.useTexture)
+                {
+                    return;
                 }
             }
         }
 
-        for (String s : toRemove)
-        {
-            System.err.println("Model " + model + " has shape keys \"" + s + "\" that doesn't match the base OBJ file!");
+        Link paletteLink = model.combine("palette.png");
+        File paletteFile = provider.getFile(paletteLink);
+        Pixels pixels = Pixels.fromSize(materials.size(), 1);
 
-            for (MeshesOBJ value : compile.values())
+        for (int x = 0; x < materials.size(); x++)
+        {
+            OBJMaterial objMaterial = materials.get(x);
+            Color set = new Color().set(objMaterial.r, objMaterial.g, objMaterial.b, 1F);
+            
+            pixels.setColor(x, 0, set);
+        }
+
+        try
+        {
+            PNGEncoder.writeToFile(pixels, paletteFile);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        pixels.delete();
+
+        for (MeshesOBJ value : compile.values())
+        {
+            for (MeshOBJ mesh : value.meshes)
             {
-                value.shapes.remove(s);
+                int index = materials.indexOf(mesh.material);
+
+                for (int i = 0, c = mesh.triangles; i < c; i++)
+                {
+                    mesh.texData[i * 2] = (index + 0.5F) / materials.size();
+                    mesh.texData[i * 2 + 1] = 0.5F;
+                }
             }
         }
+
+        newModel.texture = paletteLink;
     }
 
     /**
@@ -185,12 +225,28 @@ public class CubicModelLoader implements IModelLoader
                 continue;
             }
 
+            Link mtl = new Link(link.source, StringUtils.removeExtension(link.path) + ".mtl");
+
             try (InputStream stream = models.provider.getAsset(link))
             {
-                OBJParser parser = new OBJParser(stream, null);
+                InputStream mtlStream = null;
+
+                try
+                {
+                    mtlStream = models.provider.getAsset(mtl);
+                }
+                catch (Exception e)
+                {}
+
+                OBJParser parser = new OBJParser(stream, mtlStream);
 
                 parser.read();
                 compile.putAll(parser.compile());
+
+                if (mtlStream != null)
+                {
+                    mtlStream.close();
+                }
 
                 break;
             }
