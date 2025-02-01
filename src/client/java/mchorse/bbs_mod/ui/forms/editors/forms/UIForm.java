@@ -3,14 +3,18 @@ package mchorse.bbs_mod.ui.forms.editors.forms;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.graphics.window.Window;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.UIFormEditor;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIFormPanel;
 import mchorse.bbs_mod.ui.forms.editors.panels.UIGeneralFormPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIPanelBase;
+import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import net.minecraft.client.util.math.MatrixStack;
@@ -29,6 +33,17 @@ public abstract class UIForm <T extends Form> extends UIPanelBase<UIFormPanel<T>
     public UIForm()
     {
         super(Direction.LEFT);
+
+        this.keys().register(Keys.CYCLE_PANELS, this::cyclePanels);
+    }
+
+    private void cyclePanels()
+    {
+        int index = this.panels.indexOf(this.view);
+        int newIndex = MathUtils.cycler(index + (Window.isShiftPressed() ? -1 : 1), 0, this.panels.size() - 1);
+
+        this.setPanel(this.panels.get(newIndex));
+        UIUtils.playClick();
     }
 
     public Matrix4f getOrigin(float transition)

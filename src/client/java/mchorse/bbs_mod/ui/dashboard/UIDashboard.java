@@ -108,6 +108,7 @@ public class UIDashboard extends UIBaseMenu
         /* Register keys */
         IKey category = UIKeys.DASHBOARD_CATEGORY;
 
+        this.main.keys().register(Keys.CYCLE_PANELS, this::cyclePanels).category(category);
         this.overlay.keys().register(Keys.TOGGLE_VISIBILITY, () ->
         {
             if (this.panels.panel.canToggleVisibility())
@@ -115,7 +116,6 @@ public class UIDashboard extends UIBaseMenu
                 this.main.toggleVisible();
             }
         }).category(category);
-        this.overlay.keys().register(Keys.CYCLE_PANELS, this::cyclePanels).category(category);
         this.overlay.keys().register(new KeyCombo(UIKeys.UTILITY_TITLE, GLFW.GLFW_KEY_F6), () ->
         {
             if (UIOverlay.has(this.context))
