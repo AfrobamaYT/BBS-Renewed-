@@ -65,6 +65,8 @@
     "bbs.config.editor.periodic_save-comment": "Кол-во секунд после которого панель сохранит данные после иссечение периода. Чтобы отключить сохранение, установите 0.",
     "bbs.config.editor.rule_of_thirds": "Правило третей",
     "bbs.config.editor.rule_of_thirds-comment": "Показывает правило третей",
+    "bbs.config.editor.rewind": "Перемотать",
+    "bbs.config.editor.rewind-comment": "Перемотать ли в самое начало когда фильм закончился проигрываться в редакторе фильмов",
     "bbs.config.editor.seconds": "Использовать секунды",
     "bbs.config.editor.seconds-comment": "Когда включено, то показывает секунды вместо тиков в редакоре камеры",
     "bbs.config.editor.snap_to_markers": "Привязка к тикам",

@@ -63,6 +63,8 @@
     "bbs.config.editor.loop-comment": "Loops playback of currently selected clip or looping region (you can use [ and ] keys to select the region, or Alt + click drag on the timeline)",
     "bbs.config.editor.periodic_save": "Pereodic save",
     "bbs.config.editor.periodic_save-comment": "Number of seconds that triggers automatic save repeatedly. To disable periodic saving, set the option to 0",
+    "bbs.config.editor.rewind": "Rewind",
+    "bbs.config.editor.rewind-comment": "Whether the playback should be rewound to beginning upon finishing playing the film",
     "bbs.config.editor.rule_of_thirds": "Rule of thirds",
     "bbs.config.editor.rule_of_thirds-comment": "Show rule of thirds guides",
     "bbs.config.editor.seconds": "Use seconds",

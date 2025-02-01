@@ -879,8 +879,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (this.lastRunning && !this.isRunning())
         {
             this.lastRunning = this.runner.isRunning();
-            this.setCursor(0);
-            this.notifyServer(ActionState.RESTART);
+
+            if (BBSSettings.editorRewind.get())
+            {
+                this.setCursor(0);
+                this.notifyServer(ActionState.RESTART);
+            }
         }
     }
 
