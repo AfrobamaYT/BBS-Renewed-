@@ -193,7 +193,7 @@ public class UIPropTransform extends UITransform
     {
         if (this.mode == 0 || fully) this.setT(this.cache.translate.x, this.cache.translate.y, this.cache.translate.z);
         if (this.mode == 1 || fully) this.setS(this.cache.scale.x, this.cache.scale.y, this.cache.scale.z);
-        if (this.mode == 2 || fully) this.setR(this.cache.rotate.x, this.cache.rotate.y, this.cache.rotate.z);
+        if (this.mode == 2 || fully) this.setR(MathUtils.toDeg(this.cache.rotate.x), MathUtils.toDeg(this.cache.rotate.y), MathUtils.toDeg(this.cache.rotate.z));
     }
 
     private void disable()
