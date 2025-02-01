@@ -33,7 +33,7 @@ public class Pair <A, B>
         {
             Pair pair = (Pair) obj;
 
-            return Objects.equals(this.a, pair.b) && Objects.equals(this.b, pair.b);
+            return Objects.equals(this.a, pair.a) && Objects.equals(this.b, pair.b);
         }
 
         return false;

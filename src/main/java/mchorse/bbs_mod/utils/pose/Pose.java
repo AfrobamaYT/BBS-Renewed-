@@ -30,6 +30,13 @@ public class Pose implements IMapSerializable
         patterns.add(new Pair<>(Pattern.compile("^r([_.].+)$"), "l$1"));
         patterns.add(new Pair<>(Pattern.compile("^(.+[_.])r$"), "$1l"));
         patterns.add(new Pair<>(Pattern.compile("^(.+[_.])r([_.].+)$"), "$1l$2"));
+
+        patterns.add(new Pair<>(Pattern.compile("^left([_.].+)$"), "right$1"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])left$"), "$1right"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])left([_.].+)$"), "$1right$2"));
+        patterns.add(new Pair<>(Pattern.compile("^l([_.].+)$"), "r$1"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])l$"), "$1r"));
+        patterns.add(new Pair<>(Pattern.compile("^(.+[_.])l([_.].+)$"), "$1r$2"));
     }
 
     public void flip(Map<String, String> flippedParts)
@@ -46,7 +53,12 @@ public class Pose implements IMapSerializable
 
                     if (matcher.matches())
                     {
-                        list.add(new Pair<>(matcher.replaceAll(pair.b), key));
+                        Pair<String, String> e = new Pair<>(matcher.replaceAll(pair.b), key);
+
+                        if (!list.contains(new Pair<>(e.b, e.a)))
+                        {
+                            list.add(e);
+                        }
                     }
                 }
             }
@@ -55,7 +67,14 @@ public class Pose implements IMapSerializable
         {
             for (Map.Entry<String, String> entry : flippedParts.entrySet())
             {
-                list.add(new Pair<>(entry.getValue(), entry.getKey()));
+                if (this.transforms.containsKey(entry.getValue()))
+                {
+                    list.add(new Pair<>(entry.getValue(), entry.getKey()));
+                }
+                else if (this.transforms.containsKey(entry.getKey()))
+                {
+                    list.add(new Pair<>(entry.getKey(), entry.getValue()));
+                }
             }
         }
 
