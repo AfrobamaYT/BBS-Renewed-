@@ -402,7 +402,7 @@ public class UIFilmController extends UIElement
 
     public void startRecording(List<String> groups)
     {
-        if (groups.contains("outside"))
+        if (groups != null && groups.contains("outside"))
         {
             MinecraftClient.getInstance().setScreen(null);
 
