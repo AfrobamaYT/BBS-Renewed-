@@ -383,18 +383,18 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             for (UIKeyframeSheet current : sheets)
             {
                 List<Keyframe> selected = current.selection.getSelected();
-                int mmin = Integer.MAX_VALUE;
-                int mmax = Integer.MIN_VALUE;
+                float mmin = Integer.MAX_VALUE;
+                float mmax = Integer.MIN_VALUE;
 
                 for (Keyframe keyframe : selected)
                 {
-                    mmin = Math.min((int) keyframe.getTick(), mmin);
-                    mmax = Math.max((int) keyframe.getTick(), mmax);
+                    mmin = Math.min(keyframe.getTick(), mmin);
+                    mmax = Math.max(keyframe.getTick(), mmax);
                 }
 
-                int length = mmax - mmin + this.keyframes.getStackOffset();
-                int times = (int) Math.max(1, Math.ceil((currentTick - mmax) / (float) length));
-                int x = 0;
+                float length = mmax - mmin + this.keyframes.getStackOffset();
+                int times = (int) Math.max(1, Math.ceil((currentTick - mmax) / length));
+                float x = 0;
 
                 for (int i = 0; i < times; i++)
                 {

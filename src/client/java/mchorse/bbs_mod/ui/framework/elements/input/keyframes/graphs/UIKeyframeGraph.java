@@ -440,18 +440,18 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
             UIKeyframeSheet current = this.sheet;
             List<Keyframe> selected = current.selection.getSelected();
             IKeyframeFactory factory = current.channel.getFactory();
-            int mMin = Integer.MAX_VALUE;
-            int mMax = Integer.MIN_VALUE;
+            float mMin = Integer.MAX_VALUE;
+            float mMax = Integer.MIN_VALUE;
 
             for (Keyframe keyframe : selected)
             {
-                mMin = Math.min((int) keyframe.getTick(), mMin);
-                mMax = Math.max((int) keyframe.getTick(), mMax);
+                mMin = Math.min(keyframe.getTick(), mMin);
+                mMax = Math.max(keyframe.getTick(), mMax);
             }
 
-            int length = mMax - mMin + this.keyframes.getStackOffset();
-            int times = (int) Math.max(1, Math.ceil((currentTick - mMax) / (float) length));
-            int x = 0;
+            float length = mMax - mMin + this.keyframes.getStackOffset();
+            int times = (int) Math.max(1, Math.ceil((currentTick - mMax) / length));
+            float x = 0;
 
             for (int i = 0; i < times; i++)
             {

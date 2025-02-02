@@ -54,7 +54,7 @@ public class UIKeyframes extends UIElement
     private Map<Keyframe, Float> scaleTicks = new HashMap<>();
 
     private boolean stacking;
-    private int stackOffset;
+    private float stackOffset;
 
     private int lastX;
     private int lastY;
@@ -347,18 +347,18 @@ public class UIKeyframes extends UIElement
                 for (UIKeyframeSheet current : sheets)
                 {
                     List<Keyframe> selected = current.selection.getSelected();
-                    int mMin = Integer.MAX_VALUE;
-                    int mMax = Integer.MIN_VALUE;
+                    float mMin = Integer.MAX_VALUE;
+                    float mMax = Integer.MIN_VALUE;
 
                     for (Keyframe keyframe : selected)
                     {
-                        mMin = Math.min((int) keyframe.getTick(), mMin);
-                        mMax = Math.max((int) keyframe.getTick(), mMax);
+                        mMin = Math.min(keyframe.getTick(), mMin);
+                        mMax = Math.max(keyframe.getTick(), mMax);
                     }
 
-                    int length = mMax - mMin + this.getStackOffset();
-                    int times = (int) Math.max(1, Math.ceil((currentTick - mMax) / (float) length));
-                    int x = 0;
+                    float length = mMax - mMin + this.getStackOffset();
+                    int times = (int) Math.max(1, Math.ceil((currentTick - mMax) / length));
+                    float x = 0;
 
                     current.selection.clear();
 
@@ -391,7 +391,7 @@ public class UIKeyframes extends UIElement
         return this.stacking;
     }
 
-    public int getStackOffset()
+    public float getStackOffset()
     {
         return this.stackOffset;
     }
@@ -948,7 +948,7 @@ public class UIKeyframes extends UIElement
     {
         if (this.area.isInside(context) && this.stacking)
         {
-            this.stackOffset = Math.max(1, this.stackOffset + (int) Math.copySign(1, context.mouseWheel));
+            this.stackOffset = (float) Math.max(0.05F, this.stackOffset + Math.copySign(Window.isShiftPressed() ? 0.05F : 1, context.mouseWheel));
 
             return true;
         }
