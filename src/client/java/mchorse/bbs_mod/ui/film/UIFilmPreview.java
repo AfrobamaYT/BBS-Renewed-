@@ -6,7 +6,9 @@ import mchorse.bbs_mod.audio.AudioRenderer;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
+import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -94,6 +96,25 @@ public class UIFilmPreview extends UIElement
         this.teleport.context((menu) ->
         {
             menu.action(Icons.MOVE_TO, UIKeys.FILM_TELEPORT_CONTEXT_PLAYER, this.panel.playerToCamera, () -> this.panel.playerToCamera = !this.panel.playerToCamera);
+            menu.action(Icons.COPY, UIKeys.CAMERA_PANELS_CONTEXT_COPY_POSITION, () ->
+            {
+                Position current = new Position(this.panel.getCamera());
+
+                Window.setClipboard(current.toData(), "_CopyCameraPosition");
+            });
+
+            MapType map = Window.getClipboardMap("_CopyCameraPosition");
+
+            if (map != null)
+            {
+                menu.action(Icons.PASTE, UIKeys.CAMERA_PANELS_CONTEXT_PASTE_POSITION, () ->
+                {
+                    Position current = new Position();
+
+                    current.fromData(map);
+                    this.panel.cameraEditor.editClip(current);
+                });
+            }
         });
         this.flight = new UIIcon(Icons.PLANE, (b) -> this.panel.toggleFlight());
         this.flight.tooltip(UIKeys.CAMERA_EDITOR_KEYS_MODES_FLIGHT);
