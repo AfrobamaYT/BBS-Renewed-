@@ -66,6 +66,11 @@ public class DataStorageUtils
 
     public static BaseType readFromBytes(byte[] bytes)
     {
+        if (bytes == null)
+        {
+            return null;
+        }
+
         try
         {
             ByteArrayInputStream stream = new ByteArrayInputStream(bytes);

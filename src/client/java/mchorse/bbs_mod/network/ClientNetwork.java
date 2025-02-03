@@ -140,7 +140,7 @@ public class ClientNetwork
         crusher.receive(buf, (bytes, packetByteBuf) ->
         {
             int id = packetByteBuf.readInt();
-            Form form = bytes.length == 0 ? null : FormUtils.fromData(DataStorageUtils.readFromBytes(bytes));
+            Form form = FormUtils.fromData(DataStorageUtils.readFromBytes(bytes));
 
             final Form finalForm = form;
 

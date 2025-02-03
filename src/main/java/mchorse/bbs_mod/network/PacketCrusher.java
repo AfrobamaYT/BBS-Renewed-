@@ -43,7 +43,14 @@ public abstract class PacketCrusher
 
         if (index == total - 1)
         {
-            receiver.receiveBuffer(map.toByteArray(), buf);
+            byte[] finalBytes = map.toByteArray();
+
+            if (finalBytes.length == 1 && finalBytes[0] == 69)
+            {
+                finalBytes = null;
+            }
+
+            receiver.receiveBuffer(finalBytes, buf);
             this.chunks.remove(id);
         }
     }
@@ -65,6 +72,11 @@ public abstract class PacketCrusher
 
     public void send(Collection<PlayerEntity> entities, Identifier identifier, byte[] bytes, Consumer<PacketByteBuf> consumer)
     {
+        if (bytes.length == 0)
+        {
+            bytes = new byte[]{69};
+        }
+
         int total = Math.max((int) Math.ceil(bytes.length / (float) BUFFER_SIZE), 1);
         int counter = this.counter;
 
