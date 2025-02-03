@@ -7,8 +7,10 @@ import mchorse.bbs_mod.camera.OrbitDistanceCamera;
 import mchorse.bbs_mod.camera.controller.OrbitCameraController;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.network.ClientNetwork;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.utils.UIOrbitCamera;
 import mchorse.bbs_mod.ui.forms.UIFormPalette;
@@ -24,6 +26,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.presets.UICopyPasteController;
 import mchorse.bbs_mod.ui.utils.presets.UIPresetContextMenu;
@@ -37,6 +40,7 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -325,6 +329,15 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         int index = Math.min(lastSection, this.sections.size() - 1);
 
         this.setSection(CollectionUtils.getKey(this.sections, (UIIcon) this.iconBar.getChildren().get(index)));
+        this.main.keys().register(Keys.CYCLE_PANELS, () ->
+        {
+            List<UIIcon> children = this.iconBar.getChildren(UIIcon.class);
+            int i = children.indexOf(this.sections.get(this.currentSection));
+            int newIndex = MathUtils.cycler(i + (Window.isShiftPressed() ? -1 : 1), 0, children.size() - 1);
+
+            this.setSection(CollectionUtils.getKey(this.sections, children.get(newIndex)));
+            UIUtils.playClick();
+        });
     }
 
     private UIElement createTransform(Transform transform, Supplier<Form> formSupplier, Consumer<Form> formConsumer)
