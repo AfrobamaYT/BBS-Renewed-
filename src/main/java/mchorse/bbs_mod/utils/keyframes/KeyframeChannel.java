@@ -8,7 +8,6 @@ import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -346,21 +345,9 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
 
         this.preNotifyParent();
 
-        double length = channel.getLength();
         double start = tick + ((Keyframe) channel.getKeyframes().get(0)).getTick();
-        double end = tick + length;
 
-        Iterator<Keyframe<T>> it = this.list.iterator();
-
-        if (it.hasNext())
-        {
-            Keyframe<T> next = it.next();
-
-            if (next.getTick() >= start && next.getTick() <= end)
-            {
-                it.remove();
-            }
-        }
+        this.list.removeIf((next) -> next.getTick() >= start);
 
         for (Object o : channel.getKeyframes())
         {
