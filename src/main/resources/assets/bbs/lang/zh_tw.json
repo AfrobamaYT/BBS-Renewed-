@@ -1,7 +1,9 @@
 {
     "block.bbs.model": "模型方塊",
+    "item.bbs.gun": "BBS 槍",
     "itemGroup.bbs.main": "BBS mod",
 
+    "key.bbs.item_editor": "物品編輯器",
     "key.bbs.dashboard": "儀表盤",
     "key.bbs.demorph": "取消偽裝",
     "key.bbs.open_replays": "打開當前回放列表",
@@ -9,5 +11,6 @@
     "key.bbs.play_film": "播放影片",
     "key.bbs.record_replay": "錄製當前回放",
     "key.bbs.record_video": "錄製視頻",
+    "key.bbs.teleport": "傳送至當前回放",
     "category.bbs.main": "BBS mod"
 }
