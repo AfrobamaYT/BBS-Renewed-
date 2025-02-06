@@ -2,7 +2,7 @@ package mchorse.bbs_mod.ui.forms.categories;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.CubicLoader;
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.MapType;
@@ -35,7 +35,7 @@ public class UIModelFormCategory extends UIFormCategory
             menu.action(Icons.UPLOAD, UIKeys.FORMS_CATEGORIES_CONTEXT_EXPORT_MODEL, () ->
             {
                 ModelForm modelForm = (ModelForm) this.selected;
-                CubicModel model = ModelFormRenderer.getModel(modelForm);
+                ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
                 if (model != null)
                 {

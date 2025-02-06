@@ -3,6 +3,7 @@ package mchorse.bbs_mod.cubic;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.data.DataToString;
+import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.utils.IOUtils;
@@ -65,13 +66,13 @@ public class CubicLoader
         return info;
     }
 
-    public static MapType toData(ICubicModel model)
+    public static MapType toData(IModelInstance model)
     {
         MapType data = new MapType();
 
-        if (model.getModel() != null)
+        if (model.getModel() instanceof IMapSerializable serializable)
         {
-            data.put("model", model.getModel().toData());
+            data.put("model", serializable.toData());
         }
 
         if (model.getAnimations() != null)

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.utils.pose;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -88,7 +88,7 @@ public class UIActionsConfigEditor extends UIElement
     public void setConfigs(ActionsConfig configs, ModelForm form)
     {
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(form);
-        CubicModel model = renderer.getModel();
+        ModelInstance model = renderer.getModel();
 
         renderer.ensureAnimator(0F);
 

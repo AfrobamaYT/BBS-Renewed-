@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.model;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
@@ -23,7 +23,7 @@ import java.util.Collection;
 public class VoxModelLoader implements IModelLoader
 {
     @Override
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
+    public ModelInstance load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         Link modelVox = IModelLoader.getLink(model.combine("model.vox"), links, ".vox");
         Link palette = IModelLoader.getLink(model.combine("palette.png"), links, ".png");
@@ -50,11 +50,11 @@ public class VoxModelLoader implements IModelLoader
             newModel.initialize();
             this.ensurePalette(models.provider, document, modelVox, palette);
 
-            CubicModel cubicModel = new CubicModel(id, newModel, new Animations(models.parser), palette);
+            ModelInstance modelInstance = new ModelInstance(id, newModel, new Animations(models.parser), palette);
 
-            cubicModel.applyConfig(config);
+            modelInstance.applyConfig(config);
 
-            return cubicModel;
+            return modelInstance;
         }
         catch (Exception e)
         {

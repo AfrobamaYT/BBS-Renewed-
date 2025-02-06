@@ -8,9 +8,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.CameraUtils;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
-import mchorse.bbs_mod.cubic.CubicModel;
-import mchorse.bbs_mod.cubic.CubicModelAnimator;
-import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
 import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
@@ -201,25 +199,22 @@ public class UIReplaysEditor extends UIElement
     {
         if (!bone.isEmpty() && form instanceof ModelForm modelForm)
         {
-            CubicModel model = ModelFormRenderer.getModel(modelForm);
+            ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
-            if (model != null)
+            if (model == null)
             {
-                ModelGroup group = model.model.getGroup(bone);
-                List<ModelGroup> groups = group.parent != null
-                    ? group.parent.children
-                    : model.model.topGroups;
-
-                context.replaceContextMenu((menu) ->
-                {
-                    for (ModelGroup modelGroup : groups)
-                    {
-                        menu.action(Icons.LIMB, IKey.constant(modelGroup.id), () -> consumer.accept(modelGroup.id));
-                    }
-
-                    menu.autoKeys();
-                });
+                return;
             }
+
+            context.replaceContextMenu((menu) ->
+            {
+                for (String modelGroup : model.model.getAdjacentGroups(bone))
+                {
+                    menu.action(Icons.LIMB, IKey.constant(modelGroup), () -> consumer.accept(modelGroup));
+                }
+
+                menu.autoKeys();
+            });
         }
     }
 
@@ -227,30 +222,22 @@ public class UIReplaysEditor extends UIElement
     {
         if (!bone.isEmpty() && form instanceof ModelForm modelForm)
         {
-            CubicModel model = ModelFormRenderer.getModel(modelForm);
+            ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
-            if (model != null)
+            if (model == null)
             {
-                ModelGroup group = model.model.getGroup(bone);
-                List<ModelGroup> groups = new ArrayList<>();
+                return;
+            }
 
-                while (group != null)
+            context.replaceContextMenu((menu) ->
+            {
+                for (String modelGroup : model.model.getHierarchyGroups(bone))
                 {
-                    groups.add(group);
-
-                    group = group.parent;
+                    menu.action(Icons.LIMB, IKey.constant(modelGroup), () -> consumer.accept(modelGroup));
                 }
 
-                context.replaceContextMenu((menu) ->
-                {
-                    for (ModelGroup modelGroup : groups)
-                    {
-                        menu.action(Icons.LIMB, IKey.constant(modelGroup.id), () -> consumer.accept(modelGroup.id));
-                    }
-
-                    menu.autoKeys();
-                });
-            }
+                menu.autoKeys();
+            });
         }
     }
 
@@ -565,7 +552,7 @@ public class UIReplaysEditor extends UIElement
 
     private void animationToPoses(ModelForm modelForm, UIKeyframeSheet sheet)
     {
-        CubicModel model = ModelFormRenderer.getModel(modelForm);
+        ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
         if (model != null)
         {
@@ -575,7 +562,7 @@ public class UIReplaysEditor extends UIElement
 
     public void animationToPoseKeyframes(ModelForm modelForm, UIKeyframeSheet sheet, String animationKey, boolean onlyKeyframes, int length, int step)
     {
-        CubicModel model = ModelFormRenderer.getModel(modelForm);
+        ModelInstance model = ModelFormRenderer.getModel(modelForm);
         Animation animation = model.animations.get(animationKey);
 
         if (animation != null)
@@ -617,29 +604,12 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    private void fillAnimationPose(UIKeyframeSheet sheet, int i, CubicModel model, IEntity entity, Animation animation, int current)
+    private void fillAnimationPose(UIKeyframeSheet sheet, int i, ModelInstance model, IEntity entity, Animation animation, int current)
     {
-        MolangHelper.setMolangVariables(model.model.parser, entity, i, 0F);
-        CubicModelAnimator.resetPose(model.model);
-        CubicModelAnimator.animate(model.model, animation, i, 1F, false);
+        model.model.resetPose();
+        model.model.apply(entity, animation, i, 1F, 0F, false);
 
-        Pose pose = new Pose();
-
-        for (String key : model.model.getAllGroupKeys())
-        {
-            PoseTransform poseTransform = pose.get(key);
-            ModelGroup group = model.model.getGroup(key);
-
-            poseTransform.copy(group.current);
-            poseTransform.translate.sub(group.initial.translate);
-            poseTransform.rotate.sub(group.initial.rotate);
-
-            poseTransform.rotate.x = MathUtils.toRad(poseTransform.rotate.x);
-            poseTransform.rotate.y = MathUtils.toRad(poseTransform.rotate.y);
-            poseTransform.rotate.z = MathUtils.toRad(poseTransform.rotate.z);
-        }
-
-        int insert = sheet.channel.insert(current + i, pose);
+        int insert = sheet.channel.insert(current + i, model.model.createPose());
 
         sheet.selection.add(insert);
     }

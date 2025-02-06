@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.animation;
 
-import mchorse.bbs_mod.cubic.ICubicModel;
+import mchorse.bbs_mod.cubic.IModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -53,7 +53,7 @@ public class Animator implements IAnimator
     public boolean wasOnGround = true;
     public int jumpingCounter;
 
-    private ICubicModel model;
+    private IModelInstance model;
 
     @Override
     public List<String> getActions()
@@ -65,7 +65,7 @@ public class Animator implements IAnimator
     }
 
     @Override
-    public void setup(ICubicModel model, ActionsConfig actions, boolean fade)
+    public void setup(IModelInstance model, ActionsConfig actions, boolean fade)
     {
         this.model = model;
 
@@ -357,7 +357,7 @@ public class Animator implements IAnimator
      * Apply currently running action pipeline onto given armature
      */
     @Override
-    public void applyActions(IEntity target, ICubicModel armature, float transition)
+    public void applyActions(IEntity target, IModelInstance armature, float transition)
     {
         if (this.basePre != null)
         {

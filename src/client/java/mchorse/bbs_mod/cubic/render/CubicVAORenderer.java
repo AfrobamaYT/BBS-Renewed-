@@ -2,7 +2,7 @@ package mchorse.bbs_mod.cubic.render;
 
 import mchorse.bbs_mod.client.render.ModelVAO;
 import mchorse.bbs_mod.client.render.ModelVAORenderer;
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
@@ -16,9 +16,9 @@ import net.minecraft.client.util.math.MatrixStack;
 public class CubicVAORenderer extends CubicCubeRenderer
 {
     private ShaderProgram program;
-    private CubicModel model;
+    private ModelInstance model;
 
-    public CubicVAORenderer(ShaderProgram program, CubicModel model, int light, int overlay, boolean picking, ShapeKeys shapeKeys)
+    public CubicVAORenderer(ShaderProgram program, ModelInstance model, int light, int overlay, boolean picking, ShapeKeys shapeKeys)
     {
         super(light, overlay, picking, shapeKeys);
 

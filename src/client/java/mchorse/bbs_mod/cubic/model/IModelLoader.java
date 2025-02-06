@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.cubic.model;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 
@@ -52,5 +52,5 @@ public interface IModelLoader
         return newLinks;
     }
 
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config);
+    public ModelInstance load(String id, ModelManager models, Link model, Collection<Link> links, MapType config);
 }

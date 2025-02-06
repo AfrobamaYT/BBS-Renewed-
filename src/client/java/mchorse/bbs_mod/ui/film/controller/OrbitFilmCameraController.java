@@ -3,7 +3,7 @@ package mchorse.bbs_mod.ui.film.controller;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.controller.ICameraController;
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.film.FilmController;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -232,7 +232,7 @@ public class OrbitFilmCameraController implements ICameraController
 
                 if (form instanceof ModelForm modelForm)
                 {
-                    CubicModel model = ModelFormRenderer.getModel(modelForm);
+                    ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
                     if (model != null)
                     {

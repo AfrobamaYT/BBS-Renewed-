@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -52,7 +52,7 @@ public class UIStateTriggersFormPanel extends UIFormPanel<ModelForm>
     private void addElement(StateTrigger trigger)
     {
         ModelFormRenderer renderer = (ModelFormRenderer) FormUtilsClient.getRenderer(this.form);
-        CubicModel model = renderer.getModel();
+        ModelInstance model = renderer.getModel();
         Collection<String> animations = model != null ? model.animations.animations.keySet() : null;
         UIStateTrigger uiTrigger = new UIStateTrigger(this.form, trigger, animations);
 

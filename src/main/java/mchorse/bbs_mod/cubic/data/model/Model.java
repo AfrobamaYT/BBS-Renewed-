@@ -1,9 +1,15 @@
 package mchorse.bbs_mod.cubic.data.model;
 
+import mchorse.bbs_mod.cubic.CubicModelAnimator;
+import mchorse.bbs_mod.cubic.IModel;
+import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.math.molang.MolangParser;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 
@@ -15,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class Model implements IMapSerializable
+public class Model implements IMapSerializable, IModel
 {
     public int textureWidth;
     public int textureHeight;
@@ -35,11 +41,6 @@ public class Model implements IMapSerializable
     public Model(MolangParser parser)
     {
         this.parser = parser;
-    }
-
-    public Set<String> getShapeKeys()
-    {
-        return this.shapeKeys;
     }
 
     public void initialize()
@@ -124,19 +125,101 @@ public class Model implements IMapSerializable
         return this.orderedGroups;
     }
 
+    public ModelGroup getGroup(String id)
+    {
+        return this.namedGroups.get(id);
+    }
+
+    /* IModel implementation */
+
+    @Override
+    public Pose createPose()
+    {
+        Pose pose = new Pose();
+
+        for (String key : this.getAllGroupKeys())
+        {
+            PoseTransform poseTransform = pose.get(key);
+            ModelGroup group = this.getGroup(key);
+
+            poseTransform.copy(group.current);
+            poseTransform.translate.sub(group.initial.translate);
+            poseTransform.rotate.sub(group.initial.rotate);
+
+            poseTransform.rotate.x = MathUtils.toRad(poseTransform.rotate.x);
+            poseTransform.rotate.y = MathUtils.toRad(poseTransform.rotate.y);
+            poseTransform.rotate.z = MathUtils.toRad(poseTransform.rotate.z);
+        }
+
+        return pose;
+    }
+
+    @Override
+    public void resetPose()
+    {
+        CubicModelAnimator.resetPose(this);
+    }
+
+    @Override
+    public void applyPose(Pose pose)
+    {
+        this.apply(pose);
+    }
+
+    @Override
+    public Set<String> getShapeKeys()
+    {
+        return this.shapeKeys;
+    }
+
+    @Override
+    public String getAnchor()
+    {
+        return !this.topGroups.isEmpty() ? this.topGroups.get(0).id : "";
+    }
+
+    @Override
     public Set<String> getAllGroupKeys()
     {
         return this.namedGroups.keySet();
     }
 
+    @Override
     public Collection<ModelGroup> getAllGroups()
     {
         return this.namedGroups.values();
     }
 
-    public ModelGroup getGroup(String id)
+    @Override
+    public Collection<String> getAdjacentGroups(String groupName)
     {
-        return this.namedGroups.get(id);
+        ModelGroup group = this.getGroup(groupName);
+        List<ModelGroup> groups = group.parent != null ? group.parent.children : this.topGroups;
+
+        return groups.stream().map((g) -> g.id).toList();
+    }
+
+    @Override
+    public Collection<String> getHierarchyGroups(String groupName)
+    {
+        ModelGroup group = this.getGroup(groupName);
+        List<String> groups = new ArrayList<>();
+
+        while (group != null)
+        {
+            groups.add(group.id);
+
+            group = group.parent;
+        }
+
+        return groups;
+    }
+
+    @Override
+    public void apply(IEntity target, Animation action, float tick, float blend, float transition, boolean skipInitial)
+    {
+        MolangHelper.setMolangVariables(this.parser, target, tick, transition);
+        CubicModelAnimator.animate(this, action, tick, blend, skipInitial);
     }
 
     /* Deserialization / Serialization */

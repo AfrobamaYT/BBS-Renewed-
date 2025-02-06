@@ -1,10 +1,9 @@
 package mchorse.bbs_mod.cubic.animation;
 
-import mchorse.bbs_mod.cubic.CubicModelAnimator;
-import mchorse.bbs_mod.cubic.ICubicModel;
+import mchorse.bbs_mod.cubic.IModel;
+import mchorse.bbs_mod.cubic.IModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
-import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -23,7 +22,7 @@ public class ProceduralAnimator implements IAnimator
     public ActionPlayback basePre;
     public ActionPlayback basePost;
 
-    private ICubicModel model;
+    private IModelInstance model;
 
     @Override
     public List<String> getActions()
@@ -32,7 +31,7 @@ public class ProceduralAnimator implements IAnimator
     }
 
     @Override
-    public void setup(ICubicModel model, ActionsConfig actions, boolean fade)
+    public void setup(IModelInstance model, ActionsConfig actions, boolean fade)
     {
         this.model = model;
 
@@ -99,7 +98,7 @@ public class ProceduralAnimator implements IAnimator
     }
 
     @Override
-    public void applyActions(IEntity target, ICubicModel armature, float transition)
+    public void applyActions(IEntity target, IModelInstance armature, float transition)
     {
         if (target == null)
         {
@@ -111,7 +110,7 @@ public class ProceduralAnimator implements IAnimator
             this.basePre.apply(target, armature.getModel(), transition, 1F, false);
         }
 
-        Model model = armature.getModel();
+        IModel model = armature.getModel();
         ItemStack main = target.getEquipmentStack(EquipmentSlot.MAINHAND);
         ItemStack offhand = target.getEquipmentStack(EquipmentSlot.OFFHAND);
 
@@ -141,11 +140,11 @@ public class ProceduralAnimator implements IAnimator
         ModelGroup rightArm = null;
         ModelGroup torso = null;
 
-        CubicModelAnimator.resetPose(model);
+        model.resetPose();
 
         if (target.isSneaking())
         {
-            model.apply(armature.getSneakingPose());
+            model.applyPose(armature.getSneakingPose());
         }
 
         for (ModelGroup group : model.getAllGroups())

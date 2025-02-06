@@ -6,8 +6,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
-import mchorse.bbs_mod.cubic.CubicModel;
-import mchorse.bbs_mod.cubic.CubicModelAnimator;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.animation.Animator;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -15,10 +14,8 @@ import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
-import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
-import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -40,14 +37,9 @@ import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
@@ -72,7 +64,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private ActionsConfig lastConfigs;
     private IAnimator animator;
-    private CubicModel lastModel;
+    private ModelInstance lastModel;
 
     private IEntity entity = new StubEntity();
 
@@ -106,7 +98,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         super.applyTransforms(stack, transition);
 
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         if (model != null)
         {
@@ -119,7 +111,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         super.applyTransforms(matrix, transition);
 
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         if (model != null)
         {
@@ -148,7 +140,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         return uiMatrix;
     }
 
-    public static CubicModel getModel(ModelForm form)
+    public static ModelInstance getModel(ModelForm form)
     {
         return BBSModClient.getModels().getModel(form.model.get());
     }
@@ -163,7 +155,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         return this.animator;
     }
 
-    public CubicModel getModel()
+    public ModelInstance getModel()
     {
         return getModel(this.form);
     }
@@ -181,7 +173,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     public void ensureAnimator(float transition)
     {
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
         ActionsConfig actionsConfig = this.form.actions.get();
 
         if (model == null || this.lastModel == model)
@@ -209,7 +201,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public List<String> getBones()
     {
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         return model == null ? Collections.emptyList() : new ArrayList<>(model.model.getAllGroupKeys());
     }
@@ -221,7 +213,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         this.ensureAnimator(context.getTransition());
 
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         if (this.animator != null && model != null)
         {
@@ -238,10 +230,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             Color color = this.form.color.get();
             float scale = this.form.uiScale.get() * model.uiScale;
 
-            CubicModelAnimator.resetPose(model.model);
+            model.model.resetPose();
 
             this.animator.applyActions(null, model, context.getTransition());
-            model.model.apply(this.getPose(context.getTransition()));
+            model.model.applyPose(this.getPose(context.getTransition()));
 
             MatrixStackUtils.multiply(stack, uiMatrix);
             stack.scale(scale, scale, scale);
@@ -271,7 +263,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, Supplier<ShaderProgram> program, MatrixStack stack, CubicModel model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
+    private void renderModel(IEntity target, Supplier<ShaderProgram> program, MatrixStack stack, ModelInstance model, int light, int overlay, Color color, boolean ui, boolean picking, float transition)
     {
         if (!model.culling)
         {
@@ -286,14 +278,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         gameRenderer.getOverlayTexture().setupOverlayColor();
 
         MatrixStack newStack = new MatrixStack();
-        boolean isVao = model.isVAORendered();
-        CubicCubeRenderer renderProcessor = isVao
-            ? new CubicVAORenderer(program.get(), model, light, overlay, picking, this.form.shapeKeys.get())
-            : new CubicCubeRenderer(light, overlay, picking, this.form.shapeKeys.get());
-
-        renderProcessor.setColor(color.r, color.g, color.b, color.a);
-
-        newStack.push();
 
         MatrixStackUtils.multiply(newStack, stack.peek().getPositionMatrix());
         newStack.peek().getNormalMatrix().set(stack.peek().getNormalMatrix());
@@ -304,22 +288,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             newStack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
         }
 
-        if (isVao)
-        {
-            CubicRenderer.processRenderModel(renderProcessor, null, newStack, model.model);
-        }
-        else
-        {
-            RenderSystem.setShader(program);
-
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
-
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
-            CubicRenderer.processRenderModel(renderProcessor, builder, newStack, model.model);
-            BufferRenderer.drawWithGlobalProgram(builder.end());
-        }
-
-        newStack.pop();
+        model.render(newStack, program, color, light, overlay, picking, this.form.shapeKeys.get());
 
         gameRenderer.getLightmapTextureManager().disable();
         gameRenderer.getOverlayTexture().teardownOverlayColor();
@@ -416,7 +385,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     {
         this.ensureAnimator(context.getTransition());
 
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         if (this.animator != null && model != null)
         {
@@ -425,10 +394,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             Color color = this.form.color.get().copy();
 
             color.mul(context.color);
-            CubicModelAnimator.resetPose(model.model);
+            model.model.resetPose();
 
             this.animator.applyActions(context.entity, model, context.getTransition());
-            model.model.apply(this.getPose(context.getTransition()));
+            model.model.applyPose(this.getPose(context.getTransition()));
 
             context.stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
 
@@ -446,27 +415,19 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     protected void updateStencilMap(FormRenderingContext context)
     {
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         if (model == null || model.model == null || context.stencilMap == null)
         {
             return;
         }
 
-        for (ModelGroup group : model.model.getOrderedGroups())
-        {
-            context.stencilMap.addPicking(this.form, group.id);
-        }
+        model.fillStencilMap(context.stencilMap, this.form);
     }
 
-    private void captureMatrices(CubicModel model, String target)
+    private void captureMatrices(ModelInstance model, String target)
     {
-        MatrixStack stack = new MatrixStack();
-        CubicMatrixRenderer renderer = new CubicMatrixRenderer(model.model, target);
-
-        CubicRenderer.processRenderModel(renderer, null, stack, model.model);
-
-        List<Matrix4f> matrices = renderer.matrices;
+        List<Matrix4f> matrices = model.captureMatrices(target);
 
         for (ModelGroup group : model.model.getAllGroups())
         {
@@ -514,7 +475,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     @Override
     public void collectMatrices(IEntity entity, String target, MatrixStack stack, Map<String, Matrix4f> matrices, String prefix, float transition)
     {
-        CubicModel model = this.getModel();
+        ModelInstance model = this.getModel();
 
         stack.push();
         this.applyTransforms(stack, transition);
@@ -524,7 +485,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         /* Collect bones and add them to matrix list */
         if (this.animator != null && model != null)
         {
-            CubicModelAnimator.resetPose(model.model);
+            model.model.resetPose();
+
             String localTarget = target;
 
             if (target != null && !prefix.isEmpty())
@@ -538,7 +500,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             }
 
             this.animator.applyActions(entity, model, transition);
-            model.model.apply(this.getPose(transition));
+            model.model.applyPose(this.getPose(transition));
 
             stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
             this.captureMatrices(model, localTarget);

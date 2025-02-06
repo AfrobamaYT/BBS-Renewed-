@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.film.replays;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -32,7 +32,7 @@ public class UIAnimationToPoseOverlayPanel extends UIOverlayPanel
         this.editor = editor;
         this.modelForm = modelForm;
 
-        CubicModel model = ModelFormRenderer.getModel(modelForm);
+        ModelInstance model = ModelFormRenderer.getModel(modelForm);
 
         this.list = new UIStringList((l) -> this.pickAnimation(l.get(0)));
         this.list.h(UIStringList.DEFAULT_HEIGHT * 6);
@@ -71,7 +71,7 @@ public class UIAnimationToPoseOverlayPanel extends UIOverlayPanel
 
     private void pickAnimation(String s)
     {
-        CubicModel model = ModelFormRenderer.getModel(this.modelForm);
+        ModelInstance model = ModelFormRenderer.getModel(this.modelForm);
         Animation animation = model.animations.get(s);
 
         this.length.setValue(animation.getLengthInTicks());

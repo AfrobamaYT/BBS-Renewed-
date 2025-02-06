@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.cubic.model;
 
 import mchorse.bbs_mod.cubic.CubicLoader;
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
@@ -36,12 +36,13 @@ import java.util.Set;
 public class CubicModelLoader implements IModelLoader
 {
     @Override
-    public CubicModel load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
+    public ModelInstance load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
         Link modelBBS = IModelLoader.getLink(model.combine("model.bbs.json"), links, ".bbs.json");
         Link modelTexture = IModelLoader.getLink(model.combine("model.png"), links, ".png");
-        CubicModel newModel = new CubicModel(id, null, new Animations(models.parser), modelTexture);
+        ModelInstance newModel = new ModelInstance(id, null, new Animations(models.parser), modelTexture);
         Map<String, MeshesOBJ> compile = this.tryLoadingOBJMeshes(models, model, IModelLoader.getLinks(links, ".obj"));
+        Model theModel = null;
 
         try (InputStream stream = models.provider.getAsset(modelBBS))
         {
@@ -50,7 +51,7 @@ public class CubicModelLoader implements IModelLoader
 
             if (info.model != null)
             {
-                newModel.model = info.model;
+                theModel = info.model;
             }
 
             if (info.animations != null)
@@ -71,11 +72,11 @@ public class CubicModelLoader implements IModelLoader
         {
             HashSet<String> declined = new HashSet<>();
 
-            if (newModel.model == null)
+            if (theModel == null)
             {
-                newModel.model = new Model(models.parser);
-                newModel.model.textureWidth = 1;
-                newModel.model.textureHeight = 1;
+                theModel = new Model(models.parser);
+                theModel.textureWidth = 1;
+                theModel.textureHeight = 1;
 
                 this.tryMakingFlatMaterials(models.provider, model, newModel, compile);
             }
@@ -83,27 +84,27 @@ public class CubicModelLoader implements IModelLoader
             for (Map.Entry<String, MeshesOBJ> entry : compile.entrySet())
             {
                 MeshesOBJ value = entry.getValue();
-                ModelGroup group = newModel.model.getGroup(entry.getKey());
+                ModelGroup group = theModel.getGroup(entry.getKey());
 
                 if (group == null)
                 {
                     group = new ModelGroup(entry.getKey());
 
-                    newModel.model.topGroups.add(group);
+                    theModel.topGroups.add(group);
                 }
 
                 for (MeshOBJ mesh : value.meshes)
                 {
                     ModelMesh modelMesh = new ModelMesh();
 
-                    modelMesh.baseData.fill(mesh, newModel.model.textureWidth, newModel.model.textureHeight);
+                    modelMesh.baseData.fill(mesh, theModel.textureWidth, theModel.textureHeight);
                     group.meshes.add(modelMesh);
                 }
 
-                this.fillShapes(declined, value.shapes, group, newModel.model.textureWidth, newModel.model.textureHeight);
+                this.fillShapes(declined, value.shapes, group, theModel.textureWidth, theModel.textureHeight);
             }
 
-            newModel.model.initialize();
+            theModel.initialize();
 
             for (String s : declined)
             {
@@ -111,10 +112,12 @@ public class CubicModelLoader implements IModelLoader
             }
         }
 
-        if (newModel.model == null || newModel.model.topGroups.isEmpty())
+        if (theModel == null || theModel.topGroups.isEmpty())
         {
             return null;
         }
+
+        newModel.model = theModel;
 
         for (Animation animation : this.tryLoadingExternalAnimations(models, config).getAll())
         {
@@ -126,7 +129,7 @@ public class CubicModelLoader implements IModelLoader
         return newModel;
     }
 
-    private void tryMakingFlatMaterials(AssetProvider provider, Link model, CubicModel newModel, Map<String, MeshesOBJ> compile)
+    private void tryMakingFlatMaterials(AssetProvider provider, Link model, ModelInstance newModel, Map<String, MeshesOBJ> compile)
     {
         List<OBJMaterial> materials = new ArrayList<>();
 

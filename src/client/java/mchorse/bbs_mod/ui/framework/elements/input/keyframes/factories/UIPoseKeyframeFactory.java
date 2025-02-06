@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
@@ -32,7 +32,7 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
 
         UIKeyframeSheet sheet = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) sheet.property.getForm();
-        CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
+        ModelInstance model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
 
         if (model != null)
         {

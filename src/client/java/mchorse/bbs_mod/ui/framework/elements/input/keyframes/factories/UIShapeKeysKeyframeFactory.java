@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories;
 
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -22,7 +22,7 @@ public class UIShapeKeysKeyframeFactory extends UIKeyframeFactory<ShapeKeys>
 
         UIKeyframeSheet sheet = editor.getGraph().getSheet(keyframe);
         ModelForm form = (ModelForm) sheet.property.getForm();
-        CubicModel model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
+        ModelInstance model = ((ModelFormRenderer) FormUtilsClient.getRenderer(form)).getModel();
         Set<String> shapeKeys = model.model.getShapeKeys();
 
         this.shapeKeys = new UIShapeKeysEditor(this);

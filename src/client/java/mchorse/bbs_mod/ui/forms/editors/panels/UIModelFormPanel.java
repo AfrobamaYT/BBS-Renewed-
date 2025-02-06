@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.forms.editors.panels;
 
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.cubic.CubicModel;
+import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
@@ -18,6 +18,8 @@ import mchorse.bbs_mod.ui.utils.pose.UIPoseEditor;
 import mchorse.bbs_mod.ui.utils.shapes.UIShapeKeys;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Color;
+
+import java.util.Set;
 
 public class UIModelFormPanel extends UIFormPanel<ModelForm>
 {
@@ -40,7 +42,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
 
                 if (Window.isCtrlPressed())
                 {
-                    CubicModel model = ModelFormRenderer.getModel(this.form);
+                    ModelInstance model = ModelFormRenderer.getModel(this.form);
 
                     if (model != null)
                     {
@@ -64,7 +66,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
         this.pick = new UIButton(UIKeys.FORMS_EDITOR_MODEL_PICK_TEXTURE, (b) ->
         {
             Link link = this.form.texture.get();
-            CubicModel model = ModelFormRenderer.getModel(this.form);
+            ModelInstance model = ModelFormRenderer.getModel(this.form);
 
             if (model != null && link == null)
             {
@@ -87,7 +89,7 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
     {
         super.startEdit(form);
 
-        CubicModel model = ModelFormRenderer.getModel(this.form);
+        ModelInstance model = ModelFormRenderer.getModel(this.form);
 
         this.poseEditor.setPose(form.pose.get(), model == null ? this.form.model.get() : model.poseGroup);
         this.poseEditor.fillGroups(FormUtilsClient.getBones(this.form), model == null ? null : model.flippedParts);
@@ -95,10 +97,15 @@ public class UIModelFormPanel extends UIFormPanel<ModelForm>
 
         this.shapeKeys.removeFromParent();
 
-        if (model != null && !model.model.getShapeKeys().isEmpty())
+        if (model != null)
         {
-            this.options.add(this.shapeKeys);
-            this.shapeKeys.setShapeKeys(model.poseGroup, model.model.getShapeKeys(), this.form.shapeKeys.get());
+            Set<String> modelShapeKeys = model.model.getShapeKeys();
+
+            if (!modelShapeKeys.isEmpty())
+            {
+                this.options.add(this.shapeKeys);
+                this.shapeKeys.setShapeKeys(model.poseGroup, modelShapeKeys, this.form.shapeKeys.get());
+            }
         }
 
         this.options.resize();

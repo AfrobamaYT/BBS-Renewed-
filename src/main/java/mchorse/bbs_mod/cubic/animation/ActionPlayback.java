@@ -1,9 +1,7 @@
 package mchorse.bbs_mod.cubic.animation;
 
-import mchorse.bbs_mod.cubic.CubicModelAnimator;
-import mchorse.bbs_mod.cubic.MolangHelper;
+import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
-import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.forms.entities.IEntity;
 
 public class ActionPlayback
@@ -118,8 +116,8 @@ public class ActionPlayback
     /**
      * Calculate fade factor with given partial ticks
      *
-     * Closer to 1 means started fading, meanwhile closer to 0 is almost
-     * finished fading.
+     * A value closer to 1 means started fading, meanwhile closer to 0
+     * is almost finished fading.
      */
     public float getFadeFactor(float transition)
     {
@@ -202,12 +200,11 @@ public class ActionPlayback
         return ticks;
     }
 
-    public void apply(IEntity target, Model armature, float transition, float blend, boolean skipInitial)
+    public void apply(IEntity target, IModel armature, float transition, float blend, boolean skipInitial)
     {
         float tick = this.getTick(transition);
 
-        MolangHelper.setMolangVariables(armature.parser, target, tick, transition);
-        CubicModelAnimator.animate(armature, this.action, tick, blend, skipInitial);
+        armature.apply(target, this.action, tick, blend, transition, skipInitial);
     }
 
     public static enum Fade

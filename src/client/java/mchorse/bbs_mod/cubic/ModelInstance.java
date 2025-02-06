@@ -1,31 +1,47 @@
 package mchorse.bbs_mod.cubic;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.client.render.ModelVAO;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
+import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
+import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.cubic.render.CubicVAOBuilderRenderer;
+import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.ModelForm;
+import mchorse.bbs_mod.obj.shapes.ShapeKeys;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
+import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
-public class CubicModel implements ICubicModel
+public class ModelInstance implements IModelInstance
 {
     public final String id;
-    public Model model;
+    public IModel model;
     public Animations animations;
     public Link texture;
 
@@ -46,7 +62,7 @@ public class CubicModel implements ICubicModel
 
     private Map<ModelGroup, ModelVAO> vaos = new HashMap<>();
 
-    public CubicModel(String id, Model model, Animations animations, Link texture)
+    public ModelInstance(String id, Model model, Animations animations, Link texture)
     {
         this.id = id;
         this.model = model;
@@ -57,7 +73,7 @@ public class CubicModel implements ICubicModel
     }
 
     @Override
-    public Model getModel()
+    public IModel getModel()
     {
         return this.model;
     }
@@ -81,9 +97,11 @@ public class CubicModel implements ICubicModel
 
     public String getAnchor()
     {
-        if (this.anchorGroup.isEmpty() && this.model.topGroups.size() == 1)
+        String anchor = this.model.getAnchor();
+
+        if (this.anchorGroup.isEmpty() && !anchor.isEmpty())
         {
-            return this.model.topGroups.get(0).id;
+            return anchor;
         }
 
         return this.anchorGroup;
@@ -152,15 +170,18 @@ public class CubicModel implements ICubicModel
             return;
         }
 
-        MinecraftClient.getInstance().execute(() ->
+        if (this.model instanceof Model model)
         {
-            CubicRenderer.processRenderModel(new CubicVAOBuilderRenderer(this.vaos), null, new MatrixStack(), this.model);
-        });
+            MinecraftClient.getInstance().execute(() ->
+            {
+                CubicRenderer.processRenderModel(new CubicVAOBuilderRenderer(this.vaos), null, new MatrixStack(), model);
+            });
+        }
     }
 
     public boolean isVAORendered()
     {
-        return this.model.getShapeKeys().isEmpty();
+        return !this.vaos.isEmpty();
     }
 
     public void delete()
@@ -171,5 +192,61 @@ public class CubicModel implements ICubicModel
         }
 
         this.vaos.clear();
+    }
+
+    /* Rendering */
+
+    public void fillStencilMap(StencilMap stencilMap, ModelForm form)
+    {
+        if (this.model instanceof Model model)
+        {
+            for (ModelGroup group : model.getOrderedGroups())
+            {
+                stencilMap.addPicking(form, group.id);
+            }
+        }
+    }
+
+    public List<Matrix4f> captureMatrices(String target)
+    {
+        if (this.model instanceof Model model)
+        {
+            MatrixStack stack = new MatrixStack();
+            CubicMatrixRenderer renderer = new CubicMatrixRenderer(model, target);
+
+            CubicRenderer.processRenderModel(renderer, null, stack, model);
+
+            return renderer.matrices;
+        }
+
+        return List.of();
+    }
+
+    public void render(MatrixStack stack, Supplier<ShaderProgram> program, Color color, int light, int overlay, boolean picking, ShapeKeys keys)
+    {
+        if (this.model instanceof Model model)
+        {
+            boolean isVao = this.isVAORendered();
+            CubicCubeRenderer renderProcessor = isVao
+                ? new CubicVAORenderer(program.get(), this, light, overlay, picking, keys)
+                : new CubicCubeRenderer(light, overlay, picking, keys);
+
+            renderProcessor.setColor(color.r, color.g, color.b, color.a);
+
+            if (isVao)
+            {
+                CubicRenderer.processRenderModel(renderProcessor, null, stack, model);
+            }
+            else
+            {
+                RenderSystem.setShader(program);
+
+                BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
+                BufferRenderer.drawWithGlobalProgram(builder.end());
+            }
+        }
     }
 }
