@@ -34,7 +34,7 @@ public abstract class UIForm <T extends Form> extends UIPanelBase<UIFormPanel<T>
     {
         super(Direction.LEFT);
 
-        this.keys().register(Keys.CYCLE_PANELS, this::cyclePanels);
+        this.keys().register(Keys.FILM_CONTROLLER_CYCLE_EDITORS, this::cyclePanels);
     }
 
     private void cyclePanels()

@@ -329,7 +329,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         int index = Math.min(lastSection, this.sections.size() - 1);
 
         this.setSection(CollectionUtils.getKey(this.sections, (UIIcon) this.iconBar.getChildren().get(index)));
-        this.main.keys().register(Keys.CYCLE_PANELS, () ->
+        this.main.keys().register(Keys.FILM_CONTROLLER_CYCLE_EDITORS, () ->
         {
             List<UIIcon> children = this.iconBar.getChildren(UIIcon.class);
             int i = children.indexOf(this.sections.get(this.currentSection));
