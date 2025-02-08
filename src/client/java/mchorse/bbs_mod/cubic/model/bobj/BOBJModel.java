@@ -4,6 +4,7 @@ import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.cubic.IModel;
+import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
@@ -191,6 +192,7 @@ public class BOBJModel implements IModel
     @Override
     public void apply(IEntity target, Animation action, float tick, float blend, float transition, boolean skipInitial)
     {
-        // TODO: ...
+        MolangHelper.setMolangVariables(action.parser, target, tick, transition);
+        BOBJModelAnimator.animate(this, action, tick, blend, skipInitial);
     }
 }

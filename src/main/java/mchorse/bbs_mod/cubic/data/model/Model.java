@@ -114,7 +114,10 @@ public class Model implements IMapSerializable, IModel
     @Override
     public void resetPose()
     {
-        CubicModelAnimator.resetPose(this);
+        for (ModelGroup orderedGroup : this.orderedGroups)
+        {
+            orderedGroup.reset();
+        }
     }
 
     @Override

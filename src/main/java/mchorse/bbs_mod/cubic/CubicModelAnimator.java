@@ -7,6 +7,7 @@ import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
 import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -20,22 +21,81 @@ public class CubicModelAnimator
     private static Vector3d s = new Vector3d();
     private static Vector3d r = new Vector3d();
 
-    public static void resetPose(Model model)
+    /**
+     * Get value from given value of a keyframe (end or start)
+     *
+     * This method is responsible for processing keyframe value, because
+     * for some reason constant values are exported in radians, while molang
+     * expressions are in degrees
+     *
+     * Plus X and Y axis of rotation are inverted for some reason ...
+     */
+    public static double getValue(MolangExpression value, MolangHelper.Component component, Axis axis)
     {
-        for (ModelGroup group : model.topGroups)
+        double out = value.get();
+
+        if (component == MolangHelper.Component.SCALE)
         {
-            resetGroup(group);
+            out = out - 1;
         }
+
+        return out;
     }
 
-    private static void resetGroup(ModelGroup group)
+    public static Vector3d interpolateList(Vector3d vector, AnimationChannel channel, float frame, MolangHelper.Component component)
     {
-        group.reset();
+        return interpolate(vector, channel, frame, component);
+    }
 
-        for (ModelGroup childGroup : group.children)
+    public static Vector3d interpolate(Vector3d output, AnimationChannel channel, float frame, MolangHelper.Component component)
+    {
+        List<AnimationVector> keyframes = channel.keyframes;
+
+        if (keyframes.isEmpty())
         {
-            resetGroup(childGroup);
+            output.set(0, 0, 0);
+
+            return output;
         }
+
+        AnimationVector first = keyframes.get(0);
+
+        if (frame < first.time * 20)
+        {
+            output.x = getValue(first.getStart(Axis.X), component, Axis.X);
+            output.y = getValue(first.getStart(Axis.Y), component, Axis.Y);
+            output.z = getValue(first.getStart(Axis.Z), component, Axis.Z);
+
+            return output;
+        }
+
+        double duration = first.time * 20;
+
+        for (AnimationVector vector : keyframes)
+        {
+            double length = vector.getLengthInTicks();
+
+            if (frame >= duration && frame < duration + length)
+            {
+                double factor = (frame - duration) / length;
+
+                output.x = AnimationInterpolation.interpolate(vector, component, Axis.X, factor);
+                output.y = AnimationInterpolation.interpolate(vector, component, Axis.Y, factor);
+                output.z = AnimationInterpolation.interpolate(vector, component, Axis.Z, factor);
+
+                return output;
+            }
+
+            duration += length;
+        }
+
+        AnimationVector last = keyframes.get(keyframes.size() - 1);
+
+        output.x = getValue(last.getStart(Axis.X), component, Axis.X);
+        output.y = getValue(last.getStart(Axis.Y), component, Axis.Y);
+        output.z = getValue(last.getStart(Axis.Z), component, Axis.Z);
+
+        return output;
     }
 
     public static void animate(Model model, Animation animation, float frame, float blend, boolean skipInitial)
@@ -95,61 +155,5 @@ public class CubicModelAnimator
         current.rotate.x = Lerps.lerp(current.rotate.x, (float) rotation.x + initial.rotate.x, blend);
         current.rotate.y = Lerps.lerp(current.rotate.y, (float) rotation.y + initial.rotate.y, blend);
         current.rotate.z = Lerps.lerp(current.rotate.z, (float) rotation.z + initial.rotate.z, blend);
-    }
-
-    private static Vector3d interpolateList(Vector3d vector, AnimationChannel channel, float frame, MolangHelper.Component component)
-    {
-        return interpolate(vector, channel, frame, component);
-    }
-
-    private static Vector3d interpolate(Vector3d output, AnimationChannel channel, float frame, MolangHelper.Component component)
-    {
-        List<AnimationVector> keyframes = channel.keyframes;
-
-        if (keyframes.isEmpty())
-        {
-            output.set(0, 0, 0);
-
-            return output;
-        }
-
-        AnimationVector first = keyframes.get(0);
-
-        if (frame < first.time * 20)
-        {
-            output.x = MolangHelper.getValue(first.getStart(Axis.X), component, Axis.X);
-            output.y = MolangHelper.getValue(first.getStart(Axis.Y), component, Axis.Y);
-            output.z = MolangHelper.getValue(first.getStart(Axis.Z), component, Axis.Z);
-
-            return output;
-        }
-
-        double duration = first.time * 20;
-
-        for (AnimationVector vector : keyframes)
-        {
-            double length = vector.getLengthInTicks();
-
-            if (frame >= duration && frame < duration + length)
-            {
-                double factor = (frame - duration) / length;
-
-                output.x = AnimationInterpolation.interpolate(vector, component, Axis.X, factor);
-                output.y = AnimationInterpolation.interpolate(vector, component, Axis.Y, factor);
-                output.z = AnimationInterpolation.interpolate(vector, component, Axis.Z, factor);
-
-                return output;
-            }
-
-            duration += length;
-        }
-
-        AnimationVector last = keyframes.get(keyframes.size() - 1);
-
-        output.x = MolangHelper.getValue(last.getStart(Axis.X), component, Axis.X);
-        output.y = MolangHelper.getValue(last.getStart(Axis.Y), component, Axis.Y);
-        output.z = MolangHelper.getValue(last.getStart(Axis.Z), component, Axis.Z);
-
-        return output;
     }
 }

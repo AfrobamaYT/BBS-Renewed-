@@ -33,6 +33,7 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -249,7 +250,10 @@ public class ModelInstance implements IModelInstance
         {
             for (BOBJBone orderedBone : model.getArmature().orderedBones)
             {
-                bones.put(orderedBone.name, new Matrix4f(orderedBone.mat));
+                Matrix4f value = new Matrix4f();
+
+                value.rotateY(MathUtils.PI).mul(orderedBone.mat);
+                bones.put(orderedBone.name, value);
             }
         }
     }
@@ -286,9 +290,14 @@ public class ModelInstance implements IModelInstance
 
             if (vao != null)
             {
+                stack.push();
+                stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
+
                 vao.armature.setupMatrices();
                 vao.updateMesh(picking);
                 vao.render(program.get(), stack, color.r, color.g, color.b, color.a, picking, light, overlay);
+
+                stack.pop();
             }
         }
     }

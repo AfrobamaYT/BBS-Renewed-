@@ -11,8 +11,7 @@ import java.util.Map;
 public class Animation implements IMapSerializable
 {
     public final String id;
-
-    private MolangParser parser;
+    public final MolangParser parser;
 
     /**
      * Animation length in seconds
