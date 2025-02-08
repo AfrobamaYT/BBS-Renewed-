@@ -18,6 +18,7 @@ import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -154,6 +155,7 @@ public class BOBJModelLoader implements IModelLoader
                 AnimationVector rotation = new AnimationVector();
 
                 xyz.time = scale.time = rotation.time = t / 20F;
+                xyz.interp = scale.interp = rotation.interp = Interpolations.HERMITE;
                 xyz.x = new MolangValue(parser, new Constant(x == null ? 0D : x.calculate(t)));
                 xyz.y = new MolangValue(parser, new Constant(y == null ? 0D : y.calculate(t)));
                 xyz.z = new MolangValue(parser, new Constant(z == null ? 0D : z.calculate(t)));
@@ -175,5 +177,7 @@ public class BOBJModelLoader implements IModelLoader
 
             animation.parts.put(entry.getKey(), part);
         }
+
+        animation.setLength(value.getDuration() / 20F);
     }
 }

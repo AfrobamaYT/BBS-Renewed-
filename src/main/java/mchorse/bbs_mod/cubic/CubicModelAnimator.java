@@ -7,7 +7,6 @@ import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
 import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
-import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.pose.Transform;
@@ -20,27 +19,6 @@ public class CubicModelAnimator
     private static Vector3d p = new Vector3d();
     private static Vector3d s = new Vector3d();
     private static Vector3d r = new Vector3d();
-
-    /**
-     * Get value from given value of a keyframe (end or start)
-     *
-     * This method is responsible for processing keyframe value, because
-     * for some reason constant values are exported in radians, while molang
-     * expressions are in degrees
-     *
-     * Plus X and Y axis of rotation are inverted for some reason ...
-     */
-    public static double getValue(MolangExpression value, MolangHelper.Component component, Axis axis)
-    {
-        double out = value.get();
-
-        if (component == MolangHelper.Component.SCALE)
-        {
-            out = out - 1;
-        }
-
-        return out;
-    }
 
     public static Vector3d interpolateList(Vector3d vector, AnimationChannel channel, float frame, MolangHelper.Component component)
     {
@@ -62,9 +40,9 @@ public class CubicModelAnimator
 
         if (frame < first.time * 20)
         {
-            output.x = getValue(first.getStart(Axis.X), component, Axis.X);
-            output.y = getValue(first.getStart(Axis.Y), component, Axis.Y);
-            output.z = getValue(first.getStart(Axis.Z), component, Axis.Z);
+            output.x = MolangHelper.getValue(first.getStart(Axis.X), component, Axis.X);
+            output.y = MolangHelper.getValue(first.getStart(Axis.Y), component, Axis.Y);
+            output.z = MolangHelper.getValue(first.getStart(Axis.Z), component, Axis.Z);
 
             return output;
         }
@@ -91,9 +69,9 @@ public class CubicModelAnimator
 
         AnimationVector last = keyframes.get(keyframes.size() - 1);
 
-        output.x = getValue(last.getStart(Axis.X), component, Axis.X);
-        output.y = getValue(last.getStart(Axis.Y), component, Axis.Y);
-        output.z = getValue(last.getStart(Axis.Z), component, Axis.Z);
+        output.x = MolangHelper.getValue(last.getStart(Axis.X), component, Axis.X);
+        output.y = MolangHelper.getValue(last.getStart(Axis.Y), component, Axis.Y);
+        output.z = MolangHelper.getValue(last.getStart(Axis.Z), component, Axis.Z);
 
         return output;
     }
