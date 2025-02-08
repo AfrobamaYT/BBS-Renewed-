@@ -17,11 +17,6 @@ public class BOBJArmature
     public String name;
 
     /**
-     * Default action of this armature 
-     */
-    public String action = "";
-
-    /**
      * Map of all bones in this armature 
      */
     public Map<String, BOBJBone> bones = new HashMap<String, BOBJBone>();
@@ -79,7 +74,7 @@ public class BOBJArmature
             }
 
             /* Sort bones according to their index */
-            Collections.sort(this.orderedBones, Comparator.comparingInt(o -> o.index));
+            this.orderedBones.sort(Comparator.comparingInt(o -> o.index));
 
             this.matrices = new Matrix4f[this.orderedBones.size()];
             this.initialized = true;

@@ -1,14 +1,12 @@
 package mchorse.bbs_mod.obj;
 
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.IOUtils;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,33 +53,6 @@ public class OBJParser
          * they must be replaced to avoid messing up texture paths...
          */
         return name.replaceAll("[/|\\\\]+", "-");
-    }
-
-    /**
-     * Read all lines from a file (needs a text file)
-     */
-    public static List<String> readAllLines(InputStream stream) throws Exception
-    {
-        List<String> list = new ArrayList<String>();
-
-        try
-        {
-            BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
-
-            String line;
-            while ((line = br.readLine()) != null)
-            {
-                list.add(line);
-            }
-
-            br.close();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return list;
     }
 
     /**
@@ -164,7 +135,7 @@ public class OBJParser
             return;
         }
 
-        List<String> lines = readAllLines(this.mtlFile);
+        List<String> lines = IOUtils.readLines(this.mtlFile);
         OBJMaterial material = null;
 
         for (String line : lines)
@@ -213,7 +184,7 @@ public class OBJParser
      */
     public void readOBJ() throws Exception
     {
-        List<String> lines = readAllLines(this.objFile);
+        List<String> lines = IOUtils.readLines(this.objFile);
 
         OBJDataMesh mesh = null;
         OBJMaterial material = null;

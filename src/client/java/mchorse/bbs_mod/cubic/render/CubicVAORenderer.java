@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.cubic.render;
 
-import mchorse.bbs_mod.client.render.ModelVAO;
-import mchorse.bbs_mod.client.render.ModelVAORenderer;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;

@@ -2,8 +2,8 @@ package mchorse.bbs_mod.graphics.texture;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.render.ModelVAO;
-import mchorse.bbs_mod.client.render.ModelVAOData;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOData;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.colors.Color;

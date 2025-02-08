@@ -77,49 +77,6 @@ public class Model implements IMapSerializable, IModel
         }
     }
 
-    public void apply(Pose pose)
-    {
-        if (pose.isEmpty())
-        {
-            return;
-        }
-
-        for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
-        {
-            PoseTransform transform = entry.getValue();
-            ModelGroup group = this.getGroup(entry.getKey());
-
-            if (group == null)
-            {
-                continue;
-            }
-
-            if (pose.staticPose)
-            {
-                group.current.copy(group.initial);
-            }
-            else if (transform.fix > 0F)
-            {
-                group.current.lerp(group.initial, transform.fix);
-            }
-
-            group.lighting = transform.lighting;
-            group.color.copy(transform.color);
-            group.current.translate.add(transform.translate);
-            group.current.scale.add(transform.scale).sub(1, 1, 1);
-            group.current.rotate.add(
-                (float) Math.toDegrees(transform.rotate.x),
-                (float) Math.toDegrees(transform.rotate.y),
-                (float) Math.toDegrees(transform.rotate.z)
-            );
-            group.current.rotate2.add(
-                (float) Math.toDegrees(transform.rotate2.x),
-                (float) Math.toDegrees(transform.rotate2.y),
-                (float) Math.toDegrees(transform.rotate2.z)
-            );
-        }
-    }
-
     public List<ModelGroup> getOrderedGroups()
     {
         return this.orderedGroups;
@@ -163,7 +120,45 @@ public class Model implements IMapSerializable, IModel
     @Override
     public void applyPose(Pose pose)
     {
-        this.apply(pose);
+        if (pose.isEmpty())
+        {
+            return;
+        }
+
+        for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
+        {
+            PoseTransform transform = entry.getValue();
+            ModelGroup group = this.getGroup(entry.getKey());
+
+            if (group == null)
+            {
+                continue;
+            }
+
+            if (pose.staticPose)
+            {
+                group.current.copy(group.initial);
+            }
+            else if (transform.fix > 0F)
+            {
+                group.current.lerp(group.initial, transform.fix);
+            }
+
+            group.lighting = transform.lighting;
+            group.color.copy(transform.color);
+            group.current.translate.add(transform.translate);
+            group.current.scale.add(transform.scale).sub(1, 1, 1);
+            group.current.rotate.add(
+                (float) Math.toDegrees(transform.rotate.x),
+                (float) Math.toDegrees(transform.rotate.y),
+                (float) Math.toDegrees(transform.rotate.z)
+            );
+            group.current.rotate2.add(
+                (float) Math.toDegrees(transform.rotate2.x),
+                (float) Math.toDegrees(transform.rotate2.y),
+                (float) Math.toDegrees(transform.rotate2.z)
+            );
+        }
     }
 
     @Override

@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.bobj;
 
+import mchorse.bbs_mod.utils.pose.Transform;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 public class BOBJBone
 {
@@ -11,23 +11,8 @@ public class BOBJBone
     public String parent;
     public BOBJBone parentBone;
 
-    /* Debug information */
-    public Vector3f head;
-    public Vector3f tail;
-    public float length;
-
     /* Transformations */
-    public float x;
-    public float y;
-    public float z;
-
-    public float rotateX;
-    public float rotateY;
-    public float rotateZ;
-
-    public float scaleX = 1;
-    public float scaleY = 1;
-    public float scaleZ = 1;
+    public final Transform transform = new Transform();
 
     /**
      * Computed bone matrix which is used for transformations. This 
@@ -50,24 +35,12 @@ public class BOBJBone
      */
     public Matrix4f relBoneMat = new Matrix4f();
 
-    /**
-     * Temporary matrix used for multiplications of  
-     */
-    public Matrix4f tempMat = new Matrix4f();
-
-    public BOBJBone(int index, String name, String parent, Vector3f tail, Matrix4f boneMat)
+    public BOBJBone(int index, String name, String parent, Matrix4f boneMat)
     {
         this.index = index;
         this.name = name;
         this.parent = parent;
         this.boneMat = boneMat;
-
-        this.head = boneMat.getTranslation(new Vector3f());
-        this.tail = tail;
-
-        Vector3f diff = new Vector3f(this.tail);
-        diff.sub(this.head);
-        this.length = diff.length();
 
         this.invBoneMat.set(boneMat);
         this.invBoneMat.invert();
@@ -105,35 +78,28 @@ public class BOBJBone
 
     public void applyTransformations()
     {
-        this.tempMat.identity().setTranslation(this.x, this.y, this.z);
-        this.mat.mul(this.tempMat);
+        this.mat.translate(this.transform.translate);
 
-        if (this.rotateZ != 0)
+        if (this.transform.rotate.z != 0F)
         {
-            this.tempMat.identity().rotateZ(this.rotateZ);
-            this.mat.mul(this.tempMat);
+            this.mat.rotateZ(this.transform.rotate.z);
         }
 
-        if (this.rotateY != 0)
+        if (this.transform.rotate.y != 0F)
         {
-            this.tempMat.identity().rotateY(this.rotateY);
-            this.mat.mul(this.tempMat);
+            this.mat.rotateY(this.transform.rotate.y);
         }
 
-        if (this.rotateX != 0)
+        if (this.transform.rotate.x != 0F)
         {
-            this.tempMat.identity().rotateY(this.rotateX);
-            this.mat.mul(this.tempMat);
+            this.mat.rotateX(this.transform.rotate.x);
         }
 
-        this.tempMat.identity().scale(this.scaleX, this.scaleY, this.scaleZ);
-        this.mat.mul(this.tempMat);
+        this.mat.scale(this.transform.scale);
     }
 
     public void reset()
     {
-        this.x = this.y = this.z = 0;
-        this.rotateX = this.rotateY = this.rotateZ = 0;
-        this.scaleX = this.scaleY = this.scaleZ = 1;
+        this.transform.identity();
     }
 }

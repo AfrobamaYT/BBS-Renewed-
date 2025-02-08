@@ -1,7 +1,6 @@
-package mchorse.bbs_mod.client.render;
+package mchorse.bbs_mod.cubic.render.vao;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import mchorse.bbs_mod.client.render.gl.Attributes;
 import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.util.math.MatrixStack;
@@ -10,7 +9,7 @@ import org.lwjgl.opengl.GL30;
 
 public class ModelVAORenderer
 {
-    public static void render(ShaderProgram shader, ModelVAO modelVAO, MatrixStack stack, float r, float g, float b, float a, int light, int overlay)
+    public static void render(ShaderProgram shader, IModelVAO modelVAO, MatrixStack stack, float r, float g, float b, float a, int light, int overlay)
     {
         GL30.glVertexAttrib4f(Attributes.COLOR, r, g, b, a);
         GL30.glVertexAttribI2i(Attributes.OVERLAY_UV, overlay & '\uffff', overlay >> 16 & '\uffff');

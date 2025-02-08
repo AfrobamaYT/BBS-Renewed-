@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.client.render.gl;
+package mchorse.bbs_mod.cubic.render.vao;
 
 /**
  * Вершинные атрибуты (могут измениться в зависимости от версии игры или Iris, см. индексы в {@link net.irisshaders.iris.vertices.IrisVertexFormats})

@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.cubic.render;
 
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.render.ModelVAO;
-import mchorse.bbs_mod.client.render.ModelVAOData;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOData;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelCube;
 import mchorse.bbs_mod.cubic.data.model.ModelData;

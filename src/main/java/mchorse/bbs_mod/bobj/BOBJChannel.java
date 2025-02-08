@@ -86,21 +86,21 @@ public class BOBJChannel
     {
         if (this.path.equals("location"))
         {
-            if (this.index == 0) bone.x = this.calculate(frame);
-            else if (this.index == 1) bone.y = this.calculate(frame);
-            else if (this.index == 2) bone.z = this.calculate(frame);
+            if (this.index == 0) bone.transform.translate.x = this.calculate(frame);
+            else if (this.index == 1) bone.transform.translate.y = this.calculate(frame);
+            else if (this.index == 2) bone.transform.translate.z = this.calculate(frame);
         }
         else if (this.path.equals("rotation"))
         {
-            if (this.index == 0) bone.rotateX = this.calculate(frame);
-            else if (this.index == 1) bone.rotateY = this.calculate(frame);
-            else if (this.index == 2) bone.rotateZ = this.calculate(frame);
+            if (this.index == 0) bone.transform.rotate.x = this.calculate(frame);
+            else if (this.index == 1) bone.transform.rotate.y = this.calculate(frame);
+            else if (this.index == 2) bone.transform.rotate.z = this.calculate(frame);
         }
         else if (this.path.equals("scale"))
         {
-            if (this.index == 0) bone.scaleX = this.calculate(frame);
-            else if (this.index == 1) bone.scaleY = this.calculate(frame);
-            else if (this.index == 2) bone.scaleZ = this.calculate(frame);
+            if (this.index == 0) bone.transform.scale.x = this.calculate(frame);
+            else if (this.index == 1) bone.transform.scale.y = this.calculate(frame);
+            else if (this.index == 2) bone.transform.scale.z = this.calculate(frame);
         }
     }
 
@@ -110,21 +110,21 @@ public class BOBJChannel
 
         if (this.path.equals("location"))
         {
-            if (this.index == 0) bone.x = value + (bone.x - value) * x;
-            else if (this.index == 1) bone.y = value + (bone.y - value) * x;
-            else if (this.index == 2) bone.z = value + (bone.z - value) * x;
+            if (this.index == 0) bone.transform.translate.x = value + (bone.transform.translate.x - value) * x;
+            else if (this.index == 1) bone.transform.translate.y = value + (bone.transform.translate.y - value) * x;
+            else if (this.index == 2) bone.transform.translate.z = value + (bone.transform.translate.z - value) * x;
         }
         else if (this.path.equals("rotation"))
         {
-            if (this.index == 0) bone.rotateX = value + (bone.rotateX - value) * x;
-            else if (this.index == 1) bone.rotateY = value + (bone.rotateY - value) * x;
-            else if (this.index == 2) bone.rotateZ = value + (bone.rotateZ - value) * x;
+            if (this.index == 0) bone.transform.rotate.x = value + (bone.transform.rotate.x - value) * x;
+            else if (this.index == 1) bone.transform.rotate.y = value + (bone.transform.rotate.y - value) * x;
+            else if (this.index == 2) bone.transform.rotate.z = value + (bone.transform.rotate.z - value) * x;
         }
         else if (this.path.equals("scale"))
         {
-            if (this.index == 0) bone.scaleX = value + (bone.scaleX - value) * x;
-            else if (this.index == 1) bone.scaleY = value + (bone.scaleY - value) * x;
-            else if (this.index == 2) bone.scaleZ = value + (bone.scaleZ - value) * x;
+            if (this.index == 0) bone.transform.scale.x = value + (bone.transform.scale.x - value) * x;
+            else if (this.index == 1) bone.transform.scale.y = value + (bone.transform.scale.y - value) * x;
+            else if (this.index == 2) bone.transform.scale.z = value + (bone.transform.scale.z - value) * x;
         }
     }
 }

@@ -1,17 +1,21 @@
 package mchorse.bbs_mod.cubic;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import mchorse.bbs_mod.client.render.ModelVAO;
+import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
+import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.render.CubicCubeRenderer;
 import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.cubic.render.CubicVAOBuilderRenderer;
 import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
+import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -19,6 +23,7 @@ import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
 import net.minecraft.client.MinecraftClient;
@@ -62,7 +67,7 @@ public class ModelInstance implements IModelInstance
 
     private Map<ModelGroup, ModelVAO> vaos = new HashMap<>();
 
-    public ModelInstance(String id, Model model, Animations animations, Link texture)
+    public ModelInstance(String id, IModel model, Animations animations, Link texture)
     {
         this.id = id;
         this.model = model;
@@ -164,6 +169,11 @@ public class ModelInstance implements IModelInstance
 
     public void setup()
     {
+        if (this.model instanceof BOBJModel model)
+        {
+            MinecraftClient.getInstance().execute(model::setup);
+        }
+
         /* VAOs should be only generated if there are no shape keys */
         if (!this.model.getShapeKeys().isEmpty())
         {
@@ -205,9 +215,16 @@ public class ModelInstance implements IModelInstance
                 stencilMap.addPicking(form, group.id);
             }
         }
+        else if (this.model instanceof BOBJModel model)
+        {
+            for (BOBJBone orderedBone : model.getArmature().orderedBones)
+            {
+                stencilMap.addPicking(form, orderedBone.name);
+            }
+        }
     }
 
-    public List<Matrix4f> captureMatrices(String target)
+    public void captureMatrices(Map<String, Matrix4f> bones, String target)
     {
         if (this.model instanceof Model model)
         {
@@ -216,10 +233,26 @@ public class ModelInstance implements IModelInstance
 
             CubicRenderer.processRenderModel(renderer, null, stack, model);
 
-            return renderer.matrices;
-        }
+            for (ModelGroup group : model.getAllGroups())
+            {
+                Matrix4f matrix = new Matrix4f(renderer.matrices.get(group.index));
 
-        return List.of();
+                matrix.translate(
+                    group.initial.translate.x / 16,
+                    group.initial.translate.y / 16,
+                    group.initial.translate.z / 16
+                );
+                matrix.rotateY(MathUtils.PI);
+                bones.put(group.id, matrix);
+            }
+        }
+        else if (this.model instanceof BOBJModel model)
+        {
+            for (BOBJBone orderedBone : model.getArmature().orderedBones)
+            {
+                bones.put(orderedBone.name, new Matrix4f(orderedBone.mat));
+            }
+        }
     }
 
     public void render(MatrixStack stack, Supplier<ShaderProgram> program, Color color, int light, int overlay, boolean picking, ShapeKeys keys)
@@ -246,6 +279,18 @@ public class ModelInstance implements IModelInstance
                 builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
                 CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
                 BufferRenderer.drawWithGlobalProgram(builder.end());
+            }
+        }
+        else if (this.model instanceof BOBJModel model)
+        {
+            BOBJModelVAO vao = model.getVao();
+
+            if (vao != null)
+            {
+                vao.armature.setupMatrices();
+                vao.updateMesh();
+
+                ModelVAORenderer.render(program.get(), vao, stack, color.r, color.g, color.b, color.a, light, overlay);
             }
         }
     }

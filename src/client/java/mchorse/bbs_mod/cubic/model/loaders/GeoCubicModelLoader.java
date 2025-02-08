@@ -1,4 +1,4 @@
-package mchorse.bbs_mod.cubic.model;
+package mchorse.bbs_mod.cubic.model.loaders;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -8,6 +8,7 @@ import mchorse.bbs_mod.cubic.data.animation.Animations;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.geo.GeoAnimationParser;
 import mchorse.bbs_mod.cubic.geo.GeoModelParser;
+import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.IOUtils;

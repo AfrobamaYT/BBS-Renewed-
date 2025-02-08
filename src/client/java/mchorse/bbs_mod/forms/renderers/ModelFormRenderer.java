@@ -11,11 +11,8 @@ import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.cubic.animation.Animator;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
-import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
-import mchorse.bbs_mod.cubic.render.CubicMatrixRenderer;
-import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -427,20 +424,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private void captureMatrices(ModelInstance model, String target)
     {
-        List<Matrix4f> matrices = model.captureMatrices(target);
+        /* this.bones.clear()? */
+        model.captureMatrices(this.bones, target);
 
-        for (ModelGroup group : model.model.getAllGroups())
-        {
-            Matrix4f matrix = new Matrix4f(matrices.get(group.index));
-
-            matrix.translate(
-                group.initial.translate.x / 16,
-                group.initial.translate.y / 16,
-                group.initial.translate.z / 16
-            );
-            matrix.rotateY(MathUtils.PI);
-            this.bones.put(group.id, matrix);
-        }
+        int a = 10;
     }
 
     @Override
