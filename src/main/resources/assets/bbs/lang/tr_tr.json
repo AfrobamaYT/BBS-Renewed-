@@ -1,13 +1,16 @@
 {
-    "block.bbs.model": "Model Bloğu",
+    "block.bbs.model": "Model bloğu",
+    "item.bbs.gun": "BBS silahı",
     "itemGroup.bbs.main": "BBS mod",
 
-    "key.bbs.dashboard": "Gösterge Paneli",
-    "key.bbs.demorph": "Geri Dönüşme",
-    "key.bbs.open_replays": "Kayıtları Göster",
-    "key.bbs.open_morphing": "Dönüşme Menüsünü Aç",
-    "key.bbs.play_film": "Filmi Oynat",
-    "key.bbs.record_replay": "Seçili Aktörü Kaydet",
-    "key.bbs.record_video": "Video Kaydet",
+    "key.bbs.item_editor": "Eşya düzenleyicisi",
+    "key.bbs.dashboard": "Gösterge paneli",
+    "key.bbs.demorph": "Normale dönüş",
+    "key.bbs.open_replays": "Aktörleri Göster",
+    "key.bbs.open_morphing": "Dönüşme menüsünü aç",
+    "key.bbs.play_film": "Filmi oynat",
+    "key.bbs.record_replay": "Şeçili aktörü kaydet",
+    "key.bbs.record_video": "Video kaydet",
+    "key.bbs.teleport": "Şeçili aktöre ışınlan",
     "category.bbs.main": "BBS mod"
 }
