@@ -15,7 +15,6 @@ import mchorse.bbs_mod.cubic.render.CubicVAOBuilderRenderer;
 import mchorse.bbs_mod.cubic.render.CubicVAORenderer;
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
-import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -288,9 +287,8 @@ public class ModelInstance implements IModelInstance
             if (vao != null)
             {
                 vao.armature.setupMatrices();
-                vao.updateMesh();
-
-                ModelVAORenderer.render(program.get(), vao, stack, color.r, color.g, color.b, color.a, light, overlay);
+                vao.updateMesh(picking);
+                vao.render(program.get(), stack, color.r, color.g, color.b, color.a, picking, light, overlay);
             }
         }
     }

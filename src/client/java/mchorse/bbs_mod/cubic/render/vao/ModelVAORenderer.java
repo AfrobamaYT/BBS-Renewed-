@@ -28,7 +28,7 @@ public class ModelVAORenderer
         GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer);
     }
 
-    private static void setupUniforms(MatrixStack stack, ShaderProgram shader)
+    public static void setupUniforms(MatrixStack stack, ShaderProgram shader)
     {
         for (int i = 0; i < 12; i++)
         {

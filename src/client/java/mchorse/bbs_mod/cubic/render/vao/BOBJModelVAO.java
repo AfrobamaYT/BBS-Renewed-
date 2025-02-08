@@ -2,15 +2,16 @@ package mchorse.bbs_mod.cubic.render.vao;
 
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJLoader;
-import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.util.math.MatrixStack;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 
-public class BOBJModelVAO implements IModelVAO
+public class BOBJModelVAO
 {
     public BOBJLoader.CompiledData data;
     public BOBJArmature armature;
@@ -21,10 +22,12 @@ public class BOBJModelVAO implements IModelVAO
     /* GL buffers */
     public int vertexBuffer;
     public int normalBuffer;
+    public int lightBuffer;
     public int texCoordBuffer;
 
     private float[] tmpVertices;
     private float[] tmpNormals;
+    private int[] tmpLight;
 
     public BOBJModelVAO(BOBJLoader.CompiledData data)
     {
@@ -47,7 +50,13 @@ public class BOBJModelVAO implements IModelVAO
 
         this.vertexBuffer = GL30.glGenBuffers();
         this.normalBuffer = GL30.glGenBuffers();
+        this.lightBuffer = GL30.glGenBuffers();
         this.texCoordBuffer = GL30.glGenBuffers();
+
+        this.count = this.data.normData.length / 3;
+        this.tmpVertices = new float[this.data.posData.length];
+        this.tmpNormals = new float[this.data.normData.length];
+        this.tmpLight = new int[this.data.texData.length];
 
         GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.vertexBuffer);
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.posData, GL30.GL_DYNAMIC_DRAW);
@@ -57,13 +66,13 @@ public class BOBJModelVAO implements IModelVAO
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.normData, GL30.GL_DYNAMIC_DRAW);
         GL30.glVertexAttribPointer(Attributes.NORMAL, 3, GL30.GL_FLOAT, false, 0, 0);
 
+        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.lightBuffer);
+        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.tmpLight, GL30.GL_DYNAMIC_DRAW);
+        GL30.glVertexAttribIPointer(Attributes.LIGHTMAP_UV, 2, GL30.GL_INT, 0, 0);
+
         GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.texCoordBuffer);
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.texData, GL30.GL_STATIC_DRAW);
         GL30.glVertexAttribPointer(Attributes.TEXTURE_UV, 2, GL30.GL_FLOAT, false, 0, 0);
-
-        this.count = this.data.normData.length / 3;
-        this.tmpVertices = new float[this.data.posData.length];
-        this.tmpNormals = new float[this.data.normData.length];
     }
 
     /**
@@ -75,6 +84,7 @@ public class BOBJModelVAO implements IModelVAO
 
         GL15.glDeleteBuffers(this.vertexBuffer);
         GL15.glDeleteBuffers(this.normalBuffer);
+        GL15.glDeleteBuffers(this.lightBuffer);
         GL15.glDeleteBuffers(this.texCoordBuffer);
     }
 
@@ -83,7 +93,7 @@ public class BOBJModelVAO implements IModelVAO
      * matrix transformations to vertices and normals according to its 
      * bone owners and these bone influences.
      */
-    public void updateMesh()
+    public void updateMesh(boolean picking)
     {
         Vector4f sum = new Vector4f();
         Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
@@ -100,6 +110,8 @@ public class BOBJModelVAO implements IModelVAO
         for (int i = 0, c = this.count; i < c; i++)
         {
             int count = 0;
+            float maxWeight = -1;
+            int lightBone = -1;
 
             for (int w = 0; w < 4; w++)
             {
@@ -118,6 +130,12 @@ public class BOBJModelVAO implements IModelVAO
                     resultNormal.add(sumNormal.mul(weight));
 
                     count++;
+
+                    if (weight > maxWeight)
+                    {
+                        lightBone = index;
+                        maxWeight = weight;
+                    }
                 }
             }
 
@@ -141,63 +159,65 @@ public class BOBJModelVAO implements IModelVAO
 
             result.set(0F, 0F, 0F, 0F);
             resultNormal.set(0F, 0F, 0F);
+
+            if (picking)
+            {
+                this.tmpLight[i * 2] = Math.max(0, lightBone);
+                this.tmpLight[i * 2 + 1] = 0;
+            }
         }
 
         this.processData(newVertices, newNormals);
 
-        this.updateVertices(newVertices);
-        this.updateNormals(newNormals);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vertexBuffer);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newVertices, GL15.GL_DYNAMIC_DRAW);
+
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.normalBuffer);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newNormals, GL15.GL_DYNAMIC_DRAW);
+
+        if (picking)
+        {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.lightBuffer);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, this.tmpLight, GL15.GL_DYNAMIC_DRAW);
+        }
     }
 
     protected void processData(float[] newVertices, float[] newNormals)
     {}
 
-    /**
-     * Update mesh with given data 
-     */
-    public void updateVertices(float[] data)
+    public void render(ShaderProgram shader, MatrixStack stack, float r, float g, float b, float a, boolean picking, int light, int overlay)
     {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vertexBuffer);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_DYNAMIC_DRAW);
-    }
+        GL30.glVertexAttrib4f(Attributes.COLOR, r, g, b, a);
+        GL30.glVertexAttribI2i(Attributes.OVERLAY_UV, overlay & '\uffff', overlay >> 16 & '\uffff');
 
-    /**
-     * Update mesh with given data 
-     */
-    public void updateNormals(float[] data)
-    {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.normalBuffer);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_DYNAMIC_DRAW);
-    }
+        if (!picking) GL30.glVertexAttribI2i(Attributes.LIGHTMAP_UV, light & '\uffff', light >> 16 & '\uffff');
 
-    @Override
-    public void render()
-    {
-        boolean hasShaders = isShadersEnabled();
+        int currentVAO = GL30.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int currentElementArrayBuffer = GL30.glGetInteger(GL30.GL_ELEMENT_ARRAY_BUFFER_BINDING);
+
+        ModelVAORenderer.setupUniforms(stack, shader);
+
+        shader.bind();
 
         GL30.glBindVertexArray(this.vao);
 
-        enableAttributes(hasShaders);
-        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, this.count);
-        disableAttributes(hasShaders);
-    }
-
-    private static void disableAttributes(boolean hasShaders)
-    {
-        GL30.glDisableVertexAttribArray(Attributes.POSITION);
-        GL30.glDisableVertexAttribArray(Attributes.TEXTURE_UV);
-        GL30.glDisableVertexAttribArray(Attributes.NORMAL);
-    }
-
-    private static void enableAttributes(boolean hasShaders)
-    {
         GL30.glEnableVertexAttribArray(Attributes.POSITION);
         GL30.glEnableVertexAttribArray(Attributes.TEXTURE_UV);
         GL30.glEnableVertexAttribArray(Attributes.NORMAL);
-    }
 
-    public static boolean isShadersEnabled()
-    {
-        return BBSRendering.isIrisShadersEnabled();
+        if (picking) GL30.glEnableVertexAttribArray(Attributes.LIGHTMAP_UV);
+
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, this.count);
+
+        GL30.glDisableVertexAttribArray(Attributes.POSITION);
+        GL30.glDisableVertexAttribArray(Attributes.TEXTURE_UV);
+        GL30.glDisableVertexAttribArray(Attributes.NORMAL);
+
+        if (picking) GL30.glDisableVertexAttribArray(Attributes.LIGHTMAP_UV);
+
+        shader.unbind();
+
+        GL30.glBindVertexArray(currentVAO);
+        GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer);
     }
 }
