@@ -51,7 +51,7 @@ public class BOBJModelVAO implements IModelVAO
 
         GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.vertexBuffer);
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.posData, GL30.GL_DYNAMIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.POSITION, 4, GL30.GL_FLOAT, false, 0, 0);
+        GL30.glVertexAttribPointer(Attributes.POSITION, 3, GL30.GL_FLOAT, false, 0, 0);
 
         GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.normalBuffer);
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.normData, GL30.GL_DYNAMIC_DRAW);
@@ -86,7 +86,7 @@ public class BOBJModelVAO implements IModelVAO
     public void updateMesh()
     {
         Vector4f sum = new Vector4f();
-        Vector4f result = new Vector4f();
+        Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
         Vector3f sumNormal = new Vector3f();
         Vector3f resultNormal = new Vector3f();
 
@@ -109,7 +109,7 @@ public class BOBJModelVAO implements IModelVAO
                 {
                     int index = this.data.boneIndexData[i * 4 + w];
 
-                    sum.set(oldVertices[i * 4], oldVertices[i * 4 + 1], oldVertices[i * 4 + 2], oldVertices[i * 4 + 3]);
+                    sum.set(oldVertices[i * 3], oldVertices[i * 3 + 1], oldVertices[i * 3 + 2], 1F);
                     matrices[index].transform(sum);
                     result.add(sum.mul(weight));
 
@@ -123,7 +123,7 @@ public class BOBJModelVAO implements IModelVAO
 
             if (count == 0)
             {
-                result.set(oldVertices[i * 4], oldVertices[i * 3 + 4], oldVertices[i * 4 + 2], oldVertices[i * 4 + 3]);
+                result.set(oldVertices[i * 3], oldVertices[i * 3 + 1], oldVertices[i * 3 + 2], 1F);
                 resultNormal.set(oldNormals[i * 3], oldNormals[i * 3 + 1], oldNormals[i * 3 + 2]);
             }
 
@@ -131,10 +131,9 @@ public class BOBJModelVAO implements IModelVAO
             result.y /= result.w;
             result.z /= result.w;
 
-            newVertices[i * 4] = result.x;
-            newVertices[i * 4 + 1] = result.y;
-            newVertices[i * 4 + 2] = result.z;
-            newVertices[i * 4 + 3] = 1F;
+            newVertices[i * 3] = result.x;
+            newVertices[i * 3 + 1] = result.y;
+            newVertices[i * 3 + 2] = result.z;
 
             newNormals[i * 3] = resultNormal.x;
             newNormals[i * 3 + 1] = resultNormal.y;

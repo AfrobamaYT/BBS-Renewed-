@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -161,7 +160,7 @@ public class BOBJLoader
             }
         }
 
-        /* Last ones needs this too */
+        /* Last ones need this too */
         if (vertex != null)
         {
             vertex.eliminateTinyWeights();
@@ -193,7 +192,7 @@ public class BOBJLoader
         /* Initiate arrays for mesh data */
         int[] boneIndicesArr = new int[facesList.size() * 3 * 4];
         float[] weightsArr = new float[facesList.size() * 3 * 4];
-        float[] posArr = new float[facesList.size() * 3 * 4];
+        float[] posArr = new float[facesList.size() * 3 * 3];
         float[] textCoordArr = new float[facesList.size() * 3 * 2];
         float[] normArr = new float[facesList.size() * 3 * 3];
 
@@ -232,7 +231,7 @@ public class BOBJLoader
         }
 
         /* Initiate arrays for mesh data */
-        float[] posArr = new float[facesList.size() * 3 * 4];
+        float[] posArr = new float[facesList.size() * 3 * 3];
         float[] textCoordArr = new float[facesList.size() * 3 * 2];
         float[] normArr = new float[facesList.size() * 3 * 3];
 
@@ -262,10 +261,9 @@ public class BOBJLoader
         {
             Vertex vec = data.vertices.get(indices.idxPos);
 
-            posArr[index * 4] = vec.x;
-            posArr[index * 4 + 1] = vec.y;
-            posArr[index * 4 + 2] = vec.z;
-            posArr[index * 4 + 3] = 1;
+            posArr[index * 3] = vec.x;
+            posArr[index * 3 + 1] = vec.y;
+            posArr[index * 3 + 2] = vec.z;
 
             if (mesh != null)
             {
@@ -430,30 +428,25 @@ public class BOBJLoader
 
         public void eliminateTinyWeights()
         {
-            Iterator<Weight> it = this.weights.iterator();
+            this.weights.removeIf(w -> w.factor < 0.01);
 
-            while (it.hasNext())
+            if (this.weights.isEmpty())
             {
-                Weight w = it.next();
-
-                if (w.factor < 0.05)
-                {
-                    it.remove();
-                }
+                return;
             }
 
-            if (this.weights.size() > 0)
-            {
-                float weight = 0;
+            float weight = 0;
 
+            for (Weight w : this.weights)
+            {
+                weight += w.factor;
+            }
+
+            if (weight != 1)
+            {
                 for (Weight w : this.weights)
                 {
-                    weight += w.factor;
-                }
-
-                if (weight < 1)
-                {
-                    this.weights.get(weights.size() - 1).factor += 1 - weight;
+                    w.factor /= weight;
                 }
             }
         }
