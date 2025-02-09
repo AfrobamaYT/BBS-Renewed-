@@ -25,6 +25,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.resources.LinkUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.BufferBuilder;
@@ -123,6 +124,10 @@ public class ModelInstance implements IModelInstance
         this.culling = config.getBool("culling", this.culling);
         this.poseGroup = config.getString("pose_group", this.poseGroup);
 
+        if (config.has("texture"))
+        {
+            this.texture = LinkUtils.create(config.get("texture"));
+        }
         if (config.has("items_main")) this.itemsMain = DataStorageUtils.stringListFromData(config.get("items_main"));
         if (config.has("items_off")) this.itemsOff = DataStorageUtils.stringListFromData(config.get("items_off"));
         if (config.has("ui_scale")) this.uiScale = config.getFloat("ui_scale");

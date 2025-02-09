@@ -68,7 +68,11 @@ public class BOBJModelLoader implements IModelLoader
 
                 bobjData.initiateArmatures();
 
-                return new ModelInstance(id, bobjModel, this.convertAnimations(bobjData, new Animations(models.parser)), modelTexture);
+                ModelInstance instance = new ModelInstance(id, bobjModel, this.convertAnimations(bobjData, new Animations(models.parser)), modelTexture);
+
+                instance.applyConfig(config);
+
+                return instance;
             }
 
             System.err.println("Model \"" + model + "\" doesn't have a mesh connected to one of the armatures!");
