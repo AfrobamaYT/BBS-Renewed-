@@ -134,12 +134,17 @@ public class UIKeyframes extends UIElement
                 {
                     for (UIKeyframeSheet sheet : this.getGraph().getSheets())
                     {
+                        List<Keyframe> selected = sheet.selection.getSelected();
+
+                        if (selected.isEmpty())
+                        {
+                            continue;
+                        }
+
                         sheet.channel.preNotifyParent();
 
-                        for (Object keyframe : sheet.channel.getKeyframes())
+                        for (Keyframe kf : selected)
                         {
-                            Keyframe kf = (Keyframe) keyframe;
-
                             kf.setTick(Math.round(kf.getTick()), false);
                         }
 
