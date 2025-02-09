@@ -11,5 +11,6 @@
     "key.bbs.play_film": "Reproducir película",
     "key.bbs.record_replay": "Grabar reproducción actual",
     "key.bbs.record_video": "Grabar vídeo",
+    "key.bbs.teleport": "Teletransportarse a la reproducción actual",
     "category.bbs.main": "BBS mod"
 }
