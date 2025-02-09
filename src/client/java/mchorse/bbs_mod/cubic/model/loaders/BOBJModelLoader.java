@@ -64,7 +64,7 @@ public class BOBJModelLoader implements IModelLoader
             if (finalMesh != null)
             {
                 BOBJLoader.CompiledData compiledData = BOBJLoader.compileMesh(bobjData, finalMesh);
-                BOBJModel bobjModel = new BOBJModel(armature, compiledData);
+                BOBJModel bobjModel = new BOBJModel(armature, compiledData, id.startsWith("emoticons") && id.endsWith("_simple"));
 
                 bobjData.initiateArmatures();
 
@@ -201,7 +201,6 @@ public class BOBJModelLoader implements IModelLoader
     private void fillHeadVariables(MolangParser parser, AnimationPart head)
     {
         AnimationVector vector = new AnimationVector();
-
 
         vector.x = parseExpression(parser, "query.head_pitch / 180 * " + Math.PI);
         vector.y = parseExpression(parser, "-query.head_yaw / 180 * " + Math.PI);

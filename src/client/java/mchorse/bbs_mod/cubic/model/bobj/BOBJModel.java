@@ -7,6 +7,7 @@ import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.cubic.render.vao.BOBJModelSimpleVAO;
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.pose.Pose;
@@ -25,11 +26,13 @@ public class BOBJModel implements IModel
     private BOBJLoader.CompiledData meshData;
 
     private BOBJModelVAO vao;
+    private boolean simple;
 
-    public BOBJModel(BOBJArmature armature, BOBJLoader.CompiledData meshData)
+    public BOBJModel(BOBJArmature armature, BOBJLoader.CompiledData meshData, boolean simple)
     {
         this.armature = armature;
         this.meshData = meshData;
+        this.simple = simple;
     }
 
     public BOBJArmature getArmature()
@@ -59,7 +62,9 @@ public class BOBJModel implements IModel
 
     public void setup()
     {
-        this.vao = new BOBJModelVAO(this.meshData);
+        this.vao = this.simple
+            ? new BOBJModelSimpleVAO(this.meshData)
+            : new BOBJModelVAO(this.meshData);
 
         this.armature.setupMatrices();
     }
