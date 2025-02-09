@@ -30,6 +30,7 @@ public class UIStateTrigger extends UIElement
 
         this.actions = new UIStringList((l) -> trigger.action = l.get(0));
         this.actions.background().add(actions);
+        this.actions.sort();
         this.actions.h(16 * 5);
         this.actions.setCurrentScroll(trigger.action);
 
