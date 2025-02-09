@@ -1,6 +1,7 @@
 {
 	"texture": "assets:models/player/steve/steve.png",
 	"culling": false,
+	"scale": [0.9375, 0.9375, 0.9375],
 	"items_main": ["low_right_arm.end"],
 	"items_off": ["low_left_arm.end"]
 }
