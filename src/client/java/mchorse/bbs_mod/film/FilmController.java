@@ -342,7 +342,7 @@ public class FilmController
 
             if (replay != null)
             {
-                int ticks = this.tick;
+                int ticks = replay.getTick(this.tick);
 
                 replay.applyFrame(ticks, entity, null);
                 replay.applyClientActions(ticks, entity, this.film);
@@ -383,9 +383,10 @@ public class FilmController
 
             Replay replay = this.film.replays.getList().get(i);
             IEntity entity = this.entities.get(i);
+            int tick = replay.getTick(this.tick);
 
             /* Apply property */
-            replay.applyProperties(this.tick + transition, entity.getForm());
+            replay.applyProperties(tick + transition, entity.getForm());
 
             Map<String, Integer> actors = BBSModClient.getFilms().actors.get(this.film.getId());
 
@@ -399,7 +400,7 @@ public class FilmController
 
                     if (anEntity instanceof ActorEntity actor)
                     {
-                        replay.applyProperties(this.tick + transition, actor.getForm());
+                        replay.applyProperties(tick + transition, actor.getForm());
                     }
                 }
             }
