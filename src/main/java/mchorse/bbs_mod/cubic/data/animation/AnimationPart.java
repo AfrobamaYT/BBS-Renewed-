@@ -12,9 +12,9 @@ import mchorse.bbs_mod.math.molang.expressions.MolangValue;
 
 public class AnimationPart implements IMapSerializable
 {
-    public AnimationChannel position = new AnimationChannel();
-    public AnimationChannel scale = new AnimationChannel();
-    public AnimationChannel rotation = new AnimationChannel();
+    public final AnimationChannel position = new AnimationChannel();
+    public final AnimationChannel scale = new AnimationChannel();
+    public final AnimationChannel rotation = new AnimationChannel();
 
     private MolangParser parser;
 

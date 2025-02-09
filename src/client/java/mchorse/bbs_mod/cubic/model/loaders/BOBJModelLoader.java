@@ -16,6 +16,7 @@ import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
+import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -178,6 +179,47 @@ public class BOBJModelLoader implements IModelLoader
             animation.parts.put(entry.getKey(), part);
         }
 
+        /* Insert head keyframes */
+        AnimationPart head = animation.parts.get("head");
+
+        if (head == null)
+        {
+            head = new AnimationPart(parser);
+
+            animation.parts.put("head", head);
+
+            this.fillHeadVariables(parser, head);
+        }
+        else if (head.rotation.keyframes.isEmpty())
+        {
+            this.fillHeadVariables(parser, head);
+        }
+
         animation.setLength(value.getDuration() / 20F);
+    }
+
+    private void fillHeadVariables(MolangParser parser, AnimationPart head)
+    {
+        AnimationVector vector = new AnimationVector();
+
+
+        vector.x = parseExpression(parser, "query.head_pitch / 180 * " + Math.PI);
+        vector.y = parseExpression(parser, "-query.head_yaw / 180 * " + Math.PI);
+        vector.z = MolangParser.ZERO;
+
+        head.rotation.keyframes.add(vector);
+        head.rotation.sort();
+    }
+
+    private static MolangExpression parseExpression(MolangParser parser, String expression)
+    {
+        try
+        {
+            return new MolangValue(parser, parser.parse(expression));
+        }
+        catch (Exception e)
+        {}
+
+        return MolangParser.ZERO;
     }
 }
