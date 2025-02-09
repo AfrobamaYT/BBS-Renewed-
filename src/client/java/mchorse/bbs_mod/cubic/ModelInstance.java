@@ -191,7 +191,7 @@ public class ModelInstance implements IModelInstance
 
     public boolean isVAORendered()
     {
-        return !this.vaos.isEmpty();
+        return !this.vaos.isEmpty() || this.model instanceof BOBJModel;
     }
 
     public void delete()

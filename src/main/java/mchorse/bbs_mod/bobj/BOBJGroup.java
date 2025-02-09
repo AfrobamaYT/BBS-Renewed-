@@ -13,22 +13,6 @@ public class BOBJGroup
         this.name = name;
     }
 
-    public void apply(BOBJBone bone, float frame)
-    {
-        for (BOBJChannel channel : this.channels)
-        {
-            channel.apply(bone, frame);
-        }
-    }
-
-    public void applyInterpolate(BOBJBone bone, float frame, float x)
-    {
-        for (BOBJChannel channel : this.channels)
-        {
-            channel.applyInterpolate(bone, frame, x);
-        }
-    }
-
     public int getDuration()
     {
         int max = 0;
