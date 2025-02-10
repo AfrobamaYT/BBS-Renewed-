@@ -73,6 +73,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -459,6 +460,16 @@ public class BBSModClient implements ClientModInitializer
 
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
         BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, gunItemRenderer);
+
+        for (String path : List.of("alex", "alex_simple", "steve", "steve_simple"))
+        {
+            BBSMod.getAssetsPath("models/emoticons/" + path + "/").mkdirs();
+        }
+
+        for (String path : List.of("alex", "alex_bends", "eyes", "eyes_1px", "steve", "steve_bends"))
+        {
+            BBSMod.getAssetsPath("models/player/" + path + "/").mkdirs();
+        }
     }
 
     private KeyBinding createKey(String id, int key)
