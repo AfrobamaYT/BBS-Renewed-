@@ -82,7 +82,7 @@ public class UIFilmPreview extends UIElement
                 {
                     this.panel.dashboard.closeThisMenu();
 
-                    Films.playFilm(this.panel.getData(), true);
+                    Films.playFilm(this.panel.getData().getId(), true);
                 }
             });
 
