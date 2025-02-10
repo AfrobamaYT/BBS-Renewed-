@@ -133,6 +133,7 @@ public class CubicModelLoader implements IModelLoader
     private void tryMakingFlatMaterials(AssetProvider provider, Link model, ModelInstance newModel, Map<String, MeshesOBJ> compile)
     {
         List<OBJMaterial> materials = new ArrayList<>();
+        int materialCount = 0;
 
         for (MeshesOBJ value : compile.values())
         {
@@ -142,6 +143,8 @@ public class CubicModelLoader implements IModelLoader
                 {
                     continue;
                 }
+
+                materialCount += 1;
 
                 if (!materials.contains(mesh.material))
                 {
@@ -153,6 +156,11 @@ public class CubicModelLoader implements IModelLoader
                     return;
                 }
             }
+        }
+
+        if (materialCount == 0)
+        {
+            return;
         }
 
         Link paletteLink = model.combine("palette.png");
