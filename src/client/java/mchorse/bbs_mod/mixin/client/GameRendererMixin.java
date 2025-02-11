@@ -70,14 +70,14 @@ public class GameRendererMixin
         }
     }
 
-    @Inject(method = "render(FJZ)V", at = @At("HEAD"))
-    public void onRender(CallbackInfo info)
+    @Inject(at = @At("HEAD"), method = "renderWorld")
+    private void onWorldRenderBegin(CallbackInfo callbackInfo)
     {
         BBSRendering.onWorldRenderBegin();
     }
 
-    @Inject(method = "render(FJZ)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V", ordinal = 0))
-    public void beforeRenderGUI(CallbackInfo info)
+    @Inject(at = @At("RETURN"), method = "renderWorld")
+    private void onWorldRenderEnd(CallbackInfo callbackInfo)
     {
         BBSRendering.onWorldRenderEnd();
     }

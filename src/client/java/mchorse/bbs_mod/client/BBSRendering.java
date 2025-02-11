@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -21,7 +20,6 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import mchorse.bbs_mod.utils.sodium.SodiumUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -29,17 +27,11 @@ import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.WindowFramebuffer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
-import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.io.File;
@@ -67,6 +59,9 @@ public class BBSRendering
     private static int width;
     private static int height;
 
+    private static boolean toggleFramebuffer;
+    private static Framebuffer framebuffer;
+    private static Framebuffer clientFramebuffer;
     private static Texture texture;
 
     public static int getMotionBlur()
@@ -195,15 +190,106 @@ public class BBSRendering
         IrisUtils.setup();
     }
 
+    /* Framebuffers */
+
+    public static void resizeExtraFramebuffers()
+    {
+        Set<Framebuffer> buffers = new HashSet<>();
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        buffers.add(mc.worldRenderer.getEntityOutlinesFramebuffer());
+        buffers.add(mc.worldRenderer.getTranslucentFramebuffer());
+        buffers.add(mc.worldRenderer.getEntityFramebuffer());
+        buffers.add(mc.worldRenderer.getParticlesFramebuffer());
+        buffers.add(mc.worldRenderer.getWeatherFramebuffer());
+        buffers.add(mc.worldRenderer.getCloudsFramebuffer());
+
+        for (Framebuffer buffer : buffers)
+        {
+            resizeFramebuffer(buffer);
+        }
+    }
+
+    private static void resizeFramebuffer(Framebuffer framebuffer)
+    {
+        if (framebuffer == null)
+        {
+            return;
+        }
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+        int w = mc.getWindow().getFramebufferWidth();
+        int h = mc.getWindow().getFramebufferHeight();
+
+        if (framebuffer.textureWidth == w && framebuffer.textureHeight == h)
+        {
+            return;
+        }
+
+        framebuffer.resize(w, h, MinecraftClient.IS_SYSTEM_MAC);
+    }
+
+    public static void toggleFramebuffer(boolean toggleFramebuffer)
+    {
+        if (toggleFramebuffer == BBSRendering.toggleFramebuffer)
+        {
+            return;
+        }
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+        Window window = mc.getWindow();
+
+        if (framebuffer == null)
+        {
+            framebuffer = new WindowFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight());
+        }
+
+        BBSRendering.toggleFramebuffer = toggleFramebuffer;
+
+        if (toggleFramebuffer)
+        {
+            int w = mc.getWindow().getFramebufferWidth();
+            int h = mc.getWindow().getFramebufferHeight();
+
+            resizeExtraFramebuffers();
+
+            if (framebuffer.textureWidth != w || framebuffer.textureHeight != h)
+            {
+                framebuffer.resize(w, h, MinecraftClient.IS_SYSTEM_MAC);
+            }
+
+            clientFramebuffer = mc.getFramebuffer();
+
+            reassignFramebuffer(framebuffer);
+
+            framebuffer.beginWrite(true);
+        }
+        else
+        {
+            reassignFramebuffer(clientFramebuffer);
+
+            mc.getFramebuffer().beginWrite(true);
+            framebuffer.draw(window.getFramebufferWidth(), window.getFramebufferHeight());
+        }
+    }
+
+    private static void reassignFramebuffer(Framebuffer framebuffer)
+    {
+        MinecraftClient.getInstance().framebuffer = framebuffer;
+    }
+
+    /* Rendering */
+
     public static void onWorldRenderBegin()
     {
-        BBSModClient.getFilms().startRenderFrame(MinecraftClient.getInstance().getTickDelta());
+        MinecraftClient mc = MinecraftClient.getInstance();
+        BBSModClient.getFilms().startRenderFrame(mc.getTickDelta());
 
         UIBaseMenu menu = UIScreen.getCurrentMenu();
 
         if (menu != null)
         {
-            menu.startRenderFrame(MinecraftClient.getInstance().getTickDelta());
+            menu.startRenderFrame(mc.getTickDelta());
         }
 
         renderingWorld = true;
@@ -213,18 +299,7 @@ public class BBSRendering
             return;
         }
 
-        Window window = MinecraftClient.getInstance().getWindow();
-        Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
-
-        framebuffer.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
-        framebuffer.beginWrite(true);
-
-        Framebuffer efb = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
-
-        if (efb != null && (efb.viewportWidth != window.getFramebufferWidth() || efb.viewportHeight != window.getFramebufferHeight()))
-        {
-            efb.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
-        }
+        toggleFramebuffer(true);
     }
 
     public static void onWorldRenderEnd()
@@ -246,7 +321,6 @@ public class BBSRendering
             return;
         }
 
-        Framebuffer framebuffer = mc.getFramebuffer();
         UIBaseMenu currentMenu = UIScreen.getCurrentMenu();
         Texture texture = getTexture();
 
@@ -263,32 +337,9 @@ public class BBSRendering
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, framebuffer.textureWidth, framebuffer.textureHeight);
         texture.unbind();
 
-        Window window = mc.getWindow();
-
         renderingWorld = false;
 
-        framebuffer.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
-        framebuffer.beginWrite(true);
-
-        if (width != 0)
-        {
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
-
-            builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-
-            builder.vertex(-1F, -1F, 0F).texture(0F, 0F).color(Colors.WHITE).next();
-            builder.vertex(-1F, 1F, 0F).texture(0F, 1F).color(Colors.WHITE).next();
-            builder.vertex(1F, 1F, 0F).texture(1F, 1F).color(Colors.WHITE).next();
-            builder.vertex(1F, -1F, 0F).texture(1F, 0F).color(Colors.WHITE).next();
-
-            RenderSystem.disableCull();
-            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-            RenderSystem.setShaderTexture(0, texture.id);
-            RenderSystem.setProjectionMatrix(new Matrix4f(), VertexSorter.BY_Z);
-            RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
-
-            BufferRenderer.drawWithGlobalProgram(builder.end());
-        }
+        toggleFramebuffer(false);
     }
 
     public static void onRenderChunkLayer(MatrixStack stack)

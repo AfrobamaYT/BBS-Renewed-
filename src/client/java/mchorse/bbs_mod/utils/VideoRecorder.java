@@ -135,11 +135,7 @@ public class VideoRecorder
             // huge amount of data we're dealing here, so unwrap it with this little
             // hack.
             OutputStream os = this.process.getOutputStream();
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-
-            theUnsafe.setAccessible(true);
-
-            Unsafe unsafe = (Unsafe) theUnsafe.get(null);
+            Unsafe unsafe = UnsafeUtils.getUnsafe();
 
             if (os instanceof FilterOutputStream)
             {
