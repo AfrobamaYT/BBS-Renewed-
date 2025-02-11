@@ -13,6 +13,7 @@ import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
+import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -41,6 +42,7 @@ import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -301,8 +303,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (!picking)
         {
-            this.renderItems(target, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, color, overlay, light);
-            this.renderItems(target, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, color, overlay, light);
+            this.renderItems(target, model, stack, EquipmentSlot.MAINHAND, ModelTransformationMode.THIRD_PERSON_RIGHT_HAND, model.itemsMain, color, overlay, light);
+            this.renderItems(target, model, stack, EquipmentSlot.OFFHAND, ModelTransformationMode.THIRD_PERSON_LEFT_HAND, model.itemsOff, color, overlay, light);
 
             for (Map.Entry<ArmorType, ArmorSlot> entry : model.armorSlots.entrySet())
             {
@@ -338,7 +340,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderItems(IEntity target, MatrixStack stack, EquipmentSlot slot, ModelTransformationMode mode, List<ArmorSlot> items, Color color, int overlay, int light)
+    private void renderItems(IEntity target, ModelInstance model, MatrixStack stack, EquipmentSlot slot, ModelTransformationMode mode, List<ArmorSlot> items, Color color, int overlay, int light)
     {
         ItemStack itemStack = target.getEquipmentStack(slot);
 
@@ -365,6 +367,19 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
 
                 consumers.setSubstitute(BBSRendering.getColorConsumer(color));
+
+                /* For some reason, due to Sodium and my color consumer, in some cases items like Trident,
+                 * shield, etc. not get rendered, but if in another arm there is another item, it does render...
+                 * So, I render a 0 size oak button to circumvent that bug! */
+                if (model.model instanceof BOBJModel)
+                {
+                    stack.push();
+                    stack.scale(0F, 0F, 0F);
+                    MinecraftClient.getInstance().getItemRenderer().renderItem(null, new ItemStack(Items.OAK_BUTTON), mode, mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);
+                    consumers.draw();
+                    stack.pop();
+                }
+
                 MinecraftClient.getInstance().getItemRenderer().renderItem(null, itemStack, mode, mode == ModelTransformationMode.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);
                 consumers.draw();
                 consumers.setSubstitute(null);
