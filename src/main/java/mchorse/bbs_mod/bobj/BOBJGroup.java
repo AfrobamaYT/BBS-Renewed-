@@ -13,9 +13,9 @@ public class BOBJGroup
         this.name = name;
     }
 
-    public int getDuration()
+    public float getDuration()
     {
-        int max = 0;
+        float max = 0;
 
         for (BOBJChannel channel : this.channels)
         {
@@ -23,7 +23,7 @@ public class BOBJGroup
 
             if (size > 0)
             {
-                max = Math.max(max, (int) channel.keyframes.get(size - 1).frame);
+                max = Math.max(max, channel.keyframes.get(size - 1).frame);
             }
         }
 

@@ -13,9 +13,9 @@ public class BOBJAction
         this.name = name;
     }
 
-    public int getDuration()
+    public float getDuration()
     {
-        int max = 0;
+        float max = 0;
 
         for (BOBJGroup group : this.groups.values())
         {
