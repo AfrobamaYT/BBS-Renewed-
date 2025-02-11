@@ -3,6 +3,7 @@ package mchorse.bbs_mod.utils.pose;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.IMapSerializable;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import org.joml.Matrix3f;
@@ -122,6 +123,21 @@ public class Transform implements IMapSerializable
         this.rotate2.set(transform.rotate2);
     }
 
+    public boolean isDefault()
+    {
+        return this.equals(DEFAULT);
+    }
+
+    public void toRad()
+    {
+        this.rotate.x = MathUtils.toRad(this.rotate.x);
+        this.rotate.y = MathUtils.toRad(this.rotate.y);
+        this.rotate.z = MathUtils.toRad(this.rotate.z);
+        this.rotate2.x = MathUtils.toRad(this.rotate2.x);
+        this.rotate2.y = MathUtils.toRad(this.rotate2.y);
+        this.rotate2.z = MathUtils.toRad(this.rotate2.z);
+    }
+
     @Override
     public void toData(MapType data)
     {
@@ -140,10 +156,5 @@ public class Transform implements IMapSerializable
         this.scale.set(DataStorageUtils.vector3fFromData(data.getList("s"), DEFAULT_SCALE));
         this.rotate.set(DataStorageUtils.vector3fFromData(data.getList("r")));
         this.rotate2.set(DataStorageUtils.vector3fFromData(data.getList("r2")));
-    }
-
-    public boolean isDefault()
-    {
-        return this.equals(DEFAULT);
     }
 }

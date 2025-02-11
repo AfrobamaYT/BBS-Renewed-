@@ -338,7 +338,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderItems(IEntity target, MatrixStack stack, EquipmentSlot slot, ModelTransformationMode mode, List<String> items, Color color, int overlay, int light)
+    private void renderItems(IEntity target, MatrixStack stack, EquipmentSlot slot, ModelTransformationMode mode, List<ArmorSlot> items, Color color, int overlay, int light)
     {
         ItemStack itemStack = target.getEquipmentStack(slot);
 
@@ -347,9 +347,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             return;
         }
 
-        for (String groupName : items)
+        for (ArmorSlot armorSlot : items)
         {
-            Matrix4f matrix = this.bones.get(groupName);
+            Matrix4f matrix = this.bones.get(armorSlot.group);
 
             if (matrix != null)
             {
@@ -360,6 +360,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90F));
                 stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
                 stack.translate(0F, 0.125F, 0F);
+                MatrixStackUtils.applyTransform(stack, armorSlot.transform);
 
                 CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
 

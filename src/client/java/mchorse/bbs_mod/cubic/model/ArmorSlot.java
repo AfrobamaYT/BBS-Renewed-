@@ -1,24 +1,37 @@
 package mchorse.bbs_mod.cubic.model;
 
-import mchorse.bbs_mod.data.IMapSerializable;
+import mchorse.bbs_mod.data.IDataSerializable;
+import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.utils.pose.Transform;
 
-public class ArmorSlot implements IMapSerializable
+public class ArmorSlot implements IDataSerializable
 {
-    public final Transform transform = new Transform();
     public String group = "";
+    public final Transform transform = new Transform();
 
     @Override
-    public void toData(MapType data)
+    public BaseType toData()
     {
         /* Unnecessary yet */
+        return new MapType();
     }
 
     @Override
-    public void fromData(MapType data)
+    public void fromData(BaseType data)
     {
-        this.transform.fromData(data.getMap("transform"));
-        this.group = data.getString("group");
+        if (data.isString())
+        {
+            this.transform.identity();
+            this.group = data.asString();
+        }
+        else if (data.isMap())
+        {
+            MapType map = data.asMap();
+
+            this.transform.fromData(map.getMap("transform"));
+            this.transform.toRad();
+            this.group = map.getString("group");
+        }
     }
 }

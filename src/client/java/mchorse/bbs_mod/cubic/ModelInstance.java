@@ -17,6 +17,7 @@ import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
 import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.obj.shapes.ShapeKeys;
@@ -61,8 +62,8 @@ public class ModelInstance implements IModelInstance
     public float uiScale = 1F;
     public Pose sneakingPose = new Pose();
 
-    public List<String> itemsMain = new ArrayList<>();
-    public List<String> itemsOff = new ArrayList<>();
+    public List<ArmorSlot> itemsMain = new ArrayList<>();
+    public List<ArmorSlot> itemsOff = new ArrayList<>();
     public Map<String, String> flippedParts = new HashMap<>();
     public Map<ArmorType, ArmorSlot> armorSlots = new HashMap<>();
 
@@ -128,8 +129,30 @@ public class ModelInstance implements IModelInstance
         {
             this.texture = LinkUtils.create(config.get("texture"));
         }
-        if (config.has("items_main")) this.itemsMain = DataStorageUtils.stringListFromData(config.get("items_main"));
-        if (config.has("items_off")) this.itemsOff = DataStorageUtils.stringListFromData(config.get("items_off"));
+        if (config.has("items_main"))
+        {
+            ListType list = config.get("items_main").asList();
+
+            for (BaseType type : list)
+            {
+                ArmorSlot slot = new ArmorSlot();
+
+                slot.fromData(type);
+                this.itemsMain.add(slot);
+            }
+        }
+        if (config.has("items_off"))
+        {
+            ListType list = config.get("items_off").asList();
+
+            for (BaseType type : list)
+            {
+                ArmorSlot slot = new ArmorSlot();
+
+                slot.fromData(type);
+                this.itemsOff.add(slot);
+            }
+        }
         if (config.has("ui_scale")) this.uiScale = config.getFloat("ui_scale");
         if (config.has("scale")) this.scale = DataStorageUtils.vector3fFromData(config.getList("scale"), new Vector3f(1F));
         if (config.has("sneaking_pose", BaseType.TYPE_MAP))
