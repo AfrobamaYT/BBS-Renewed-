@@ -74,6 +74,7 @@ public class BBSSettings
 
     public static ValueFloat recordingCountdown;
     public static ValueBoolean recordingSwipeDamage;
+    public static ValueBoolean recordingOverlays;
 
     public static ValueBoolean renderAllModelBlocks;
     public static ValueBoolean clickModelBlocks;
@@ -178,6 +179,7 @@ public class BBSSettings
 
         recordingCountdown = builder.category("recording").getFloat("countdown", 1.5F, 0F, 30F);
         recordingSwipeDamage = builder.getBoolean("swipe_damage", false);
+        recordingOverlays = builder.getBoolean("overlays", true);
 
         renderAllModelBlocks = builder.category("model_blocks").getBoolean("render_all", true);
         clickModelBlocks = builder.getBoolean("click", true);

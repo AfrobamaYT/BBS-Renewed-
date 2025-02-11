@@ -283,7 +283,7 @@ public class Films
         Batcher2D batcher2D = new Batcher2D(drawContext);
         Recorder recorder = BBSModClient.getFilms().getRecorder();
 
-        if (recorder != null)
+        if (recorder != null && BBSSettings.recordingOverlays.get())
         {
             String label = recorder.hasNotStarted() ?
                 String.valueOf(TimeUtils.toSeconds(recorder.countdown)) :

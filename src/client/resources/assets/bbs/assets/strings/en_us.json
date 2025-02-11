@@ -95,6 +95,8 @@
     "bbs.config.multiskin.tooltip": "Options regarding Multi-skin feature",
     "bbs.config.recording.countdown": "Recording countdown",
     "bbs.config.recording.countdown-comment": "Recording countdown (in seconds)",
+    "bbs.config.recording.overlays": "Overlays",
+    "bbs.config.recording.overlays-comment": "Whether recording overlays will be displayed (counter, current tick and camera preview will be displayed)",
     "bbs.config.recording.swipe_damage": "Swipe damage",
     "bbs.config.recording.swipe_damage-comment": "When swipe action clip gets recorded, insert also an automatic attack action clip",
     "bbs.config.recording.title": "Recording",

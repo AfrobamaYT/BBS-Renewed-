@@ -88,6 +88,11 @@ public class Recorder extends FilmController
     {
         super.render(context);
 
+        if (!BBSSettings.recordingOverlays.get())
+        {
+            return;
+        }
+
         Camera camera = context.camera();
         Vector4f vector = Vectors.TEMP_4F;
         Matrix4f matrix = Matrices.TEMP_4F;
