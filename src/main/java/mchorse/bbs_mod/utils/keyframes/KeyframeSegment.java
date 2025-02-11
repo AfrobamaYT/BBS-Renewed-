@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils.keyframes;
 
+import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
 
 /**
@@ -62,7 +63,7 @@ public class KeyframeSegment <T>
 
         this.duration = forcedDuration > 0 ? forcedDuration : this.b.getTick() - this.a.getTick();
         this.offset = ticks - this.a.getTick();
-        this.x = this.duration == 0 ? 0F : this.offset / this.duration;
+        this.x = MathUtils.clamp(this.duration == 0 ? 0F : this.offset / this.duration, 0F, 1F);
     }
 
     public T createInterpolated()

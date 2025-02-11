@@ -38,7 +38,7 @@ loom {
 		}
 	}
 
-	accessWidenerPath.set(getRootProject().file("src/client/resources/bbs.accesswidener"))
+	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
 }
 
 dependencies {
