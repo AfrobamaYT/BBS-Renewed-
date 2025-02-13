@@ -17,6 +17,7 @@ import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
+import mchorse.bbs_mod.resources.AssetProvider;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
@@ -27,6 +28,8 @@ import java.util.Map;
 
 public class BOBJModelLoader implements IModelLoader
 {
+    private Animations defaultAnimations;
+
     @Override
     public ModelInstance load(String id, ModelManager models, Link model, Collection<Link> links, MapType config)
     {
@@ -66,6 +69,22 @@ public class BOBJModelLoader implements IModelLoader
 
                 ModelInstance instance = new ModelInstance(id, bobjModel, this.convertAnimations(bobjData, new Animations(models.parser)), modelTexture);
 
+                if (id.startsWith("emoticons/"))
+                {
+                    if (this.defaultAnimations == null)
+                    {
+                        this.loadDefaultAnimations(models.provider, models.parser);
+                    }
+
+                    if (this.defaultAnimations != null)
+                    {
+                        for (Animation value : this.defaultAnimations.animations.values())
+                        {
+                            instance.animations.add(value);
+                        }
+                    }
+                }
+
                 instance.applyConfig(config);
 
                 return instance;
@@ -79,6 +98,23 @@ public class BOBJModelLoader implements IModelLoader
         }
 
         return null;
+    }
+
+    private void loadDefaultAnimations(AssetProvider provider, MolangParser parser)
+    {
+        this.defaultAnimations = new Animations(parser);
+
+        try (InputStream stream = provider.getAsset(Link.assets("actions.bobj")))
+        {
+            BOBJLoader.BOBJData bobjData = BOBJLoader.readData(stream);
+
+            this.convertAnimations(bobjData, this.defaultAnimations);
+        }
+        catch (Exception e)
+        {
+            System.err.println("Failed to load Emoticons' actions.bobj!");
+            e.printStackTrace();
+        }
     }
 
     private Animations convertAnimations(BOBJLoader.BOBJData bobjData, Animations animations)
@@ -163,6 +199,7 @@ public class BOBJModelLoader implements IModelLoader
 
             Keyframe<MolangExpression> keyframe = keyframeChannel.get(index);
 
+            /* Fill in interpolation and bezier handles */
             keyframe.getInterpolation().setInterp(b.interpolation.interp);
             keyframe.lx = a.frame - a.leftX;
             keyframe.ly = a.leftY - a.value;
