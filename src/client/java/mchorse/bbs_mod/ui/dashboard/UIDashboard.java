@@ -32,6 +32,7 @@ import mchorse.bbs_mod.ui.selectors.UISelectorsOverlayPanel;
 import mchorse.bbs_mod.ui.supporters.UISupportersPanel;
 import mchorse.bbs_mod.ui.utility.UIUtilityOverlayPanel;
 import mchorse.bbs_mod.ui.utility.audio.UIAudioEditorPanel;
+import mchorse.bbs_mod.ui.utils.UIChalkboard;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
@@ -63,6 +64,8 @@ public class UIDashboard extends UIBaseMenu
 
     private UISettingsOverlayPanel settingsPanel;
     private Perspective lastPerspective = Perspective.FIRST_PERSON;
+
+    private UIChalkboard chalkboard;
 
     public UIDashboard()
     {
@@ -100,10 +103,13 @@ public class UIDashboard extends UIBaseMenu
             UIOverlay.addOverlayRight(this.context, new UISelectorsOverlayPanel(), 240);
         });
         this.selectors.tooltip(UIKeys.SELECTORS_TITLE, Direction.TOP);
+        this.chalkboard = new UIChalkboard();
+        this.chalkboard.full(this.getRoot());
 
         this.panels.pinned.add(this.settings, this.selectors);
         this.getRoot().prepend(this.orbitUI);
         this.getRoot().add(this.orbitKeysUI);
+        this.getRoot().add(this.chalkboard);
 
         /* Register keys */
         IKey category = UIKeys.DASHBOARD_CATEGORY;
