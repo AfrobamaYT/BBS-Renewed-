@@ -740,6 +740,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (texture != null)
         {
+            context.batcher.box(0, 0, context.menu.width, context.menu.height, Colors.A100);
+
             int w = context.menu.width;
             int h = context.menu.height;
             Vector2i resize = Vectors.resize(texture.width / (float) texture.height, w, h);

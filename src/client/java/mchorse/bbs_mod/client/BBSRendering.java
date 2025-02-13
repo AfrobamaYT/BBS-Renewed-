@@ -125,6 +125,11 @@ public class BBSRendering
         return movies;
     }
 
+    public static boolean canReplaceFramebuffer()
+    {
+        return customSize && renderingWorld;
+    }
+
     public static boolean isCustomSize()
     {
         return customSize;
@@ -144,10 +149,7 @@ public class BBSRendering
 
         if (!customSize)
         {
-            Framebuffer efb = MinecraftClient.getInstance().worldRenderer.getEntityOutlinesFramebuffer();
-            Window window = MinecraftClient.getInstance().getWindow();
-
-            efb.resize(window.getFramebufferWidth(), window.getFramebufferHeight(), false);
+            resizeExtraFramebuffers();
         }
     }
 
@@ -210,7 +212,7 @@ public class BBSRendering
         }
     }
 
-    private static void resizeFramebuffer(Framebuffer framebuffer)
+    public static void resizeFramebuffer(Framebuffer framebuffer)
     {
         if (framebuffer == null)
         {
@@ -269,7 +271,11 @@ public class BBSRendering
             reassignFramebuffer(clientFramebuffer);
 
             mc.getFramebuffer().beginWrite(true);
-            framebuffer.draw(window.getFramebufferWidth(), window.getFramebufferHeight());
+
+            if (width != 0)
+            {
+                framebuffer.draw(window.getFramebufferWidth(), window.getFramebufferHeight());
+            }
         }
     }
 
