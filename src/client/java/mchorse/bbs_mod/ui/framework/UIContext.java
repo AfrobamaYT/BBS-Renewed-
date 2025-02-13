@@ -380,6 +380,15 @@ public class UIContext implements IViewportStack
         this.menu.overlay.add(menu);
     }
 
+    public void closeContextMenu()
+    {
+        if (this.contextMenu != null)
+        {
+            this.contextMenu.removeFromParent();
+            this.contextMenu = null;
+        }
+    }
+
     /* Viewport */
 
     /**
