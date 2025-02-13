@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.bobj;
 
-import mchorse.bbs_mod.utils.interps.Lerps;
-import net.minecraft.util.math.MathHelper;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 
 /**
  * BOBJ keyframe. This class is responsible for holding data about a 
@@ -87,61 +87,20 @@ public class BOBJKeyframe
         this.rightY = rightY;
     }
 
-    public float interpolate(float x, BOBJKeyframe next)
-    {
-        return this.interpolation.interpolate(this, x, next);
-    }
-
     /**
      * Interpolations. These enums provide different interpolation types.
      */
     public static enum Interpolation
     {
-        CONSTANT
+        CONSTANT(Interpolations.CONST),
+        LINEAR(Interpolations.LINEAR),
+        BEZIER(Interpolations.BEZIER);
+
+        public final IInterp interp;
+
+        Interpolation(IInterp interp)
         {
-            @Override
-            public float interpolate(BOBJKeyframe keyframe, float x, BOBJKeyframe next)
-            {
-                return keyframe.value;
-            }
-        },
-        LINEAR
-        {
-            @Override
-            public float interpolate(BOBJKeyframe keyframe, float x, BOBJKeyframe next)
-            {
-                return Lerps.lerp(keyframe.value, next.value, x);
-            }
-        },
-        BEZIER
-        {
-            @Override
-            public float interpolate(BOBJKeyframe keyframe, float x, BOBJKeyframe next)
-            {
-                if (x <= 0) return keyframe.value;
-                if (x >= 1) return next.value;
-
-                /* Transform input to 0..1 */
-                float w = next.frame - keyframe.frame;
-                float h = next.value - keyframe.value;
-
-                /* In case if there is no slope whatsoever */
-                if (h == 0) h = 0.00001F;
-
-                float x1 = (keyframe.rightX - keyframe.frame) / w;
-                float y1 = (keyframe.rightY - keyframe.value) / h;
-                float x2 = (next.leftX - keyframe.frame) / w;
-                float y2 = (next.leftY - keyframe.value) / h;
-                float e = 0.0005F;
-
-                e = h == 0 ? e : Math.max(Math.min(e, 1 / h * e), 0.00001F);
-                x1 = MathHelper.clamp(x1, 0, 1);
-                x2 = MathHelper.clamp(x2, 0, 1);
-
-                return Lerps.bezier(0, y1, y2, 1, Lerps.bezierX(x1, x2, x, e)) * h + keyframe.value;
-            }
-        };
-
-        public abstract float interpolate(BOBJKeyframe keyframe, float x, BOBJKeyframe next);
+            this.interp = interp;
+        }
     }
 }

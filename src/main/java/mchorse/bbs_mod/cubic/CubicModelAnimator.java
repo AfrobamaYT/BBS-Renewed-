@@ -1,18 +1,18 @@
 package mchorse.bbs_mod.cubic;
 
 import mchorse.bbs_mod.cubic.data.animation.Animation;
-import mchorse.bbs_mod.cubic.data.animation.AnimationChannel;
-import mchorse.bbs_mod.cubic.data.animation.AnimationInterpolation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
-import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
-import mchorse.bbs_mod.utils.Axis;
+import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.keyframes.BezierUtils;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.pose.Transform;
 import org.joml.Vector3d;
-
-import java.util.List;
 
 public class CubicModelAnimator
 {
@@ -20,60 +20,39 @@ public class CubicModelAnimator
     private static Vector3d s = new Vector3d();
     private static Vector3d r = new Vector3d();
 
-    public static Vector3d interpolateList(Vector3d vector, AnimationChannel channel, float frame, MolangHelper.Component component)
+    public static Vector3d interpolateList(Vector3d output, KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, float frame, double defaultValue)
     {
-        return interpolate(vector, channel, frame, component);
-    }
-
-    public static Vector3d interpolate(Vector3d output, AnimationChannel channel, float frame, MolangHelper.Component component)
-    {
-        List<AnimationVector> keyframes = channel.keyframes;
-
-        if (keyframes.isEmpty())
-        {
-            output.set(0, 0, 0);
-
-            return output;
-        }
-
-        AnimationVector first = keyframes.get(0);
-
-        if (frame < first.time * 20)
-        {
-            output.x = MolangHelper.getValue(first.getStart(Axis.X), component, Axis.X);
-            output.y = MolangHelper.getValue(first.getStart(Axis.Y), component, Axis.Y);
-            output.z = MolangHelper.getValue(first.getStart(Axis.Z), component, Axis.Z);
-
-            return output;
-        }
-
-        double duration = first.time * 20;
-
-        for (AnimationVector vector : keyframes)
-        {
-            double length = vector.getLengthInTicks();
-
-            if (frame >= duration && frame < duration + length)
-            {
-                double factor = (frame - duration) / length;
-
-                output.x = AnimationInterpolation.interpolate(vector, component, Axis.X, factor);
-                output.y = AnimationInterpolation.interpolate(vector, component, Axis.Y, factor);
-                output.z = AnimationInterpolation.interpolate(vector, component, Axis.Z, factor);
-
-                return output;
-            }
-
-            duration += length;
-        }
-
-        AnimationVector last = keyframes.get(keyframes.size() - 1);
-
-        output.x = MolangHelper.getValue(last.getStart(Axis.X), component, Axis.X);
-        output.y = MolangHelper.getValue(last.getStart(Axis.Y), component, Axis.Y);
-        output.z = MolangHelper.getValue(last.getStart(Axis.Z), component, Axis.Z);
+        output.x = interpolateSegment(x.findSegment(frame), defaultValue);
+        output.y = interpolateSegment(y.findSegment(frame), defaultValue);
+        output.z = interpolateSegment(z.findSegment(frame), defaultValue);
 
         return output;
+    }
+
+    private static double interpolateSegment(KeyframeSegment<MolangExpression> segment, double defaultValue)
+    {
+        if (segment == null)
+        {
+            return defaultValue;
+        }
+
+        double start = segment.a.getValue().get();
+        double destination = segment.b.getValue().get();
+
+        if (segment.b.getInterpolation().getInterp() == Interpolations.BEZIER)
+        {
+            return BezierUtils.get(start, destination,
+                segment.a.getTick(), segment.b.getTick(),
+                segment.a.rx, segment.a.ry,
+                segment.b.lx, segment.b.ly,
+                segment.x
+            );
+        }
+
+        double pre = segment.preA.getValue().get();
+        double post = segment.postB.getValue().get();
+
+        return segment.b.getInterpolation().interpolate(IInterp.context.set(pre, start, destination, post, segment.x));
     }
 
     public static void animate(Model model, Animation animation, float frame, float blend, boolean skipInitial)
@@ -115,9 +94,14 @@ public class CubicModelAnimator
 
     private static void applyGroupAnimation(ModelGroup group, AnimationPart animation, float frame, float blend)
     {
-        Vector3d position = interpolateList(p, animation.position, frame, MolangHelper.Component.POSITION);
-        Vector3d scale = interpolateList(s, animation.scale, frame, MolangHelper.Component.SCALE);
-        Vector3d rotation = interpolateList(r, animation.rotation, frame, MolangHelper.Component.ROTATION);
+        Vector3d position = interpolateList(p, animation.x, animation.y, animation.z, frame, 0D);
+        Vector3d scale = interpolateList(s, animation.sx, animation.sy, animation.sz, frame, 1D);
+        Vector3d rotation = interpolateList(r, animation.rx, animation.ry, animation.rz, frame, 0D);
+
+        scale.sub(1, 1, 1);
+
+        rotation.x *= -1;
+        rotation.y *= -1;
 
         Transform initial = group.initial;
         Transform current = group.current;

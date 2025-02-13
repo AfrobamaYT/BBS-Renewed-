@@ -5,15 +5,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import mchorse.bbs_mod.cubic.data.animation.Animation;
-import mchorse.bbs_mod.cubic.data.animation.AnimationChannel;
 import mchorse.bbs_mod.cubic.data.animation.AnimationInterpolation;
 import mchorse.bbs_mod.cubic.data.animation.AnimationPart;
-import mchorse.bbs_mod.cubic.data.animation.AnimationVector;
 import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
+import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
+import mchorse.bbs_mod.utils.keyframes.Keyframe;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 
 import java.util.Map;
 
@@ -43,23 +44,22 @@ public class GeoAnimationParser
     {
         AnimationPart part = new AnimationPart(parser);
 
-        if (object.has("position")) parseChannel(parser, part.position, object.get("position"));
-        if (object.has("scale")) parseChannel(parser, part.scale, object.get("scale"));
-        if (object.has("rotation")) parseChannel(parser, part.rotation, object.get("rotation"));
+        if (object.has("position")) parseChannel(parser, part.x, part.y, part.z, object.get("position"));
+        if (object.has("scale")) parseChannel(parser, part.sx, part.sy, part.sz, object.get("scale"));
+        if (object.has("rotation")) parseChannel(parser, part.rx, part.ry, part.rz, object.get("rotation"));
 
         return part;
     }
 
-    private static void parseChannel(MolangParser parser, AnimationChannel channel, JsonElement element) throws Exception
+    private static void parseChannel(MolangParser parser, KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, JsonElement element) throws Exception
     {
         if (element.isJsonArray())
         {
-            AnimationVector vector = parseAnimationVector(parser, element);
+            Vector vector = parseAnimationVector(parser, element);
 
             if (vector != null)
             {
-                channel.keyframes.add(vector);
-                channel.sort();
+                insertKeyframe(0F, x, y, z, vector);
             }
 
             return;
@@ -74,7 +74,12 @@ public class GeoAnimationParser
 
         if (object.has("vector"))
         {
-            channel.keyframes.add(parseAnimationVector(parser, object));
+            Vector vector = parseAnimationVector(parser, object);
+
+            if (vector != null)
+            {
+                insertKeyframe(0F, x, y, z, vector);
+            }
         }
         else
         {
@@ -91,20 +96,36 @@ public class GeoAnimationParser
                     continue;
                 }
 
-                AnimationVector vector = parseAnimationVector(parser, entry.getValue());
+                Vector vector = parseAnimationVector(parser, entry.getValue());
 
                 if (vector != null)
                 {
-                    vector.time = time;
-                    channel.keyframes.add(vector);
+                    insertKeyframe((float) time, x, y, z, vector);
                 }
             }
         }
 
-        channel.sort();
+        x.sort();
+        y.sort();
+        z.sort();
     }
 
-    private static AnimationVector parseAnimationVector(MolangParser parser, JsonElement element) throws Exception
+    private static void insertKeyframe(float t, KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, Vector vector)
+    {
+        insertKeyframe(x, t * 20F, vector.x, vector.interp);
+        insertKeyframe(y, t * 20F, vector.y, vector.interp);
+        insertKeyframe(z, t * 20F, vector.z, vector.interp);
+    }
+
+    private static void insertKeyframe(KeyframeChannel<MolangExpression> channel, float t, MolangExpression e, IInterp interp)
+    {
+        int index = channel.insert(t, e);
+        Keyframe<MolangExpression> kf = channel.get(index);
+
+        kf.getInterpolation().setInterp(interp);
+    }
+
+    private static Vector parseAnimationVector(MolangParser parser, JsonElement element) throws Exception
     {
         JsonArray array = element.isJsonArray() ? element.getAsJsonArray() : null;
 
@@ -129,7 +150,12 @@ public class GeoAnimationParser
             }
         }
 
-        AnimationVector vector = new AnimationVector();
+        if (array == null || array.size() < 3)
+        {
+            return null;
+        }
+
+        Vector vector = new Vector();
 
         vector.x = parseValue(parser, array.get(0));
         vector.y = parseValue(parser, array.get(1));
@@ -164,5 +190,13 @@ public class GeoAnimationParser
         }
 
         return parser.parseExpression(primitive.getAsString());
+    }
+
+    private static class Vector
+    {
+        public MolangExpression x;
+        public MolangExpression y;
+        public MolangExpression z;
+        public IInterp interp = Interpolations.LINEAR;
     }
 }

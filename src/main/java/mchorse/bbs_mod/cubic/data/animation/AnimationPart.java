@@ -9,12 +9,26 @@ import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
 import mchorse.bbs_mod.math.molang.expressions.MolangValue;
+import mchorse.bbs_mod.utils.interps.IInterp;
+import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+
+import java.util.List;
 
 public class AnimationPart implements IMapSerializable
 {
-    public final AnimationChannel position = new AnimationChannel();
-    public final AnimationChannel scale = new AnimationChannel();
-    public final AnimationChannel rotation = new AnimationChannel();
+    public final KeyframeChannel<MolangExpression> x = new KeyframeChannel<>("x", null);
+    public final KeyframeChannel<MolangExpression> y = new KeyframeChannel<>("y", null);
+    public final KeyframeChannel<MolangExpression> z = new KeyframeChannel<>("z", null);
+
+    public final KeyframeChannel<MolangExpression> sx = new KeyframeChannel<>("sx", null);
+    public final KeyframeChannel<MolangExpression> sy = new KeyframeChannel<>("sy", null);
+    public final KeyframeChannel<MolangExpression> sz = new KeyframeChannel<>("sz", null);
+
+    public final KeyframeChannel<MolangExpression> rx = new KeyframeChannel<>("rx", null);
+    public final KeyframeChannel<MolangExpression> ry = new KeyframeChannel<>("ry", null);
+    public final KeyframeChannel<MolangExpression> rz = new KeyframeChannel<>("rz", null);
+
+    public final List<KeyframeChannel<MolangExpression>> channels = List.of(this.x, this.y, this.z, this.sx, this.sy, this.sz, this.rx, this.ry, this.rz);
 
     private MolangParser parser;
 
@@ -26,39 +40,43 @@ public class AnimationPart implements IMapSerializable
     @Override
     public void fromData(MapType data)
     {
-        if (data.has("translate")) parseChannel(this.position, data.get("translate"), MolangParser.ZERO);
-        if (data.has("scale")) parseChannel(this.scale, data.get("scale"), MolangParser.ONE);
-        if (data.has("rotate")) parseChannel(this.rotation, data.get("rotate"), MolangParser.ZERO);
+        if (data.has("translate")) parseChannel(this.x, this.y, this.z, data.get("translate"), MolangParser.ZERO);
+        if (data.has("scale")) parseChannel(this.sx, this.sy, this.sz, data.get("scale"), MolangParser.ONE);
+        if (data.has("rotate")) parseChannel(this.rx, this.ry, this.rz, data.get("rotate"), MolangParser.ZERO);
     }
 
-    private void parseChannel(AnimationChannel channel, BaseType data, MolangExpression defaultValue)
+    private void parseChannel(KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, BaseType data, MolangExpression defaultValue)
     {
         if (BaseType.isList(data))
         {
             for (BaseType keyframe : (ListType) data)
             {
-                channel.keyframes.add(this.parseAnimationVector(keyframe, defaultValue));
+                this.parseAnimationVector(x, y, z, keyframe, defaultValue);
             }
-
-            channel.sort();
         }
+
+        x.sort();
+        y.sort();
+        z.sort();
     }
 
-    private AnimationVector parseAnimationVector(BaseType data, MolangExpression defaultValue)
+    private void parseAnimationVector(KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z, BaseType data, MolangExpression defaultValue)
     {
         ListType values = (ListType) data;
-        AnimationVector vector = new AnimationVector();
 
         if (values.size() >= 5)
         {
-            vector.time = values.getDouble(0);
-            vector.interp = AnimationInterpolation.byName(values.getString(1));
-            vector.x = this.parseValue(this.parser, values.get(2), defaultValue);
-            vector.y = this.parseValue(this.parser, values.get(3), defaultValue);
-            vector.z = this.parseValue(this.parser, values.get(4), defaultValue);
-        }
+            double time = values.getDouble(0) * 20F;
+            IInterp interp = AnimationInterpolation.byName(values.getString(1));
 
-        return vector;
+            int xIndex = x.insert((float) time, this.parseValue(this.parser, values.get(2), defaultValue));
+            int yIndex = y.insert((float) time, this.parseValue(this.parser, values.get(3), defaultValue));
+            int zIndex = z.insert((float) time, this.parseValue(this.parser, values.get(4), defaultValue));
+
+            x.get(xIndex).getInterpolation().setInterp(interp);
+            y.get(yIndex).getInterpolation().setInterp(interp);
+            z.get(zIndex).getInterpolation().setInterp(interp);
+        }
     }
 
     private MolangExpression parseValue(MolangParser parser, BaseType element, MolangExpression defaultValue)
@@ -83,16 +101,16 @@ public class AnimationPart implements IMapSerializable
     @Override
     public void toData(MapType data)
     {
-        data.put("translate", this.serializeChannel(this.position));
-        data.put("scale", this.serializeChannel(this.scale));
-        data.put("rotate", this.serializeChannel(this.rotation));
+        data.put("translate", this.serializeChannel(this.x, this.y, this.z));
+        data.put("scale", this.serializeChannel(this.sx, this.sy, this.sz));
+        data.put("rotate", this.serializeChannel(this.rx, this.ry, this.rz));
     }
 
-    private ListType serializeChannel(AnimationChannel channel)
+    private ListType serializeChannel(KeyframeChannel<MolangExpression> x, KeyframeChannel<MolangExpression> y, KeyframeChannel<MolangExpression> z)
     {
         ListType list = new ListType();
 
-        for (AnimationVector keyframe : channel.keyframes)
+        /* TODO: for (AnimationVector keyframe : channel.keyframes)
         {
             ListType keyframeList = new ListType();
 
@@ -103,7 +121,7 @@ public class AnimationPart implements IMapSerializable
             keyframeList.add(keyframe.z.toData());
 
             list.add(keyframeList);
-        }
+        } */
 
         return list;
     }

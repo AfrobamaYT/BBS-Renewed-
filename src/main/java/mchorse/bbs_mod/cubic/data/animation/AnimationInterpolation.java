@@ -1,7 +1,5 @@
 package mchorse.bbs_mod.cubic.data.animation;
 
-import mchorse.bbs_mod.cubic.MolangHelper;
-import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.interps.IInterp;
 import mchorse.bbs_mod.utils.interps.Interpolations;
@@ -61,22 +59,5 @@ public class AnimationInterpolation
     public static String toName(IInterp interp)
     {
         return CollectionUtils.getKey(GECKO_LIB_NAMES, interp);
-    }
-
-    public static double interpolate(AnimationVector vector, MolangHelper.Component component, Axis axis, double factor)
-    {
-        IInterp interpolation = Interpolations.LINEAR;
-        double start = MolangHelper.getValue(vector.getStart(axis), component, axis);
-        double destination = MolangHelper.getValue(vector.getEnd(axis), component, axis);
-        double pre = start;
-        double post = destination;
-
-        if (vector.next != null) interpolation = vector.next.interp;
-        if (vector.interp == Interpolations.CONST) interpolation = vector.interp;
-
-        if (vector.prev != null) pre = MolangHelper.getValue(vector.prev.getStart(axis), component, axis);
-        if (vector.next != null) post = MolangHelper.getValue(vector.next.getEnd(axis), component, axis);
-
-        return interpolation.interpolate(IInterp.context.set(pre, start, destination, post, factor));
     }
 }

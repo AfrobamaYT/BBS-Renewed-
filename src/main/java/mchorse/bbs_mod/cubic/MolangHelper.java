@@ -2,8 +2,6 @@ package mchorse.bbs_mod.cubic;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.math.molang.MolangParser;
-import mchorse.bbs_mod.math.molang.expressions.MolangExpression;
-import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
@@ -111,42 +109,5 @@ public class MolangHelper
         parser.setValue("query.limb_swing", limbSwing);
         parser.setValue("query.limb_swing_amount", limbSwingAmount);
         parser.setValue("query.age", age);
-    }
-
-    /**
-     * Get value from given value of a keyframe (end or start)
-     *
-     * This method is responsible for processing keyframe value, because
-     * for some reason constant values are exported in radians, while molang
-     * expressions are in degrees
-     *
-     * Plus X and Y axis of rotation are inverted for some reason ...
-     */
-    public static double getValue(MolangExpression value, Component component, Axis axis)
-    {
-        double out = value.get();
-
-        if (component == Component.ROTATION)
-        {
-            if (axis == Axis.X || axis == Axis.Y)
-            {
-                out *= -1;
-            }
-        }
-        else if (component == Component.SCALE)
-        {
-            out = out - 1;
-        }
-
-        return out;
-    }
-
-    /**
-     * Component enum determines which part of the animation is being
-     * calculated
-     */
-    public static enum Component
-    {
-        POSITION, ROTATION, SCALE
     }
 }
