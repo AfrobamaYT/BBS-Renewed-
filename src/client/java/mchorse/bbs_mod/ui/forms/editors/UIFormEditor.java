@@ -160,6 +160,13 @@ public class UIFormEditor extends UIElement implements IUIFormList
             {
                 current.part.setForm(FormUtils.copy(f));
 
+                if (current.part.getForm().getId().contains("particle"))
+                {
+                    current.part.useTarget = true;
+
+                    this.useTarget.setValue(true);
+                }
+
                 this.refreshFormList();
                 this.switchEditor(current.part.getForm());
             });
