@@ -574,9 +574,9 @@ public class UIReplaysEditor extends UIElement
 
             if (onlyKeyframes)
             {
-                List<Integer> list = this.getTicks(animation);
+                List<Float> list = this.getTicks(animation);
 
-                for (int i : list)
+                for (float i : list)
                 {
                     this.fillAnimationPose(sheet, i, model, entity, animation, current);
                 }
@@ -593,9 +593,9 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    private List<Integer> getTicks(Animation animation)
+    private List<Float> getTicks(Animation animation)
     {
-        Set<Integer> integers = new HashSet<>();
+        Set<Float> integers = new HashSet<>();
 
         for (AnimationPart value : animation.parts.values())
         {
@@ -603,19 +603,19 @@ public class UIReplaysEditor extends UIElement
             {
                 for (Keyframe<MolangExpression> keyframe : channel.getKeyframes())
                 {
-                    integers.add(TimeUtils.toTick(keyframe.getTick()));
+                    integers.add(keyframe.getTick());
                 }
             }
         }
 
-        ArrayList<Integer> ticks = new ArrayList<>(integers);
+        ArrayList<Float> ticks = new ArrayList<>(integers);
 
         Collections.sort(ticks);
 
         return ticks;
     }
 
-    private void fillAnimationPose(UIKeyframeSheet sheet, int i, ModelInstance model, IEntity entity, Animation animation, int current)
+    private void fillAnimationPose(UIKeyframeSheet sheet, float i, ModelInstance model, IEntity entity, Animation animation, int current)
     {
         model.model.resetPose();
         model.model.apply(entity, animation, i, 1F, 0F, false);
