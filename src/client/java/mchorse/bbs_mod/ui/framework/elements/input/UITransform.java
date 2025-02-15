@@ -348,15 +348,15 @@ public abstract class UITransform extends UIElement
         Vector3d rotation = this.getVector(list, 9);
 
         this.r2x.setValue(rotation.x);
-        this.r2y.setValue(rotation.y);
-        this.r2z.setValueAndNotify(rotation.z);
+        this.r2y.setValue(rotation.y * (Window.isShiftPressed() ? -1 : 1));
+        this.r2z.setValueAndNotify(rotation.z * (Window.isShiftPressed() ? -1 : 1));
     }
 
     public void pasteTranslation(ListType list)
     {
         Vector3d translation = this.getVector(list, 0);
 
-        this.tx.setValue(translation.x);
+        this.tx.setValue(translation.x * (Window.isShiftPressed() ? -1 : 1));
         this.ty.setValue(translation.y);
         this.tz.setValueAndNotify(translation.z);
     }
@@ -375,8 +375,8 @@ public abstract class UITransform extends UIElement
         Vector3d rotation = this.getVector(list, 6);
 
         this.rx.setValue(rotation.x);
-        this.ry.setValue(rotation.y);
-        this.rz.setValueAndNotify(rotation.z);
+        this.ry.setValue(rotation.y * (Window.isShiftPressed() ? -1 : 1));
+        this.rz.setValueAndNotify(rotation.z * (Window.isShiftPressed() ? -1 : 1));
     }
 
     private Vector3d getVector(ListType list, int offset)
