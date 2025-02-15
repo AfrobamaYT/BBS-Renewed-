@@ -2,11 +2,13 @@ package mchorse.bbs_mod.ui.framework.elements.overlay;
 
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.audio.AudioReader;
+import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.audio.SoundPlayer;
+import mchorse.bbs_mod.audio.Wave;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
-import mchorse.bbs_mod.ui.utils.icons.Icons;
+import mchorse.bbs_mod.ui.film.screenplay.UIAudioPlayer;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,6 +16,8 @@ import java.util.function.Consumer;
 
 public class UISoundOverlayPanel extends UIStringOverlayPanel
 {
+    public UIAudioPlayer player;
+
     private static Set<String> getSoundEvents()
     {
         Set<String> locations = new HashSet<>();
@@ -34,32 +38,38 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
 
     public UISoundOverlayPanel(Consumer<Link> callback)
     {
-        super(UIKeys.OVERLAYS_SOUNDS_MAIN, getSoundEvents(), (str) ->
+        super(UIKeys.OVERLAYS_SOUNDS_MAIN, getSoundEvents(), null);
+
+        this.callback((str) ->
         {
             if (callback != null)
             {
-                callback.accept(Link.create(str));
+                Link link = Link.create(str);
+
+                callback.accept(link);
+
+                try
+                {
+                    SoundManager sounds = BBSModClient.getSounds();
+                    Wave wave = AudioReader.read(BBSMod.getProvider(), link);
+                    SoundPlayer player = this.player.getPlayer();
+
+                    if (player != null)
+                    {
+                        player.stop();
+                    }
+
+                    this.player.loadAudio(wave, sounds.readColorCodes(link));
+                }
+                catch (Exception e)
+                {}
             }
         });
 
-        UIIcon edit = new UIIcon(Icons.SOUND, (b) -> this.playSound());
+        this.player = new UIAudioPlayer();
 
-        this.icons.add(edit);
-    }
-
-    private void playSound()
-    {
-        if (this.strings.list.getIndex() <= 0)
-        {
-            return;
-        }
-
-        Link location = Link.create(this.strings.list.getCurrentFirst());
-        SoundPlayer play = BBSModClient.getSounds().play(location);
-
-        if (play != null)
-        {
-            play.setRelative(true);
-        }
+        this.content.add(this.player);
+        this.player.relative(this.content).x(6).w(1F, -12).h(20);
+        this.strings.y(20).h(1F, -20);
     }
 }
