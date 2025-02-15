@@ -136,6 +136,7 @@ public class TrackerClientClip extends TrackerClip
         position.angle.yaw = this.isActive(3) ? (float) newAngle.y : position.angle.yaw;
         position.angle.pitch = this.isActive(4) ? (float) newAngle.x : position.angle.pitch;
         position.angle.roll = this.isActive(5) ? (float) newAngle.z : position.angle.roll;
+        position.angle.fov = this.isActive(6) ? this.fov.get() : position.angle.fov;
     }
 
     public boolean isActive(int bit)

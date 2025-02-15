@@ -12,6 +12,7 @@ import mchorse.bbs_mod.ui.film.clips.modules.UIPointModule;
 import mchorse.bbs_mod.ui.film.clips.widgets.UIBitToggle;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIAnchorKeyframeFactory;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.CollectionUtils;
@@ -30,6 +31,7 @@ public class UITrackerClip extends UIClip<TrackerClip>
 
     public UIPointModule point;
     public UIPointModule angle;
+    public UITrackpad fov;
     public UIToggle lookAt;
     public UIToggle relative;
     public UIBitToggle active;
@@ -57,10 +59,11 @@ public class UITrackerClip extends UIClip<TrackerClip>
 
         this.point = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
         this.angle = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_ANGLE).contextMenu();
+        this.fov = new UITrackpad((v) -> this.clip.fov.set(v.floatValue()));
+        this.fov.tooltip(UIKeys.CAMERA_PANELS_FOV);
         this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, b -> this.clip.lookAt.set(b.getValue()));
         this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, b -> this.clip.relative.set(b.getValue()));
         this.active = new UIBitToggle((value) -> this.clip.active.set(value)).all();
-        this.active.bits.remove(this.active.bits.size() - 1);
     }
 
     private void displayGroups()
@@ -110,6 +113,7 @@ public class UITrackerClip extends UIClip<TrackerClip>
 
         this.panels.add(this.point.marginTop(6));
         this.panels.add(this.angle.marginTop(6));
+        this.panels.add(this.fov);
         this.panels.add(this.lookAt);
         this.panels.add(this.relative);
         this.panels.add(this.active);
@@ -122,6 +126,7 @@ public class UITrackerClip extends UIClip<TrackerClip>
 
         this.point.fill(this.clip.offset);
         this.angle.fill(this.clip.angle);
+        this.fov.setValue(this.clip.fov.get());
         this.lookAt.setValue(this.clip.lookAt.get());
         this.relative.setValue(this.clip.relative.get());
         this.active.setValue(this.clip.active.get());
