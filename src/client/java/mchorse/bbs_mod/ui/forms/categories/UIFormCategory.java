@@ -25,7 +25,6 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
-import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
@@ -101,7 +100,7 @@ public class UIFormCategory extends UIElement
                                 continue;
                             }
 
-                            m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.title), () ->
+                            m.action(Icons.ADD, UIKeys.FORMS_CATEGORIES_CONTEXT_COPY_TO.format(formCategory.getProcessedTitle()), () ->
                             {
                                 formCategory.addForm(FormUtils.copy(this.selected));
                             });
@@ -236,7 +235,7 @@ public class UIFormCategory extends UIElement
     {
         super.render(context);
 
-        context.batcher.textCard(StringUtils.processColoredText(this.category.title.get()), this.area.x + 26, this.area.y + 6);
+        context.batcher.textCard(this.category.getProcessedTitle(), this.area.x + 26, this.area.y + 6);
 
         if (this.category.visible.get())
         {

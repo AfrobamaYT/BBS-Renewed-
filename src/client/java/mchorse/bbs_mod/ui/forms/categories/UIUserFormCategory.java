@@ -67,7 +67,7 @@ public class UIUserFormCategory extends UIFormCategory
                 menu.action(Icons.TRASH, UIKeys.FORMS_CATEGORIES_CONTEXT_REMOVE_CATEGORY, () ->
                 {
                     UIConfirmOverlayPanel panel = new UIConfirmOverlayPanel(
-                        UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE.format(this.category.title),
+                        UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_TITLE.format(this.category.getProcessedTitle()),
                         UIKeys.FORMS_CATEGORIES_REMOVE_CATEGORY_DESCRIPTION,
                         (confirm) ->
                         {

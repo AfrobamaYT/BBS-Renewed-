@@ -11,6 +11,7 @@ import mchorse.bbs_mod.settings.values.ValueBoolean;
 import mchorse.bbs_mod.ui.forms.UIFormList;
 import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.utils.CollectionUtils;
+import mchorse.bbs_mod.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +28,11 @@ public class FormCategory implements IMapSerializable
     {
         this.title = title;
         this.visible = visible;
+    }
+
+    public String getProcessedTitle()
+    {
+        return StringUtils.processColoredText(this.title.get());
     }
 
     public boolean canModify(Form form)
