@@ -107,7 +107,6 @@ public class BBSModClient implements ClientModInitializer
     private static GunItemRenderer gunItemRenderer = new GunItemRenderer();
     private static Films films;
 
-    private static boolean requestToggleRecording;
     private static float originalFramebufferScale;
 
     public static TextureManager getTextures()
@@ -339,21 +338,6 @@ public class BBSModClient implements ClientModInitializer
 
         WorldRenderEvents.LAST.register((context) ->
         {
-            if (requestToggleRecording)
-            {
-                Window window = MinecraftClient.getInstance().getWindow();
-                int width = Math.max(window.getWidth(), 2);
-                int height = Math.max(window.getHeight(), 2);
-
-                if (width % 2 == 1) width -= width % 2;
-                if (height % 2 == 1) height -= height % 2;
-
-                videoRecorder.toggleRecording(BBSRendering.getTexture().id, width, height);
-                BBSRendering.setCustomSize(videoRecorder.isRecording(), width, height);
-
-                requestToggleRecording = false;
-            }
-
             if (videoRecorder.isRecording() && BBSRendering.canRender)
             {
                 videoRecorder.recordFrame();
@@ -400,7 +384,18 @@ public class BBSModClient implements ClientModInitializer
             while (keyItemEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
             while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
-            while (keyRecordVideo.wasPressed()) requestToggleRecording = true;
+            while (keyRecordVideo.wasPressed())
+            {
+                Window window = MinecraftClient.getInstance().getWindow();
+                int width = Math.max(window.getWidth(), 2);
+                int height = Math.max(window.getHeight(), 2);
+
+                if (width % 2 == 1) width -= width % 2;
+                if (height % 2 == 1) height -= height % 2;
+
+                videoRecorder.toggleRecording(BBSRendering.getTexture().id, width, height);
+                BBSRendering.setCustomSize(videoRecorder.isRecording(), width, height);
+            }
             while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
             while (keyOpenMorphing.wasPressed())
             {
@@ -421,6 +416,7 @@ public class BBSModClient implements ClientModInitializer
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) -> BBSResources.stopWatchdog());
         ClientLifecycleEvents.CLIENT_STARTED.register((e) ->
         {
+            BBSRendering.setupFramebuffer();
             provider.register(new MinecraftSourcePack());
 
             Window window = MinecraftClient.getInstance().getWindow();

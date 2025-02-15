@@ -194,6 +194,18 @@ public class BBSRendering
 
     /* Framebuffers */
 
+    public static Framebuffer getFramebuffer()
+    {
+        return framebuffer;
+    }
+
+    public static void setupFramebuffer()
+    {
+        Window window = MinecraftClient.getInstance().getWindow();
+
+        framebuffer = new WindowFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight());
+    }
+
     public static void resizeExtraFramebuffers()
     {
         Set<Framebuffer> buffers = new HashSet<>();
@@ -240,11 +252,6 @@ public class BBSRendering
 
         MinecraftClient mc = MinecraftClient.getInstance();
         Window window = mc.getWindow();
-
-        if (framebuffer == null)
-        {
-            framebuffer = new WindowFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight());
-        }
 
         BBSRendering.toggleFramebuffer = toggleFramebuffer;
 
