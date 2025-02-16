@@ -197,7 +197,6 @@ public class BBSMod implements ModInitializer
         .entries((context, entries) ->
         {
             entries.add(createModelBlockStack(Link.assets("textures/model_block.png")));
-            entries.add(new ItemStack(GUN_ITEM));
             entries.add(CHROMA_RED_BLOCK_ITEM);
             entries.add(CHROMA_GREEN_BLOCK_ITEM);
             entries.add(CHROMA_BLUE_BLOCK_ITEM);
@@ -206,6 +205,7 @@ public class BBSMod implements ModInitializer
             entries.add(CHROMA_YELLOW_BLOCK_ITEM);
             entries.add(CHROMA_BLACK_BLOCK_ITEM);
             entries.add(CHROMA_WHITE_BLOCK_ITEM);
+            entries.add(new ItemStack(GUN_ITEM));
         })
         .build();
 
