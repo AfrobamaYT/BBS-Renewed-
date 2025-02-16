@@ -1,5 +1,13 @@
 {
     "block.bbs.model": "Model block",
+    "block.bbs.chroma_red": "Red chroma",
+    "block.bbs.chroma_green": "Green chroma",
+    "block.bbs.chroma_blue": "Blue chroma",
+    "block.bbs.chroma_cyan": "Cyan chroma",
+    "block.bbs.chroma_magenta": "Magenta chroma",
+    "block.bbs.chroma_yellow": "Yellow chroma",
+    "block.bbs.chroma_black": "Black chroma",
+    "block.bbs.chroma_white": "White chroma",
     "item.bbs.gun": "BBS gun",
     "itemGroup.bbs.main": "BBS mod",
 

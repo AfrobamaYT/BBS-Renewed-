@@ -165,9 +165,25 @@ public class BBSMod implements ModInitializer
         .nonOpaque()
         .notSolid()
         .strength(0F));
+    public static final Block CHROMA_RED_BLOCK = createChromaBlock();
+    public static final Block CHROMA_GREEN_BLOCK = createChromaBlock();
+    public static final Block CHROMA_BLUE_BLOCK = createChromaBlock();
+    public static final Block CHROMA_CYAN_BLOCK = createChromaBlock();
+    public static final Block CHROMA_MAGENTA_BLOCK = createChromaBlock();
+    public static final Block CHROMA_YELLOW_BLOCK = createChromaBlock();
+    public static final Block CHROMA_BLACK_BLOCK = createChromaBlock();
+    public static final Block CHROMA_WHITE_BLOCK = createChromaBlock();
 
     public static final BlockItem MODEL_BLOCK_ITEM = new BlockItem(MODEL_BLOCK, new Item.Settings());
     public static final GunItem GUN_ITEM = new GunItem(new Item.Settings().maxCount(1));
+    public static final BlockItem CHROMA_RED_BLOCK_ITEM = new BlockItem(CHROMA_RED_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_GREEN_BLOCK_ITEM = new BlockItem(CHROMA_GREEN_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_BLUE_BLOCK_ITEM = new BlockItem(CHROMA_BLUE_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_CYAN_BLOCK_ITEM = new BlockItem(CHROMA_CYAN_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_MAGENTA_BLOCK_ITEM = new BlockItem(CHROMA_MAGENTA_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_YELLOW_BLOCK_ITEM = new BlockItem(CHROMA_YELLOW_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_BLACK_BLOCK_ITEM = new BlockItem(CHROMA_BLACK_BLOCK, new Item.Settings());
+    public static final BlockItem CHROMA_WHITE_BLOCK_ITEM = new BlockItem(CHROMA_WHITE_BLOCK, new Item.Settings());
 
     public static final BlockEntityType<ModelBlockEntity> MODEL_BLOCK_ENTITY = Registry.register(
         Registries.BLOCK_ENTITY_TYPE,
@@ -182,12 +198,29 @@ public class BBSMod implements ModInitializer
         {
             entries.add(createModelBlockStack(Link.assets("textures/model_block.png")));
             entries.add(new ItemStack(GUN_ITEM));
+            entries.add(CHROMA_RED_BLOCK_ITEM);
+            entries.add(CHROMA_GREEN_BLOCK_ITEM);
+            entries.add(CHROMA_BLUE_BLOCK_ITEM);
+            entries.add(CHROMA_CYAN_BLOCK_ITEM);
+            entries.add(CHROMA_MAGENTA_BLOCK_ITEM);
+            entries.add(CHROMA_YELLOW_BLOCK_ITEM);
+            entries.add(CHROMA_BLACK_BLOCK_ITEM);
+            entries.add(CHROMA_WHITE_BLOCK_ITEM);
         })
         .build();
 
     private static File worldFolder;
 
     private static ResourceTracker resourceTracker;
+
+    private static Block createChromaBlock()
+    {
+        return new Block(FabricBlockSettings.create()
+            .noBlockBreakParticles()
+            .dropsNothing()
+            .requiresTool()
+            .strength(-1F, 3600000F));
+    }
 
     private static ItemStack createModelBlockStack(Link texture)
     {
@@ -425,8 +458,25 @@ public class BBSMod implements ModInitializer
 
         /* Blocks */
         Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "model"), MODEL_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_red"), CHROMA_RED_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_green"), CHROMA_GREEN_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_blue"), CHROMA_BLUE_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_cyan"), CHROMA_CYAN_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_magenta"), CHROMA_MAGENTA_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_yellow"), CHROMA_YELLOW_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_black"), CHROMA_BLACK_BLOCK);
+        Registry.register(Registries.BLOCK, new Identifier(MOD_ID, "chroma_white"), CHROMA_WHITE_BLOCK);
+
         Registry.register(Registries.ITEM, new Identifier(MOD_ID, "model"), MODEL_BLOCK_ITEM);
         Registry.register(Registries.ITEM, new Identifier(MOD_ID, "gun"), GUN_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_red"), CHROMA_RED_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_green"), CHROMA_GREEN_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_blue"), CHROMA_BLUE_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_cyan"), CHROMA_CYAN_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_magenta"), CHROMA_MAGENTA_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_yellow"), CHROMA_YELLOW_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_black"), CHROMA_BLACK_BLOCK_ITEM);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "chroma_white"), CHROMA_WHITE_BLOCK_ITEM);
 
         Registry.register(Registries.ITEM_GROUP, new Identifier(MOD_ID, "main"), ITEM_GROUP);
     }
