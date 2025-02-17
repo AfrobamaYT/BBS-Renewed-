@@ -25,7 +25,8 @@
         "sodium.SodiumBufferBuilderAccessor",
         "sodium.ColorAttributeMixin",
         "iris.EntityVertexMixin",
-        "KeyboardInputMixin"
+        "KeyboardInputMixin",
+        "EntityRendererMixin"
     ],
     "injectors": {
         "defaultRequire": 1

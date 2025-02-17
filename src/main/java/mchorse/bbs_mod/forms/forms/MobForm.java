@@ -22,4 +22,9 @@ public class MobForm extends Form
     {
         return this.mobID.get().isEmpty() ? super.getDefaultDisplayName() : this.mobID.get();
     }
+
+    public boolean isPlayer()
+    {
+        return this.mobID.get().equals("minecraft:player");
+    }
 }

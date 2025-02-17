@@ -37,11 +37,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.Stack;
 
 public class FormUtilsClient
 {
     private static Map<Class, IFormRendererFactory> map = new HashMap<>();
     private static CustomVertexConsumerProvider customVertexConsumerProvider;
+    private static Stack<Form> currentForm = new Stack<>();
 
     static
     {
@@ -82,7 +84,8 @@ public class FormUtilsClient
         register(VanillaParticleForm.class, VanillaParticleFormRenderer::new);
     }
 
-    private static void assignBufferBuilder(Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> builderStorage, RenderLayer layer) {
+    private static void assignBufferBuilder(Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> builderStorage, RenderLayer layer)
+    {
         builderStorage.put(layer, new BufferBuilder(layer.getExpectedBufferSize()));
     }
 
@@ -94,6 +97,11 @@ public class FormUtilsClient
     private static <T extends Form> void register(Class<T> clazz, IFormRendererFactory<T> function)
     {
         map.put(clazz, function);
+    }
+
+    public static Form getCurrentForm()
+    {
+        return currentForm.isEmpty() ? null : currentForm.peek();
     }
 
     public static FormRenderer getRenderer(Form form)
@@ -138,7 +146,16 @@ public class FormUtilsClient
 
         if (renderer != null)
         {
-            renderer.render(context);
+            currentForm.push(form);
+
+            try
+            {
+                renderer.render(context);
+            }
+            catch (Exception e)
+            {}
+
+            currentForm.pop();
         }
     }
 

@@ -89,7 +89,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
         this.entity = Registries.ENTITY_TYPE.get(new Identifier(id)).create(MinecraftClient.getInstance().world);
 
-        if (this.entity == null && id.equals("minecraft:player"))
+        if (this.entity == null && this.form.isPlayer())
         {
             this.entity = new OtherClientPlayerEntity(MinecraftClient.getInstance().world, new GameProfile(UUID.fromString("b99a2400-28a8-4288-92dc-924beafbf756"), "McHorseYT"));
             this.entity.getDataTracker().set(PlayerUtils.ProtectedAccess.getModelParts(), (byte) 0b1111111);
