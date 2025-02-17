@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.overlay;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.audio.AudioReader;
+import mchorse.bbs_mod.audio.ColorCode;
 import mchorse.bbs_mod.audio.SoundManager;
 import mchorse.bbs_mod.audio.SoundPlayer;
 import mchorse.bbs_mod.audio.Wave;
@@ -11,6 +12,7 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.screenplay.UIAudioPlayer;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -59,7 +61,14 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
                         player.stop();
                     }
 
-                    this.player.loadAudio(wave, sounds.readColorCodes(link));
+                    List<ColorCode> colorCodes = sounds.readColorCodes(link);
+
+                    if (wave.getBytesPerSample() > 2)
+                    {
+                        wave = wave.convertTo16();
+                    }
+
+                    this.player.loadAudio(wave, colorCodes);
                 }
                 catch (Exception e)
                 {}
