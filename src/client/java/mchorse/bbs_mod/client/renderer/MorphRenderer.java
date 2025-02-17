@@ -3,6 +3,7 @@ package mchorse.bbs_mod.client.renderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.selectors.ISelectorOwnerProvider;
@@ -29,7 +30,10 @@ public class MorphRenderer
     {
         if (hidePlayer)
         {
-            return true;
+            if (FormUtilsClient.getCurrentForm() instanceof MobForm form && !form.isPlayer())
+            {
+                return true;
+            }
         }
 
         Morph morph = Morph.getMorph(player);
