@@ -2,6 +2,7 @@ package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -74,6 +75,12 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
     public void render3D(FormRenderingContext context)
     {
         boolean shading = this.form.shading.get();
+
+        if (BBSRendering.isIrisShadersEnabled())
+        {
+            shading = true;
+        }
+
         VertexFormat format = shading ? VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL : VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
         Supplier<ShaderProgram> shader = this.getShader(context,
             shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexLightmapColorProgram,
