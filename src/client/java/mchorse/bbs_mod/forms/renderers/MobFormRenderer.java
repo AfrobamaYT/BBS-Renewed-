@@ -37,10 +37,14 @@ import java.util.UUID;
 
 public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 {
+    public static final GameProfile WIDE = new GameProfile(UUID.fromString("b99a2400-28a8-4288-92dc-924beafbf756"), "McHorseYT");
+    public static final GameProfile SLIM = new GameProfile(UUID.fromString("5477bd28-e672-4f87-a209-c03cf75f3606"), "osmiq");
+
     private Entity entity;
 
     private String lastId = "";
     private String lastNBT = "";
+    private boolean lastSlim;
 
     public float prevHandSwing;
     private float prevYawHead;
@@ -65,11 +69,13 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
     {
         String id = this.form.mobID.get();
         String nbt = this.form.mobNBT.get();
+        boolean slim = this.form.slim.get();
 
-        if (!this.lastId.equals(id) || !this.lastNBT.equals(nbt))
+        if (!this.lastId.equals(id) || !this.lastNBT.equals(nbt) || slim != this.lastSlim)
         {
             this.lastId = id;
             this.lastNBT = nbt;
+            this.lastSlim = slim;
             this.entity = null;
         }
 
@@ -91,7 +97,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
         if (this.entity == null && this.form.isPlayer())
         {
-            this.entity = new OtherClientPlayerEntity(MinecraftClient.getInstance().world, new GameProfile(UUID.fromString("b99a2400-28a8-4288-92dc-924beafbf756"), "McHorseYT"));
+            this.entity = new OtherClientPlayerEntity(MinecraftClient.getInstance().world, slim ? SLIM : WIDE);
             this.entity.getDataTracker().set(PlayerUtils.ProtectedAccess.getModelParts(), (byte) 0b1111111);
         }
 
