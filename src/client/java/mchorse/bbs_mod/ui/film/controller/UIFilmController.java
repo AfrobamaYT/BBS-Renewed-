@@ -136,6 +136,7 @@ public class UIFilmController extends UIElement
         IKey category = UIKeys.FILM_CONTROLLER_KEYS_CATEGORY;
 
         Supplier<Boolean> hasActor = () -> this.getCurrentEntity() != null;
+        Supplier<Boolean> hasTwoOrMoreReplays = () -> this.panel.getData().replays.getList().size() >= 2;
 
         this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, this::pickRecording).active(hasActor).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, this::insertFrame).active(hasActor).category(category);
@@ -175,8 +176,22 @@ public class UIFilmController extends UIElement
         {
             this.panel.preview.openReplays();
         }).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_PREV_REPLAY, () -> this.switchReplay(-1)).active(hasTwoOrMoreReplays).category(category);
+        this.keys().register(Keys.FILM_CONTROLLER_NEXT_REPLAY, () -> this.switchReplay(1)).active(hasTwoOrMoreReplays).category(category);
 
         this.noCulling();
+    }
+
+    private void switchReplay(int direction)
+    {
+        List<Replay> list = this.panel.getData().replays.getList();
+
+        int index = list.indexOf(this.getReplay());
+        int newIndex = MathUtils.cycler(index + direction, 0, list.size() - 1);
+        Replay replay = list.get(newIndex);
+
+        this.panel.replayEditor.setReplay(replay);
+        UIUtils.playClick();
     }
 
     public boolean isPaused()
