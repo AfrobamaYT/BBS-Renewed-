@@ -45,6 +45,7 @@ public class MolangHelper
         double age = 0;
         float limbSwingAmount = 0;
         float limbSwing = 0;
+        float lifeTime = frame;
 
         if (target != null)
         {
@@ -59,6 +60,7 @@ public class MolangHelper
             velocity = Math.sqrt(dx * dx + target.getVelocity().y * target.getVelocity().y + dz * dz);
             limbSwingAmount = target.getLimbSpeed(transition);
             limbSwing = target.getLimbPos(transition);
+            lifeTime = target.getAge() + transition;
 
             /* There is still a tiny bit of vertical velocity (gravity) when an
              * entity stands still, so set it to zero in that case */
@@ -99,8 +101,8 @@ public class MolangHelper
 
         float groundSpeed = (float) Math.sqrt(dx * dx + dz * dz);
 
-        parser.setValue("query.anim_time", frame / 20);
-        parser.setValue("query.life_tiem", frame / 20);
+        parser.setValue("query.anim_time", frame / 20D);
+        parser.setValue("query.life_time", lifeTime / 20D);
         parser.setValue("query.ground_speed", groundSpeed);
         parser.setValue("query.yaw_speed", MathUtils.toRad((float) yawSpeed));
         parser.setValue("query.head_yaw", headYaw);
