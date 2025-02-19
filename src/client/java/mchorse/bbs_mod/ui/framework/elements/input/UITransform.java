@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.input;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -147,6 +148,22 @@ public abstract class UITransform extends UIElement
         });
 
         this.wh(190, 70);
+
+        this.keys().register(Keys.COPY, this::copyTransformations).inside().label(UIKeys.TRANSFORMS_CONTEXT_COPY);
+        this.keys().register(Keys.PASTE, () ->
+        {
+            ListType transforms = Window.getClipboardList();
+
+            if (transforms != null && transforms.size() < 9)
+            {
+                transforms = null;
+            }
+
+            if (transforms != null)
+            {
+                this.pasteAll(transforms);
+            }
+        }).inside().label(UIKeys.TRANSFORMS_CONTEXT_PASTE);
     }
 
     protected void toggleUniformScale()
