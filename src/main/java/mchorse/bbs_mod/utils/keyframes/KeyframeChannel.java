@@ -59,9 +59,9 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         return this.has(index) ? this.list.get(index) : null;
     }
 
-    public KeyframeSegment find(float ticks)
+    public KeyframeSegment<T> find(float ticks)
     {
-        KeyframeSegment segment = this.findSegment(ticks);
+        KeyframeSegment<T> segment = this.findSegment(ticks);
 
         if (segment == null)
         {

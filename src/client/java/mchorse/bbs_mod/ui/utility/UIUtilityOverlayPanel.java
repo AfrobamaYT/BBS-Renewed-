@@ -54,7 +54,7 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
         UIIcon textures = new UIIcon(Icons.MATERIAL, (b) ->
         {
             this.print("Reloading textures!");
-            BBSModClient.getTextures().reload();
+            BBSModClient.getTextures().delete();
             this.close();
         });
         textures.w(0).tooltip(UIKeys.UTILITY_RELOAD_TEXTURES);

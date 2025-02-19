@@ -16,16 +16,17 @@ import org.lwjgl.opengl.GL11;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class TextureManager implements IWatchDogListener
 {
     public final Map<Link, Texture> textures = new HashMap<>();
+    public final Map<Link, AnimatedTexture> animatedTextures = new HashMap<>();
     public AssetProvider provider;
 
     private Texture error;
     private TextureExtruder extruder = new TextureExtruder();
+    private int tick;
 
     public TextureManager(AssetProvider provider)
     {
@@ -125,6 +126,13 @@ public class TextureManager implements IWatchDogListener
         {
             texture.delete();
         }
+
+        AnimatedTexture animatedTexture = this.animatedTextures.remove(link);
+
+        if (animatedTexture != null)
+        {
+            animatedTexture.delete();
+        }
     }
 
     public Texture createTexture(Link link)
@@ -178,7 +186,7 @@ public class TextureManager implements IWatchDogListener
 
     public Texture getTexture(Link link, int filter, boolean silent)
     {
-        Texture texture = this.textures.get(link);
+        Texture texture = this.get(link);
 
         if (texture == null)
         {
@@ -188,10 +196,24 @@ public class TextureManager implements IWatchDogListener
 
                 if (pixels != null)
                 {
-                    texture = new Texture();
-                    texture.setFilter(filter);
-                    texture.uploadTexture(pixels);
-                    texture.unbind();
+                    try (InputStream stream = this.provider.getAsset(new Link(link.source, link.path + ".mcmeta")))
+                    {
+                        AnimatedTexture animatedTexture = AnimatedTexture.load(stream, pixels);
+
+                        texture = animatedTexture.getTexture(this.tick);
+
+                        System.out.println("Animated texture \"" + link + "\" was loaded!");
+
+                        this.animatedTextures.put(link, animatedTexture);
+
+                        return texture;
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                    texture = Texture.textureFromPixels(pixels, filter);
 
                     System.out.println("Texture \"" + link + "\" was loaded!");
 
@@ -220,41 +242,38 @@ public class TextureManager implements IWatchDogListener
         return texture;
     }
 
-    public void reload()
+    private Texture get(Link link)
     {
-        this.reload(false);
-    }
-
-    public void reload(boolean delete)
-    {
-        Iterator<Texture> it = this.textures.values().iterator();
-
-        while (it.hasNext())
+        if (this.animatedTextures.containsKey(link))
         {
-            Texture texture = it.next();
+            Texture texture = this.animatedTextures.get(link).getTexture(this.tick);
 
-            if (texture.isRefreshable() || delete)
-            {
-                texture.delete();
-
-                it.remove();
-            }
+            return texture == null ? this.error : texture;
         }
 
-        this.textures.clear();
-        this.extruder.deleteAll();
-
-        if (this.error != null)
-        {
-            this.error.delete();
-
-            this.error = null;
-        }
+        return this.textures.get(link);
     }
 
     public void delete()
     {
-        this.reload(true);
+        for (Texture texture : this.textures.values())
+        {
+            texture.delete();
+        }
+
+        for (AnimatedTexture animatedTexture : this.animatedTextures.values())
+        {
+            animatedTexture.delete();
+        }
+
+        this.textures.clear();
+        this.animatedTextures.clear();
+        this.extruder.deleteAll();
+    }
+
+    public void update()
+    {
+        this.tick += 1;
     }
 
     /**

@@ -376,6 +376,7 @@ public class BBSModClient implements ClientModInitializer
                 films.update();
                 modelBlockItemRenderer.update();
                 gunItemRenderer.update();
+                textures.update();
             }
 
             BBSResources.update();

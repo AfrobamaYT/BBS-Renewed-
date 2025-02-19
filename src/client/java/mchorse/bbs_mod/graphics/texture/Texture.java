@@ -23,7 +23,6 @@ public class Texture
     public int height;
 
     private boolean mipmap;
-    private boolean refreshable = true;
     private boolean clearable;
 
     private TextureFormat format = TextureFormat.RGBA_U8;
@@ -44,19 +43,23 @@ public class Texture
         return new Pixels(buffer, texture.width, texture.height);
     }
 
+    public static Texture textureFromPixels(Pixels pixels, int filter)
+    {
+        Texture texture = new Texture();
+
+        texture.setFilter(filter);
+        texture.uploadTexture(pixels);
+        texture.unbind();
+
+        return texture;
+    }
+
     public Texture()
     {
         this.id = TextureUtil.generateTextureId();
         this.target = GL11.GL_TEXTURE_2D;
 
         this.bind();
-    }
-
-    public Texture notRefreshable()
-    {
-        this.refreshable = false;
-
-        return this;
     }
 
     public void setClearable(boolean clearable)
@@ -77,11 +80,6 @@ public class Texture
     public boolean isMipmap()
     {
         return this.mipmap;
-    }
-
-    public boolean isRefreshable()
-    {
-        return this.refreshable;
     }
 
     public boolean isValid()
