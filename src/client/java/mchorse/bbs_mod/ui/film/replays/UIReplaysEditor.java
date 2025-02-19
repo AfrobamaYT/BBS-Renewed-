@@ -731,7 +731,7 @@ public class UIReplaysEditor extends UIElement
 
                 if (context.mouseButton == 0)
                 {
-                    if (Window.isAltPressed()) offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
+                    if (Window.isCtrlPressed()) offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
                     else if (Window.isShiftPressed()) offerHierarchy(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
                     else this.pickForm(pair.a, pair.b);
 
