@@ -51,17 +51,17 @@ public class Pixels
             pixels = STBImage.stbi_load_from_memory(image, width, height, bits, 0);
 
             /* Convert grayscale to RGBA */
-            if (bitsPerPixel == 2)
+            if (bitsPerPixel <= 2)
             {
                 ByteBuffer newBuffer = MemoryUtil.memAlloc(w * h * 4);
 
                 pixels.position(0);
                 pixels.limit(pixels.capacity());
 
-                for (int i = 0, c = pixels.limit() / 2; i < c; i++)
+                for (int i = 0, c = pixels.limit() / bitsPerPixel; i < c; i++)
                 {
                     byte g = pixels.get();
-                    byte a = pixels.get();
+                    byte a = bitsPerPixel == 1 ? (byte) 255 : pixels.get();
 
                     newBuffer.put(g);
                     newBuffer.put(g);

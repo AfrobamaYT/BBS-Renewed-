@@ -209,9 +209,7 @@ public class TextureManager implements IWatchDogListener
                         return texture;
                     }
                     catch (Exception e)
-                    {
-                        e.printStackTrace();
-                    }
+                    {}
 
                     texture = Texture.textureFromPixels(pixels, filter);
 
