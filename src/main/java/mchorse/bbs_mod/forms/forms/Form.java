@@ -15,6 +15,8 @@ import mchorse.bbs_mod.forms.properties.IntegerProperty;
 import mchorse.bbs_mod.forms.properties.StringProperty;
 import mchorse.bbs_mod.forms.properties.TransformProperty;
 import mchorse.bbs_mod.utils.pose.Transform;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -38,6 +40,11 @@ public abstract class Form implements IMapSerializable
     public final FloatProperty hitboxHeight = new FloatProperty(this, "hitboxHeight", 1.8F);
     public final FloatProperty hitboxSneakMultiplier = new FloatProperty(this, "hitboxSneakMultiplier", 0.9F);
     public final FloatProperty hitboxEyeHeight = new FloatProperty(this, "hitboxEyeHeight", 0.9F);
+
+    /* Morphing properties */
+    public final FloatProperty hp = new FloatProperty(this, "hp", 20F);
+    public final FloatProperty speed = new FloatProperty(this, "movement_speed", 0.1F);
+    public final FloatProperty stepHeight = new FloatProperty(this, "step_height", 0.5F);
 
     public final IntegerProperty hotkey = new IntegerProperty(this, "keybind", 0);
 
@@ -68,6 +75,14 @@ public abstract class Form implements IMapSerializable
         this.register(this.hitboxHeight);
         this.register(this.hitboxSneakMultiplier);
         this.register(this.hitboxEyeHeight);
+
+        this.hp.cantAnimate();
+        this.speed.cantAnimate();
+        this.stepHeight.cantAnimate();
+
+        this.register(this.hp);
+        this.register(this.speed);
+        this.register(this.stepHeight);
 
         this.hotkey.cantAnimate();
 
@@ -110,6 +125,31 @@ public abstract class Form implements IMapSerializable
     public Form getParent()
     {
         return this.parent;
+    }
+
+    /* Morphing */
+
+    public void onMorph(PlayerEntity entity)
+    {
+        float hp = this.hp.get();
+        float speed = this.speed.get();
+        float stepHeight = this.stepHeight.get();
+
+        if (hp != 20F)
+        {
+            entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(hp);
+            entity.setHealth(hp);
+        }
+        if (speed != 0.1F) entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED).setBaseValue(speed);
+        if (stepHeight != 0.5F) entity.setStepHeight(stepHeight);
+    }
+
+    public void onDemorph(PlayerEntity entity)
+    {
+        entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(20F);
+        entity.setHealth(20F);
+        entity.setMovementSpeed(0.1F);
+        entity.setStepHeight(0.5F);
     }
 
     /* ID and display name */

@@ -28,6 +28,10 @@ public class UIGeneralFormPanel extends UIFormPanel
     public UITrackpad hitboxSneakMultiplier;
     public UITrackpad hitboxEyeHeight;
 
+    public UITrackpad hp;
+    public UITrackpad speed;
+    public UITrackpad stepHeight;
+
     public UIGeneralFormPanel(UIForm editor)
     {
         super(editor);
@@ -58,12 +62,22 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hitboxEyeHeight = new UITrackpad((v) -> this.form.hitboxEyeHeight.set(v.floatValue()));
         this.hitboxEyeHeight.limit(0, 1);
 
+        this.hp = new UITrackpad((v) -> this.form.hp.set(v.floatValue()));
+        this.hp.limit(1F);
+        this.speed = new UITrackpad((v) -> this.form.speed.set(v.floatValue()));
+        this.speed.limit(0F);
+        this.stepHeight = new UITrackpad((v) -> this.form.stepHeight.set(v.floatValue()));
+        this.stepHeight.limit(0F);
+
         this.options.add(this.hotkey, this.visible, this.lighting);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_UI_SCALE), this.uiScale);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_DISPLAY), this.name, this.transform.marginTop(8));
         this.options.add(this.hitbox.marginTop(12), UI.row(this.hitboxWidth, this.hitboxHeight));
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_SNEAK_MULTIPLIER), this.hitboxSneakMultiplier);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HITBOX_EYE_HEIGHT), this.hitboxEyeHeight);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_HP).marginTop(12), this.hp);
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_MOVEMENT_SPEED), this.speed.tooltip(UIKeys.FORMS_EDITORS_GENERAL_MOVEMENT_SPEED_TOOLTIP));
+        this.options.add(UI.label(UIKeys.FORMS_EDITORS_GENERAL_STEP_HEIGHT), this.stepHeight);
     }
 
     @Override
@@ -84,5 +98,9 @@ public class UIGeneralFormPanel extends UIFormPanel
         this.hitboxHeight.setValue(form.hitboxHeight.get());
         this.hitboxSneakMultiplier.setValue(form.hitboxSneakMultiplier.get());
         this.hitboxEyeHeight.setValue(form.hitboxEyeHeight.get());
+
+        this.hp.setValue(form.hp.get());
+        this.speed.setValue(form.speed.get());
+        this.stepHeight.setValue(form.stepHeight.get());
     }
 }
