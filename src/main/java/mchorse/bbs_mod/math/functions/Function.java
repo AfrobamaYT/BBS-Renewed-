@@ -2,6 +2,7 @@ package mchorse.bbs_mod.math.functions;
 
 import mchorse.bbs_mod.math.Constant;
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 
 /**
  * Abstract function class
@@ -11,13 +12,18 @@ import mchorse.bbs_mod.math.IExpression;
  */
 public abstract class Function implements IExpression
 {
+    protected MathBuilder builder;
     protected IExpression[] args;
     protected String name;
 
     protected IExpression result = new Constant(0);
 
-    public Function(IExpression[] expressions, String name) throws Exception
+    public Function(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
+        this.builder = builder;
+        this.args = expressions;
+        this.name = name;
+
         if (expressions.length < this.getRequiredArguments())
         {
             String message = String.format("Function '%s' requires at least %s arguments. %s are given!", this.getName(), this.getRequiredArguments(), expressions.length);
@@ -29,9 +35,6 @@ public abstract class Function implements IExpression
         {
             this.verifyArgument(i, expressions[i]);
         }
-
-        this.args = expressions;
-        this.name = name;
     }
 
     protected void verifyArgument(int index, IExpression expression)

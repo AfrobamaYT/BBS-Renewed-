@@ -47,7 +47,7 @@ public class MolangParser extends MathBuilder
         this.functions.put("atan", AtanDegrees.class);
         this.functions.put("atan2", Atan2Degrees.class);
 
-        /* Remap functions to be in tact with Molang specification */
+        /* Remap functions to be intact with MoLang specification */
         this.remap("abs", "math.abs");
         this.remap("ceil", "math.ceil");
         this.remap("clamp", "math.clamp");

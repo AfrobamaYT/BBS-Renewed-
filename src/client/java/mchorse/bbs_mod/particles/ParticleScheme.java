@@ -3,7 +3,6 @@ package mchorse.bbs_mod.particles;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.math.molang.MolangParser;
 import mchorse.bbs_mod.particles.components.IComponentBase;
 import mchorse.bbs_mod.particles.components.IComponentEmitterInitialize;
 import mchorse.bbs_mod.particles.components.IComponentEmitterUpdate;
@@ -12,6 +11,8 @@ import mchorse.bbs_mod.particles.components.IComponentParticleRender;
 import mchorse.bbs_mod.particles.components.IComponentParticleUpdate;
 import mchorse.bbs_mod.particles.components.ParticleComponentBase;
 import mchorse.bbs_mod.particles.components.motion.ParticleComponentInitialSpeed;
+import mchorse.bbs_mod.particles.emitter.Particle;
+import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.values.ValueGroup;
 
@@ -47,7 +48,9 @@ public class ParticleScheme extends ValueGroup
     public List<IComponentParticleRender> particleRender;
 
     /* MoLang integration */
-    public MolangParser parser;
+    public final ParticleMolangParser parser;
+    public Particle particle;
+    public ParticleEmitter emitter;
 
     public static ParticleScheme parse(String json)
     {
@@ -86,7 +89,7 @@ public class ParticleScheme extends ValueGroup
     {
         super("");
 
-        this.parser = new MolangParser();
+        this.parser = new ParticleMolangParser(this);
 
         /* Default variables */
         this.parser.register("variable.particle_age");
@@ -95,12 +98,6 @@ public class ParticleScheme extends ValueGroup
         this.parser.register("variable.particle_random_2");
         this.parser.register("variable.particle_random_3");
         this.parser.register("variable.particle_random_4");
-
-        this.parser.register("variable.particle_speed.length");
-        this.parser.register("variable.particle_speed.x");
-        this.parser.register("variable.particle_speed.y");
-        this.parser.register("variable.particle_speed.z");
-        this.parser.register("variable.particle_bounces");
 
         this.parser.register("variable.emitter_age");
         this.parser.register("variable.emitter_lifetime");

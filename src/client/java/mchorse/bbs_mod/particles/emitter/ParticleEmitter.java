@@ -192,6 +192,8 @@ public class ParticleEmitter
 
     public void setParticleVariables(Particle particle, float transition)
     {
+        this.scheme.particle = particle;
+
         if (this.varIndex != null) this.varIndex.set(particle.index);
         if (this.varAge != null) this.varAge.set(particle.getAge(transition));
         if (this.varLifetime != null) this.varLifetime.set(particle.lifetime / 20.0);
@@ -208,6 +210,8 @@ public class ParticleEmitter
 
     public void setEmitterVariables(float transition)
     {
+        this.scheme.emitter = this;
+
         if (this.varEmitterAge != null) this.varEmitterAge.set(this.getAge(transition));
         if (this.varEmitterLifetime != null) this.varEmitterLifetime.set(this.lifetime / 20.0);
         if (this.varEmitterRandom1 != null) this.varEmitterRandom1.set(this.random1);
@@ -349,6 +353,19 @@ public class ParticleEmitter
         {
             component.update(this, particle);
         }
+    }
+
+    public Particle getParticleByIndex(int index)
+    {
+        for (Particle particle : this.particles)
+        {
+            if (particle.index == index)
+            {
+                return particle;
+            }
+        }
+
+        return null;
     }
 
     /**

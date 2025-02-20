@@ -1,13 +1,14 @@
 package mchorse.bbs_mod.math.functions.string;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.SNFunction;
 
 public class StringEndsWith extends SNFunction
 {
-    public StringEndsWith(IExpression[] expressions, String name) throws Exception
+    public StringEndsWith(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

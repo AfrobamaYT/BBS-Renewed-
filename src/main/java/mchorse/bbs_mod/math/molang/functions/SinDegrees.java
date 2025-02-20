@@ -1,13 +1,14 @@
 package mchorse.bbs_mod.math.molang.functions;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 
 public class SinDegrees extends NNFunction
 {
-    public SinDegrees(IExpression[] expressions, String name) throws Exception
+    public SinDegrees(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

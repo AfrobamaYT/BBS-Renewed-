@@ -1,14 +1,15 @@
 package mchorse.bbs_mod.math.functions.utility;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 import mchorse.bbs_mod.utils.interps.Lerps;
 
 public class LerpRotate extends NNFunction
 {
-    public LerpRotate(IExpression[] expressions, String name) throws Exception
+    public LerpRotate(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

@@ -1,15 +1,16 @@
 package mchorse.bbs_mod.math.functions;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 
 /**
  * Function that expects number input arguments and outputs a string
  */
 public abstract class NSFunction extends Function
 {
-    public NSFunction(IExpression[] expressions, String name) throws Exception
+    public NSFunction(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
 
         for (IExpression expression : expressions)
         {

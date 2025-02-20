@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.math.functions;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.Operation;
 
 /**
@@ -8,9 +9,9 @@ import mchorse.bbs_mod.math.Operation;
  */
 public abstract class SNFunction extends Function
 {
-    public SNFunction(IExpression[] expressions, String name) throws Exception
+    public SNFunction(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

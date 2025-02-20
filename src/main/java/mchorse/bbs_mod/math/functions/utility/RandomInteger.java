@@ -1,12 +1,13 @@
 package mchorse.bbs_mod.math.functions.utility;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 
 public class RandomInteger extends Random
 {
-    public RandomInteger(IExpression[] expressions, String name) throws Exception
+    public RandomInteger(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

@@ -4,6 +4,9 @@ import org.joml.Matrix3f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Particle
 {
     /* Randoms */
@@ -51,6 +54,8 @@ public class Particle
     public float a = 1;
 
     private Vector3d global = new Vector3d();
+
+    public Map<String, Double> localValues = new HashMap<>();
 
     public Particle(int index, float offset)
     {

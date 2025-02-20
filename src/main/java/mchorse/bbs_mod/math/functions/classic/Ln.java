@@ -1,13 +1,14 @@
 package mchorse.bbs_mod.math.functions.classic;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 
 public class Ln extends NNFunction
 {
-    public Ln(IExpression[] expressions, String name) throws Exception
+    public Ln(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

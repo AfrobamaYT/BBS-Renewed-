@@ -1,14 +1,15 @@
 package mchorse.bbs_mod.math.functions.limit;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 import mchorse.bbs_mod.utils.MathUtils;
 
 public class Clamp extends NNFunction
 {
-    public Clamp(IExpression[] expressions, String name) throws Exception
+    public Clamp(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

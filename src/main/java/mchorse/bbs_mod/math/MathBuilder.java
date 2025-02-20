@@ -573,8 +573,8 @@ public class MathBuilder
         }
 
         Class<? extends Function> function = this.functions.get(first);
-        Constructor<? extends Function> ctor = function.getConstructor(IExpression[].class, String.class);
-        Function func = ctor.newInstance(values.toArray(new IExpression[values.size()]), first);
+        Constructor<? extends Function> ctor = function.getConstructor(MathBuilder.class, IExpression[].class, String.class);
+        Function func = ctor.newInstance(this, values.toArray(new IExpression[values.size()]), first);
 
         return func;
     }

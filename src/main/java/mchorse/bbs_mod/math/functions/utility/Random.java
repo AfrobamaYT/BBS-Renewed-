@@ -1,15 +1,16 @@
 package mchorse.bbs_mod.math.functions.utility;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 
 public class Random extends NNFunction
 {
     public java.util.Random random;
 
-    public Random(IExpression[] expressions, String name) throws Exception
+    public Random(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
 
         this.random = new java.util.Random();
     }

@@ -1,13 +1,14 @@
 package mchorse.bbs_mod.math.functions.trig;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 import mchorse.bbs_mod.math.functions.NNFunction;
 
 public class Sin extends NNFunction
 {
-    public Sin(IExpression[] expressions, String name) throws Exception
+    public Sin(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override

@@ -1,15 +1,16 @@
 package mchorse.bbs_mod.math.functions;
 
 import mchorse.bbs_mod.math.IExpression;
+import mchorse.bbs_mod.math.MathBuilder;
 
 /**
  * Function that expects string input arguments and outputs a string
  */
 public abstract class SSFunction extends Function
 {
-    public SSFunction(IExpression[] expressions, String name) throws Exception
+    public SSFunction(MathBuilder builder, IExpression[] expressions, String name) throws Exception
     {
-        super(expressions, name);
+        super(builder, expressions, name);
     }
 
     @Override
