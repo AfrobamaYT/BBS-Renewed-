@@ -136,7 +136,7 @@ public class UIFilmController extends UIElement
         IKey category = UIKeys.FILM_CONTROLLER_KEYS_CATEGORY;
 
         Supplier<Boolean> hasActor = () -> this.getCurrentEntity() != null;
-        Supplier<Boolean> hasTwoOrMoreReplays = () -> this.panel.getData().replays.getList().size() >= 2;
+        Supplier<Boolean> hasTwoOrMoreReplays = () -> this.panel.getData() != null && this.panel.getData().replays.getList().size() >= 2;
 
         this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, this::pickRecording).active(hasActor).category(category);
         this.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, this::insertFrame).active(hasActor).category(category);
