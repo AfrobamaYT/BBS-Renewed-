@@ -11,6 +11,7 @@ import mchorse.bbs_mod.particles.components.ParticleComponentBase;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.WorldRenderer;
@@ -271,6 +272,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         double py = Lerps.lerp(particle.prevPosition.y, particle.position.y, transition);
         double pz = Lerps.lerp(particle.prevPosition.z, particle.position.z, transition);
         float angle = Lerps.lerp(particle.prevRotation, particle.rotation, transition);
+        float scale = 1F;
 
         if (particle.relativePosition && particle.relativeRotation)
         {
@@ -284,6 +286,11 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
             px += emitter.lastGlobal.x;
             py += emitter.lastGlobal.y;
             pz += emitter.lastGlobal.z;
+        }
+
+        if (particle.textureScale)
+        {
+            scale = emitter.rotation.getRow(0, Vectors.TEMP_3F).length();
         }
 
         /* Calculate yaw and pitch based on the facing mode */
@@ -335,6 +342,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         this.rotation.identity();
         this.rotation.rotateZ(angle / 180 * (float) Math.PI);
         this.transform.mul(this.rotation);
+        this.transform.scale(scale);
         this.transform.setTranslation(new Vector3f((float) px, (float) py, (float) pz));
 
         this.build(builder, matrix, particle);

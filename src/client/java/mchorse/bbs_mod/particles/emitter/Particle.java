@@ -23,6 +23,7 @@ public class Particle
     private boolean dead;
     public boolean relativePosition;
     public boolean relativeRotation;
+    public boolean textureScale;
     public boolean manual;
 
     /* Rotation */

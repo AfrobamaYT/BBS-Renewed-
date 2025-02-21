@@ -13,12 +13,14 @@ public class ParticleComponentLocalSpace extends ParticleComponentBase implement
 {
     public boolean position;
     public boolean rotation;
+    public boolean textureScale;
 
     @Override
     protected void toData(MapType data)
     {
         if (this.position) data.putBool("position", true);
         if (this.rotation) data.putBool("rotation", true);
+        if (this.textureScale) data.putBool("texture_scale", true);
     }
 
     public ParticleComponentBase fromData(BaseType data, MolangParser parser) throws MolangException
@@ -32,6 +34,7 @@ public class ParticleComponentLocalSpace extends ParticleComponentBase implement
 
         if (map.has("position")) this.position = map.getBool("position");
         if (map.has("rotation")) this.rotation = map.getBool("rotation");
+        if (map.has("texture_scale")) this.textureScale = map.getBool("texture_scale");
 
         return super.fromData(map, parser);
     }
@@ -41,6 +44,7 @@ public class ParticleComponentLocalSpace extends ParticleComponentBase implement
     {
         particle.relativePosition = this.position;
         particle.relativeRotation = this.rotation;
+        particle.textureScale = this.textureScale;
 
         particle.setupMatrix(emitter);
     }
