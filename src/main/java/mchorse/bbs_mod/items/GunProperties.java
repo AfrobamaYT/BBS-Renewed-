@@ -5,12 +5,15 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.FormUtils;
+import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.forms.forms.utils.ParticleSettings;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.interps.Interpolation;
+import mchorse.bbs_mod.utils.interps.Interpolations;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -49,6 +52,14 @@ public class GunProperties extends ModelProperties
     public float knockback;
     public boolean collideBlocks = true;
     public boolean collideEntities = true;
+
+    /* Zoom */
+    public Form zoomForm;
+    public String cmdZoomOn = "";
+    public String cmdZoomOff = "";
+    public Interpolation fovInterp = new Interpolation("interp", Interpolations.MAP);
+    public int fovDuration = 10;
+    public float fovTarget = 40F;
 
     /* Commands */
     public String cmdFiring = "";
@@ -164,6 +175,17 @@ public class GunProperties extends ModelProperties
     }
 
     @Override
+    public void update(IEntity entity)
+    {
+        super.update(entity);
+
+        if (this.zoomForm != null)
+        {
+            this.zoomForm.update(entity);
+        }
+    }
+
+    @Override
     public void fromData(MapType data)
     {
         super.fromData(data);
@@ -195,6 +217,13 @@ public class GunProperties extends ModelProperties
         this.knockback = data.getFloat("knockback");
         this.collideBlocks = data.getBool("collideBlocks", true);
         this.collideEntities = data.getBool("collideEntities", true);
+
+        this.zoomForm = FormUtils.fromData(data.get("zoomForm"));
+        this.cmdZoomOn = data.getString("cmdZoomOn");
+        this.cmdZoomOff = data.getString("cmdZoomOff");
+        this.fovInterp.fromData(data.get("fovInterp"));
+        this.fovDuration = data.getInt("fovDuration");
+        this.fovTarget = data.getFloat("fovTarget");
 
         this.cmdFiring = data.getString("cmdFiring");
         this.cmdImpact = data.getString("cmdImpact");
@@ -235,6 +264,13 @@ public class GunProperties extends ModelProperties
         data.putFloat("knockback", this.knockback);
         data.putBool("collideBlocks", this.collideBlocks);
         data.putBool("collideEntities", this.collideEntities);
+
+        if (this.zoomForm != null) data.put("zoomForm", FormUtils.toData(this.zoomForm));
+        data.putString("cmdZoomOn", this.cmdZoomOn);
+        data.putString("cmdZoomOff", this.cmdZoomOff);
+        data.put("fovInterp", this.fovInterp.toData());
+        data.putInt("fovDuration", this.fovDuration);
+        data.putFloat("fovTarget", this.fovTarget);
 
         data.putString("cmdFiring", this.cmdFiring);
         data.putString("cmdImpact", this.cmdImpact);

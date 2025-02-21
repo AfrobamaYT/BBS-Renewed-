@@ -94,6 +94,7 @@ public class ServerNetwork
     public static final Identifier SERVER_REQUEST_ASSET = new Identifier(BBSMod.MOD_ID, "s11");
     public static final Identifier SERVER_ASSET = new Identifier(BBSMod.MOD_ID, "s12");
     public static final Identifier SERVER_SHARED_FORM = new Identifier(BBSMod.MOD_ID, "s13");
+    public static final Identifier SERVER_ZOOM = new Identifier(BBSMod.MOD_ID, "s14");
 
     private static ServerPacketCrusher crusher = new ServerPacketCrusher();
 
@@ -117,6 +118,7 @@ public class ServerNetwork
         ServerPlayNetworking.registerGlobalReceiver(SERVER_REQUEST_ASSET, (server, player, handler, buf, responder) -> handleRequestAssets(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_ASSET, (server, player, handler, buf, responder) -> handleAssetPacket(server, player, buf));
         ServerPlayNetworking.registerGlobalReceiver(SERVER_SHARED_FORM, (server, player, handler, buf, responder) -> handleSharedFormPacket(server, player, buf));
+        ServerPlayNetworking.registerGlobalReceiver(SERVER_ZOOM, (server, player, handler, buf, responder) -> handleZoomPacket(server, player, buf));
     }
 
     /* Handlers */
@@ -538,6 +540,23 @@ public class ServerNetwork
                 }
             });
         });
+    }
+
+    private static void handleZoomPacket(MinecraftServer server, ServerPlayerEntity player, PacketByteBuf buf)
+    {
+        boolean zoom = buf.readBoolean();
+        ItemStack main = player.getMainHandStack();
+
+        if (main.getItem() == BBSMod.GUN_ITEM)
+        {
+            GunProperties properties = GunProperties.get(main);
+            String command = zoom ? properties.cmdZoomOn : properties.cmdZoomOff;
+
+            if (!command.isEmpty())
+            {
+                server.getCommandManager().executeWithPrefix(player.getCommandSource(), command);
+            }
+        }
     }
 
     /* API */

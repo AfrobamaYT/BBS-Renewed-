@@ -25,6 +25,8 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.triggers.StateTrigger;
 import mchorse.bbs_mod.graphics.FramebufferManager;
 import mchorse.bbs_mod.graphics.texture.TextureManager;
+import mchorse.bbs_mod.items.GunProperties;
+import mchorse.bbs_mod.items.GunZoom;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
@@ -99,6 +101,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyOpenMorphing;
     private static KeyBinding keyDemorph;
     private static KeyBinding keyTeleport;
+    private static KeyBinding keyZoom;
 
     private static UIDashboard dashboard;
 
@@ -106,6 +109,7 @@ public class BBSModClient implements ClientModInitializer
     private static ModelBlockItemRenderer modelBlockItemRenderer = new ModelBlockItemRenderer();
     private static GunItemRenderer gunItemRenderer = new GunItemRenderer();
     private static Films films;
+    private static GunZoom gunZoom;
 
     private static float originalFramebufferScale;
 
@@ -167,6 +171,16 @@ public class BBSModClient implements ClientModInitializer
     public static Films getFilms()
     {
         return films;
+    }
+
+    public static GunZoom getGunZoom()
+    {
+        return gunZoom;
+    }
+
+    public static KeyBinding getKeyZoom()
+    {
+        return keyZoom;
     }
 
     public static UIDashboard getDashboard()
@@ -327,6 +341,7 @@ public class BBSModClient implements ClientModInitializer
         keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
         keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
         keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);
+        keyZoom = this.createKeyMouse("zoom", 2);
 
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
@@ -387,7 +402,7 @@ public class BBSModClient implements ClientModInitializer
             while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
             while (keyRecordVideo.wasPressed())
             {
-                Window window = MinecraftClient.getInstance().getWindow();
+                Window window = mc.getWindow();
                 int width = Math.max(window.getWidth(), 2);
                 int height = Math.max(window.getHeight(), 2);
 
@@ -407,11 +422,36 @@ public class BBSModClient implements ClientModInitializer
             }
             while (keyDemorph.wasPressed()) ClientNetwork.sendPlayerForm(null);
             while (keyTeleport.wasPressed()) this.keyTeleport();
+
+            if (mc.player != null)
+            {
+                boolean zoom = keyZoom.isPressed();
+                ItemStack stack = mc.player.getMainHandStack();
+
+                if (gunZoom == null && zoom && stack.getItem() == BBSMod.GUN_ITEM)
+                {
+                    GunProperties properties = GunProperties.get(stack);
+
+                    ClientNetwork.sendZoom(true);
+                    gunZoom = new GunZoom(properties.fovTarget, properties.fovInterp, properties.fovDuration);
+                }
+            }
         });
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
         {
             BBSRendering.renderHud(drawContext, tickDelta);
+
+            if (gunZoom != null)
+            {
+                gunZoom.update(keyZoom.isPressed(), MinecraftClient.getInstance().getLastFrameDuration());
+
+                if (gunZoom.canBeRemoved())
+                {
+                    ClientNetwork.sendZoom(false);
+                    gunZoom = null;
+                }
+            }
         });
 
         ClientLifecycleEvents.CLIENT_STOPPING.register((e) -> BBSResources.stopWatchdog());
@@ -475,6 +515,16 @@ public class BBSModClient implements ClientModInitializer
             "key." + BBSMod.MOD_ID + "." + id,
             InputUtil.Type.KEYSYM,
             key,
+            "category." + BBSMod.MOD_ID + ".main"
+        ));
+    }
+
+    private KeyBinding createKeyMouse(String id, int button)
+    {
+        return KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key." + BBSMod.MOD_ID + "." + id,
+            InputUtil.Type.MOUSE,
+            button,
             "category." + BBSMod.MOD_ID + ".main"
         ));
     }

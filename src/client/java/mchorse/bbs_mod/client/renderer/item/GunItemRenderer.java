@@ -2,6 +2,7 @@ package mchorse.bbs_mod.client.renderer.item;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -52,6 +53,11 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
         {
             GunProperties properties = item.properties;
             Form form = properties.getForm(mode);
+
+            if (mode.isFirstPerson() && BBSModClient.getGunZoom() != null && properties.zoomForm != null)
+            {
+                form = properties.zoomForm;
+            }
 
             if (form != null)
             {

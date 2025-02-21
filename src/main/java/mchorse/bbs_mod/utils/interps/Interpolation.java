@@ -123,6 +123,11 @@ public class Interpolation extends BaseValue
     @Override
     public void fromData(BaseType data)
     {
+        if (data == null)
+        {
+            return;
+        }
+
         if (data.isList())
         {
             ListType list = data.asList();

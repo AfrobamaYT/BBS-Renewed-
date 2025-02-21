@@ -5,6 +5,7 @@ import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.items.GunZoom;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
@@ -35,6 +36,15 @@ public class GameRendererMixin
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
     public void onGetFov(CallbackInfoReturnable<Double> info)
     {
+        GunZoom gunZoom = BBSModClient.getGunZoom();
+
+        if (gunZoom != null)
+        {
+            info.setReturnValue((double) gunZoom.getFOV(info.getReturnValue().floatValue()));
+
+            return;
+        }
+
         CameraController controller = BBSModClient.getCameraController();
 
         if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())

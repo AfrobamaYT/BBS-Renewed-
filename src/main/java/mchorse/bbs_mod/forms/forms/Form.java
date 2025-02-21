@@ -148,7 +148,7 @@ public abstract class Form implements IMapSerializable
     {
         entity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(20F);
         entity.setHealth(20F);
-        entity.setMovementSpeed(0.1F);
+        entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED).setBaseValue(0.1F);
         entity.setStepHeight(0.5F);
     }
 

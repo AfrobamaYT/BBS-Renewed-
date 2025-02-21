@@ -2,8 +2,8 @@ package mchorse.bbs_mod.ui.utils;
 
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
@@ -44,7 +44,7 @@ public class UIChalkboard extends UIElement
         this.add(this.picker);
 
         this.keys().register(Keys.DELETE, this::resize).active(() -> this.isChalkEnabled);
-        this.keys().register(new KeyCombo("", IKey.raw("Toggle chalkboard"), GLFW.GLFW_KEY_F10), this::toggleChalk);
+        this.keys().register(new KeyCombo("", UIKeys.PANELS_KEYS_TOGGLE_CHALKBOARD, GLFW.GLFW_KEY_F10), this::toggleChalk);
     }
 
     private void toggleChalk()

@@ -20,6 +20,7 @@ import mchorse.bbs_mod.ui.framework.UIRenderingContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
+import mchorse.bbs_mod.ui.framework.elements.context.UIInterpolationContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
@@ -57,6 +58,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public UIIcon gun;
     public UIIcon projectile;
     public UIIcon impact;
+    public UIIcon zoom;
     public UIIcon commands;
 
     public Map<UIElement, UIIcon> sections = new HashMap<>();
@@ -68,6 +70,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
     public UIElement sectionGun;
     public UIElement sectionProjectile;
     public UIElement sectionImpact;
+    public UIElement sectionZoom;
     public UIElement sectionCommands;
 
     /* Data */
@@ -269,6 +272,40 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.impact = new UIIcon(Icons.DOWNLOAD, (b) -> this.setSection(this.sectionImpact));
             this.impact.tooltip(UIKeys.GUN_IMPACT_TITLE);
 
+            /* Zoom */
+            UINestedEdit zoomForm = new UINestedEdit((edit) -> UIFormPalette.open(this.main, edit, gun.zoomForm, (f) ->
+            {
+                gun.zoomForm = FormUtils.copy(f);
+                this.sectionZoom.getChildren(UINestedEdit.class).get(0).setForm(f);
+            }));
+            UITextbox cmdZoomOn = new UITextbox(10000, (t) -> gun.cmdZoomOn = t);
+            UITextbox cmdZoomOff = new UITextbox(10000, (t) -> gun.cmdZoomOff = t);
+            UIIcon fovInterp = new UIIcon(Icons.GRAPH, (b) ->
+            {
+                this.context.replaceContextMenu(new UIInterpolationContextMenu(gun.fovInterp));
+            });
+            UITrackpad fovDuration = new UITrackpad((v) -> gun.fovDuration = v.intValue());
+            UITrackpad fovTarget = new UITrackpad((v) -> gun.fovTarget = v.floatValue());
+
+            zoomForm.setForm(gun.zoomForm);
+            cmdZoomOn.setText(gun.cmdZoomOn);
+            cmdZoomOff.setText(gun.cmdZoomOff);
+            fovDuration.limit(1, 1000, true);
+            fovDuration.setValue(gun.fovDuration);
+            fovTarget.limit(0.001D, 179.999F);
+            fovTarget.setValue(gun.fovTarget);
+
+            this.sectionZoom = UI.scrollView(5, 10,
+                UI.label(UIKeys.GUN_ZOOM_FORM).background(), zoomForm,
+                UI.label(UIKeys.GUN_ZOOM_ON).background().marginTop(6), cmdZoomOn,
+                UI.label(UIKeys.GUN_ZOOM_OFF).background(), cmdZoomOff,
+                UI.label(UIKeys.GUN_ZOOM_FOV_DURATION).background().marginTop(6), UI.row(fovDuration, fovInterp),
+                UI.label(UIKeys.GUN_ZOOM_FOV_TARGET).background().marginTop(6), fovTarget
+            );
+            this.sectionZoom.relative(this.viewport).x(1F).w(200).h(1F).anchorX(1F);
+            this.zoom = new UIIcon(Icons.SEARCH, (b) -> this.setSection(this.sectionZoom));
+            this.zoom.tooltip(UIKeys.GUN_ZOOM_TITLE);
+
             /* Commands */
             UITextbox cmdFiring = new UITextbox(10000, (t) -> gun.cmdFiring = t);
             UITextbox cmdImpact = new UITextbox(10000, (t) -> gun.cmdImpact = t);
@@ -309,7 +346,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
         this.sections.put(this.sectionFp, this.firstPerson);
         this.sections.put(this.sectionInventory, this.inventory);
 
-        this.iconBar = UI.row(0, this.def, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact, this.commands);
+        this.iconBar = UI.row(0, this.def, this.thirdPerson, this.firstPerson, this.inventory, this.gun, this.projectile, this.impact, this.zoom, this.commands);
         this.iconBar.row().resize();
         this.iconBar.relative(this.viewport).x(0.5F).h(20).anchor(0.5F, 0F);
 
@@ -321,9 +358,10 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.sections.put(this.sectionGun, this.gun);
             this.sections.put(this.sectionProjectile, this.projectile);
             this.sections.put(this.sectionImpact, this.impact);
+            this.sections.put(this.sectionZoom, this.zoom);
             this.sections.put(this.sectionCommands, this.commands);
 
-            this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact, this.sectionCommands);
+            this.main.add(this.sectionGun, this.sectionProjectile, this.sectionImpact, this.sectionZoom, this.sectionCommands);
         }
 
         int index = Math.min(lastSection, this.sections.size() - 1);

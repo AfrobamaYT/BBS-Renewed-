@@ -624,4 +624,13 @@ public class ClientNetwork
             packetByteBuf.writeUuid(uuid);
         });
     }
+
+    public static void sendZoom(boolean zoom)
+    {
+        PacketByteBuf buf = PacketByteBufs.create();
+
+        buf.writeBoolean(zoom);
+
+        ClientPlayNetworking.send(ServerNetwork.SERVER_ZOOM, buf);
+    }
 }
