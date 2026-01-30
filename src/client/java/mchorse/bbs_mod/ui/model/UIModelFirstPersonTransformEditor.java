@@ -76,7 +76,6 @@ public class UIModelFirstPersonTransformEditor extends UIDashboardPanel
         {
             this.parent.dirty();
             this.syncModel();
-            this.parent.forceSave();
         });
         this.transform.relative(this).x(1F, -200).y(0.5F, 10).w(190).h(70);
 
@@ -120,8 +119,14 @@ public class UIModelFirstPersonTransformEditor extends UIDashboardPanel
     {
         if (this.cachedModel != null)
         {
-            this.cachedModel.fpMain.transform.copy(this.config.fpMain.transform);
-            this.cachedModel.fpOffhand.transform.copy(this.config.fpOffhand.transform);
+            if (this.cachedModel.fpMain != null)
+            {
+                this.cachedModel.fpMain.transform.copy(this.config.fpMain.transform);
+            }
+            if (this.cachedModel.fpOffhand != null)
+            {
+                this.cachedModel.fpOffhand.transform.copy(this.config.fpOffhand.transform);
+            }
         }
     }
 
@@ -195,6 +200,7 @@ public class UIModelFirstPersonTransformEditor extends UIDashboardPanel
     {
         super.disappear();
 
+        this.parent.forceSave();
         this.restore();
 
         MinecraftClient.getInstance().options.hudHidden = true;
