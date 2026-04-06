@@ -4,6 +4,7 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.MolangHelper;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
+import mchorse.bbs_mod.cubic.physics.ModelPhysicsRuntime;
 import mchorse.bbs_mod.cubic.model.loaders.BOBJModelLoader;
 import mchorse.bbs_mod.cubic.model.loaders.CubicModelLoader;
 import mchorse.bbs_mod.cubic.model.loaders.GeoCubicModelLoader;
@@ -164,6 +165,7 @@ public class ModelManager implements IWatchDogListener
 
         this.models.clear();
         ModelIKRuntime.clearCache();
+        ModelPhysicsRuntime.clearCache();
         PoseManager.INSTANCE.clear();
         ShapeKeysManager.INSTANCE.clear();
         this.setupLoaders();
@@ -188,7 +190,8 @@ public class ModelManager implements IWatchDogListener
             || link.path.endsWith(".animation.json")
             || link.path.endsWith(".vox")
             || link.path.endsWith("/config.json")
-            || link.path.endsWith("/ik.json");
+            || link.path.endsWith("/ik.json")
+            || link.path.endsWith("/physics.json");
     }
 
     /**
@@ -213,6 +216,10 @@ public class ModelManager implements IWatchDogListener
             if (link.path.endsWith("/ik.json"))
             {
                 ModelIKRuntime.invalidate(key);
+            }
+            else if (link.path.endsWith("/physics.json"))
+            {
+                ModelPhysicsRuntime.invalidate(key);
             }
 
             if (model != null)

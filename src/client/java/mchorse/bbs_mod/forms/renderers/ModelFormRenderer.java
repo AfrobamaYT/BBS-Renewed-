@@ -13,9 +13,11 @@ import mchorse.bbs_mod.cubic.animation.IAnimator;
 import mchorse.bbs_mod.cubic.animation.ProceduralAnimator;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
+import mchorse.bbs_mod.cubic.physics.ModelPhysicsRuntime;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
+import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.ITickable;
@@ -51,6 +53,7 @@ import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
@@ -72,6 +75,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     private IAnimator animator;
     private ModelInstance lastModel;
     private boolean ikAppliedThisRender;
+    private boolean physicsAppliedThisRender;
 
     private IEntity entity = new StubEntity();
 
@@ -269,7 +273,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 ? GameRenderer::getRenderTypeEntityTranslucentCullProgram
                 : BBSShaders::getModel;
 
-            this.renderModel(this.entity, mainShader, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, null, context.getTransition());
+            this.renderModel(this.entity, mainShader, stack, model, LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, color, true, null, context.getTransition(), null);
 
             /* Render body parts */
             stack.push();
@@ -287,9 +291,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, Supplier<ShaderProgram> program, MatrixStack stack, ModelInstance model, int light, int overlay, Color color, boolean ui, StencilMap stencilMap, float transition)
+    private void renderModel(IEntity target, Supplier<ShaderProgram> program, MatrixStack stack, ModelInstance model, int light, int overlay, Color color, boolean ui, StencilMap stencilMap, float transition, Camera camera)
     {
         this.ikAppliedThisRender = false;
+        this.physicsAppliedThisRender = false;
 
         if (!model.culling)
         {
@@ -315,6 +320,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         this.applyIKOnce(model);
+        this.applyPhysicsOnce(target, model, transition, this.getWorldTransform(newStack.peek().getPositionMatrix(), camera, ui));
 
         model.render(newStack, program, color, light, overlay, stencilMap, this.form.shapeKeys.get());
 
@@ -351,6 +357,35 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         this.ikAppliedThisRender = true;
         ModelIKRuntime.apply(model);
+    }
+
+    private void applyPhysicsOnce(IEntity target, ModelInstance model, float transition, Matrix4f baseTransform)
+    {
+        if (this.physicsAppliedThisRender)
+        {
+            return;
+        }
+
+        this.physicsAppliedThisRender = true;
+        ModelPhysicsRuntime.apply(target, model, transition, baseTransform);
+    }
+
+    private Matrix4f getWorldTransform(Matrix4f positionMatrix, Camera camera, boolean ui)
+    {
+        if (ui || camera == null)
+        {
+            return null;
+        }
+
+        Matrix4f matrix = new Matrix4f(RenderSystem.getInverseViewRotationMatrix());
+
+        matrix.mul(positionMatrix);
+
+        Vector3f translation = matrix.getTranslation(new Vector3f());
+        translation.add((float) camera.position.x, (float) camera.position.y, (float) camera.position.z);
+        matrix.setTranslation(translation);
+
+        return matrix;
     }
 
     private void renderArmor(IEntity target, MatrixStack stack, ArmorType type, ArmorSlot armorSlot, Color color, int overlay, int light)
@@ -486,7 +521,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             RenderSystem.enableDepthTest();
             RenderSystem.enableBlend();
 
-            this.renderModel(this.entity, mainShader, matrices, model, light, OverlayTexture.DEFAULT_UV, color, false, null, 0F);
+            this.renderModel(this.entity, mainShader, matrices, model, light, OverlayTexture.DEFAULT_UV, color, false, null, 0F, null);
 
             for (ModelGroup group : model.getModel().getAllGroups())
             {
@@ -529,7 +564,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 : BBSShaders::getModel;
             Supplier<ShaderProgram> shader = this.getShader(context, mainShader, BBSShaders::getPickerModelsProgram);
 
-            this.renderModel(context.entity, shader, context.stack, model, context.light, context.overlay, color, false, context.stencilMap, context.getTransition());
+            this.renderModel(context.entity, shader, context.stack, model, context.light, context.overlay, color, false, context.stencilMap, context.getTransition(), context.camera);
         }
     }
 
