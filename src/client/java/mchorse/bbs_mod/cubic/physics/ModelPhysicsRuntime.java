@@ -24,6 +24,7 @@ public final class ModelPhysicsRuntime
     private static final float EPS = 1.0e-6f;
     private static final float ANCHOR_ROTATION_POS_FOLLOW = 0.85F;
     private static final float ANCHOR_ROTATION_PREV_FOLLOW = 0.75F;
+    private static final float ANCHOR_TRANSLATION_INERTIA = 0.5F;
 
     private static final class ChainState
     {
@@ -31,6 +32,7 @@ public final class ModelPhysicsRuntime
         public Vector3f anchor = new Vector3f();
         public Vector3f attach = new Vector3f();
         public Quaternionf attachRotation = new Quaternionf();
+        public Vector3f attachVelocity = new Vector3f();
         public Vector3f rootOffsetLocal = new Vector3f();
         public boolean rootOffsetReady;
         public Vector3f[] pos;
@@ -258,6 +260,7 @@ public final class ModelPhysicsRuntime
         {
             state.attach.set(newAttach);
             state.attachRotation.set(newAttachRotation);
+            state.attachVelocity.set(0F, 0F, 0F);
 
             Vector3f rootPos = chainFrames.get(0).position();
 
@@ -316,6 +319,11 @@ public final class ModelPhysicsRuntime
         float damping = clamp01(chain.damping());
         int iterations = chain.iterations();
 
+        Vector3f oldAttachTick = new Vector3f(state.attach);
+        Vector3f velAttach = new Vector3f(newAttach).sub(oldAttachTick).mul(1F / dt);
+        Vector3f accelAttach = new Vector3f(velAttach).sub(state.attachVelocity);
+        state.attachVelocity.set(velAttach);
+
         for (int t = 0; t < dt; t++)
         {
             Vector3f oldAttach = new Vector3f(state.attach);
@@ -356,6 +364,12 @@ public final class ModelPhysicsRuntime
 
                 prev.set(p);
                 p.add(vel);
+                if (t == 0 && ANCHOR_TRANSLATION_INERTIA > 0F)
+                {
+                    p.x -= accelAttach.x * ANCHOR_TRANSLATION_INERTIA;
+                    p.y -= accelAttach.y * ANCHOR_TRANSLATION_INERTIA;
+                    p.z -= accelAttach.z * ANCHOR_TRANSLATION_INERTIA;
+                }
                 p.y -= gravity;
             }
 
