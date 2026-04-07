@@ -28,6 +28,7 @@ public final class ModelPhysicsRuntime
     private static final float ANCHOR_ROTATION_POS_FOLLOW = 0.85F;
     private static final float ANCHOR_ROTATION_PREV_FOLLOW = 0.75F;
     private static final float ANCHOR_TRANSLATION_INERTIA = 0.5F;
+    private static final float ANCHOR_TRANSLATION_DRAG = 0.15F;
 
     private static final class ChainState
     {
@@ -356,6 +357,12 @@ public final class ModelPhysicsRuntime
                     p.x -= accelAnchor.x * ANCHOR_TRANSLATION_INERTIA;
                     p.y -= accelAnchor.y * ANCHOR_TRANSLATION_INERTIA;
                     p.z -= accelAnchor.z * ANCHOR_TRANSLATION_INERTIA;
+                }
+                if (t == 0 && ANCHOR_TRANSLATION_DRAG > 0F)
+                {
+                    p.x -= velAnchor.x * ANCHOR_TRANSLATION_DRAG;
+                    p.y -= velAnchor.y * ANCHOR_TRANSLATION_DRAG;
+                    p.z -= velAnchor.z * ANCHOR_TRANSLATION_DRAG;
                 }
                 p.y -= gravity;
             }
