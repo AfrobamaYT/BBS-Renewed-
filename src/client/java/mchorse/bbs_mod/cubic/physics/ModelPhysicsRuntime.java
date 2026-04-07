@@ -30,11 +30,8 @@ public final class ModelPhysicsRuntime
     {
         public int lastAge = Integer.MIN_VALUE;
         public Vector3f anchor = new Vector3f();
-        public Vector3f attach = new Vector3f();
-        public Quaternionf attachRotation = new Quaternionf();
-        public Vector3f attachVelocity = new Vector3f();
-        public Vector3f rootOffsetLocal = new Vector3f();
-        public boolean rootOffsetReady;
+        public Quaternionf anchorRotation = new Quaternionf();
+        public Vector3f anchorVelocity = new Vector3f();
         public Vector3f[] pos;
         public Vector3f[] prev;
         public Vector3f[] render;
@@ -98,7 +95,6 @@ public final class ModelPhysicsRuntime
         for (ModelPhysicsCache.CompiledChain chain : compiledChains)
         {
             chainIds.add(chain.id());
-            wanted.add(chain.attach());
             wanted.addAll(chain.chainRootToEnd());
         }
 
@@ -126,13 +122,6 @@ public final class ModelPhysicsRuntime
 
     private static void applyChain(int age, float transition, Model model, ModelPhysicsCache.CompiledChain chain, Map<String, PivotFrame> frames, InstanceState instanceState)
     {
-        PivotFrame attachFrame = frames.get(chain.attach());
-
-        if (attachFrame == null)
-        {
-            return;
-        }
-
         List<String> ids = chain.chainRootToEnd();
         int pivotCount = ids.size();
         int pointCount = pivotCount + 1;
@@ -158,7 +147,6 @@ public final class ModelPhysicsRuntime
             }
 
             state.lastAge = Integer.MIN_VALUE;
-            state.rootOffsetReady = false;
         }
 
         List<PivotFrame> chainFrames = new ArrayList<>(pivotCount);
@@ -175,10 +163,13 @@ public final class ModelPhysicsRuntime
             chainFrames.add(frame);
         }
 
-        Quaternionf attachRotation = attachFrame.worldRotation();
-        step(age, chain, attachFrame.position(), attachRotation, chainFrames, state);
+        PivotFrame rootFrame = chainFrames.get(0);
+        Vector3f anchor = rootFrame.position();
+        Quaternionf anchorRotation = rootFrame.worldRotation();
+
+        step(age, chain, anchor, anchorRotation, chainFrames, state);
         Vector3f[] positions = interpolate(state, transition);
-        applyRenderAnchorFollow(state, positions, attachFrame.position(), attachRotation, transition);
+        applyRenderAnchorFollow(state, positions, anchor, anchorRotation, transition);
         CubicRenderer.applyRotations(model, chainFrames.get(0).parentRotation(), ids, positions);
     }
 
@@ -208,7 +199,7 @@ public final class ModelPhysicsRuntime
         return state.render;
     }
 
-    private static void applyRenderAnchorFollow(ChainState state, Vector3f[] positions, Vector3f attachPosition, Quaternionf attachRotation, float transition)
+    private static void applyRenderAnchorFollow(ChainState state, Vector3f[] positions, Vector3f anchorPosition, Quaternionf anchorRotation, float transition)
     {
         if (state.lastAge == Integer.MIN_VALUE || positions == null || positions.length == 0)
         {
@@ -226,10 +217,10 @@ public final class ModelPhysicsRuntime
             t = 1F;
         }
 
-        Vector3f oldAttach = state.attach;
-        Vector3f delta = new Vector3f(attachPosition).sub(oldAttach).mul(t);
+        Vector3f oldAnchor = state.anchor;
+        Vector3f delta = new Vector3f(anchorPosition).sub(oldAnchor).mul(t);
 
-        Quaternionf dq = new Quaternionf(attachRotation).mul(new Quaternionf(state.attachRotation).invert()).normalize();
+        Quaternionf dq = new Quaternionf(anchorRotation).mul(new Quaternionf(state.anchorRotation).invert()).normalize();
         Quaternionf dqPartial = new Quaternionf().identity().slerp(dq, t);
 
         if (Math.abs(delta.x) < EPS && Math.abs(delta.y) < EPS && Math.abs(delta.z) < EPS && Math.abs(dqPartial.x) < EPS && Math.abs(dqPartial.y) < EPS && Math.abs(dqPartial.z) < EPS)
@@ -239,16 +230,16 @@ public final class ModelPhysicsRuntime
 
         for (int i = 0; i < positions.length; i++)
         {
-            Vector3f rel = new Vector3f(positions[i]).sub(oldAttach);
+            Vector3f rel = new Vector3f(positions[i]).sub(oldAnchor);
             dqPartial.transform(rel);
-            positions[i].set(oldAttach).add(delta).add(rel);
+            positions[i].set(oldAnchor).add(delta).add(rel);
         }
     }
 
-    private static void step(int age, ModelPhysicsCache.CompiledChain chain, Vector3f attachPosition, Quaternionf attachRotation, List<PivotFrame> chainFrames, ChainState state)
+    private static void step(int age, ModelPhysicsCache.CompiledChain chain, Vector3f anchorPosition, Quaternionf anchorRotation, List<PivotFrame> chainFrames, ChainState state)
     {
-        Vector3f newAttach = attachPosition;
-        Quaternionf newAttachRotation = attachRotation;
+        Vector3f newAnchor = anchorPosition;
+        Quaternionf newAnchorRotation = anchorRotation;
         float[] lengths = chain.restLengths();
 
         if (lengths == null || lengths.length != state.pos.length - 1)
@@ -258,24 +249,12 @@ public final class ModelPhysicsRuntime
 
         if (state.lastAge == Integer.MIN_VALUE)
         {
-            state.attach.set(newAttach);
-            state.attachRotation.set(newAttachRotation);
-            state.attachVelocity.set(0F, 0F, 0F);
+            state.anchor.set(newAnchor);
+            state.anchorRotation.set(newAnchorRotation);
+            state.anchorVelocity.set(0F, 0F, 0F);
 
-            Vector3f rootPos = chainFrames.get(0).position();
-
-            if (!state.rootOffsetReady)
-            {
-                Vector3f offsetWorld = new Vector3f(rootPos).sub(newAttach);
-                Quaternionf inv = new Quaternionf(newAttachRotation).invert();
-                inv.transform(offsetWorld);
-                state.rootOffsetLocal.set(offsetWorld);
-                state.rootOffsetReady = true;
-            }
-
-            state.anchor.set(rootPos);
-            state.pos[0].set(rootPos);
-            state.prev[0].set(rootPos);
+            state.pos[0].set(newAnchor);
+            state.prev[0].set(newAnchor);
 
             for (int i = 1; i < chainFrames.size(); i++)
             {
@@ -328,41 +307,35 @@ public final class ModelPhysicsRuntime
         float damping = clamp01(chain.damping());
         int iterations = chain.iterations();
 
-        Vector3f oldAttachTick = new Vector3f(state.attach);
-        Vector3f velAttach = new Vector3f(newAttach).sub(oldAttachTick).mul(1F / dt);
-        Vector3f accelAttach = new Vector3f(velAttach).sub(state.attachVelocity);
-        state.attachVelocity.set(velAttach);
+        Vector3f oldAnchorTick = new Vector3f(state.anchor);
+        Vector3f velAnchor = new Vector3f(newAnchor).sub(oldAnchorTick).mul(1F / dt);
+        Vector3f accelAnchor = new Vector3f(velAnchor).sub(state.anchorVelocity);
+        state.anchorVelocity.set(velAnchor);
 
         for (int t = 0; t < dt; t++)
         {
-            Vector3f oldAttach = new Vector3f(state.attach);
-            Quaternionf dq = new Quaternionf(newAttachRotation).mul(new Quaternionf(state.attachRotation).invert()).normalize();
+            Vector3f oldAnchor = new Vector3f(state.anchor);
+            Quaternionf dq = new Quaternionf(newAnchorRotation).mul(new Quaternionf(state.anchorRotation).invert()).normalize();
             Quaternionf dqPos = new Quaternionf().identity().slerp(dq, ANCHOR_ROTATION_POS_FOLLOW);
             Quaternionf dqPrev = new Quaternionf().identity().slerp(dq, ANCHOR_ROTATION_PREV_FOLLOW);
 
-            for (int i = 0; i < state.pos.length; i++)
+            for (int i = 1; i < state.pos.length; i++)
             {
                 Vector3f p = state.pos[i];
-                Vector3f rel = new Vector3f(p).sub(oldAttach);
+                Vector3f rel = new Vector3f(p).sub(oldAnchor);
                 dqPos.transform(rel);
-                p.set(newAttach).add(rel);
+                p.set(newAnchor).add(rel);
 
                 Vector3f prev = state.prev[i];
-                Vector3f relPrev = new Vector3f(prev).sub(oldAttach);
+                Vector3f relPrev = new Vector3f(prev).sub(oldAnchor);
                 dqPrev.transform(relPrev);
-                prev.set(newAttach).add(relPrev);
+                prev.set(newAnchor).add(relPrev);
             }
 
-            state.attach.set(newAttach);
-            state.attachRotation.set(newAttachRotation);
-
-            Vector3f offsetWorld = new Vector3f(state.rootOffsetLocal);
-            new Quaternionf(newAttachRotation).transform(offsetWorld);
-            Vector3f anchor = new Vector3f(newAttach).add(offsetWorld);
-
-            state.anchor.set(anchor);
-            state.pos[0].set(anchor);
-            state.prev[0].set(anchor);
+            state.anchor.set(newAnchor);
+            state.anchorRotation.set(newAnchorRotation);
+            state.pos[0].set(newAnchor);
+            state.prev[0].set(newAnchor);
 
             for (int i = 1; i < state.pos.length; i++)
             {
@@ -375,9 +348,9 @@ public final class ModelPhysicsRuntime
                 p.add(vel);
                 if (t == 0 && ANCHOR_TRANSLATION_INERTIA > 0F)
                 {
-                    p.x -= accelAttach.x * ANCHOR_TRANSLATION_INERTIA;
-                    p.y -= accelAttach.y * ANCHOR_TRANSLATION_INERTIA;
-                    p.z -= accelAttach.z * ANCHOR_TRANSLATION_INERTIA;
+                    p.x -= accelAnchor.x * ANCHOR_TRANSLATION_INERTIA;
+                    p.y -= accelAnchor.y * ANCHOR_TRANSLATION_INERTIA;
+                    p.z -= accelAnchor.z * ANCHOR_TRANSLATION_INERTIA;
                 }
                 p.y -= gravity;
             }

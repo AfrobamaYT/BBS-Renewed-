@@ -4,13 +4,12 @@ import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.model.ModelManager;
 import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
-import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.utils.IOUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class ModelPhysicsIO
 {
@@ -43,31 +42,29 @@ public final class ModelPhysicsIO
 
         MapType map = readMap(file);
 
-        if (map == null || !map.has("chains", BaseType.TYPE_LIST))
+        if (map == null || !map.has("bones", BaseType.TYPE_MAP))
         {
             return null;
         }
 
-        ListType chains = map.getList("chains");
-        List<ModelPhysicsConfig.Chain> out = new ArrayList<>();
+        MapType bones = map.getMap("bones");
+        Map<String, ModelPhysicsConfig.Bone> out = new HashMap<>();
 
-        for (int i = 0; i < chains.size(); i++)
+        for (String root : bones.keys())
         {
-            if (!chains.has(i, BaseType.TYPE_MAP))
+            if (!bones.has(root, BaseType.TYPE_MAP))
             {
                 continue;
             }
 
-            MapType entry = chains.getMap(i);
-            String root = entry.getString("root");
+            MapType entry = bones.getMap(root);
             String end = entry.getString("end");
 
-            if (root.isEmpty() || end.isEmpty())
+            if (root == null || root.isEmpty() || end == null || end.isEmpty())
             {
                 continue;
             }
 
-            String attach = entry.getString("attach");
             float gravity = entry.getFloat("gravity", DEFAULT_GRAVITY);
             float damping = entry.getFloat("damping", DEFAULT_DAMPING);
             int iterations = entry.getInt("iterations", DEFAULT_ITERATIONS);
@@ -77,7 +74,7 @@ public final class ModelPhysicsIO
                 iterations = 1;
             }
 
-            out.add(new ModelPhysicsConfig.Chain(attach, root, end, gravity, damping, iterations));
+            out.put(root, new ModelPhysicsConfig.Bone(end, gravity, damping, iterations));
         }
 
         return out.isEmpty() ? null : new ModelPhysicsConfig(out);
@@ -95,44 +92,30 @@ public final class ModelPhysicsIO
         file.getParentFile().mkdirs();
 
         MapType root = new MapType();
-        ListType chains = new ListType();
+        MapType bones = new MapType();
 
-        if (config != null && config.chains() != null)
+        if (config != null && config.bones() != null)
         {
-            for (ModelPhysicsConfig.Chain chain : config.chains())
+            for (Map.Entry<String, ModelPhysicsConfig.Bone> entry : config.bones().entrySet())
             {
-                if (chain == null)
+                String rootId = entry.getKey();
+                ModelPhysicsConfig.Bone bone = entry.getValue();
+
+                if (rootId == null || rootId.isEmpty() || bone == null || bone.end() == null || bone.end().isEmpty())
                 {
                     continue;
                 }
 
-                String rootId = chain.root();
-                String endId = chain.end();
-
-                if (rootId == null || rootId.isEmpty() || endId == null || endId.isEmpty())
-                {
-                    continue;
-                }
-
-                MapType entry = new MapType();
-                String attach = chain.attach();
-
-                if (attach != null && !attach.isEmpty() && !attach.equals(rootId))
-                {
-                    entry.putString("attach", attach);
-                }
-
-                entry.putString("root", rootId);
-                entry.putString("end", endId);
-                entry.putFloat("gravity", chain.gravity());
-                entry.putFloat("damping", chain.damping());
-                entry.putInt("iterations", Math.max(1, chain.iterations()));
-
-                chains.add(entry);
+                MapType map = new MapType();
+                map.putString("end", bone.end());
+                map.putFloat("gravity", bone.gravity());
+                map.putFloat("damping", bone.damping());
+                map.putInt("iterations", Math.max(1, bone.iterations()));
+                bones.put(rootId, map);
             }
         }
 
-        root.put("chains", chains);
+        root.put("bones", bones);
 
         return DataToString.writeSilently(file, root, true);
     }

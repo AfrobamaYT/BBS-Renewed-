@@ -11,7 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-final class ModelIKIO
+public final class ModelIKIO
 {
     private ModelIKIO()
     {
@@ -56,16 +56,58 @@ final class ModelIKIO
             MapType entry = map.getMap(controller);
             String locator = entry.getString("locator");
             String root = entry.getString("root");
+            boolean enabled = entry.getBool("enabled", true);
 
             if (locator.isEmpty() || root.isEmpty())
             {
                 continue;
             }
 
-            chains.add(new ModelIKConfig.Chain(controller, locator, root));
+            chains.add(new ModelIKConfig.Chain(controller, locator, root, enabled));
         }
 
         return chains.isEmpty() ? null : new ModelIKConfig(chains);
+    }
+
+    public static boolean write(String modelId, ModelIKConfig config)
+    {
+        File file = getFile(modelId);
+
+        if (file == null)
+        {
+            return false;
+        }
+
+        file.getParentFile().mkdirs();
+
+        MapType ik = new MapType();
+
+        if (config != null && config.chains() != null)
+        {
+            for (ModelIKConfig.Chain chain : config.chains())
+            {
+                if (chain == null || chain.controller() == null || chain.controller().isEmpty())
+                {
+                    continue;
+                }
+
+                String locator = chain.locator();
+                String root = chain.root();
+
+                if (locator == null || locator.isEmpty() || root == null || root.isEmpty())
+                {
+                    continue;
+                }
+
+                MapType boneData = new MapType();
+                boneData.putString("locator", locator);
+                boneData.putString("root", root);
+                boneData.putBool("enabled", chain.enabled());
+                ik.put(chain.controller(), boneData);
+            }
+        }
+
+        return DataToString.writeSilently(file, ik, true);
     }
 
     private static MapType readMap(File file)

@@ -119,23 +119,25 @@ final class ModelPhysicsCache
 
     private static List<CompiledChain> compile(Model model, ModelPhysicsConfig config)
     {
-        if (config == null || config.chains() == null || config.chains().isEmpty())
+        if (config == null || config.bones() == null || config.bones().isEmpty())
         {
             return java.util.Collections.emptyList();
         }
 
         List<CompiledChain> out = new ArrayList<>();
 
-        for (int i = 0; i < config.chains().size(); i++)
+        List<String> roots = new ArrayList<>(config.bones().keySet());
+        java.util.Collections.sort(roots);
+
+        for (String rootId : roots)
         {
-            ModelPhysicsConfig.Chain chain = config.chains().get(i);
+            ModelPhysicsConfig.Bone chain = config.bones().get(rootId);
 
             if (chain == null)
             {
                 continue;
             }
 
-            String rootId = chain.root();
             String endId = chain.end();
 
             ModelGroup root = model.getGroup(rootId);
@@ -160,14 +162,9 @@ final class ModelPhysicsCache
                 continue;
             }
 
-            String attach = chain.attach();
+            String attach = rootId;
 
-            if (attach == null || attach.isEmpty())
-            {
-                attach = rootId;
-            }
-
-            String id = i + ":" + attach + ":" + rootId + ":" + endId;
+            String id = rootId + ":" + endId;
             out.add(new CompiledChain(id, attach, ids, lengths, chain.gravity(), chain.damping(), chain.iterations()));
         }
 

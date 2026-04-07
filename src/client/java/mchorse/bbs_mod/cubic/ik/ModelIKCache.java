@@ -55,19 +55,11 @@ final class ModelIKCache
             return cached;
         }
 
-        ModelIKConfig config = ModelIKIO.read(modelId);
+        ModelIKConfig config = lm < 0 ? null : ModelIKIO.read(modelId);
         List<CompiledChain> compiled = compile(model, config);
 
-        Compiled next = compiled.isEmpty() ? null : new Compiled(file, lm, compiled);
-
-        if (next == null)
-        {
-            CACHE.remove(modelId);
-        }
-        else
-        {
-            CACHE.put(modelId, next);
-        }
+        Compiled next = new Compiled(file, lm, compiled);
+        CACHE.put(modelId, next);
 
         return next;
     }
@@ -84,6 +76,11 @@ final class ModelIKCache
         for (ModelIKConfig.Chain chain : config.chains())
         {
             if (chain == null)
+            {
+                continue;
+            }
+
+            if (!chain.enabled())
             {
                 continue;
             }
