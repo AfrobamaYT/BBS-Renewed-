@@ -103,10 +103,10 @@ public final class ModelPhysicsRuntime
         Map<String, InstanceState> byModel = STATES.computeIfAbsent(entity, (e) -> new HashMap<>());
         InstanceState state = byModel.computeIfAbsent(instance.id, (k) -> new InstanceState());
 
-        applyCompiled(entity.getAge(), transition, model, instance, compiled.chains(), constraints, state);
+        applyCompiled(entity.getAge(), transition, model, instance, compiled.chains(), constraints, state, baseTransform);
     }
 
-    private static void applyCompiled(int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state)
+    private static void applyCompiled(int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform)
     {
         Set<String> wanted = new HashSet<>();
         Set<String> chainIds = new HashSet<>();
@@ -136,7 +136,7 @@ public final class ModelPhysicsRuntime
         }
 
         Map<String, PivotFrame> frames = new HashMap<>(wanted.size() * 2);
-        CubicRenderer.collectPivotFrames(model, wanted, frames);
+        CubicRenderer.collectPivotFrames(model, wanted, frames, baseTransform);
 
         for (ModelPhysicsCache.CompiledChain chain : compiledChains)
         {
@@ -200,10 +200,6 @@ public final class ModelPhysicsRuntime
             if (worldPos != null)
             {
                 TARGET.set(worldPos);
-                if (instance.lastBaseTransform != null)
-                {
-                    M1.set(instance.lastBaseTransform).invert().transformPosition(TARGET);
-                }
                 target = TARGET;
             }
         }
