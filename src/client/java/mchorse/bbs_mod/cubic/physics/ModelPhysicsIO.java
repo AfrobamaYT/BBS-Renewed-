@@ -16,6 +16,8 @@ public final class ModelPhysicsIO
     private static final float DEFAULT_GRAVITY = 1F;
     private static final float DEFAULT_DAMPING = 0.15F;
     private static final int DEFAULT_ITERATIONS = 4;
+    private static final boolean DEFAULT_COLLISIONS = false;
+    private static final float DEFAULT_RADIUS = 0.1F;
 
     private ModelPhysicsIO()
     {
@@ -69,13 +71,20 @@ public final class ModelPhysicsIO
             float gravity = entry.getFloat("gravity", DEFAULT_GRAVITY);
             float damping = entry.getFloat("damping", DEFAULT_DAMPING);
             int iterations = entry.getInt("iterations", DEFAULT_ITERATIONS);
+            boolean collisions = entry.getBool("collisions", DEFAULT_COLLISIONS);
+            float radius = entry.getFloat("radius", DEFAULT_RADIUS);
 
             if (iterations < 1)
             {
                 iterations = 1;
             }
 
-            out.put(root, new ModelPhysicsConfig.Bone(end, targetBone, gravity, damping, iterations));
+            if (radius < 0F)
+            {
+                radius = 0F;
+            }
+
+            out.put(root, new ModelPhysicsConfig.Bone(end, targetBone, gravity, damping, iterations, collisions, radius));
         }
 
         return out.isEmpty() ? null : new ModelPhysicsConfig(out);
@@ -118,6 +127,17 @@ public final class ModelPhysicsIO
                 map.putFloat("gravity", bone.gravity());
                 map.putFloat("damping", bone.damping());
                 map.putInt("iterations", Math.max(1, bone.iterations()));
+
+                if (bone.collisions())
+                {
+                    map.putBool("collisions", true);
+                }
+
+                if (bone.radius() != DEFAULT_RADIUS)
+                {
+                    map.putFloat("radius", bone.radius());
+                }
+
                 bones.put(rootId, map);
             }
         }

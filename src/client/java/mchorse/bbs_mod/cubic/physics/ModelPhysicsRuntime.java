@@ -9,6 +9,9 @@ import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.joml.Matrices;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.World;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -29,6 +32,14 @@ public final class ModelPhysicsRuntime
     private static final float ANCHOR_ROTATION_PREV_FOLLOW = 0.75F;
     private static final float ANCHOR_TRANSLATION_INERTIA = 0.5F;
     private static final float ANCHOR_TRANSLATION_DRAG = 0.15F;
+    private static final float COLLISION_FRICTION = 0.5F;
+    private static final float COLLISION_MAX_ANCHOR_STEP = 0.25F;
+    private static final int COLLISION_MAX_SUBSTEPS = 8;
+    private static final float COLLISION_EPS = 1.0e-4f;
+    private static final float COLLISION_SLEEP_EPS = 0.005f;
+    private static final float COLLISION_STATIC_FRICTION_EPS = 0.02f;
+    private static final float COLLISION_CONTACT_SLOP = 0.02f;
+    private static final float RENDER_SMOOTH_ALPHA = 0.35F;
 
     /* Temporary pool to avoid allocations */
     private static final Vector3f V1 = new Vector3f();
@@ -37,10 +48,13 @@ public final class ModelPhysicsRuntime
     private static final Vector3f V4 = new Vector3f();
     private static final Vector3f V5 = new Vector3f();
     private static final Vector3f V6 = new Vector3f();
+    private static final Vector3f V7 = new Vector3f();
     private static final Vector3f TARGET = new Vector3f();
     private static final Quaternionf Q1 = new Quaternionf();
     private static final Quaternionf Q2 = new Quaternionf();
     private static final Quaternionf Q3 = new Quaternionf();
+    private static final Quaternionf Q4 = new Quaternionf();
+    private static final Quaternionf Q5 = new Quaternionf();
     private static final Matrix4f M1 = new Matrix4f();
 
     private static final class ChainState
@@ -52,6 +66,7 @@ public final class ModelPhysicsRuntime
         public Vector3f[] pos;
         public Vector3f[] prev;
         public Vector3f[] render;
+        public Vector3f[] contactNormals;
     }
 
     private static final class InstanceState
@@ -103,10 +118,10 @@ public final class ModelPhysicsRuntime
         Map<String, InstanceState> byModel = STATES.computeIfAbsent(entity, (e) -> new HashMap<>());
         InstanceState state = byModel.computeIfAbsent(instance.id, (k) -> new InstanceState());
 
-        applyCompiled(entity.getAge(), transition, model, instance, compiled.chains(), constraints, state, baseTransform);
+        applyCompiled(entity.getWorld(), entity.getAge(), transition, model, instance, compiled.chains(), constraints, state, baseTransform);
     }
 
-    private static void applyCompiled(int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform)
+    private static void applyCompiled(World world, int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform)
     {
         Set<String> wanted = new HashSet<>();
         Set<String> chainIds = new HashSet<>();
@@ -140,11 +155,11 @@ public final class ModelPhysicsRuntime
 
         for (ModelPhysicsCache.CompiledChain chain : compiledChains)
         {
-            applyChain(age, transition, model, instance, chain, constraints, frames, state);
+            applyChain(world, age, transition, model, instance, chain, constraints, frames, state);
         }
     }
 
-    private static void applyChain(int age, float transition, Model model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, InstanceState instanceState)
+    private static void applyChain(World world, int age, float transition, Model model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, InstanceState instanceState)
     {
         List<String> ids = chain.chainRootToEnd();
         int pivotCount = ids.size();
@@ -162,12 +177,14 @@ public final class ModelPhysicsRuntime
             state.pos = new Vector3f[pointCount];
             state.prev = new Vector3f[pointCount];
             state.render = new Vector3f[pointCount];
+            state.contactNormals = new Vector3f[pointCount];
 
             for (int i = 0; i < pointCount; i++)
             {
                 state.pos[i] = new Vector3f();
                 state.prev[i] = new Vector3f();
                 state.render[i] = new Vector3f();
+                state.contactNormals[i] = new Vector3f();
             }
 
             state.lastAge = Integer.MIN_VALUE;
@@ -226,9 +243,10 @@ public final class ModelPhysicsRuntime
             }
         }
 
-        step(age, model, ids, chain, constraints, anchor, anchorRotation, target, chainFrames, state);
+        step(world, age, model, ids, chain, constraints, anchor, anchorRotation, target, chainFrames, state);
         Vector3f[] positions = interpolate(state, transition);
         applyRenderAnchorFollow(state, positions, anchor, anchorRotation, target, transition);
+        applyRenderSmoothing(state, positions, transition, chain.collisions());
         CubicRenderer.applyRotations(model, chainFrames.get(0).parentRotation(), ids, positions);
     }
 
@@ -256,6 +274,19 @@ public final class ModelPhysicsRuntime
         }
 
         return state.render;
+    }
+
+    private static void applyRenderSmoothing(ChainState state, Vector3f[] positions, float transition, boolean collisions)
+    {
+        if (!collisions || transition > 0F || positions == null || state == null || state.pos == null || positions.length != state.pos.length)
+        {
+            return;
+        }
+
+        for (int i = 0; i < positions.length; i++)
+        {
+            positions[i].lerp(state.pos[i], RENDER_SMOOTH_ALPHA);
+        }
     }
 
     private static void applyRenderAnchorFollow(ChainState state, Vector3f[] positions, Vector3f anchorPosition, Quaternionf anchorRotation, Vector3f targetPosition, float transition)
@@ -305,7 +336,7 @@ public final class ModelPhysicsRuntime
         }
     }
 
-    private static void step(int age, Model model, List<String> ids, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, ChainState state)
+    private static void step(World world, int age, Model model, List<String> ids, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, ChainState state)
     {
         Vector3f newAnchor = anchorPosition;
         Quaternionf newAnchorRotation = anchorRotation;
@@ -373,36 +404,55 @@ public final class ModelPhysicsRuntime
         float gravity = BASE_GRAVITY * chain.gravity();
         float damping = clamp01(chain.damping());
         int iterations = chain.iterations();
+        boolean collisions = chain.collisions() && world != null && chain.radius() > 0F;
+        float radius = chain.radius();
 
         V1.set(state.anchor); // oldAnchorTick
         V2.set(newAnchor).sub(V1).mul(1F / dt); // velAnchor
         V3.set(V2).sub(state.anchorVelocity); // accelAnchor
         state.anchorVelocity.set(V2);
 
+        BlockPos.Mutable mutable = collisions ? new BlockPos.Mutable() : null;
+
         for (int t = 0; t < dt; t++)
         {
-            V4.set(state.anchor); // oldAnchor
-            Q1.set(newAnchorRotation).mul(Q2.set(state.anchorRotation).invert()).normalize(); // dq
-            Q2.identity().slerp(Q1, ANCHOR_ROTATION_POS_FOLLOW); // dqPos
-            Q3.identity().slerp(Q1, ANCHOR_ROTATION_PREV_FOLLOW); // dqPrev
+            V4.set(state.anchor);
+            Q4.set(state.anchorRotation);
 
-            for (int i = 1; i < state.pos.length; i++)
+            int substeps = computeSubsteps(V4, newAnchor);
+
+            for (int sub = 0; sub < substeps; sub++)
             {
-                Vector3f p = state.pos[i];
-                V5.set(p).sub(V4); // rel
-                Q2.transform(V5);
-                p.set(newAnchor).add(V5);
+                float alpha = (sub + 1) / (float) substeps;
 
-                Vector3f prev = state.prev[i];
-                V6.set(prev).sub(V4); // relPrev
-                Q3.transform(V6);
-                prev.set(newAnchor).add(V6);
+                V7.set(V4).lerp(newAnchor, alpha);
+                Q5.set(Q4).slerp(newAnchorRotation, alpha);
+
+                V6.set(state.anchor);
+                Q1.set(Q5).mul(Q2.set(state.anchorRotation).invert()).normalize();
+                Q2.identity().slerp(Q1, ANCHOR_ROTATION_POS_FOLLOW);
+                Q3.identity().slerp(Q1, ANCHOR_ROTATION_PREV_FOLLOW);
+
+                for (int i = 1; i < state.pos.length; i++)
+                {
+                    Vector3f p = state.pos[i];
+                    V5.set(p).sub(V6);
+                    Q2.transform(V5);
+                    p.set(V7).add(V5);
+
+                    Vector3f prev = state.prev[i];
+                    V5.set(prev).sub(V6);
+                    Q3.transform(V5);
+                    prev.set(V7).add(V5);
+                }
+
+                state.anchor.set(V7);
+                state.anchorRotation.set(Q5);
+                state.pos[0].set(V7);
+                state.prev[0].set(V7);
+
+                /* Collisions are resolved later during the solver iterations */
             }
-
-            state.anchor.set(newAnchor);
-            state.anchorRotation.set(newAnchorRotation);
-            state.pos[0].set(newAnchor);
-            state.prev[0].set(newAnchor);
 
             for (int i = 1; i < state.pos.length; i++)
             {
@@ -426,6 +476,44 @@ public final class ModelPhysicsRuntime
                     p.z -= V2.z * ANCHOR_TRANSLATION_DRAG;
                 }
                 p.y -= gravity;
+
+                if (collisions)
+                {
+                    float dx = p.x - prev.x;
+                    float dy = p.y - prev.y;
+                    float dz = p.z - prev.z;
+
+                    float maxStep = Math.max(COLLISION_MAX_ANCHOR_STEP, radius * 2F);
+                    float maxStepSq = maxStep * maxStep;
+                    float lenSq = dx * dx + dy * dy + dz * dz;
+
+                    if (lenSq > maxStepSq)
+                    {
+                        float minX = Math.min(prev.x, p.x) - radius;
+                        float minY = Math.min(prev.y, p.y) - radius;
+                        float minZ = Math.min(prev.z, p.z) - radius;
+                        float maxX = Math.max(prev.x, p.x) + radius;
+                        float maxY = Math.max(prev.y, p.y) + radius;
+                        float maxZ = Math.max(prev.z, p.z) + radius;
+
+                        int minBX = MathHelper.floor(minX);
+                        int minBY = MathHelper.floor(minY);
+                        int minBZ = MathHelper.floor(minZ);
+                        int maxBX = MathHelper.floor(maxX);
+                        int maxBY = MathHelper.floor(maxY);
+                        int maxBZ = MathHelper.floor(maxZ);
+
+                        boolean nearSolids = ModelPhysicsWorldCollisions.hasFullCubeInAabb(world, mutable, minBX, minBY, minBZ, maxBX, maxBY, maxBZ);
+
+                        if (nearSolids)
+                        {
+                            float inv = maxStep / (float) Math.sqrt(lenSq);
+                            p.x = prev.x + dx * inv;
+                            p.y = prev.y + dy * inv;
+                            p.z = prev.z + dz * inv;
+                        }
+                    }
+                }
             }
 
             for (int iter = 0; iter < iterations; iter++)
@@ -488,10 +576,45 @@ public final class ModelPhysicsRuntime
                         state.pos[state.pos.length - 1].set(targetPosition);
                     }
                 }
+
+                if (collisions)
+                {
+                    int from = 1;
+                    int to = targetPosition != null ? state.pos.length - 1 : state.pos.length;
+                    ModelPhysicsWorldCollisions.resolve(world, state.pos, state.prev, state.contactNormals, from, to, radius, COLLISION_FRICTION, COLLISION_CONTACT_SLOP, COLLISION_SLEEP_EPS, COLLISION_STATIC_FRICTION_EPS, COLLISION_EPS);
+
+                    state.pos[0].set(state.anchor);
+                    if (targetPosition != null)
+                    {
+                        state.pos[state.pos.length - 1].set(targetPosition);
+                    }
+                }
             }
 
             state.lastAge++;
         }
+    }
+
+    private static int computeSubsteps(Vector3f from, Vector3f to)
+    {
+        float dx = to.x - from.x;
+        float dy = to.y - from.y;
+        float dz = to.z - from.z;
+        float d2 = dx * dx + dy * dy + dz * dz;
+
+        if (d2 <= COLLISION_MAX_ANCHOR_STEP * COLLISION_MAX_ANCHOR_STEP)
+        {
+            return 1;
+        }
+
+        int steps = (int) Math.ceil(Math.sqrt(d2) / COLLISION_MAX_ANCHOR_STEP);
+
+        if (steps < 1)
+        {
+            return 1;
+        }
+
+        return Math.min(steps, COLLISION_MAX_SUBSTEPS);
     }
 
     private static void applyAngleConstraints(Model model, List<String> ids, Vector3f[] pos, float[] lengths, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Quaternionf rootParentRotation)

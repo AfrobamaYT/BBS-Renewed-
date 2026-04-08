@@ -719,6 +719,8 @@
 	"bbs.ui.forms.editors.model.physics.gravity": "Гравитация",
 	"bbs.ui.forms.editors.model.physics.damping": "Затухание",
 	"bbs.ui.forms.editors.model.physics.iterations": "Итерации",
+	"bbs.ui.forms.editors.model.physics.collisions": "Коллизии (Бета)",
+	"bbs.ui.forms.editors.model.physics.radius": "Радиус",
 	"bbs.ui.forms.editors.model.physics.clear": "Очистить",
 	"bbs.ui.forms.editors.model.physics.apply": "Применить",
 	"bbs.ui.forms.editors.model.physics.save_error": "Не удалось сохранить конфиг физики",

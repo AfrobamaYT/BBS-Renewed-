@@ -452,6 +452,8 @@ public class UIKeys
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_GRAVITY = L10n.lang("bbs.ui.forms.editors.model.physics.gravity");
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_DAMPING = L10n.lang("bbs.ui.forms.editors.model.physics.damping");
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_ITERATIONS = L10n.lang("bbs.ui.forms.editors.model.physics.iterations");
+    public static final IKey FORMS_EDITORS_MODEL_PHYSICS_COLLISIONS = L10n.lang("bbs.ui.forms.editors.model.physics.collisions");
+    public static final IKey FORMS_EDITORS_MODEL_PHYSICS_RADIUS = L10n.lang("bbs.ui.forms.editors.model.physics.radius");
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_CLEAR = L10n.lang("bbs.ui.forms.editors.model.physics.clear");
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_APPLY = L10n.lang("bbs.ui.forms.editors.model.physics.apply");
     public static final IKey FORMS_EDITORS_MODEL_PHYSICS_SAVE_ERROR = L10n.lang("bbs.ui.forms.editors.model.physics.save_error");
