@@ -322,7 +322,7 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         this.collisions.setEnabled(active);
         this.radius.setEnabled(active);
         this.clear.setEnabled(panelEnabled && boneSelected && d != null);
-        this.apply.setEnabled(panelEnabled && this.modelId != null && !this.modelId.isEmpty());
+        this.apply.setEnabled(panelEnabled && this.form != null);
 
         if (d == null)
         {
@@ -373,7 +373,11 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
     private void load()
     {
         this.data.clear();
-        ModelPhysicsConfig config = this.modelId == null ? null : ModelPhysicsIO.read(this.modelId);
+        ModelPhysicsConfig config = null;
+        if (this.form != null && this.form.physics.get() instanceof mchorse.bbs_mod.data.types.MapType map)
+        {
+            config = ModelPhysicsIO.fromData(map);
+        }
 
         if (config == null || config.bones() == null)
         {
@@ -404,7 +408,7 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
 
     private void save()
     {
-        if (this.modelId == null || this.modelId.isEmpty())
+        if (this.form == null)
         {
             this.getContext().notifyError(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_SAVE_ERROR);
             return;
@@ -437,14 +441,9 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             bones.put(root, new ModelPhysicsConfig.Bone(d.end, d.targetBone, d.gravity, d.damping, d.iterations, d.collisions, d.radius));
         }
 
-        if (ModelPhysicsIO.write(this.modelId, new ModelPhysicsConfig(bones)))
-        {
-            this.getContext().notifySuccess(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_SAVED);
-        }
-        else
-        {
-            this.getContext().notifyError(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_SAVE_ERROR);
-        }
+        ModelPhysicsConfig config = new ModelPhysicsConfig(bones);
+        this.form.physics.set(ModelPhysicsIO.toData(config));
+        this.getContext().notifySuccess(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_SAVED);
     }
 
     private boolean isValidChain(String rootId, String endId)

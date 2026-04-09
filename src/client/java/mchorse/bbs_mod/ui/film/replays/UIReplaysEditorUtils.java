@@ -149,6 +149,7 @@ public class UIReplaysEditorUtils
             return;
         }
 
+        model.form = modelForm;
         List<String> controllers = ModelIKRuntime.getControllers(model);
         String path = FormUtils.getPath(modelForm);
 
@@ -175,7 +176,11 @@ public class UIReplaysEditorUtils
             return;
         }
 
-        ModelPhysicsConfig physics = ModelPhysicsIO.read(model.id);
+        ModelPhysicsConfig physics = null;
+        if (modelForm.physics.get() instanceof mchorse.bbs_mod.data.types.MapType map)
+        {
+            physics = ModelPhysicsIO.fromData(map);
+        }
 
         if (physics == null || physics.bones() == null)
         {

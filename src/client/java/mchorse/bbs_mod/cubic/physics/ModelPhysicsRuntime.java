@@ -7,6 +7,7 @@ import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.render.CubicRenderer;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import net.minecraft.util.math.BlockPos;
@@ -88,8 +89,6 @@ public final class ModelPhysicsRuntime
 
     public static void invalidate(String modelId)
     {
-        ModelPhysicsCache.invalidate(modelId);
-
         for (Map<String, InstanceState> byModel : STATES.values())
         {
             if (byModel != null)
@@ -106,14 +105,18 @@ public final class ModelPhysicsRuntime
             return;
         }
 
-        ModelPhysicsCache.Compiled compiled = ModelPhysicsCache.get(instance.id, model);
+        ModelPhysicsCache.Compiled compiled = null;
+        if (instance.form instanceof mchorse.bbs_mod.forms.forms.ModelForm modelForm && modelForm.physics.get() instanceof MapType map)
+        {
+            compiled = ModelPhysicsCache.getFromData(model, map);
+        }
 
         if (compiled == null || compiled.chains() == null || compiled.chains().isEmpty())
         {
             return;
         }
 
-        Map<String, ModelConstraintsConfig.BoneConstraint> constraints = ModelConstraintsRuntime.getBones(instance.id);
+        Map<String, ModelConstraintsConfig.BoneConstraint> constraints = ModelConstraintsRuntime.getBones(instance);
 
         Map<String, InstanceState> byModel = STATES.computeIfAbsent(entity, (e) -> new HashMap<>());
         InstanceState state = byModel.computeIfAbsent(instance.id, (k) -> new InstanceState());

@@ -367,6 +367,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
 
         this.ikAppliedThisRender = true;
+        model.form = this.form;
         if (baseTransform == null || this.form == null || this.form.ikTargetOverrides.isEmpty())
         {
             ModelIKRuntime.apply(model);

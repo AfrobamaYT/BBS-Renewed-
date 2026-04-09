@@ -1,64 +1,74 @@
 package mchorse.bbs_mod.cubic.constraints;
 
-import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
-import mchorse.bbs_mod.cubic.model.ModelManager;
+import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.utils.MathUtils;
 
-import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public final class ModelConstraintsRuntime
 {
+    private static final WeakHashMap<MapType, Map<String, ModelConstraintsConfig.BoneConstraint>> EMBEDDED = new WeakHashMap<>();
+
     private ModelConstraintsRuntime()
     {
     }
 
     public static void clearCache()
     {
-        ModelConstraintsCache.clear();
+        EMBEDDED.clear();
     }
 
     public static void invalidate(String modelId)
     {
-        ModelConstraintsCache.invalidate(modelId);
+        EMBEDDED.clear();
     }
 
     public static void apply(ModelInstance instance)
     {
-        if (instance == null || instance.id == null || instance.id.isEmpty() || !(instance.model instanceof Model model))
+        if (instance == null || !(instance.model instanceof Model model))
         {
             return;
         }
 
-        ModelConstraintsCache.Compiled compiled = ModelConstraintsCache.get(instance.id);
+        Map<String, ModelConstraintsConfig.BoneConstraint> bones = getBones(instance);
 
-        if (compiled == null || compiled.bones() == null || compiled.bones().isEmpty())
+        if (bones == null || bones.isEmpty())
         {
             return;
         }
 
-        applyToModel(model, compiled.bones());
+        applyToModel(model, bones);
     }
 
-    public static Map<String, ModelConstraintsConfig.BoneConstraint> getBones(String modelId)
+    public static Map<String, ModelConstraintsConfig.BoneConstraint> getBones(ModelInstance instance)
     {
-        if (modelId == null || modelId.isEmpty())
+        if (instance != null && instance.form instanceof ModelForm form && form.constraints.get() instanceof MapType map)
         {
-            return Collections.emptyMap();
+            Map<String, ModelConstraintsConfig.BoneConstraint> cached = EMBEDDED.get(map);
+
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            ModelConstraintsConfig config = ModelConstraintsIO.fromData(map);
+            Map<String, ModelConstraintsConfig.BoneConstraint> bones = config == null || config.bones() == null
+                ? Collections.emptyMap()
+                : Collections.unmodifiableMap(new HashMap<>(config.bones()));
+
+            EMBEDDED.put(map, bones);
+
+            return bones;
         }
 
-        ModelConstraintsCache.Compiled compiled = ModelConstraintsCache.get(modelId);
-
-        if (compiled == null || compiled.bones() == null || compiled.bones().isEmpty())
-        {
-            return Collections.emptyMap();
-        }
-
-        return compiled.bones();
+        return Collections.emptyMap();
     }
 
     private static void applyToModel(Model model, Map<String, ModelConstraintsConfig.BoneConstraint> bones)
@@ -111,8 +121,4 @@ public final class ModelConstraintsRuntime
         }
     }
 
-    static File getConstraintsFile(String modelId)
-    {
-        return modelId == null ? null : BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + modelId + "/constraints.json");
-    }
 }

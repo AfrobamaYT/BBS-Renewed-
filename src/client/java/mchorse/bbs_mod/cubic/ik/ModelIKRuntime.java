@@ -2,6 +2,8 @@ package mchorse.bbs_mod.cubic.ik;
 
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
+import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.forms.forms.ModelForm;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -36,8 +38,7 @@ public final class ModelIKRuntime
 
     public static void invalidate(String modelId)
     {
-        ModelIKCache.invalidate(modelId);
-        STATES.clear();
+        clearCache();
     }
 
     public static void apply(ModelInstance instance)
@@ -52,7 +53,11 @@ public final class ModelIKRuntime
             return;
         }
 
-        ModelIKCache.Compiled compiled = ModelIKCache.get(instance.id, model);
+        ModelIKCache.Compiled compiled = null;
+        if (instance.form instanceof ModelForm form && form.ik.get() instanceof MapType map)
+        {
+            compiled = ModelIKCache.getFromData(model, map);
+        }
 
         if (compiled == null)
         {
@@ -77,7 +82,11 @@ public final class ModelIKRuntime
             return java.util.Collections.emptyList();
         }
 
-        ModelIKCache.Compiled compiled = ModelIKCache.get(instance.id, model);
+        ModelIKCache.Compiled compiled = null;
+        if (instance.form instanceof ModelForm form && form.ik.get() instanceof MapType map)
+        {
+            compiled = ModelIKCache.getFromData(model, map);
+        }
 
         if (compiled == null || compiled.chains() == null || compiled.chains().isEmpty())
         {

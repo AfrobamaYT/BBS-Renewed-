@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.constraints.ModelConstraintsConfig;
 import mchorse.bbs_mod.cubic.constraints.ModelConstraintsIO;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -146,7 +147,11 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
         this.bones.setList(bones);
         this.setElementsEnabled(true);
 
-        ModelConstraintsConfig config = this.modelId == null ? null : ModelConstraintsIO.read(this.modelId);
+        ModelConstraintsConfig config = null;
+        if (this.form != null && this.form.constraints.get() instanceof MapType map)
+        {
+            config = ModelConstraintsIO.fromData(map);
+        }
 
         if (config != null && config.bones() != null)
         {
@@ -234,7 +239,7 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
         this.maxY.setEnabled(active);
         this.maxZ.setEnabled(active);
         this.clear.setEnabled(panelEnabled && !this.selectedBone.isEmpty());
-        this.apply.setEnabled(panelEnabled && this.modelId != null && !this.modelId.isEmpty());
+        this.apply.setEnabled(panelEnabled && this.form != null);
     }
 
     private void setDefaults()
@@ -272,20 +277,14 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
 
     private void save()
     {
-        if (this.modelId == null || this.modelId.isEmpty())
+        if (this.form == null)
         {
             this.getContext().notifyError(UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_SAVE_ERROR);
             return;
         }
 
-        if (ModelConstraintsIO.write(this.modelId, new ModelConstraintsConfig(this.data)))
-        {
-            this.getContext().notifySuccess(UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_SAVED);
-        }
-        else
-        {
-            this.getContext().notifyError(UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_SAVE_ERROR);
-        }
+        this.form.constraints.set(ModelConstraintsIO.toData(new ModelConstraintsConfig(this.data)));
+        this.getContext().notifySuccess(UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_SAVED);
     }
 
     private void setElementsEnabled(boolean enabled)

@@ -1,14 +1,9 @@
 package mchorse.bbs_mod.cubic.constraints;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.cubic.model.ModelManager;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.utils.IOUtils;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,17 +16,8 @@ public final class ModelConstraintsIO
     {
     }
 
-    public static ModelConstraintsConfig read(String modelId)
+    public static ModelConstraintsConfig fromData(MapType root)
     {
-        File file = getFile(modelId);
-
-        if (file == null || !file.exists())
-        {
-            return null;
-        }
-
-        MapType root = readMap(file);
-
         if (root == null || !root.has("bones", BaseType.TYPE_MAP))
         {
             return null;
@@ -84,17 +70,8 @@ public final class ModelConstraintsIO
         return out.isEmpty() ? null : new ModelConstraintsConfig(out);
     }
 
-    public static boolean write(String modelId, ModelConstraintsConfig config)
+    public static MapType toData(ModelConstraintsConfig config)
     {
-        File file = getFile(modelId);
-
-        if (file == null)
-        {
-            return false;
-        }
-
-        file.getParentFile().mkdirs();
-
         MapType root = new MapType();
         MapType bones = new MapType();
 
@@ -131,8 +108,7 @@ public final class ModelConstraintsIO
         }
 
         root.put("bones", bones);
-
-        return DataToString.writeSilently(file, root, true);
+        return root;
     }
 
     private static float getFloat(ListType list, int index, float def)
@@ -145,27 +121,5 @@ public final class ModelConstraintsIO
         }
 
         return def;
-    }
-
-    private static MapType readMap(File file)
-    {
-        try
-        {
-            BaseType parsed = DataToString.fromString(IOUtils.readText(file));
-
-            if (parsed instanceof MapType map)
-            {
-                return map;
-            }
-        }
-        catch (Exception e)
-        {}
-
-        return null;
-    }
-
-    private static File getFile(String modelId)
-    {
-        return modelId == null ? null : BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + modelId + "/constraints.json");
     }
 }

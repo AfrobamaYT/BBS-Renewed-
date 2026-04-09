@@ -191,10 +191,7 @@ public class ModelManager implements IWatchDogListener
             || link.path.endsWith(".obj")
             || link.path.endsWith(".animation.json")
             || link.path.endsWith(".vox")
-            || link.path.endsWith("/config.json")
-            || link.path.endsWith("/ik.json")
-            || link.path.endsWith("/physics.json")
-            || link.path.endsWith("/constraints.json");
+            || link.path.endsWith("/config.json");
     }
 
     /**
@@ -215,19 +212,6 @@ public class ModelManager implements IWatchDogListener
         {
             String key = StringUtils.parentPath(link.path.substring(MODELS_PREFIX.length()));
             ModelInstance model = this.models.remove(key);
-
-            if (link.path.endsWith("/ik.json"))
-            {
-                ModelIKRuntime.invalidate(key);
-            }
-            else if (link.path.endsWith("/physics.json"))
-            {
-                ModelPhysicsRuntime.invalidate(key);
-            }
-            else if (link.path.endsWith("/constraints.json"))
-            {
-                ModelConstraintsRuntime.invalidate(key);
-            }
 
             if (model != null)
             {

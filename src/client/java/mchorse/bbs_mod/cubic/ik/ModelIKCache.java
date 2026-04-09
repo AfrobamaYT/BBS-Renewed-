@@ -2,12 +2,11 @@ package mchorse.bbs_mod.cubic.ik;
 
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
+import mchorse.bbs_mod.data.types.MapType;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.WeakHashMap;
 
 final class ModelIKCache
 {
@@ -19,49 +18,42 @@ final class ModelIKCache
     {
     }
 
-    public record Compiled(File file, long lastModified, List<CompiledChain> chains)
+    public record Compiled(List<CompiledChain> chains)
     {
     }
 
-    private static final Map<String, Compiled> CACHE = new HashMap<>();
+    private static final WeakHashMap<MapType, EmbeddedCompiled> EMBEDDED = new WeakHashMap<>();
+
+    private record EmbeddedCompiled(Model model, List<CompiledChain> chains)
+    {
+    }
 
     public static void clear()
     {
-        CACHE.clear();
+        EMBEDDED.clear();
     }
 
-    public static void invalidate(String modelId)
+    public static Compiled getFromData(Model model, MapType data)
     {
-        if (modelId != null && !modelId.isEmpty())
-        {
-            CACHE.remove(modelId);
-        }
-    }
-
-    public static Compiled get(String modelId, Model model)
-    {
-        if (modelId == null || modelId.isEmpty() || model == null)
+        if (model == null || data == null)
         {
             return null;
         }
 
-        File file = ModelIKIO.getFile(modelId);
-        long lm = file != null && file.exists() ? file.lastModified() : -1L;
+        EmbeddedCompiled cached = EMBEDDED.get(data);
 
-        Compiled cached = CACHE.get(modelId);
-
-        if (cached != null && cached.lastModified == lm)
+        if (cached != null && cached.model == model)
         {
-            return cached;
+            return new Compiled(cached.chains);
         }
 
-        ModelIKConfig config = lm < 0 ? null : ModelIKIO.read(modelId);
+        ModelIKConfig config = ModelIKIO.fromData(data);
         List<CompiledChain> compiled = compile(model, config);
 
-        Compiled next = new Compiled(file, lm, compiled);
-        CACHE.put(modelId, next);
+        EmbeddedCompiled next = new EmbeddedCompiled(model, compiled);
+        EMBEDDED.put(data, next);
 
-        return next;
+        return new Compiled(compiled);
     }
 
     private static List<CompiledChain> compile(Model model, ModelIKConfig config)

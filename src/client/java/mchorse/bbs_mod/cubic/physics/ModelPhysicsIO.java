@@ -1,13 +1,8 @@
 package mchorse.bbs_mod.cubic.physics;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.cubic.model.ModelManager;
-import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.utils.IOUtils;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,27 +18,8 @@ public final class ModelPhysicsIO
     {
     }
 
-    public static File getFile(String modelId)
+    public static ModelPhysicsConfig fromData(MapType map)
     {
-        if (modelId == null || modelId.isEmpty())
-        {
-            return null;
-        }
-
-        return BBSMod.getAssetsPath(ModelManager.MODELS_PREFIX + modelId + "/physics.json");
-    }
-
-    public static ModelPhysicsConfig read(String modelId)
-    {
-        File file = getFile(modelId);
-
-        if (file == null || !file.exists())
-        {
-            return null;
-        }
-
-        MapType map = readMap(file);
-
         if (map == null || !map.has("bones", BaseType.TYPE_MAP))
         {
             return null;
@@ -90,17 +66,8 @@ public final class ModelPhysicsIO
         return out.isEmpty() ? null : new ModelPhysicsConfig(out);
     }
 
-    public static boolean write(String modelId, ModelPhysicsConfig config)
+    public static MapType toData(ModelPhysicsConfig config)
     {
-        File file = getFile(modelId);
-
-        if (file == null)
-        {
-            return false;
-        }
-
-        file.getParentFile().mkdirs();
-
         MapType root = new MapType();
         MapType bones = new MapType();
 
@@ -143,24 +110,6 @@ public final class ModelPhysicsIO
         }
 
         root.put("bones", bones);
-
-        return DataToString.writeSilently(file, root, true);
-    }
-
-    private static MapType readMap(File file)
-    {
-        try
-        {
-            BaseType parsed = DataToString.fromString(IOUtils.readText(file));
-
-            if (parsed instanceof MapType map)
-            {
-                return map;
-            }
-        }
-        catch (Exception e)
-        {}
-
-        return null;
+        return root;
     }
 }
