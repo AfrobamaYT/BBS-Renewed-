@@ -724,6 +724,8 @@
 	"bbs.ui.forms.editors.model.physics.target": "Target: %s",
 	"bbs.ui.forms.editors.model.physics.end": "End: %s",
 	"bbs.ui.forms.editors.model.physics.gravity": "Gravity",
+	"bbs.ui.forms.editors.model.physics.relative_gravity": "Parent direction",
+	"bbs.ui.forms.editors.model.physics.relative_gravity_rotation": "Direction",
 	"bbs.ui.forms.editors.model.physics.damping": "Damping",
 	"bbs.ui.forms.editors.model.physics.iterations": "Iterations",
 	"bbs.ui.forms.editors.model.physics.collisions": "Collisions (Beta)",

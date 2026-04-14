@@ -723,6 +723,8 @@
 	"bbs.ui.forms.editors.model.physics.target": "Таргет: %s",
 	"bbs.ui.forms.editors.model.physics.end": "Конец: %s",
 	"bbs.ui.forms.editors.model.physics.gravity": "Гравитация",
+	"bbs.ui.forms.editors.model.physics.relative_gravity": "Направление родителя",
+	"bbs.ui.forms.editors.model.physics.relative_gravity_rotation": "Направление",
 	"bbs.ui.forms.editors.model.physics.damping": "Затухание",
 	"bbs.ui.forms.editors.model.physics.iterations": "Итерации",
 	"bbs.ui.forms.editors.model.physics.collisions": "Коллизии (Бета)",

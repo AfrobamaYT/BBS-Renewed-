@@ -246,7 +246,7 @@ public final class ModelPhysicsRuntime
             }
         }
 
-        step(world, age, model, ids, chain, constraints, anchor, anchorRotation, target, chainFrames, state);
+        step(world, age, model, ids, chain, constraints, anchor, anchorRotation, chainFrames.get(0).parentRotation(), target, chainFrames, state);
         Vector3f[] positions = interpolate(state, transition);
         applyRenderAnchorFollow(state, positions, anchor, anchorRotation, target, transition);
         applyRenderSmoothing(state, positions, transition, chain.collisions());
@@ -339,7 +339,7 @@ public final class ModelPhysicsRuntime
         }
     }
 
-    private static void step(World world, int age, Model model, List<String> ids, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, ChainState state)
+    private static void step(World world, int age, Model model, List<String> ids, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Vector3f anchorPosition, Quaternionf anchorRotation, Quaternionf parentRotation, Vector3f targetPosition, List<PivotFrame> chainFrames, ChainState state)
     {
         Vector3f newAnchor = anchorPosition;
         Quaternionf newAnchorRotation = anchorRotation;
@@ -410,6 +410,11 @@ public final class ModelPhysicsRuntime
         boolean collisions = chain.collisions() && world != null && chain.radius() > 0F;
         float radius = chain.radius();
 
+        computeGravityDirection(chain, parentRotation, gravity, V6);
+        float gravityX = V6.x;
+        float gravityY = V6.y;
+        float gravityZ = V6.z;
+
         V1.set(state.anchor); // oldAnchorTick
         V2.set(newAnchor).sub(V1).mul(1F / dt); // velAnchor
         V3.set(V2).sub(state.anchorVelocity); // accelAnchor
@@ -478,7 +483,9 @@ public final class ModelPhysicsRuntime
                     p.y -= V2.y * ANCHOR_TRANSLATION_DRAG;
                     p.z -= V2.z * ANCHOR_TRANSLATION_DRAG;
                 }
-                p.y -= gravity;
+                p.x += gravityX;
+                p.y += gravityY;
+                p.z += gravityZ;
 
                 if (collisions)
                 {
@@ -596,6 +603,40 @@ public final class ModelPhysicsRuntime
 
             state.lastAge++;
         }
+    }
+
+    private static void computeGravityDirection(ModelPhysicsCache.CompiledChain chain, Quaternionf parentRotation, float gravity, Vector3f out)
+    {
+        out.set(0F, -1F, 0F);
+
+        if (chain.relativeGravity() && parentRotation != null)
+        {
+            /* Model bone forward axis is -Y in this rig convention. */
+            parentRotation.transform(out);
+        }
+
+        if (chain.hasGravityRotation())
+        {
+            if (parentRotation != null)
+            {
+                /* Apply user rotation in chain local space, then convert back to world space. */
+                Q1.set(parentRotation).invert();
+                Q1.transform(out);
+                chain.applyGravityRotation(out);
+                Q2.set(parentRotation).transform(out);
+            }
+            else
+            {
+                chain.applyGravityRotation(out);
+            }
+        }
+
+        if (out.lengthSquared() < EPS * EPS)
+        {
+            out.set(0F, -1F, 0F);
+        }
+
+        out.normalize().mul(gravity);
     }
 
     private static int computeSubsteps(Vector3f from, Vector3f to)

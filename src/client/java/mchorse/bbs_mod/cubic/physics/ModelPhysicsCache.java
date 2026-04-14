@@ -3,6 +3,9 @@ package mchorse.bbs_mod.cubic.physics;
 import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.joml.Matrices;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,21 +23,29 @@ final class ModelPhysicsCache
         private final float gravity;
         private final float damping;
         private final int iterations;
+        private final boolean relativeGravity;
+        private final boolean hasGravityRotation;
+        private final Quaternionf gravityRotation;
         private final boolean collisions;
         private final float radius;
 
-        public CompiledChain(String id, String attach, String targetBone, List<String> chainRootToEnd, float[] restLengths, float gravity, float damping, int iterations, boolean collisions, float radius)
+        public CompiledChain(String id, String attach, String targetBone, List<String> chainRootToEnd, float[] restLengths, ModelPhysicsConfig.Bone bone)
         {
             this.id = id;
             this.attach = attach;
             this.targetBone = targetBone;
             this.chainRootToEnd = chainRootToEnd;
             this.restLengths = restLengths;
-            this.gravity = gravity;
-            this.damping = damping;
-            this.iterations = iterations;
-            this.collisions = collisions;
-            this.radius = radius;
+            this.gravity = bone.gravity();
+            this.damping = bone.damping();
+            this.iterations = bone.iterations();
+            this.relativeGravity = bone.relativeGravity();
+            this.hasGravityRotation = bone.hasRelativeGravityRotation();
+            this.gravityRotation = this.hasGravityRotation
+                ? Matrices.toQuaternionZYXDegrees(bone.relativeGravityRotateX(), bone.relativeGravityRotateY(), bone.relativeGravityRotateZ())
+                : new Quaternionf();
+            this.collisions = bone.collisions();
+            this.radius = bone.radius();
         }
 
         public String id()
@@ -75,6 +86,24 @@ final class ModelPhysicsCache
         public int iterations()
         {
             return this.iterations;
+        }
+
+        public boolean relativeGravity()
+        {
+            return this.relativeGravity;
+        }
+
+        public boolean hasGravityRotation()
+        {
+            return this.hasGravityRotation;
+        }
+
+        public void applyGravityRotation(Vector3f direction)
+        {
+            if (this.hasGravityRotation)
+            {
+                this.gravityRotation.transform(direction);
+            }
         }
 
         public boolean collisions()
@@ -178,7 +207,7 @@ final class ModelPhysicsCache
             String attach = rootId;
 
             String id = rootId + ":" + endId;
-            out.add(new CompiledChain(id, attach, chain.targetBone(), ids, lengths, chain.gravity(), chain.damping(), chain.iterations(), chain.collisions(), chain.radius()));
+            out.add(new CompiledChain(id, attach, chain.targetBone(), ids, lengths, chain));
         }
 
         return out;
