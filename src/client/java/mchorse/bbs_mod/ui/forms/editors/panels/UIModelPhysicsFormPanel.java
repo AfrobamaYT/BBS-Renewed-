@@ -28,7 +28,6 @@ import java.util.Map;
 public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
 {
     private static final float DEFAULT_GRAVITY = 1F;
-    private static final float DEFAULT_WEIGHT = 1F;
     private static final float DEFAULT_DAMPING = 0.15F;
     private static final int DEFAULT_ITERATIONS = 4;
     private static final float DEFAULT_RADIUS = 0.1F;
@@ -38,7 +37,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
     public UIStringList bones;
     public UIToggle enabled;
     public UITrackpad gravity;
-    public UITrackpad weight;
     public UIToggle relativeGravity;
     public UITrackpad relativeGravityRotateX;
     public UITrackpad relativeGravityRotateY;
@@ -59,7 +57,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         public String end = "";
         public String targetBone = "";
         public float gravity = DEFAULT_GRAVITY;
-        public float weight = DEFAULT_WEIGHT;
         public boolean relativeGravity;
         public float relativeGravityRotateX;
         public float relativeGravityRotateY;
@@ -125,24 +122,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         });
         this.gravity.onlyNumbers().values(0.1D, 0.01D, 0.5D).increment(0.25D).limit(0D, 10D);
         this.gravity.tooltip(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_GRAVITY);
-
-        this.weight = new UITrackpad((v) ->
-        {
-            if (this.syncingUI)
-            {
-                return;
-            }
-
-            BoneData d = this.getSelectedData();
-
-            if (d != null)
-            {
-                d.weight = v.floatValue();
-                this.commitChanges();
-            }
-        });
-        this.weight.onlyNumbers().values(0.1D, 0.01D, 0.25D).increment(0.01D).limit(0D, 1D);
-        this.weight.tooltip(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_WEIGHT);
 
         this.relativeGravity = new UIToggle(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_RELATIVE_GRAVITY, (b) ->
         {
@@ -331,8 +310,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             this.enabled,
             this.end,
             this.targetBone,
-            UI.label(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_WEIGHT),
-            this.weight,
             UI.label(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_GRAVITY),
             this.gravity,
             this.relativeGravity,
@@ -391,7 +368,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         this.end.setEnabled(enabled);
         this.targetBone.setEnabled(enabled);
         this.gravity.setEnabled(enabled);
-        this.weight.setEnabled(enabled);
         this.relativeGravity.setEnabled(enabled);
         this.relativeGravityRotateX.setEnabled(enabled);
         this.relativeGravityRotateY.setEnabled(enabled);
@@ -436,7 +412,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         this.end.setEnabled(active);
         this.targetBone.setEnabled(active);
         this.gravity.setEnabled(active);
-        this.weight.setEnabled(active);
         this.relativeGravity.setEnabled(active);
         this.relativeGravityRotateX.setEnabled(active);
         this.relativeGravityRotateY.setEnabled(active);
@@ -455,7 +430,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
                 this.end.label = UIKeys.FORMS_EDITORS_MODEL_PHYSICS_END.format("-");
                 this.targetBone.label = UIKeys.FORMS_EDITORS_MODEL_PHYSICS_TARGET.format("-");
                 this.gravity.setValue(DEFAULT_GRAVITY);
-                this.weight.setValue(DEFAULT_WEIGHT);
                 this.relativeGravity.setValue(false);
                 this.relativeGravityRotateX.setValue(0);
                 this.relativeGravityRotateY.setValue(0);
@@ -470,7 +444,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
                 this.end.label = UIKeys.FORMS_EDITORS_MODEL_PHYSICS_END.format(d.end == null || d.end.isEmpty() ? "-" : d.end);
                 this.targetBone.label = UIKeys.FORMS_EDITORS_MODEL_PHYSICS_TARGET.format(d.targetBone == null || d.targetBone.isEmpty() ? "-" : d.targetBone);
                 this.gravity.setValue(d.gravity);
-                this.weight.setValue(d.weight);
                 this.relativeGravity.setValue(d.relativeGravity);
                 this.relativeGravityRotateX.setValue(d.relativeGravityRotateX);
                 this.relativeGravityRotateY.setValue(d.relativeGravityRotateY);
@@ -539,7 +512,6 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             d.end = bone.end();
             d.targetBone = bone.targetBone() == null ? "" : bone.targetBone();
             d.gravity = bone.gravity();
-            d.weight = bone.weight();
             d.relativeGravity = bone.relativeGravity();
             d.relativeGravityRotateX = bone.relativeGravityRotateX();
             d.relativeGravityRotateY = bone.relativeGravityRotateY();
@@ -597,7 +569,7 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             String root = entry.getKey();
             BoneData d = entry.getValue();
 
-            bones.put(root, new ModelPhysicsConfig.Bone(d.end, d.targetBone, d.gravity, d.damping, d.iterations, d.relativeGravity, d.relativeGravityRotateX, d.relativeGravityRotateY, d.relativeGravityRotateZ, d.collisions, d.radius, d.weight));
+            bones.put(root, new ModelPhysicsConfig.Bone(d.end, d.targetBone, d.gravity, d.damping, d.iterations, d.relativeGravity, d.relativeGravityRotateX, d.relativeGravityRotateY, d.relativeGravityRotateZ, d.collisions, d.radius, ModelPhysicsConfig.DEFAULT_WEIGHT));
         }
 
         ModelPhysicsConfig config = new ModelPhysicsConfig(bones);

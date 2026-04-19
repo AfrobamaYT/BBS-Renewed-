@@ -47,7 +47,7 @@ final class ModelPhysicsCache
                 : new Quaternionf();
             this.collisions = bone.collisions();
             this.radius = bone.radius();
-            this.weight = bone.weight();
+            this.weight = ModelPhysicsConfig.DEFAULT_WEIGHT;
         }
 
         public String id()
@@ -183,11 +183,6 @@ final class ModelPhysicsCache
             ModelPhysicsConfig.Bone chain = config.bones().get(rootId);
 
             if (chain == null)
-            {
-                continue;
-            }
-
-            if (chain.weight() <= 0F)
             {
                 continue;
             }

@@ -83,6 +83,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
     private boolean ikAppliedThisRender;
     private boolean physicsAppliedThisRender;
     private boolean constraintsAppliedThisRender;
+    private final Map<String, Float> poseFixByBone = new HashMap<>();
 
     private IEntity entity = new StubEntity();
 
@@ -329,6 +330,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         Matrix4f baseTransform = ui ? null : new Matrix4f((world != null ? world : stack).peek().getPositionMatrix());
 
+        this.collectPoseFixByBone();
         this.applyIKOnce(model, baseTransform);
         this.applyPhysicsOnce(target, model, transition, baseTransform);
         this.applyConstraintsOnce(model);
@@ -370,7 +372,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         model.form = this.form;
         if (baseTransform == null || this.form == null || this.form.ikTargetOverrides.isEmpty())
         {
-            ModelIKRuntime.apply(model);
+            ModelIKRuntime.applyWithPoseFix(model, this.poseFixByBone);
             return;
         }
 
@@ -394,11 +396,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (local.isEmpty())
         {
-            ModelIKRuntime.apply(model);
+            ModelIKRuntime.applyWithPoseFix(model, this.poseFixByBone);
             return;
         }
 
-        ModelIKRuntime.apply(model, local);
+        ModelIKRuntime.apply(model, local, this.poseFixByBone);
     }
 
     private void applyPhysicsOnce(IEntity target, ModelInstance model, float transition, Matrix4f baseTransform)
@@ -411,7 +413,42 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         this.physicsAppliedThisRender = true;
         model.lastBaseTransform = baseTransform;
         model.form = this.form;
-        ModelPhysicsRuntime.apply(target, model, transition, baseTransform);
+        ModelPhysicsRuntime.apply(target, model, transition, baseTransform, this.poseFixByBone);
+    }
+
+    private void collectPoseFixByBone()
+    {
+        this.poseFixByBone.clear();
+
+        if (this.form == null)
+        {
+            return;
+        }
+
+        Pose pose = this.getPose();
+
+        if (pose == null || pose.transforms.isEmpty())
+        {
+            return;
+        }
+
+        for (Map.Entry<String, PoseTransform> entry : pose.transforms.entrySet())
+        {
+            String bone = entry.getKey();
+            PoseTransform transform = entry.getValue();
+
+            if (bone == null || bone.isEmpty() || transform == null)
+            {
+                continue;
+            }
+
+            float fix = MathUtils.clamp(transform.fix, 0F, 1F);
+
+            if (fix > 0F)
+            {
+                this.poseFixByBone.put(bone, fix);
+            }
+        }
     }
 
     private void applyConstraintsOnce(ModelInstance model)

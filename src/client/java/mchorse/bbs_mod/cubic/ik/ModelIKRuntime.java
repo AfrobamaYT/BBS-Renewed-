@@ -43,10 +43,20 @@ public final class ModelIKRuntime
 
     public static void apply(ModelInstance instance)
     {
-        apply(instance, null);
+        apply(instance, null, null);
     }
 
     public static void apply(ModelInstance instance, Map<String, Vector3f> controllerTargets)
+    {
+        apply(instance, controllerTargets, null);
+    }
+
+    public static void applyWithPoseFix(ModelInstance instance, Map<String, Float> poseFixByBone)
+    {
+        apply(instance, null, poseFixByBone);
+    }
+
+    public static void apply(ModelInstance instance, Map<String, Vector3f> controllerTargets, Map<String, Float> poseFixByBone)
     {
         if (instance == null || !(instance.model instanceof Model model))
         {
@@ -72,7 +82,7 @@ public final class ModelIKRuntime
         }
 
         InstanceState state = STATES.computeIfAbsent(instance, (k) -> new InstanceState());
-        ModelIKApplier.apply(model, chains, controllerTargets, state.prevNormals, HYSTERESIS_RAD, SINGULARITY_RAD);
+        ModelIKApplier.apply(model, chains, controllerTargets, state.prevNormals, HYSTERESIS_RAD, SINGULARITY_RAD, poseFixByBone);
     }
 
     public static List<String> getControllers(ModelInstance instance)

@@ -101,6 +101,11 @@ public final class ModelPhysicsRuntime
 
     public static void apply(IEntity entity, ModelInstance instance, float transition, Matrix4f baseTransform)
     {
+        apply(entity, instance, transition, baseTransform, null);
+    }
+
+    public static void apply(IEntity entity, ModelInstance instance, float transition, Matrix4f baseTransform, Map<String, Float> poseFixByBone)
+    {
         if (entity == null || instance == null || !(instance.model instanceof Model model))
         {
             return;
@@ -122,10 +127,10 @@ public final class ModelPhysicsRuntime
         Map<String, InstanceState> byModel = STATES.computeIfAbsent(entity, (e) -> new HashMap<>());
         InstanceState state = byModel.computeIfAbsent(instance.id, (k) -> new InstanceState());
 
-        applyCompiled(entity.getWorld(), entity.getAge(), transition, model, instance, compiled.chains(), constraints, state, baseTransform);
+        applyCompiled(entity.getWorld(), entity.getAge(), transition, model, instance, compiled.chains(), constraints, state, baseTransform, poseFixByBone);
     }
 
-    private static void applyCompiled(World world, int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform)
+    private static void applyCompiled(World world, int age, float transition, Model model, ModelInstance instance, List<ModelPhysicsCache.CompiledChain> compiledChains, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, InstanceState state, Matrix4f baseTransform, Map<String, Float> poseFixByBone)
     {
         Set<String> wanted = new HashSet<>();
         Set<String> chainIds = new HashSet<>();
@@ -159,11 +164,11 @@ public final class ModelPhysicsRuntime
 
         for (ModelPhysicsCache.CompiledChain chain : compiledChains)
         {
-            applyChain(world, age, transition, model, instance, chain, constraints, frames, state);
+            applyChain(world, age, transition, model, instance, chain, constraints, frames, state, poseFixByBone);
         }
     }
 
-    private static void applyChain(World world, int age, float transition, Model model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, InstanceState instanceState)
+    private static void applyChain(World world, int age, float transition, Model model, ModelInstance instance, ModelPhysicsCache.CompiledChain chain, Map<String, ModelConstraintsConfig.BoneConstraint> constraints, Map<String, PivotFrame> frames, InstanceState instanceState, Map<String, Float> poseFixByBone)
     {
         float weight = chain.weight();
 
@@ -177,6 +182,14 @@ public final class ModelPhysicsRuntime
         int pointCount = pivotCount + 1;
 
         if (pivotCount < 1)
+        {
+            return;
+        }
+
+        float poseFix = getChainPoseFix(ids, chain.targetBone(), poseFixByBone);
+        weight *= (1F - poseFix);
+
+        if (weight <= EPS)
         {
             return;
         }
@@ -259,6 +272,50 @@ public final class ModelPhysicsRuntime
         applyRenderAnchorFollow(state, positions, anchor, anchorRotation, target, transition);
         applyRenderSmoothing(state, positions, transition, chain.collisions());
         ModelRotationBlender.applyWeightedRotations(model, chainFrames.get(0).parentRotation(), ids, positions, weight);
+    }
+
+    private static float getChainPoseFix(List<String> ids, String targetBone, Map<String, Float> poseFixByBone)
+    {
+        if (poseFixByBone == null || poseFixByBone.isEmpty() || ids == null || ids.isEmpty())
+        {
+            return 0F;
+        }
+
+        float maxFix = 0F;
+
+        for (String id : ids)
+        {
+            maxFix = Math.max(maxFix, getFix(poseFixByBone, id));
+
+            if (maxFix >= 1F)
+            {
+                return 1F;
+            }
+        }
+
+        if (targetBone != null && !targetBone.isEmpty())
+        {
+            maxFix = Math.max(maxFix, getFix(poseFixByBone, targetBone));
+        }
+
+        return maxFix;
+    }
+
+    private static float getFix(Map<String, Float> poseFixByBone, String bone)
+    {
+        Float value = poseFixByBone.get(bone);
+
+        if (value == null)
+        {
+            return 0F;
+        }
+
+        if (value <= 0F)
+        {
+            return 0F;
+        }
+
+        return Math.min(value, 1F);
     }
 
     private static Vector3f[] interpolate(ChainState state, float transition)
