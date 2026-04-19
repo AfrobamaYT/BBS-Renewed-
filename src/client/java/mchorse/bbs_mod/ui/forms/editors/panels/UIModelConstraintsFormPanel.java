@@ -17,7 +17,9 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIConstants;
+import mchorse.bbs_mod.ui.utils.presets.UIDataContextMenu;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.pose.ModelConstraintsManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +47,7 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
     private String selectedBone = "";
     private final Map<String, ModelConstraintsConfig.BoneConstraint> data = new HashMap<>();
     private ModelInstance modelInstance;
+    private String presetGroup = "";
     private boolean syncingUI;
 
     public UIModelConstraintsFormPanel(UIForm editor)
@@ -59,6 +62,13 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
             this.updateFields();
         });
         this.bones.background().h(UIConstants.LIST_ITEM_HEIGHT * 8);
+        this.bones.context(() -> new UIDataContextMenu(ModelConstraintsManager.INSTANCE, this.presetGroup, this::toPresetData, this::applyPresetData).tooltips("_CopyModelConstraints",
+            UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_CONTEXT_COPY,
+            UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_CONTEXT_PASTE,
+            UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_CONTEXT_RESET,
+            UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_CONTEXT_SAVE,
+            UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_CONTEXT_NAME
+        ));
 
         this.enabled = new UIToggle(UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_ENABLED, (b) ->
         {
@@ -119,6 +129,7 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
 
         ModelInstance model = ModelFormRenderer.getModel(form);
         this.modelInstance = model;
+        this.presetGroup = this.resolvePresetGroup(form, model);
 
         this.data.clear();
         this.selectedBone = "";
@@ -150,7 +161,7 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
 
         if (config != null && config.bones() != null)
         {
-            this.data.putAll(config.bones());
+            this.load(config);
         }
 
         if (!bones.isEmpty())
@@ -359,7 +370,8 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
             return;
         }
 
-        this.form.constraints.set(ModelConstraintsIO.toData(new ModelConstraintsConfig(this.data)));
+        MapType map = this.toPresetData();
+        this.form.constraints.set(map.isEmpty() ? null : map);
     }
 
     private void setElementsEnabled(boolean enabled)
@@ -374,5 +386,100 @@ public class UIModelConstraintsFormPanel extends UIFormPanel<ModelForm>
         this.maxY.setEnabled(enabled);
         this.maxZ.setEnabled(enabled);
         this.updateFieldsEnabled();
+    }
+
+    private void load(ModelConstraintsConfig config)
+    {
+        this.data.clear();
+
+        if (config == null || config.bones() == null)
+        {
+            return;
+        }
+
+        for (Map.Entry<String, ModelConstraintsConfig.BoneConstraint> entry : config.bones().entrySet())
+        {
+            String bone = entry.getKey();
+            ModelConstraintsConfig.BoneConstraint constraint = entry.getValue();
+
+            if (bone == null || bone.isEmpty() || constraint == null || !constraint.enabled())
+            {
+                continue;
+            }
+
+            if (!this.availableBones.isEmpty() && !this.availableBones.contains(bone))
+            {
+                continue;
+            }
+
+            this.data.put(bone, constraint);
+        }
+    }
+
+    private MapType toPresetData()
+    {
+        Map<String, ModelConstraintsConfig.BoneConstraint> out = new HashMap<>();
+
+        for (Map.Entry<String, ModelConstraintsConfig.BoneConstraint> entry : this.data.entrySet())
+        {
+            String bone = entry.getKey();
+            ModelConstraintsConfig.BoneConstraint constraint = entry.getValue();
+
+            if (bone == null || bone.isEmpty() || constraint == null || !constraint.enabled())
+            {
+                continue;
+            }
+
+            if (!this.availableBones.isEmpty() && !this.availableBones.contains(bone))
+            {
+                continue;
+            }
+
+            out.put(bone, constraint);
+        }
+
+        if (out.isEmpty())
+        {
+            return new MapType();
+        }
+
+        return ModelConstraintsIO.toData(new ModelConstraintsConfig(out));
+    }
+
+    private void applyPresetData(MapType map)
+    {
+        String current = this.selectedBone;
+
+        this.load(ModelConstraintsIO.fromData(map));
+
+        if (current == null || current.isEmpty() || !this.availableBones.contains(current))
+        {
+            current = this.availableBones.isEmpty() ? "" : this.availableBones.get(0);
+        }
+
+        if (current.isEmpty())
+        {
+            this.selectedBone = "";
+            this.bones.deselect();
+            this.updateFields();
+        }
+        else
+        {
+            this.selectBone(current);
+        }
+
+        this.commitChanges();
+    }
+
+    private String resolvePresetGroup(ModelForm form, ModelInstance model)
+    {
+        String group = model != null ? model.poseGroup : "";
+
+        if (group == null || group.isEmpty())
+        {
+            group = form == null ? "" : form.model.get();
+        }
+
+        return group == null ? "" : group;
     }
 }

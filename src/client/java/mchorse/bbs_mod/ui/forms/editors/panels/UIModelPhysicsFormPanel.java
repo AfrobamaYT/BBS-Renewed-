@@ -5,6 +5,7 @@ import mchorse.bbs_mod.cubic.data.model.Model;
 import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.physics.ModelPhysicsConfig;
 import mchorse.bbs_mod.cubic.physics.ModelPhysicsIO;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -16,8 +17,10 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIConstants;
+import mchorse.bbs_mod.ui.utils.presets.UIDataContextMenu;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.pose.ModelPhysicsManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +53,7 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
     private String selectedBone = "";
     private final Map<String, BoneData> data = new HashMap<>();
     private ModelInstance modelInstance;
+    private String presetGroup = "";
     private boolean syncingUI;
 
     private static class BoneData
@@ -79,6 +83,13 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             this.updateFields();
         });
         this.bones.background().h(UIConstants.LIST_ITEM_HEIGHT * 8);
+        this.bones.context(() -> new UIDataContextMenu(ModelPhysicsManager.INSTANCE, this.presetGroup, this::toPresetData, this::applyPresetData).tooltips("_CopyModelPhysics",
+            UIKeys.FORMS_EDITORS_MODEL_PHYSICS_CONTEXT_COPY,
+            UIKeys.FORMS_EDITORS_MODEL_PHYSICS_CONTEXT_PASTE,
+            UIKeys.FORMS_EDITORS_MODEL_PHYSICS_CONTEXT_RESET,
+            UIKeys.FORMS_EDITORS_MODEL_PHYSICS_CONTEXT_SAVE,
+            UIKeys.FORMS_EDITORS_MODEL_PHYSICS_CONTEXT_NAME
+        ));
 
         this.enabled = new UIToggle(UIKeys.FORMS_EDITORS_MODEL_PHYSICS_ENABLED, (b) ->
         {
@@ -332,6 +343,7 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
 
         ModelInstance model = ModelFormRenderer.getModel(form);
         this.modelInstance = model;
+        this.presetGroup = this.resolvePresetGroup(form, model);
 
         if (model == null || model.model == null)
         {
@@ -486,12 +498,18 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
 
     private void load()
     {
-        this.data.clear();
         ModelPhysicsConfig config = null;
-        if (this.form != null && this.form.physics.get() instanceof mchorse.bbs_mod.data.types.MapType map)
+        if (this.form != null && this.form.physics.get() instanceof MapType map)
         {
             config = ModelPhysicsIO.fromData(map);
         }
+
+        this.load(config);
+    }
+
+    private void load(ModelPhysicsConfig config)
+    {
+        this.data.clear();
 
         if (config == null || config.bones() == null)
         {
@@ -508,6 +526,16 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
                 continue;
             }
 
+            if (!this.availableBones.isEmpty() && (!this.availableBones.contains(root) || !this.availableBones.contains(bone.end())))
+            {
+                continue;
+            }
+
+            if (!this.isValidChain(root, bone.end()))
+            {
+                continue;
+            }
+
             BoneData d = new BoneData();
             d.end = bone.end();
             d.targetBone = bone.targetBone() == null ? "" : bone.targetBone();
@@ -520,8 +548,81 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             d.iterations = bone.iterations();
             d.collisions = bone.collisions();
             d.radius = bone.radius();
+
+            if (!d.targetBone.isEmpty() && !this.availableBones.isEmpty() && !this.availableBones.contains(d.targetBone))
+            {
+                d.targetBone = "";
+            }
+
             this.data.put(root, d);
         }
+    }
+
+    private MapType toPresetData()
+    {
+        Map<String, ModelPhysicsConfig.Bone> bones = new HashMap<>();
+
+        for (Map.Entry<String, BoneData> entry : this.data.entrySet())
+        {
+            String root = entry.getKey();
+            BoneData d = entry.getValue();
+
+            if (d == null || root == null || root.isEmpty() || d.end == null || d.end.isEmpty())
+            {
+                continue;
+            }
+
+            if (!this.availableBones.isEmpty() && (!this.availableBones.contains(root) || !this.availableBones.contains(d.end)))
+            {
+                continue;
+            }
+
+            if (!this.isValidChain(root, d.end))
+            {
+                continue;
+            }
+
+            String target = d.targetBone == null ? "" : d.targetBone;
+
+            if (!target.isEmpty() && !this.availableBones.isEmpty() && !this.availableBones.contains(target))
+            {
+                target = "";
+            }
+
+            bones.put(root, new ModelPhysicsConfig.Bone(d.end, target, d.gravity, d.damping, d.iterations, d.relativeGravity, d.relativeGravityRotateX, d.relativeGravityRotateY, d.relativeGravityRotateZ, d.collisions, d.radius, ModelPhysicsConfig.DEFAULT_WEIGHT));
+        }
+
+        if (bones.isEmpty())
+        {
+            return new MapType();
+        }
+
+        return ModelPhysicsIO.toData(new ModelPhysicsConfig(bones));
+    }
+
+    private void applyPresetData(MapType map)
+    {
+        String current = this.selectedBone;
+
+        this.load(ModelPhysicsIO.fromData(map));
+
+        if (current == null || current.isEmpty() || !this.availableBones.contains(current))
+        {
+            current = this.availableBones.isEmpty() ? "" : this.availableBones.get(0);
+        }
+
+        if (current.isEmpty())
+        {
+            this.selectedBone = "";
+            this.bones.deselect();
+            this.updateFields();
+        }
+        else
+        {
+            this.selectBone(current);
+        }
+
+        this.commitChanges();
     }
 
     private void commitChanges()
@@ -562,18 +663,8 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
             }
         }
 
-        Map<String, ModelPhysicsConfig.Bone> bones = new HashMap<>();
-
-        for (Map.Entry<String, BoneData> entry : this.data.entrySet())
-        {
-            String root = entry.getKey();
-            BoneData d = entry.getValue();
-
-            bones.put(root, new ModelPhysicsConfig.Bone(d.end, d.targetBone, d.gravity, d.damping, d.iterations, d.relativeGravity, d.relativeGravityRotateX, d.relativeGravityRotateY, d.relativeGravityRotateZ, d.collisions, d.radius, ModelPhysicsConfig.DEFAULT_WEIGHT));
-        }
-
-        ModelPhysicsConfig config = new ModelPhysicsConfig(bones);
-        this.form.physics.set(ModelPhysicsIO.toData(config));
+        MapType map = this.toPresetData();
+        this.form.physics.set(map.isEmpty() ? null : map);
 
         if (notify)
         {
@@ -642,6 +733,18 @@ public class UIModelPhysicsFormPanel extends UIFormPanel<ModelForm>
         t.textbox.setColor(color);
         t.tooltip(tooltip);
         return t;
+    }
+
+    private String resolvePresetGroup(ModelForm form, ModelInstance model)
+    {
+        String group = model != null ? model.poseGroup : "";
+
+        if (group == null || group.isEmpty())
+        {
+            group = form == null ? "" : form.model.get();
+        }
+
+        return group == null ? "" : group;
     }
 
 }
