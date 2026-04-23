@@ -898,6 +898,8 @@
 	"bbs.ui.model_blocks.transform.inventory": "Трансформация в инвентаре (GUI)",
 	"bbs.ui.model_blocks.transform.third_person": "Трансформация от третьего лица",
 	"bbs.ui.morphing.demorph": "Разморфиться",
+	"bbs.ui.morphing.filter_categories": "Показать или скрыть категории форм",
+	"bbs.ui.morphing.filter_categories-title": "Категории морфинга",
 	"bbs.ui.morphing.from_mob": "Создать форму из моба на которого Вы смотрите",
 	"bbs.ui.morphing.title": "Морфинг",
 	"bbs.ui.none": "<пусто>",

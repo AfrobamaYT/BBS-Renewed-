@@ -23,6 +23,7 @@ public class BBSSettings {
 	public static ValueColors favoriteColors;
 	public static ValueColors recentColors;
 	public static ValueStringKeys disabledSheets;
+	public static ValueStringKeys disabledMorphFormCategories;
 	public static ValueLanguage language;
 	public static ValueInt primaryColor;
 	public static ValueBoolean enableTrackpadIncrements;
@@ -210,6 +211,8 @@ public class BBSSettings {
 		builder.register(favoriteColors);
 		builder.register(recentColors);
 		builder.register(disabledSheets);
+		disabledMorphFormCategories = new ValueStringKeys("disabled_morph_form_categories");
+		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 
 		builder.category("tutorials");

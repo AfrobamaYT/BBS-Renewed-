@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.forms;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.FormCategories;
 import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.categories.FormCategory;
@@ -11,6 +12,8 @@ import mchorse.bbs_mod.ui.forms.categories.UIFormCategory;
 import mchorse.bbs_mod.ui.forms.categories.UIRecentFormCategory;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
+import mchorse.bbs_mod.ui.morphing.UIMorphFormCategoryFilterOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
@@ -23,6 +26,7 @@ import net.minecraft.client.render.DiffuseLighting;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class UIFormList extends UIElement
 {
@@ -34,7 +38,9 @@ public class UIFormList extends UIElement
     public UITextbox search;
     public UIIcon edit;
     public UIIcon close;
+    public UIIcon categoryFilter;
 
+    private final boolean morphCategoryFilter;
     private UIFormCategory recent;
     private List<UIFormCategory> categories = new ArrayList<>();
 
@@ -43,7 +49,13 @@ public class UIFormList extends UIElement
 
     public UIFormList(IUIFormList palette)
     {
+        this(palette, false);
+    }
+
+    public UIFormList(IUIFormList palette, boolean morphCategoryFilter)
+    {
         this.palette = palette;
+        this.morphCategoryFilter = morphCategoryFilter;
 
         this.forms = UI.scrollView(0, 0);
         this.forms.scroll.cancelScrolling();
@@ -57,13 +69,45 @@ public class UIFormList extends UIElement
         this.bar.relative(this).x(10).y(1F, -30).w(1F, -20).h(20).row().height(20);
         this.close.w(20);
 
-        this.bar.add(this.search, this.edit, this.close);
+        if (morphCategoryFilter)
+        {
+            this.categoryFilter = new UIIcon(Icons.FILTER, this::openMorphCategoryFilter);
+            this.categoryFilter.tooltip(UIKeys.MORPHING_FILTER_CATEGORIES, Direction.TOP);
+            this.categoryFilter.w(20);
+            this.bar.add(this.categoryFilter, this.search, this.edit, this.close);
+        }
+        else
+        {
+            this.categoryFilter = null;
+            this.bar.add(this.search, this.edit, this.close);
+        }
+
         this.add(this.forms, this.bar);
 
         this.search.keys().register(Keys.FORMS_FOCUS, this::focusSearch);
 
         this.markContainer();
         this.setupForms(BBSModClient.getFormCategories());
+    }
+
+    private void openMorphCategoryFilter(UIIcon b)
+    {
+        Set<String> disabled = BBSSettings.disabledMorphFormCategories.get();
+        FormCategories formCategories = BBSModClient.getFormCategories();
+        UIMorphFormCategoryFilterOverlayPanel panel = new UIMorphFormCategoryFilterOverlayPanel(
+            disabled,
+            formCategories.getAllCategories()
+        );
+
+        UIOverlay.addOverlay(this.getContext(), panel, 240, 0.9F);
+
+        panel.onClose(e ->
+        {
+            BBSSettings.disabledMorphFormCategories.set(disabled);
+            Form selected = this.getSelected();
+            this.setupForms(formCategories);
+            this.setSelected(selected);
+        });
     }
 
     private void focusSearch()
@@ -78,6 +122,11 @@ public class UIFormList extends UIElement
 
         for (FormCategory category : forms.getAllCategories())
         {
+            if (this.morphCategoryFilter && BBSSettings.disabledMorphFormCategories.get().contains(category.visible.getId()))
+            {
+                continue;
+            }
+
             UIFormCategory uiCategory = category.createUI(this);
 
             this.forms.add(uiCategory);
@@ -89,7 +138,11 @@ public class UIFormList extends UIElement
             }
         }
 
-        this.categories.get(this.categories.size() - 1).marginBottom(40);
+        if (!this.categories.isEmpty())
+        {
+            this.categories.get(this.categories.size() - 1).marginBottom(40);
+        }
+
         this.resize();
 
         this.lastUpdate = forms.getLastUpdate();
@@ -177,7 +230,7 @@ public class UIFormList extends UIElement
             }
         }
 
-        if (!found && form != null)
+        if (!found && form != null && this.recent != null)
         {
             Form copy = FormUtils.copy(form);
 
