@@ -392,12 +392,7 @@ public class ServerNetwork
                     actionPlayer.syncing = true;
                     actionPlayer.playing = false;
 
-                    if (tick == 0)
-                    {
-                        /* Prime first-tick actions without advancing playback timeline. */
-                        actionPlayer.goTo(-1, 0);
-                    }
-                    else
+                    if (tick != 0)
                     {
                         actionPlayer.goTo(0, tick);
                     }

@@ -51,7 +51,6 @@ public class ActionPlayer
     private int cacheHunger;
     private int cacheXpLevel;
     private float cacheXpProgress;
-    private boolean currentTickActionApplied;
 
     public ActionPlayer(ServerPlayerEntity serverPlayer, ServerWorld world, Film film, int tick, int countdown, int exception, PlayerType type)
     {
@@ -243,14 +242,7 @@ public class ActionPlayer
 
         if (this.tick >= 0)
         {
-            if (this.currentTickActionApplied)
-            {
-                this.currentTickActionApplied = false;
-            }
-            else
-            {
-                this.applyAction();
-            }
+            this.applyAction();
         }
 
         this.tick += 1;
@@ -325,8 +317,6 @@ public class ActionPlayer
 
                 this.applyAction();
             }
-
-            this.currentTickActionApplied = this.tick >= 0;
         }
     }
 
