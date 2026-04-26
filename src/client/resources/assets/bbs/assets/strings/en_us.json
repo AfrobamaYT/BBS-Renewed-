@@ -1216,6 +1216,7 @@
 	"bbs.ui.textures.export_frames-title": "Extract frames",
 	"bbs.ui.textures.export_frames-tooltip": "This tool allows you to extract frames from a vertical/horizontal texture atlas as separate frames",
 	"bbs.ui.textures.export_frames.extract": "Extract",
+	"bbs.ui.textures.preview_model": "Preview Model",
 	"bbs.ui.textures.export_frames.frames": "Frames",
 	"bbs.ui.textures.export_frames.resolution": "Resolution",
 	"bbs.ui.textures.export_frames.step": "Step",

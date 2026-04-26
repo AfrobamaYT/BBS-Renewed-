@@ -1208,6 +1208,7 @@
 	"bbs.ui.textures.export_frames-title": "Экспортировать кадры",
 	"bbs.ui.textures.export_frames-tooltip": "Эта фича позволяет Вам экспортировать кадры из вертикального/горизонтального текстурного атласа как отдельные кадры",
 	"bbs.ui.textures.export_frames.extract": "Экспортировать",
+	"bbs.ui.textures.preview_model": "Предпросмотр модели",
 	"bbs.ui.textures.export_frames.frames": "Кол-во кадров",
 	"bbs.ui.textures.export_frames.resolution": "Разрешение",
 	"bbs.ui.textures.export_frames.step": "Отступ",

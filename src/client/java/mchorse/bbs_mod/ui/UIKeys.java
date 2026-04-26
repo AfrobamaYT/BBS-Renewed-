@@ -971,6 +971,7 @@ public class UIKeys
     public static final IKey TEXTURES_EXTRACT_FRAMES_STEP = L10n.lang("bbs.ui.textures.export_frames.step");
     public static final IKey TEXTURES_EXTRACT_FRAMES_TITLE = L10n.lang("bbs.ui.textures.export_frames-title");
     public static final IKey TEXTURES_EXTRACT_FRAMES_TOOLTIP = L10n.lang("bbs.ui.textures.export_frames-tooltip");
+    public static final IKey TEXTURES_PREVIEW_MODEL = L10n.lang("bbs.ui.textures.preview_model");
     public static final IKey TEXTURES_KEYS_CATEGORY = L10n.lang("bbs.ui.textures.keys.category");
     public static final IKey TEXTURES_KEYS_FILL = L10n.lang("bbs.ui.textures.keys.fill");
     public static final IKey TEXTURES_KEYS_PICK = L10n.lang("bbs.ui.textures.keys.pick");

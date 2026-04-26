@@ -119,6 +119,11 @@ public class UITexturePainter extends UIElement
     private UIIcon toolIconFill;
     private UIIcon toolIconPipette;
     private UIIcon toolIconSelection;
+    private UIIcon modelPreviewIcon;
+    
+    private UIElement modelPreviewHost;
+    private UIDraggable modelPreviewDraggable;
+    private UIModelPreviewPanel modelPreviewPanel;
 
     private UILabel brushSizeLabel;
     private UILabel brushSoftnessLabel;
@@ -143,10 +148,11 @@ public class UITexturePainter extends UIElement
 
         this.buildIconBar();
         this.buildOptions();
+        this.buildModelPreviewHost();
         this.buildEditorHost();
 
         this.content.add(new UIRenderable(this::renderPanelBackground),
-            this.iconBar, this.options, this.editorHost, this.optionsDraggable);
+            this.iconBar, this.options, this.editorHost, this.modelPreviewHost, this.optionsDraggable, this.modelPreviewDraggable);
         this.add(this.tabs, this.content, this.brightness);
 
         this.syncTabs();
@@ -182,11 +188,14 @@ public class UITexturePainter extends UIElement
         this.toolIconFill = this.createToolIcon(Icons.BUCKET, UIKeys.TEXTURES_TOOLS_FILL, TexturePaintTool.FILL);
         this.toolIconPipette = this.createToolIcon(Icons.PIPETTE, UIKeys.TEXTURES_TOOLS_PIPETTE, TexturePaintTool.PIPETTE);
         this.toolIconSelection = this.createToolIcon(Icons.OUTLINE, UIKeys.TEXTURES_TOOLS_SELECTION, TexturePaintTool.SELECTION);
+        this.modelPreviewIcon = new UIIcon(Icons.POSE, (b) -> this.openModelPreview());
+        this.modelPreviewIcon.tooltip(UIKeys.TEXTURES_PREVIEW_MODEL, Direction.LEFT);
 
         this.iconBar.add(this.saveIcon, this.resizeIcon, this.extractIcon,
             this.toolIconBrush.marginTop(TOOL_SEPARATOR_GAP),
             this.toolIconEraser, this.toolIconFill, this.toolIconPipette,
-            this.toolIconSelection);
+            this.toolIconSelection,
+            this.modelPreviewIcon.marginTop(TOOL_SEPARATOR_GAP));
     }
 
     private UIIcon createToolIcon(Icon icon, IKey tooltip, TexturePaintTool tool)
@@ -257,6 +266,28 @@ public class UITexturePainter extends UIElement
             this.eraserOpacityLabel, this.eraserOpacity);
     }
 
+    private void buildModelPreviewHost()
+    {
+        this.modelPreviewHost = new UIElement();
+        this.modelPreviewHost.relative(this.content).x(1F, -ICON_BAR_W).h(1F).w(0).anchorX(1F);
+        this.modelPreviewHost.setVisible(false);
+
+        this.modelPreviewPanel = new UIModelPreviewPanel(this);
+        this.modelPreviewPanel.relative(this.modelPreviewHost).w(1F).h(1F);
+
+        this.modelPreviewDraggable = new UIDraggable((context) ->
+        {
+            float f = (this.iconBar.area.x - context.mouseX) / (float) this.content.area.w;
+            float w = MathUtils.clamp(f, 0.1F, 0.8F);
+
+            this.modelPreviewHost.w(w);
+            this.content.resize();
+            this.modelPreviewDraggable.resize();
+        });
+        this.modelPreviewDraggable.relative(this.modelPreviewHost).x(0F).y(0.5F).w(6).h(40).anchor(0.5F, 0.5F);
+        this.modelPreviewDraggable.setVisible(false);
+    }
+
     private void buildEditorHost()
     {
         this.editorHost = new UIElement();
@@ -312,6 +343,45 @@ public class UITexturePainter extends UIElement
             case PIPETTE -> this.toolIconPipette;
             case SELECTION -> this.toolIconSelection;
         };
+    }
+
+    public void openModelPreview()
+    {
+        mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel list = new mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel(
+            UIKeys.FORMS_EDITOR_MODEL_MODELS,
+            (model) ->
+            {
+                this.openModelPreview(model);
+            }
+        );
+
+        list.addValues(BBSModClient.getModels().getAvailableKeys());
+        list.list.list.sort();
+        mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay.addOverlay(this.getContext(), list);
+    }
+
+    public void openModelPreview(String model)
+    {
+        this.modelPreviewPanel.setModel(model);
+        this.modelPreviewHost.add(this.modelPreviewPanel);
+        this.modelPreviewHost.w(0.3F);
+        this.modelPreviewHost.setVisible(true);
+        this.modelPreviewDraggable.setVisible(true);
+        
+        this.editorHost.wTo(this.modelPreviewHost.area, 0F, -UIConstants.MARGIN);
+        this.content.resize();
+    }
+
+    public void closeModelPreview()
+    {
+        this.modelPreviewPanel.removeFromParent();
+        this.modelPreviewPanel.cleanUp();
+        this.modelPreviewHost.w(0);
+        this.modelPreviewHost.setVisible(false);
+        this.modelPreviewDraggable.setVisible(false);
+        
+        this.editorHost.wTo(this.iconBar.area, 0F, -UIConstants.MARGIN);
+        this.content.resize();
     }
 
     private void withEditor(Consumer<UITextureEditor> action)
@@ -553,7 +623,7 @@ public class UITexturePainter extends UIElement
         this.resize();
     }
 
-    private UITextureEditor getCurrentEditor()
+    public UITextureEditor getCurrentEditor()
     {
         return documents.isEmpty() || currentIndex < 0 || currentIndex >= documents.size()
             ? null

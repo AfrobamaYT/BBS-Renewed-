@@ -168,6 +168,11 @@ public class UIPixelsEditor extends UICanvasEditor
         return this;
     }
 
+    public Texture getTemporaryTexture()
+    {
+        return this.temporary;
+    }
+
     public Pixels getPixels()
     {
         return this.pixels;
