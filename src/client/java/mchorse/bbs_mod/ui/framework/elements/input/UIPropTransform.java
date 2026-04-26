@@ -616,7 +616,7 @@ public class UIPropTransform extends UITransform
 
         rel.normalize();
 
-        float dot = this.dragStartRingVec.dot(rel);
+        float dot = Math.max(-1F, Math.min(1F, this.dragStartRingVec.dot(rel)));
         Vector3f cross = new Vector3f();
 
         this.dragStartRingVec.cross(rel, cross);
@@ -637,6 +637,9 @@ public class UIPropTransform extends UITransform
 
         if (this.dragRotateGizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
+
+        this.dragStartRotateDeg.set(rx, ry, rz);
+        this.dragStartRingVec.set(rel);
     }
 
     /**
