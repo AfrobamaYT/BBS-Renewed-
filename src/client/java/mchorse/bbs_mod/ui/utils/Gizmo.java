@@ -8,6 +8,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.colors.Colors;
+import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -15,6 +16,7 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.gl.VertexBuffer;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -46,6 +48,12 @@ public class Gizmo
      * world position without having to thread it through every call site. */
     private final Matrix4f lastRenderMatrix = new Matrix4f();
     private boolean hasLastRenderMatrix;
+
+    /* VBO caching for rotation rings to save resources */
+    private VertexBuffer rotateRingVbo;
+    private VertexBuffer rotateStencilRingVbo;
+    private float lastScale = -1F;
+    private float lastThickness = -1F;
 
     private Gizmo()
     {}
@@ -257,6 +265,67 @@ public class Gizmo
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
     }
 
+    private void updateVbos()
+    {
+        float scale = BBSSettings.axesScale.get();
+        float thickness = BBSSettings.axesThickness.get();
+
+        if (this.rotateRingVbo == null || scale != this.lastScale || thickness != this.lastThickness)
+        {
+            if (this.rotateRingVbo != null)
+            {
+                this.rotateRingVbo.close();
+                this.rotateStencilRingVbo.close();
+            }
+
+            this.rotateRingVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+            this.rotateStencilRingVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+            BufferBuilder builder = Tessellator.getInstance().getBuffer();
+
+            float radius = 0.22F * scale;
+            float thicknessRing = 0.015F * scale * thickness;
+            float outlinePad = 0.015F * scale * thickness;
+            float thicknessStencil = 0.025F * scale * thickness + outlinePad;
+
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
+            this.rotateRingVbo.bind();
+            this.rotateRingVbo.upload(builder.end());
+
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessStencil, 1F, 1F, 1F, 0F, 360F);
+            this.rotateStencilRingVbo.bind();
+            this.rotateStencilRingVbo.upload(builder.end());
+
+            VertexBuffer.unbind();
+
+            this.lastScale = scale;
+            this.lastThickness = thickness;
+        }
+    }
+
+    private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, int color)
+    {
+        this.drawCachedRing(stack, vbo, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
+    }
+
+    private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, float r, float g, float b, float a)
+    {
+        stack.push();
+        
+        if (axis == Axis.X) stack.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.Z) stack.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotation(MathUtils.PI / 2F));
+
+        RenderSystem.setShaderColor(r, g, b, a);
+        vbo.bind();
+        vbo.draw(stack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorProgram());
+        VertexBuffer.unbind();
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        
+        stack.pop();
+    }
+
     private void drawAxes(MatrixStack stack, float axisSize, float axisOffset)
     {
         float scale = BBSSettings.axesScale.get();
@@ -267,21 +336,22 @@ public class Gizmo
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-
         if (this.mode == Mode.ROTATE)
         {
-            float radius = 0.22F * scale;
-            float thicknessRing = 0.015F * scale * thickness;
+            this.updateVbos();
 
-            Draw.arc3D(builder, stack, Axis.Z, radius, thicknessRing, Colors.BLUE);
-            Draw.arc3D(builder, stack, Axis.X, radius, thicknessRing, Colors.RED);
-            Draw.arc3D(builder, stack, Axis.Y, radius, thicknessRing, Colors.GREEN);
+            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            this.drawCachedRing(stack, this.rotateRingVbo, Axis.Z, Colors.BLUE);
+            this.drawCachedRing(stack, this.rotateRingVbo, Axis.X, Colors.RED);
+            this.drawCachedRing(stack, this.rotateRingVbo, Axis.Y, Colors.GREEN);
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, Colors.WHITE);
         }
         else
         {
+            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
             Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
@@ -334,21 +404,20 @@ public class Gizmo
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-
         if (this.mode == Mode.ROTATE)
         {
-            float outlinePad = 0.015F * scale * thickness;
-            float radius = 0.22F * scale;
-            float thicknessRing = 0.025F * scale * thickness;
+            this.updateVbos();
 
-            Draw.arc3D(builder, stack, Axis.Z, radius, thicknessRing + outlinePad, STENCIL_Z / 255F, 0F, 0F);
-            Draw.arc3D(builder, stack, Axis.X, radius, thicknessRing + outlinePad, STENCIL_X / 255F, 0F, 0F);
-            Draw.arc3D(builder, stack, Axis.Y, radius, thicknessRing + outlinePad, STENCIL_Y / 255F, 0F, 0F);
+            RenderSystem.disableDepthTest();
+            this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.Z, STENCIL_Z / 255F, 0F, 0F, 1F);
+            this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.X, STENCIL_X / 255F, 0F, 0F, 1F);
+            this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.Y, STENCIL_Y / 255F, 0F, 0F, 1F);
+            return;
         }
-        else
-        {
-            Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, STENCIL_X / 255F, 0F, 0F);
+
+        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        
+        Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, STENCIL_X / 255F, 0F, 0F);
             Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, STENCIL_Y / 255F, 0F, 0F);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, STENCIL_Z / 255F, 0F, 0F);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, 0F, 0F, 0F);
@@ -372,8 +441,6 @@ public class Gizmo
                 Draw.fillBox(builder, stack, -axisOffset * 2F, axisSize, -axisOffset * 2F, axisOffset * 2F, scaleEnd, axisOffset * 2F, STENCIL_Y / 255F, 0F, 0F);
                 Draw.fillBox(builder, stack, -axisOffset * 2F, -axisOffset * 2F, axisSize, axisOffset * 2F, axisOffset * 2F, scaleEnd, STENCIL_Z / 255F, 0F, 0F);
             }
-
-        }
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         RenderSystem.disableDepthTest();
