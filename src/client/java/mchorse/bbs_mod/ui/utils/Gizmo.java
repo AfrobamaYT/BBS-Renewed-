@@ -415,6 +415,11 @@ public class Gizmo
         float startDeg = MathUtils.toDeg((float) Math.atan2(pz, px));
         float sweepDeg = this.currentTransform.getAccumulatedRotateDeg() * sweepDir;
 
+        if (this.currentTransform.isLocal())
+        {
+            startDeg -= sweepDeg;
+        }
+
         stack.push();
         
         if (axis == Axis.X) stack.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotation(MathUtils.PI / 2F));
