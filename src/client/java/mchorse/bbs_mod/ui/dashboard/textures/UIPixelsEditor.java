@@ -24,7 +24,9 @@ import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,6 +45,34 @@ public class UIPixelsEditor extends UICanvasEditor
     private boolean blendStroke;
     private final Color blendedStrokeColor = new Color();
     private Vector2i lastPixel;
+
+    private boolean hasSelection;
+    private List<SelectionRect> selections = new ArrayList<>();
+    private SelectionRect currentSelection;
+    private boolean currentSelectionSubtract;
+
+    public static class SelectionRect
+    {
+        public int x1, y1, x2, y2;
+
+        public SelectionRect(int x1, int y1, int x2, int y2)
+        {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+        }
+
+        public boolean isInside(int x, int y)
+        {
+            int minX = Math.min(this.x1, this.x2);
+            int maxX = Math.max(this.x1, this.x2);
+            int minY = Math.min(this.y1, this.y2);
+            int maxY = Math.max(this.y1, this.y2);
+
+            return x >= minX && x <= maxX && y >= minY && y <= maxY;
+        }
+    }
 
     protected UndoManager<Pixels> undoManager;
     private PixelsUndo pixelsUndo;
@@ -72,8 +102,37 @@ public class UIPixelsEditor extends UICanvasEditor
         this.keys().register(Keys.COPY, this::copyPixel).label(UIKeys.TEXTURES_VIEWER_CONTEXT_COPY_HEX).inside().active(texture).category(category);
         this.keys().register(Keys.UNDO, this::undo).inside().active(editing).category(category);
         this.keys().register(Keys.REDO, this::redo).inside().active(editing).category(category);
+        this.keys().register(Keys.PIXEL_DESELECT, this::clearSelection).inside().active(editing).category(category);
 
         this.setEditing(false);
+    }
+
+    public void clearSelection()
+    {
+        if (this.hasSelection)
+        {
+            this.hasSelection = false;
+            this.selections.clear();
+            this.currentSelection = null;
+        }
+    }
+
+    public boolean isInsideSelection(int x, int y)
+    {
+        if (!this.hasSelection || this.selections.isEmpty())
+        {
+            return true;
+        }
+
+        for (SelectionRect rect : this.selections)
+        {
+            if (rect.isInside(x, y))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public UIPixelsEditor colorSupplier(Supplier<Color> supplier)
@@ -201,6 +260,11 @@ public class UIPixelsEditor extends UICanvasEditor
     private void paintPixel(int x, int y)
     {
         if (x < 0 || y < 0 || x >= this.pixels.width || y >= this.pixels.height)
+        {
+            return;
+        }
+
+        if (!this.isInsideSelection(x, y))
         {
             return;
         }
@@ -360,6 +424,203 @@ public class UIPixelsEditor extends UICanvasEditor
         }
     }
 
+    private boolean[][] createSelectionMask()
+    {
+        return new boolean[this.w][this.h];
+    }
+
+    private void fillSelectionMask(boolean[][] mask, SelectionRect rect, boolean selected)
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        int minX = Math.max(0, Math.min(rect.x1, rect.x2));
+        int maxX = Math.min(this.w - 1, Math.max(rect.x1, rect.x2));
+        int minY = Math.max(0, Math.min(rect.y1, rect.y2));
+        int maxY = Math.min(this.h - 1, Math.max(rect.y1, rect.y2));
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                mask[x][y] = selected;
+            }
+        }
+    }
+
+    private boolean[][] buildSelectionMask()
+    {
+        boolean[][] mask = this.createSelectionMask();
+
+        for (SelectionRect rect : this.selections)
+        {
+            this.fillSelectionMask(mask, rect, true);
+        }
+
+        return mask;
+    }
+
+    private List<SelectionRect> buildSelectionsFromMask(boolean[][] mask)
+    {
+        List<SelectionRect> result = new ArrayList<>();
+        List<SelectionRect> active = new ArrayList<>();
+
+        for (int y = 0; y < this.h; y++)
+        {
+            List<SelectionRect> next = new ArrayList<>();
+            List<int[]> spans = new ArrayList<>();
+            boolean[] used;
+
+            for (int x = 0; x < this.w; x++)
+            {
+                if (!mask[x][y])
+                {
+                    continue;
+                }
+
+                int start = x;
+
+                while (x + 1 < this.w && mask[x + 1][y])
+                {
+                    x++;
+                }
+
+                spans.add(new int[] {start, x});
+            }
+
+            used = new boolean[spans.size()];
+
+            for (SelectionRect rect : active)
+            {
+                int match = -1;
+
+                for (int i = 0; i < spans.size(); i++)
+                {
+                    int[] span = spans.get(i);
+
+                    if (!used[i] && rect.x1 == span[0] && rect.x2 == span[1])
+                    {
+                        match = i;
+                        break;
+                    }
+                }
+
+                if (match >= 0)
+                {
+                    rect.y2 = y;
+                    next.add(rect);
+                    used[match] = true;
+                }
+                else
+                {
+                    result.add(rect);
+                }
+            }
+
+            for (int i = 0; i < spans.size(); i++)
+            {
+                if (!used[i])
+                {
+                    int[] span = spans.get(i);
+
+                    next.add(new SelectionRect(span[0], y, span[1], y));
+                }
+            }
+
+            active = next;
+        }
+
+        result.addAll(active);
+
+        return result;
+    }
+
+    private void applyCurrentSelection()
+    {
+        if (this.currentSelection == null)
+        {
+            return;
+        }
+
+        boolean[][] mask = this.buildSelectionMask();
+
+        this.fillSelectionMask(mask, this.currentSelection, !this.currentSelectionSubtract);
+        this.selections = this.buildSelectionsFromMask(mask);
+        this.hasSelection = !this.selections.isEmpty();
+        this.currentSelection = null;
+        this.currentSelectionSubtract = false;
+    }
+
+    private int getSelectionScreenX(int x)
+    {
+        return (int) Math.round(this.scaleX.to(x - this.w / 2D));
+    }
+
+    private int getSelectionScreenY(int y)
+    {
+        return (int) Math.round(this.scaleY.to(y - this.h / 2D));
+    }
+
+    private int getSelectionPatternColor(int x, int y)
+    {
+        int phase = (int) (System.currentTimeMillis() / 150L);
+
+        return ((x + y + phase) & 1) == 0 ? Colors.WHITE : 0xff000000;
+    }
+
+    private void renderSelectionHorizontalEdge(UIContext context, int x, int y)
+    {
+        int sx1 = this.getSelectionScreenX(x);
+        int sx2 = this.getSelectionScreenX(x + 1);
+        int sy = this.getSelectionScreenY(y);
+
+        context.batcher.box(sx1, sy, sx2, sy + 1, this.getSelectionPatternColor(x, y));
+    }
+
+    private void renderSelectionVerticalEdge(UIContext context, int x, int y)
+    {
+        int sx = this.getSelectionScreenX(x);
+        int sy1 = this.getSelectionScreenY(y);
+        int sy2 = this.getSelectionScreenY(y + 1);
+
+        context.batcher.box(sx, sy1, sx + 1, sy2, this.getSelectionPatternColor(x, y));
+    }
+
+    private void renderSelectionOutline(UIContext context, boolean[][] mask)
+    {
+        for (int y = 0; y <= this.h; y++)
+        {
+            for (int x = 0; x < this.w; x++)
+            {
+                boolean above = y > 0 && mask[x][y - 1];
+                boolean below = y < this.h && mask[x][y];
+                boolean boundary = above != below;
+
+                if (boundary)
+                {
+                    this.renderSelectionHorizontalEdge(context, x, y);
+                }
+            }
+        }
+
+        for (int x = 0; x <= this.w; x++)
+        {
+            for (int y = 0; y < this.h; y++)
+            {
+                boolean left = x > 0 && mask[x - 1][y];
+                boolean right = x < this.w && mask[x][y];
+                boolean boundary = left != right;
+
+                if (boundary)
+                {
+                    this.renderSelectionVerticalEdge(context, x, y);
+                }
+            }
+        }
+    }
+
     protected void wasChanged()
     {}
 
@@ -464,6 +725,30 @@ public class UIPixelsEditor extends UICanvasEditor
     }
 
     @Override
+    public boolean subMouseClicked(UIContext context)
+    {
+        if (this.area.isInside(context) && this.isMouseButtonAllowed(context.mouseButton))
+        {
+            this.dragging = true;
+            this.mouse = context.mouseButton;
+
+            this.lastX = context.mouseX;
+            this.lastY = context.mouseY;
+
+            if (this.mouse == 0 && Window.isCtrlPressed() && this.getActivePaintTool() != TexturePaintTool.SELECTION)
+            {
+                this.mouse = 2;
+            }
+
+            this.startDragging(context);
+
+            return true;
+        }
+
+        return super.subMouseClicked(context);
+    }
+
+    @Override
     protected boolean isMouseButtonAllowed(int mouseButton)
     {
         return super.isMouseButtonAllowed(mouseButton);
@@ -480,6 +765,23 @@ public class UIPixelsEditor extends UICanvasEditor
         }
 
         TexturePaintTool tool = this.getActivePaintTool();
+
+        if (tool == TexturePaintTool.SELECTION)
+        {
+            Vector2i pixel = this.getHoverPixel(context.mouseX, context.mouseY);
+            boolean subtract = Window.isCtrlPressed();
+
+            if (!Window.isShiftPressed() && !subtract)
+            {
+                this.selections.clear();
+            }
+
+            this.hasSelection = !this.selections.isEmpty() || !subtract;
+            this.currentSelection = new SelectionRect(pixel.x, pixel.y, pixel.x, pixel.y);
+            this.currentSelectionSubtract = subtract;
+
+            return;
+        }
 
         if (tool == TexturePaintTool.FILL)
         {
@@ -521,6 +823,15 @@ public class UIPixelsEditor extends UICanvasEditor
     @Override
     public boolean subMouseReleased(UIContext context)
     {
+        if (this.dragging && this.getActivePaintTool() == TexturePaintTool.SELECTION && this.currentSelection != null)
+        {
+            Vector2i hoverPixel = this.getHoverPixel(context.mouseX, context.mouseY);
+
+            this.currentSelection.x2 = hoverPixel.x;
+            this.currentSelection.y2 = hoverPixel.y;
+            this.applyCurrentSelection();
+        }
+
         if (this.dragging && this.pixelsUndo != null)
         {
             Vector2i hoverPixel = this.getHoverPixel(context.mouseX, context.mouseY);
@@ -575,26 +886,53 @@ public class UIPixelsEditor extends UICanvasEditor
             this.renderStrokePreview(context, pixelX, pixelY);
         }
 
-        if (this.editing && this.dragging && (this.lastX != context.mouseX || this.lastY != context.mouseY) && this.mouse == 0 && this.isStrokePaintTool())
+        if (this.hasSelection || this.currentSelection != null)
         {
-            Vector2i last = this.getHoverPixel(this.lastX, this.lastY);
-            Vector2i current = this.getHoverPixel(context.mouseX, context.mouseY);
+            context.batcher.clip(this.area, context);
+            boolean[][] mask = this.buildSelectionMask();
 
-            double distance = Math.max(new Vector2d(current.x, current.y).distance(last.x, last.y), 1);
+            this.fillSelectionMask(mask, this.currentSelection, !this.currentSelectionSubtract);
+            this.renderSelectionOutline(context, mask);
 
-            for (int i = 0; i <= distance; i++)
+            context.batcher.unclip(context);
+        }
+
+        if (this.editing && this.dragging && (this.lastX != context.mouseX || this.lastY != context.mouseY) && this.mouse == 0)
+        {
+            if (this.getActivePaintTool() == TexturePaintTool.SELECTION)
             {
-                int xx = (int) Lerps.lerp(last.x, current.x, i / distance);
-                int yy = (int) Lerps.lerp(last.y, current.y, i / distance);
+                Vector2i current = this.getHoverPixel(context.mouseX, context.mouseY);
 
-                this.paint(xx, yy);
+                if (this.currentSelection != null)
+                {
+                    this.currentSelection.x2 = current.x;
+                    this.currentSelection.y2 = current.y;
+                }
+
+                this.lastX = context.mouseX;
+                this.lastY = context.mouseY;
             }
+            else if (this.isStrokePaintTool())
+            {
+                Vector2i last = this.getHoverPixel(this.lastX, this.lastY);
+                Vector2i current = this.getHoverPixel(context.mouseX, context.mouseY);
 
-            this.wasChanged();
-            this.updateTexture();
+                double distance = Math.max(new Vector2d(current.x, current.y).distance(last.x, last.y), 1);
 
-            this.lastX = context.mouseX;
-            this.lastY = context.mouseY;
+                for (int i = 0; i <= distance; i++)
+                {
+                    int xx = (int) Lerps.lerp(last.x, current.x, i / distance);
+                    int yy = (int) Lerps.lerp(last.y, current.y, i / distance);
+
+                    this.paint(xx, yy);
+                }
+
+                this.wasChanged();
+                this.updateTexture();
+
+                this.lastX = context.mouseX;
+                this.lastY = context.mouseY;
+            }
         }
     }
 

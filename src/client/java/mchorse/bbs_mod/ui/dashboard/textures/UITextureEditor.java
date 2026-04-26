@@ -152,6 +152,11 @@ public class UITextureEditor extends UIPixelsEditor
             {
                 for (int y = 0; y < pixels.height; y++)
                 {
+                    if (!this.isInsideSelection(x, y))
+                    {
+                        continue;
+                    }
+
                     Color current = pixels.getColor(x, y);
 
                     if (current.getARGBColor() == target.getARGBColor())
@@ -187,6 +192,11 @@ public class UITextureEditor extends UIPixelsEditor
             int py = point.y;
 
             if (px < 0 || py < 0 || px >= pixels.width || py >= pixels.height)
+            {
+                continue;
+            }
+
+            if (!this.isInsideSelection(px, py))
             {
                 continue;
             }

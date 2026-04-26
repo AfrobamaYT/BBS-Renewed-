@@ -960,6 +960,7 @@ public class UIKeys
     public static final IKey TEXTURES_DOWNLOAD_FILENAME = L10n.lang("bbs.ui.textures.download.filename");
     public static final IKey TEXTURES_DOWNLOAD_TITLE = L10n.lang("bbs.ui.textures.download-title");
     public static final IKey TEXTURES_DOWNLOAD_URL = L10n.lang("bbs.ui.textures.download.url");
+    public static final IKey TEXTURES_DESELECT = L10n.lang("bbs.ui.textures.deselect");
     public static final IKey TEXTURES_EXPORT_OVERLAY_ERROR = L10n.lang("bbs.ui.textures.export_overlay.error");
     public static final IKey TEXTURES_EXPORT_OVERLAY_OPEN_FOLDER = L10n.lang("bbs.ui.textures.export_overlay.open_folder");
     public static final IKey TEXTURES_EXPORT_OVERLAY_SUCCESS = L10n.lang("bbs.ui.textures.export_overlay.success");
@@ -993,6 +994,7 @@ public class UIKeys
     public static final IKey TEXTURES_TOOLS_ERASER = L10n.lang("bbs.ui.textures.tools.eraser");
     public static final IKey TEXTURES_TOOLS_FILL = L10n.lang("bbs.ui.textures.tools.fill");
     public static final IKey TEXTURES_TOOLS_PIPETTE = L10n.lang("bbs.ui.textures.tools.pipette");
+    public static final IKey TEXTURES_TOOLS_SELECTION = L10n.lang("bbs.ui.textures.tools.selection");
     public static final IKey TEXTURES_TOOLS_PIPETTE_HINT = L10n.lang("bbs.ui.textures.tools.pipette_hint");
     public static final IKey TEXTURES_BRUSH_SIZE = L10n.lang("bbs.ui.textures.brush_size");
     public static final IKey TEXTURES_BRUSH_SHAPE = L10n.lang("bbs.ui.textures.brush_shape");
