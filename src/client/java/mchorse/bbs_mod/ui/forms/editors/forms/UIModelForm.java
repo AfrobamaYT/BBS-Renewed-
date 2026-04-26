@@ -51,9 +51,17 @@ public class UIModelForm extends UIForm<ModelForm>
     @Override
     public Matrix4f getOrigin(float transition)
     {
-        String path = FormUtils.getPath(this.form);
-        UIPoseEditor poseEditor = this.modelPanel.poseEditor;
+        return this.getOrigin(transition, this.bonePath(), this.modelPanel.poseEditor.transform.isLocal());
+    }
 
-        return this.getOrigin(transition, StringUtils.combinePaths(path, poseEditor.groups.getCurrentFirst()), poseEditor.transform.isLocal());
+    @Override
+    public Matrix4f getOriginMatrix(float transition)
+    {
+        return this.getOrigin(transition, this.bonePath(), true);
+    }
+
+    private String bonePath()
+    {
+        return StringUtils.combinePaths(FormUtils.getPath(this.form), this.modelPanel.poseEditor.groups.getCurrentFirst());
     }
 }

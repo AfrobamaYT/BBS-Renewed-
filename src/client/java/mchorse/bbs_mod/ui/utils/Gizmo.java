@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.utils;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -13,6 +14,10 @@ import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 public class Gizmo
@@ -29,16 +34,84 @@ public class Gizmo
     private Mode mode = Mode.TRANSLATE;
 
     private int index;
-    /* TODO: I'm too lazy to figure out right now the plane intersection algorithm for
-     * proper transforms, but for now, it appears, this implementation works as well
-     * not even that poorly! */
     private int mouseX;
     private int mouseY;
 
     private UIPropTransform currentTransform;
 
+    /* Snapshot of the matrix stack at the moment the gizmo is rendered.
+     * Combined with a camera (whose view matrix matches the one applied to
+     * the stack during rendering) this lets us recover the gizmo's true
+     * world position without having to thread it through every call site. */
+    private final Matrix4f lastRenderMatrix = new Matrix4f();
+    private boolean hasLastRenderMatrix;
+
     private Gizmo()
     {}
+
+    /**
+     * Reconstruct the world-space origin of the gizmo from the most recent
+     * render matrix and the camera that drove that render. The stack at
+     * render time is {@code view * translate(-cam.pos) * gizmoChain}, so
+     * undoing the view rotation and adding camera position yields the real
+     * world coordinates.
+     */
+    public boolean computeWorldOrigin(Camera camera, Vector3d out)
+    {
+        if (!this.hasLastRenderMatrix)
+        {
+            return false;
+        }
+
+        Matrix4f undoView = new Matrix4f(camera.view).invert().mul(this.lastRenderMatrix);
+        Vector3f cameraRelative = undoView.getTranslation(new Vector3f());
+
+        out.set(
+            camera.position.x + cameraRelative.x,
+            camera.position.y + cameraRelative.y,
+            camera.position.z + cameraRelative.z
+        );
+
+        return true;
+    }
+
+    /**
+     * Recover the gizmo's world-space axes from the latest render matrix and
+     * camera. Columns of {@code out} become the unit-length world directions
+     * of the gizmo's X/Y/Z handles. Returns {@code false} if the gizmo hasn't
+     * been rendered yet, in which case the caller should skip ray-based
+     * dragging.
+     */
+    public boolean computeWorldAxes(Camera camera, Matrix3f out)
+    {
+        if (!this.hasLastRenderMatrix)
+        {
+            return false;
+        }
+
+        Matrix4f undoView = new Matrix4f(camera.view).invert().mul(this.lastRenderMatrix);
+
+        out.set(undoView.get3x3(new Matrix3f()));
+
+        Vector3f col = new Vector3f();
+
+        for (int i = 0; i < 3; i++)
+        {
+            out.getColumn(i, col);
+
+            float lenSq = col.lengthSquared();
+
+            if (lenSq < 1.0E-12F)
+            {
+                return false;
+            }
+
+            col.div((float) Math.sqrt(lenSq));
+            out.setColumn(i, col);
+        }
+
+        return true;
+    }
 
     public Mode getMode()
     {
@@ -61,6 +134,11 @@ public class Gizmo
 
     public boolean start(int index, int mouseX, int mouseY, UIPropTransform transform)
     {
+        return this.start(index, mouseX, mouseY, transform, null);
+    }
+
+    public boolean start(int index, int mouseX, int mouseY, UIPropTransform transform, GizmoDrag drag)
+    {
         if (!BBSSettings.gizmos.get())
         {
             return false;
@@ -76,9 +154,12 @@ public class Gizmo
 
             if (transform != null)
             {
-                if (this.index == STENCIL_X) transform.enableMode(this.mode.ordinal(), Axis.X);
-                else if (this.index == STENCIL_Y) transform.enableMode(this.mode.ordinal(), Axis.Y);
-                else if (this.index == STENCIL_Z) transform.enableMode(this.mode.ordinal(), Axis.Z);
+                if (this.index == STENCIL_X) transform.enableMode(this.mode.ordinal(), Axis.X, null, drag);
+                else if (this.index == STENCIL_Y) transform.enableMode(this.mode.ordinal(), Axis.Y, null, drag);
+                else if (this.index == STENCIL_Z) transform.enableMode(this.mode.ordinal(), Axis.Z, null, drag);
+                else if (this.mode == Mode.TRANSLATE && this.index == STENCIL_XZ) transform.enableMode(this.mode.ordinal(), Axis.X, Axis.Z, drag);
+                else if (this.mode == Mode.TRANSLATE && this.index == STENCIL_XY) transform.enableMode(this.mode.ordinal(), Axis.X, Axis.Y, drag);
+                else if (this.mode == Mode.TRANSLATE && this.index == STENCIL_ZY) transform.enableMode(this.mode.ordinal(), Axis.Z, Axis.Y, drag);
             }
 
             return true;
@@ -101,6 +182,9 @@ public class Gizmo
 
     public void render(MatrixStack stack)
     {
+        this.lastRenderMatrix.set(stack.peek().getPositionMatrix());
+        this.hasLastRenderMatrix = true;
+
         if (BBSSettings.gizmos.get())
         {
             this.drawAxes(stack, 0.25F, 0.015F, 0.26F, 0.025F);
@@ -166,6 +250,17 @@ public class Gizmo
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, 0F, 0F, 1F);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, 1F, 1F, 1F);
 
+            if (this.mode == Mode.TRANSLATE)
+            {
+                float planeStart = axisSize * 0.2F;
+                float planeEnd = axisSize * 0.6F;
+                float planeThickness = axisOffset * 0.5F;
+
+                Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, 0.85F, 0F, 0.85F);
+                Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, 0.85F, 0.85F, 0F);
+                Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, 0F, 0.85F, 0.85F);
+            }
+
             if (this.mode == Mode.SCALE)
             {
                 float scaleEnd = axisSize + axisOffset;
@@ -174,14 +269,6 @@ public class Gizmo
                 Draw.fillBox(builder, stack, -axisOffset * 2F, axisSize, -axisOffset * 2F, axisOffset * 2F, scaleEnd, axisOffset * 2F, 0F, 1F, 0F);
                 Draw.fillBox(builder, stack, -axisOffset * 2F, -axisOffset * 2F, axisSize, axisOffset * 2F, axisOffset * 2F, scaleEnd, 0F, 0F, 1F);
             }
-
-            /* float l = axisSize * 0.25F;
-            float o = 0.001F;
-            float rr = axisSize * 0.65F;
-
-            Draw.fillBox(builder, stack, l, -o, l, rr, o, rr, 1F, 0F, 1F);
-            Draw.fillBox(builder, stack, l, l, -o, rr, rr, o, 1F, 1F, 0F);
-            Draw.fillBox(builder, stack, -o, l, l, o, rr, rr, 0F, 1F, 1F); */
         }
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
@@ -229,6 +316,17 @@ public class Gizmo
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, STENCIL_Z / 255F, 0F, 0F);
             Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, 0F, 0F, 0F);
 
+            if (this.mode == Mode.TRANSLATE)
+            {
+                float planeStart = axisSize * 0.2F;
+                float planeEnd = axisSize * 0.6F;
+                float planeThickness = axisOffset * 0.5F;
+
+                Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, STENCIL_XZ / 255F, 0F, 0F);
+                Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, STENCIL_XY / 255F, 0F, 0F);
+                Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, STENCIL_ZY / 255F, 0F, 0F);
+            }
+
             if (this.mode == Mode.SCALE)
             {
                 float scaleEnd = axisSize + axisOffset;
@@ -238,13 +336,6 @@ public class Gizmo
                 Draw.fillBox(builder, stack, -axisOffset * 2F, -axisOffset * 2F, axisSize, axisOffset * 2F, axisOffset * 2F, scaleEnd, STENCIL_Z / 255F, 0F, 0F);
             }
 
-            /* float l = axisSize * 0.25F;
-            float o = 0.001F;
-            float rr = axisSize * 0.65F;
-
-            Draw.fillBox(builder, stack, l, -o, l, rr, o, rr, STENCIL_XZ / 255F, 0F, 0F);
-            Draw.fillBox(builder, stack, l, l, -o, rr, rr, o, STENCIL_XY / 255F, 0F, 0F);
-            Draw.fillBox(builder, stack, -o, l, l, o, rr, rr, STENCIL_ZY / 255F, 0F, 0F); */
         }
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);

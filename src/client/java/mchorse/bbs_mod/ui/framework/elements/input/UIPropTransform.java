@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Gizmo;
+import mchorse.bbs_mod.ui.utils.GizmoDrag;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Axis;
@@ -19,6 +20,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.MinecraftClient;
 import org.joml.Matrix3f;
+import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -36,12 +38,48 @@ public class UIPropTransform extends UITransform
     private boolean editing;
     private int mode;
     private Axis axis = Axis.X;
+    private Axis axis2;
     private int lastX;
     private Transform cache = new Transform();
     private Timer checker = new Timer(30);
 
     private boolean model;
     private boolean local;
+
+    /* Ray-based drag state for translate mode */
+    private GizmoDrag drag;
+    /**
+     * World-space direction (with scale) for one unit of drag along each
+     * gizmo handle. Columns correspond to the {@link Axis} the user is
+     * dragging. Used to project the cursor's world delta back onto the
+     * relevant handle.
+     */
+    private final Matrix3f dragWorldBasis = new Matrix3f();
+    /**
+     * Direction (in {@code transform.translate} units) for one unit of drag
+     * along each gizmo handle. Together with {@link #dragWorldBasis} this
+     * solves the mapping from world cursor motion to the change of
+     * {@code transform.translate} regardless of what units that translate is
+     * in (blocks, pixels, ...).
+     */
+    private final Matrix3f dragTranslateBasis = new Matrix3f();
+    private final Vector3f dragPlaneNormal = new Vector3f();
+    private final Vector3d dragStartHit = new Vector3d();
+    private final Vector3f dragStartTranslate = new Vector3f();
+
+    /* Per-mode start state. Translate uses dragStartTranslate above; scale and
+     * rotate get their own snapshots so each mode is self-contained. */
+    private final Vector3f dragStartScale = new Vector3f();
+    private final Vector3f dragStartRotateDeg = new Vector3f();
+    /** World-space direction of the active handle, captured at drag start. */
+    private final Vector3f dragAxisDir = new Vector3f();
+    /** Signed projection of {@code (startHit - origin)} onto {@link #dragAxisDir}. Used for ratio-based scale. */
+    private float dragStartScaleProj;
+    /** Unit ring direction (perpendicular to rotation axis) at drag start. */
+    private final Vector3f dragStartRingVec = new Vector3f();
+    /** Whether {@link #dragStartRotateDeg} should be written back to {@code rotate2} instead of {@code rotate}. */
+    private boolean dragRotateGizmoSpace;
+    private boolean dragHasStart;
 
     private UITransformHandler handler;
 
@@ -221,6 +259,16 @@ public class UIPropTransform extends UITransform
 
     public void enableMode(int mode, Axis axis)
     {
+        this.enableMode(mode, axis, null, null);
+    }
+
+    public void enableMode(int mode, Axis axis, Axis axis2)
+    {
+        this.enableMode(mode, axis, axis2, null);
+    }
+
+    public void enableMode(int mode, Axis axis, Axis axis2, GizmoDrag drag)
+    {
         if (Gizmo.INSTANCE.setMode(Gizmo.Mode.values()[mode]) && axis == null)
         {
             return;
@@ -242,13 +290,17 @@ public class UIPropTransform extends UITransform
             Axis[] values = Axis.values();
 
             this.axis = values[MathUtils.cycler(this.axis.ordinal() + 1, 0, values.length - 1)];
+            this.axis2 = null;
+            this.drag = null;
 
             this.restore(true);
         }
         else
         {
             this.axis = axis == null ? Axis.X : axis;
+            this.axis2 = axis2;
             this.lastX = context.mouseX;
+            this.drag = drag;
         }
 
         this.editing = true;
@@ -256,10 +308,368 @@ public class UIPropTransform extends UITransform
 
         this.cache.copy(this.transform);
 
+        if (this.drag != null)
+        {
+            this.beginRayDrag(context.mouseX, context.mouseY);
+        }
+
         if (!this.handler.hasParent())
         {
             context.menu.overlay.add(this.handler);
         }
+    }
+
+    /**
+     * Resolve the cursor's current intersection with the drag plane and
+     * dispatch to the per-mode handler. Bails silently when the ray turns
+     * parallel to the plane so the transform doesn't jump.
+     */
+    private void applyRayDrag(int mouseX, int mouseY)
+    {
+        if (!this.dragHasStart || this.transform == null)
+        {
+            return;
+        }
+
+        Vector3d hit = new Vector3d();
+
+        if (!this.drag.intersectPlane(mouseX, mouseY, this.dragPlaneNormal, hit))
+        {
+            return;
+        }
+
+        switch (this.mode)
+        {
+            case 0:
+                this.applyRayTranslate(hit);
+                break;
+            case 1:
+                this.applyRayScale(hit);
+                break;
+            case 2:
+                this.applyRayRotate(hit);
+                break;
+        }
+    }
+
+    private void applyRayTranslate(Vector3d hit)
+    {
+        Vector3f delta = new Vector3f(
+            (float) (hit.x - this.dragStartHit.x),
+            (float) (hit.y - this.dragStartHit.y),
+            (float) (hit.z - this.dragStartHit.z)
+        );
+
+        Vector3f result = new Vector3f();
+
+        this.accumulateAlongAxis(delta, this.axis, result);
+
+        if (this.axis2 != null)
+        {
+            this.accumulateAlongAxis(delta, this.axis2, result);
+        }
+
+        this.setT(null,
+            this.dragStartTranslate.x + result.x,
+            this.dragStartTranslate.y + result.y,
+            this.dragStartTranslate.z + result.z
+        );
+    }
+
+    /**
+     * Scale by ratio of cursor-to-origin distances along the active axis. The
+     * "lever" picked at drag start defines 1.0; pulling further multiplies the
+     * scale, dragging closer shrinks it. Falls back to additive delta if the
+     * starting projection is too small to safely divide by.
+     */
+    private void applyRayScale(Vector3d hit)
+    {
+        double rx = hit.x - this.drag.gizmoOrigin.x;
+        double ry = hit.y - this.drag.gizmoOrigin.y;
+        double rz = hit.z - this.drag.gizmoOrigin.z;
+        float currentProj = (float) (rx * this.dragAxisDir.x + ry * this.dragAxisDir.y + rz * this.dragAxisDir.z);
+
+        boolean all = Window.isCtrlPressed();
+        float sx = this.dragStartScale.x;
+        float sy = this.dragStartScale.y;
+        float sz = this.dragStartScale.z;
+
+        if (Math.abs(this.dragStartScaleProj) < 1.0E-4F)
+        {
+            float delta = currentProj - this.dragStartScaleProj;
+
+            if (all || this.axis == Axis.X) sx += delta;
+            if (all || this.axis == Axis.Y) sy += delta;
+            if (all || this.axis == Axis.Z) sz += delta;
+        }
+        else
+        {
+            float ratio = currentProj / this.dragStartScaleProj;
+
+            if (all || this.axis == Axis.X) sx *= ratio;
+            if (all || this.axis == Axis.Y) sy *= ratio;
+            if (all || this.axis == Axis.Z) sz *= ratio;
+        }
+
+        this.setS(null, sx, sy, sz);
+    }
+
+    /**
+     * Rotate around the active axis by the signed angle swept on the rotation
+     * plane between the start hit and the current hit. The axis convention
+     * matches the dx-based code: when {@code local && gizmos enabled} the
+     * change goes into {@code rotate2}, otherwise into {@code rotate}.
+     */
+    private void applyRayRotate(Vector3d hit)
+    {
+        Vector3f rel = new Vector3f(
+            (float) (hit.x - this.drag.gizmoOrigin.x),
+            (float) (hit.y - this.drag.gizmoOrigin.y),
+            (float) (hit.z - this.drag.gizmoOrigin.z)
+        );
+
+        float along = rel.dot(this.dragAxisDir);
+
+        rel.sub(new Vector3f(this.dragAxisDir).mul(along));
+
+        if (rel.lengthSquared() < 1.0E-8F)
+        {
+            return;
+        }
+
+        rel.normalize();
+
+        float dot = this.dragStartRingVec.dot(rel);
+        Vector3f cross = new Vector3f();
+
+        this.dragStartRingVec.cross(rel, cross);
+
+        float crossSign = cross.dot(this.dragAxisDir);
+        float angleDeg = MathUtils.toDeg((float) Math.atan2(crossSign, dot));
+
+        float rx = this.dragStartRotateDeg.x;
+        float ry = this.dragStartRotateDeg.y;
+        float rz = this.dragStartRotateDeg.z;
+
+        switch (this.axis)
+        {
+            case X: rx += angleDeg; break;
+            case Y: ry += angleDeg; break;
+            case Z: rz += angleDeg; break;
+        }
+
+        if (this.dragRotateGizmoSpace) this.setR2(null, rx, ry, rz);
+        else this.setR(null, rx, ry, rz);
+    }
+
+    /**
+     * Convert the cursor's world-space delta into a contribution to
+     * {@code transform.translate} for the given handle.
+     *
+     * The math is the same for both LOCAL and GLOBAL modes: project the
+     * world delta onto the handle's world direction (with scale), then map
+     * it back into translate-space using the precomputed translate basis.
+     * This automatically handles cases where one unit of {@code translate}
+     * is not one block in world (cubic groups, scaled parents, etc.).
+     */
+    private void accumulateAlongAxis(Vector3f delta, Axis axis, Vector3f out)
+    {
+        Vector3f worldAxis = new Vector3f();
+
+        this.dragWorldBasis.getColumn(axis.ordinal(), worldAxis);
+
+        float lenSq = worldAxis.lengthSquared();
+
+        if (lenSq < 1.0E-12F)
+        {
+            return;
+        }
+
+        float t = worldAxis.dot(delta) / lenSq;
+
+        Vector3f translateAxis = new Vector3f();
+
+        this.dragTranslateBasis.getColumn(axis.ordinal(), translateAxis);
+        out.add(translateAxis.mul(t));
+    }
+
+    /**
+     * Capture the world-space anchor for ray-based translate. Recomputed when
+     * the cursor wraps, so that the delta always restarts from zero relative
+     * to the current pointer position.
+     */
+    private void beginRayDrag(int mouseX, int mouseY)
+    {
+        if (this.drag == null || this.transform == null)
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        switch (this.mode)
+        {
+            case 0:
+                this.beginRayTranslate(mouseX, mouseY);
+                break;
+            case 1:
+                this.beginRayScale(mouseX, mouseY);
+                break;
+            case 2:
+                this.beginRayRotate(mouseX, mouseY);
+                break;
+            default:
+                this.dragHasStart = false;
+                break;
+        }
+    }
+
+    private void beginRayTranslate(int mouseX, int mouseY)
+    {
+        Matrix3f jacobian = new Matrix3f(this.drag.translateJacobian);
+
+        if (this.local)
+        {
+            /* Local: each handle moves along the form's own axes (after the
+             * legacy 180° X correction). The translate-space direction is
+             * R.col(axis); pushed through the Jacobian we get the world-space
+             * direction with the proper scale baked in. */
+            Matrix3f rotation = new Matrix3f()
+                .rotateX(this.model ? MathUtils.PI : 0F)
+                .mul(this.transform.createRotationMatrix());
+
+            this.dragTranslateBasis.set(rotation);
+            this.dragWorldBasis.set(jacobian).mul(rotation);
+        }
+        else
+        {
+            /* Global (Parent space): handles align with the bone's origin axes 
+             * (which includes parent rotations and entity yaw). The Jacobian 
+             * directly gives us these world-space axes for each translate 
+             * component. */
+            this.dragTranslateBasis.identity();
+            this.dragWorldBasis.set(jacobian);
+        }
+
+        if (this.axis2 == null)
+        {
+            this.drag.planeNormalForAxis(mouseX, mouseY, this.dragWorldBasis, this.axis, this.dragPlaneNormal);
+        }
+        else
+        {
+            this.drag.planeNormalForPlane(this.dragWorldBasis, this.axis, this.axis2, this.dragPlaneNormal);
+        }
+
+        this.dragStartTranslate.set(this.transform.translate);
+        this.dragHasStart = this.drag.intersectPlane(mouseX, mouseY, this.dragPlaneNormal, this.dragStartHit);
+    }
+
+    /**
+     * Anchor a scale drag on a plane that contains the picked axis and faces
+     * the camera. The cursor's projection onto that axis at start defines the
+     * "1.0" lever for the ratio computed in {@link #applyRayScale}.
+     */
+    private void beginRayScale(int mouseX, int mouseY)
+    {
+        Vector3f axisDir = this.drag.gizmoWorldAxes.getColumn(this.axis.ordinal(), new Vector3f());
+
+        if (axisDir.lengthSquared() < 1.0E-8F)
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        axisDir.normalize();
+        this.dragAxisDir.set(axisDir);
+
+        Matrix3f basis = new Matrix3f();
+
+        basis.setColumn(this.axis.ordinal(), axisDir);
+        this.drag.planeNormalForAxis(mouseX, mouseY, basis, this.axis, this.dragPlaneNormal);
+
+        if (!this.drag.intersectPlane(mouseX, mouseY, this.dragPlaneNormal, this.dragStartHit))
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        double rx = this.dragStartHit.x - this.drag.gizmoOrigin.x;
+        double ry = this.dragStartHit.y - this.drag.gizmoOrigin.y;
+        double rz = this.dragStartHit.z - this.drag.gizmoOrigin.z;
+
+        this.dragStartScaleProj = (float) (rx * axisDir.x + ry * axisDir.y + rz * axisDir.z);
+        this.dragStartScale.set(this.transform.scale);
+        this.dragHasStart = true;
+    }
+
+    /**
+     * Anchor a rotate drag on the plane perpendicular to the picked axis. The
+     * unit vector from the gizmo origin to the start hit becomes the reference
+     * direction; subsequent intersections produce a signed angle around the
+     * axis via {@code atan2}.
+     */
+    private void beginRayRotate(int mouseX, int mouseY)
+    {
+        /* Use the renderer's actual rotation axis (filled by the editor via
+         * GizmoDrag.computeRotateAxes), not the visible gizmo arrow direction.
+         * For cubic models these can differ in sign on X/Z because the renderer
+         * post-multiplies by Ry(180°) after the bone's own rotation, flipping
+         * bone-local X and Z while preserving Y. Without this the angle we
+         * write into transform.rotate winds up running opposite to the user's
+         * physical drag. */
+        Vector3f axisDir = this.drag.rotateAxes.getColumn(this.axis.ordinal(), new Vector3f());
+
+        if (axisDir.lengthSquared() < 1.0E-8F)
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        axisDir.normalize();
+        this.dragAxisDir.set(axisDir);
+        this.dragPlaneNormal.set(axisDir);
+
+        if (!this.drag.intersectPlane(mouseX, mouseY, this.dragPlaneNormal, this.dragStartHit))
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        Vector3f ring = new Vector3f(
+            (float) (this.dragStartHit.x - this.drag.gizmoOrigin.x),
+            (float) (this.dragStartHit.y - this.drag.gizmoOrigin.y),
+            (float) (this.dragStartHit.z - this.drag.gizmoOrigin.z)
+        );
+
+        float along = ring.dot(axisDir);
+
+        ring.sub(new Vector3f(axisDir).mul(along));
+
+        if (ring.lengthSquared() < 1.0E-8F)
+        {
+            this.dragHasStart = false;
+
+            return;
+        }
+
+        ring.normalize();
+        this.dragStartRingVec.set(ring);
+
+        this.dragRotateGizmoSpace = this.local && BBSSettings.gizmos.get();
+
+        Vector3f source = this.dragRotateGizmoSpace ? this.transform.rotate2 : this.transform.rotate;
+
+        this.dragStartRotateDeg.set(
+            MathUtils.toDeg(source.x),
+            MathUtils.toDeg(source.y),
+            MathUtils.toDeg(source.z)
+        );
+
+        this.dragHasStart = true;
     }
 
     private Vector3f getValue()
@@ -295,6 +705,9 @@ public class UIPropTransform extends UITransform
     private void disable()
     {
         this.editing = false;
+        this.axis2 = null;
+        this.drag = null;
+        this.dragHasStart = false;
 
         if (this.handler.hasParent())
         {
@@ -453,6 +866,8 @@ public class UIPropTransform extends UITransform
 
                 this.lastX = context.menu.width - (int) (borderPadding / fx);
                 this.checker.mark();
+
+                if (this.drag != null) this.beginRayDrag(this.lastX, context.mouseY);
             }
             else if (rawX >= w - border)
             {
@@ -460,6 +875,12 @@ public class UIPropTransform extends UITransform
 
                 this.lastX = (int) (borderPadding / fx);
                 this.checker.mark();
+
+                if (this.drag != null) this.beginRayDrag(this.lastX, context.mouseY);
+            }
+            else if (this.drag != null)
+            {
+                this.applyRayDrag(context.mouseX, context.mouseY);
             }
             else
             {
@@ -472,6 +893,11 @@ public class UIPropTransform extends UITransform
                 if (this.local && this.mode == 0)
                 {
                     Vector3f vector3f = this.calculateLocalVector(factor * dx, this.axis);
+
+                    if (this.axis2 != null)
+                    {
+                        vector3f.add(this.calculateLocalVector(factor * dx, this.axis2));
+                    }
 
                     this.setT(null, vector.x + vector3f.x, vector.y + vector3f.y, vector.z + vector3f.z);
                 }
@@ -487,6 +913,9 @@ public class UIPropTransform extends UITransform
                     if (this.axis == Axis.X || all) vector3f.x += factor * dx;
                     if (this.axis == Axis.Y || all) vector3f.y += factor * dx;
                     if (this.axis == Axis.Z || all) vector3f.z += factor * dx;
+                    if (!all && this.axis2 == Axis.X) vector3f.x += factor * dx;
+                    if (!all && this.axis2 == Axis.Y) vector3f.y += factor * dx;
+                    if (!all && this.axis2 == Axis.Z) vector3f.z += factor * dx;
 
                     if (this.mode == 0) this.setT(null, vector3f.x, vector3f.y, vector3f.z);
                     if (this.mode == 1) this.setS(null, vector3f.x, vector3f.y, vector3f.z);
@@ -496,9 +925,15 @@ public class UIPropTransform extends UITransform
                         else this.setR(null, vector3f.x, vector3f.y, vector3f.z);
                     }
                 }
+            }
 
+            if (rawX < border || rawX >= w - border)
+            {
+                // Cursor wrapped, lastX is already updated
+            }
+            else
+            {
                 this.setTransform(this.transform);
-
                 this.lastX = context.mouseX;
             }
         }
