@@ -240,6 +240,25 @@ public class UIPixelsEditor extends UICanvasEditor
 
     public Texture getTemporaryTexture()
     {
+        if (this.layers.isEmpty())
+        {
+            return this.temporary;
+        }
+        
+        Pixels flat = this.flattenLayers();
+        if (flat != null)
+        {
+            if (this.temporaryFlat == null)
+            {
+                this.temporaryFlat = new Texture();
+                this.temporaryFlat.setFilter(org.lwjgl.opengl.GL11.GL_NEAREST);
+            }
+            this.temporaryFlat.bind();
+            this.temporaryFlat.updateTexture(flat);
+            flat.delete();
+            return this.temporaryFlat;
+        }
+
         return this.temporary;
     }
 
@@ -944,6 +963,12 @@ public class UIPixelsEditor extends UICanvasEditor
         this.layers.clear();
         this.temporary = null;
         this.pixels = null;
+        
+        if (this.temporaryFlat != null)
+        {
+            this.temporaryFlat.delete();
+            this.temporaryFlat = null;
+        }
     }
 
     public void fillPixels(Pixels pixels)
@@ -1238,9 +1263,16 @@ public class UIPixelsEditor extends UICanvasEditor
         return output;
     }
 
+    private Texture temporaryFlat;
+
     protected Texture getRenderTexture(UIContext context)
     {
-        return this.temporary;
+        if (this.layers.isEmpty() || this.editing)
+        {
+            return this.temporary;
+        }
+
+        return this.getTemporaryTexture();
     }
 
     @Override
