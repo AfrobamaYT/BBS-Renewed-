@@ -10,6 +10,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.graphics.window.Window;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -538,10 +539,12 @@ public class Gizmo
 
             if (BBSSettings.rotate3dSphere.get() && (!editing || trackball))
             {
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
-                this.drawCachedSphere(stack, this.rotateSphereVbo, 1F, 1F, 1F, 0.15F);
-                RenderSystem.disableBlend();
+                if (!Window.isAltPressed()) {
+                    RenderSystem.enableBlend();
+                    RenderSystem.defaultBlendFunc();
+                    this.drawCachedSphere(stack, this.rotateSphereVbo, 1F, 1F, 1F, 0.15F);
+                    RenderSystem.disableBlend();
+                }
             }
 
             RenderSystem.depthFunc(GL11.GL_ALWAYS);
@@ -647,7 +650,9 @@ public class Gizmo
 
             if (BBSSettings.rotate3dSphere.get() && (!editing || trackball))
             {
-                this.drawCachedSphere(stack, this.rotateStencilSphereVbo, STENCIL_XYZ / 255F, 0F, 0F, 1F);
+                if (!Window.isAltPressed()) {
+                    this.drawCachedSphere(stack, this.rotateStencilSphereVbo, STENCIL_XYZ / 255F, 0F, 0F, 1F);
+                }
             }
 
             if (!BBSSettings.rotateHideRings.get()) {
