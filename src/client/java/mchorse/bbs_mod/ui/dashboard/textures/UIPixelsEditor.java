@@ -20,6 +20,7 @@ import mchorse.bbs_mod.utils.interps.rasterizers.LineRasterizer;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
+import mchorse.bbs_mod.ui.dashboard.textures.layers.TextureLayer;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
@@ -40,6 +41,9 @@ public class UIPixelsEditor extends UICanvasEditor
     public UIElement toolbar;
 
     private int brushSize = 1;
+
+    public List<TextureLayer> layers = new ArrayList<>();
+    public int activeLayerIndex = -1;
 
     private Texture temporary;
     private Pixels pixels;
@@ -167,6 +171,16 @@ public class UIPixelsEditor extends UICanvasEditor
         this.pickColorConsumer = consumer != null ? consumer : (c) -> {};
 
         return this;
+    }
+
+    public void setActiveLayer(int index)
+    {
+        if (index >= 0 && index < this.layers.size())
+        {
+            this.activeLayerIndex = index;
+            this.pixels = this.layers.get(index).pixels;
+            this.temporary = this.layers.get(index).texture;
+        }
     }
 
     public Texture getTemporaryTexture()
@@ -822,7 +836,10 @@ public class UIPixelsEditor extends UICanvasEditor
 
     private void handleUndo(IUndo<Pixels> pixelsIUndo, boolean redo)
     {
-        this.updateTexture();
+        for (TextureLayer layer : this.layers)
+        {
+            layer.updateTexture();
+        }
     }
 
     private void copyPixel()
@@ -842,9 +859,9 @@ public class UIPixelsEditor extends UICanvasEditor
 
     protected void updateTexture()
     {
-        this.pixels.rewindBuffer();
-        this.temporary.bind();
-        this.temporary.updateTexture(this.pixels);
+        if (this.activeLayerIndex >= 0 && this.activeLayerIndex < this.layers.size()) {
+            this.layers.get(this.activeLayerIndex).updateTexture();
+        }
     }
 
     public void undo()
@@ -865,11 +882,13 @@ public class UIPixelsEditor extends UICanvasEditor
 
     public void deleteTexture()
     {
-        if (this.temporary != null)
+        for (TextureLayer layer : this.layers)
         {
-            this.temporary.delete();
-            this.temporary = null;
+            layer.delete();
         }
+        this.layers.clear();
+        this.temporary = null;
+        this.pixels = null;
     }
 
     public void fillPixels(Pixels pixels)
@@ -879,14 +898,14 @@ public class UIPixelsEditor extends UICanvasEditor
         this.deleteTexture();
         this.setEditing(false);
 
-        this.pixels = pixels;
-
         if (pixels != null)
         {
-            this.temporary = new Texture();
-            this.temporary.setFilter(GL11.GL_NEAREST);
+            TextureLayer layer = new TextureLayer("Слой 1", pixels);
+            this.layers.add(layer);
+            this.activeLayerIndex = 0;
+            this.pixels = layer.pixels;
+            this.temporary = layer.texture;
 
-            this.updateTexture();
             this.setSize(pixels.width, pixels.height);
         }
     }
@@ -1043,9 +1062,22 @@ public class UIPixelsEditor extends UICanvasEditor
         int x = -this.w / 2;
         int y = -this.h / 2;
         Area area = this.calculate(x, y, x + this.w, y + this.h);
-        Texture texture = this.getRenderTexture(context);
 
-        context.batcher.fullTexturedBox(texture, area.x, area.y, area.w, area.h);
+        if (!this.editing)
+        {
+            Texture texture = this.getRenderTexture(context);
+            context.batcher.fullTexturedBox(texture, area.x, area.y, area.w, area.h);
+        }
+        else
+        {
+            for (TextureLayer layer : this.layers)
+            {
+                if (layer.visible && layer.texture != null)
+                {
+                    context.batcher.fullTexturedBox(layer.texture, area.x, area.y, area.w, area.h);
+                }
+            }
+        }
 
         /* Draw brush preview for stroke tools */
         if (this.isStrokePaintTool())
@@ -1103,6 +1135,27 @@ public class UIPixelsEditor extends UICanvasEditor
                 this.lastY = context.mouseY;
             }
         }
+    }
+
+    public Pixels flattenLayers()
+    {
+        if (this.layers.isEmpty())
+        {
+            return null;
+        }
+
+        Pixels output = Pixels.fromSize(this.w, this.h);
+
+        for (TextureLayer layer : this.layers)
+        {
+            if (layer.visible && layer.pixels != null)
+            {
+                output.draw(layer.pixels, 0, 0, this.w, this.h);
+            }
+        }
+
+        output.rewindBuffer();
+        return output;
     }
 
     protected Texture getRenderTexture(UIContext context)
