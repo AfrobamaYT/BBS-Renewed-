@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.utils;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
+import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -213,6 +214,11 @@ public class Gizmo
 
     public void render(MatrixStack stack)
     {
+        if (BBSRendering.isIrisShadowPass())
+        {
+            return;
+        }
+
         this.lastRenderMatrix.set(stack.peek().getPositionMatrix());
         this.hasLastRenderMatrix = true;
 
@@ -599,6 +605,11 @@ public class Gizmo
 
     public void renderStencil(MatrixStack stack, StencilMap map)
     {
+        if (BBSRendering.isIrisShadowPass())
+        {
+            return;
+        }
+
         if (BBSSettings.gizmos.get())
         {
             float distanceScale = this.getAxesDistanceScale(stack);
