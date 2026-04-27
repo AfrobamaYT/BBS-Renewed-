@@ -29,6 +29,8 @@
 	"bbs.config.transformation.axes_keep_screen_size-comment": "Если включено, оси и гизмо сохраняют примерно одинаковый размер на экране при изменении дистанции до камеры",
 	"bbs.config.transformation.rotate_3d_sphere": "3D сфера вращения",
 	"bbs.config.transformation.rotate_3d_sphere-comment": "Если включено, в режиме вращения появляется внутренняя 3D-сфера для свободного вращения, а клавиша R сначала запускает именно её",
+	"bbs.config.transformation.rotate_hide_rings": "Скрыть кольца вращения",
+	"bbs.config.transformation.rotate_hide_rings-comment": "Если включено, в режиме вращения будут видны только 3D-сфера (если она включена), а кольца осей будут скрыты",
 	"bbs.config.transformation.transform_local_default": "Локальная трансформация по умолчанию",
 	"bbs.config.transformation.transform_local_default-comment": "Если включено, поля трансформации (поза, модель и т.д.) открываются в локальном пространстве, а не в глобальном. Переключение по Q по-прежнему доступно.",
 	"bbs.config.transformation.hotkeys_3d_ray": "3D-луч для R/G/S",

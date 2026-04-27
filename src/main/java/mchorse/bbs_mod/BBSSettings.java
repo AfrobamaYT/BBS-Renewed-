@@ -39,6 +39,7 @@ public class BBSSettings {
 	public static ValueFloat axesThickness;
 	public static ValueBoolean axesKeepScreenSize;
 	public static ValueBoolean rotate3dSphere;
+	public static ValueBoolean rotateHideRings;
 	public static ValueBoolean uniformScale;
 	public static ValueBoolean clickSound;
 	public static ValueBoolean gizmos;
@@ -238,6 +239,7 @@ public class BBSSettings {
 		axesThickness = builder.getFloat("axes_thickness", 1F, 0.25F, 3F);
 		axesKeepScreenSize = builder.getBoolean("axes_keep_screen_size", true);
 		rotate3dSphere = builder.getBoolean("rotate_3d_sphere", true);
+		rotateHideRings = builder.getBoolean("rotate_hide_rings", false);
 		transformLocalDefault = builder.getBoolean("transform_local_default", false);
 		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
 
