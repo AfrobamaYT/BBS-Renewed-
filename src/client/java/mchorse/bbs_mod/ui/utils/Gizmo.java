@@ -540,9 +540,10 @@ public class Gizmo
             if (BBSSettings.rotate3dSphere.get() && (!editing || trackball))
             {
                 if (!Window.isAltPressed()) {
+                    int color = BBSSettings.rotate3dSphereColor.get();
                     RenderSystem.enableBlend();
                     RenderSystem.defaultBlendFunc();
-                    this.drawCachedSphere(stack, this.rotateSphereVbo, 1F, 1F, 1F, 0.15F);
+                    this.drawCachedSphere(stack, this.rotateSphereVbo, Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
                     RenderSystem.disableBlend();
                 }
             }
