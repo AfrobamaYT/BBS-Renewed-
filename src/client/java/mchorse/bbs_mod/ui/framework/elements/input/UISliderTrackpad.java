@@ -20,7 +20,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 
 public class UISliderTrackpad extends UIElement
 {
-    private static final int TRACK = 0xff1a1a1a;
     private static final float VALUE_ALPHA = 0.75F;
     private static final float DRAG_VALUE_ALPHA = 0.92F;
     private static final float HANDLE_ALPHA = 0.8F;
@@ -518,7 +517,8 @@ public class UISliderTrackpad extends UIElement
         int fillColor = Colors.setA(primary, this.dragging ? DRAG_VALUE_ALPHA : VALUE_ALPHA);
         int handleColor = this.dragging ? Colors.WHITE : Colors.setA(Colors.WHITE, this.handleArea.isInside(context) ? HANDLE_HOVER_ALPHA : HANDLE_ALPHA);
 
-        this.area.render(context.batcher, TRACK);
+        this.area.render(context.batcher, BBSSettings.inputSurface());
+        this.area.render(context.batcher, BBSSettings.inputSurfaceTint());
 
         if (this.hasSliderRange())
         {

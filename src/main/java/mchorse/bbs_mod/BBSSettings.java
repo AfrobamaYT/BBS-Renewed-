@@ -251,6 +251,18 @@ public class BBSSettings {
 		return primaryColor(alpha);
 	}
 
+	public static int inputSurface() {
+		return deepSurface();
+	}
+
+	public static int inputSurfaceTint() {
+		return backgroundTint(Colors.A6);
+	}
+
+	public static int inputBorderColor(boolean focused) {
+		return focused ? primaryColor.get() : dividerColor();
+	}
+
 	public static int panelShadowOpaqueColor() {
 		return Colors.A25 | primaryColor.get();
 	}
