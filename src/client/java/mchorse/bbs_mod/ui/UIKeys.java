@@ -222,8 +222,8 @@ public class UIKeys
     public static final IKey ENGINE_KEYSTROKES_POSITION_BOTTOM_RIGHT = L10n.lang("bbs.keystrokes_position.bottom_right");
     public static final IKey ENGINE_KEYSTROKES_POSITION_TOP_LEFT = L10n.lang("bbs.keystrokes_position.top_left");
     public static final IKey ENGINE_KEYSTROKES_POSITION_TOP_RIGHT = L10n.lang("bbs.keystrokes_position.top_right");
-    public static final IKey ENGINE_TOOLTIP_STYLE_DARK = L10n.lang("bbs.tooltip_style.dark");
-    public static final IKey ENGINE_TOOLTIP_STYLE_LIGHT = L10n.lang("bbs.tooltip_style.light");
+    public static final IKey ENGINE_THEME_DARK = L10n.lang("bbs.theme.dark");
+    public static final IKey ENGINE_THEME_LIGHT = L10n.lang("bbs.theme.light");
     public static final IKey FILM_CONTROLLER_CONTROL_MODE_TOOLTIP = L10n.lang("bbs.ui.film.controller.control_mode-tooltip");
     public static final IKey FILM_CONTROLLER_INSERT_FRAME_DESCRIPTION = L10n.lang("bbs.ui.film.controller.insert_frame-description");
     public static final IKey FILM_CONTROLLER_INSERT_FRAME_TITLE = L10n.lang("bbs.ui.film.controller.insert_frame-title");

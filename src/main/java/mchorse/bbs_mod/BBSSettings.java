@@ -1,6 +1,7 @@
 package mchorse.bbs_mod;
 
 import java.util.HashSet;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.settings.SettingsBuilder;
 import mchorse.bbs_mod.settings.values.core.ValueLink;
@@ -117,7 +118,7 @@ public class BBSSettings {
 
 	public static ValueBoolean damageControl;
 
-	public static ValueBoolean darkMode;
+	public static ValueBoolean coloredTracks;
 
 	public static ValueBoolean shaderCurvesEnabled;
 
@@ -185,6 +186,48 @@ public class BBSSettings {
 		return index >= 0 && index < values.length ? values[index] : KeyframeShape.SQUARE;
 	}
 
+	public static boolean migrateLegacySettings(MapType root) {
+		MapType appearance = root.getMap("appearance");
+		MapType personalization = root.getMap("personalization");
+		boolean migrated = false;
+
+		migrated |= migrateLegacyInvertedBoolean(appearance, personalization, "dark_mode", "colored_tracks");
+		migrated |= migrateLegacyValue(appearance, personalization, "primary_color");
+		migrated |= migrateLegacyValue(appearance, personalization, "tooltip_style", "theme");
+		migrated |= migrateLegacyValue(appearance, personalization, "track_width");
+		migrated |= migrateLegacyValue(appearance, personalization, "keyframe_default_shape");
+
+		if (migrated) {
+			root.put("personalization", personalization);
+		}
+
+		return migrated;
+	}
+
+	private static boolean migrateLegacyValue(MapType oldCategory, MapType newCategory, String key) {
+		return migrateLegacyValue(oldCategory, newCategory, key, key);
+	}
+
+	private static boolean migrateLegacyValue(MapType oldCategory, MapType newCategory, String oldKey, String newKey) {
+		if (newCategory.has(newKey) || !oldCategory.has(oldKey)) {
+			return false;
+		}
+
+		newCategory.put(newKey, oldCategory.get(oldKey).copy());
+
+		return true;
+	}
+
+	private static boolean migrateLegacyInvertedBoolean(MapType oldCategory, MapType newCategory, String oldKey, String newKey) {
+		if (newCategory.has(newKey) || !oldCategory.has(oldKey)) {
+			return false;
+		}
+
+		newCategory.putBool(newKey, !oldCategory.getBool(oldKey));
+
+		return true;
+	}
+
 	public static void register(SettingsBuilder builder) {
 		HashSet<String> defaultFilters = new HashSet<>();
 
@@ -208,12 +251,9 @@ public class BBSSettings {
 
 		builder.category("appearance");
 		builder.register(language = new ValueLanguage("language"));
-		darkMode = builder.getBoolean("dark_mode", false);
-		primaryColor = builder.getInt("primary_color", Colors.DARK_GRAY).color();
 		enableTrackpadIncrements = builder.getBoolean("trackpad_increments", true);
 		enableTrackpadScrolling = builder.getBoolean("trackpad_scrolling", true);
 		userIntefaceScale = builder.getInt("ui_scale", 2, 0, 4);
-		tooltipStyle = builder.getInt("tooltip_style", 1);
 		fov = builder.getFloat("fov", 40, 0, 180);
 		hsvColorPicker = builder.getBoolean("hsv_color_picker", true);
 		forceQwerty = builder.getBoolean("force_qwerty", false);
@@ -221,8 +261,6 @@ public class BBSSettings {
 		morphingFocusSearch = builder.getBoolean("morphing_focus_search", false);
 		uniformScale = builder.getBoolean("uniform_scale", false);
 		clickSound = builder.getBoolean("click_sound", false);
-		editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
-		keyframeDefaultShape = builder.getInt("keyframe_default_shape", 0, 0, KeyframeShape.values().length - 1);
 		favoriteColors = new ValueColors("favorite_colors");
 		recentColors = new ValueColors("recent_colors");
 		disabledSheets = new ValueStringKeys("disabled_sheets");
@@ -233,6 +271,13 @@ public class BBSSettings {
 		disabledMorphFormCategories = new ValueStringKeys("disabled_morph_form_categories");
 		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
+
+		builder.category("personalization");
+		coloredTracks = builder.getBoolean("colored_tracks", true);
+		primaryColor = builder.getInt("primary_color", Colors.DARK_GRAY).color();
+		tooltipStyle = builder.getInt("theme", 1);
+		editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
+		keyframeDefaultShape = builder.getInt("keyframe_default_shape", 0, 0, KeyframeShape.values().length - 1);
 
 		builder.category("transformation");
 		gizmos = builder.getBoolean("gizmos", true);

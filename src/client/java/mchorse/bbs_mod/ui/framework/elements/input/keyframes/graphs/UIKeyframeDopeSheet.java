@@ -1085,7 +1085,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + this.trackHeight;
         int by = this.getTrackBodyY(y);
         int bh = this.getTrackBodyHeight();
-        int bg = Colors.setA(BBSSettings.darkMode.get() ? Colors.DARKER_GRAY : group.color, hover ? 0.25F : 0.2F);
+        int bg = Colors.setA(BBSSettings.coloredTracks.get() ? group.color : Colors.DARKER_GRAY, hover ? 0.25F : 0.2F);
 
         /* Render track background block */
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
@@ -1115,7 +1115,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int my = y + (int) this.trackHeight / 2;
         int by = this.getTrackBodyY(y);
         int bh = this.getTrackBodyHeight();
-        int trackColor = BBSSettings.darkMode.get() ? Colors.DARKER_GRAY : sheet.color;
+        int trackColor = BBSSettings.coloredTracks.get() ? sheet.color : Colors.DARKER_GRAY;
         int row = 0;
         Integer sheetY = this.sheetYCache.get(sheet);
 
