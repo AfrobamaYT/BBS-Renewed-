@@ -44,6 +44,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 {
     private static final int POSE_TAB_BASE_INDENT = 4;
     private static final int POSE_TAB_DEPTH_STEP = 4;
+    private static final float TRACK_BAR_ALPHA = 0.3F;
 
     private UIKeyframes keyframes;
 
@@ -1143,7 +1144,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         {
             Keyframe previous = (Keyframe) keyframes.get(j - 1);
             Keyframe frame = (Keyframe) keyframes.get(j);
-            int c = Colors.setA(sheet.color, BBSSettings.coloredTracks.get() ? 0.3F : 0.18F);
+            int c = Colors.setA(sheet.color, TRACK_BAR_ALPHA);
             int xx = this.keyframes.toGraphX(previous.getTick());
             int xxx = this.keyframes.toGraphX(frame.getTick());
 

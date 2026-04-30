@@ -22,8 +22,6 @@
     "bbs.config.personalization.theme-comment": "Esta opción permite cambiar el estilo de la descripción emergente de la GUI",
     "bbs.config.personalization.primary_color": "Color principal",
     "bbs.config.personalization.primary_color-comment": "El color que se utiliza en todas las partes de la Interfaz Gráfica de Usuario (GUI)",
-    "bbs.config.personalization.colored_tracks": "Colored tracks",
-    "bbs.config.personalization.colored_tracks-comment": "When enabled, keyframe tracks use their own color instead of dark gray",
     "bbs.config.personalization.colored_background": "Colored background",
     "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",

@@ -23,8 +23,6 @@
     "bbs.config.personalization.theme-comment": "Cette option autorise a changer le style des infobulles de l'interface",
     "bbs.config.personalization.primary_color": "Couleur primaire",
     "bbs.config.personalization.primary_color-comment": "Cette couleur est utilisée partout dans l'interface",
-    "bbs.config.personalization.colored_tracks": "Colored tracks",
-    "bbs.config.personalization.colored_tracks-comment": "When enabled, keyframe tracks use their own color instead of dark gray",
     "bbs.config.personalization.colored_background": "Colored background",
     "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",

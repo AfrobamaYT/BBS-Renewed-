@@ -30,7 +30,7 @@ public class BBSSettings {
 	public static ValueBoolean enableTrackpadIncrements;
 	public static ValueBoolean enableTrackpadScrolling;
 	public static ValueInt userIntefaceScale;
-	public static ValueInt tooltipStyle;
+	public static ValueInt theme;
 	public static ValueFloat fov;
 	public static ValueBoolean hsvColorPicker;
 	public static ValueBoolean forceQwerty;
@@ -118,7 +118,6 @@ public class BBSSettings {
 
 	public static ValueBoolean damageControl;
 
-	public static ValueBoolean coloredTracks;
 	public static ValueBoolean coloredBackground;
 	public static ValueFloat backgroundBrightness;
 
@@ -136,6 +135,26 @@ public class BBSSettings {
 	public static ValueString cdnUrl;
 	public static ValueString cdnToken;
 
+	private static final int LIGHT_THEME = 0;
+	private static final int DARK_THEME = 1;
+	private static final int DEFAULT_THEME = DARK_THEME;
+	private static final float DEFAULT_BACKGROUND_BRIGHTNESS = 1F;
+	private static final float MIN_BACKGROUND_BRIGHTNESS = 0.5F;
+	private static final float MAX_BACKGROUND_BRIGHTNESS = 1.5F;
+	private static final float IDENTITY_BRIGHTNESS = 1F;
+	private static final float BRIGHTNESS_EPSILON = 0.001F;
+	private static final int DEFAULT_PRIMARY_COLOR = 0xffff1493;
+	private static final int LIGHT_CHROME_SURFACE = 0xffe6e9ef;
+	private static final int DARK_CHROME_SURFACE = 0xff111316;
+	private static final int LIGHT_BASE_SURFACE = 0xfff1f4f8;
+	private static final int DARK_BASE_SURFACE = 0xff171a1f;
+	private static final int LIGHT_RAISED_SURFACE = 0xfff8fafd;
+	private static final int DARK_RAISED_SURFACE = 0xff1d2127;
+	private static final int LIGHT_DEEP_SURFACE = 0xffdee4ed;
+	private static final int DARK_DEEP_SURFACE = 0xff0f1217;
+	private static final int LIGHT_DIVIDER_COLOR = 0xffc2cbd8;
+	private static final int DARK_DIVIDER_COLOR = 0xff30353d;
+
 	public static int primaryColor() {
 		return primaryColor(Colors.A50);
 	}
@@ -149,21 +168,25 @@ public class BBSSettings {
 	}
 
 	public static boolean isLightTheme() {
-		return tooltipStyle != null && tooltipStyle.get() == 0;
-	}
-
-	public static float getBackgroundBrightness() {
-		return backgroundBrightness == null ? 1F : backgroundBrightness.get();
+		return theme != null && theme.get() == LIGHT_THEME;
 	}
 
 	private static int withAlpha(int color, int alpha) {
 		return (color & Colors.RGB) | alpha;
 	}
 
-	private static int applyBackgroundBrightness(int color) {
-		float brightness = MathUtils.clamp(getBackgroundBrightness(), 0.5F, 1.5F);
+	private static int getThemeColor(int lightColor, int darkColor) {
+		return isLightTheme() ? lightColor : darkColor;
+	}
 
-		if (Math.abs(brightness - 1F) < 0.001F) {
+	private static float getBackgroundBrightnessFactor() {
+		return backgroundBrightness == null ? DEFAULT_BACKGROUND_BRIGHTNESS : backgroundBrightness.get();
+	}
+
+	private static int applyBackgroundBrightness(int color) {
+		float brightness = MathUtils.clamp(getBackgroundBrightnessFactor(), MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS);
+
+		if (Math.abs(brightness - IDENTITY_BRIGHTNESS) < BRIGHTNESS_EPSILON) {
 			return color;
 		}
 
@@ -192,44 +215,28 @@ public class BBSSettings {
 		return a | (r << 16) | (g << 8) | b;
 	}
 
-	private static int getThemeChromeSurface() {
-		return applyBackgroundBrightness(isLightTheme() ? 0xffe6e9ef : 0xff111316);
-	}
-
-	private static int getThemeBaseSurface() {
-		return applyBackgroundBrightness(isLightTheme() ? 0xfff1f4f8 : 0xff171a1f);
-	}
-
-	private static int getThemeRaisedSurface() {
-		return applyBackgroundBrightness(isLightTheme() ? 0xfff8fafd : 0xff1d2127);
-	}
-
-	private static int getThemeDeepSurface() {
-		return applyBackgroundBrightness(isLightTheme() ? 0xffdee4ed : 0xff0f1217);
-	}
-
-	private static int getThemeDividerColor() {
-		return isLightTheme() ? 0xffc2cbd8 : 0xff30353d;
+	private static int getThemeSurface(int lightColor, int darkColor) {
+		return applyBackgroundBrightness(getThemeColor(lightColor, darkColor));
 	}
 
 	public static int chromeSurface() {
-		return getThemeChromeSurface();
+		return getThemeSurface(LIGHT_CHROME_SURFACE, DARK_CHROME_SURFACE);
 	}
 
 	public static int baseSurface() {
-		return getThemeBaseSurface();
+		return getThemeSurface(LIGHT_BASE_SURFACE, DARK_BASE_SURFACE);
 	}
 
 	public static int raisedSurface() {
-		return getThemeRaisedSurface();
+		return getThemeSurface(LIGHT_RAISED_SURFACE, DARK_RAISED_SURFACE);
 	}
 
 	public static int deepSurface() {
-		return getThemeDeepSurface();
+		return getThemeSurface(LIGHT_DEEP_SURFACE, DARK_DEEP_SURFACE);
 	}
 
 	public static int dividerColor() {
-		return getThemeDividerColor();
+		return getThemeColor(LIGHT_DIVIDER_COLOR, DARK_DIVIDER_COLOR);
 	}
 
 	public static int color(int color, int alpha) {
@@ -242,22 +249,6 @@ public class BBSSettings {
 
 	public static int accentOverlay(int alpha) {
 		return primaryColor(alpha);
-	}
-
-	public static int panelBackground(float tint) {
-		return tint <= 0.08F ? deepSurface() : tint <= 0.16F ? baseSurface() : raisedSurface();
-	}
-
-	public static int panelBackground(int alpha) {
-		return color(baseSurface(), alpha);
-	}
-
-	public static int panelOverlay(int alpha) {
-		return hasColoredBackground() ? accentOverlay(alpha) : color(dividerColor(), alpha);
-	}
-
-	public static int panelChromeColor() {
-		return chromeSurface();
 	}
 
 	public static int panelShadowOpaqueColor() {
@@ -317,7 +308,6 @@ public class BBSSettings {
 		MapType personalization = root.getMap("personalization");
 		boolean migrated = false;
 
-		migrated |= migrateLegacyInvertedBoolean(appearance, personalization, "dark_mode", "colored_tracks");
 		migrated |= migrateLegacyValue(appearance, personalization, "primary_color");
 		migrated |= migrateLegacyValue(appearance, personalization, "tooltip_style", "theme");
 		migrated |= migrateLegacyValue(appearance, personalization, "track_width");
@@ -340,16 +330,6 @@ public class BBSSettings {
 		}
 
 		newCategory.put(newKey, oldCategory.get(oldKey).copy());
-
-		return true;
-	}
-
-	private static boolean migrateLegacyInvertedBoolean(MapType oldCategory, MapType newCategory, String oldKey, String newKey) {
-		if (newCategory.has(newKey) || !oldCategory.has(oldKey)) {
-			return false;
-		}
-
-		newCategory.putBool(newKey, !oldCategory.getBool(oldKey));
 
 		return true;
 	}
@@ -399,11 +379,10 @@ public class BBSSettings {
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 
 		builder.category("personalization");
-		coloredTracks = builder.getBoolean("colored_tracks", true);
-		coloredBackground = builder.getBoolean("colored_background", true);
-		backgroundBrightness = builder.getFloat("background_brightness", 1F, 0.5F, 1.5F);
-		primaryColor = builder.getInt("primary_color", Colors.DARK_GRAY).color();
-		tooltipStyle = builder.getInt("theme", 1);
+		coloredBackground = builder.getBoolean("colored_background", false);
+		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS);
+		primaryColor = builder.getInt("primary_color", DEFAULT_PRIMARY_COLOR).color();
+		theme = builder.getInt("theme", DEFAULT_THEME);
 		editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
 		keyframeDefaultShape = builder.getInt("keyframe_default_shape", 0, 0, KeyframeShape.values().length - 1);
 

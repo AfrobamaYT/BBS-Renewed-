@@ -414,7 +414,7 @@ public class BBSModClient implements ClientModInitializer
             }
         });
 
-        BBSSettings.tooltipStyle.modes(
+        BBSSettings.theme.modes(
             UIKeys.ENGINE_THEME_LIGHT,
             UIKeys.ENGINE_THEME_DARK
         );
