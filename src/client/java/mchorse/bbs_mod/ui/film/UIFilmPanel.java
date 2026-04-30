@@ -364,7 +364,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             @Override
             public void render(UIContext context)
             {
-                this.area.render(context.batcher, Colors.mulRGB(BBSSettings.primaryColor(Colors.A100), 0.2F));
+                this.area.render(context.batcher, BBSSettings.baseSurface());
+                this.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
                 super.render(context);
             }
         };
@@ -2309,10 +2310,50 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     protected void renderBackground(UIContext context)
     {
         super.renderBackground(context);
+        this.renderEditorSidebar(context);
 
         if (this.cameraEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openCameraEditor.area);
         if (this.replayEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openReplayEditor.area);
         if (this.actionEditor.isVisible()) UIDashboardPanels.renderHighlightHorizontal(context.batcher, this.openActionEditor.area);
+    }
+
+    private void renderEditorSidebar(UIContext context)
+    {
+        if (!this.iconBar.isVisible())
+        {
+            return;
+        }
+
+        this.iconBar.area.render(context.batcher, BBSSettings.chromeSurface());
+        this.iconBar.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
+        context.batcher.gradientHBox(this.iconBar.area.x - 6, this.iconBar.area.y, this.iconBar.area.x, this.iconBar.area.ey(), 0, BBSSettings.color(BBSSettings.chromeSurface(), 0x29000000));
+
+        this.renderSidebarButton(context, this.openFilmMenu, false);
+        this.renderSidebarButton(context, this.openCameraEditor, this.cameraEditor.isVisible());
+        this.renderSidebarButton(context, this.openReplayEditor, this.replayEditor.isVisible());
+        this.renderSidebarButton(context, this.openActionEditor, this.actionEditor.isVisible());
+        this.renderSidebarButton(context, this.layoutPresetsButton, false);
+        this.renderSidebarButton(context, this.lockLayoutButton, false);
+    }
+
+    private void renderSidebarButton(UIContext context, UIIcon button, boolean active)
+    {
+        if (button == null || !button.isVisible())
+        {
+            return;
+        }
+
+        Area area = button.area;
+        boolean hover = area.isInside(context.mouseX, context.mouseY);
+
+        if (active)
+        {
+            context.batcher.box(area.x, area.y, area.ex(), area.ey(), BBSSettings.raisedSurface());
+        }
+        else if (hover)
+        {
+            context.batcher.box(area.x, area.y, area.ex(), area.ey(), BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25));
+        }
     }
 
     /**
@@ -2365,9 +2406,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.updateLogic(context);
 
-        int color = BBSSettings.primaryColor.get();
-
-        this.area.render(context.batcher, Colors.mulRGB(color | Colors.A100, 0.2F));
+        this.area.render(context.batcher, BBSSettings.baseSurface());
+        this.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
 
         if (this.editor.isVisible())
         {

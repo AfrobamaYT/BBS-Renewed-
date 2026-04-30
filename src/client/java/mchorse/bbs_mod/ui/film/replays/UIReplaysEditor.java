@@ -280,7 +280,8 @@ public class UIReplaysEditor extends UIElement {
                     int labelWidth = this.getLabelWidth();
                     Area area = this.iconBar.area;
 
-                    context.batcher.box(area.x, area.y, area.x + labelWidth, area.ey(), Colors.A100);
+                    context.batcher.box(area.x, area.y, area.x + labelWidth, area.ey(), BBSSettings.chromeSurface());
+                    context.batcher.box(area.x, area.y, area.x + labelWidth, area.ey(), BBSSettings.backgroundTint(Colors.A6));
 
                     /* Render active tab indicator */
                     UIIcon activeIcon = this.tabButtons.get(this.category);

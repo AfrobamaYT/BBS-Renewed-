@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.panels.tabs;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDataDashboardPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -103,6 +104,7 @@ public class UIDataTabs extends UIElement
 
     private void renderBackground(UIContext context)
     {
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), Colors.A100);
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.chromeSurface());
+        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.backgroundTint(Colors.A6));
     }
 }
