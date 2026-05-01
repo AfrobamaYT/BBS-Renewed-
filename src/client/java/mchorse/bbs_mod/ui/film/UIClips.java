@@ -1878,7 +1878,7 @@ public class UIClips extends UIElement
     {
         if (this.selecting)
         {
-            context.batcher.normalizedBox(this.lastX, this.lastY, context.mouseX, context.mouseY, Colors.setA(Colors.ACTIVE, 0.25F));
+            context.batcher.normalizedBox(this.lastX, this.lastY, context.mouseX, context.mouseY, BBSSettings.accentOverlay(Colors.A25));
         }
     }
 
