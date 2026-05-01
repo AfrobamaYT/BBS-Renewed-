@@ -49,6 +49,17 @@ public abstract class UIClickable <T> extends UIElement
         }
     }
 
+    @Override
+    protected void clickItselfWithoutContext(int mouseButton)
+    {
+        if (this.isAllowed(mouseButton))
+        {
+            this.pressed = true;
+            UIUtils.playClick();
+            this.click(mouseButton);
+        }
+    }
+
     protected abstract T get();
 
     @Override

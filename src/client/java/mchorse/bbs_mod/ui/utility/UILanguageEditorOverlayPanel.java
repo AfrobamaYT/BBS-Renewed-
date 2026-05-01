@@ -110,7 +110,7 @@ public class UILanguageEditorOverlayPanel extends UIOverlayPanel
         this.readMarkedStrings();
         this.updateCompletionLabel();
 
-        this.keys().register(Keys.SAVE, () -> this.save.clickItself());
+        this.keys().register(Keys.SAVE, this::save);
     }
 
     public boolean hasMarked(String key)

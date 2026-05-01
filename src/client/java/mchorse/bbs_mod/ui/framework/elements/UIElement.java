@@ -1100,6 +1100,13 @@ public class UIElement implements IUIElement, IUndoElement
             return;
         }
 
+        if (context == null)
+        {
+            this.clickItselfWithoutContext(mouseButton);
+
+            return;
+        }
+
         int mouseX = context.mouseX;
         int mouseY = context.mouseY;
         int button = context.mouseButton;
@@ -1114,6 +1121,9 @@ public class UIElement implements IUIElement, IUndoElement
         context.mouseY = mouseY;
         context.mouseButton = button;
     }
+
+    protected void clickItselfWithoutContext(int mouseButton)
+    {}
 
     /* Handling input events
      *
