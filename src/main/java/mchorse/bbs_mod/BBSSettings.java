@@ -88,6 +88,7 @@ public class BBSSettings {
 	public static ValueInt editorPeriodicSave;
 	public static ValueBoolean editorHorizontalFlight;
 	public static ValueBoolean editorOrbitMovementRequiresFlight;
+	public static ValueBoolean editorOrbitCenterMarker;
 	public static ValueBoolean editorPlayerFollowsCamera;
 	public static ValueEditorLayout editorLayoutSettings;
 	public static ValueOnionSkin editorOnionSkin;
@@ -457,6 +458,7 @@ public class BBSSettings {
 		editorPeriodicSave = builder.getInt("periodic_save", 60, 0, 3600);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);
+		editorOrbitCenterMarker = builder.getBoolean("orbit_center_marker", false);
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
 		builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
 		builder.register(editorOnionSkin = new ValueOnionSkin("onion_skin"));

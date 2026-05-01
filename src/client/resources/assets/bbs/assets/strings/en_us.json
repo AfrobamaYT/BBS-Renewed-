@@ -123,6 +123,8 @@
 	"bbs.config.editor.horizontal_flight-comment": "When enabled, the pitch of the camera won't affect the movement making the WASD movement cardinal (XZ plane)",
 	"bbs.config.editor.orbit_movement_requires_flight": "Movement in orbit camera only in flight",
 	"bbs.config.editor.orbit_movement_requires_flight-comment": "When enabled, WASD movement in orbit camera requires flight: without flight you need middle mouse plus the orbit modifier key. When disabled, WASD and middle-mouse orbit work without entering flight.",
+	"bbs.config.editor.orbit_center_marker": "Orbit center marker",
+	"bbs.config.editor.orbit_center_marker-comment": "Shows a debug marker at the point the orbit camera currently rotates around.",
 	"bbs.config.editor.player_follows_camera": "Player follows camera",
 	"bbs.config.editor.player_follows_camera-comment": "When enabled, your player is teleported each tick to match the film camera position and view direction.",
 	"bbs.config.editor.jump": "Jump",

@@ -352,6 +352,18 @@ public class OrbitFilmCameraController implements ICameraController
         return this.bindToReplay;
     }
 
+    public Vector3d getOrbitCenter(float transition)
+    {
+        if (!this.bindToReplay)
+        {
+            return new Vector3d(this.freePivot);
+        }
+
+        OrbitTarget target = this.getOrbitTarget(transition);
+
+        return target == null ? null : new Vector3d(target.position);
+    }
+
     public void toggleBindToReplay()
     {
         this.setBindToReplay(!this.bindToReplay);
