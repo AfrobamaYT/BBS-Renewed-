@@ -131,7 +131,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIIcon openReplayEditor;
     public UIIcon openActionEditor;
 
-    /** When true, docking and resizing are disabled; drag handles and their top offset are hidden. */
+    /** When true, docking is disabled; panel drag handles and their top offset are hidden. */
     private boolean layoutLocked = true;
 
     private UICopyPasteController layoutPresetsController;
@@ -938,7 +938,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         List<EditorLayoutNode.SplitterNode> splitters = layout.getFilmSplitters();
 
-        if (!this.layoutLocked && resize && splitters.size() == this.splitterHandles.size())
+        if (resize && splitters.size() == this.splitterHandles.size())
         {
             this.updateEditorFlexBoundsOnly(root);
             this.resize();
@@ -979,6 +979,17 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.applyPanelBoundsFromStacks(stackInfos);
         this.rebuildDockStackTabs(stackInfos);
 
+        this.splitterHandleInfos.clear();
+        EditorLayoutNode.computeSplitterHandles(root, 0F, 0F, 1F, 1F, this.splitterHandleInfos);
+
+        for (int i = 0; i < splitters.size(); i++)
+        {
+            UIDraggable handle = this.createSplitterHandle(layout, splitters, i);
+            this.splitterHandles.add(handle);
+            IUIElement insertAfter = i == 0 ? this.main : this.splitterHandles.get(i - 1);
+            this.editor.addAfter(insertAfter, handle);
+        }
+
         if (this.layoutLocked)
         {
             for (UIDraggable h : this.dragHandlesById.values())
@@ -988,17 +999,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
         else
         {
-            this.splitterHandleInfos.clear();
-            EditorLayoutNode.computeSplitterHandles(root, 0F, 0F, 1F, 1F, this.splitterHandleInfos);
-
-            for (int i = 0; i < splitters.size(); i++)
-            {
-                UIDraggable handle = this.createSplitterHandle(layout, splitters, i);
-                this.splitterHandles.add(handle);
-                IUIElement insertAfter = i == 0 ? this.main : this.splitterHandles.get(i - 1);
-                this.editor.addAfter(insertAfter, handle);
-            }
-
             this.applyDragHandleBoundsFromStacks(stackInfos);
         }
 
@@ -1108,7 +1108,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             }
         };
 
-        handle.hoverOnly().dragEnd(() ->
+        handle.dragEnd(() ->
         {
             this.clearSplitterDragState();
             this.applyPreviewSizeToBBS();
@@ -1602,6 +1602,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             context.requestCursor(this.getSplitterCursor(index, context.mouseX, context.mouseY));
         }
 
+        if (!splitter.isDragging() && !this.draggedSplitterIndices.contains(index))
+        {
+            return;
+        }
+
         if (info.horizontal)
         {
             int cy = splitter.area.y + splitter.area.h / 2;
@@ -1774,7 +1779,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (this.editor.area.w >= EDITOR_MIN_SIZE_FOR_PX_HANDLES && this.editor.area.h >= EDITOR_MIN_SIZE_FOR_PX_HANDLES)
         {
-            if (!this.layoutLocked && this.splitterHandles.size() == this.splitterHandleInfos.size())
+            if (this.splitterHandles.size() == this.splitterHandleInfos.size())
             {
                 this.syncSplitterHandleBounds();
             }
