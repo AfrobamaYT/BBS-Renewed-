@@ -1224,6 +1224,7 @@ public class UIKeyframes extends UIElement
         }
 
         this.currentGraph.postRender(context);
+        this.renderOverlay(context);
 
         context.batcher.unclip(context);
 
@@ -1233,6 +1234,11 @@ public class UIKeyframes extends UIElement
             Area a = this.labelResizer.area;
             Scroll.bar(context.batcher, a.x, a.y, a.ex(), a.ey(), BBSSettings.dividerColor());
         }
+    }
+
+    protected void renderOverlay(UIContext context)
+    {
+        this.currentGraph.renderTopmostKeyframes(context);
     }
 
     /**
