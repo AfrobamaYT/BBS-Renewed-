@@ -536,6 +536,7 @@
 	"bbs.ui.film.open_camera_editor": "Open camera editor",
 	"bbs.ui.film.open_history": "Open undo/redo history...",
 	"bbs.ui.film.open_replay_editor": "Open replay editor",
+	"bbs.ui.film.layout_bind_to_editor": "Bind layout to editor",
 	"bbs.ui.film.layout_lock": "Lock layout",
 	"bbs.ui.film.layout_presets": "Layout presets",
 	"bbs.ui.film.layout_reset": "Reset layout",

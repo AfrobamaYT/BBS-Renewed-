@@ -270,6 +270,7 @@ public class UIKeys
     public static final IKey FILM_NO_CAMERA_TITLE = L10n.lang("bbs.ui.film.no_camera-title");
     public static final IKey FILM_OPEN_ACTION_EDITOR = L10n.lang("bbs.ui.film.open_action_editor");
     public static final IKey FILM_OPEN_CAMERA_EDITOR = L10n.lang("bbs.ui.film.open_camera_editor");
+    public static final IKey FILM_LAYOUT_BIND_TO_EDITOR = L10n.lang("bbs.ui.film.layout_bind_to_editor");
     public static final IKey FILM_LAYOUT_LOCK = L10n.lang("bbs.ui.film.layout_lock");
     public static final IKey FILM_LAYOUT_PRESETS = L10n.lang("bbs.ui.film.layout_presets");
     public static final IKey FILM_LAYOUT_UNLOCK = L10n.lang("bbs.ui.film.layout_unlock");

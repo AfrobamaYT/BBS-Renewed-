@@ -536,6 +536,7 @@
 	"bbs.ui.film.open_camera_editor": "Открыть редактор камеры",
 	"bbs.ui.film.open_history": "Открыть историю изменений...",
 	"bbs.ui.film.open_replay_editor": "Открыть редактор записей",
+	"bbs.ui.film.layout_bind_to_editor": "Привязать раскладку к редактору",
 	"bbs.ui.film.layout_lock": "Заблокировать раскладку",
 	"bbs.ui.film.layout_presets": "Пресеты раскладки",
 	"bbs.ui.film.layout_reset": "Сбросить раскладку",

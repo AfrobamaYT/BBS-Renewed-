@@ -799,6 +799,68 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.replayEditor.refreshEditPanelOffset();
     }
 
+    private ValueEditorLayout.FilmEditor getCurrentFilmLayoutEditor()
+    {
+        if (this.selectedMainEditorPanel == this.replayEditor)
+        {
+            return ValueEditorLayout.FilmEditor.REPLAY;
+        }
+
+        if (this.selectedMainEditorPanel == this.actionEditor)
+        {
+            return ValueEditorLayout.FilmEditor.ACTION;
+        }
+
+        return ValueEditorLayout.FilmEditor.CAMERA;
+    }
+
+    private ValueEditorLayout getFilmLayoutSettings()
+    {
+        return BBSSettings.editorLayoutSettings;
+    }
+
+    private EditorLayoutNode getCurrentFilmLayoutRoot()
+    {
+        return this.getFilmLayoutSettings().getFilmLayoutRoot(this.getCurrentFilmLayoutEditor());
+    }
+
+    private void setCurrentFilmLayoutRoot(EditorLayoutNode root)
+    {
+        this.getFilmLayoutSettings().setFilmLayoutRoot(this.getCurrentFilmLayoutEditor(), root);
+    }
+
+    private List<EditorLayoutNode.SplitterNode> getCurrentFilmSplitters()
+    {
+        return this.getFilmLayoutSettings().getFilmSplitters(this.getCurrentFilmLayoutEditor());
+    }
+
+    private List<EditorLayoutNode.SplitterNode> getCurrentFilmSplittersForWrite()
+    {
+        return this.getFilmLayoutSettings().getFilmSplittersForWrite(this.getCurrentFilmLayoutEditor());
+    }
+
+    private boolean isCurrentFilmLayoutBound()
+    {
+        return this.getFilmLayoutSettings().isFilmLayoutBound(this.getCurrentFilmLayoutEditor());
+    }
+
+    private void refreshCurrentFilmLayout()
+    {
+        this.clearPanelDragState();
+        this.clearSplitterDragState();
+        this.setupEditorFlex(true);
+    }
+
+    private void toggleCurrentFilmLayoutBinding()
+    {
+        ValueEditorLayout layout = this.getFilmLayoutSettings();
+        ValueEditorLayout.FilmEditor editor = this.getCurrentFilmLayoutEditor();
+        boolean bound = layout.isFilmLayoutBound(editor);
+
+        layout.setFilmLayoutBound(editor, !bound);
+        this.refreshCurrentFilmLayout();
+    }
+
     private void activateDockStackTab(String stackPanelId, String panelId)
     {
         if (stackPanelId == null || panelId == null)
@@ -806,13 +868,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             return;
         }
 
-        ValueEditorLayout layout = BBSSettings.editorLayoutSettings;
-        EditorLayoutNode root = layout.getFilmLayoutRoot();
+        EditorLayoutNode root = this.getCurrentFilmLayoutRoot();
         EditorLayoutNode next = EditorLayoutNode.copyWithStackActivePanel(root, stackPanelId, panelId);
 
         if (next != root)
         {
-            layout.setFilmLayoutRoot(next);
+            this.setCurrentFilmLayoutRoot(next);
             this.setupEditorFlex(true);
         }
     }
@@ -898,7 +959,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private MapType getFilmLayoutPresetData()
     {
         MapType data = new MapType();
-        data.put("film_layout", BBSSettings.editorLayoutSettings.getFilmLayoutRoot().toData());
+        data.put("film_layout", this.getCurrentFilmLayoutRoot().toData());
         return data;
     }
 
@@ -912,31 +973,28 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         EditorLayoutNode root = EditorLayoutNode.fromData(layoutData);
         if (root != null)
         {
-            BBSSettings.editorLayoutSettings.setFilmLayoutRoot(root);
+            this.setCurrentFilmLayoutRoot(root);
             this.setupEditorFlex(true);
         }
     }
 
     private void resetFilmLayout()
     {
-        this.clearPanelDragState();
-        this.clearSplitterDragState();
-        BBSSettings.editorLayoutSettings.setFilmLayoutRoot(EditorLayoutNode.defaultFilmLayout());
-        this.setupEditorFlex(true);
+        this.setCurrentFilmLayoutRoot(EditorLayoutNode.defaultFilmLayout());
+        this.refreshCurrentFilmLayout();
     }
 
     private void setupEditorFlex(boolean resize)
     {
-        ValueEditorLayout layout = BBSSettings.editorLayoutSettings;
-        EditorLayoutNode originalRoot = layout.getFilmLayoutRoot();
+        EditorLayoutNode originalRoot = this.getCurrentFilmLayoutRoot();
         EditorLayoutNode root = this.ensureFilmLayoutPanels(originalRoot);
 
         if (root != originalRoot)
         {
-            layout.setFilmLayoutRoot(root);
+            this.setCurrentFilmLayoutRoot(root);
         }
 
-        List<EditorLayoutNode.SplitterNode> splitters = layout.getFilmSplitters();
+        List<EditorLayoutNode.SplitterNode> splitters = this.getCurrentFilmSplitters();
 
         if (resize && splitters.size() == this.splitterHandles.size())
         {
@@ -984,7 +1042,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         for (int i = 0; i < splitters.size(); i++)
         {
-            UIDraggable handle = this.createSplitterHandle(layout, splitters, i);
+            UIDraggable handle = this.createSplitterHandle(i);
             this.splitterHandles.add(handle);
             IUIElement insertAfter = i == 0 ? this.main : this.splitterHandles.get(i - 1);
             this.editor.addAfter(insertAfter, handle);
@@ -1089,9 +1147,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
     }
 
-    private UIDraggable createSplitterHandle(ValueEditorLayout layout, List<EditorLayoutNode.SplitterNode> splitters, int index)
+    private UIDraggable createSplitterHandle(int index)
     {
-        UIDraggable handle = new UIDraggable((context) -> this.applySplitterDrag(layout, context.mouseX, context.mouseY))
+        UIDraggable handle = new UIDraggable((context) -> this.applySplitterDrag(context.mouseX, context.mouseY))
         {
             @Override
             protected boolean subMouseClicked(UIContext context)
@@ -1113,7 +1171,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.clearSplitterDragState();
             this.applyPreviewSizeToBBS();
         });
-        handle.reference(() -> this.getSplitterHandleReferencePosition(index, splitters))
+        handle.reference(() -> this.getSplitterHandleReferencePosition(index))
             .referenceAxis(!this.splitterHandleInfos.get(index).horizontal, this.splitterHandleInfos.get(index).horizontal);
         handle.rendering((context) -> this.renderSplitter(context, index));
         this.applySplitterHandleBounds(handle, this.splitterHandleInfos.get(index));
@@ -1164,16 +1222,16 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.draggedSplitterIndices.clear();
     }
 
-    private void applySplitterDrag(ValueEditorLayout layout, int mouseX, int mouseY)
+    private void applySplitterDrag(int mouseX, int mouseY)
     {
         if (this.draggedSplitterIndices.isEmpty())
         {
             return;
         }
 
-        BaseValue.edit(layout, (__) ->
+        BaseValue.edit(this.getFilmLayoutSettings(), (__) ->
         {
-            List<EditorLayoutNode.SplitterNode> splitters = layout.getFilmSplitters();
+            List<EditorLayoutNode.SplitterNode> splitters = this.getCurrentFilmSplittersForWrite();
 
             for (int draggedIndex : this.draggedSplitterIndices)
             {
@@ -1217,8 +1275,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         return MathUtils.clamp(ratio, 0.05F, 0.95F);
     }
 
-    private Vector2i getSplitterHandleReferencePosition(int index, List<EditorLayoutNode.SplitterNode> splitters)
+    private Vector2i getSplitterHandleReferencePosition(int index)
     {
+        List<EditorLayoutNode.SplitterNode> splitters = this.getCurrentFilmSplitters();
+
         if (index < 0 || index >= this.splitterHandleInfos.size() || index >= splitters.size())
         {
             return new Vector2i(this.editor.area.x, this.editor.area.y);
@@ -1425,15 +1485,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void applyPanelDropResult(String dragId, String targetId, int zone)
     {
-        ValueEditorLayout layout = BBSSettings.editorLayoutSettings;
-        EditorLayoutNode root = layout.getFilmLayoutRoot();
+        EditorLayoutNode root = this.getCurrentFilmLayoutRoot();
         EditorLayoutNode newRoot = zone == DROP_ZONE_CENTER
             ? EditorLayoutNode.copyWithInsertStackAt(root, targetId, dragId)
             : EditorLayoutNode.copyWithInsertSplitAt(root, targetId, dragId, zone);
 
         if (newRoot != null && newRoot != root)
         {
-            layout.setFilmLayoutRoot(newRoot);
+            this.setCurrentFilmLayoutRoot(newRoot);
             this.setupEditorFlex(true);
         }
     }
@@ -1673,6 +1732,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         menu.action(Icons.SAVED, UIKeys.GENERAL_SAVE, this::save);
         menu.action(Icons.LAYOUT, UIKeys.FILM_LAYOUT_PRESETS, this::openLayoutPresetsMenu);
+        menu.action(Icons.LINK, UIKeys.FILM_LAYOUT_BIND_TO_EDITOR, this.isCurrentFilmLayoutBound(), this::toggleCurrentFilmLayoutBinding);
         menu.action(Icons.REFRESH, UIKeys.FILM_LAYOUT_RESET, this::resetFilmLayout);
         menu.action(this.layoutLocked ? Icons.UNLOCKED : Icons.LOCKED, this.layoutLocked ? UIKeys.FILM_LAYOUT_UNLOCK : UIKeys.FILM_LAYOUT_LOCK, this.layoutLocked, this::toggleLayoutLock);
 
@@ -1909,6 +1969,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public void showPanel(UIElement element)
     {
+        EditorLayoutNode previousRoot = this.getCurrentFilmLayoutRoot();
         int index = this.getPanelIndex();
 
         if (index >= 0)
@@ -1916,8 +1977,17 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.captureTimelineViewport(this.panels.get(index));
         }
 
+        this.clearPanelDragState();
+        this.clearSplitterDragState();
         this.selectedMainEditorPanel = element;
-        this.updateMainEditorVisibility(this.hasFilmInCurrentTab());
+        if (previousRoot != this.getCurrentFilmLayoutRoot())
+        {
+            this.setupEditorFlex(true);
+        }
+        else
+        {
+            this.updateMainEditorVisibility(this.hasFilmInCurrentTab());
+        }
         this.applyTimelineViewport(element);
 
         this.applyPreviewSizeToBBS();
