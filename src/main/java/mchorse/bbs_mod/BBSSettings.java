@@ -21,6 +21,10 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeShape;
 
 public class BBSSettings {
 
+	public static final float GUI_SCALE_MIN = 0.5F;
+	public static final float GUI_SCALE_MAX = 4F;
+	public static final float GUI_SCALE_STEP = 0.1F;
+
 	public static ValueColors favoriteColors;
 	public static ValueColors recentColors;
 	public static ValueStringKeys disabledSheets;
@@ -29,7 +33,7 @@ public class BBSSettings {
 	public static ValueInt primaryColor;
 	public static ValueBoolean enableTrackpadIncrements;
 	public static ValueBoolean enableTrackpadScrolling;
-	public static ValueInt userIntefaceScale;
+	public static ValueFloat userIntefaceScale;
 	public static ValueInt theme;
 	public static ValueFloat fov;
 	public static ValueBoolean hsvColorPicker;
@@ -373,7 +377,7 @@ public class BBSSettings {
 		builder.register(language = new ValueLanguage("language"));
 		enableTrackpadIncrements = builder.getBoolean("trackpad_increments", true);
 		enableTrackpadScrolling = builder.getBoolean("trackpad_scrolling", true);
-		userIntefaceScale = builder.getInt("ui_scale", 2, 0, 4);
+		userIntefaceScale = builder.getFloat("ui_scale", 2F, GUI_SCALE_MIN, GUI_SCALE_MAX);
 		fov = builder.getFloat("fov", 40, 0, 180);
 		hsvColorPicker = builder.getBoolean("hsv_color_picker", true);
 		forceQwerty = builder.getBoolean("force_qwerty", false);

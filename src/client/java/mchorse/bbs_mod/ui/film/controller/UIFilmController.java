@@ -1488,8 +1488,10 @@ public class UIFilmController extends UIElement
         Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
         int w = BBSRendering.getVideoWidth();
         int h = BBSRendering.getVideoHeight();
+        int scaledW = BBSModClient.getScaledGUISize(w);
+        int scaledH = BBSModClient.getScaledGUISize(h);
 
-        if (mainTexture.width != w || mainTexture.height != h)
+        if (mainTexture.width != scaledW || mainTexture.height != scaledH)
         {
             this.stencil.resizeGUI(w, h);
         }

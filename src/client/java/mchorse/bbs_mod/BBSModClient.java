@@ -263,16 +263,34 @@ public class BBSModClient implements ClientModInitializer
         return dashboard;
     }
 
-    public static int getGUIScale()
+    public static float getGUIScale()
     {
-        int scale = BBSSettings.userIntefaceScale.get();
+        return BBSSettings.userIntefaceScale.get();
+    }
 
-        if (scale == 0)
+    public static int getScaledGUICoordinate(int value)
+    {
+        return Math.round(value * getGUIScale());
+    }
+
+    public static int getScaledGUISize(int value)
+    {
+        return Math.max(1, getScaledGUICoordinate(value));
+    }
+
+    public static void adjustGUIScale(int direction)
+    {
+        float scale = BBSSettings.userIntefaceScale.get();
+        float nextScale = Math.round((scale + direction * BBSSettings.GUI_SCALE_STEP) * 10F) / 10F;
+
+        nextScale = Math.max(BBSSettings.GUI_SCALE_MIN, Math.min(BBSSettings.GUI_SCALE_MAX, nextScale));
+
+        if (Math.abs(nextScale - scale) < 0.0001F)
         {
-            return MinecraftClient.getInstance().options.getGuiScale().getValue();
+            return;
         }
 
-        return scale;
+        BBSSettings.userIntefaceScale.set(nextScale);
     }
 
     public static float getOriginalFramebufferScale()
@@ -406,6 +424,13 @@ public class BBSModClient implements ClientModInitializer
         BBSMod.events.post(new RegisterClientSettingsEvent());
 
         BBSSettings.language.postCallback((v, f) -> reloadLanguage(getLanguageKey()));
+        BBSSettings.userIntefaceScale.postCallback((v, f) ->
+        {
+            if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
+            {
+                screen.refreshScale();
+            }
+        });
         BBSSettings.editorSeconds.postCallback((v, f) ->
         {
             if (dashboard != null && dashboard.getPanels().panel instanceof UIFilmPanel panel)

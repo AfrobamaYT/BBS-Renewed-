@@ -301,7 +301,9 @@ public abstract class UIModelRenderer extends UIElement
     {
         Vector3d vector = new Vector3d();
         Vector3d origin = new Vector3d(this.cachedCamera.position).sub(this.cachedPos);
-        Vector3d destination = new Vector3d(this.cachedCamera.getMouseDirection(context.mouseX, context.mouseY, this.area.x, this.area.y, this.area.w, this.area.h)).mul(this.distance.getValue() * 2).add(origin);
+        int areaX = context.globalX(this.area.x);
+        int areaY = context.globalY(this.area.y);
+        Vector3d destination = new Vector3d(this.cachedCamera.getMouseDirection(context.mouseX, context.mouseY, areaX, areaY, this.area.w, this.area.h)).mul(this.distance.getValue() * 2).add(origin);
         Intersectiond.intersectLineSegmentPlane(origin.x, origin.y, origin.z, destination.x, destination.y, destination.z, this.plane.x, this.plane.y, this.plane.z, 0, vector);
 
         return vector;
@@ -320,15 +322,12 @@ public abstract class UIModelRenderer extends UIElement
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 
         MinecraftClient mc = MinecraftClient.getInstance();
-
-        float rx = (float) Math.round(mc.getWindow().getWidth() / (double) context.menu.width);
-        float ry = (float) Math.round(mc.getWindow().getHeight() / (double) context.menu.height);
         float size = BBSModClient.getOriginalFramebufferScale();
-
-        int vx = (int) (this.area.x * rx);
-        int vy = (int) (mc.getWindow().getHeight() - (this.area.y + this.area.h) * ry);
-        int vw = (int) (this.area.w * rx);
-        int vh = (int) (this.area.h * ry);
+        int vx = context.toScreenX(context.globalX(this.area.x));
+        int vyTop = context.toScreenY(context.globalY(this.area.y));
+        int vw = context.toScreenWidth(this.area.w);
+        int vh = context.toScreenHeight(this.area.h);
+        int vy = mc.getWindow().getHeight() - (vyTop + vh);
 
         RenderSystem.viewport((int) (vx * size), (int) (vy * size), (int) (vw * size), (int) (vh * size));
         this.camera.updatePerspectiveProjection(vw, vh);
