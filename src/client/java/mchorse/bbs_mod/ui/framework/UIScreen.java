@@ -12,7 +12,6 @@ import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.FFMpegUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Window;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -29,10 +28,6 @@ public class UIScreen extends Screen implements IFileDropListener
     private UIRenderingContext context;
 
     private int lastGuiScale;
-    private int logicalWidth;
-    private int logicalHeight;
-    private float renderScaleX = 1F;
-    private float renderScaleY = 1F;
 
     public static void open(UIBaseMenu menu)
     {
@@ -117,7 +112,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         this.lastGuiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
 
-        MinecraftClient.getInstance().options.getGuiScale().setValue(1);
+        MinecraftClient.getInstance().options.getGuiScale().setValue(BBSModClient.getGUIScale());
         MinecraftClient.getInstance().onResolutionChanged();
 
         super.onDisplayed();
@@ -141,8 +136,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.init();
 
-        this.updateScaleMetrics(this.width, this.height);
-        this.menu.resize(this.logicalWidth, this.logicalHeight);
+        this.menu.resize(this.width, this.height);
     }
 
     @Override
@@ -150,36 +144,30 @@ public class UIScreen extends Screen implements IFileDropListener
     {
         super.resize(client, width, height);
 
-        this.updateScaleMetrics(width, height);
-        this.menu.resize(this.logicalWidth, this.logicalHeight);
+        this.menu.resize(width, height);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
-        return this.menu.mouseClicked(this.toLogicalX(mouseX), this.toLogicalY(mouseY), button);
+        return this.menu.mouseClicked((int) mouseX, (int) mouseY, button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount)
     {
-        return this.menu.mouseScrolled(this.toLogicalX(mouseX), this.toLogicalY(mouseY), horizontalAmount, verticalAmount);
+        return this.menu.mouseScrolled((int) mouseX, (int) mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button)
     {
-        return this.menu.mouseReleased(this.toLogicalX(mouseX), this.toLogicalY(mouseY), button);
+        return this.menu.mouseReleased((int) mouseX, (int) mouseY, button);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers)
     {
-        if (this.handleScaleHotkey(keyCode, modifiers))
-        {
-            return true;
-        }
-
         return this.menu.handleKey(keyCode, scanCode, BBSRendering.lastAction, modifiers);
     }
 
@@ -207,65 +195,8 @@ public class UIScreen extends Screen implements IFileDropListener
         super.render(context, mouseX, mouseY, delta);
 
         this.menu.context.setTransition(this.client.getTickDelta());
-        this.menu.context.setScreenScale(this.renderScaleX, this.renderScaleY);
-        this.menu.renderMenu(this.context, this.toLogicalX(mouseX), this.toLogicalY(mouseY));
+        this.menu.renderMenu(this.context, mouseX, mouseY);
         this.menu.context.render.executeRunnables();
-    }
-
-    public void refreshScale()
-    {
-        if (this.client == null)
-        {
-            return;
-        }
-
-        this.updateScaleMetrics(this.width, this.height);
-        this.menu.resize(this.logicalWidth, this.logicalHeight);
-    }
-
-    private void updateScaleMetrics(int width, int height)
-    {
-        Window window = MinecraftClient.getInstance().getWindow();
-        float scale = BBSModClient.getGUIScale();
-
-        this.logicalWidth = Math.max(1, Math.round(window.getWidth() / scale));
-        this.logicalHeight = Math.max(1, Math.round(window.getHeight() / scale));
-        this.renderScaleX = width / (float) this.logicalWidth;
-        this.renderScaleY = height / (float) this.logicalHeight;
-        this.menu.context.setScreenScale(this.renderScaleX, this.renderScaleY);
-    }
-
-    private int toLogicalX(double mouseX)
-    {
-        return Math.max(0, Math.min(this.logicalWidth - 1, (int) Math.floor(mouseX / this.renderScaleX)));
-    }
-
-    private int toLogicalY(double mouseY)
-    {
-        return Math.max(0, Math.min(this.logicalHeight - 1, (int) Math.floor(mouseY / this.renderScaleY)));
-    }
-
-    private boolean handleScaleHotkey(int keyCode, int modifiers)
-    {
-        if ((modifiers & GLFW.GLFW_MOD_CONTROL) == 0 || BBSRendering.lastAction == GLFW.GLFW_RELEASE)
-        {
-            return false;
-        }
-
-        if (keyCode == GLFW.GLFW_KEY_EQUAL || keyCode == GLFW.GLFW_KEY_KP_ADD)
-        {
-            BBSModClient.adjustGUIScale(1);
-
-            return true;
-        }
-        else if (keyCode == GLFW.GLFW_KEY_MINUS || keyCode == GLFW.GLFW_KEY_KP_SUBTRACT)
-        {
-            BBSModClient.adjustGUIScale(-1);
-
-            return true;
-        }
-
-        return false;
     }
 
     @Override

@@ -72,12 +72,12 @@ public class StencilFormFramebuffer
 
     public void resizeGUI(int w, int h)
     {
-        this.resize(BBSModClient.getScaledGUISize(w), BBSModClient.getScaledGUISize(h));
+        this.resize(w, h, BBSModClient.getGUIScale());
     }
 
-    public void resize(int w, int h, float scale)
+    public void resize(int w, int h, int scale)
     {
-        this.resize(Math.max(1, Math.round(w * scale)), Math.max(1, Math.round(h * scale)));
+        this.resize(w * scale, h * scale);
     }
 
     public void resize(int w, int h)
@@ -100,7 +100,9 @@ public class StencilFormFramebuffer
 
     public void pickGUI(int x, int y)
     {
-        this.pick(BBSModClient.getScaledGUICoordinate(x), BBSModClient.getScaledGUICoordinate(y));
+        int scale = BBSModClient.getGUIScale();
+
+        this.pick(x * scale, y * scale);
     }
 
     public void pick(int x, int y)

@@ -58,8 +58,6 @@ public class UIContext implements IViewportStack
     private float transition;
     private long tick;
     private int cursorShape = GLFW.GLFW_ARROW_CURSOR;
-    private float screenScaleX = 1F;
-    private float screenScaleY = 1F;
 
     public UIViewportStack viewportStack = new UIViewportStack();
 
@@ -559,37 +557,6 @@ public class UIContext implements IViewportStack
     public void resetMatrix()
     {
         this.render.batcher.getContext().getMatrices().loadIdentity();
-
-        if (this.screenScaleX != 1F || this.screenScaleY != 1F)
-        {
-            this.render.batcher.getContext().getMatrices().scale(this.screenScaleX, this.screenScaleY, 1F);
-        }
-    }
-
-    public void setScreenScale(float screenScaleX, float screenScaleY)
-    {
-        this.screenScaleX = screenScaleX;
-        this.screenScaleY = screenScaleY;
-    }
-
-    public int toScreenX(int x)
-    {
-        return Math.round(x * this.screenScaleX);
-    }
-
-    public int toScreenY(int y)
-    {
-        return Math.round(y * this.screenScaleY);
-    }
-
-    public int toScreenWidth(int width)
-    {
-        return Math.max(1, Math.round(width * this.screenScaleX));
-    }
-
-    public int toScreenHeight(int height)
-    {
-        return Math.max(1, Math.round(height * this.screenScaleY));
     }
 
     public void update()

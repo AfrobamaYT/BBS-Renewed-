@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.utils;
 
-import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -119,7 +119,9 @@ public class UIChalkboard extends UIElement
             this.pixels.delete();
         }
 
-        this.pixels = Pixels.fromSize(BBSModClient.getScaledGUISize(this.area.w), BBSModClient.getScaledGUISize(this.area.h));
+        int scale = BBSSettings.userIntefaceScale.get();
+
+        this.pixels = Pixels.fromSize(this.area.w * scale, this.area.h * scale);
         this.pixels.rewindBuffer();
         this.texture.bind();
         this.texture.updateTexture(this.pixels);
@@ -133,6 +135,7 @@ public class UIChalkboard extends UIElement
             return;
         }
 
+        int scale = BBSSettings.userIntefaceScale.get();
         int x = context.mouseX;
         int y = context.mouseY;
 
@@ -144,8 +147,8 @@ public class UIChalkboard extends UIElement
 
                 for (int i = 0; i < distance; i++)
                 {
-                    int xx = Math.round((float) Lerps.lerp(BBSModClient.getScaledGUICoordinate(x), BBSModClient.getScaledGUICoordinate(this.lastX), i / distance));
-                    int yy = Math.round((float) Lerps.lerp(BBSModClient.getScaledGUICoordinate(y), BBSModClient.getScaledGUICoordinate(this.lastY), i / distance));
+                    int xx = (int) (Lerps.lerp(x * scale, this.lastX * scale, i / distance));
+                    int yy = (int) (Lerps.lerp(y * scale, this.lastY * scale, i / distance));
 
                     this.pixels.drawRect(xx - 1, yy - 2, 2, 4, this.color);
                     this.pixels.drawRect(xx - 2, yy - 1, 1, 2, this.color);
