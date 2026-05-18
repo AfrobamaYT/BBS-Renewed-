@@ -59,7 +59,7 @@ public class UISettingsOverlayPanel extends UIOverlayPanel
         this.options = new UIScrollView(ScrollDirection.VERTICAL);
         this.options.scroll.scrollSpeed = 51;
         this.options.relative(this.panel).x(6).y(6).w(1F, -12).h(1F, -12);
-        this.options.column().scroll().vertical().stretch().padding(10).height(20);
+        this.options.column(8).scroll().vertical().stretch().padding(10).height(20);
 
         this.search = new UITextbox(100, (str) -> this.refresh());
         this.search.placeholder(UIKeys.GENERAL_SEARCH);

@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.settings.ui;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
@@ -170,7 +171,10 @@ public class UIValueFactory
         control.removeTooltip();
 
         String comment = L10n.lang(UIValueFactory.getValueCommentKey(value)).get();
-        boolean hasComment = !comment.isEmpty() && !comment.startsWith("bbs.settings.") && !comment.startsWith("cml.settings.");
+        boolean hasComment = !comment.isEmpty()
+            && !comment.startsWith("bbs.settings.")
+            && !comment.startsWith("cml.settings.")
+            && (BBSSettings.hideSettingDescriptions == null || !BBSSettings.hideSettingDescriptions.get());
 
         if (hasComment)
         {

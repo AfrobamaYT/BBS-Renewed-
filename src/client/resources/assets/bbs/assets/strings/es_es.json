@@ -31,6 +31,8 @@
     "bbs.config.appearance.tooltip_style-comment": "Esta opción permite cambiar el estilo de la descripción emergente de la GUI",
     "bbs.config.appearance.trackpad_increments": "Incrementos de panel interactivo",
     "bbs.config.appearance.trackpad_increments-comment": "Habilita los botones < y > en el campo del panel interactivo (que incrementan el valor de este)",
+    "bbs.config.appearance.hide_setting_descriptions": "Ocultar descripciones de ajustes",
+    "bbs.config.appearance.hide_setting_descriptions-comment": "Oculta las descripciones de ajustes para una apariencia más limpia y compacta.",
     "bbs.config.appearance.trackpad_scrolling": "Desplazamiento de panel interactivo",
     "bbs.config.appearance.trackpad_scrolling-comment": "Habilita el desplazamiento con la rueda del ratón en los campos del panel interactivo para incrementar/disminuir valores",
     "bbs.config.appearance.ui_scale": "Escala de la GUI",
