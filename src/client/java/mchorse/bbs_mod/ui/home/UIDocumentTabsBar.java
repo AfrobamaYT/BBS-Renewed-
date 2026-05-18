@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.home;
 
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
@@ -259,7 +260,7 @@ public class UIDocumentTabsBar extends UIControlBar
 
     private IKey titleOf(DocumentTab tab)
     {
-        if (tab.isHome) return mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.home");
+        if (tab.isHome) return L10n.lang("bbs.ui.raw.home");
         if (tab.id != null) return IKey.raw(new DataPath(tab.id).getLast());
         if (tab.type == ContentType.FILMS) return UIKeys.FILM_TITLE;
         if (tab.type == ContentType.MODELS) return UIKeys.MODELS_TITLE;

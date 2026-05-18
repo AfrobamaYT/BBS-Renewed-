@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.dashboard;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.ui.ContentType;
@@ -56,10 +57,10 @@ public class UIMainMenuBar extends UIElement
         brand.w(25).marginLeft(6);
 
         this.add(brand);
-        this.add(new UIMenuButton(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.file"), this, this::buildFileMenu).w(28));
-        this.add(new UIMenuButton(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.edit"), this, this::buildEditMenu).w(28));
-        this.add(new UIMenuButton(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.tools"), this, this::buildToolsMenu).w(32));
-        this.add(new UIMenuButton(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.help"), this, this::buildHelpMenu).w(28));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.file"), this, this::buildFileMenu).w(28));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.edit"), this, this::buildEditMenu).w(28));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.tools"), this, this::buildToolsMenu).w(32));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.help"), this, this::buildHelpMenu).w(28));
 
         this.row(2).preferred(999);
     }
@@ -119,9 +120,9 @@ public class UIMainMenuBar extends UIElement
 
     private void buildFileMenu(ContextMenuManager menu)
     {
-        menu.action(Icons.ADD, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.new"), () -> this.openNewSubmenu());
-        menu.action(Icons.FOLDER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.open"), () -> this.openOpenPopup());
-        menu.action(Icons.TIME, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.recent"), () -> this.openRecentSubmenu());
+        menu.action(Icons.ADD, L10n.lang("bbs.ui.raw.new"), () -> this.openNewSubmenu());
+        menu.action(Icons.FOLDER, L10n.lang("bbs.ui.raw.open"), () -> this.openOpenPopup());
+        menu.action(Icons.TIME, L10n.lang("bbs.ui.raw.recent"), () -> this.openRecentSubmenu());
         menu.action(Icons.SETTINGS, UIKeys.CONFIG_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.settingsPanel, 580, 340));
         menu.action(Icons.JOYSTICK, UIKeys.ADDONS_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.addonsPanel, 520, 320));
     }
@@ -142,7 +143,7 @@ public class UIMainMenuBar extends UIElement
 
     private void buildHelpMenu(ContextMenuManager menu)
     {
-        menu.action(Icons.HELP, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.about"), () -> UIOverlay.addOverlay(this.getContext(), new UIAboutOverlayPanel(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.about"), this.dashboard), 560, 440));
+        menu.action(Icons.HELP, L10n.lang("bbs.ui.raw.about"), () -> UIOverlay.addOverlay(this.getContext(), new UIAboutOverlayPanel(L10n.lang("bbs.ui.raw.about"), this.dashboard), 560, 440));
     }
 
     /* ------------------------------------------------------------------ */
@@ -165,7 +166,7 @@ public class UIMainMenuBar extends UIElement
         {
             if (RecentAssetsTracker.RECENT.isEmpty())
             {
-                menu.action(Icons.NONE, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.no_recent_assets"), () -> {});
+                menu.action(Icons.NONE, L10n.lang("bbs.ui.raw.no_recent_assets"), () -> {});
                 return;
             }
 
@@ -220,7 +221,7 @@ public class UIMainMenuBar extends UIElement
 
     private void openOpenPopup()
     {
-        UIOverlay.addOverlay(this.getContext(), new UIOpenAssetOverlayPanel(mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.open_asset"), this.dashboard), 520, 320);
+        UIOverlay.addOverlay(this.getContext(), new UIOpenAssetOverlayPanel(L10n.lang("bbs.ui.raw.open_asset"), this.dashboard), 520, 320);
     }
 
     private void triggerKey(KeyCombo combo)

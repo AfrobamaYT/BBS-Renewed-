@@ -104,9 +104,9 @@ public class UIScreenNodeEditor extends UIShapeNodeEditor
         {
             PosterizeNode p = (PosterizeNode) node;
 
-            menu.action(Icons.GEAR, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.mode_scalar"), p.mode == 0 ? Colors.ACTIVE : 0,
+            menu.action(Icons.GEAR, L10n.lang("bbs.ui.raw.mode_scalar"), p.mode == 0 ? Colors.ACTIVE : 0,
                 () -> p.mode = 0);
-            menu.action(Icons.GEAR, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.mode_color"),  p.mode == 1 ? Colors.ACTIVE : 0,
+            menu.action(Icons.GEAR, L10n.lang("bbs.ui.raw.mode_color"),  p.mode == 1 ? Colors.ACTIVE : 0,
                 () -> p.mode = 1);
         }
     }
@@ -116,76 +116,76 @@ public class UIScreenNodeEditor extends UIShapeNodeEditor
     {
         /* Input — green */
         ContextMenuManager inputSub = new ContextMenuManager();
-        inputSub.action(Icons.MAXIMIZE,       mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.value"),      Colors.POSITIVE, () -> this.addNode("value"));
-        inputSub.action(Icons.MATERIAL,       mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.color"),      Colors.POSITIVE, () -> this.addNode("color"));
-        inputSub.action(Icons.TIME,           mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.time"),       Colors.POSITIVE, () -> this.addNode("time"));
-        inputSub.action(Icons.ALL_DIRECTIONS, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.coordinate"), Colors.POSITIVE, () -> this.addNode("coordinate"));
-        inputSub.action(Icons.IMAGE,          mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.texture"),    Colors.POSITIVE, () -> this.addNode("texture"));
-        menu.action(Icons.DOWNLOAD, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.input"), Colors.POSITIVE, () -> context.replaceContextMenu(inputSub.create()));
+        inputSub.action(Icons.MAXIMIZE,       L10n.lang("bbs.ui.raw.value"),      Colors.POSITIVE, () -> this.addNode("value"));
+        inputSub.action(Icons.MATERIAL,       L10n.lang("bbs.ui.raw.color"),      Colors.POSITIVE, () -> this.addNode("color"));
+        inputSub.action(Icons.TIME,           L10n.lang("bbs.ui.raw.time"),       Colors.POSITIVE, () -> this.addNode("time"));
+        inputSub.action(Icons.ALL_DIRECTIONS, L10n.lang("bbs.ui.raw.coordinate"), Colors.POSITIVE, () -> this.addNode("coordinate"));
+        inputSub.action(Icons.IMAGE,          L10n.lang("bbs.ui.raw.texture"),    Colors.POSITIVE, () -> this.addNode("texture"));
+        menu.action(Icons.DOWNLOAD, L10n.lang("bbs.ui.raw.input"), Colors.POSITIVE, () -> context.replaceContextMenu(inputSub.create()));
 
         /* Math — blue */
         ContextMenuManager mathSub = new ContextMenuManager();
-        mathSub.action(Icons.GEAR,            mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.math"),       Colors.ACTIVE, () -> this.addNode("math"));
-        mathSub.action(Icons.ALL_DIRECTIONS,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.vector_math"),Colors.ACTIVE, () -> this.addNode("vector_math"));
-        mathSub.action(Icons.GEAR,            mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.remap"),      Colors.ACTIVE, () -> this.addNode("remap"));
-        mathSub.action(Icons.GEAR,            mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.clamp"),      Colors.ACTIVE, () -> this.addNode("clamp"));
-        mathSub.action(Icons.GEAR,            mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.smoothstep"), Colors.ACTIVE, () -> this.addNode("smoothstep"));
-        mathSub.action(Icons.REFRESH,         mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.invert"),     Colors.ACTIVE, () -> this.addNode("invert"));
-        mathSub.action(Icons.GEAR,            mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.posterize"),  Colors.ACTIVE, () -> this.addNode("posterize"));
-        menu.action(Icons.GEAR, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.math"), Colors.ACTIVE, () -> context.replaceContextMenu(mathSub.create()));
+        mathSub.action(Icons.GEAR,            L10n.lang("bbs.ui.raw.math"),       Colors.ACTIVE, () -> this.addNode("math"));
+        mathSub.action(Icons.ALL_DIRECTIONS,  L10n.lang("bbs.ui.raw.vector_math"),Colors.ACTIVE, () -> this.addNode("vector_math"));
+        mathSub.action(Icons.GEAR,            L10n.lang("bbs.ui.raw.remap"),      Colors.ACTIVE, () -> this.addNode("remap"));
+        mathSub.action(Icons.GEAR,            L10n.lang("bbs.ui.raw.clamp"),      Colors.ACTIVE, () -> this.addNode("clamp"));
+        mathSub.action(Icons.GEAR,            L10n.lang("bbs.ui.raw.smoothstep"), Colors.ACTIVE, () -> this.addNode("smoothstep"));
+        mathSub.action(Icons.REFRESH,         L10n.lang("bbs.ui.raw.invert"),     Colors.ACTIVE, () -> this.addNode("invert"));
+        mathSub.action(Icons.GEAR,            L10n.lang("bbs.ui.raw.posterize"),  Colors.ACTIVE, () -> this.addNode("posterize"));
+        menu.action(Icons.GEAR, L10n.lang("bbs.ui.raw.math"), Colors.ACTIVE, () -> context.replaceContextMenu(mathSub.create()));
 
         /* Color — orange */
         ContextMenuManager colorSub = new ContextMenuManager();
-        colorSub.action(Icons.REFRESH, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.mix_color"),      Colors.ORANGE, () -> this.addNode("mix_color"));
-        colorSub.action(Icons.FILTER,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.split_color"),    Colors.ORANGE, () -> this.addNode("split_color"));
-        colorSub.action(Icons.FILTER,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.combine_color"),  Colors.ORANGE, () -> this.addNode("combine_color"));
-        colorSub.action(Icons.FILTER,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.screen_blend"),   Colors.ORANGE, () -> this.addNode("screen_blend"));
-        colorSub.action(Icons.FILTER,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.overlay_blend"),  Colors.ORANGE, () -> this.addNode("overlay_blend"));
-        menu.action(Icons.MATERIAL, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.color"), Colors.ORANGE, () -> context.replaceContextMenu(colorSub.create()));
+        colorSub.action(Icons.REFRESH, L10n.lang("bbs.ui.raw.mix_color"),      Colors.ORANGE, () -> this.addNode("mix_color"));
+        colorSub.action(Icons.FILTER,  L10n.lang("bbs.ui.raw.split_color"),    Colors.ORANGE, () -> this.addNode("split_color"));
+        colorSub.action(Icons.FILTER,  L10n.lang("bbs.ui.raw.combine_color"),  Colors.ORANGE, () -> this.addNode("combine_color"));
+        colorSub.action(Icons.FILTER,  L10n.lang("bbs.ui.raw.screen_blend"),   Colors.ORANGE, () -> this.addNode("screen_blend"));
+        colorSub.action(Icons.FILTER,  L10n.lang("bbs.ui.raw.overlay_blend"),  Colors.ORANGE, () -> this.addNode("overlay_blend"));
+        menu.action(Icons.MATERIAL, L10n.lang("bbs.ui.raw.color"), Colors.ORANGE, () -> context.replaceContextMenu(colorSub.create()));
 
         /* Noise — yellow */
         ContextMenuManager noiseSub = new ContextMenuManager();
-        noiseSub.action(Icons.SOUND, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.perlin_noise"), Colors.INACTIVE, () -> this.addNode("noise"));
-        noiseSub.action(Icons.SOUND, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.voronoi"),      Colors.INACTIVE, () -> this.addNode("voronoi"));
-        noiseSub.action(Icons.SOUND, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.flow_noise"),   Colors.INACTIVE, () -> this.addNode("flow_noise"));
-        menu.action(Icons.SOUND, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.noise"), Colors.INACTIVE, () -> context.replaceContextMenu(noiseSub.create()));
+        noiseSub.action(Icons.SOUND, L10n.lang("bbs.ui.raw.perlin_noise"), Colors.INACTIVE, () -> this.addNode("noise"));
+        noiseSub.action(Icons.SOUND, L10n.lang("bbs.ui.raw.voronoi"),      Colors.INACTIVE, () -> this.addNode("voronoi"));
+        noiseSub.action(Icons.SOUND, L10n.lang("bbs.ui.raw.flow_noise"),   Colors.INACTIVE, () -> this.addNode("flow_noise"));
+        menu.action(Icons.SOUND, L10n.lang("bbs.ui.raw.noise"), Colors.INACTIVE, () -> context.replaceContextMenu(noiseSub.create()));
 
         /* Wave */
         ContextMenuManager waveSub = new ContextMenuManager();
-        waveSub.action(Icons.ARC,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.sine_wave"),   Colors.BLUE, () -> this.addNode("sine_wave"));
-        waveSub.action(Icons.ARC,  mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.square_wave"), Colors.BLUE, () -> this.addNode("square_wave"));
-        menu.action(Icons.ARC, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.wave"), Colors.BLUE, () -> context.replaceContextMenu(waveSub.create()));
+        waveSub.action(Icons.ARC,  L10n.lang("bbs.ui.raw.sine_wave"),   Colors.BLUE, () -> this.addNode("sine_wave"));
+        waveSub.action(Icons.ARC,  L10n.lang("bbs.ui.raw.square_wave"), Colors.BLUE, () -> this.addNode("square_wave"));
+        menu.action(Icons.ARC, L10n.lang("bbs.ui.raw.wave"), Colors.BLUE, () -> context.replaceContextMenu(waveSub.create()));
 
         /* Adjust / color grade */
         ContextMenuManager adjustSub = new ContextMenuManager();
-        adjustSub.action(Icons.FILTER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.gamma_correction"),    Colors.YELLOW, () -> this.addNode("gamma_correction"));
-        adjustSub.action(Icons.FILTER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.hue_saturation"),    Colors.YELLOW, () -> this.addNode("hue_saturation"));
-        adjustSub.action(Icons.FILTER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.brightness_contrast"), Colors.YELLOW, () -> this.addNode("brightness_contrast"));
-        adjustSub.action(Icons.FILTER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.levels"),              Colors.YELLOW, () -> this.addNode("levels"));
-        adjustSub.action(Icons.EXCHANGE, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.glitch"),            Colors.MAGENTA, () -> this.addNode("glitch"));
-        menu.action(Icons.FILTER, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.adjust"), Colors.YELLOW, () -> context.replaceContextMenu(adjustSub.create()));
+        adjustSub.action(Icons.FILTER, L10n.lang("bbs.ui.raw.gamma_correction"),    Colors.YELLOW, () -> this.addNode("gamma_correction"));
+        adjustSub.action(Icons.FILTER, L10n.lang("bbs.ui.raw.hue_saturation"),    Colors.YELLOW, () -> this.addNode("hue_saturation"));
+        adjustSub.action(Icons.FILTER, L10n.lang("bbs.ui.raw.brightness_contrast"), Colors.YELLOW, () -> this.addNode("brightness_contrast"));
+        adjustSub.action(Icons.FILTER, L10n.lang("bbs.ui.raw.levels"),              Colors.YELLOW, () -> this.addNode("levels"));
+        adjustSub.action(Icons.EXCHANGE, L10n.lang("bbs.ui.raw.glitch"),            Colors.MAGENTA, () -> this.addNode("glitch"));
+        menu.action(Icons.FILTER, L10n.lang("bbs.ui.raw.adjust"), Colors.YELLOW, () -> context.replaceContextMenu(adjustSub.create()));
 
         /* Utility — no color */
         ContextMenuManager utilitySub = new ContextMenuManager();
-        utilitySub.action(Icons.GEAR, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.trigger"), () -> this.addNode("trigger"));
-        utilitySub.action(Icons.EDIT, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.comment"), () -> this.addNode("comment"));
-        menu.action(Icons.MORE, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.utility"), () -> context.replaceContextMenu(utilitySub.create()));
+        utilitySub.action(Icons.GEAR, L10n.lang("bbs.ui.raw.trigger"), () -> this.addNode("trigger"));
+        utilitySub.action(Icons.EDIT, L10n.lang("bbs.ui.raw.comment"), () -> this.addNode("comment"));
+        menu.action(Icons.MORE, L10n.lang("bbs.ui.raw.utility"), () -> context.replaceContextMenu(utilitySub.create()));
 
         /* Effects — standalone effect nodes */
         ContextMenuManager effectSub = new ContextMenuManager();
-        effectSub.action(Icons.FILM,     mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.vignette"),   0xFF226644, () -> this.addNode("screen_vignette"));
-        effectSub.action(Icons.FILM,     mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.grain"),      0xFF226644, () -> this.addNode("screen_grain"));
-        effectSub.action(Icons.FILM,     mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.letterbox"),  0xFF226644, () -> this.addNode("screen_letterbox"));
-        effectSub.action(Icons.FILM,     mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.overlay"),    0xFF226644, () -> this.addNode("screen_overlay"));
-        effectSub.action(Icons.EXCHANGE, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.distortion"),   0xFF226644, () -> this.addNode("screen_distortion"));
-        effectSub.action(Icons.FILTER,   mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.color_grade"),  0xFF226644, () -> this.addNode("screen_color_grade"));
-        menu.action(Icons.FILM, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.effects"), 0xFF226644, () -> context.replaceContextMenu(effectSub.create()));
+        effectSub.action(Icons.FILM,     L10n.lang("bbs.ui.raw.vignette"),   0xFF226644, () -> this.addNode("screen_vignette"));
+        effectSub.action(Icons.FILM,     L10n.lang("bbs.ui.raw.grain"),      0xFF226644, () -> this.addNode("screen_grain"));
+        effectSub.action(Icons.FILM,     L10n.lang("bbs.ui.raw.letterbox"),  0xFF226644, () -> this.addNode("screen_letterbox"));
+        effectSub.action(Icons.FILM,     L10n.lang("bbs.ui.raw.overlay"),    0xFF226644, () -> this.addNode("screen_overlay"));
+        effectSub.action(Icons.EXCHANGE, L10n.lang("bbs.ui.raw.distortion"),   0xFF226644, () -> this.addNode("screen_distortion"));
+        effectSub.action(Icons.FILTER,   L10n.lang("bbs.ui.raw.color_grade"),  0xFF226644, () -> this.addNode("screen_color_grade"));
+        menu.action(Icons.FILM, L10n.lang("bbs.ui.raw.effects"), 0xFF226644, () -> context.replaceContextMenu(effectSub.create()));
 
         /* Output — screen_output + screen_uv */
         ContextMenuManager outputSub = new ContextMenuManager();
-        outputSub.action(Icons.DOWNLOAD, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.screen_output"), Colors.NEGATIVE, () -> this.addNode("screen_output"));
-        outputSub.action(Icons.GLOBE,    mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.screen_uv"),     Colors.NEGATIVE, () -> this.addNode("screen_uv"));
-        outputSub.action(Icons.COPY,     mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.layer"),         Colors.INACTIVE, () -> this.addNode("screen_layer"));
-        menu.action(Icons.UPLOAD, mchorse.bbs_mod.l10n.L10n.lang("bbs.ui.raw.output"), Colors.NEGATIVE, () -> context.replaceContextMenu(outputSub.create()));
+        outputSub.action(Icons.DOWNLOAD, L10n.lang("bbs.ui.raw.screen_output"), Colors.NEGATIVE, () -> this.addNode("screen_output"));
+        outputSub.action(Icons.GLOBE,    L10n.lang("bbs.ui.raw.screen_uv"),     Colors.NEGATIVE, () -> this.addNode("screen_uv"));
+        outputSub.action(Icons.COPY,     L10n.lang("bbs.ui.raw.layer"),         Colors.INACTIVE, () -> this.addNode("screen_layer"));
+        menu.action(Icons.UPLOAD, L10n.lang("bbs.ui.raw.output"), Colors.NEGATIVE, () -> context.replaceContextMenu(outputSub.create()));
     }
 }

@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class UIValueMap
 {
@@ -183,7 +184,7 @@ public class UIValueMap
 
         register(ValueLanguage.class, (value, ui) ->
         {
-            java.util.function.Supplier<IKey> getLangLabel = () -> {
+            Supplier<IKey> getLangLabel = () -> {
                 for (Label<String> label : BBSModClient.getL10n().getSupportedLanguageLabels())
                 {
                     if (label.value.equals(value.get()))
