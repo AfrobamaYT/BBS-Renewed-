@@ -928,6 +928,16 @@ public class UIAudioEditorPanel extends UISidebarDashboardPanel
         this.mainView.setVisible(!home);
         this.iconBar.setVisible(!home);
 
+        if (home)
+        {
+            this.editor.resetFlex().relative(this).w(1F).h(1F);
+        }
+        else
+        {
+            this.editor.resetFlex().relative(this).wTo(this.iconBar.area).h(1F);
+        }
+        this.resize();
+
         this.updateHomeButtonsState();
     }
 

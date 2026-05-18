@@ -176,6 +176,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public UIIcon openReplayEditor;
     public UIIcon openActionEditor;
     public UIIcon openScreenEditor;
+    public UIElement bottomIcons;
     private UICopyPasteController layoutPresetsController;
 
     private Camera camera = new Camera();
@@ -694,10 +695,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         /* Setup elements */
         this.iconBar.add(this.openHistory, this.openRenderQueue, this.openCameraEditor.marginTop(9), this.openReplayEditor, this.openActionEditor, this.openScreenEditor);
 
-        UIElement bottomIcons = new UIElement();
+        this.bottomIcons = new UIElement();
 
-        bottomIcons.relative(this).x(1F, -20).y(1F).wh(20, 60).anchorY(1F).column(0).stretch();
-        bottomIcons.add(this.toggleHorizontal, this.layoutLock, this.layoutPresets);
+        this.bottomIcons.relative(this).x(1F, -20).y(1F).wh(20, 60).anchorY(1F).column(0).stretch();
+        this.bottomIcons.add(this.toggleHorizontal, this.layoutLock, this.layoutPresets);
         this.iconBar.relative(this).x(1F, -20).y(0).w(20).h(1F).column(0).stretch();
         this.homePage.relative(this.editor).x(0.5F, -250).y(0).w(500).h(1F);
         this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44)).column(0).vertical().stretch();
@@ -723,7 +724,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.editor.add(handle);
         }
         this.main.add(this.cameraEditor, this.replayEditor, this.actionEditor, this.screenEditor, this.draggableMain, this.draggableEditor);
-        this.add(this.controller, new UIRenderable(this::renderDividers), bottomIcons);
+        this.add(this.controller, new UIRenderable(this::renderDividers), this.bottomIcons);
         this.overlay.namesList.setFileIcon(Icons.FILM);
         this.createHomeDocumentTab(true);
 
@@ -3662,12 +3663,22 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.editor.setVisible(true);
         this.setWorkspaceVisible(!home);
         this.iconBar.setVisible(!home);
+        if (this.bottomIcons != null)
+        {
+            this.bottomIcons.setVisible(!home);
+        }
         this.updateHomeButtonsState();
 
-        if (!home)
+        if (home)
         {
+            this.editor.resetFlex().relative(this).w(1F).h(1F);
+        }
+        else
+        {
+            this.editor.resetFlex().relative(this).wTo(this.iconBar.area).h(1F);
             this.setupEditorFlex(true, false, false);
         }
+        this.resize();
 
         this.performingLayout = false;
     }
