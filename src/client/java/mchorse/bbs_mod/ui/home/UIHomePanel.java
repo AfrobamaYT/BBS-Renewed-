@@ -11,6 +11,7 @@ import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.dashboard.UIPanelSwitcher;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIOpenAssetOverlayPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
@@ -100,6 +101,8 @@ public class UIHomePanel extends UIDashboardPanel
     private final UISearchList<String> homeRecentSearch;
     private final UIIcon homeViewToggle;
 
+    private final UIPanelSwitcher panelSwitcher;
+
     private String selectedId;
     private ContentType selectedType;
     private String listLastClickedId;
@@ -133,10 +136,11 @@ public class UIHomePanel extends UIDashboardPanel
         this.homeCreateAudio = this.createHomeButton(UIKeys.PANELS_AUDIOS, Icons.SOUND, (b) ->
             UIOverlay.addOverlay(this.getContext(), new UISoundOverlayPanel((link) -> this.openAsset(ContentType.SOUNDS, link.toString()))));
 
-        this.homeDuplicateCurrent = this.createHomeButton(UIKeys.FILM_CRUD_DUPE, Icons.COPY, (b) -> this.duplicateSelected());
-        this.homeRenameCurrent = this.createHomeButton(UIKeys.FILM_CRUD_RENAME, Icons.EDIT, (b) -> this.renameSelected());
-        this.homeDeleteCurrent = this.createHomeButton(UIKeys.FILM_CRUD_REMOVE, Icons.REMOVE, (b) -> this.deleteSelected());
+        this.homeDuplicateCurrent = this.createHomeButton(UIKeys.GENERAL_DUPE, Icons.COPY, (b) -> this.duplicateSelected());
+        this.homeRenameCurrent = this.createHomeButton(UIKeys.GENERAL_RENAME, Icons.EDIT, (b) -> this.renameSelected());
+        this.homeDeleteCurrent = this.createHomeButton(UIKeys.GENERAL_REMOVE, Icons.REMOVE, (b) -> this.deleteSelected());
 
+        this.panelSwitcher = new UIPanelSwitcher(this.dashboard);
         this.updateHomeButtonsState();
 
         this.homeRecentList = new UIStringList((list) ->
@@ -248,13 +252,14 @@ public class UIHomePanel extends UIDashboardPanel
         );
 
         this.homePage.relative(this).x(0.5F, -250).y(0).w(500).h(1F);
-        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20)).column(0).vertical().stretch();
-        this.homeRecentSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20));
+        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44)).column(0).vertical().stretch();
+        this.panelSwitcher.relative(this.homePage).x(0.5F, -87).y(1F, -32).w(175).h(24);
+        this.homeRecentSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44));
         this.homeRecentSearch.search.w(1F, -25);
         this.homeMosaic.relative(this.homeRecentSearch).x(0).y(20).w(1F).h(1F, -20);
         this.homeViewToggle.relative(this.homeRecentSearch).x(1F, -22).y(0).w(20).h(20);
 
-        this.homePage.add(new UIRenderable(this::renderHomeBanner), this.homeActionsPanel, this.homeRecentSearch, this.homeMosaic, this.homeViewToggle);
+        this.homePage.add(new UIRenderable(this::renderHomeBanner), this.homeActionsPanel, this.homeRecentSearch, this.homeMosaic, this.homeViewToggle, this.panelSwitcher);
 
         this.add(this.homePage);
     }

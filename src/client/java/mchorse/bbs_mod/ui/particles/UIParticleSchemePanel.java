@@ -18,6 +18,7 @@ import mchorse.bbs_mod.resources.packs.URLSourcePack;
 import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.dashboard.UIPanelSwitcher;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDataDashboardPanel;
@@ -120,6 +121,7 @@ public class UIParticleSchemePanel extends UIDataDashboardPanel<ParticleScheme>
     private UIElement homePage;
     private UISearchList<DataPath> homeParticlesSearch;
     private UIDataPathList homeParticlesList;
+    private UIPanelSwitcher panelSwitcher;
     private UIElement homeActionsPanel;
     private UIButton homeCreateParticle;
     private UIButton homeDuplicateCurrent;
@@ -439,14 +441,17 @@ public class UIParticleSchemePanel extends UIDataDashboardPanel<ParticleScheme>
         this.updateHomeButtonsState();
 
         this.homePage.relative(this.editor).x(0.5F, -250).y(0).w(500).h(1F);
-        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20)).column(0).vertical().stretch();
+        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44)).column(0).vertical().stretch();
         
+        this.panelSwitcher = new UIPanelSwitcher(this.dashboard);
+        this.panelSwitcher.relative(this.homePage).x(0.5F, -87).y(1F, -32).w(175).h(24);
+
         UIElement spacing = new UIElement();
         spacing.h(8);
 
         this.homeActionsPanel.add(this.homeCreateParticle, spacing, this.homeDuplicateCurrent, this.homeRenameCurrent, this.homeDeleteCurrent);
-        this.homeParticlesSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20));
-        this.homePage.add(new UIRenderable(this::renderHomeBackground), this.homeActionsPanel, this.homeParticlesSearch);
+        this.homeParticlesSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44));
+        this.homePage.add(new UIRenderable(this::renderHomeBackground), this.homeActionsPanel, this.homeParticlesSearch, this.panelSwitcher);
 
         this.editor.add(this.mainView, this.homePage);
 

@@ -87,6 +87,66 @@ public class UIDocumentTabsBar extends UIControlBar
         this.activate(this.documentTabs.size() - 1);
     }
 
+    public void switchToType(ContentType type)
+    {
+        if (type == null)
+        {
+            this.activateHome();
+            return;
+        }
+
+        int index = -1;
+        for (int i = 0; i < this.documentTabs.size(); i++)
+        {
+            DocumentTab tab = this.documentTabs.get(i);
+            if (!tab.isHome && tab.type == type)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        if (index >= 0)
+        {
+            this.activate(index);
+        }
+        else
+        {
+            /* If currently on Home, convert that tab in place instead of stacking */
+            if (this.activeTab >= 0 && this.activeTab < this.documentTabs.size())
+            {
+                DocumentTab current = this.documentTabs.get(this.activeTab);
+                if (current.isHome)
+                {
+                    current.isHome = false;
+                    current.type = type;
+                    current.id = null;
+                    this.activate(this.activeTab);
+                    this.rebuild();
+                    return;
+                }
+            }
+
+            this.documentTabs.add(new DocumentTab(type, null));
+            this.rebuild();
+            this.activate(this.documentTabs.size() - 1);
+        }
+    }
+
+    public void switchHomeType(ContentType type)
+    {
+        if (this.activeTab >= 0 && this.activeTab < this.documentTabs.size())
+        {
+            DocumentTab current = this.documentTabs.get(this.activeTab);
+            if (current.isHome)
+            {
+                current.homeType = type;
+                this.activate(this.activeTab);
+                this.rebuild();
+            }
+        }
+    }
+
     public void activateHome()
     {
         for (int i = 0; i < this.documentTabs.size(); i++)
@@ -222,7 +282,15 @@ public class UIDocumentTabsBar extends UIControlBar
 
     private UIDashboardPanel resolvePanel(DocumentTab tab)
     {
-        if (tab.isHome) return this.dashboard.getPanel(UIHomePanel.class);
+        if (tab.isHome)
+        {
+            if (tab.homeType == null) return this.dashboard.getPanel(UIHomePanel.class);
+            if (tab.homeType == ContentType.FILMS) return this.dashboard.getPanel(UIFilmPanel.class);
+            if (tab.homeType == ContentType.MODELS) return this.dashboard.getPanel(UIModelPanel.class);
+            if (tab.homeType == ContentType.PARTICLES) return this.dashboard.getPanel(UIParticleSchemePanel.class);
+
+            return this.dashboard.getPanel(UIAudioEditorPanel.class);
+        }
         if (tab.type == ContentType.FILMS) return this.dashboard.getPanel(UIFilmPanel.class);
         if (tab.type == ContentType.MODELS) return this.dashboard.getPanel(UIModelPanel.class);
         if (tab.type == ContentType.PARTICLES) return this.dashboard.getPanel(UIParticleSchemePanel.class);
@@ -288,6 +356,7 @@ public class UIDocumentTabsBar extends UIControlBar
         public boolean isHome;
         public ContentType type;
         public String id;
+        public ContentType homeType;
 
         private DocumentTab(ContentType type, String id)
         {

@@ -38,6 +38,7 @@ import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.dashboard.UIPanelSwitcher;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
 import mchorse.bbs_mod.ui.dashboard.panels.IFlightSupported;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
@@ -231,6 +232,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private UIDataPathList homeFilmsList;
     private UIFilmMosaicGrid homeFilmsMosaic;
     private UIIcon homeViewToggle;
+    private UIPanelSwitcher panelSwitcher;
     private UIElement homeActionsPanel;
     private UIButton homeCreateFilm;
     private UIButton homeOpenManager;
@@ -708,17 +710,20 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         bottomIcons.add(this.toggleHorizontal, this.layoutLock, this.layoutPresets);
         this.iconBar.relative(this).x(1F, -20).y(0).w(20).h(1F).column(0).stretch();
         this.homePage.relative(this.editor).x(0.5F, -250).y(0).w(500).h(1F);
-        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20)).column(0).vertical().stretch();
+        this.homeActionsPanel.relative(this.homePage).x(0).y(HOME_BANNER_HEIGHT + 20).w(0.35F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44)).column(0).vertical().stretch();
         
+        this.panelSwitcher = new UIPanelSwitcher(this.dashboard);
+        this.panelSwitcher.relative(this.homePage).x(0.5F, -87).y(1F, -32).w(175).h(24);
+
         UIElement spacing = new UIElement();
         spacing.h(8);
 
         this.homeActionsPanel.add(this.homeCreateFilm, spacing, this.homeDuplicateCurrent, this.homeRenameCurrent, this.homeDeleteCurrent);
-        this.homeFilmsSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20));
+        this.homeFilmsSearch.relative(this.homePage).x(0.35F).y(HOME_BANNER_HEIGHT + 20).w(0.65F).h(1F, -(HOME_BANNER_HEIGHT + 20 + 44));
         this.homeFilmsSearch.search.w(1F, -25);
         this.homeFilmsMosaic.relative(this.homeFilmsSearch).x(0).y(20).w(1F).h(1F, -20);
         this.homeViewToggle.relative(this.homeFilmsSearch).x(1F, -22).y(0).w(20).h(20);
-        this.homePage.add(new UIRenderable(this::renderHomeBanner), this.homeActionsPanel, this.homeFilmsSearch, this.homeFilmsMosaic, this.homeViewToggle);
+        this.homePage.add(new UIRenderable(this::renderHomeBanner), this.homeActionsPanel, this.homeFilmsSearch, this.homeFilmsMosaic, this.homeViewToggle, this.panelSwitcher);
 
         this.editor.add(this.main, this.editArea, this.preview, this.homePage, new UIRenderable(this::renderIcons), new UIRenderable(this::renderDropZoneHighlight), new UIRenderable(this::renderFloatingPanelWindows));
         for (String id : this.panelById.keySet())
