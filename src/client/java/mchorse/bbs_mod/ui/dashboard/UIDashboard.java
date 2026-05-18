@@ -262,7 +262,8 @@ public class UIDashboard extends UIBaseMenu
             || panel instanceof UIFilmPanel
             || panel instanceof UIModelPanel
             || panel instanceof UIParticleSchemePanel
-            || panel instanceof UIAudioEditorPanel;
+            || panel instanceof UIAudioEditorPanel
+            || panel instanceof UIGraphPanel;
     }
 
     private void updateTabsBarVisibility(UIDashboardPanel panel)

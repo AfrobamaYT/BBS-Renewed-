@@ -139,8 +139,12 @@ public class UIMainMenuBar extends UIElement
     {
         menu.action(Icons.PROPERTIES, UIKeys.SELECTORS_TITLE, () ->
             UIOverlay.addOverlayRight(this.getContext(), new UISelectorsOverlayPanel(), 240));
-        menu.action(Icons.GRAPH, UIKeys.GRAPH_TOOLTIP, () ->
-            this.dashboard.setPanel(this.dashboard.getPanel(UIGraphPanel.class)));
+        menu.action(Icons.GRAPH, UIKeys.GRAPH_TOOLTIP, () -> {
+            if (this.dashboard.documentTabsBar != null)
+            {
+                this.dashboard.documentTabsBar.addOrActivate(ContentType.GRAPH, "graph_calculator");
+            }
+        });
     }
 
     private void buildHelpMenu(ContextMenuManager menu)

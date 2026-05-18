@@ -7,6 +7,7 @@ import mchorse.bbs_mod.ui.ContentType;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
+import mchorse.bbs_mod.ui.dashboard.utils.UIGraphPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.navigation.UIControlBar;
@@ -58,7 +59,10 @@ public class UIDocumentTabsBar extends UIControlBar
     public void addOrActivate(ContentType type, String id)
     {
         ContentType recentType = (type == null) ? ContentType.SOUNDS : type;
-        RecentAssetsTracker.add(recentType, id);
+        if (recentType != ContentType.GRAPH)
+        {
+            RecentAssetsTracker.add(recentType, id);
+        }
 
         int existing = this.find(type, id);
 
@@ -274,7 +278,10 @@ public class UIDocumentTabsBar extends UIControlBar
         if (!tab.isHome && tab.id != null)
         {
             ContentType recentType = (tab.type == null) ? ContentType.SOUNDS : tab.type;
-            RecentAssetsTracker.add(recentType, tab.id);
+            if (recentType != ContentType.GRAPH)
+            {
+                RecentAssetsTracker.add(recentType, tab.id);
+            }
 
             this.loadAsset(tab);
         }
@@ -330,6 +337,7 @@ public class UIDocumentTabsBar extends UIControlBar
         if (tab.type == ContentType.FILMS) return this.dashboard.getPanel(UIFilmPanel.class);
         if (tab.type == ContentType.MODELS) return this.dashboard.getPanel(UIModelPanel.class);
         if (tab.type == ContentType.PARTICLES) return this.dashboard.getPanel(UIParticleSchemePanel.class);
+        if (tab.type == ContentType.GRAPH) return this.dashboard.getPanel(UIGraphPanel.class);
 
         return this.dashboard.getPanel(UIAudioEditorPanel.class);
     }
@@ -363,6 +371,10 @@ public class UIDocumentTabsBar extends UIControlBar
                 panel.pickData(tab.id);
             }
         }
+        else if (tab.type == ContentType.GRAPH)
+        {
+            // Graph has no asset file to load
+        }
         else
         {
             UIAudioEditorPanel panel = this.dashboard.getPanel(UIAudioEditorPanel.class);
@@ -377,6 +389,7 @@ public class UIDocumentTabsBar extends UIControlBar
     private IKey titleOf(DocumentTab tab)
     {
         if (tab.isHome) return L10n.lang("bbs.ui.raw.home");
+        if (tab.type == ContentType.GRAPH) return UIKeys.GRAPH_TOOLTIP;
         if (tab.id != null) return IKey.raw(new DataPath(tab.id).getLast());
         if (tab.type == ContentType.FILMS) return UIKeys.FILM_TITLE;
         if (tab.type == ContentType.MODELS) return UIKeys.MODELS_TITLE;
@@ -391,6 +404,7 @@ public class UIDocumentTabsBar extends UIControlBar
         if (tab.type == ContentType.FILMS) return Icons.FILM;
         if (tab.type == ContentType.MODELS) return Icons.PLAYER;
         if (tab.type == ContentType.PARTICLES) return Icons.PARTICLE;
+        if (tab.type == ContentType.GRAPH) return Icons.GRAPH;
 
         return Icons.SOUND;
     }
