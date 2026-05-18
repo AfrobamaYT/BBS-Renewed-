@@ -52,7 +52,11 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
          * the keybinds are processed afterwards. */
         UIElement savePlease = new UIElement().noCulling();
 
-        savePlease.keys().register(Keys.SAVE, () -> {UIUtils.playClick(); this.save();}).active(() -> this.data != null);
+        savePlease.keys().register(Keys.SAVE, () -> 
+        {
+            UIUtils.playClick();
+            this.save();
+        }).active(() -> this.data != null);
         savePlease.keys().register(Keys.OPEN_NEW_TAB, this::addTab).active(this::areTabsEnabled);
         this.add(savePlease);
     }
