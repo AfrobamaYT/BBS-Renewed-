@@ -734,7 +734,7 @@ public class Textbox
             int sx = x + offset;
             int sw = this.font.getWidth(text.substring(min, max));
 
-            context.batcher.box(sx, y - 2, sx + sw, y + this.font.getHeight() + 2, BBSSettings.accentOverlay(0x88));
+            context.batcher.box(sx, y - 2, sx + sw, y + this.font.getHeight() + 2, BBSSettings.accentOverlay(Colors.A50));
         }
 
         context.batcher.textShadow(text, x, y, color);
