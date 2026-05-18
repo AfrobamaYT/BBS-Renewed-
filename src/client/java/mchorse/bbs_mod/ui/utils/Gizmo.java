@@ -359,7 +359,14 @@ public class Gizmo
 
     private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, int color)
     {
-        this.drawCachedRing(stack, vbo, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
+        float alpha = Colors.getA(color);
+
+        if (alpha <= 0F)
+        {
+            alpha = 1F;
+        }
+
+        this.drawCachedRing(stack, vbo, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
     }
 
     private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, float r, float g, float b, float a)

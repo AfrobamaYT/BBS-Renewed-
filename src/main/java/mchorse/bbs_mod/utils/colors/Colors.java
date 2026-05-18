@@ -23,9 +23,9 @@ public class Colors
     public static final int DARKER_GRAY = 0xff444444;
     public static final int DARK_GRAY = 0x676767;
     public static final int DARKEST_GRAY = 0xff222222;
-    public static final int RED = 0xffff4059;
-    public static final int GREEN = 0xff59d940;
-    public static final int BLUE = 0xff4073ff;
+    public static final int RED = 0xff4059;
+    public static final int GREEN = 0x59d940;
+    public static final int BLUE = 0x4073ff;
     public static final int PLANE_XZ = 0xffd940d9;
     public static final int PLANE_XY = 0xff40a6d9;
     public static final int PLANE_ZY = 0xffd9d940;
@@ -46,6 +46,11 @@ public class Colors
     public static final int CURSOR = 0xff57f52a;
 
     public static final Color COLOR = new Color();
+
+    public static int opaque(int color)
+    {
+        return A100 | (color & RGB);
+    }
 
     public static int mulRGB(int color, float factor)
     {

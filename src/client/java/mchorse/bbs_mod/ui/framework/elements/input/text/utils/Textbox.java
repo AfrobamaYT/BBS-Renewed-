@@ -723,7 +723,7 @@ public class Textbox
         boolean empty = !this.focused && this.text.isEmpty();
         String text = empty ? this.font.limitToWidth(this.placeholder.get(), this.area.w - 5) : this.getWrappedText();
         int length = text.length();
-        int color = empty ? 0xaaaaaa : this.color;
+        int color = empty ? 0xaaaaaa : Colors.opaque(this.color);
 
         if (!empty && this.isSelected())
         {
