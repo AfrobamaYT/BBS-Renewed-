@@ -29,6 +29,8 @@ import mchorse.bbs_mod.utils.RecentAssetsTracker;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.repos.IRepository;
 
+import net.minecraft.client.MinecraftClient;
+
 import java.util.function.Consumer;
 
 public class UIMainMenuBar extends UIElement
@@ -57,10 +59,10 @@ public class UIMainMenuBar extends UIElement
         brand.w(25).marginLeft(6);
 
         this.add(brand);
-        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.file"), this, this::buildFileMenu).w(28));
-        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.edit"), this, this::buildEditMenu).w(28));
-        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.tools"), this, this::buildToolsMenu).w(32));
-        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.help"), this, this::buildHelpMenu).w(28));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.file"), this, this::buildFileMenu));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.edit"), this, this::buildEditMenu));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.tools"), this, this::buildToolsMenu));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.help"), this, this::buildHelpMenu));
 
         this.row(2).preferred(999);
     }
@@ -272,6 +274,31 @@ public class UIMainMenuBar extends UIElement
             this.bar = bar;
             this.menuConsumer = menuConsumer;
             this.callback = (b) -> this.bar.toggleMenu(this, this.menuConsumer);
+
+            try
+            {
+                int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(label.get());
+                this.w(textWidth + 10);
+            }
+            catch (Exception e)
+            {
+                this.w(28);
+            }
+        }
+
+        @Override
+        public void resize()
+        {
+            try
+            {
+                int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(this.label.get());
+                this.w(textWidth + 10);
+            }
+            catch (Exception e)
+            {
+                this.w(28);
+            }
+            super.resize();
         }
 
         @Override
