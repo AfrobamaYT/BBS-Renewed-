@@ -47,6 +47,7 @@ public class UISettingsOverlayPanel extends UIOverlayPanel
         super(UIKeys.CONFIG_TITLE);
         this.title.color(0xff000000 | BBSSettings.primaryColor.get());
         this.resizable();
+        this.content.w(1F);
 
         this.sidebar = new UIScrollView(ScrollDirection.VERTICAL);
         this.sidebar.relative(this.content).x(0).y(0).w(SIDEBAR_WIDTH).h(1F);
