@@ -246,6 +246,10 @@ public class UIDocumentTabsBar extends UIControlBar
         {
             this.loadAsset(tab);
         }
+        else if (tab.isHome && target != null)
+        {
+            target.showHomeView();
+        }
 
         this.rebuild();
     }

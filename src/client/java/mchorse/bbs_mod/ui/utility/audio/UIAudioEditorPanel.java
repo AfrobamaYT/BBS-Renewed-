@@ -947,6 +947,12 @@ public class UIAudioEditorPanel extends UISidebarDashboardPanel
     }
 
     @Override
+    public void showHomeView()
+    {
+        this.openAudio(null);
+    }
+
+    @Override
     public UIDashboardPanel getMainPanel()
     {
         UIHomePanel home = this.dashboard.getPanel(UIHomePanel.class);

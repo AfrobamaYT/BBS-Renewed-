@@ -1066,6 +1066,12 @@ public class UIModelPanel extends UIDataDashboardPanel<ModelConfig>
     }
 
     @Override
+    public void showHomeView()
+    {
+        this.fill(null);
+    }
+
+    @Override
     public void fillNames(Collection<String> names)
     {
         super.fillNames(names);
