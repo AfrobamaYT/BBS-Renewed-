@@ -72,7 +72,7 @@ import java.util.function.Consumer;
 public class UIHomePanel extends UIDashboardPanel
 {
     private static final String BANNERS_URL = "https://raw.githubusercontent.com/BBSCommunity/CML-NEWS/main/Banners_Panel/banners.json";
-    private static final int HOME_BANNER_HEIGHT = 108;
+    public static final int HOME_BANNER_HEIGHT = 108;
     private static final int BANNER_DURATION = 200;
     private static final int BANNER_TRANSITION = 60;
 
@@ -787,6 +787,18 @@ public class UIHomePanel extends UIDashboardPanel
 
         BufferRenderer.drawWithGlobalProgram(builder.end());
 
+        this.renderCardAndBanners(context, this.homePage, dividerX, L10n.lang("bbs.ui.film.home.list").get());
+    }
+
+    public void renderCardAndBanners(UIContext context, UIElement customHomePage, int dividerX, String listTitle)
+    {
+        int pageX = customHomePage.area.x;
+        int pageY = customHomePage.area.y;
+        int pageW = customHomePage.area.w;
+        int pageH = customHomePage.area.h;
+        int bannerH = HOME_BANNER_HEIGHT;
+        int splitY = pageY + bannerH;
+
         context.batcher.gradientHBox(pageX - 18, pageY, pageX, pageY + pageH, 0, Colors.setA(0x000000, 0.7F));
         context.batcher.gradientHBox(pageX + pageW, pageY, pageX + pageW + 18, pageY + pageH, Colors.setA(0x000000, 0.7F), 0);
         context.batcher.box(pageX, pageY, pageX + pageW, pageY + pageH, Colors.setA(0x1e1e1e, 1F));
@@ -840,24 +852,31 @@ public class UIHomePanel extends UIDashboardPanel
             textTransitionCurr = 1F;
         }
 
-        int prevIndex = this.bannerSequence.isEmpty() ? 0 : this.bannerSequence.get((this.sequenceIndex + this.bannerSequence.size() - 1) % this.bannerSequence.size());
-        BannerEntry current = this.homeBanners.get(this.bannerIndex);
-        BannerEntry prev = this.homeBanners.get(prevIndex);
-
-        if (transition > 0.001F)
+        if (this.homeBanners.isEmpty())
         {
-            this.drawBanner(context, prev, pageX, pageY, pageW, bannerH, transition, textTransitionPrev, true);
-            this.drawBanner(context, current, pageX, pageY, pageW, bannerH, 1F - transition, textTransitionCurr, true);
+            context.batcher.box(pageX, pageY, pageX + pageW, pageY + bannerH, Colors.setA(0, 0.3F));
         }
         else
         {
-            this.drawBanner(context, current, pageX, pageY, pageW, bannerH, 1F, textTransitionCurr, true);
+            int prevIndex = this.bannerSequence.isEmpty() ? 0 : this.bannerSequence.get((this.sequenceIndex + this.bannerSequence.size() - 1) % this.bannerSequence.size());
+            BannerEntry current = this.homeBanners.get(this.bannerIndex);
+            BannerEntry prev = this.homeBanners.get(prevIndex);
+
+            if (transition > 0.001F)
+            {
+                this.drawBanner(context, prev, pageX, pageY, pageW, bannerH, transition, textTransitionPrev, true);
+                this.drawBanner(context, current, pageX, pageY, pageW, bannerH, 1F - transition, textTransitionCurr, true);
+            }
+            else
+            {
+                this.drawBanner(context, current, pageX, pageY, pageW, bannerH, 1F, textTransitionCurr, true);
+            }
         }
 
         context.batcher.box(pageX, splitY, pageX + pageW, splitY + 1, Colors.A12);
         context.batcher.box(dividerX, splitY + 1, dividerX + 1, pageY + pageH, Colors.A12);
         context.batcher.textShadow(L10n.lang("bbs.ui.film.home.actions").get(), pageX + 4, splitY + 6);
-        context.batcher.textShadow(L10n.lang("bbs.ui.film.home.list").get(), dividerX + 4, splitY + 6);
+        context.batcher.textShadow(listTitle, dividerX + 4, splitY + 6);
     }
 
     private void drawBanner(UIContext context, BannerEntry entry, int x, int y, int w, int h, float alpha, float textAlpha, boolean drawStripe)
