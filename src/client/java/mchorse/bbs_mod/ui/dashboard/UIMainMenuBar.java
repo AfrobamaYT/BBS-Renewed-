@@ -122,7 +122,7 @@ public class UIMainMenuBar extends UIElement
         menu.action(Icons.ADD, IKey.raw("New"), () -> this.openNewSubmenu());
         menu.action(Icons.FOLDER, IKey.raw("Open"), () -> this.openOpenPopup());
         menu.action(Icons.TIME, IKey.raw("Recent"), () -> this.openRecentSubmenu());
-        menu.action(Icons.SETTINGS, UIKeys.CONFIG_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.settingsPanel, 520, 320));
+        menu.action(Icons.SETTINGS, UIKeys.CONFIG_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.settingsPanel, 580, 340));
         menu.action(Icons.JOYSTICK, UIKeys.ADDONS_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.addonsPanel, 520, 320));
     }
 

@@ -54,11 +54,11 @@ public class UIValueMap
     {
         register(ValueBoolean.class, (value, ui) ->
         {
-            UIToggle toggle = UIValueFactory.booleanUI(value, null);
+            UIToggle toggle = UIValueFactory.booleanUINoLabel(value, null);
 
-            toggle.resetFlex();
+            toggle.w(18);
 
-            return Arrays.asList(toggle);
+            return Arrays.asList(UIValueFactory.column(toggle, value));
         });
 
         register(ValueDouble.class, (value, ui) ->
@@ -183,7 +183,18 @@ public class UIValueMap
 
         register(ValueLanguage.class, (value, ui) ->
         {
-            UIButton button = new UIButton(UIKeys.LANGUAGE_PICK, (b) ->
+            java.util.function.Supplier<IKey> getLangLabel = () -> {
+                for (Label<String> label : BBSModClient.getL10n().getSupportedLanguageLabels())
+                {
+                    if (label.value.equals(value.get()))
+                    {
+                        return label.title;
+                    }
+                }
+                return UIKeys.LANGUAGE_PICK;
+            };
+
+            UIButton button = new UIButton(getLangLabel.get(), (b) ->
             {
                 List<Label<String>> labels = BBSModClient.getL10n().getSupportedLanguageLabels();
                 UILabelOverlayPanel<String> panel = new UILabelOverlayPanel<>(UIKeys.LANGUAGE_PICK_TITLE, labels, (str) -> value.set(str.value));
@@ -192,7 +203,9 @@ public class UIValueMap
                 UIOverlay.addOverlay(ui.getContext(), panel);
             });
 
-            button.w(90);
+            value.postCallback((changed, flag) -> button.label = getLangLabel.get());
+
+            button.w(150);
 
             UIText credits = new UIText().text(UIKeys.LANGUAGE_CREDITS).updates();
 
