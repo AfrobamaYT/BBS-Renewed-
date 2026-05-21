@@ -123,6 +123,7 @@ public class BBSSettings
     public static ValueBoolean renderAllModelBlocks;
     public static ValueBoolean clickModelBlocks;
     public static ValueBoolean modelBlockCategoriesPanelEnabled;
+    public static ValueString modelBlockPanelLayout;
 
     public static ValueString entitySelectorsPropertyWhitelist;
 
@@ -327,6 +328,8 @@ public class BBSSettings
         clickModelBlocks = builder.getBoolean("click", true);
         modelBlockCategoriesPanelEnabled = builder.getBoolean("categories_panel_enabled", false);
         modelPbrPanelControls = builder.getBoolean("model_pbr_panel_controls", false);
+        modelBlockPanelLayout = builder.getString("panel_layout", "");
+        modelBlockPanelLayout.invisible();
 
         builder.category("entity_selectors");
         entitySelectorsPropertyWhitelist = builder.getString("whitelist", "CustomName,Name");
