@@ -33,6 +33,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.model_blocks.camera.ImmersiveModelBlockCameraController;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -404,10 +405,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         UIElement mainHandColumn = UI.column(2, UI.label(UIKeys.MODELS_ITEMS_MAIN), this.mainHand);
         UIElement offHandColumn = UI.column(2, UI.label(UIKeys.MODELS_ITEMS_OFF), this.offHand);
-        UIElement armorHeadColumn = UI.column(2, UI.label(IKey.constant("Head")), this.armorHead);
-        UIElement armorChestColumn = UI.column(2, UI.label(IKey.constant("Chest")), this.armorChest);
-        UIElement armorLegsColumn = UI.column(2, UI.label(IKey.constant("Legs")), this.armorLegs);
-        UIElement armorFeetColumn = UI.column(2, UI.label(IKey.constant("Feet")), this.armorFeet);
+        UIElement armorHeadColumn = UI.column(2, UI.label(L10n.lang("bbs.ui.model_blocks.armor.head")), this.armorHead);
+        UIElement armorChestColumn = UI.column(2, UI.label(L10n.lang("bbs.ui.model_blocks.armor.chest")), this.armorChest);
+        UIElement armorLegsColumn = UI.column(2, UI.label(L10n.lang("bbs.ui.model_blocks.armor.legs")), this.armorLegs);
+        UIElement armorFeetColumn = UI.column(2, UI.label(L10n.lang("bbs.ui.model_blocks.armor.feet")), this.armorFeet);
 
         /* Equipment is laid out as a 3-column grid (two rows). */
         float equipColumn = 1F / 3F;
@@ -450,13 +451,13 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         /* Grouped layout: toggles 2-per-row (no label truncation), the two block
            sliders side by side, then equipment as a 3-column grid. */
         this.properties = UI.column(5,
-            this.sectionHeader(IKey.constant("Display")),
+            this.sectionHeader(L10n.lang("bbs.ui.model_blocks.display")),
             UI.row(4, this.enabled, this.shadow),
             UI.row(4, this.global, this.lookAt),
             this.hitbox,
-            this.sectionHeader(IKey.constant("Block")),
+            this.sectionHeader(L10n.lang("bbs.ui.model_blocks.block")),
             UI.row(4, lightGroup, hardnessGroup),
-            this.sectionHeader(IKey.constant("Equipment")),
+            this.sectionHeader(L10n.lang("bbs.ui.model_blocks.equipment")),
             UI.row(4, armorHeadColumn, armorChestColumn, mainHandColumn),
             UI.row(4, armorLegsColumn, armorFeetColumn, offHandColumn));
 

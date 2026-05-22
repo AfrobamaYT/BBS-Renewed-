@@ -65,7 +65,7 @@ public class UIMainMenuBar extends UIElement
         this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.tools"), this, this::buildToolsMenu));
         /* Window menu is always visible; its content adapts to the active panel
            (currently only the Model Editor populates it). */
-        this.add(new UIMenuButton(IKey.constant("Window"), this, this::buildWindowMenu));
+        this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.window"), this, this::buildWindowMenu));
         this.add(new UIMenuButton(L10n.lang("bbs.ui.raw.help"), this, this::buildHelpMenu));
 
         this.row(2).preferred(999);
@@ -171,11 +171,11 @@ public class UIMainMenuBar extends UIElement
             {
                 panel.setRightVisible(!panel.isRightVisible());
             });
-            menu.action(Icons.REFRESH, IKey.constant("Reset Layout"), panel::resetLayout);
+            menu.action(Icons.REFRESH, L10n.lang("bbs.ui.dashboard.menu.reset_layout"), panel::resetLayout);
         }
         else
         {
-            menu.action(Icons.NONE, IKey.constant("No windows in this panel"), () -> {});
+            menu.action(Icons.NONE, L10n.lang("bbs.ui.dashboard.menu.no_windows"), () -> {});
         }
     }
 
