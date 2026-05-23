@@ -33,6 +33,7 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
+import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.model_blocks.camera.ImmersiveModelBlockCameraController;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -260,9 +261,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                 this.addCameraController(palette);
             }
 
-            /* Hide every card while the form palette is open. */
+            /* Hide every card while the form palette is open. pickEdit lives
+               inside middleScrollView now so it follows that visibility. */
             this.modelBlocks.setVisible(false);
-            this.pickEdit.setVisible(false);
             this.leftDragHandle.setVisible(false);
             this.leftCardResizer.setVisible(false);
             this.middleScrollView.setVisible(false);
@@ -447,9 +448,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         lightGroup.w(0.5F, -2);
         hardnessGroup.w(0.5F, -2);
 
-        /* Grouped layout: toggles 2-per-row (no label truncation), the two block
-           sliders side by side, then equipment as a 3-column grid. */
+        /* Grouped layout: Form (Pick/Edit) first, then toggles 2-per-row,
+           the two block sliders side by side, then equipment as a 3-column grid. */
         this.properties = UI.column(5,
+            this.sectionHeader(IKey.constant("Form")),
+            this.pickEdit,
             this.sectionHeader(IKey.constant("Display")),
             UI.row(4, this.enabled, this.shadow),
             UI.row(4, this.global, this.lookAt),
@@ -646,7 +649,6 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.leftDragHandle.relative(this);
         this.modelBlocks.relative(this);
-        this.pickEdit.relative(this);
         this.leftCardResizer.relative(this);
         this.middleDragHandle.relative(this);
         this.middleScrollView.relative(this);
@@ -659,19 +661,23 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
            iterated in reverse for clicks). The boundary resizer straddles two
            cards; without this order the lower card's drag handle would eat the
            click. */
-        this.add(this.leftDragHandle, this.modelBlocks, this.pickEdit,
+        this.add(this.leftDragHandle, this.modelBlocks,
                  this.middleDragHandle, this.middleScrollView,
                  this.rightDragHandle, this.rightScrollView,
                  this.leftCardResizer, this.middleCardResizer, this.rightCardResizer);
     }
 
-    /* A muted, slightly raised label used to group the Properties window into
-       readable sections. */
+    /* Section header for the Properties window — matches the category titles in
+       the Settings panel: primary-color text on a dark background, 20px tall,
+       bottom-left aligned, with breathing room above. */
     private UIElement sectionHeader(IKey label)
     {
-        UIElement header = UI.label(label, 14, 0xFF8A8A95);
+        UILabel header = UI.label(label)
+            .labelAnchor(0, 1)
+            .color(0xFF000000 | BBSSettings.primaryColor.get())
+            .background(() -> 0xFF1A1A22);
 
-        header.marginTop(3);
+        header.h(20).marginTop(8);
 
         return header;
     }
@@ -1353,32 +1359,19 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         // Update layout boundaries dynamically before resizing children elements
         this.leftDragHandle.x(this.leftCardX).y(this.leftCardY).w(this.leftCardWidth).h(22);
 
-        /* Left card body: the list fills the space; Pick/Edit pinned at the
-           bottom when a model block is selected. */
+        /* Left card body: the list fills the entire body (Pick/Edit now lives
+           in the Properties card). */
         int pad = 6;
         int bodyX = this.leftCardX + pad;
         int bodyY = this.leftCardY + 22 + pad;
         int bodyW = this.leftCardWidth - pad * 2;
         int bodyH = this.leftCardHeight - 22 - pad * 2;
         boolean leftBody = this.leftVisible && !this.leftCollapsed && !paletteOpen;
-        boolean showPick = leftBody && this.modelBlock != null;
 
-        if (showPick)
-        {
-            int peH = 20;
-            int listH = Math.max(0, bodyH - peH - pad);
-
-            this.modelBlocks.x(bodyX).y(bodyY).w(bodyW).h(listH);
-            this.pickEdit.x(bodyX).y(bodyY + listH + pad).w(bodyW).h(peH);
-        }
-        else
-        {
-            this.modelBlocks.x(bodyX).y(bodyY).w(bodyW).h(Math.max(0, bodyH));
-        }
+        this.modelBlocks.x(bodyX).y(bodyY).w(bodyW).h(Math.max(0, bodyH));
 
         this.leftDragHandle.setVisible(this.leftVisible && !paletteOpen);
         this.modelBlocks.setVisible(leftBody);
-        this.pickEdit.setVisible(showPick);
         this.leftCardResizer.setVisible(this.leftVisible && !this.leftCollapsed && !paletteOpen);
 
         this.middleDragHandle.x(this.middleCardX).y(this.middleCardY).w(this.middleCardWidth).h(22);

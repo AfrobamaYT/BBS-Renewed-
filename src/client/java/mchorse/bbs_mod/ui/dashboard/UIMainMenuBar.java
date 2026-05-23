@@ -15,6 +15,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIAboutOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIOpenAssetOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.utils.UIGraphPanel;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
+import mchorse.bbs_mod.ui.triggers.UITriggerBlockPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -172,6 +173,22 @@ public class UIMainMenuBar extends UIElement
                 panel.setRightVisible(!panel.isRightVisible());
             });
             menu.action(Icons.REFRESH, IKey.constant("Reset Layout"), panel::resetLayout);
+        }
+        else if (this.dashboard.panels.panel instanceof UITriggerBlockPanel trigger)
+        {
+            menu.action(trigger.isListVisible() ? Icons.CHECKMARK : Icons.NONE, IKey.constant("Triggers"), () ->
+            {
+                trigger.setListVisible(!trigger.isListVisible());
+            });
+            menu.action(trigger.isActionsVisible() ? Icons.CHECKMARK : Icons.NONE, IKey.constant("Actions"), () ->
+            {
+                trigger.setActionsVisible(!trigger.isActionsVisible());
+            });
+            menu.action(trigger.isGeometryVisible() ? Icons.CHECKMARK : Icons.NONE, IKey.constant("Geometry"), () ->
+            {
+                trigger.setGeometryVisible(!trigger.isGeometryVisible());
+            });
+            menu.action(Icons.REFRESH, IKey.constant("Reset Layout"), trigger::resetLayout);
         }
         else
         {
