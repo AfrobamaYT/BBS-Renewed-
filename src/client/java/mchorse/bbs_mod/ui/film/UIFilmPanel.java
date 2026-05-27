@@ -2130,6 +2130,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         MapType data = new MapType();
         data.put("film_layout", BBSSettings.editorLayoutSettings.getFilmLayoutRoot().toData());
+        data.putInt("video_frame_width", BBSSettings.videoSettings.width.get());
+        data.putInt("video_frame_height", BBSSettings.videoSettings.height.get());
+        data.putInt("video_frame_rate", BBSSettings.videoSettings.frameRate.get());
+        data.putInt("video_motion_blur", BBSSettings.videoSettings.motionBlur.get());
         return data;
     }
 
@@ -2146,6 +2150,26 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             BBSSettings.editorLayoutSettings.setFilmLayoutRoot(root);
             this.setupEditorFlex(true);
+        }
+
+        if (data.has("video_frame_width"))
+        {
+            BBSSettings.videoSettings.width.set(data.getInt("video_frame_width"));
+        }
+
+        if (data.has("video_frame_height"))
+        {
+            BBSSettings.videoSettings.height.set(data.getInt("video_frame_height"));
+        }
+
+        if (data.has("video_frame_rate"))
+        {
+            BBSSettings.videoSettings.frameRate.set(data.getInt("video_frame_rate"));
+        }
+
+        if (data.has("video_motion_blur"))
+        {
+            BBSSettings.videoSettings.motionBlur.set(data.getInt("video_motion_blur"));
         }
     }
 
