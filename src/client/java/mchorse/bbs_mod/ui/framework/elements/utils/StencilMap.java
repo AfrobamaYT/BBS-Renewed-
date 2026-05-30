@@ -20,10 +20,13 @@ public class StencilMap
 
     public void setup()
     {
-        this.objectIndex = 7;
+        /* Pickable form parts start right after every gizmo stencil id so they
+         * never share an index with a gizmo handle (the sphere and view ring
+         * included), which would otherwise hijack the click. */
+        this.objectIndex = Gizmo.STENCIL_VIEW + 1;
 
-        /* Reset map and setup pairs for Gizmo's individual axes
-         * and perpendicular planes */
+        /* Reset map and setup pairs for Gizmo's individual axes, perpendicular
+         * planes, the trackball sphere and the shared view-plane ring */
         this.indexMap.clear();
         this.indexMap.put(Gizmo.STENCIL_X, new Pair<>(null, "x"));
         this.indexMap.put(Gizmo.STENCIL_Y, new Pair<>(null, "y"));
@@ -31,6 +34,8 @@ public class StencilMap
         this.indexMap.put(Gizmo.STENCIL_XZ, new Pair<>(null, "xz"));
         this.indexMap.put(Gizmo.STENCIL_XY, new Pair<>(null, "xy"));
         this.indexMap.put(Gizmo.STENCIL_ZY, new Pair<>(null, "zy"));
+        this.indexMap.put(Gizmo.STENCIL_XYZ, new Pair<>(null, "xyz"));
+        this.indexMap.put(Gizmo.STENCIL_VIEW, new Pair<>(null, "view"));
     }
 
     public void addPicking(Form form)

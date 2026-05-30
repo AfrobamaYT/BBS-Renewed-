@@ -100,7 +100,7 @@ public class UIFilmController extends UIElement
     public static final int CAMERA_MODE_FIRST_PERSON = 3;
     public static final int CAMERA_MODE_THIRD_PERSON_BACK = 4;
     public static final int CAMERA_MODE_THIRD_PERSON_FRONT = 5;
-    private static final int REPLAY_STENCIL_OFFSET = Gizmo.STENCIL_XYZ + 1;
+    private static final int REPLAY_STENCIL_OFFSET = Gizmo.STENCIL_VIEW + 1;
 
     public final UIFilmPanel panel;
 

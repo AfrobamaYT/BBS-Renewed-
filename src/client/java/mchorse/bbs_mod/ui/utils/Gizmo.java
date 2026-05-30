@@ -22,6 +22,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.gl.VertexBuffer;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -35,6 +36,10 @@ public class Gizmo
     public final static int STENCIL_XY = 5;
     public final static int STENCIL_ZY = 6;
     public final static int STENCIL_XYZ = 7;
+    public final static int STENCIL_VIEW = 8;
+
+    /** Radius of the view-plane ring relative to the per-axis rings. */
+    private final static float VIEW_RING_SCALE = 1.2F;
 
     public final static Gizmo INSTANCE = new Gizmo();
 
@@ -159,7 +164,7 @@ public class Gizmo
             return false;
         }
 
-        if (index >= STENCIL_X && index <= STENCIL_XYZ)
+        if (index >= STENCIL_X && index <= STENCIL_VIEW)
         {
             this.index = index;
             this.mouseX = mouseX;
@@ -176,6 +181,7 @@ public class Gizmo
                 else if ((this.mode == Mode.TRANSLATE || this.mode == Mode.SCALE) && this.index == STENCIL_XY) transform.enableMode(this.mode.ordinal(), Axis.X, Axis.Y, drag);
                 else if ((this.mode == Mode.TRANSLATE || this.mode == Mode.SCALE) && this.index == STENCIL_ZY) transform.enableMode(this.mode.ordinal(), Axis.Z, Axis.Y, drag);
                 else if (this.mode == Mode.ROTATE && BBSSettings.rotate3dSphere.get() && this.index == STENCIL_XYZ) transform.enableTrackball(drag);
+                else if (this.mode == Mode.ROTATE && !BBSSettings.rotateHideRings.get() && this.index == STENCIL_VIEW) transform.enableViewRotate(drag);
             }
 
             return true;
@@ -195,7 +201,7 @@ public class Gizmo
         {
             this.currentTransform = null;
 
-            if (this.index < STENCIL_X || this.index > STENCIL_XYZ)
+            if (this.index < STENCIL_X || this.index > STENCIL_VIEW)
             {
                 this.index = -1;
             }
@@ -389,6 +395,36 @@ public class Gizmo
         stack.pop();
     }
 
+    private void drawCachedRingBillboard(MatrixStack stack, VertexBuffer vbo, float r, float g, float b, float a)
+    {
+        stack.push();
+
+        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Vector3f toCamera = matrix.getTranslation(new Vector3f()).negate();
+        Matrix3f basis = matrix.get3x3(new Matrix3f());
+
+        if (Math.abs(basis.determinant()) > 1.0E-8F)
+        {
+            basis.invert().transform(toCamera);
+        }
+
+        if (toCamera.lengthSquared() > 1.0E-8F)
+        {
+            toCamera.normalize();
+            stack.multiply(new Quaternionf().rotationTo(0F, 1F, 0F, toCamera.x, toCamera.y, toCamera.z));
+        }
+
+        stack.scale(VIEW_RING_SCALE, VIEW_RING_SCALE, VIEW_RING_SCALE);
+
+        RenderSystem.setShaderColor(r, g, b, a);
+        vbo.bind();
+        vbo.draw(stack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorProgram());
+        VertexBuffer.unbind();
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+
+        stack.pop();
+    }
+
     private void drawRotatePie(MatrixStack stack, Axis axis)
     {
         if (this.currentTransform == null || this.currentTransform.getDrag() == null) return;
@@ -559,11 +595,20 @@ public class Gizmo
                 }
             }
 
+            boolean viewActive = editing && this.currentTransform.isViewRotate();
+
             RenderSystem.depthFunc(GL11.GL_ALWAYS);
             if (!BBSSettings.rotateHideRings.get()) {
                 if (!editing || activeAxis == Axis.Z) this.drawCachedRing(stack, this.rotateRingVbo, Axis.Z, Colors.BLUE);
                 if (!editing || activeAxis == Axis.X) this.drawCachedRing(stack, this.rotateRingVbo, Axis.X, Colors.RED);
                 if (!editing || activeAxis == Axis.Y) this.drawCachedRing(stack, this.rotateRingVbo, Axis.Y, Colors.GREEN);
+
+                if (!editing || viewActive)
+                {
+                    int color = Colors.LIGHTEST_GRAY;
+
+                    this.drawCachedRingBillboard(stack, this.rotateRingVbo, Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
+                }
             }
 
             if (editing && activeAxis != null)
@@ -680,10 +725,14 @@ public class Gizmo
                 }
             }
 
+            boolean viewActive = editing && this.currentTransform.isViewRotate();
+
             if (!BBSSettings.rotateHideRings.get()) {
                 if (!editing || activeAxis == Axis.Z) this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.Z, STENCIL_Z / 255F, 0F, 0F, 1F);
                 if (!editing || activeAxis == Axis.X) this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.X, STENCIL_X / 255F, 0F, 0F, 1F);
                 if (!editing || activeAxis == Axis.Y) this.drawCachedRing(stack, this.rotateStencilRingVbo, Axis.Y, STENCIL_Y / 255F, 0F, 0F, 1F);
+
+                if (!editing || viewActive) this.drawCachedRingBillboard(stack, this.rotateStencilRingVbo, STENCIL_VIEW / 255F, 0F, 0F, 1F);
             }
             
             RenderSystem.enableDepthTest();
