@@ -12,6 +12,10 @@ public class TextureLayer
     public boolean visible = true;
     public float opacity = 1.0F;
 
+    /** Pixel offset of this layer within the document, applied by the move tool and baked in on flatten. */
+    public int offsetX;
+    public int offsetY;
+
     public TextureLayer(String name, Pixels pixels)
     {
         this.name = name;

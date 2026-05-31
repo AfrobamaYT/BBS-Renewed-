@@ -102,6 +102,10 @@ public class UIPixelsEditor extends UICanvasEditor
     /** True while the current stroke is the right-mouse-button temporary eraser. */
     private boolean secondaryEraser;
 
+    /** Active layer's pixel offset captured at the start of a move-tool drag. */
+    private int moveStartOffsetX;
+    private int moveStartOffsetY;
+
     public UIPixelsEditor()
     {
         super();
@@ -1137,6 +1141,22 @@ public class UIPixelsEditor extends UICanvasEditor
             return;
         }
 
+        if (tool == TexturePaintTool.MOVE)
+        {
+            TextureLayer layer = this.document == null ? null : this.document.getActiveLayer();
+
+            if (layer != null)
+            {
+                /* Anchor the drag to the layer's current offset and the press position; the offset
+                 * is recomputed as startOffset + (currentPixel - startPixel) each frame so slow
+                 * sub-pixel drags accumulate correctly without drift. */
+                this.moveStartOffsetX = layer.offsetX;
+                this.moveStartOffsetY = layer.offsetY;
+            }
+
+            return;
+        }
+
         if (this.isStrokePaintTool())
         {
             this.pixelsUndo = new PixelsUndo();
@@ -1228,8 +1248,11 @@ public class UIPixelsEditor extends UICanvasEditor
             {
                 if (layer.visible && layer.texture != null)
                 {
+                    /* Shift the layer quad by its pixel offset (move tool); the canvas clip keeps it
+                     * within the editor, and flattening crops it to the document bounds. */
+                    Area layerArea = this.calculate(x + layer.offsetX, y + layer.offsetY, x + layer.offsetX + this.w, y + layer.offsetY + this.h);
                     int color = Colors.setA(Colors.WHITE, layer.opacity);
-                    context.batcher.texturedBox(layer.texture, color, area.x, area.y, area.w, area.h, 0, 0, layer.texture.width, layer.texture.height, layer.texture.width, layer.texture.height);
+                    context.batcher.texturedBox(layer.texture, color, layerArea.x, layerArea.y, layerArea.w, layerArea.h, 0, 0, layer.texture.width, layer.texture.height, layer.texture.width, layer.texture.height);
                 }
             }
         }
@@ -1267,6 +1290,26 @@ public class UIPixelsEditor extends UICanvasEditor
 
                 this.lastX = context.mouseX;
                 this.lastY = context.mouseY;
+            }
+            else if (this.getActivePaintTool() == TexturePaintTool.MOVE)
+            {
+                TextureLayer layer = this.document == null ? null : this.document.getActiveLayer();
+
+                if (layer != null)
+                {
+                    /* lastX/lastY stay pinned to the drag origin so the offset tracks the total drag. */
+                    Vector2i start = this.getHoverPixel(this.lastX, this.lastY);
+                    Vector2i current = this.getHoverPixel(context.mouseX, context.mouseY);
+                    int newX = this.moveStartOffsetX + (current.x - start.x);
+                    int newY = this.moveStartOffsetY + (current.y - start.y);
+
+                    if (newX != layer.offsetX || newY != layer.offsetY)
+                    {
+                        layer.offsetX = newX;
+                        layer.offsetY = newY;
+                        this.wasChanged();
+                    }
+                }
             }
             else if (this.isStrokePaintTool())
             {

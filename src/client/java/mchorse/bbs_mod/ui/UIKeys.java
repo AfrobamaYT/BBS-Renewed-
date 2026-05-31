@@ -1022,6 +1022,7 @@ public class UIKeys
     public static final IKey TEXTURES_TOOLTIP = L10n.lang("bbs.ui.textures.tooltip");
     public static final IKey TEXTURES_TOOLS_BRUSH = L10n.lang("bbs.ui.textures.tools.brush");
     public static final IKey TEXTURES_TOOLS_ERASER = L10n.lang("bbs.ui.textures.tools.eraser");
+    public static final IKey TEXTURES_TOOLS_MOVE = L10n.lang("bbs.ui.textures.tools.move");
     public static final IKey TEXTURES_TOOLS_FILL = L10n.lang("bbs.ui.textures.tools.fill");
     public static final IKey TEXTURES_TOOLS_EYEDROPPER = L10n.lang("bbs.ui.textures.tools.eyedropper");
     public static final IKey TEXTURES_TOOLS_SELECTION = L10n.lang("bbs.ui.textures.tools.selection");

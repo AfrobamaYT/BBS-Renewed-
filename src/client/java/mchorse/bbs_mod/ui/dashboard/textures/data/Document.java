@@ -132,7 +132,9 @@ public class Document implements IMapSerializable
         {
             if (layer.visible && layer.pixels != null && layer.opacity > 0F)
             {
-                output.draw(layer.pixels, 0, 0, layer.opacity);
+                /* Draw at the layer's offset; Pixels.draw clips to the output bounds, so any part
+                 * of the layer pushed outside the canvas by the move tool is correctly cropped. */
+                output.draw(layer.pixels, layer.offsetX, layer.offsetY, layer.opacity);
             }
         }
 
@@ -187,6 +189,8 @@ public class Document implements IMapSerializable
             layerData.putString("name", layer.name);
             layerData.putFloat("opacity", layer.opacity);
             layerData.putBool("visible", layer.visible);
+            layerData.putInt("offsetX", layer.offsetX);
+            layerData.putInt("offsetY", layer.offsetY);
             layerData.put("pixels", new IntArrayType(toARGB(layer.pixels)));
 
             layersData.add(layerData);
@@ -222,6 +226,8 @@ public class Document implements IMapSerializable
 
                 layer.opacity = layerData.getFloat("opacity", 1F);
                 layer.visible = layerData.getBool("visible", true);
+                layer.offsetX = layerData.getInt("offsetX", 0);
+                layer.offsetY = layerData.getInt("offsetY", 0);
 
                 this.layers.add(layer);
             }

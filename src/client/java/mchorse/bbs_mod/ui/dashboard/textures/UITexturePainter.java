@@ -120,6 +120,7 @@ public class UITexturePainter extends UIElement
 
     private UIIcon toolIconBrush;
     private UIIcon toolIconEraser;
+    private UIIcon toolIconMove;
     private UIIcon toolIconFill;
     private UIIcon toolIconPipette;
     private UIIcon toolIconSelection;
@@ -194,6 +195,7 @@ public class UITexturePainter extends UIElement
 
         this.toolIconBrush = this.createToolIcon(Icons.BRUSH, UIKeys.TEXTURES_TOOLS_BRUSH, TexturePaintTool.BRUSH);
         this.toolIconEraser = this.createToolIcon(Icons.ERASER, UIKeys.TEXTURES_TOOLS_ERASER, TexturePaintTool.ERASER);
+        this.toolIconMove = this.createToolIcon(Icons.ALL_DIRECTIONS, UIKeys.TEXTURES_TOOLS_MOVE, TexturePaintTool.MOVE);
         this.toolIconFill = this.createToolIcon(Icons.BUCKET, UIKeys.TEXTURES_TOOLS_FILL, TexturePaintTool.FILL);
         this.toolIconPipette = this.createToolIcon(Icons.EYEDROPPER, UIKeys.TEXTURES_TOOLS_EYEDROPPER, TexturePaintTool.PIPETTE);
         this.toolIconSelection = this.createToolIcon(Icons.OUTLINE, UIKeys.TEXTURES_TOOLS_SELECTION, TexturePaintTool.SELECTION);
@@ -202,7 +204,7 @@ public class UITexturePainter extends UIElement
 
         this.iconBar.add(this.saveIcon, this.resizeIcon, this.extractIcon,
             this.toolIconBrush.marginTop(TOOL_SEPARATOR_GAP),
-            this.toolIconEraser, this.toolIconFill, this.toolIconPipette,
+            this.toolIconEraser, this.toolIconMove, this.toolIconFill, this.toolIconPipette,
             this.toolIconSelection,
             this.modelPreviewIcon.marginTop(TOOL_SEPARATOR_GAP));
     }
@@ -372,6 +374,7 @@ public class UITexturePainter extends UIElement
         {
             case BRUSH -> this.toolIconBrush;
             case ERASER -> this.toolIconEraser;
+            case MOVE -> this.toolIconMove;
             case FILL -> this.toolIconFill;
             case PIPETTE -> this.toolIconPipette;
             case SELECTION -> this.toolIconSelection;

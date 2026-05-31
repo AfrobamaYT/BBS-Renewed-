@@ -1291,6 +1291,7 @@
 	"bbs.ui.textures.tooltip": "Texture manager",
 	"bbs.ui.textures.tools.brush": "Brush",
 	"bbs.ui.textures.tools.eraser": "Eraser",
+	"bbs.ui.textures.tools.move": "Move layer",
 	"bbs.ui.textures.tools.fill": "Fill",
 	"bbs.ui.textures.tools.eyedropper": "Eyedropper",
 	"bbs.ui.textures.tools.selection": "Selection",
