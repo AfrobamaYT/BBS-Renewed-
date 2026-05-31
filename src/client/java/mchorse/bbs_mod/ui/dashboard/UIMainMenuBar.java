@@ -16,6 +16,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.overlay.UIOpenAssetOverlayPanel;
 import mchorse.bbs_mod.ui.dashboard.utils.UIGraphPanel;
 import mchorse.bbs_mod.ui.film.UIFilmLogOverlayPanel;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.utils.FilmProjectHandler;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
@@ -133,9 +134,9 @@ public class UIMainMenuBar extends UIElement
         menu.action(Icons.FOLDER, L10n.lang("bbs.ui.raw.open"), () -> this.openOpenPopup());
         menu.action(Icons.TIME, L10n.lang("bbs.ui.raw.recent"), () -> this.openRecentSubmenu());
 
-        if (this.dashboard.panels.panel instanceof UIDataDashboardPanel<?> data && data.getData() != null)
+        if (this.dashboard.panels.panel instanceof UIFilmPanel filmPanel && filmPanel.getData() != null)
         {
-            menu.action(Icons.SAVED, UIKeys.GENERAL_SAVE, data::save);
+            menu.action(Icons.UPLOAD, L10n.lang("bbs.ui.film.export_project"), () -> FilmProjectHandler.exportProject(filmPanel));
         }
 
         menu.action(Icons.SETTINGS, UIKeys.CONFIG_TITLE, () -> UIOverlay.addOverlay(this.getContext(), this.dashboard.settingsPanel, 580, 340));
