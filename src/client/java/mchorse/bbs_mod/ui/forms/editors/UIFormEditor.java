@@ -400,6 +400,11 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
 
     public boolean startSphereGizmo(UIContext context)
     {
+        if (this.statesEditor.isVisible())
+        {
+            return this.statesKeyframes.startSphereGizmo(context);
+        }
+
         UIPropTransform transform = this.editor.getEditableTransform();
         GizmoDrag drag = this.buildGizmoDrag(transform, context.getTransition());
 
@@ -454,6 +459,13 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
 
     public void pickFormFromRenderer(Pair<Form, String> pair)
     {
+        if (this.statesEditor.isVisible())
+        {
+            this.statesKeyframes.pickFormFromRenderer(pair);
+
+            return;
+        }
+
         if (Window.isCtrlPressed() && !pair.b.isEmpty()) this.bodyPartEditor.pickBone(pair);
         else if (Window.isCtrlPressed()) UIReplaysEditorUtils.offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickFormBone(pair.a, bone));
         else if (Window.isShiftPressed()) UIReplaysEditorUtils.offerHierarchy(this.getContext(), pair.a, pair.b, (bone) -> this.pickFormBone(pair.a, bone));

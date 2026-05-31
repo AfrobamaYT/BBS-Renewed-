@@ -307,6 +307,17 @@ public class UIAnimationStateEditor extends UIElement
                     return true;
                 }
 
+                /* The rotate sphere is picked in screen space (it no longer writes to the stencil),
+                 * so a bone under the sphere defers to a pending pick: drag starts the trackball,
+                 * a plain click falls through to bone selection. Without this the trackball is
+                 * unreachable whenever the rings are hidden. Mirrors UIFormEditor.clickViewport. */
+                if (context.mouseButton == 0 && this.editor.renderer.isSphereHovered() && Gizmo.INSTANCE.isSphereInteractive())
+                {
+                    this.editor.renderer.beginPendingSpherePick(context, pair);
+
+                    return true;
+                }
+
                 if (context.mouseButton == 0 || (context.mouseButton == 2 && Window.isCtrlPressed()))
                 {
                     if (Window.isCtrlPressed()) UIReplaysEditorUtils.offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
@@ -345,6 +356,30 @@ public class UIAnimationStateEditor extends UIElement
     public void pickForm(Form form, String bone)
     {
         UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.editor, form, bone, false);
+    }
+
+    /**
+     * Starts the trackball on the keyframe transform. Routed here from
+     * {@link UIFormEditor#startSphereGizmo} (and the renderer's deferred pick) so the gizmo uses the
+     * animation-state transform and its state-aware drag rather than the form editor's.
+     */
+    public boolean startSphereGizmo(UIContext context)
+    {
+        UIPropTransform transform = UIReplaysEditorUtils.getEditableTransform(this.keyframeEditor);
+        GizmoDrag drag = this.buildGizmoDrag(transform, context.getTransition());
+
+        return Gizmo.INSTANCE.start(Gizmo.STENCIL_XYZ, context.mouseX, context.mouseY, transform, drag);
+    }
+
+    /**
+     * Bone selection for the renderer's deferred sphere pick (a click that didn't turn into a
+     * trackball drag). Mirrors the left-click branch of {@link #clickViewport}.
+     */
+    public void pickFormFromRenderer(Pair<Form, String> pair)
+    {
+        if (Window.isCtrlPressed()) UIReplaysEditorUtils.offerAdjacent(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
+        else if (Window.isShiftPressed()) UIReplaysEditorUtils.offerHierarchy(this.getContext(), pair.a, pair.b, (bone) -> this.pickForm(pair.a, bone));
+        else this.pickForm(pair.a, pair.b);
     }
 
     private GizmoDrag buildGizmoDrag(UIPropTransform transform, float transition)
