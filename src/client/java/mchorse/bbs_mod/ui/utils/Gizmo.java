@@ -762,6 +762,16 @@ public class Gizmo
         stack.pop();
     }
 
+    /**
+     * Factor the move/scale handles shrink by so they nest inside the rotation
+     * rings in combined mode. With "hide rotation rings" on there is nothing to
+     * nest inside, so they keep their full (larger) size.
+     */
+    private float combinedInnerScale()
+    {
+        return this.mode == Mode.COMBINED && !BBSSettings.rotateHideRings.get() ? COMBINED_INNER_SCALE : 1F;
+    }
+
     private void drawRotateHandles(MatrixStack stack, boolean editing, int activeOp)
     {
         this.updateVbos();
@@ -821,7 +831,7 @@ public class Gizmo
         boolean showScale = this.mode.shows(Op.SCALE) && (!editing || activeOp == Op.SCALE.modeOrdinal);
         boolean showRotate = this.mode.shows(Op.ROTATE) && (!editing || activeOp == Op.ROTATE.modeOrdinal);
 
-        axisSize *= scale * (this.mode == Mode.COMBINED ? COMBINED_INNER_SCALE : 1F);
+        axisSize *= scale * this.combinedInnerScale();
         axisOffset *= scale * thickness;
 
         BufferBuilder builder = Tessellator.getInstance().getBuffer();
@@ -924,7 +934,7 @@ public class Gizmo
         boolean showScale = this.mode.shows(Op.SCALE) && (!editing || activeOp == Op.SCALE.modeOrdinal);
         boolean showRotate = this.mode.shows(Op.ROTATE) && (!editing || activeOp == Op.ROTATE.modeOrdinal);
 
-        axisSize *= scale * (this.mode == Mode.COMBINED ? COMBINED_INNER_SCALE : 1F);
+        axisSize *= scale * this.combinedInnerScale();
         axisOffset *= scale * thickness;
 
         RenderSystem.disableDepthTest();
