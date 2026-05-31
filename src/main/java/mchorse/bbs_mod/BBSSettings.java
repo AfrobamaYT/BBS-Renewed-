@@ -147,7 +147,7 @@ public class BBSSettings {
 	private static final float MAX_BACKGROUND_BRIGHTNESS = 1.5F;
 	private static final float IDENTITY_BRIGHTNESS = 1F;
 	private static final float BRIGHTNESS_EPSILON = 0.001F;
-	private static final int DEFAULT_PRIMARY_COLOR = 0xffff1493;
+	private static final int DEFAULT_PRIMARY_COLOR = 0xffff3242;
 	private static final int LIGHT_CHROME_SURFACE = 0xffe6e9ef;
 	private static final int DARK_CHROME_SURFACE = 0xff111316;
 	private static final int LIGHT_BASE_SURFACE = 0xfff1f4f8;
@@ -398,7 +398,7 @@ public class BBSSettings {
 		coloredBackground = builder.getBoolean("colored_background", false);
 		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS);
 		primaryColor = builder.getInt("primary_color", DEFAULT_PRIMARY_COLOR).color();
-		stencilHighlightColor = builder.getInt("stencil_highlight_color", Colors.setA(0x0080FF, 0.5F)).colorAlpha();
+		stencilHighlightColor = builder.getInt("stencil_highlight_color", 0x2EFFFFFF).colorAlpha();
 		theme = builder.getInt("theme", DEFAULT_THEME);
 		editorTrackWidth = builder.getInt("track_width", 2, 1, 10);
 		keyframeDefaultShape = builder.getInt("keyframe_default_shape", 0, 0, KeyframeShape.values().length - 1);
@@ -409,11 +409,11 @@ public class BBSSettings {
 		axesThickness = builder.getFloat("axes_thickness", 1F, 0.25F, 3F);
 		axesKeepScreenSize = builder.getBoolean("axes_keep_screen_size", true);
 		rotate3dSphere = builder.getBoolean("rotate_3d_sphere", true);
-		rotate3dSphereColor = builder.getInt("rotate_3d_sphere_color", Colors.setA(Colors.WHITE, 0.15F)).colorAlpha();
+		rotate3dSphereColor = builder.getInt("rotate_3d_sphere_color", Colors.setA(Colors.WHITE, 0F)).colorAlpha();
 		rotateHideRings = builder.getBoolean("rotate_hide_rings", false);
 		transformLocalDefault = builder.getBoolean("transform_local_default", false);
 		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
-		trackballSensitivity = builder.getFloat("trackball_sensitivity", 0.4F, 0.05F, 2F);
+		trackballSensitivity = builder.getFloat("trackball_sensitivity", 1F, 0.05F, 2F);
 
 		builder.category("tutorials");
 		enableCursorRendering = builder.getBoolean("cursor", false);
