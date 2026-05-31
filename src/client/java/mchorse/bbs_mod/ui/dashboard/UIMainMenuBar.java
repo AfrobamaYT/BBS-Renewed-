@@ -20,6 +20,7 @@ import mchorse.bbs_mod.ui.film.utils.FilmProjectHandler;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UICreateAssetOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockPanel;
@@ -283,16 +284,10 @@ public class UIMainMenuBar extends UIElement
 
     private void createNewAsset(ContentType type)
     {
-        UIPromptOverlayPanel panel = new UIPromptOverlayPanel(
-            UIKeys.GENERAL_ADD,
-            UIKeys.PANELS_MODALS_ADD,
+        UICreateAssetOverlayPanel panel = new UICreateAssetOverlayPanel(
+            type,
             (name) ->
             {
-                if (name.trim().isEmpty())
-                {
-                    return;
-                }
-
                 IRepository repository = type.getRepository();
                 ValueGroup created = (ValueGroup) repository.create(name);
 
@@ -310,8 +305,7 @@ public class UIMainMenuBar extends UIElement
                 }
             }
         );
-        panel.text.filename();
-        UIOverlay.addOverlay(this.getContext(), panel);
+        UIOverlay.addOverlay(this.getContext(), panel, 260, 160);
     }
 
     private void openOpenPopup()
