@@ -531,7 +531,7 @@ public class Gizmo
             float radius = 0.22F * scale;
             float thicknessRing = 0.015F * scale * thickness;
             float outlinePad = 0.015F * scale * thickness;
-            float thicknessStencil = 0.025F * scale * thickness + outlinePad;
+            float thicknessStencil = 0.05F * scale * thickness + outlinePad;
 
             builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
@@ -901,7 +901,7 @@ public class Gizmo
 
         stack.push();
         stack.scale(distanceScale, distanceScale, distanceScale);
-        this.drawAxes(stack, map, 0.25F, 0.015F);
+        this.drawAxes(stack, map, 0.25F, 0.025F);
         stack.pop();
         stack.pop();
     }

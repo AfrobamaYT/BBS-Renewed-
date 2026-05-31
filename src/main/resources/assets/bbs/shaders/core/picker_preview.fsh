@@ -24,14 +24,7 @@ void main()
 
     if (totalIndex == Target)
     {
-        if (Target >= 7)
-        {
-            color = HighlightColor;
-        }
-        else
-        {
-            color = vec4(1.0, 1.0, 1.0, 0.5);
-        }
+        color = HighlightColor;
     }
     else
     {
