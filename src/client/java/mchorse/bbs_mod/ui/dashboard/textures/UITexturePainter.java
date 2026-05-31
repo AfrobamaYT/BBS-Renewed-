@@ -333,6 +333,7 @@ public class UITexturePainter extends UIElement
         this.keys().register(Keys.PIXEL_SWAP, this::swapColors).inside().category(category);
         this.keys().register(Keys.PIXEL_TOOL_BRUSH, () -> this.userSelectTool(TexturePaintTool.BRUSH)).inside().category(category);
         this.keys().register(Keys.PIXEL_TOOL_ERASER, () -> this.userSelectTool(TexturePaintTool.ERASER)).inside().category(category);
+        this.keys().register(Keys.PIXEL_TOOL_MOVE, () -> this.userSelectTool(TexturePaintTool.MOVE)).inside().category(category);
         this.keys().register(Keys.PIXEL_TOOL_FILL, () -> this.userSelectTool(TexturePaintTool.FILL)).inside().category(category);
         this.keys().register(Keys.PIXEL_TOOL_SELECTION, () -> this.userSelectTool(TexturePaintTool.SELECTION)).inside().category(category);
         this.keys().register(Keys.PIXEL_BRUSH_DEC, () -> this.adjustBrushSize(-1)).inside().category(category);

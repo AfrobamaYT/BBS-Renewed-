@@ -1257,6 +1257,7 @@
 	"bbs.ui.textures.keys.brush_inc": "Увеличить размер кисти",
 	"bbs.ui.textures.keys.tool_brush": "Выбрать кисть",
 	"bbs.ui.textures.keys.tool_eraser": "Выбрать ластик",
+	"bbs.ui.textures.keys.tool_move": "Выбрать инструмент перемещения",
 	"bbs.ui.textures.keys.tool_fill": "Выбрать заливку (ведро)",
 	"bbs.ui.textures.layers": "Слои",
 	"bbs.ui.textures.layers.add": "Добавить слой...",

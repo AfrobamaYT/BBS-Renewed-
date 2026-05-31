@@ -1264,6 +1264,7 @@
 	"bbs.ui.textures.keys.brush_inc": "Increase brush size",
 	"bbs.ui.textures.keys.tool_brush": "Select brush tool",
 	"bbs.ui.textures.keys.tool_eraser": "Select eraser tool",
+	"bbs.ui.textures.keys.tool_move": "Select move tool",
 	"bbs.ui.textures.keys.tool_fill": "Select fill (bucket) tool",
 	"bbs.ui.textures.layers": "Layers",
 	"bbs.ui.textures.layers.add": "Add layer...",

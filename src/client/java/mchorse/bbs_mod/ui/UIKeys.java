@@ -994,6 +994,7 @@ public class UIKeys
     public static final IKey TEXTURES_KEYS_BRUSH_INC = L10n.lang("bbs.ui.textures.keys.brush_inc");
     public static final IKey TEXTURES_KEYS_TOOL_BRUSH = L10n.lang("bbs.ui.textures.keys.tool_brush");
     public static final IKey TEXTURES_KEYS_TOOL_ERASER = L10n.lang("bbs.ui.textures.keys.tool_eraser");
+    public static final IKey TEXTURES_KEYS_TOOL_MOVE = L10n.lang("bbs.ui.textures.keys.tool_move");
     public static final IKey TEXTURES_LAYERS = L10n.lang("bbs.ui.textures.layers");
     public static final IKey TEXTURES_LAYERS_ADD = L10n.lang("bbs.ui.textures.layers.add");
     public static final IKey TEXTURES_LAYERS_DEFAULT_NAME = L10n.lang("bbs.ui.textures.layers.default_name");
