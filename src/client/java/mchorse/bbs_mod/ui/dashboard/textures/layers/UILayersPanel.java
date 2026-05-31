@@ -42,8 +42,10 @@ public class UILayersPanel extends UIElement
         this.addImage = new UIIcon(Icons.IMAGE, (b) -> this.addImageLayer());
         this.addImage.tooltip(UIKeys.TEXTURES_LAYERS_ADD_IMAGE);
         
-        this.opacity = new UITrackpad((v) -> {
-            if (this.currentEditor != null && this.currentEditor.activeLayerIndex >= 0) {
+        this.opacity = new UITrackpad((v) ->
+        {
+            if (this.currentEditor != null && this.currentEditor.activeLayerIndex >= 0)
+            {
                 this.currentEditor.layers.get(this.currentEditor.activeLayerIndex).opacity = v.floatValue() / 100F;
                 this.currentEditor.dirty();
             }
