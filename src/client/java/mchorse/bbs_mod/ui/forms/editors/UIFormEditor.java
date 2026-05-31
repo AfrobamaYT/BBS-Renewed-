@@ -362,11 +362,23 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
 
             if (pair != null)
             {
-                UIPropTransform transform = this.editor.getEditableTransform();
-                GizmoDrag drag = this.buildGizmoDrag(transform, context.getTransition());
+                int index = stencil.getIndex();
 
-                if (Gizmo.INSTANCE.start(stencil.getIndex(), context.mouseX, context.mouseY, transform, drag))
+                if (index >= Gizmo.STENCIL_X && index <= Gizmo.STENCIL_VIEW)
                 {
+                    UIPropTransform transform = this.editor.getEditableTransform();
+                    GizmoDrag drag = this.buildGizmoDrag(transform, context.getTransition());
+
+                    if (Gizmo.INSTANCE.start(index, context.mouseX, context.mouseY, transform, drag))
+                    {
+                        return true;
+                    }
+                }
+
+                if (context.mouseButton == 0 && this.renderer.isSphereHovered() && Gizmo.INSTANCE.isSphereInteractive())
+                {
+                    this.renderer.beginPendingSpherePick(context, pair);
+
                     return true;
                 }
 
@@ -375,8 +387,23 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
                 return true;
             }
         }
+        else if (!stencil.hasPicked() && context.mouseButton == 0 && this.renderer.isSphereHovered() && Gizmo.INSTANCE.isSphereInteractive())
+        {
+            if (this.startSphereGizmo(context))
+            {
+                return true;
+            }
+        }
 
         return false;
+    }
+
+    public boolean startSphereGizmo(UIContext context)
+    {
+        UIPropTransform transform = this.editor.getEditableTransform();
+        GizmoDrag drag = this.buildGizmoDrag(transform, context.getTransition());
+
+        return Gizmo.INSTANCE.start(Gizmo.STENCIL_XYZ, context.mouseX, context.mouseY, transform, drag);
     }
 
     private GizmoDrag buildGizmoDrag(UIPropTransform transform, float transition)
