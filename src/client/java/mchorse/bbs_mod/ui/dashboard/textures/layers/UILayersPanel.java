@@ -52,8 +52,12 @@ public class UILayersPanel extends UIElement
 
             if (active != null)
             {
-                active.opacity = v.floatValue() / 100F;
-                this.currentEditor.dirty();
+                /* Merge so a continuous opacity drag collapses into a single undo step. */
+                this.currentEditor.recordLayerChange("opacity", () ->
+                {
+                    active.opacity = v.floatValue() / 100F;
+                    this.currentEditor.dirty();
+                });
             }
         });
         this.opacity.limit(0, 100).integer().setValue(100);
@@ -82,13 +86,16 @@ public class UILayersPanel extends UIElement
 
         if (document != null && this.currentEditor.getPixels() != null)
         {
-            Pixels newPixels = Pixels.fromSize(this.currentEditor.getPixels().width, this.currentEditor.getPixels().height);
-            TextureLayer layer = new TextureLayer(UIKeys.TEXTURES_LAYERS_DEFAULT_NAME.format(String.valueOf(document.layers.size() + 1)).get(), newPixels);
+            this.currentEditor.recordLayerChange(null, () ->
+            {
+                Pixels newPixels = Pixels.fromSize(this.currentEditor.getPixels().width, this.currentEditor.getPixels().height);
+                TextureLayer layer = new TextureLayer(UIKeys.TEXTURES_LAYERS_DEFAULT_NAME.format(String.valueOf(document.layers.size() + 1)).get(), newPixels);
 
-            document.layers.add(layer);
-            this.currentEditor.setActiveLayer(document.layers.size() - 1);
-            this.updateLayers();
-            this.currentEditor.dirty();
+                document.layers.add(layer);
+                this.currentEditor.setActiveLayer(document.layers.size() - 1);
+                this.updateLayers();
+                this.currentEditor.dirty();
+            });
         }
     }
 
@@ -106,21 +113,24 @@ public class UILayersPanel extends UIElement
 
                 if (loaded != null)
                 {
-                    Pixels newPixels = Pixels.fromSize(
-                        Math.max(this.currentEditor.getPixels().width, loaded.width),
-                        Math.max(this.currentEditor.getPixels().height, loaded.height)
-                    );
-                    newPixels.draw(loaded, 0, 0);
-                    loaded.delete();
-                    
-                    TextureLayer layer = new TextureLayer(mchorse.bbs_mod.utils.StringUtils.fileName(path), newPixels);
+                    this.currentEditor.recordLayerChange(null, () ->
+                    {
+                        Pixels newPixels = Pixels.fromSize(
+                            Math.max(this.currentEditor.getPixels().width, loaded.width),
+                            Math.max(this.currentEditor.getPixels().height, loaded.height)
+                        );
+                        newPixels.draw(loaded, 0, 0);
+                        loaded.delete();
 
-                    this.currentEditor.getDocument().layers.add(layer);
-                    this.currentEditor.setActiveLayer(this.currentEditor.getDocument().layers.size() - 1);
+                        TextureLayer layer = new TextureLayer(mchorse.bbs_mod.utils.StringUtils.fileName(path), newPixels);
 
-                    this.updateLayers();
-                    this.currentEditor.dirty();
-                    this.currentEditor.resize();
+                        this.currentEditor.getDocument().layers.add(layer);
+                        this.currentEditor.setActiveLayer(this.currentEditor.getDocument().layers.size() - 1);
+
+                        this.updateLayers();
+                        this.currentEditor.dirty();
+                        this.currentEditor.resize();
+                    });
                 }
             }
             catch (Exception e)

@@ -613,6 +613,13 @@ public class UITexturePainter extends UIElement
         editor.brushSoftnessSupplier(() -> (float) this.brushSoftness.getValue() / 100.0F);
         editor.eraserOpacitySupplier(() -> (float) this.eraserOpacity.getValue() / 100.0F);
         editor.secondaryEraserToggle(this::setSecondaryEraser);
+        editor.layersChangedCallback(() ->
+        {
+            if (this.layersPanel != null && this.getCurrentEditor() == editor)
+            {
+                this.layersPanel.updateLayers();
+            }
+        });
         editor.setBrushSize((int) this.brushSize.getValue());
         editor.setDocument(document);
         editor.full(this.editorHost);

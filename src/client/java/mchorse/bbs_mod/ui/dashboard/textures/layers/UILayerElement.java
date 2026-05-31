@@ -35,9 +35,12 @@ public class UILayerElement extends UIElement
         
         this.visible = new UIIcon(layer.visible ? Icons.VISIBLE : Icons.INVISIBLE, (b) ->
         {
-            this.layer.visible = !this.layer.visible;
-            this.visible.both(this.layer.visible ? Icons.VISIBLE : Icons.INVISIBLE);
-            this.panel.currentEditor.dirty();
+            this.panel.currentEditor.recordLayerChange(null, () ->
+            {
+                this.layer.visible = !this.layer.visible;
+                this.visible.both(this.layer.visible ? Icons.VISIBLE : Icons.INVISIBLE);
+                this.panel.currentEditor.dirty();
+            });
         });
         this.visible.w(20);
 
@@ -62,7 +65,7 @@ public class UILayerElement extends UIElement
 
         if (canMoveUp)
         {
-            menu.action(Icons.MOVE_UP, UIKeys.TEXTURES_LAYERS_CONTEXT_MOVE_UP, () ->
+            menu.action(Icons.MOVE_UP, UIKeys.TEXTURES_LAYERS_CONTEXT_MOVE_UP, () -> this.panel.currentEditor.recordLayerChange(null, () ->
             {
                 TextureLayer current = this.panel.currentEditor.getDocument().layers.remove(this.index);
                 this.panel.currentEditor.getDocument().layers.add(this.index + 1, current);
@@ -79,12 +82,12 @@ public class UILayerElement extends UIElement
                 this.panel.currentEditor.setActiveLayer(this.panel.currentEditor.getDocument().activeLayerIndex);
                 this.panel.updateLayers();
                 this.panel.currentEditor.dirty();
-            });
+            }));
         }
 
         if (canMoveDown)
         {
-            menu.action(Icons.MOVE_DOWN, UIKeys.TEXTURES_LAYERS_CONTEXT_MOVE_DOWN, () ->
+            menu.action(Icons.MOVE_DOWN, UIKeys.TEXTURES_LAYERS_CONTEXT_MOVE_DOWN, () -> this.panel.currentEditor.recordLayerChange(null, () ->
             {
                 TextureLayer current = this.panel.currentEditor.getDocument().layers.remove(this.index);
 
@@ -102,7 +105,7 @@ public class UILayerElement extends UIElement
                 this.panel.currentEditor.setActiveLayer(this.panel.currentEditor.getDocument().activeLayerIndex);
                 this.panel.updateLayers();
                 this.panel.currentEditor.dirty();
-            });
+            }));
         }
 
         menu.action(Icons.OUTLINE, UIKeys.TEXTURES_LAYERS_CONTEXT_SELECT, () ->
@@ -122,9 +125,12 @@ public class UILayerElement extends UIElement
                 {
                     if (!str.trim().isEmpty())
                     {
-                        this.layer.name = str.trim();
-                        this.name.label = IKey.raw(this.layer.name);
-                        this.panel.currentEditor.dirty();
+                        this.panel.currentEditor.recordLayerChange(null, () ->
+                        {
+                            this.layer.name = str.trim();
+                            this.name.label = IKey.raw(this.layer.name);
+                            this.panel.currentEditor.dirty();
+                        });
                     }
                 }
             );
@@ -133,22 +139,23 @@ public class UILayerElement extends UIElement
             UIOverlay.addOverlay(this.getContext(), prompt);
         });
 
-        menu.action(Icons.DUPE, UIKeys.TEXTURES_LAYERS_CONTEXT_DUPE, () -> {
+        menu.action(Icons.DUPE, UIKeys.TEXTURES_LAYERS_CONTEXT_DUPE, () -> this.panel.currentEditor.recordLayerChange(null, () ->
+        {
             Pixels newPixels = Pixels.fromSize(this.layer.pixels.width, this.layer.pixels.height);
 
             newPixels.draw(this.layer.pixels, 0, 0);
 
             TextureLayer duplicatedLayer = new TextureLayer(UIKeys.TEXTURES_LAYERS_DUPE_SUFFIX.format(this.layer.name).get(), newPixels);
-            
+
             this.panel.currentEditor.getDocument().layers.add(this.index + 1, duplicatedLayer);
             this.panel.currentEditor.setActiveLayer(this.index + 1);
             this.panel.updateLayers();
             this.panel.currentEditor.dirty();
-        });
+        }));
 
         if (canDelete)
         {
-            menu.action(Icons.REMOVE, UIKeys.TEXTURES_LAYERS_CONTEXT_REMOVE, Colors.NEGATIVE, () ->
+            menu.action(Icons.REMOVE, UIKeys.TEXTURES_LAYERS_CONTEXT_REMOVE, Colors.NEGATIVE, () -> this.panel.currentEditor.recordLayerChange(null, () ->
             {
                 this.panel.currentEditor.getDocument().layers.remove(this.index);
                 this.layer.delete();
@@ -161,7 +168,7 @@ public class UILayerElement extends UIElement
                 this.panel.currentEditor.setActiveLayer(this.panel.currentEditor.getDocument().activeLayerIndex);
                 this.panel.updateLayers();
                 this.panel.currentEditor.dirty();
-            });
+            }));
         }
     }
 

@@ -172,6 +172,7 @@ public class UITextureEditor extends UIPixelsEditor
     public void fillColor(Vector2i pixel, Color color, boolean colorReplace)
     {
         PixelsUndo pixelsUndo = new PixelsUndo();
+        pixelsUndo.layerIndex = this.document == null ? -1 : this.document.activeLayerIndex;
         Pixels pixels = this.getPixels();
         Color target = pixels.getColor(pixel.x, pixel.y);
 

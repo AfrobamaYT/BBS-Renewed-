@@ -5,7 +5,9 @@ import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.ui.dashboard.textures.data.Document;
+import mchorse.bbs_mod.ui.dashboard.textures.undo.LayerStateUndo;
 import mchorse.bbs_mod.ui.dashboard.textures.undo.PixelsUndo;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -83,8 +85,14 @@ public class UIPixelsEditor extends UICanvasEditor
         }
     }
 
-    protected UndoManager<Pixels> undoManager;
+    protected UndoManager<Document> undoManager;
     private PixelsUndo pixelsUndo;
+
+    /** Notified after an undo/redo rebuilds or reorders layers, so the owning UI can refresh. */
+    private Runnable layersChangedCallback = () -> {};
+
+    /** Document snapshot captured at the start of a move-tool drag (one undo per move gesture). */
+    private MapType moveUndoBefore;
 
     private Supplier<Float> backgroundSupplier = () -> 0.7F;
     private Supplier<Color> colorSupplier = Color::white;
@@ -933,15 +941,60 @@ public class UIPixelsEditor extends UICanvasEditor
         this.pixelsUndo = null;
     }
 
-    private void handleUndo(IUndo<Pixels> pixelsIUndo, boolean redo)
+    private void handleUndo(IUndo<Document> undo, boolean redo)
     {
-        if (this.document != null)
+        if (this.document == null)
         {
-            for (TextureLayer layer : this.document.layers)
-            {
-                layer.updateTexture();
-            }
+            return;
         }
+
+        /* A structural undo (LayerStateUndo) may have rebuilt the layer list, invalidating the
+         * cached active layer; re-sync it, refresh every layer's GPU texture and notify the UI. */
+        if (this.document.layers.isEmpty())
+        {
+            this.pixels = null;
+            this.temporary = null;
+        }
+        else
+        {
+            this.setActiveLayer(MathUtils.clamp(this.document.activeLayerIndex, 0, this.document.layers.size() - 1));
+        }
+
+        for (TextureLayer layer : this.document.layers)
+        {
+            layer.updateTexture();
+        }
+
+        this.wasChanged();
+        this.layersChangedCallback.run();
+    }
+
+    public UIPixelsEditor layersChangedCallback(Runnable callback)
+    {
+        this.layersChangedCallback = callback != null ? callback : () -> {};
+
+        return this;
+    }
+
+    /**
+     * Runs a layer-management mutation and records it as a single undoable step by snapshotting the
+     * document before and after. {@code mergeTag} (nullable) lets consecutive changes of the same
+     * kind &mdash; e.g. an opacity drag &mdash; collapse into one undo entry.
+     */
+    public void recordLayerChange(String mergeTag, Runnable mutation)
+    {
+        if (this.undoManager == null || this.document == null)
+        {
+            mutation.run();
+
+            return;
+        }
+
+        MapType before = this.document.toData();
+
+        mutation.run();
+
+        this.undoManager.pushUndo(new LayerStateUndo(before, this.document.toData(), mergeTag));
     }
 
     private void copyPixel()
@@ -971,7 +1024,7 @@ public class UIPixelsEditor extends UICanvasEditor
 
     public void undo()
     {
-        if (this.undoManager != null && this.undoManager.undo(this.pixels))
+        if (this.undoManager != null && this.undoManager.undo(this.document))
         {
             UIUtils.playClick();
         }
@@ -979,7 +1032,7 @@ public class UIPixelsEditor extends UICanvasEditor
 
     public void redo()
     {
-        if (this.undoManager != null && this.undoManager.redo(this.pixels))
+        if (this.undoManager != null && this.undoManager.redo(this.document))
         {
             UIUtils.playClick();
         }
@@ -1152,6 +1205,9 @@ public class UIPixelsEditor extends UICanvasEditor
                  * sub-pixel drags accumulate correctly without drift. */
                 this.moveStartOffsetX = layer.offsetX;
                 this.moveStartOffsetY = layer.offsetY;
+
+                /* Snapshot the document so the whole move gesture becomes one undo entry on release. */
+                this.moveUndoBefore = this.document.toData();
             }
 
             return;
@@ -1160,6 +1216,7 @@ public class UIPixelsEditor extends UICanvasEditor
         if (this.isStrokePaintTool())
         {
             this.pixelsUndo = new PixelsUndo();
+            this.pixelsUndo.layerIndex = this.document == null ? -1 : this.document.activeLayerIndex;
             this.strokeStrengths.clear();
             this.blendStroke = tool == TexturePaintTool.BRUSH;
             this.drawColor = tool == TexturePaintTool.ERASER ? new Color(0, 0, 0, 0) : this.colorSupplier.get();
@@ -1221,6 +1278,20 @@ public class UIPixelsEditor extends UICanvasEditor
         {
             this.secondaryEraser = false;
             this.secondaryEraserToggle.accept(false);
+        }
+
+        /* Commit the move gesture as a single undo entry if the layer offset actually changed. */
+        if (this.moveUndoBefore != null)
+        {
+            TextureLayer layer = this.document == null ? null : this.document.getActiveLayer();
+            boolean moved = layer != null && (layer.offsetX != this.moveStartOffsetX || layer.offsetY != this.moveStartOffsetY);
+
+            if (moved && this.undoManager != null)
+            {
+                this.undoManager.pushUndo(new LayerStateUndo(this.moveUndoBefore, this.document.toData()));
+            }
+
+            this.moveUndoBefore = null;
         }
 
         return super.subMouseReleased(context);
