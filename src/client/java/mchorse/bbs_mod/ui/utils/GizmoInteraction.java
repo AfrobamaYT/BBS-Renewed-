@@ -42,11 +42,6 @@ public class GizmoInteraction
         return this.sphereHovered;
     }
 
-    public boolean isGizmoActive()
-    {
-        return this.gizmoActive;
-    }
-
     public boolean mouseClicked(UIContext context)
     {
         if (context.mouseButton != 0)
@@ -162,7 +157,7 @@ public class GizmoInteraction
 
         if (Gizmo.INSTANCE.isSphereInteractive())
         {
-            if (this.gizmoActive)
+            if (Gizmo.INSTANCE.isTrackballDragging())
             {
                 hover = true;
             }

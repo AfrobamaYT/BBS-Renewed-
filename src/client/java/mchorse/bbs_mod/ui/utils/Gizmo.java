@@ -175,6 +175,11 @@ public class Gizmo
         return true;
     }
 
+    public boolean isTrackballDragging()
+    {
+        return this.currentTransform != null && this.currentTransform.isEditing() && this.currentTransform.isTrackball();
+    }
+
     /**
      * Project the gizmo's origin onto the viewport in pixel space and
      * write the result into {@code out}. Returns {@code false} when the
