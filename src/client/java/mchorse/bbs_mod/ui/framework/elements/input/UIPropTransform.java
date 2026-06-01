@@ -1936,27 +1936,30 @@ public class UIPropTransform extends UITransform
 
             context.batcher.textCard(label, x, y, Colors.WHITE, BBSSettings.primaryColor(Colors.A50));
 
+            /* Label echoed both at the cursor and (when typing) under "Editing...". */
+            String numericLabel = null;
+
             if (this.axis != null)
             {
                 Vector3f v = this.getValue();
                 float val = this.axis == Axis.X ? v.x : (this.axis == Axis.Y ? v.y : v.z);
-                
+
                 if (this.mode == 2)
                 {
                     val = MathUtils.toDeg(val);
                 }
-                
+
                 String valueLabel = String.format(java.util.Locale.US, "%.2f", val);
-                
+
                 if (this.axis2 != null)
                 {
                     float val2 = this.axis2 == Axis.X ? v.x : (this.axis2 == Axis.Y ? v.y : v.z);
-                    
+
                     if (this.mode == 2)
                     {
                         val2 = MathUtils.toDeg(val2);
                     }
-                    
+
                     valueLabel += ", " + String.format(java.util.Locale.US, "%.2f", val2);
                 }
 
@@ -1966,20 +1969,33 @@ public class UIPropTransform extends UITransform
                     ? this.numericInputDisplay() + " (" + valueLabel + ")"
                     : valueLabel;
 
+                if (this.numericActive)
+                {
+                    numericLabel = cursorLabel;
+                }
+
                 context.batcher.textCard(cursorLabel, context.mouseX + 12, context.mouseY + 12, Colors.WHITE, Colors.A50);
             }
             else if (this.numericActive)
             {
                 /* View (arcball) and trackball have no single axis component to
                  * echo, so show the typed angle, plus the trackball direction. */
-                String suffix = this.rotateKind == RotateKind.TRACKBALL
-                    ? (this.trackballAxis == Axis.Y ? " vertical" : " horizontal")
-                    : "";
+                String prefix = this.rotateKind == RotateKind.TRACKBALL ? (this.trackballAxis == Axis.Y ? "X" : "Y") : "";
 
-                context.batcher.textCard(this.numericInputDisplay() + "°" + suffix, context.mouseX + 12, context.mouseY + 12, Colors.WHITE, Colors.A50);
+                numericLabel = prefix + this.numericInputDisplay() + "°";
+
+                context.batcher.textCard(numericLabel, context.mouseX + 12, context.mouseY + 12, Colors.WHITE, Colors.A50);
+            }
+
+            /* Mirror the live numeric input on its own card right under "Editing...". */
+            if (numericLabel != null)
+            {
+                int nx = this.area.mx(font.getWidth(numericLabel));
+                int ny = y + font.getHeight() + 8;
+
+                context.batcher.textCard(numericLabel, nx, ny, Colors.WHITE, BBSSettings.primaryColor(Colors.A50));
             }
         }
-
     }
 
     /**
