@@ -111,6 +111,9 @@ public class UIPropTransform extends UITransform
     private final StringBuilder numericInput = new StringBuilder();
     private boolean numericNegative;
     private boolean numericActive;
+    /** Trackball numeric target: {@link Axis#X} = horizontal (screen-up axis),
+     *  {@link Axis#Y} = vertical (screen-right axis). */
+    private Axis trackballAxis = Axis.X;
 
     private UITransformHandler handler;
 
@@ -497,6 +500,7 @@ public class UIPropTransform extends UITransform
 
         this.editing = true;
         this.rotateKind = RotateKind.TRACKBALL;
+        this.trackballAxis = Axis.X;
         this.mode = 2; // ROTATE
         this.axis = null;
         this.axis2 = null;
@@ -1356,9 +1360,10 @@ public class UIPropTransform extends UITransform
 
     /**
      * Numeric input only rides on the GSR keyboard operations ({@link #hotkeyMode}),
-     * never on a mouse handle drag. Rotation additionally needs a single ring to
-     * apply a typed angle to, so the free trackball/view turns are excluded;
-     * translate and scale always run on an axis (X by default).
+     * never on a mouse handle drag. Axis rotation additionally needs a picked ring
+     * to apply the typed angle to; the screen-space view (arcball) and trackball
+     * turns take the angle directly. Translate and scale always run on an axis
+     * (X by default).
      */
     private boolean acceptsNumericInput()
     {
@@ -1367,7 +1372,12 @@ public class UIPropTransform extends UITransform
             return false;
         }
 
-        return this.mode != 2 || (this.rotateKind == RotateKind.AXIS && this.axis != null);
+        if (this.mode != 2)
+        {
+            return true;
+        }
+
+        return this.rotateKind != RotateKind.AXIS || this.axis != null;
     }
 
     /**
@@ -1391,6 +1401,23 @@ public class UIPropTransform extends UITransform
         }
 
         int key = context.getKeyCode();
+
+        /* In trackball, X/Y aim the typed angle at the horizontal (screen-up
+         * axis) or vertical (screen-right axis) turn instead of constraining to
+         * a ring. */
+        if (this.mode == 2 && this.rotateKind == RotateKind.TRACKBALL
+            && (key == GLFW.GLFW_KEY_X || key == GLFW.GLFW_KEY_Y))
+        {
+            this.trackballAxis = key == GLFW.GLFW_KEY_Y ? Axis.Y : Axis.X;
+
+            if (this.numericActive)
+            {
+                this.applyNumericInput();
+            }
+
+            return true;
+        }
+
         int digit = numericDigit(key);
 
         if (digit >= 0)
@@ -1550,7 +1577,18 @@ public class UIPropTransform extends UITransform
                 this.applyNumericScale(value);
                 break;
             case 2:
-                this.applyNumericRotate(value);
+                switch (this.rotateKind)
+                {
+                    case VIEW:
+                        this.applyNumericView(value);
+                        break;
+                    case TRACKBALL:
+                        this.applyNumericTrackball(value);
+                        break;
+                    default:
+                        this.applyNumericRotate(value);
+                        break;
+                }
                 break;
         }
 
@@ -1610,6 +1648,46 @@ public class UIPropTransform extends UITransform
         if (this.axis == Axis.X || this.axis2 == Axis.X) rx += value;
         if (this.axis == Axis.Y || this.axis2 == Axis.Y) ry += value;
         if (this.axis == Axis.Z || this.axis2 == Axis.Z) rz += value;
+
+        if (gizmoSpace) this.setR2(null, rx, ry, rz);
+        else this.setR(null, rx, ry, rz);
+    }
+
+    private void applyNumericView(double value)
+    {
+        this.applyNumericAxisRotation(value, this.viewLocalAxis);
+    }
+
+    private void applyNumericTrackball(double value)
+    {
+        this.applyNumericAxisRotation(value, this.trackballAxis == Axis.Y ? this.trackballRightLocal : this.trackballUpLocal);
+    }
+
+    /**
+     * Premultiply the start orientation ({@link #cache}) by a turn of the typed
+     * degrees about a fixed parent-frame axis, then read the Euler angles back —
+     * the same composition the cursor-driven view/trackball drags use, but from a
+     * single exact angle. {@code localAxis} is captured at drag start
+     * ({@link #viewLocalAxis} or the trackball screen axes) and stays constant.
+     */
+    private void applyNumericAxisRotation(double degrees, Vector3f localAxis)
+    {
+        if (localAxis.lengthSquared() < 1.0E-8F)
+        {
+            return;
+        }
+
+        boolean gizmoSpace = this.dragRotateGizmoSpace;
+        Vector3f source = gizmoSpace ? this.cache.rotate2 : this.cache.rotate;
+
+        Vector3f euler = new Matrix3f()
+            .rotation(MathUtils.toRad((float) degrees), localAxis)
+            .mul(new Matrix3f().rotationZ(source.z).rotateY(source.y).rotateX(source.x))
+            .getEulerAnglesZYX(new Vector3f());
+
+        float rx = MathUtils.toDeg(euler.x);
+        float ry = MathUtils.toDeg(euler.y);
+        float rz = MathUtils.toDeg(euler.z);
 
         if (gizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
@@ -1889,6 +1967,16 @@ public class UIPropTransform extends UITransform
                     : valueLabel;
 
                 context.batcher.textCard(cursorLabel, context.mouseX + 12, context.mouseY + 12, Colors.WHITE, Colors.A50);
+            }
+            else if (this.numericActive)
+            {
+                /* View (arcball) and trackball have no single axis component to
+                 * echo, so show the typed angle, plus the trackball direction. */
+                String suffix = this.rotateKind == RotateKind.TRACKBALL
+                    ? (this.trackballAxis == Axis.Y ? " vertical" : " horizontal")
+                    : "";
+
+                context.batcher.textCard(this.numericInputDisplay() + "°" + suffix, context.mouseX + 12, context.mouseY + 12, Colors.WHITE, Colors.A50);
             }
         }
 
