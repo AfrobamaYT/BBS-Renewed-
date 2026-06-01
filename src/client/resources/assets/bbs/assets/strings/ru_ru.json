@@ -752,6 +752,7 @@
 	"bbs.ui.forms.editors.model.ik.locator": "Конечная кость: %s",
 	"bbs.ui.forms.editors.model.ik.root": "Корень цепочки: %s",
 	"bbs.ui.forms.editors.model.ik.pole": "Направление сгиба",
+	"bbs.ui.forms.editors.model.ik.weight": "Влияние",
 	"bbs.ui.forms.editors.model.ik.context.copy": "Скопировать IK",
 	"bbs.ui.forms.editors.model.ik.context.paste": "Вставить IK",
 	"bbs.ui.forms.editors.model.ik.context.reset": "Сбросить IK",

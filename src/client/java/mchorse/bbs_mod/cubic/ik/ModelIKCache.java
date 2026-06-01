@@ -88,7 +88,7 @@ final class ModelIKCache
                 continue;
             }
 
-            out.add(new CompiledChain(chain.controller(), chain.locator(), chain.root(), chain.poleX(), chain.poleY(), chain.poleZ(), chain.poleSpace(), ModelIKConfig.DEFAULT_WEIGHT, chainIds));
+            out.add(new CompiledChain(chain.controller(), chain.locator(), chain.root(), chain.poleX(), chain.poleY(), chain.poleZ(), chain.poleSpace(), chain.weight(), chainIds));
         }
 
         return out;

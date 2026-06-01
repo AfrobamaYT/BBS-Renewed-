@@ -752,6 +752,7 @@
 	"bbs.ui.forms.editors.model.ik.locator": "End bone: %s",
 	"bbs.ui.forms.editors.model.ik.root": "Chain root: %s",
 	"bbs.ui.forms.editors.model.ik.pole": "Bend direction",
+	"bbs.ui.forms.editors.model.ik.weight": "Influence",
 	"bbs.ui.forms.editors.model.ik.context.copy": "Copy IK",
 	"bbs.ui.forms.editors.model.ik.context.paste": "Paste IK",
 	"bbs.ui.forms.editors.model.ik.context.reset": "Reset IK",

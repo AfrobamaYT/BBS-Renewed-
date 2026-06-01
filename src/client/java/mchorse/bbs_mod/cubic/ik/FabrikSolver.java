@@ -9,16 +9,15 @@ final class FabrikSolver
 {
     private static final float EPS = 1.0e-6f;
 
+    /* Keep the goal a hair inside the reachable sphere so the chain never locks
+     * dead straight: a fully extended chain has an undefined bend plane and rolls. */
+    private static final float REACH_LIMIT = 0.999F;
+
     private FabrikSolver()
     {
     }
 
-    public static List<Vector3f> solve(List<Vector3f> startPositions, Vector3f target, int maxIterations, float tolerance)
-    {
-        return solve(startPositions, target, null, null, 0F, 0F, maxIterations, tolerance);
-    }
-
-    public static List<Vector3f> solve(List<Vector3f> startPositions, Vector3f target, Vector3f pole, Vector3f prevNormal, float hysteresisRad, float singularityRad, int maxIterations, float tolerance)
+    public static List<Vector3f> solve(List<Vector3f> startPositions, Vector3f target, Vector3f pole, int maxIterations, float tolerance)
     {
         int n = startPositions.size();
 
@@ -28,6 +27,11 @@ final class FabrikSolver
         }
 
         List<Vector3f> p = startPositions;
+
+        /* When no pole is given, remember which way each joint currently bends so
+         * the solved pose keeps that side. This is what makes the bend deterministic
+         * frame to frame and removes any need for flip hysteresis. */
+        Vector3f[] bendRef = pole == null ? captureBendReferences(p) : null;
 
         float[] d = new float[n - 1];
         float total = 0F;
@@ -41,9 +45,11 @@ final class FabrikSolver
 
         Vector3f root = new Vector3f(p.get(0));
         Vector3f dir = new Vector3f();
+
+        Vector3f goal = new Vector3f(target);
         float rootToTarget = root.distance(target);
 
-        if (rootToTarget > total)
+        if (rootToTarget > total * REACH_LIMIT)
         {
             dir.set(target).sub(root);
 
@@ -53,25 +59,17 @@ final class FabrikSolver
             }
 
             dir.normalize();
-
-            p.get(0).set(root);
-
-            for (int i = 0; i < n - 1; i++)
-            {
-                p.get(i + 1).set(p.get(i)).fma(d[i], dir);
-            }
-
-            return p;
-        }
-
-        if (p.get(n - 1).distanceSquared(target) <= tolerance * tolerance)
-        {
-            return p;
+            goal.set(root).fma(total * REACH_LIMIT, dir);
         }
 
         for (int iter = 0; iter < maxIterations; iter++)
         {
-            p.get(n - 1).set(target);
+            if (p.get(n - 1).distanceSquared(goal) <= tolerance * tolerance)
+            {
+                break;
+            }
+
+            p.get(n - 1).set(goal);
 
             for (int i = n - 2; i >= 0; i--)
             {
@@ -108,46 +106,58 @@ final class FabrikSolver
                 dir.mul((float) (d[i] / Math.sqrt(lenSq)));
                 pj.set(pi).add(dir);
             }
-
-            if (p.get(n - 1).distanceSquared(target) <= tolerance * tolerance)
-            {
-                break;
-            }
         }
 
-        if (pole != null)
-        {
-            applyPoleVector(p, pole, prevNormal, hysteresisRad, singularityRad);
-        }
+        applyBend(p, pole, bendRef);
 
         return p;
     }
 
-    private static void applyPoleVector(List<Vector3f> p, Vector3f pole, Vector3f prevNormal, float hysteresisRad, float singularityRad)
+    /**
+     * Captures, for every interior joint, the component of the incoming
+     * limb direction that lies across the root-to-tip axis. That perpendicular
+     * direction is the side the joint currently bends towards.
+     */
+    private static Vector3f[] captureBendReferences(List<Vector3f> p)
     {
-        if (p == null || pole == null || p.size() < 3)
+        int n = p.size();
+        Vector3f[] refs = new Vector3f[n];
+
+        for (int i = 1; i < n - 1; i++)
+        {
+            Vector3f ref = perpendicular(p.get(i - 1), p.get(i), p.get(i + 1));
+
+            if (ref != null)
+            {
+                refs[i] = ref;
+            }
+        }
+
+        return refs;
+    }
+
+    /**
+     * Rotates every interior joint around its own root-to-tip axis so the bend
+     * lands on the requested side: towards the pole when one is given, otherwise
+     * onto the captured rest side. The end positions stay put, so reach is kept.
+     */
+    private static void applyBend(List<Vector3f> p, Vector3f pole, Vector3f[] bendRef)
+    {
+        int n = p.size();
+
+        if (n < 3)
         {
             return;
         }
 
         Vector3f axis = new Vector3f();
-        Vector3f ab = new Vector3f();
-        Vector3f ap = new Vector3f();
-        Vector3f tmp = new Vector3f();
+        Vector3f current = new Vector3f();
+        Vector3f desired = new Vector3f();
         Vector3f cross = new Vector3f();
         Quaternionf q = new Quaternionf();
-        Vector3f ba = new Vector3f();
-        Vector3f cb = new Vector3f();
-        Vector3f bRel = new Vector3f();
-        Vector3f bPlus = new Vector3f();
-        Vector3f bMinus = new Vector3f();
-        Vector3f nPlus = new Vector3f();
-        Vector3f nMinus = new Vector3f();
-        Vector3f tmp2 = new Vector3f();
+        Vector3f rel = new Vector3f();
 
-        float hysteresisMargin = hysteresisRad > 0F ? (1F - (float) Math.cos(hysteresisRad)) : 0F;
-
-        for (int i = 1; i < p.size() - 1 && i < 2; i++)
+        for (int i = 1; i < n - 1; i++)
         {
             Vector3f a = p.get(i - 1);
             Vector3f b = p.get(i);
@@ -163,100 +173,85 @@ final class FabrikSolver
 
             axis.mul(1F / (float) Math.sqrt(axisLenSq));
 
-            ab.set(b).sub(a);
-            ap.set(pole).sub(a);
-
-            float dot = ab.dot(axis);
-            tmp.set(axis).mul(dot);
-            ab.sub(tmp);
-
-            dot = ap.dot(axis);
-            tmp.set(axis).mul(dot);
-            ap.sub(tmp);
-
-            float abLenSq = ab.lengthSquared();
-            float apLenSq = ap.lengthSquared();
-
-            if (abLenSq <= EPS * EPS || apLenSq <= EPS * EPS)
+            if (!project(current.set(b).sub(a), axis))
             {
                 continue;
             }
 
-            ab.mul(1F / (float) Math.sqrt(abLenSq));
-            ap.mul(1F / (float) Math.sqrt(apLenSq));
-
-            cross.set(ab).cross(ap);
-            float sin = axis.dot(cross);
-            float cos = ab.dot(ap);
-            float angleBase = (float) Math.atan2(sin, cos);
-
-            float chosenAngle = angleBase;
-
-            if (prevNormal != null && prevNormal.lengthSquared() > EPS * EPS)
+            if (pole != null)
             {
-                ba.set(b).sub(a);
-                cb.set(c).sub(b);
-
-                float baLenSq = ba.lengthSquared();
-                float cbLenSq = cb.lengthSquared();
-
-                if (baLenSq > EPS * EPS && cbLenSq > EPS * EPS && singularityRad > 0F)
+                if (!project(desired.set(pole).sub(a), axis))
                 {
-                    float inv = 1F / (float) Math.sqrt(baLenSq * cbLenSq);
-                    float cosElbow = ba.dot(cb) * inv;
-                    if (cosElbow < -1F) cosElbow = -1F;
-                    else if (cosElbow > 1F) cosElbow = 1F;
-                    float elbowAngle = (float) Math.acos(cosElbow);
-                    if (elbowAngle <= singularityRad)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
+            }
+            else
+            {
+                Vector3f ref = bendRef == null ? null : bendRef[i];
 
-                bRel.set(b).sub(a);
-
-                q.identity().fromAxisAngleRad(axis.x, axis.y, axis.z, angleBase);
-                bPlus.set(bRel);
-                q.transform(bPlus);
-                bPlus.add(a);
-
-                q.identity().fromAxisAngleRad(axis.x, axis.y, axis.z, -angleBase);
-                bMinus.set(bRel);
-                q.transform(bMinus);
-                bMinus.add(a);
-
-                nPlus.set(bPlus).sub(a);
-                tmp2.set(c).sub(bPlus);
-                nPlus.cross(tmp2);
-                float nPlusLenSq = nPlus.lengthSquared();
-                float dotPlus = -Float.MAX_VALUE;
-                if (nPlusLenSq > EPS * EPS)
+                if (ref == null || !project(desired.set(ref), axis))
                 {
-                    nPlus.mul(1F / (float) Math.sqrt(nPlusLenSq));
-                    dotPlus = nPlus.dot(prevNormal);
-                }
-
-                nMinus.set(bMinus).sub(a);
-                tmp2.set(c).sub(bMinus);
-                nMinus.cross(tmp2);
-                float nMinusLenSq = nMinus.lengthSquared();
-                float dotMinus = -Float.MAX_VALUE;
-                if (nMinusLenSq > EPS * EPS)
-                {
-                    nMinus.mul(1F / (float) Math.sqrt(nMinusLenSq));
-                    dotMinus = nMinus.dot(prevNormal);
-                }
-
-                if (dotMinus > dotPlus + hysteresisMargin)
-                {
-                    chosenAngle = -angleBase;
+                    continue;
                 }
             }
 
-            q.identity().fromAxisAngleRad(axis.x, axis.y, axis.z, chosenAngle);
-            tmp.set(b).sub(a);
-            q.transform(tmp);
-            b.set(a).add(tmp);
+            cross.set(current).cross(desired);
+            float sin = axis.dot(cross);
+            float cos = current.dot(desired);
+            float angle = (float) Math.atan2(sin, cos);
+
+            if (Math.abs(angle) < EPS)
+            {
+                continue;
+            }
+
+            q.identity().fromAxisAngleRad(axis.x, axis.y, axis.z, angle);
+            rel.set(b).sub(a);
+            q.transform(rel);
+            b.set(a).add(rel);
         }
+    }
+
+    /**
+     * Returns the perpendicular component of (b - a) relative to the axis a-c,
+     * normalized, or null when it is degenerate (joint sits on the axis).
+     */
+    private static Vector3f perpendicular(Vector3f a, Vector3f b, Vector3f c)
+    {
+        Vector3f axis = new Vector3f(c).sub(a);
+
+        if (axis.lengthSquared() <= EPS * EPS)
+        {
+            return null;
+        }
+
+        axis.normalize();
+
+        Vector3f out = new Vector3f(b).sub(a);
+
+        return project(out, axis) ? out : null;
+    }
+
+    /**
+     * Strips the axis-parallel part from {@code v} and normalizes the remainder
+     * in place. Returns false when nothing perpendicular is left.
+     */
+    private static boolean project(Vector3f v, Vector3f axis)
+    {
+        float dot = v.dot(axis);
+        v.x -= axis.x * dot;
+        v.y -= axis.y * dot;
+        v.z -= axis.z * dot;
+
+        float lenSq = v.lengthSquared();
+
+        if (lenSq <= EPS * EPS)
+        {
+            return false;
+        }
+
+        v.mul(1F / (float) Math.sqrt(lenSq));
+
+        return true;
     }
 }
