@@ -36,10 +36,6 @@ public final class ModelPhysicsRuntime
     private static final float COLLISION_FRICTION = 0.5F;
     private static final float COLLISION_MAX_ANCHOR_STEP = 0.25F;
     private static final int COLLISION_MAX_SUBSTEPS = 8;
-    private static final float COLLISION_EPS = 1.0e-4f;
-    private static final float COLLISION_SLEEP_EPS = 0.005f;
-    private static final float COLLISION_STATIC_FRICTION_EPS = 0.02f;
-    private static final float COLLISION_CONTACT_SLOP = 0.02f;
 
 
     private static final class ChainState
@@ -53,7 +49,6 @@ public final class ModelPhysicsRuntime
         public Vector3f[] settled;
         public Vector3f[] settledPrev;
         public Vector3f[] render;
-        public Vector3f[] contactNormals;
     }
 
     private static final class InstanceState
@@ -190,7 +185,6 @@ public final class ModelPhysicsRuntime
             state.settled = new Vector3f[pointCount];
             state.settledPrev = new Vector3f[pointCount];
             state.render = new Vector3f[pointCount];
-            state.contactNormals = new Vector3f[pointCount];
 
             for (int i = 0; i < pointCount; i++)
             {
@@ -199,7 +193,6 @@ public final class ModelPhysicsRuntime
                 state.settled[i] = new Vector3f();
                 state.settledPrev[i] = new Vector3f();
                 state.render[i] = new Vector3f();
-                state.contactNormals[i] = new Vector3f();
             }
 
             state.lastAge = Integer.MIN_VALUE;
@@ -631,7 +624,7 @@ public final class ModelPhysicsRuntime
                 {
                     int from = 1;
                     int to = targetPosition != null ? state.pos.length - 1 : state.pos.length;
-                    ModelPhysicsWorldCollisions.resolve(world, state.pos, state.prev, state.contactNormals, from, to, radius, COLLISION_FRICTION, COLLISION_CONTACT_SLOP, COLLISION_SLEEP_EPS, COLLISION_STATIC_FRICTION_EPS, COLLISION_EPS);
+                    ModelPhysicsWorldCollisions.resolve(world, state.pos, state.prev, from, to, radius, COLLISION_FRICTION);
 
                     state.pos[0].set(state.anchor);
                     if (targetPosition != null)
