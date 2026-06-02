@@ -169,6 +169,7 @@ public final class ModelPhysicsWorldCollisions
             float dzs = p.z - s.z;
             boolean hasMotion = dxs * dxs + dys * dys + dzs * dzs > EPS * EPS;
 
+            Vector3f sweepNormal = new Vector3f();
             float bestT = Float.POSITIVE_INFINITY;
             float bestNx = 0F;
             float bestNy = 0F;
@@ -198,116 +199,14 @@ public final class ModelPhysicsWorldCollisions
 
                             if (state.isFullCube(world, mutable))
                             {
-                                float minBX = x;
-                                float minBY = y;
-                                float minBZ = z;
-                                float maxBX = x + 1F;
-                                float maxBY = y + 1F;
-                                float maxBZ = z + 1F;
-
-                                float exMinX = minBX - radius;
-                                float exMinY = minBY - radius;
-                                float exMinZ = minBZ - radius;
-                                float exMaxX = maxBX + radius;
-                                float exMaxY = maxBY + radius;
-                                float exMaxZ = maxBZ + radius;
-
-                                float tmin = 0F;
-                                float tmax = 1F;
-                                int axis = -1;
-                                float axisSign = 0F;
-
-                                if (Math.abs(dxs) < EPS)
-                                {
-                                    if (s.x < exMinX || s.x > exMaxX) continue;
-                                }
-                                else
-                                {
-                                    float inv = 1F / dxs;
-                                    float t1 = (exMinX - s.x) * inv;
-                                    float t2 = (exMaxX - s.x) * inv;
-                                    float enter = t1;
-                                    float exit = t2;
-                                    if (enter > exit)
-                                    {
-                                        float tmp = enter; enter = exit; exit = tmp;
-                                    }
-                                    if (enter > tmin)
-                                    {
-                                        tmin = enter;
-                                        axis = 0;
-                                        axisSign = dxs > 0F ? -1F : 1F;
-                                    }
-                                    if (exit < tmax) tmax = exit;
-                                    if (tmin > tmax) continue;
-                                }
-
-                                if (Math.abs(dys) < EPS)
-                                {
-                                    if (s.y < exMinY || s.y > exMaxY) continue;
-                                }
-                                else
-                                {
-                                    float inv = 1F / dys;
-                                    float t1 = (exMinY - s.y) * inv;
-                                    float t2 = (exMaxY - s.y) * inv;
-                                    float enter = t1;
-                                    float exit = t2;
-                                    if (enter > exit)
-                                    {
-                                        float tmp = enter; enter = exit; exit = tmp;
-                                    }
-                                    if (enter > tmin)
-                                    {
-                                        tmin = enter;
-                                        axis = 1;
-                                        axisSign = dys > 0F ? -1F : 1F;
-                                    }
-                                    if (exit < tmax) tmax = exit;
-                                    if (tmin > tmax) continue;
-                                }
-
-                                if (Math.abs(dzs) < EPS)
-                                {
-                                    if (s.z < exMinZ || s.z > exMaxZ) continue;
-                                }
-                                else
-                                {
-                                    float inv = 1F / dzs;
-                                    float t1 = (exMinZ - s.z) * inv;
-                                    float t2 = (exMaxZ - s.z) * inv;
-                                    float enter = t1;
-                                    float exit = t2;
-                                    if (enter > exit)
-                                    {
-                                        float tmp = enter; enter = exit; exit = tmp;
-                                    }
-                                    if (enter > tmin)
-                                    {
-                                        tmin = enter;
-                                        axis = 2;
-                                        axisSign = dzs > 0F ? -1F : 1F;
-                                    }
-                                    if (exit < tmax) tmax = exit;
-                                    if (tmin > tmax) continue;
-                                }
-
-                                if (tmax < 0F || tmin > 1F)
-                                {
-                                    continue;
-                                }
-
-                                float thit = tmin < 0F ? 0F : tmin;
+                                float thit = sweepBoxHit(s.x, s.y, s.z, dxs, dys, dzs, x, y, z, x + 1F, y + 1F, z + 1F, radius, sweepNormal);
 
                                 if (thit < bestT)
                                 {
                                     bestT = thit;
-                                    bestNx = 0F;
-                                    bestNy = 0F;
-                                    bestNz = 0F;
-                                    if (axis == 0) bestNx = axisSign;
-                                    else if (axis == 1) bestNy = axisSign;
-                                    else if (axis == 2) bestNz = axisSign;
+                                    bestNx = sweepNormal.x;
+                                    bestNy = sweepNormal.y;
+                                    bestNz = sweepNormal.z;
                                 }
                             }
                             else
@@ -320,116 +219,14 @@ public final class ModelPhysicsWorldCollisions
 
                                 for (Box box : shape.getBoundingBoxes())
                                 {
-                                    float minBX = (float) (x + box.minX);
-                                    float minBY = (float) (y + box.minY);
-                                    float minBZ = (float) (z + box.minZ);
-                                    float maxBX = (float) (x + box.maxX);
-                                    float maxBY = (float) (y + box.maxY);
-                                    float maxBZ = (float) (z + box.maxZ);
-
-                                    float exMinX = minBX - radius;
-                                    float exMinY = minBY - radius;
-                                    float exMinZ = minBZ - radius;
-                                    float exMaxX = maxBX + radius;
-                                    float exMaxY = maxBY + radius;
-                                    float exMaxZ = maxBZ + radius;
-
-                                    float tmin = 0F;
-                                    float tmax = 1F;
-                                    int axis = -1;
-                                    float axisSign = 0F;
-
-                                    if (Math.abs(dxs) < EPS)
-                                    {
-                                        if (s.x < exMinX || s.x > exMaxX) continue;
-                                    }
-                                    else
-                                    {
-                                        float inv = 1F / dxs;
-                                        float t1 = (exMinX - s.x) * inv;
-                                        float t2 = (exMaxX - s.x) * inv;
-                                        float enter = t1;
-                                        float exit = t2;
-                                        if (enter > exit)
-                                        {
-                                            float tmp = enter; enter = exit; exit = tmp;
-                                        }
-                                        if (enter > tmin)
-                                        {
-                                            tmin = enter;
-                                            axis = 0;
-                                            axisSign = dxs > 0F ? -1F : 1F;
-                                        }
-                                        if (exit < tmax) tmax = exit;
-                                        if (tmin > tmax) continue;
-                                    }
-
-                                    if (Math.abs(dys) < EPS)
-                                    {
-                                        if (s.y < exMinY || s.y > exMaxY) continue;
-                                    }
-                                    else
-                                    {
-                                        float inv = 1F / dys;
-                                        float t1 = (exMinY - s.y) * inv;
-                                        float t2 = (exMaxY - s.y) * inv;
-                                        float enter = t1;
-                                        float exit = t2;
-                                        if (enter > exit)
-                                        {
-                                            float tmp = enter; enter = exit; exit = tmp;
-                                        }
-                                        if (enter > tmin)
-                                        {
-                                            tmin = enter;
-                                            axis = 1;
-                                            axisSign = dys > 0F ? -1F : 1F;
-                                        }
-                                        if (exit < tmax) tmax = exit;
-                                        if (tmin > tmax) continue;
-                                    }
-
-                                    if (Math.abs(dzs) < EPS)
-                                    {
-                                        if (s.z < exMinZ || s.z > exMaxZ) continue;
-                                    }
-                                    else
-                                    {
-                                        float inv = 1F / dzs;
-                                        float t1 = (exMinZ - s.z) * inv;
-                                        float t2 = (exMaxZ - s.z) * inv;
-                                        float enter = t1;
-                                        float exit = t2;
-                                        if (enter > exit)
-                                        {
-                                            float tmp = enter; enter = exit; exit = tmp;
-                                        }
-                                        if (enter > tmin)
-                                        {
-                                            tmin = enter;
-                                            axis = 2;
-                                            axisSign = dzs > 0F ? -1F : 1F;
-                                        }
-                                        if (exit < tmax) tmax = exit;
-                                        if (tmin > tmax) continue;
-                                    }
-
-                                    if (tmax < 0F || tmin > 1F)
-                                    {
-                                        continue;
-                                    }
-
-                                    float thit = tmin < 0F ? 0F : tmin;
+                                    float thit = sweepBoxHit(s.x, s.y, s.z, dxs, dys, dzs, (float) (x + box.minX), (float) (y + box.minY), (float) (z + box.minZ), (float) (x + box.maxX), (float) (y + box.maxY), (float) (z + box.maxZ), radius, sweepNormal);
 
                                     if (thit < bestT)
                                     {
                                         bestT = thit;
-                                        bestNx = 0F;
-                                        bestNy = 0F;
-                                        bestNz = 0F;
-                                        if (axis == 0) bestNx = axisSign;
-                                        else if (axis == 1) bestNy = axisSign;
-                                        else if (axis == 2) bestNz = axisSign;
+                                        bestNx = sweepNormal.x;
+                                        bestNy = sweepNormal.y;
+                                        bestNz = sweepNormal.z;
                                     }
                                 }
                             }
@@ -610,7 +407,7 @@ public final class ModelPhysicsWorldCollisions
             return;
         }
 
-        for (int rep = 0; rep < 3; rep++)
+        for (int rep = 0; rep < MAX_CAPSULE_REP; rep++)
         {
             boolean changed = false;
 
@@ -871,16 +668,7 @@ public final class ModelPhysicsWorldCollisions
             }
 
             float vt = (float) Math.sqrt(vtSq);
-            float stickFactor = 1F;
-
-            if (vt <= staticFrictionEps)
-            {
-                stickFactor = vt / staticFrictionEps;
-                if (stickFactor < 0.2F)
-                {
-                    stickFactor = 0.2F;
-                }
-            }
+            float stickFactor = frictionStickFactor(vt, staticFrictionEps);
 
             float f = MathHelper.clamp(friction, 0F, 1F);
             float scale = (1F - f) * stickFactor;
@@ -894,7 +682,7 @@ public final class ModelPhysicsWorldCollisions
         }
     }
 
-    private static boolean findClosestFullCubeNormal(World world, BlockPos.Mutable mutable, float px, float py, float pz, float search, Vector3f outNormal)
+    private static boolean findClosestBlockNormal(World world, BlockPos.Mutable mutable, float px, float py, float pz, float search, Vector3f outNormal)
     {
         if (world == null || outNormal == null || search <= 0F)
         {
@@ -902,11 +690,10 @@ public final class ModelPhysicsWorldCollisions
         }
 
         float bestDistSq = Float.POSITIVE_INFINITY;
-        float bestNx = 0F;
-        float bestNy = 0F;
-        float bestNz = 0F;
-
         float searchSq = search * search;
+
+        Vector3f bestNormal = new Vector3f();
+        Vector3f boxNormal = new Vector3f();
 
         int bx = MathHelper.floor(px);
         int by = MathHelper.floor(py);
@@ -941,59 +728,12 @@ public final class ModelPhysicsWorldCollisions
 
             if (state.isFullCube(world, mutable))
             {
-                float minBX = x;
-                float minBY = y;
-                float minBZ = z;
-                float maxBX = x + 1F;
-                float maxBY = y + 1F;
-                float maxBZ = z + 1F;
-
-                float cx = MathHelper.clamp(px, minBX, maxBX);
-                float cy = MathHelper.clamp(py, minBY, maxBY);
-                float cz = MathHelper.clamp(pz, minBZ, maxBZ);
-
-                float dx = px - cx;
-                float dy = py - cy;
-                float dz = pz - cz;
-
-                float d2 = dx * dx + dy * dy + dz * dz;
+                float d2 = closestBoxNormal(px, py, pz, x, y, z, x + 1F, y + 1F, z + 1F, boxNormal);
 
                 if (d2 <= searchSq && d2 < bestDistSq)
                 {
-                    float nx;
-                    float ny;
-                    float nz;
-
-                    if (d2 <= EPS * EPS)
-                    {
-                        float dMinX = px - minBX;
-                        float dMaxX = maxBX - px;
-                        float dMinY = py - minBY;
-                        float dMaxY = maxBY - py;
-                        float dMinZ = pz - minBZ;
-                        float dMaxZ = maxBZ - pz;
-
-                        float best = dMinX;
-                        nx = -1F; ny = 0F; nz = 0F;
-
-                        if (dMaxX < best) { best = dMaxX; nx = 1F; ny = 0F; nz = 0F; }
-                        if (dMinY < best) { best = dMinY; nx = 0F; ny = -1F; nz = 0F; }
-                        if (dMaxY < best) { best = dMaxY; nx = 0F; ny = 1F; nz = 0F; }
-                        if (dMinZ < best) { best = dMinZ; nx = 0F; ny = 0F; nz = -1F; }
-                        if (dMaxZ < best) { nx = 0F; ny = 0F; nz = 1F; }
-                    }
-                    else
-                    {
-                        float inv = 1F / (float) Math.sqrt(d2);
-                        nx = dx * inv;
-                        ny = dy * inv;
-                        nz = dz * inv;
-                    }
-
                     bestDistSq = d2;
-                    bestNx = nx;
-                    bestNy = ny;
-                    bestNz = nz;
+                    bestNormal.set(boxNormal);
                 }
 
                 continue;
@@ -1007,62 +747,13 @@ public final class ModelPhysicsWorldCollisions
 
             for (Box box : shape.getBoundingBoxes())
             {
-                float minBX = (float) (x + box.minX);
-                float minBY = (float) (y + box.minY);
-                float minBZ = (float) (z + box.minZ);
-                float maxBX = (float) (x + box.maxX);
-                float maxBY = (float) (y + box.maxY);
-                float maxBZ = (float) (z + box.maxZ);
+                float d2 = closestBoxNormal(px, py, pz, (float) (x + box.minX), (float) (y + box.minY), (float) (z + box.minZ), (float) (x + box.maxX), (float) (y + box.maxY), (float) (z + box.maxZ), boxNormal);
 
-                float cx = MathHelper.clamp(px, minBX, maxBX);
-                float cy = MathHelper.clamp(py, minBY, maxBY);
-                float cz = MathHelper.clamp(pz, minBZ, maxBZ);
-
-                float dx = px - cx;
-                float dy = py - cy;
-                float dz = pz - cz;
-
-                float d2 = dx * dx + dy * dy + dz * dz;
-
-                if (d2 > searchSq || d2 >= bestDistSq)
+                if (d2 <= searchSq && d2 < bestDistSq)
                 {
-                    continue;
+                    bestDistSq = d2;
+                    bestNormal.set(boxNormal);
                 }
-
-                float nx;
-                float ny;
-                float nz;
-
-                if (d2 <= EPS * EPS)
-                {
-                    float dMinX = px - minBX;
-                    float dMaxX = maxBX - px;
-                    float dMinY = py - minBY;
-                    float dMaxY = maxBY - py;
-                    float dMinZ = pz - minBZ;
-                    float dMaxZ = maxBZ - pz;
-
-                    float best = dMinX;
-                    nx = -1F; ny = 0F; nz = 0F;
-
-                    if (dMaxX < best) { best = dMaxX; nx = 1F; ny = 0F; nz = 0F; }
-                    if (dMinY < best) { best = dMinY; nx = 0F; ny = -1F; nz = 0F; }
-                    if (dMaxY < best) { best = dMaxY; nx = 0F; ny = 1F; nz = 0F; }
-                    if (dMinZ < best) { best = dMinZ; nx = 0F; ny = 0F; nz = -1F; }
-                    if (dMaxZ < best) { nx = 0F; ny = 0F; nz = 1F; }
-                }
-                else
-                {
-                    float inv = 1F / (float) Math.sqrt(d2);
-                    nx = dx * inv;
-                    ny = dy * inv;
-                    nz = dz * inv;
-                }
-
-                bestDistSq = d2;
-                bestNx = nx;
-                bestNy = ny;
-                bestNz = nz;
             }
         }
 
@@ -1071,7 +762,7 @@ public final class ModelPhysicsWorldCollisions
             return false;
         }
 
-        outNormal.set(bestNx, bestNy, bestNz);
+        outNormal.set(bestNormal);
 
         if (outNormal.lengthSquared() > EPS * EPS)
         {
@@ -1081,53 +772,137 @@ public final class ModelPhysicsWorldCollisions
         return true;
     }
 
-    private static boolean findClosestBlockNormal(World world, BlockPos.Mutable mutable, float px, float py, float pz, float search, Vector3f outNormal)
+    /**
+     * Swept test of a sphere of {@code radius} travelling from {@code (sx,sy,sz)} along {@code (dxs,dys,dzs)}
+     * against the box expanded by the radius. Returns the hit fraction in [0, 1] (or +infinity when missed)
+     * and writes the axis-aligned contact normal into {@code outNormal}.
+     */
+    private static float sweepBoxHit(float sx, float sy, float sz, float dxs, float dys, float dzs, float minBX, float minBY, float minBZ, float maxBX, float maxBY, float maxBZ, float radius, Vector3f outNormal)
     {
-        return findClosestFullCubeNormal(world, mutable, px, py, pz, search, outNormal);
+        float exMinX = minBX - radius;
+        float exMinY = minBY - radius;
+        float exMinZ = minBZ - radius;
+        float exMaxX = maxBX + radius;
+        float exMaxY = maxBY + radius;
+        float exMaxZ = maxBZ + radius;
+
+        float tmin = 0F;
+        float tmax = 1F;
+        int axis = -1;
+        float axisSign = 0F;
+
+        if (Math.abs(dxs) < EPS)
+        {
+            if (sx < exMinX || sx > exMaxX) return Float.POSITIVE_INFINITY;
+        }
+        else
+        {
+            float inv = 1F / dxs;
+            float enter = (exMinX - sx) * inv;
+            float exit = (exMaxX - sx) * inv;
+            if (enter > exit) { float tmp = enter; enter = exit; exit = tmp; }
+            if (enter > tmin) { tmin = enter; axis = 0; axisSign = dxs > 0F ? -1F : 1F; }
+            if (exit < tmax) tmax = exit;
+            if (tmin > tmax) return Float.POSITIVE_INFINITY;
+        }
+
+        if (Math.abs(dys) < EPS)
+        {
+            if (sy < exMinY || sy > exMaxY) return Float.POSITIVE_INFINITY;
+        }
+        else
+        {
+            float inv = 1F / dys;
+            float enter = (exMinY - sy) * inv;
+            float exit = (exMaxY - sy) * inv;
+            if (enter > exit) { float tmp = enter; enter = exit; exit = tmp; }
+            if (enter > tmin) { tmin = enter; axis = 1; axisSign = dys > 0F ? -1F : 1F; }
+            if (exit < tmax) tmax = exit;
+            if (tmin > tmax) return Float.POSITIVE_INFINITY;
+        }
+
+        if (Math.abs(dzs) < EPS)
+        {
+            if (sz < exMinZ || sz > exMaxZ) return Float.POSITIVE_INFINITY;
+        }
+        else
+        {
+            float inv = 1F / dzs;
+            float enter = (exMinZ - sz) * inv;
+            float exit = (exMaxZ - sz) * inv;
+            if (enter > exit) { float tmp = enter; enter = exit; exit = tmp; }
+            if (enter > tmin) { tmin = enter; axis = 2; axisSign = dzs > 0F ? -1F : 1F; }
+            if (exit < tmax) tmax = exit;
+            if (tmin > tmax) return Float.POSITIVE_INFINITY;
+        }
+
+        if (tmax < 0F || tmin > 1F)
+        {
+            return Float.POSITIVE_INFINITY;
+        }
+
+        outNormal.set(0F, 0F, 0F);
+
+        if (axis == 0) outNormal.x = axisSign;
+        else if (axis == 1) outNormal.y = axisSign;
+        else if (axis == 2) outNormal.z = axisSign;
+
+        return tmin < 0F ? 0F : tmin;
     }
 
-    @FunctionalInterface
-    private interface BoxVisitor
+    /**
+     * Closest-point normal of {@code (px,py,pz)} against the box, returning the squared distance and writing
+     * the unit surface normal into {@code outNormal}. When the point is inside the box the nearest face is used.
+     */
+    private static float closestBoxNormal(float px, float py, float pz, float minBX, float minBY, float minBZ, float maxBX, float maxBY, float maxBZ, Vector3f outNormal)
     {
-        boolean visit(float minBX, float minBY, float minBZ, float maxBX, float maxBY, float maxBZ);
+        float cx = MathHelper.clamp(px, minBX, maxBX);
+        float cy = MathHelper.clamp(py, minBY, maxBY);
+        float cz = MathHelper.clamp(pz, minBZ, maxBZ);
+
+        float dx = px - cx;
+        float dy = py - cy;
+        float dz = pz - cz;
+
+        float d2 = dx * dx + dy * dy + dz * dz;
+
+        if (d2 <= EPS * EPS)
+        {
+            float dMinX = px - minBX;
+            float dMaxX = maxBX - px;
+            float dMinY = py - minBY;
+            float dMaxY = maxBY - py;
+            float dMinZ = pz - minBZ;
+            float dMaxZ = maxBZ - pz;
+
+            float best = dMinX;
+            outNormal.set(-1F, 0F, 0F);
+
+            if (dMaxX < best) { best = dMaxX; outNormal.set(1F, 0F, 0F); }
+            if (dMinY < best) { best = dMinY; outNormal.set(0F, -1F, 0F); }
+            if (dMaxY < best) { best = dMaxY; outNormal.set(0F, 1F, 0F); }
+            if (dMinZ < best) { best = dMinZ; outNormal.set(0F, 0F, -1F); }
+            if (dMaxZ < best) { outNormal.set(0F, 0F, 1F); }
+        }
+        else
+        {
+            float inv = 1F / (float) Math.sqrt(d2);
+            outNormal.set(dx * inv, dy * inv, dz * inv);
+        }
+
+        return d2;
     }
 
-    private static boolean forEachCollisionBox(World world, BlockPos.Mutable mutable, int x, int y, int z, BoxVisitor visitor)
+    private static float frictionStickFactor(float speed, float staticFrictionEps)
     {
-        mutable.set(x, y, z);
-
-        if (!world.isChunkLoaded(mutable))
+        if (speed > staticFrictionEps)
         {
-            return false;
+            return 1F;
         }
 
-        BlockState state = world.getBlockState(mutable);
-        if (state == null)
-        {
-            return false;
-        }
+        float factor = speed / staticFrictionEps;
 
-        if (state.isFullCube(world, mutable))
-        {
-            return visitor.visit(x, y, z, x + 1F, y + 1F, z + 1F);
-        }
-
-        VoxelShape shape = state.getCollisionShape(world, mutable, ShapeContext.absent());
-        if (shape.isEmpty())
-        {
-            return false;
-        }
-
-        for (Box box : shape.getBoundingBoxes())
-        {
-            if (visitor.visit((float) (x + box.minX), (float) (y + box.minY), (float) (z + box.minZ),
-                (float) (x + box.maxX), (float) (y + box.maxY), (float) (z + box.maxZ)))
-            {
-                return true;
-            }
-        }
-
-        return true;
+        return factor < 0.2F ? 0.2F : factor;
     }
 
     private static void applyCollisionFriction(Vector3f prev, Vector3f pos, float nx, float ny, float nz, float friction, float sleepEps, float staticFrictionEps)
@@ -1148,16 +923,7 @@ public final class ModelPhysicsWorldCollisions
         float speedSq = vx * vx + vy * vy + vz * vz;
 
         float speed = (float) Math.sqrt(speedSq);
-        float stickFactor = 1F;
-
-        if (speed <= staticFrictionEps)
-        {
-            stickFactor = speed / staticFrictionEps;
-            if (stickFactor < 0.2F)
-            {
-                stickFactor = 0.2F;
-            }
-        }
+        float stickFactor = frictionStickFactor(speed, staticFrictionEps);
 
         float f = MathHelper.clamp(friction, 0F, 1F);
         float scale = (1F - f) * stickFactor;
