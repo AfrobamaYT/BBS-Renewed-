@@ -26,18 +26,17 @@ import java.util.Set;
 /**
  * Draws the IK chains on top of the rendered model: the solved bone chain, the
  * target and the automatic bend direction. It is drawn straight from the same
- * model-local pivot frames the renderer/solver use (so it matches the mesh in
- * any context — form editor, film, world) and re-runs the solver to show the
- * solved chain. Connections use {@code DEBUG_LINES} (a vertex pair per segment)
- * so they always join the points exactly. Gated globally by {@link #enabled}.
+ * model-local pivot frames the renderer uses (so it matches the mesh in any
+ * context — form editor, film, world). IK is already applied to the rig before
+ * this runs, so the collected frames are the solved chain — re-solving here
+ * would double-apply the pole angle. Connections use {@code DEBUG_LINES} (a
+ * vertex pair per segment) so they always join the points exactly. Gated
+ * globally by {@link #enabled}.
  */
 public final class ModelIKDebug
 {
     private static final float JOINT = 0.014F;
     private static final float MARKER = 0.022F;
-
-    private static final int MAX_ITERATIONS = 12;
-    private static final float TOLERANCE = 1.0e-4f;
 
     public static boolean enabled;
 
@@ -106,11 +105,6 @@ public final class ModelIKDebug
         {
             return;
         }
-
-        float poleAngleRad = (float) Math.toRadians(chain.poleAngle());
-
-        /* Run the same solver in this space so the debug shows the solved chain. */
-        IKSolver.solve(pts, new Vector3f(target), chain.pole(), poleAngleRad, chain.softness(), MAX_ITERATIONS, TOLERANCE);
 
         float a = chain.tip().equals(selectedTip) ? 1F : 0.6F;
         Vector3f root = pts.get(0);
