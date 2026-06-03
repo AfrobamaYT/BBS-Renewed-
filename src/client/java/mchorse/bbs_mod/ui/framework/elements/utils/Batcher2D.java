@@ -132,13 +132,19 @@ public class Batcher2D
         builder.vertex(matrix4f, x + w, y, 0).color(color2).next();
     }
 
-    public void bevelBox(int x1, int y1, int x2, int y2, int fill, boolean shadow)
+    public void bevelBox(int x1, int y1, int x2, int y2, int fill, boolean shadow, boolean border)
     {
-        int ix2 = x2 - 1;
-        int iy2 = y2 - 1;
+        if (border)
+        {
+            this.box(x1, y1, x2, y2, Colors.A100);
 
-        this.box(x1, y1, x2, y2, Colors.A100);
-        this.box(x1 + 1, y1 + 1, ix2, iy2, fill);
+            x1++;
+            y1++;
+            x2--;
+            y2--;
+        }
+
+        this.box(x1, y1, x2, y2, fill);
 
         if (!BBSSettings.interfaceShadows.get())
         {
@@ -147,12 +153,12 @@ public class Batcher2D
 
         int light = Colors.lerp(fill, Colors.WHITE, 0.35F);
 
-        this.box(x1 + 1, y1 + 1, ix2, y1 + 2, light);
-        this.box(x1 + 1, y1 + 1, x1 + 2, iy2, light);
+        this.box(x1, y1, x2, y1 + 1, light);
+        this.box(x1, y1, x1 + 1, y2, light);
 
         if (shadow)
         {
-            this.box(x1 + 1, iy2 - 2, ix2, iy2, Colors.lerp(fill, Colors.A100, 0.4F));
+            this.box(x1, y2 - 2, x2, y2, Colors.lerp(fill, Colors.A100, 0.4F));
         }
     }
 
