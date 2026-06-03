@@ -431,7 +431,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         /* Setup elements */
 
-        this.editor.add(new UIRenderable(this::renderPanelSurfaces), this.main, new UIRenderable(this::renderIcons), new UIRenderable(this::renderDropZoneHighlight));
+        this.editor.add(new UIRenderable(this::renderPanelSurfaces), this.main, new UIRenderable(this::renderPanelBorders), new UIRenderable(this::renderIcons), new UIRenderable(this::renderDropZoneHighlight));
         for (String id : this.panelById.keySet())
         {
             UIDraggable handle = this.createPanelDragHandle(id);
@@ -3020,6 +3020,34 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 panel.area.render(context.batcher, BBSSettings.deepSurface());
                 panel.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
             }
+        }
+    }
+
+    /**
+     * Drawn on top of the panels so the inset shadow and border show even over
+     * panels that paint their own opaque content (the timeline, lists, etc.).
+     */
+    private void renderPanelBorders(UIContext context)
+    {
+        if (!BBSSettings.interfaceShadows.get())
+        {
+            return;
+        }
+
+        int fade = Colors.setA(Colors.A100, 0F);
+
+        for (UIElement panel : this.panelById.values())
+        {
+            if (!panel.isVisible() || panel == this.preview)
+            {
+                continue;
+            }
+
+            Area a = panel.area;
+
+            context.batcher.gradientVBox(a.x, a.y, a.ex(), a.y + 4, Colors.A25, fade);
+            context.batcher.gradientHBox(a.x, a.y, a.x + 4, a.ey(), Colors.A25, fade);
+            context.batcher.outline(a.x, a.y, a.ex(), a.ey(), BBSSettings.dividerColor());
         }
     }
 
