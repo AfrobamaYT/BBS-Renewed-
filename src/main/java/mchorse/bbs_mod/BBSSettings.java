@@ -262,11 +262,7 @@ public class BBSSettings {
 	}
 
 	public static int inputSurface() {
-		return deepSurface();
-	}
-
-	public static int inputBorderColor(boolean focused) {
-		return focused ? primaryColor.get() : dividerColor();
+		return raisedSurface();
 	}
 
 	public static int panelShadowOpaqueColor() {

@@ -708,11 +708,9 @@ public class Textbox
         {
             this.area.render(context.batcher, BBSSettings.inputSurface());
 
-            if (this.border)
+            if (this.border && this.focused)
             {
-                int borderColor = BBSSettings.inputBorderColor(this.focused);
-
-                context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), borderColor);
+                context.batcher.box(this.area.x, this.area.ey() - 1, this.area.ex(), this.area.ey(), BBSSettings.primaryColor.get());
             }
 
             x = this.area.x + 4;

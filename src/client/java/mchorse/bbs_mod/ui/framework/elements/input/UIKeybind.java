@@ -194,7 +194,6 @@ public class UIKeybind extends UIElement
         {
             this.area.render(context.batcher, BBSSettings.inputSurface());
             this.area.render(context.batcher, BBSSettings.accentOverlay(Colors.A25));
-            context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.primaryColor.get());
 
             int x = this.area.mx(w);
             int y = this.area.my() + font.getHeight() - 1;
@@ -206,7 +205,6 @@ public class UIKeybind extends UIElement
         else
         {
             this.area.render(context.batcher, BBSSettings.inputSurface());
-            context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.inputBorderColor(false));
         }
 
         context.batcher.textShadow(label, this.area.mx(w), this.area.my() - font.getHeight() / 2);
