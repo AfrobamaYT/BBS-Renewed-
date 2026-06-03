@@ -141,8 +141,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "อนุญาตให้คุณปรับค่าปัจจัยเพื่อเพิ่มหรือลดความเร็วในการเลื่อนด้วยล้อเมาส์",
     "bbs.config.scrollbars.sensitivity_horizontal": "ความไวในการเลื่อน (แนวนอน)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "ช่วยให้คุณปรับปัจจัยความเร็วหรือความช้าของการเลื่อนด้วยล้อเมาส์ในแนวนอน",
-    "bbs.config.scrollbars.shadow": "สีของเงา",
-    "bbs.config.scrollbars.shadow-comment": "อนุญาตให้คุณตั้งค่าสีของเงาที่แสดงบนแถบเลื่อน",
     "bbs.config.scrollbars.smoothness": "ความลื่นไหลในการเลื่อน",
     "bbs.config.scrollbars.smoothness-comment": "ทำให้คุณสามารถเปลี่ยนการเลื่อนระหว่างแบบลื่นไหลและแบบทันทีได้",
     "bbs.config.scrollbars.title": "แถบเลื่อน",

@@ -142,8 +142,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Permite que você altere o fator de quão mais rápido ou mais lento é o rolar mouse",
     "bbs.config.scrollbars.sensitivity_horizontal": "Sensibilidade ao rolar (horizontal)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Permite você alterar o fator do quão rapido ou lento a roda do mouse vai rolar horizontalmente",
-    "bbs.config.scrollbars.shadow": "Cor da Sombra",
-    "bbs.config.scrollbars.shadow-comment": "Permite você escolher a cor de sombra das scrollbars",
     "bbs.config.scrollbars.smoothness": "Suavidade ao rodar",
     "bbs.config.scrollbars.smoothness-comment": "Permite você alternar entre suavidade e rolagem imediata",
     "bbs.config.scrollbars.title": "Barra de rolar",

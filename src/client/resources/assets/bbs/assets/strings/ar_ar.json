@@ -117,8 +117,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "ﻳﺘﻴﺢ ﻟﻚ ﺗﻐﻴﻴﺮ ﻋﺎﻣﻞ ﺍﻟﺘﻤﺮﻳﺮ ﺃﺳﺮﻉ ﺃﻭ ﺃﺑﻄﺄ",
     "bbs.config.scrollbars.sensitivity_horizontal": "حساسية التمرير (أفقي)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "ﻳﺘﻴﺢ ﻟﻚ ﺗﻐﻴﻴﺮ ﻋﺎﻣﻞ ﺍﻟﺘﻤﺮﻳﺮ ﺃﺳﺮﻉ ﺃﻭ ﺃﺑﻄﺄ ﻟﻌﺠﻠﺔ ﺍﻟﻤﺎﻭﺱ ﺃﻓﻘﻴﺎ",
-    "bbs.config.scrollbars.shadow": "لون الظل",
-    "bbs.config.scrollbars.shadow-comment": "ﻳﺴﻤﺢ ﻟﻚ ﺑﺘﻌﻴﻴﻦ ﻟﻮﻥ ﺍﻟﻈﻞ ﻷﺷﺮﻃﺔ ﺍﻟﺘﻤﺮﻳﺮ",
     "bbs.config.scrollbars.smoothness": "نعومة التمرير",
     "bbs.config.scrollbars.smoothness-comment": "ﻳﺘﻴﺢ ﻟﻚ ﺍﻟﺘﺒﺪﻳﻞ ﺑﻴﻦ ﺍﻟﺘﻤﺮﻳﺮ ﺍﻟﺴﻠﺲ ﻭﺍﻟﻔﻮﺭﻱ",
     "bbs.config.scrollbars.title": "أشرطة التمرير",

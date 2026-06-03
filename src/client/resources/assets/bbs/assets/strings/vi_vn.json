@@ -141,8 +141,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Cho phép bạn thay đổi tốc độ cuộn của bánh xe chuột nhanh hơn hoặc chậm hơn",
     "bbs.config.scrollbars.sensitivity_horizontal": "Độ nhạy khi cuộn (ngang)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Cho phép bạn thay đổi tốc độ cuộn của bánh xe chuột nhanh hơn hoặc chậm hơn",
-    "bbs.config.scrollbars.shadow": "Màu bóng",
-    "bbs.config.scrollbars.shadow-comment": "Cho phép bạn thiết lập màu bóng của thanh cuộn",
     "bbs.config.scrollbars.smoothness": "Lướt mượt",
     "bbs.config.scrollbars.smoothness-comment": "Cho phép bạn chuyển đổi giữa cuộn mượt mà và cuộn ngay lập tức",
     "bbs.config.scrollbars.title": "Thanh cuộn",

@@ -128,8 +128,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Fare tekerleğinin ne kadar hızlı veya yavaş kaydırılacağı faktörünü değiştirmenizi sağlar",
     "bbs.config.scrollbars.sensitivity_horizontal": "Kaydırma hassasiyeti (yatay)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Fare tekerleğinin yatay olarak ne kadar hızlı veya yavaş kaydırılacağının faktörünü değiştirmenizi sağlar",
-    "bbs.config.scrollbars.shadow": "Gölge rengi",
-    "bbs.config.scrollbars.shadow-comment": "Kaydırma çubuklarının gölge rengini ayarlamanızı sağlar",
     "bbs.config.scrollbars.smoothness": "Kaydırma akıcılığı",
     "bbs.config.scrollbars.smoothness-comment": "Yumuşak ve ani kaydırma arasında geçiş yapmanızı sağlar",
     "bbs.config.scrollbars.title": "Kaydırma çubukları",

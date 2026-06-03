@@ -81,8 +81,6 @@
     "bbs.config.dc.tooltip": "Opsi terkait kontrol kerusakan",
     "bbs.config.scrollbars.sensitivity": "Sensitivitas pengguliran",
     "bbs.config.scrollbars.sensitivity-comment": "Memungkinkan Anda untuk mengubah faktor seberapa cepat atau lambat pengguliran roda mouse",
-    "bbs.config.scrollbars.shadow": "Warna bayangan",
-    "bbs.config.scrollbars.shadow-comment": "Memungkinkan Anda untuk mengatur warna bayangan dari scrollbars",
     "bbs.config.scrollbars.title": "Scrollbars",
     "bbs.config.scrollbars.tooltip": "Opsi latar belakang seperti warna dan tekstur yang akan digunakan",
     "bbs.config.scrollbars.width": "Ketebalan",

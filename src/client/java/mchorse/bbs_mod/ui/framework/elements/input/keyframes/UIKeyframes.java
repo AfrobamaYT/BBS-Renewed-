@@ -1240,7 +1240,7 @@ public class UIKeyframes extends UIElement
         if (this.labelResizer.isVisible() && (this.labelResizer.area.isInside(context) || this.labelResizer.isDragging()))
         {
             Area a = this.labelResizer.area;
-            Scroll.bar(context.batcher, a.x, a.y, a.ex(), a.ey(), BBSSettings.dividerColor());
+            Scroll.bar(context.batcher, a.x, a.y, a.ex(), a.ey());
         }
     }
 

@@ -137,8 +137,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Pozwala na zmianę współczynnika szybszego lub wolniejszego przewijania kółkiem myszy",
     "bbs.config.scrollbars.sensitivity_horizontal": "Czułość przewijania (w poziomie)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Umożliwia zmianę współczynnika szybszego lub wolniejszego przewijania kółka myszy w poziomie",
-    "bbs.config.scrollbars.shadow": "Kolor cienia",
-    "bbs.config.scrollbars.shadow-comment": "Pozwala na ustawienie koloru cienia pasków przewijania",
     "bbs.config.scrollbars.smoothness": "Płynność przewijania",
     "bbs.config.scrollbars.smoothness-comment": "Umożliwia przełączanie między płynnym i natychmiastowym przewijaniem.",
     "bbs.config.scrollbars.title": "Paski przewijania",

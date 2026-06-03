@@ -139,8 +139,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Дозволяє змінити коефіцієнт, наскільки швидше або повільніше прокручується колесо миші",
     "bbs.config.scrollbars.sensitivity_horizontal": "Чутливість прокрутки (по горизонталі)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Дозволяє змінити коефіцієнт, наскільки швидше або повільніше прокручується колесо миші по горизонталі",
-    "bbs.config.scrollbars.shadow": "Колір тіні",
-    "bbs.config.scrollbars.shadow-comment": "Дозволяє встановити колір тіні для повзунків",
     "bbs.config.scrollbars.smoothness": "Плавність прокрутки",
     "bbs.config.scrollbars.smoothness-comment": "Дозволяє перемикатися між плавною та миттєвою прокруткою",
     "bbs.config.scrollbars.title": "Повзунки",

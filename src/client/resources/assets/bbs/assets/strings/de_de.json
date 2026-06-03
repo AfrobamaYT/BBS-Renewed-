@@ -135,8 +135,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Erlaubt es dir den Faktor zu ändern wie schnell oder langsam Scrollen mit dem Mausrand fungiert.",
     "bbs.config.scrollbars.sensitivity_horizontal": "Scrolling Sensivität (Horizontal)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Erlaubt dir den Faktor zu ändern wie viel schneller oder langsamer Mausrad-Scrolling horizontal ist",
-    "bbs.config.scrollbars.shadow": "Schattenfarbe",
-    "bbs.config.scrollbars.shadow-comment": "Erlaubt es dir die Schattenfarbe von Scrollbars zu setzen",
     "bbs.config.scrollbars.smoothness": "Scrolling Dämpfung",
     "bbs.config.scrollbars.smoothness-comment": "Erlaubt es dir zwischen gedämpften und direktem Scrolling umzuschalten",
     "bbs.config.scrollbars.tooltip": "Hintergrund-Optionen wie Farbe oder Textur die verwendet werden sollen",

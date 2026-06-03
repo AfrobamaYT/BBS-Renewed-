@@ -131,8 +131,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Cela vous autorise à changer le facteur de défilement de la roulette de la souris plus rapidement ou plus lentement",
     "bbs.config.scrollbars.sensitivity_horizontal": "Sensibilité du scroll (horizontal)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Vous permet de modifier le facteur pour accélérer ou ralentir le scroll horizontal avec la molette de la souris.",
-    "bbs.config.scrollbars.shadow": "Couleur de l'ombre",
-    "bbs.config.scrollbars.shadow-comment": "Cela vous autorise a sélectionner la couleur d'ombre des barres de défillement",
     "bbs.config.scrollbars.smoothness": "Fluidité du scroll",
     "bbs.config.scrollbars.smoothness-comment": "Vous permet de basculer entre un défilement fluide et un défilement instantané",
     "bbs.config.scrollbars.title": "Barres de défilement",

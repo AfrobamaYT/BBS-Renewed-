@@ -132,8 +132,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Permite cambiar el factor de cuán rápido o lento se desplaza la rueda del mouse",
     "bbs.config.scrollbars.sensitivity_horizontal": "Sensibilidad de desplazamiento (horizontal)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Permite cambiar el factor de qué tan rápido o lento se desplaza la rueda del ratón horizontalmente",
-    "bbs.config.scrollbars.shadow": "Color de sombra",
-    "bbs.config.scrollbars.shadow-comment": "Permite configurar el color de la sombra de las barras de desplazamiento",
     "bbs.config.scrollbars.smoothness": "Suavidad de desplazamiento",
     "bbs.config.scrollbars.smoothness-comment": "Permite alternar entre desplazamiento suave e inmediato",
     "bbs.config.scrollbars.title": "Barras de desplazamiento",

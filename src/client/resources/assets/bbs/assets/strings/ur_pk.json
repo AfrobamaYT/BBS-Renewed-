@@ -137,8 +137,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "ماؤس وہیل اسکرولنگ کتنی تیز یا سست ہو—اس کا فیکٹر تبدیل کریں",
     "bbs.config.scrollbars.sensitivity_horizontal": "اسکرولنگ حساسیت (افقی)",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "افقی اسکرولنگ کے لیے رفتار کا فیکٹر تبدیل کریں",
-    "bbs.config.scrollbars.shadow": "سایہ کا رنگ",
-    "bbs.config.scrollbars.shadow-comment": "اسکرول بارز کے سایہ کا رنگ سیٹ کریں",
     "bbs.config.scrollbars.smoothness": "اسکرولنگ ہمواری",
     "bbs.config.scrollbars.smoothness-comment": "ہموار اور فوری اسکرولنگ کے درمیان ٹوگل کریں",
     "bbs.config.scrollbars.title": "اسکرول بارز",

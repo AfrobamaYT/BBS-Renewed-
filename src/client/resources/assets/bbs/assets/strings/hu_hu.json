@@ -138,8 +138,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "Lehetővé teszi az egér görgőjének görgetési sebességének beállítását",
     "bbs.config.scrollbars.sensitivity_horizontal": "Vízszintes görgetési érzékenység",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "Lehetővé teszi az egér görgőjének vízszintes görgetési sebességének beállítását",
-    "bbs.config.scrollbars.shadow": "Árnyék színe",
-    "bbs.config.scrollbars.shadow-comment": "Lehetővé teszi a görgetősávok árnyékszínének beállítását",
     "bbs.config.scrollbars.smoothness": "Görgetési simaság",
     "bbs.config.scrollbars.smoothness-comment": "Lehetővé teszi a váltást a sima és az azonnali görgetés között",
     "bbs.config.scrollbars.title": "Görgetősávok",

@@ -141,8 +141,6 @@
     "bbs.config.scrollbars.sensitivity-comment": "允许您更改鼠标滚轮滚动快慢的系数",
     "bbs.config.scrollbars.sensitivity_horizontal": "滚轮灵敏度（水平）",
     "bbs.config.scrollbars.sensitivity_horizontal-comment": "更改鼠标滚轮在水平方向滚动的快慢系数",
-    "bbs.config.scrollbars.shadow": "阴影颜色",
-    "bbs.config.scrollbars.shadow-comment": "用于设置滚动条的阴影颜色",
     "bbs.config.scrollbars.smoothness": "平滑滚动",
     "bbs.config.scrollbars.smoothness-comment": "切换为平滑滚动或即时滚动",
     "bbs.config.scrollbars.title": "滚动条",

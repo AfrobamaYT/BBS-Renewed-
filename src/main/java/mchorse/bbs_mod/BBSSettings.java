@@ -67,7 +67,6 @@ public class BBSSettings {
 	public static ValueBoolean chromaSkyTerrain;
 	public static ValueFloat chromaSkyBillboard;
 
-	public static ValueInt scrollbarShadow;
 	public static ValueInt scrollbarWidth;
 	public static ValueFloat scrollingSensitivity;
 	public static ValueFloat scrollingSensitivityHorizontal;
@@ -434,7 +433,6 @@ public class BBSSettings {
 		chromaSkyBillboard = builder.getFloat("billboard", 0F, 0F, 256F);
 
 		builder.category("scrollbars", Icons.VERTICAL);
-		scrollbarShadow = builder.getInt("shadow", Colors.A50).colorAlpha();
 		scrollbarWidth = builder.getInt("width", 4, 2, 10);
 		scrollingSensitivity = builder.getFloat("sensitivity", 1F, 0F, 10F);
 		scrollingSensitivityHorizontal = builder.getFloat("sensitivity_horizontal", 1F, 0F, 10F);

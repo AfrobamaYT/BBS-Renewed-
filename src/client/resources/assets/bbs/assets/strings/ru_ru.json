@@ -194,8 +194,6 @@
 	"bbs.config.scrollbars.sensitivity-comment": "Позволяет Вам изменить коэффициент прокрутки колёсика мышки",
 	"bbs.config.scrollbars.sensitivity_horizontal": "Чуствительность прокрутки (гориз.)",
 	"bbs.config.scrollbars.sensitivity_horizontal-comment": "Позволяет Вам изменить коэффициент горизонтальной прокрутки колёсика мышки",
-	"bbs.config.scrollbars.shadow": "Цвет тени",
-	"bbs.config.scrollbars.shadow-comment": "Позволяет Вам установить цвет тени для ползунков",
 	"bbs.config.scrollbars.smoothness": "Сглаживание прокрутки",
 	"bbs.config.scrollbars.smoothness-comment": "Позволяет Вам переключаться между моментальным и сглаженным режимом прокрутки",
 	"bbs.config.scrollbars.disable_smoothness_in_editors": "Без сглаживания в редакторах",
