@@ -1474,7 +1474,6 @@ public class UITextarea <T extends TextLine> extends UIElement implements IFocus
 
         this.area.render(context.batcher, borderColor);
         this.area.render(context.batcher, BBSSettings.inputSurface(), 1);
-        this.area.render(context.batcher, BBSSettings.inputSurfaceTint(), 1);
     }
 
     protected void renderForeground(FontRenderer font, UIContext context)

@@ -679,7 +679,6 @@ public class UITrackpad extends UIBaseTextbox
         else
         {
             this.area.render(context.batcher, BBSSettings.inputSurface());
-            this.area.render(context.batcher, BBSSettings.inputSurfaceTint());
             context.batcher.outline(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.inputBorderColor(false));
 
             if (dragging)

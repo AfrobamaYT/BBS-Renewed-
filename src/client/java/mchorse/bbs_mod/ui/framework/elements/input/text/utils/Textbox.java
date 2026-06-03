@@ -707,7 +707,6 @@ public class Textbox
         if (this.background)
         {
             this.area.render(context.batcher, BBSSettings.inputSurface());
-            this.area.render(context.batcher, BBSSettings.inputSurfaceTint());
 
             if (this.border)
             {

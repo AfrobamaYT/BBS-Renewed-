@@ -45,8 +45,6 @@
 	"bbs.config.personalization.primary_color-comment": "Основной цвет используемый во всём интерфейсе",
 	"bbs.config.personalization.stencil_highlight_color": "Цвет выделения",
 	"bbs.config.personalization.stencil_highlight_color-comment": "Цвет, которым подсвечивается кость или реплей под курсором во вьюпорте. Альфа задаёт интенсивность.",
-	"bbs.config.personalization.colored_background": "Цветной фон",
-	"bbs.config.personalization.colored_background-comment": "Если выключено, фоны панелей используют нейтральный цвет выбранной темы вместо основного цвета.",
 	"bbs.config.personalization.background_brightness": "Яркость фона",
 	"bbs.config.personalization.background_brightness-comment": "Регулирует яркость фоновых поверхностей панелей и редакторов",
 	"bbs.config.personalization.interface_shadows": "Тени",

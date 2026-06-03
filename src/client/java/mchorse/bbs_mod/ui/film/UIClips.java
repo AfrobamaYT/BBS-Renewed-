@@ -1720,11 +1720,9 @@ public class UIClips extends UIElement
         if (leftEdge > this.area.x)
         {
             batcher.box(this.area.x, this.area.y, Math.min(leftEdge, this.area.ex()), this.area.ey(), BBSSettings.chromeSurface());
-            batcher.box(this.area.x, this.area.y, Math.min(leftEdge, this.area.ex()), this.area.ey(), BBSSettings.backgroundTint(Colors.A6));
         }
 
         area.render(batcher, BBSSettings.deepSurface());
-        area.render(batcher, BBSSettings.backgroundTint(Colors.A6));
         batcher.clip(this.vertical.area.x, rulerBottom, this.vertical.area.ex(), this.vertical.area.ey(), context);
 
         for (int i = 0; i < this.layers; i++)
@@ -1734,7 +1732,6 @@ public class UIClips extends UIElement
             if (i % 2 != 0)
             {
                 batcher.box(leftEdge, ly, this.area.ex(), ly + h, BBSSettings.baseSurface());
-                batcher.box(leftEdge, ly, this.area.ex(), ly + h, BBSSettings.backgroundTint(Colors.A6));
             }
         }
 

@@ -87,7 +87,6 @@ public class UIReplaysListPanel extends UIElement
 
         this.updateButtonsState();
         context.batcher.box(this.bar.area.x, this.bar.area.y, this.bar.area.ex(), this.bar.area.ey(), barBg);
-        context.batcher.box(this.bar.area.x, this.bar.area.y, this.bar.area.ex(), this.bar.area.ey(), BBSSettings.backgroundTint(Colors.A12));
         super.render(context);
     }
 }

@@ -17,8 +17,6 @@
     "bbs.config.personalization.theme-comment": "Opsi ini memungkinkan untuk mengubah gaya tooltip GUI",
     "bbs.config.personalization.primary_color": "Warna utama",
     "bbs.config.personalization.primary_color-comment": "Warna yang digunakan di mana-mana dalam sistem GUI",
-    "bbs.config.personalization.colored_background": "Colored background",
-    "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",
 	"bbs.config.personalization.background_brightness-comment": "Controls the brightness of panel and editor background surfaces",
     "bbs.config.personalization.track_width": "Keyframe track thickness",

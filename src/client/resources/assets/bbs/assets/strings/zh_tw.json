@@ -23,8 +23,6 @@
     "bbs.config.personalization.theme-comment": "此選項允許更改 GUI 工具提示的樣式",
     "bbs.config.personalization.primary_color": "主要顏色",
     "bbs.config.personalization.primary_color-comment": "GUI 系統中使用的顏色",
-    "bbs.config.personalization.colored_background": "Colored background",
-    "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",
 	"bbs.config.personalization.background_brightness-comment": "Controls the brightness of panel and editor background surfaces",
     "bbs.config.personalization.track_width": "Keyframe track thickness",

@@ -293,7 +293,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             int ey = this.area.ey();
 
             context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.chromeSurface());
-            context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), BBSSettings.backgroundTint(Colors.A6));
 
             for (int i = 0; i < this.panelIds.size(); i++)
             {
@@ -2913,7 +2912,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.updateLogic(context);
 
         this.area.render(context.batcher, BBSSettings.baseSurface());
-        this.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
 
         if (this.editor.isVisible())
         {
@@ -3018,7 +3016,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             if (panel.isVisible() && panel != this.preview)
             {
                 panel.area.render(context.batcher, BBSSettings.deepSurface());
-                panel.area.render(context.batcher, BBSSettings.backgroundTint(Colors.A6));
             }
         }
     }

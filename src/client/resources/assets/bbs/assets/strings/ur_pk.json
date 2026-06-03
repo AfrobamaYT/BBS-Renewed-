@@ -21,8 +21,6 @@
     "bbs.config.personalization.theme-comment": "GUI کی ٹوول ٹِپ کے انداز کو تبدیل کرنے کی اجازت",
     "bbs.config.personalization.primary_color": "بنیادی رنگ",
     "bbs.config.personalization.primary_color-comment": "وہ رنگ جو GUI سسٹم میں ہر جگہ استعمال ہوتا ہے",
-    "bbs.config.personalization.colored_background": "Colored background",
-    "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",
 	"bbs.config.personalization.background_brightness-comment": "Controls the brightness of panel and editor background surfaces",
     "bbs.config.personalization.track_width": "Keyframe track thickness",

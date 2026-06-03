@@ -23,8 +23,6 @@
     "bbs.config.personalization.theme-comment": "Chọn màu sáng hoặc tối cho tooltip",
     "bbs.config.personalization.primary_color": "Màu chính",
     "bbs.config.personalization.primary_color-comment": "Màu được sử dụng khắp giao diện",
-    "bbs.config.personalization.colored_background": "Colored background",
-    "bbs.config.personalization.colored_background-comment": "When disabled, panel backgrounds use neutral colors from the selected theme instead of the primary color",
 	"bbs.config.personalization.background_brightness": "Background brightness",
 	"bbs.config.personalization.background_brightness-comment": "Controls the brightness of panel and editor background surfaces",
     "bbs.config.personalization.track_width": "Keyframe track thickness",

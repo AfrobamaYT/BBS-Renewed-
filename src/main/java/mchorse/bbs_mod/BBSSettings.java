@@ -136,7 +136,6 @@ public class BBSSettings {
 
 	public static ValueBoolean damageControl;
 
-	public static ValueBoolean coloredBackground;
 	public static ValueFloat backgroundBrightness;
 	public static ValueBoolean interfaceShadows;
 
@@ -180,10 +179,6 @@ public class BBSSettings {
 
 	public static int primaryColor(int alpha) {
 		return withAlpha(primaryColor.get(), alpha);
-	}
-
-	public static boolean hasColoredBackground() {
-		return coloredBackground == null || coloredBackground.get();
 	}
 
 	public static boolean isLightTheme() {
@@ -262,20 +257,12 @@ public class BBSSettings {
 		return withAlpha(color, alpha);
 	}
 
-	public static int backgroundTint(int alpha) {
-		return hasColoredBackground() ? primaryColor(alpha) : 0;
-	}
-
 	public static int accentOverlay(int alpha) {
 		return primaryColor(alpha);
 	}
 
 	public static int inputSurface() {
 		return deepSurface();
-	}
-
-	public static int inputSurfaceTint() {
-		return backgroundTint(Colors.A6);
 	}
 
 	public static int inputBorderColor(boolean focused) {
@@ -410,7 +397,6 @@ public class BBSSettings {
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 
 		builder.category("personalization", Icons.COLOR);
-		coloredBackground = builder.getBoolean("colored_background", false);
 		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS);
 		interfaceShadows = builder.getBoolean("interface_shadows", true);
 		primaryColor = builder.getInt("primary_color", DEFAULT_PRIMARY_COLOR).color();
