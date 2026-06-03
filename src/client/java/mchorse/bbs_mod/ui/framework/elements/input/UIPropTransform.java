@@ -975,10 +975,20 @@ public class UIPropTransform extends UITransform
             case Z: rz += angleDeg; break;
         }
 
+        /* Keep the raw accumulation so the drag stays smooth, then snap only the
+         * axis the user is actually turning — the other two carry their start
+         * values and must not be rounded out from under the user. */
+        this.dragStartRotateDeg.set(rx, ry, rz);
+
+        switch (this.axis)
+        {
+            case X: rx = (float) this.snapGizmoValue(rx); break;
+            case Y: ry = (float) this.snapGizmoValue(ry); break;
+            case Z: rz = (float) this.snapGizmoValue(rz); break;
+        }
+
         if (this.dragRotateGizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
-
-        this.dragStartRotateDeg.set(rx, ry, rz);
     }
 
     /**
@@ -988,6 +998,11 @@ public class UIPropTransform extends UITransform
     private float screenAngle(int mouseX, int mouseY)
     {
         return (float) Math.atan2(mouseY - this.dragScreenCenter.y, mouseX - this.dragScreenCenter.x);
+    }
+
+    private static float unwrapDeg(float valueDeg, float referenceDeg)
+    {
+        return valueDeg + Math.round((referenceDeg - valueDeg) / 360F) * 360F;
     }
 
     /**
@@ -1340,9 +1355,10 @@ public class UIPropTransform extends UITransform
             .mul(startRotation)
             .getEulerAnglesZYX(new Vector3f());
 
-        float rx = MathUtils.toDeg(euler.x);
-        float ry = MathUtils.toDeg(euler.y);
-        float rz = MathUtils.toDeg(euler.z);
+        Vector3f live = this.dragRotateGizmoSpace ? this.transform.rotate2 : this.transform.rotate;
+        float rx = unwrapDeg(MathUtils.toDeg(euler.x), MathUtils.toDeg(live.x));
+        float ry = unwrapDeg(MathUtils.toDeg(euler.y), MathUtils.toDeg(live.y));
+        float rz = unwrapDeg(MathUtils.toDeg(euler.z), MathUtils.toDeg(live.z));
 
         if (this.dragRotateGizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
@@ -1485,9 +1501,9 @@ public class UIPropTransform extends UITransform
             .mul(rotation)
             .getEulerAnglesZYX(new Vector3f());
 
-        float rx = MathUtils.toDeg(euler.x);
-        float ry = MathUtils.toDeg(euler.y);
-        float rz = MathUtils.toDeg(euler.z);
+        float rx = unwrapDeg(MathUtils.toDeg(euler.x), MathUtils.toDeg(source.x));
+        float ry = unwrapDeg(MathUtils.toDeg(euler.y), MathUtils.toDeg(source.y));
+        float rz = unwrapDeg(MathUtils.toDeg(euler.z), MathUtils.toDeg(source.z));
 
         if (this.dragRotateGizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
@@ -2038,9 +2054,9 @@ public class UIPropTransform extends UITransform
             .mul(new Matrix3f().rotationZ(source.z).rotateY(source.y).rotateX(source.x))
             .getEulerAnglesZYX(new Vector3f());
 
-        float rx = MathUtils.toDeg(euler.x);
-        float ry = MathUtils.toDeg(euler.y);
-        float rz = MathUtils.toDeg(euler.z);
+        float rx = unwrapDeg(MathUtils.toDeg(euler.x), MathUtils.toDeg(source.x));
+        float ry = unwrapDeg(MathUtils.toDeg(euler.y), MathUtils.toDeg(source.y));
+        float rz = unwrapDeg(MathUtils.toDeg(euler.z), MathUtils.toDeg(source.z));
 
         if (gizmoSpace) this.setR2(null, rx, ry, rz);
         else this.setR(null, rx, ry, rz);
@@ -2126,10 +2142,6 @@ public class UIPropTransform extends UITransform
             return;
         }
 
-        x = this.snapGizmoValue(x);
-        y = this.snapGizmoValue(y);
-        z = this.snapGizmoValue(z);
-
         this.preCallback();
         this.transform.rotate.set(MathUtils.toRad((float) x), MathUtils.toRad((float) y), MathUtils.toRad((float) z));
         this.postCallback();
@@ -2142,10 +2154,6 @@ public class UIPropTransform extends UITransform
         {
             return;
         }
-
-        x = this.snapGizmoValue(x);
-        y = this.snapGizmoValue(y);
-        z = this.snapGizmoValue(z);
 
         this.preCallback();
         this.transform.rotate2.set(MathUtils.toRad((float) x), MathUtils.toRad((float) y), MathUtils.toRad((float) z));
