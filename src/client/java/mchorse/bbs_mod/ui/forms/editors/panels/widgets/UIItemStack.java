@@ -13,6 +13,8 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
@@ -129,11 +131,11 @@ public class UIItemStack extends UIElement
 
         Identifier id = Registries.ITEM.getId(stack.getItem());
         StringBuilder command = new StringBuilder("give @s ").append(id);
-        NbtCompound tag = stack.getNbt();
+        NbtComponent customData = stack.get(DataComponentTypes.CUSTOM_DATA);
 
-        if (tag != null && !tag.isEmpty())
+        if (customData != null && !customData.isEmpty())
         {
-            command.append(tag);
+            command.append("[minecraft:custom_data=").append(customData.getNbt()).append(']');
         }
 
         command.append(' ').append(stack.getCount());

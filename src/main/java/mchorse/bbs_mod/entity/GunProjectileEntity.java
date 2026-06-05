@@ -91,7 +91,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
     }
 
     @Override
-    protected void initDataTracker()
+    protected void initDataTracker(net.minecraft.entity.data.DataTracker.Builder builder)
     {}
 
     public GunProperties getProperties()
@@ -325,7 +325,7 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
         DamageSource source = this.getDamageSources().magic();
 
         int fireTicks = entity.getFireTicks();
-        boolean deflectsArrows = entity.getType().isIn(EntityTypeTags.DEFLECTS_ARROWS);
+        boolean deflectsArrows = entity.getType().isIn(EntityTypeTags.DEFLECTS_PROJECTILES);
 
         if (this.isOnFire() && !deflectsArrows)
         {
@@ -345,12 +345,6 @@ public class GunProjectileEntity extends ProjectileEntity implements IEntityForm
                     {
                         livingEntity.addVelocity(punchVector.x, 0.1D, punchVector.z);
                     }
-                }
-
-                if (owner instanceof LivingEntity)
-                {
-                    EnchantmentHelper.onUserDamaged(livingEntity, owner);
-                    EnchantmentHelper.onTargetDamaged((LivingEntity)owner, livingEntity);
                 }
 
                 this.onHit(livingEntity);

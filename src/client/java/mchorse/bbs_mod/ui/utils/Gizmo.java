@@ -501,8 +501,7 @@ public class Gizmo
             return;
         }
 
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         float size = 10000F;
         float t = 0.005F;
@@ -524,7 +523,7 @@ public class Gizmo
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
     }
 
@@ -546,24 +545,23 @@ public class Gizmo
             this.rotateStencilRingVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
             this.rotateSphereVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
 
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
             float radius = 0.22F * scale;
             float thicknessRing = 0.02F * scale * thickness;
             float outlinePad = 0.015F * scale * thickness;
             float thicknessStencil = 0.05F * scale * thickness + outlinePad;
 
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
             this.rotateRingVbo.bind();
             this.rotateRingVbo.upload(builder.end());
 
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessStencil, 1F, 1F, 1F, 0F, 360F);
             this.rotateStencilRingVbo.bind();
             this.rotateStencilRingVbo.upload(builder.end());
 
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             Draw.sphere(builder, new MatrixStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
             this.rotateSphereVbo.bind();
             this.rotateSphereVbo.upload(builder.end());
@@ -704,7 +702,6 @@ public class Gizmo
         float b = Colors.getB(color);
         float a = 0.25F;
 
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
         Matrix4f mat = stack.peek().getPositionMatrix();
 
         RenderSystem.enableBlend();
@@ -713,7 +710,7 @@ public class Gizmo
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
         RenderSystem.disableCull();
 
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         int segments = Math.max(12, (int) (Math.abs(sweepDeg) / 360F * 64F));
         float step = sweepDeg / segments;
@@ -728,24 +725,24 @@ public class Gizmo
             float x2 = (float) Math.cos(a2) * radius;
             float z2 = (float) Math.sin(a2) * radius;
 
-            builder.vertex(mat, 0, 0, 0).color(r, g, b, a).next();
+            builder.vertex(mat, 0, 0, 0).color(r, g, b, a);
             
             if (sweepDeg > 0)
             {
-                builder.vertex(mat, x1, 0, z1).color(r, g, b, a).next();
-                builder.vertex(mat, x2, 0, z2).color(r, g, b, a).next();
+                builder.vertex(mat, x1, 0, z1).color(r, g, b, a);
+                builder.vertex(mat, x2, 0, z2).color(r, g, b, a);
             }
             else
             {
-                builder.vertex(mat, x2, 0, z2).color(r, g, b, a).next();
-                builder.vertex(mat, x1, 0, z1).color(r, g, b, a).next();
+                builder.vertex(mat, x2, 0, z2).color(r, g, b, a);
+                builder.vertex(mat, x1, 0, z1).color(r, g, b, a);
             }
         }
         
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
 
         float lineThickness = 0.005F * scale;
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
         
         float endDeg = startDeg + sweepDeg;
         
@@ -756,24 +753,24 @@ public class Gizmo
         
         Vector3f p1 = new Vector3f(-sz, 0, sx).normalize().mul(lineThickness);
         
-        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, -p1.x, 0, -p1.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F).next();
+        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F);
+        builder.vertex(mat, -p1.x, 0, -p1.z).color(r, g, b, 1F);
+        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F);
         
-        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, sx + p1.x, 0, sz + p1.z).color(r, g, b, 1F).next();
+        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F);
+        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F);
+        builder.vertex(mat, sx + p1.x, 0, sz + p1.z).color(r, g, b, 1F);
         
         Vector3f p2 = new Vector3f(-ez, 0, ex).normalize().mul(lineThickness);
-        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, -p2.x, 0, -p2.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F).next();
+        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F);
+        builder.vertex(mat, -p2.x, 0, -p2.z).color(r, g, b, 1F);
+        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F);
         
-        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F).next();
-        builder.vertex(mat, ex + p2.x, 0, ez + p2.z).color(r, g, b, 1F).next();
+        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F);
+        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F);
+        builder.vertex(mat, ex + p2.x, 0, ez + p2.z).color(r, g, b, 1F);
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
 
         RenderSystem.enableCull();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -854,8 +851,8 @@ public class Gizmo
         axisSize *= scale * this.combinedInnerScale();
         axisOffset *= scale * thickness;
 
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
         boolean building = false;
+        BufferBuilder builder = null;
 
         if (showRotate)
         {
@@ -864,7 +861,7 @@ public class Gizmo
 
         if (showMove || showScale)
         {
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
             building = true;
 
             Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
@@ -903,7 +900,7 @@ public class Gizmo
         {
             if (!building)
             {
-                builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
                 building = true;
             }
 
@@ -915,7 +912,7 @@ public class Gizmo
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
-            BufferRenderer.drawWithGlobalProgram(builder.end());
+            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
 
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
         }
@@ -989,7 +986,6 @@ public class Gizmo
 
         if (showMove || showScale)
         {
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
             /* The bar reads as move when move is on screen (combined) and as scale
              * only when scale stands alone; the scale handle then lives on the end
@@ -1001,7 +997,7 @@ public class Gizmo
             int planeXY = showMove ? STENCIL_XY : STENCIL_SCALE_XY;
             int planeZY = showMove ? STENCIL_ZY : STENCIL_SCALE_ZY;
 
-            builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
             Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, barX / 255F, 0F, 0F);
             Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, barY / 255F, 0F, 0F);
@@ -1036,7 +1032,7 @@ public class Gizmo
 
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-            BufferRenderer.drawWithGlobalProgram(builder.end());
+            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
         }
 
         RenderSystem.enableDepthTest();

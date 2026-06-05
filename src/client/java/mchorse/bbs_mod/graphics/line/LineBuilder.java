@@ -84,18 +84,17 @@ public class LineBuilder <T>
 
         for (List<LinePoint<T>> points : build)
         {
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
 
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.enableBlend();
-            builder.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
 
             for (LinePoint<T> point : points)
             {
                 renderer.render(builder, matrix, point);
             }
 
-            BufferRenderer.drawWithGlobalProgram(builder.end());
+            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
         }
     }
 }

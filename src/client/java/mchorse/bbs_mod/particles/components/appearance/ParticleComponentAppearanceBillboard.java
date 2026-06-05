@@ -392,7 +392,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
                 .texture(u, v)
                 .color(particle.r, particle.g, particle.b, particle.a)
                 .light(this.light)
-                .next();
+                ;
         }
         else
         {
@@ -403,7 +403,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
                 .overlay(overlay)
                 .light(this.light)
                 .normal(this.n.x, this.n.y, this.n.z)
-                .next();
+                ;
         }
     }
 
@@ -455,7 +455,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         builder.vertex(matrix, vertex.x, vertex.y, 0F)
             .texture(u, v)
             .color(particle.r, particle.g, particle.b, particle.a)
-            .next();
+            ;
     }
 
     public void calculateUVs(Particle particle, ParticleEmitter emitter, float transition)

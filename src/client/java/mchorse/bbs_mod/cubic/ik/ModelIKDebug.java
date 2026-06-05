@@ -121,8 +121,7 @@ public final class ModelIKDebug
         RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        BufferBuilder builder = Tessellator.getInstance().getBuffer();
-        builder.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         for (ModelIKCache.CompiledChain chain : compiled.chains())
         {
@@ -141,7 +140,7 @@ public final class ModelIKDebug
             stencilMap.addPicking(form, chain.target());
         }
 
-        BufferRenderer.drawWithGlobalProgram(builder.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
 
         RenderSystem.enableDepthTest();
     }
@@ -203,8 +202,7 @@ public final class ModelIKDebug
         Matrix4f matrix = stack.peek().getPositionMatrix();
 
         /* Lines: the bone chain plus a faint bridge to the goal. */
-        BufferBuilder lines = Tessellator.getInstance().getBuffer();
-        lines.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder lines = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -213,11 +211,10 @@ public final class ModelIKDebug
 
         addLine(lines, matrix, tip, target, GOAL, 0.4F * a);
 
-        BufferRenderer.drawWithGlobalProgram(lines.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = lines.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
 
         /* Solid spheres: joints, the accented effector, and the goal. */
-        BufferBuilder dots = Tessellator.getInstance().getBuffer();
-        dots.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder dots = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -227,7 +224,7 @@ public final class ModelIKDebug
         orb(dots, stack, tip, unit * 0.1F, EFFECTOR, a);
         orb(dots, stack, target, unit * 0.12F, GOAL, a);
 
-        BufferRenderer.drawWithGlobalProgram(dots.end());
+        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = dots.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
     }
 
     private static void orb(BufferBuilder builder, MatrixStack stack, Vector3f p, float radius, float[] col, float a)
@@ -247,7 +244,7 @@ public final class ModelIKDebug
 
     private static void addLine(BufferBuilder builder, Matrix4f matrix, Vector3f p1, Vector3f p2, float[] col, float a)
     {
-        builder.vertex(matrix, p1.x, p1.y, p1.z).color(col[0], col[1], col[2], a).next();
-        builder.vertex(matrix, p2.x, p2.y, p2.z).color(col[0], col[1], col[2], a).next();
+        builder.vertex(matrix, p1.x, p1.y, p1.z).color(col[0], col[1], col[2], a);
+        builder.vertex(matrix, p2.x, p2.y, p2.z).color(col[0], col[1], col[2], a);
     }
 }

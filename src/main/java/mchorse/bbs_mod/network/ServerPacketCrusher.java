@@ -11,6 +11,6 @@ public class ServerPacketCrusher extends PacketCrusher
     @Override
     protected void sendBuffer(PlayerEntity entity, Identifier identifier, PacketByteBuf buf)
     {
-        ServerPlayNetworking.send((ServerPlayerEntity) entity, identifier, buf);
+        ServerPlayNetworking.send((ServerPlayerEntity) entity, ServerNetwork.BufPayload.from(buf, ServerNetwork.idFor(identifier)));
     }
 }

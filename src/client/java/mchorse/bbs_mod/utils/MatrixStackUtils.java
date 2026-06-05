@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.utils;
 
+import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.utils.joml.Vectors;
@@ -8,6 +9,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 
 public class MatrixStackUtils
 {
@@ -28,29 +30,25 @@ public class MatrixStackUtils
         /* Cache the global stuff */
         oldProjection.set(RenderSystem.getProjectionMatrix());
         oldMV.set(RenderSystem.getModelViewMatrix());
-        oldInverse.set(RenderSystem.getInverseViewRotationMatrix());
+        oldInverse.set(InverseView.get());
 
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
+        Matrix4fStack renderStack = RenderSystem.getModelViewStack();
 
-        renderStack.push();
-        renderStack.loadIdentity();
+        renderStack.pushMatrix();
+        renderStack.identity();
         RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
     }
 
     public static void restoreMatrices()
     {
         /* Return back to orthographic projection */
         RenderSystem.setProjectionMatrix(oldProjection, VertexSorter.BY_Z);
-        RenderSystem.setInverseViewRotationMatrix(oldInverse);
+        InverseView.set(oldInverse);
 
-        MatrixStack renderStack = RenderSystem.getModelViewStack();
+        Matrix4fStack renderStack = RenderSystem.getModelViewStack();
 
-        renderStack.push();
-        renderStack.loadIdentity();
-        MatrixStackUtils.multiply(renderStack, oldMV);
+        renderStack.popMatrix();
         RenderSystem.applyModelViewMatrix();
-        renderStack.pop();
     }
 
     public static void applyTransform(MatrixStack stack, Transform transform)

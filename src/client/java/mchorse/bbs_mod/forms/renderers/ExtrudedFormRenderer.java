@@ -78,7 +78,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         VertexFormat format = shading ? VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL : VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
         Supplier<ShaderProgram> normal = shading && !BBSRendering.isIrisShadersEnabled()
             ? BBSShaders::getModel
-            : (shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexLightmapColorProgram);
+            : (shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexColorProgram);
         Supplier<ShaderProgram> shader = this.getShader(context,
             normal,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
