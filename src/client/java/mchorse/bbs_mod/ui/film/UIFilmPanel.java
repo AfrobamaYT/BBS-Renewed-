@@ -3089,7 +3089,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         if (!BBSRendering.isIrisShadowPass())
         {
             this.lastProjection.set(RenderSystem.getProjectionMatrix());
-            this.lastView.set(context.matrixStack().peek().getPositionMatrix());
+            /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
+             * MatrixStack base is just an identity stack for entity-relative rendering, so
+             * reading the view from it would drop the camera angle and misaim every raycast. */
+            this.lastView.set(context.positionMatrix());
         }
 
         this.controller.renderFrame(context);

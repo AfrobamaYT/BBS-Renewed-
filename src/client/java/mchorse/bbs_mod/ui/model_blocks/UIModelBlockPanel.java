@@ -356,7 +356,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
          * and dragging in one coordinate frame. */
         this.gizmoProjection.set(RenderSystem.getProjectionMatrix());
         this.gizmoCamera.projection.set(this.gizmoProjection);
-        this.gizmoCamera.view.set(stack.peek().getPositionMatrix());
+        /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
+         * MatrixStack base is just an identity stack for entity-relative rendering, so
+         * reading the view from it would drop the camera angle and break picking/dragging. */
+        this.gizmoCamera.view.set(context.positionMatrix());
         this.gizmoCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
 
         this.renderGizmoStencil(stack, cameraPos, mc);
@@ -685,7 +688,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.mouseDirection.set(CameraUtils.getMouseDirection(
             RenderSystem.getProjectionMatrix(),
-            context.matrixStack().peek().getPositionMatrix(),
+            context.positionMatrix(),
             (int) x, (int) y, 0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight()
         ));
         this.hovered = this.getClosestObject(new Vector3d(pos.x, pos.y, pos.z), this.mouseDirection);
