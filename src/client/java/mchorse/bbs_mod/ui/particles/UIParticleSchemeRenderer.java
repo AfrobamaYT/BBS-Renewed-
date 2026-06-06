@@ -72,6 +72,9 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
+
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+
         this.emitter.render(VertexFormats.POSITION_TEXTURE_COLOR_LIGHT, GameRenderer::getParticleProgram, stack, OverlayTexture.DEFAULT_UV, context.getTransition());
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
