@@ -140,6 +140,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     public UIFilmController(UIFilmPanel panel)
     {
         this.panel = panel;
+        this.setPov(BBSSettings.editorCameraMode.get());
 
         IKey category = UIKeys.FILM_CONTROLLER_KEYS_CATEGORY;
 
@@ -290,6 +291,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         this.pov = pov;
         this.orbit.enabled = this.getPovMode() > 1;
+
+        BBSSettings.editorCameraMode.set(this.getPovMode());
     }
 
     private int getMouseMode()
