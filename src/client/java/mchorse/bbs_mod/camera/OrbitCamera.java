@@ -396,7 +396,7 @@ public class OrbitCamera
             return;
         }
 
-        float dt = MinecraftClient.getInstance().getLastFrameDuration();
+        float dt = MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration();
         float factor = MathUtils.clamp(1F - (float) Math.pow(Math.min(smoothness, 0.99F), dt), 0F, 1F);
 
         this.position.lerp(this.targetPosition, factor);
