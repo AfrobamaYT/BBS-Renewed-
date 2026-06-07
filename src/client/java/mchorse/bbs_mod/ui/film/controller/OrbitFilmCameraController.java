@@ -313,6 +313,11 @@ public class OrbitFilmCameraController implements ICameraController
                 this.targetPivot.set(replay);
                 this.positioned = true;
             }
+            else if (this.hasNoReplays())
+            {
+                this.seedPivotFromCamera(camera);
+                this.positioned = true;
+            }
         }
 
         Vector3f offset = this.getOffset();
@@ -363,6 +368,27 @@ public class OrbitFilmCameraController implements ICameraController
         OrbitTarget target = this.getOrbitTarget(transition);
 
         return target == null ? null : new Vector3f((float) target.position.x, (float) target.position.y, (float) target.position.z);
+    }
+
+    private boolean hasNoReplays()
+    {
+        return this.controller.panel.getData() == null || this.controller.panel.getData().replays.getList().isEmpty();
+    }
+
+    /**
+     * When there is nothing to focus on, place the orbit center in front of the
+     * current camera (keeping its position and rotation), instead of leaving it at
+     * the world origin which could be nowhere near the view.
+     */
+    private void seedPivotFromCamera(Camera camera)
+    {
+        this.targetRotation.set(-camera.rotation.x, -camera.rotation.y);
+        this.rotation.set(this.targetRotation);
+
+        Vector3f forward = this.rotateVector(0F, 0F, -1F, this.rotation.y, this.rotation.x, false).mul(this.distance);
+
+        this.pivot.set((float) camera.position.x, (float) camera.position.y, (float) camera.position.z).add(forward);
+        this.targetPivot.set(this.pivot);
     }
 
     private OrbitTarget getOrbitTarget(float transition)
