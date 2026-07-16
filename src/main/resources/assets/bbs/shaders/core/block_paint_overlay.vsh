@@ -8,12 +8,13 @@ in ivec2 UV2;
 in vec3 Normal;
 
 uniform mat4 ModelViewMat;
+uniform mat4 FormRootInverse;
 uniform mat4 ProjMat;
 uniform mat3 IViewRotMat;
 
 out vec4 vertexColor;
 out vec2 texCoord0;
-out vec3 localPos;
+out vec3 formRootPos;
 
 void main()
 {
@@ -21,5 +22,5 @@ void main()
 
     vertexColor = Color;
     texCoord0 = UV0;
-    localPos = Position;
+    formRootPos = (FormRootInverse * ModelViewMat * vec4(Position, 1.0)).xyz;
 }
