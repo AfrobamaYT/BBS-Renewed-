@@ -16,6 +16,13 @@ public final class BBSToolsModClient implements ClientModInitializer
     {
         BBSToolsMod.LOG.info("BBSTools client init");
 
+        /* AUTONOMIE 2026-07-27: zwei fertige, aber nie gerufene werkzeuge.
+         * F12 oeffnet die in-game log-konsole (BBSLogConsoleScreen), das HUD zeigt
+         * perf-zahlen (aus mit /bbs-renewed hud). Beide haben ihr register() seit
+         * jeher — es hat sie nur niemand aufgerufen, also gab es sie im spiel nicht. */
+        com.afrobama.bbstools.client.console.BBSLogConsoleHotkey.register();
+        com.afrobama.bbstools.client.console.BBSRenewedHud.register();
+
         /* AUTONOMIE 2026-07-27: BBSToolsAddon von hand am event-bus anmelden.
          * Frueher lief das ueber BBS' custom-entrypoint "bbs-addon-client" (CML-fork), das
          * es im fs-kern nicht gibt — fs postet seine 5 register-events einfach ueber
@@ -871,6 +878,14 @@ public final class BBSToolsModClient implements ClientModInitializer
                 com.afrobama.bbstools.clip.BBSToolsAddCameraClip.class,
                 (clip, editor) -> new com.afrobama.bbstools.client.clip.UIBBSToolsAddCameraClip(
                     (com.afrobama.bbstools.clip.BBSToolsAddCameraClip) clip, editor));
+
+            /* AUTONOMIE 2026-07-27: UI-editor fuer den damage-hitbox-clip. Der clip-typ
+             * selbst wird serverseitig in BBSToolsMod registriert; ohne DIESE zeile gaebe
+             * es ihn zwar in der clip-liste, aber ohne editor-panel. */
+            mchorse.bbs_mod.ui.film.clips.UIClip.register(
+                com.afrobama.bbstools.hitbox.DamageHitboxClip.class,
+                (clip, editor) -> new com.afrobama.bbstools.client.hitbox.UIDamageHitboxClip(
+                    (com.afrobama.bbstools.hitbox.DamageHitboxClip) clip, editor));
 
             BBSToolsMod.LOG.info("Add Camera clip registered (bbs:bbstools_add_camera)");
         }

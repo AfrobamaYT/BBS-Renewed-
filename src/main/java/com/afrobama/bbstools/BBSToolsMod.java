@@ -44,6 +44,12 @@ public final class BBSToolsMod implements ModInitializer
         /* /buildschematic + /ragdolly each register their own
          *  CommandRegistrationCallback internally — just call register(). */
         com.afrobama.bbstools.schematic.BuildSchematic.register();
+
+        /* AUTONOMIE 2026-07-27: damage-hitbox (keyframed schaden-AABB fuer kampf-animationen).
+         * Gleiches muster wie BuildSchematic drueber — register() haengt sich selbst an
+         * CommandRegistrationCallback + END_SERVER_TICK. Der aufruf fehlte schlicht, damit
+         * war das ganze paket (664z + clip + UI-editor) unerreichbar. */
+        com.afrobama.bbstools.hitbox.DamageHitbox.register();
         com.afrobama.bbstools.ragdoll.RagdollSwap.register();
 
 
@@ -80,6 +86,10 @@ public final class BBSToolsMod implements ModInitializer
 
             return;
         }
+
+        BBSMod.getFactoryCameraClips().register(Link.create("bbstools:damage_hitbox"),
+            com.afrobama.bbstools.hitbox.DamageHitboxClip.class,
+            new ClipFactoryData(Icons.SPHERE, 0xef5350));
 
         fabrik
             .register(Link.create("bbstools:model_fracture"), ModelFractureActionClip.class,
