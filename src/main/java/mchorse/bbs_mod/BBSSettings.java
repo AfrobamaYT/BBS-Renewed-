@@ -207,6 +207,9 @@ public class BBSSettings {
 	/** Beim replay-posieren nur die markierten knochen aufzeichnen statt des ganzen skeletts. */
 	public static ValueBoolean replayMarkedBonesOnly;
 
+	/** Form-picker als karten-raster statt als liste (CML-stil). Umschaltbar, beide gehen. */
+	public static ValueBoolean formPickerKarten;
+
 	/* AUTONOMIE 2026-07-27: schluessel fuer die AI-hintergrundentfernung in com/afrobama
 	 * (AIBackgroundRemover = replicate.com, AIOpenAIBackgroundRemover = OpenAI). Leer =
 	 * feature bleibt still aus, es wird nichts nach draussen geschickt. */
@@ -688,6 +691,7 @@ public class BBSSettings {
 		bakeDistanceCulling = builder.getBoolean("bake_distance_culling", true);
 		bakeArmyBake = builder.getBoolean("bake_army_bake", false);
 		replayMarkedBonesOnly = builder.getBoolean("replay_marked_bones_only", false);
+		formPickerKarten = builder.getBoolean("form_picker_karten", true);
 
 		builder.category("ai", Icons.SERVER);
 		aiApiKey = builder.getString("api_key", "");
