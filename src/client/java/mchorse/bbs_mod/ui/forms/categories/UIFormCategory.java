@@ -49,25 +49,10 @@ public class UIFormCategory extends UIElement
     private String search = "";
     private List<Form> searched = new ArrayList<>();
 
-    /* AUTONOMIE 2026-07-27: aufklapp-animation und kachel-ziehen. Die logik liegt in
-     * com.afrobama.bbstools.client.forms (Aufklapp, FormZiehen) — hier steht nur, wie
-     * sie sich auf hoehe und darstellung auswirken. CML hatte beides zusammen mit dem
-     * zeichnen in einem 1.383-zeilen-UICategoryCardsGrid. */
-    private final com.afrobama.bbstools.client.forms.Aufklapp aufklapp =
-        new com.afrobama.bbstools.client.forms.Aufklapp();
-    private final com.afrobama.bbstools.client.forms.FormZiehen ziehen =
-        new com.afrobama.bbstools.client.forms.FormZiehen();
-
     public UIFormCategory(FormCategory category, UIFormList list)
     {
         this.category = category;
         this.list = list;
-
-        /* Startzustand OHNE animation: beim oeffnen des pickers sollen die kategorien
-         * sofort so dastehen wie zuletzt, nicht erst aufklappen. */
-        this.aufklapp.sofort = true;
-        this.aufklapp.setOffen(category.visible.get());
-        this.aufklapp.sofort = BBSSettings.editorSimplifyAnimations.get();
 
         this.context((menu) ->
         {
@@ -200,8 +185,7 @@ public class UIFormCategory extends UIElement
         int perRow = Math.max(1, width / CELL_WIDTH);
         int h = HEADER_HEIGHT;
 
-        /* Der kachel-teil waechst/schrumpft mit der animation; die kopfzeile bleibt. */
-        if (!forms.isEmpty() && !this.aufklapp.istRuhigZu())
+        if (!forms.isEmpty() && this.category.visible.get())
         {
             int i = 0;
 
@@ -219,9 +203,7 @@ public class UIFormCategory extends UIElement
             h += CELL_HEIGHT;
         }
 
-        /* Nur der inhalt skaliert, nicht die kopfzeile — sonst wuerde die ueberschrift
-         * beim zuklappen mitschrumpfen und flackern. */
-        return HEADER_HEIGHT + Math.round((h - HEADER_HEIGHT) * this.aufklapp.wert());
+        return h;
     }
 
     public void refreshLayoutForSearch(int columnWidth)
@@ -258,11 +240,7 @@ public class UIFormCategory extends UIElement
             {
                 if (x < this.area.x + 30 + context.batcher.getFont().getWidth(this.category.title.get()))
                 {
-                    boolean neu = !this.category.visible.get();
-
-                    this.category.visible.set(neu);
-                    this.aufklapp.sofort = BBSSettings.editorSimplifyAnimations.get();
-                    this.aufklapp.setOffen(neu);
+                    this.category.visible.set(!this.category.visible.get());
 
                     return true;
                 }
@@ -280,16 +258,6 @@ public class UIFormCategory extends UIElement
 
             if (i >= 0 && i < forms.size())
             {
-                /* AUTONOMIE 2026-07-27: rechtsklick heftet an statt auszuwaehlen.
-                 * Bewusst kein kontextmenue: bei 60x80-kacheln ist ein menue groesser
-                 * als das ziel, und anheften ist die einzige aktion die es hier gibt. */
-                if (context.mouseButton == 1)
-                {
-                    com.afrobama.bbstools.client.forms.FormFavoriten.umschalten(forms.get(i));
-
-                    return true;
-                }
-
                 this.select(forms.get(i), true);
             }
             else
@@ -314,18 +282,6 @@ public class UIFormCategory extends UIElement
     @Override
     public void render(UIContext context)
     {
-        /* Einen frame weiterrechnen. Solange sich der wert aendert, aendert sich auch die
-         * hoehe — deshalb muss der eltern-container danach neu vermessen werden, sonst
-         * ueberlappen die kategorien waehrend der animation. */
-        float vorher = this.aufklapp.wert();
-
-        this.aufklapp.sofort = BBSSettings.editorSimplifyAnimations.get();
-
-        if (this.aufklapp.tick() != vorher)
-        {
-            this.last = -1;
-        }
-
         int layoutWidth = Math.max(CELL_WIDTH, this.area.w);
         List<Form> forms = this.getForms();
         int h = this.computeContentHeight(layoutWidth);
@@ -390,14 +346,6 @@ public class UIFormCategory extends UIElement
                 }
 
                 FormUtilsClient.renderUI(form, context, cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT);
-
-                /* AUTONOMIE 2026-07-27: favoriten-marker oben rechts auf der kachel.
-                 * Die daten liegen in com.afrobama.bbstools.client.forms.FormFavoriten —
-                 * diese zeile zeichnet nur. Rechtsklick schaltet um, siehe subMouseClicked. */
-                if (com.afrobama.bbstools.client.forms.FormFavoriten.ist(form))
-                {
-                    context.batcher.icon(Icons.SAVED, cx + CELL_WIDTH - 11, cy + 2, 0F, 0F);
-                }
 
                 context.batcher.unclip(context);
 
