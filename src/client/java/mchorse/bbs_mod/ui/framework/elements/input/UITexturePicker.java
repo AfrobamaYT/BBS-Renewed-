@@ -928,7 +928,26 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
 
     protected void updateOptions()
     {
-        Texture texture = BBSModClient.getTextures().getTexture(this.current);
+        /* AUTONOMIE 2026-07-27: null-link nicht an getTexture() reichen.
+         *
+         * Die zeile darunter prueft this.current != null — aber ERST NACH dem aufruf.
+         * Bei leerer auswahl (frisch gebauter picker) landet null in
+         * TextureManager.getPixels(), das blind link.source liest:
+         *
+         *     NullPointerException: Cannot read field "source" because "link" is null
+         *       at TextureManager.getPixels(TextureManager:163)
+         *       at UITexturePicker.updateOptions(UITexturePicker:931)
+         *
+         * Gefunden vom autonomen panel-durchlauf, nicht durch klicken. Wird zwar
+         * abgefangen (kein crash), feuert aber bei JEDEM oeffnen des pickers und
+         * verstopft das log, in dem echte fehler stehen.
+         *
+         * ⚠️ Diese datei ist sonst BYTE-IDENTISCH mit bbs-fs-pur — der fehler ist
+         * fs-eigen, kein umstiegsschaden. Beim naechsten upstream-merge pruefen, ob
+         * er dort behoben wurde. */
+        Texture texture = this.current == null
+            ? null
+            : BBSModClient.getTextures().getTexture(this.current);
 
         this.options.setVisible(this.current != null);
 
