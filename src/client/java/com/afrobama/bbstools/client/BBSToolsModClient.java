@@ -16,6 +16,13 @@ public final class BBSToolsModClient implements ClientModInitializer
     {
         BBSToolsMod.LOG.info("BBSTools client init");
 
+        /* AUTONOMIE 2026-07-27: BBSToolsAddon von hand am event-bus anmelden.
+         * Frueher lief das ueber BBS' custom-entrypoint "bbs-addon-client" (CML-fork), das
+         * es im fs-kern nicht gibt — fs postet seine 5 register-events einfach ueber
+         * BBSMod.events. Ohne diese zeile wird kein einziger @Subscribe-hook je gerufen
+         * (dashboard-panel + sprachdatei fehlen dann still). */
+        mchorse.bbs_mod.BBSMod.events.register(new com.afrobama.bbstools.client.addon.BBSToolsAddon());
+
         /* Blender-transform-kern bei BBS anmelden. UIPropTransform kennt seit 2026-07-26 nur
          * noch das interface mchorse…input.BlenderModalKernel — ohne diese zeile bleibt die
          * fabrik null und G/R/S fällt auf BBS' alten ray-pfad zurück (kein crash, aber der

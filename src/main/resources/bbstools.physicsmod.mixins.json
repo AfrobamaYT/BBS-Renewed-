@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.afrobama.bbstools.client.mixin.physicsmod",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.afrobama.bbstools.client.mixin.physicsmod.BBSPhysicsModMixinPlugin",
+  "client": [
+    "MixinConfigMobs",
+    "ConvexRigidBodyMaskMixin",
+    "BoxRigidBodyMaskMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

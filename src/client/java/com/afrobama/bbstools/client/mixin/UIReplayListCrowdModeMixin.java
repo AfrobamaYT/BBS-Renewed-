@@ -24,6 +24,7 @@ package com.afrobama.bbstools.client.mixin;
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.ui.film.replays.ReplayListEntry;
 import mchorse.bbs_mod.ui.film.replays.UIReplayList;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UIList;
@@ -41,15 +42,14 @@ public abstract class UIReplayListCrowdModeMixin extends UIList<Replay>
         super(callback);
     }
 
-    /** HEAD of render: reset the per-frame aggregation. Must happen
-     *  before any renderElementPart invocations for this frame. */
-    @Inject(method = "render", at = @At("HEAD"))
-    private void bbstools$crowdModeBeginFrame(UIContext context, CallbackInfo ci)
-    {
-        /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
-         * com.afrobama.blendertransform.UiReplayListCrowdModeLogik — siehe MixinBruecke. */
-        MixinBruecke.rufe("UiReplayListCrowdModeLogik", "crowdModeBeginFrame");
-    }
+    /* AUTONOMIE 2026-07-27: die beiden render-injections (HEAD/TAIL) sind ENTFERNT.
+     * fs' UIReplayList erbt render() von UIList und deklariert es nicht selbst — ein
+     * @Inject(method="render") findet in der zielklasse dann kein ziel und laesst den
+     * ganzen mixin (und damit den start) scheitern. Die aggregation laeuft jetzt allein
+     * ueber renderElementPart unten: die logik-klasse setzt ihren zaehler beim ersten
+     * aufruf eines frames zurueck. Der zusammenfassungs-streifen am ende des frames
+     * fehlt damit — er braucht einen eigenen anker (z.B. UIList.render), der in der
+     * feature-runde nachgezogen wird. */
 
     /** HEAD of renderElementPart: in crowd mode, aggregate the row's
      *  actor-type label and CANCEL the vanilla render. Skips the
@@ -58,7 +58,7 @@ public abstract class UIReplayListCrowdModeMixin extends UIList<Replay>
     @Inject(method = "renderElementPart",
             at = @At("HEAD"),
             cancellable = true)
-    private void bbstools$crowdModeAggregateRow(UIContext context, Replay element,
+    private void bbstools$crowdModeAggregateRow(UIContext context, ReplayListEntry element,
         int i, int x, int y, boolean hover, boolean selected, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
@@ -67,15 +67,5 @@ public abstract class UIReplayListCrowdModeMixin extends UIList<Replay>
             element)) ci.cancel();
     }
 
-    /** TAIL of render: paint the compact crowd-mode strip listing every
-     *  aggregated type + count, plus a faint hint footer. */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void bbstools$crowdModeDrawStrip(UIContext context, CallbackInfo ci)
-    {
-        /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
-         * com.afrobama.blendertransform.UiReplayListCrowdModeLogik — siehe MixinBruecke. */
-        MixinBruecke.rufe("UiReplayListCrowdModeLogik", "crowdModeDrawStrip",
-            (UIReplayList)(Object) this, context);
-    }
 
 }

@@ -27,9 +27,11 @@ public interface ModelInstanceAccessor
 {
     @Accessor("model")
     IModel bbstools$getModel();
-
-    @Accessor("texture")
-    Link bbstools$getTexture();
+    /* AUTONOMIE 2026-07-27: der texture-accessor ist ENTFERNT. fs haelt die textur nicht
+     * mehr als feld auf ModelInstance, sondern in config (ValueLink) — und bietet dafuer
+     * die echte methode ModelInstance.getTexture(), die zusaetzlich auf baseTexture
+     * zurueckfaellt. Der @Accessor fand sein feld nicht und liess den ganzen mixin
+     * scheitern (dann fehlten auch getModel/getVaos). Kein aufrufer hatte ihn benutzt. */
 
     @Accessor("vaos")
     Map<ModelGroup, ModelVAO> bbstools$getVaos();

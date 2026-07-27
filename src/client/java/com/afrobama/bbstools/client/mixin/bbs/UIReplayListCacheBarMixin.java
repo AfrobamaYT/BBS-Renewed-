@@ -15,6 +15,7 @@ import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.ui.film.replays.ReplayListEntry;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.UIReplayList;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -40,7 +41,10 @@ public abstract class UIReplayListCacheBarMixin
     private static MethodHandle bbstools$drawGriff;
 
     @Inject(method = "renderElementPart", at = @At("TAIL"), remap = false)
-    private void bbstools$cacheBar(UIContext context, Replay element, int i, int x, int y,
+    /* AUTONOMIE 2026-07-27: fs' UIReplayList haelt ReplayListEntry (replay ODER ordner),
+     * CMLs hielt direkt Replay. Der eintrag kann jetzt ein ordner sein — dann ist .replay
+     * null und die logik ueberspringt ihn. */
+    private void bbstools$cacheBar(UIContext context, ReplayListEntry element, int i, int x, int y,
                                    boolean hover, boolean selected, CallbackInfo ci)
     {
         bbstools$refreshGriff();
@@ -56,7 +60,9 @@ public abstract class UIReplayListCacheBarMixin
         {
             if (bbstools$drawGriff != null)
             {
-                bbstools$drawGriff.invoke(this.panel, context, element, i,
+                /* AUTONOMIE 2026-07-27: die logik erwartet einen Replay; ein ordner-eintrag
+                 * traegt keinen (null) und wird von ihr uebersprungen. */
+                bbstools$drawGriff.invoke(this.panel, context, element == null ? null : element.replay, i,
                     self.area.x, self.area.y, self.area.w,
                     list.scroll.scrollItemSize, list.scroll.getScroll());
             }
