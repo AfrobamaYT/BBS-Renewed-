@@ -42,8 +42,25 @@ public class UIClipPreviewLayer extends UIElement
     private boolean loggedFirstActive;
     private boolean loggedFirstRender;
 
+    /* Lebende instanzen, damit der client-tick sie erreicht. Schwache referenzen: wird
+     * das dashboard geschlossen, darf die instanz weg — wir halten sie nicht am leben.
+     * Siehe die crash-erklaerung bei syncChildren(). */
+    private static final java.util.Set<UIClipPreviewLayer> LEBENDE =
+        java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /** Vom client-tick gerufen: alle offenen overlays synchronisieren, ausserhalb des renderns. */
+    public static void tickAlle()
+    {
+        for (UIClipPreviewLayer o : new java.util.ArrayList<>(LEBENDE))
+        {
+            try { o.syncChildren(); }
+            catch (Throwable ignoriert) { /* ein kaputtes overlay darf den tick nicht reissen */ }
+        }
+    }
+
     public UIClipPreviewLayer()
     {
+        LEBENDE.add(this);
         /* Full-screen invisible container; children position themselves
          *  in absolute coords via applyAutoLayout. canBeRendered is
          *  overridden so we render even before resize() has propagated. */
@@ -80,11 +97,24 @@ public class UIClipPreviewLayer extends UIElement
             }
         }
 
-        syncChildren();
         super.render(context);
     }
 
-    private void syncChildren()
+    /* ⛔ AUTONOMIE 2026-07-27 — CRASH-URSACHE, gemessen an drei crash-reports:
+     *
+     *     java.util.ConcurrentModificationException
+     *       at java.util.ArrayList$Itr.checkForComodification
+     *       at mchorse.bbs_mod.ui.framework.elements.UIElement.render(UIElement:1429)
+     *
+     * syncChildren() ruft add()/remove() auf der kinder-liste. Wurde es aus render()
+     * gerufen, aenderte sich die liste GENAU WAEHREND der eltern-UIElement.render()
+     * sie mit einem iterator durchlief — beim naechsten next() knallt es. Ausgeloest
+     * hat es jedes preview, das waehrend eines frames dazukam oder verschwand; beim
+     * durchklicken der UI passiert das staendig.
+     *
+     * Fix: mutation aus dem render-pfad heraus. Die synchronisation laeuft jetzt im
+     * client-tick, wo niemand die liste iteriert. render() liest nur noch. */
+    public void syncChildren()
     {
         java.util.List<ActiveCameraClipRegistry.Active> active = ActiveCameraClipRegistry.snapshot();
 

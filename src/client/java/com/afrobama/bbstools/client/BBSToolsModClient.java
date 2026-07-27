@@ -78,6 +78,13 @@ public final class BBSToolsModClient implements ClientModInitializer
                 com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onTick();
                 /* afrobama — mirror the BBS top-bar "Bake" menu flags into perf config. */
                 com.afrobama.bbstools.client.qol.BakeMenuSync.tick();
+
+                /* AUTONOMIE 2026-07-27: kamera-preview-overlays HIER synchronisieren,
+                 * nicht in ihrem render(). Dort aenderten sie die kinder-liste, waehrend
+                 * UIElement.render() sie iterierte -> ConcurrentModificationException,
+                 * drei crash-reports. Im tick iteriert niemand. */
+                com.afrobama.bbstools.client.campreview.UICameraPreviewOverlay.tickAlle();
+                com.afrobama.bbstools.client.campreview.UIClipPreviewLayer.tickAlle();
             });
         /* Per-frame counter for the heartbeat's "frame" + "fps" fields. */
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(

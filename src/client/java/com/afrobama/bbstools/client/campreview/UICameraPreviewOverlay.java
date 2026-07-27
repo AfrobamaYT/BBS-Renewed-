@@ -25,15 +25,31 @@ public class UICameraPreviewOverlay extends UIElement
 {
     private final Map<UUID, UICameraPreviewWindow> windows = new HashMap<>();
 
+    /* Lebende instanzen, damit der client-tick sie erreicht. Schwache referenzen: wird
+     * das dashboard geschlossen, darf die instanz weg — wir halten sie nicht am leben.
+     * Siehe die crash-erklaerung bei syncChildren(). */
+    private static final java.util.Set<UICameraPreviewOverlay> LEBENDE =
+        java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /** Vom client-tick gerufen: alle offenen overlays synchronisieren, ausserhalb des renderns. */
+    public static void tickAlle()
+    {
+        for (UICameraPreviewOverlay o : new java.util.ArrayList<>(LEBENDE))
+        {
+            try { o.syncChildren(); }
+            catch (Throwable ignoriert) { /* ein kaputtes overlay darf den tick nicht reissen */ }
+        }
+    }
+
     public UICameraPreviewOverlay()
     {
+        LEBENDE.add(this);
         this.wh(1F, 1F);
     }
 
     @Override
     public void render(UIContext context)
     {
-        this.syncChildren();
         super.render(context);
     }
 
@@ -71,7 +87,21 @@ public class UICameraPreviewOverlay extends UIElement
         return false;
     }
 
-    private void syncChildren()
+    /* ⛔ AUTONOMIE 2026-07-27 — CRASH-URSACHE, gemessen an drei crash-reports:
+     *
+     *     java.util.ConcurrentModificationException
+     *       at java.util.ArrayList$Itr.checkForComodification
+     *       at mchorse.bbs_mod.ui.framework.elements.UIElement.render(UIElement:1429)
+     *
+     * syncChildren() ruft add()/remove() auf der kinder-liste. Wurde es aus render()
+     * gerufen, aenderte sich die liste GENAU WAEHREND der eltern-UIElement.render()
+     * sie mit einem iterator durchlief — beim naechsten next() knallt es. Ausgeloest
+     * hat es jedes preview, das waehrend eines frames dazukam oder verschwand; beim
+     * durchklicken der UI passiert das staendig.
+     *
+     * Fix: mutation aus dem render-pfad heraus. Die synchronisation laeuft jetzt im
+     * client-tick, wo niemand die liste iteriert. render() liest nur noch. */
+    public void syncChildren()
     {
         /* Add windows for new previews. */
         for (CameraPreview p : CameraPreviewRegistry.list())

@@ -67,6 +67,45 @@ loom {
 		quick {
 			client()
 			configName = "Quick"
+
+			/* AUTONOMIE 2026-07-27: mit -Pdebug oeffnet die instanz JDWP auf :5005.
+			 *
+			 *     ./gradlew runQuick -Pdebug
+			 *
+			 * Danach kann hotswap-cf.ps1 (oder IntelliJ) klassen live austauschen, ohne
+			 * neustart. Ohne den schalter bleibt der port zu — JDWP kostet etwas leistung
+			 * und soll nicht immer offen sein. suspend=n: das game wartet nicht auf einen
+			 * debugger, es startet normal durch. */
+			if (project.hasProperty("debug"))
+			{
+				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+			}
+
+			/* ⭐ VOLLES HOTSWAP (2026-07-27 wiederhergestellt — war im alten fork eingerichtet).
+			 *
+			 * Mit der gebundelten JBR (../jbr-dcevm-home, 21.0.9-nomod) und dem hotswap-agent
+			 * in deren lib/hotswap/ kann die laufende JVM NEUE METHODEN, FELDER UND KLASSEN
+			 * aufnehmen — nicht nur methoden-rümpfe. Damit braucht ein feature-umbau keinen
+			 * neustart mehr.
+			 *
+			 * ⛔ canAddMethod()/canUnrestrictedlyRedefineClasses() melden trotzdem `false`.
+			 * Beide sind deprecated und sagen NICHTS über die echte fähigkeit — nie daran
+			 * messen, immer eine echte klasse ändern und die wirkung im laufenden prozess
+			 * prüfen. (Diese fehlmessung kostete uns einen tag, siehe CLAUDE.md regel 0d.)
+			 *
+			 * Auf einer stock-JVM werden die -XX-flags ignoriert; dann bleibt es bei
+			 * body-hotswap. Deshalb ist die JBR über org.gradle.java.home fest gesetzt. */
+			/* Die redefinition-flags stehen NICHT hier, sondern als JDK_JAVA_OPTIONS weiter
+			 * unten am run-task — siehe die begruendung dort. Als vmArgs kommen sie beim
+			 * game-prozess nicht an. */
+			/* ⛔ KEIN -XX:HotswapAgent=fatjar. Das flag laedt den agent in den system-classloader;
+			 * Minecrafts log4j sucht org.hotswap.agent.config.PluginManager dann ueber Knot und
+			 * findet ihn nicht -> NoClassDefFoundError beim allerersten log-aufruf, das game
+			 * startet gar nicht. Der fork, der gestern lief, setzt es auch nicht: die beiden
+			 * AllowRedefinition-flags der JBR reichen fuer add-method/add-field. */
+
+
+			vmArgs "--add-modules=jdk.jshell"
 			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
 		}
 	}
@@ -80,7 +119,7 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	
+
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
@@ -110,6 +149,45 @@ dependencies {
 
 	modImplementation "org.anarres:jcpp:1.4.14"
 	modImplementation "io.github.douira:glsl-transformer:2.0.0-pre13"
+}
+
+/* ⭐ VOLLES HOTSWAP — die JBR NUR fuer den game-lauf, nicht fuer den build.
+ *
+ * WARUM NICHT org.gradle.java.home: das wuerde auch gradle+loom auf die JBR umstellen.
+ * Loom cached mappings und remap-ergebnisse pro JVM — ein wechsel loest einen kompletten
+ * neubau aus und provoziert fabric-loader-fehler, weil die caches nicht zusammenpassen.
+ * Der build bleibt deshalb auf der gewohnten JVM; nur der gestartete client laeuft auf
+ * der JBR, und nur DIE braucht die redefinition-faehigkeit.
+ *
+ * Greift automatisch, wenn ../jbr-dcevm-home existiert — sonst laeuft alles wie bisher
+ * (dann eben nur body-hotswap statt vollem).
+ */
+tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach {
+	def jbr = file("${rootDir}/../jbr-dcevm-home/bin/java.exe")
+
+	if (jbr.exists())
+	{
+		it.executable = jbr.absolutePath
+
+		/* ⛔ Die -XX-flags MUESSEN ueber JDK_JAVA_OPTIONS kommen, nicht ueber vmArgs.
+		 *
+		 * GEMESSEN 2026-07-27: loom startet den client nicht direkt, sondern ueber
+		 * net.fabricmc.devlaunchinjector.Main mit einer launch.cfg. Dessen JVM erbt die
+		 * vmArgs NICHT — im laufenden game meldete
+		 * ManagementFactory.getRuntimeMXBean().getInputArguments() nur die -D-properties,
+		 * und redefineClasses scheiterte an "schema change not implemented", obwohl die
+		 * flags auf der prozess-kommandozeile standen.
+		 *
+		 * JDK_JAVA_OPTIONS liest JEDE JVM der kette beim start — damit kommen sie an. */
+		it.environment "JDK_JAVA_OPTIONS",
+			"-XX:+AllowEnhancedClassRedefinition -XX:+AllowRedefinitionToAddDeleteMethods"
+
+		it.doFirst { logger.lifecycle("[hotswap] client auf JBR + volle redefinition: ${jbr.absolutePath}") }
+	}
+	else
+	{
+		it.doFirst { logger.lifecycle("[hotswap] ../jbr-dcevm-home fehlt — nur body-hotswap moeglich") }
+	}
 }
 
 processResources {
