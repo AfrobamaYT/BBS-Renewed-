@@ -29,6 +29,13 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
         this.factory = factory;
     }
 
+    /* afrobama 2026-07-27 — aus dem CML-fork (dort KeyframeChannel:44). ReplayKeyframes
+     * tauscht damit die factory eines kanals nachtraeglich aus. */
+    public void setFactory(IKeyframeFactory<T> factory)
+    {
+        this.factory = factory;
+    }
+
     public IKeyframeFactory<T> getFactory()
     {
         return this.factory;
@@ -228,6 +235,46 @@ public class KeyframeChannel <T> extends ValueList<Keyframe<T>>
      *
      * Also, it returns index at which it was inserted.
      */
+    /**
+     * Keyframe an dieser stelle einfuegen und dabei den AKTUELL interpolierten wert
+     * uebernehmen — die kurve bleibt also unveraendert, es gibt nur einen stuetzpunkt mehr.
+     *
+     * <p>afrobama 2026-07-27 — aus dem CML-fork (dort KeyframeChannel:376). Wird von
+     * ReplayKeyframes gebraucht, um bei der aufnahme in bestehende kanaele zu schreiben,
+     * ohne den bisherigen verlauf zu zerstoeren.</p>
+     */
+    public int insertInterpolated(float tick)
+    {
+        KeyframeSegment<T> segment = this.find(tick);
+        T value;
+
+        if (segment != null)
+        {
+            value = this.factory.copy(segment.createInterpolated());
+        }
+        else
+        {
+            T interpolated = this.interpolate(tick);
+
+            value = interpolated != null ? this.factory.copy(interpolated) : this.factory.createEmpty();
+        }
+
+        int index = this.insert(tick, value);
+
+        if (segment != null)
+        {
+            Keyframe<T> keyframe = this.get(index);
+
+            if (keyframe != null)
+            {
+                keyframe.getInterpolation().copy(segment.a.getInterpolation());
+                keyframe.copyOverExtra(segment.a);
+            }
+        }
+
+        return index;
+    }
+
     public int insert(float tick, T value)
     {
         this.preNotify();

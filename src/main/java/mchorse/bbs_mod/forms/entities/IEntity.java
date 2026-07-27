@@ -6,6 +6,7 @@ import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LimbAnimator;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -163,6 +164,11 @@ public interface IEntity
 
         this.setVelocity((float) entity.getVelocity().x, (float) entity.getVelocity().y, (float) entity.getVelocity().z);
 
+        /* afrobama 2026-07-27 — aus dem CML-fork (dort IEntity:243-244). Ohne diese zwei
+         * zeilen faellt der wert beim kopieren zwischen entities wieder auf true zurueck. */
+        this.setShowHand(entity.getShowHand());
+        this.setShowHud(entity.getShowHud());
+
         float[] extraVariables = this.getExtraVariables();
         float[] prevExtraVariables = this.getPrevExtraVariables();
 
@@ -214,8 +220,81 @@ public interface IEntity
         return true;
     }
 
+    /* afrobama 2026-07-27 — setter aus dem CML-fork uebernommen (dort IEntity:62/69).
+     * fs hat nur die getter, damit war der wert von aussen nie schreibbar: weder der
+     * keyframe-kanal show_hand noch MCEntityShowHandMixin konnten ihn setzen. */
+    public default void setShowHand(boolean show) {}
+
     public default boolean getShowHud()
     {
         return true;
+    }
+
+    public default void setShowHud(boolean show) {}
+
+    /*
+     * afrobama 2026-07-27 — restliche entity-zugriffe aus dem CML-fork, die
+     * ReplayKeyframes fuer seine kanaele braucht (hotbar_slot_*, health, hunger,
+     * death_time, using_item, item_use_time, fire, particles, active_hand, ridden).
+     *
+     * ⛔ ALLE als DEFAULT, nicht abstrakt. Im CML-fork sind mehrere davon abstrakt
+     * (`public int getDeathTime();`) — uebernaehme man das 1:1, muesste jede
+     * IEntity-implementierung in fs sie nachziehen, sonst kompiliert nichts mehr.
+     * Die defaults liefern denselben wert wie ein nicht-gesetzter kanal, das
+     * verhalten ohne keyframes bleibt also unveraendert.
+     */
+    public default void setHealth(float health) {}
+
+    public default void setHunger(int hunger) {}
+
+    public default void setHotbarItem(int slot, ItemStack stack) {}
+
+    public default void setSelectedSlot(int slot) {}
+
+    public default int getDeathTime()
+    {
+        return 0;
+    }
+
+    public default void setDeathTime(int deathTime) {}
+
+    public default boolean isUsingItem()
+    {
+        return false;
+    }
+
+    public default void setUsingItem(boolean usingItem) {}
+
+    public default int getItemUseTimeLeft()
+    {
+        return 0;
+    }
+
+    public default void setItemUseTimeLeft(int itemUseTimeLeft) {}
+
+    public default int getFireTicks()
+    {
+        return 0;
+    }
+
+    public default void setFireTicks(int fireTicks) {}
+
+    public default boolean isParticlesEnabled()
+    {
+        return true;
+    }
+
+    public default void setParticlesEnabled(boolean particlesEnabled) {}
+
+    public default Hand getActiveHand()
+    {
+        return Hand.MAIN_HAND;
+    }
+
+    public default void setActiveHand(Hand hand) {}
+
+    public default IEntity getMountTarget()
+    {
+        return null;
     }
 }

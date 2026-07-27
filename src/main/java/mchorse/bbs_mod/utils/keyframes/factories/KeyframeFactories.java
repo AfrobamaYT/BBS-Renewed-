@@ -35,6 +35,9 @@ public class KeyframeFactories
     public static final ShapeKeysKeyframeFactory SHAPE_KEYS = new ShapeKeysKeyframeFactory();
     public static final ParticleSettingsKeyframeFactory PARTICLE_SETTINGS = new ParticleSettingsKeyframeFactory();
 
+    /* afrobama 2026-07-27 — aus dem CML-fork, fuer den "ridden"-keyframe-kanal. */
+    public static final MountLinkKeyframeFactory MOUNT_LINK = new MountLinkKeyframeFactory();
+
     public static boolean isNumeric(IKeyframeFactory factory)
     {
         return factory instanceof DoubleKeyframeFactory
@@ -70,5 +73,6 @@ public class KeyframeFactories
         FACTORIES.put("actions_config", ACTIONS_CONFIG);
         FACTORIES.put("shape_keys", SHAPE_KEYS);
         FACTORIES.put("particle_settings", PARTICLE_SETTINGS);
+        FACTORIES.put("mount_link", MOUNT_LINK);
     }
 }

@@ -79,19 +79,58 @@ public class GameRendererMixin
 
         if (current instanceof PlayCameraController)
         {
+            /* afrobama 2026-07-27 — 1:1 aus dem CML-fork uebernommen
+             * (cml-fresh GameRendererMixin:149-173).
+             *
+             * fs cancelte hier UNBEDINGT, sobald ein film lief. Der apparat dahinter ist
+             * vollstaendig vorhanden (renderHand-flag, shouldRenderHand() mit ease,
+             * begin/endHandRendering) — nur fragte ihn niemand.
+             *
+             * ⛔ begin/endHandRendering() sind PFLICHT, nicht schmuck. Ein erster versuch
+             * liess die hand nur durch (return statt cancel) — sie blieb trotzdem
+             * unsichtbar, weil das render-setup fehlte. Genau dieses paar macht den
+             * unterschied. */
+            if (mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.shouldRenderHand())
+            {
+                mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHandRendering();
+
+                /* vanilla renderHand darf laufen, wenn wir die hand sehen wollen */
+                return;
+            }
+
             info.cancel();
+        }
+    }
+
+    /** Gegenstueck zu beginHandRendering — raeumt das setup nach dem zeichnen wieder ab. */
+    @Inject(method = "renderHand", at = @At("RETURN"))
+    public void onRenderHandEnd(CallbackInfo info)
+    {
+        if (mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.shouldRenderHand()
+            && BBSModClient.getCameraController().getCurrent() != null)
+        {
+            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHandRendering();
         }
     }
 
     @Inject(at = @At("HEAD"), method = "renderWorld")
     private void onWorldRenderBegin(CallbackInfo callbackInfo)
     {
+        /* afrobama 2026-07-27 — aus dem CML-fork (dort GameRendererMixin:175-183).
+         * Gehoert zum hand/HUD-render-lebenszyklus: begin/endLevelRendering klammern
+         * den welt-durchgang, damit die hand danach im richtigen zustand gezeichnet wird. */
+        if (BBSModClient.getCameraController().getCurrent() != null)
+        {
+            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginLevelRendering();
+        }
+
         BBSRendering.onWorldRenderBegin();
     }
 
     @Inject(at = @At("RETURN"), method = "renderWorld")
     private void onWorldRenderEnd(CallbackInfo callbackInfo)
     {
+        mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
     }
 

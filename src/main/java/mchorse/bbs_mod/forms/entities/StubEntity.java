@@ -22,6 +22,11 @@ public class StubEntity implements IEntity
     private boolean sneaking;
     private boolean sprinting;
     private boolean onGround = true;
+
+    /* afrobama 2026-07-27 — aus dem CML-fork (dort StubEntity:75-76). Default true,
+     * wie die IEntity-defaults: ohne keyframes verhaelt sich alles wie vorher. */
+    private boolean showHand = true;
+    private boolean showHud = true;
     private float fallDistance;
     private int hurtTimer;
 
@@ -111,6 +116,30 @@ public class StubEntity implements IEntity
     public int getSelectedSlot()
     {
         return 0;
+    }
+
+    @Override
+    public boolean getShowHand()
+    {
+        return this.showHand;
+    }
+
+    @Override
+    public void setShowHand(boolean show)
+    {
+        this.showHand = show;
+    }
+
+    @Override
+    public boolean getShowHud()
+    {
+        return this.showHud;
+    }
+
+    @Override
+    public void setShowHud(boolean show)
+    {
+        this.showHud = show;
     }
 
     @Override

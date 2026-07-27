@@ -1,6 +1,30 @@
+/*
+ * QUELLE: uebernommen aus dem CML-fork (2026-07-27),
+ * cml-fresh/src/main/java/mchorse/bbs_mod/film/replays/ReplayKeyframes.java.
+ *
+ * WARUM: in fs fehlten 24 von 55 keyframe-kanaelen — u.a. hotbar_slot_1..9, health,
+ * hunger, show_hand, show_hud. Ohne die hotbar-kanaele kennt BBS den hotbar-inhalt
+ * eines replays gar nicht; darum zeigte "show HUD" nur das debug-HUD.
+ *
+ * ABWEICHUNGEN von der CML-vorlage (bewusst, nicht uebersehen):
+ *   1. GROUP_TRANSFORM wieder ergaenzt — die konstante ist fs-eigen, cmls datei kennt
+ *      sie nicht, aber UIFilmController + UIRecordOverlayPanel lesen sie.
+ *   2. Sonst zeile fuer zeile die CML-fassung.
+ *
+ * Mitgebrachte abhaengigkeiten (einzeln geholt, NICHT als ganze dateien — cmls
+ * KeyframeFactories/KeyframeChannel ziehen sechs factory-klassen aus fremden features
+ * nach, die fs nicht hat):
+ *   - MountLink + MountLinkKeyframeFactory (kanal "ridden")
+ *   - KeyframeChannel.insertInterpolated / setFactory
+ *   - 15 default-methoden auf IEntity
+ */
 package mchorse.bbs_mod.film.replays;
 
+import mchorse.bbs_mod.data.types.BaseType;
+import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.entities.MCEntity;
+import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.utils.interps.IInterp;
@@ -9,8 +33,12 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
+
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
+
 import org.joml.Vector2d;
 
 import java.util.ArrayList;
@@ -19,6 +47,10 @@ import java.util.List;
 
 public class ReplayKeyframes extends ValueGroup
 {
+    /* fs-eigene gruppe, die es im CML-fork nicht gibt — beim uebernehmen der
+     * CML-datei wieder ergaenzt (UIFilmController + UIRecordOverlayPanel lesen sie). */
+    public static final String GROUP_TRANSFORM = "transform";
+
     public static final String GROUP_POSITION = "position";
     public static final String GROUP_ROTATION = "rotation";
     public static final String GROUP_LEFT_STICK = "lstick";
@@ -26,9 +58,8 @@ public class ReplayKeyframes extends ValueGroup
     public static final String GROUP_TRIGGERS = "triggers";
     public static final String GROUP_EXTRA1 = "extra1";
     public static final String GROUP_EXTRA2 = "extra2";
-    public static final String GROUP_TRANSFORM = "transform";
 
-    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "sprinting", "item_main_hand", "item_off_hand", "item_head", "item_chest", "item_legs", "item_feet", "selected_slot", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "vX", "vY", "vZ");
+    public static final List<String> CURATED_CHANNELS = Arrays.asList("x", "y", "z", "pitch", "yaw", "headYaw", "bodyYaw", "sneaking", "riding", "sprinting", "item_main_hand", "item_off_hand", "item_head", "item_chest", "item_legs", "item_feet", "selected_slot", "hotbar_slot_1", "hotbar_slot_2", "hotbar_slot_3", "hotbar_slot_4", "hotbar_slot_5", "hotbar_slot_6", "hotbar_slot_7", "hotbar_slot_8", "hotbar_slot_9", "health", "hunger", "show_hand", "show_hud", "stick_lx", "stick_ly", "stick_rx", "stick_ry", "trigger_l", "trigger_r", "extra1_x", "extra1_y", "extra2_x", "extra2_y", "grounded", "damage", "death_time", "using_item", "item_use_time", "fire", "particles", "active_hand", "vX", "vY", "vZ", "shadow_size", "shadow_opacity");
 
     public final KeyframeChannel<Double> x = new KeyframeChannel<>("x", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> y = new KeyframeChannel<>("y", KeyframeFactories.DOUBLE);
@@ -48,6 +79,12 @@ public class ReplayKeyframes extends ValueGroup
     public final KeyframeChannel<Double> grounded = new KeyframeChannel<>("grounded", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> fall = new KeyframeChannel<>("fall", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> damage = new KeyframeChannel<>("damage", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> deathTime = new KeyframeChannel<>("death_time", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> usingItem = new KeyframeChannel<>("using_item", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> itemUseTime = new KeyframeChannel<>("item_use_time", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> fire = new KeyframeChannel<>("fire", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> particles = new KeyframeChannel<>("particles", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> activeHand = new KeyframeChannel<>("active_hand", KeyframeFactories.DOUBLE);
 
     public final KeyframeChannel<Double> stickLeftX = new KeyframeChannel<>("stick_lx", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> stickLeftY = new KeyframeChannel<>("stick_ly", KeyframeFactories.DOUBLE);
@@ -61,6 +98,8 @@ public class ReplayKeyframes extends ValueGroup
     public final KeyframeChannel<Double> extra1Y = new KeyframeChannel<>("extra1_y", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> extra2X = new KeyframeChannel<>("extra2_x", KeyframeFactories.DOUBLE);
     public final KeyframeChannel<Double> extra2Y = new KeyframeChannel<>("extra2_y", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> shadowSize = new KeyframeChannel<>("shadow_size", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> shadowOpacity = new KeyframeChannel<>("shadow_opacity", KeyframeFactories.DOUBLE);
 
     public final KeyframeChannel<ItemStack> mainHand = new KeyframeChannel<>("item_main_hand", KeyframeFactories.ITEM_STACK);
     public final KeyframeChannel<ItemStack> offHand = new KeyframeChannel<>("item_off_hand", KeyframeFactories.ITEM_STACK);
@@ -69,6 +108,19 @@ public class ReplayKeyframes extends ValueGroup
     public final KeyframeChannel<ItemStack> armorLegs = new KeyframeChannel<>("item_legs", KeyframeFactories.ITEM_STACK);
     public final KeyframeChannel<ItemStack> armorFeet = new KeyframeChannel<>("item_feet", KeyframeFactories.ITEM_STACK);
     public final KeyframeChannel<Integer> selectedSlot = new KeyframeChannel<>("selected_slot", KeyframeFactories.INTEGER);
+    public final KeyframeChannel<Double> riding = new KeyframeChannel<>("riding", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<MountLink> ridden = new KeyframeChannel<>("ridden", KeyframeFactories.MOUNT_LINK);
+
+    /* Hotbar / status channels (afrobama HUD/hand tracker feature). The tracker
+     * clip's HUD/hand mirror reads these values off the entity during playback,
+     * so a recorded actor reproduces its hotbar, health, hunger and HUD/hand
+     * visibility when the camera POVs into it. */
+    @SuppressWarnings("unchecked")
+    public final KeyframeChannel<ItemStack>[] hotbarSlots = new KeyframeChannel[9];
+    public final KeyframeChannel<Double> health = new KeyframeChannel<>("health", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> hunger = new KeyframeChannel<>("hunger", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> showHandChannel = new KeyframeChannel<>("show_hand", KeyframeFactories.DOUBLE);
+    public final KeyframeChannel<Double> showHudChannel = new KeyframeChannel<>("show_hud", KeyframeFactories.DOUBLE);
 
     public ReplayKeyframes(String id)
     {
@@ -89,6 +141,12 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.grounded);
         this.add(this.fall);
         this.add(this.damage);
+        this.add(this.deathTime);
+        this.add(this.usingItem);
+        this.add(this.itemUseTime);
+        this.add(this.fire);
+        this.add(this.particles);
+        this.add(this.activeHand);
         this.add(this.stickLeftX);
         this.add(this.stickLeftY);
         this.add(this.stickRightX);
@@ -99,6 +157,8 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.extra1Y);
         this.add(this.extra2X);
         this.add(this.extra2Y);
+        this.add(this.shadowSize);
+        this.add(this.shadowOpacity);
 
         this.add(this.mainHand);
         this.add(this.offHand);
@@ -107,6 +167,153 @@ public class ReplayKeyframes extends ValueGroup
         this.add(this.armorLegs);
         this.add(this.armorFeet);
         this.add(this.selectedSlot);
+        this.add(this.riding);
+        this.add(this.ridden);
+
+        for (int i = 0; i < 9; i++)
+        {
+            this.hotbarSlots[i] = new KeyframeChannel<>("hotbar_slot_" + (i + 1), KeyframeFactories.ITEM_STACK);
+            this.add(this.hotbarSlots[i]);
+        }
+
+        this.add(this.health);
+        this.add(this.hunger);
+        this.add(this.showHandChannel);
+        this.add(this.showHudChannel);
+    }
+
+    @Override
+    public void fromData(BaseType data)
+    {
+        super.fromData(data);
+        this.migrateFireChannel();
+        this.migrateLegacyFireTicks(data);
+        this.migrateParticlesChannel();
+        migrateLegacyRidingChannel(this.riding);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void migrateFireChannel()
+    {
+        if (!ReplayKeyframes.isLegacyBooleanFactory(this.fire))
+        {
+            return;
+        }
+
+        KeyframeChannel<Boolean> legacy = (KeyframeChannel<Boolean>) (Object) this.fire;
+        List<Float> ticks = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+
+        for (Keyframe<?> keyframe : legacy.getKeyframes())
+        {
+            Object value = keyframe.getValue();
+
+            ticks.add(keyframe.getTick());
+            values.add(Boolean.TRUE.equals(value) ? 1D : 0D);
+        }
+
+        this.fire.removeAll();
+        this.fire.setFactory(KeyframeFactories.DOUBLE);
+
+        for (int i = 0; i < ticks.size(); i++)
+        {
+            this.fire.insert(ticks.get(i), values.get(i));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void migrateParticlesChannel()
+    {
+        if (!ReplayKeyframes.isLegacyBooleanFactory(this.particles))
+        {
+            return;
+        }
+
+        KeyframeChannel<Boolean> legacy = (KeyframeChannel<Boolean>) (Object) this.particles;
+        List<Float> ticks = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+
+        for (Keyframe<?> keyframe : legacy.getKeyframes())
+        {
+            Object value = keyframe.getValue();
+
+            ticks.add(keyframe.getTick());
+            values.add(Boolean.TRUE.equals(value) ? 1D : 0D);
+        }
+
+        this.particles.removeAll();
+        this.particles.setFactory(KeyframeFactories.DOUBLE);
+
+        for (int i = 0; i < ticks.size(); i++)
+        {
+            this.particles.insert(ticks.get(i), values.get(i));
+        }
+    }
+
+    private void migrateLegacyFireTicks(BaseType data)
+    {
+        if (!(data instanceof MapType map) || !map.has("fire_ticks"))
+        {
+            return;
+        }
+
+        if (!this.fire.isEmpty())
+        {
+            return;
+        }
+
+        KeyframeChannel<Double> legacy = new KeyframeChannel<>("fire_ticks", KeyframeFactories.DOUBLE);
+
+        legacy.fromData(map.get("fire_ticks"));
+
+        for (Keyframe<Double> keyframe : legacy.getKeyframes())
+        {
+            Double value = keyframe.getValue();
+            double enabled = value != null && value > 0D ? 1D : 0D;
+
+            this.fire.insert(keyframe.getTick(), enabled);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void migrateLegacyRidingChannel(KeyframeChannel<Double> channel)
+    {
+        if (!ReplayKeyframes.isLegacyMountLinkFactory(channel))
+        {
+            return;
+        }
+
+        List<Float> ticks = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+
+        for (Keyframe<?> keyframe : channel.getKeyframes())
+        {
+            Object value = keyframe.getValue();
+
+            if (value instanceof MountLink link)
+            {
+                ticks.add(keyframe.getTick());
+                values.add(link.active ? 1D : 0D);
+            }
+        }
+
+        channel.removeAll();
+        channel.setFactory(KeyframeFactories.DOUBLE);
+
+        for (int i = 0; i < ticks.size(); i++)
+        {
+            channel.insert(ticks.get(i), values.get(i));
+        }
+    }
+
+    private static boolean isLegacyBooleanFactory(KeyframeChannel<?> channel)
+    {
+        return channel.getFactory() == KeyframeFactories.BOOLEAN;
+    }
+
+    private static boolean isLegacyMountLinkFactory(KeyframeChannel<?> channel)
+    {
+        return channel.getFactory() == KeyframeFactories.MOUNT_LINK;
     }
 
     public List<KeyframeChannel<?>> getChannels()
@@ -177,6 +384,12 @@ public class ReplayKeyframes extends ValueGroup
         this.sprinting.insert(tick, entity.isSprinting() ? 1D : 0D);
         this.grounded.insert(tick, entity.isOnGround() ? 1D : 0D);
         this.damage.insert(tick, (double) entity.getHurtTimer());
+        this.deathTime.insert(tick, (double) entity.getDeathTime());
+        this.usingItem.insert(tick, entity.isUsingItem() ? 1D : 0D);
+        this.itemUseTime.insert(tick, (double) this.getItemUseElapsed(entity));
+        this.fire.insert(tick, entity.getFireTicks() > 0 ? 1D : 0D);
+        this.particles.insert(tick, entity.isParticlesEnabled() ? 1D : 0D);
+        this.activeHand.insert(tick, entity.getActiveHand() == Hand.OFF_HAND ? 1D : 0D);
 
         if (rotation)
         {
@@ -227,6 +440,98 @@ public class ReplayKeyframes extends ValueGroup
             this.armorLegs.insert(tick, entity.getEquipmentStack(EquipmentSlot.LEGS).copy());
             this.armorFeet.insert(tick, entity.getEquipmentStack(EquipmentSlot.FEET).copy());
             this.selectedSlot.insert(tick, entity.getSelectedSlot());
+
+            for (int i = 0; i < 9; i++)
+            {
+                ItemStack item = entity.getHotbarItem(i);
+                this.hotbarSlots[i].insert(tick, item != null ? item.copy() : ItemStack.EMPTY);
+            }
+
+            this.health.insert(tick, (double) entity.getHealth());
+            this.hunger.insert(tick, (double) entity.getHunger());
+            this.showHandChannel.insert(tick, entity.getShowHand() ? 1D : 0D);
+            this.showHudChannel.insert(tick, entity.getShowHud() ? 1D : 0D);
+        }
+    }
+
+    /**
+     * Insert keyframes at {@code tick} using values interpolated from the
+     * existing animation at that tick (for cursor placement).
+     */
+    public void insertInterpolated(int tick, List<String> groups)
+    {
+        boolean empty = groups == null || groups.isEmpty();
+        boolean position = empty || groups.contains(GROUP_POSITION);
+        boolean rotation = empty || groups.contains(GROUP_ROTATION);
+        boolean leftStick = empty || groups.contains(GROUP_LEFT_STICK);
+        boolean rightStick = empty || groups.contains(GROUP_RIGHT_STICK);
+        boolean triggers = empty || groups.contains(GROUP_TRIGGERS);
+        boolean extra1 = empty || groups.contains(GROUP_EXTRA1);
+        boolean extra2 = empty || groups.contains(GROUP_EXTRA2);
+
+        if (position)
+        {
+            this.x.insertInterpolated(tick);
+            this.y.insertInterpolated(tick);
+            this.z.insertInterpolated(tick);
+            this.vX.insertInterpolated(tick);
+            this.vY.insertInterpolated(tick);
+            this.vZ.insertInterpolated(tick);
+            this.fall.insertInterpolated(tick);
+        }
+
+        this.sneaking.insertInterpolated(tick);
+        this.sprinting.insertInterpolated(tick);
+        this.grounded.insertInterpolated(tick);
+        this.damage.insertInterpolated(tick);
+
+        if (rotation)
+        {
+            this.yaw.insertInterpolated(tick);
+            this.pitch.insertInterpolated(tick);
+            this.headYaw.insertInterpolated(tick);
+            this.bodyYaw.insertInterpolated(tick);
+        }
+
+        if (leftStick)
+        {
+            this.stickLeftX.insertInterpolated(tick);
+            this.stickLeftY.insertInterpolated(tick);
+        }
+
+        if (rightStick)
+        {
+            this.stickRightX.insertInterpolated(tick);
+            this.stickRightY.insertInterpolated(tick);
+        }
+
+        if (triggers)
+        {
+            this.triggerLeft.insertInterpolated(tick);
+            this.triggerRight.insertInterpolated(tick);
+        }
+
+        if (extra1)
+        {
+            this.extra1X.insertInterpolated(tick);
+            this.extra1Y.insertInterpolated(tick);
+        }
+
+        if (extra2)
+        {
+            this.extra2X.insertInterpolated(tick);
+            this.extra2Y.insertInterpolated(tick);
+        }
+
+        if (empty)
+        {
+            this.mainHand.insertInterpolated(tick);
+            this.offHand.insertInterpolated(tick);
+            this.armorHead.insertInterpolated(tick);
+            this.armorChest.insertInterpolated(tick);
+            this.armorLegs.insertInterpolated(tick);
+            this.armorFeet.insertInterpolated(tick);
+            this.selectedSlot.insertInterpolated(tick);
         }
     }
 
@@ -248,8 +553,11 @@ public class ReplayKeyframes extends ValueGroup
         boolean triggers = empty || !groups.contains(GROUP_TRIGGERS);
         boolean extra1 = empty || !groups.contains(GROUP_EXTRA1);
         boolean extra2 = empty || !groups.contains(GROUP_EXTRA2);
+        MountLink riding = this.getRidingAt(tick);
+        boolean mounted = entity.getMountTarget() != null;
+        boolean sitting = riding.active && !mounted;
 
-        if (position)
+        if (position && !mounted)
         {
             entity.setVelocity(this.vX.interpolate(tick).floatValue(), this.vY.interpolate(tick).floatValue(), this.vZ.interpolate(tick).floatValue());
             entity.setFallDistance(this.fall.interpolate(tick).floatValue());
@@ -266,8 +574,13 @@ public class ReplayKeyframes extends ValueGroup
             entity.setPrevY(yy.y);
             entity.setPrevZ(zz.y);
         }
+        else if (mounted)
+        {
+            entity.setVelocity(0F, 0F, 0F);
+            entity.setFallDistance(0F);
+        }
 
-        if (rotation)
+        if (rotation && !mounted)
         {
             KeyframeSegment<Double> yaw = this.yaw.findSegment(tick);
             Vector2d yyaw = this.getPrev(yaw, this.yaw.interpolate(tick - 1), tick);
@@ -290,10 +603,19 @@ public class ReplayKeyframes extends ValueGroup
         }
 
         /* Motion and fall distance */
-        entity.setSneaking(this.sneaking.interpolate(tick) != 0D);
-        entity.setSprinting(this.sprinting.interpolate(tick) != 0D);
+        entity.setSneaking(mounted || sitting ? false : this.sneaking.interpolate(tick) != 0D);
+        entity.setSprinting(mounted || sitting ? false : this.sprinting.interpolate(tick) != 0D);
         entity.setOnGround(this.grounded.interpolate(tick) != 0D);
         entity.setHurtTimer(this.damage.interpolate(tick).intValue());
+        entity.setDeathTime(this.deathTime.interpolate(tick).intValue());
+        int itemUseElapsed = this.itemUseTime.interpolate(tick).intValue();
+        boolean usingItem = this.usingItem.interpolate(tick) > 0D || itemUseElapsed > 0;
+
+        entity.setUsingItem(usingItem);
+        entity.setItemUseTimeLeft(itemUseElapsed);
+        entity.setFireTicks(this.getFireTicksAt(tick));
+        entity.setParticlesEnabled(this.getParticlesAt(tick));
+        entity.setActiveHand(this.activeHand.interpolate(tick) > 0D ? Hand.OFF_HAND : Hand.MAIN_HAND);
 
         float[] sticks = entity.getExtraVariables();
 
@@ -333,6 +655,18 @@ public class ReplayKeyframes extends ValueGroup
         entity.setEquipmentStack(EquipmentSlot.CHEST, this.armorChest.interpolate(tick));
         entity.setEquipmentStack(EquipmentSlot.LEGS, this.armorLegs.interpolate(tick));
         entity.setEquipmentStack(EquipmentSlot.FEET, this.armorFeet.interpolate(tick));
+
+        entity.setSelectedSlot(this.selectedSlot.interpolate(tick));
+
+        for (int i = 0; i < 9; i++)
+        {
+            entity.setHotbarItem(i, this.hotbarSlots[i].interpolate(tick));
+        }
+
+        entity.setHealth(this.health.interpolate(tick).floatValue());
+        entity.setHunger(this.hunger.interpolate(tick).intValue());
+        entity.setShowHand(this.showHandChannel.interpolate(tick) != 0D);
+        entity.setShowHud(this.showHudChannel.interpolate(tick) != 0D);
     }
 
     /**
@@ -370,5 +704,149 @@ public class ReplayKeyframes extends ValueGroup
         }
 
         return new Vector2d(interpolated == null ? prev : interpolated, prev);
+    }
+
+    public int getFireTicksAt(float tick)
+    {
+        if (this.fire.isEmpty() || this.fire.interpolate(tick) <= 0D)
+        {
+            return 0;
+        }
+
+        return Math.max(1, ((int) tick % 20) + 1);
+    }
+
+    public boolean getParticlesAt(float tick)
+    {
+        if (this.particles.isEmpty())
+        {
+            return true;
+        }
+
+        return this.particles.interpolate(tick) > 0D;
+    }
+
+    public MountLink getRidingAt(float tick)
+    {
+        boolean active = this.riding.interpolate(tick) != 0D;
+
+        return new MountLink(active, MountLink.NO_REPLAY);
+    }
+
+    public static MountLink resolveRiding(Replay riderReplay, List<Replay> replays, int riderIndex, float tick)
+    {
+        if (riderReplay == null)
+        {
+            return new MountLink();
+        }
+
+        boolean active = riderReplay.keyframes.riding.interpolate(tick) != 0D;
+
+        if (!active)
+        {
+            return new MountLink();
+        }
+
+        int mountIndex = ReplayKeyframes.resolveMountReplay(replays, riderIndex, tick);
+
+        return new MountLink(true, mountIndex >= 0 ? mountIndex : MountLink.NO_REPLAY);
+    }
+
+    public static int resolveMountReplay(List<Replay> replays, int riderIndex, float tick)
+    {
+        if (replays == null)
+        {
+            return -1;
+        }
+
+        for (int i = 0; i < replays.size(); i++)
+        {
+            Replay mountReplay = replays.get(i);
+
+            if (mountReplay == null)
+            {
+                continue;
+            }
+
+            MountLink ridden = mountReplay.keyframes.getRiddenAt(tick);
+
+            if (ridden.active && ridden.replay == riderIndex)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public MountLink getRiddenAt(float tick)
+    {
+        return ReplayKeyframes.getMountLinkAt(this.ridden, tick);
+    }
+
+    /**
+     * Timeline stores elapsed item use ticks (0 = just started, higher = further along, e.g. bow draw).
+     */
+    private int getItemUseElapsed(IEntity entity)
+    {
+        if (!entity.isUsingItem())
+        {
+            return 0;
+        }
+
+        if (entity instanceof StubEntity)
+        {
+            return entity.getItemUseTimeLeft();
+        }
+
+        Hand hand = entity.getActiveHand();
+        EquipmentSlot slot = hand == Hand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
+        ItemStack stack = entity.getEquipmentStack(slot);
+
+        if (stack.isEmpty())
+        {
+            return 0;
+        }
+
+        int left = entity.getItemUseTimeLeft();
+        int max = 20;
+
+        if (entity instanceof MCEntity mcEntity && mcEntity.getMcEntity() instanceof LivingEntity living)
+        {
+            max = stack.getMaxUseTime(living);
+        }
+
+        if (max <= 0)
+        {
+            return left;
+        }
+
+        return Math.max(0, max - left);
+    }
+
+    /**
+     * Mount links are inactive before the first keyframe. A single-keyframe channel
+     * would otherwise apply that keyframe at every tick (including tick 0).
+     */
+    private static MountLink getMountLinkAt(KeyframeChannel<MountLink> channel, float tick)
+    {
+        if (channel.isEmpty())
+        {
+            return new MountLink();
+        }
+
+        Keyframe<MountLink> first = channel.get(0);
+
+        if (first == null || tick < first.getTick())
+        {
+            return new MountLink();
+        }
+
+        if (channel.getKeyframes().size() == 1)
+        {
+            return first.getValue().copy();
+        }
+
+        return channel.interpolate(tick);
     }
 }
