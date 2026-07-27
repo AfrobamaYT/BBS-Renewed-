@@ -194,22 +194,20 @@ public final class FastPathRenderer
         }
         else
         {
-            /* Invoker-mode (Tier 1.5b-1 baseline): full BBS renderModel
-             * private wrapper including captureMatrices + renderItems.
-             * CML beta-2 added a trailing (world MatrixStack, FormRenderingContext): the fast path
-             * uses one matrix for both stack and world, and hands renderModel a context describing
-             * the same entity/light/overlay/transition it already receives as loose args. */
-            mchorse.bbs_mod.forms.renderers.FormRenderingContext renderContext =
-                new mchorse.bbs_mod.forms.renderers.FormRenderingContext()
-                    .set(mchorse.bbs_mod.forms.renderers.FormRenderType.ENTITY,
-                         s.entity, stack, s.light, s.overlay, s.transition)
-                    .equipment(s.renderEquipment);
-
+            /* Invoker-mode (Tier 1.5b-1 baseline): BBS' privater renderModel-wrapper,
+             * inklusive captureMatrices + renderItems.
+             *
+             * AUTONOMIE 2026-07-27: an fs' signatur angepasst. Der schnellpfad haelt eine
+             * farbe; fs will zwei (kontext- und form-farbe, die multipliziert werden), also
+             * geben wir unsere als kontext-farbe und WHITE als form-farbe — das ergibt
+             * dasselbe produkt. additive=false ist der normale blend-modus. Der equipment-
+             * schalter faellt hier weg: fs entscheidet das ueber die form selbst. Eine
+             * matrix dient als stack UND world, wie im CML-pfad zuvor. */
             selfA.bbstools$renderModel(
                 s.entity, shader, stack, instance,
-                s.light, s.overlay, color, false, null,
-                s.transition, s.renderEquipment,
-                stack, renderContext);
+                s.light, s.overlay,
+                color, mchorse.bbs_mod.utils.colors.Color.white(), false,
+                false, null, s.transition, stack);
         }
 
         if (!LOGGED_FIRST_RENDER)

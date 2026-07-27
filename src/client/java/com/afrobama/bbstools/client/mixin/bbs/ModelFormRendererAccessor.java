@@ -50,8 +50,16 @@ public interface ModelFormRendererAccessor
      * private renderModel(...) method so FastPathRenderer can call it
      * from outside the class without an AccessWidener entry (memory:
      * feedback_mixin_no_public_static — prefer mixin over public-bumping). */
-    /* CML beta-2 added two trailing params to renderModel: a second MatrixStack (world) and a
-     * FormRenderingContext. Signature verified against the jar. */
+    /* AUTONOMIE 2026-07-27: signatur an den fs-kern angeglichen (ModelFormRenderer:312).
+     *
+     * CML hatte hinten (renderEquipment, world, FormRenderingContext) angehaengt. fs hat
+     * stattdessen ZWEI farb-parameter — contextColor (vom render-kontext) und formColor
+     * (von der form selbst, wird multipliziert) — plus ein additive-flag fuer den blend-
+     * modus, und haelt world am ende. renderEquipment/renderContext gibt es dort nicht.
+     *
+     * Die alte signatur liess den ganzen accessor scheitern: "No candidates were found
+     * matching renderModel(...)" — und riss beim OEFFNEN EINES FILMS den client mit,
+     * weil ModelFormRenderer erst dann geladen wird. */
     @Invoker("renderModel")
     void bbstools$renderModel(
         IEntity target,
@@ -60,11 +68,11 @@ public interface ModelFormRendererAccessor
         ModelInstance model,
         int light,
         int overlay,
-        Color color,
+        Color contextColor,
+        Color formColor,
+        boolean additive,
         boolean ui,
         StencilMap stencilMap,
         float transition,
-        boolean renderEquipment,
-        MatrixStack world,
-        mchorse.bbs_mod.forms.renderers.FormRenderingContext renderContext);
+        MatrixStack world);
 }
