@@ -133,8 +133,7 @@ public class UIFormList extends UIElement
 
         /* Karten-ansicht (CML-stil) statt liste, falls eingeschaltet — logik in
          * com.afrobama.bbstools.client.forms.UIKategorieKarten. */
-        com.afrobama.bbstools.client.forms.UIKategorieKarten.einhaengen(this.forms,
-            () -> this.categories, () -> this.setupForms(BBSModClient.getFormCategories()));
+        com.afrobama.bbstools.client.forms.UIKategorieKarten.einhaengen(this.forms, () -> this.categories);
 
         if (!this.categories.isEmpty())
         {
