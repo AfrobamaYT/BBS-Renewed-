@@ -29,8 +29,29 @@ public final class BBSToolsConfig
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/config");
 
+    /**
+     * Feature-name → gewuenschter zustand, aus der config gelesen.
+     *
+     * <p>Nur die namen, die der nutzer im Optimize-menue bewusst gesetzt hat. Was hier
+     * NICHT drinsteht, bleibt dem start-sweep ueberlassen — so wachsen neue features
+     * weiter mit, ohne dass jemand die config pflegen muss.</p>
+     */
+    private static final Map<String, Boolean> gespeicherteFeatures = new LinkedHashMap<>();
+
     private BBSToolsConfig()
     {
+    }
+
+    /** Die gespeicherten feature-wuensche (leer, solange nichts geladen wurde). */
+    public static Map<String, Boolean> gespeicherteFeatures()
+    {
+        return gespeicherteFeatures;
+    }
+
+    /** Einen feature-wunsch merken. Schreibt noch nicht — dafuer {@link #save()} rufen. */
+    public static void merkeFeature(String name, boolean an)
+    {
+        gespeicherteFeatures.put(name, an);
     }
 
     private static File configFile()
@@ -81,6 +102,21 @@ public final class BBSToolsConfig
             if (root.has("veil_batch_max_bones"))
                 BBSPerfConfig.VEIL_BATCH_MAX_BONES = root.get("veil_batch_max_bones").getAsInt();
 
+            /* Feature-schalter aus dem Optimize-menue. Werden hier nur EINGELESEN;
+             * angewendet werden sie in FeatureSchalter.anwendenNachSweep(), weil der
+             * start-sweep sonst darueber huepft (er laeuft spaeter, bei CLIENT_STARTED). */
+            if (root.has("features") && root.get("features").isJsonObject())
+            {
+                JsonObject features = root.getAsJsonObject("features");
+
+                gespeicherteFeatures.clear();
+
+                for (String name : features.keySet())
+                {
+                    gespeicherteFeatures.put(name, features.get(name).getAsBoolean());
+                }
+            }
+
             LOG.info("Loaded config from {}", f);
         }
         catch (Throwable t)
@@ -114,9 +150,31 @@ public final class BBSToolsConfig
             else if (v instanceof Double) sb.append(String.format(java.util.Locale.ROOT, "%.1f", (Double) v));
             else if (v instanceof Integer) sb.append(v);
             else sb.append("\"").append(v).append("\"");
-            if (i++ < values.size() - 1) sb.append(",");
+            /* Komma auch hinter dem LETZTEN wert, wenn danach noch der features-block
+             * kommt — sonst entsteht ungueltiges JSON und die config faellt beim naechsten
+             * start still auf die defaults zurueck. */
+            if (i++ < values.size() - 1 || !gespeicherteFeatures.isEmpty()) sb.append(",");
             sb.append("\n");
         }
+
+        /* features als verschachteltes objekt — ein flacher key pro feature waere bei
+         * 80+ schaltern unleserlich, und so bleibt sichtbar, was zusammengehoert. */
+        if (!gespeicherteFeatures.isEmpty())
+        {
+            sb.append("  \"features\": {\n");
+
+            int j = 0;
+
+            for (Map.Entry<String, Boolean> e : gespeicherteFeatures.entrySet())
+            {
+                sb.append("    \"").append(e.getKey()).append("\": ").append(e.getValue());
+                if (j++ < gespeicherteFeatures.size() - 1) sb.append(",");
+                sb.append("\n");
+            }
+
+            sb.append("  }\n");
+        }
+
         sb.append("}\n");
 
         try

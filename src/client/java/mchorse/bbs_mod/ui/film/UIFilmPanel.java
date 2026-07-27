@@ -1871,6 +1871,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             UIOverlay.addOverlay(this.getContext(), new UIFilmDetailsOverlayPanel(this.getData()), 300, 260);
         });
+
+        com.afrobama.bbstools.client.ui.optimize.OptimizeMenuEintrag.anhaengen(menu, this.getContext());
     }
 
     /**
