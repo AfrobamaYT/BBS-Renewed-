@@ -164,8 +164,6 @@ public interface IEntity
 
         this.setVelocity((float) entity.getVelocity().x, (float) entity.getVelocity().y, (float) entity.getVelocity().z);
 
-        /* afrobama 2026-07-27 — aus dem CML-fork (dort IEntity:243-244). Ohne diese zwei
-         * zeilen faellt der wert beim kopieren zwischen entities wieder auf true zurueck. */
         this.setShowHand(entity.getShowHand());
         this.setShowHud(entity.getShowHud());
 
@@ -203,8 +201,6 @@ public interface IEntity
 
     public boolean isUsingRiptide();
 
-    /* ⛔ MERGE 2026-07-27: vier default-getter aus dem CML-fork. TrackerClientClip
-     * (first-person hand + HUD) und unsere autonomie-schicht lesen sie. */
     public default float getHealth()
     {
         return 20F;
@@ -220,9 +216,6 @@ public interface IEntity
         return true;
     }
 
-    /* afrobama 2026-07-27 — setter aus dem CML-fork uebernommen (dort IEntity:62/69).
-     * fs hat nur die getter, damit war der wert von aussen nie schreibbar: weder der
-     * keyframe-kanal show_hand noch MCEntityShowHandMixin konnten ihn setzen. */
     public default void setShowHand(boolean show) {}
 
     public default boolean getShowHud()
@@ -232,17 +225,6 @@ public interface IEntity
 
     public default void setShowHud(boolean show) {}
 
-    /*
-     * afrobama 2026-07-27 — restliche entity-zugriffe aus dem CML-fork, die
-     * ReplayKeyframes fuer seine kanaele braucht (hotbar_slot_*, health, hunger,
-     * death_time, using_item, item_use_time, fire, particles, active_hand, ridden).
-     *
-     * ⛔ ALLE als DEFAULT, nicht abstrakt. Im CML-fork sind mehrere davon abstrakt
-     * (`public int getDeathTime();`) — uebernaehme man das 1:1, muesste jede
-     * IEntity-implementierung in fs sie nachziehen, sonst kompiliert nichts mehr.
-     * Die defaults liefern denselben wert wie ein nicht-gesetzter kanal, das
-     * verhalten ohne keyframes bleibt also unveraendert.
-     */
     public default void setHealth(float health) {}
 
     public default void setHunger(int hunger) {}

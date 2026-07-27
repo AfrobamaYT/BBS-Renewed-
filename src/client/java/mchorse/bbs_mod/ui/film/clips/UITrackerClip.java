@@ -10,6 +10,8 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIAnchorKeyframeFactory;
+import mchorse.bbs_mod.l10n.keys.IKey;
+
 public class UITrackerClip extends UIClip<TrackerClip>
 {
     public UIButton selector;
@@ -22,16 +24,6 @@ public class UITrackerClip extends UIClip<TrackerClip>
     public UIToggle relative;
     public UIBitToggle active;
 
-    /* afrobama 2026-07-27 — show hand/HUD in den camera properties.
-     *
-     * Die felder gab es auf TrackerClip laengst (show_hand/show_hud, serialisiert), und
-     * der gesamte render-apparat dahinter ist vollstaendig: TrackerClientClip.renderHand,
-     * shouldRenderHand(), die verbraucher an mc.options.hudHidden. Nur die zeile zum
-     * SETZEN fehlte — ohne sie blieben beide werte ewig auf ihrem default false, und der
-     * schreiber in TrackerClientClip konnte nie feuern. Der nutzer sah deshalb kein
-     * "show hud"/"show hand" in den properties.
-     *
-     * ⚠ First-person-hand ist laut ARCHITEKTUR.md das wichtigste feature des projekts. */
     public UIToggle showHand;
     public UIToggle showHud;
 
@@ -67,20 +59,8 @@ public class UITrackerClip extends UIClip<TrackerClip>
         this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, b -> this.clip.relative.set(b.getValue()));
         this.active = new UIBitToggle((value) -> this.clip.active.set(value)).all();
 
-        /* QUELLE: cml-fresh/src/client/java/mchorse/bbs_mod/ui/film/clips/UITrackerClip.java:61-62.
-         *
-         * ABWEICHUNG: dort IKey.raw(...), hier IKey.constant(...) plus tooltips. Die
-         * uebersetzungs-keys liegen in fs-fremdcode (UIKeys.java + strings/*.json in 22
-         * sprachen) — konstanten halten den upstream mergebar. */
-        this.showHand = new UIToggle(mchorse.bbs_mod.l10n.keys.IKey.constant("Show hand"),
-            (b) -> this.clip.showHand.set(b.getValue()));
-        this.showHand.tooltip(mchorse.bbs_mod.l10n.keys.IKey.constant(
-            "Zeigt die first-person-hand waehrend dieses clips."));
-
-        this.showHud = new UIToggle(mchorse.bbs_mod.l10n.keys.IKey.constant("Show HUD"),
-            (b) -> this.clip.showHud.set(b.getValue()));
-        this.showHud.tooltip(mchorse.bbs_mod.l10n.keys.IKey.constant(
-            "Zeigt das HUD (hotbar, herzen, chat) waehrend dieses clips."));
+        this.showHand = new UIToggle(IKey.constant("Show hand"), b -> this.clip.showHand.set(b.getValue()));
+        this.showHud = new UIToggle(IKey.constant("Show HUD"), b -> this.clip.showHud.set(b.getValue()));
     }
 
     private UIFilmPanel getPanel()

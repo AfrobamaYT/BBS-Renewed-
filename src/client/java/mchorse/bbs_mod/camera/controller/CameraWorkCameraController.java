@@ -46,22 +46,7 @@ public abstract class CameraWorkCameraController implements ICameraController
         this.context.clipData.clear();
         this.context.setup(ticks, transition);
 
-        /*
-         * afrobama 2026-07-28 — hand/HUD-lebenszyklus pro frame.
-         * QUELLE: cml-fresh/.../camera/controller/CameraWorkCameraController.java:49-77.
-         *
-         * ⛔ DIESER BLOCK FEHLTE IN FS KOMPLETT — und er ist die gemeinsame wurzel von
-         * drei gemeldeten bugs. resetRenderFlags() setzt controllerRanThisFrame; ohne den
-         * schalter steigt beginLevelRendering() in seiner ERSTEN zeile aus und setzt
-         * renderHand/renderHud gleich wieder auf false zurueck. Folge (alles gemessen):
-         *   handShowProgress/hudShowProgress bleiben 0.0  -> keine einblend-animation
-         *   levelRenderingActive bleibt false             -> kein hand-state-swap
-         *   scaleChanged bleibt false                     -> hotbar behaelt viewport-skalierung
-         * Der nutzer sah: hand statisch, HUD zu klein, und bei beiden flags gar nichts.
-         *
-         * MUSS VOR der clip-schleife stehen: die clips setzen in applyClip() die flags
-         * renderHand/renderHud, der reset raeumt den VORIGEN frame ab.
-         */
+        /* Reset vor der clip-schleife: die clips setzen renderHand/renderHud in applyClip(). */
         TrackerClientClip.resetRenderFlags();
         TrackerClientClip.currentTickDelta = transition;
 
@@ -70,15 +55,12 @@ public abstract class CameraWorkCameraController implements ICameraController
             this.context.apply(clip, this.position);
         }
 
-        /* Bob + sprint-FOV NACH der clip-schleife: erst dort steht fest, welche entity
-         * getrackt wird und ob die hand ueberhaupt gezeichnet werden soll. */
         IEntity bobEntity = TrackerClientClip.currentEntity;
 
         if (bobEntity != null)
         {
             TrackerClientClip.updateSprintFov(bobEntity.isSprinting(), ticks);
 
-            /* Beim schleichen kein bob — sonst wackelt die hand, waehrend der koerper steht. */
             if (TrackerClientClip.renderHand && !bobEntity.isSneaking())
             {
                 TrackerClientClip.updateBob(
@@ -96,9 +78,6 @@ public abstract class CameraWorkCameraController implements ICameraController
             TrackerClientClip.resetSprintFov();
         }
 
-        /* Die urspruengliche GUI-skalierung merken, solange sie noch gilt — waehrend des
-         * HUD-durchgangs wird sie ueberschrieben, und ohne diesen wert bleibt die hotbar
-         * auf der viewport-groesse haengen (zu klein). */
         if (TrackerClientClip.renderHud)
         {
             TrackerClientClip.captureOriginalGuiScale();

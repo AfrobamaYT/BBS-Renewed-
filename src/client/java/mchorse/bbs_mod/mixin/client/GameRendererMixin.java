@@ -31,17 +31,6 @@ public class GameRendererMixin
     {
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
-            /* afrobama 2026-07-28 — HAND-BOBBING.
-             * QUELLE: cml-fresh/.../mixin/client/GameRendererMixin.java:53-60.
-             *
-             * ⛔ fs cancelte hier nur und nahm die parameter gar nicht erst entgegen —
-             * damit war TrackerClientClip.applyBob() unerreichbar, obwohl die methode
-             * vollstaendig existiert (TrackerClientClip:226). Der nutzer sah: hand
-             * steht beim laufen voellig still.
-             *
-             * Vanilla-bobbing bleibt gecancelt (die film-kamera fuehrt), aber WENN die
-             * hand gezeichnet wird, bekommt sie ihr eigenes bobbing aus der bewegung der
-             * getrackten entity — gespeist von updateBob() im CameraWorkCameraController. */
             if (TrackerClientClip.shouldRenderHand())
             {
                 TrackerClientClip.applyBob(matrices, tickDelta);
@@ -95,34 +84,14 @@ public class GameRendererMixin
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
-        /* afrobama 2026-07-28 — CameraWorkCameraController statt PlayCameraController.
-         *
-         * ⛔ Der nutzer will hand/HUD im EDITOR-VIEWPORT sehen, nicht in der welt-wiedergabe.
-         * Dort laeuft aber RunnerCameraController, nicht PlayCameraController — die pruefung
-         * auf den Play-typ schloss den editor also aus. Gemessen: bei offenem film-editor
-         * meldet getCurrent() "RunnerCameraController".
-         *
-         * Beide erben von CameraWorkCameraController; die basisklasse trifft genau die
-         * beiden faelle, in denen ein film die kamera fuehrt (editor-vorschau + wiedergabe),
-         * und laesst orbit-/freikamera unberuehrt. Auch der CML-fork prueft hier auf den
-         * Play-typ — das feature fehlte dort im viewport ebenso. */
+        /* CameraWorkCameraController statt PlayCameraController: der editor-viewport
+         * laeuft ueber RunnerCameraController, beide erben von der basisklasse. */
         if (current instanceof CameraWorkCameraController)
         {
-            /* Kern uebernommen aus cml-fresh GameRendererMixin:149-173.
-             *
-             * fs cancelte hier UNBEDINGT, sobald ein film lief. Der apparat dahinter ist
-             * vollstaendig vorhanden (renderHand-flag, shouldRenderHand() mit ease,
-             * begin/endHandRendering) — nur fragte ihn niemand.
-             *
-             * ⛔ begin/endHandRendering() sind PFLICHT, nicht schmuck. Ein erster versuch
-             * liess die hand nur durch (return statt cancel) — sie blieb trotzdem
-             * unsichtbar, weil das render-setup fehlte. Genau dieses paar macht den
-             * unterschied. */
-            if (mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.shouldRenderHand())
+            if (TrackerClientClip.shouldRenderHand())
             {
-                mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHandRendering();
+                TrackerClientClip.beginHandRendering();
 
-                /* vanilla renderHand darf laufen, wenn wir die hand sehen wollen */
                 return;
             }
 
@@ -130,26 +99,22 @@ public class GameRendererMixin
         }
     }
 
-    /** Gegenstueck zu beginHandRendering — raeumt das setup nach dem zeichnen wieder ab. */
     @Inject(method = "renderHand", at = @At("RETURN"))
     public void onRenderHandEnd(CallbackInfo info)
     {
-        if (mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.shouldRenderHand()
+        if (TrackerClientClip.shouldRenderHand()
             && BBSModClient.getCameraController().getCurrent() != null)
         {
-            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHandRendering();
+            TrackerClientClip.endHandRendering();
         }
     }
 
     @Inject(at = @At("HEAD"), method = "renderWorld")
     private void onWorldRenderBegin(CallbackInfo callbackInfo)
     {
-        /* afrobama 2026-07-27 — aus dem CML-fork (dort GameRendererMixin:175-183).
-         * Gehoert zum hand/HUD-render-lebenszyklus: begin/endLevelRendering klammern
-         * den welt-durchgang, damit die hand danach im richtigen zustand gezeichnet wird. */
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
-            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginLevelRendering();
+            TrackerClientClip.beginLevelRendering();
         }
 
         BBSRendering.onWorldRenderBegin();
@@ -158,7 +123,7 @@ public class GameRendererMixin
     @Inject(at = @At("RETURN"), method = "renderWorld")
     private void onWorldRenderEnd(CallbackInfo callbackInfo)
     {
-        mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endLevelRendering();
+        TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
     }
 

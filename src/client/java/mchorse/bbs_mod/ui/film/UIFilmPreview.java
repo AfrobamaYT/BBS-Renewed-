@@ -365,6 +365,8 @@ public class UIFilmPreview extends UIElement
             context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
         }
 
+        this.renderViewportHud(context, area);
+
         this.renderCursor(context);
 
         boolean needGuides = BBSSettings.editorRuleOfThirds.get()
@@ -468,6 +470,58 @@ public class UIFilmPreview extends UIElement
         context.batcher.clip(this.area, context);
         super.render(context);
         context.batcher.unclip(context);
+    }
+
+    /**
+     * Draws Minecraft's HUD inside the viewport when a tracker clip asks for it.
+     *
+     * MC only renders InGameHud when no screen covers the display, so with the editor
+     * open our InGameHudMixin never fires. The viewport has to call it itself, scaled
+     * from the window's GUI space down to the viewport rectangle.
+     */
+    private void renderViewportHud(UIContext context, Area area)
+    {
+        if (!mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.shouldRenderHud())
+        {
+            return;
+        }
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc.inGameHud == null || mc.player == null)
+        {
+            return;
+        }
+
+        net.minecraft.client.util.Window window = mc.getWindow();
+        float scale = Math.min(area.w / (float) window.getScaledWidth(), area.h / (float) window.getScaledHeight());
+
+        context.batcher.flush();
+
+        net.minecraft.client.gui.DrawContext draw = context.batcher.getContext();
+        net.minecraft.client.util.math.MatrixStack matrices = draw.getMatrices();
+
+        matrices.push();
+        matrices.translate(area.x, area.y, 0F);
+        matrices.scale(scale, scale, 1F);
+
+        boolean hidden = mc.options.hudHidden;
+
+        mc.options.hudHidden = false;
+        mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHudRendering(draw);
+
+        try
+        {
+            mc.inGameHud.render(draw, mc.getRenderTickCounter());
+        }
+        finally
+        {
+            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHudRendering(draw);
+            mc.options.hudHidden = hidden;
+
+            context.batcher.flush();
+            matrices.pop();
+        }
     }
 
     private void renderCursor(UIContext context)

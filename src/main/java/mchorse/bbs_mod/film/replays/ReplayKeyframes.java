@@ -1,23 +1,3 @@
-/*
- * QUELLE: uebernommen aus dem CML-fork (2026-07-27),
- * cml-fresh/src/main/java/mchorse/bbs_mod/film/replays/ReplayKeyframes.java.
- *
- * WARUM: in fs fehlten 24 von 55 keyframe-kanaelen — u.a. hotbar_slot_1..9, health,
- * hunger, show_hand, show_hud. Ohne die hotbar-kanaele kennt BBS den hotbar-inhalt
- * eines replays gar nicht; darum zeigte "show HUD" nur das debug-HUD.
- *
- * ABWEICHUNGEN von der CML-vorlage (bewusst, nicht uebersehen):
- *   1. GROUP_TRANSFORM wieder ergaenzt — die konstante ist fs-eigen, cmls datei kennt
- *      sie nicht, aber UIFilmController + UIRecordOverlayPanel lesen sie.
- *   2. Sonst zeile fuer zeile die CML-fassung.
- *
- * Mitgebrachte abhaengigkeiten (einzeln geholt, NICHT als ganze dateien — cmls
- * KeyframeFactories/KeyframeChannel ziehen sechs factory-klassen aus fremden features
- * nach, die fs nicht hat):
- *   - MountLink + MountLinkKeyframeFactory (kanal "ridden")
- *   - KeyframeChannel.insertInterpolated / setFactory
- *   - 15 default-methoden auf IEntity
- */
 package mchorse.bbs_mod.film.replays;
 
 import mchorse.bbs_mod.data.types.BaseType;
@@ -47,8 +27,6 @@ import java.util.List;
 
 public class ReplayKeyframes extends ValueGroup
 {
-    /* fs-eigene gruppe, die es im CML-fork nicht gibt — beim uebernehmen der
-     * CML-datei wieder ergaenzt (UIFilmController + UIRecordOverlayPanel lesen sie). */
     public static final String GROUP_TRANSFORM = "transform";
 
     public static final String GROUP_POSITION = "position";

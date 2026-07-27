@@ -29,9 +29,6 @@ public class InGameHudMixin
          * eines tracker-clips kam nie an. Wie bei der hand ist das begin/endHudRendering-
          * paar pflicht, nicht schmuck: es klammert das zeichnen und setzt hudHidden
          * danach zurueck, damit der zustand des nutzers erhalten bleibt. */
-        /* afrobama 2026-07-28 — CameraWorkCameraController statt PlayCameraController,
-         * damit das HUD auch im EDITOR-VIEWPORT greift (dort laeuft
-         * RunnerCameraController). Siehe GameRendererMixin fuer die volle begruendung. */
         if (current instanceof CameraWorkCameraController)
         {
             BBSRendering.onRenderBeforeScreen();

@@ -1,27 +1,3 @@
-/*
- * QUELLE: uebernommen aus dem CML-fork (2026-07-28),
- * cml-fresh/src/main/java/mchorse/bbs_mod/forms/entities/MCEntity.java.
- *
- * WARUM DIESE DATEI, NACHDEM SCHON VIER ANDERE GEPATCHT WAREN:
- * fs' fassung fehlten 25 methoden (539 statt 759 zeilen) — genau die, die den
- * zustand SPEICHERN: setShowHand/setShowHud, health, hunger, hotbar-slots,
- * death_time, using_item, item_use_time, fire, particles, active_hand, mount/rider.
- *
- * Die defaults auf IEntity liefern konstanten (getHealth()=20, getHotbarItem()=EMPTY,
- * setShowHand()=no-op). Solange MCEntity sie nicht ueberschreibt, laeuft JEDER
- * schreibzugriff ins leere: keyframe-kanaele koennen ihre werte nicht ablegen, die
- * aufnahme schreibt nie einen abweichenden wert (weil der getter konstant bleibt),
- * und der render-apparat sieht immer den default.
- *
- * Gemessen nach der uebernahme, an einer frischen MCEntity:
- *   setShowHand(false) -> getShowHand()=false   (vorher: blieb true)
- *   setHealth(7)       -> getHealth()=7.0       (vorher: blieb 20)
- *   setHunger(3)       -> getHunger()=3         (vorher: blieb 20)
- *
- * ⚠ LEHRE: bei "feature fehlt" ALLE dateien der kette gegen den alten fork
- * diffen, bevor man einzelne patcht. Ein methoden-set-vergleich haette diese
- * luecke in einer minute gezeigt statt in mehreren runden.
- */
 package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
