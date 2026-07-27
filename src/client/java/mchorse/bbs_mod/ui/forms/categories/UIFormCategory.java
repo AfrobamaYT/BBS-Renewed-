@@ -258,6 +258,16 @@ public class UIFormCategory extends UIElement
 
             if (i >= 0 && i < forms.size())
             {
+                /* AUTONOMIE 2026-07-27: rechtsklick heftet an statt auszuwaehlen.
+                 * Bewusst kein kontextmenue: bei 60x80-kacheln ist ein menue groesser
+                 * als das ziel, und anheften ist die einzige aktion die es hier gibt. */
+                if (context.mouseButton == 1)
+                {
+                    com.afrobama.bbstools.client.forms.FormFavoriten.umschalten(forms.get(i));
+
+                    return true;
+                }
+
                 this.select(forms.get(i), true);
             }
             else
@@ -346,6 +356,14 @@ public class UIFormCategory extends UIElement
                 }
 
                 FormUtilsClient.renderUI(form, context, cx, cy, cx + CELL_WIDTH, cy + CELL_HEIGHT);
+
+                /* AUTONOMIE 2026-07-27: favoriten-marker oben rechts auf der kachel.
+                 * Die daten liegen in com.afrobama.bbstools.client.forms.FormFavoriten —
+                 * diese zeile zeichnet nur. Rechtsklick schaltet um, siehe subMouseClicked. */
+                if (com.afrobama.bbstools.client.forms.FormFavoriten.ist(form))
+                {
+                    context.batcher.icon(Icons.SAVED, cx + CELL_WIDTH - 11, cy + 2, 0F, 0F);
+                }
 
                 context.batcher.unclip(context);
 

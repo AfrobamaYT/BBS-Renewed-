@@ -29,6 +29,10 @@ public class FormCategories implements IWatchDogListener
     public void setup()
     {
         this.sections.clear();
+        /* AUTONOMIE 2026-07-27: favoriten GANZ OBEN, noch vor "zuletzt benutzt" — wer
+         * eine form anheftet, will sie als erstes sehen. Eigene sektion nach fs' muster
+         * (com.afrobama.bbstools.client.forms), kein eingriff in fs' eigene sektionen. */
+        this.sections.add(new com.afrobama.bbstools.client.forms.FavoritenFormSection(this));
         this.sections.add(this.recentForms);
         this.sections.add(this.userForms);
         this.sections.add(new ModelFormSection(this));
