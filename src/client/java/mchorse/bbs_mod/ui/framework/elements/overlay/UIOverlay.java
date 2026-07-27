@@ -27,6 +27,9 @@ public class UIOverlay extends UIElement
     private static boolean loaded = false;
 
     private int background = Colors.A50;
+
+    /** Verhindert, dass das schliessen mehrfach vorgemerkt wird (render laeuft pro frame). */
+    private boolean abschlussVorgemerkt;
     private float openTransition = 0.0F;
     private boolean closing = false;
 
@@ -340,9 +343,35 @@ public class UIOverlay extends UIElement
             this.openTransition += (target - this.openTransition) * 0.25F;
         }
 
+        /* ⛔ AUTONOMIE 2026-07-27: schliessen NICHT mehr aus render() heraus.
+         *
+         * CRASH-URSACHE, gemessen an vier crash-reports dieser session:
+         *
+         *     java.util.ConcurrentModificationException
+         *       at java.util.ArrayList$Itr.checkForComodification
+         *       at mchorse.bbs_mod.ui.framework.elements.UIElement.render(UIElement:1429)
+         *
+         * performClose() ruft removeFromParent() — und wurde hier gerufen, WAEHREND der
+         * eltern-UIElement.render() die kinder-liste mit einem iterator durchlaeuft. Beim
+         * naechsten next() knallt es. Ausgeloest hat es jedes overlay, dessen ausblend-
+         * animation waehrend eines frames endete: dashboard auf, keybind-editor zu, crash.
+         *
+         * fs' eigene fassung (bbs-fs-pur, 173 zeilen) hat das problem nicht — sie entfernt
+         * direkt im klick-handler und kennt weder performClose noch openTransition. Die
+         * verzoegerte variante kam mit CMLs animierter UI (241 zeilen), die du behalten
+         * wolltest.
+         *
+         * Fix: das entfernen VORMERKEN und im naechsten client-tick ausfuehren, wo
+         * niemand die liste iteriert. Die animation laeuft unveraendert weiter. */
         if (this.closing && this.openTransition <= 0.01F)
         {
-            this.performClose();
+            if (!this.abschlussVorgemerkt)
+            {
+                this.abschlussVorgemerkt = true;
+
+                net.minecraft.client.MinecraftClient.getInstance().execute(this::performClose);
+            }
+
             return;
         }
 
