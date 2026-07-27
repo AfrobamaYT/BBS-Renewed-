@@ -1,5 +1,7 @@
 plugins {
-	id 'fabric-loom' version '1.15-SNAPSHOT'
+	/* AUTONOMIE 2026-07-27: von 1.15 angehoben — die veil-lib ist mit loom 1.16+
+	 * gebaut, 1.15.5 kann deren mod-metadaten nicht remappen. Braucht gradle 9.6.1. */
+	id 'fabric-loom' version '1.17-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -31,6 +33,12 @@ repositories {
 	maven {
 		name = "Gegy"
 		url = "https://maven.gegy.dev/"
+	}
+
+	/* AUTONOMIE 2026-07-27: MCEF (chromium-embedded) fuer BBSWebBridge. */
+	maven {
+		name = "CinemaMod"
+		url = "https://mcef-download.cinemamod.com/repositories/releases"
 	}
 }
 
@@ -82,6 +90,23 @@ dependencies {
 	modImplementation "maven.modrinth:watermedia:2.1.37"
 	modImplementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
 	modImplementation "maven.modrinth:iris:1.8.8+1.21.1-fabric"
+
+	/* AUTONOMIE 2026-07-27: fremd-mods gegen die com/afrobama kompiliert.
+	 * Alle modCompileOnly — sie werden NICHT gebuendelt und NICHT zur laufzeit verlangt;
+	 * die betroffenen features (Veil-FX, PhysicsMod-fracture, accelerated crowd-rendering,
+	 * MCEF-webbridge) pruefen selbst per FabricLoader.isModLoaded() und schalten sich ab.
+	 * Die jars liegen in libs/. */
+	modCompileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
+	modCompileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
+	modCompileOnly files("libs/physics-mod-pro-v172j-fabric-1.21.1.jar")
+	modCompileOnly files("libs/worldedit-mod-7.3.8.jar")
+	modCompileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
+
+	/* AUTONOMIE 2026-07-27: audio-decoder fuer com/afrobama/bbstools/audio
+	 * (MASFlacReader, MASMp3Reader) — liest FLAC/MP3 fuer die lipsync-/waveform-spur.
+	 * include() = wird in den jar gebuendelt, sonst fehlt sie zur laufzeit. */
+	implementation include("org.jflac:jflac-codec:1.5.2")
+	implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
 
 	modImplementation "org.anarres:jcpp:1.4.14"
 	modImplementation "io.github.douira:glsl-transformer:2.0.0-pre13"

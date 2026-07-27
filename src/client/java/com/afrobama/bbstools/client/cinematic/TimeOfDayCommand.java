@@ -1,0 +1,184 @@
+// Coded by Afrobama/Claude — /bbstools tod cinematic time-of-day setter.
+// Mid-shoot the user wants to snap world time to a specific phase
+// without typing /time set <number> and without waiting for the slow
+// vanilla day-cycle interpolation (the "server slop" — vanilla's
+// world-border-sync packet + per-tick tick-skip math adds 2-4 ticks of
+// visible jitter when /time set runs through the regular command path).
+// Going straight at ServerWorld.setTimeOfDay() on the integrated server
+// world is a single-tick set with no command-dispatch overhead.
+//
+//   /bbstools tod <0-24000>           — set absolute MC day-time
+//   /bbstools tod night|noon|dawn|dusk — named cinematic presets
+//
+// Presets (per user spec — these match what the cinematic eye expects,
+// not what /time set's literals expect; in particular "night" = 18000
+// is true midnight when the moon is dead-center, and "dawn" = 23000 is
+// just before sunrise so the horizon already has the warm rim):
+//   night = 18000   moon overhead, deepest blue, stars at peak
+//   noon  =  6000   sun overhead, brightest sky
+//   dawn  = 23000   pre-sunrise, warm horizon, low ambient
+//   dusk  = 12000   sun just below horizon, magic-hour purple
+//
+// Architectural notes:
+//   - CommandRegistrationCallback.EVENT (server variant) fires on the
+//     integrated server inside a singleplayer client, so this is
+//     server-authoritative despite living in src/client/java. Same
+//     pattern as DeleteGrassCommand — see its file header for the
+//     splitEnvironmentSourceSets rationale.
+//   - We try the public Yarn method setTimeOfDay(long) first; if a
+//     future BBS-Renewed remap obfuscates it (mojmap, intermediary,
+//     etc.) we fall back to a reflective lookup across the known method
+//     names (setTimeOfDay, method_29199, setDayTime). Belt-and-braces
+//     so the command keeps working across mapping flips.
+//   - Wraps the input modulo 24000 so /bbstools tod 30000 still does
+//     the sensible thing (= 6000 = noon) instead of silently advancing
+//     a full day.
+package com.afrobama.bbstools.client.cinematic;
+
+import com.afrobama.bbstools.BBSToolsMod;
+
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
+
+public final class TimeOfDayCommand
+{
+    /** Length of one MC day in ticks. Used both for the argument range
+     *  (0..24000 inclusive — same as vanilla /time set) and the
+     *  modulo-wrap so overflows still produce a sensible time. */
+    private static final int DAY_TICKS = 24000;
+
+    /** Cinematic preset values — see file header for the rationale. */
+    private static final int PRESET_NIGHT = 18000;
+    private static final int PRESET_NOON  = 6000;
+    private static final int PRESET_DAWN  = 23000;
+    private static final int PRESET_DUSK  = 12000;
+
+    private TimeOfDayCommand() {}
+
+    public static void register()
+    {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
+        {
+            dispatcher.register(CommandManager.literal("bbstools")
+                .then(CommandManager.literal("tod")
+                    /* Numeric form: /bbstools tod <0-24000>. Brigadier
+                     *  enforces the range; we still % DAY_TICKS for
+                     *  safety in case a future caller bypasses the
+                     *  client parse path (e.g. macros). */
+                    .then(CommandManager.argument("time", IntegerArgumentType.integer(0, DAY_TICKS))
+                        .executes(ctx -> doSet(ctx, IntegerArgumentType.getInteger(ctx, "time"), null)))
+                    /* Named presets — separate literals so tab-complete
+                     *  surfaces them as suggestions, no extra typing. */
+                    .then(CommandManager.literal("night").executes(ctx -> doSet(ctx, PRESET_NIGHT, "night")))
+                    .then(CommandManager.literal("noon") .executes(ctx -> doSet(ctx, PRESET_NOON,  "noon")))
+                    .then(CommandManager.literal("dawn") .executes(ctx -> doSet(ctx, PRESET_DAWN,  "dawn")))
+                    .then(CommandManager.literal("dusk") .executes(ctx -> doSet(ctx, PRESET_DUSK,  "dusk")))));
+        });
+    }
+
+    private static int doSet(CommandContext<ServerCommandSource> ctx, int rawTime, String presetName)
+    {
+        ServerCommandSource src = ctx.getSource();
+        ServerPlayerEntity player;
+        try
+        {
+            player = src.getPlayerOrThrow();
+        }
+        catch (Exception e)
+        {
+            src.sendFeedback(() -> Text.literal(
+                "§c[tod] §fmust be run by a player §7(needs a world reference)"), false);
+            return 0;
+        }
+
+        ServerWorld world = player.getServerWorld();
+        long time = ((rawTime % DAY_TICKS) + DAY_TICKS) % DAY_TICKS;
+
+        boolean ok = applyTimeOfDay(world, time);
+        if (!ok)
+        {
+            src.sendFeedback(() -> Text.literal(
+                "§c[tod] §ffailed to set time §7(no setTimeOfDay/setDayTime method on "
+                + world.getClass().getName() + ")"), false);
+            BBSToolsMod.LOG.warn("/bbstools tod could not find a time-setter on {}", world.getClass().getName());
+            return 0;
+        }
+
+        /* Cinematic feedback: short, in-chat, broadcast=true so other
+         *  observers in the world (e.g. recording party) see the snap
+         *  in their chat too — useful for sync-clapper-style takes. */
+        final long timeFinal = time;
+        final String labelFinal = presetName != null ? presetName : Long.toString(time);
+        src.sendFeedback(() -> Text.literal(
+            "§a[tod] §ftime set to §a" + labelFinal
+            + "§f §7(" + timeFinal + " ticks)"), true);
+
+        BBSToolsMod.LOG.info("/bbstools tod {} ({} ticks) on {}",
+            labelFinal, timeFinal, world.getRegistryKey().getValue());
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /** Try the public Yarn method first (fast path, JIT-able), fall back
+     *  to reflection across the known method names (setTimeOfDay,
+     *  method_29199 = intermediary, setDayTime = some mojmap variants).
+     *  Returns true on success. */
+    private static boolean applyTimeOfDay(ServerWorld world, long time)
+    {
+        try
+        {
+            /* Yarn 1.21.1: ServerWorld.setTimeOfDay(long). Direct call —
+             *  bytecode is a single INVOKEVIRTUAL after JIT. */
+            world.setTimeOfDay(time);
+            return true;
+        }
+        catch (LinkageError directFail)
+        {
+            /* LinkageError covers NoSuchMethodError, AbstractMethodError,
+             *  IncompatibleClassChangeError — anything the verifier raises
+             *  when our compiled call site doesn't line up with the
+             *  ServerWorld actually loaded at runtime (e.g. remap drift). */
+            BBSToolsMod.LOG.debug("Direct setTimeOfDay missing ({}), falling back to reflection",
+                directFail.toString());
+        }
+        catch (Throwable t)
+        {
+            BBSToolsMod.LOG.warn("Direct setTimeOfDay threw: {}", t.toString());
+        }
+
+        /* Reflection fallback for remapped variants. We probe a small
+         *  whitelist of method names rather than scanning all declared
+         *  methods so an attacker who somehow controls the class can't
+         *  trick us into invoking an unrelated long-taking setter. */
+        String[] candidates = { "setTimeOfDay", "method_29199", "setDayTime" };
+        for (String name : candidates)
+        {
+            try
+            {
+                var m = world.getClass().getMethod(name, long.class);
+                m.invoke(world, time);
+                return true;
+            }
+            catch (NoSuchMethodException ignored)
+            {
+                /* try the next name */
+            }
+            catch (Throwable t)
+            {
+                BBSToolsMod.LOG.warn("Reflective {} threw: {}", name, t.toString());
+            }
+        }
+
+        return false;
+    }
+
+}

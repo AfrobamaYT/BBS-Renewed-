@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.interps.Interpolation;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,33 @@ public class UIKeyframeSheet extends UIKeyframeElement
     public final boolean isBoneTrack;
 
     /** Set for sheets that have no backing form property (e.g. the IK controls track), so the editor can find the owning form. */
+    /** Einrueck-tiefe in der spur-hierarchie (0 = oberste ebene).
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork — unsere gruppierten spuren zeichnen die
+     *  kopfzeile abhaengig davon eingerueckt. fs kennt nur flache spuren, deshalb 0. */
+    public int level = 0;
+
+    /* AUTONOMIE 2026-07-27: gruppen-kopfzeilen in der spurliste (CML-fork). Ein sheet mit
+     * groupHeader=true traegt keine eigenen keyframes — es ist die aufklappbare ueberschrift
+     * ueber den spuren, die zu groupKey gehoeren. toggleGroup wird beim klick gerufen. */
+    public boolean groupHeader;
+    public boolean groupExpanded;
+    public String groupKey;
+    public Runnable toggleGroup;
+
+    /** Baut eine solche kopfzeile — leerer kanal, nur titel/farbe/aufklapp-zustand. */
+    public static UIKeyframeSheet groupHeader(String id, IKey title, int color, String groupKey, boolean expanded, Runnable toggleGroup)
+    {
+        UIKeyframeSheet sheet = new UIKeyframeSheet(id, title, color, false, new KeyframeChannel<>(id, KeyframeFactories.DOUBLE), null);
+
+        sheet.groupHeader = true;
+        sheet.groupExpanded = expanded;
+        sheet.groupKey = groupKey;
+        sheet.toggleGroup = toggleGroup;
+
+        return sheet;
+    }
+
     public Form form;
 
     /**

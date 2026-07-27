@@ -47,6 +47,13 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
 
     private Consumer<Replay> callback;
 
+    /** Erweiterungspunkt: jeder eintrag wird beim aufbau des panels einmal gerufen.
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork. Unser code (ReplayCrowdModeToggle,
+     *  ReplayCacheBar) haengt damit eigene knoepfe ins replay-overlay, ohne die
+     *  fs-klasse selbst zu patchen. */
+    public static final java.util.List<java.util.function.Consumer<UIReplaysOverlayPanel>> extensions = new java.util.ArrayList<>();
+
     public UIReplaysOverlayPanel(UIFilmPanel filmPanel, Consumer<Replay> callback)
     {
         super(UIKeys.FILM_REPLAY_TITLE);
@@ -151,6 +158,13 @@ public class UIReplaysOverlayPanel extends UIOverlayPanel
         this.replays.relative(this.content).w(0.5F).h(1F);
 
         this.content.add(this.replays, this.properties);
+
+        /* AUTONOMIE 2026-07-27: erweiterungen einmal am ende des aufbaus abarbeiten — sonst
+         * waere die liste oben nur eine sammelstelle, in die niemand hineinschaut. */
+        for (Consumer<UIReplaysOverlayPanel> consumer : extensions)
+        {
+            consumer.accept(this);
+        }
     }
 
     @Override

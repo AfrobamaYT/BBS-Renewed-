@@ -18,6 +18,7 @@ public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
     public Link path = new Link("", "");
     public Predicate<Link> filter;
 
+
     public UIFileLinkList(Consumer<Link> fileCallback)
     {
         super(null);

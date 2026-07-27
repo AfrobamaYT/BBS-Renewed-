@@ -24,6 +24,14 @@ public class FormRenderingContext
     public int color;
     public boolean modelRenderer;
 
+    /* AUTONOMIE 2026-07-27: zwei render-flags aus dem CML-fork.
+     * relative        — matrizen sind schon relativ zum entity aufgebaut, world nicht nochmal anwenden.
+     * renderEquipment — ruestung/handgegenstaende mitzeichnen. Der crowd-schnellpfad
+     *                   (com/afrobama/.../fastpath) schaltet sie fuer die masse ab, weil
+     *                   equipment pro mitglied einen eigenen draw kostet. */
+    public boolean relative;
+    public boolean renderEquipment;
+
     public FormRenderingContext()
     {}
 
@@ -39,6 +47,8 @@ public class FormRenderingContext
         this.stencilMap = null;
         this.ui = false;
         this.color = 0xffffffff;
+        this.relative = false;
+        this.renderEquipment = true;
 
         if (entity != null && (this.type == FormRenderType.ENTITY || this.type == FormRenderType.MODEL_BLOCK))
         {
@@ -90,6 +100,13 @@ public class FormRenderingContext
     public FormRenderingContext color(int color)
     {
         this.color = color;
+
+        return this;
+    }
+
+    public FormRenderingContext equipment(boolean renderEquipment)
+    {
+        this.renderEquipment = renderEquipment;
 
         return this;
     }

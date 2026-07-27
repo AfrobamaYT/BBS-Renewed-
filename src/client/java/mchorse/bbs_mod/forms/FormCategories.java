@@ -54,6 +54,24 @@ public class FormCategories implements IWatchDogListener
         this.lastUpdate = System.currentTimeMillis();
     }
 
+    /** Die "extra"-sektion (mobs + eigene kategorien).
+     *
+     *  AUTONOMIE 2026-07-27: fs hat getRecentForms()/getUserForms(), aber keinen getter fuer
+     *  die extra-sektion, obwohl setup() sie registriert. Unser FormCategoriesAddCameraLogik
+     *  haengt dort eine kamera-kategorie ein. */
+    public ExtraFormSection getExtraForms()
+    {
+        for (FormSection section : this.sections)
+        {
+            if (section instanceof ExtraFormSection extra)
+            {
+                return extra;
+            }
+        }
+
+        return null;
+    }
+
     public RecentFormSection getRecentForms()
     {
         return this.recentForms;

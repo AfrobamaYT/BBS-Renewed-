@@ -193,6 +193,27 @@ public class BBSSettings {
 	public static ValueBoolean audioWaveformTime;
 	public static ValueBoolean audioWaveformPreviewCombined;
 
+	/* AUTONOMIE 2026-07-27: schalter fuer den crowd/bake-schnellpfad in com/afrobama
+	 * (bbstools/client/bbs/fastpath). Eigene kategorie "bbstools" statt sie wie im CML-fork
+	 * in eine fremde einzuhaengen — dort landeten sie unter "cdn" und bekamen deshalb
+	 * unlesbare namen in der settings-UI. */
+	public static ValueBoolean bakeFastPath;
+	public static ValueBoolean bakeFastPathRender;
+	public static ValueBoolean bakeCrowdMode;
+	public static ValueBoolean bakeLod;
+	public static ValueBoolean bakeDistanceCulling;
+	public static ValueBoolean bakeArmyBake;
+
+	/** Beim replay-posieren nur die markierten knochen aufzeichnen statt des ganzen skeletts. */
+	public static ValueBoolean replayMarkedBonesOnly;
+
+	/* AUTONOMIE 2026-07-27: schluessel fuer die AI-hintergrundentfernung in com/afrobama
+	 * (AIBackgroundRemover = replicate.com, AIOpenAIBackgroundRemover = OpenAI). Leer =
+	 * feature bleibt still aus, es wird nichts nach draussen geschickt. */
+	public static ValueString aiApiKey;
+	public static ValueString aiBgRemoveModel;
+	public static ValueString aiOpenaiKey;
+
 	public static ValueString cdnUrl;
 	public static ValueString cdnToken;
 
@@ -658,6 +679,20 @@ public class BBSSettings {
 		audioWaveformFilename = builder.getBoolean("waveform_filename", false);
 		audioWaveformTime = builder.getBoolean("waveform_time", false);
 		audioWaveformPreviewCombined = builder.getBoolean("waveform_preview_combined", false);
+
+		builder.category("bbstools", Icons.GEAR);
+		bakeFastPath = builder.getBoolean("bake_fast_path", true);
+		bakeFastPathRender = builder.getBoolean("bake_fast_path_render", true);
+		bakeCrowdMode = builder.getBoolean("bake_crowd_mode", false);
+		bakeLod = builder.getBoolean("bake_lod", true);
+		bakeDistanceCulling = builder.getBoolean("bake_distance_culling", true);
+		bakeArmyBake = builder.getBoolean("bake_army_bake", false);
+		replayMarkedBonesOnly = builder.getBoolean("replay_marked_bones_only", false);
+
+		builder.category("ai", Icons.SERVER);
+		aiApiKey = builder.getString("api_key", "");
+		aiBgRemoveModel = builder.getString("bg_remove_model", "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc");
+		aiOpenaiKey = builder.getString("openai_key", "");
 
 		builder.category("cdn", Icons.SERVER);
 		cdnUrl = builder.getString("url", "");

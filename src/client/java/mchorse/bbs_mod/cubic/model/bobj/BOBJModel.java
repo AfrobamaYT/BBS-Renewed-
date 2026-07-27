@@ -37,6 +37,21 @@ public class BOBJModel implements IModel
     private List<BOBJModelVAO> vaos = new ArrayList<>();
     private boolean simple;
 
+    /** Die kompilierten mesh-daten (vertices/normalen/gewichte) dieses modells.
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork — der fracture-code (BoneMeshExtractor) braucht
+     *  die rohen dreiecke, um ein modell in bruchstuecke zu zerlegen. */
+    public BOBJLoader.CompiledData getMeshData()
+    {
+        return this.meshes.isEmpty() ? null : this.meshes.get(0);
+    }
+
+    /** Alle meshes dieses modells. fs erlaubt mehrere pro datei, CML kannte nur eins. */
+    public java.util.List<BOBJLoader.CompiledData> getMeshes()
+    {
+        return this.meshes;
+    }
+
     public BOBJModel(BOBJArmature armature, List<BOBJLoader.CompiledData> meshes, boolean simple)
     {
         this.armature = armature;

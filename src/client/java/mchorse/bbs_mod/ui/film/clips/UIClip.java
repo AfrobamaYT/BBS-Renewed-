@@ -58,7 +58,9 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.ScrollDirection;
+import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
 import mchorse.bbs_mod.ui.utils.UI;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.utils.TimeUtilsClient;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -113,6 +115,15 @@ public abstract class UIClip <T extends Clip> extends UIElement
         register(DamageActionClip.class, UIDamageActionClip::new);
         register(ItemDropActionClip.class, UIItemDropActionClip::new);
         register(SwipeActionClip.class, UISwipeActionClip::new);
+    }
+
+    /** Abschnitts-ueberschrift im clip-editor — beschriftung auf halbtransparentem akzentgrund.
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork; unsere eigenen clip-panels (tracker, fracture)
+     *  bauen ihre abschnitte damit, damit sie wie die eingebauten aussehen. */
+    public static UILabel label(IKey key)
+    {
+        return UI.label(key).background(() -> BBSSettings.primaryColor(Colors.A50));
     }
 
     public static <T extends Clip> void register(Class<T> clazz, IUIClipFactory<T> factory)

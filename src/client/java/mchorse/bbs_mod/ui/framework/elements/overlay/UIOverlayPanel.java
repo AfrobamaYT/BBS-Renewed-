@@ -30,6 +30,19 @@ public class UIOverlayPanel extends UIElement
 
     private int initialOffsetX;
     private int initialOffsetY;
+    /* AUTONOMIE 2026-07-27: groessen-anfasser unten rechts (bzw. links, siehe resizeFromLeft),
+     * portiert aus dem CML-fork. fs' overlay kann nur VERSCHIEBEN (feld `moving` oben) —
+     * unsere panels (keybind-editor, launchpad, replay-dock, powerbins, settings-overlay)
+     * rufen resizable() und brauchen den zieh-rand. Standardmaessig AUS: bestehende
+     * overlays verhalten sich unveraendert. */
+    private boolean resizing;
+    private boolean resizable;
+    private boolean resizeFromLeft;
+    private int resizeMargin = 12;
+    private int minWidth = 180;
+    private int minHeight = 120;
+    private int resizeMinWidth = 180;
+    private int resizeMinHeight = 120;
 
     public UIOverlayPanel(IKey title)
     {
@@ -49,6 +62,54 @@ public class UIOverlayPanel extends UIElement
         this.add(this.title, this.icons, this.content);
 
         this.mouseEventPropagataion(EventPropagation.BLOCK_INSIDE);
+    }
+
+    public UIOverlayPanel resizable()
+    {
+        return this.resizable(true);
+    }
+
+    public UIOverlayPanel resizable(boolean value)
+    {
+        this.resizable = value;
+
+        return this;
+    }
+
+    /** Kleinstmoegliche groesse beim ziehen. Untergrenze 60px, sonst verschwindet der anfasser selbst. */
+    public UIOverlayPanel minSize(int width, int height)
+    {
+        this.minWidth = Math.max(60, width);
+        this.minHeight = Math.max(60, height);
+
+        return this;
+    }
+
+    public UIOverlayPanel resizeMargin(int margin)
+    {
+        this.resizeMargin = Math.max(6, margin);
+
+        return this;
+    }
+
+    /** Anfasser nach unten LINKS statt rechts — fuer panels die am rechten bildschirmrand andocken. */
+    public UIOverlayPanel resizeFromLeft()
+    {
+        this.resizeFromLeft = true;
+
+        return this;
+    }
+
+    /** Maus im anfasser-dreieck? Nur dann faengt subMouseClicked den klick ab. */
+    private boolean isResizeHandleInside(UIContext context)
+    {
+        boolean side = this.resizeFromLeft
+            ? context.mouseX <= this.area.x + this.resizeMargin
+            : context.mouseX >= this.area.ex() - this.resizeMargin;
+
+        return this.resizable
+            && side
+            && context.mouseY >= this.area.ey() - this.resizeMargin;
     }
 
     public void setInitialOffset(int x, int y)
@@ -78,6 +139,28 @@ public class UIOverlayPanel extends UIElement
     @Override
     public boolean subMouseClicked(UIContext context)
     {
+        /* Anfasser hat vorrang vor allem anderen — er liegt ueber dem inhalt. */
+        if (this.isResizeHandleInside(context))
+        {
+            if (Window.isCtrlPressed())
+            {
+                this.flex.w.offset = this.initialWidthOffset;
+                this.flex.h.offset = this.initialHeightOffset;
+
+                this.getParent().resize();
+
+                return true;
+            }
+
+            this.resizing = true;
+            this.resizeMinWidth = Math.min(this.minWidth, this.area.w);
+            this.resizeMinHeight = Math.min(this.minHeight, this.area.h);
+            this.lastX = context.mouseX;
+            this.lastY = context.mouseY;
+
+            return true;
+        }
+
         if (this.title.area.isInside(context))
         {
             if (Window.isCtrlPressed())
@@ -103,6 +186,7 @@ public class UIOverlayPanel extends UIElement
     @Override
     public boolean subMouseReleased(UIContext context)
     {
+        this.resizing = false;
         this.moving = super.subMouseReleased(context);
 
         return false;
@@ -152,9 +236,62 @@ public class UIOverlayPanel extends UIElement
             this.lastY = context.mouseY;
         }
 
+        if (this.resizing && (context.mouseX != this.lastX || context.mouseY != this.lastY))
+        {
+            int dx = context.mouseX - this.lastX;
+            int dy = context.mouseY - this.lastY;
+            int maxW = this.getParent() == null ? Integer.MAX_VALUE : this.getParent().area.w;
+            int maxH = this.getParent() == null ? Integer.MAX_VALUE : this.getParent().area.h;
+
+            /* Von links ziehen verschiebt zusaetzlich den ursprung, sonst waechst das panel
+             * nach rechts weg statt zum cursor hin. */
+            if (this.resizeFromLeft)
+            {
+                int desiredW = Math.min(maxW, Math.max(this.resizeMinWidth, this.area.w - dx));
+                int desiredH = Math.min(maxH, Math.max(this.resizeMinHeight, this.area.h + dy));
+
+                this.flex.x.offset += this.area.w - desiredW;
+                this.flex.w.offset += desiredW - this.area.w;
+                this.flex.h.offset += desiredH - this.area.h;
+            }
+            else
+            {
+                int desiredW = Math.min(maxW, Math.max(this.resizeMinWidth, this.area.w + dx));
+                int desiredH = Math.min(maxH, Math.max(this.resizeMinHeight, this.area.h + dy));
+
+                this.flex.w.offset += desiredW - this.area.w;
+                this.flex.h.offset += desiredH - this.area.h;
+            }
+
+            this.getParent().resize();
+
+            this.lastX = context.mouseX;
+            this.lastY = context.mouseY;
+        }
+
         this.renderBackground(context);
 
         super.render(context);
+
+        if (this.resizable)
+        {
+            /* Zwei striche als winkel — hell wenn die maus drueber ist. */
+            int resizeColor = this.isResizeHandleInside(context) ? Colors.WHITE : Colors.GRAY;
+            int left = this.area.x;
+            int right = this.area.ex();
+            int bottom = this.area.ey();
+
+            if (this.resizeFromLeft)
+            {
+                context.batcher.box(left + 1, bottom - 1, left + 9, bottom, resizeColor);
+                context.batcher.box(left, bottom - 9, left + 1, bottom - 1, resizeColor);
+            }
+            else
+            {
+                context.batcher.box(right - 9, bottom - 1, right - 1, bottom, resizeColor);
+                context.batcher.box(right - 1, bottom - 9, right, bottom - 1, resizeColor);
+            }
+        }
     }
 
     protected void renderBackground(UIContext context)

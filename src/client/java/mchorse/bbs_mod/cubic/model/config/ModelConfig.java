@@ -16,8 +16,10 @@ import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.settings.values.misc.ValueVector3f;
 import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
+import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.settings.values.ui.ValueStringKeys;
 import mchorse.bbs_mod.settings.values.ui.ValueStringMap;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Pose;
 import org.joml.Vector3f;
 
@@ -43,6 +45,14 @@ public class ModelConfig extends ValueGroup
     public final ValueString poseGroup = new ValueString("pose_group", "");
     public final ValueString anchor = new ValueString("anchor", "");
     public final ValueLink texture = new ValueLink("texture", null);
+
+    /** Per-instance tint, multiplied onto the form colour at render time (ARGB, default white).
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork uebernommen — dort ein loses public feld auf
+     *  ModelInstance, hier als serialisierbarer wert im config-baum wie alles andere, damit
+     *  es speichern/undo/UI ohne sonderfall mitmacht. Leser: com/afrobama .../crowd (tint
+     *  pro crowd-mitglied) und der fastpath-renderer. */
+    public final ValueInt color = new ValueInt("color", Colors.WHITE);
     public final ValueFloat uiScale = new ValueFloat("ui_scale", 1F);
     public final ValueVector3f scale = new ValueVector3f("scale", new Vector3f(1F));
     public final WeldList welds = new WeldList("welds");
@@ -77,6 +87,7 @@ public class ModelConfig extends ValueGroup
         this.add(this.anchor);
         this.add(this.texture);
         this.add(this.uiScale);
+        this.add(this.color);
         this.add(this.scale);
         this.add(this.welds);
         this.add(this.disabledBones);

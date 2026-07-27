@@ -133,6 +133,12 @@ public class BBSModClient implements ClientModInitializer
     private static float originalFramebufferScale;
     private static boolean customGUIScale;
 
+    public static UIDashboard peekDashboard()
+    {
+        return dashboard;
+    }
+
+
     public static TextureManager getTextures()
     {
         return textures;

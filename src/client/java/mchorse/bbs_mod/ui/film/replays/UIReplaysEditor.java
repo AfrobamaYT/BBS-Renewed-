@@ -73,6 +73,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
 import org.joml.Vector3d;
 
+import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
@@ -198,6 +199,52 @@ public class UIReplaysEditor extends UIElement
         ICONS.put("count", Icons.BUCKET);
         ICONS.put("settings", Icons.GEAR);
         ICONS.put("physics_targets", Icons.TIME);
+    }
+
+    /* AUTONOMIE 2026-07-27: zwei kontextmenue-helfer aus dem CML-fork. Beide fuellen ein
+     * menue mit knochen-namen und rufen den consumer mit der wahl. Nutzer: die kamera-
+     * vorschau (com/afrobama/.../campreview), wo man einen clip an einen knochen heftet.
+     * "_item"-gruppen sind ausgeblendet — das sind die unsichtbaren halter fuer
+     * handgegenstaende, an die niemand eine kamera haengt. */
+    public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
+    {
+        offerGroups(context, form, bone, consumer, true);
+    }
+
+    /** Wie offerAdjacent, aber die ganze eltern-kette statt der geschwister. */
+    public static void offerHierarchy(UIContext context, Form form, String bone, Consumer<String> consumer)
+    {
+        offerGroups(context, form, bone, consumer, false);
+    }
+
+    private static void offerGroups(UIContext context, Form form, String bone, Consumer<String> consumer, boolean adjacent)
+    {
+        if (bone.isEmpty() || !(form instanceof ModelForm modelForm))
+        {
+            return;
+        }
+
+        ModelInstance model = ModelFormRenderer.getModel(modelForm);
+
+        if (model == null)
+        {
+            return;
+        }
+
+        context.replaceContextMenu((menu) ->
+        {
+            for (String modelGroup : adjacent ? model.model.getAdjacentGroups(bone) : model.model.getHierarchyGroups(bone))
+            {
+                if (modelGroup.endsWith("_item"))
+                {
+                    continue;
+                }
+
+                menu.action(Icons.LIMB, IKey.constant(modelGroup), () -> consumer.accept(modelGroup));
+            }
+
+            menu.autoKeys();
+        });
     }
 
     public static Icon getIcon(String key)

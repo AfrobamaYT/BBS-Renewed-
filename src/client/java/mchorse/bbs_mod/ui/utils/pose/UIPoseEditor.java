@@ -52,6 +52,23 @@ public class UIPoseEditor extends UIElement
     protected IModel model;
     protected Map<String, String> flippedParts;
 
+    /* AUTONOMIE 2026-07-27: "markierte knochen" ist ein CML-feature (dort 54 stellen im
+     * 1670-zeilen pose-editor: knochen anklicken, auswahl pro pose-gruppe persistieren).
+     * Der fs-kern hat es nicht. Unser einziger nutzer ist BoneHoverPickRunner, und der
+     * benutzt es rein als VERENGUNG: sind knochen markiert, pickt der hover nur die.
+     * Leere antwort = "keine markierung" = alle knochen pickbar, das korrekte
+     * ausgangsverhalten. Wird das feature spaeter gebaut, ersetzen diese beiden methoden
+     * ihren echten cache — die aufrufstelle bleibt unveraendert. */
+    public static boolean hasMarkedBones(String groupKey)
+    {
+        return false;
+    }
+
+    public static java.util.Set<String> getMarkedBones(String groupKey)
+    {
+        return java.util.Collections.emptySet();
+    }
+
     public UIPoseEditor()
     {
         this.groups = new UIBoneList(this::pickBones);

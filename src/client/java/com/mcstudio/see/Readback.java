@@ -1,0 +1,219 @@
+package com.mcstudio.see;
+
+import com.mcstudio.http.StudioServer;
+import com.mcstudio.util.RenderThread;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
+
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.ByteBuffer;
+
+/**
+ * Readback — In-JVM framebuffer capture. The reliable "see" primitive.
+ *
+ * WHY THIS EXISTS: OS-level window capture photographs whatever window is on top (today it grabbed the
+ * Claude-Code terminal instead of Minecraft). glReadPixels runs INSIDE the MC process against MC's own
+ * GL context, so it reads the REAL game framebuffer regardless of which window is focused — and works
+ * even when MC is not in the foreground. That is the whole point of In-JVM readback.
+ *
+ * OWNER: W2 (see/). This module self-registers its /shot route via StudioServer.route(...); it never
+ * edits StudioServer.java or StudioClient.java. Lead adds ONE line "Readback.register();" to
+ * StudioClient.onInitializeClient() BEFORE StudioServer.start() (routes must be registered before start).
+ *
+ * Inspector (also W2-owned) reuses captureFramebuffer(Framebuffer, String) to export its offscreen FBO.
+ *
+ * FAIL-LOUD (CLAUDE.md Regel 0 — the Rust-R3 lesson): if the buffer comes back all-zero we DO NOT report
+ * a silent "ok"; the JSON carries {"warning":"framebuffer all-zero"} so a dead capture is never mistaken
+ * for a black scene.
+ */
+public final class Readback
+{
+	private Readback()
+	{
+	}
+
+	/**
+	 * Self-register the /shot route. Called by StudioClient (one line, added by Lead) before
+	 * StudioServer.start(). /shot?name=foo captures MC's main framebuffer to run/mcstudio-shots/foo.png.
+	 */
+	public static void register()
+	{
+		StudioServer.route("/shot", exchange ->
+		{
+			String name = StudioServer.query(exchange, "name");
+
+			if (name == null || name.isEmpty())
+			{
+				name = "shot";
+			}
+
+			/* Sanitize to a bare filename (no path traversal, no separators). */
+			name = name.replaceAll("[^A-Za-z0-9._-]", "_");
+
+			File out = new File(shotsDir(), name + ".png");
+
+			/* Actual GL work must run on the render thread; the HTTP handler thread blocks on the result. */
+			final String path = out.getAbsolutePath();
+			String json = RenderThread.submit(() -> captureMainFramebuffer(path));
+
+			StudioServer.respond(exchange, json);
+		});
+
+		System.out.println("[mcstudio] Readback registered /shot");
+	}
+
+	/**
+	 * Capture MC's main (on-screen) framebuffer to a PNG. MUST run on the render thread — call it via
+	 * RenderThread.submit(...). Returns JSON {w,h,ms,path} (plus {"warning":"framebuffer all-zero"} if
+	 * the pixels came back empty).
+	 */
+	public static String captureMainFramebuffer(String path)
+	{
+		MinecraftClient client = MinecraftClient.getInstance();
+
+		if (client == null)
+		{
+			return "{\"error\":\"MinecraftClient not available\"}";
+		}
+
+		Framebuffer fb = client.getFramebuffer();
+
+		if (fb == null)
+		{
+			return "{\"error\":\"main framebuffer not available\"}";
+		}
+
+		return captureFramebuffer(fb, path);
+	}
+
+	/**
+	 * Capture ANY Framebuffer's color attachment to a PNG. Shared by the main-shot path and by Inspector's
+	 * offscreen FBO. MUST run on the render thread.
+	 *
+	 * FLOW: bind the FBO for reading -> glReadPixels(GL_BGRA, UNSIGNED_BYTE) -> pack into an INT_ARGB
+	 * BufferedImage with a Y-FLIP (OpenGL origin is bottom-left, PNG/BufferedImage is top-left) -> ImageIO.
+	 * Timed with System.nanoTime around the whole capture+encode.
+	 */
+	public static String captureFramebuffer(Framebuffer fb, String path)
+	{
+		RenderSystem.assertOnRenderThread();
+
+		int width = fb.textureWidth;
+		int height = fb.textureHeight;
+
+		if (width <= 0 || height <= 0)
+		{
+			return "{\"error\":\"framebuffer has zero size " + width + "x" + height + "\"}";
+		}
+
+		long t0 = System.nanoTime();
+
+		/* Bind THIS framebuffer as the read source. beginRead() binds the color texture; we need the FBO
+		 * itself bound as GL_READ_FRAMEBUFFER so glReadPixels(0,0,...) reads its attachment, not the screen. */
+		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fb.fbo);
+
+		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
+
+		/* Tight packing so rows are width*4 bytes with no padding — matters for non-4-aligned widths. */
+		GL11.glPixelStorei(GL11.GL_PACK_ALIGNMENT, 1);
+		GL11.glReadPixels(0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
+
+		/* Restore the default framebuffer binding so we do not leave the read-FBO bound. */
+		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
+
+		boolean allZero = true;
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+		for (int y = 0; y < height; ++y)
+		{
+			for (int x = 0; x < width; ++x)
+			{
+				int i = (y * width + x) * 4;
+
+				/* GL_BGRA byte order in memory: B, G, R, A. Pack into INT_ARGB (0xAARRGGBB). */
+				int b = buffer.get(i) & 0xFF;
+				int g = buffer.get(i + 1) & 0xFF;
+				int r = buffer.get(i + 2) & 0xFF;
+				int a = buffer.get(i + 3) & 0xFF;
+
+				if (allZero && (r != 0 || g != 0 || b != 0 || a != 0))
+				{
+					allZero = false;
+				}
+
+				int argb = (a << 24) | (r << 16) | (g << 8) | b;
+
+				/* Y-FLIP: GL row 0 is the BOTTOM of the image; BufferedImage row 0 is the TOP. */
+				image.setRGB(x, (height - 1) - y, argb);
+			}
+		}
+
+		try
+		{
+			File file = new File(path);
+
+			if (file.getParentFile() != null)
+			{
+				file.getParentFile().mkdirs();
+			}
+
+			ImageIO.write(image, "png", file);
+		}
+		catch (Exception e)
+		{
+			return "{\"error\":\"" + escape(String.valueOf(e.getMessage())) + "\"}";
+		}
+
+		long ms = (System.nanoTime() - t0) / 1_000_000L;
+
+		String json = "{\"w\":" + width + ",\"h\":" + height + ",\"ms\":" + ms
+			+ ",\"path\":\"" + escape(path) + "\"";
+
+		if (allZero)
+		{
+			/* FAIL-LOUD: an all-zero buffer means we read nothing (wrong FBO bound, or GL not current) —
+			 * NOT a legitimately black scene reported as success. */
+			json += ",\"warning\":\"framebuffer all-zero\"";
+		}
+
+		json += "}";
+
+		return json;
+	}
+
+	/**
+	 * The mcstudio-shots output folder, created on demand. Anchored to MC's canonical run directory
+	 * (MinecraftClient.runDirectory) — the same base MC uses for run/screenshots. Using a relative
+	 * "run/..." here would double to run/run/... because runClient already sets the CWD to run/.
+	 */
+	static File shotsDir()
+	{
+		MinecraftClient client = MinecraftClient.getInstance();
+		File base = (client != null && client.runDirectory != null) ? client.runDirectory : new File(".");
+		File dir = new File(base, "mcstudio-shots");
+		dir.mkdirs();
+		return dir;
+	}
+
+	/* Minimal JSON string escaping (backslash + quote) for paths and error messages. */
+	private static String escape(String s)
+	{
+		if (s == null)
+		{
+			return "";
+		}
+
+		return s.replace("\\", "\\\\").replace("\"", "\\\"");
+	}
+}

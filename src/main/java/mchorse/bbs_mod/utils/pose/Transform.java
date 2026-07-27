@@ -18,6 +18,8 @@ public class Transform implements IMapSerializable
     public static final Transform DEFAULT = new Transform();
 
     public final Vector3f translate = new Vector3f();
+
+    public final Vector3f pivot = new Vector3f();
     public final Vector3f scale = new Vector3f(DEFAULT_SCALE);
     public final Vector3f rotate = new Vector3f();
     public final Vector3f rotate2 = new Vector3f();
@@ -72,6 +74,7 @@ public class Transform implements IMapSerializable
     {
         this.translate.set(0, 0, 0);
         this.scale.set(1, 1, 1);
+        this.pivot.set(0, 0, 0);
         this.rotate.set(0, 0, 0);
         this.rotate2.set(0, 0, 0);
     }
@@ -143,6 +146,7 @@ public class Transform implements IMapSerializable
     {
         this.translate.set(transform.translate);
         this.scale.set(transform.scale);
+        this.pivot.set(transform.pivot);
         this.rotate.set(transform.rotate);
         this.rotate2.set(transform.rotate2);
     }
@@ -179,6 +183,7 @@ public class Transform implements IMapSerializable
         {
             data.put("t", DataStorageUtils.vector3fToData(this.translate));
             data.put("s", DataStorageUtils.vector3fToData(this.scale));
+            data.put("p", DataStorageUtils.vector3fToData(this.pivot));
             data.put("r", DataStorageUtils.vector3fToData(this.rotate));
             data.put("r2", DataStorageUtils.vector3fToData(this.rotate2));
         }

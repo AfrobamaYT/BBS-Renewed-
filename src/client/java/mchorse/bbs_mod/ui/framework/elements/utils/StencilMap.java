@@ -13,6 +13,12 @@ public class StencilMap
     public Map<Integer, Pair<Form, String>> indexMap = new HashMap<>();
     public boolean increment = true;
 
+    /** Wenn gesetzt: nur diese knochen landen im stencil-puffer, alles andere wird uebersprungen.
+     *
+     *  AUTONOMIE 2026-07-27: aus dem CML-fork — der bone-hover-picker (campreview) faerbt nur
+     *  die markierten knochen ein, sonst trifft der klick immer den ganzen koerper. null = alle. */
+    public java.util.Set<String> allowedBones;
+
     public void setIncrement(boolean increment)
     {
         this.increment = increment;

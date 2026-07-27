@@ -21,6 +21,15 @@ public class Keybind
     public boolean strict;
     public Supplier<Boolean> active;
 
+    /** Die tastenkombination dieses keybinds.
+     *
+     *  MERGE 2026-07-27: getter aus dem CML-fork — unsere autonomie-schicht (UiInvoke) liest
+     *  darueber die belegung, um keybinds programmatisch auszuloesen. */
+    public KeyCombo getCombo()
+    {
+        return this.combo;
+    }
+
     public Keybind(KeyCombo combo, Runnable callback)
     {
         this.combo = combo;

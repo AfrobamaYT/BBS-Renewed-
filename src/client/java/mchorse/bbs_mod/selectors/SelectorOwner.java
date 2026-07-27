@@ -37,6 +37,32 @@ public class SelectorOwner
         return form;
     }
 
+    /** Form von aussen erzwingen und die automatische neuberechnung einfrieren.
+     *
+     *  AUTONOMIE 2026-07-27: BBSTools keeper-hook. Der selector leitet die form sonst
+     *  periodisch aus den entity-NBT ab; wer sie per skript/UI setzt, will genau das NICHT
+     *  ueberschrieben bekommen. check auf MAX_VALUE = naechste pruefung nie faellig,
+     *  clearForm() macht es rueckgaengig. */
+    public void setForm(Form form)
+    {
+        this.form = form;
+        this.check = Long.MAX_VALUE;
+        this.nbtCheck = Integer.MAX_VALUE;
+
+        if (form != null)
+        {
+            form.playMain();
+        }
+    }
+
+    /** Erzwungene form loeschen — die naechste pruefung leitet wieder aus NBT ab. */
+    public void clearForm()
+    {
+        this.form = null;
+        this.check = 0L;
+        this.nbtCheck = 0;
+    }
+
     public void update()
     {
         World world = this.entity.getWorld();

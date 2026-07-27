@@ -52,7 +52,10 @@ import java.util.List;
 
 public class UIDashboard extends UIBaseMenu
 {
-    private UIDashboardPanels panels;
+    /* MERGE 2026-07-27: public statt private — unsere autonomie-schicht (mcstudio UiInvoke,
+     * BbsPlay) liest den aktiven panel-zustand direkt. Im CML-fork war das feld ebenfalls
+     * oeffentlich; getPanels() bleibt daneben bestehen. */
+    public UIDashboardPanels panels;
 
     public UIIcon settings;
     public UIIcon selectors;

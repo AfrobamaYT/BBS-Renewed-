@@ -1,0 +1,290 @@
+// Coded by Afrobama/Claude — Tier 1.5b fast-path renderer.
+//
+// Actual render-replacement for routed replays. Called from
+// FastPathBatch.flush() when BBSPerfConfig.ENABLE_FAST_PATH_RENDER is on.
+//
+// Tier 1.5b-1 architecture (this file):
+//   - Hoist RenderSystem state setup OUT of the per-replay loop
+//     (enable_blend / disable_cull / lightmap / overlay set ONCE per flush
+//     instead of 100× per frame)
+//   - Per submission: re-execute the BBS vanilla render flow via accessor
+//     invokers (ensureAnimator + applyActions + applyPose + texture-bind
+//     + renderModel)
+//   - Texture bind ONCE per (model.id, texture) sub-group
+//
+// Expected speedup at this stage: ~1.3–2× over vanilla (state-setup
+// batching dominates). Real win comes in Tier 1.5b-2 with vertex-cache +
+// 1-draw-per-model-id (skinning still CPU-side) and Tier 2 with GPU
+// instancing.
+//
+// Iris compat: uses vanilla GameRenderer::getRenderTypeEntityTranslucentCullProgram
+// — no custom shader, no transform-patcher friction. The output VBO
+// path is exactly what Iris already supports for vanilla entity render.
+package com.afrobama.bbstools.client.bbs.fastpath;
+
+import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
+import com.afrobama.bbstools.perf.BBSPerfConfig;
+
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.animation.IAnimator;
+import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.MathUtils;
+import mchorse.bbs_mod.utils.colors.Color;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.RotationAxis;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+public final class FastPathRenderer
+{
+    private static final Logger LOG = LoggerFactory.getLogger("bbstools/fast-path/renderer");
+
+    /* Diagnostic one-shot flags. */
+    private static volatile boolean LOGGED_FIRST_FLUSH = false;
+    private static volatile boolean LOGGED_FIRST_RENDER = false;
+
+    private FastPathRenderer() {}
+
+    /**
+     * Main entry called by FastPathBatch.flush() at end-of-frame.
+     * Iterates the per-model-id batch and renders all submissions with
+     * state setup hoisted outside the per-replay loop.
+     */
+    public static void flushAll()
+    {
+        Map<String, List<FastPathBatch.Submission>> batch = FastPathBatch.snapshotBatch();
+        if (batch.isEmpty()) return;
+
+        if (!LOGGED_FIRST_FLUSH)
+        {
+            LOGGED_FIRST_FLUSH = true;
+            int total = FastPathBatch.currentBatchSize();
+            LOG.info("[fast-path/renderer] FIRST flushAll — models={} totalSubs={}",
+                batch.size(), total);
+        }
+
+        long startNs = System.nanoTime();
+        int rendered = 0;
+        int failed = 0;
+
+        /* Hoisted state setup — done ONCE per flush instead of per replay.
+         * Mirrors what BBS does at the head of renderModel(...). */
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
+        gameRenderer.getLightmapTextureManager().enable();
+        gameRenderer.getOverlayTexture().setupOverlayColor();
+
+        try
+        {
+            for (Map.Entry<String, List<FastPathBatch.Submission>> entry : batch.entrySet())
+            {
+                List<FastPathBatch.Submission> list = entry.getValue();
+                if (list.isEmpty()) continue;
+
+                for (FastPathBatch.Submission s : list)
+                {
+                    try
+                    {
+                        renderOne(s);
+                        rendered++;
+                    }
+                    catch (Throwable t)
+                    {
+                        failed++;
+                        if (failed <= 3)
+                        {
+                            LOG.warn("[fast-path/renderer] renderOne threw for model={}: {}",
+                                s.instance == null ? "?" : s.instance.id, t.toString(), t);
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            gameRenderer.getLightmapTextureManager().disable();
+            gameRenderer.getOverlayTexture().teardownOverlayColor();
+            RenderSystem.disableBlend();
+        }
+
+        long elapsedNs = System.nanoTime() - startNs;
+        BBSPerfConfig.fastPathRenderNsAccum += elapsedNs;
+        BBSPerfConfig.fastPathRendered += rendered;
+        BBSPerfConfig.fastPathRenderFailed += failed;
+    }
+
+    /**
+     * Tier 2-b fallback entry — invoked by Tier2bDrawPath when a bucket's
+     * SkinnedMeshIR is unavailable (BOBJ models, models with meshes /
+     * shape keys). Delegates to renderOne so visual parity is preserved
+     * while the merged-buffer path handles the rest.
+     *
+     * NOTE: caller is responsible for state setup (blend/lightmap/overlay)
+     * — Tier2bDrawPath.flushAll hoists those once at the top, matching
+     * what flushAll() does here.
+     */
+    public static void renderOneFallback(FastPathBatch.Submission s)
+    {
+        renderOne(s);
+    }
+
+    /**
+     * Render a single captured replay. Dispatches to the direct path
+     * (Tier 1.5b-2) or the invoker path (Tier 1.5b-1) based on
+     * BBSPerfConfig.ENABLE_FAST_PATH_DIRECT.
+     */
+    private static void renderOne(FastPathBatch.Submission s)
+    {
+        ModelFormRenderer self = s.renderer;
+        if (self == null) return;
+        ModelFormRendererAccessor selfA = (ModelFormRendererAccessor) (Object) self;
+
+        ModelInstance instance = s.instance;
+        if (instance == null || instance.model == null) return;
+
+        /* Animator chain — shared between both render modes. Replicates
+         * render3D lines 609-623. */
+        selfA.bbstools$ensureAnimator(s.transition);
+        IAnimator animator = selfA.bbstools$getAnimator();
+        if (animator == null) return;
+
+        instance.model.resetPose();
+        animator.applyActions(s.entity, instance, s.transition);
+        instance.model.applyPose(selfA.bbstools$getPose());
+
+        /* Texture + color resolution (matches render3D lines 615-619). */
+        Link link = s.form.texture.get();
+        Link texture = link == null ? instance.getTexture() : link;
+        Color color = s.form.color.get().copy();
+        color.mul(s.color);
+
+        if (texture != null)
+        {
+            BBSModClient.getTextures().bindTexture(texture);
+        }
+
+        /* Shader. Iris-compat by construction: vanilla MC entity
+         * translucent cull program goes through Iris's gbuffers_entities
+         * pipeline. */
+        Supplier<ShaderProgram> shader = GameRenderer::getRenderTypeEntityTranslucentCullProgram;
+
+        /* Build matrix stack from snapshot. Re-apply the 180° Y rotation
+         * that vanilla does inside render3D line 625. */
+        MatrixStack stack = new MatrixStack();
+        stack.multiplyPositionMatrix(s.worldMatrix);
+        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+
+        if (BBSPerfConfig.ENABLE_FAST_PATH_DIRECT)
+        {
+            renderDirect(s, selfA, instance, stack, shader, color, texture);
+        }
+        else
+        {
+            /* Invoker-mode (Tier 1.5b-1 baseline): full BBS renderModel
+             * private wrapper including captureMatrices + renderItems.
+             * CML beta-2 added a trailing (world MatrixStack, FormRenderingContext): the fast path
+             * uses one matrix for both stack and world, and hands renderModel a context describing
+             * the same entity/light/overlay/transition it already receives as loose args. */
+            mchorse.bbs_mod.forms.renderers.FormRenderingContext renderContext =
+                new mchorse.bbs_mod.forms.renderers.FormRenderingContext()
+                    .set(mchorse.bbs_mod.forms.renderers.FormRenderType.ENTITY,
+                         s.entity, stack, s.light, s.overlay, s.transition)
+                    .equipment(s.renderEquipment);
+
+            selfA.bbstools$renderModel(
+                s.entity, shader, stack, instance,
+                s.light, s.overlay, color, false, null,
+                s.transition, s.renderEquipment,
+                stack, renderContext);
+        }
+
+        if (!LOGGED_FIRST_RENDER)
+        {
+            LOGGED_FIRST_RENDER = true;
+            LOG.info("[fast-path/renderer] FIRST renderOne completed — model={} texture={} mode={}",
+                instance.id, texture == null ? "null" : texture.toString(),
+                BBSPerfConfig.ENABLE_FAST_PATH_DIRECT ? "DIRECT" : "INVOKER");
+        }
+    }
+
+    /**
+     * Tier 1.5b-2 — direct ModelInstance.render() call. Skips BBS's
+     * renderModel(...) private wrapper:
+     *   - No per-call enable/disable blend (hoisted)
+     *   - No per-call lightmap/overlay setup (hoisted)
+     *   - No captureMatrices walk (no body parts in fast-path)
+     *   - No renderItems (no equipment, router excluded it)
+     *
+     * Only conditional cull is kept (per-instance flag).
+     */
+    private static void renderDirect(FastPathBatch.Submission s,
+                                     ModelFormRendererAccessor selfA,
+                                     ModelInstance instance,
+                                     MatrixStack stack,
+                                     Supplier<ShaderProgram> shader,
+                                     Color color,
+                                     Link texture)
+    {
+        boolean disabledCull = false;
+        if (!instance.config.culling.get())
+        {
+            RenderSystem.disableCull();
+            disabledCull = true;
+        }
+
+        try
+        {
+            instance.render(
+                stack, shader, color, s.light, s.overlay,
+                /* stencilMap */ null,
+                s.form.shapeKeys.get(),
+                /* AUTONOMIE 2026-07-27: fs loest texturen PRO MATERIAL auf (Function<material,Link>),
+                 * CML hatte eine einzige fuer das ganze modell. Wir haben genau eine, also fuer
+                 * jedes material dieselbe zurueckgeben; ist keine gesetzt, fs' eigene
+                 * material-aufloesung machen lassen statt null durchzureichen. */
+                (material) -> texture != null ? texture : instance.getMaterialTexture(material, null));
+        }
+        finally
+        {
+            if (disabledCull)
+            {
+                RenderSystem.enableCull();
+            }
+        }
+    }
+
+    public static void resetCounters()
+    {
+        LOGGED_FIRST_FLUSH = false;
+        LOGGED_FIRST_RENDER = false;
+        BBSPerfConfig.fastPathRendered = 0L;
+        BBSPerfConfig.fastPathRenderFailed = 0L;
+        BBSPerfConfig.fastPathRenderNsAccum = 0L;
+    }
+
+    public static String snapshot()
+    {
+        double avgUs = BBSPerfConfig.fastPathRendered == 0 ? 0
+            : (BBSPerfConfig.fastPathRenderNsAccum / (double) BBSPerfConfig.fastPathRendered) / 1000.0;
+        return String.format(
+            "rendered=%d  failed=%d  avgPerReplay=%.1fµs",
+            BBSPerfConfig.fastPathRendered,
+            BBSPerfConfig.fastPathRenderFailed,
+            avgUs);
+    }
+
+}

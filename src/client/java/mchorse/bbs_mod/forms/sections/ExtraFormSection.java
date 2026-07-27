@@ -34,6 +34,15 @@ public class ExtraFormSection extends FormSection
     private FormCategory extra;
     private List<FormCategory> categories;
 
+    /** Die freie "extra"-kategorie — hier landen forms, die in keine mob-gruppe gehoeren.
+     *
+     *  AUTONOMIE 2026-07-27: getter fuer das private feld, damit wir eigene eintraege
+     *  (kamera-form) hineinlegen koennen, ohne die sektion neu zu bauen. */
+    public FormCategory getExtraCategory()
+    {
+        return this.extra;
+    }
+
     public ExtraFormSection(FormCategories parent)
     {
         super(parent);

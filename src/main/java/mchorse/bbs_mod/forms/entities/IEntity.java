@@ -127,6 +127,14 @@ public interface IEntity
 
     public void update();
 
+    /** Gegenstand im hotbar-slot, leer wenn die entity keine hotbar hat.
+     *
+     *  MERGE 2026-07-27: aus dem CML-fork — TrackerClientClip (first-person hand) liest ihn. */
+    public default ItemStack getHotbarItem(int slot)
+    {
+        return ItemStack.EMPTY;
+    }
+
     public default void copy(IEntity entity)
     {
         this.setForm(entity.getForm());
@@ -188,4 +196,26 @@ public interface IEntity
     public Vec3d lerpVelocity(float transition);
 
     public boolean isUsingRiptide();
+
+    /* ⛔ MERGE 2026-07-27: vier default-getter aus dem CML-fork. TrackerClientClip
+     * (first-person hand + HUD) und unsere autonomie-schicht lesen sie. */
+    public default float getHealth()
+    {
+        return 20F;
+    }
+
+    public default int getHunger()
+    {
+        return 20;
+    }
+
+    public default boolean getShowHand()
+    {
+        return true;
+    }
+
+    public default boolean getShowHud()
+    {
+        return true;
+    }
 }

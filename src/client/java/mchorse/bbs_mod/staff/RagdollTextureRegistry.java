@@ -1,0 +1,307 @@
+package mchorse.bbs_mod.staff;
+
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.minecraft.client.texture.NativeImage;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.util.Identifier;
+
+/**
+ * Client-side registry that maps an entity UUID to a custom texture loaded
+ * either from the staff PNG folder or from the BBS assets folder. The texture
+ * override is consumed by the LivingEntityRendererTextureMixin so vanilla mob
+ * renderers get the override without needing renderer subclasses.
+ *
+ * Ported from NeoForge BBSTools.
+ */
+public final class RagdollTextureRegistry
+{
+    private static final Logger LOG = LoggerFactory.getLogger("bbs/ragdoll-texture");
+
+    private static final Map<UUID, Identifier> TEXTURES = new ConcurrentHashMap<>();
+    private static final Map<UUID, NativeImageBackedTexture> DYNAMIC = new ConcurrentHashMap<>();
+
+    private RagdollTextureRegistry()
+    {
+    }
+
+    public static Identifier get(UUID uuid)
+    {
+        return uuid == null ? null : TEXTURES.get(uuid);
+    }
+
+    public static int size()
+    {
+        return TEXTURES.size();
+    }
+
+    public static boolean has(UUID uuid)
+    {
+        return uuid != null && TEXTURES.containsKey(uuid);
+    }
+
+    public static void clearAll()
+    {
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc == null)
+        {
+            doClearAll();
+        }
+        else
+        {
+            mc.execute(RagdollTextureRegistry::doClearAll);
+        }
+    }
+
+    private static void doClearAll()
+    {
+        int n = DYNAMIC.size();
+
+        for (Map.Entry<UUID, NativeImageBackedTexture> e : DYNAMIC.entrySet())
+        {
+            try
+            {
+                e.getValue().close();
+            }
+            catch (Throwable ignored)
+            {
+            }
+        }
+
+        DYNAMIC.clear();
+        TEXTURES.clear();
+        LOG.info("Cleared {} ragdoll textures", n);
+    }
+
+    public static void remove(UUID uuid)
+    {
+        if (uuid == null)
+        {
+            return;
+        }
+
+        TEXTURES.remove(uuid);
+        NativeImageBackedTexture tex = DYNAMIC.remove(uuid);
+
+        if (tex != null)
+        {
+            try
+            {
+                MinecraftClient mc = MinecraftClient.getInstance();
+
+                if (mc != null)
+                {
+                    mc.execute(() ->
+                    {
+                        try
+                        {
+                            tex.close();
+                        }
+                        catch (Throwable ignored)
+                        {
+                        }
+                    });
+                }
+            }
+            catch (Throwable ignored)
+            {
+            }
+        }
+    }
+
+    /**
+     * Schedule a texture registration on the client thread. Safe to call from
+     * any thread (server-thread in single-player included).
+     *
+     * @param uuid    entity UUID the override should apply to
+     * @param bbsLink BBS texture link, e.g. {@code assets:models/Grox/villager.png}
+     */
+    public static void scheduleRegister(UUID uuid, String bbsLink)
+    {
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT)
+        {
+            return;
+        }
+
+        if (uuid == null || bbsLink == null || bbsLink.isEmpty())
+        {
+            return;
+        }
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc == null)
+        {
+            return;
+        }
+
+        mc.execute(() -> registerNow(uuid, bbsLink));
+    }
+
+    /**
+     * Register a texture for {@code uuid} loaded directly from an absolute
+     * file path. Used by the Texture Staff item.
+     */
+    public static void scheduleRegisterFromFile(UUID uuid, Path file)
+    {
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT)
+        {
+            return;
+        }
+
+        if (uuid == null || file == null)
+        {
+            return;
+        }
+
+        MinecraftClient mc = MinecraftClient.getInstance();
+
+        if (mc == null)
+        {
+            return;
+        }
+
+        mc.execute(() -> registerNowFromFile(uuid, file));
+    }
+
+    private static void registerNowFromFile(UUID uuid, Path file)
+    {
+        try
+        {
+            if (!Files.isRegularFile(file))
+            {
+                LOG.warn("Texture file not found: {}", file);
+
+                return;
+            }
+
+            NativeImage img;
+
+            try (InputStream in = Files.newInputStream(file))
+            {
+                img = NativeImage.read(in);
+            }
+
+            NativeImageBackedTexture tex = new NativeImageBackedTexture(img);
+            String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
+            Identifier id = Identifier.of("bbs", texId);
+            MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
+
+            NativeImageBackedTexture prev = DYNAMIC.put(uuid, tex);
+
+            if (prev != null)
+            {
+                try
+                {
+                    prev.close();
+                }
+                catch (Throwable ignored)
+                {
+                }
+            }
+
+            TEXTURES.put(uuid, id);
+            LOG.info("Registered staff texture {} -> {}", uuid, file.getFileName());
+        }
+        catch (Throwable t)
+        {
+            LOG.error("Failed to register staff texture for {} file={}", uuid, file, t);
+        }
+    }
+
+    private static void registerNow(UUID uuid, String bbsLink)
+    {
+        try
+        {
+            Path file = resolveBBSPath(bbsLink);
+
+            if (file == null || !Files.isRegularFile(file))
+            {
+                LOG.warn("Ragdoll texture file not found for link {} -> {}", bbsLink, file);
+
+                return;
+            }
+
+            NativeImage img;
+
+            try (InputStream in = Files.newInputStream(file))
+            {
+                img = NativeImage.read(in);
+            }
+
+            NativeImageBackedTexture tex = new NativeImageBackedTexture(img);
+            String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
+            Identifier id = Identifier.of("bbs", texId);
+            MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
+
+            NativeImageBackedTexture prev = DYNAMIC.put(uuid, tex);
+
+            if (prev != null)
+            {
+                try
+                {
+                    prev.close();
+                }
+                catch (Throwable ignored)
+                {
+                }
+            }
+
+            TEXTURES.put(uuid, id);
+            LOG.info("Registered ragdoll texture {} -> {}", uuid, id);
+        }
+        catch (Throwable t)
+        {
+            LOG.error("Failed to register ragdoll texture for {} link={}", uuid, bbsLink, t);
+        }
+    }
+
+    /**
+     * Resolve a BBS link of the form {@code assets:models/foo/bar.png} to an
+     * absolute file path under {@code <gameDir>/config/bbs/assets/models/foo/bar.png}.
+     */
+    private static Path resolveBBSPath(String bbsLink)
+    {
+        String link = bbsLink.trim();
+        int colon = link.indexOf(':');
+        String source;
+        String rel;
+
+        if (colon > 0)
+        {
+            source = link.substring(0, colon);
+            rel = link.substring(colon + 1);
+        }
+        else
+        {
+            source = "assets";
+            rel = link;
+        }
+
+        rel = rel.replace('\\', '/');
+
+        if (rel.startsWith("/"))
+        {
+            rel = rel.substring(1);
+        }
+
+        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+
+        return gameDir.resolve("config").resolve("bbs").resolve(source).resolve(rel);
+    }
+
+}

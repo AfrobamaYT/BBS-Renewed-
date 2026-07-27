@@ -37,6 +37,11 @@ public class Replay extends ValueGroup
     /* MERGE 2026-07-27: mob-capture aus dem CML-upstream (RecorderMobCapture). */
     public final ValueBoolean vanillaMobPlayback = new ValueBoolean("vanilla_mob_playback", false);
     public transient boolean vanillaMobPlaybackSerialized = false;
+
+    public final ValueString group = new ValueString("group", "");
+    public final ValueBoolean isGroup = new ValueBoolean("is_group", false);
+    public final ValueString uuid = new ValueString("uuid", "");
+
     public final ValueBoolean shadow = new ValueBoolean("shadow", true);
     public final ValueFloat shadowSize = new ValueFloat("shadow_size", 0.5F);
     /** When enabled, the shadow follows the form's perceived position (anchor/transform motion). */
@@ -67,6 +72,10 @@ public class Replay extends ValueGroup
         this.add(this.label);
         this.add(this.nameTag);
         this.add(this.vanillaMobPlayback);
+        this.add(this.group);
+        this.add(this.isGroup);
+        this.add(this.uuid);
+        this.uuid.set(java.util.UUID.randomUUID().toString());
         this.add(this.shadow);
         this.add(this.shadowSize);
         this.add(this.shadowFollow);
