@@ -43,3 +43,7 @@ replay_*.log
 
 ik_test/*
 .claude/settings.local.json
+
+# 2026-07-27: build-ausgaben und py-artefakte gehoeren nicht ins repo
+__pycache__/
+/0
