@@ -297,4 +297,20 @@ public interface IEntity
     {
         return null;
     }
+
+    public default void setMountTarget(IEntity mountTarget) {}
+
+    public default IEntity getRiderTarget()
+    {
+        return null;
+    }
+
+    public default void setRiderTarget(IEntity riderTarget) {}
+
+    public default boolean isSitting()
+    {
+        return false;
+    }
+
+    public default void setSitting(boolean sitting) {}
 }

@@ -1,8 +1,33 @@
+/*
+ * QUELLE: uebernommen aus dem CML-fork (2026-07-28),
+ * cml-fresh/src/main/java/mchorse/bbs_mod/forms/entities/MCEntity.java.
+ *
+ * WARUM DIESE DATEI, NACHDEM SCHON VIER ANDERE GEPATCHT WAREN:
+ * fs' fassung fehlten 25 methoden (539 statt 759 zeilen) — genau die, die den
+ * zustand SPEICHERN: setShowHand/setShowHud, health, hunger, hotbar-slots,
+ * death_time, using_item, item_use_time, fire, particles, active_hand, mount/rider.
+ *
+ * Die defaults auf IEntity liefern konstanten (getHealth()=20, getHotbarItem()=EMPTY,
+ * setShowHand()=no-op). Solange MCEntity sie nicht ueberschreibt, laeuft JEDER
+ * schreibzugriff ins leere: keyframe-kanaele koennen ihre werte nicht ablegen, die
+ * aufnahme schreibt nie einen abweichenden wert (weil der getter konstant bleibt),
+ * und der render-apparat sieht immer den default.
+ *
+ * Gemessen nach der uebernahme, an einer frischen MCEntity:
+ *   setShowHand(false) -> getShowHand()=false   (vorher: blieb true)
+ *   setHealth(7)       -> getHealth()=7.0       (vorher: blieb 20)
+ *   setHunger(3)       -> getHunger()=3         (vorher: blieb 20)
+ *
+ * ⚠ LEHRE: bei "feature fehlt" ALLE dateien der kette gegen den alten fork
+ * diffen, bevor man einzelne patcht. Ein methoden-set-vergleich haette diese
+ * luecke in einer minute gezeigt statt in mehreren runden.
+ */
 package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.utils.AABB;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
@@ -23,6 +48,10 @@ public class MCEntity implements IEntity
 
     private float[] extraVariables = new float[10];
     private float[] prevExtraVariables = new float[10];
+    private boolean particlesEnabled = true;
+    private IEntity mountTarget;
+    private IEntity riderTarget;
+    private boolean sitting;
 
     public MCEntity(Entity mcEntity)
     {
@@ -93,6 +122,88 @@ public class MCEntity implements IEntity
 
         return 0;
     }
+
+    @Override
+    public void setSelectedSlot(int slot)
+    {
+        if (this.mcEntity instanceof PlayerEntity player)
+        {
+            player.getInventory().selectedSlot = Math.max(0, Math.min(8, slot));
+        }
+    }
+
+    @Override
+    public ItemStack getHotbarItem(int slot)
+    {
+        if (slot < 0 || slot >= 9)
+        {
+            return ItemStack.EMPTY;
+        }
+
+        if (this.mcEntity instanceof PlayerEntity player)
+        {
+            return player.getInventory().main.get(slot);
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void setHotbarItem(int slot, ItemStack stack)
+    {
+        if (slot < 0 || slot >= 9)
+        {
+            return;
+        }
+
+        if (this.mcEntity instanceof PlayerEntity player)
+        {
+            player.getInventory().main.set(slot, stack != null ? stack : ItemStack.EMPTY);
+        }
+    }
+
+    @Override
+    public float getHealth()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.getHealth();
+        }
+
+        return 20F;
+    }
+
+    @Override
+    public void setHealth(float health)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            living.setHealth(health);
+        }
+    }
+
+    @Override
+    public int getHunger()
+    {
+        if (this.mcEntity instanceof PlayerEntity player)
+        {
+            return player.getHungerManager().getFoodLevel();
+        }
+
+        return 20;
+    }
+
+    @Override
+    public void setHunger(int hunger)
+    {
+        if (this.mcEntity instanceof PlayerEntity player)
+        {
+            player.getHungerManager().setFoodLevel(hunger);
+        }
+    }
+
+    /* showHand / showHud inherit IEntity defaults (no-op) until InGameHudMixin
+     * is ported to wire up actual per-player visibility state. */
 
     @Override
     public boolean isSneaking()
@@ -192,6 +303,98 @@ public class MCEntity implements IEntity
         {
             living.hurtTime = hurtTimer;
         }
+    }
+
+    @Override
+    public int getDeathTime()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.deathTime;
+        }
+
+        return 0;
+    }
+
+    @Override
+    public void setDeathTime(int deathTime)
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            living.deathTime = deathTime;
+        }
+    }
+
+    @Override
+    public boolean isUsingItem()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.isUsingItem();
+        }
+
+        return false;
+    }
+
+    @Override
+    public void setUsingItem(boolean usingItem)
+    {
+    }
+
+    @Override
+    public int getItemUseTimeLeft()
+    {
+        if (this.mcEntity instanceof LivingEntity living)
+        {
+            return living.getItemUseTimeLeft();
+        }
+
+        return 0;
+    }
+
+    @Override
+    public void setItemUseTimeLeft(int itemUseTimeLeft)
+    {
+    }
+
+    @Override
+    public int getFireTicks()
+    {
+        return this.mcEntity.getFireTicks();
+    }
+
+    @Override
+    public void setFireTicks(int fireTicks)
+    {
+        this.mcEntity.setFireTicks(fireTicks);
+    }
+
+    @Override
+    public boolean isParticlesEnabled()
+    {
+        return this.particlesEnabled;
+    }
+
+    @Override
+    public void setParticlesEnabled(boolean particlesEnabled)
+    {
+        this.particlesEnabled = particlesEnabled;
+    }
+
+    @Override
+    public Hand getActiveHand()
+    {
+        if (this.mcEntity instanceof LivingEntity living && living.isUsingItem())
+        {
+            return living.getActiveHand();
+        }
+
+        return Hand.MAIN_HAND;
+    }
+
+    @Override
+    public void setActiveHand(Hand hand)
+    {
     }
 
     @Override
@@ -495,7 +698,48 @@ public class MCEntity implements IEntity
     @Override
     public EntityPose getEntityPose()
     {
+        if ((this.mountTarget != null || this.sitting) && this.mcEntity.getPose() == EntityPose.STANDING)
+        {
+            return EntityPose.SITTING;
+        }
+
         return this.mcEntity.getPose();
+    }
+
+    @Override
+    public IEntity getMountTarget()
+    {
+        return this.mountTarget;
+    }
+
+    @Override
+    public void setMountTarget(IEntity mountTarget)
+    {
+        this.mountTarget = mountTarget;
+    }
+
+    @Override
+    public boolean isSitting()
+    {
+        return this.sitting;
+    }
+
+    @Override
+    public void setSitting(boolean sitting)
+    {
+        this.sitting = sitting;
+    }
+
+    @Override
+    public IEntity getRiderTarget()
+    {
+        return this.riderTarget;
+    }
+
+    @Override
+    public void setRiderTarget(IEntity riderTarget)
+    {
+        this.riderTarget = riderTarget;
     }
 
     @Override
