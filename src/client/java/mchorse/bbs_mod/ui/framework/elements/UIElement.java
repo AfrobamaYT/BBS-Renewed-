@@ -341,7 +341,8 @@ public class UIElement implements IUIElement, IUndoElement
 
     public void removeAll()
     {
-        for (IUIElement uiElement : this.children)
+        /* Kopie: die schleife raeumt beim durchlaufen selbst auf. */
+        for (IUIElement uiElement : new ArrayList<>(this.children))
         {
             if (uiElement instanceof UIElement)
             {
@@ -1064,7 +1065,8 @@ public class UIElement implements IUIElement, IUndoElement
 
         this.afterResizeApplied();
 
-        for (IUIElement element : this.children)
+        /* Kopie, gleicher grund wie in render(). */
+        for (IUIElement element : new ArrayList<>(this.children))
         {
             element.resize();
         }
@@ -1426,7 +1428,9 @@ public class UIElement implements IUIElement, IUndoElement
             context.resetTooltip();
         }
 
-        for (IUIElement element : this.children)
+        /* ⛔ KOPIE: ein kind, das sich beim render selbst entfernt, riss sonst den
+         * iterator (5 crashes, ConcurrentModificationException). Siehe docs/BBS-FS-UMSTIEG-STAND.md */
+        for (IUIElement element : new ArrayList<>(this.children))
         {
             if (element.isVisible() && element.canBeRendered(context.getViewport()))
             {
