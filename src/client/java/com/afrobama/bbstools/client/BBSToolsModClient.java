@@ -86,14 +86,31 @@ public final class BBSToolsModClient implements ClientModInitializer
                 com.afrobama.bbstools.client.campreview.UICameraPreviewOverlay.tickAlle();
                 com.afrobama.bbstools.client.campreview.UIClipPreviewLayer.tickAlle();
             });
+        /*
+         * Real-frame id fuer den playback-sim-decouple.
+         *
+         * ⛔ FRUEHER AM HudRenderCallback — DAS WAR DER FLACKER-BUG (2026-07-27, gemessen).
+         * Der HUD-pass laeuft NICHT, solange ein screen offen ist, also im BBS-editor nie.
+         * Die id stand dort fest, und PlaybackDecoupleLogik.coalescePerFrame bricht jeden
+         * updateEntities ab, dessen id gleich der letzten ist — im editor also ALLE ausser
+         * dem ersten. Die actors froren auf dem ersten tick ein und bekamen keine
+         * keyframe-transforms mehr; der nutzer sah "70% szene, 30% falsche position".
+         *
+         * WorldRenderEvents.END feuert pro welt-render, auch bei offenem screen. Damit
+         * zaehlt die id im editor wieder mit, das gate ist wieder self-gating wie gedacht.
+         *
+         * ⚠ Iris/shaderpacks koennen die welt mehrfach pro frame zeichnen (schatten-pass).
+         * Mehr id-spruenge sind harmlos: das gate wird dadurch nur DURCHLAESSIGER (mehr
+         * ticks laufen durch), nie strenger — es kann also nie wieder transforms verschlucken.
+         */
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.END.register(
+            kontext -> com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++);
+
         /* Per-frame counter for the heartbeat's "frame" + "fps" fields. */
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(
             (drawContext, tickDelta) ->
             {
                 com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrame();
-                /* Real-frame id for the playback-sim decouple (coalesces catch-up ticks to 1
-                 * updateEntities per rendered frame). Once per real frame (HUD pass). */
-                com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++;
                 try
                 {
                     com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
