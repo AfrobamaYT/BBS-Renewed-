@@ -350,9 +350,9 @@ public final class DamageHitbox
             /* BBS ActorEntity replay nameTag (private field — reflection access). */
             try
             {
-                Class<?> actorClass = Class.forName("mchorse.bbs_mod.entity.ActorEntity");
+                Class<?> actorClass = actorKlasse();
 
-                if (actorClass.isInstance(e))
+                if (actorClass != null && actorClass.isInstance(e))
                 {
                     Field replayField = actorClass.getDeclaredField("replay");
                     replayField.setAccessible(true);
@@ -376,9 +376,8 @@ public final class DamageHitbox
                     }
                 }
             }
-            catch (ClassNotFoundException ignored)
-            {
-            }
+            /* Der ClassNotFoundException-zweig ist weg: die suche liegt jetzt in
+             * actorKlasse() und wird dort einmal behandelt (siehe unten). */
             catch (Exception ex)
             {
                 /* Reflection errors are not interesting at this volume. */
@@ -659,6 +658,36 @@ public final class DamageHitbox
         }
 
         return Command.SINGLE_SUCCESS;
+    }
+
+    /* AUTONOMIE 2026-07-27: klassen-suche einmal, nicht pro entity.
+     *
+     * Gleiche falle wie in KernelBruecke (dort 87 %% CPU gemessen): Class.forName in einer
+     * schleife, exception geschluckt. Hier laeuft es nur bei aktivem hitbox-command statt
+     * pro frame, aber die such-schleife geht ueber ALLE entities der welt. Das ergebnis
+     * aendert sich nie — BBS ist geladen oder nicht. */
+    private static final Class<?> KEINE_KLASSE = Void.class;
+    private static volatile Class<?> actorKlasseCache;
+
+    private static Class<?> actorKlasse()
+    {
+        Class<?> gemerkt = actorKlasseCache;
+
+        if (gemerkt == null)
+        {
+            try
+            {
+                gemerkt = Class.forName("mchorse.bbs_mod.entity.ActorEntity");
+            }
+            catch (Throwable ohneBbs)
+            {
+                gemerkt = KEINE_KLASSE;
+            }
+
+            actorKlasseCache = gemerkt;
+        }
+
+        return gemerkt == KEINE_KLASSE ? null : gemerkt;
     }
 
 }

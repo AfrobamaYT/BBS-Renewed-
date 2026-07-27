@@ -251,17 +251,40 @@ public final class KernelBruecke
      * Ist kein agent attached, wirft {@code Class.forName} und wird hier geschluckt — das ist
      * der normale, erwartete fall auf einem server ohne hotpatch-tooling.</p>
      */
+    /* AUTONOMIE 2026-07-27 — GEMESSENER HOTSPOT: 87,1 %% CPU (2224 samples), 2 FPS.
+     *
+     * Vorher rief diese methode bei JEDEM rufe()/rufeUndAbbrechen() ein Class.forName und
+     * schluckte die exception. Ohne attached hotpatch-agent ist der normalfall aber genau
+     * die exception — und jede kostet einen befuellten stacktrace. Pro mixin-aufruf, pro
+     * entity, pro frame. In der szene mit vielen actors ging die frame-zeit dadurch von
+     * 7,5 ms auf 264,8 ms hoch (frame-timeline phase=final, 97,5%% der frame-zeit).
+     *
+     * Das ergebnis kann sich zur laufzeit NICHT aendern: der agent wird per -javaagent beim
+     * JVM-start attached oder nie. Also einmal suchen, ergebnis behalten — auch das
+     * negative. GEFUNDEN_NICHTS ist ein sentinel, weil null "noch nicht gesucht" heisst. */
+    private static final Class<?> GEFUNDEN_NICHTS = Void.class;
+    private static volatile Class<?> kernelLoaderCache;
+
     private static Class<?> kernelLoaderKlasse()
     {
-        try
+        Class<?> gemerkt = kernelLoaderCache;
+
+        if (gemerkt == null)
         {
-            return Class.forName("com.afrobama.hotpatch.KernelLoader", false,
-                ClassLoader.getSystemClassLoader());
+            try
+            {
+                gemerkt = Class.forName("com.afrobama.hotpatch.KernelLoader", false,
+                    ClassLoader.getSystemClassLoader());
+            }
+            catch (Throwable ohneAgent)
+            {
+                gemerkt = GEFUNDEN_NICHTS;    /* kein agent — normalfall, nie wieder suchen */
+            }
+
+            kernelLoaderCache = gemerkt;
         }
-        catch (Throwable ohneAgent)
-        {
-            return null;
-        }
+
+        return gemerkt == GEFUNDEN_NICHTS ? null : gemerkt;
     }
 
 
