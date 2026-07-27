@@ -8,6 +8,21 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 
 public abstract class CameraClip extends Clip
 {
+    /**
+     * Whether this clip drives the camera's position/angle (true) or only draws an overlay
+     * on top of the frame (false).
+     *
+     * ⛔ MERGE 2026-07-27: aus dem CML-upstream. Dessen screen-clips (ColorClip, VignetteClip,
+     * LetterboxClip, GrainClip, CinematicClip, EyeClip, ScreenNodeClip, BossBarClip, ImageClip,
+     * VideoClip, HotbarClip) sind post-effekte auf der kamera-timeline und ueberschreiben das
+     * mit false — sie bewegen die kamera nicht. Ohne diese basis-methode kompiliert die
+     * gesamte post-FX-schicht nicht.
+     */
+    public boolean isPositionClip()
+    {
+        return true;
+    }
+
     public void shutdown(ClipContext context)
     {}
 

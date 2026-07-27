@@ -39,6 +39,18 @@ public abstract class ClipContext <T extends Clip, E>
     /**
      * How many camera clips were applied
      */
+    /**
+     * How many top-level clips were applied this frame.
+     * Used for HUD overlay draw order (subtitle/image/boss bar/hotbar).
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — dessen HUD-clips (BossBar, Hotbar, Image)
+     * stapeln sich anhand dieses zaehlers, damit sie sich nicht ueberdecken.
+     */
+    public int applied;
+
+    /** Recursion depth while applying nested clips. See {@link #applied}. */
+    public int applyDepth;
+
     public int count;
 
     /**

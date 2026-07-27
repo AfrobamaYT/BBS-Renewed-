@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.categories;
 
+import java.util.List;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.sections.UserFormSection;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -53,5 +54,18 @@ public class UserFormCategory extends FormCategory
         super.removeForm(form);
 
         this.section.writeUserCategories(this);
+    }
+
+    /* MERGE 2026-07-27: aus dem CML-upstream (gebraucht von der behaltenen UIFormList). */    public void moveForm(int from, int to)
+    {
+        List<Form> forms = this.getDirectForms();
+
+        if (from >= 0 && from < forms.size() && to >= 0 && to < forms.size() && from != to)
+        {
+            Form form = forms.remove(from);
+            forms.add(to, form);
+
+            this.section.writeUserCategories(this);
+        }
     }
 }

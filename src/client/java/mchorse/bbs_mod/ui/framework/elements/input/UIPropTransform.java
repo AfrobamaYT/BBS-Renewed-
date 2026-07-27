@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input;
 
+import org.joml.Matrix4f;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -36,6 +37,17 @@ import java.util.function.Supplier;
 
 public class UIPropTransform extends UITransform
 {
+    /**
+     * Liefert maus-strahl und gizmo-matrix fuer das picking.
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — GizmoRayFrame/GizmoController haengen daran.
+     */
+    public interface IGizmoRayProvider
+    {
+        public boolean getMouseRay(UIContext context, int mouseX, int mouseY, Vector3d rayOrigin, Vector3f rayDirection);
+        public boolean getGizmoMatrix(Matrix4f matrix);
+    }
+
     private static final double[] CURSOR_X = new double[1];
     private static final double[] CURSOR_Y = new double[1];
 

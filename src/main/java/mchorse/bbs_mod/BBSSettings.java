@@ -32,6 +32,8 @@ public class BBSSettings {
 
 	public static ValueColors favoriteColors;
 	public static ValueColors recentColors;
+	/* MERGE 2026-07-27: aus dem CML-upstream — favoriten im form-picker (UIFormList). */
+	public static ValueStringKeys favoriteModelForms;
 	public static ValueStringKeys disabledSheets;
 	public static ValueStringKeys disabledMorphFormCategories;
 	public static ValueLanguage language;
@@ -118,6 +120,16 @@ public class BBSSettings {
 	public static ValueFloat editorCameraSpeed;
 	public static ValueFloat editorCameraAngleSpeed;
 	public static ValueInt duration;
+	/* MERGE 2026-07-27: aus dem CML-upstream. Steuert die weichen UI-uebergaenge
+	 * (panels/overlays wachsen auf statt sofort da zu sein) — user wollte das feature,
+	 * aber abschaltbar. Gelesen von UIFormList, UIToggle, UIOverlay. */
+	public static ValueBoolean editorSimplifyAnimations;
+	/* MERGE 2026-07-27: felder aus dem CML-upstream, gebraucht von behaltenen CML-dateien. */
+	public static ValueBoolean editorFisheyeWidenFov;
+	public static ValueString favoriteFormCategoriesData;
+	public static ValueBoolean recordingAutoCaptureMobs;
+	public static ValueBoolean recordingAutoCaptureProjectiles;
+	public static ValueBoolean recordingMobCaptureOnAlt;
 	public static ValueBoolean editorLoop;
 	public static ValueInt editorJump;
 	public static ValueInt editorGuidesColor;
@@ -479,6 +491,8 @@ public class BBSSettings {
 		builder.register(favoriteColors);
 		builder.register(recentColors);
 		builder.register(disabledSheets);
+		favoriteModelForms = new ValueStringKeys("favorite_model_forms");
+		builder.register(favoriteModelForms);
 		disabledMorphFormCategories = new ValueStringKeys("disabled_morph_form_categories");
 		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
@@ -576,6 +590,12 @@ public class BBSSettings {
 		editorCameraAngleSpeed = builder.getFloat("angle_speed", 1F, 0.1F, 100F);
 		duration = builder.getInt("duration", 30, 1, 1000);
 		editorJump = builder.getInt("jump", 5, 1, 1000);
+		editorSimplifyAnimations = builder.getBoolean("simplify_animations", false);
+		editorFisheyeWidenFov = builder.getBoolean("fisheye_widen_fov", true);
+		favoriteFormCategoriesData = builder.getString("favorite_form_categories_data", "");
+		recordingAutoCaptureMobs = builder.getBoolean("auto_capture_mobs", true);
+		recordingAutoCaptureProjectiles = builder.getBoolean("auto_capture_projectiles", true);
+		recordingMobCaptureOnAlt = builder.getBoolean("mob_capture_on_alt", false);
 		editorLoop = builder.getBoolean("loop", false);
 		editorGuidesColor = builder.getInt("guides_color", 0xcccc0000).colorAlpha();
 		editorRuleOfThirds = builder.getBoolean("rule_of_thirds", false);

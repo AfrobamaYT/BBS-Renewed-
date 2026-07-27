@@ -248,4 +248,21 @@ public abstract class BaseValue implements IDataSerializable<BaseType>, IValueNo
 
         this.postNotify(flag);
     }
+
+    /**
+     * Whether the settings UI should offer a "reset" button for this value.
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — dessen toolbar-settings
+     * (ValueGizmoToolbar, ValueViewportToolbar, ValueFormEditorGizmoToolbar) ueberschreiben
+     * beide methoden, um ihre button-reihenfolge zurueckzusetzen.
+     */
+    public boolean isResettable()
+    {
+        return false;
+    }
+
+    /** See {@link #isResettable()}. */
+    public void resetToDefault()
+    {
+    }
 }

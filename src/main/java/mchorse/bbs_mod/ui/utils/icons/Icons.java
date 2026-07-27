@@ -13,6 +13,9 @@ public class Icons
     public static final Icon NONE = new Icon(null, "none", 0, 0);
 
     public static final Icon GEAR = register(new Icon(ATLAS, "gear", 0, 0));
+    /* MERGE 2026-07-27: aus dem CML-upstream (zelle 112,176 ist im fs-atlas frei).
+     * Gebraucht von UIFormList/UIReplayList fuer "unsichtbar"-markierung. */
+    public static final Icon CROSSED_OUT_EYE = register(new Icon(ATLAS, "crossed_out_eye", 112, 176));
     public static final Icon MORE = register(new Icon(ATLAS, "more", 16, 0));
     public static final Icon SAVED = register(new Icon(ATLAS, "saved", 32, 0));
     public static final Icon SAVE = register(new Icon(ATLAS, "save", 48, 0));

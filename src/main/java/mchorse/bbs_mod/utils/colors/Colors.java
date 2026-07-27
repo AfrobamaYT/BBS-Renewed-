@@ -48,6 +48,58 @@ public class Colors
 
     public static final Color COLOR = new Color();
 
+    /**
+     * Returns the hue endpoint for long-path interpolation around the spectrum
+     * (red - orange - yellow - green - cyan - blue - magenta - red).
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream. Gebraucht von GlowSettings-/
+     * PaintSettingsKeyframeFactory fuer das spectrum-flag am Keyframe: statt den kuerzesten
+     * hue-weg zu nehmen, laeuft die interpolation einmal andersherum durchs farbrad.
+     */
+    public static float longPathHueTarget(float hueFrom, float hueTo)
+    {
+        float delta = hueTo - hueFrom;
+
+        if (delta > 0.5F)
+        {
+            delta -= 1F;
+        }
+        else if (delta < -0.5F)
+        {
+            delta += 1F;
+        }
+
+        float longDelta;
+
+        if (delta > 0F)
+        {
+            longDelta = delta - 1F;
+        }
+        else if (delta < 0F)
+        {
+            longDelta = delta + 1F;
+        }
+        else
+        {
+            longDelta = 1F;
+        }
+
+        return hueFrom + longDelta;
+    }
+
+    /**
+     * Smoothstep with zero first AND second derivative at both ends (Perlin's variant).
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — Glow-/PaintSettingsKeyframeFactory nutzen es,
+     * damit die interpolation an den keyframe-enden nicht sichtbar "anspringt".
+     */
+    public static float smootherstep(float x)
+    {
+        x = MathUtils.clamp(x, 0F, 1F);
+
+        return x * x * x * (x * (x * 6F - 15F) + 10F);
+    }
+
     public static int opaque(int color)
     {
         return A100 | (color & RGB);

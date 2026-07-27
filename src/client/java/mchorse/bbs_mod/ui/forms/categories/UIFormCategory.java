@@ -369,4 +369,31 @@ public class UIFormCategory extends UIElement
             }
         }
     }
+
+    /* MERGE 2026-07-27: aus dem CML-upstream (gebraucht von der behaltenen UIFormList). */    public int getIndexAt(int mouseX, int mouseY)
+    {
+        int x = mouseX - this.area.x;
+        int y = mouseY - this.area.y - HEADER_HEIGHT;
+        int perRow = this.area.w / CELL_WIDTH;
+
+        if (x >= 0 && y >= 0)
+        {
+            x /= CELL_WIDTH;
+            y /= CELL_HEIGHT;
+            int i = x + y * perRow;
+            int size = this.getForms().size();
+
+            if (i >= 0 && i <= size)
+            {
+                return Math.min(i, size);
+            }
+        }
+        
+        // If below the last row, return size (append)
+        if (y >= 0 && (mouseY - this.area.y) < this.area.h) {
+             return this.getForms().size();
+        }
+
+        return -1;
+    }
 }

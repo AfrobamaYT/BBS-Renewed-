@@ -40,6 +40,25 @@ import org.lwjgl.opengl.GL11;
 
 public class Gizmo
 {
+    /**
+     * Addon hook for a custom handle.
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — RegisterGizmoEvent bietet das als addon-API an.
+     */
+    public interface IGizmoHandler
+    {
+        public void start(Gizmo gizmo, int index, int mouseX, int mouseY, UIPropTransform transform);
+    }
+
+    /** Registrierte addon-handler, indiziert nach handle-id. Siehe {@link IGizmoHandler}. */
+    private final java.util.Map<Integer, IGizmoHandler> handlers = new java.util.HashMap<>();
+
+    /** Register a custom handler for a handle id. Called through {@code RegisterGizmoEvent}. */
+    public void register(int index, IGizmoHandler handler)
+    {
+        this.handlers.put(index, handler);
+    }
+
     /* Every pickable gizmo handle owns a distinct stencil id so the combined
      * mode can show move/scale/rotate at once and a pick unambiguously names
      * both the operation and the axis. {@link Handle} ties these together;

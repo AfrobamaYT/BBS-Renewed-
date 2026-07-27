@@ -268,6 +268,16 @@ public class BBSMod implements ModInitializer
     /**
      * Main folder, where all the other folders are located.
      */
+    /**
+     * MERGE 2026-07-27: getter aus dem CML-upstream — das feld {@code worldFolder} gibt es
+     * hier bereits, nur der oeffentliche zugriff fehlte. BBS.java und UIFilmPanel
+     * (thumbnail-cache) rufen ihn.
+     */
+    public static File getWorldFolder()
+    {
+        return worldFolder;
+    }
+
     public static File getGameFolder()
     {
         return gameFolder;

@@ -37,7 +37,6 @@
         "iris.StringElementWidgetInvoker",
         "SimpleOptionMixin",
         "BlockEntityRenderDispatcherMixin",
-        "WorldMixin",
         "LivingEntityRendererInvoker",
         "EntityRenderDispatcherMixin",
         "RenderTickCounterAccessor"

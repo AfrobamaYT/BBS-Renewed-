@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.utils.presets;
 
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -10,6 +11,26 @@ import java.util.function.Supplier;
 
 public class UICopyPasteController
 {
+    /**
+     * Vorschau eines presets im uebernahme-dialog.
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — UIPresetsOverlayPanel zeigt damit an, wie ein
+     * preset aussieht, bevor man es anwendet.
+     */
+    public static interface IPresetPreview
+    {
+        public UIElement createElement();
+
+        public void preview(String presetId, MapType presetData);
+
+        public void reset();
+
+        public default IPresetPreview fork()
+        {
+            return null;
+        }
+    }
+
     public final PresetManager manager;
     public final String copyPrefix;
     private Supplier<MapType> supplier;

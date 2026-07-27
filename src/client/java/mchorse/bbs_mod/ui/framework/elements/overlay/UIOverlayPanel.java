@@ -178,4 +178,39 @@ public class UIOverlayPanel extends UIElement
     {
         this.events.emit(new UIOverlayCloseEvent(this));
     }
+
+    /**
+     * Stabiler schluessel dieses overlays (klassenname + titel).
+     *
+     * MERGE 2026-07-27: aus dem CML-upstream — die uebernommene UIOverlay-fassung nutzt ihn,
+     * um die weichen ein-/ausblend-animationen pro panel zu merken (editorSimplifyAnimations).
+     */
+    public String getKey()
+    {
+        String className = this.getClass().getSimpleName();
+
+        if (className.isEmpty())
+        {
+            className = this.getClass().getSuperclass().getSimpleName();
+        }
+
+        if (this.title != null && this.title.label != null && this.title.label.get() != null && !this.title.label.get().isEmpty())
+        {
+            return className + "_" + this.title.label.get();
+        }
+
+        return className;
+    }
+
+    /* MERGE 2026-07-27: aus dem CML-upstream — die uebernommene UIOverlay-fassung merkt sich
+     * die zielgroesse, um das panel weich darauf aufwachsen zu lassen. */
+    private int initialWidthOffset;
+    private int initialHeightOffset;
+
+    /** See {@link #initialWidthOffset}. */
+    public void setInitialSizeOffset(int w, int h)
+    {
+        this.initialWidthOffset = w;
+        this.initialHeightOffset = h;
+    }
 }

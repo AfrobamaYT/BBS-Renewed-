@@ -32,6 +32,18 @@ public class Keyframe <T> extends BaseValue
     private KeyframeShape shape = BBSSettings.getDefaultKeyframeShape();
     private Color color;
 
+    /* ⛔ MERGE 2026-07-27: drei flags aus dem CML-upstream. Diese datei ist die fs-fassung
+     * (sie hat die multi-handle-bezier-API, die CML nicht kennt), deshalb nur die felder
+     * nachgezogen statt die ganze klasse zu tauschen.
+     *
+     * spectrum        — farb-/glow-keyframes interpolieren durch das volle hue-spektrum
+     *                   statt auf dem kuerzesten weg (Paint-/GlowSettingsKeyframeFactory)
+     * bend            — gebogener uebergang im dopesheet
+     * noshadingOpacity — deckkraft ohne shading anwenden */
+    private boolean spectrum;
+    private boolean bend;
+    private boolean noshadingOpacity;
+
     /**
      * Forced duration that would be used instead of the difference
      * between two keyframes, if not 0
@@ -247,10 +259,47 @@ public class Keyframe <T> extends BaseValue
         this.postNotify();
     }
 
+    /** See the field comment on {@link #spectrum}. */
+    public boolean isSpectrum()
+    {
+        return this.spectrum;
+    }
+
+    public void setSpectrum(boolean spectrum)
+    {
+        this.spectrum = spectrum;
+    }
+
+    /** See the field comment on {@link #bend}. */
+    public boolean isBend()
+    {
+        return this.bend;
+    }
+
+    public void setBend(boolean bend)
+    {
+        this.bend = bend;
+    }
+
+    /** See the field comment on {@link #noshadingOpacity}. */
+    public boolean isNoshadingOpacity()
+    {
+        return this.noshadingOpacity;
+    }
+
+    public void setNoshadingOpacity(boolean noshadingOpacity)
+    {
+        this.noshadingOpacity = noshadingOpacity;
+    }
+
     public void copy(Keyframe<T> keyframe)
     {
         this.tick = keyframe.tick;
         this.duration = keyframe.duration;
+        /* MERGE 2026-07-27: die drei CML-flags mitkopieren, s. felddeklaration. */
+        this.spectrum = keyframe.spectrum;
+        this.bend = keyframe.bend;
+        this.noshadingOpacity = keyframe.noshadingOpacity;
         this.value = this.factory.copy(keyframe.value);
         this.interp.copy(keyframe.interp);
         this.shape = keyframe.shape;
@@ -303,6 +352,11 @@ public class Keyframe <T> extends BaseValue
         data.put("value", this.factory.toData(this.value));
 
         if (this.duration != 0F) data.putFloat("duration", this.duration);
+        /* MERGE 2026-07-27: CML-flags mitspeichern (schluessel wie im upstream, damit
+         * dessen filme kompatibel bleiben). */
+        if (this.bend) data.putBool("bend", true);
+        if (this.spectrum) data.putBool("spectrum", true);
+        if (this.noshadingOpacity) data.putBool("noshading_opacity", true);
         if (this.interp.getInterp() != Interpolations.LINEAR) data.put("interp", this.interp.toData());
         if (this.lx != 5F) data.putFloat("lx", this.lx);
         if (this.ly != 0F) data.putFloat("ly", this.ly);
@@ -348,6 +402,10 @@ public class Keyframe <T> extends BaseValue
         if (map.has("tick")) this.tick = map.getFloat("tick");
         if (map.has("duration")) this.duration = map.getFloat("duration");
         if (map.has("value")) this.value = this.factory.fromData(map.get("value"));
+        /* MERGE 2026-07-27: CML-flags lesen, s. toData(). */
+        if (map.has("bend")) this.bend = map.getBool("bend");
+        if (map.has("spectrum")) this.spectrum = map.getBool("spectrum");
+        if (map.has("noshading_opacity")) this.noshadingOpacity = map.getBool("noshading_opacity");
         if (map.has("interp")) this.interp.fromData(map.get("interp"));
         if (map.has("lx")) this.lx = map.getFloat("lx");
         if (map.has("ly")) this.ly = map.getFloat("ly");

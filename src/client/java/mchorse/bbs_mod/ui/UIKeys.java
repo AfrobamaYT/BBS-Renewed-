@@ -1263,4 +1263,30 @@ public class UIKeys
 
     public static final KeyCollection C_KEYBIND_CATGORIES = new KeyCollection("keybinds.config.^.title");
     public static final KeyCollection C_KEYBIND_CATGORIES_TOOLTIP = new KeyCollection("keybinds.config.^.tooltip");
+
+    /* MERGE 2026-07-27: UIKeys aus dem CML-upstream fuer die behaltene UIFormList. */
+    public static final IKey FORMS_CATEGORIES_CONTEXT_ADD_TO_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.add_to_category");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_ADD_TO_FAVORITES = L10n.lang("bbs.ui.forms.categories.context.add_to_favorites");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_ADD_TO_PICK = L10n.lang("bbs.ui.forms.categories.context.add_to_pick");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_MOVE_TO_PICK = L10n.lang("bbs.ui.forms.categories.context.move_to_pick");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_FROM_CATEGORY = L10n.lang("bbs.ui.forms.categories.context.remove_from_category");
+    public static final IKey FORMS_CATEGORIES_CONTEXT_REMOVE_FROM_FAVORITES = L10n.lang("bbs.ui.forms.categories.context.remove_from_favorites");
+    public static final IKey FORMS_LIST_CATEGORIES_CREATE_EXISTS = L10n.lang("bbs.ui.forms.list.categories.create.exists");
+    public static final IKey FORMS_LIST_CATEGORIES_CREATE_ICON = L10n.lang("bbs.ui.forms.list.categories.create.icon");
+    public static final IKey FORMS_LIST_CATEGORIES_CREATE_NAME = L10n.lang("bbs.ui.forms.list.categories.create.name");
+    public static final IKey FORMS_LIST_CATEGORIES_CREATE_TITLE = L10n.lang("bbs.ui.forms.list.categories.create.title");
+    public static final IKey FORMS_LIST_CATEGORIES_EDIT_ACTION = L10n.lang("bbs.ui.forms.list.categories.edit.action");
+    public static final IKey FORMS_LIST_CATEGORIES_EDIT_TITLE = L10n.lang("bbs.ui.forms.list.categories.edit.title");
+    public static final IKey FORMS_LIST_CATEGORIES_PICK_CATEGORY = L10n.lang("bbs.ui.forms.list.categories.pick.category");
+    public static final IKey FORMS_LIST_CATEGORIES_PICK_ICON = L10n.lang("bbs.ui.forms.list.categories.pick.icon");
+    public static final IKey FORMS_LIST_GROUP_MISC = L10n.lang("bbs.ui.forms.list.group.misc");
+    public static final IKey FORMS_LIST_GROUP_MODELS = L10n.lang("bbs.ui.forms.list.group.models");
+    public static final IKey FORMS_LIST_GROUP_PARTICLES = L10n.lang("bbs.ui.forms.list.group.particles");
+    public static final IKey FORMS_LIST_GROUP_RECENT = L10n.lang("bbs.ui.forms.list.group.recent");
+    public static final IKey FORMS_LIST_GROUP_USER = L10n.lang("bbs.ui.forms.list.group.user");
+    public static final IKey FORMS_LIST_MODEL_FOLDER_BACK = L10n.lang("bbs.ui.forms.list.model_folder.back");
+    public static final IKey FORMS_LIST_TAB_ALL = L10n.lang("bbs.ui.forms.list.tab.all");
+    public static final IKey FORMS_LIST_TAB_FAVORITES = L10n.lang("bbs.ui.forms.list.tab.favorites");
+    public static final IKey FORMS_LIST_TOGGLE_ALL_PREVIEWS = L10n.lang("bbs.ui.forms.list.toggle_all_previews");
+    public static final IKey FORMS_LIST_TOGGLE_CATEGORY_ORDER_LOCK = L10n.lang("bbs.ui.forms.list.toggle_category_order_lock");
 }
