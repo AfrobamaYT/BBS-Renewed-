@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.ICameraController;
+import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.items.GunZoom;
@@ -25,10 +27,26 @@ public class GameRendererMixin
      * This injection cancels bobbing when camera controller takes over
      */
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
-    public void onBob(CallbackInfo ci)
+    public void onBob(MatrixStack matrices, float tickDelta, CallbackInfo ci)
     {
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
+            /* afrobama 2026-07-28 — HAND-BOBBING.
+             * QUELLE: cml-fresh/.../mixin/client/GameRendererMixin.java:53-60.
+             *
+             * ⛔ fs cancelte hier nur und nahm die parameter gar nicht erst entgegen —
+             * damit war TrackerClientClip.applyBob() unerreichbar, obwohl die methode
+             * vollstaendig existiert (TrackerClientClip:226). Der nutzer sah: hand
+             * steht beim laufen voellig still.
+             *
+             * Vanilla-bobbing bleibt gecancelt (die film-kamera fuehrt), aber WENN die
+             * hand gezeichnet wird, bekommt sie ihr eigenes bobbing aus der bewegung der
+             * getrackten entity — gespeist von updateBob() im CameraWorkCameraController. */
+            if (TrackerClientClip.shouldRenderHand())
+            {
+                TrackerClientClip.applyBob(matrices, tickDelta);
+            }
+
             ci.cancel();
         }
     }
@@ -77,10 +95,20 @@ public class GameRendererMixin
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
-        if (current instanceof PlayCameraController)
+        /* afrobama 2026-07-28 — CameraWorkCameraController statt PlayCameraController.
+         *
+         * ⛔ Der nutzer will hand/HUD im EDITOR-VIEWPORT sehen, nicht in der welt-wiedergabe.
+         * Dort laeuft aber RunnerCameraController, nicht PlayCameraController — die pruefung
+         * auf den Play-typ schloss den editor also aus. Gemessen: bei offenem film-editor
+         * meldet getCurrent() "RunnerCameraController".
+         *
+         * Beide erben von CameraWorkCameraController; die basisklasse trifft genau die
+         * beiden faelle, in denen ein film die kamera fuehrt (editor-vorschau + wiedergabe),
+         * und laesst orbit-/freikamera unberuehrt. Auch der CML-fork prueft hier auf den
+         * Play-typ — das feature fehlte dort im viewport ebenso. */
+        if (current instanceof CameraWorkCameraController)
         {
-            /* afrobama 2026-07-27 — 1:1 aus dem CML-fork uebernommen
-             * (cml-fresh GameRendererMixin:149-173).
+            /* Kern uebernommen aus cml-fresh GameRendererMixin:149-173.
              *
              * fs cancelte hier UNBEDINGT, sobald ein film lief. Der apparat dahinter ist
              * vollstaendig vorhanden (renderHand-flag, shouldRenderHand() mit ease,

@@ -2,14 +2,17 @@ package mchorse.bbs_mod.forms.entities;
 
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.utils.AABB;
+
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LimbAnimator;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,13 +25,14 @@ public class StubEntity implements IEntity
     private boolean sneaking;
     private boolean sprinting;
     private boolean onGround = true;
-
-    /* afrobama 2026-07-27 — aus dem CML-fork (dort StubEntity:75-76). Default true,
-     * wie die IEntity-defaults: ohne keyframes verhaelt sich alles wie vorher. */
-    private boolean showHand = true;
-    private boolean showHud = true;
     private float fallDistance;
     private int hurtTimer;
+    private int deathTime;
+    private boolean usingItem;
+    private int itemUseTimeLeft;
+    private int fireTicks;
+    private boolean particlesEnabled = true;
+    private Hand activeHand = Hand.MAIN_HAND;
 
     private double prevX;
     private double prevY;
@@ -54,13 +58,33 @@ public class StubEntity implements IEntity
 
     private float[] extraVariables = new float[10];
     private float[] prevExtraVariables = new float[10];
+    private boolean externalPrevPosition;
+    private boolean externalPrevRotation;
 
     private LimbAnimator limbAnimator = new LimbAnimator();
     private final Map<EquipmentSlot, ItemStack> items = new HashMap<>();
+    private IEntity mountTarget;
+    private IEntity riderTarget;
+    private boolean sitting;
+
+    /* Hotbar / status state (afrobama keyframe channels) */
+    private final ItemStack[] hotbarItems = new ItemStack[9];
+    private int selectedSlot;
+    private float health = 20F;
+    private int hunger = 20;
+    private boolean showHand = true;
+    private boolean showHud = true;
 
     public StubEntity(World world)
     {
         this.world = world;
+
+        for (EquipmentSlot value : EquipmentSlot.values())
+        {
+            this.items.put(value, ItemStack.EMPTY);
+        }
+
+        Arrays.fill(this.hotbarItems, ItemStack.EMPTY);
     }
 
     public StubEntity()
@@ -69,6 +93,8 @@ public class StubEntity implements IEntity
         {
             this.items.put(value, ItemStack.EMPTY);
         }
+
+        Arrays.fill(this.hotbarItems, ItemStack.EMPTY);
     }
 
     @Override
@@ -115,7 +141,61 @@ public class StubEntity implements IEntity
     @Override
     public int getSelectedSlot()
     {
-        return 0;
+        return this.selectedSlot;
+    }
+
+    @Override
+    public void setSelectedSlot(int slot)
+    {
+        this.selectedSlot = Math.max(0, Math.min(8, slot));
+    }
+
+    @Override
+    public ItemStack getHotbarItem(int slot)
+    {
+        if (slot < 0 || slot >= 9)
+        {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack item = this.hotbarItems[slot];
+
+        return item != null ? item : ItemStack.EMPTY;
+    }
+
+    @Override
+    public void setHotbarItem(int slot, ItemStack stack)
+    {
+        if (slot < 0 || slot >= 9)
+        {
+            return;
+        }
+
+        this.hotbarItems[slot] = stack != null ? stack : ItemStack.EMPTY;
+    }
+
+    @Override
+    public float getHealth()
+    {
+        return this.health;
+    }
+
+    @Override
+    public void setHealth(float health)
+    {
+        this.health = health;
+    }
+
+    @Override
+    public int getHunger()
+    {
+        return this.hunger;
+    }
+
+    @Override
+    public void setHunger(int hunger)
+    {
+        this.hunger = hunger;
     }
 
     @Override
@@ -227,6 +307,78 @@ public class StubEntity implements IEntity
     }
 
     @Override
+    public int getDeathTime()
+    {
+        return this.deathTime;
+    }
+
+    @Override
+    public void setDeathTime(int deathTime)
+    {
+        this.deathTime = deathTime;
+    }
+
+    @Override
+    public boolean isUsingItem()
+    {
+        return this.usingItem;
+    }
+
+    @Override
+    public void setUsingItem(boolean usingItem)
+    {
+        this.usingItem = usingItem;
+    }
+
+    @Override
+    public int getItemUseTimeLeft()
+    {
+        return this.itemUseTimeLeft;
+    }
+
+    @Override
+    public void setItemUseTimeLeft(int itemUseTimeLeft)
+    {
+        this.itemUseTimeLeft = itemUseTimeLeft;
+    }
+
+    @Override
+    public int getFireTicks()
+    {
+        return this.fireTicks;
+    }
+
+    @Override
+    public void setFireTicks(int fireTicks)
+    {
+        this.fireTicks = fireTicks;
+    }
+
+    @Override
+    public boolean isParticlesEnabled()
+    {
+        return this.particlesEnabled;
+    }
+
+    @Override
+    public void setParticlesEnabled(boolean particlesEnabled)
+    {
+        this.particlesEnabled = particlesEnabled;
+    }
+
+    @Override
+    public Hand getActiveHand()
+    {
+        return this.activeHand;
+    }
+
+    @Override
+    public void setActiveHand(Hand hand)
+    {
+        this.activeHand = hand == null ? Hand.MAIN_HAND : hand;
+    }
+
+    @Override
     public double getX()
     {
         return this.x;
@@ -242,6 +394,7 @@ public class StubEntity implements IEntity
     public void setPrevX(double x)
     {
         this.prevX = x;
+        this.externalPrevPosition = true;
     }
 
     @Override
@@ -260,6 +413,7 @@ public class StubEntity implements IEntity
     public void setPrevY(double y)
     {
         this.prevY = y;
+        this.externalPrevPosition = true;
     }
 
     @Override
@@ -278,6 +432,7 @@ public class StubEntity implements IEntity
     public void setPrevZ(double z)
     {
         this.prevZ = z;
+        this.externalPrevPosition = true;
     }
 
     @Override
@@ -328,6 +483,7 @@ public class StubEntity implements IEntity
     public void setPrevYaw(float prevYaw)
     {
         this.prevYaw = prevYaw;
+        this.externalPrevRotation = true;
     }
 
     @Override
@@ -352,6 +508,7 @@ public class StubEntity implements IEntity
     public void setPrevHeadYaw(float prevHeadYaw)
     {
         this.prevHeadYaw = prevHeadYaw;
+        this.externalPrevRotation = true;
     }
 
     @Override
@@ -376,6 +533,7 @@ public class StubEntity implements IEntity
     public void setPrevPitch(float prevPitch)
     {
         this.prevPitch = prevPitch;
+        this.externalPrevRotation = true;
     }
 
     @Override
@@ -406,12 +564,14 @@ public class StubEntity implements IEntity
     public void setPrevBodyYaw(float prevBodyYaw)
     {
         this.prevBodyYaw = prevBodyYaw;
+        this.externalPrevRotation = true;
     }
 
     @Override
     public void setPrevPrevBodyYaw(float prevPrevBodyYaw)
     {
         this.prevPrevBodyYaw = prevPrevBodyYaw;
+        this.externalPrevRotation = true;
     }
 
     @Override
@@ -456,16 +616,24 @@ public class StubEntity implements IEntity
         this.armSwing -= 1;
         this.age += 1;
 
-        this.prevX = this.x;
-        this.prevY = this.y;
-        this.prevZ = this.z;
+        if (!this.externalPrevPosition)
+        {
+            this.prevX = this.x;
+            this.prevY = this.y;
+            this.prevZ = this.z;
+        }
 
-        this.prevPrevBodyYaw = this.prevBodyYaw;
+        if (!this.externalPrevRotation && this.mountTarget == null)
+        {
+            this.prevPrevBodyYaw = this.prevBodyYaw;
+            this.prevYaw = this.yaw;
+            this.prevHeadYaw = this.headYaw;
+            this.prevPitch = this.pitch;
+            this.prevBodyYaw = this.bodyYaw;
+        }
 
-        this.prevYaw = this.yaw;
-        this.prevHeadYaw = this.headYaw;
-        this.prevPitch = this.pitch;
-        this.prevBodyYaw = this.bodyYaw;
+        this.externalPrevPosition = false;
+        this.externalPrevRotation = false;
 
         for (int i = 0; i < this.extraVariables.length; i++)
         {
@@ -506,7 +674,53 @@ public class StubEntity implements IEntity
     @Override
     public EntityPose getEntityPose()
     {
+        if (this.mountTarget != null || this.sitting)
+        {
+            return EntityPose.SITTING;
+        }
+
+        if (this.sneaking)
+        {
+            return EntityPose.CROUCHING;
+        }
+
         return EntityPose.STANDING;
+    }
+
+    @Override
+    public IEntity getMountTarget()
+    {
+        return this.mountTarget;
+    }
+
+    @Override
+    public void setMountTarget(IEntity mountTarget)
+    {
+        this.mountTarget = mountTarget;
+    }
+
+    @Override
+    public IEntity getRiderTarget()
+    {
+        return this.riderTarget;
+    }
+
+    @Override
+    public void setRiderTarget(IEntity riderTarget)
+    {
+        this.riderTarget = riderTarget;
+    }
+
+    @Override
+    public boolean isSitting()
+    {
+        return this.sitting;
+    }
+
+    @Override
+    public void setSitting(boolean sitting)
+    {
+        this.sitting = sitting;
     }
 
     @Override
