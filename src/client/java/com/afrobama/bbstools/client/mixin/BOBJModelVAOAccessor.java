@@ -25,8 +25,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(value = BOBJModelVAO.class, remap = false)
 public interface BOBJModelVAOAccessor
 {
-    @Accessor("dominantBonePerTriangle")
-    int[] bbstools$getDominantBonePerTriangle();
 
     @Accessor("data")
     BOBJLoader.CompiledData bbstools$getData();

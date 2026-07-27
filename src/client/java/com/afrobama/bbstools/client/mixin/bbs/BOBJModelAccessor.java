@@ -23,10 +23,4 @@ public interface BOBJModelAccessor
 {
     @Accessor("armature")
     BOBJArmature bbstools$getArmature();
-
-    @Accessor("meshData")
-    BOBJLoader.CompiledData bbstools$getCompiledData();
-
-    @Accessor("vao")
-    BOBJModelVAO bbstools$getVao();
 }

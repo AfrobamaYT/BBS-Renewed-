@@ -58,8 +58,14 @@ public abstract class UIFilmControllerCurrentEntityFastMixin
     @Unique private static MethodHandle bbstools$resolveGriff;
     @Unique private static MethodHandle bbstools$publishGriff;
 
+    /* AUTONOMIE 2026-07-27: ziel von getCurrentEntity -> getCurrentReplayIndex.
+     * fs hat die index-suche in eine eigene methode ausgelagert (UIFilmController:341);
+     * getCurrentEntity ruft sie nur noch auf und enthaelt selbst kein indexOf mehr.
+     * Der redirect fand dort kein ziel und riss beim OEFFNEN DES DASHBOARDS den ganzen
+     * client mit (UIFilmPanel:142 laedt die klasse lazy — deshalb erst beim klick,
+     * nicht beim boot). Semantik unveraendert: dieselbe liste, derselbe replay. */
     @Redirect(
-        method = "getCurrentEntity",
+        method = "getCurrentReplayIndex",
         at = @At(value = "INVOKE", target = "Ljava/util/List;indexOf(Ljava/lang/Object;)I"),
         remap = false)
     private int bbstools$fastCurrentIndex(List list, Object replay)

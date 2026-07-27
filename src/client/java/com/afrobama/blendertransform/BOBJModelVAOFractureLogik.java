@@ -3,6 +3,7 @@ package com.afrobama.blendertransform;
 import com.afrobama.bbstools.client.fracture.FractureRenderContext;
 import com.afrobama.bbstools.client.fracture.FracturedBoneRegistry;
 import com.afrobama.bbstools.client.mixin.BOBJModelVAOAccessor;
+import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 
@@ -60,7 +61,8 @@ public final class BOBJModelVAOFractureLogik
      * "this" der {@code @Redirect}-ziel-referenz einen accessor bräuchte und inline diese
      * komplexität vermeidet.
      *
-     * @param zielVao die VAO-instanz als accessor, um {@code dominantBonePerTriangle} zu lesen
+     * @param zielVao die VAO-instanz (der accessor liefert uns die typ-brücke; die knochen-
+     *                tabelle rechnen wir selbst aus vao.data, siehe dominanteKnochen())
      * @return {@code true}, wenn hier gezeichnet wurde
      *
      * <p>⚠ DER RÜCKGABEWERT IST NICHT KOSMETIK. Der aufrufer ist ein {@code @Redirect}, der
@@ -89,7 +91,9 @@ public final class BOBJModelVAOFractureLogik
          * läufe als glDrawArrays-aufrufe emittieren, die fracturierte knochen überspringen.
          * count ist die gesamt-vertex-zahl = triangleCount * 3, also ist die länge des
          * per-dreieck-bone-arrays = count / 3. */
-        int[] bones = zielVao.bbstools$getDominantBonePerTriangle();
+        /* AUTONOMIE 2026-07-27: lokal berechnet statt per @Accessor gelesen — siehe
+         * dominanteKnochen() unten. Das feld dominantBonePerTriangle gibt es im fs-kern nicht. */
+        int[] bones = dominanteKnochen((BOBJModelVAO) (Object) zielVao, count);
         if (bones == null)
         {
             /* Fallback, falls accessor nicht verfügbar — bulk rendern, um black-screen bei
@@ -124,4 +128,72 @@ public final class BOBJModelVAOFractureLogik
          * sonst lägen die fracturierten dreiecke wieder drüber. */
         return true;
     }
+    /* AUTONOMIE 2026-07-27: dominanten knochen je dreieck SELBST berechnen.
+     *
+     * Der CML-fork hielt dafuer ein feld `dominantBonePerTriangle` auf BOBJModelVAO, das ein
+     * @Accessor auslas. Im fs-kern gibt es dieses feld nicht — der accessor fand es nicht und
+     * riss den ganzen mixin mit (und damit das fracture-feature). Die rohdaten liegen aber
+     * offen: `vao.data.weightData` und `vao.data.boneIndexData` sind public. Also rechnen wir
+     * es hier aus, einmal je VAO, gehalten in einer schwachen map — identische mathematik wie
+     * CMLs buildDominantBones(). */
+    private static final java.util.Map<Object, int[]> KNOCHEN_CACHE =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    private static int[] dominanteKnochen(BOBJModelVAO vao, int count)
+    {
+        if (vao == null || vao.data == null
+            || vao.data.weightData == null || vao.data.boneIndexData == null)
+        {
+            return null;                       /* aufrufer rendert dann bulk (kein black screen) */
+        }
+
+        int[] zwischen = KNOCHEN_CACHE.get(vao);
+
+        if (zwischen != null && zwischen.length == count / 3)
+        {
+            return zwischen;
+        }
+
+        int[] proDreieck = new int[count / 3];
+
+        for (int dreieck = 0; dreieck < proDreieck.length; dreieck++)
+        {
+            int basis = dreieck * 3;
+            int a = dominanterKnochen(vao, basis);
+            int b = dominanterKnochen(vao, basis + 1);
+            int c = dominanterKnochen(vao, basis + 2);
+
+            /* Mehrheit der drei ecken gewinnt; bei drei verschiedenen die erste — wie CML. */
+            proDreieck[dreieck] = (a == b || a == c) ? a : (b == c ? b : a);
+        }
+
+        KNOCHEN_CACHE.put(vao, proDreieck);
+
+        return proDreieck;
+    }
+
+    /** Der knochen mit dem groessten gewicht an diesem vertex, oder -1 wenn keiner greift. */
+    private static int dominanterKnochen(BOBJModelVAO vao, int vertex)
+    {
+        int basis = vertex * 4;
+        float max = -1F;
+        int knochen = -1;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (basis + i >= vao.data.weightData.length) break;
+
+            float gewicht = vao.data.weightData[basis + i];
+            int index = vao.data.boneIndexData[basis + i];
+
+            if (index >= 0 && gewicht > max)
+            {
+                max = gewicht;
+                knochen = index;
+            }
+        }
+
+        return knochen;
+    }
+
 }
