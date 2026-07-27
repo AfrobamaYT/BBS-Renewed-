@@ -44,6 +44,24 @@ loom {
 	}
 
 	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
+
+	/*
+	 * Startet direkt in eine welt statt ins hauptmenue — spart bei jedem test das
+	 * durchklicken von menue -> weltliste -> laden.
+	 *
+	 *   ./gradlew runQuick                 (welt "New World")
+	 *   ./gradlew runQuick -Pwelt=<name>   (andere welt)
+	 *
+	 * Angelegt 2026-07-27: die UI-klickerei per bildschirm-koordinaten kostete pro test
+	 * minuten und traf oft daneben (fenstergroesse verschiebt die pixel-positionen).
+	 */
+	runs {
+		quick {
+			client()
+			configName = "Quick"
+			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
+		}
+	}
 }
 
 dependencies {
