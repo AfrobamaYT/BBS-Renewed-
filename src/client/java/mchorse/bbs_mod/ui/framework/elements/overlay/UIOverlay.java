@@ -28,8 +28,8 @@ public class UIOverlay extends UIElement
 
     private int background = Colors.A50;
 
-    /** Verhindert, dass das schliessen mehrfach vorgemerkt wird (render laeuft pro frame). */
-    private boolean abschlussVorgemerkt;
+    /** Gesetzt wenn die ausblend-animation durch ist; der NAECHSTE render entfernt dann. */
+    private boolean abschlussFaellig;
     private float openTransition = 0.0F;
     private boolean closing = false;
 
@@ -361,16 +361,30 @@ public class UIOverlay extends UIElement
          * verzoegerte variante kam mit CMLs animierter UI (241 zeilen), die du behalten
          * wolltest.
          *
-         * Fix: das entfernen VORMERKEN und im naechsten client-tick ausfuehren, wo
-         * niemand die liste iteriert. Die animation laeuft unveraendert weiter. */
+         * ⛔ ERSTER FIX-VERSUCH WAR FALSCH (2026-07-27, vom user gefunden): er reichte
+         * performClose an mc.execute() weiter. Dessen warteschlange wird in dieser
+         * dev-instanz NICHT abgearbeitet (gemessen: ein per mc.execute gesetzter marker
+         * bleibt aus, waehrend das game mit 118 FPS rendert). Das overlay wurde also NIE
+         * entfernt — es blieb sichtbar offen, und der naechste schliess-versuch crashte
+         * erneut an derselben stelle. Ein fix, der auf einer nicht laufenden queue
+         * aufsetzt, ist kein fix.
+         *
+         * Fix jetzt ohne fremde queue: das overlay merkt sich den wunsch und entfernt
+         * sich beim NAECHSTEN render-aufruf — GANZ AM ANFANG, bevor super.render() die
+         * kinder-liste anfasst. Zu diesem zeitpunkt ist die iteration des vorigen frames
+         * beendet, die des aktuellen noch nicht gestartet. Kostet einen frame, laeuft
+         * aber garantiert. */
+        if (this.abschlussFaellig)
+        {
+            this.abschlussFaellig = false;
+            this.performClose();
+
+            return;
+        }
+
         if (this.closing && this.openTransition <= 0.01F)
         {
-            if (!this.abschlussVorgemerkt)
-            {
-                this.abschlussVorgemerkt = true;
-
-                net.minecraft.client.MinecraftClient.getInstance().execute(this::performClose);
-            }
+            this.abschlussFaellig = true;
 
             return;
         }
