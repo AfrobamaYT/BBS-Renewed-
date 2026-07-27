@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.utils;
 
 import java.util.List;
-import java.util.ArrayList;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.entity.ActorEntity;
@@ -20,13 +19,6 @@ import org.joml.Vector3f;
 
 public class RayTracing
 {
-    /**
-     * Addon-registrierte raytracing-handler.
-     *
-     * MERGE 2026-07-27: aus dem CML-upstream — RegisterRayTracingEvent traegt hier ein,
-     * damit dritt-addons eigene trefferpruefungen einhaengen koennen.
-     */
-    public static final List<IRayTracingHandler> handlers = new ArrayList<>();
 
     public static Vec3d fromVector3d(Vector3d vector)
     {

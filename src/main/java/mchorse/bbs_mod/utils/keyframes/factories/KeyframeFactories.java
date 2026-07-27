@@ -12,7 +12,6 @@ public class KeyframeFactories
     public static final ColorKeyframeFactory COLOR = new ColorKeyframeFactory();
     /* MERGE 2026-07-27: illusion-keyframes aus dem CML-upstream. */
     public static final IllusionKeyframeFactory ILLUSION = new IllusionKeyframeFactory();
-    public static final StructureLightSettingsKeyframeFactory STRUCTURE_LIGHT_SETTINGS = new StructureLightSettingsKeyframeFactory();
     public static final TransformKeyframeFactory TRANSFORM = new TransformKeyframeFactory();
     public static final PoseTransformKeyframeFactory POSE_TRANSFORM = new PoseTransformKeyframeFactory();
     public static final PoseKeyframeFactory POSE = new PoseKeyframeFactory();
@@ -49,7 +48,6 @@ public class KeyframeFactories
     {
         FACTORIES.put("color", COLOR);
         FACTORIES.put("illusion", ILLUSION);
-        FACTORIES.put("structure_light_settings", STRUCTURE_LIGHT_SETTINGS);
         FACTORIES.put("transform", TRANSFORM);
         FACTORIES.put("pose_transform", POSE_TRANSFORM);
         FACTORIES.put("pose", POSE);
