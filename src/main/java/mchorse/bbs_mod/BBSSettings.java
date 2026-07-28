@@ -68,6 +68,7 @@ public class BBSSettings {
 	public static ValueInt transformSpace;
 	public static ValueBoolean transformHotkeys3dRay;
 	public static ValueBoolean transformHotkeysWhileControlling;
+	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
 	public static ValueBoolean poseShowDisabledBones;
@@ -590,6 +591,7 @@ public class BBSSettings {
 		transformSpace.invisible();
 		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
 		transformHotkeysWhileControlling = builder.getBoolean("hotkeys_while_controlling", true);
+		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();
 		poseAlternateInvert = builder.getBoolean("pose_alternate_invert", false);

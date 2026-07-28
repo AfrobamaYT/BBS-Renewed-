@@ -1207,6 +1207,12 @@ public class UIKeys
     public static final IKey TEXTURE_KEYS_FIND_ALL = L10n.lang("bbs.ui.texture.keys.find_all");
     public static final IKey TEXTURE_MULTISKIN = L10n.lang("bbs.ui.texture.multiskin");
     public static final IKey TEXTURE_NO_DATA = L10n.lang( "bbs.ui.texture.no_data");
+    public static final IKey TEXTURES_VIEW_TOOLTIP = L10n.lang("bbs.ui.textures.view.tooltip");
+    public static final IKey TEXTURES_VIEW_LIST = L10n.lang("bbs.ui.textures.view.list");
+    public static final IKey TEXTURES_VIEW_SMALL = L10n.lang("bbs.ui.textures.view.small");
+    public static final IKey TEXTURES_VIEW_MEDIUM = L10n.lang("bbs.ui.textures.view.medium");
+    public static final IKey TEXTURES_VIEW_LARGE = L10n.lang("bbs.ui.textures.view.large");
+    public static final IKey TEXTURES_VIEW_VERY_LARGE = L10n.lang("bbs.ui.textures.view.very_large");
     public static final IKey TEXTURE_OPEN_FOLDER = L10n.lang("bbs.ui.texture.open_folder");
     public static final IKey TEXTURE_PICK_TEXTURE = L10n.lang("bbs.ui.texture.pick_texture");
     public static final IKey TEXTURE_URL_ERROR_FFMPEG = L10n.lang("bbs.ui.texture.url_error_ffmpeg");

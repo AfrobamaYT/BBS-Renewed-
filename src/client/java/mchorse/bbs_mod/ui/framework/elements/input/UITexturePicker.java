@@ -72,6 +72,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
     public UIIcon close;
     public UIIcon folder;
     public UIIcon pixelEdit;
+    public UIIcon viewMode;
     public UIFileLinkList picker;
 
     public UIButton multi;
@@ -219,6 +220,18 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
         this.folder = new UIIcon(Icons.FOLDER, (b) -> this.openFolder());
         this.folder.tooltip(UIKeys.TEXTURE_OPEN_FOLDER, Direction.BOTTOM);
         this.pixelEdit = new UIIcon(Icons.EDIT, (b) -> this.editCurrent());
+        /* Vorschau-groesse: klick schaltet zwischen liste und kacheln, das kontextmenue
+         * bietet die einzelnen stufen. Strg+mausrad ueber der liste zoomt frei. */
+        this.viewMode = new UIIcon(Icons.IMAGE, (b) -> this.picker.toggleLargeView());
+        this.viewMode.context((menu) ->
+        {
+            menu.action(Icons.MORE, UIKeys.TEXTURES_VIEW_LIST, () -> this.picker.setItemSize(UIFileLinkList.VIEW_LIST));
+            menu.action(Icons.IMAGE, UIKeys.TEXTURES_VIEW_SMALL, () -> this.picker.setItemSize(UIFileLinkList.VIEW_ICONS_SMALL));
+            menu.action(Icons.IMAGE, UIKeys.TEXTURES_VIEW_MEDIUM, () -> this.picker.setItemSize(UIFileLinkList.VIEW_ICONS_MEDIUM));
+            menu.action(Icons.IMAGE, UIKeys.TEXTURES_VIEW_LARGE, () -> this.picker.setItemSize(UIFileLinkList.VIEW_ICONS_LARGE));
+            menu.action(Icons.IMAGE, UIKeys.TEXTURES_VIEW_VERY_LARGE, () -> this.picker.setItemSize(UIFileLinkList.VIEW_ICONS_VERY_LARGE));
+        });
+        this.viewMode.tooltip(UIKeys.TEXTURES_VIEW_TOOLTIP, Direction.BOTTOM);
         this.picker = new UIFileLinkList(this::onFileClicked)
         {
             @Override
@@ -284,7 +297,7 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
         this.remove = new UIIcon(Icons.REMOVE, (b) -> this.removeMulti());
         this.edit = new UIIcon(Icons.EDIT, (b) -> this.toggleEditor());
 
-        UIElement icons = UI.row(0, this.pixelEdit, this.folder, this.close);
+        UIElement icons = UI.row(0, this.viewMode, this.pixelEdit, this.folder, this.close);
 
         icons.row().preferred(0);
         icons.relative(this.browseContent).x(1F, -10).y(10).w(60).h(20).anchorX(1F);
