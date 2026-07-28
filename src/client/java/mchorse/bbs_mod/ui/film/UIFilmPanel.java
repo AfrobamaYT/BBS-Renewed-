@@ -66,7 +66,6 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.PlayerUtils;
-import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -105,7 +104,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private RunnerCameraController runner;
     private boolean lastRunning;
     private final Position position = new Position(0, 0, 0, 0, 0);
-    private final Position lastPosition = new Position(0, 0, 0, 0, 0);
+    /** Writes the live camera into the camera clip — while flying, and while a take plays. */
+    private final FlightClipRecorder flightRecorder = new FlightClipRecorder(this, this.position);
 
     public UIFilmSelectionPanel selectionPanel;
 
@@ -144,7 +144,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     public final Matrix4f lastView = new Matrix4f();
     public final Matrix4f lastProjection = new Matrix4f();
 
-    private Timer flightEditTime = new Timer(100);
     private long lastTime;
     private double timeSpentActiveAccumulator;
     private final FilmEditorUserActivity filmUserActivity = new FilmEditorUserActivity();
@@ -489,7 +488,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.fill(null);
 
         this.setupEditorFlex(false);
-        this.flightEditTime.mark();
+        this.flightRecorder.mark();
 
         this.panels.add(this.cameraEditor);
         this.panels.add(this.replayEditor);
@@ -2724,12 +2723,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 }
                 else
                 {
-                    this.lastPosition.set(Position.ZERO);
+                    this.flightRecorder.forgetLastPosition();
                 }
             }
             else
             {
-                this.lastPosition.set(Position.ZERO);
+                this.flightRecorder.forgetLastPosition();
             }
 
             this.runner.setManual(flight ? this.position : null);
@@ -2970,8 +2969,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
      */
     private void updateLogic(UIContext context)
     {
-        Clip clip = this.cameraEditor.getClip();
-
         /* Loop fixture */
         if (BBSSettings.editorLoop.get() && this.isRunning())
         {
@@ -2986,31 +2983,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             }
         }
 
-        /* Animate flight mode */
-        if (this.dashboard.orbitUI.canControl())
-        {
-            this.dashboard.orbit.apply(this.position);
-
-            Position current = new Position(this.getCamera());
-            boolean check = this.flightEditTime.check();
-
-            if (this.cameraEditor.acceptsFlightEdit() && this.controller.getPovMode() != UIFilmController.CAMERA_MODE_FREE)
-            {
-                if (!this.lastPosition.equals(current) && check)
-                {
-                    this.cameraEditor.editClip(current);
-                }
-            }
-
-            if (check)
-            {
-                this.lastPosition.set(current);
-            }
-        }
-        else
-        {
-            this.dashboard.orbit.setup(this.getCamera());
-        }
+        /* Animate flight mode, and record the camera into the clip during playback */
+        this.flightRecorder.update();
 
         /* Rewind playback back to 0 */
         if (this.lastRunning && !this.isRunning())
@@ -3135,8 +3109,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     @Override
     public void setCursor(int value)
     {
-        this.flightEditTime.mark();
-        this.lastPosition.set(Position.ZERO);
+        this.flightRecorder.rewind();
 
         this.runner.ticks = Math.max(0, value);
 
