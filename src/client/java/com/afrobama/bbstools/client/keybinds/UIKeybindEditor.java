@@ -239,6 +239,18 @@ public class UIKeybindEditor extends UIOverlayPanel
              *  stopped conflicting (or just started). */
             this.rebuild();
         });
+
+        /* mouse() schaltet das aufnehmen von maustasten frei. Ohne den aufruf ignoriert
+         * UIKeybind jeden klick, der nicht die aufnahme startet — deshalb liessen sich hier
+         * Mouse4/Mouse5 nicht belegen, obwohl der ganze unterbau sie laengst kann: KeyCombo
+         * speichert maustasten als NEGATIVE ids und prueft sie ueber
+         * Window.isMouseButtonPressed(-key), und KeyCodes.getName(-3) liefert "Mouse 4".
+         * BBS' eigener keybind-eintrag in den settings macht es genauso (UIValueMap:259).
+         *
+         * escape() wird BEWUSST nicht gesetzt: damit bleibt ESC das abbrechen einer laufenden
+         * aufnahme. In den settings ist es gesetzt, dort ist ESC belegbar — hier waere ein
+         * verklickt-tippen sonst nicht mehr zurueckzunehmen. */
+        editor.mouse();
         editor.setKeyCombo(combo);
         editor.w(120);
 
