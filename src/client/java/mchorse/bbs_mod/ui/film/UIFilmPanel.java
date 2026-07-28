@@ -19,7 +19,6 @@ import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.Recorder;
 import mchorse.bbs_mod.film.replays.Replay;
-import mchorse.bbs_mod.forms.FormUtils;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -46,6 +45,7 @@ import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.UIFilmUndoHandler;
 import mchorse.bbs_mod.ui.film.utils.undo.UIUndoHistoryOverlay;
+import mchorse.bbs_mod.ui.film.utils.undo.UndoPersistence;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -73,7 +73,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.presets.PresetManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -2310,7 +2309,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.save();
             this.overlay.namesList.addFile(name);
 
-            Film data = this.createDuplicateFilm(name, this.data);
+            Film data = mchorse.bbs_mod.ui.film.utils.FilmDuplicator.duplicate(
+                name, this.data, this.getCursor(), this.getCamera());
 
             this.fill(data);
             this.save();
@@ -2354,72 +2354,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 return;
             }
 
-            Film duplicated = this.createDuplicateFilm(name, source);
+            Film duplicated = mchorse.bbs_mod.ui.film.utils.FilmDuplicator.duplicate(
+                name, source, this.getCursor(), this.getCamera());
 
             this.fill(duplicated);
             this.save();
             this.requestNames();
         });
-    }
-
-    private Film createDuplicateFilm(String name, Film source)
-    {
-        Film data = new Film();
-        Position position = new Position();
-        IdleClip idle = new IdleClip();
-        int tick = this.getCursor();
-
-        position.set(this.getCamera());
-        idle.duration.set(BBSSettings.getDefaultDuration());
-        idle.position.set(position);
-        data.camera.addClip(idle);
-        data.setId(name);
-        data.stampCreationTimeNow();
-
-        for (Replay replay : source.replays.getList())
-        {
-            Replay copy = new Replay(replay.getId());
-
-            copy.form.set(FormUtils.copy(replay.form.get()));
-
-            for (KeyframeChannel<?> channel : replay.keyframes.getChannels())
-            {
-                if (!channel.isEmpty())
-                {
-                    KeyframeChannel newChannel = (KeyframeChannel) copy.keyframes.get(channel.getId());
-
-                    newChannel.insert(0, channel.interpolate(tick));
-                }
-            }
-
-            for (Map.Entry<String, KeyframeChannel> entry : replay.properties.properties.entrySet())
-            {
-                KeyframeChannel channel = entry.getValue();
-
-                if (channel.isEmpty())
-                {
-                    continue;
-                }
-
-                KeyframeChannel newChannel = new KeyframeChannel(channel.getId(), channel.getFactory());
-                KeyframeSegment segment = channel.find(tick);
-
-                if (segment != null)
-                {
-                    newChannel.insert(0, segment.createInterpolated());
-                }
-
-                if (!newChannel.isEmpty())
-                {
-                    copy.properties.properties.put(newChannel.getId(), newChannel);
-                    copy.properties.add(newChannel);
-                }
-            }
-
-            data.replays.add(copy);
-        }
-
-        return data;
     }
 
     @Override
@@ -2655,6 +2596,24 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         super.fill(data);
         this.restoreTimelineScroll();
         this.notifyServer(ActionState.RESTART);
+
+        /* Nach super.fill: dort legt fillData den Undo-Manager neu an. */
+        if (data != null && this.undoHandler != null)
+        {
+            UndoPersistence.laden(data.getId(), this.undoHandler.getUndoManager());
+        }
+    }
+
+    @Override
+    public void forceSave()
+    {
+        super.forceSave();
+
+        /* Nach dem Speichern: der Hash im Journal gehoert zur gerade geschriebenen Film-Datei. */
+        if (this.data != null && this.undoHandler != null)
+        {
+            UndoPersistence.speichern(this.data.getId(), this.undoHandler.getUndoManager());
+        }
     }
 
     @Override

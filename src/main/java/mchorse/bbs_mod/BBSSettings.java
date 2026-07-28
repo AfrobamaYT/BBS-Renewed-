@@ -140,6 +140,10 @@ public class BBSSettings {
 	public static ValueBoolean editorSeconds;
 	public static ValueBoolean editorTimelineGrid;
 	public static ValueInt editorPeriodicSave;
+	/* Persistentes Undo: Historie ueberlebt Neustart und Absturz. Gelesen von
+	 * com.afrobama.bbstools.client.ui.undo.UndoPersistence. */
+	public static ValueBoolean editorPersistentUndo;
+	public static ValueInt editorPersistentUndoLimit;
 	public static ValueBoolean editorHorizontalFlight;
 	public static ValueBoolean editorOrbitMovementRequiresFlight;
 	public static ValueBoolean editorOrbitCenterMarker;
@@ -628,6 +632,10 @@ public class BBSSettings {
 		editorTimelineGrid = builder.getBoolean("timeline_grid", false);
 		keyframeDefaultInterpolation = builder.getString("keyframe_default_interpolation", Interpolations.LINEAR.getKey());
 		editorPeriodicSave = builder.getInt("periodic_save", 60, 0, 3600);
+		editorPersistentUndo = builder.getBoolean("persistent_undo", true);
+		/* Obergrenze 100, weil der UndoManager selbst bei 100 deckelt (UIFormUndoHandler.reset) —
+		 * ein hoeherer Wert waere ein Versprechen, das die Sitzung nicht halten kann. */
+		editorPersistentUndoLimit = builder.getInt("persistent_undo_limit", 100, 1, 100);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);
 		editorOrbitCenterMarker = builder.getBoolean("orbit_center_marker", false);
