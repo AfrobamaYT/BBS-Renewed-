@@ -54,6 +54,20 @@ loom {
 	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
 
 	/*
+	 * Ports der DEV-instanz — bewusst NEBEN denen der CurseForge-instanz.
+	 *
+	 * CF laeuft auf den defaults (studio 7900, bridge 9880, jdwp 5005). Die dev-instanz
+	 * liegt daneben, damit beide gleichzeitig laufen koennen: der nutzer arbeitet in CF,
+	 * waehrend hier gemessen wird. Ohne diese trennung band die zweite instanz still
+	 * nichts und jede messung ging an die falsche JVM.
+	 */
+	ext.devPorts = [
+		studio: project.findProperty("studioPort") ?: 7901,
+		bridge: project.findProperty("bridgePort") ?: 9881,
+		jdwp  : project.findProperty("jdwpPort")   ?: 5006,
+	]
+
+	/*
 	 * Startet direkt in eine welt statt ins hauptmenue — spart bei jedem test das
 	 * durchklicken von menue -> weltliste -> laden.
 	 *
@@ -78,8 +92,11 @@ loom {
 			 * debugger, es startet normal durch. */
 			if (project.hasProperty("debug"))
 			{
-				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+				vmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:${devPorts.jdwp}"
 			}
+
+
+			property "mcstudio.port", devPorts.studio.toString()
 
 			/* ⭐ VOLLES HOTSWAP (2026-07-27 wiederhergestellt — war im alten fork eingerichtet).
 			 *

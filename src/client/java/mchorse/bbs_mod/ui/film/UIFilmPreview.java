@@ -365,8 +365,6 @@ public class UIFilmPreview extends UIElement
             context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
         }
 
-        this.renderViewportHud(context, area);
-
         this.renderCursor(context);
 
         boolean needGuides = BBSSettings.editorRuleOfThirds.get()
@@ -493,34 +491,65 @@ public class UIFilmPreview extends UIElement
             return;
         }
 
-        net.minecraft.client.util.Window window = mc.getWindow();
-        float scale = Math.min(area.w / (float) window.getScaledWidth(), area.h / (float) window.getScaledHeight());
+        /* Die GUI-flaeche des VIDEOS auf das viewport-rechteck abbilden, nicht die des
+         * fensters: der viewport hat das seitenverhaeltnis der video-aufloesung
+         * (getViewport()), und das HUD soll dort sitzen, wo es im export landet.
+         * MCs HUD zentriert auf der GUI-breite und haengt an der GUI-hoehe. */
+        int videoW = BBSRendering.getVideoWidth();
+        int videoH = BBSRendering.getVideoHeight();
+
+        if (videoW <= 0 || videoH <= 0)
+        {
+            return;
+        }
+
+        int guiScale = mchorse.bbs_mod.utils.MathUtils.clamp(
+            Math.min(videoW / 320, videoH / 240), 1, 4);
+        int guiW = videoW / guiScale;
+        int guiH = videoH / guiScale;
+
+        float scaleX = area.w / (float) guiW;
+        float scaleY = area.h / (float) guiH;
 
         context.batcher.flush();
 
         net.minecraft.client.gui.DrawContext draw = context.batcher.getContext();
         net.minecraft.client.util.math.MatrixStack matrices = draw.getMatrices();
 
+        /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
+         * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
+        context.batcher.clip(area.x, area.y, area.w, area.h, context.menu.width, context.menu.height);
+
         matrices.push();
         matrices.translate(area.x, area.y, 0F);
-        matrices.scale(scale, scale, 1F);
+        matrices.scale(scaleX, scaleY, 1F);
 
         boolean hidden = mc.options.hudHidden;
 
+        /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
+         * zupflastern — es gehoert auf den bildschirm, nicht ins kamerabild. */
+        boolean debugOverlay = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
+
         mc.options.hudHidden = false;
-        mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.beginHudRendering(draw);
+        com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = false;
 
         try
         {
-            mc.inGameHud.render(draw, mc.getRenderTickCounter());
+            /* renderMainHud statt render: render() steigt im editor-kontext still aus
+             * (screen offen, kein spiel-tick). renderMainHud zeichnet hotbar, herzen,
+             * hunger und fadenkreuz ohne diese guards — das ist genau das, was im
+             * exportierten video landet. */
+            ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.inGameHud)
+                .bbs$renderMainHud(draw, mc.getRenderTickCounter());
         }
         finally
         {
-            mchorse.bbs_mod.camera.clips.misc.TrackerClientClip.endHudRendering(draw);
+            com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = debugOverlay;
             mc.options.hudHidden = hidden;
 
             context.batcher.flush();
             matrices.pop();
+            context.batcher.unclip(context);
         }
     }
 
