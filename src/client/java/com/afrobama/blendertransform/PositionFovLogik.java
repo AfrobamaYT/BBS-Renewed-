@@ -31,36 +31,50 @@ public final class PositionFovLogik
      * @param camera die {@code mchorse.bbs_mod.camera.Camera}-instanz (unbenutzt hier, wie im
      *               original — bleibt in der signatur, weil der handler sie durchreicht)
      */
+    /**
+     * Der aktuelle sprint-multiplikator, mit dem {@link #applySprintFov} {@code angle.fov} boostet.
+     * 1.0 = kein boost.
+     *
+     * <p>Herausgezogen 2026-07-28: {@code SprintFovLogik} muss denselben faktor kennen, um ihn im
+     * hand-pfad wieder herauszurechnen (vanilla rendert die hand sprint-frei). EINE quelle, damit
+     * boost und gegenrechnung nicht auseinanderlaufen koennen.</p>
+     */
+    public static float sprintFaktor()
+    {
+        if (com.afrobama.bbstools.client.tracker.SprintFovState.MANUAL_SPRINT)
+        {
+            /* Vanilla MC sprint FOV multiplier — matches the
+             *  PlayerEntity.getSpeedFOVMultiplier() value when
+             *  isSprinting() returns true. Was 1.3 for visibility
+             *  during 16-iter debug session; back to vanilla now
+             *  that the hook works. */
+            return 1.15F;
+        }
+
+        /* Read upstream TrackerClientClip's smoothed sprint
+         *  factor. When entity sprints during playback,
+         *  CameraWorkCameraController calls updateSprintFov
+         *  which sets this. */
+        try
+        {
+            Class<?> cls = Class.forName("mchorse.bbs_mod.camera.clips.misc.TrackerClientClip");
+            float factor = cls.getDeclaredField("sprintFovFactor").getFloat(null);
+            float lastFactor = cls.getDeclaredField("lastSprintFovFactor").getFloat(null);
+            float td = cls.getDeclaredField("currentTickDelta").getFloat(null);
+
+            return lastFactor + (factor - lastFactor) * td;
+        }
+        catch (Throwable ignored) {}
+
+        return 1F;
+    }
+
     public static void applySprintFov(Object ziel, Object camera)
     {
         try
         {
-            float mul = 1F;
-            if (com.afrobama.bbstools.client.tracker.SprintFovState.MANUAL_SPRINT)
-            {
-                /* Vanilla MC sprint FOV multiplier — matches the
-                 *  PlayerEntity.getSpeedFOVMultiplier() value when
-                 *  isSprinting() returns true. Was 1.3 for visibility
-                 *  during 16-iter debug session; back to vanilla now
-                 *  that the hook works. */
-                mul = 1.15F;
-            }
-            else
-            {
-                /* Read upstream TrackerClientClip's smoothed sprint
-                 *  factor. When entity sprints during playback,
-                 *  CameraWorkCameraController calls updateSprintFov
-                 *  which sets this. */
-                try
-                {
-                    Class<?> cls = Class.forName("mchorse.bbs_mod.camera.clips.misc.TrackerClientClip");
-                    float factor = cls.getDeclaredField("sprintFovFactor").getFloat(null);
-                    float lastFactor = cls.getDeclaredField("lastSprintFovFactor").getFloat(null);
-                    float td = cls.getDeclaredField("currentTickDelta").getFloat(null);
-                    mul = lastFactor + (factor - lastFactor) * td;
-                }
-                catch (Throwable ignored) {}
-            }
+            float mul = sprintFaktor();
+
             if (Math.abs(mul - 1F) < 0.001F) return;
 
             /* Access angle.fov reflectively to avoid hard coupling

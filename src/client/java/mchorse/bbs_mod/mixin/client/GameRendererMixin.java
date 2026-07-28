@@ -9,6 +9,7 @@ import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.items.GunZoom;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.math.MatrixStack;
@@ -42,9 +43,22 @@ public class GameRendererMixin
 
     /**
      * This injection replaces the camera FOV when camera controller takes over
+     *
+     * <p>changingFov ist vanillas trennung zwischen welt und erster-person-hand:
+     * renderWorld ruft getFov mit true, renderHand mit false, und getFov ueberspringt bei false
+     * den ganzen multiplikator-block. Im bytecode von 1.21.1 nachgelesen. Deshalb waechst im
+     * echten spiel beim rennen die welt, die hand aber nicht.</p>
+     *
+     * <p>Die korrektur MUSS hier stehen, nicht in einem spaeteren injektor: setReturnValue
+     * cancelt den callback, und mixin springt danach sofort zurueck — jeder weitere
+     * RETURN-injektor wird uebersprungen, unabhaengig von seiner prioritaet. Gemessen
+     * 2026-07-28: nach diesem handler steht cir.isCancelled() == true. Zwei anlaeufe ueber
+     * eigene mixins (prioritaet 3000 bzw. @ModifyReturnValue mit 4000) blieben deshalb
+     * wirkungslos, obwohl ihre logik isoliert das richtige ergebnis lieferte.</p>
      */
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
-    public void onGetFov(CallbackInfoReturnable<Double> info)
+    public void onGetFov(Camera camera, float tickDelta, boolean changingFov,
+        CallbackInfoReturnable<Double> info)
     {
         GunZoom gunZoom = BBSModClient.getGunZoom();
 
@@ -59,7 +73,23 @@ public class GameRendererMixin
 
         if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
         {
-            info.setReturnValue(controller.getFOV());
+            double fov = controller.getFOV();
+
+            /* camera.fov traegt den sprint-boost, den PositionFovLogik auf angle.fov legt.
+             * Fuer die welt ist das gewollt, fuer die hand nicht — sonst streckt sie sich beim
+             * rennen mit. Nur den sprint-anteil herausrechnen; das clip-FOV bleibt stehen,
+             * damit die hand weiterhin dem shot folgt. */
+            if (!changingFov)
+            {
+                float sprint = com.afrobama.blendertransform.PositionFovLogik.sprintFaktor();
+
+                if (sprint > 1.001F)
+                {
+                    fov /= sprint;
+                }
+            }
+
+            info.setReturnValue(fov);
         }
     }
 
