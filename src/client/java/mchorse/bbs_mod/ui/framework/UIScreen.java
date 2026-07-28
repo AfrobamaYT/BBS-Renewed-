@@ -196,7 +196,14 @@ public class UIScreen extends Screen implements IFileDropListener
         RenderTickCounter tick = this.client.getRenderTickCounter();
 
         this.menu.context.setTransition(tick instanceof RenderTickCounterAccessor accessor ? accessor.bbs$getTickDelta() : tick.getTickDelta(false));
-        this.menu.renderMenu(this.context, mouseX, mouseY);
+
+        /* TEST-AUTONOMIE: normalfall = beide aufrufe geben mouseX/mouseY unveraendert zurueck
+         * (ein volatile-read). Nur waehrend eines programmatischen zuges liefern sie die
+         * gesetzte position — ohne das koennte kein test etwas ZIEHEN, weil ziehende elemente
+         * die maus pro frame hier neu lesen. Siehe VirtuelleMaus. */
+        this.menu.renderMenu(this.context,
+            com.afrobama.bbstools.client.autotest.VirtuelleMaus.x(mouseX),
+            com.afrobama.bbstools.client.autotest.VirtuelleMaus.y(mouseY));
         this.menu.context.render.executeRunnables();
     }
 
