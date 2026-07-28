@@ -118,7 +118,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     private IEntity controlled;
     private final Vector2i lastMouse = new Vector2i();
     private int mouseMode;
-    private final Vector2f mouseStick = new Vector2f();
+    final Vector2f mouseStick = new Vector2f();
 
     /* Recording state */
     private IEntity previousEntity;
@@ -333,7 +333,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
     }
 
-    private boolean isMouseLookMode()
+    boolean isMouseLookMode()
     {
         return this.getMouseMode() == 0;
     }
@@ -435,7 +435,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
     }
 
-    private boolean canControl()
+    boolean canControl()
     {
         UIContext context = this.getContext();
 
@@ -690,7 +690,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         float gizmoTransition = this.isPlaying() ? context.getTransition() : 0F;
 
-        return UIReplaysEditorUtils.startFilmGizmo(this.panel, context, stencilIndex, gizmoTransition);
+        return mchorse.bbs_mod.ui.film.replays.FilmGizmoDrag.startFilmGizmo(this.panel, context, stencilIndex, gizmoTransition);
     }
 
     @Override
@@ -1449,28 +1449,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         int x = (int) mouse.getX();
         int y = (int) mouse.getY();
 
-        if (this.canControl())
-        {
-            if (this.isMouseLookMode() && ClientNetwork.isIsBBSModOnServer())
-            {
-                float cursorDeltaX = (x - this.lastMouse.x) / 2F;
-                float cursorDeltaY = (y - this.lastMouse.y) / 2F;
-
-                MinecraftClient.getInstance().player.changeLookDirection(cursorDeltaX, cursorDeltaY);
-            }
-            else
-            {
-                /* Control sticks and triggers variables */
-                float sensitivity = 100F;
-
-                float xx = (y - this.lastMouse.y) / sensitivity;
-                float yy = (x - this.lastMouse.x) / sensitivity;
-
-                this.mouseStick.add(xx, yy);
-                this.mouseStick.x = MathUtils.clamp(this.mouseStick.x, -1F, 1F);
-                this.mouseStick.y = MathUtils.clamp(this.mouseStick.y, -1F, 1F);
-            }
-        }
+        ControlMouse.steer(this, x, y, this.lastMouse.x, this.lastMouse.y);
 
         this.lastMouse.set(x, y);
 

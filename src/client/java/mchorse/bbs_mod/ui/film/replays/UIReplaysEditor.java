@@ -1451,7 +1451,7 @@ public class UIReplaysEditor extends UIElement
         this.iconBar.setVisible(this.timelineVisible && notEditing);
         this.actionsToggle.setVisible(this.timelineVisible && notEditing);
 
-        UIReplaysEditorUtils.configureFilmHotkeyDrag(this.filmPanel, context);
+        FilmGizmoDrag.configureFilmHotkeyDrag(this.filmPanel, context);
 
         super.render(context);
     }

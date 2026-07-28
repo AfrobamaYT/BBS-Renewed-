@@ -59,6 +59,8 @@
 	"bbs.config.transformation.gizmo_opacity-comment": "How opaque the gizmo draws — lower it to see the model through the handles. 1 is fully opaque",
 	"bbs.config.transformation.hotkeys_3d_ray": "3D ray for R/G/S",
 	"bbs.config.transformation.hotkeys_3d_ray-comment": "When enabled, transformations started with R/G/S use a 3D ray instead of the old left/right screen-space drag",
+	"bbs.config.transformation.hotkeys_while_controlling": "R/G/S while controlling",
+	"bbs.config.transformation.hotkeys_while_controlling-comment": "When enabled, R/G/S keep working while you control an actor (first person): the drag gets the cursor back for its duration and mouse look holds still, so rotating a bone doesn't turn the head. Off restores the old behaviour, where controlling blocked every transform hotkey",
 	"bbs.config.transformation.rotate_hotkey_order": "Rotation key cycle",
 	"bbs.config.transformation.rotate_hotkey_order-comment": "The order in which repeated presses of the rotation key walk the modes: the view ring, the 3D sphere and the axis rings. Drag the chips to rearrange, right click to reset",
 	"bbs.config.transformation.scale_hotkey_order": "Scale key cycle",

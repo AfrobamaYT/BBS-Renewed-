@@ -41,6 +41,7 @@ import mchorse.bbs_mod.ui.dashboard.panels.tabs.DataTab;
 import mchorse.bbs_mod.ui.dashboard.panels.tabs.UIDataTabs;
 import mchorse.bbs_mod.ui.dashboard.utils.IUIOrbitKeysHandler;
 import mchorse.bbs_mod.ui.film.audio.UIAudioRecorder;
+import mchorse.bbs_mod.ui.film.controller.ControlMouse;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.UIFilmUndoHandler;
@@ -2904,10 +2905,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             }
         }
 
-        if (this.controller.isControlling())
-        {
-            context.mouseX = context.mouseY = -1;
-        }
+        ControlMouse.pin(this, context);
 
         this.controller.orbit.update(context);
 

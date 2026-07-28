@@ -17,6 +17,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.events.UITrackpadDragEndEvent;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragContext;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.DragCursor;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragStrategy;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragStrategyFactory;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformNumericInput;
@@ -123,11 +124,8 @@ public class UIPropTransform extends UITransform
      * advancing at {@link DragStrategy#FINE_DRAG_FACTOR} speed while Shift is
      * held, so every ray gesture slows uniformly without per-mode code. The
      * lag is the accumulated offset between the two. */
-    private float fineOffsetX;
-    private float fineOffsetY;
-    private int fineLastX;
-    private int fineLastY;
-    private boolean fineHasLast;
+    /** The cursor the running gesture reads (Shift damping, cursorless start) — see DragCursor. */
+    private final DragCursor cursor = new DragCursor();
 
     private UITransformHandler handler;
 
@@ -1099,6 +1097,11 @@ public class UIPropTransform extends UITransform
         this.strategy = DragStrategyFactory.create(this.bridge, op, axis, axis2, variant, hotkeyMode);
         this.strategy.begin(context.mouseX, context.mouseY);
 
+        /* A host can hold the cursor back on the frame an edit starts — controlling an actor
+         * pins it to -1/-1 and only hands it over once one is running, so the anchor above
+         * comes from a position the pointer was never at (see DragCursor#armReanchor). */
+        this.cursor.armReanchor(context.mouseX, context.mouseY);
+
         if (!this.handler.hasParent())
         {
             context.menu.overlay.add(this.handler);
@@ -1190,7 +1193,7 @@ public class UIPropTransform extends UITransform
         this.hotkeyMode = false;
         this.strategy = null;
         this.drag = null;
-        this.fineHasLast = false;
+        this.cursor.forget();
         this.numeric.clear();
         Gizmo.INSTANCE.clearTrackedTransform(this);
 
@@ -1311,7 +1314,7 @@ public class UIPropTransform extends UITransform
 
         /* The cursor was free to roam while typing; re-anchor the precision
          * tracking here so the resumed drag doesn't inherit a stale lag. */
-        this.resetFineCursor(context.mouseX, context.mouseY);
+        this.cursor.anchor(context.mouseX, context.mouseY);
 
         if (this.strategy != null)
         {
@@ -1509,53 +1512,6 @@ public class UIPropTransform extends UITransform
     }
 
     /**
-     * Maintain the virtual cursor for the current frame. While Shift is held it
-     * advances at {@link DragStrategy#FINE_DRAG_FACTOR} of the real cursor — the
-     * rest of the motion piles into the lag offset; released, it tracks the
-     * cursor 1:1 again with no jump. Ray gestures read {@link #fineX}/{@link #fineY}
-     * so they all slow uniformly without any per-mode code.
-     */
-    private void updateFineCursor(int mouseX, int mouseY)
-    {
-        if (!this.fineHasLast)
-        {
-            this.resetFineCursor(mouseX, mouseY);
-
-            return;
-        }
-
-        if (Window.isShiftPressed())
-        {
-            float keep = 1F - DragStrategy.FINE_DRAG_FACTOR;
-
-            this.fineOffsetX += (mouseX - this.fineLastX) * keep;
-            this.fineOffsetY += (mouseY - this.fineLastY) * keep;
-        }
-
-        this.fineLastX = mouseX;
-        this.fineLastY = mouseY;
-    }
-
-    private void resetFineCursor(int mouseX, int mouseY)
-    {
-        this.fineOffsetX = 0F;
-        this.fineOffsetY = 0F;
-        this.fineLastX = mouseX;
-        this.fineLastY = mouseY;
-        this.fineHasLast = true;
-    }
-
-    private int fineX(int mouseX)
-    {
-        return Math.round(mouseX - this.fineOffsetX);
-    }
-
-    private int fineY(int mouseY)
-    {
-        return Math.round(mouseY - this.fineOffsetY);
-    }
-
-    /**
      * Advance the live gesture: wrap the cursor at the window edges (re-anchoring
      * the strategy at the teleported position) and feed the strategy the cursor —
      * virtual (Shift-slowed) for ray gestures, raw for the additive fallback,
@@ -1579,7 +1535,19 @@ public class UIPropTransform extends UITransform
         int border = 5;
         int borderPadding = border + 1;
 
-        this.updateFineCursor(context.mouseX, context.mouseY);
+        /* Anchored without a cursor (see startEdit): re-anchor here instead of advancing, or
+         * the whole distance to the pointer's real position arrives as one step. */
+        if (this.cursor.claimReanchor(context.mouseX, context.mouseY))
+        {
+            if (this.strategy != null)
+            {
+                this.strategy.begin(context.mouseX, context.mouseY);
+            }
+
+            return;
+        }
+
+        this.cursor.advance(context.mouseX, context.mouseY);
 
         if (rawX <= border || rawX >= w - border)
         {
@@ -1600,7 +1568,7 @@ public class UIPropTransform extends UITransform
 
             /* The wrap re-anchors the drag at the teleported position, so the
              * virtual cursor resets there too — no lag carries across the seam. */
-            this.resetFineCursor(wrapX, context.mouseY);
+            this.cursor.anchor(wrapX, context.mouseY);
 
             if (this.strategy != null)
             {
@@ -1614,7 +1582,7 @@ public class UIPropTransform extends UITransform
         {
             if (this.strategy.usesFineCursor())
             {
-                this.strategy.update(this.fineX(context.mouseX), this.fineY(context.mouseY));
+                this.strategy.update(this.cursor.x(context.mouseX), this.cursor.y(context.mouseY));
             }
             else
             {
