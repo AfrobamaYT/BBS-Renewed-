@@ -50,13 +50,20 @@ public final class BBSToolsKeys
         GLFW.GLFW_KEY_LEFT_SHIFT
     );
 
-    /** Toggle the in-game log console (F12 default). Captures every
+    /** Toggle the in-game log console (Shift+F12 default). Captures every
      *  Log4j event from BBS / BBSTools / Minecraft / other mods into a
-     *  ring buffer for in-game inspection. */
+     *  ring buffer for in-game inspection.
+     *
+     *  <p>WAR bis 2026-07-28 blankes F12 — zusammen mit dem debug-overlay
+     *  und der BBS-Renewed-konsole eine DREIFACHbelegung: ein druck oeffnete
+     *  eine konsole ueber dem editor und der overlay-schalter kam nie mehr
+     *  zurueck. Blankes F12 gehoert jetzt dem overlay-schalter
+     *  (DebugOverlayKeybind), das konsolen-oeffnen vertraegt den modifier.</p> */
     public static final KeyCombo LOG_CONSOLE_TOGGLE = new KeyCombo(
         "bbstools.log_console_toggle",
         IKey.constant("Toggle in-game log console"),
-        GLFW.GLFW_KEY_F12
+        GLFW.GLFW_KEY_F12,
+        GLFW.GLFW_KEY_LEFT_SHIFT
     );
 
     /** Add a new camera-preview window at the player's current pose

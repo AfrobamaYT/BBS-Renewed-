@@ -63,8 +63,11 @@ public final class QuickWinKeybinds
     /** F9 — Master debugger Module 6: one-shot bug-report bundle (zips log+crash+modlist+screenshot). */
     private static KeyBinding bugBundle;
 
-    /** F12 — Master debugger Module 33: toggle on-screen DebugOverlayHud. */
-    private static KeyBinding debugOverlayToggle;
+    /* F12 (debug-overlay) liegt seit 2026-07-28 in
+     * com.afrobama.bbstools.client.keybinds.DebugOverlayKeybind. Grund: hier
+     * haengt jede taste an KeyBinding.wasPressed(), und das feuert nicht,
+     * solange ein screen offen ist — der overlay-schalter wird aber genau
+     * dann gebraucht. Nicht zurueckholen. */
 
     /** Auto-incrementing label suffix so successive F5 presses don't
      *  collide on the registry's label key. */
@@ -143,15 +146,6 @@ public final class QuickWinKeybinds
             "category.bbstools"
         ));
 
-        /* F12 — Master debugger Module 33: toggle on-screen DebugOverlayHud
-         *  (top-left FPS/CPU/RAM/GC/GPU/threads/mods/F11/debugger/log/HTTP). */
-        debugOverlayToggle = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.bbstools.debug_overlay",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_F12,
-            "category.bbstools"
-        ));
-
         /* Prime the marker registry once so the F5 path doesn't take
          *  the lazy-load hit on the client tick thread. Mirrors what
          *  TimelineMarkerCommand.register() already does at startup —
@@ -227,22 +221,6 @@ public final class QuickWinKeybinds
                 if (client.player != null)
                     client.player.sendMessage(net.minecraft.text.Text.literal("§c[bug-bundle] failed: " + t.getMessage()), false);
             }
-        }
-
-        /* F12 — Module 33 DebugOverlayHud toggle. Flips the static ENABLED
-         *  flag; on next HudRenderCallback the panel either appears or
-         *  early-returns. Action-bar gives the user feedback so the toggle
-         *  isn't silent (HUD might already be hidden behind UI). */
-        boolean fireDebugOverlay = drain(debugOverlayToggle);
-        if (fireDebugOverlay)
-        {
-            com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED =
-                !com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
-            boolean on = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
-            actionBar(client, on
-                ? "§a[bbstools] Debug overlay ON"
-                : "§e[bbstools] Debug overlay OFF");
-            BBSToolsMod.LOG.info("F12 → debug-overlay {}", on ? "ON" : "OFF");
         }
     }
 
