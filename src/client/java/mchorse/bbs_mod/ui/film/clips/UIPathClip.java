@@ -86,6 +86,13 @@ public class UIPathClip extends UIClip<PathClip>
         }
     }
 
+
+    @Override
+    public boolean authorsCamera()
+    {
+        return true;
+    }
+
     @Override
     public void editClip(Position position)
     {

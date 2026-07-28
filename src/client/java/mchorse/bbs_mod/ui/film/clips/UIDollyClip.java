@@ -76,6 +76,13 @@ public class UIDollyClip extends UIClip<DollyClip>
         this.fillData();
     }
 
+
+    @Override
+    public boolean authorsCamera()
+    {
+        return true;
+    }
+
     @Override
     public void editClip(Position position)
     {

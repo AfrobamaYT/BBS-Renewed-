@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.camera.data.Position;
@@ -16,6 +17,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.factory.IFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -68,6 +70,60 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         {
             this.panel.setVisible(visible);
         }
+    }
+
+    /**
+     * Pick the clip that is driving the camera right now, so flying edits something
+     * even when nothing was selected. Returns whether an editor is open afterwards.
+     *
+     * <p>Without this the flight had to be aimed at a clip the user had selected
+     * beforehand; flying with nothing selected moved the camera and threw the result
+     * away on leaving the mode. The clip chosen is the same one
+     * {@link #editClip(Position)} already treats as the top of the stack: the highest
+     * layer among the clips evaluated at this tick.</p>
+     *
+     * <p>Only runs while {@link BBSSettings#editorFlightEditsActiveClip} is on and no
+     * clip is open — once one is picked the caller's first condition holds and this
+     * is not asked again.</p>
+     */
+    /**
+     * Whether flying should write into a clip right now — a clip is open and its
+     * editor showing, or {@link #pickActiveClip()} just found one.
+     *
+     * <p>Before this, flying with nothing selected moved the camera and threw the
+     * result away on leaving the mode.</p>
+     */
+    public boolean acceptsFlightEdit()
+    {
+        return (this.getClip() != null && this.isVisible()) || this.pickActiveClip();
+    }
+
+    public boolean pickActiveClip()
+    {
+        if (!BBSSettings.editorFlightEditsActiveClip.get() || this.getClip() != null)
+        {
+            return false;
+        }
+
+        List<Clip> kandidaten = new ArrayList<>(this.filmPanel.getRunner().getContext().getSnapshots().keySet());
+
+        kandidaten.sort((a, b) -> Integer.compare(b.layer.get(), a.layer.get()));
+
+        for (Clip clip : kandidaten)
+        {
+            this.pickClip(clip);
+
+            /* Nicht jeder clip auf der kamera-spur nimmt eine kameraposition an — ein
+             * audio-clip liegt dort genauso und wuerde den flug lautlos schlucken. */
+            if (this.panel != null && this.panel.authorsCamera())
+            {
+                return true;
+            }
+        }
+
+        this.pickClip(null);
+
+        return false;
     }
 
     public void editClip(Position position)

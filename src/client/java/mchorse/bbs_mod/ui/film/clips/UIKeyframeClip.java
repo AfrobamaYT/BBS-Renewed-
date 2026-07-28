@@ -72,6 +72,13 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
         this.panels.add(this.section(UIKeys.CAMERA_PANELS_KEYFRAMES, this.edit));
     }
 
+
+    @Override
+    public boolean authorsCamera()
+    {
+        return true;
+    }
+
     @Override
     public void editClip(Position position)
     {

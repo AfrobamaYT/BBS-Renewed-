@@ -106,6 +106,12 @@ public class UITrackerClip extends UIClip<TrackerClip>
         this.panels.add(this.active);
     }
 
+    @Override
+    public boolean authorsCamera()
+    {
+        return true;
+    }
+
     /**
      * Turn a camera the user placed (by flying, or by orbiting the viewport) into
      * the offset and angle that reproduce it, so the tracker is authored the same

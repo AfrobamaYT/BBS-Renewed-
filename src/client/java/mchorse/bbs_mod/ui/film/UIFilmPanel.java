@@ -2994,7 +2994,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             Position current = new Position(this.getCamera());
             boolean check = this.flightEditTime.check();
 
-            if (this.cameraEditor.getClip() != null && this.cameraEditor.isVisible() && this.controller.getPovMode() != UIFilmController.CAMERA_MODE_FREE)
+            if (this.cameraEditor.acceptsFlightEdit() && this.controller.getPovMode() != UIFilmController.CAMERA_MODE_FREE)
             {
                 if (!this.lastPosition.equals(current) && check)
                 {

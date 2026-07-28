@@ -40,6 +40,13 @@ public class UIIdleClip extends UIClip<IdleClip>
         this.panels.context((menu) -> UICameraUtils.positionContextMenu(menu, this.editor, this.clip.position));
     }
 
+
+    @Override
+    public boolean authorsCamera()
+    {
+        return true;
+    }
+
     @Override
     public void editClip(Position position)
     {

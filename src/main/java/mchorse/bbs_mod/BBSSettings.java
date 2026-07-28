@@ -148,6 +148,9 @@ public class BBSSettings {
 	/* Bei gleicher haupttaste gewinnt die bindung mit den meisten modifiern.
 	 * Gelesen von mchorse.bbs_mod.ui.utils.keys.Keybind. */
 	public static ValueBoolean editorKeybindSpecificWins;
+	/* Flug schreibt in den fuehrenden clip, auch wenn keiner ausgewaehlt ist.
+	 * Gelesen von mchorse.bbs_mod.ui.film.UIClipsPanel.pickActiveClip. */
+	public static ValueBoolean editorFlightEditsActiveClip;
 	public static ValueBoolean editorHorizontalFlight;
 	public static ValueBoolean editorOrbitMovementRequiresFlight;
 	public static ValueBoolean editorOrbitCenterMarker;
@@ -657,6 +660,7 @@ public class BBSSettings {
 		 * ein hoeherer Wert waere ein Versprechen, das die Sitzung nicht halten kann. */
 		editorPersistentUndoLimit = builder.getInt("persistent_undo_limit", 100, 1, 100);
 		editorKeybindSpecificWins = builder.getBoolean("keybind_specific_wins", true);
+		editorFlightEditsActiveClip = builder.getBoolean("flight_edits_active_clip", true);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);
 		editorOrbitCenterMarker = builder.getBoolean("orbit_center_marker", false);

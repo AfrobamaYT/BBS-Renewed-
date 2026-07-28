@@ -241,6 +241,20 @@ public abstract class UIClip <T extends Clip> extends UIElement
         this.fillData();
     }
 
+    /**
+     * Whether {@link #editClip(Position)} actually writes the camera into the clip.
+     * The default only refreshes the panel, which is right for clips that don't place
+     * the camera at all — an audio clip sits on the same track and would silently
+     * swallow a flight.
+     *
+     * <p>Asked by {@link mchorse.bbs_mod.ui.film.UIClipsPanel#pickActiveClip()} to
+     * skip those when flying without a selection.</p>
+     */
+    public boolean authorsCamera()
+    {
+        return false;
+    }
+
     public void fillData()
     {
         TimeUtilsClient.configure(this.tick, 0);
