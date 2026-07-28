@@ -1,10 +1,12 @@
 package mchorse.bbs_mod.ui.utils.keys;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Objects;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 
 /**
@@ -122,7 +124,63 @@ public class Keybind
             return false;
         }
 
+        if (this.beschattetVonLaengeremCombo())
+        {
+            return false;
+        }
+
         return this.inside ? inside : true;
+    }
+
+    /**
+     * Whether a longer combo on the same key is fully held right now — then this
+     * shorter one steps aside.
+     *
+     * <p>Camera mode on {@code 3} and the pose tab on {@code Shift + 3} live on
+     * different elements, and {@link KeybindManager} only ranks the binds of ONE
+     * element. Without this the plain key wins by arriving first and Shift+3 opens
+     * the camera mode UI. {@link #strict} solves the same thing but has to be set
+     * by hand per bind — useless once the user rebinds freely, which is the point
+     * of the keybind editor.</p>
+     *
+     * <p>Only asked when a modifier is held that this combo doesn't list, so a bind
+     * without any competitor is never slowed down or changed.</p>
+     */
+    private boolean beschattetVonLaengeremCombo()
+    {
+        return BBSSettings.editorKeybindSpecificWins.get()
+            && istBeschattet(this.combo, KeyCombo.getRegistrierte(), KeyCombo::isKeyDown);
+    }
+
+    /**
+     * The rule itself, with the key state and the list of rivals handed in.
+     *
+     * <p>Separated so it can be checked against a made-up key state — pressing real
+     * Shift+3 into the running client would need the window in the foreground, and
+     * the client belongs to whoever is working in it.</p>
+     */
+    public static boolean istBeschattet(KeyCombo combo, Iterable<KeyCombo> alle, IntPredicate gedrueckt)
+    {
+        int haupt = combo.getMainKey();
+
+        for (KeyCombo anderes : alle)
+        {
+            if (anderes == combo
+                || anderes.getMainKey() != haupt
+                || anderes.keys.size() <= combo.keys.size())
+            {
+                continue;
+            }
+
+            /* isHeld prueft ALLE tasten des laengeren combos, haupttaste eingeschlossen —
+             * die ist gerade gedrueckt, sonst waeren wir nicht hier. */
+            if (anderes.isHeld(gedrueckt))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -164,6 +222,13 @@ public class Keybind
             {
                 return false;
             }
+        }
+
+        /* Gilt genauso fuer maustasten: das preset "Left-Hand + Mouse" legt
+         * Mouse4 und Shift+Mouse4 auf verschiedene aktionen. */
+        if (this.beschattetVonLaengeremCombo())
+        {
+            return false;
         }
 
         return this.inside ? inside : true;

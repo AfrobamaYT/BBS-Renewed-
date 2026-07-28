@@ -235,6 +235,15 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_INSERT_FRAME_TITLE = L10n.lang("bbs.ui.film.controller.insert_frame-title");
     public static final IKey FILM_CONTROLLER_KEYS_CATEGORY = L10n.lang("bbs.ui.film.controller.keys.category");
     public static final IKey FILM_CONTROLLER_KEYS_CHANGE_CAMERA_MODE = L10n.lang("bbs.ui.film.controller.keys.change_camera_mode");
+    /* Eigene beschriftungen statt der menue-labels ("Orbit", "Free", ...): im
+     * keybind-editor stehen sie neben zwei dutzend anderen zeilen und muessen fuer sich
+     * allein sagen, was sie tun. */
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_CAMERA = L10n.lang("bbs.ui.film.controller.keys.camera_mode_camera");
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_FREE = L10n.lang("bbs.ui.film.controller.keys.camera_mode_free");
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_ORBIT = L10n.lang("bbs.ui.film.controller.keys.camera_mode_orbit");
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_FIRST_PERSON = L10n.lang("bbs.ui.film.controller.keys.camera_mode_first_person");
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_THIRD_PERSON_BACK = L10n.lang("bbs.ui.film.controller.keys.camera_mode_third_person_back");
+    public static final IKey FILM_CONTROLLER_KEYS_CAMERA_MODE_THIRD_PERSON_FRONT = L10n.lang("bbs.ui.film.controller.keys.camera_mode_third_person_front");
     public static final IKey FILM_CONTROLLER_KEYS_CYCLE_EDITORS = L10n.lang("bbs.ui.film.controller.keys.cycle_editors");
     public static final IKey FILM_CONTROLLER_KEYS_INSERT_FRAME = L10n.lang("bbs.ui.film.controller.keys.insert_frame");
     public static final IKey FILM_CONTROLLER_KEYS_MOVE_REPLAY_TO_CURSOR = L10n.lang("bbs.ui.film.controller.keys.move_replay_to_cursor");

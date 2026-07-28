@@ -146,6 +146,18 @@ public class Keys
     public static final KeyCombo FILM_CONTROLLER_INSERT_FRAME = new KeyCombo("insert_frame", UIKeys.FILM_CONTROLLER_KEYS_INSERT_FRAME, GLFW.GLFW_KEY_I).categoryKey("film_controller");
     public static final KeyCombo FILM_CONTROLLER_TOGGLE_CONTROL = new KeyCombo("toggle_control", UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_CONTROL, GLFW.GLFW_KEY_H).categoryKey("film_controller");
     public static final KeyCombo FILM_CONTROLLER_TOGGLE_ORBIT_MODE = new KeyCombo("toggle_orbit_mode", UIKeys.FILM_CONTROLLER_KEYS_CHANGE_CAMERA_MODE, GLFW.GLFW_KEY_F3).categoryKey("film_controller");
+    /* Direkt in EINEN kamera-modus springen, statt mit toggle_orbit_mode erst das
+     * auswahl-menue zu oeffnen. Reihenfolge und beschriftung sind dieselben wie im menue.
+     * Strg + ziffer, weil die nackten ziffern schon den replay-tabs und den
+     * aufnahme-gruppen gehoeren — die bleiben erreichbar, seit die spezifischere
+     * bindung gewinnt (BBSSettings.editorKeybindSpecificWins). */
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_CAMERA = new KeyCombo("camera_mode_camera", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_CAMERA, GLFW.GLFW_KEY_1, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_FREE = new KeyCombo("camera_mode_free", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_FREE, GLFW.GLFW_KEY_2, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_ORBIT = new KeyCombo("camera_mode_orbit", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_ORBIT, GLFW.GLFW_KEY_3, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_FIRST_PERSON = new KeyCombo("camera_mode_first_person", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_FIRST_PERSON, GLFW.GLFW_KEY_4, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_THIRD_PERSON_BACK = new KeyCombo("camera_mode_third_person_back", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_THIRD_PERSON_BACK, GLFW.GLFW_KEY_5, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+    public static final KeyCombo FILM_CONTROLLER_CAMERA_MODE_THIRD_PERSON_FRONT = new KeyCombo("camera_mode_third_person_front", UIKeys.FILM_CONTROLLER_KEYS_CAMERA_MODE_THIRD_PERSON_FRONT, GLFW.GLFW_KEY_6, GLFW.GLFW_KEY_LEFT_CONTROL).categoryKey("film_controller");
+
     public static final KeyCombo FILM_CONTROLLER_TOGGLE_ORTHO = new KeyCombo("toggle_ortho", UIKeys.FILM_CONTROLLER_KEYS_TOGGLE_ORTHO, GLFW.GLFW_KEY_KP_5).categoryKey("film_controller");
     public static final KeyCombo FILM_CONTROLLER_TELEPORT_ORBIT = new KeyCombo("teleport_orbit_record", UIKeys.FILM_CONTROLLER_KEYS_TELEPORT_ORBIT, GLFW.GLFW_KEY_C).categoryKey("film_controller");
     public static final KeyCombo FILM_CONTROLLER_ATTACH_ORBIT = new KeyCombo("attach_orbit_record", UIKeys.FILM_CONTROLLER_KEYS_ATTACH_ORBIT, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_LEFT_SHIFT).categoryKey("film_controller");

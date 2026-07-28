@@ -78,6 +78,7 @@ import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
+import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -147,87 +148,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
         this.panel = panel;
         this.setPov(BBSSettings.editorCameraMode.get());
 
-        IKey category = UIKeys.FILM_CONTROLLER_KEYS_CATEGORY;
-
-        Supplier<Boolean> hasActor = () -> this.getCurrentEntity() != null;
-        Supplier<Boolean> hasTwoOrMoreReplays = () -> this.panel.getData() != null && this.panel.getData().replays.getList().size() >= 2;
-
-        this.keys().register(Keys.FILM_CONTROLLER_START_RECORDING, this::pickRecording).active(hasActor).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_INSERT_FRAME, () ->
-        {
-            this.insertFrame();
-            UIUtils.playClick();
-        }).active(hasActor).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_CONTROL, this::toggleControl).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORBIT_MODE, this::toggleOrbitMode).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TELEPORT_ORBIT, this::teleportOrbitPivotToReplay).strict().active(() -> this.getPovMode() == CAMERA_MODE_ORBIT).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_ATTACH_ORBIT, () ->
-        {
-            this.toggleOrbitAttachment();
-            UIUtils.playClick();
-        }).strict().active(() -> this.getPovMode() == CAMERA_MODE_ORBIT).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ORTHO, () ->
-        {
-            this.orbit.toggleOrtho();
-            UIUtils.playClick();
-        }).strict().active(() -> this.getPovMode() == CAMERA_MODE_ORBIT).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_REPLAY_MENU, this::toggleReplayMenu).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
-        {
-            Area area = this.panel.preview.getViewport();
-            UIContext context = this.getContext();
-            World world = MinecraftClient.getInstance().world;
-            Camera camera = this.panel.getCamera();
-
-            Vector3f rayOffset = new Vector3f();
-            Vector3f rayDirection = camera.getMouseRay(context.mouseX, context.mouseY, area.x, area.y, area.w, area.h, rayOffset);
-
-            HitResult result = RayTracing.rayTrace(
-                world,
-                RayTracing.fromVector3d(new Vector3d(camera.position).add(rayOffset.x, rayOffset.y, rayOffset.z)),
-                RayTracing.fromVector3f(rayDirection),
-                512F
-            );
-
-            if (result.getType() == HitResult.Type.BLOCK)
-            {
-                this.panel.replayEditor.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
-            }
-        }).active(hasActor).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_RESTART_ACTIONS, () ->
-        {
-            this.panel.notifyServer(ActionState.RESTART);
-            this.createEntities();
-        }).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ONION_SKIN, () ->
-        {
-            this.getOnionSkin().enabled.toggle();
-
-            UIUtils.playClick();
-        }).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_MOTION_PATH, () ->
-        {
-            this.getMotionPath().enabled.toggle();
-
-            UIUtils.playClick();
-        }).strict().active(() -> !this.panel.hasSelectedClip()).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_MOTION_PATH_PIN, () ->
-        {
-            this.toggleMotionPathPin();
-
-            UIUtils.playClick();
-        }).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_OPEN_REPLAYS, () ->
-        {
-            this.panel.showPanel(this.panel.replayEditor);
-        }).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_PREV_REPLAY, () -> this.switchReplay(-1)).active(hasTwoOrMoreReplays).category(category);
-        this.keys().register(Keys.FILM_CONTROLLER_NEXT_REPLAY, () -> this.switchReplay(1)).active(hasTwoOrMoreReplays).category(category);
+        UIFilmControllerKeys.register(this);
 
         this.noCulling();
     }
 
-    private void switchReplay(int direction)
+    /* Paket-sichtbar: UIFilmControllerKeys haengt die tasten daran. */
+    void switchReplay(int direction)
     {
         List<Replay> list = this.panel.getData().replays.getList();
 

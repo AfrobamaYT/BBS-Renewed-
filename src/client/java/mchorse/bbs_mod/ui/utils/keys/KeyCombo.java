@@ -8,10 +8,22 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 public class KeyCombo
 {
     private static Set<String> categoryKeys = new HashSet<>();
+
+    /**
+     * Every combo the user can see and rebind, in creation order.
+     *
+     * <p>Needed because a keybind has to know whether a LONGER combo on the same key
+     * exists elsewhere — {@link KeybindManager} only ranks the binds of one element,
+     * so a plain key on element A shadows the {@code Shift + key} on element B no
+     * matter which is more specific. Rebinding writes through {@link #copy(KeyCombo)},
+     * which mutates in place, so the entries stay current.</p>
+     */
+    private static final List<KeyCombo> registriert = new ArrayList<>();
 
     public String id = "";
     public IKey label;
@@ -25,6 +37,11 @@ public class KeyCombo
         return categoryKeys;
     }
 
+    public static List<KeyCombo> getRegistrierte()
+    {
+        return registriert;
+    }
+
     public KeyCombo(String id, IKey label, int... keys)
     {
         this(label, keys);
@@ -32,6 +49,10 @@ public class KeyCombo
         this.id = id;
 
         this.categoryKey("all");
+
+        /* Nur benannte combos: die namenlosen sind wegwerf-bindungen einzelner
+         * elemente, die im keybind-editor nie auftauchen. */
+        registriert.add(this);
     }
 
     public KeyCombo(IKey label, int... keys)
@@ -86,6 +107,16 @@ public class KeyCombo
      */
     public boolean isHeld()
     {
+        return this.isHeld(KeyCombo::isKeyDown);
+    }
+
+    /**
+     * Same, but asks the given predicate instead of the real keyboard — so the
+     * shadowing rule in {@link Keybind} can be checked against a made-up key state
+     * without pressing anything into the running client.
+     */
+    public boolean isHeld(IntPredicate gedrueckt)
+    {
         if (this.keys.isEmpty())
         {
             return false;
@@ -93,7 +124,7 @@ public class KeyCombo
 
         for (int key : this.keys)
         {
-            if (!isKeyDown(key))
+            if (!gedrueckt.test(key))
             {
                 return false;
             }

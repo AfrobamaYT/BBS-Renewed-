@@ -145,6 +145,9 @@ public class BBSSettings {
 	 * com.afrobama.bbstools.client.ui.undo.UndoPersistence. */
 	public static ValueBoolean editorPersistentUndo;
 	public static ValueInt editorPersistentUndoLimit;
+	/* Bei gleicher haupttaste gewinnt die bindung mit den meisten modifiern.
+	 * Gelesen von mchorse.bbs_mod.ui.utils.keys.Keybind. */
+	public static ValueBoolean editorKeybindSpecificWins;
 	public static ValueBoolean editorHorizontalFlight;
 	public static ValueBoolean editorOrbitMovementRequiresFlight;
 	public static ValueBoolean editorOrbitCenterMarker;
@@ -653,6 +656,7 @@ public class BBSSettings {
 		/* Obergrenze 100, weil der UndoManager selbst bei 100 deckelt (UIFormUndoHandler.reset) —
 		 * ein hoeherer Wert waere ein Versprechen, das die Sitzung nicht halten kann. */
 		editorPersistentUndoLimit = builder.getInt("persistent_undo_limit", 100, 1, 100);
+		editorKeybindSpecificWins = builder.getBoolean("keybind_specific_wins", true);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);
 		editorOrbitCenterMarker = builder.getBoolean("orbit_center_marker", false);
