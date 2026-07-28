@@ -5,6 +5,7 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.film.replays.UIQuickReplayOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -63,6 +64,9 @@ public class UIFilmControllerKeys
             UIUtils.playClick();
         }).strict().active(() -> c.getPovMode() == UIFilmController.CAMERA_MODE_ORBIT).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_TOGGLE_REPLAY_MENU, c::toggleReplayMenu).category(category);
+        /* Quick search: eigenes overlay, kein context-menue — es braucht eine tippbare
+         * such-zeile, die ein UISimpleContextMenu nicht hat. */
+        c.keys().register(Keys.FILM_CONTROLLER_QUICK_REPLAY, () -> UIQuickReplayOverlayPanel.open(c.panel)).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
         {
             Area area = c.panel.preview.getViewport();

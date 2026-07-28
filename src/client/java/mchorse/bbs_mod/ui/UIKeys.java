@@ -251,6 +251,7 @@ public class UIKeys
     public static final IKey FILM_CONTROLLER_KEYS_TOGGLE_ACTIONS = L10n.lang("bbs.ui.film.controller.keys.toggle_actions");
     public static final IKey FILM_CONTROLLER_KEYS_OPEN_REPLAYS = L10n.lang("bbs.ui.film.controller.keys.open_replays");
     public static final IKey FILM_CONTROLLER_KEYS_PREV_REPLAY = L10n.lang("bbs.ui.film.controller.keys.prev_replay");
+    public static final IKey FILM_CONTROLLER_KEYS_QUICK_REPLAY = L10n.lang("bbs.ui.film.controller.keys.quick_replay");
     public static final IKey FILM_CONTROLLER_KEYS_RESTART_ACTIONS = L10n.lang("bbs.ui.film.controller.keys.restart_actions");
     public static final IKey FILM_CONTROLLER_KEYS_START_RECORDING = L10n.lang("bbs.ui.film.controller.keys.start_recording");
     public static final IKey FILM_CONTROLLER_KEYS_ATTACH_ORBIT = L10n.lang("bbs.ui.film.controller.keys.attach_orbit");
@@ -356,6 +357,9 @@ public class UIKeys
     public static final IKey FILM_REPLAY_LOOPING = L10n.lang("bbs.ui.film.replay.looping");
     public static final IKey FILM_REPLAY_LOOPING_TOOLTIP = L10n.lang("bbs.ui.film.replay.looping-tooltip");
     public static final IKey FILM_REPLAY_NAME_TAG = L10n.lang("bbs.ui.film.replay.name_tag");
+    /* Quick search: form per name eintippen, Enter legt einen neuen replay damit an
+     * (UIQuickReplayOverlayPanel). */
+    public static final IKey FILM_QUICK_REPLAY_TITLE = L10n.lang("bbs.ui.film.quick_replay.title");
     public static final IKey FILM_REPLAY_ORBIT_CAMERA = L10n.lang("bbs.ui.film.replay.orbit.camera");
     public static final IKey FILM_REPLAY_ORBIT_FIRST_PERSON = L10n.lang("bbs.ui.film.replay.orbit.first_person");
     public static final IKey FILM_REPLAY_ORBIT_FREE = L10n.lang("bbs.ui.film.replay.orbit.free");
