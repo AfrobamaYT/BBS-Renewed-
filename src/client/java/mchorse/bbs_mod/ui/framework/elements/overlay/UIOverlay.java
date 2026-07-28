@@ -6,6 +6,8 @@ import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.utils.Area;
+import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -28,7 +30,15 @@ public class UIOverlay extends UIElement
 
     private int background = Colors.A50;
 
+    /** Wieviel vom fenster in jeder achse auf dem schirm liegen muss, damit es greifbar ist. */
+    private static final int MIN_SICHTBAR = 32;
+    /** Hoehe der titelleiste — nur an ihr laesst sich ein fenster ziehen. */
+    private static final int TITEL_HOEHE = 20;
+
     /** Gesetzt wenn die ausblend-animation durch ist; der NAECHSTE render entfernt dann. */
+    /** Laeuft gerade eine korrektur? Sonst riefe das resize darin sich selbst. */
+    private boolean klemmeLaeuft;
+
     private boolean abschlussFaellig;
     private float openTransition = 0.0F;
     private boolean closing = false;
@@ -271,6 +281,73 @@ public class UIOverlay extends UIElement
         context.menu.overlay.add(overlay);
         overlay.add(panel);
         context.menu.overlay.resize();
+    }
+
+    /**
+     * Ein gespeicherter platz darf ein fenster nie unerreichbar machen.
+     *
+     * <p>Positionen werden pro key persistiert ({@link #saveOverlayState}). Zieht der nutzer
+     * ein fenster fast aus dem bild, verkleinert danach das MC-fenster, oder rechnet das
+     * layout einmal gegen ein eltern-element der groesse 0 (gemessen 2026-07-28: das
+     * settings-fenster stand auf -215/-190, exakt minus der halben panel-groesse), dann
+     * oeffnet es beim naechsten mal wieder dort — und es gibt keinen sichtbaren weg zurueck.
+     * Der reset liegt auf Ctrl+klick AUF DIE TITELLEISTE, und genau die ist dann nicht mehr da.
+     *
+     * <p>⛔ Die pruefung haengt am RESIZE, nicht am einhaengen. Beim einhaengen steht die
+     * flaeche des panels noch auf null — gemessen beim bau dieses fixes: die pruefung sah
+     * 0,0 430x380, fand das in ordnung und liess einen offset von -5000 durch. Am resize
+     * greift sie ausserdem dort, wo der zweite fall entsteht: wenn das MC-fenster kleiner
+     * wird, rechnen overlays ihre position sonst nie neu.
+     */
+    @Override
+    public void resize()
+    {
+        super.resize();
+
+        if (this.klemmeLaeuft || this.area.w <= 0 || this.area.h <= 0)
+        {
+            return;
+        }
+
+        for (IUIElement kind : this.getChildren())
+        {
+            if (!(kind instanceof UIOverlayPanel panel) || this.liegtImBild(panel))
+            {
+                continue;
+            }
+
+            /* Der reset loest ein zweites resize aus — ohne die sperre riefe das sich selbst. */
+            this.klemmeLaeuft = true;
+
+            try
+            {
+                panel.resetOffsetToInitial();
+                super.resize();
+                saveOverlayState(panel);
+            }
+            finally
+            {
+                this.klemmeLaeuft = false;
+            }
+        }
+    }
+
+    /** Ueberlappt das fenster den schirm genug, dass man es sehen und an der titelleiste fassen kann? */
+    private boolean liegtImBild(UIOverlayPanel panel)
+    {
+        Area fenster = panel.area;
+
+        if (fenster.w <= 0 || fenster.h <= 0)
+        {
+            /* Noch kein layout — hier waere jedes urteil geraten. */
+            return true;
+        }
+
+        int sichtbarX = Math.min(fenster.ex(), this.area.ex()) - Math.max(fenster.x, this.area.x);
+        int sichtbarY = Math.min(fenster.ey(), this.area.ey()) - Math.max(fenster.y, this.area.y);
+        boolean titelGreifbar = fenster.y >= this.area.y && fenster.y + TITEL_HOEHE <= this.area.ey();
+
+        return sichtbarX >= MIN_SICHTBAR && sichtbarY >= MIN_SICHTBAR && titelGreifbar;
     }
 
     /**

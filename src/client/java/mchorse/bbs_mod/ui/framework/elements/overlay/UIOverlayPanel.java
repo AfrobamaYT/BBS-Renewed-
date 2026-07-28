@@ -118,6 +118,17 @@ public class UIOverlayPanel extends UIElement
         this.initialOffsetY = y;
     }
 
+    /**
+     * Put the window back where it was designed to sit — the escape hatch behind Ctrl+click
+     * on the title, and what {@link UIOverlay} falls back to when a stored position would
+     * open the panel off-screen.
+     */
+    public void resetOffsetToInitial()
+    {
+        this.flex.x.offset = this.initialOffsetX;
+        this.flex.y.offset = this.initialOffsetY;
+    }
+
     public void onClose(Consumer<UIOverlayCloseEvent> callback)
     {
         this.events.register(UIOverlayCloseEvent.class, callback);
@@ -165,9 +176,7 @@ public class UIOverlayPanel extends UIElement
         {
             if (Window.isCtrlPressed())
             {
-                this.flex.x.offset = this.initialOffsetX;
-                this.flex.y.offset = this.initialOffsetY;
-
+                this.resetOffsetToInitial();
                 this.getParent().resize();
 
                 return true;
