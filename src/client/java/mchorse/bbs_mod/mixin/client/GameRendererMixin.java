@@ -170,7 +170,11 @@ public class GameRendererMixin
         method = "renderWorld",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/WorldRenderer;setupFrustum(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/util/math/Vec3d;Lorg/joml/Matrix4f;)V"
+            /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): setupFrustum nimmt keinen MatrixStack mehr,
+             * sondern (Vec3d, Matrix4f positionMatrix, Matrix4f projectionMatrix) — per javap
+             * gegen die 1.21.1-jar geprueft. Die projektion bleibt argument 2. Mit dem alten
+             * deskriptor fand mixin 0 ziele und der client startete gar nicht erst. */
+            target = "Lnet/minecraft/client/render/WorldRenderer;setupFrustum(Lnet/minecraft/util/math/Vec3d;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
         ),
         index = 2
     )
@@ -183,9 +187,14 @@ public class GameRendererMixin
         method = "renderWorld",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/util/math/MatrixStack;FJZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;)V"
+            /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): WorldRenderer.render nimmt statt
+             * (MatrixStack, tickDelta, limitTime, blockOutline, ...) jetzt einen
+             * RenderTickCounter und gibt ZWEI matrizen mit (position, projektion).
+             * Die projektion ist weiterhin das LETZTE argument — damit wandert sie von
+             * index 7 auf 6. Signatur per javap gegen die 1.21.1-jar geprueft. */
+            target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
         ),
-        index = 7
+        index = 6
     )
     private Matrix4f onRenderProjection(Matrix4f projection)
     {

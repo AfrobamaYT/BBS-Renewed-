@@ -42,7 +42,6 @@
     "EntityRenderDispatcherMixin",
     "RenderTickCounterAccessor",
     "BackgroundRendererMixin",
-    "sodium.SodiumBufferBuilderAccessor",
     "WorldMixin"
   ],
   "injectors": {
