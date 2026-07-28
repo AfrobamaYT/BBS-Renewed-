@@ -174,9 +174,7 @@ public class UIClips extends UIElement
             if (hasSelected)
             {
                 this.addConverters(menu, context);
-                menu.action(Icons.CUT, UIKeys.CAMERA_TIMELINE_CONTEXT_CUT, this::cut);
-                menu.action(Icons.MOVE_TO, UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT, this::shiftToCursor);
-                menu.action(Icons.SHIFT_TO, UIKeys.CAMERA_TIMELINE_CONTEXT_SHIFT_DURATION, this::shiftDurationToCursor);
+                UIClipSelectionActions.add(menu, this.getClipsFromSelection(), this::cut, this::shiftToCursor, this::shiftDurationToCursor, this::toggleEnabled);
             }
 
             menu.action(Icons.EXCHANGE, UIKeys.CAMERA_TIMELINE_CONTEXT_REORGANIZE, () -> this.clips.sortLayers());

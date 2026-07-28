@@ -29,6 +29,16 @@ public abstract class CameraClip extends Clip
     public void fromCamera(Camera camera)
     {}
 
+    /**
+     * Evaluate this clip one tick past its nominal end ("the last frame").
+     *
+     * ⛔ INVARIANTE: das hier prueft {@link #enabled} ABSICHTLICH NICHT — es ist eine reine
+     * rechen-hilfe, die auch an einem ausgeschalteten clip ein ergebnis liefern muss
+     * (UIDollyClip.reverse, DollyToPathConverter rechnen damit beim editieren). Wer diese
+     * methode auf dem PLAYBACK-/preview-pfad ruft, muss enabled SELBST pruefen — sonst
+     * wirkt ein deaktivierter clip auf die kamera (war genau der fall in
+     * RunnerCameraController.applyEditedClipEnd).
+     */
     public void applyLast(ClipContext context, Position position)
     {
         int duration = this.duration.get();
