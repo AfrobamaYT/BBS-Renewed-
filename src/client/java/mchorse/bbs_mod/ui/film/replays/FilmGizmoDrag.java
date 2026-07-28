@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.replays;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import mchorse.bbs_mod.BBSSettings;
@@ -64,6 +65,43 @@ public class FilmGizmoDrag
         return transform != null && transform.isEditing();
     }
 
+    /**
+     * Whether the drawn gizmo can serve as the reference point a ray gesture needs.
+     *
+     * <p>Every axis-constrained R/G/S gesture builds its screen geometry from the gizmo's
+     * projected origin. Sit the camera on the edited bone — first person, or a camera clip
+     * parked on the actor's head — and that origin leaves the frustum or ends up BEHIND the
+     * near plane (measured in a prepared scene: w = -0.297, ndc 0.028/3.372, bone 0.809 blocks
+     * from the camera). The projection then yields a degenerate point, the swept angle comes
+     * out as exactly zero, and X/Y/Z look dead while the unconstrained gestures — which never
+     * touch that geometry — keep working. That asymmetry is the symptom this checks for.
+     *
+     * <p>Handing back no drag drops the ray-only steps from the R/G/S walk (view ring, sphere,
+     * screen plane) and leaves the axis steps on the screen-space drag, which needs no gizmo
+     * and works from the pure cursor delta.
+     */
+    public static boolean isGizmoUsable(UIFilmPanel panel)
+    {
+        Matrix4f projection = panel.getController().getGizmoProjection();
+        Area area = panel.getController().getGizmoArea();
+
+        if (projection == null || area == null)
+        {
+            return false;
+        }
+
+        Vector2f center = new Vector2f();
+
+        /* Same projection the visual and the pick stencil run on; it already answers "behind
+         * the camera" with false, which is the case a parked first-person camera produces. */
+        if (!Gizmo.INSTANCE.computeScreenCenter(projection, area.x, area.y, area.w, area.h, center))
+        {
+            return false;
+        }
+
+        return area.isInside((int) center.x, (int) center.y);
+    }
+
     public static boolean startFilmGizmo(UIFilmPanel panel, UIContext context, int stencilIndex, float gizmoTransition)
     {
         if (panel.isFlying())
@@ -94,14 +132,7 @@ public class FilmGizmoDrag
 
         transform.hotkeyDrag(() ->
         {
-            /* While controlling an actor the camera sits ON the edited bone, so the gizmo lands
-             * outside the view frustum (measured: NDC 2.08/-3.81 in first person against
-             * 0.09/-0.02 in orbit). Every ray gesture reads its geometry off that gizmo and
-             * comes back with a swept angle of exactly zero — the keys look dead even though
-             * the edit is running. Handing back no drag drops the ray-only steps from the
-             * R/G/S walk (view ring, sphere, screen plane) and leaves the axis steps on the
-             * screen-space drag, which needs no gizmo and works from the pure cursor delta. */
-            if (BBSSettings.transformHotkeysWhileControlling.get() && panel.getController().isControlling())
+            if (BBSSettings.transformHotkeysWhileControlling.get() && !isGizmoUsable(panel))
             {
                 return null;
             }
