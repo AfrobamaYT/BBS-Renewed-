@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes;
 
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
 import mchorse.bbs_mod.camera.clips.overwrite.KeyframeClip;
 import mchorse.bbs_mod.film.replays.PerLimbService;
 import mchorse.bbs_mod.data.DataStorageUtils;
@@ -255,6 +256,34 @@ public class UIKeyframeEditor extends UIElement
         }
 
         return null;
+    }
+
+    /** The space of the active editable transform (mirrors
+     *  {@code UIReplaysEditorUtils.getEditableTransform}'s dispatch — the bone
+     *  tracks AND the form anchor), so the film gizmo is drawn in the very space
+     *  its drag operates in. */
+    public TransformSpace getBoneSpace()
+    {
+        UIKeyframeFactory editor = this.editor;
+
+        if (editor instanceof UIPoseKeyframeFactory pose)
+        {
+            return pose.poseEditor.transform.getSpace();
+        }
+        else if (editor instanceof UITransformKeyframeFactory transform)
+        {
+            return transform.transform.getSpace();
+        }
+        else if (editor instanceof UIPoseTransformKeyframeFactory poseTransform)
+        {
+            return poseTransform.transform.getSpace();
+        }
+        else if (editor instanceof UIAnchorKeyframeFactory anchor)
+        {
+            return anchor.transform.getSpace();
+        }
+
+        return TransformSpace.LOCAL;
     }
 
     /**

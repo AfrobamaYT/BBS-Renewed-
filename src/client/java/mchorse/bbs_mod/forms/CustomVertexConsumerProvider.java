@@ -2,11 +2,20 @@ package mchorse.bbs_mod.forms;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
+import net.minecraft.client.gl.VertexBuffer;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.VertexFormats;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -74,8 +83,88 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         return buffer;
     }
 
+    /**
+     * Translucent layers of buffered forms (blocks, items) defer into the frame's sorted
+     * translucent queue instead of drawing immediately — otherwise their semi-transparent
+     * pixels write depth mid-frame and occlude forms drawn after them. Active only when the
+     * current form renderer published its sort origin (never in picking or UI paths).
+     *
+     * <p>MERGE fsgh/2.5 (1.20.4 → 1.21.1): upstream greift hier in die interna von
+     * {@code Immediate}. Deren 1.20.4-form (fallbackBuffer + activeConsumers-set +
+     * {@code Optional<RenderLayer> currentLayer} + {@code builder.isBuilding()}) gibt es in
+     * 1.21.1 nicht mehr — dort steht ein {@code pending}-map (layer → laufender builder)
+     * und ein nacktes {@code currentLayer}. Beide felder sind protected, wir erben aber
+     * nicht mehr von {@code Immediate} (seit dem 1.21.1-port haelt diese klasse ein
+     * delegate), darum sind sie im accesswidener geoeffnet.</p>
+     *
+     * <p>KEIN {@code @Override}: das interface {@link VertexConsumerProvider} kennt nur
+     * {@code getBuffer}. Gerufen wird die methode aus unserem eigenen {@link #draw()}.</p>
+     */
+    public void draw(RenderLayer layer)
+    {
+        Vector3f origin = FormTranslucentQueue.getSortOrigin();
+
+        /* Text layers defer only inside a recorded group (labels): the group preserves the
+         * text-over-background order, and text keeps its depth writes there. */
+        boolean textLayer = FormTranslucentQueue.isGroupOpen() && layer.getVertexFormat() == VertexFormats.POSITION_COLOR_TEXTURE_LIGHT;
+
+        if (origin == null || !FormTranslucentQueue.isActive() || !(textLayer || isDeferrableTranslucent(layer)))
+        {
+            this.delegate.draw(layer);
+
+            return;
+        }
+
+        /* pending.remove == "diesen layer NICHT zeichnen, ich nehme den puffer selbst".
+         * Steht nichts drin, hat die ebene diesen frame gar nichts gesammelt. */
+        BufferBuilder builder = this.delegate.pending.remove(layer);
+
+        if (builder == null)
+        {
+            return;
+        }
+
+        if (this.delegate.currentLayer == layer)
+        {
+            this.delegate.currentLayer = null;
+        }
+
+        BuiltBuffer built = builder.endNullable();
+
+        if (built == null)
+        {
+            return;
+        }
+
+        VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+        buffer.bind();
+        buffer.upload(built);
+        VertexBuffer.unbind();
+
+        FormTranslucentQueue.add(new FormTranslucentQueue.RenderLayerCommand(layer, buffer, new Matrix4f(RenderSystem.getModelViewMatrix()), new Vector3f(origin), textLayer));
+    }
+
+    private static boolean isDeferrableTranslucent(RenderLayer layer)
+    {
+        String name = layer.toString();
+
+        return name.contains("translucent") && !name.contains("glint");
+    }
+
     public void draw()
     {
+        /* MERGE fsgh/2.5: {@code Immediate.draw()} ruft intern sein EIGENES draw(layer).
+         * Solange upstream von Immediate ERBTE, landete das per virtual dispatch in der
+         * ueberschriebenen methode; mit unserem delegate (1.21.1-port) kaeme die umleitung
+         * in die translucent-queue dort nie an. Also gehen wir die offenen ebenen selbst
+         * durch. Danach ist pending leer, und das delegate zeichnet nur noch, was es
+         * ueber eigene allocator-ebenen haelt. */
+        for (RenderLayer layer : new ArrayList<>(this.delegate.pending.keySet()))
+        {
+            this.draw(layer);
+        }
+
         this.delegate.draw();
 
         if (this.ui)

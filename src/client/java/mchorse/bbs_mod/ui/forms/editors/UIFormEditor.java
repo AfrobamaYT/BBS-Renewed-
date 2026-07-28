@@ -48,6 +48,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.utils.EventPropagation;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable;
@@ -443,13 +444,22 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
 
         if (drag != null)
         {
+            /* Same frame GLOBAL is DRAWN in (UIPickableFormRenderer#renderAxes):
+             * the preview's scene axes, which the model block's immersive editing
+             * turns with the block. Both sides must read it from the renderer. */
+            drag.setGlobalAxes(this.renderer.getSceneAxes());
+            /* Sampled matrices live in the form's own frame, while the gizmo's
+             * origin and axes are read back out of the render matrix — which
+             * carries the renderer's transform. Lift the samples into the same
+             * frame (a no-op in a plain preview, the block's rotation inside an
+             * immersively edited model block) or the drag runs off the handles. */
             drag.setJacobian(GizmoDrag.computeTranslateJacobian(
                 transform.getTransform(),
                 () ->
                 {
                     Matrix4f origin = this.getOrigin(transition);
 
-                    return origin == null ? new Vector3f() : origin.getTranslation(new Vector3f());
+                    return origin == null ? new Vector3f() : this.renderer.toSceneMatrix(origin).getTranslation(new Vector3f());
                 }
             ));
             drag.setRotateAxes(GizmoDrag.computeRotateAxes(
@@ -463,12 +473,30 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
                      * collapses to identity. */
                     Matrix4f origin = this.getOriginMatrix(transition);
 
-                    return origin == null ? new Matrix4f() : MatrixStackUtils.stripScale(origin);
+                    return origin == null ? new Matrix4f() : MatrixStackUtils.stripScale(this.renderer.toSceneMatrix(origin));
                 }
             ));
+            drag.setAdditiveRotationBase(this.poseRotationBase(transform, transition));
         }
 
         return drag;
+    }
+
+    /**
+     * The additive euler base under the pose editor's channels for the picked
+     * bone ({@link UIModelForm#poseRotationBase}) — the model form's pose stack
+     * (and the animator's actions) sits under the pose track the panel edits.
+     * {@code null} (zero base) for every other transform editor here (body
+     * part, general form transform, states), whose values aren't pose-stacked.
+     */
+    private Vector3f poseRotationBase(UIPropTransform transform, float transition)
+    {
+        if (this.isBodyPartGizmoMode() || this.statesEditor.isVisible() || !(this.editor instanceof UIModelForm modelForm))
+        {
+            return null;
+        }
+
+        return modelForm.poseRotationBase(transform, transition);
     }
 
     public GizmoDrag buildHotkeyDrag(UIPropTransform transform)
@@ -949,6 +977,23 @@ public class UIFormEditor extends UIElement implements IUIFormList, ICursor
         }
 
         return this.editor.getOrigin(transition);
+    }
+
+    /** The space the displayed gizmo should be drawn in, matching the active
+     *  editing panel (mirrors {@link #getOrigin(float)}'s dispatch). */
+    public TransformSpace getGizmoSpace()
+    {
+        if (this.statesEditor.isVisible())
+        {
+            return this.statesKeyframes.getGizmoSpace();
+        }
+
+        if (this.isBodyPartGizmoMode())
+        {
+            return this.bodyPartEditor.transform.getSpace();
+        }
+
+        return this.editor.getGizmoSpace();
     }
 
     /**

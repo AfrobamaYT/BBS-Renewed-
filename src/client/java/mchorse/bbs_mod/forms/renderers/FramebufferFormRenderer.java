@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.FramebufferForm;
@@ -20,6 +21,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgram;
+import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.GameRenderer;
@@ -159,6 +161,11 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
             BBSRendering.setIrisMainBound(false);
         }
 
+        /* The nested forms render under an ortho projection into this framebuffer — deferring
+         * their translucent pixels into the world's queue would replay them with the wrong
+         * projection, so they render single-pass as before. */
+        boolean queueWasActive = FormTranslucentQueue.suspend();
+
         try
         {
             super.renderBodyParts(context);
@@ -171,6 +178,8 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
             {
                 BBSRendering.setIrisMainBound(true);
             }
+
+            FormTranslucentQueue.restore(queueWasActive);
         }
 
         context.stack.pop();
@@ -188,10 +197,10 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         VertexFormat format = shading ? VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL : VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
         Supplier<ShaderProgram> shader = shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexColorProgram;
 
-        this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition());
+        this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
 
-    private void renderModel(Texture texture, VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
+    private void renderModel(Texture texture, VertexFormat format, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         float w = texture.width;
         float h = texture.height;
@@ -221,10 +230,10 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         quad.p3.set(TLx, BRy, 0);
         quad.p4.set(BRx, BRy, 0);
 
-        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition);
+        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer);
     }
 
-    private void renderQuad(VertexFormat format, Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         Color color = Color.white();
         Matrix4f matrix = matrices.peek().getPositionMatrix();
@@ -264,7 +273,36 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
 
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+
+        if (defer && FormTranslucentQueue.isActive())
+        {
+            /* The framebuffer's content is transparent-background by nature, so the whole quad
+             * defers into the sorted translucent pass. The command binds the framebuffer's live
+             * texture at flush — with several framebuffer forms at the same nesting depth they
+             * share one framebuffer, so their deferred quads would all show the last-rendered
+             * content; a known trade-off of the shared framebuffer scheme. */
+            ShaderProgram finalShader = RenderSystem.getShader();
+            VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+            buffer.bind();
+            buffer.upload(builder.end());
+            VertexBuffer.unbind();
+
+            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
+            Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
+
+            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
+                buffer, () -> finalShader, texture, modelView, null, origin, true, null, null
+            ));
+        }
+        else
+        {
+            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable();
+                if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
+             * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
+             * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
+        }
 
         gameRenderer.getLightmapTextureManager().disable();
         gameRenderer.getOverlayTexture().teardownOverlayColor();

@@ -5,14 +5,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.clips.modifiers.TrackerClip;
 import mchorse.bbs_mod.camera.data.Angle;
+import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.camera.data.Position;
-import mchorse.bbs_mod.film.BaseFilmController;
-import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
-import mchorse.bbs_mod.utils.MatrixUtils;
-import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.Lerps;
@@ -31,10 +26,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RotationAxis;
 import com.mojang.blaze3d.systems.VertexSorter;
 
-import org.joml.Matrix3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
-import org.joml.Vector3f;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -58,6 +51,17 @@ import java.util.List;
  * Heavy use of reflection on MinecraftClient internals (HeldItemRenderer,
  * Window, InGameHud) to swap items/state mid-frame. Reflection cache
  * resolves field names dynamically to survive obfuscation across remappings.
+ *
+ * ⚠ WARUM DIE MASCHINERIE HIER LIEGT UND NICHT IN EIGENEN DATEIEN (2026-07-28):
+ * die statischen felder/methoden sind KEIN reiner java-aufruf-graph. An diesem
+ * KLASSENNAMEN haengen:
+ *   - {@code TrackerSprintRampMixin} (@Mixin(TrackerClientClip.class), zielt auf
+ *     updateSprintFov) — ein fehlendes ziel laesst mixin beim laden hart scheitern,
+ *   - vier reflection-stellen in {@code com.afrobama.blendertransform}, die
+ *     {@code Class.forName("...TrackerClientClip")} + feldnamen benutzen und ihre
+ *     fehler SCHLUCKEN (sprintFovFactor, currentEntity).
+ * Ein umzug muss diese fuenf stellen im selben schritt mitnehmen, sonst faellt das
+ * sprint-FOV lautlos aus. Darum getrennt als eigene aufgabe, nicht im merge.
  */
 public class TrackerClientClip extends TrackerClip
 {
@@ -1062,8 +1066,32 @@ public class TrackerClientClip extends TrackerClip
     }
 
     /* ========================================================
-     * applyClip (camera tracking + flag-set for hand/HUD)
+     * Kamera-platzierung (+ flag-set fuer hand/HUD)
      * ======================================================== */
+
+    /**
+     * Position produced by the clips underneath at the tick this clip was last
+     * applied at. Relative mode measures the camera's travel against it, and the
+     * camera editor needs the same measurement to invert the placement — see
+     * {@link mchorse.bbs_mod.ui.film.clips.UITrackerClip}.
+     */
+    private final Position underneath = new Position();
+
+    private boolean evaluated;
+
+    /**
+     * Whether this clip has been applied at least once, i.e. whether
+     * {@link #getUnderneath()} holds anything meaningful.
+     */
+    public boolean isEvaluated()
+    {
+        return this.evaluated;
+    }
+
+    public Position getUnderneath()
+    {
+        return this.underneath;
+    }
 
     @Override
     protected void applyClip(ClipContext context, Position position)
@@ -1078,7 +1106,13 @@ public class TrackerClientClip extends TrackerClip
 
         if (entity == null) return;
 
-        /* Hand-anchor mode: when showHand is on and no group is set, anchor camera to entity head */
+        /* Hand-anchor mode: when showHand is on and no group is set, anchor camera to entity head.
+         *
+         * MERGE fsgh/2.5: dieser zweig kehrt VOR underneath/evaluated zurueck, also bleibt
+         * isEvaluated() hier false. Gewollt: das neue editClip rechnet eine geflogene kamera
+         * ueber den KNOCHEN-frame zurueck, den es im hand-anchor-modus gar nicht gibt
+         * (TrackerFrame.resolve gibt bei leerer gruppe null). Es passiert also nichts,
+         * statt falsche werte in offset/winkel zu schreiben. */
         if (this.showHand.get())
         {
             String grp = this.group.get();
@@ -1114,77 +1148,50 @@ public class TrackerClientClip extends TrackerClip
             this.position.copy(position);
         }
 
-        Form form = entity.getForm();
-        if (form == null) return;
+        /* MERGE fsgh/2.5: die matrix-rechnung von hand steht jetzt in TrackerFrame —
+         * dieselbe klasse liefert auch die UMKEHRUNG, mit der UITrackerClip eine
+         * geflogene kamera in offset+winkel zurueckrechnet. Beide richtungen an einem
+         * ort, damit sie bei der naechsten aenderung nicht auseinanderlaufen. */
+        TrackerFrame frame = TrackerFrame.resolve(
+            ((CameraClipContext) context).entities,
+            entities.get(0),
+            this.group.get(),
+            position.point.x,
+            position.point.y,
+            position.point.z,
+            context.transition
+        );
 
-        MatrixCache map = FormUtilsClient.getRenderer(form).collectMatrices(entity, context.transition);
-        Vector3f relativeFormPos = new Vector3f();
-        String targetGroup = this.group.get();
-
-        if (!map.has(targetGroup)) return;
-
-        Matrix4f formTransform = BaseFilmController.getMatrixForRenderWithRotation(entity, position.point.x, position.point.y, position.point.z, context.transition);
-        Pair<Matrix4f, Float> totalMatrix = BaseFilmController.getTotalMatrix(((CameraClipContext) context).entities, form.anchor.get(), formTransform, position.point.x, position.point.y, position.point.z, context.transition, 0);
-
-        if (totalMatrix.a != null) formTransform = totalMatrix.a;
-
-        formTransform.mul(map.get(targetGroup).matrix());
-        formTransform.getTranslation(relativeFormPos);
-
-        Matrix3d trackerRot = new Matrix3d(formTransform);
-        Vector3d relativeTrackerPos = new Vector3d(this.offset.get().x, this.offset.get().y, this.offset.get().z);
-        trackerRot.transform(relativeTrackerPos);
-        relativeTrackerPos.add(relativeFormPos);
-
-        Vector3d firstCamPos = new Vector3d(this.position.point.x, this.position.point.y, this.position.point.z);
-        Vector3d currentCamPos = new Vector3d(position.point.x, position.point.y, position.point.z);
-        Vector3d newAngle = new Vector3d();
-        Vector3d newPosition = new Vector3d();
-
-        if (this.lookAt.get())
+        if (frame == null)
         {
-            Angle lookAtAngle = Angle.angle(relativeTrackerPos.x, relativeTrackerPos.y, relativeTrackerPos.z);
-            newAngle.set(lookAtAngle.pitch, lookAtAngle.yaw, lookAtAngle.roll)
-                .add(this.angle.get().x, this.angle.get().y, this.angle.get().z);
-        }
-        else
-        {
-            relativeTrackerPos.add(currentCamPos);
-
-            if (this.relative.get())
-            {
-                Vector3d camPosDelta = new Vector3d(currentCamPos).sub(firstCamPos);
-                trackerRot.transform(camPosDelta);
-                relativeTrackerPos.add(camPosDelta);
-            }
-
-            Vector3d offsetAngle = new Vector3d(this.angle.get().x, this.angle.get().y, this.angle.get().z);
-            offsetAngle.set(Math.toRadians(offsetAngle.x), Math.toRadians(offsetAngle.y), Math.toRadians(offsetAngle.z));
-            trackerRot.mul(MatrixUtils.RotationOrder.YXZ.getRotationMatrix(offsetAngle.y, offsetAngle.x, offsetAngle.z));
-
-            if (this.relative.get())
-            {
-                double angleDeltaX = Math.toRadians(position.angle.pitch - this.position.angle.pitch);
-                double angleDeltaY = Math.toRadians(position.angle.yaw - this.position.angle.yaw);
-                double angleDeltaZ = Math.toRadians(position.angle.roll - this.position.angle.roll);
-                trackerRot.mul(MatrixUtils.RotationOrder.YXZ.getRotationMatrix(angleDeltaY, angleDeltaX, angleDeltaZ));
-            }
-
-            Vector3f globalEulerAngles = MatrixUtils.cast3dTo3f(MatrixUtils.RotationOrder.YXZ.getEulerAngles(trackerRot));
-            newAngle.set(Math.toDegrees(globalEulerAngles.x), Math.toDegrees(-globalEulerAngles.y) - 180D, Math.toDegrees(globalEulerAngles.z));
-            newPosition.set(relativeTrackerPos);
+            return;
         }
 
-        if (!this.lookAt.get())
+        if (this.relative.get())
         {
+            frame.relative(position, this.position);
+        }
+
+        this.underneath.copy(position);
+        this.evaluated = true;
+
+        Point offset = this.offset.get();
+        Point angle = this.angle.get();
+        boolean lookAt = this.lookAt.get();
+        Angle newAngle = lookAt ? frame.lookAtAngles(offset, angle) : frame.angles(angle);
+
+        if (!lookAt)
+        {
+            Vector3d newPosition = frame.position(offset);
+
             position.point.x = this.isActive(0) ? newPosition.x : position.point.x;
             position.point.y = this.isActive(1) ? newPosition.y : position.point.y;
             position.point.z = this.isActive(2) ? newPosition.z : position.point.z;
         }
 
-        position.angle.yaw = this.isActive(3) ? (float) newAngle.y : position.angle.yaw;
-        position.angle.pitch = this.isActive(4) ? (float) newAngle.x : position.angle.pitch;
-        position.angle.roll = this.isActive(5) ? (float) newAngle.z : position.angle.roll;
+        position.angle.yaw = this.isActive(3) ? newAngle.yaw : position.angle.yaw;
+        position.angle.pitch = this.isActive(4) ? newAngle.pitch : position.angle.pitch;
+        position.angle.roll = this.isActive(5) ? newAngle.roll : position.angle.roll;
         position.angle.fov = this.isActive(6) ? this.fov.get() : position.angle.fov;
     }
 
@@ -1198,5 +1205,4 @@ public class TrackerClientClip extends TrackerClip
     {
         return new TrackerClientClip();
     }
-
 }

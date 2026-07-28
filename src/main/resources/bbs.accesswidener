@@ -10,3 +10,11 @@ accessible field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft
 mutable field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft/client/gl/Framebuffer;
 
 accessible field net/minecraft/client/model/ModelPart children Ljava/util/Map;
+
+# MERGE 2026-07-28 (fsgh/2.5): CustomVertexConsumerProvider faengt translucent-ebenen ab und
+# haengt sie in FormTranslucentQueue, statt sie sofort zu zeichnen. Es braucht dafuer den
+# laufenden puffer der ebene. Seit dem 1.21.1-port ERBT die klasse nicht mehr von Immediate
+# (sie haelt ein delegate), also reicht "protected" nicht mehr.
+accessible field net/minecraft/client/render/VertexConsumerProvider$Immediate pending Ljava/util/Map;
+accessible field net/minecraft/client/render/VertexConsumerProvider$Immediate currentLayer Lnet/minecraft/client/render/RenderLayer;
+mutable field net/minecraft/client/render/VertexConsumerProvider$Immediate currentLayer Lnet/minecraft/client/render/RenderLayer;

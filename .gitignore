@@ -47,3 +47,4 @@ ik_test/*
 # 2026-07-27: build-ausgaben und py-artefakte gehoeren nicht ins repo
 __pycache__/
 /0
+OrthoCamera-1.20.1

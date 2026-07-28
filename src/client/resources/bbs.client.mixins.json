@@ -40,7 +40,10 @@
     "BlockEntityRenderDispatcherMixin",
     "LivingEntityRendererInvoker",
     "EntityRenderDispatcherMixin",
-    "RenderTickCounterAccessor"
+    "RenderTickCounterAccessor",
+    "BackgroundRendererMixin",
+    "sodium.SodiumBufferBuilderAccessor",
+    "WorldMixin"
   ],
   "injectors": {
     "defaultRequire": 1
