@@ -89,6 +89,18 @@ public class RunnerCameraController extends CameraWorkCameraController
 
         Clip clip = this.panel.cameraEditor.getClip();
 
+        /* LECK-DICHTUNG: applyLast() ruft applyClip() DIREKT und umgeht damit den
+         * enabled-check, der sonst nur in CameraClip.apply() sitzt. Ohne diesen guard
+         * sprang ein DEAKTIVIERTER clip die kamera trotzdem an, sobald der cursor genau
+         * auf seiner exklusiven end-grenze stand. Die pruefung gehoert hierher und nicht
+         * in applyLast(): dort ist sie eine reine rechen-hilfe, die die editor-operationen
+         * (UIDollyClip.reverse, DollyToPathConverter) auch an ausgeschalteten clips
+         * brauchen — ein guard dort wuerde ihnen eine null-position liefern. */
+        if (clip != null && !clip.enabled.get())
+        {
+            return;
+        }
+
         /* When editing a camera clip and the cursor rests on its exclusive end
          * boundary, show (and thus allow editing of) the clip's final point /
          * keyframe — which otherwise belongs to the next clip's first frame. */

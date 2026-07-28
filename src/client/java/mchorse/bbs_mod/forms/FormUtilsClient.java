@@ -62,6 +62,10 @@ public class FormUtilsClient
         register(VanillaParticleForm.class, VanillaParticleFormRenderer::new);
         register(TrailForm.class, TrailFormRenderer::new);
         register(FramebufferForm.class, FramebufferFormRenderer::new);
+        /* Gehoert untrennbar zum registry-eintrag in BBSMod: mehrere BBS-pfade rufen
+         * getRenderer(form).collectMatrices(...) ohne null-check (gizmo-achsen des ausgewaehlten
+         * actors) — eine registrierte form ohne renderer ist dort eine NPE. */
+        register(mchorse.bbs_mod.forms.forms.LightForm.class, mchorse.bbs_mod.forms.renderers.LightFormRenderer::new);
     }
 
     /**
