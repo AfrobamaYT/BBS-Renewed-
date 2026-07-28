@@ -67,9 +67,25 @@ public class UIBoneList extends UIElement
         header.add(this.search, this.mirror, this.invert);
 
         this.keys().register(Keys.TRANSFORMATIONS_MIRROR_EDIT, this::toggleMirrorEdit).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
+        this.keys().register(Keys.TRANSFORMATIONS_SEARCH_BONE, this::focusSearch).category(UIKeys.TRANSFORMS_KEYS_CATEGORY);
 
         this.column().vertical().stretch();
         this.add(header, this.list.marginTop(-UIConstants.MARGIN));
+    }
+
+    /**
+     * Jump into the search box (Ctrl+F by default) so a bone can be found by typing instead of
+     * scrolling a long list. The existing query is selected, so the first keystroke replaces it —
+     * the same behaviour every editor's find shortcut has.
+     */
+    private void focusSearch()
+    {
+        UIContext context = this.getContext();
+
+        if (context != null)
+        {
+            context.focus(this.search, true);
+        }
     }
 
     /** Whether the source holds any bones at all (independent of the current search query). */
