@@ -48,6 +48,13 @@ import java.lang.invoke.MethodHandles;
  * durchlauf ab — auf dem SERVER trifft das ALLE angeschlossenen spieler, nicht nur einen
  * client. Deshalb schluckt jeder aufruf hier {@link Throwable} und liefert {@code null} /
  * {@code false}, genau wie {@code MixinBruecke}.</p>
+ *
+ * <p><b>GESCHLUCKT HEISST NICHT MEHR STILL (2026-07-28).</b> Jeder auflösungsfehler geht durch
+ * {@link BrueckenMeldung} — EINMAL laut ins log, danach nur noch ein {@code containsKey}.
+ * ⚠ UNTERSCHIED ZU {@code MixinBruecke}: der zustand "kein agent attached" ist hier der
+ * dokumentierte normalfall (siehe oben) und wird als EINE info-zeile gemeldet, nicht als
+ * fehler pro aufrufstelle. Als fehler zählt nur: agent da, klasse oder methode trotzdem nicht
+ * auflösbar. Statisch prüfbar ohne laufendes spiel: {@code python tools/bruecken-ziele.py}.</p>
  */
 public final class KernelBruecke
 {
@@ -109,10 +116,13 @@ public final class KernelBruecke
         }
         catch (Throwable t)
         {
-            /* Niemals nach oben durchreichen — siehe klassen-javadoc. */
+            /* Niemals nach oben durchreichen — siehe klassen-javadoc. Aber auch nicht still. */
             fehlschlaege++;
             letzterFehler = klasse + "#" + methode + ": "
                 + t.getClass().getSimpleName() + " " + t.getMessage();
+
+            BrueckenMeldung.einmal("rufe|" + klasse + "#" + methode, "aufruf warf",
+                "KernelBruecke", klasse, methode, t);
 
             return null;
         }
@@ -144,7 +154,27 @@ public final class KernelBruecke
 
         if (ziel == null)
         {
-            /* Kein agent, oder klasse nicht im kernel-paket gefunden. */
+            /* ZWEI SEHR VERSCHIEDENE FÄLLE, die vorher beide ein nacktes `return null` waren:
+             *
+             * (a) kein agent attached — der dokumentierte normalfall auf einem produktiven
+             *     server und bei jedem boot ohne hotpatch-tooling. Das ist KEIN fehler; eine
+             *     meldung pro aufrufstelle wäre reines rauschen. Also genau EINE info-zeile
+             *     für den ganzen prozess, mit konstantem schlüssel.
+             *
+             * (b) agent da, klasse trotzdem nicht auflösbar — das ist ein echter defekt: der
+             *     handler tut nichts und niemand merkt es. Laut melden. */
+            if (kernelLoaderKlasse() == null)
+            {
+                BrueckenMeldung.einmalHinweis("KernelBruecke|kein-agent",
+                    "KernelBruecke: kein hotpatch-agent attached — alle handler nach dem "
+                    + "brücken-muster in src/main sind inaktiv (erwartet ohne -javaagent).");
+            }
+            else
+            {
+                BrueckenMeldung.einmal(schluessel, "kernel-klasse in keinem paket gefunden",
+                    "KernelBruecke", klasse, methode);
+            }
+
             return null;
         }
 
@@ -152,6 +182,12 @@ public final class KernelBruecke
 
         if (m == null)
         {
+            /* Klasse da, methode nicht — tippfehler oder umbenennung, die der einzeiler im
+             * mixin nicht mitbekommen hat. Kompiliert weiter, wirkt aber nie. */
+            BrueckenMeldung.einmal(schluessel,
+                "keine STATISCHE methode mit passender parameter-zahl", "KernelBruecke",
+                klasse, methode);
+
             return null;
         }
 
@@ -329,9 +365,18 @@ public final class KernelBruecke
                 fehlschlaege++;
                 letzterFehler = "feldLesen " + feldName + ": " + t.getClass().getSimpleName();
 
+                BrueckenMeldung.einmal("feldLesen|" + feldName, "feld-zugriff warf",
+                    "KernelBruecke", zielObjekt.getClass().getSimpleName(), feldName, t);
+
                 return null;
             }
         }
+
+        /* Kein treffer in der ganzen oberklassen-kette. Ein umbenanntes @Shadow-feld sieht für
+         * den handler exakt aus wie "wert ist null" — deshalb melden. */
+        BrueckenMeldung.einmal("feldLesen|" + zielObjekt.getClass().getName() + "|" + feldName,
+            "feld in keiner oberklasse gefunden", "KernelBruecke",
+            zielObjekt.getClass().getSimpleName(), feldName);
 
         return null;
     }
@@ -367,9 +412,17 @@ public final class KernelBruecke
                 fehlschlaege++;
                 letzterFehler = "feldSchreiben " + feldName + ": " + t.getClass().getSimpleName();
 
+                BrueckenMeldung.einmal("feldSchreiben|" + feldName, "feld-zugriff warf",
+                    "KernelBruecke", zielObjekt.getClass().getSimpleName(), feldName, t);
+
                 return false;
             }
         }
+
+        /* Siehe feldLesen — fast kein handler prüft den rückgabewert. */
+        BrueckenMeldung.einmal("feldSchreiben|" + zielObjekt.getClass().getName() + "|" + feldName,
+            "feld in keiner oberklasse gefunden", "KernelBruecke",
+            zielObjekt.getClass().getSimpleName(), feldName);
 
         return false;
     }
@@ -380,6 +433,7 @@ public final class KernelBruecke
         return "generation=" + generation()
             + " cache=" + CACHE.size()
             + " fehlschlaege=" + fehlschlaege
-            + " letzter=" + letzterFehler;
+            + " letzter=" + letzterFehler
+            + " " + BrueckenMeldung.zusammenfassung();
     }
 }

@@ -4,6 +4,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import com.afrobama.bbstools.kernel.BrueckenMeldung;
+
 /**
  * Macht MIXIN-HANDLER hotswapbar — die letzte grenze des kernel-swaps.
  *
@@ -56,8 +58,16 @@ import java.lang.invoke.MethodType;
  *
  * <p>Ein mixin-handler, der eine exception nach oben durchreicht, reisst den render- oder
  * tick-durchlauf ab. Deshalb schluckt jeder aufruf hier {@link Throwable} und liefert
- * {@code null}. Ein still ausgelassener frame ist besser als ein abgestürztes spiel —
+ * {@code null}. Ein ausgelassener frame ist besser als ein abgestürztes spiel —
  * dieselbe begründung wie in {@link CallbackStubs}.</p>
+ *
+ * <p><b>GESCHLUCKT HEISST NICHT MEHR STILL (2026-07-28).</b> Bis dahin war jeder
+ * auflösungsfehler ein nacktes {@code return null} ohne eine zeile im log. Gefunden wurden so
+ * zwei handler, die pro frame und pro replay ins leere liefen: die kernel-klassen
+ * {@code WorldTransformBakeLogik} und {@code FilmEditorWorldTransformLogik} existieren gar
+ * nicht. Jeder auflösungsfehler geht jetzt durch {@link BrueckenMeldung} — EINMAL laut ins
+ * log, danach ein {@code containsKey} und zurück, damit der pro-frame-pfad nichts kostet.
+ * Statisch prüfbar ohne laufendes spiel: {@code python tools/bruecken-ziele.py}.</p>
  */
 public final class MixinBruecke
 {
@@ -112,10 +122,15 @@ public final class MixinBruecke
         }
         catch (Throwable t)
         {
-            /* Niemals nach oben durchreichen — siehe klassen-javadoc. */
+            /* Niemals nach oben durchreichen — siehe klassen-javadoc. Aber auch nicht still:
+             * dieser pfad ist ohnehin teuer (gefüllter stacktrace), die verkettung für den
+             * schlüssel fällt daneben nicht ins gewicht. */
             fehlschlaege++;
             letzterFehler = klasse + "#" + methode + ": "
                 + t.getClass().getSimpleName() + " " + t.getMessage();
+
+            BrueckenMeldung.einmal("rufe|" + klasse + "#" + methode, "aufruf warf",
+                "MixinBruecke", klasse, methode, t);
 
             return null;
         }
@@ -147,6 +162,14 @@ public final class MixinBruecke
 
         if (ziel == null)
         {
+            /* Hier stand bis 2026-07-28 ein nacktes `return null`. Der aufrufende handler tat
+             * dann pro frame nichts, ohne eine zeile im log — so blieben zwei tote features
+             * (WorldTransformBakeLogik, FilmEditorWorldTransformLogik) unbemerkt.
+             * `schluessel` wird als melde-schlüssel WIEDERVERWENDET: er ist oben bereits
+             * gebaut, der fehlerpfad kostet damit keine zusätzliche verkettung. */
+            BrueckenMeldung.einmal(schluessel, "kernel-klasse in keinem paket gefunden",
+                "MixinBruecke", klasse, methode);
+
             return null;
         }
 
@@ -154,6 +177,12 @@ public final class MixinBruecke
 
         if (m == null)
         {
+            /* Klasse da, methode nicht — fast immer ein tippfehler oder eine umbenennung, die
+             * den einzeiler im mixin nicht mitbekommen hat. Sie kompiliert ja weiter. */
+            BrueckenMeldung.einmal(schluessel,
+                "keine STATISCHE methode mit passender parameter-zahl", "MixinBruecke",
+                klasse, methode);
+
             return null;
         }
 
@@ -399,9 +428,19 @@ public final class MixinBruecke
                 fehlschlaege++;
                 letzterFehler = "feldLesen " + feldName + ": " + t.getClass().getSimpleName();
 
+                BrueckenMeldung.einmal("feldLesen|" + feldName, "feld-zugriff warf",
+                    "MixinBruecke", zielObjekt.getClass().getSimpleName(), feldName, t);
+
                 return null;
             }
         }
+
+        /* Kein treffer in der ganzen oberklassen-kette. Ein @Shadow-feld, das umbenannt wurde,
+         * sieht für den handler exakt aus wie "wert ist null" — deshalb melden. Der schlüssel
+         * enthält die zielklasse, weil dasselbe feld an mehreren typen gelesen wird. */
+        BrueckenMeldung.einmal("feldLesen|" + zielObjekt.getClass().getName() + "|" + feldName,
+            "feld in keiner oberklasse gefunden", "MixinBruecke",
+            zielObjekt.getClass().getSimpleName(), feldName);
 
         return null;
     }
@@ -440,9 +479,18 @@ public final class MixinBruecke
                 fehlschlaege++;
                 letzterFehler = "feldSchreiben " + feldName + ": " + t.getClass().getSimpleName();
 
+                BrueckenMeldung.einmal("feldSchreiben|" + feldName, "feld-zugriff warf",
+                    "MixinBruecke", zielObjekt.getClass().getSimpleName(), feldName, t);
+
                 return false;
             }
         }
+
+        /* Siehe feldLesen: ein nicht gefundenes feld ist von "nichts zu tun" nicht zu
+         * unterscheiden, wenn niemand den rückgabewert prüft — und das tut fast kein handler. */
+        BrueckenMeldung.einmal("feldSchreiben|" + zielObjekt.getClass().getName() + "|" + feldName,
+            "feld in keiner oberklasse gefunden", "MixinBruecke",
+            zielObjekt.getClass().getSimpleName(), feldName);
 
         return false;
     }
@@ -472,6 +520,9 @@ public final class MixinBruecke
 
             if (ziel == null)
             {
+                BrueckenMeldung.einmal(schluessel, "kernel-klasse in keinem paket gefunden",
+                    "MixinBruecke", klasse, methode);
+
                 return null;
             }
 
@@ -491,6 +542,13 @@ public final class MixinBruecke
                 return handle;
             }
 
+            /* Die schleife lief durch: die klasse ist da, aber keine statische methode dieses
+             * namens mit dieser parameter-zahl. Ein griff == null bedeutet für den aufrufer
+             * "pfad überspringen" — ohne meldung wäre die optimierung lautlos aus. */
+            BrueckenMeldung.einmal(schluessel,
+                "keine STATISCHE methode mit passender parameter-zahl", "MixinBruecke",
+                klasse, methode);
+
             return null;
         }
         catch (Throwable t)
@@ -498,6 +556,9 @@ public final class MixinBruecke
             fehlschlaege++;
             letzterFehler = "griff " + klasse + "#" + methode + ": "
                 + t.getClass().getSimpleName();
+
+            BrueckenMeldung.einmal("griff|" + klasse + "#" + methode, "griff warf",
+                "MixinBruecke", klasse, methode, t);
 
             return null;
         }
@@ -509,6 +570,7 @@ public final class MixinBruecke
         return "generation=" + generation()
             + " cache=" + CACHE.size()
             + " fehlschlaege=" + fehlschlaege
-            + " letzter=" + letzterFehler;
+            + " letzter=" + letzterFehler
+            + " " + BrueckenMeldung.zusammenfassung();
     }
 }
