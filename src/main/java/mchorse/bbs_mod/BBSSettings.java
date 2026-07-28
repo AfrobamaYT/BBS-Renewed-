@@ -510,16 +510,26 @@ public class BBSSettings {
 		morphingFocusSearch = builder.getBoolean("morphing_focus_search", false);
 		uniformScale = builder.getBoolean("uniform_scale", false);
 		clickSound = builder.getBoolean("click_sound", false);
+		/* invisible(): das sind gespeicherte ZUSTAENDE, keine einstellungen — favoritenlisten,
+		 * zuletzt benutzte farben, abgeschaltete filter. Die UI schreibt sie selbst, niemand
+		 * stellt sie in den settings ein. Sichtbar erzeugten sie nur rohe schluessel in der
+		 * liste (BBS bildet den anzeigenamen aus "bbs.config.<kategorie>.<name>", und dafuer
+		 * gibt es hier zu recht keinen sprach-eintrag). Vorbild: editorCameraMode.invisible(). */
 		favoriteColors = new ValueColors("favorite_colors");
 		recentColors = new ValueColors("recent_colors").limit(33);
 		disabledSheets = new ValueStringKeys("disabled_sheets");
 		disabledSheets.set(defaultFilters);
+		favoriteColors.invisible();
+		recentColors.invisible();
+		disabledSheets.invisible();
 		builder.register(favoriteColors);
 		builder.register(recentColors);
 		builder.register(disabledSheets);
 		favoriteModelForms = new ValueStringKeys("favorite_model_forms");
+		favoriteModelForms.invisible();
 		builder.register(favoriteModelForms);
 		disabledMorphFormCategories = new ValueStringKeys("disabled_morph_form_categories");
+		disabledMorphFormCategories.invisible();
 		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 
@@ -620,6 +630,7 @@ public class BBSSettings {
 		editorFisheyeWidenFov = builder.getBoolean("fisheye_widen_fov", true);
 		editorHandSprintFov = builder.getBoolean("hand_sprint_fov", false);
 		favoriteFormCategoriesData = builder.getString("favorite_form_categories_data", "");
+		favoriteFormCategoriesData.invisible();  /* serialisierter zustand, kein einstellbarer wert */
 		recordingAutoCaptureMobs = builder.getBoolean("auto_capture_mobs", true);
 		recordingAutoCaptureProjectiles = builder.getBoolean("auto_capture_projectiles", true);
 		recordingMobCaptureOnAlt = builder.getBoolean("mob_capture_on_alt", false);
@@ -644,7 +655,9 @@ public class BBSSettings {
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
-		builder.register(editorLayoutSettings = new ValueEditorLayout("layout"));
+		/* Das dock-layout wird durch das verschieben der panels geschrieben, nicht in den
+		 * settings eingestellt — dort stand nur der rohe schluessel. */
+		builder.register((editorLayoutSettings = new ValueEditorLayout("layout")).invisible());
 		builder.register(editorOnionSkin = new ValueOnionSkin("onion_skin"));
 		builder.register(editorMotionPath = new ValueMotionPath("motion_path"));
 		builder.register(ikDebug = new ValueIKDebug("ik_debug"));
