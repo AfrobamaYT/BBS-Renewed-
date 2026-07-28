@@ -46,6 +46,18 @@ public class FilmControllerContext
     public String nameTag = "";
     public boolean relative;
 
+    /**
+     * Place the gizmo/axes but draw no body: the form itself, its shadow and its
+     * name tag are left out, everything else runs as usual. First person hides
+     * the current actor's model (the camera is inside it) while its bone gizmo
+     * must stay live &mdash; and the gizmo is placed by the very pass that draws
+     * the form, so the pass has to run without it.
+     *
+     * <p>Reset in {@link #reset()}: this context is a reused singleton, and a
+     * leaked flag would blank the next actor.
+     */
+    public boolean gizmoOnly;
+
     private FilmControllerContext()
     {}
 
@@ -62,6 +74,7 @@ public class FilmControllerContext
         this.anchorLocal = false;
         this.nameTag = "";
         this.relative = false;
+        this.gizmoOnly = false;
     }
 
     public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, WorldRenderContext context)
@@ -172,6 +185,14 @@ public class FilmControllerContext
     public FilmControllerContext relative(boolean relative)
     {
         this.relative = relative;
+
+        return this;
+    }
+
+    /** See {@link #gizmoOnly}. */
+    public FilmControllerContext gizmoOnly(boolean gizmoOnly)
+    {
+        this.gizmoOnly = gizmoOnly;
 
         return this;
     }

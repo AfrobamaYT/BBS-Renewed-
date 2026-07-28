@@ -138,10 +138,12 @@ public class FilmEditorController extends BaseFilmController
     {
         boolean current = this.isCurrent(entity);
 
-        if (!(this.controller.getPovMode() == UIFilmController.CAMERA_MODE_FIRST_PERSON && current))
-        {
-            super.renderEntity(context, replay, entity);
-        }
+        /* Always run the pass, even for the body first person hides — hidesBody() turns it into a gizmo-only
+         * pass over in getFilmControllerContext. This pass is what PLACES the bone gizmo: it captures
+         * the frame the visual and the drag are both rebuilt from (Gizmo#captureVisual). Skipping it outright,
+         * as this did before, left that frame at its last capture: in first person the gizmo stood frozen
+         * wherever it had been when the mode was entered, and dragging it edited from that stale frame. */
+        super.renderEntity(context, replay, entity);
 
         boolean isPlaying = this.controller.isPlaying();
         int ticks = replay.getTick(this.getTick());
@@ -253,7 +255,40 @@ public class FilmEditorController extends BaseFilmController
             .bone(aBone, local)
             .gizmoSpace(this.controller.getBoneSpace(), this.controller.getGizmoView())
             .bone2(aBone2, local2)
-            .anchorGizmo(anchorGizmo, this.controller.getAnchorLocal());
+            .anchorGizmo(anchorGizmo, this.controller.getAnchorLocal())
+            .gizmoOnly(this.hidesBody(entity));
+    }
+
+    /**
+     * One entity's pick pass, for the film viewport's stencil picker
+     * ({@code UIFilmController#renderStencil}, which composes its own context by
+     * hand instead of going through {@link #getFilmControllerContext}).
+     *
+     * <p>The same {@link #hidesBody} rule applies: a body hidden by first person
+     * must not go into the pick buffer either — seen from the inside it covers the
+     * whole viewport and would swallow every click. Its gizmo handles DO stay in
+     * the buffer; that bone is exactly what the user is editing. The caller used
+     * to bail out of the whole pick pass instead, which kept the body out but
+     * took the gizmo with it, so nothing at all was pickable in first person.
+     */
+    public void renderStencilEntity(FilmControllerContext context, IEntity entity)
+    {
+        BaseFilmController.renderEntity(context.gizmoOnly(this.hidesBody(entity)));
+    }
+
+    /**
+     * Whether first person hides this entity's body — the camera sits inside the
+     * current actor, so drawing its model would fill the screen from the inside.
+     * The entity is still rendered, as a gizmo-only pass, because that pass is
+     * what places the bone gizmo.
+     *
+     * <p>Reads {@code getPovMode()}, not the raw pov field: cycling the mode
+     * (UIFilmController's orbit icon) counts past 5 and only the wrapped value is
+     * the actual mode.
+     */
+    private boolean hidesBody(IEntity entity)
+    {
+        return this.controller.getPovMode() == UIFilmController.CAMERA_MODE_FIRST_PERSON && this.isCurrent(entity);
     }
 
     private boolean isCurrent(IEntity entity)

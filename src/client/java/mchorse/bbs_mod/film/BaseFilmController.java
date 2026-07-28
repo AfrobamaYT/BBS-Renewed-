@@ -205,7 +205,14 @@ public abstract class BaseFilmController
         MatrixStackUtils.multiply(formContext.world, targetWorld);
 
         MatrixStackUtils.multiply(stack, target);
-        FormUtilsClient.render(form, formContext);
+
+        /* gizmoOnly draws everything but the body (see FilmControllerContext#gizmoOnly). Skipping the render
+         * does NOT move the gizmo below: renderAxes resolves its bone through collectMatrices, which evaluates
+         * the pose itself (rest -> actions -> pose -> IK) instead of reading what the render left behind. */
+        if (!context.gizmoOnly)
+        {
+            FormUtilsClient.render(form, formContext);
+        }
 
         /* A second, post-render span: the gizmo, the axes preview and the anchor gizmo are adjacent and all
          * read the pose the form just rendered with (states applied), so they share one evaluation — the
@@ -217,7 +224,9 @@ public abstract class BaseFilmController
         if (UIBaseMenu.shouldRenderAxes())
         {
             if (context.bone != null) renderAxes(context.bone, context.local, context.space, context.gizmoView, context.map, form, entity, transition, stack, gizmoFrame);
-            if (context.bone2 != null && context.map == null) renderPreviewAxes(context.bone2, context.local2, form, entity, transition, stack, gizmoFrame);
+            /* The axes preview is a passive marker, not an editing handle: it follows the body and stays out
+             * of a gizmoOnly pass, so hiding the body in first person does not leave a marker floating in view. */
+            if (context.bone2 != null && context.map == null && !context.gizmoOnly) renderPreviewAxes(context.bone2, context.local2, form, entity, transition, stack, gizmoFrame);
         }
 
         stack.pop();
@@ -227,7 +236,7 @@ public abstract class BaseFilmController
             renderAnchorGizmo(entities, entity, target, defaultMatrix, cx, cy, cz, transition, context.anchorLocal, context.space, context.gizmoView, context.map, stack, gizmoFrame);
         }
 
-        if (!relative && context.map == null && opacity > 0F && context.shadowRadius > 0F && form.visible.get())
+        if (!relative && !context.gizmoOnly && context.map == null && opacity > 0F && context.shadowRadius > 0F && form.visible.get())
         {
             /* Skip the shadow when the form is hidden (form.visible, animatable via keyframes): the form
              * itself renders nothing then - see FormRenderer.render - so its shadow must vanish too.
@@ -273,7 +282,7 @@ public abstract class BaseFilmController
             stack.pop();
         }
 
-        if (!relative && !context.nameTag.isEmpty() && context.map == null && form.visible.get())
+        if (!relative && !context.gizmoOnly && !context.nameTag.isEmpty() && context.map == null && form.visible.get())
         {
             /* Hide the name tag along with the form (form.visible, animatable via keyframes): when the
              * form renders nothing, its name tag must vanish too - same reasoning as the shadow above. */

@@ -1575,7 +1575,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         IEntity entity = this.getCurrentEntity();
 
-        if ((entity == null || (this.pov == CAMERA_MODE_FIRST_PERSON && entity == this.getCurrentEntity())) && !altPressed)
+        if (entity == null && !altPressed)
         {
             return;
         }
@@ -1629,7 +1629,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
                     this.stencilMap.setIncrement(false);
                 }
 
-                BaseFilmController.renderEntity(filmContext);
+                this.editorController.renderStencilEntity(filmContext, entry.getValue());
             }
         }
         else
@@ -1639,14 +1639,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             this.stencilMap.setIncrement(true);
 
-            BaseFilmController.renderEntity(FilmControllerContext.instance
+            this.editorController.renderStencilEntity(FilmControllerContext.instance
                 .setup(this.getEntities(), entity, replay, renderContext)
                 .transition(isPlaying ? renderContext.tickCounter().getTickDelta(false) : 0)
                 .stencil(this.stencilMap)
                 .relative(replay.relative.get())
                 .bone(bone == null ? null : bone.a, bone != null && bone.b)
                 .gizmoSpace(this.getBoneSpace(), this.getGizmoView())
-                .anchorGizmo(this.isAnchorGizmo(), this.getAnchorLocal()));
+                .anchorGizmo(this.isAnchorGizmo(), this.getAnchorLocal()), entity);
         }
 
         int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
