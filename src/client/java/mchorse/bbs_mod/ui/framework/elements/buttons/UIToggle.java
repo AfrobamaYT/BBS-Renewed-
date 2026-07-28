@@ -143,21 +143,18 @@ public class UIToggle extends UIClickable<UIToggle> implements ITextColoring
         int finalInactive = this.hover ? 0xFF4A4A52 : 0xFF3B3B43;
         int trackColor = this.interpolateColor(finalInactive, finalActive, this.currentKnobX);
 
-        /* Track und knopf ueber bevelBox statt box+outline: das setzt die helle kante oben
-         * links und die dunkle unten und laesst den schalter plastisch statt flach wirken —
-         * genau der unterschied, der gegenueber bbs-fs auffiel. Die kanten haengen an
-         * BBSSettings.interfaceShadows, das ist also der schalter dafuer.
-         *
-         * Die gleit-animation (currentKnobX) ist UNSERE, bbs-fs springt hart. Sie bleibt:
-         * uebernommen wird nur, wie gezeichnet wird, nicht wie bewegt wird. */
-        batcher.bevelBox(x, y, x + w, y + h, trackColor, false, true);
+        batcher.box(x, y, x + w, y + h, trackColor);
+        batcher.outline(x, y, x + w, y + h, 0xFF000000 | Colors.mulRGB(trackColor, 0.55F));
 
+        /* Knob — a square block that slides to the right when on, with a
+           1px drop shadow for depth. */
         int knobSize = h - 4;
         int knobX = x + 2 + (int) (this.currentKnobX * (w - knobSize - 4));
         int knobY = y + 2;
-        int knobColor = this.hover ? 0xFFFFFFFF : 0xFFD2D2D6;
 
-        batcher.bevelBox(knobX, knobY, knobX + knobSize, knobY + knobSize, knobColor, true, true);
+        batcher.box(knobX, knobY + 1, knobX + knobSize, knobY + knobSize + 1, 0x66000000);
+        batcher.box(knobX, knobY, knobX + knobSize, knobY + knobSize, 0xFFFFFFFF);
+        batcher.box(knobX, knobY + knobSize - 2, knobX + knobSize, knobY + knobSize, 0xFFD2D2D6);
 
         if (!this.isEnabled())
         {
