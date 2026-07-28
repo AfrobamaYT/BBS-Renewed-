@@ -225,9 +225,24 @@ public class UIOverlay extends UIElement
 
     public static void setupPanel(UIContext context, UIOverlay overlay, UIOverlayPanel panel)
     {
+        /* "Hat einen parent" ist NICHT dasselbe wie "ist zu sehen". Panels wie das
+         * settings-fenster sind langlebige singletons: wird ihre overlay-huelle aus dem
+         * baum genommen, ohne das panel abzuhaengen, behaelt es einen parent, der nirgends
+         * mehr haengt. Der alte check stieg dann fuer immer aus — der knopf reagierte
+         * nicht mehr, ohne fehler, ohne log. GENAU DAS ist dem nutzer am 2026-07-28
+         * passiert (settings-knopf tot; gemessen: parent=UIOverlay, aber parent.hasParent()
+         * war false, panel-flaeche -215,-190).
+         *
+         * Also: nur abbrechen, wenn das panel WIRKLICH erreichbar ist. Ein panel an einem
+         * toten parent wird abgehaengt und normal neu eingehaengt. */
         if (panel.hasParent())
         {
-            return;
+            if (istErreichbar(context, panel))
+            {
+                return;
+            }
+
+            panel.removeFromParent();
         }
 
         ensureLoaded();
@@ -256,6 +271,38 @@ public class UIOverlay extends UIElement
         context.menu.overlay.add(overlay);
         overlay.add(panel);
         context.menu.overlay.resize();
+    }
+
+    /**
+     * Haengt {@code element} ueber seine parent-kette WIRKLICH an der wurzel des offenen
+     * menues — ist es also auf dem schirm erreichbar?
+     *
+     * <p>Ein einzelnes {@code hasParent()} beantwortet das nicht: es sagt nur, dass
+     * IRGENDEIN element als parent eingetragen ist, auch wenn dieses selbst schon aus dem
+     * baum genommen wurde. Die tiefe ist klein (panel &rarr; overlay &rarr; overlay-schicht
+     * &rarr; wurzel), der zaehler ist nur ein bruch-schutz gegen einen zyklus.</p>
+     */
+    private static boolean istErreichbar(UIContext context, UIElement element)
+    {
+        if (context == null || context.menu == null)
+        {
+            return true;
+        }
+
+        UIElement wurzel = context.menu.getRoot();
+        UIElement aktuell = element;
+
+        for (int schutz = 0; aktuell != null && schutz < 64; schutz++)
+        {
+            if (aktuell == wurzel)
+            {
+                return true;
+            }
+
+            aktuell = aktuell.getParent();
+        }
+
+        return false;
     }
 
     public static boolean has(UIContext context)
