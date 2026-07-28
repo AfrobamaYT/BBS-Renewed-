@@ -48,6 +48,7 @@ public final class KeybindOverrides
 
     public static final String PRESET_DEFAULT = "BBS Default";
     public static final String PRESET_LEFT_HAND = "Left-Hand";
+    public static final String PRESET_LEFT_HAND_MOUSE = "Left-Hand + Mouse";
 
     /** Combo id → KeyCombo instance. Mutating its key list propagates
      *  immediately to every callsite. */
@@ -329,6 +330,7 @@ public final class KeybindOverrides
          *  optimised layout) so they're always available. */
         presets.computeIfAbsent(PRESET_DEFAULT, (k) -> new LinkedHashMap<>());
         presets.computeIfAbsent(PRESET_LEFT_HAND, (k) -> buildLeftHandLayout());
+        presets.computeIfAbsent(PRESET_LEFT_HAND_MOUSE, (k) -> buildLeftHandMouseLayout());
 
         if (file.exists())
         {
@@ -608,5 +610,73 @@ public final class KeybindOverrides
         m.put("keybind_editor", new int[]{298, 340});          /* Shift+F9 */
         return m;
     }
+
+    /**
+     * Linke Hand auf der Tastatur, rechte Hand auf der Maus — ohne dass die rechte Hand die
+     * Tastatur anfassen muss.
+     *
+     * <p><b>Warum es dieses zweite Layout gibt.</b> Von den 169 registrierten Keybinds sind
+     * 51 mit der linken Hand in WASD-Ruhelage nicht erreichbar (gemessen 2026-07-28), darunter
+     * die haeufigsten Handgriffe ueberhaupt: {@code insert_frame} lag auf I, und alle vier
+     * Flug-Schwenks lagen auf den Pfeiltasten. Umsortieren allein loest das NICHT — im
+     * erreichbaren Kernbereich haben nur zwei Tasten ueberhaupt keine Solo-Belegung. Deshalb
+     * arbeitet dieses Layout mit drei Hebeln statt mit Umsortieren:</p>
+     *
+     * <ol>
+     *   <li><b>Die Maus war voellig ungenutzt.</b> Kein einziger der 169 Keybinds lag auf einer
+     *       Maustaste. Mouse4/Mouse5 mit Shift und Strg sind sechs Plaetze, die KEINE
+     *       Handbewegung kosten — die wertvollste Flaeche in diesem Setup. Nutzbar erst, seit
+     *       der Keybind-Editor Maustasten annimmt.</li>
+     *   <li><b>Alt + WASD im Flug.</b> Beim Fliegen liegt die Hand ohnehin auf WASD und der
+     *       Daumen auf Alt. Die Pfeiltasten dafuer zu verlassen kostet damit gar nichts.</li>
+     *   <li><b>Kontext traegt mehr als Tastenzahl.</b> BBS ist modal — dieselbe Taste bedeutet
+     *       im Kamera-, Keyframe- und Transform-Editor Verschiedenes. Das ist auch Blenders
+     *       Prinzip und der Grund, warum ein kleiner erreichbarer Tastensatz reicht.</li>
+     * </ol>
+     *
+     * <p>Jede Belegung hier wurde vor dem Eintragen live gegen
+     * {@link #findConflicts(KeyCombo)} geprueft. ⚠ Diese Pruefung vergleicht GLOBAL ueber alle
+     * Kategorien und meldet deshalb auch harmlose Ueberschneidungen — die Kategorie der
+     * Gegenseite entscheidet, ob es eine echte Kollision ist.</p>
+     */
+    private static Map<String, int[]> buildLeftHandMouseLayout()
+    {
+        /* Auf dem bestehenden Left-Hand-Layout aufsetzen: dessen 22 Belegungen sind unveraendert
+         * gut, sie decken nur zu wenig ab. */
+        Map<String, int[]> m = buildLeftHandLayout();
+
+        /* --- Maus: null Handbewegung, vorher komplett ungenutzt --- */
+        m.put("insert_frame", new int[]{MOUSE_4});              /* Mouse4 — haeufigste Aktion beim Animieren, lag auf I */
+        m.put("toggle_control", new int[]{MOUSE_5});            /* Mouse5 — lag auf H */
+        m.put("toggle_onion_skin", new int[]{MOUSE_4, 340});    /* Shift+Mouse4 — lag auf O */
+        m.put("toggle_motion_path", new int[]{MOUSE_5, 340});   /* Shift+Mouse5 — lag auf M */
+        m.put("prev_replay", new int[]{MOUSE_4, 341});          /* Ctrl+Mouse4 — lag auf Bild-auf */
+        m.put("next_replay", new int[]{MOUSE_5, 341});          /* Ctrl+Mouse5 — lag auf Bild-ab */
+
+        /* --- Flug: lag komplett auf den Pfeiltasten --- */
+        m.put("flight_pan_left", new int[]{65, 342});           /* Alt+A */
+        m.put("flight_pan_right", new int[]{68, 342});          /* Alt+D */
+        m.put("flight_tilt_up", new int[]{87, 342});            /* Alt+W */
+        m.put("flight_tilt_down", new int[]{83, 342});          /* Alt+S */
+
+        /* Weicht fuer flight_pan_left auf Alt+A. Die WASD-Symmetrie im Flug ist mehr wert als
+         * die kurze Belegung eines einzelnen Kamera-Befehls. */
+        m.put("add_at_tick", new int[]{65, 342, 340, 341});     /* Alt+Shift+Strg+A */
+
+        /* --- Keyframe-Arbeit: lag auf [ ] und Pos1 --- */
+        m.put("select_prev", new int[]{90, 342});               /* Alt+Z */
+        m.put("select_next", new int[]{84, 342});               /* Alt+T */
+        m.put("maximize", new int[]{71, 342});                  /* Alt+G */
+
+        /* --- Clip-Ebene: lag auf Alt+Pfeil --- */
+        m.put("clip_layer_up", new int[]{86, 342});             /* Alt+V */
+        m.put("clip_layer_down", new int[]{70, 342});           /* Alt+F */
+
+        return m;
+    }
+
+    /** Maustasten liegen als NEGATIVE Ids in einer {@link KeyCombo}; Mouse4 ist GLFW-Knopf 3. */
+    private static final int MOUSE_4 = -3;
+    private static final int MOUSE_5 = -4;
 
 }
