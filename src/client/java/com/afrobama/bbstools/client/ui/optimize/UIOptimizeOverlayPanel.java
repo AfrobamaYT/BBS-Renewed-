@@ -20,12 +20,16 @@ import java.util.Map;
 /**
  * Optimize — die render-optimierungen an- und ausschalten, ohne neustart.
  *
- * <p><b>Warum es das gibt.</b> {@code LegacyRendererDebuggers.flipAllToEnabledExceptUnsafe()}
- * schaltet beim client-start JEDEN registrierten debugger an, der nicht auf einer kleinen
- * verbotsliste steht — derzeit 75 von 87. Darunter sind eingriffe, die direkt ins bild
- * greifen. CML hatte dafuer oben im dashboard ein "optimize"-dropdown; beim CML-cleanup
- * flog das UI raus, die flags und ihre mixins blieben. Ergebnis: alles war scharf, und
- * niemand konnte es mehr abschalten.</p>
+ * <p><b>Warum es das gibt.</b> Bis 2026-07-28 schaltete
+ * {@code LegacyRendererDebuggers.flipAllToEnabledExceptUnsafe()} beim client-start JEDEN
+ * registrierten debugger an, der nicht auf einer kleinen verbotsliste stand. Darunter sind
+ * eingriffe, die direkt ins bild greifen. CML hatte dafuer oben im dashboard ein
+ * "optimize"-dropdown; beim CML-cleanup flog das UI raus, die flags und ihre mixins
+ * blieben. Ergebnis: alles war scharf, und niemand konnte es mehr abschalten.</p>
+ *
+ * <p>Der start-zustand kommt jetzt aus {@code StartPositivliste} (nur genannte namen sind
+ * aktiv). Dieses menue bleibt der weg, die render-schalter waehrend der arbeit umzulegen —
+ * und ist der einzige, der die wahl ueber den start hinaus behaelt.</p>
  *
  * <p>Konkret gemessen (2026-07-27): {@code paused-bone-cache} liess den mesh-rebuild
  * ausfallen, solange sein pose-digest gleich blieb — die replays flackerten zwischen
@@ -38,8 +42,8 @@ import java.util.Map;
  * weil etwas kaputt aussieht.</p>
  *
  * <p>Die wahl landet in {@code config/bbstools/config.json} und wird beim naechsten start
- * NACH dem sweep angewendet ({@code LegacyRendererDebuggers.gespeicherteWuenscheAnwenden}).
- * Wer vorher setzt, wird vom sweep ueberschrieben — genau daran starb die CML-loesung.</p>
+ * NACH dem start-zustand angewendet ({@code StartPositivliste.anwenden}). Wer vorher setzt,
+ * wird ueberschrieben — genau daran starb die CML-loesung.</p>
  */
 public class UIOptimizeOverlayPanel extends UIOverlayPanel
 {

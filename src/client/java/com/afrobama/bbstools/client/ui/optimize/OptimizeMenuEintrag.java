@@ -16,10 +16,12 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
  * betrifft (icon, groesse, begruendung) liegt hier.</p>
  *
  * <p><b>Was das menue soll.</b> Es ersetzt das "optimize"-dropdown, das CML oben im
- * dashboard hatte und das beim CML-cleanup wegfiel. Ohne es blieb der start-sweep
- * ({@code LegacyRendererDebuggers.flipAllToEnabledExceptUnsafe}) unbremsbar: er schaltet
- * 75 von 87 debuggern an, darunter eingriffe die ins bild greifen. Gemessen 2026-07-27:
- * {@code paused-bone-cache} liess replays flackern, und niemand konnte es abschalten.</p>
+ * dashboard hatte und das beim CML-cleanup wegfiel. Ohne es blieb der alte start-sweep
+ * ({@code LegacyRendererDebuggers.flipAllToEnabledExceptUnsafe}) unbremsbar: er schaltete
+ * fast jeden debugger an, darunter eingriffe die ins bild greifen. Gemessen 2026-07-27:
+ * {@code paused-bone-cache} liess replays flackern, und niemand konnte es abschalten.
+ * Seit 2026-07-28 startet nur noch, was in {@code StartPositivliste} genannt ist — das
+ * menue bleibt der weg, die render-schalter waehrend der arbeit umzulegen.</p>
  */
 public final class OptimizeMenuEintrag
 {
