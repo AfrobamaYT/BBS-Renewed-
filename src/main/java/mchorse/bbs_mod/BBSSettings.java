@@ -222,6 +222,15 @@ public class BBSSettings {
 	/** Beim replay-posieren nur die markierten knochen aufzeichnen statt des ganzen skeletts. */
 	public static ValueBoolean replayMarkedBonesOnly;
 
+	/* START-ZUSTAND, drei schalter (2026-07-28). Alle drei bewusst sparsam vorbelegt:
+	 * der bisherige zustand — alles an, JFR laeuft, fenster reisst den fokus — kostete
+	 * gemessen einen voll-GC pro minute, den grossteil der log-zeilen, und die faehigkeit,
+	 * neue methoden ohne neustart einzuspielen. Gelesen von JfrAutostart,
+	 * StartPositivliste und WindowNoFocusStealMixin. */
+	public static ValueBoolean jfrAutoRecord;
+	public static ValueBoolean debuggerStartAllesAn;
+	public static ValueBoolean startupKeepFocus;
+
 	/* AUTONOMIE 2026-07-27: schluessel fuer die AI-hintergrundentfernung in com/afrobama
 	 * (AIBackgroundRemover = replicate.com, AIOpenAIBackgroundRemover = OpenAI). Leer =
 	 * feature bleibt still aus, es wird nichts nach draussen geschickt. */
@@ -728,6 +737,9 @@ public class BBSSettings {
 		bakeDistanceCulling = builder.getBoolean("bake_distance_culling", true);
 		bakeArmyBake = builder.getBoolean("bake_army_bake", false);
 		replayMarkedBonesOnly = builder.getBoolean("replay_marked_bones_only", false);
+		jfrAutoRecord = builder.getBoolean("jfr_auto_record", false);
+		debuggerStartAllesAn = builder.getBoolean("debugger_start_alles_an", false);
+		startupKeepFocus = builder.getBoolean("startup_keep_focus", true);
 
 		builder.category("ai", Icons.SERVER);
 		aiApiKey = builder.getString("api_key", "");
