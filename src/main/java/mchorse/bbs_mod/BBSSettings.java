@@ -126,6 +126,7 @@ public class BBSSettings {
 	public static ValueBoolean editorSimplifyAnimations;
 	/* MERGE 2026-07-27: felder aus dem CML-upstream, gebraucht von behaltenen CML-dateien. */
 	public static ValueBoolean editorFisheyeWidenFov;
+	public static ValueBoolean editorHandSprintFov;
 	public static ValueString favoriteFormCategoriesData;
 	public static ValueBoolean recordingAutoCaptureMobs;
 	public static ValueBoolean recordingAutoCaptureProjectiles;
@@ -613,6 +614,7 @@ public class BBSSettings {
 		editorJump = builder.getInt("jump", 5, 1, 1000);
 		editorSimplifyAnimations = builder.getBoolean("simplify_animations", false);
 		editorFisheyeWidenFov = builder.getBoolean("fisheye_widen_fov", true);
+		editorHandSprintFov = builder.getBoolean("hand_sprint_fov", false);
 		favoriteFormCategoriesData = builder.getString("favorite_form_categories_data", "");
 		recordingAutoCaptureMobs = builder.getBoolean("auto_capture_mobs", true);
 		recordingAutoCaptureProjectiles = builder.getBoolean("auto_capture_projectiles", true);

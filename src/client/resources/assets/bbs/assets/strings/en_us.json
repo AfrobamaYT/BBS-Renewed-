@@ -165,6 +165,8 @@
 	"bbs.config.editor.player_follows_camera-comment": "When enabled, your player is teleported each tick to match the film camera position and view direction.",
 	"bbs.config.editor.jump": "Jump",
 	"bbs.config.editor.jump-comment": "By how many ticks do jump keybinds move the timeline's cursor (up and down arrow keybinds)",
+	"bbs.config.editor.hand_sprint_fov": "Hand follows sprint FOV",
+	"bbs.config.editor.hand_sprint_fov-comment": "When enabled, the first person hand stretches with the sprint FOV like the world does. Vanilla Minecraft renders the hand at a fixed FOV, so it stays put while sprinting - that is the default here",
 	"bbs.config.editor.loop": "Loop playback",
 	"bbs.config.editor.loop-comment": "Loops playback of currently selected clip or looping region (you can use [ and ] keys to select the region, or Alt + click drag on the timeline)",
 	"bbs.config.editor.minutes_backup": "Minutes backup",

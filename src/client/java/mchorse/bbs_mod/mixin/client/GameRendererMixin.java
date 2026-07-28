@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
 import mchorse.bbs_mod.BBSModClient;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.ICameraController;
@@ -78,8 +79,11 @@ public class GameRendererMixin
             /* camera.fov traegt den sprint-boost, den PositionFovLogik auf angle.fov legt.
              * Fuer die welt ist das gewollt, fuer die hand nicht — sonst streckt sie sich beim
              * rennen mit. Nur den sprint-anteil herausrechnen; das clip-FOV bleibt stehen,
-             * damit die hand weiterhin dem shot folgt. */
-            if (!changingFov)
+             * damit die hand weiterhin dem shot folgt.
+             *
+             * Abschaltbar, weil es eine bewusste abweichung vom alten fork ist: wer das alte
+             * verhalten will, schaltet "Hand follows sprint FOV" in den editor-settings an. */
+            if (!changingFov && !BBSSettings.editorHandSprintFov.get())
             {
                 float sprint = com.afrobama.blendertransform.PositionFovLogik.sprintFaktor();
 
