@@ -38,10 +38,15 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* Master Debugger Modules 41+42 — crash-safe writers init FIRST,
          *  before UncaughtExceptionCapture, so the very first exception
-         *  (if any) lands in bbs/debugger/exceptions.ndjson and
-         *  bbs/debugger/recording.jfr. r38 2026-05-18 — survives JVM
-         *  native AVs because both use FileChannel.force(false) and JFR
-         *  flushes on JVM abort. */
+         *  (if any) lands in bbs/debugger/exceptions.ndjson. r38 2026-05-18 —
+         *  survives JVM native AVs because the writer uses
+         *  FileChannel.force(false).
+         *
+         *  ⚠ bbs/debugger/recording.jfr entsteht seit 2026-07-28 NICHT mehr von
+         *  selbst: die JFR-dauer-aufnahme schaltet die erweiterte klassen-
+         *  redefinition der JVM ab (gemessen) und damit strukturelles hotswap.
+         *  Wer die .jfr fuer eine crash-jagd braucht: BBS-einstellung
+         *  bbstools.jfr_auto_record — siehe JfrAutostart. */
         com.afrobama.bbstools.client.debug.master.crashsafe.CrashSafeExceptionLog.init();
         com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.init();
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
@@ -423,7 +428,12 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  ON for poll (one syscall / 30s is free), scans are explicit. */
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             new com.afrobama.bbstools.client.debug.master.disk.DiskMonitor.Feature());
-        com.afrobama.bbstools.client.debug.master.disk.DiskMonitor.startPolling();
+        /* Der poll-thread laesst sich nachtraeglich nicht mehr ungestartet machen — also
+         * hier fragen statt ihn zu starten und im start-pass wieder abzuschalten. */
+        if (com.afrobama.bbstools.client.debug.StartPositivliste.istStandardAn("disk-monitor"))
+        {
+            com.afrobama.bbstools.client.debug.master.disk.DiskMonitor.startPolling();
+        }
 
         /* Master Debugger Module 22 — mod compatibility suite. Logs load
          *  order, Fabric event hook fire order, refmap status, and the
@@ -722,7 +732,8 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  DEFAULT ON. */
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             new com.afrobama.bbstools.client.debug.master.timeseries.TimeSeriesMetrics.Feature());
-        com.afrobama.bbstools.client.debug.master.timeseries.TimeSeriesMetrics.enable();
+        /* enable() hier entfernt (2026-07-28): der start-pass entscheidet. Sonst laeuft der
+         * 1-Hz-poll-thread ab mod-init und wird eine sekunde spaeter wieder abgeschaltet. */
 
         /* Master Debugger Module 38 — Jaeger-style distributed tracing.
          *  Lock-free 1000-span rolling buffer + ThreadLocal stack for
@@ -733,7 +744,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  ~10ns when disabled (single volatile read short-circuits). */
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             new com.afrobama.bbstools.client.debug.master.tracing.SpanTracer.Feature());
-        com.afrobama.bbstools.client.debug.master.tracing.SpanTracer.enable();
+        /* enable() hier entfernt (2026-07-28) — start-pass entscheidet. */
 
         /* Master Debugger Module 39 — time-travel debugger (state snapshot
          *  rewind). NOT rr-style instruction-level replay (impossible
@@ -746,52 +757,35 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  hook adds /time-travel/* to the live server. DEFAULT ON. */
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             com.afrobama.bbstools.client.debug.master.timetravel.StateTimeMachine.FEATURE);
-        com.afrobama.bbstools.client.debug.master.timetravel.StateTimeMachine.enable();
+        /* enable() hier entfernt (2026-07-28) — start-pass entscheidet. Der snapshot-thread
+         * lief sonst ab mod-init und schrieb alle 10 s in einen 360-slot-ring. */
 
-        /* 2026-05-18 sandbox-dev rule: every IFeatureDebugger defaults ON.
-         *  DEFERRED to CLIENT_STARTED — some Feature.enable() impls touch GL
-         *  state (bindless probe, JFR start, GLFW input grab) which is NOT
-         *  ready during ModInitializer. r36: was crashing MC boot when
-         *  invoked here directly. Also auto-starts JFR continuous recording
-         *  at the same hook (user wants this as default per 2026-05-18). */
+        /* Start-zustand der debugger. DEFERRED auf CLIENT_STARTED — einige
+         *  Feature.setEnabled-impls fassen GL-zustand an (bindless-probe, GLFW
+         *  input-grab), der beim ModInitializer noch nicht existiert (r36: das
+         *  hat den boot zerlegt).
+         *
+         *  ⛔ NICHT MEHR "alles an ausser verbotsliste" (2026-07-28): das hatte 57
+         *  von 87 debuggern scharf, kostete gemessen ~136 ms voll-GC pro minute und
+         *  flutete das log so, dass ein crash-fenster nichts mehr hergab. Jetzt
+         *  entscheidet die POSITIVLISTE in StartPositivliste — begruendung und die
+         *  liste selbst stehen dort, damit sie an einer stelle wachsen. */
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED
             .register(client ->
             {
                 try
                 {
-                    com.afrobama.bbstools.client.debug.LegacyRendererDebuggers.flipAllToEnabledExceptUnsafe();
+                    com.afrobama.bbstools.client.debug.StartPositivliste.anwenden();
                 }
                 catch (Throwable t)
                 {
-                    BBSToolsMod.LOG.error("[master-debug] deferred sweep failed", t);
+                    BBSToolsMod.LOG.error("[master-debug] start-zustand fehlgeschlagen", t);
                 }
-                /* ⛔ JFR SCHALTET DCEVM AB (gemessen 2026-07-25, standalone isoliert):
-                 *     ohne JFR:  AllowEnhancedClassRedefinition = true
-                 *     mit  JFR:  AllowEnhancedClassRedefinition = FALSE
-                 * Beide male stand "-XX:+AllowEnhancedClassRedefinition" in der kommandozeile.
-                 * JFR instrumentiert beim start JDK-kernklassen (FileInputStream, Socket, …)
-                 * und die JVM deaktiviert daraufhin die erweiterte redefinition.
-                 *
-                 * Folge: solange JFR läuft, sind hotpatches auf methoden-rümpfe beschränkt —
-                 * neue methoden/felder werden abgelehnt. Deshalb ist der auto-start
-                 * abschaltbar; -Pfull setzt die property. */
-                if (Boolean.getBoolean("bbstools.jfr.disable"))
-                {
-                    BBSToolsMod.LOG.info("[jfr] auto-start ÜBERSPRUNGEN (bbstools.jfr.disable=true) "
-                        + "— nötig, damit DCEVM-hotswap strukturänderungen erlaubt");
-                }
-                else
-                {
-                    try
-                    {
-                        com.afrobama.bbstools.client.debug.master.jfr.JfrIntegration.start("auto-continuous");
-                        BBSToolsMod.LOG.info("[jfr] auto-continuous recording started post-CLIENT_STARTED");
-                    }
-                    catch (Throwable t)
-                    {
-                        BBSToolsMod.LOG.error("[jfr] auto-start failed", t);
-                    }
-                }
+
+                /* JFR-dauer-aufnahme: seit 2026-07-28 nur noch auf ausdruecklichen wunsch.
+                 * Sie schaltet die erweiterte klassen-redefinition der JVM ab (gemessen),
+                 * und damit strukturelles hotswap — begruendung in JfrAutostart. */
+                com.afrobama.bbstools.client.debug.master.jfr.JfrAutostart.starteWennErlaubt();
             });
 
         com.afrobama.bbstools.client.console.LogConsoleHandler.register();
