@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.audio.AudioRenderer;
+import mchorse.bbs_mod.audio.AudioStemExporter;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.clips.misc.AudioClip;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
@@ -287,12 +288,31 @@ public class UIFilmPreview extends UIElement
         Clips camera = this.panel.getData().camera;
         List<AudioClip> audioClips = camera.getClips(AudioClip.class);
 
-        String name = StringUtils.createTimestampFilename() + ".wav";
+        String timestamp = StringUtils.createTimestampFilename();
         File videos = BBSRendering.getVideoFolder();
         UIContext context = this.getContext();
         Vector2i range = BBSSettings.editorLoop.get() ? this.panel.getLoopingRange() : new Vector2i();
 
-        if (AudioRenderer.renderAudio(new File(videos, name), audioClips, camera.calculateDuration(), 48000, TimeUtils.toSeconds(range.x), TimeUtils.toSeconds(range.y)))
+        if (BBSSettings.audioExportSeparateFiles.get())
+        {
+            /* Own subfolder: one clip = one file means a busy film drops dozens of wavs, and
+             * dumping those next to the rendered videos would bury them. */
+            File stems = new File(videos, timestamp + "_stems");
+            int written = AudioStemExporter.exportStems(stems, audioClips, 48000, TimeUtils.toSeconds(range.x), TimeUtils.toSeconds(range.y));
+
+            if (written > 0)
+            {
+                UIOverlay.addOverlay(context, new UIMessageFolderOverlayPanel(UIKeys.GENERAL_SUCCESS, UIKeys.FILM_RENDER_AUDIO_SUCCESS, stems));
+            }
+            else
+            {
+                UIOverlay.addOverlay(context, new UIMessageOverlayPanel(UIKeys.GENERAL_ERROR, UIKeys.FILM_RENDER_AUDIO_ERROR));
+            }
+
+            return;
+        }
+
+        if (AudioRenderer.renderAudio(new File(videos, timestamp + ".wav"), audioClips, camera.calculateDuration(), 48000, TimeUtils.toSeconds(range.x), TimeUtils.toSeconds(range.y)))
         {
             UIOverlay.addOverlay(context, new UIMessageFolderOverlayPanel(UIKeys.GENERAL_SUCCESS, UIKeys.FILM_RENDER_AUDIO_SUCCESS, videos));
         }
