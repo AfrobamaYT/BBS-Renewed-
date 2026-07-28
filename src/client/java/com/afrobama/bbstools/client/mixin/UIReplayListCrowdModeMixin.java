@@ -62,9 +62,19 @@ public abstract class UIReplayListCrowdModeMixin extends UIList<Replay>
         int i, int x, int y, boolean hover, boolean selected, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
-         * com.afrobama.blendertransform.UiReplayListCrowdModeLogik — siehe MixinBruecke. */
-        if (MixinBruecke.rufeUndAbbrechen("UiReplayListCrowdModeLogik", "crowdModeAggregateRow",
-            element)) ci.cancel();
+         * com.afrobama.blendertransform.UiReplayListCrowdModeLogik — siehe MixinBruecke.
+         *
+         * Das REPLAY auspacken, nicht die zeile weiterreichen: renderElementPart bekommt seit
+         * fs einen ReplayListEntry, die logik erwartet ein Replay. Vorher flog hier jeden frame
+         * eine ClassCastException, die die bruecke geschluckt hat — der crowd-modus tat also nie
+         * etwas, und jeder fehlschlag baute einen stacktrace auf (gemessen 2026-07-28: >4000
+         * fehlschlaege im leerlauf).
+         *
+         * isReplay() ist dabei nicht nur typ-sicherheit: FOLDER-zeilen sind kategorie-koepfe mit
+         * replay == null und sollen gar nicht aggregiert werden. */
+        if (element != null && element.isReplay()
+            && MixinBruecke.rufeUndAbbrechen("UiReplayListCrowdModeLogik", "crowdModeAggregateRow",
+                element.replay)) ci.cancel();
     }
 
 
