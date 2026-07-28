@@ -14,6 +14,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class UIParticleSettings extends UIElement
 {
@@ -21,6 +22,9 @@ public class UIParticleSettings extends UIElement
     public UITextbox arguments;
 
     private ParticleSettings settings;
+
+    /** Fired after the settings were edited here, so dependent UI (colour presets) can follow. */
+    private Consumer<ParticleSettings> changeCallback;
 
     public UIParticleSettings()
     {
@@ -47,6 +51,13 @@ public class UIParticleSettings extends UIElement
         this.add(this.particle, this.arguments);
     }
 
+    public UIParticleSettings callback(Consumer<ParticleSettings> callback)
+    {
+        this.changeCallback = callback;
+
+        return this;
+    }
+
     public void setSettings(ParticleSettings settings)
     {
         this.settings = settings;
@@ -54,13 +65,41 @@ public class UIParticleSettings extends UIElement
         this.arguments.setText(settings.arguments);
     }
 
+    public ParticleSettings getSettings()
+    {
+        return this.settings;
+    }
+
+    /**
+     * Writes the arguments from the outside (colour presets). Goes through
+     * {@link UITextbox#setText(String)}, which does NOT re-fire the textbox callback — that is
+     * what keeps preset -> textbox -> preset from looping.
+     */
+    public void setArgumentsText(String args)
+    {
+        this.settings.arguments = args;
+        this.arguments.setText(args);
+    }
+
     protected void setParticle(Identifier id)
     {
         this.settings.particle = id;
+
+        this.notifyChange();
     }
 
     protected void setArguments(String args)
     {
         this.settings.arguments = args;
+
+        this.notifyChange();
+    }
+
+    private void notifyChange()
+    {
+        if (this.changeCallback != null)
+        {
+            this.changeCallback.accept(this.settings);
+        }
     }
 }

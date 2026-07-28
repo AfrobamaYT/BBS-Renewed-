@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels;
 import mchorse.bbs_mod.forms.forms.VanillaParticleForm;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
+import mchorse.bbs_mod.ui.forms.editors.utils.UIParticleColorPresets;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIParticleSettings;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
@@ -22,12 +23,15 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
     public UITrackpad offsetX;
     public UITrackpad offsetY;
     public UITrackpad offsetZ;
+    public UIParticleColorPresets colorPresets;
 
     public UIVanillaParticleFormPanel(UIForm editor)
     {
         super(editor);
 
         this.settings = new UIParticleSettings();
+        this.colorPresets = new UIParticleColorPresets((args) -> this.settings.setArgumentsText(args));
+        this.settings.callback((s) -> this.colorPresets.update(s));
         this.paused = new UIToggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_PAUSED, (b) -> this.form.paused.set(b.getValue()));
         this.local = new UIToggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_LOCAL, (b) -> this.form.local.set(b.getValue()));
         this.velocity = new UITrackpad((v) -> this.form.velocity.set(v.floatValue()));
@@ -50,6 +54,11 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_EMISSION).marginTop(UIConstants.SECTION_GAP), UI.row(this.count, this.frequency));
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_SCATTER).marginTop(UIConstants.SECTION_GAP), UI.row(this.scatteringYaw, this.scatteringPitch));
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_OFFSET).marginTop(UIConstants.SECTION_GAP), UI.row(this.offsetX, this.offsetY, this.offsetZ));
+
+        /* Last in the column on purpose: the block is hidden for every particle but
+         * entity_effect, and the column resizer still reserves the row of a hidden child —
+         * at the bottom of the scroll view that gap costs nothing. */
+        this.options.add(this.colorPresets.marginTop(UIConstants.SECTION_GAP));
     }
 
     @Override
@@ -68,5 +77,6 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         this.offsetX.setValue(form.offsetX.get());
         this.offsetY.setValue(form.offsetY.get());
         this.offsetZ.setValue(form.offsetZ.get());
+        this.colorPresets.update(form.settings.get());
     }
 }

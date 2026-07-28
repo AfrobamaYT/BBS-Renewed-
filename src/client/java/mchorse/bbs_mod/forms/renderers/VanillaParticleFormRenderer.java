@@ -18,12 +18,14 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.command.argument.ParticleEffectArgumentType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.BlockStateParticleEffect;
+import net.minecraft.particle.EntityEffectParticleEffect;
 import net.minecraft.particle.ItemStackParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ColorHelper;
 import net.minecraft.world.World;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -154,9 +156,10 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
      * Builds the particle effect from the form's settings. For the two common parametric
      * particles the arguments string is just a bare id for convenience — {@code dirt} for
      * {@code minecraft:block}, {@code apple} for {@code minecraft:item} — and the rest of the
-     * structure is filled in here. Otherwise (or when a {@code {...}} compound is given) it is
-     * parsed exactly like the vanilla {@code /particle} command, so every particle type still
-     * works. Falls back to flame when nothing parses.
+     * structure is filled in here. {@code minecraft:entity_effect} takes the same shortcut with
+     * a bare {@code "r g b [a]"} colour. Otherwise (or when a {@code {...}} compound is given)
+     * it is parsed exactly like the vanilla {@code /particle} command, so every particle type
+     * still works. Falls back to flame when nothing parses.
      */
     private static ParticleEffect createEffect(ParticleSettings settings, World world)
     {
@@ -177,6 +180,16 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
                 return new ItemStackParticleEffect(ParticleTypes.ITEM, new ItemStack(Registries.ITEM.get(Identifier.of(args))));
             }
 
+            if (bareId && type == ParticleTypes.ENTITY_EFFECT)
+            {
+                ParticleEffect tinted = parseEntityEffectColor(args);
+
+                if (tinted != null)
+                {
+                    return tinted;
+                }
+            }
+
             StringReader reader = new StringReader(settings.particle.toString() + args);
 
             return ParticleEffectArgumentType.readParameters(reader, world.getRegistryManager());
@@ -184,6 +197,41 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
         catch (Exception e)
         {
             return ParticleTypes.FLAME;
+        }
+    }
+
+    /**
+     * Parses the colour that the form editor's colour presets write:
+     * {@code "r g b"} or {@code "r g b a"}, each 0..1, decimal point (Locale.ROOT — the editor
+     * formats with the same locale, a comma would land here as a parse failure).
+     *
+     * <p>Vanilla's own spelling for this particle is the packed {@code {color:<argb>}} compound;
+     * it starts with '{' and therefore never reaches this method, so both forms keep working.</p>
+     *
+     * @return null when the arguments are not a float triple/quad, so the caller falls through
+     *         to the vanilla parser instead of swallowing a valid but unusual argument string.
+     */
+    private static ParticleEffect parseEntityEffectColor(String args)
+    {
+        String[] split = args.split("\\s+");
+
+        if (split.length < 3 || split.length > 4)
+        {
+            return null;
+        }
+
+        try
+        {
+            float r = Float.parseFloat(split[0]);
+            float g = Float.parseFloat(split[1]);
+            float b = Float.parseFloat(split[2]);
+            float a = split.length == 4 ? Float.parseFloat(split[3]) : 1F;
+
+            return EntityEffectParticleEffect.create(ParticleTypes.ENTITY_EFFECT, ColorHelper.Argb.fromFloats(a, r, g, b));
+        }
+        catch (NumberFormatException e)
+        {
+            return null;
         }
     }
 }
