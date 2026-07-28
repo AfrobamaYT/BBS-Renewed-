@@ -14,6 +14,7 @@ import mchorse.bbs_mod.audio.Wave;
 import mchorse.bbs_mod.audio.ogg.VorbisReader;
 import mchorse.bbs_mod.audio.wav.WaveReader;
 import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.screenplay.UIAudioPlayer;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -202,7 +203,11 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
     {
         Set<String> locations = new HashSet<>();
 
-        for (Link link : BBSMod.getProvider().getLinksFromPath(Link.assets("audio")))
+        /* Der ganze assets-baum, nicht nur audio/. Gemessen 2026-07-29 in der DEV-instanz:
+         * von fuenf klaengen lag KEIN einziger unter audio/ — sie steckten in
+         * models/<modell>/<teil>/sounds/. Die liste war also nicht schlecht sortiert oder
+         * schlecht durchsuchbar, sie kannte diese dateien ueberhaupt nicht. */
+        for (Link link : BBSMod.getProvider().getLinksFromPath(Link.assets("")))
         {
             String pathLower = link.path.toLowerCase();
             boolean supported = pathLower.endsWith(".wav") || pathLower.endsWith(".ogg");
@@ -611,11 +616,28 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
             return;
         }
 
-        String oldFileName = oldName.replace("assets:audio/", "").replace(".ogg", "");
-        String newFileName = newName.replace("assets:audio/", "").replace(".ogg", "");
+        /* ⛔ Pfad aus dem eintrag ABLEITEN, nicht annehmen. Die alte fassung schnitt
+         * "assets:audio/" und ".ogg" per textersetzung weg und baute daraus wieder
+         * "audio/<name>.ogg" — fuer einen klang aus models/<modell>/sounds/ zeigte das auf
+         * eine datei, die es nicht gibt (harmlos beim umbenennen, beim loeschen waere es
+         * eine falsche datei gewesen). Ordner und endung bleiben jetzt, wie sie sind. */
+        String altPfad = pfadAusEintrag(oldName);
 
-        File oldFile = new File(BBSMod.getAssetsFolder(), "audio/" + oldFileName + ".ogg");
-        File newFile = new File(BBSMod.getAssetsFolder(), "audio/" + newFileName + ".ogg");
+        if (altPfad == null)
+        {
+            return;
+        }
+
+        String ordner = altPfad.contains("/") ? altPfad.substring(0, altPfad.lastIndexOf('/') + 1) : "";
+        String endung = altPfad.contains(".") ? altPfad.substring(altPfad.lastIndexOf('.')) : "";
+        String neuerName = StringUtils.fileName(pfadAusEintrag(newName) == null ? newName : pfadAusEintrag(newName));
+
+        neuerName = neuerName.contains(".") ? neuerName.substring(0, neuerName.lastIndexOf('.')) : neuerName;
+
+        String neuPfad = ordner + neuerName + endung;
+
+        File oldFile = new File(BBSMod.getAssetsFolder(), altPfad);
+        File newFile = new File(BBSMod.getAssetsFolder(), neuPfad);
 
         if (newFile.exists())
         {
@@ -632,7 +654,7 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
             if (this.likeManager.isSoundLiked(oldName))
             {
                 this.likeManager.removeSound(oldName);
-                this.likeManager.setSoundLiked("assets:audio/" + newFileName + ".ogg", newFileName, true);
+                this.likeManager.setSoundLiked(Link.assets(neuPfad).toString(), StringUtils.fileName(neuPfad), true);
             }
 
             this.refreshSoundList();
@@ -648,8 +670,16 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
             return;
         }
 
-        String fileName = soundName.replace("assets:audio/", "").replace(".ogg", "");
-        File audioFile = new File(BBSMod.getAssetsFolder(), "audio/" + fileName + ".ogg");
+        /* Siehe renameAudio: der pfad kommt aus dem eintrag. Eine geratene datei zu
+         * loeschen ist der teuerste weg, diesen fehler zu machen. */
+        String pfad = pfadAusEintrag(soundName);
+
+        if (pfad == null)
+        {
+            return;
+        }
+
+        File audioFile = new File(BBSMod.getAssetsFolder(), pfad);
 
         if (audioFile.exists() && audioFile.delete())
         {
@@ -657,13 +687,38 @@ public class UISoundOverlayPanel extends UIStringOverlayPanel
 
             if (BBSModClient.getSounds() != null)
             {
-                BBSModClient.getSounds().stop(Link.assets("audio/" + fileName + ".ogg"));
+                BBSModClient.getSounds().stop(Link.assets(pfad));
             }
 
             this.refreshSoundList();
             this.refreshVanillaSoundList();
             this.refreshLikedList();
         }
+    }
+
+    /**
+     * Der pfad UNTERHALB des assets-ordners, aus einem listen-eintrag ("assets:&lt;pfad&gt;").
+     *
+     * <p>{@code null} fuer alles, was nicht aus der assets-quelle stammt — vanilla-klaenge
+     * etwa gehoeren nicht uns, die darf weder umbenannt noch geloescht werden.
+     */
+    private static String pfadAusEintrag(String eintrag)
+    {
+        if (eintrag == null)
+        {
+            return null;
+        }
+
+        String prefix = "assets:";
+
+        if (!eintrag.startsWith(prefix))
+        {
+            return null;
+        }
+
+        String pfad = eintrag.substring(prefix.length());
+
+        return pfad.isEmpty() ? null : pfad;
     }
 
     private void stopCurrentPlayback()
