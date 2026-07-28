@@ -358,7 +358,7 @@ public class UIKeys
     public static final IKey FILM_REPLAY_LOOPING_TOOLTIP = L10n.lang("bbs.ui.film.replay.looping-tooltip");
     public static final IKey FILM_REPLAY_NAME_TAG = L10n.lang("bbs.ui.film.replay.name_tag");
     /* Quick search: form per name eintippen, Enter legt einen neuen replay damit an
-     * (UIQuickReplayOverlayPanel). */
+     * (UIQuickReplayMenu). */
     public static final IKey FILM_QUICK_REPLAY_TITLE = L10n.lang("bbs.ui.film.quick_replay.title");
     public static final IKey FILM_REPLAY_ORBIT_CAMERA = L10n.lang("bbs.ui.film.replay.orbit.camera");
     public static final IKey FILM_REPLAY_ORBIT_FIRST_PERSON = L10n.lang("bbs.ui.film.replay.orbit.first_person");

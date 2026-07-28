@@ -171,7 +171,7 @@ public class BBSSettings {
 	public static ValuePhysicsDebug physicsDebug;
 	public static ValueBoolean editorSnapToMarkers;
 	/* Quick Search: neuer replay landet auf dem anvisierten block statt fuenf bloecke
-	 * geradeaus. Gelesen von UIQuickReplayOverlayPanel. */
+	 * geradeaus. Gelesen von UIQuickReplayMenu. */
 	public static ValueBoolean editorQuickReplaySnapToBlock;
 	public static ValueBoolean editorClipPreview;
 	public static ValueBoolean editorRewind;
