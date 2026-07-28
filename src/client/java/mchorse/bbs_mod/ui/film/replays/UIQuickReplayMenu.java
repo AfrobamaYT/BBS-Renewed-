@@ -12,6 +12,7 @@ import mchorse.bbs_mod.ui.forms.UIFormSearchList;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.context.UIContextMenu;
 import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
+import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.RayTracing;
 
@@ -37,9 +38,12 @@ import org.lwjgl.glfw.GLFW;
  * titelleiste. Der nutzer wollte das nicht — "eine box die nicht die sicht stoert", und die
  * suchzeile GANZ oben. Beides gibt es hier geschenkt, weil es dieselbe form ist wie das
  * kamera-modus-menue, auf das er gezeigt hat: {@link UIContextMenu} setzt sich an die maus,
- * ist so gross wie sein inhalt, hat keine titelleiste — und schliesst von selbst bei ESC und
- * bei einem klick daneben. Der ESC-fall war vorher ein eigener fehler (die box blieb offen,
- * weil das suchfeld die taste schluckte); mit dieser form loest er sich mit auf.</p>
+ * ist so gross wie sein inhalt, hat keine titelleiste — und schliesst bei einem klick
+ * daneben.</p>
+ *
+ * <p>⚠ ESC KAM NICHT GRATIS MIT, entgegen der annahme beim umbau: {@code UIContextMenu}
+ * behandelt ESC zwar, sieht die taste aber nie, weil das fokussierte suchfeld sie vorher
+ * aufbraucht. Gemessen, dann geloest — siehe {@link SuchFeld}.</p>
  *
  * <p>Die teile darin sind weiter BBS' eigene: {@link UISearchList} ist das
  * suchzeile-ueber-liste-paar, das der picker und jede overlay-liste benutzt (die suchzeile
@@ -96,9 +100,68 @@ public class UIQuickReplayMenu extends UIContextMenu
         this.forms.addLibraryForms();
 
         this.searchList = new UISearchList<>(this.forms);
+
+        /* ⛔ DAS SUCHFELD AUSTAUSCHEN, damit ESC die box schliesst statt nur den fokus
+         * abzugeben — siehe SuchFeld. UISearchList baut seine textbox selbst im
+         * konstruktor; sie wird darum hier abgehaengt und durch unsere ersetzt, mit
+         * DEMSELBEN filter-aufruf und DENSELBEN massen (0,0 / volle breite / 20 hoch),
+         * damit sich am aussehen nichts aendert. label() kommt danach, sonst haengt der
+         * platzhalter an der weggeworfenen box. */
+        UISearchList<Form> liste = this.searchList;
+
+        liste.search.removeFromParent();
+        liste.search = new SuchFeld((str) -> liste.filter(str, false));
+        liste.search.relative(liste).set(0, 0, 0, 20).w(1, 0);
+        liste.add(liste.search);
+
         this.searchList.label(UIKeys.GENERAL_SEARCH).full(this);
 
         this.add(this.searchList);
+    }
+
+    /**
+     * Suchfeld, das ESC an die box weiterreicht, statt es aufzubrauchen.
+     *
+     * <h2>Warum das noetig ist</h2>
+     *
+     * <p>{@code UITextbox.subKeyPressed} faengt ESC ab, solange das feld den fokus hat, und
+     * gibt nur den fokus ab. Das ist in BBS ueberall so, und ueberall sonst ist es richtig:
+     * dort ist das textfeld EIN element unter vielen, und man will erst das feld verlassen,
+     * bevor man das fenster schliesst.</p>
+     *
+     * <p>Hier ist es falsch, weil die box NUR aus dem feld und seiner trefferliste besteht:
+     * das feld hat den fokus, solange die box offen ist. "Erst das feld verlassen" ist
+     * damit ein leerer schritt, und der nutzer sah ein ESC, das nichts tut — er musste mit
+     * der maus ans X. GEMESSEN 2026-07-28: erstes ESC gab nur den fokus ab, erst das zweite
+     * schloss.</p>
+     *
+     * <p>⚠ BEWUSST NICHT {@code UITextbox} SELBST GEAENDERT: dieselbe zeile haengt an jedem
+     * panel mit textfeld im ganzen baum, und das zweistufige verhalten ist dort gewollt.
+     * Der eingriff bleibt darum auf diese box beschraenkt.</p>
+     */
+    private class SuchFeld extends UITextbox
+    {
+        public SuchFeld(java.util.function.Consumer<String> callback)
+        {
+            super(100, callback);
+        }
+
+        @Override
+        public boolean subKeyPressed(UIContext context)
+        {
+            if (this.isFocused() && context.isPressed(GLFW.GLFW_KEY_ESCAPE))
+            {
+                /* Fokus zuerst abgeben: das feld verschwindet gleich, und ein fokus auf
+                 * einem element ohne parent laesst die tastatur ins leere laufen. */
+                context.unfocus();
+
+                UIQuickReplayMenu.this.removeFromParent();
+
+                return true;
+            }
+
+            return super.subKeyPressed(context);
+        }
     }
 
     /**
