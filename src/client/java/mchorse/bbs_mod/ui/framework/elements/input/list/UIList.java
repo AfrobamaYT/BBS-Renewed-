@@ -129,13 +129,26 @@ public abstract class UIList <T> extends UIElement
         }
 
         String qwerty = KeyCodes.cyrillicToQwerty(filter);
+        String[] worte = ListFilterText.worte(filter);
+        String[] worteQwerty = ListFilterText.worte(qwerty);
 
         for (int i = 0; i < this.list.size(); i ++)
         {
             T element = this.list.get(i);
-            String target = this.elementToString(this.getContext(), i, element).toLowerCase();
+            String roh = this.elementToString(this.getContext(), i, element).toLowerCase();
 
-            if (target.contains(filter) || target.contains(qwerty))
+            if (roh.contains(filter) || roh.contains(qwerty))
+            {
+                this.filtered.add(new Pair<>(element, i));
+
+                continue;
+            }
+
+            /* Wort für Wort, auf entschärftem text — sonst findet man eine datei nicht, die
+             * man vor sich sieht. Siehe ListFilterText. */
+            String ziel = ListFilterText.entschaerfe(roh);
+
+            if (ListFilterText.enthaeltAlle(ziel, worte) || ListFilterText.enthaeltAlle(ziel, worteQwerty))
             {
                 this.filtered.add(new Pair<>(element, i));
             }
