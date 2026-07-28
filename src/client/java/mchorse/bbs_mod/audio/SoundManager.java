@@ -176,6 +176,22 @@ public class SoundManager implements IWatchDogListener
 
     public SoundPlayer playUnique(Link link)
     {
+        return this.playUnique(link, true);
+    }
+
+    /**
+     * @param relative wie die frisch erzeugte quelle im raum steht: {@code true} klebt sie am
+     *        hoerer (kein raumklang — der normalfall fuer film-audio, ein durchgehender
+     *        soundtrack soll nicht leiser werden wenn die kamera fliegt), {@code false}
+     *        stellt sie in weltkoordinaten, so dass entfernung und richtung wirken.
+     *
+     *        <p>⚠ FALLE: der wert wirkt NUR beim ERZEUGEN. Ein bereits laufender unique-player
+     *        wird unveraendert zurueckgegeben — wer den modus zur laufzeit umschalten will
+     *        (der raeumliche audio-clip tut das), muss relative UND position selbst pro frame
+     *        nachziehen. Siehe AudioClientClip#applySpatial.</p>
+     */
+    public SoundPlayer playUnique(Link link, boolean relative)
+    {
         for (SoundPlayer player : this.sounds)
         {
             if (player.isUnique() && player.getBuffer().getId().equals(link))
@@ -190,7 +206,7 @@ public class SoundManager implements IWatchDogListener
         {
             SoundPlayer player = new SoundPlayer(buffer).unique();
 
-            player.setRelative(true);
+            player.setRelative(relative);
             player.play();
             this.sounds.add(player);
 

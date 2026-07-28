@@ -151,6 +151,9 @@ public class BBSSettings {
 	/* Flug schreibt in den fuehrenden clip, auch wenn keiner ausgewaehlt ist.
 	 * Gelesen von mchorse.bbs_mod.ui.film.UIClipsPanel.pickActiveClip. */
 	public static ValueBoolean editorFlightEditsActiveClip;
+	/* Waehrend der wiedergabe wird die live-kamera fortlaufend in den fuehrenden clip
+	 * geschrieben. Gelesen von mchorse.bbs_mod.ui.film.FlightClipRecorder. */
+	public static ValueBoolean editorRecordCameraDuringPlayback;
 	public static ValueBoolean editorHorizontalFlight;
 	public static ValueBoolean editorOrbitMovementRequiresFlight;
 	public static ValueBoolean editorOrbitCenterMarker;
@@ -167,6 +170,9 @@ public class BBSSettings {
 	public static ValueIKDebug ikDebug;
 	public static ValuePhysicsDebug physicsDebug;
 	public static ValueBoolean editorSnapToMarkers;
+	/* Quick Search: neuer replay landet auf dem anvisierten block statt fuenf bloecke
+	 * geradeaus. Gelesen von UIQuickReplayOverlayPanel. */
+	public static ValueBoolean editorQuickReplaySnapToBlock;
 	public static ValueBoolean editorClipPreview;
 	public static ValueBoolean editorRewind;
 	public static ValueBoolean editorHorizontalClipEditor;
@@ -207,6 +213,9 @@ public class BBSSettings {
 	public static ValueBoolean audioWaveformFilename;
 	public static ValueBoolean audioWaveformTime;
 	public static ValueBoolean audioWaveformPreviewCombined;
+	/* Audio-export schreibt eine WAV PRO CLIP statt einer mischung.
+	 * Gelesen von mchorse.bbs_mod.ui.film.UIFilmPreview / AudioStemExporter. */
+	public static ValueBoolean audioExportSeparateFiles;
 
 	/* AUTONOMIE 2026-07-27: schalter fuer den crowd/bake-schnellpfad in com/afrobama
 	 * (bbstools/client/bbs/fastpath). Eigene kategorie "bbstools" statt sie wie im CML-fork
@@ -670,6 +679,7 @@ public class BBSSettings {
 		editorPersistentUndoLimit = builder.getInt("persistent_undo_limit", 100, 1, 100);
 		editorKeybindSpecificWins = builder.getBoolean("keybind_specific_wins", true);
 		editorFlightEditsActiveClip = builder.getBoolean("flight_edits_active_clip", true);
+		editorRecordCameraDuringPlayback = builder.getBoolean("record_camera_during_playback", false);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);
 		editorOrbitCenterMarker = builder.getBoolean("orbit_center_marker", false);
@@ -689,6 +699,7 @@ public class BBSSettings {
 		builder.register(ikDebug = new ValueIKDebug("ik_debug"));
 		builder.register(physicsDebug = new ValuePhysicsDebug("physics_debug"));
 		editorSnapToMarkers = builder.getBoolean("snap_to_markers", false);
+		editorQuickReplaySnapToBlock = builder.getBoolean("quick_replay_snap_to_block", true);
 		editorClipPreview = builder.getBoolean("clip_preview", true);
 		editorRewind = builder.getBoolean("rewind", true);
 		editorHorizontalClipEditor = builder.getBoolean("horizontal_clip_editor", true);
@@ -728,6 +739,7 @@ public class BBSSettings {
 		audioWaveformFilename = builder.getBoolean("waveform_filename", false);
 		audioWaveformTime = builder.getBoolean("waveform_time", false);
 		audioWaveformPreviewCombined = builder.getBoolean("waveform_preview_combined", false);
+		audioExportSeparateFiles = builder.getBoolean("export_separate_files", false);
 
 		builder.category("bbstools", Icons.GEAR);
 		bakeFastPath = builder.getBoolean("bake_fast_path", true);
