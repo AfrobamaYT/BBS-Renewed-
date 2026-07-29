@@ -125,6 +125,78 @@ loom {
 			vmArgs "--add-modules=jdk.jshell"
 
 			/*
+			 * ⭐ MIXIN-HOTSWAP (2026-07-29, user-order „will nie wieder restarts sehen").
+			 *
+			 * Die MixinBruecke macht die LOGIK eines Handlers hotswapbar, nicht die WEBUNG.
+			 * Neues Mixin, anderer Injection Point, geänderte Handler-Signatur kosteten
+			 * deshalb weiterhin einen Boot — der letzte verbliebene Boot-Grund.
+			 *
+			 * Mixin bringt dagegen ein eigenes Werkzeug mit, das nie eingeschaltet war:
+			 * `org.spongepowered.tools.agent.MixinAgent` steckt im sponge-mixin-jar, das
+			 * ohnehin auf dem Classpath liegt, und dessen Manifest trägt Agent-Class,
+			 * Premain-Class, Can-Redefine-Classes und Can-Retransform-Classes. Mit
+			 * `mixin.hotSwap=true` DEFINIERT der Mixin-Prozessor die Mixin-Klassen als
+			 * echte JVM-Klassen; erst dann kann JDWP sie redefinieren, und der Agent webt
+			 * die Zielklassen daraufhin neu.
+			 *
+			 * ⛔ NACHTRÄGLICH ANHÄNGEN REICHT NICHT — gemessen: der Agent lässt sich per
+			 * Attach-API an die laufende JVM hängen (`ANGEHAENGT`, Instanz lief weiter),
+			 * aber die Mixin-Klassen waren da längst nicht als JVM-Klassen definiert
+			 * (`ungeladen (kommt beim ersten zugriff frisch)`), also gab es nichts zu
+			 * redefinieren. Die Eigenschaft muss beim START stehen.
+			 *
+			 * ⭐ BELEGT AM 2026-07-29 AN DER TEST-INSTANZ, die ganze Kette:
+			 *   1. `mixin.hotSwap = true` steht (ohne Agent-Boot: null).
+			 *   2. `hotswap.ps1 <MixinKlasse>` meldet `REDEFINED: 1 klasse(n)`.
+			 *      Dieselbe Klasse in der Instanz OHNE Agent: `ungeladen`.
+			 *   3. Der Agent protokolliert die Neu-Webung:
+			 *      `(FabricLoader/Mixin/agent) Redefining mixin com/afrobama/.../…Mixin`
+			 *   4. WIRKUNG: der gewobene Handler rief danach einen Klassennamen, den es erst
+			 *      im NACH dem Boot kompilierten Quelltext gab — nachgewiesen über eine neue
+			 *      Brückenmeldung. Kein Neustart.
+			 *
+			 * Deshalb STANDARD AN (User-Order 2026-07-29: „will nie wieder restarts sehen").
+			 * Abschalten, falls der Agent je im Weg steht:  ./gradlew runQuick -PkeinMixinHotswap
+			 */
+			if (!project.hasProperty("keinMixinHotswap"))
+			{
+				/* ⛔ NICHT ÜBER EINE PROJEKT-KONFIGURATION. Der jar hängt an fabric-loader
+				 * und steht auf LOOMS launch-classpath, nicht in compileClasspath oder
+				 * runtimeClasspath — zwei Versuche darüber schlugen fehl. Er liegt aber
+				 * verlässlich im Gradle-Modul-Cache; die Fassung wird nicht festgenagelt,
+				 * sondern die neueste genommen. */
+				def cache = new File(gradle.gradleUserHomeDir,
+					"caches/modules-2/files-2.1/net.fabricmc/sponge-mixin")
+				def gefunden = []
+
+				if (cache.exists())
+				{
+					cache.eachFileRecurse { datei ->
+						if (datei.name.startsWith("sponge-mixin-") && datei.name.endsWith(".jar"))
+						{
+							gefunden << datei
+						}
+					}
+				}
+
+				def mixinJar = gefunden.sort { -it.lastModified() }.find { true }
+
+				if (mixinJar == null)
+				{
+					/* Ein Werkzeug, das nicht kann was verlangt wird, muss LAUT scheitern —
+					 * ein stilles Weiterlaufen ohne Agent sähe aus wie „Mixin-Hotswap geht
+					 * nicht", und genau diese Fehldiagnose hat schon Monate gekostet. */
+					throw new GradleException(
+						"-PmixinHotswap: kein sponge-mixin-*.jar unter " + cache)
+				}
+
+				property "mixin.hotSwap", "true"
+				vmArgs "-javaagent:${mixinJar.absolutePath}"
+
+				println "[mixin-hotswap] agent: ${mixinJar.name}"
+			}
+
+			/*
 			 * ⛔ EIGENER LAUFORDNER FUER DIE TEST-INSTANZ (2026-07-29, R3 in docs/REIBUNGEN.md).
 			 *
 			 * Zwei clients duerfen sich `run/` nicht teilen: Minecraft haelt eine session.lock
