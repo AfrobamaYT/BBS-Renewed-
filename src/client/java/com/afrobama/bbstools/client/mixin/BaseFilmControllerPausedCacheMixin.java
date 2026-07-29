@@ -18,8 +18,7 @@
 // upload time.
 package com.afrobama.bbstools.client.mixin;
 
-import com.afrobama.bbstools.perf.PausedReplayBoneCache;
-import com.afrobama.bbstools.perf.PausedReplayMatrixCache;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.film.BaseFilmController;
 
@@ -34,11 +33,10 @@ public abstract class BaseFilmControllerPausedCacheMixin
     @Inject(method = "togglePause", at = @At("RETURN"), remap = false)
     private void bbs$invalidatePausedCacheOnToggle(CallbackInfo ci)
     {
-        /* Drop every cache entry; bump version counter so any pending
-         * reader on another thread sees the stale generation and falls
-         * through to the recompute path. */
-        PausedReplayBoneCache.INSTANCE.invalidateAll();
-        PausedReplayMatrixCache.INSTANCE.reset();
+        /* BRÜCKEN-MUSTER: logik liegt in
+         * com.afrobama.blendertransform.BaseFilmControllerPausedCacheLogik — dort ist sie
+         * hotswapbar, der gewobene teil bleibt ein einzeiler. */
+        MixinBruecke.rufe("BaseFilmControllerPausedCacheLogik", "invalidateOnToggle");
     }
 
 }

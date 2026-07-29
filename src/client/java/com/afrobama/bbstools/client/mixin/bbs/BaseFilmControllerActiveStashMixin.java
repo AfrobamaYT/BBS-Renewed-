@@ -7,7 +7,7 @@
 // AFK baking.
 package com.afrobama.bbstools.client.mixin.bbs;
 
-import com.afrobama.bbstools.client.bbs.fastpath.BackgroundBaker;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.film.BaseFilmController;
 
@@ -22,7 +22,10 @@ public abstract class BaseFilmControllerActiveStashMixin
     @Inject(method = "update", at = @At("HEAD"), remap = false)
     private void bbstools$stashActive(CallbackInfo ci)
     {
-        BackgroundBaker.setActive((BaseFilmController) (Object) this);
+        /* BRÜCKEN-MUSTER: logik liegt in
+         * com.afrobama.blendertransform.BaseFilmControllerActiveStashLogik. Der gewobene
+         * teil bleibt damit ein einzeiler und die logik ist hotswapbar. */
+        MixinBruecke.rufe("BaseFilmControllerActiveStashLogik", "stashActive", this);
     }
 
 }
