@@ -118,8 +118,14 @@ public class Keys
 
     /* World menu */
     public static final KeyCombo CYCLE_PANELS = new KeyCombo("cycle_panels", UIKeys.WORLD_KEYS_CYCLE_PANELS, GLFW.GLFW_KEY_TAB).categoryKey("world");
-    /* Alt+Z wie Blenders X-Ray — der User arbeitet in Blender, das Kürzel sitzt dort in den Fingern. */
-    public static final KeyCombo WIREFRAME = new KeyCombo("wireframe", UIKeys.WORLD_KEYS_WIREFRAME, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_LEFT_ALT).categoryKey("world");
+    /* Alt+Z wie Blenders X-Ray — der User arbeitet in Blender, das Kürzel sitzt dort in den Fingern.
+     *
+     * ⛔ GLFW_KEY_Y, NICHT _Z. Die GLFW-Konstanten benennen PHYSISCHE Tasten nach dem
+     * US-Layout. Auf der deutschen QWERTZ-Tastatur des Users sitzt an der Stelle von
+     * GLFW_KEY_Z (90) die Taste mit der Aufschrift Y — und umgekehrt. Mit _Z belegt tat
+     * Alt+Z bei ihm nichts (2026-07-29 gemeldet und nachgemessen); BBS zeigte die Belegung
+     * sogar korrekt lokalisiert als "Alt + Y" an. _Y trifft die Taste, auf der Z steht. */
+    public static final KeyCombo WIREFRAME = new KeyCombo("wireframe", UIKeys.WORLD_KEYS_WIREFRAME, GLFW.GLFW_KEY_Y, GLFW.GLFW_KEY_LEFT_ALT).categoryKey("world");
 
     /* Transformations */
     public static final KeyCombo TRANSFORMATIONS_TRANSLATE = new KeyCombo("translate", UIKeys.TRANSFORMS_TRANSLATE, GLFW.GLFW_KEY_G).categoryKey("transformations");
