@@ -66,6 +66,18 @@ public final class StencilAnzeige
         Texture texture = puffer.getMainTexture();
         int abIndex = altGedrueckt ? panel.getData().replays.getList().size() + offset : offset;
 
+        /* ⛔ NICHT die übergebene Panel-Fläche, sondern das SICHTFENSTER. getViewport() legt das
+         * Seitenverhältnis des Videos mittig ins Panel (Letterbox) — der Stencil-Inhalt gehört
+         * also in dieses innere Rechteck. Spannt man ihn über das ganze Panel, liegt der Umriss
+         * verzerrt und verschoben über der Figur.
+         *
+         * Warum das erst beim User auffiel: sein DEV-Panel ist zufällig fast genau 16:9, dort
+         * fallen Panel und Sichtfenster zusammen. In seiner CF-Instanz nicht — dort zeichnete
+         * der Umriss riesige Konturen quer durchs Bild (gemeldet 2026-07-29 mit Screenshots).
+         * Ich habe erst die Mods verdächtigt; BBS' eigene Auswahl lieferte in CF aber saubere
+         * Indizes (20 auf der Figur, 0 daneben) — der Puffer war also immer in Ordnung. */
+        area = panel.preview.getViewport();
+
         if (texture == null)
         {
             return;
