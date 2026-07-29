@@ -34,7 +34,7 @@
 // meldet ein VERSCHWUNDENES ziel, nicht ein erweitertes.
 package com.afrobama.bbstools.client.mixin.bbs;
 
-import com.afrobama.bbstools.perf.BBSPerfConfig;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -63,19 +63,12 @@ public abstract class ModelFormRendererPickerSkipAnimateMixin
     private void bbstools$skipAnimateForPicker(ModelFormRenderer self, IEntity entity, ModelInstance model, float transition,
                                                FormRenderingContext context)
     {
-        if (BBSPerfConfig.ENABLE_ARMY_BAKE
-            && BBSPerfConfig.ENABLE_PICKER_SKIP_ANIMATE
-            && context.stencilMap != null)
+        /* BRÜCKEN-MUSTER (Aufgabe #56): die logik liegt in
+         * com.afrobama.blendertransform.ModelFormRendererPickerSkipAnimateLogik und ist
+         * damit hotswapbar. Hier steht nur noch die weiche. */
+        if (MixinBruecke.rufeUndAbbrechen("ModelFormRendererPickerSkipAnimateLogik", "ueberspringen",
+                self, model, context))
         {
-            /* Pick pass → rest-pose silhouette is enough; skip the per-form
-             * animator (the multi-select 0-fps). Das ist evaluateChannels OHNE
-             * applyActions — die beiden anderen schritte muessen bleiben, sonst
-             * behaelt das modell die pose des zuletzt gerenderten replays. */
-            BBSPerfConfig.pickerAnimateSkips++;
-
-            model.model.resetPose();
-            model.model.applyPose(self.getPose());
-
             return;
         }
 
