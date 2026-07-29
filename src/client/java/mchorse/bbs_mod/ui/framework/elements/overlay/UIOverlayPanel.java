@@ -278,6 +278,42 @@ public class UIOverlayPanel extends UIElement
             this.lastY = context.mouseY;
         }
 
+        /* AUFGEHEND ÖFFNEN — aus dem CML-Upstream nachgezogen.
+         *
+         * USER 2026-07-29: „im alten fork hat bbs cml smoothe animationen für all ihre uis
+         * aber das funktioniert in unserem fork nicht".
+         *
+         * Der Wert dafür lief bei uns längst: UIOverlay zieht openTransition pro Frame auf 1
+         * hoch (und bei simplify_animations sofort). Nur GEZEICHNET wurde er nie —
+         * getOpenTransition() hatte keinen einzigen Aufrufer, während CML ihn hier benutzt
+         * (UIOverlayPanel:292). Deshalb blendete bei uns nur die Hintergrund-Abdunklung ein
+         * und das Panel selbst stand sofort in voller Größe da.
+         *
+         * Skaliert wird um die MITTE des Panels, nicht um seine Ecke — sonst wächst es aus
+         * der linken oberen Ecke heraus statt aufzugehen. */
+        float transition = 1.0F;
+
+        if (this.getParent() instanceof UIOverlay overlay)
+        {
+            transition = overlay.getOpenTransition();
+        }
+
+        boolean waechst = transition < 1.0F;
+
+        if (waechst)
+        {
+            /* Nicht auf 0 skalieren: eine Matrix mit Faktor 0 ist nicht invertierbar, und
+             * das erste Bild wäre ohnehin unsichtbar. */
+            float skalierung = Math.max(0.01F, transition);
+            float cx = this.area.mx();
+            float cy = this.area.my();
+
+            context.render.batcher.getContext().getMatrices().push();
+            context.render.batcher.getContext().getMatrices().translate(cx, cy, 0.0F);
+            context.render.batcher.getContext().getMatrices().scale(skalierung, skalierung, 1.0F);
+            context.render.batcher.getContext().getMatrices().translate(-cx, -cy, 0.0F);
+        }
+
         this.renderBackground(context);
 
         super.render(context);
@@ -300,6 +336,14 @@ public class UIOverlayPanel extends UIElement
                 context.batcher.box(right - 9, bottom - 1, right - 1, bottom, resizeColor);
                 context.batcher.box(right - 1, bottom - 9, right, bottom - 1, resizeColor);
             }
+        }
+
+        /* Erst hier zurück, nicht direkt nach super.render: der Anfasser zum Größe-Ziehen
+         * gehört zum Panel und muss mitwachsen, sonst zappelt er während der Animation an
+         * seiner Endposition. */
+        if (waechst)
+        {
+            context.render.batcher.getContext().getMatrices().pop();
         }
     }
 
