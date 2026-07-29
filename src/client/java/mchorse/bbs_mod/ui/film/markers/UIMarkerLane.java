@@ -33,7 +33,10 @@ public class UIMarkerLane extends UIElement
     private static final int KOPF_HOEHE = 9;
 
     /** Halbe Breite des Kopfes. Schmal genug, dass er einen Clip nicht verdeckt. */
-    private static final int KOPF_BREITE = 3;
+    private static final int KOPF_BREITE = 4;
+
+    /** Wie viele Zeilen des Kopfes zur Spitze zulaufen. */
+    private static final int SPITZE = 3;
 
     private final UIClips clips;
     private final IUIClipsDelegate delegate;
@@ -55,6 +58,50 @@ public class UIMarkerLane extends UIElement
      * Abspielkopfes, und beides ist wichtiger. Schnittprogramme legen die Marker deshalb in ein
      * eigenes Band gleich unter dem Lineal; genau das tut das hier.</p>
      */
+    /**
+     * Ein Marker-Kopf: Fähnchen mit Spitze nach unten, dunkel umrandet, oben aufgehellt.
+     *
+     * <p>Warum nicht einfach ein Rechteck (so war es zuerst): ein flacher Farbklecks sieht
+     * nach Platzhalter aus und geht auf einem gleichfarbigen Clip unter. Die drei Zutaten,
+     * die daraus ein Bedienelement machen, sind dieselben, die BBS überall benutzt — eine
+     * dunkle Kante für Kontrast auf jedem Untergrund, eine hellere Oberkante als Lichtkante,
+     * und eine Spitze, die auf den Tick zeigt statt ihn zu überdecken.</p>
+     *
+     * <p>Gezeichnet wird zeilenweise, weil die Oberfläche pixelig ist: eine echte Diagonale
+     * würde neben den Blockgrafiken von Minecraft falsch aussehen.</p>
+     */
+    private void fahne(UIContext context, int x, int oben, int farbe, boolean hervor)
+    {
+        int koerper = hervor ? Colors.lerp(farbe, Colors.WHITE, 0.25F) : farbe;
+        int kante = Colors.A50;
+        int licht = Colors.lerp(koerper, Colors.WHITE, 0.45F);
+
+        int voll = KOPF_HOEHE - SPITZE;
+
+        /* Erst die dunkle Kante als etwas größere Silhouette, dann den Körper darauf. */
+        for (int i = 0; i <= SPITZE; i++)
+        {
+            int b = KOPF_BREITE - i;
+            int y = oben + voll + i;
+
+            context.batcher.box(x - b - 1, y, x + b + 1, y + 1, kante);
+        }
+
+        context.batcher.box(x - KOPF_BREITE - 1, oben - 1, x + KOPF_BREITE + 1, oben + voll, kante);
+        context.batcher.box(x - KOPF_BREITE, oben, x + KOPF_BREITE, oben + voll, koerper);
+
+        for (int i = 0; i < SPITZE; i++)
+        {
+            int b = KOPF_BREITE - i;
+            int y = oben + voll + i;
+
+            context.batcher.box(x - b, y, x + b, y + 1, koerper);
+        }
+
+        /* Lichtkante oben — ohne sie wirkt der Kopf flach. */
+        context.batcher.box(x - KOPF_BREITE, oben, x + KOPF_BREITE, oben + 1, licht);
+    }
+
     private int oben()
     {
         return TimelineRulerRenderer.getRulerBottom(this.area) + 1;
@@ -158,6 +205,7 @@ public class UIMarkerLane extends UIElement
     {
         Area area = this.area;
         FontRenderer font = context.batcher.getFont();
+        Marker ueberfahren = this.unterZeiger(context.mouseX, context.mouseY);
 
         context.batcher.clip(area, context);
 
@@ -171,19 +219,24 @@ public class UIMarkerLane extends UIElement
             }
 
             int farbe = marker.color.get();
+            boolean drunter = ueberfahren == marker;
 
-            /* Die Linie läuft durch die ganze Spur, aber halbdurchsichtig: sie soll die
-             * Stelle zeigen, ohne die Clips darunter unlesbar zu machen. */
-            context.batcher.box(x, this.oben() + KOPF_HOEHE, x + 1, area.ey(), Colors.setA(farbe, 0.4F));
+            this.fahne(context, x, this.oben(), farbe, drunter);
 
-            /* Der Kopf ist das, was man anklickt — deshalb voll deckend. */
-            context.batcher.box(x - KOPF_BREITE, this.oben(), x + KOPF_BREITE, this.oben() + KOPF_HOEHE, farbe);
+            /* Die Linie läuft durch die ganze Spur, aber halbdurchsichtig: sie zeigt die
+             * Stelle, ohne die Clips darunter unlesbar zu machen. Unter dem Zeiger wird sie
+             * kräftiger — so sieht man, welche Linie zu welchem Kopf gehört. */
+            context.batcher.box(x, this.oben() + KOPF_HOEHE, x + 1, area.ey(),
+                Colors.setA(farbe, drunter ? 0.75F : 0.35F));
 
             String text = marker.label.get();
 
             if (!text.isEmpty())
             {
-                context.batcher.text(text, x + KOPF_BREITE + 2, this.oben() + (KOPF_HOEHE - font.getHeight()) / 2 + 1, Colors.WHITE);
+                /* Auf dunklem Grund, sonst verschwindet heller Text auf hellen Clips. */
+                context.batcher.textCard(text, x + KOPF_BREITE + 3,
+                    this.oben() + (KOPF_HOEHE - font.getHeight()) / 2 + 1,
+                    Colors.WHITE, Colors.A75, 2);
             }
         }
 
