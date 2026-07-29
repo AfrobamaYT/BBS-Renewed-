@@ -123,6 +123,22 @@ loom {
 
 
 			vmArgs "--add-modules=jdk.jshell"
+
+			/*
+			 * ⛔ EIGENER LAUFORDNER FUER DIE TEST-INSTANZ (2026-07-29, R3 in docs/REIBUNGEN.md).
+			 *
+			 * Zwei clients duerfen sich `run/` nicht teilen: Minecraft haelt eine session.lock
+			 * auf der geladenen welt, und options.txt/config werden beim beenden ueberschrieben.
+			 * Die zweite instanz bekommt deshalb `run_2` (steht schon in .gitignore).
+			 *
+			 * WOFUER ueberhaupt eine zweite: meine beweis-laeufe haben dem nutzer panel,
+			 * kategorie und cursor unter den haenden weggezogen, einmal sein vorbereitetes
+			 * testszenario zerschossen. Die test-instanz darf ich jederzeit ruinieren.
+			 *
+			 *   pwsh tools/dev-neustart.ps1 -Test -Starten
+			 */
+			runDir project.findProperty("laufordner") ?: "run"
+
 			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
 		}
 	}
