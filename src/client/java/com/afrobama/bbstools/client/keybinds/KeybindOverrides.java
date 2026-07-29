@@ -103,13 +103,58 @@ public final class KeybindOverrides
         return Collections.unmodifiableMap(registry);
     }
 
+    /** Die eine Kategorie, die überall gilt — sie kollidiert mit jedem anderen Kontext. */
+    private static final String GLOBAL = "all";
+
+    /**
+     * Können zwei Belegungen überhaupt gleichzeitig gelten?
+     *
+     * <p>⛔ BBS IST MODAL, und das war der Fehler dieser Prüfung: sie verglich nur die
+     * Tastenmengen, quer über alle Kategorien. Dieselbe Taste bedeutet aber im Kamera-,
+     * Keyframe- und Transform-Editor etwas anderes und funktioniert dort gleichzeitig.
+     * Der User hat es beim Arbeiten bemerkt (2026-07-28): „genau das habe ich auch bemerkt
+     * im keybind editor fix das bitte".</p>
+     *
+     * <p>GEMESSEN, warum die Kategorie hier der richtige Maßstab ist (2026-07-29) — nicht
+     * angenommen, denn ein zu großzügiger Filter wäre schlimmer als der alte Zustand: er
+     * würde ECHTE Konflikte verschweigen, und der Nutzer sucht später, warum eine Taste
+     * nichts tut.</p>
+     * <ul>
+     *   <li>Jede Kategorie wird von GENAU EINEM UI-Element abgefragt — nachgeschlagen für
+     *       die Paare, die der User als funktionierend gemeldet hat: {@code camera} nur in
+     *       {@code UIClips}, {@code keyframes} nur in {@code UIKeyframes},
+     *       {@code transformations} nur in {@code UIPropTransform}.</li>
+     *   <li>Die Belegungen hängen am ELEMENT, nicht global:
+     *       {@code this.keys().register(Keys.CLIP_DURATION, …).active(canUseKeybinds)}.
+     *       Das UI-Framework verteilt die Taste an das Element im Kontext — nur eines
+     *       bekommt sie.</li>
+     *   <li>{@code all} hängt dagegen an keinem Element und gilt überall; solche Paare
+     *       bleiben Konflikte.</li>
+     * </ul>
+     *
+     * <p>Unbekannte Kategorie ({@code null}) gilt bewusst als überschneidend: eine Warnung
+     * zu viel ist hier billiger als eine verschwiegene Kollision.</p>
+     */
+    private static boolean kontexteUeberschneiden(String eine, String andere)
+    {
+        if (eine == null || andere == null)
+        {
+            return true;
+        }
+
+        return eine.equals(andere) || GLOBAL.equals(eine) || GLOBAL.equals(andere);
+    }
+
     /**
      * Returns every other registered KeyCombo whose key set is identical
-     * to the given combo's. Order of keys doesn't matter — Shift+E and
-     * E+Shift conflict because the user can't distinguish them.
+     * to the given combo's AND whose context can be active at the same time.
+     * Order of keys doesn't matter — Shift+E and E+Shift conflict because
+     * the user can't distinguish them.
      *
      * <p>Empty / unbound combos return an empty list (an unbound combo
      * isn't a real binding and shouldn't be flagged as conflicting).</p>
+     *
+     * <p>Zur Kontext-Bedingung siehe {@link #kontexteUeberschneiden(String, String)}.</p>
      */
     public static synchronized List<KeyCombo> findConflicts(KeyCombo combo)
     {
@@ -128,6 +173,7 @@ public final class KeybindOverrides
             if (other.id != null && other.id.equals(combo.id)) continue;
             if (other.keys == null || other.keys.isEmpty()) continue;
             if (other.keys.size() != combo.keys.size()) continue;
+            if (!kontexteUeberschneiden(combo.categoryKey, other.categoryKey)) continue;
 
             java.util.Set<Integer> theirs = new java.util.HashSet<>(other.keys);
             if (mine.equals(theirs))
@@ -638,9 +684,10 @@ public final class KeybindOverrides
      * </ol>
      *
      * <p>Jede Belegung hier wurde vor dem Eintragen live gegen
-     * {@link #findConflicts(KeyCombo)} geprueft. ⚠ Diese Pruefung vergleicht GLOBAL ueber alle
-     * Kategorien und meldet deshalb auch harmlose Ueberschneidungen — die Kategorie der
-     * Gegenseite entscheidet, ob es eine echte Kollision ist.</p>
+     * {@link #findConflicts(KeyCombo)} geprueft. Seit 2026-07-29 beruecksichtigt diese Pruefung
+     * den Kontext selbst: sie meldet nur noch Ueberschneidungen, die gleichzeitig gelten koennen
+     * (gleiche Kategorie, oder eine der beiden ist {@code all}). Frueher verglich sie quer ueber
+     * alle Kategorien und markierte auch Belegungen rot, die problemlos nebeneinander laufen.</p>
      */
     private static Map<String, int[]> buildLeftHandMouseLayout()
     {
