@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.replays;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
+import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.SpurZeiger;
@@ -117,6 +118,17 @@ public class KameraSpuren implements SpurZeiger
     public boolean klick(UIContext context)
     {
         if (context.mouseButton != 0 || !an() || !this.ansicht.graphArea.isInside(context))
+        {
+            return false;
+        }
+
+        /* ⛔ Strg+Klick legt einen Keyframe an, Alt+Klick dupliziert eine Spalte — beide Gesten
+         * gehören der Keyframe-Ansicht (UIKeyframes#subMouseClicked). Der Kamera-Balken darf sie
+         * NICHT abfangen: sonst wählt ein Strg+Klick über einem Clip nur den Clip aus, und man
+         * kann an dieser Stelle keinen Keyframe mehr setzen. Vom User gemeldet 2026-07-29:
+         * „wenn ich über einem camera clip ein keyframe erstellen will dann selected er den
+         * camera clip und ich kann kein keyframe drüber legen." */
+        if (Window.isCtrlPressed() || Window.isAltPressed())
         {
             return false;
         }
