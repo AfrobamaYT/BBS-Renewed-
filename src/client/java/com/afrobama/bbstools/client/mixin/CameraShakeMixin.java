@@ -1,5 +1,6 @@
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.client.fracture.CameraShakeManager;
 
 import net.minecraft.client.render.Camera;
@@ -28,22 +29,26 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(Camera.class)
 public class CameraShakeMixin
 {
+    /* BRÜCKEN-MUSTER (Aufgabe #56): logik in
+     * com.afrobama.blendertransform.CameraShakeLogik, damit sie hotswapbar ist.
+     *
+     * ⛔ RÜCKFALL AUF DEN UNVERÄNDERTEN WERT, nicht auf 0: liefert die brücke null (klasse
+     * oder methode nicht auflösbar), muss die kamera stehen wie ohne feature. Ein
+     * `(Float) ergebnis` würde dort eine NullPointerException pro frame werfen. */
     @ModifyVariable(method = "setRotation(FF)V", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     private float bbstools$shakeYaw(float yaw)
     {
-        if (!CameraShakeManager.isActive()) return yaw;
-        /* Advance the noise time + decay amplitude for this frame.
-         *  Done in the yaw hook because it's reliably called before
-         *  pitch. */
-        CameraShakeManager.tickFrame();
-        return yaw + CameraShakeManager.currentYawDelta();
+        Object ergebnis = MixinBruecke.rufe("CameraShakeLogik", "yaw", yaw);
+
+        return ergebnis instanceof Float ? (Float) ergebnis : yaw;
     }
 
     @ModifyVariable(method = "setRotation(FF)V", at = @At("HEAD"), ordinal = 1, argsOnly = true)
     private float bbstools$shakePitch(float pitch)
     {
-        if (!CameraShakeManager.isActive()) return pitch;
-        return pitch + CameraShakeManager.currentPitchDelta();
+        Object ergebnis = MixinBruecke.rufe("CameraShakeLogik", "pitch", pitch);
+
+        return ergebnis instanceof Float ? (Float) ergebnis : pitch;
     }
 
 }
