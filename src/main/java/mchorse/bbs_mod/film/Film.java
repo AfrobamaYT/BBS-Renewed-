@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.film;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.film.markers.Markers;
 import mchorse.bbs_mod.film.replays.Inventory;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.film.replays.Replays;
@@ -29,6 +30,9 @@ public class Film extends ValueGroup
      */
     public final ValueStringKeys replayCategoryNames = new ValueStringKeys("replay_categories");
 
+    /** Merkstellen auf der Zeitleiste — siehe {@link mchorse.bbs_mod.film.markers.Marker}. */
+    public final Markers markers = new Markers("markers");
+
     public final Inventory inventory = new Inventory("inventory");
     public final ValueFloat hp = new ValueFloat("hp", 20F);
     public final ValueFloat hunger = new ValueFloat("hunger", 20F);
@@ -54,6 +58,7 @@ public class Film extends ValueGroup
         this.add(this.camera);
         this.add(this.replays);
         this.add(this.replayCategoryNames);
+        this.add(this.markers);
 
         this.add(this.inventory);
         this.add(this.hp);

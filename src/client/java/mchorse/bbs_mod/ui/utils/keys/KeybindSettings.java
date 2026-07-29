@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.utils.keys;
 import mchorse.bbs_mod.settings.SettingsBuilder;
 import mchorse.bbs_mod.settings.value.ValueKeyCombo;
 import mchorse.bbs_mod.ui.Keys;
+import mchorse.bbs_mod.ui.film.markers.MarkerKeys;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 
@@ -39,6 +40,7 @@ public class KeybindSettings
     public static void registerClasses()
     {
         classes.add(Keys.class);
+        classes.add(MarkerKeys.class);
     }
 
     public static void register(SettingsBuilder builder)

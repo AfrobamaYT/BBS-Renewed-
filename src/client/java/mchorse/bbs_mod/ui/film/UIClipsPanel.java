@@ -15,6 +15,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
+import mchorse.bbs_mod.ui.film.markers.UIMarkerLane;
 import mchorse.bbs_mod.utils.factory.IFactory;
 
 import java.util.ArrayList;
@@ -40,6 +41,11 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         this.clips = new UIClips(this, factory);
 
         this.add(this.clips.full(this));
+
+        /* Die Merkstellen-Spur ist ein KIND der Zeitleiste: so wird sie danach gezeichnet
+         * (liegt also oben) und bekommt den Klick zuerst. Sie gibt jeden Klick weiter, der
+         * keinen Marker trifft. Siehe UIMarkerLane. */
+        this.clips.add(new UIMarkerLane(this.clips, this).full(this.clips));
     }
 
     public UIClipsPanel target(UIElement target)

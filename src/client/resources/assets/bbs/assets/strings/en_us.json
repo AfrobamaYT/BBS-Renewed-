@@ -764,6 +764,13 @@
 	"bbs.ui.film.replay.animation_to_pose.only_keyframes": "Only keyframes",
 	"bbs.ui.film.replay.animation_to_pose.only_keyframes-tooltip": "Instead of baking animations for every tick, when enabled, only in places where there are keyframes poses will be generated... for MoLang powered animations, it's better to disable this option!",
 	"bbs.ui.film.replay.animation_to_pose.step": "Baking step",
+	"bbs.ui.film.markers.title": "Marker",
+	"bbs.ui.film.markers.label": "What you want to remember here",
+	"bbs.ui.film.markers.color": "Marker colour — use it to tell kinds of notes apart",
+	"bbs.ui.film.markers.tick": "Tick the marker sits on",
+	"bbs.ui.film.markers.remove": "Remove marker",
+	"bbs.ui.film.markers.keys.add": "Add a marker at the playhead",
+
 	"bbs.ui.film.replay.animation_to_pose.title": "Animation to poses",
 	"bbs.ui.film.replay.axes_preview": "Axes preview",
 	"bbs.ui.film.replay.context.add": "Add a replay here",
