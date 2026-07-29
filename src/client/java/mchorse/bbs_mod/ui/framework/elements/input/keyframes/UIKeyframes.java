@@ -84,34 +84,7 @@ public class UIKeyframes extends UIElement
 
     private final Scale xAxis = new Scale(this.graphArea, ScrollDirection.HORIZONTAL);
 
-    /**
-     * Etwas, das auf der Zeitleiste unter den Spuren liegt und selbst auf die Maus hört —
-     * die Kamera-Clips im Replay-Editor sind der erste Fall.
-     *
-     * <p>Die Keyframes haben immer Vorrang: {@link #klick} wird erst gefragt, wenn der Graph
-     * den Klick nicht schon verbraucht hat. Gezeichnet wird über {@link #backgroundRenderer},
-     * also vor Gitter und Keyframes.</p>
-     */
-    public interface SpurZeiger
-    {
-        /**
-         * Gezeichnet wird zwischen den Spuren und dem Zeitleisten-Gitter.
-         *
-         * <p>NICHT über {@link #backgroundRenderer} — der läuft vor den Spuren, und deren
-         * Zeilenhintergrund ist DECKEND: gemessen 2026-07-29 war von zwei Kamera-Clips nur
-         * der sichtbar, der unterhalb der letzten Spur lag, der andere war übermalt. Hier
-         * liegt der Balken über dem Zeilenhintergrund, aber unter Gitter und Keyframes —
-         * genau die Reihenfolge, die der User bestellt hat.</p>
-         */
-        void zeichne(UIContext context);
-
-        boolean klick(UIContext context);
-
-        void zug(UIContext context);
-
-        void losgelassen(UIContext context);
-    }
-
+    /** Was in den Spurzeilen unter den Keyframes liegt — siehe {@link SpurZeiger}. */
     public SpurZeiger spuren;
 
     private final Consumer<Keyframe> callback;
@@ -1512,22 +1485,6 @@ public class UIKeyframes extends UIElement
         public PastedKeyframes(IKeyframeFactory factory)
         {
             this.factory = factory;
-        }
-    }
-
-    private static class SheetCache
-    {
-        public List<Pair<BaseType, UIKeyframeSheet>> data = new ArrayList<>();
-
-        public SheetCache(Collection<UIKeyframeSheet> sheets)
-        {
-            for (UIKeyframeSheet sheet : sheets)
-            {
-                if (sheet.selection.hasAny())
-                {
-                    this.data.add(new Pair<>(sheet.channel.toData(), sheet));
-                }
-            }
         }
     }
 }

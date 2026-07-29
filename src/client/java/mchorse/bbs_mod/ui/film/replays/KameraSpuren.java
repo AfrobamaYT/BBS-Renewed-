@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.ui.film.replays;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.SpurZeiger;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -24,7 +26,7 @@ import java.util.List;
  * also VOR Gitter und Keyframes; die Keyframes bleiben oben und behalten den Vorrang bei der
  * Maus.</p>
  */
-public class KameraSpuren implements UIKeyframes.SpurZeiger
+public class KameraSpuren implements SpurZeiger
 {
     /** Wie nah an der Kante gegriffen werden muss, um zu kürzen statt zu verschieben. */
     private static final int KANTE = 4;
@@ -53,30 +55,42 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
 
     /* Was gezeichnet wird */
 
+    /**
+     * Die Clips EINER Spurzeile, aufgerufen aus der Zeile selbst — direkt nachdem sie ihren
+     * Hintergrund gemalt hat und bevor sie ihre Keyframes zeichnet.
+     *
+     * <p>USER-EINWAND 2026-07-29 zur ersten Fassung: „ich wollte ja das es hinter den keyframes
+     * selbst displayed wird weil jetzt verdeckt es sie nur." Genau daran lag es: der Balken lag
+     * über der ganzen Zeile, also auch über deren Keyframes. Ein Durchgang nach allen Spuren
+     * kann das nicht lösen — die Zeile malt Hintergrund UND Keyframes in einem Zug, dazwischen
+     * kommt man nur von innen.</p>
+     */
     @Override
-    public void zeichne(UIContext context)
+    public void zeichneZeile(UIContext context, int zeile, int y, int hoehe)
     {
         Clips clips = this.clips();
 
-        if (clips == null || !KameraSpurTasten.an())
+        if (clips == null || !an())
         {
             return;
         }
 
         Clip gewaehlt = this.kamera.getClip();
-        List<Clip> liste = clips.get();
 
-        context.batcher.clip(this.ansicht.graphArea, context);
-
-        for (Clip clip : liste)
+        for (Clip clip : clips.get())
         {
-            if (this.flaeche(clip, this.balken))
+            if (Math.max(0, clip.layer.get()) != zeile)
             {
-                KameraSpurBalken.zeichne(context, this.kamera.clips, clip, this.balken, clip == gewaehlt);
+                continue;
             }
-        }
 
-        context.batcher.unclip(context);
+            int x = this.ansicht.toGraphX(clip.tick.get());
+            int breite = Math.max(KameraSpurBalken.MIN_BREITE, this.ansicht.toGraphX(clip.tick.get() + clip.duration.get()) - x);
+
+            this.balken.set(x, y, breite, hoehe);
+
+            KameraSpurBalken.zeichne(context, this.kamera.clips, clip, this.balken, clip == gewaehlt);
+        }
     }
 
     /* Maus */
@@ -84,7 +98,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     @Override
     public boolean klick(UIContext context)
     {
-        if (context.mouseButton != 0 || !KameraSpurTasten.an() || !this.ansicht.graphArea.isInside(context))
+        if (context.mouseButton != 0 || !an() || !this.ansicht.graphArea.isInside(context))
         {
             return false;
         }
@@ -148,6 +162,22 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     }
 
     /* Rechnerei */
+
+    /**
+     * ⚠ Neues statisches Feld: nach einem Hotswap steht dort null, bis die Instanz neu
+     * startet. Im Zweifel an — das ist der bestellte Default.
+     */
+    public static boolean an()
+    {
+        try
+        {
+            return BBSSettings.editorCameraClipsInReplays.get();
+        }
+        catch (Throwable t)
+        {
+            return true;
+        }
+    }
 
     private Clips clips()
     {

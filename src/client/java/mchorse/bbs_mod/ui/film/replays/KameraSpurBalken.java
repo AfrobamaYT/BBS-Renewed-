@@ -1,10 +1,12 @@
 package mchorse.bbs_mod.ui.film.replays;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.film.clips.renderer.IUIClipRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
+import mchorse.bbs_mod.utils.colors.Colors;
 
 /**
  * Zeichnet einen Kamera-Clip in die Zeitleiste des Replay-Editors — mit demselben Renderer
@@ -32,6 +34,15 @@ public final class KameraSpurBalken
     {
     }
 
+    /**
+     * Wie stark der Balken zurücktritt. Der Clip-Renderer malt für seine eigene Leiste, wo er
+     * die Hauptsache ist; hier ist er Beiwerk hinter den Keyframes. USER 2026-07-29: „mach
+     * vielleicht die opacity runter weil das lenkt ab." Der gewählte Clip bleibt kräftiger —
+     * er ist der, an dem gerade gearbeitet wird.
+     */
+    private static final float SCHLEIER = 0.62F;
+    private static final float SCHLEIER_GEWAEHLT = 0.35F;
+
     public static void zeichne(UIContext context, UIClips clips, Clip clip, Area balken, boolean gewaehlt)
     {
         IUIClipRenderer renderer = clips.getRenderers().get(clip);
@@ -42,5 +53,11 @@ public final class KameraSpurBalken
         balken.h = Math.max(2, balken.h - 2);
 
         renderer.renderClip(context, clips, clip, balken, gewaehlt, gewaehlt);
+
+        /* Gedämpft wird NACH dem Zeichnen mit einem Schleier in der Hintergrundfarbe, nicht
+         * durch Eingriff in den Renderer: so bleibt jeder Clip-Typ bei seiner Darstellung —
+         * Name, Icon, Wellenform — nur eben leiser. */
+        context.batcher.box(balken.x, balken.y, balken.ex(), balken.ey(),
+            Colors.setA(BBSSettings.deepSurface(), gewaehlt ? SCHLEIER_GEWAEHLT : SCHLEIER));
     }
 }

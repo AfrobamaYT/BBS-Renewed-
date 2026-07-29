@@ -734,12 +734,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     {
         this.renderGrid(context);
         this.renderGraph(context);
-
-        if (this.keyframes.spuren != null)
-        {
-            this.keyframes.spuren.zeichne(context);
-        }
-
         this.renderTimelineGrid(context);
         this.renderPreviewHints(context);
     }
@@ -1186,6 +1180,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         if (hover)
         {
             context.batcher.box(area.x, by, area.ex(), by + bh, BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25));
+        }
+
+        /* Was unter den Keyframes dieser Zeile liegen soll (Kamera-Clips), kommt hierhin:
+         * der Zeilenhintergrund steht, die Keyframes folgen erst. */
+        if (this.keyframes.spuren != null)
+        {
+            this.keyframes.spuren.zeichneZeile(context, row, by, bh);
         }
 
         builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
