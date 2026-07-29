@@ -4,7 +4,6 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
-import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 
 /**
@@ -43,22 +42,35 @@ public final class KameraSpurTasten
         }
     }
 
-    /** E öffnet die Kamera-Zeitleiste mit dem Clip, der gerade gewählt ist. */
-    public static void verdrahten(UIElement editor, UIFilmPanel panel)
+    /**
+     * Hängt den Horcher als LETZTES Kind ein — dort wird er zuerst gefragt.
+     *
+     * <p>⛔ Warum nicht einfach {@code subKeyPressed} im Replay-Editor überschreiben: das läuft
+     * NACH den Kindern, und eines davon verbraucht den Tastendruck. Gemessen 2026-07-29: beim
+     * Drücken kam gar nichts an, nur beim Loslassen — und ein losgelassener Knopf löst
+     * grundsätzlich kein Kürzel aus. {@code UIElement#childrenKeyPressed} läuft die Kinder
+     * RÜCKWÄRTS durch, das zuletzt hinzugefügte hat also den ersten Zugriff.</p>
+     *
+     * <p>Damit der Replay-Editor trotzdem seine eigenen Kürzel behält, greift der Horcher nur,
+     * solange ein Kamera-Clip gewählt ist — genau die Bedingung, die der User genannt hat
+     * („wenn man ein camera clip wie keyframe clip selected dann …"). Ohne gewählten Clip
+     * verhält sich der Editor wie zuvor.</p>
+     */
+    public static void anhaengen(UIElement editor, UIFilmPanel panel)
     {
-        editor.keys().register(Keys.FORMS_EDIT, () -> panel.showPanel(panel.cameraEditor))
+        UIElement horcher = new UIElement();
+
+        horcher.keys().register(Keys.FORMS_EDIT, () -> panel.showPanel(panel.cameraEditor))
             .category(UIClips.KEYS_CATEGORY)
-            .active(() -> an() && panel.cameraEditor.getClip() != null);
+            .active(() -> bereit(panel));
+
+        editor.add(horcher);
     }
 
-    /** Den Tastendruck an die Kamera-Zeitleiste weiterreichen. */
-    public static boolean weiterreichen(UIFilmPanel panel, UIContext context)
+    /** Nur mit gewähltem Kamera-Clip mischt sich die Kamera in die Tastatur ein. */
+    private static boolean bereit(UIFilmPanel panel)
     {
-        if (!an() || panel == null || panel.cameraEditor == null)
-        {
-            return false;
-        }
-
-        return panel.cameraEditor.clips.keys().check(context, true);
+        return an() && panel != null && panel.cameraEditor != null && panel.cameraEditor.getClip() != null;
     }
+
 }
