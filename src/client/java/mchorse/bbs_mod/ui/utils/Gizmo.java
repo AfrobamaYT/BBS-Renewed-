@@ -340,7 +340,10 @@ public class Gizmo
             return false;
         }
 
-        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
+        /* Bildschirmfest, wenn der echte Ursprung hinter der Kamera liegt — siehe
+         * GizmoBildschirmfest. Ohne den Schalter unveraendert. */
+        Matrix4f mvp = new Matrix4f(projection)
+            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
         Vector4f clip = mvp.transform(new Vector4f(0F, 0F, 0F, 1F));
 
         if (clip.w <= 0F)
@@ -385,7 +388,8 @@ public class Gizmo
             return 0F;
         }
 
-        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
+        Matrix4f mvp = new Matrix4f(projection)
+            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
         float r = this.lastSphereLocalRadius;
         float[] xs = {r, 0F, 0F};
         float[] ys = {0F, r, 0F};
@@ -690,7 +694,8 @@ public class Gizmo
         UIUtils.viewportArea(area);
 
         MatrixStack stack = new MatrixStack();
-        MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
+        MatrixStackUtils.multiply(stack,
+            GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
 
         RenderSystem.disableDepthTest();
         this.drawGizmo(stack);
@@ -1631,7 +1636,8 @@ public class Gizmo
         UIUtils.viewportArea(area);
 
         MatrixStack stack = new MatrixStack();
-        MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
+        MatrixStackUtils.multiply(stack,
+            GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
 
         this.drawStencilAxes(stack, map);
 
