@@ -217,7 +217,7 @@
 	"bbs.config.editor.periodic_save": "Pereodic save",
 	"bbs.config.editor.periodic_save-comment": "Number of seconds that triggers automatic save repeatedly. To disable periodic saving, set the option to 0",
 	"bbs.config.editor.simplify_animations": "Simplify UI animations",
-	"bbs.config.editor.simplify_animations-comment": "When enabled, panels and overlays appear instantly instead of growing into place. Turn it on if the transitions feel sluggish or distracting",
+	"bbs.config.editor.simplify_animations-comment": "When enabled, overlays appear and close instantly instead of fading, and toggle knobs snap instead of sliding. Turn it on if the transitions feel sluggish or distracting",
 	"bbs.config.editor.fisheye_widen_fov": "Widen FOV in fisheye",
 	"bbs.config.editor.fisheye_widen_fov-comment": "Widens the field of view while the fisheye projection is active, so the distortion covers the whole frame instead of cropping it",
 	"bbs.config.editor.auto_capture_mobs": "Auto capture mobs",
