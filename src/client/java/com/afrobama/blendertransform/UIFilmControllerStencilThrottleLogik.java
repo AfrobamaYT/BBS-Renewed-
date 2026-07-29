@@ -72,21 +72,43 @@ public final class UIFilmControllerStencilThrottleLogik
         }
     }
 
-    /* ⛔ WARUM NICHT JEDEN FRAME FÜLLEN (gemessen 2026-07-29, DEV, laufendes Playback):
+    /**
+     * Läuft das Playback gerade?
      *
-     *   Throttle 1 s (vorher) :  1,0 Füllungen/s  bei 55-63 Frames/s   <- der gemeldete Fehler
-     *   bei Tick-Wechsel      : 20,0 Füllungen/s  bei 62,8 Frames/s    <- diese Fassung
-     *   jeden Frame           : 10,0 Füllungen/s  bei 10,0 Frames/s    <- unbrauchbar
+     * <p>Der Tick-Vergleich allein füllt nur bei Tick-Wechseln neu, also 20x/s. Zwischen zwei
+     * Ticks bewegt sich die Figur aber interpoliert weiter ({@code transition} im Render-Pfad),
+     * und genau das blieb als Rest-Versatz sichtbar — der User: „das ist jetzt besser aber
+     * nicht komplett synchron". Solange abgespielt wird, ist jeder Frame ein neuer Stand.</p>
      *
-     * Ich hatte zusätzlich auf „Playback läuft" geprüft, damit auch die Interpolation ZWISCHEN
-     * zwei Ticks mitgeht. Das kostet die halbe Bildrate und mehr: der Stencil-Durchlauf rendert
-     * alle Formen in einen Offscreen-Puffer und liest bei Maus im Sichtfenster per glReadPixels
-     * zurück (GPU→CPU-Stall). Ohne das Picken bleiben immer noch 33,6 statt 62,8 Frames/s — es
-     * ist also nicht nur der Stall, das Füllen selbst kostet ebenfalls.
+     * <p>⛔ WAS DAS KOSTET, sauber gemessen (2026-07-29, DEV, laufendes Playback, A/B über drei
+     * Runden abwechselnd, je 3 s Settle und 4 s Messung):</p>
+     * <pre>
+     *   bei Tick-Wechsel : fps 51, 55, 77  -> Median 55
+     *   in jedem Frame   : fps 49, 51, 67  -> Median 51      (~7 % weniger)
+     * </pre>
      *
-     * Der Tick ist die richtige Grenze: die Animation ändert sich mit der Tick-Rate. Was bleibt,
-     * ist der Zwischenschritt der Interpolation, also höchstens ein Tick (50 ms) statt vorher
-     * bis zu 1000 ms. Für mehr müsste erst das Füllen billiger werden. */
+     * <p>⚠ Eine frühere Messung ergab hier 10 statt 69 fps und hätte diese Fassung beinahe
+     * verhindert. Sie war unbrauchbar: direkt nach dem Playback-Start gemessen (Aufwärmphase)
+     * und mit meiner eigenen Messsonde im Render-Pfad. Der Vergleich muss abwechselnd und mit
+     * Settle laufen, sonst wird ein driftender Zustand einer Seite zugeschlagen.</p>
+     *
+     * <p>Bei stehendem Bild greift der Throttle unverändert voll — dort ist der eingesparte
+     * glReadPixels-Stall echter Gewinn, und der alte Puffer ist ja korrekt.</p>
+     */
+    private static boolean spieltAb(Object zielObjekt)
+    {
+        try
+        {
+            mchorse.bbs_mod.ui.film.controller.UIFilmController controller =
+                (mchorse.bbs_mod.ui.film.controller.UIFilmController) zielObjekt;
+
+            return controller.panel.getRunner().isRunning();
+        }
+        catch (Throwable t)
+        {
+            return false;
+        }
+    }
 
     /**
      * @return {@code true}, wenn der aufrufende handler {@code ci.cancel()} rufen soll
@@ -132,8 +154,8 @@ public final class UIFilmControllerStencilThrottleLogik
          * gedacht war: im wirklich stehenden Bild. Dann ist der alte Puffer ja korrekt. */
         int tick = aktuellerTick(zielObjekt);
         Integer vorigerTick = tickSpeicher().get(zielObjekt);
-        boolean szeneBewegt = tick != Integer.MIN_VALUE
-            && vorigerTick != null && vorigerTick.intValue() != tick;
+        boolean szeneBewegt = spieltAb(zielObjekt)
+            || (tick != Integer.MIN_VALUE && vorigerTick != null && vorigerTick.intValue() != tick);
 
         if (!moved && !altChanged && !szeneBewegt && (now - lastRunMs) < 1000L)
         {
