@@ -611,6 +611,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 if (context.mouseY >= y && context.mouseY < y + this.trackHeight)
                 {
                     group.collapsed = !group.collapsed;
+
+                    if (group.onToggle != null)
+                    {
+                        group.onToggle.run();
+                    }
+
                     this.updateScrollSize();
 
                     return true;
@@ -988,16 +994,18 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             else if (element instanceof UIKeyframeGroup group)
             {
                 this.renderGroupLabel(context, builder, matrix, area, group, offset, y, w);
+
+                /* Kinder beginnen direkt UNTER der Kopfzeile. Vorher lief y erst um die
+                 * Gesamthöhe der Gruppe weiter und die Kinder wurden darunter gezeichnet —
+                 * also außerhalb des Bereichs, den die Gruppe belegt: aufgeklappt blieb die
+                 * Liste leer. calculateLayout und clickElements rechnen seit jeher so. */
+                if (!group.collapsed)
+                {
+                    this.renderLabels(context, builder, matrix, group.children, offset + 10, y + (int) this.trackHeight);
+                }
             }
 
             y += this.getElementHeight(element);
-
-            if (element instanceof UIKeyframeGroup group && !group.collapsed)
-            {
-                this.renderLabels(context, builder, matrix, group.children, offset + 10, y);
-
-                y = this.getElementHeight(group) - (int) this.trackHeight + y;
-            }
         }
 
         context.batcher.unclip(context);
@@ -1086,14 +1094,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             else if (element instanceof UIKeyframeGroup group)
             {
                 this.renderGroup(context, builder, matrix, area, group, offset, y);
+
+                if (!group.collapsed)
+                {
+                    this.renderElements(context, builder, matrix, area, group.children, offset + 10, y + (int) this.trackHeight);
+                }
             }
 
             y += this.getElementHeight(element);
-
-            if (element instanceof UIKeyframeGroup group && !group.collapsed)
-            {
-                y = this.renderElements(context, builder, matrix, area, group.children, offset + 10, y);
-            }
         }
 
         return y;
@@ -1330,13 +1338,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             {
                 this.renderSheetKeyframeShapes(context, builder, matrix, area, sheet, y);
             }
+            else if (element instanceof UIKeyframeGroup group && !group.collapsed)
+            {
+                this.renderElementsTopmostKeyframes(context, builder, matrix, area, group.children, y + (int) this.trackHeight);
+            }
 
             y += this.getElementHeight(element);
-
-            if (element instanceof UIKeyframeGroup group && !group.collapsed)
-            {
-                y = this.renderElementsTopmostKeyframes(context, builder, matrix, area, group.children, y);
-            }
         }
 
         return y;

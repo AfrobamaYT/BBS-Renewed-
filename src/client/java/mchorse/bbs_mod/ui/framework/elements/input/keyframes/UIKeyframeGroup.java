@@ -10,9 +10,21 @@ public class UIKeyframeGroup extends UIKeyframeElement
     public List<UIKeyframeElement> children = new ArrayList<>();
     public boolean collapsed = true;
 
+    /**
+     * Läuft nach jedem Auf- oder Zuklappen. Die Spurliste wird bei jedem Replay-Wechsel neu
+     * gebaut; ohne diesen Rückkanal wüsste der Erbauer nicht, was der Nutzer zuletzt aufgeklappt
+     * hatte, und die Gruppe klappte bei jedem Neuaufbau wieder zu.
+     */
+    public Runnable onToggle;
+
     public UIKeyframeGroup(IKey title)
     {
         super(title, 0);
+    }
+
+    public UIKeyframeGroup(IKey title, int color)
+    {
+        super(title, color);
     }
 
     public void add(UIKeyframeElement element)

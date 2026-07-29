@@ -188,6 +188,7 @@ public class BBSSettings {
 	public static ValueInt editorPreviewCustomHeight;
 	public static ValueFloat editorPreviewResolutionScale;
 	public static ValueBoolean editorClipAutoName;
+	public static ValueBoolean editorGroupHandHudTracks;
 
 	public static ValueFloat recordingCountdown;
 	public static ValueBoolean recordingSwipeDamage;
@@ -562,6 +563,7 @@ public class BBSSettings {
 		disabledMorphFormCategories.invisible();
 		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
+		editorGroupHandHudTracks = builder.getBoolean("group_hand_hud_tracks", true);
 
 		builder.category("personalization", Icons.COLOR);
 		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS).slider();

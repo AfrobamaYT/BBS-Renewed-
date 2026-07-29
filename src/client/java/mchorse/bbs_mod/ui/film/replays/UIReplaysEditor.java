@@ -810,10 +810,7 @@ public class UIReplaysEditor extends UIElement
                 }
             });
 
-            for (UIKeyframeSheet sheet : sheets)
-            {
-                this.keyframeEditor.view.addSheet(sheet);
-            }
+            SpurGruppen.einfuegen(this.keyframeEditor.view, sheets);
 
             Set<String> expandedPoseIds = this.expandedPoseTabsByReplay.getOrDefault(
                 this.replay == null ? "" : this.replay.getId(),
