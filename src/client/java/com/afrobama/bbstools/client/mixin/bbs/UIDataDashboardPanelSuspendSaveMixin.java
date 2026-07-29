@@ -13,6 +13,7 @@
 // saves on panel exit. Flag-gated ENABLE_SUSPEND_SAVE_WHILE_PLAYING (default ON).
 package com.afrobama.bbstools.client.mixin.bbs;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,9 +27,12 @@ public abstract class UIDataDashboardPanelSuspendSaveMixin
     @Inject(method = "checkPeriodicSave", at = @At("HEAD"), cancellable = true, remap = false)
     private void bbstools$suspendSaveWhilePlaying(CallbackInfo ci)
     {
-        if (BBSPerfConfig.ENABLE_SUSPEND_SAVE_WHILE_PLAYING && BBSPerfConfig.filmIsPlaying)
+        /* BRUECKEN-MUSTER (Aufgabe #56): logik in
+         * com.afrobama.blendertransform.SuspendSaveLogik. Der zaehler bleibt in
+         * BBSPerfConfig -- ein statisches feld in der logik-klasse haette nach einem
+         * kernel-tausch eine zweite, leere kopie. */
+        if (MixinBruecke.rufeUndAbbrechen("SuspendSaveLogik", "aussetzen"))
         {
-            BBSPerfConfig.suspendedSaves++;
             ci.cancel();
         }
     }
