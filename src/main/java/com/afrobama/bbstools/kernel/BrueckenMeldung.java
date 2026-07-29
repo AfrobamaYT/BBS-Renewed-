@@ -24,9 +24,16 @@ import org.slf4j.LoggerFactory;
  *       {@code FilmEditorControllerWorldTransformMixin}</li>
  * </ul>
  *
- * <p>Beide kernel-klassen EXISTIEREN NICHT — es gibt keine quelldatei im baum. Die mixins
- * wurden auf das brücken-muster umgebaut, die logik-klassen kamen nie mit. Die beiden
- * playback-optimierungen sind seither tot, und ohne meldung sah das niemand.</p>
+ * <p>Beide kernel-klassen EXISTIERTEN NICHT — keine quelldatei im baum und keine in der
+ * git-historie. Die mixins wurden auf das brücken-muster umgebaut, die logik-klassen kamen
+ * nie mit. Die beiden playback-optimierungen waren seither tot, und ohne meldung sah das
+ * niemand.</p>
+ *
+ * <p><b>ERLEDIGT 2026-07-29:</b> beide mixins entfernt. Beweisbar ohne verhaltensänderung —
+ * {@code rufeUndAbbrechen} liefert bei fehlender klasse {@code false}, die {@code @Inject}s
+ * haben also NIE gecancelt; eines der beiden stand zudem in keiner {@code mixins.json} und
+ * wurde gar nicht gewoben. Der entwurf steht in
+ * {@code docs/OFFEN-WORLD-TRANSFORM-OPTIMIERUNG.md}.</p>
  *
  * <h2>Warum EINMAL, und warum der schlüssel nicht gebaut werden darf</h2>
  *

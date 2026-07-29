@@ -64,8 +64,11 @@ import com.afrobama.bbstools.kernel.BrueckenMeldung;
  * <p><b>GESCHLUCKT HEISST NICHT MEHR STILL (2026-07-28).</b> Bis dahin war jeder
  * auflösungsfehler ein nacktes {@code return null} ohne eine zeile im log. Gefunden wurden so
  * zwei handler, die pro frame und pro replay ins leere liefen: die kernel-klassen
- * {@code WorldTransformBakeLogik} und {@code FilmEditorWorldTransformLogik} existieren gar
- * nicht. Jeder auflösungsfehler geht jetzt durch {@link BrueckenMeldung} — EINMAL laut ins
+ * {@code WorldTransformBakeLogik} und {@code FilmEditorWorldTransformLogik} existierten gar
+ * nicht — nicht im baum und nirgends in der historie. Beide mixins sind am 2026-07-29
+ * entfernt worden (der entwurf steht in {@code docs/OFFEN-WORLD-TRANSFORM-OPTIMIERUNG.md},
+ * damit die option nicht mit dem code verschwindet).
+ * Jeder auflösungsfehler geht jetzt durch {@link BrueckenMeldung} — EINMAL laut ins
  * log, danach ein {@code containsKey} und zurück, damit der pro-frame-pfad nichts kostet.
  * Statisch prüfbar ohne laufendes spiel: {@code python tools/bruecken-ziele.py}.</p>
  */

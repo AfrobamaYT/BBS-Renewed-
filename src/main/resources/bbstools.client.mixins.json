@@ -29,7 +29,6 @@
     "bbs.UIReplayListCacheBarMixin",
     "bbs.BaseFilmControllerActiveStashMixin",
     "bbs.BaseFilmControllerPlaybackDecoupleMixin",
-    "bbs.FilmEditorControllerWorldTransformMixin",
     "bbs.UIDataDashboardPanelSuspendSaveMixin",
     "bbs.ModelFormRendererPickerSkipAnimateMixin",
     "bbs.UIFilmControllerStencilThrottleMixin",
