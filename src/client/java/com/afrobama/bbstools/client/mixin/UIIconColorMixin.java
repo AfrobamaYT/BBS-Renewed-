@@ -1,7 +1,7 @@
 // Coded by Afrobama/Claude — UI Overhaul Phase 3 part 4: icon hover/active accent
 package com.afrobama.bbstools.client.mixin;
 
-import com.afrobama.bbstools.client.ui.theme.BBSToolsTheme;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 
@@ -27,9 +27,22 @@ public abstract class UIIconColorMixin
     @Inject(method = "<init>*", at = @At("RETURN"), require = 0)
     private void bbstools$retuneDefaults(CallbackInfo ci)
     {
-        UIIcon self = (UIIcon) (Object) this;
-        self.hoverColor = BBSToolsTheme.ACCENT_PRIMARY;
-        self.activeColor = BBSToolsTheme.ACCENT_PRIMARY;
+        /* BRUECKEN-MUSTER: dieser rumpf wird beim klassenladen in UIIcon gewoben und ist
+         * damit vom swap unerreichbar — stuende die farbwahl hier, kostete jede aenderung
+         * an einem farbton einen boot. Also nur der zugriff hier, die farbe kommt aus
+         * OberflaechenFarbenLogik im kernel-paket.
+         *
+         * ⛔ Das UIIcon wird NICHT hineingereicht: BBS-typen duerfen nicht in der signatur
+         * eines brueckenaufrufs stehen (anderer loader auf beiden seiten). */
+        Object farbe = MixinBruecke.rufe("OberflaechenFarbenLogik", "iconAkzent");
+
+        if (farbe instanceof Integer wert)
+        {
+            UIIcon self = (UIIcon) (Object) this;
+
+            self.hoverColor = wert;
+            self.activeColor = wert;
+        }
     }
 
 }

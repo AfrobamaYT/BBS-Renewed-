@@ -1,7 +1,7 @@
 // Coded by Afrobama/Claude — UI Overhaul Phase 3 part 3: scrollbar tint
 package com.afrobama.bbstools.client.mixin;
 
-import com.afrobama.bbstools.client.ui.theme.BBSToolsTheme;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.ui.utils.Scroll;
 
@@ -30,10 +30,11 @@ public abstract class ScrollBarSkinMixin
     )
     private static int bbstools$tintScrollbar(int color)
     {
-        /* Preserve alpha if BBS encoded it, otherwise use full opacity. */
-        int alpha = (color >>> 24) & 0xFF;
-        if (alpha == 0) alpha = 0xFF;
-        return (alpha << 24) | (BBSToolsTheme.ACCENT_PRIMARY & 0x00FFFFFF);
+        /* BRUECKEN-MUSTER: die farbrechnung liegt in OberflaechenFarbenLogik (kernel-paket,
+         * swapbar), hier bleibt nur das durchreichen. Nur primitive in der signatur. */
+        Object farbe = MixinBruecke.rufe("OberflaechenFarbenLogik", "scrollbalken", color);
+
+        return farbe instanceof Integer wert ? wert : color;
     }
 
 }
