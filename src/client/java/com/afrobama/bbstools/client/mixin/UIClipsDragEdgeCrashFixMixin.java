@@ -1,11 +1,11 @@
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.utils.clips.Clip;
 
-import org.joml.Vector3i;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -34,14 +34,17 @@ import java.util.List;
 @Mixin(UIClips.class)
 public abstract class UIClipsDragEdgeCrashFixMixin
 {
-    @Shadow private List<Vector3i> grabbedData;
-    @Shadow private List<Clip> grabbedClips;
-
+    /* BRÜCKEN-MUSTER (Aufgabe #56): logik in
+     * com.afrobama.blendertransform.UIClipsDragEdgeGuardLogik.
+     *
+     * ⛔ DIE @Shadow-FELDER SIND WEG. Der kernel darf keine mixin-schnittstelle in der
+     * signatur führen (klassenlader-identität) — er liest `grabbedData`/`grabbedClips`
+     * reflektiv über MixinBruecke.feldLesen, das über objekt.getClass() geht und damit
+     * loader-unabhängig ist. Deshalb reicht der handler nur `this` als Object hinüber. */
     @Inject(method = "dragLeftEdge", at = @At("HEAD"), cancellable = true, require = 0)
     private void bbstools$guardDragLeftEdge(List<Clip> clipList, int dx, int dy, CallbackInfo ci)
     {
-        if (this.grabbedData == null || this.grabbedData.isEmpty()
-            || this.grabbedClips == null || this.grabbedClips.isEmpty())
+        if (MixinBruecke.rufeUndAbbrechen("UIClipsDragEdgeGuardLogik", "abbrechen", this))
         {
             ci.cancel();
         }
@@ -50,8 +53,7 @@ public abstract class UIClipsDragEdgeCrashFixMixin
     @Inject(method = "dragRightEdge", at = @At("HEAD"), cancellable = true, require = 0)
     private void bbstools$guardDragRightEdge(List<Clip> clipList, int dx, int dy, CallbackInfo ci)
     {
-        if (this.grabbedData == null || this.grabbedData.isEmpty()
-            || this.grabbedClips == null || this.grabbedClips.isEmpty())
+        if (MixinBruecke.rufeUndAbbrechen("UIClipsDragEdgeGuardLogik", "abbrechen", this))
         {
             ci.cancel();
         }
