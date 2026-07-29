@@ -1,7 +1,7 @@
 package mchorse.bbs_mod.ui.film.replays;
 
 import mchorse.bbs_mod.film.Film;
-import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -35,7 +35,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     private static final int RECHTS = 3;
 
     private final UIKeyframes ansicht;
-    private final IUIClipsDelegate kamera;
+    private final UIClipsPanel kamera;
 
     private final Area balken = new Area();
 
@@ -45,7 +45,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     private int startTick;
     private int startDauer;
 
-    public KameraSpuren(UIKeyframes ansicht, IUIClipsDelegate kamera)
+    public KameraSpuren(UIKeyframes ansicht, UIClipsPanel kamera)
     {
         this.ansicht = ansicht;
         this.kamera = kamera;
@@ -58,7 +58,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     {
         Clips clips = this.clips();
 
-        if (clips == null)
+        if (clips == null || !KameraSpurTasten.an())
         {
             return;
         }
@@ -72,7 +72,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
         {
             if (this.flaeche(clip, this.balken))
             {
-                KameraSpurBalken.zeichne(context, clip, this.balken, clip == gewaehlt);
+                KameraSpurBalken.zeichne(context, this.kamera.clips, clip, this.balken, clip == gewaehlt);
             }
         }
 
@@ -84,7 +84,7 @@ public class KameraSpuren implements UIKeyframes.SpurZeiger
     @Override
     public boolean klick(UIContext context)
     {
-        if (context.mouseButton != 0 || !this.ansicht.graphArea.isInside(context))
+        if (context.mouseButton != 0 || !KameraSpurTasten.an() || !this.ansicht.graphArea.isInside(context))
         {
             return false;
         }

@@ -189,6 +189,7 @@ public class BBSSettings {
 	public static ValueFloat editorPreviewResolutionScale;
 	public static ValueBoolean editorClipAutoName;
 	public static ValueBoolean editorGroupHandHudTracks;
+	public static ValueBoolean editorCameraClipsInReplays;
 
 	public static ValueFloat recordingCountdown;
 	public static ValueBoolean recordingSwipeDamage;
@@ -564,6 +565,7 @@ public class BBSSettings {
 		builder.register(disabledMorphFormCategories);
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 		editorGroupHandHudTracks = builder.getBoolean("group_hand_hud_tracks", true);
+		editorCameraClipsInReplays = builder.getBoolean("camera_clips_in_replays", true);
 
 		builder.category("personalization", Icons.COLOR);
 		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS).slider();

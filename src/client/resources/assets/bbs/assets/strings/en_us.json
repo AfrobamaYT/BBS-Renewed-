@@ -101,6 +101,8 @@
 	"bbs.config.appearance.uniform_scale-comment": "This option forces uniform scaling for transformation fields when all scale coordinates are same",
 	"bbs.config.appearance.clip_auto_name": "Auto clip name",
 	"bbs.config.appearance.clip_auto_name-comment": "When on: empty clip title shows type or resource name (e.g. audio filename). When off: only your custom title is shown.",
+	"bbs.config.appearance.camera_clips_in_replays": "Camera clips in replay timeline",
+	"bbs.config.appearance.camera_clips_in_replays-comment": "When on: camera clips show up as bars in the replay editor's timeline — behind the keyframes and the grid — where you can select, move and trim them. E opens the camera timeline on the selected clip, and the camera shortcuts work there too. When off: the replay timeline shows only keyframes.",
 	"bbs.config.appearance.group_hand_hud_tracks": "Group hand/HUD tracks",
 	"bbs.config.appearance.group_hand_hud_tracks-comment": "When on: hotbar, held items, health, hunger and hand/HUD tracks collapse into one \"Hand/HUD\" track in the keyframe editor. Click it to fold it open. When off: every track is listed separately.",
 	"bbs.config.audio.title": "Audio",
