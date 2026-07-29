@@ -490,6 +490,10 @@ public class BBSModClient implements ClientModInitializer
         keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);
         keyZoom = this.createKeyMouse("zoom", 2);
 
+        /* Drahtgitter-Sicht für den Editor (Aufnahmen planen, bei denen ein Darsteller
+         * unter der Erde startet). Eigene Klasse, siehe mchorse.bbs_mod.client.WeltDrahtgitter. */
+        mchorse.bbs_mod.client.WeltDrahtgitter.anmelden();
+
         WorldRenderEvents.AFTER_ENTITIES.register((context) ->
         {
             if (!BBSRendering.isIrisShadersEnabled())

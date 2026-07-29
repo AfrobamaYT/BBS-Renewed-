@@ -118,6 +118,8 @@ public class Keys
 
     /* World menu */
     public static final KeyCombo CYCLE_PANELS = new KeyCombo("cycle_panels", UIKeys.WORLD_KEYS_CYCLE_PANELS, GLFW.GLFW_KEY_TAB).categoryKey("world");
+    /* Alt+Z wie Blenders X-Ray — der User arbeitet in Blender, das Kürzel sitzt dort in den Fingern. */
+    public static final KeyCombo WIREFRAME = new KeyCombo("wireframe", UIKeys.WORLD_KEYS_WIREFRAME, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_LEFT_ALT).categoryKey("world");
 
     /* Transformations */
     public static final KeyCombo TRANSFORMATIONS_TRANSLATE = new KeyCombo("translate", UIKeys.TRANSFORMS_TRANSLATE, GLFW.GLFW_KEY_G).categoryKey("transformations");

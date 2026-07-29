@@ -216,6 +216,7 @@
 	"bbs.config.editor.preview_resolution_scale-comment": "Multiplier for automatic preview mode (1 = same as block size, 1.5 = sharper, higher = less pixelation, more GPU load)",
 	"bbs.config.editor.periodic_save": "Pereodic save",
 	"bbs.config.editor.periodic_save-comment": "Number of seconds that triggers automatic save repeatedly. To disable periodic saving, set the option to 0",
+	"bbs.ui.world.keys.wireframe": "Toggle wireframe view",
 	"bbs.config.editor.simplify_animations": "Simplify UI animations",
 	"bbs.config.editor.simplify_animations-comment": "When enabled, overlays appear and close instantly instead of fading, and toggle knobs snap instead of sliding. Turn it on if the transitions feel sluggish or distracting",
 	"bbs.config.editor.fisheye_widen_fov": "Widen FOV in fisheye",

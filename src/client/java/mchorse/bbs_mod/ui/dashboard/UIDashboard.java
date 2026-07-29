@@ -121,6 +121,9 @@ public class UIDashboard extends UIBaseMenu
         IKey category = UIKeys.DASHBOARD_CATEGORY;
 
         this.main.keys().register(Keys.CYCLE_PANELS, this::cyclePanels).category(category);
+        /* Drahtgitter-Sicht: Arbeitsmodus des Editors, deshalb hier am Dashboard und nicht
+         * in den Einstellungen (ausdrückliche User-Ansage 2026-07-29). */
+        this.main.keys().register(Keys.WIREFRAME, mchorse.bbs_mod.client.WeltDrahtgitter::umschalten).category(category);
         this.overlay.keys().register(Keys.TOGGLE_VISIBILITY, () ->
         {
             if (this.panels.panel.canToggleVisibility())
