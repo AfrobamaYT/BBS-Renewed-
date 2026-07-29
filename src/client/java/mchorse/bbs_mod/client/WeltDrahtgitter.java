@@ -54,8 +54,22 @@ public final class WeltDrahtgitter
     /**
      * Hooks anmelden. Wird einmal beim Start des Clients gerufen.
      *
-     * <p>AFTER_SETUP liegt hinter dem Aufbau der Welt und vor den Blöcken; END liegt hinter
-     * allem, was in der Welt gezeichnet wird. Dazwischen gilt der Drahtgitter-Modus.</p>
+     * <p>Das Fenster ist eng gewählt: der Modus gilt NUR für das Terrain.</p>
+     *
+     * <pre>
+     *   AFTER_SETUP      -&gt; Drahtgitter an   (die Blöcke werden danach gezeichnet)
+     *   BEFORE_ENTITIES  -&gt; Drahtgitter aus  (Darsteller, Formen und Gizmos bleiben massiv)
+     *   END              -&gt; Drahtgitter aus  (Sicherheitsnetz)
+     * </pre>
+     *
+     * <p>⛔ WARUM NICHT EINFACH BIS END (erster Entwurf, vom User sofort bemerkt): der
+     * Füllmodus ist GLOBALER Zustand und erwischt alles, was danach gezeichnet wird — auch
+     * das Replay. „unser replay wird einfach auch davon betroffen". Damit war das Feature
+     * gegen seinen eigenen Zweck gerichtet: die Welt soll durchsichtig werden, DAMIT man den
+     * Darsteller sieht. Ein Darsteller aus Drahtgitter hilft niemandem.</p>
+     *
+     * <p>⚠ Das Zurücksetzen läuft BEDINGUNGSLOS, nicht nur wenn {@link #an} gilt: schaltet
+     * der Nutzer mitten im Bild um, bliebe der Modus sonst für alles Weitere stehen.</p>
      */
     public static void anmelden()
     {
@@ -67,8 +81,9 @@ public final class WeltDrahtgitter
             }
         });
 
-        /* ⚠ BEDINGUNGSLOS zurücksetzen, nicht nur wenn `an` gilt: schaltet der Nutzer
-         * mitten im Bild um, bliebe der Modus sonst für alles Weitere stehen. */
+        WorldRenderEvents.BEFORE_ENTITIES.register(context ->
+            GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL));
+
         WorldRenderEvents.END.register(context ->
             GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL));
     }
