@@ -1337,6 +1337,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
             this.gizmo.renderReadout(context);
         }
 
+        /* Der Umriss haengt NICHT am Ueberfahren — er steht, solange ein Replay gewaehlt ist. */
+        StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET);
+
         if (!this.stencil.hasPicked())
         {
             return;
@@ -1368,42 +1371,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
         RenderSystem.enableBlend();
         context.batcher.texturedBox(getPickerPreviewProgram, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
-        if (altPressed)
-        {
-            int selectedReplayIndex = this.getCurrentReplayIndex();
-            int stencilIndex = index - REPLAY_STENCIL_OFFSET;
-
-            if (stencilIndex >= 0 && stencilIndex < this.panel.getData().replays.getList().size() && stencilIndex != selectedReplayIndex)
-            {
-                this.hoveredReplayIndex = stencilIndex;
-
-                String label = this.panel.getData().replays.getList().get(stencilIndex).getName();
-
-                context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
-            }
-            else if (pair != null && pair.a != null)
-            {
-                String label = pair.a.getFormIdOrName();
-
-                if (!pair.b.isEmpty())
-                {
-                    label += " - " + pair.b;
-                }
-
-                context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
-            }
-        }
-        else if (pair != null && pair.a != null)
-        {
-            String label = pair.a.getFormIdOrName();
-
-            if (!pair.b.isEmpty())
-            {
-                label += " - " + pair.b;
-            }
-
-            context.batcher.textCard(label, context.mouseX + 12, context.mouseY + 8);
-        }
+        this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed,
+            index, REPLAY_STENCIL_OFFSET, this.getCurrentReplayIndex(), pair);
     }
 
     public void startRenderFrame(float tickDelta)
@@ -1544,8 +1513,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
     private void renderStencil(WorldRenderContext renderContext, UIContext context, boolean altPressed)
     {
         Area viewport = this.panel.preview.getViewport();
+        boolean drin = viewport.isInside(context);
 
-        if (!viewport.isInside(context) || this.controlled != null)
+        if (this.controlled != null || (!drin && !StencilAnzeige.ohneMaus(this.stencil)))
         {
             this.stencil.clearPicking();
 
@@ -1628,11 +1598,17 @@ public class UIFilmController extends UIElement implements GizmoViewport
                 .anchorGizmo(this.isAnchorGizmo(), this.getAnchorLocal()), entity);
         }
 
-        int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
-        int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
-        int radius = Math.round(BBSSettings.gizmoHoverTolerance.get() * mainTexture.width / (float) viewport.w);
+        /* Ohne Maus im Fenster gibt es nichts zu picken — der Puffer wurde nur fuer den Umriss
+         * gefuellt. Gelesen wird trotzdem nicht: die Mauskoordinaten zeigen dann irgendwohin. */
+        if (drin)
+        {
+            int x = (int) ((context.mouseX - viewport.x) / (float) viewport.w * mainTexture.width);
+            int y = (int) ((1F - (context.mouseY - viewport.y) / (float) viewport.h) * mainTexture.height);
+            int radius = Math.round(BBSSettings.gizmoHoverTolerance.get() * mainTexture.width / (float) viewport.w);
 
-        this.stencil.pick(x, y, radius, Gizmo.STENCIL_MAX);
+            this.stencil.pick(x, y, radius, Gizmo.STENCIL_MAX);
+        }
+
         this.stencil.unbind(this.stencilMap);
 
         MinecraftClient.getInstance().getFramebuffer().beginWrite(true);

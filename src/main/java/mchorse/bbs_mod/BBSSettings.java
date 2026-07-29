@@ -190,6 +190,9 @@ public class BBSSettings {
 	public static ValueBoolean editorClipAutoName;
 	public static ValueBoolean editorGroupHandHudTracks;
 	public static ValueBoolean editorCameraClipsInReplays;
+	public static ValueBoolean editorReplayOutline;
+	public static ValueInt editorReplayOutlineColor;
+	public static ValueInt editorReplayOutlineWidth;
 
 	public static ValueFloat recordingCountdown;
 	public static ValueBoolean recordingSwipeDamage;
@@ -566,6 +569,10 @@ public class BBSSettings {
 		editorClipAutoName = builder.getBoolean("clip_auto_name", true);
 		editorGroupHandHudTracks = builder.getBoolean("group_hand_hud_tracks", true);
 		editorCameraClipsInReplays = builder.getBoolean("camera_clips_in_replays", true);
+		editorReplayOutline = builder.getBoolean("replay_outline", true);
+		/* Blenders Vorgabe, in der Instanz des Users abgelesen: object_active = #FFA028. */
+		editorReplayOutlineColor = builder.getInt("replay_outline_color", 0xFFFFA028).colorAlpha();
+		editorReplayOutlineWidth = builder.getInt("replay_outline_width", 1, 1, 5).slider();
 
 		builder.category("personalization", Icons.COLOR);
 		backgroundBrightness = builder.getFloat("background_brightness", DEFAULT_BACKGROUND_BRIGHTNESS, MIN_BACKGROUND_BRIGHTNESS, MAX_BACKGROUND_BRIGHTNESS).slider();
