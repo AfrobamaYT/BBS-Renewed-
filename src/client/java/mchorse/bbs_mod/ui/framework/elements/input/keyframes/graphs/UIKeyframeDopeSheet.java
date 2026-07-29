@@ -734,6 +734,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     {
         this.renderGrid(context);
         this.renderGraph(context);
+
+        if (this.keyframes.spuren != null)
+        {
+            this.keyframes.spuren.zeichne(context);
+        }
+
         this.renderTimelineGrid(context);
         this.renderPreviewHints(context);
     }

@@ -84,6 +84,36 @@ public class UIKeyframes extends UIElement
 
     private final Scale xAxis = new Scale(this.graphArea, ScrollDirection.HORIZONTAL);
 
+    /**
+     * Etwas, das auf der Zeitleiste unter den Spuren liegt und selbst auf die Maus hört —
+     * die Kamera-Clips im Replay-Editor sind der erste Fall.
+     *
+     * <p>Die Keyframes haben immer Vorrang: {@link #klick} wird erst gefragt, wenn der Graph
+     * den Klick nicht schon verbraucht hat. Gezeichnet wird über {@link #backgroundRenderer},
+     * also vor Gitter und Keyframes.</p>
+     */
+    public interface SpurZeiger
+    {
+        /**
+         * Gezeichnet wird zwischen den Spuren und dem Zeitleisten-Gitter.
+         *
+         * <p>NICHT über {@link #backgroundRenderer} — der läuft vor den Spuren, und deren
+         * Zeilenhintergrund ist DECKEND: gemessen 2026-07-29 war von zwei Kamera-Clips nur
+         * der sichtbar, der unterhalb der letzten Spur lag, der andere war übermalt. Hier
+         * liegt der Balken über dem Zeilenhintergrund, aber unter Gitter und Keyframes —
+         * genau die Reihenfolge, die der User bestellt hat.</p>
+         */
+        void zeichne(UIContext context);
+
+        boolean klick(UIContext context);
+
+        void zug(UIContext context);
+
+        void losgelassen(UIContext context);
+    }
+
+    public SpurZeiger spuren;
+
     private final Consumer<Keyframe> callback;
     private Consumer<UIContext> backgroundRender;
     private Consumer<UIContext> rulerRender;
@@ -1080,6 +1110,11 @@ public class UIKeyframes extends UIElement
             return true;
         }
 
+        if (this.spuren != null && this.spuren.klick(context))
+        {
+            return true;
+        }
+
         if (this.scaling)
         {
             this.scaling = false;
@@ -1208,6 +1243,11 @@ public class UIKeyframes extends UIElement
     @Override
     protected boolean subMouseReleased(UIContext context)
     {
+        if (this.spuren != null)
+        {
+            this.spuren.losgelassen(context);
+        }
+
         this.currentGraph.mouseReleased(context);
 
         if (this.selecting)
@@ -1287,6 +1327,11 @@ public class UIKeyframes extends UIElement
         super.render(context);
 
         this.handleMouse(context);
+
+        if (this.spuren != null)
+        {
+            this.spuren.zug(context);
+        }
 
         context.batcher.clip(this.area, context);
 

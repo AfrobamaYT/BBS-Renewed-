@@ -718,6 +718,11 @@ public class UIReplaysEditor extends UIElement
                 this.keyframeEditor.view.copyViewport(lastEditor);
             }
 
+            /* Kamera-Clips als Balken unter den Spuren — sehen und bedienen, ohne in den
+             * Kamera-Tab zu wechseln (4.54). Der Hintergrund-Haken zeichnet vor Gitter und
+             * Keyframes, spuren nimmt nur Klicks, die kein Keyframe verbraucht hat. */
+            this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor);
+
             this.keyframeEditor.view.rulerRenderer((context) -> renderRuler(context, this.keyframeEditor.view, this.filmPanel.cameraEditor, this.film.camera, 0));
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
             this.keyframeEditor.view.context(menu ->
