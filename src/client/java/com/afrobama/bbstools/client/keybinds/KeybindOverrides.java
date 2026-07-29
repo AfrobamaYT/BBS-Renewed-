@@ -296,10 +296,13 @@ public final class KeybindOverrides
         return presets.computeIfAbsent(name, (k) -> new LinkedHashMap<>());
     }
 
+    /** Keycode 0 gibt es nicht — er entstand aus einem Linksklick beim Aufnehmen (-0 == 0)
+     *  und traf danach jeden Linksklick. Beim Anwenden verworfen, damit eine schon
+     *  verdorbene Datei sich beim nächsten Speichern selbst aufräumt. */
     private static void applyKeys(KeyCombo combo, int[] keys)
     {
         combo.keys.clear();
-        for (int k : keys) combo.keys.add(k);
+        for (int k : keys) if (k != 0) combo.keys.add(k);
     }
 
     /* === Disk I/O === */

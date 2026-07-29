@@ -93,6 +93,16 @@ public class UIKeybind extends UIElement
         {
             int key = -context.mouseButton;
 
+            /* Die LINKE maustaste wird nicht aufgezeichnet. Sie ist GLFW-button 0, und -0
+             * ist 0 — ununterscheidbar von „keine taste". So eine belegung trifft danach
+             * jeden linksklick im ganzen editor (2026-07-29 beim nutzer passiert: er klickte
+             * beim aufnehmen daneben, und die Undo-History ging fortan bei jedem klick auf).
+             * Als shortcut waere sie ohnehin unbrauchbar — mit ihr bedient man die UI. */
+            if (key == 0)
+            {
+                return true;
+            }
+
             if (!this.combo.keys.contains(key))
             {
                 if (this.single)

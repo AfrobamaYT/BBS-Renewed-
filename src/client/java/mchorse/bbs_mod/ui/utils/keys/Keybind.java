@@ -209,9 +209,29 @@ public class Keybind
 
     public boolean checkMouse(int mouseButton, boolean inside)
     {
-        mouseButton = -mouseButton;
+        /* ⛔ MAUSTASTEN SIND NEGATIV KODIERT (Mouse2 = -1, Mouse4 = -3 …), und genau daran
+         * hing der teuerste UI-fehler dieser woche: die LINKE maustaste ist GLFW-button 0,
+         * und -0 ist wieder 0. Eine combo, in der versehentlich die 0 landet, traf damit
+         * JEDEN linksklick — beim nutzer oeffnete sich die Undo-History bei jedem klick auf
+         * jedes menue, auch auf dem schliess-kreuz, sodass das fenster unschliessbar wirkte
+         * (gemessen 2026-07-29 in seiner instanz: preset "Left-Hand + Mouse" enthielt
+         * "bbstools.undo_history_open": [0]).
+         *
+         * Dasselbe eine stelle weiter: getMainKey() liefert -1, wenn eine combo GAR KEINE
+         * taste hat — und -1 ist der rechtsklick. Jede nie belegte combo haette also auf
+         * jeden rechtsklick gefeuert.
+         *
+         * Beide faelle sterben hier: nur eine NEGATIVE haupttaste ist eine maus-belegung,
+         * und eine leere combo bindet nichts. Die pruefung heilt auch bereits verdorbene
+         * konfigurationen, ohne dass jemand eine json anfassen muss. */
+        if (this.combo.keys.isEmpty())
+        {
+            return false;
+        }
 
-        if (mouseButton != this.combo.getMainKey())
+        int haupt = this.combo.getMainKey();
+
+        if (haupt >= 0 || haupt != -mouseButton)
         {
             return false;
         }
