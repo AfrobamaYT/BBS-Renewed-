@@ -3,8 +3,6 @@ package com.afrobama.bbstools.client.qol;
 import com.afrobama.bbstools.BBSToolsMod;
 import com.afrobama.bbstools.client.shader.ShaderHotReload;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
-import com.afrobama.bbstools.timeline.TimelineMarker;
-import com.afrobama.bbstools.timeline.TimelineMarkerRegistry;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -42,7 +40,6 @@ public final class QuickWinKeybinds
     private static KeyBinding cinematicToggle;
 
     /** F5 — pin a marker at the current scrub cursor. */
-    private static KeyBinding markerPin;
 
 
     private static KeyBinding veilCrowdToggle;
@@ -71,7 +68,6 @@ public final class QuickWinKeybinds
 
     /** Auto-incrementing label suffix so successive F5 presses don't
      *  collide on the registry's label key. */
-    private static int markerCounter = 1;
 
     private QuickWinKeybinds() {}
 
@@ -81,13 +77,6 @@ public final class QuickWinKeybinds
             "key.bbstools.cinematic_toggle",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
-            "category.bbstools"
-        ));
-
-        markerPin = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.bbstools.marker_pin_at_cursor",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_F5,
             "category.bbstools"
         ));
 
@@ -146,11 +135,6 @@ public final class QuickWinKeybinds
             "category.bbstools"
         ));
 
-        /* Prime the marker registry once so the F5 path doesn't take
-         *  the lazy-load hit on the client tick thread. Mirrors what
-         *  TimelineMarkerCommand.register() already does at startup —
-         *  cheap no-op if the command registered first. */
-        try { TimelineMarkerRegistry.load(); } catch (Throwable ignored) {}
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));
 
@@ -167,13 +151,11 @@ public final class QuickWinKeybinds
          *  action per binding, regardless of how many times the key
          *  was tapped this frame. */
         boolean fireCinematic    = drain(cinematicToggle);
-        boolean fireMarker       = drain(markerPin);
         boolean fireVeil         = drain(veilCrowdToggle);
         boolean fireShaderReload = drain(shaderReload);
         boolean fireGpuDebug     = drain(gpuDebugCapture);
 
         if (fireCinematic)    handleCinematic(client);
-        if (fireMarker)       handleMarker(client);
         if (fireVeil)         handleVeilCrowd(client);
         if (fireShaderReload) handleShaderReload(client);
         if (fireGpuDebug)
@@ -268,44 +250,6 @@ public final class QuickWinKeybinds
         }
     }
 
-    /** F5: pin a marker named "F5-N" at the current scrub cursor. Only
-     *  fires inside the BBS editor (film panel + film loaded). */
-    private static void handleMarker(MinecraftClient client)
-    {
-        try
-        {
-            UIFilmPanel panel = getFilmPanel();
-            if (panel == null || panel.getData() == null)
-            {
-                actionBar(client, "§c[bbstools] F5: open a film in the BBS editor first");
-                LOG.info("F5 pressed but no film panel / loaded film — marker not added.");
-                return;
-            }
-
-            int tick = Math.max(0, panel.getCursor());
-
-            /* Generate a unique-ish label; if the registry already has
-             *  one at this slot bump the counter until we land on free
-             *  ground so the user can mash F5 without collisions. */
-            String label;
-            do
-            {
-                label = "F5-" + (markerCounter++);
-            }
-            while (TimelineMarkerRegistry.find(label) != null && markerCounter < 100_000);
-
-            TimelineMarker marker = TimelineMarkerRegistry.add(new TimelineMarker(tick, label));
-
-            actionBar(client, "§a[bbstools] §fmarker §a" + marker.label
-                + "§f @ tick §a" + marker.tick);
-            BBSToolsMod.LOG.info("F5 → pinned marker '{}' @ tick {}.", marker.label, marker.tick);
-        }
-        catch (Throwable t)
-        {
-            BBSToolsMod.LOG.warn("F5 marker-at-cursor failed: {}", t.toString(), t);
-            actionBar(client, "§c[bbstools] F5 failed — see log");
-        }
-    }
 
 
     private static void handleVeilCrowd(MinecraftClient client)

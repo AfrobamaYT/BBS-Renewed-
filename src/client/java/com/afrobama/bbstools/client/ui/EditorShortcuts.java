@@ -9,7 +9,6 @@
 //                     UIFilmPanel.cameraEditor.getClip(); clone via the
 //                     BBS Clip.copy() method; add at clip.tick + clip.
 //                     duration on the same Clips container)
-//   Ctrl+Shift+M      add a TimelineMarker at the cursor tick
 //   Space             toggle play/pause of the timeline (calls
 //                     UIFilmPanel.togglePlayback() reflectively so we
 //                     don't bind hard to the symbol — BBS-Renewed may
@@ -30,8 +29,6 @@
 package com.afrobama.bbstools.client.ui;
 
 import com.afrobama.bbstools.BBSToolsMod;
-import com.afrobama.bbstools.timeline.TimelineMarker;
-import com.afrobama.bbstools.timeline.TimelineMarkerRegistry;
 
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -70,9 +67,6 @@ public final class EditorShortcuts
     /** Ctrl+D — duplicate the selected clip. */
     private static KeyBinding duplicateClip;
 
-    /** Ctrl+Shift+M — add a TimelineMarker at the cursor. */
-    private static KeyBinding setMarker;
-
     /** Space — toggle play/pause of the BBS timeline. */
     private static KeyBinding togglePlay;
 
@@ -81,9 +75,6 @@ public final class EditorShortcuts
 
     /** End — jump the cursor to film end. */
     private static KeyBinding jumpEnd;
-
-    /** Auto-incrementing label for Ctrl+Shift+M markers. */
-    private static int markerCounter = 1;
 
     /** Track shifted modifiers ourselves because Fabric {@link KeyBinding}s
      *  only resolve to a single physical key — combos like Ctrl+D must
@@ -97,13 +88,6 @@ public final class EditorShortcuts
             "key.bbstools.editor_duplicate_clip",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
-            "category.bbstools"
-        ));
-
-        setMarker = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.bbstools.editor_set_marker",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_M,
             "category.bbstools"
         ));
 
@@ -128,10 +112,6 @@ public final class EditorShortcuts
             "category.bbstools"
         ));
 
-        /* Prime the marker registry so the Ctrl+Shift+M path doesn't
-         *  pay the lazy-load cost on the render thread. Same trick
-         *  QuickWinKeybinds uses for the F5 marker pin. */
-        try { TimelineMarkerRegistry.load(); } catch (Throwable ignored) {}
 
         ClientTickEvents.END_CLIENT_TICK.register(EditorShortcuts::tick);
 
@@ -149,7 +129,6 @@ public final class EditorShortcuts
          *  otherwise presses queue up while the gate is closed and all
          *  fire at once when the user opens the editor. */
         boolean fireDuplicate = drain(duplicateClip);
-        boolean fireMarker    = drain(setMarker);
         boolean firePlay      = drain(togglePlay);
         boolean fireStart     = drain(jumpStart);
         boolean fireEnd       = drain(jumpEnd);
@@ -181,13 +160,6 @@ public final class EditorShortcuts
             if (fireDuplicate && ctrl && !shift)
             {
                 handleDuplicate(client, panel);
-            }
-
-            /* Ctrl+Shift+M — marker. Reject bare M and Ctrl+M so the
-             *  letter is still typeable in textboxes. */
-            if (fireMarker && ctrl && shift)
-            {
-                handleMarker(client, panel);
             }
 
             /* Space — play/pause. Reject when any modifier is held so
@@ -289,37 +261,6 @@ public final class EditorShortcuts
         }
     }
 
-    /** Ctrl+Shift+M: pin a marker at the editor cursor with a
-     *  unique auto-label ("M-<n>"). */
-    private static void handleMarker(MinecraftClient client, UIFilmPanel panel)
-    {
-        try
-        {
-            int tick = Math.max(0, panel.getCursor());
-
-            String label;
-            do
-            {
-                label = "M-" + (markerCounter++);
-            }
-            while (TimelineMarkerRegistry.find(label) != null && markerCounter < 100_000);
-
-            TimelineMarker marker = TimelineMarkerRegistry.add(new TimelineMarker(tick, label));
-            if (marker == null)
-            {
-                actionBar(client, "§c[bbstools] Ctrl+Shift+M: marker registry refused");
-                return;
-            }
-
-            actionBar(client, "§a[bbstools] marker §f" + marker.label + "§a @ tick §f" + marker.tick);
-            BBSToolsMod.LOG.info("Editor shortcut Ctrl+Shift+M: pinned '{}' @ tick {}", marker.label, marker.tick);
-        }
-        catch (Throwable t)
-        {
-            LOG.warn("Ctrl+Shift+M marker failed: {}", t.toString(), t);
-            actionBar(client, "§c[bbstools] Ctrl+Shift+M failed — see log");
-        }
-    }
 
     /** Space: toggle BBS timeline play/pause. UIFilmPanel.
      *  togglePlayback() is the canonical entry — keep reflective so

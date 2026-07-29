@@ -544,7 +544,6 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  shortcut lands in a follow-up once the keybind editor's
          *  category for marker hotkeys exists — for now everything
          *  goes through the command. */
-        com.afrobama.bbstools.client.timeline.TimelineMarkerCommand.register();
 
         /* (Removed 2026-05-31) The old TAB-hold "Axiom-style" block-selection mode was
          *  inaccurate/annoying and is superseded by the BBS-side WorldBlockCapture
