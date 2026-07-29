@@ -1,14 +1,12 @@
 // Coded by Afrobama/Claude — Phase 15 v9: keep BBSToolsAddCameraClip out of the main camera
 package com.afrobama.bbstools.client.mixin;
 
-import com.afrobama.bbstools.clip.BBSToolsAddCameraClip;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.utils.clips.Clip;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,9 +31,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(CameraClipContext.class)
 public abstract class CameraClipContextSkipOurClipMixin
 {
-    private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/clip-skip");
-    private static boolean loggedFirstSkip;
-
+    /* BRÜCKEN-MUSTER (Aufgabe #56): logik samt einmal-meldung in
+     * com.afrobama.blendertransform.CameraClipContextSkipLogik. */
     @Inject(
         method = "apply(Lmchorse/bbs_mod/utils/clips/Clip;Lmchorse/bbs_mod/camera/data/Position;)Z",
         at = @At("HEAD"),
@@ -44,13 +41,8 @@ public abstract class CameraClipContextSkipOurClipMixin
     )
     private void bbstools$skipOurClip(Clip clip, Position position, CallbackInfoReturnable<Boolean> cir)
     {
-        if (clip instanceof BBSToolsAddCameraClip)
+        if (MixinBruecke.rufeUndAbbrechen("CameraClipContextSkipLogik", "ueberspringen", clip))
         {
-            if (!loggedFirstSkip)
-            {
-                loggedFirstSkip = true;
-                LOG.info("Skipping main-camera apply for BBSToolsAddCameraClip — alt-cam stays alt-tile-only");
-            }
             cir.setReturnValue(false);
         }
     }
