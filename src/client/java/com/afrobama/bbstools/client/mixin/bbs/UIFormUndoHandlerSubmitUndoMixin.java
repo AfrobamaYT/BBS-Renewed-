@@ -3,7 +3,7 @@
 // ValueChangeUndo per changed value.
 package com.afrobama.bbstools.client.mixin.bbs;
 
-import com.afrobama.bbstools.client.bbs.fastpath.UndoSnapshotMemo;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 
 import mchorse.bbs_mod.ui.forms.editors.UIFormUndoHandler;
 
@@ -18,13 +18,14 @@ public class UIFormUndoHandlerSubmitUndoMixin
     @Inject(method = "submitUndo", at = @At("HEAD"))
     private void bbstools$beginUndoBatch(CallbackInfo ci)
     {
-        UndoSnapshotMemo.beginBatch();
+        /* BRUECKEN-MUSTER: klammer-logik liegt in UndoStapelLogik (kernel-paket, swapbar). */
+        MixinBruecke.rufe("UndoStapelLogik", "beginne");
     }
 
     @Inject(method = "submitUndo", at = @At("RETURN"))
     private void bbstools$endUndoBatch(CallbackInfo ci)
     {
-        UndoSnapshotMemo.endBatch();
+        MixinBruecke.rufe("UndoStapelLogik", "beende");
     }
 
 }
