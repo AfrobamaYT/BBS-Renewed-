@@ -340,10 +340,13 @@ public class Gizmo
             return false;
         }
 
-        /* Bildschirmfest, wenn der echte Ursprung hinter der Kamera liegt — siehe
-         * GizmoBildschirmfest. Ohne den Schalter unveraendert. */
-        Matrix4f mvp = new Matrix4f(projection)
-            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
+        /* ⛔ HIER BEWUSST DIE ECHTE MATRIX (2026-07-30, nach User-Befund). Diese Antwort
+         * treibt FilmGizmoDrag.isGizmoUsable: liefert sie einen gueltigen Punkt, verlassen
+         * die Achsen-Gesten R/G/S den Bildschirm-Zug und rechnen ueber den Strahl. Mit der
+         * bildschirmfesten Ersatzmatrix waere dieser Strahl um einen ERFUNDENEN Punkt
+         * gelegt — der User meldete: "r g und s gehen nicht mehr wenn man das anhat".
+         * Die Anzeige darf die Bedienung nicht kaputtmachen. */
+        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
         Vector4f clip = mvp.transform(new Vector4f(0F, 0F, 0F, 1F));
 
         if (clip.w <= 0F)
@@ -388,8 +391,8 @@ public class Gizmo
             return 0F;
         }
 
-        Matrix4f mvp = new Matrix4f(projection)
-            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
+        /* Echte Matrix, aus demselben Grund wie in computeScreenCenter. */
+        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
         float r = this.lastSphereLocalRadius;
         float[] xs = {r, 0F, 0F};
         float[] ys = {0F, r, 0F};
