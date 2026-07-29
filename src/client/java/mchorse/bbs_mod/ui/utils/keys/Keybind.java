@@ -99,6 +99,37 @@ public class Keybind
         return this.combo.getKeyCombo();
     }
 
+    /**
+     * Passt die Taste — und wenn ja, ausführen. Ohne Rücksicht auf {@link #isActive()}.
+     *
+     * <p>Für Fälle, in denen ein ANDERER Teil der Oberfläche entscheidet, ob das Kürzel gerade
+     * gelten soll. Der Replay-Editor macht das mit den Clip-Kürzeln: dort hängt „darf gelten"
+     * an einem gewählten Kamera-Clip, während {@code isActive()} an der Sichtbarkeit der
+     * Kamera-Zeitleiste hängt und deshalb immer false ist (gemessen 2026-07-29, docs/REIBUNGEN
+     * R12). Wer das hier benutzt, muss seine eigene Bedingung vorher geprüft haben.</p>
+     */
+    public boolean feuern(int keyCode, KeyAction keyAction, boolean inside)
+    {
+        /* ⛔ Loslassen löst KEIN Kürzel aus. {@link #check} prüft das nicht — im normalen Weg
+         * fragt der KeybindManager ohnehin nur beim Drücken. Wer check() selbst aufruft, muss
+         * es hier tun, sonst feuert jedes Kürzel zweimal pro Anschlag. Gemessen 2026-07-29:
+         * „Toggle enable" schaltete beim Drücken UND beim Loslassen, der Clip stand danach
+         * wieder wie vorher — das sah aus, als täte die Taste gar nichts. */
+        if (keyAction == KeyAction.RELEASED)
+        {
+            return false;
+        }
+
+        if (this.callback == null || !this.check(keyCode, keyAction, inside))
+        {
+            return false;
+        }
+
+        this.callback.run();
+
+        return true;
+    }
+
     public boolean check(int keyCode, KeyAction keyAction, boolean inside)
     {
         if (keyAction == KeyAction.REPEAT && !this.combo.repeatable)

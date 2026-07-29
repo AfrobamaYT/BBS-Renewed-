@@ -4,7 +4,9 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.ui.film.UIClipsPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.SpurZeiger;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeEditor;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
@@ -39,6 +41,10 @@ public class KameraSpuren implements SpurZeiger
     private final UIKeyframes ansicht;
     private final UIClipsPanel kamera;
 
+    /** Für die Clip-Eigenschaften im Dock — beide null lassen heißt: kein Dock, nur Balken. */
+    private UIKeyframeEditor keyframeEditor;
+    private UIElement editor;
+
     private final Area balken = new Area();
 
     private int modus = NICHTS;
@@ -51,6 +57,15 @@ public class KameraSpuren implements SpurZeiger
     {
         this.ansicht = ansicht;
         this.kamera = kamera;
+    }
+
+    /** Ohne das hier zeichnet die Spur nur Balken; damit zeigt ein Klick auch die Eigenschaften. */
+    public KameraSpuren dock(UIKeyframeEditor keyframeEditor, UIElement editor)
+    {
+        this.keyframeEditor = keyframeEditor;
+        this.editor = editor;
+
+        return this;
     }
 
     /* Was gezeichnet wird */
@@ -110,7 +125,16 @@ public class KameraSpuren implements SpurZeiger
             return false;
         }
 
-        this.kamera.pickClip(clip);
+        /* ⛔ NICHT kamera.pickClip(clip) — das setzt nur den ANGEZEIGTEN Clip. Die Kürzel der
+         * Kamera-Zeitleiste arbeiten aber alle über getClipsFromSelection(), und die Auswahl
+         * bliebe dabei leer: „Toggle enable" feuerte messbar und tat nichts, weil die Liste
+         * leer war (gemessen 2026-07-29, docs/REIBUNGEN.md R12). UIClips#pickClip setzt beides
+         * — Auswahl und Anzeige — und ist derselbe Weg, den ein Klick in der Kamera-Leiste geht. */
+        this.kamera.clips.pickClip(clip);
+
+        /* Die Eigenschaften des Clips ins Dock, wo sonst die Knochen-Werte eines Pose-Keyframes
+         * stehen — ausdrücklicher Wunsch des Users. */
+        KameraClipDock.zeige(this.editor, this.keyframeEditor, this.kamera.filmPanel, clip);
 
         this.gezogen = clip;
         this.startTick = clip.tick.get();

@@ -4,6 +4,8 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.film.UIClips;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.utils.keys.Keybind;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 
 /**
@@ -51,6 +53,10 @@ public final class KameraSpurTasten
      * grundsätzlich kein Kürzel aus. {@code UIElement#childrenKeyPressed} läuft die Kinder
      * RÜCKWÄRTS durch, das zuletzt hinzugefügte hat also den ersten Zugriff.</p>
      *
+     * <p>⚠ „Letztes Kind" heißt: der Aufruf muss NACH {@code bringBarToFront()} stehen. Stand er
+     * davor, landete der Horcher auf Platz 2 von 6 — und dasselbe Symptom war zurück, der
+     * Tastendruck erreichte ihn erst beim Loslassen (gemessen, docs/REIBUNGEN.md R12).</p>
+     *
      * <p>Damit der Replay-Editor trotzdem seine eigenen Kürzel behält, greift der Horcher nur,
      * solange ein Kamera-Clip gewählt ist — genau die Bedingung, die der User genannt hat
      * („wenn man ein camera clip wie keyframe clip selected dann …"). Ohne gewählten Clip
@@ -58,13 +64,66 @@ public final class KameraSpurTasten
      */
     public static void anhaengen(UIElement editor, UIFilmPanel panel)
     {
-        UIElement horcher = new UIElement();
+        /* Die Spurliste wird bei jedem Replay-Wechsel neu gebaut, und der Aufruf sitzt darin.
+         * Ohne dieses Aufräumen sammeln sich Horcher an — gemessen lagen nach drei Wechseln
+         * drei Stück im Baum. Sie stören nicht sichtbar, aber jeder bekommt jeden Tastendruck. */
+        for (Object kind : new java.util.ArrayList<>(editor.getChildren()))
+        {
+            if (kind instanceof UIElement && kind.getClass().getEnclosingClass() == KameraSpurTasten.class)
+            {
+                ((UIElement) kind).removeFromParent();
+            }
+        }
+
+        UIElement horcher = new UIElement()
+        {
+            @Override
+            protected boolean subKeyPressed(UIContext context)
+            {
+                return weiterreichen(panel, context);
+            }
+        };
 
         horcher.keys().register(Keys.FORMS_EDIT, () -> panel.showPanel(panel.cameraEditor))
             .category(UIClips.KEYS_CATEGORY)
             .active(() -> bereit(panel));
 
         editor.add(horcher);
+    }
+
+    /**
+     * Die Kürzel der Kamera-Zeitleiste hier feuern lassen.
+     *
+     * <p>⛔ NICHT über {@code keys().check(...)} — das überspringt jedes Kürzel, dessen
+     * {@code isActive()} false ist, und genau das ist hier der Fall: die Clip-Kürzel hängen an
+     * {@code canUseKeybinds} der Kamera-Leiste, also an DEREN Sichtbarkeit. Im Replay-Editor
+     * ist sie unsichtbar, damit wäre kein einziges Kürzel je aktiv. Zwei Anläufe sind daran
+     * gescheitert, bevor es gemessen war (docs/REIBUNGEN.md R12).</p>
+     *
+     * <p>Die Bedingung ersetzen wir durch unsere eigene: es gilt, solange ein Kamera-Clip
+     * gewählt ist. Deshalb wird {@link Keybind#feuern} benutzt, das {@code isActive()} bewusst
+     * übergeht — die Entscheidung ist schon in {@link #bereit} gefallen.</p>
+     *
+     * <p>⚠ „Gewählt" muss dabei die AUSWAHL von {@code UIClips} meinen, nicht bloß den
+     * angezeigten Clip: die Kürzel arbeiten sämtlich über {@code getClipsFromSelection()}.
+     * Deshalb wählt {@link KameraSpuren#klick} über {@code clips.pickClip} aus.</p>
+     */
+    public static boolean weiterreichen(UIFilmPanel panel, UIContext context)
+    {
+        if (!bereit(panel))
+        {
+            return false;
+        }
+
+        for (Keybind keybind : panel.cameraEditor.clips.keys().keybinds)
+        {
+            if (keybind.feuern(context.getKeyCode(), context.getKeyAction(), true))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Nur mit gewähltem Kamera-Clip mischt sich die Kamera in die Tastatur ein. */

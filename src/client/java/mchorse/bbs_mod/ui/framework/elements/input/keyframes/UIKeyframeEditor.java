@@ -74,8 +74,33 @@ public class UIKeyframeEditor extends UIElement
         return this.editPanelTopOffsetPx != null ? this.editPanelTopOffsetPx.get() : EDIT_PANEL_TOP_OFFSET_PX;
     }
 
+    /**
+     * Ein fremder Bewohner des Docks — heute die Eigenschaften eines Kamera-Clips, den der
+     * Nutzer im Replay-Editor angeklickt hat (siehe {@code KameraClipDock}).
+     *
+     * <p>Das Dock hat Platz für einen. Wer es besetzt, trägt sich hier ein; ein gewählter
+     * Keyframe verdrängt ihn, sonst lägen zwei Oberflächen übereinander.</p>
+     */
+    public UIElement fremdesPanel;
+
+    public UIElement getTarget()
+    {
+        return this.target;
+    }
+
+    public boolean isPropertiesVisible()
+    {
+        return this.propertiesVisible;
+    }
+
     private void pickKeyframe(Keyframe keyframe)
     {
+        if (this.fremdesPanel != null)
+        {
+            this.fremdesPanel.removeFromParent();
+            this.fremdesPanel = null;
+        }
+
         UIKeyframeFactory.saveScroll(this.editor);
 
         if (this.editor != null)
@@ -126,6 +151,11 @@ public class UIKeyframeEditor extends UIElement
         if (this.editor != null)
         {
             this.editor.setVisible(visible);
+        }
+
+        if (this.fremdesPanel != null)
+        {
+            this.fremdesPanel.setVisible(visible);
         }
     }
 
