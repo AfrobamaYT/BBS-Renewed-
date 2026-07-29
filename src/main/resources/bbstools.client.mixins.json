@@ -71,7 +71,6 @@
     "UIKeybindsHintMixin",
     "UIPickableFormRendererLodBypassMixin",
     "UIClipsDragEdgeCrashFixMixin",
-    "UIClipsMarkerOverlayMixin",
     "UIOverlayMinSizeMixin",
     "FormCategoriesAddCameraMixin",
     "WindowNoFocusStealMixin",
