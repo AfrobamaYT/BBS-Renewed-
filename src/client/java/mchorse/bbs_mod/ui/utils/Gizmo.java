@@ -340,13 +340,12 @@ public class Gizmo
             return false;
         }
 
-        /* ⛔ HIER BEWUSST DIE ECHTE MATRIX (2026-07-30, nach User-Befund). Diese Antwort
-         * treibt FilmGizmoDrag.isGizmoUsable: liefert sie einen gueltigen Punkt, verlassen
-         * die Achsen-Gesten R/G/S den Bildschirm-Zug und rechnen ueber den Strahl. Mit der
-         * bildschirmfesten Ersatzmatrix waere dieser Strahl um einen ERFUNDENEN Punkt
-         * gelegt — der User meldete: "r g und s gehen nicht mehr wenn man das anhat".
-         * Die Anzeige darf die Bedienung nicht kaputtmachen. */
-        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
+        /* Ersatzsystem, wenn es greift — UND DANN AUCH FUER DEN DREHPUNKT DES ZUGS
+         * (GizmoDrag.fromRenderedGizmo). Beide Haelften muessen dasselbe Bezugssystem
+         * benutzen: am 2026-07-30 rechnete die Bildschirm-Geometrie im Ersatz-System und der
+         * Drehpunkt im echten, worauf der Trackball lief und die Achsen-Gesten nicht. */
+        Matrix4f mvp = new Matrix4f(projection)
+            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
         Vector4f clip = mvp.transform(new Vector4f(0F, 0F, 0F, 1F));
 
         if (clip.w <= 0F)
@@ -391,8 +390,8 @@ public class Gizmo
             return 0F;
         }
 
-        /* Echte Matrix, aus demselben Grund wie in computeScreenCenter. */
-        Matrix4f mvp = new Matrix4f(projection).mul(this.lastRenderMatrix);
+        Matrix4f mvp = new Matrix4f(projection)
+            .mul(GizmoBildschirmfest.matrix(projection, this.lastRenderMatrix, this.hasLastRenderMatrix));
         float r = this.lastSphereLocalRadius;
         float[] xs = {r, 0F, 0F};
         float[] ys = {0F, r, 0F};
@@ -1646,6 +1645,15 @@ public class Gizmo
 
         RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
         MatrixStackUtils.restoreMatrices();
+    }
+
+    /**
+     * Ob das bildschirmfeste Ersatzsystem gerade zieht — fuer Aufrufer ausserhalb, die
+     * denselben Drehpunkt brauchen wie das Gezeichnete (siehe {@code GizmoDrag}).
+     */
+    public boolean bildschirmfestAktiv(Matrix4f projection)
+    {
+        return GizmoBildschirmfest.greift(projection, this.lastRenderMatrix, this.hasLastRenderMatrix);
     }
 
     private void captureRenderMatrix(MatrixStack stack)

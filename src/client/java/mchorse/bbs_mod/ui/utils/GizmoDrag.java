@@ -122,6 +122,22 @@ public class GizmoDrag
             return null;
         }
 
+        /* ⛔ DERSELBE DREHPUNKT WIE DAS GEZEICHNETE (2026-07-30). Sitzt die Kamera auf dem
+         * bearbeiteten Knochen, liegt dessen Weltposition HINTER der Kamera — als Weltpunkt
+         * gueltig, aber nicht projizierbar, und die Strahl-Rechnung entartet (gesweepter
+         * Winkel exakt 0). Zieht das bildschirmfeste Ersatzsystem, wird deshalb auch hier auf
+         * den Punkt gewechselt, an dem das Gizmo TATSAECHLICH gezeichnet wird.
+         *
+         * Nur der Drehpunkt wandert — die Achsen unten kommen weiter vom Knochen, sonst
+         * zeigte X/Y/Z woandershin als der Griff.
+         *
+         * Ohne diese Zeile lief der Trackball und die Achsen-Gesten nicht: die
+         * Bildschirm-Geometrie rechnete im Ersatz-System, der Drehpunkt im echten. */
+        if (Gizmo.INSTANCE.bildschirmfestAktiv(camera.projection))
+        {
+            GizmoBildschirmfest.ersatzUrsprung(camera.view, origin);
+        }
+
         GizmoDrag drag = new GizmoDrag().setup(camera, viewport, origin);
 
         Gizmo.INSTANCE.computeWorldAxes(camera, drag.gizmoWorldAxes);
