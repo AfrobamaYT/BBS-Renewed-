@@ -41,6 +41,15 @@ public class UIMarkerLane extends UIElement
     private final UIClips clips;
     private final IUIClipsDelegate delegate;
 
+    /** Der gerade gefasste Marker, oder null. */
+    private Marker gezogen;
+
+    /** Abstand zwischen Greifpunkt und Marker-Tick, damit er beim Ziehen nicht springt. */
+    private int griffVersatz;
+
+    /** Ob sich seit dem Fassen wirklich etwas bewegt hat — sonst war es ein Klick. */
+    private boolean verschoben;
+
     public UIMarkerLane(UIClips clips, IUIClipsDelegate delegate)
     {
         this.clips = clips;
@@ -179,10 +188,35 @@ public class UIMarkerLane extends UIElement
         if (context.mouseButton == 1)
         {
             markers.remove(marker);
+
+            return true;
         }
-        else
+
+        /* Linke Taste heisst erstmal NUR: der hier ist gefasst. Ob daraus ein Verschieben
+         * oder ein Oeffnen wird, entscheidet das Loslassen — genau wie bei einem Clip. */
+        this.gezogen = marker;
+        this.griffVersatz = marker.tick.get() - this.clips.fromGraphX(context.mouseX);
+        this.verschoben = false;
+
+        return true;
+    }
+
+    @Override
+    protected boolean subMouseReleased(UIContext context)
+    {
+        Marker marker = this.gezogen;
+
+        this.gezogen = null;
+
+        if (marker == null)
         {
-            UIOverlay.addOverlay(context, new UIMarkerPanel(markers, marker, this.delegate::fillData), 180, 130);
+            return false;
+        }
+
+        /* Losgelassen, ohne dass sich etwas bewegt hat → das war ein Klick, kein Zug. */
+        if (!this.verschoben)
+        {
+            UIOverlay.addOverlay(context, new UIMarkerPanel(this.markers(), marker, this.delegate::fillData), 180, 130);
         }
 
         return true;
@@ -195,10 +229,34 @@ public class UIMarkerLane extends UIElement
 
         if (markers != null && !markers.getList().isEmpty())
         {
+            this.ziehe(context);
             this.zeichne(context, markers);
         }
 
         super.render(context);
+    }
+
+    /**
+     * Den gefassten Marker der Maus folgen lassen.
+     *
+     * <p>Der Zug wird beim Zeichnen fortgeschrieben, nicht in einem Maus-Ereignis: BBS liefert
+     * keine Bewegungs-Ereignisse an Elemente, {@code UIClips} macht sein Scrubbing aus demselben
+     * Grund genauso (siehe {@code UIClips#handleInput}).</p>
+     */
+    private void ziehe(UIContext context)
+    {
+        if (this.gezogen == null)
+        {
+            return;
+        }
+
+        int neu = Math.max(0, this.clips.fromGraphX(context.mouseX) + this.griffVersatz);
+
+        if (neu != this.gezogen.tick.get())
+        {
+            this.gezogen.tick.set(neu);
+            this.verschoben = true;
+        }
     }
 
     private void zeichne(UIContext context, Markers markers)
