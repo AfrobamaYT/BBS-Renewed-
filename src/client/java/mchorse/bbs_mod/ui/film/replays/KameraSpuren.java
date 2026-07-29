@@ -12,7 +12,9 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Die Kamera-Clips als Balken in der Zeitleiste des Replay-Editors — sehen, auswählen,
@@ -22,7 +24,8 @@ import java.util.List;
  * muss … es soll im Endeffekt dafür dienen den Workflow zu beschleunigen indem man nicht
  * konstant die taps wechseln muss."</p>
  *
- * <p>Der Balken liegt auf der Spurzeile, die dem {@code layer} des Clips entspricht, und ist
+ * <p>Der Balken liegt auf der Spurzeile, die sich aus der Ebenen-Reihenfolge ergibt (siehe
+ * {@link #zeile}) — NICHT auf der Zeile mit der Nummer der Ebene —, und ist
  * genau eine Spur hoch — mit Alt+Mausrad wächst und schrumpft er also mit den Spuren mit
  * (ebenfalls Vorgabe des Users). Gezeichnet wird über den Hintergrund-Haken der Zeitleiste,
  * also VOR Gitter und Keyframes; die Keyframes bleiben oben und behalten den Vorrang bei der
@@ -94,7 +97,7 @@ public class KameraSpuren implements SpurZeiger
 
         for (Clip clip : clips.get())
         {
-            if (Math.max(0, clip.layer.get()) != zeile)
+            if (this.zeile(clips, clip) != zeile)
             {
                 continue;
             }
@@ -203,6 +206,39 @@ public class KameraSpuren implements SpurZeiger
         }
     }
 
+    /**
+     * Welche Spurzeile ein Clip bekommt.
+     *
+     * <p>⛔ NICHT die Ebenennummer. Die Kamera-Zeitleiste zählt Ebenen VON UNTEN
+     * ({@code UIClips#toLayerY}: {@code ey() - MARGIN - (layer + 1) * h}), und sie sind beliebig
+     * hoch nummeriert — im Film des Users liegen alle Clips auf Ebene 15. Als Zeile von oben
+     * gelesen landen sie fünfzehn Zeilen tief, also weit unterhalb dessen, was die Kamera-Leiste
+     * zeigt. Genau das hat der User gemeldet: „im camera editor sind die clips auf der vierten
+     * zeile aber beim replay editor viel viel weiter unten."</p>
+     *
+     * <p>Deshalb werden die BENUTZTEN Ebenen gepackt, die oberste zuerst: die Reihenfolge bleibt
+     * wie in der Kamera-Leiste (höhere Ebene = weiter oben), aber es entstehen keine Lücken, und
+     * die Balken bleiben sichtbar, egal wie hoch die Ebenen nummeriert sind.</p>
+     */
+    private int zeile(Clips clips, Clip clip)
+    {
+        int eigene = clip.layer.get();
+        Set<Integer> darueber = new HashSet<>();
+
+        for (Clip anderer : clips.get())
+        {
+            int seine = anderer.layer.get();
+
+            if (seine > eigene)
+            {
+                darueber.add(seine);
+            }
+        }
+
+        /* So viele Zeilen, wie es BENUTZTE Ebenen über dieser gibt — die oberste bekommt 0. */
+        return darueber.size();
+    }
+
     private Clips clips()
     {
         Film film = this.kamera == null ? null : this.kamera.getFilm();
@@ -214,7 +250,7 @@ public class KameraSpuren implements SpurZeiger
     private boolean flaeche(Clip clip, Area ziel)
     {
         int hoehe = (int) this.ansicht.getDopeSheet().getTrackHeight();
-        int y = this.ansicht.getDopeSheet().getDopeSheetY() + Math.max(0, clip.layer.get()) * hoehe;
+        int y = this.ansicht.getDopeSheet().getDopeSheetY() + this.zeile(this.clips(), clip) * hoehe;
         int x = this.ansicht.toGraphX(clip.tick.get());
         int breite = Math.max(KameraSpurBalken.MIN_BREITE, this.ansicht.toGraphX(clip.tick.get() + clip.duration.get()) - x);
 
