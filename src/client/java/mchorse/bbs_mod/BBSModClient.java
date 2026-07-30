@@ -89,6 +89,9 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.renderer.GameRenderer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.platform.Window;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -414,9 +417,9 @@ public class BBSModClient implements ClientModInitializer
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.currentScreen instanceof UIScreen)
+            if (mc.screen instanceof UIScreen)
             {
-                mc.onResolutionChanged();
+                mc.resizeDisplay();
             }
         });
         BBSSettings.editorSeconds.postCallback((v, f) ->
@@ -527,19 +530,19 @@ public class BBSModClient implements ClientModInitializer
                     Integer fromCurve = BBSRendering.getChromaSkyColorArgb();
                     Color color = Colors.COLOR.set(fromCurve != null ? fromCurve : BBSSettings.chromaSkyColor.get());
 
-                    stack.push();
+                    stack.pushPose();
 
-                    PoseStack.Entry peek = stack.peek();
+                    PoseStack.Pose peek = stack.last();
 
-                    peek.getPositionMatrix().identity();
-                    peek.getNormalMatrix().identity();
+                    peek.pose().identity();
+                    peek.normal().identity();
                     stack.translate(0F, 0F, -d);
 
                     RenderSystem.enableDepthTest();
 
-                    BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                    BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-                    float fov = Minecraft.getInstance().options.getFov().getValue();
+                    float fov = Minecraft.getInstance().options.fov().get();
                     float dd = d * (float) Math.pow(fov / 40F, 2F);
 
                     Draw.fillQuad(builder, stack,
@@ -552,10 +555,10 @@ public class BBSModClient implements ClientModInitializer
 
                     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-                    { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferUploader.drawWithGlobalProgram(__bbsBuilt); }
+                    { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
                     RenderSystem.disableDepthTest();
 
-                    stack.pop();
+                    stack.popPose();
                 }
             }
         });
@@ -606,7 +609,7 @@ public class BBSModClient implements ClientModInitializer
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.currentScreen instanceof UIScreen screen)
+            if (mc.screen instanceof UIScreen screen)
             {
                 screen.update();
             }
@@ -658,7 +661,7 @@ public class BBSModClient implements ClientModInitializer
             if (mc.player != null)
             {
                 boolean zoom = keyZoom.isDown();
-                ItemStack stack = mc.player.getMainHandStack();
+                ItemStack stack = mc.player.getMainHandItem();
 
                 if (gunZoom == null && zoom && stack.getItem() == BBSMod.GUN_ITEM)
                 {
@@ -676,7 +679,7 @@ public class BBSModClient implements ClientModInitializer
 
             if (gunZoom != null)
             {
-                gunZoom.update(keyZoom.isDown(), Minecraft.getInstance().getRenderTickCounter().getLastFrameDuration());
+                gunZoom.update(keyZoom.isDown(), Minecraft.getInstance().getTimer().getRealtimeDeltaTicks());
 
                 if (gunZoom.canBeRemoved())
                 {
@@ -694,7 +697,7 @@ public class BBSModClient implements ClientModInitializer
 
             Window window = Minecraft.getInstance().getWindow();
 
-            originalFramebufferScale = window.getFramebufferWidth() / window.getWidth();
+            originalFramebufferScale = window.getWidth() / window.getGuiScaledWidth();
         });
 
         URLTextureErrorCallback.EVENT.register((url, error) ->

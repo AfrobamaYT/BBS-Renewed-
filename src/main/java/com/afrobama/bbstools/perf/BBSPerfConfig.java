@@ -394,7 +394,7 @@ public final class BBSPerfConfig
      *  Iris-compat: per-worker BufferBuilder still triggers Iris's
      *  MixinBufferBuilder (54B extension). Merged bytes inherit format.
      *  Format consistency across workers is guaranteed (same
-     *  VertexFormat.DrawMode.TRIANGLES + ENTITY format).
+     *  VertexFormat.Mode.TRIANGLES + ENTITY format).
      *
      *  Default OFF — opt-in via /bbstools replay-fast-path tier2-merge on.
      *  Requires all Tier 2-c/d gates on. */

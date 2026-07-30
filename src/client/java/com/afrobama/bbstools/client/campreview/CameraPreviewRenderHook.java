@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  *       (via {@code CameraInvokerMixin})</li>
  *   <li>Bind preview's framebuffer</li>
  *   <li>Build a projection matrix matching the framebuffer aspect</li>
- *   <li>Call {@code mc.worldRenderer.render(...)} directly — bypasses
+ *   <li>Call {@code mc.levelRenderer.render(...)} directly — bypasses
  *       the {@code WorldRenderEvents} re-entry that {@code gameRenderer.renderWorld}
  *       would have triggered</li>
  *   <li>Restore main framebuffer + Camera state</li>

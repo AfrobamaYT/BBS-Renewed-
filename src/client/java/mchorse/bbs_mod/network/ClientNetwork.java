@@ -126,7 +126,7 @@ public class ClientNetwork
 
             client.execute(() ->
             {
-                Entity entity = client.world.getEntityById(id);
+                Entity entity = client.level.getEntity(id);
                 Morph morph = Morph.getMorph(entity);
 
                 if (morph != null)
@@ -300,7 +300,7 @@ public class ClientNetwork
 
             client.execute(() ->
             {
-                Entity entity = client.world.getEntityById(entityId);
+                Entity entity = client.level.getEntity(entityId);
 
                 if (entity instanceof IEntityFormProvider provider)
                 {

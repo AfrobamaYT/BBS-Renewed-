@@ -127,7 +127,7 @@ public class UIFormCategory extends UIElement
                     {
                         this.getContext().replaceContextMenu((newMenu) ->
                         {
-                            for (PlayerListEntry entry : playerList)
+                            for (PlayerInfo entry : playerList)
                             {
                                 if (entry.getProfile().getId().equals(Minecraft.getInstance().player.getGameProfile().getId()))
                                 {

@@ -119,7 +119,7 @@ public final class BBSToolsModClient implements ClientModInitializer
                 try
                 {
                     com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
-                        net.minecraft.client.MinecraftClient.getInstance().getCurrentFps());
+                        net.minecraft.client.Minecraft.getInstance().getFps());
                 }
                 catch (Throwable ig) {}
                 /* Benchmark harness: once-per-real-frame driver (Iris-safe; WorldRenderEvents fires per pass). */
@@ -491,7 +491,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  in hero shots and snags PhysicsMod debris colliders around
          *  ragdoll feet — this lets the user clean a 64-256 b zone in
          *  one tick before rolling without /fill replace gymnastics. */
-        com.afrobama.bbstools.client.world.DeleteGrassCommand.register();
+        com.afrobama.bbstools.client.level.DeleteGrassCommand.register();
         /* DISABLED — BBS Renewed (the renamed BBS-CML fork) ships the
          *  same editor-cam handler at source level. Running both = double
          *  cycling per F8 press. The BBS-Renewed jar's

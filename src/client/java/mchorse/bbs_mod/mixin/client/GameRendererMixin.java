@@ -171,7 +171,7 @@ public class GameRendererMixin
         at = @At(
             value = "INVOKE",
             /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): setupFrustum nimmt keinen MatrixStack mehr,
-             * sondern (Vec3d, Matrix4f positionMatrix, Matrix4f projectionMatrix) — per javap
+             * sondern (Vec3, Matrix4f positionMatrix, Matrix4f projectionMatrix) — per javap
              * gegen die 1.21.1-jar geprueft. Die projektion bleibt argument 2. Mit dem alten
              * deskriptor fand mixin 0 ziele und der client startete gar nicht erst. */
             target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareCullFrustum(Lnet/minecraft/world/phys/Vec3;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"

@@ -48,6 +48,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 public final class BBSFxCommand
 {
@@ -86,7 +87,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             SupernovaEffect.trigger((float) p.x, (float) p.y + 30F, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] supernova triggered 30 b above you"));
                             return 1;
@@ -106,7 +107,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             NukeEffect.trigger((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] nuke triggered at your position"));
                             return 1;
@@ -126,7 +127,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             RevealLightEffect.start((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§b[bbstools fx] reveal-light ON at your position — /bbstools fx reveal-light-off to fade out"));
                             return 1;
@@ -152,7 +153,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             CrystalEffect.trigger((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§b[bbstools fx] CRYSTALLIZATION WAVE expanding from your position"));
                             return 1;
@@ -172,7 +173,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             AntimatterEffect.trigger((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§9[bbstools fx] ANTIMATTER implosion forming at your position — light bending inward"));
                             return 1;
@@ -192,7 +193,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             GlitchEffect.trigger((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§5[bbstools fx] REALITY GLITCH opened at your position — corruption expanding outward"));
                             return 1;
@@ -212,7 +213,7 @@ public final class BBSFxCommand
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
-                            Vec3d p = mc.player.getPos();
+                            Vec3 p = mc.player.position();
                             MeteorEffect.trigger((float) p.x, (float) p.y, (float) p.z);
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] meteor incoming — impact at your position in 2.5s"));
                             return 1;

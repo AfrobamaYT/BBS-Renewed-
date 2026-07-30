@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.particles.ParticleType;
 
 public class UIParticleSettings extends UIElement
 {
@@ -27,12 +30,12 @@ public class UIParticleSettings extends UIElement
     {
         this.particle = new UIButton(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_EDITOR_PICK, (b) ->
         {
-            UIListOverlayPanel overlayPanel = new UIListOverlayPanel(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_EDITOR_TITLE, (l) -> this.setParticle(ResourceLocation.of(l)));
+            UIListOverlayPanel overlayPanel = new UIListOverlayPanel(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_EDITOR_TITLE, (l) -> this.setParticle(ResourceLocation.parse(l)));
             List<String> strings = new ArrayList<>();
 
-            for (RegistryKey<ParticleType<?>> key : Registries.PARTICLE_TYPE.getKeys())
+            for (ResourceKey<ParticleType<?>> key : BuiltInRegistries.PARTICLE_TYPE.registryKeySet())
             {
-                strings.add(key.getValue().toString());
+                strings.add(key.location().toString());
             }
 
             overlayPanel.addValues(strings);

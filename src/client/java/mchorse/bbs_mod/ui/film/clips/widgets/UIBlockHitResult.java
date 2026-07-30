@@ -14,6 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 
 public class UIBlockHitResult
 {
@@ -107,7 +109,7 @@ public class UIBlockHitResult
                 if (this.result == null) return;
 
                 Minecraft mc = Minecraft.getInstance();
-                HitResult result = mc == null ? null : mc.crosshairTarget;
+                HitResult result = mc == null ? null : mc.hitResult;
 
                 if (result instanceof BlockHitResult bhr && result.getType() == HitResult.Type.BLOCK)
                 {

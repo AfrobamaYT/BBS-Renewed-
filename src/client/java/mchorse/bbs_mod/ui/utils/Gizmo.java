@@ -1643,7 +1643,7 @@ public class Gizmo
         /* The drag/pick math (computeWorldOrigin, computeWorldAxes, computeScreenCenter)
          * needs the FULL modelview — view * translate(-cam) * gizmoChain. Since 1.21.1 the
          * world render keeps the camera view in RenderSystem's global model-view and hands
-         * the stack an identity base, so stack.peek() alone no longer carries the camera
+         * the stack an identity base, so stack.last() alone no longer carries the camera
          * rotation. modelView() folds the global model-view back in (and is a no-op in the
          * form editor, where the camera already lives in the stack), giving the same
          * coordinate frame the gizmo is actually drawn in. */

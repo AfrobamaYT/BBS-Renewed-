@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>Save: probes the currently active {@link TrackerClip} on the
  * playing film's camera timeline (if any) and grabs its {@code fov} value;
- * falls back to {@code MinecraftClient.options.getFov().getValue()} when
+ * falls back to {@code MinecraftClient.options.fov().get()} when
  * no tracker is active. Load: writes the stored FOV back to the active
  * tracker clip (so the next frame's {@code applyClip} picks it up), with
  * the same MC-options fallback. List: dumps every saved preset to chat.</p>

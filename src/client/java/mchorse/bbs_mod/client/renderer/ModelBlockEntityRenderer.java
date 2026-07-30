@@ -99,7 +99,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     {}
 
     @Override
-    public boolean rendersOutsideBoundingBox(ModelBlockEntity blockEntity)
+    public boolean shouldRenderOffScreen(ModelBlockEntity blockEntity)
     {
         return blockEntity.getProperties().isGlobal();
     }

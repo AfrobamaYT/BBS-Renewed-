@@ -1,6 +1,6 @@
 // Coded by Afrobama/Claude — rolling FPS sampler.
 //
-// Single MinecraftClient.getCurrentFps() snapshot at /bbstools status time
+// Single MinecraftClient.getFps() snapshot at /bbstools status time
 // is noisy (read 1 frame, can be 50-100fps spike). Rolling buffer over the
 // last ~10 seconds of frames smooths the signal so we get useful avg/min/max
 // stats with one /bbstools status call.

@@ -30,7 +30,7 @@
 // because Loom's splitEnvironmentSourceSets blocks main → client refs;
 // the user's spec asked for the server entry but that's not reachable
 // from this sourceSet — see BBSDebug for the same pattern.
-package com.afrobama.bbstools.client.world;
+package com.afrobama.bbstools.client.level;
 
 import com.afrobama.bbstools.BBSToolsMod;
 

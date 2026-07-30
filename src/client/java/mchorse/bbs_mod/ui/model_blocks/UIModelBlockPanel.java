@@ -173,7 +173,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
         {
             this.modelBlock.getProperties().setGlobal(b.getValue());
-            Minecraft.getInstance().worldRenderer.reload();
+            Minecraft.getInstance().levelRenderer.allChanged();
         });
         this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, (b) -> this.modelBlock.getProperties().setLookAt(b.getValue()));
 

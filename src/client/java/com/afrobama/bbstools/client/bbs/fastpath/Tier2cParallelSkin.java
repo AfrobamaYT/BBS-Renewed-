@@ -19,7 +19,7 @@
 //   PHASE C (serial, main thread)
 //     Tessellator.begin(TRIANGLES, ENTITY)
 //     For each instance i, for each quad q, for each vertex v in {0,1,2,0,2,3}:
-//       builder.vertex(skinnedPos[..]).color(..).texture(..).overlay(..).light(..).normal(..)
+//       builder.vertex(skinnedPos[..]).color(..).texture(..).setOverlay(..).setLight(..).setNormal(..)
 //     BufferRenderer.drawWithGlobalProgram(builder.end())     // single drawArrays
 //
 // Iris-compat by construction: same vanilla MC ENTITY format + same

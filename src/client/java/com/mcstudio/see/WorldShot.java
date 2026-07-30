@@ -107,8 +107,8 @@ public final class WorldShot
 			return "{\"error\":\"MinecraftClient not available\"}";
 		}
 
-		/* renderWorld dereferences client.world with NO null-guard (verified in 1.21.1 bytecode: it reads
-		 * client.world.getTickManager() etc.) — calling it in the menu would NPE. Fail loud instead. */
+		/* renderWorld dereferences client.level with NO null-guard (verified in 1.21.1 bytecode: it reads
+		 * client.level.getTickManager() etc.) — calling it in the menu would NPE. Fail loud instead. */
 		if (client.level == null)
 		{
 			return "{\"error\":\"no world loaded (in menu?) — /shot_world needs an in-game world\"}";

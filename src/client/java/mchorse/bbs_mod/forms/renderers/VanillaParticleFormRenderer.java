@@ -73,7 +73,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
         Matrix4f matrix = new Matrix4f(InverseView.get());
 
         /* Since 1.21.1 the world render keeps the camera view in RenderSystem's global
-         * model-view and gives the stack an identity base, so stack.peek() no longer
+         * model-view and gives the stack an identity base, so stack.last() no longer
          * carries the view rotation that InverseView is meant to cancel. Fold the global
          * model-view back in (identity, hence a no-op, in the form editor where the camera
          * lives in the stack) so the emitter's world position and direction come out right. */

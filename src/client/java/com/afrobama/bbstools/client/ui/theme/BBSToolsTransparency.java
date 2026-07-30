@@ -71,7 +71,7 @@ public final class BBSToolsTransparency
                 toggle();
                 if (client.player != null)
                 {
-                    client.player.sendMessage(Component.literal(
+                    client.player.displayClientMessage(Component.literal(
                         String.format("§a[BBSTools] §fEditor-Hintergrund-Transparenz: §b%d%%",
                             Math.round(PANEL_BG_ALPHA * 100F))), true);
                 }

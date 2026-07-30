@@ -128,7 +128,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             Matrix4f matrix = new Matrix4f(InverseView.get());
 
             /* Since 1.21.1 the world render keeps the camera view in RenderSystem's global
-             * model-view and gives the stack an identity base, so stack.peek() no longer
+             * model-view and gives the stack an identity base, so stack.last() no longer
              * carries the view rotation InverseView is meant to cancel. Fold the global
              * model-view in (identity, hence a no-op, in the form editor) so the emitter's
              * world origin and rotation come out right. */
