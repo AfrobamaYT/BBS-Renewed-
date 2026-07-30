@@ -48,3 +48,7 @@ ik_test/*
 __pycache__/
 /0
 OrthoCamera-1.20.1
+
+# migrateMappings-ausgabe: generiert, gehoert nicht in die historie
+remappedSrc/
+remappedSrc-client/
