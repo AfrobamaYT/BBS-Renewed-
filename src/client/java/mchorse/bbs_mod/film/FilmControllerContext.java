@@ -8,7 +8,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Matrix4f;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.MultiBufferSource;
 
@@ -77,7 +77,7 @@ public class FilmControllerContext
         this.gizmoOnly = false;
     }
 
-    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, WorldRenderContext context)
+    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, LevelRenderContext context)
     {
         this.reset();
 

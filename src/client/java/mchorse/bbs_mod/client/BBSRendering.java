@@ -34,7 +34,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.IrisUtils;
 import mchorse.bbs_mod.utils.iris.ShaderCurves;
 import mchorse.bbs_mod.utils.sodium.SodiumUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
@@ -558,7 +558,7 @@ public class BBSRendering
         batcher2D.textCard(label, iconX + 3, y + 4, Colors.WHITE, Colors.A50);
     }
 
-    public static void renderCoolStuff(WorldRenderContext worldRenderContext)
+    public static void renderCoolStuff(LevelRenderContext worldRenderContext)
     {
         /* 1.21's Fabric no longer threads a matrix stack through the world render
          * context (it carries a position matrix instead), so rebuild one from the

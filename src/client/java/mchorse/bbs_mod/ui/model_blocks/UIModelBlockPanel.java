@@ -50,7 +50,7 @@ import mchorse.bbs_mod.utils.PlayerUtils;
 import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -350,7 +350,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             && this.getChildren(UIFormPalette.class).isEmpty();
     }
 
-    private void renderGizmo(WorldRenderContext context, Vec3 cameraPos)
+    private void renderGizmo(LevelRenderContext context, Vec3 cameraPos)
     {
         if (!this.canShowGizmo())
         {
@@ -700,7 +700,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     }
 
     @Override
-    public void renderInWorld(WorldRenderContext context)
+    public void renderInWorld(LevelRenderContext context)
     {
         super.renderInWorld(context);
 

@@ -52,7 +52,7 @@ import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -1457,7 +1457,7 @@ public abstract class BaseFilmController
         return i != this.exception;
     }
 
-    public void render(WorldRenderContext context)
+    public void render(LevelRenderContext context)
     {
         /* 26.2: enableDepthTest() entfaellt ersatzlos. Der Aufruf sicherte den Tiefentest fuer
          * die Formen, die gleich gezeichnet werden — den bringt jetzt die Pipeline des
@@ -1478,7 +1478,7 @@ public abstract class BaseFilmController
         }
     }
 
-    protected void renderEntity(WorldRenderContext context, Replay replay, IEntity entity)
+    protected void renderEntity(LevelRenderContext context, Replay replay, IEntity entity)
     {
         if (!replay.actor.get())
         {
@@ -1490,7 +1490,7 @@ public abstract class BaseFilmController
         }
     }
 
-    protected FilmControllerContext getFilmControllerContext(WorldRenderContext context, Replay replay, IEntity entity)
+    protected FilmControllerContext getFilmControllerContext(LevelRenderContext context, Replay replay, IEntity entity)
     {
         return FilmControllerContext.instance
             .setup(this.entities, entity, replay, context)

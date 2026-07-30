@@ -89,7 +89,7 @@ import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
@@ -139,7 +139,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     private int pov;
     private boolean paused;
 
-    private WorldRenderContext worldRenderContext;
+    private LevelRenderContext worldRenderContext;
 
     public UIFilmController(UIFilmPanel panel)
     {
@@ -1388,7 +1388,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
     }
 
-    public void renderFrame(WorldRenderContext context)
+    public void renderFrame(LevelRenderContext context)
     {
         this.worldRenderContext = context;
 
@@ -1436,7 +1436,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
          * waehlt seine Pipeline und damit seinen Tiefentest selbst. Nichts zu uebergeben. */
     }
 
-    private void renderOrbitCenterMarker(WorldRenderContext context)
+    private void renderOrbitCenterMarker(LevelRenderContext context)
     {
         if (this.getPovMode() != CAMERA_MODE_ORBIT || !BBSSettings.editorOrbitCenterMarker.get())
         {
@@ -1524,7 +1524,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         return UIBaseMenu.shouldRenderAxes() && !this.isRecording() && (this.getBone() != null || this.isAnchorGizmo());
     }
 
-    private void renderStencil(WorldRenderContext renderContext, UIContext context, boolean altPressed)
+    private void renderStencil(LevelRenderContext renderContext, UIContext context, boolean altPressed)
     {
         Area viewport = this.panel.preview.getViewport();
         boolean drin = viewport.isInside(context);

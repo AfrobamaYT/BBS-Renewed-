@@ -26,7 +26,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -88,7 +88,7 @@ public class MotionPath
         "swipe", "jump", "jump_alt", "hurt", "land", "shoot", "consume", "base_pre", "base_post"
     };
 
-    public static void render(WorldRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick)
+    public static void render(LevelRenderContext context, ValueMotionPath config, UIFilmController controller, Replay replay, Pair<String, Boolean> bone, float currentTick)
     {
         if (replay == null || replay.relative.get())
         {
@@ -114,7 +114,7 @@ public class MotionPath
 
     /* Drawing */
 
-    private static void draw(WorldRenderContext context, ValueMotionPath config, Trajectory trajectory, float currentTick)
+    private static void draw(LevelRenderContext context, ValueMotionPath config, Trajectory trajectory, float currentTick)
     {
         float first = trajectory.first();
         float last = trajectory.last();

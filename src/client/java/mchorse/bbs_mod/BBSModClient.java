@@ -70,7 +70,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -514,7 +514,7 @@ public class BBSModClient implements ClientModInitializer
          * unter der Erde startet). Eigene Klasse, siehe mchorse.bbs_mod.client.WeltDrahtgitter. */
         mchorse.bbs_mod.client.WeltDrahtgitter.anmelden();
 
-        WorldRenderEvents.AFTER_ENTITIES.register((context) ->
+        LevelRenderEvents.AFTER_SOLID_FEATURES.register((context) ->
         {
             if (!BBSRendering.isIrisShadersEnabled())
             {
@@ -582,7 +582,12 @@ public class BBSModClient implements ClientModInitializer
             }
         });
 
-        WorldRenderEvents.LAST.register((context) ->
+        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.LAST -- die Phase NACH
+         * allem, einschliesslich Wolken, Wetter und Nachbearbeitung. In 26.2 gibt es dafuer
+         * kein benanntes Gegenstueck; END_MAIN ist die letzte verfuegbare Phase, aber ob sie
+         * an derselben Stelle liegt, ist aus dem Bytecode NICHT ablesbar.
+         * Zu pruefen am laufenden Bild: sieht ein Export genauso aus wie das Fenster? */
+        LevelRenderEvents.END_MAIN.register((context) ->
         {
             if (videoRecorder.isRecording() && BBSRendering.canRender)
             {

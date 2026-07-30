@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.client;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 
 import org.lwjgl.opengl.GL11;
 
@@ -73,7 +73,11 @@ public final class WeltDrahtgitter
      */
     public static void anmelden()
     {
-        WorldRenderEvents.AFTER_SETUP.register(context ->
+        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.AFTER_SETUP -- nach dem
+         * Aufbau, vor dem Zeichnen. 26.2 kennt diese Zwischenstufe nicht; START_MAIN ist
+         * die frueheste verfuegbare. Fuer reines Uniform-Setzen genuegt das, fuer alles was
+         * den aufgebauten Zustand LIEST nicht. */
+        LevelRenderEvents.START_MAIN.register(context ->
         {
             if (an)
             {
@@ -81,10 +85,13 @@ public final class WeltDrahtgitter
             }
         });
 
-        WorldRenderEvents.BEFORE_ENTITIES.register(context ->
+        LevelRenderEvents.COLLECT_SUBMITS.register(context ->
             GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL));
 
-        WorldRenderEvents.END.register(context ->
+        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.END. END_MAIN ist die
+         * naechstliegende Phase; die alte Reihenfolge zwischen END und LAST geht dabei
+         * verloren, weil beide jetzt dieselbe Phase treffen. Am Bild zu pruefen. */
+        LevelRenderEvents.END_MAIN.register(context ->
             GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL));
     }
 }
