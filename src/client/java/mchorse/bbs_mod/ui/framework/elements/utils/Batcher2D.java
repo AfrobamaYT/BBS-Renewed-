@@ -1,11 +1,8 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.graphics.texture.Texture;
@@ -14,21 +11,51 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.state.gui.BlitRenderState;
+import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
+import net.minecraft.client.renderer.state.gui.GuiRenderState;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fc;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
+import java.lang.reflect.Field;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * BBS' own 2D drawing.
+ *
+ * <p>MC 26.2 draws the GUI in TWO phases: {@link GuiGraphicsExtractor} draws nothing, it
+ * appends elements to a {@link GuiRenderState}, and {@code GuiRenderer.render()} walks that
+ * list afterwards and batches it. So every draw call here builds a
+ * {@link GuiElementRenderState} and enqueues it — there is no immediate mode and no
+ * {@code flush()} any more.
+ *
+ * <p>Trap this class exists to avoid: swapping {@code GuiGraphics} for
+ * {@code GuiGraphicsExtractor} name-for-name compiles cleanly and draws NOTHING, because the
+ * old Tesselator/BufferUploader path writes into a GL state that nobody submits.
+ */
 public class Batcher2D
 {
     private static FontRenderer fontRenderer = new FontRenderer();
 
-    private GuiGraphics context;
+    private GuiGraphicsExtractor context;
     private FontRenderer font;
+
+    /**
+     * Mirror of the extractor's own scissor stack.
+     *
+     * <p>Every {@link GuiElementRenderState} has to name the scissor rect it is clipped to;
+     * the extractor keeps its stack private, but {@link #clip}/{@link #unclip} are BBS' only
+     * entry points, so the same push/pop is tracked here. {@code null} = no clipping.
+     */
+    private final Deque<ScreenRectangle> scissors = new ArrayDeque<>();
 
     public static FontRenderer getDefaultTextRenderer()
     {
@@ -37,13 +64,23 @@ public class Batcher2D
         return fontRenderer;
     }
 
-    public Batcher2D(GuiGraphics context)
+    public Batcher2D(GuiGraphicsExtractor context)
     {
         this.context = context;
         this.font = getDefaultTextRenderer();
     }
 
-    public GuiGraphics getContext()
+    /**
+     * The extractor only exists for the duration of one extraction pass — vanilla hands it to
+     * {@code Screen.extractRenderState()} and drops it. UIScreen pushes the current one in
+     * here at the start of every pass; see {@code UIScreen.extractRenderState}.
+     */
+    public void setContext(GuiGraphicsExtractor context)
+    {
+        this.context = context;
+    }
+
+    public GuiGraphicsExtractor getContext()
     {
         return this.context;
     }
@@ -71,6 +108,20 @@ public class Batcher2D
     public void clip(int x, int y, int w, int h, int sw, int sh)
     {
         this.context.enableScissor(x, y, x + w, y + h);
+
+        /* Same nesting rule the extractor applies: the new rect is intersected with the one
+         * already in force, so an inner clip can never widen an outer one. */
+        ScreenRectangle rect = new ScreenRectangle(x, y, w, h);
+        ScreenRectangle current = this.scissors.peek();
+
+        if (current != null)
+        {
+            ScreenRectangle intersection = current.intersection(rect);
+
+            rect = intersection == null ? ScreenRectangle.empty() : intersection;
+        }
+
+        this.scissors.push(rect);
     }
 
     public void unclip(UIContext context)
@@ -81,6 +132,11 @@ public class Batcher2D
     public void unclip(int sw, int sh)
     {
         this.context.disableScissor();
+
+        if (!this.scissors.isEmpty())
+        {
+            this.scissors.pop();
+        }
     }
 
     /* Solid rectangles */
@@ -107,17 +163,15 @@ public class Batcher2D
 
     public void box(float x, float y, float w, float h, int color1, int color2, int color3, int color4)
     {
-        Matrix4f matrix4f = this.context.pose().last().pose();
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
-        this.fillRect(builder, matrix4f, x, y, w, h, color1, color2, color3, color4);
-
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
-        this.context.flush();
+        /* c1 ---- c2
+         * |        |
+         * c3 ---- c4 */
+        this.quad(
+            x, y, color1,
+            x, y + h, color3,
+            x + w, y + h, color4,
+            x + w, y, color2
+        );
     }
 
     public void fillRect(BufferBuilder builder, Matrix4f matrix4f, float x, float y, float w, float h, int color1, int color2, int color3, int color4)
@@ -168,43 +222,45 @@ public class Batcher2D
         right += offset;
         bottom += offset;
 
-        Matrix4f matrix4f = this.context.pose().last().pose();
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
         /* Draw opaque part */
-        builder.addVertex(matrix4f, left + offset, top + offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f,left + offset, bottom - offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right - offset, bottom - offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right - offset, top + offset, 0).setColor(opaque);
+        this.quad(
+            left + offset, top + offset, opaque,
+            left + offset, bottom - offset, opaque,
+            right - offset, bottom - offset, opaque,
+            right - offset, top + offset, opaque
+        );
 
         /* Draw top shadow */
-        builder.addVertex(matrix4f, left, top, 0).setColor(shadow);
-        builder.addVertex(matrix4f,left + offset, top + offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right - offset, top + offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right, top, 0).setColor(shadow);
+        this.quad(
+            left, top, shadow,
+            left + offset, top + offset, opaque,
+            right - offset, top + offset, opaque,
+            right, top, shadow
+        );
 
         /* Draw bottom shadow */
-        builder.addVertex(matrix4f, left + offset, bottom - offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f,left, bottom, 0).setColor(shadow);
-        builder.addVertex(matrix4f, right, bottom, 0).setColor(shadow);
-        builder.addVertex(matrix4f, right - offset, bottom - offset, 0).setColor(opaque);
+        this.quad(
+            left + offset, bottom - offset, opaque,
+            left, bottom, shadow,
+            right, bottom, shadow,
+            right - offset, bottom - offset, opaque
+        );
 
         /* Draw left shadow */
-        builder.addVertex(matrix4f, left, top, 0).setColor(shadow);
-        builder.addVertex(matrix4f, left, bottom, 0).setColor(shadow);
-        builder.addVertex(matrix4f, left + offset, bottom - offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f,left + offset, top + offset, 0).setColor(opaque);
+        this.quad(
+            left, top, shadow,
+            left, bottom, shadow,
+            left + offset, bottom - offset, opaque,
+            left + offset, top + offset, opaque
+        );
 
         /* Draw right shadow */
-        builder.addVertex(matrix4f, right - offset, top + offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right - offset, bottom - offset, 0).setColor(opaque);
-        builder.addVertex(matrix4f, right, bottom, 0).setColor(shadow);
-        builder.addVertex(matrix4f,right, top, 0).setColor(shadow);
-
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+        this.quad(
+            right - offset, top + offset, opaque,
+            right - offset, bottom - offset, opaque,
+            right, bottom, shadow,
+            right, top, shadow
+        );
     }
 
     /* Gradients */
@@ -221,16 +277,26 @@ public class Batcher2D
 
     public void dropCircleShadow(int x, int y, int radius, int segments, int opaque, int shadow)
     {
-        Matrix4f matrix4f = this.context.pose().last().pose();
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        builder.addVertex(matrix4f, x, y, 0F).setColor(opaque);
+        /* PORT-HINWEIS 26.2: die 1.21.1-fassung baute hier einen TRIANGLE_FAN auf und lud
+         * ihn NIE hoch (kein BufferUploader-aufruf) -- sie zeichnete also nichts. Diese
+         * fassung zeichnet den faecher wirklich; das ist eine bewusste verhaltensaenderung
+         * gegenueber dem original und im bericht vermerkt. */
+        float previousX = 0F;
+        float previousY = 0F;
 
         for (int i = 0; i <= segments; i ++)
         {
             double a = i / (double) segments * Math.PI * 2 - Math.PI / 2;
+            float px = (float) (x - Math.cos(a) * radius);
+            float py = (float) (y + Math.sin(a) * radius);
 
-            builder.addVertex(matrix4f, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(shadow);
+            if (i > 0)
+            {
+                this.triangle(x, y, opaque, previousX, previousY, shadow, px, py, shadow);
+            }
+
+            previousX = px;
+            previousY = py;
         }
     }
 
@@ -243,42 +309,43 @@ public class Batcher2D
             return;
         }
 
-        Matrix4f matrix4f = this.context.pose().last().pose();
-
-
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
         /* Draw opaque base */
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        builder.addVertex(matrix4f, x, y, 0F).setColor(opaque);
+        float previousX = 0F;
+        float previousY = 0F;
 
         for (int i = 0; i <= segments; i ++)
         {
             double a = i / (double) segments * Math.PI * 2 - Math.PI / 2;
+            float px = (int) (x - Math.cos(a) * offset);
+            float py = (int) (y + Math.sin(a) * offset);
 
-            builder.addVertex(matrix4f, (int) (x - Math.cos(a) * offset), (int) (y + Math.sin(a) * offset), 0F).setColor(opaque);
+            if (i > 0)
+            {
+                this.triangle(x, y, opaque, previousX, previousY, opaque, px, py, opaque);
+            }
+
+            previousX = px;
+            previousY = py;
         }
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
         /* Draw outer shadow */
-        builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
         for (int i = 0; i < segments; i ++)
         {
             double alpha1 = i / (double) segments * Math.PI * 2 - Math.PI / 2;
             double alpha2 = (i + 1) / (double) segments * Math.PI * 2 - Math.PI / 2;
 
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha2) * offset), (float) (y + Math.sin(alpha2) * offset), 0F).setColor(opaque);
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha1) * offset), (float) (y + Math.sin(alpha1) * offset), 0F).setColor(opaque);
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha1) * radius), (float) (y + Math.sin(alpha1) * radius), 0F).setColor(shadow);
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha2) * offset), (float) (y + Math.sin(alpha2) * offset), 0F).setColor(opaque);
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha1) * radius), (float) (y + Math.sin(alpha1) * radius), 0F).setColor(shadow);
-            builder.addVertex(matrix4f, (float) (x - Math.cos(alpha2) * radius), (float) (y + Math.sin(alpha2) * radius), 0F).setColor(shadow);
-        }
+            float ox1 = (float) (x - Math.cos(alpha1) * offset);
+            float oy1 = (float) (y + Math.sin(alpha1) * offset);
+            float ox2 = (float) (x - Math.cos(alpha2) * offset);
+            float oy2 = (float) (y + Math.sin(alpha2) * offset);
+            float rx1 = (float) (x - Math.cos(alpha1) * radius);
+            float ry1 = (float) (y + Math.sin(alpha1) * radius);
+            float rx2 = (float) (x - Math.cos(alpha2) * radius);
+            float ry2 = (float) (y + Math.sin(alpha2) * radius);
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            this.triangle(ox2, oy2, opaque, ox1, oy1, opaque, rx1, ry1, shadow);
+            this.triangle(ox2, oy2, opaque, rx1, ry1, shadow, rx2, ry2, shadow);
+        }
     }
 
     /* Outline methods */
@@ -406,45 +473,23 @@ public class Batcher2D
 
     public void texturedBox(Texture texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        RenderSystem.setShaderTexture(0, texture.id);
-
-        Matrix4f matrix = this.context.pose().last().pose();
-
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
-        this.fillTexturedBox(builder, matrix, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+        this.texturedBox(texture.id, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
     public void texturedBox(int texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        this.texturedBox(GameRenderer::getPositionTexColorShader, texture, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
+        this.texturedBox(() -> RenderPipelines.GUI_TEXTURED, texture, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
-    public void texturedBox(Supplier<ShaderInstance> shader, int texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
+    /**
+     * MC 26.2: a custom GUI shader is no longer a {@code ShaderInstance} supplied to
+     * {@code RenderSystem.setShader}, it is a whole {@link RenderPipeline} named by the
+     * render state. The supplier therefore yields a pipeline now; callers that passed
+     * {@code BBSShaders::getPickerPreviewProgram} need that method to return a pipeline.
+     */
+    public void texturedBox(Supplier<RenderPipeline> pipeline, int texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        RenderSystem.setShaderTexture(0, texture);
-
-        Matrix4f matrix = this.context.pose().last().pose();
-
-        RenderSystem.setShader(shader);
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
-        this.fillTexturedBox(builder, matrix, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-    }
-
-    private void fillTexturedBox(BufferBuilder builder, Matrix4f matrix, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
-    {
-        builder.addVertex(matrix, x, y + h, 0F).setUv(u1 / (float) textureW, v2 / (float) textureH).setColor(color);
-        builder.addVertex(matrix, x + w, y + h, 0F).setUv(u2 / (float) textureW, v2 / (float) textureH).setColor(color);
-        builder.addVertex(matrix, x + w, y, 0F).setUv(u2 / (float) textureW, v1 / (float) textureH).setColor(color);
-        builder.addVertex(matrix, x, y + h, 0F).setUv(u1 / (float) textureW, v2 / (float) textureH).setColor(color);
-        builder.addVertex(matrix, x + w, y, 0F).setUv(u2 / (float) textureW, v1 / (float) textureH).setColor(color);
-        builder.addVertex(matrix, x, y, 0F).setUv(u1 / (float) textureW, v1 / (float) textureH).setColor(color);
+        this.blit(pipeline.get(), texture, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
     /* Repeatable textured box */
@@ -456,13 +501,6 @@ public class Batcher2D
         float fillerX = w - (countX - 1) * tileW;
         float fillerY = h - (countY - 1) * tileH;
 
-        Matrix4f matrix = this.context.pose().last().pose();
-
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, texture.id);
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
-
         for (int i = 0, c = countX * countY; i < c; i ++)
         {
             float ix = i % countX;
@@ -472,10 +510,8 @@ public class Batcher2D
             float xw = ix == countX - 1 ? fillerX : tileW;
             float yh = iy == countY - 1 ? fillerY : tileH;
 
-            this.fillTexturedBox(builder, matrix, color, xx, yy, xw, yh, u, v, u + xw, v + yh, tw, th);
+            this.blit(RenderPipelines.GUI_TEXTURED, texture.id, color, xx, yy, xw, yh, u, v, u + xw, v + yh, tw, th);
         }
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
     /* Text with default font */
@@ -519,10 +555,10 @@ public class Batcher2D
             color = Colors.opaque(color);
         }
 
-        this.context.drawString(this.font.getRenderer(), label, (int) x, (int) y, color, shadow);
-        this.context.flush();
-
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* 26.2: GuiGraphics.drawString -> GuiGraphicsExtractor.text; the trailing
+         * RenderSystem.depthFunc(GL_ALWAYS) is gone with it — GUI space has no depth any
+         * more, overlap is decided by GuiGraphicsExtractor.nextStratum(). */
+        this.context.text(this.font.getRenderer(), label, (int) x, (int) y, color, shadow);
     }
 
     /* Text helpers */
@@ -594,8 +630,166 @@ public class Batcher2D
         this.text(text, x, y, color, shadow);
     }
 
+    /**
+     * No-op since MC 26.2.
+     *
+     * <p>There is nothing left to flush: draw calls no longer touch GL, they are appended to
+     * the {@link GuiRenderState} and {@code GuiRenderer} batches and submits the whole list at
+     * the end of the frame. Kept so the many call sites do not all have to change at once.
+     */
     public void flush()
+    {}
+
+    /* Element submission — everything above ends up here */
+
+    /**
+     * Enqueue one triangle. MC 26.2's GUI pipelines are quad-topology, so a triangle is sent
+     * as a quad whose last vertex is doubled: the shared quad index buffer then produces the
+     * wanted triangle plus one zero-area (invisible) one.
+     */
+    private void triangle(float x1, float y1, int c1, float x2, float y2, int c2, float x3, float y3, int c3)
     {
-        this.context.flush();
+        this.quad(x1, y1, c1, x2, y2, c2, x3, y3, c3, x3, y3, c3);
+    }
+
+    /** Enqueue one flat-coloured quad in the winding vanilla uses (TL, BL, BR, TR). */
+    private void quad(float x1, float y1, int c1, float x2, float y2, int c2, float x3, float y3, int c3, float x4, float y4, int c4)
+    {
+        Matrix3x2f pose = new Matrix3x2f(this.context.pose());
+
+        this.submit(new UIQuad(pose, x1, y1, c1, x2, y2, c2, x3, y3, c3, x4, y4, c4,
+            this.scissors.peek(), bounds(pose, x1, y1, x2, y2, x3, y3, x4, y4)));
+    }
+
+    /** Enqueue one textured quad. Vanilla's own {@link BlitRenderState} already carries a tint. */
+    private void blit(RenderPipeline pipeline, int glTextureId, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
+    {
+        Matrix3x2f pose = new Matrix3x2f(this.context.pose());
+        int x0 = (int) x;
+        int y0 = (int) y;
+        int x1 = (int) (x + w);
+        int y1 = (int) (y + h);
+
+        this.submit(new BlitRenderState(pipeline, textureSetup(glTextureId), pose,
+            x0, y0, x1, y1,
+            u1 / (float) textureW, u2 / (float) textureW,
+            v1 / (float) textureH, v2 / (float) textureH,
+            color, this.scissors.peek(),
+            bounds(pose, x0, y0, x0, y1, x1, y1, x1, y0)));
+    }
+
+    private void submit(GuiElementRenderState element)
+    {
+        guiRenderState(this.context).addGuiElement(element);
+    }
+
+    /**
+     * Axis-aligned screen bounds of a quad, as {@code GuiElementRenderState.bounds()} demands
+     * (the renderer uses it for culling and for sorting inside a stratum).
+     */
+    private static ScreenRectangle bounds(Matrix3x2fc pose, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
+    {
+        int minX = (int) Math.floor(Math.min(Math.min(x1, x2), Math.min(x3, x4)));
+        int minY = (int) Math.floor(Math.min(Math.min(y1, y2), Math.min(y3, y4)));
+        int maxX = (int) Math.ceil(Math.max(Math.max(x1, x2), Math.max(x3, x4)));
+        int maxY = (int) Math.ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4)));
+
+        return new ScreenRectangle(minX, minY, maxX - minX, maxY - minY).transformMaxBounds(pose);
+    }
+
+    /**
+     * NICHT UEBERSETZT — hier fehlt eine bruecke, die ausserhalb dieser datei gebaut werden muss.
+     *
+     * <p>26.2 nimmt in der GUI keine rohe GL-textur-id mehr entgegen. Ein
+     * {@link GuiElementRenderState} nennt seine textur ueber
+     * {@code TextureSetup.singleTexture(GpuTextureView, GpuSampler)}.
+     * {@link mchorse.bbs_mod.graphics.texture.Texture} ist aber reines rohes GL
+     * ({@code TextureUtil.generateTextureId()} + {@code GL11.glTexImage2D}) und hat keinen
+     * {@code GpuTextureView}; {@code com.mojang.blaze3d.opengl.GlTexture} hat nur einen
+     * {@code protected} konstruktor, eine fremde GL-id laesst sich also nicht umhuellen.
+     *
+     * <p>Solange {@code Texture} nicht auf {@code GpuTexture}/{@code GpuTextureView} umgestellt
+     * ist, kann dieser pfad nicht uebersetzt werden. Der aufruf bleibt ABSICHTLICH als
+     * compilerfehler stehen ({@code Texture.guiSetup(int)} existiert nicht), weil die
+     * alternative — irgendetwas plausibles einsetzen — eine leere UI ohne fehlermeldung waere.
+     */
+    private static TextureSetup textureSetup(int glTextureId)
+    {
+        return Texture.guiSetup(glTextureId);
+    }
+
+    /**
+     * Der {@link GuiRenderState} liegt privat in {@link GuiGraphicsExtractor}
+     * (javap 26.2: {@code private final ...GuiRenderState guiRenderState;}) und hat keinen
+     * getter — vanilla reicht ihn selbst herein ({@code Gui.extractRenderState} baut den
+     * extractor mit {@code GuiGraphicsExtractor(Minecraft, GuiRenderState, int, int)}), ein
+     * Screen bekommt aber nur den fertigen extractor.
+     *
+     * <p>NOTBEHELF bis ein accessor-mixin registriert ist (nur diese eine methode muss dann
+     * getauscht werden). Bewusst OHNE stillen fallback: ohne den state landet KEIN element in
+     * der liste, die {@code GuiRenderer} abarbeitet — das waere eine leere UI ohne fehler.
+     */
+    private static Field guiRenderStateField;
+
+    private static GuiRenderState guiRenderState(GuiGraphicsExtractor context)
+    {
+        try
+        {
+            if (guiRenderStateField == null)
+            {
+                Field field = GuiGraphicsExtractor.class.getDeclaredField("guiRenderState");
+
+                field.setAccessible(true);
+
+                guiRenderStateField = field;
+            }
+
+            return (GuiRenderState) guiRenderStateField.get(context);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException("BBS: GuiRenderState in GuiGraphicsExtractor nicht erreichbar — accessor-mixin fehlt", e);
+        }
+    }
+
+    /**
+     * One flat-coloured quad with a free colour per corner.
+     *
+     * <p>Vanilla's {@code ColoredRectangleRenderState} only knows two colours (top/bottom) and
+     * only axis-aligned rectangles; BBS needs four corner colours (gradientHBox) and real
+     * trapezoids (dropShadow), so it carries its own state. Vertex order and
+     * {@code addVertexWith2DPose} are copied from
+     * {@code ColoredRectangleRenderState.buildVertices} (javap -c).
+     */
+    public record UIQuad(
+        Matrix3x2fc pose,
+        float x1, float y1, int c1,
+        float x2, float y2, int c2,
+        float x3, float y3, int c3,
+        float x4, float y4, int c4,
+        ScreenRectangle scissorArea,
+        ScreenRectangle bounds
+    ) implements GuiElementRenderState
+    {
+        @Override
+        public void buildVertices(VertexConsumer consumer)
+        {
+            consumer.addVertexWith2DPose(this.pose, this.x1, this.y1).setColor(this.c1);
+            consumer.addVertexWith2DPose(this.pose, this.x2, this.y2).setColor(this.c2);
+            consumer.addVertexWith2DPose(this.pose, this.x3, this.y3).setColor(this.c3);
+            consumer.addVertexWith2DPose(this.pose, this.x4, this.y4).setColor(this.c4);
+        }
+
+        @Override
+        public RenderPipeline pipeline()
+        {
+            return RenderPipelines.GUI;
+        }
+
+        @Override
+        public TextureSetup textureSetup()
+        {
+            return TextureSetup.noTexture();
+        }
     }
 }

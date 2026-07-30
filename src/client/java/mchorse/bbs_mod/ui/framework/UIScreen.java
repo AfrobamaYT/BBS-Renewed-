@@ -11,11 +11,15 @@ import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.utils.IFileDropListener;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.FFMpegUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
@@ -31,7 +35,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public static void open(UIBaseMenu menu)
     {
-        Minecraft.getInstance().setScreen(new UIScreen(Component.empty(), menu));
+        Minecraft.getInstance().setScreenAndShow(new UIScreen(Component.empty(), menu));
     }
 
     public static UIBaseMenu getCurrentMenu()
@@ -48,13 +52,16 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public UIScreen(Component title, UIBaseMenu menu)
     {
-        super(title);
+        /* Screen.minecraft is final in 26.2 — it is set through this constructor instead of
+         * being assigned afterwards. */
+        super(Minecraft.getInstance(), Minecraft.getInstance().font, title);
 
-        Minecraft mc = Minecraft.getInstance();
-
-        this.minecraft = mc;
         this.menu = menu;
-        this.context = new UIRenderingContext(new GuiGraphics(mc, mc.renderBuffers().bufferSource()));
+
+        /* 26.2: there is no GuiGraphics to build up front any more. The GuiGraphicsExtractor
+         * only exists for the duration of one extraction pass and is handed in by vanilla, so
+         * the batcher starts without one and gets it in extractRenderState(). */
+        this.context = new UIRenderingContext(null);
 
         this.menu.context.setup(this.context);
     }
@@ -69,9 +76,23 @@ public class UIScreen extends Screen implements IFileDropListener
         this.menu.update();
     }
 
-    public void renderInWorld(WorldRenderContext context)
+    public void renderInWorld(LevelRenderContext context)
     {
         this.menu.renderInWorld(context);
+    }
+
+    /**
+     * 26.2 dropped {@code Options.hideGui}; the flag lives on {@link Hud} now and is only
+     * reachable through a toggle, so it is set by comparing first.
+     */
+    private static void setHudHidden(boolean hidden)
+    {
+        Hud hud = Minecraft.getInstance().gui.hud;
+
+        if (hud.isHidden() != hidden)
+        {
+            hud.toggle();
+        }
     }
 
     @Override
@@ -104,7 +125,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
         if (this.menu.canHideHUD())
         {
-            Minecraft.getInstance().options.hideGui = false;
+            setHudHidden(false);
         }
     }
 
@@ -120,7 +141,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
         if (this.menu.canHideHUD())
         {
-            Minecraft.getInstance().options.hideGui = true;
+            setHudHidden(true);
         }
     }
 
@@ -139,17 +160,17 @@ public class UIScreen extends Screen implements IFileDropListener
     }
 
     @Override
-    public void resize(Minecraft client, int width, int height)
+    public void resize(int width, int height)
     {
-        super.resize(client, width, height);
+        super.resize(width, height);
 
         this.menu.resize(width, height);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button)
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
-        return this.menu.mouseClicked((int) mouseX, (int) mouseY, button);
+        return this.menu.mouseClicked((int) event.x(), (int) event.y(), event.button());
     }
 
     @Override
@@ -159,41 +180,51 @@ public class UIScreen extends Screen implements IFileDropListener
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button)
+    public boolean mouseReleased(MouseButtonEvent event)
     {
-        return this.menu.mouseReleased((int) mouseX, (int) mouseY, button);
+        return this.menu.mouseReleased((int) event.x(), (int) event.y(), event.button());
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
+    public boolean keyPressed(KeyEvent event)
     {
-        return this.menu.handleKey(keyCode, scanCode, BBSRendering.lastAction, modifiers);
+        return this.menu.handleKey(event.key(), event.scancode(), BBSRendering.lastAction, event.modifiers());
     }
 
     @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers)
+    public boolean keyReleased(KeyEvent event)
     {
-        return this.menu.handleKey(keyCode, scanCode, GLFW.GLFW_RELEASE, modifiers);
+        return this.menu.handleKey(event.key(), event.scancode(), GLFW.GLFW_RELEASE, event.modifiers());
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers)
+    public boolean charTyped(CharacterEvent event)
     {
-        this.menu.handleTextInput(chr);
+        /* 26.2 delivers a codepoint instead of a char; BBS' text input is char based, so
+         * anything outside the BMP (surrogate pairs) is not representable here. */
+        this.menu.handleTextInput((char) event.codepoint());
 
         return true;
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta)
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta)
     {}
 
+    /**
+     * 26.2: {@code Screen.render(GuiGraphics, ...)} is gone. Drawing happens in two phases —
+     * this pass only APPENDS elements to the GuiRenderState behind {@code context};
+     * {@code GuiRenderer.render()} draws them afterwards.
+     */
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta)
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta)
     {
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
-        DeltaTracker tick = this.minecraft.getTimer();
+        /* The extractor is per pass, so hand this frame's one to the batcher before drawing. */
+        this.context.batcher.setContext(context);
+
+        DeltaTracker tick = this.minecraft.getDeltaTracker();
 
         this.menu.context.setTransition(tick instanceof RenderTickCounterAccessor accessor ? accessor.bbs$getTickDelta() : tick.getGameTimeDeltaPartialTick(false));
 
