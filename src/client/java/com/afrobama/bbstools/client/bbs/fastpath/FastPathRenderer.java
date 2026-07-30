@@ -25,7 +25,6 @@ package com.afrobama.bbstools.client.bbs.fastpath;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
@@ -78,9 +77,13 @@ public final class FastPathRenderer
         int failed = 0;
 
         /* Hoisted state setup — done ONCE per flush instead of per replay.
-         * Mirrors what BBS does at the head of renderModel(...). */
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+         * Mirrors what BBS does at the head of renderModel(...).
+         *
+         * 26.2: Blend ist kein umschaltbarer Zustand mehr. enableBlend + defaultBlendFunc
+         * standen hier nur, damit das Modell durchsichtig gemischt wird — das traegt jetzt
+         * die Pipeline des Modell-Zeichenwegs selbst: ModelVAOPipeline.DURCHSICHTIG mit
+         * BlendFunction.TRANSLUCENT, genau die Mischung, die defaultBlendFunc setzte.
+         * Zu hoisten bleiben Lichtkarte und Overlay — die sind weiterhin globaler Zustand. */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
         gameRenderer.lightTexture().turnOnLightLayer();
         gameRenderer.overlayTexture().setupOverlayColor();
@@ -115,7 +118,8 @@ public final class FastPathRenderer
         {
             gameRenderer.lightTexture().turnOffLightLayer();
             gameRenderer.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+            /* Kein disableBlend mehr: die Mischung gehoert der Pipeline (siehe oben), es
+             * gibt keinen globalen Blend-Zustand, den dieses finally zuruecksetzen muesste. */
         }
 
         long elapsedNs = System.nanoTime() - startNs;
@@ -224,7 +228,8 @@ public final class FastPathRenderer
      *   - No captureMatrices walk (no body parts in fast-path)
      *   - No renderItems (no equipment, router excluded it)
      *
-     * Only conditional cull is kept (per-instance flag).
+     * Der bedingte Cull, der hier frueher stand, ist seit 26.2 Sache der Pipeline
+     * (ModelVAOPipeline.DURCHSICHTIG_BEIDSEITIG) — siehe Kommentar im Rumpf.
      */
     private static void renderDirect(FastPathBatch.Submission s,
                                      ModelFormRendererAccessor selfA,
@@ -234,32 +239,23 @@ public final class FastPathRenderer
                                      Color color,
                                      Link texture)
     {
-        boolean disabledCull = false;
-        if (!instance.config.culling.get())
-        {
-            RenderSystem.disableCull();
-            disabledCull = true;
-        }
-
-        try
-        {
-            instance.render(
-                stack, shader, color, s.light, s.overlay,
-                /* stencilMap */ null,
-                s.form.shapeKeys.get(),
-                /* AUTONOMIE 2026-07-27: fs loest texturen PRO MATERIAL auf (Function<material,Link>),
-                 * CML hatte eine einzige fuer das ganze modell. Wir haben genau eine, also fuer
-                 * jedes material dieselbe zurueckgeben; ist keine gesetzt, fs' eigene
-                 * material-aufloesung machen lassen statt null durchzureichen. */
-                (material) -> texture != null ? texture : instance.getMaterialTexture(material, null));
-        }
-        finally
-        {
-            if (disabledCull)
-            {
-                RenderSystem.enableCull();
-            }
-        }
+        /* 26.2: Cull ist kein umschaltbarer Zustand mehr, sondern Teil der Pipeline. Das Paar
+         * disableCull/enableCull um den Zeichenaufruf entfaellt deshalb ersatzlos, samt der
+         * Fahne, die es nur zusammenhielt. Die beidseitige Variante ist
+         * ModelVAOPipeline.DURCHSICHTIG_BEIDSEITIG, und gewaehlt wird sie im Modell-Zeichenweg
+         * an genau der Bedingung, die hier stand: ModelInstance.isCulling() ist
+         * instance.config.culling. Der Schnellpfad kann daran nichts mehr drehen und muss es
+         * auch nicht — die Information geht nicht verloren, sie wandert nur an die Stelle,
+         * die die Pipeline aussucht. */
+        instance.render(
+            stack, shader, color, s.light, s.overlay,
+            /* stencilMap */ null,
+            s.form.shapeKeys.get(),
+            /* AUTONOMIE 2026-07-27: fs loest texturen PRO MATERIAL auf (Function<material,Link>),
+             * CML hatte eine einzige fuer das ganze modell. Wir haben genau eine, also fuer
+             * jedes material dieselbe zurueckgeben; ist keine gesetzt, fs' eigene
+             * material-aufloesung machen lassen statt null durchzureichen. */
+            (material) -> texture != null ? texture : instance.getMaterialTexture(material, null));
     }
 
     public static void resetCounters()

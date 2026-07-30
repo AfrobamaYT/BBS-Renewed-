@@ -87,10 +87,17 @@ public final class Tier2bDrawPath
         int failures = 0;
 
         /* Hoist render state outside per-bucket loop — same pattern as
-         * FastPathRenderer.flushAll. blend/lightmap/overlay set ONCE
-         * for the entire fast-path flush. */
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+         * FastPathRenderer.flushAll. lightmap/overlay set ONCE for the
+         * entire fast-path flush.
+         *
+         * 26.2: enableBlend + defaultBlendFunc entfallen ersatzlos. Mischen ist
+         * kein Schalter mehr, sondern Teil der Pipeline. Den Zustand traegt hier
+         * RenderPipelines.ENTITY_TRANSLUCENT_CULL — dieselbe Wahl, die der
+         * Zeichenweg unten ohnehin schon ausspricht (der gesetzte Shader ist
+         * getRendertypeEntityTranslucentCullShader). Deren
+         * BlendFunction.TRANSLUCENT ist genau das alte defaultBlendFunc.
+         * ⚠️ Wer den Zeichenaufruf portiert, muss GENAU diese Pipeline waehlen —
+         * mit einer ungemischten werden die Modelle still undurchsichtig. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         gr.lightTexture().turnOnLightLayer();
         gr.overlayTexture().setupOverlayColor();
@@ -225,7 +232,10 @@ public final class Tier2bDrawPath
         {
             gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+            /* 26.2: disableBlend entfaellt ersatzlos. Der Aufruf nahm nur den
+             * globalen Schalter von oben zurueck; den gibt es nicht mehr. Jede
+             * folgende Zeichnung bringt ihr Mischverhalten in ihrer eigenen
+             * Pipeline mit — es ist nichts zurueckzusetzen. */
         }
 
         long elapsedNs = System.nanoTime() - startNs;

@@ -108,9 +108,13 @@ public final class Tier2cParallelSkin
         int submissionsDrawn = 0;
         int failures = 0;
 
-        /* Hoist render state — same pattern as Tier 2-b. */
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* Hoist render state — same pattern as Tier 2-b.
+         *
+         * enableBlend + defaultBlendFunc entfallen: seit 26.2 sitzt die Mischung in der
+         * Pipeline des Zeichenwegs, nicht in einem globalen Schalter. Phase C zeichnet ueber
+         * den Entity-Translucent-Cull-Weg (RenderPipelines.ENTITY_TRANSLUCENT_CULL), der
+         * BlendFunction.TRANSLUCENT bereits traegt — genau der Zustand, der hier frueher von
+         * Hand gesetzt wurde. Gleiche Aufloesung wie in Tier2eMergedDraw#flushAll. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         gr.lightTexture().turnOnLightLayer();
         gr.overlayTexture().setupOverlayColor();
@@ -179,7 +183,10 @@ public final class Tier2cParallelSkin
         {
             gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+
+            /* disableBlend entfaellt ersatzlos: es gibt keinen globalen Mischzustand mehr,
+             * den ein spaeterer Zeichenweg erben koennte — der bekommt seinen aus seiner
+             * eigenen Pipeline. Also ist hier nichts zurueckzugeben. */
         }
 
         BBSPerfConfig.tier2cBucketsProcessed += bucketsProcessed;

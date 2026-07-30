@@ -125,10 +125,16 @@ public final class Tier2dParallelEmit
         int totalDraws = 0;
         int failures = 0;
 
-        /* Hoist render state. blend/lightmap/overlay set ONCE for the
+        /* Hoist render state. lightmap/overlay set ONCE for the
          * entire fast-path flush. */
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* 26.2: Blend ist kein umschaltbarer Zustand mehr. enableBlend +
+         * defaultBlendFunc (SRC_ALPHA/ONE_MINUS_SRC_ALPHA) sind wortgleich das, was
+         * BlendFunction.TRANSLUCENT in einer Pipeline traegt — und die Pipeline zu dem
+         * Shader, den Phase D setzt (getRendertypeEntityTranslucentCullShader), ist
+         * RenderPipelines.ENTITY_TRANSLUCENT_CULL. Der Zustand ist nicht weg, er sitzt
+         * jetzt am Zeichenaufruf.
+         * ⚠️ Er wirkt erst, wenn Phase D vom drawWithShader-Weg auf einen RenderPass mit
+         * dieser Pipeline umgestellt ist — bis dahin fehlt die Mischung. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         gr.lightTexture().turnOnLightLayer();
         gr.overlayTexture().setupOverlayColor();
@@ -197,7 +203,8 @@ public final class Tier2dParallelEmit
         {
             gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+            /* 26.2: kein disableBlend — es gab nichts einzuschalten, also auch nichts
+             * abzuschalten. Blend haengt an der Pipeline des Zeichenaufrufs. */
         }
 
         BBSPerfConfig.tier2dBucketsProcessed += bucketsProcessed;

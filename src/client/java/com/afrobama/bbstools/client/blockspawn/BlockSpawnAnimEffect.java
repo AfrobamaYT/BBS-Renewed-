@@ -34,7 +34,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -429,9 +428,14 @@ public final class BlockSpawnAnimEffect
 
     private static void flush(MultiBufferSource.BufferSource buffers)
     {
-        RenderSystem.disableCull();
+        /* 26.2: disableCull/enableCull entfallen ersatzlos. Rueckseiten-Culling ist kein
+         * globaler Schalter mehr, sondern gehoert zur Pipeline des RenderType — hier also zu
+         * der von RenderType.translucent() (RenderPipelines.TRANSLUCENT_BLOCK). Genau die
+         * benutzt Vanilla auch fuer die Translucent-Lage der Chunks, und unsere Geisterbloecke
+         * sind dieselben Blockmodelle aus ModelBlockRenderer#tesselateBlock, nur um ein reines
+         * Translate versetzt — keine Spiegelung, Wicklung unveraendert. Der Zustand aus der
+         * Pipeline ist damit derselbe, den Vanilla fuer diese Geometrie faehrt. */
         buffers.endBatch(RenderType.translucent());
-        RenderSystem.enableCull();
     }
 
 }

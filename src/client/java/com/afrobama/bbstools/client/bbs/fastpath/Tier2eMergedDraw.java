@@ -90,8 +90,11 @@ public final class Tier2eMergedDraw
         int mergedDraws = 0;
         int failures = 0;
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* enableBlend + defaultBlendFunc entfallen: seit 26.2 sitzt die Mischung in der
+         * Pipeline des Zeichenwegs, nicht in einem globalen Schalter. Der zusammengefuehrte
+         * Draw in drawBucket laeuft ueber den Entity-Translucent-Cull-Weg
+         * (RenderPipelines.ENTITY_TRANSLUCENT_CULL), der BlendFunction.TRANSLUCENT bereits
+         * traegt — genau der Zustand, der hier frueher von Hand gesetzt wurde. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         gr.lightTexture().turnOnLightLayer();
         gr.overlayTexture().setupOverlayColor();
@@ -153,7 +156,10 @@ public final class Tier2eMergedDraw
         {
             gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+
+            /* disableBlend entfaellt ersatzlos: es gibt keinen globalen Mischzustand mehr,
+             * den ein spaeterer Zeichenweg erben koennte — der bekommt seinen aus seiner
+             * eigenen Pipeline. Also ist hier nichts zurueckzugeben. */
         }
 
         BBSPerfConfig.tier2eBucketsProcessed += bucketsProcessed;

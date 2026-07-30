@@ -124,10 +124,14 @@ public final class BlockDestructionWireframe
 
         ms.popPose();
 
-        /* Restore GL state. */
+        /* Linienbreite ist in 26.2 weiterhin globaler Zustand — die wird zurueckgesetzt.
+         * Tiefentest und Tiefenmaske sind es NICHT mehr. Sie stehen im DepthStencilState
+         * der RenderPipeline des jeweiligen Zeichenaufrufs, also bringt jeder folgende
+         * Aufruf seinen Tiefenzustand selbst mit (Vanilla ueber renderType.pipeline(),
+         * BBS-Modelle ueber ModelVAOPipeline.DURCHSICHTIG). Es gibt keinen globalen
+         * Zustand mehr, den man hier wiederherstellen koennte oder muesste — die beiden
+         * Aufrufe entfallen ersatzlos. */
         RenderSystem.lineWidth(1F);
-        RenderSystem.depthMask(true);
-        RenderSystem.enableDepthTest();
     }
 
     private static void drawClipWireframe(BufferBuilder bb, Matrix4f m, PhysicsBlockDestructionActionClip clip)

@@ -115,8 +115,11 @@ public final class Tier2eMergedDrawV2
         int mergedDraws      = 0;
         int failures         = 0;
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* 26.2: enableBlend() + defaultBlendFunc() sind ersatzlos entfallen. Mischung ist kein
+         * Schalter mehr, sie steht in der Pipeline des Draws. Der zusammengefasste Draw unten
+         * zeichnet NEW_ENTITY-Dreiecke mit dem Entity-Translucent-Cull-Programm; die zugehoerige
+         * Pipeline RenderPipelines.ENTITY_TRANSLUCENT_CULL traegt BlendFunction.TRANSLUCENT - genau
+         * das, was defaultBlendFunc hier einstellte. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         gr.lightTexture().turnOnLightLayer();
         gr.overlayTexture().setupOverlayColor();
@@ -178,7 +181,10 @@ public final class Tier2eMergedDrawV2
         {
             gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
-            RenderSystem.disableBlend();
+
+            /* 26.2: disableBlend() ist ersatzlos entfallen - es gibt keinen globalen Blend-Schalter
+             * mehr, den dieser Flush zuruecknehmen muesste. Was nach ihm zeichnet, bekommt seine
+             * Mischung aus der eigenen Pipeline. */
         }
 
         BBSPerfConfig.tier2eV2BucketsProcessed += bucketsProcessed;
