@@ -2,17 +2,17 @@ package com.afrobama.bbstools.client.fracture;
 
 import com.afrobama.bbstools.fracture.PhysicsBlockDestructionActionClip;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.Camera;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
@@ -95,27 +95,40 @@ public final class BlockDestructionWireframe
         RenderSystem.lineWidth(4F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         ms.pushPose();
         ms.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f modelMat = ms.last().pose();
 
-        BufferBuilder bb = Tesselator.getInstance().begin(
-            VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
-        synchronized (VISIBLE)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            for (PhysicsBlockDestructionActionClip clip : VISIBLE)
+            BufferBuilder bb = SofortZeichner.beginnen(
+                speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+
+            synchronized (VISIBLE)
             {
-                if (clip == null) continue;
-                drawClipWireframe(bb, modelMat, clip);
+                for (PhysicsBlockDestructionActionClip clip : VISIBLE)
+                {
+                    if (clip == null) continue;
+                    drawClipWireframe(bb, modelMat, clip);
+                }
             }
-        }
 
-        try
-        {
-            BufferUploader.drawWithShader(bb.buildOrThrow());
+            /* Der Zustandsblock von oben als Pipeline: mischen (enableBlend +
+             * defaultBlendFunc), KEINE Tiefenpruefung (disableDepthTest + depthMask(false)
+             * — Test aus heisst hier auch Schreiben aus, genau die Absicht "durch Waende
+             * sichtbar, ohne die Tiefe zu verschmutzen"), kein Culling (bei Linien ohne
+             * Wirkung).
+             *
+             * modelMat steckt schon in den Ecken (addVertex(m, ...) in line()), darum geht
+             * als Modellansicht NUR der globale Wert mit — der, den
+             * BufferUploader.drawWithShader frueher selbst aus RenderSystem nahm. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false),
+                bb.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
         }
         catch (Throwable t)
         {

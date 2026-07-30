@@ -372,6 +372,14 @@ public final class Tier2eMergedDraw
             }
             RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
+            /* ⛔ OFFEN 26.2 — steht absichtlich noch so da, nicht geraten:
+             *  Der Zug zeichnet NEW_ENTITY-Dreiecke mit dem Entity-Translucent-Cull-Programm.
+             *  Die passende Pipeline gibt es (RenderPipelines.ENTITY_TRANSLUCENT_CULL), aber
+             *  sie braucht neben Sampler0 auch Overlay und Lightmap — genau das, was oben
+             *  setupOverlayColor/turnOnLightLayer global stellen. SofortZeichner bindet nur
+             *  Sampler0, FormPipelines deckt nur die Positions-/Texturformate ab. Ohne die
+             *  beiden anderen Bindungen zeichnet der Durchgang nicht bloss falsch, er faellt
+             *  aus — deshalb bleibt der alte Aufruf stehen, bis der Entity-Zeichenweg da ist. */
             BufferUploader.drawWithShader(masterBuilt);
             drewOk = true;
             BBSPerfConfig.tier2eMergedBytes += totalBytes;

@@ -1,13 +1,14 @@
 // Coded by Afrobama/Claude — Phase 15 v4: reference grid via proper matrix stack
 package com.afrobama.bbstools.client.campreview;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -139,44 +140,70 @@ public final class AltCameraGridRenderer
             RenderSystem.disableDepthTest();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-            BufferBuilder bb = Tesselator.getInstance().begin(
-                VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
-            for (int i = -HALF_EXTENT; i <= HALF_EXTENT; i++)
+            /* 26.2: SofortZeichner statt Tesselator + BufferUploader. Den Zustand traegt die
+             *  Pipeline, und zwar genau den oben nachgemessenen: mischen (LINES faehrt
+             *  BlendFunction.TRANSLUCENT == altes enableBlend + defaultBlendFunc), KEINE
+             *  Tiefenpruefung — und damit auch kein Tiefenschreiben, was hier der eigentliche
+             *  Punkt ist (siehe ⛔ oben: sonst legt das 256-Bloecke-Gitter eine Tiefenwand in
+             *  den Puffer und verdeckt den nachfolgenden Form-Pass) — und KEIN Culling
+             *  (withCull(false) == altes disableCull).
+             *  Die Modellansicht ist die oben aufgebaute Sichtmatrix: der Modelview-Stack
+             *  allein bewirkt in 26.2 nichts mehr, SofortZeichner schreibt sie als
+             *  DynamicTransforms in den Durchgang.
+             *
+             *  ⚠️ WEITERHIN OFFEN — das ZIEL, nicht der Zeichenweg: SofortZeichner oeffnet
+             *  seinen Durchgang gegen gameRenderer.mainRenderTarget(), nicht gegen den
+             *  Alt-Kamera-Puffer des Aufrufers. Wer die Schnittstelle dieser Methode um das
+             *  Ziel erweitert (siehe ⛔ oben), muss den Durchgang dorthin fuehren; bis dahin
+             *  ist diese Methode NICHT portiert, auch wenn der Zeichenblock uebersetzt ist. */
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder((2 * HALF_EXTENT + 1) * 4 * 16))
             {
-                int alpha;
-                int r = 180, g = 180, b = 200;
-                if (i == 0)
+                /* Vier Ecken je Schritt, 16 Byte je Ecke in POSITION_COLOR — von vornherein
+                 * gross genug, damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
+                BufferBuilder bb = SofortZeichner.beginnen(
+                    speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+
+                for (int i = -HALF_EXTENT; i <= HALF_EXTENT; i++)
                 {
-                    alpha = 220; r = 100; g = 200; b = 255;
-                }
-                else if (i % 8 == 0)
-                {
-                    alpha = 140;
-                }
-                else
-                {
-                    alpha = 60;
+                    int alpha;
+                    int r = 180, g = 180, b = 200;
+                    if (i == 0)
+                    {
+                        alpha = 220; r = 100; g = 200; b = 255;
+                    }
+                    else if (i % 8 == 0)
+                    {
+                        alpha = 140;
+                    }
+                    else
+                    {
+                        alpha = 60;
+                    }
+
+                    float fx = (float) gx + (float) i;
+                    float fy = (float) gy;
+                    float fz = (float) gz + (float) i;
+                    float fzMin = (float) gz - HALF_EXTENT;
+                    float fzMax = (float) gz + HALF_EXTENT;
+                    float fxMin = (float) gx - HALF_EXTENT;
+                    float fxMax = (float) gx + HALF_EXTENT;
+
+                    /* Line parallel to Z axis (varying X = fx). */
+                    bb.addVertex(fx, fy, fzMin).setColor(r, g, b, alpha);
+                    bb.addVertex(fx, fy, fzMax).setColor(r, g, b, alpha);
+
+                    /* Line parallel to X axis (varying Z = fz). */
+                    bb.addVertex(fxMin, fy, fz).setColor(r, g, b, alpha);
+                    bb.addVertex(fxMax, fy, fz).setColor(r, g, b, alpha);
                 }
 
-                float fx = (float) gx + (float) i;
-                float fy = (float) gy;
-                float fz = (float) gz + (float) i;
-                float fzMin = (float) gz - HALF_EXTENT;
-                float fzMax = (float) gz + HALF_EXTENT;
-                float fxMin = (float) gx - HALF_EXTENT;
-                float fxMax = (float) gx + HALF_EXTENT;
-
-                /* Line parallel to Z axis (varying X = fx). */
-                bb.addVertex(fx, fy, fzMin).setColor(r, g, b, alpha);
-                bb.addVertex(fx, fy, fzMax).setColor(r, g, b, alpha);
-
-                /* Line parallel to X axis (varying Z = fz). */
-                bb.addVertex(fxMin, fy, fz).setColor(r, g, b, alpha);
-                bb.addVertex(fxMax, fy, fz).setColor(r, g, b, alpha);
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false),
+                    bb.build(),
+                    mvStack,
+                    null,
+                    null);
             }
-
-            BufferUploader.drawWithShader(bb.buildOrThrow());
 
             /* 26.2: ersatzlos entfallen. Die drei Aufrufe haben nur den
              *  globalen Zustand aufgeraeumt — den gibt es nicht mehr. Blend,

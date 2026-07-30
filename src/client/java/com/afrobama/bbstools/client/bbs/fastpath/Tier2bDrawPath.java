@@ -146,6 +146,30 @@ public final class Tier2bDrawPath
                  * Iris-compat by construction. */
                 RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
+                /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten.
+                 *
+                 *  Der Ecken-Aufbau waere trivial umzustellen (SofortZeichner.beginnen mit
+                 *  einem ByteBufferBuilder), aber ohne den Zeichenaufruf unten waere das ein
+                 *  halber Umbau. Und der Zeichenaufruf hat noch keine Pipeline:
+                 *
+                 *   - Gebraucht wird NEW_ENTITY + core/rendertype_entity_translucent_cull,
+                 *     Topologie TRIANGLES, gemischt, mit Tiefe, mit Cull — also genau
+                 *     RenderPipelines.ENTITY_TRANSLUCENT_CULL (der Kommentar oben nennt sie
+                 *     schon). FormPipelines deckt nur die POSITION_COLOR/POSITION_TEX-Familie
+                 *     ab und haengt Sampler0 nur an Shadernamen mit "tex" — fuer den
+                 *     Entity-Shader ergaebe das eine Pipeline mit fehlenden Bindegruppen.
+                 *   - SofortZeichner bindet nur Sampler0 aus einem TextureSetup. Der
+                 *     Entity-Weg braucht zusaetzlich Sampler1 (Overlay) und Sampler2
+                 *     (Lightmap); beide werden hier oben noch ueber turnOnLightLayer /
+                 *     setupOverlayColor als globaler Zustand gesetzt, und die Textur kommt
+                 *     ueber BBSModClient.getTextures().bindTexture(...), also rohes GL —
+                 *     kein TextureSetup, das ein RenderPass binden koennte.
+                 *
+                 *  Zu raten, welche Bindung wohin gehoert, gaebe ein falsches Bild ohne
+                 *  Fehlermeldung. Erst Entity-Pipeline + Sampler-Weg bauen, dann ist das hier
+                 *  in einem Zug zu machen — zusammen mit den Geschwistern Tier2c/2d/2e, die
+                 *  dieselbe Kombination brauchen. */
+
                 /* Begin merged buffer for this bucket. */
                 BufferBuilder builder;
                 try
@@ -209,7 +233,9 @@ public final class Tier2bDrawPath
                     continue;
                 }
 
-                /* Single draw per bucket. */
+                /* Single draw per bucket.
+                 * ⛔ OFFEN 26.2 — Begruendung steht oben am Tesselator-Aufruf: es fehlt die
+                 * Entity-Pipeline und der Sampler-Weg fuer Overlay/Lightmap. */
                 try
                 {
                     BufferUploader.drawWithShader(builder.buildOrThrow());
