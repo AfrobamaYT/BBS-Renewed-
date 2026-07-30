@@ -40,7 +40,7 @@ public final class CacheBarRenderer
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             if (!BBSPerfConfig.ENABLE_CACHE_LOADING_BAR || SNAP_COUNT == 0) return;
-            try { draw(ctx.matrixStack()); }
+            try { draw(ctx.matrixStack(), ctx.submitNodeCollector()); }
             catch (Throwable ignored) {}
         });
     }
@@ -65,15 +65,18 @@ public final class CacheBarRenderer
         SNAP_COUNT++;
     }
 
-    private static void draw(PoseStack stack)
+    private static void draw(PoseStack stack, SubmitNodeCollector sammler)
     {
-        if (stack == null) return;
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        SubmitNodeCollector immediate = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = immediate.getBuffer(RenderTypes.lines());
+        if (stack == null || sammler == null) return;
 
-        Matrix4f m = stack.last().pose();
-        PoseStack.Pose entry = stack.last();
+        /* 26.2: es gibt keinen VertexConsumer mehr zum Hineinschreiben. Die Geometrie wird
+         * als AUFTRAG eingereiht und spaeter gezeichnet -- der Eckenaufbau steht darum in
+         * einem Lambda. Er selbst ist unveraendert; nur die Matrix kommt aus der
+         * uebergebenen Pose statt aus einem vorher eingefangenen Stapel, weil das Lambda
+         * erst laeuft, wenn der Stapel schon weitergewandert sein kann. */
+        sammler.submitCustomGeometry(stack, RenderTypes.lines(), (entry, vc) ->
+        {
+        Matrix4f m = entry.pose();
 
         float half = BAR_WIDTH * 0.5F;
         for (int i = 0; i < SNAP_COUNT; i++)
@@ -100,7 +103,10 @@ public final class CacheBarRenderer
             }
         }
 
-        immediate.endBatch(RenderTypes.lines());
+        });
+
+        /* Kein endBatch mehr: der Auftrag ist eingereiht, gezeichnet wird er vom Sammler
+         * zusammen mit allem anderen. Ein manuelles Abschicken gibt es nicht. */
     }
 
 }
