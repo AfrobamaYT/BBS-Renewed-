@@ -553,13 +553,13 @@ public class UIFilmPreview extends UIElement
         matrices.translate(area.x, area.y, 0F);
         matrices.scale(scaleX, scaleY, 1F);
 
-        boolean hidden = mc.options.hideGui;
+        boolean hidden = mc.gui.isHidden();
 
         /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
          * zupflastern — es gehoert auf den bildschirm, nicht ins kamerabild. */
         boolean debugOverlay = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
 
-        mc.options.hideGui = false;
+        mc.gui.setHidden(false);
         com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = false;
 
         try
@@ -569,12 +569,12 @@ public class UIFilmPreview extends UIElement
              * hunger und fadenkreuz ohne diese guards — das ist genau das, was im
              * exportierten video landet. */
             ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.gui)
-                .bbs$renderMainHud(draw, mc.getTimer());
+                .bbs$renderMainHud(draw, mc.getDeltaTracker());
         }
         finally
         {
             com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = debugOverlay;
-            mc.options.hideGui = hidden;
+            mc.gui.setHidden(hidden);
 
             context.batcher.flush();
             matrices.popPose();

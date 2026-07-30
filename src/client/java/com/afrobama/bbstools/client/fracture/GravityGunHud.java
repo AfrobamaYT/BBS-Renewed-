@@ -27,7 +27,7 @@ public final class GravityGunHud
     private static void onHudRender(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter)
     {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null || client.options.hideGui) return;
+        if (client == null || client.player == null || client.gui.isHidden()) return;
 
         Font fr = client.font;
         if (fr == null) return;

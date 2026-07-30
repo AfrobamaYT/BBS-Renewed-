@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.util.PreviewPassState;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * <p>Outside the preview pass this is a no-op — vanilla light wins for
  * the main world render and BBS export.</p>
  */
-@Mixin(LightTexture.class)
+@Mixin(LightCoordsUtil.class)
 public abstract class PreviewLightOverrideMixin
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/light-override");

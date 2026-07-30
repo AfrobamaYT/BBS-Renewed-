@@ -48,7 +48,7 @@ public class InGameHudMixin
             return;
         }
 
-        Minecraft.getInstance().options.hideGui = false;
+        Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = false;
         TrackerClientClip.beginHudRendering(drawContext);
     }
 
@@ -60,7 +60,7 @@ public class InGameHudMixin
         if (TrackerClientClip.shouldRenderHud() && BBSModClient.getCameraController().getCurrent() != null)
         {
             TrackerClientClip.endHudRendering(drawContext);
-            Minecraft.getInstance().options.hideGui = true;
+            Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = true;
         }
     }
 }

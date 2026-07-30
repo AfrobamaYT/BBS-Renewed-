@@ -680,7 +680,7 @@ public class BBSModClient implements ClientModInitializer
 
             if (gunZoom != null)
             {
-                gunZoom.update(keyZoom.isDown(), Minecraft.getInstance().getTimer().getRealtimeDeltaTicks());
+                gunZoom.update(keyZoom.isDown(), Minecraft.getInstance().getDeltaTracker().getRealtimeDeltaTicks());
 
                 if (gunZoom.canBeRemoved())
                 {

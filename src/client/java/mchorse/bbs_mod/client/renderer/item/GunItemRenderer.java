@@ -82,7 +82,7 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
 
                 RenderSystem.enableDepthTest();
                 FormUtilsClient.render(form, new FormRenderingContext()
-                    .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false))
+                    .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
                     .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
                 RenderSystem.disableDepthTest();
 

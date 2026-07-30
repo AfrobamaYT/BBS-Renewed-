@@ -357,7 +357,7 @@ public class OrbitCamera
 
         if (this.velocityPosition.lengthSquared() > 0)
         {
-            float lastFrameDuration = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks() * 5F;
+            float lastFrameDuration = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaTicks() * 5F;
 
             this.targetPosition.add(this.rotateVector(this.velocityPosition.x, 0, this.velocityPosition.z)
                 .add(0, this.velocityPosition.y, 0)
@@ -396,7 +396,7 @@ public class OrbitCamera
             return;
         }
 
-        float dt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
+        float dt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaTicks();
         float factor = MathUtils.clamp(1F - (float) Math.pow(Math.min(smoothness, 0.99F), dt), 0F, 1F);
 
         this.position.lerp(this.targetPosition, factor);

@@ -220,7 +220,7 @@ public class GameRendererMixin
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
-        if (Minecraft.getInstance().options.hideGui && current == null)
+        if (Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() && current == null)
         {
             BBSRendering.onRenderBeforeScreen();
         }

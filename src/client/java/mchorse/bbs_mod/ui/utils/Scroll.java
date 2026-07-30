@@ -510,7 +510,7 @@ public class Scroll
     {
         if (this.isSmoothScrolling())
         {
-            float delta = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
+            float delta = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaTicks();
 
             /* The higher the FPS, the smaller the lerp factor is,
              * the lower the FPS, the bigger the factor is */

@@ -170,7 +170,7 @@ public final class WorldShot
 
 			/* Render ONLY the world — no HUD (that is drawn later in GameRenderer.render, which we do NOT call).
 			 * Uses the current live render tick counter (same one the game frame uses) for interpolation. */
-			DeltaTracker tickCounter = client.getTimer();
+			DeltaTracker tickCounter = client.getDeltaTracker();
 			gameRenderer.renderLevel(tickCounter);
 
 			target.unbindWrite();
@@ -238,7 +238,7 @@ public final class WorldShot
 		{
 			net.minecraft.world.phys.Vec3 sky = client.level.getSkyColor(
 				client.gameRenderer.mainCamera().position(),
-				client.getTimer().getGameTimeDeltaPartialTick(true));
+				client.getDeltaTracker().getGameTimeDeltaPartialTick(true));
 
 			if (sky != null)
 			{

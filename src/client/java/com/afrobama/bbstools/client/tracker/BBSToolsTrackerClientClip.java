@@ -766,11 +766,11 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
 
         advanceShowTransitions();
         Minecraft mc = Minecraft.getInstance();
-        savedHudHiddenForLevel = mc.options.hideGui;
+        savedHudHiddenForLevel = mc.gui.isHidden();
 
         if (handNeeded)
         {
-            mc.options.hideGui = false;
+            mc.gui.setHidden(false);
             swapHandState();
             savedPerspectiveForLevel = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.FIRST_PERSON);
@@ -793,7 +793,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
 
         Minecraft mc = Minecraft.getInstance();
-        mc.options.hideGui = shouldRenderHud() ? false : savedHudHiddenForLevel;
+        mc.gui.setHidden(shouldRenderHud() ? false : savedHudHiddenForLevel);
     }
 
     public static void beginHandRendering()
@@ -803,8 +803,8 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         Minecraft mc = Minecraft.getInstance();
         if (!levelRenderingActive)
         {
-            savedHudHidden = mc.options.hideGui;
-            mc.options.hideGui = false;
+            savedHudHidden = mc.gui.isHidden();
+            mc.gui.setHidden(false);
             swapHandState();
         }
 
@@ -833,7 +833,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         if (!levelRenderingActive)
         {
             restoreHandState();
-            Minecraft.getInstance().options.hideGui = savedHudHidden;
+            Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = savedHudHidden;
         }
         if (handProjectionSwapped)
         {
@@ -866,7 +866,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
         endHudScaleRestore();
         restorePlayer();
-        Minecraft.getInstance().options.hideGui = savedHudHiddenForLevel;
+        Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = savedHudHiddenForLevel;
     }
 
     /* ========================================================

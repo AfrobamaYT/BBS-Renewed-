@@ -371,13 +371,13 @@ public class BBSRendering
         orthoDistance = -1F;
 
         Minecraft mc = Minecraft.getInstance();
-        BBSModClient.getFilms().startRenderFrame(mc.getTimer().getGameTimeDeltaPartialTick(false));
+        BBSModClient.getFilms().startRenderFrame(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
 
         UIBaseMenu menu = UIScreen.getCurrentMenu();
 
         if (menu != null)
         {
-            menu.startRenderFrame(mc.getTimer().getGameTimeDeltaPartialTick(false));
+            menu.startRenderFrame(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
         }
 
         renderingWorld = true;
@@ -485,7 +485,7 @@ public class BBSRendering
         Minecraft mc = Minecraft.getInstance();
 
         worldRenderContext.prepare(
-            mc.levelRenderer, mc.getTimer(), false,
+            mc.levelRenderer, mc.getDeltaTracker(), false,
             mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
             RenderSystem.getProjectionMatrix(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
         );
