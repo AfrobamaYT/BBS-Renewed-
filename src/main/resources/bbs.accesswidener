@@ -1,4 +1,9 @@
-accessWidener v2 named
+# ⛔ NAMENSRAUM `official`, NICHT `named` (26.2, 2026-07-30).
+# Ab 26.1 ist Minecraft nicht mehr obfuskiert — es gibt nur noch EINEN namensraum, und der
+# heisst `official`. Loom bricht sonst ab mit
+#     Expected official namespace for access widener entry, found: named
+# Auf dem zweig 1.21.1 gilt weiter `named`.
+accessWidener v2 official
 
 accessible field com/mojang/blaze3d/systems/RenderSystem shaderLightDirections [Lorg/joml/Vector3f;
 

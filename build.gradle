@@ -1,7 +1,7 @@
 plugins {
 	/* AUTONOMIE 2026-07-27: von 1.15 angehoben — die veil-lib ist mit loom 1.16+
 	 * gebaut, 1.15.5 kann deren mod-metadaten nicht remappen. Braucht gradle 9.6.1. */
-	id 'fabric-loom' version '1.17-SNAPSHOT'
+	id 'net.fabricmc.fabric-loom' version '1.17.17'
 	id 'maven-publish'
 }
 
@@ -51,7 +51,14 @@ loom {
 		}
 	}
 
-	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
+	/* P3-26.2-AUS: accesswidener stillgelegt fuer den kern-boot.
+	 *
+	 * 26.x hat das format ersetzt: `net.fabricmc.classtweaker` erwartet den kopf
+	 * `classTweaker <version> <namespace>` statt `accessWidener v2 <namespace>`.
+	 * Das ist eine echte umstellung (P4), kein einzeiler — und der widener dient
+	 * ausschliesslich UNSEREN features, die in P3 ohnehin aus sind.
+	 */
+//	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
 
 	/*
 	 * Ports der DEV-instanz — bewusst NEBEN denen der CurseForge-instanz.
@@ -232,32 +239,43 @@ dependencies {
 	 *
 	 * `yarn_mappings` in gradle.properties ist damit unbenutzt, bleibt aber vorerst
 	 * stehen: der zweig 1.21.1 baut weiter darueber. */
-	mappings loom.officialMojangMappings()
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	/* ⛔ AB 26.1 GIBT ES KEINE MAPPINGS-ZEILE MEHR — Minecraft ist nicht mehr obfuskiert.
+	 *
+	 * Gemessen 2026-07-30: im version-manifest fehlen `client_mappings`/`server_mappings`
+	 * ab 26.1 (1.21.11 hat sie noch, 26.1/26.1.2/26.2/26.3-snapshot nicht), und im jar steht
+	 * `net/minecraft/client/renderer/entity/PandaRenderer.class` statt `class_310`. Es gibt
+	 * schlicht nichts zu mappen.
+	 *
+	 * `loom.officialMojangMappings()` versucht trotzdem etwas zu holen und bricht ab mit
+	 * "Failed to find official mojang mappings for 26.2". Das Fabric-Beispielprojekt auf dem
+	 * 26.2-zweig hat an dieser stelle GAR KEINE zeile.
+	 *
+	 * Fuer den zweig 1.21.1 gilt das NICHT — dort ist die zeile noetig und steht auch da. */
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
-	// modImplementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
+	// implementation "net.fabricmc.fabric-api:fabric-api-deprecated:${project.fabric_version}"
 	/* MERGE 2026-07-27: aus dem CML-upstream — video-wiedergabe (VideoClip, VideoRenderer,
 	 * VideoWaveformCache). Ohne die lib faellt der komplette video-clip-block weg. */
-	modImplementation "maven.modrinth:watermedia:2.1.37"
-	modImplementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
-	modImplementation "maven.modrinth:iris:1.8.8+1.21.1-fabric"
+	// P3-26.2-AUS: implementation "maven.modrinth:watermedia:2.1.37"
+	// P3-26.2-AUS: implementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
+	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.8.8+1.21.1-fabric"
 
 	/* AUTONOMIE 2026-07-27: fremd-mods gegen die com/afrobama kompiliert.
-	 * Alle modCompileOnly — sie werden NICHT gebuendelt und NICHT zur laufzeit verlangt;
+	 * Alle compileOnly — sie werden NICHT gebuendelt und NICHT zur laufzeit verlangt;
 	 * die betroffenen features (Veil-FX, PhysicsMod-fracture, accelerated crowd-rendering,
 	 * MCEF-webbridge) pruefen selbst per FabricLoader.isModLoaded() und schalten sich ab.
 	 * Die jars liegen in libs/. */
-	modCompileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
-	modCompileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
-	modCompileOnly files("libs/physics-mod-pro-v172j-fabric-1.21.1.jar")
-	modCompileOnly files("libs/worldedit-mod-7.3.8.jar")
-	modCompileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
+	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
+	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
+	// P3-26.2-AUS: compileOnly files("libs/physics-mod-pro-v172j-fabric-1.21.1.jar")
+	// P3-26.2-AUS: compileOnly files("libs/worldedit-mod-7.3.8.jar")
+	// P3-26.2-AUS: compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
 
 	/* AUTONOMIE 2026-07-27: audio-decoder fuer com/afrobama/bbstools/audio
 	 * (MASFlacReader, MASMp3Reader) — liest FLAC/MP3 fuer die lipsync-/waveform-spur.
@@ -265,8 +283,8 @@ dependencies {
 	implementation include("org.jflac:jflac-codec:1.5.2")
 	implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
 
-	modImplementation "org.anarres:jcpp:1.4.14"
-	modImplementation "io.github.douira:glsl-transformer:2.0.0-pre13"
+	// P3-26.2-AUS: implementation "org.anarres:jcpp:1.4.14"
+	// P3-26.2-AUS: implementation "io.github.douira:glsl-transformer:2.0.0-pre13"
 }
 
 /* ⭐ VOLLES HOTSWAP — die JBR NUR fuer den game-lauf, nicht fuer den build.
@@ -330,7 +348,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 
 	/* ⛔ DECKEL HOCH, SOLANGE DER PORT LAEUFT (2026-07-30).
 	 *
@@ -350,8 +368,15 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	/* ⛔ 25, WEIL MC 26.2 ES VERLANGT (P3, 2026-07-30). Die toolchain unten sagt gradle,
+	 * WOMIT es das uebersetzt — ohne sie versucht javac 21 auf release 25 zu zielen und
+	 * scheitert mit "release version 25 not supported". */
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 }
 
 jar {
