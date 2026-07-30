@@ -52,8 +52,8 @@ public final class CameraFrustumMeshRenderer
 
     public static void register()
     {
-        /* 26.2: LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN existiert nicht mehr. Der
-         *  Nachfolger ist NICHT einfach AFTER_TRANSLUCENT_TERRAIN/_FEATURES:
+        /* 26.2: AFTER_TRANSLUCENT_TERRAIN EXISTIERT (javap auf LevelRenderEvents) --
+         *  taugt hier aber nicht:
          *  eingereichte Geometrie muss in der Sammelphase abgegeben werden,
          *  sonst sind die Feature-Renderer schon durch und es wird STILL
          *  nichts gezeichnet (kompiliert, bleibt unsichtbar).

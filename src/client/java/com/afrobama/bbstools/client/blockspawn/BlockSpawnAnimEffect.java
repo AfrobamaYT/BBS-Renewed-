@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -108,7 +107,12 @@ public final class BlockSpawnAnimEffect
 
     public static void register()
     {
-        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(BlockSpawnAnimEffect::onRender);
+        /* 26.2: EINREICHEN muss in der Sammelphase geschehen. AFTER_TRANSLUCENT_TERRAIN
+         * gibt es zwar noch (javap auf LevelRenderEvents), aber dort sind die
+         * Feature-Renderer schon durch -- eingereichte Geometrie wird dann still nicht
+         * mehr gezeichnet. Die Zeichenreihenfolge bestimmt ohnehin der RenderType,
+         * nicht der Haken. */
+        LevelRenderEvents.COLLECT_SUBMITS.register(BlockSpawnAnimEffect::onRender);
         LOG.info("BlockSpawnAnimEffect registered — render hook armed");
     }
 
@@ -333,9 +337,33 @@ public final class BlockSpawnAnimEffect
 
         BlockRenderDispatcher dispatcher = mc.getBlockRenderer();
         ModelBlockRenderer modelRenderer = dispatcher.getModelRenderer();
-        SubmitNodeCollector buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer consumer = buffers.getBuffer(RenderType.translucent());
         RandomSource rng = RandomSource.create();
+
+        /* 26.2: renderBuffers().bufferSource() gibt es nicht mehr, und es gibt keinen Puffer
+         * mehr zum Hineinschreiben. Die Geometrie wird als AUFTRAG eingereicht und spaeter
+         * gezeichnet — darum steht der ganze Zeichenblock jetzt in einem Lambda; der Aufbau
+         * selbst ist unveraendert.
+         *
+         * Der Sammler KOPIERT die Pose beim Einreichen (die Kamera-Verschiebung von oben
+         * steckt also schon drin), das Lambda laeuft aber spaeter — der Kontext-Stapel darf
+         * zu dem Zeitpunkt nicht mehr benutzt werden. tesselateBlock will jedoch einen
+         * PoseStack und nicht die Pose, also faehrt der Block auf einem EIGENEN Stapel, der
+         * aus der kopierten Pose (Position UND Normale) gesetzt wird.
+         *
+         * Rueckseiten-Culling ist kein globaler Schalter mehr (kein disableCull), sondern
+         * gehoert zur Pipeline des RenderType — hier zu der von RenderType.translucent()
+         * (RenderPipelines.TRANSLUCENT_BLOCK), genau der, die Vanilla fuer die
+         * Translucent-Lage der Chunks faehrt. Unsere Geisterbloecke sind dieselben
+         * Blockmodelle aus ModelBlockRenderer#tesselateBlock, nur um ein reines Translate
+         * versetzt — Wicklung unveraendert. */
+        SubmitNodeCollector sammler = context.submitNodeCollector();
+
+        sammler.submitCustomGeometry(matrices, RenderType.translucent(), (entry, consumer) ->
+        {
+        PoseStack lokal = new PoseStack();
+
+        lokal.last().pose().set(entry.pose());
+        lokal.last().normal().set(entry.normal());
 
         int rendered = 0;
 
@@ -391,8 +419,8 @@ public final class BlockSpawnAnimEffect
                 continue;
             }
 
-            matrices.pushPose();
-            matrices.translate(wx, wy, wz);
+            lokal.pushPose();
+            lokal.translate(wx, wy, wz);
 
             try
             {
@@ -400,7 +428,7 @@ public final class BlockSpawnAnimEffect
                     world,
                     dispatcher.getBlockModel(e.state),
                     e.state, e.pos,
-                    matrices, consumer,
+                    lokal, consumer,
                     false, rng, e.state.getSeed(e.pos),
                     OverlayTexture.NO_OVERLAY
                 );
@@ -413,7 +441,7 @@ public final class BlockSpawnAnimEffect
                  *  the offender, keep rendering everything else. */
             }
 
-            matrices.popPose();
+            lokal.popPose();
             rendered++;
 
             if (rendered >= MAX_BLOCKS)
@@ -421,21 +449,9 @@ public final class BlockSpawnAnimEffect
                 break;
             }
         }
+        });
 
-        flush(buffers);
         matrices.popPose();
-    }
-
-    private static void flush(SubmitNodeCollector buffers)
-    {
-        /* 26.2: disableCull/enableCull entfallen ersatzlos. Rueckseiten-Culling ist kein
-         * globaler Schalter mehr, sondern gehoert zur Pipeline des RenderType — hier also zu
-         * der von RenderType.translucent() (RenderPipelines.TRANSLUCENT_BLOCK). Genau die
-         * benutzt Vanilla auch fuer die Translucent-Lage der Chunks, und unsere Geisterbloecke
-         * sind dieselben Blockmodelle aus ModelBlockRenderer#tesselateBlock, nur um ein reines
-         * Translate versetzt — keine Spiegelung, Wicklung unveraendert. Der Zustand aus der
-         * Pipeline ist damit derselbe, den Vanilla fuer diese Geometrie faehrt. */
-        buffers.endBatch(RenderType.translucent());
     }
 
 }
