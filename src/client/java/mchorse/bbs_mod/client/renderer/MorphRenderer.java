@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.client.renderer;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.forms.FormUtilsClient;
@@ -43,8 +42,13 @@ public class MorphRenderer
         {
             if (canRender())
             {
-                RenderSystem.enableDepthTest();
-
+                /* 26.2: der Tiefentest ist kein globaler Schalter mehr, sondern Teil der
+                 * Pipeline. Das enableDepthTest hier und das disableDepthTest hinter dem
+                 * popPose entfallen deshalb ersatzlos: gezeichnet wird ueber
+                 * FormUtilsClient.render mit FormRenderType.ENTITY, und dort bringt jeder
+                 * Zeichenweg seinen Tiefenzustand selbst mit — die Pipeline des jeweiligen
+                 * RenderType, beim Modell-Zeichenweg ModelVAOPipeline.DURCHSICHTIG
+                 * (GREATER_THAN_OR_EQUAL mit Tiefenschreiben, reversed-Z). */
                 float bodyYaw = Lerps.lerp(player.yBodyRotO, player.yBodyRot, g);
                 int overlay = LivingEntityRenderer.getOverlayCoords(player, 0F);
 
@@ -56,8 +60,6 @@ public class MorphRenderer
                     .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
                 matrixStack.popPose();
-
-                RenderSystem.disableDepthTest();
             }
 
             return true;
@@ -98,8 +100,10 @@ public class MorphRenderer
 
         if (form != null)
         {
-            RenderSystem.enableDepthTest();
-
+            /* Tiefentest wie in renderPlayer: seit 26.2 Sache der Pipeline, nicht mehr ein
+             * globaler Schalter. Das Paar enableDepthTest/disableDepthTest um den Formaufruf
+             * entfaellt ersatzlos — der Zustand kommt aus dem Zeichenweg von
+             * FormRenderType.ENTITY. */
             float bodyYaw = Lerps.lerp(livingEntity.yBodyRotO, livingEntity.yBodyRot, g);
 
             matrixStack.pushPose();
@@ -110,8 +114,6 @@ public class MorphRenderer
                 .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
             matrixStack.popPose();
-
-            RenderSystem.disableDepthTest();
 
             return true;
         }

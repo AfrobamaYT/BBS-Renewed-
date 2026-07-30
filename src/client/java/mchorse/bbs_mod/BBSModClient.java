@@ -557,7 +557,13 @@ public class BBSModClient implements ClientModInitializer
                     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
                     { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-                    RenderSystem.disableDepthTest();
+                    /* 26.2: das disableDepthTest hinter dem Zeichnen entfaellt ersatzlos — es
+                     * hat keinen Adressaten mehr, weil jeder folgende Zeichenaufruf seinen
+                     * Tiefenzustand aus seiner eigenen Pipeline bekommt.
+                     * ⚠️ Das enableDepthTest VOR dem Zeichnen (oben) ist NICHT erledigt: es
+                     * gilt diesem Zeichenaufruf und gehoert damit in dessen Pipeline. Die gibt
+                     * es noch nicht (TRIANGLES/POSITION_COLOR mit Tiefentest), darum steht es
+                     * unveraendert da und ist als offen gemeldet. */
 
                     stack.popPose();
                 }

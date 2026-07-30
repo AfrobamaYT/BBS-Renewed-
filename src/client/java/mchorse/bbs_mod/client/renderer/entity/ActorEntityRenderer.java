@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.client.renderer.entity;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.cubic.render.vanilla.ArmorRenderer;
@@ -52,13 +51,16 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
 
         this.setupTransforms(livingEntity, matrices, yBodyRot, tickDelta);
 
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
+        /* 26.2: das Paar enableBlend()/enableDepthTest() und seine Gegenstuecke hinter dem
+         * Draw sind ersatzlos entfallen. Sie richteten nur den globalen Vorgabezustand fuer
+         * das ein, was FormUtilsClient.render() zeichnet - und das bringt seinen Zustand
+         * selbst mit: Item-, Block- und Mob-Formen ueber die Pipeline ihres RenderType
+         * (RenderType#pipeline()), BBS' eigene Modelle ueber ModelVAOPipeline (dort Blend,
+         * Tiefe und Cull fest verbaut, siehe ModelVAORenderer#render). Einen globalen
+         * Schalter, den man setzen oder zuruecksetzen koennte, gibt es nicht mehr. */
         FormUtilsClient.render(livingEntity.getForm(), new FormRenderingContext()
             .set(FormRenderType.ENTITY, livingEntity.getEntity(), matrices, light, overlay, tickDelta)
             .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableBlend();
 
         matrices.popPose();
 

@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.client.renderer.entity;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
@@ -48,11 +47,15 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         matrices.scale(scale, scale, scale);
         MatrixStackUtils.applyTransform(matrices, properties.projectileTransform);
 
-        RenderSystem.enableDepthTest();
+        /* Das enableDepthTest/disableDepthTest-Paar um den Form-Aufruf entfaellt: seit 26.2
+         * ist der Tiefentest Teil der Pipeline des jeweiligen Zeichenwegs und nicht mehr
+         * umschaltbar. Die Form bringt ihn selbst mit — Modellformen ueber ModelVAOPipeline,
+         * gepufferte Formen ueber die Pipeline ihres RenderType. Auch das Abschalten danach
+         * hat kein Ziel mehr: der Namensschild-Draw in super.render erbt keinen globalen
+         * Zustand, sondern zieht seinen aus der eigenen Pipeline. */
         FormUtilsClient.render(projectile.getForm(), new FormRenderingContext()
             .set(FormRenderType.ENTITY, projectile.getEntity(), matrices, light, OverlayTexture.NO_OVERLAY, tickDelta)
             .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-        RenderSystem.disableDepthTest();
 
         matrices.popPose();
 

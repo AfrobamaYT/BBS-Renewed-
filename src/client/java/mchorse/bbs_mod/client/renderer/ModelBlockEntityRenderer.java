@@ -141,11 +141,15 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             int lightAbove = LevelRenderer.getLightColor(entity.getLevel(), pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
             Camera camera = mc.gameRenderer.mainCamera();
 
-            RenderSystem.enableDepthTest();
+            /* Das Paar enableDepthTest/disableDepthTest um die Form faellt ersatzlos weg.
+             * Die Form zeichnet ueber ihre eigene Pipeline (ModelVAOPipeline.DURCHSICHTIG,
+             * DepthStencilState(GREATER_THAN_OR_EQUAL, true) — das ist der normale Tiefentest
+             * unter dem umgekehrten Z von 26.2) bzw. ueber einen RenderType, der ihn mitbringt.
+             * Das anschliessende Abschalten galt Draw.coolerAxes darunter, und der bringt
+             * seinen Tiefenzustand ebenfalls selbst mit. */
             FormUtilsClient.render(properties.getForm(), new FormRenderingContext()
                 .set(FormRenderType.MODEL_BLOCK, entity.getEntity(), matrices, lightAbove, overlay, tickDelta)
                 .camera(camera));
-            RenderSystem.disableDepthTest();
 
             if (this.canRenderAxes(entity) && UIBaseMenu.shouldRenderAxes())
             {

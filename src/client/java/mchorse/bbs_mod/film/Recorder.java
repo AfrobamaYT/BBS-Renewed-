@@ -109,7 +109,11 @@ public class Recorder extends WorldFilmController
 
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
-        RenderSystem.disableDepthTest();
+        /* 26.2: das disableDepthTest, das hier stand, entfaellt ersatzlos. Es schaltete nach
+         * dem Zeichnen den globalen Tiefentest ab; einen globalen Tiefenzustand gibt es nicht
+         * mehr, und alles, was danach gezeichnet wird, bringt seinen eigenen in seiner
+         * Pipeline mit. Die Vorschau selbst wurde schon vorher mit dem normalen Tiefentest
+         * gezeichnet — ein enableDepthTest stand hier nie. */
     }
 
     private static void transformFrustum(Vector4f vector, Matrix4f matrix, float x, float y)

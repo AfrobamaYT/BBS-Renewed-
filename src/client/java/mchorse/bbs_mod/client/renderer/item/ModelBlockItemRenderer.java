@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.client.renderer.item;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
@@ -69,11 +68,18 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
                 matrices.translate(0.5F, 0F, 0.5F);
                 MatrixStackUtils.applyTransform(matrices, transform);
 
-                RenderSystem.enableDepthTest();
+                /* 26.2: die beiden Tiefen-Schalter um diesen Aufruf herum entfallen ersatzlos.
+                 * Tiefe ist kein globaler Zustand mehr, sondern Teil der Pipeline — den Zustand
+                 * bringt der Form-Renderer mit, zu dem FormUtilsClient.render verzweigt (Modelle
+                 * ueber ModelVAOPipeline.DURCHSICHTIG: DepthStencilState GREATER_THAN_OR_EQUAL
+                 * mit Tiefenschreiben, alle uebrigen Formen ueber den RenderType, mit dem ihr
+                 * Renderer zeichnet). Das enableDepthTest davor erzwang nur, was jede dieser
+                 * Pipelines ohnehin traegt; das disableDepthTest danach stellte die alte
+                 * GUI-Annahme wieder her, und die GUI zeichnet inzwischen selbst mit
+                 * RenderPipelines.GUI/GUI_TEXTURED. */
                 FormUtilsClient.render(form, new FormRenderingContext()
                     .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
                     .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-                RenderSystem.disableDepthTest();
 
                 matrices.popPose();
             }

@@ -295,7 +295,11 @@ public abstract class BaseFilmController
             stack.popPose();
         }
 
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableDepthTest() entfaellt ersatzlos. Der Tiefentest ist kein globaler
+         * Schalter mehr, den ein Aufgerufener verstellen und den man danach zuruecksetzen
+         * muesste — jeder Zeichenweg holt ihn aus der Pipeline seines RenderType. Form,
+         * Schatten und Namensschild oben laufen alle ueber context.consumers, also ueber
+         * deren RenderTypes. */
     }
 
     private static void renderAxes(String bone, boolean local, TransformSpace space, Matrix4f gizmoView, StencilMap stencilMap, Form form, IEntity entity, float transition, PoseStack stack, FormFrameCache frame)
@@ -327,7 +331,10 @@ public abstract class BaseFilmController
                 Gizmo.INSTANCE.renderStencil(stack, stencilMap);
             }
 
-            RenderSystem.enableDepthTest();
+            /* 26.2: enableDepthTest() entfaellt ersatzlos — es gab nur den globalen Schalter
+             * zurueck, den Gizmo#renderStencil vorher zugemacht hatte. Den Schalter gibt es
+             * nicht mehr; der Stencil-Durchgang bekommt seinen Tiefenzustand aus der Pipeline,
+             * mit der Gizmo zeichnet. captureVisual zeichnet hier ohnehin nichts. */
             stack.popPose();
         }
     }
@@ -371,7 +378,9 @@ public abstract class BaseFilmController
         stack.scale(distanceScale, distanceScale, distanceScale);
         Draw.coolerAxes(stack, 0.25F, 0.008F);
 
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableDepthTest() entfaellt ersatzlos — nichts stellt den Tiefentest mehr
+         * global um, also ist hier auch nichts zurueckzusetzen. Draw#coolerAxes bringt seinen
+         * Tiefenzustand aus der Pipeline seines eigenen Zeichenwegs mit. */
         stack.popPose();
     }
 
@@ -428,7 +437,9 @@ public abstract class BaseFilmController
             Gizmo.INSTANCE.renderStencil(stack, stencilMap);
         }
 
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableDepthTest() entfaellt ersatzlos — dieselbe Aufloesung wie in renderAxes:
+         * der globale Schalter existiert nicht mehr, der Tiefenzustand des Stencil-Durchgangs
+         * steckt in der Pipeline, mit der Gizmo zeichnet. */
         stack.popPose();
     }
 
@@ -811,8 +822,12 @@ public abstract class BaseFilmController
         int background = (int) (opacity * 255F) << 24;
         float h = (float) (-textRenderer.width(text) / 2);
 
-        RenderSystem.disableCull();
-
+        /* 26.2: disableCull/enableCull um diesen Block entfallen ersatzlos. Culling gehoert zur
+         * Pipeline des RenderType, und welchen Font#drawInBatch nimmt, entscheidet Vanilla
+         * (Text bzw. Text-See-Through) — von hier aus ist daran nichts mehr zu drehen. Noetig
+         * ist es auch nicht: Platzierung (cameraOrientation + scale(0.025, -0.025, 0.025)) und
+         * Zeichenweg sind Vanillas eigener Namensschild-Weg, der ohne Cull-Abschaltung
+         * auskommt, und ein zur Kamera gedrehtes Schild sieht man nie von hinten. */
         textRenderer.drawInBatch(text, h, 0, 0x20ffffff, false, matrix4f, consumers, sneaking ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, background, light);
 
         if (sneaking)
@@ -821,8 +836,6 @@ public abstract class BaseFilmController
         }
 
         consumers.draw();
-
-        RenderSystem.enableCull();
 
         matrices.popPose();
     }
@@ -1446,8 +1459,10 @@ public abstract class BaseFilmController
 
     public void render(WorldRenderContext context)
     {
-        RenderSystem.enableDepthTest();
-
+        /* 26.2: enableDepthTest() entfaellt ersatzlos. Der Aufruf sicherte den Tiefentest fuer
+         * die Formen, die gleich gezeichnet werden — den bringt jetzt die Pipeline des
+         * jeweiligen RenderType mit, ueber den renderEntity zeichnet. Einen globalen Schalter
+         * dafuer gibt es nicht mehr. */
         for (Map.Entry<Integer, IEntity> entry : this.entities.entrySet())
         {
             int i = entry.getKey();

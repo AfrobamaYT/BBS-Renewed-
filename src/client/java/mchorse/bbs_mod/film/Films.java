@@ -280,8 +280,14 @@ public class Films
 
     public void render(WorldRenderContext context)
     {
-        RenderSystem.enableDepthTest();
-
+        /* Hier stand frueher Tiefentest AN vor den Controllern und AUS danach — globaler
+         * GL-Zustand fuer Zeichenaufrufe, die diese Methode gar nicht selbst macht,
+         * sondern an die Controller delegiert. In 26.2 ist der Tiefentest kein Schalter
+         * mehr, sondern Teil der RenderPipeline des jeweiligen Zeichenaufrufs: die
+         * Modelle der Controller kommen ueber ModelVAOPipeline.DURCHSICHTIG
+         * (DepthStencilState GREATER_THAN_OR_EQUAL, Tiefe schreiben — 26.2 rechnet die
+         * Tiefe umgekehrt), Vanilla-Anteile ueber renderType.pipeline(). Beide Aufrufe
+         * haben damit keinen Empfaenger mehr und entfallen ersatzlos. */
         for (BaseFilmController controller : this.controllers)
         {
             controller.render(context);
@@ -291,8 +297,6 @@ public class Films
         {
             this.recorder.render(context);
         }
-
-        RenderSystem.disableDepthTest();
     }
 
     public void renderHud(Batcher2D batcher2D, float tickDelta)

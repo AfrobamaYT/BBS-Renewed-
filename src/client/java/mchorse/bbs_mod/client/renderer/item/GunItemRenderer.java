@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.client.renderer.item;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
@@ -80,11 +79,15 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
                 matrices.translate(0.5F, 0F, 0.5F);
                 MatrixStackUtils.applyTransform(matrices, transform);
 
-                RenderSystem.enableDepthTest();
+                /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline des
+                 * jeweiligen Draws. Die Form zeichnet ueber ModelVAOPipeline, deren
+                 * DepthStencilState den Test anhat und Tiefe schreibt — das enableDepthTest()
+                 * davor entfaellt damit ersatzlos. Das disableDepthTest() danach ebenso: es
+                 * schloss nur den globalen Schalter fuer die folgenden Draws, und der GUI-Raum,
+                 * in den das Item sonst zeichnet, hat ohnehin keine Tiefe mehr. */
                 FormUtilsClient.render(form, new FormRenderingContext()
                     .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
                     .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-                RenderSystem.disableDepthTest();
 
                 matrices.popPose();
             }
