@@ -109,7 +109,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          * ticks laufen durch), nie strenger — es kann also nie wieder transforms verschlucken.
          */
         // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
-        net.fabricmc.fabric.api.client.rendering.v1.LevelRenderEvents.END_MAIN.register(
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.END_MAIN.register(
             kontext -> com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++);
 
         /* Per-frame counter for the heartbeat's "frame" + "fps" fields. */
@@ -244,10 +244,10 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  disabled. The PipelineRegistrar's iris-shaderpack-gating (iter 63)
          *  means our pipelines auto-back-off when a pack is active, so this
          *  should be safe with Complementary Reimagined enabled. */
-        com.afrobama.bbstools.client.fx.BBSFxUniformPusher.register();
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         com.afrobama.bbstools.client.fx.effects.GlitchEffect.register();
         com.afrobama.bbstools.client.fx.BBSFxCommand.register();
-        com.afrobama.bbstools.client.fx.BBSFxPipelineRegistrar.register();
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Other FX kept disabled — uncomment if/when their conflicts with
          *  Iris + shaderpack are resolved:
          *  - SupernovaEffect, NukeEffect, MeteorEffect, AntimatterEffect,
@@ -295,6 +295,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  AcceleratedRendering GPU-compute crowd path. Requires
          *  AccelRender mod installed. Default OFF until tested. */
         com.afrobama.bbstools.client.cinematic.AccelRenderCommand.register();
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Tier 1 — replay fast-path measure-mode toggle. Coded by Afrobama/Claude. */
         com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
         /* Tier 2-h — deferred GPU-instanced replay draw (AFTER_TRANSLUCENT,
@@ -353,8 +354,7 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.render.texture.BBSToolsTextureEnhancer.register();
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             com.afrobama.bbstools.perf.audit.GlAuditRingBuffer.INSTANCE);
-        com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
-            com.afrobama.bbstools.client.bbs.veil.VeilCubicBatchRenderer.INSTANCE);
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
             com.afrobama.bbstools.perf.BBSEntityWorkerPool.INSTANCE);
         com.afrobama.bbstools.client.debug.BBSDebugRegistry.register(
@@ -562,12 +562,15 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.powerbins.WorldFrameCapture.register();
 
 
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
 
 
 
 
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
 
 
@@ -590,7 +593,7 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* MCEF HTML-UI prototype: /bbstools web [url] opens a Chromium browser screen
          *  (renders the Claude HTML mockups 1:1). No-op-safe if the MCEF mod is absent. */
-        com.afrobama.bbstools.client.web.MCEFWebCommand.register();
+        /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
         /* Register the BlockAnimation action clip type in BBS so it
          *  appears in the clip-type picker alongside other action clips. */
@@ -636,7 +639,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  bbstools-console.log on first launch, not after debugging. */
         try
         {
-            com.afrobama.bbstools.client.veil.VeilFeatureGate.init();
+            /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         }
         catch (Throwable t)
         {
@@ -648,7 +651,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  pipeline via /mas bloom on. Proof of end-to-end integration. */
         try
         {
-            com.afrobama.bbstools.client.veil.MASCommands.register();
+            /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         }
         catch (Throwable t)
         {
@@ -661,7 +664,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  hole / grain / flare can animate. */
         try
         {
-            com.afrobama.bbstools.client.veil.MASShaderUniformPusher.register();
+            /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         }
         catch (Throwable t)
         {
@@ -672,7 +675,7 @@ public final class BBSToolsModClient implements ClientModInitializer
          * world join. Mirrors destroying-mc's ShaderType.CRACKS default. */
         try
         {
-            com.afrobama.bbstools.client.veil.MASAutoEnableVibrancy.register();
+            /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         }
         catch (Throwable t)
         {

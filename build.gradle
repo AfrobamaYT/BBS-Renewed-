@@ -250,12 +250,45 @@ sourceSets {
 			exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
 			exclude "com/afrobama/bbstools/client/web/MCEFWeb*"
 			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdIris*"
-			exclude "com/afrobama/bbstools/client/fracture/BonePhysicsSimulator.java"
-			exclude "com/afrobama/bbstools/client/fracture/PhysicsBlockDestructionClientClip.java"
-			exclude "com/afrobama/bbstools/client/fracture/UIPhysicsBlockDestructionClip.java"
+			/* ⛔ HIER STAND EIN AUSSCHLUSS DES GANZEN fracture-PAKETS -- ER WAR FALSCH.
+			 * Grundlage war eine suche nach dem WORT "PhysicsMod", und das steht dort in
+			 * kommentaren und klassennamen. Die IMPORTE sagen etwas anderes: keine einzige
+			 * der 26 fracture-dateien importiert net.diebuddies (PhysicsMod), com.sk89q
+			 * (WorldEdit), foundry.veil oder net.irisshaders. BonePhysicsSimulator ist
+			 * BBS-eigene knochenphysik, kein PhysicsMod-anhang.
+			 *
+			 * Ausgeschlossen bleiben nur die drei MIXINS, die wirklich in PhysicsMod-klassen
+			 * injizieren (com/afrobama/bbstools/client/mixin/physicsmod/**, weiter oben).
+			 * Das feature selbst wird portiert, nicht stillgelegt.
+			 *
+			 * Geprueft mit: python tools/fremdmod-schluss.py */
 			exclude "mchorse/bbs_mod/mixin/client/iris/**"
 			exclude "mchorse/bbs_mod/mixin/client/sodium/**"
-			exclude "mchorse/bbs_mod/utils/iris/**"
+			/* NICHT das ganze paket: ShaderCurves und QueueMap darin sind das DATENMODELL
+			 * des shader-kurven-clips, an dem UICurveClip, CurveClientClip und BBSRendering
+			 * haengen -- BBS-code, kein Iris-anhang. Nur die drei klassen, die wirklich
+			 * gegen Iris uebersetzen, fliegen raus. */
+			exclude "mchorse/bbs_mod/utils/iris/IrisUtils.java"
+			exclude "mchorse/bbs_mod/utils/iris/IrisTextureWrapper.java"
+			exclude "mchorse/bbs_mod/utils/iris/IrisTextureWrapperLoader.java"
+			exclude "mchorse/bbs_mod/utils/sodium/**"
+			exclude "mchorse/bbs_mod/forms/renderers/utils/RecolorVertexSodiumConsumer.java"
+			/* Zweite welle, gleiche ursache: fremd-mods ohne 26.2-bau. */
+			/* NUR die drei, die gegen Veil uebersetzen. BBSFxState und BBSFxCommand sind
+			 * eigener zustand bzw. eigener befehl -- 79 stellen im baum haengen an
+			 * BBSFxState, ein pauschales BBSFx* riss sie alle mit. */
+			exclude "com/afrobama/bbstools/client/fx/BBSFxPipelineRegistrar.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxShadowmapPrePass.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxUniformPusher.java"
+			exclude "com/afrobama/bbstools/client/mixin/accelrender/**"
+			exclude "com/afrobama/bbstools/client/web/BBSWebBridge.java"
+			exclude "com/afrobama/bbstools/client/powerbins/MASPresetIO.java"
+
+			exclude "com/afrobama/bbstools/client/cinematic/AccelRenderCommand.java"
+			exclude "com/afrobama/bbstools/client/cinematic/CrowdGpuCommand.java"
+			exclude "com/afrobama/bbstools/client/fx/BBSFxCommand.java"
+			exclude "com/afrobama/bbstools/client/fx/effects/DemoSequencer.java"
+			exclude "com/afrobama/bbstools/client/debug/LegacyRendererDebuggers.java"
 			exclude "mchorse/bbs_mod/cubic/physics/ModelPhysicsDebug.java"
 			/* Nachlauf: reine Debug-Tracer FUER die oben ausgeschlossenen Klassen.
 			 * Sie tauchten erst im zweiten Bau auf -- ein Ausschluss erzeugt eine kleine

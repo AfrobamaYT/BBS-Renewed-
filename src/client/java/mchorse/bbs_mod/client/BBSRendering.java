@@ -31,13 +31,10 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
-import mchorse.bbs_mod.utils.iris.IrisUtils;
 import mchorse.bbs_mod.utils.iris.ShaderCurves;
-import mchorse.bbs_mod.utils.sodium.SodiumUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
-import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.GameRenderer;
@@ -223,8 +220,14 @@ public class BBSRendering
 
     public static void setup()
     {
-        iris = FabricLoader.getInstance().isModLoaded("iris");
-        sodium = FabricLoader.getInstance().isModLoaded("sodium");
+        /* ⛔ P3-26.2-AUS: weder Iris noch Sodium haben einen 26.2-bau, und ohne die
+         * abhaengigkeit gibt es die typen nicht, gegen die BBS hier uebersetzt. Beide
+         * schalter stehen darum fest auf false; die abfragen darunter bleiben unangetastet,
+         * damit das zurueckholen eine reine abhaengigkeits-frage bleibt und keine suche.
+         * Betroffen: shaderpack-erkennung, schattendurchgang, tangenten, PBR-texturen,
+         * die shader-kurven-uniforms und Sodiums punkt-kamera-culling. */
+        iris = false;
+        sodium = false;
         optifine = FabricLoader.getInstance().isModLoaded("optifabric");
 
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
@@ -235,12 +238,9 @@ public class BBSRendering
             }
         });
 
-        if (!iris)
-        {
-            return;
-        }
-
-        IrisUtils.setup();
+        /* P3-26.2-AUS: Iris hat keinen 26.2-bau. iris ist darum dauerhaft false und
+         * dieser koerper leer -- die abfrage bleibt stehen, damit die stelle beim
+         * zurueckholen sofort wiederfindbar ist. */
     }
 
     /* Framebuffers */
@@ -362,10 +362,6 @@ public class BBSRendering
              * (see setOrthoDistance); re-armed by the orbit if still on. */
             Minecraft.getInstance().smartCull = true;
 
-            if (sodium)
-            {
-                SodiumUtils.restorePointCameraCulling();
-            }
         }
 
         orthoDistance = -1F;
@@ -614,10 +610,6 @@ public class BBSRendering
              * own point-camera heuristics get the same treatment. */
             Minecraft.getInstance().smartCull = false;
 
-            if (sodium)
-            {
-                SodiumUtils.disablePointCameraCulling();
-            }
         }
     }
 
@@ -680,7 +672,7 @@ public class BBSRendering
             return false;
         }
 
-        return IrisUtils.isShaderPackEnabled();
+        return false;
     }
 
     public static boolean isIrisShadowPass()
@@ -690,7 +682,7 @@ public class BBSRendering
             return false;
         }
 
-        return IrisUtils.isShadowPass();
+        return false;
     }
 
     /**
@@ -706,7 +698,7 @@ public class BBSRendering
             return;
         }
 
-        IrisUtils.setMainBound(bound);
+        /* P3-26.2-AUS */
     }
 
     public static void trackTexture(Texture texture)
@@ -716,7 +708,7 @@ public class BBSRendering
             return;
         }
 
-        IrisUtils.trackTexture(texture);
+        /* P3-26.2-AUS */
     }
 
     public static float[] calculateTangents(float[] t, float[] v, float[] n, float[] u)
@@ -726,7 +718,7 @@ public class BBSRendering
             return t;
         }
 
-        return IrisUtils.calculateTangents(t, v, n, u);
+        return t;
     }
 
     public static float[] calculateTangents(float[] v, float[] n, float[] u)
@@ -736,18 +728,9 @@ public class BBSRendering
             return v;
         }
 
-        return IrisUtils.calculateTangents(v, n, u);
+        return v;
     }
 
-    public static void addUniforms(List<CachedUniform> list, Map<String, ShaderCurves.ShaderVariable> variableMap)
-    {
-        if (!iris)
-        {
-            return;
-        }
-
-        IrisUtils.addUniforms(list, variableMap);
-    }
 
     public static List<String> getShadersSliderOptions()
     {
@@ -756,7 +739,7 @@ public class BBSRendering
             return Collections.emptyList();
         }
 
-        return IrisUtils.getSliderProperties();
+        return Collections.emptyList();
     }
 
     public static Map<String, String> getShadersLanguageMap(String language)
@@ -766,7 +749,7 @@ public class BBSRendering
             return Collections.emptyMap();
         }
 
-        return IrisUtils.getShadersLanguageMap(language);
+        return Collections.emptyMap();
     }
 
     /* Curves */
@@ -856,11 +839,6 @@ public class BBSRendering
 
     public static Function<VertexConsumer, VertexConsumer> getColorConsumer(Color color)
     {
-        if (sodium)
-        {
-            return (b) -> SodiumUtils.createVertexBuffer(b, color);
-        }
-
         return (b) -> new RecolorVertexConsumer(b, color);
     }
 }

@@ -57,10 +57,6 @@
       "environment": "client"
     },
     {
-      "config": "bbstools.accelrender.mixins.json",
-      "environment": "client"
-    },
-    {
       "environment": "client"
     }
   ],

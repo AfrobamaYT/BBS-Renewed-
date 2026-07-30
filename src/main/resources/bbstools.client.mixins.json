@@ -78,8 +78,6 @@
     "debug.MixinGlStateManager_ShaderEvents",
     "debug.MixinMethodTracer_BaseFilmController",
     "debug.MixinMethodTracer_BOBJModelVAO",
-    "debug.MixinMethodTracer_VeilSkinnedBatch",
-    "debug.MixinMethodTracer_VeilCubicBatch",
     "debug.MixinAssetProvider_IoTrace",
     "debug.MixinCrashReport",
     "HotswapProbeMixin"

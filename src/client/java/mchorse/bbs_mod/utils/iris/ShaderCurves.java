@@ -3,7 +3,6 @@ package mchorse.bbs_mod.utils.iris;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.Pair;
-import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -308,10 +307,16 @@ public class ShaderCurves
         return source.substring(0, nextNewLine + 1) + sb + source.substring(nextNewLine + 1);
     }
 
-    public static void addUniforms(List<CachedUniform> list)
-    {
-        BBSRendering.addUniforms(list, variableMap);
-    }
+    /* ⛔ P3-26.2-AUS: hier stand addUniforms(List<CachedUniform>), die einzige stelle, an
+     * der diese klasse Iris ueberhaupt beruehrte -- ein einzeiliger durchreicher an
+     * BBSRendering, aufgerufen NUR vom Iris-mixin CustomUniformsBuilderMixin. Der mixin ist
+     * ausgeschlossen, solange Iris keinen 26.2-bau hat; der durchreicher haette nur den
+     * Iris-typ zurueck in den uebersetzungspfad geholt.
+     *
+     * DER REST DIESER KLASSE IST KEIN IRIS-ANHANG, sondern das datenmodell des
+     * shader-kurven-clips (variablen, werte, quelltext-verarbeitung). UICurveClip,
+     * CurveClientClip und BBSRendering haengen daran. Darum bleibt sie im bau -- der
+     * paket-name ist irrefuehrend, nicht der inhalt. */
 
     public static class ShaderVariable
     {

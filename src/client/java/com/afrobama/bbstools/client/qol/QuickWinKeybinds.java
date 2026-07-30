@@ -252,11 +252,9 @@ public final class QuickWinKeybinds
 
     private static void handleVeilCrowd(Minecraft client)
     {
-        boolean after = !before;
 
-        String label = after ? "§aON" : "§eOFF";
-        actionBar(client, "§b[bbstools] §fVeil-crowd renderer: " + label);
-        BBSToolsMod.LOG.info("F2 → ENABLE_VEIL_CROWD {} → {}", before, after);
+        actionBar(client, "§b[bbstools] §fVeil-crowd renderer: §cnicht verfuegbar (Veil fehlt fuer 26.2)");
+        BBSToolsMod.LOG.info("F2 → Veil-crowd angefragt, aber Veil ist in P3 stillgelegt");
     }
 
 
