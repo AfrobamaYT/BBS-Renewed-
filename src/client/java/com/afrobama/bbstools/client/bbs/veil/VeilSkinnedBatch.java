@@ -29,7 +29,7 @@ import foundry.veil.api.client.render.vertex.VertexArrayBuilder;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL30C;

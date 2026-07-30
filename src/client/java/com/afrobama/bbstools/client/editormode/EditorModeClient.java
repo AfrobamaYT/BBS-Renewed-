@@ -60,7 +60,7 @@ public final class EditorModeClient
             }
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc == null) return false;
-            return mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen;
+            return mc.gui.screen() instanceof mchorse.bbs_mod.ui.framework.UIScreen;
         }
         catch (Throwable ignored) {}
         return false;

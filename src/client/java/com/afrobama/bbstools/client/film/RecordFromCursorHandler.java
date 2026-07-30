@@ -92,7 +92,7 @@ public final class RecordFromCursorHandler
              *  same rule manually, otherwise the user can trigger an
              *  accidental recording while typing in an editor textbox
              *  or scrubbing the timeline. */
-            if (mc().screen != null)
+            if (mc().gui.screen() != null)
             {
                 return;
             }
@@ -150,7 +150,7 @@ public final class RecordFromCursorHandler
              *  so the user can move their character. Mirrors what
              *  UIFilmController.startRecording(groups) does for the
              *  "outside" group. */
-            if (mc().screen != null)
+            if (mc().gui.screen() != null)
             {
                 mc().setScreen(null);
             }

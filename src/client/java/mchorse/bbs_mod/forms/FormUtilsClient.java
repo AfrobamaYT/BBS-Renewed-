@@ -31,7 +31,7 @@ import mchorse.bbs_mod.forms.renderers.TrailFormRenderer;
 import mchorse.bbs_mod.forms.renderers.VanillaParticleFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.resources.model.ModelBakery;
 import java.util.Collections;
@@ -94,12 +94,12 @@ public class FormUtilsClient
             assignAllocator(layers, Sheets.signSheet());
             assignAllocator(layers, Sheets.hangingSignSheet());
             assignAllocator(layers, Sheets.chestSheet());
-            assignAllocator(layers, RenderType.armorEntityGlint());
-            assignAllocator(layers, RenderType.glint());
-            assignAllocator(layers, RenderType.glintTranslucent());
-            assignAllocator(layers, RenderType.entityGlint());
+            assignAllocator(layers, RenderTypes.armorEntityGlint());
+            assignAllocator(layers, RenderTypes.glint());
+            assignAllocator(layers, RenderTypes.glintTranslucent());
+            assignAllocator(layers, RenderTypes.entityGlint());
             assignAllocator(layers, RenderType.entityGlintDirect());
-            assignAllocator(layers, RenderType.waterMask());
+            assignAllocator(layers, RenderTypes.waterMask());
 
             for (RenderType layer : ModelBakery.DESTROY_TYPES)
             {

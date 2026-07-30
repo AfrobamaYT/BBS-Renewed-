@@ -38,7 +38,7 @@ public final class CameraMeshToggleHandler
         {
             Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
-            if (mc.screen != null) return;
+            if (mc.gui.screen() != null) return;
 
             boolean down = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_K);
             if (down && !wasPressed)

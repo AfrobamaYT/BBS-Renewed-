@@ -161,7 +161,7 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
 
     public static UIQuickReplayOverlayPanel getOpened()
     {
-        Screen currentScreen = Minecraft.getInstance().screen;
+        Screen currentScreen = Minecraft.getInstance().gui.screen();
 
         if (!(currentScreen instanceof UIScreen uiScreen))
         {

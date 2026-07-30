@@ -66,7 +66,7 @@ public final class CameraPreviewPerf
         if (SKIP_WHEN_DASHBOARD_CLOSED)
         {
             Minecraft mc = Minecraft.getInstance();
-            if (mc != null && !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen))
+            if (mc != null && !(mc.gui.screen() instanceof mchorse.bbs_mod.ui.framework.UIScreen))
             {
                 previewsSkippedDashboard++;
                 return true;

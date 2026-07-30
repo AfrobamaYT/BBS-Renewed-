@@ -53,7 +53,7 @@ public final class BBSToolsOverlayHelper
      *  {@code getOpened()} copies in each overlay. */
     public static <T extends UIOverlayPanel> T getOpened(Class<T> cls)
     {
-        Screen currentScreen = Minecraft.getInstance().screen;
+        Screen currentScreen = Minecraft.getInstance().gui.screen();
         if (!(currentScreen instanceof UIScreen uiScreen)) return null;
         List<T> panels = uiScreen.getMenu().getRoot().getChildren(cls);
         return panels.isEmpty() ? null : panels.get(0);

@@ -57,9 +57,9 @@ public final class MCEFWebCommand
 
                 /* Chat has closed by now, so currentScreen is the BBS dashboard underneath (if any);
                    capture it so bridge actions like "open film" can return to it. */
-                BBSWebBridge.bbsParent = client.screen;
+                BBSWebBridge.bbsParent = client.gui.screen();
 
-                LoggerFactory.getLogger("bbstools-web").info("[web] tick-open MCEFWebScreen({}) parent={}", url, client.screen);
+                LoggerFactory.getLogger("bbstools-web").info("[web] tick-open MCEFWebScreen({}) parent={}", url, client.gui.screen());
                 client.setScreen(new MCEFWebScreen(url));
             }
         });

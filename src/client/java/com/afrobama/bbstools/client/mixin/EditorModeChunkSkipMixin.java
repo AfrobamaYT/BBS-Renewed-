@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

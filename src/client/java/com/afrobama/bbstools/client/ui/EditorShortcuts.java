@@ -387,7 +387,7 @@ public final class EditorShortcuts
      *  out "screen is open but no film loaded yet". */
     private static boolean isBBSScreenOpen(Minecraft client)
     {
-        Screen current = client.screen;
+        Screen current = client.gui.screen();
         if (current == null) return false;
 
         /* Best-effort: confirm it's a BBS UIScreen by class name so
@@ -413,7 +413,7 @@ public final class EditorShortcuts
     {
         try
         {
-            Screen screen = client.screen;
+            Screen screen = client.gui.screen();
             if (screen == null) return false;
 
             /* Walk every declared field on the screen + superclasses

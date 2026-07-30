@@ -14,7 +14,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public final class CacheBarRenderer
         if (stack == null) return;
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         MultiBufferSource.BufferSource immediate = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = immediate.getBuffer(RenderType.lines());
+        VertexConsumer vc = immediate.getBuffer(RenderTypes.lines());
 
         Matrix4f m = stack.last().pose();
         PoseStack.Pose entry = stack.last();
@@ -100,7 +100,7 @@ public final class CacheBarRenderer
             }
         }
 
-        immediate.endBatch(RenderType.lines());
+        immediate.endBatch(RenderTypes.lines());
     }
 
 }

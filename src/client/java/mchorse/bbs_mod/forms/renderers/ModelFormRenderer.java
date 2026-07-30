@@ -302,7 +302,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 : BBSShaders::getModel;
 
             boolean additive = this.form.additiveColor.get();
-            this.renderModel(this.entity, mainShader, stack, model, LightTexture.pack(15, 15), OverlayTexture.NO_OVERLAY, contextColor, formColor, additive, true, null, context.getTransition(), null);
+            this.renderModel(this.entity, mainShader, stack, model, net.minecraft.util.LightCoordsUtil.pack(15, 15), OverlayTexture.NO_OVERLAY, contextColor, formColor, additive, true, null, context.getTransition(), null);
 
             /* Render body parts */
             stack.pushPose();
@@ -310,7 +310,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             stack.last().normal().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
             this.renderBodyParts(new FormRenderingContext()
-                .set(FormRenderType.ENTITY, this.entity, stack, LightTexture.pack(15, 15), OverlayTexture.NO_OVERLAY, context.getTransition())
+                .set(FormRenderType.ENTITY, this.entity, stack, net.minecraft.util.LightCoordsUtil.pack(15, 15), OverlayTexture.NO_OVERLAY, context.getTransition())
                 .inUI());
 
             stack.popPose();

@@ -59,17 +59,17 @@ public class Window
 
     public static boolean isCtrlPressed()
     {
-        return Screen.hasControlDown();
+        return Minecraft.getInstance().hasControlDown();
     }
 
     public static boolean isShiftPressed()
     {
-        return Screen.hasShiftDown();
+        return Minecraft.getInstance().hasShiftDown();
     }
 
     public static boolean isAltPressed()
     {
-        return Screen.hasAltDown();
+        return Minecraft.getInstance().hasAltDown();
     }
 
     public static boolean isKeyPressed(int key)

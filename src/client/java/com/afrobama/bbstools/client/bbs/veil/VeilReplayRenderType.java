@@ -12,7 +12,7 @@ package com.afrobama.bbstools.client.bbs.veil;
 import foundry.veil.api.client.render.rendertype.VeilRenderType;
 
 import mchorse.bbs_mod.resources.Link;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

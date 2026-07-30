@@ -228,7 +228,7 @@ public final class BackgroundBaker
         catch (Throwable t) { camDur = 0; }
 
         int liveTick = c.getTick();
-        int fullLight = LightTexture.pack(15, 15);
+        int fullLight = net.minecraft.util.LightCoordsUtil.pack(15, 15);
 
         /* IDLE FAST-OUT. Once the previous full scan confirmed EVERY replay is
          * baked and the scene is stable (same replay count, not mid-edit), the

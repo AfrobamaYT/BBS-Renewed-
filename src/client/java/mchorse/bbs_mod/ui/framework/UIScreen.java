@@ -36,7 +36,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
     public static UIBaseMenu getCurrentMenu()
     {
-        Screen currentScreen = Minecraft.getInstance().screen;
+        Screen currentScreen = Minecraft.getInstance().gui.screen();
 
         if (currentScreen instanceof UIScreen uiScreen)
         {

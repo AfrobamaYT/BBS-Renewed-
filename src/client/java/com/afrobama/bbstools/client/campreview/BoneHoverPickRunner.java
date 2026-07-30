@@ -413,8 +413,8 @@ public final class BoneHoverPickRunner
         try
         {
             Minecraft mc = Minecraft.getInstance();
-            if (mc == null || !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
-            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.screen;
+            if (mc == null || !(mc.gui.screen() instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
+            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.gui.screen();
             mchorse.bbs_mod.ui.framework.UIBaseMenu menu = screen.getMenu();
             if (menu == null) return null;
             mchorse.bbs_mod.ui.framework.UIBaseMenu.UIRootElement root = menu.getRoot();

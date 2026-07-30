@@ -315,7 +315,7 @@ public class BBSModClient implements ClientModInitializer
 
         LocalPlayer player = Minecraft.getInstance().player;
 
-        if (player == null || Minecraft.getInstance().screen != null)
+        if (player == null || Minecraft.getInstance().gui.screen() != null)
         {
             return;
         }
@@ -417,7 +417,7 @@ public class BBSModClient implements ClientModInitializer
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.screen instanceof UIScreen)
+            if (mc.gui.screen() instanceof UIScreen)
             {
                 mc.resizeDisplay();
             }
@@ -609,7 +609,7 @@ public class BBSModClient implements ClientModInitializer
         {
             Minecraft mc = Minecraft.getInstance();
 
-            if (mc.screen instanceof UIScreen screen)
+            if (mc.gui.screen() instanceof UIScreen screen)
             {
                 screen.update();
             }

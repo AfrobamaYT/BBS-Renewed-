@@ -456,11 +456,11 @@ public class FormTranslucentQueue
      */
     public static class RenderLayerCommand extends DrawCommand
     {
-        private final net.minecraft.client.renderer.RenderType layer;
+        private final net.minecraft.client.renderer.rendertype.RenderType layer;
         private final VertexBuffer buffer;
         private final Matrix4f modelView;
 
-        public RenderLayerCommand(net.minecraft.client.renderer.RenderType layer, VertexBuffer buffer, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
+        public RenderLayerCommand(net.minecraft.client.renderer.rendertype.RenderType layer, VertexBuffer buffer, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
         {
             super(cameraSpaceOrigin, true, depthWrite);
 

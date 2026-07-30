@@ -106,7 +106,7 @@ public final class RecordFromKeyframesHandler
              *  same rule manually, otherwise the user can trigger an
              *  accidental recording while typing in an editor textbox
              *  or scrubbing the timeline. */
-            if (mc.screen != null)
+            if (mc.gui.screen() != null)
             {
                 return;
             }
@@ -170,7 +170,7 @@ public final class RecordFromKeyframesHandler
 
             /* Close editor screen so we're in-world for the recording —
              *  same behaviour as the in-editor "outside" group does. */
-            if (mc.screen != null)
+            if (mc.gui.screen() != null)
             {
                 mc.setScreen(null);
             }

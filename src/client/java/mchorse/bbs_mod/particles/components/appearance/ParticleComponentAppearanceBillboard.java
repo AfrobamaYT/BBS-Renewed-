@@ -641,7 +641,7 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
 
         if (emitter == null || emitter.lit || emitter.world == null)
         {
-            this.light = LightTexture.pack(15, 15);
+            this.light = net.minecraft.util.LightCoordsUtil.pack(15, 15);
         }
         else
         {
