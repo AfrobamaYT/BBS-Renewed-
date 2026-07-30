@@ -1,9 +1,16 @@
-#version 150
+#version 330
 
 uniform sampler2D Sampler0;
 
-uniform vec2 Blur;
-uniform vec2 TextureSize;
+/* ⛔ 26.2: TextureSize war ein Uniform -- GLSL kann die Groesse selbst erfragen, also
+ * braucht es dafuer keinen Kanal. Das ist der Grund, warum dieser Shader ohne eigenen
+ * Uniform-Block auskommt, waehrend die drei Geschwister (multilink, picker_preview,
+ * replay_outline) es nicht tun: ihre Werte lassen sich nicht aus dem Bild ableiten.
+ *
+ * Blur reist in der Vertexfarbe mit: R = Staerke x, G = Staerke y, jeweils Zehntel
+ * (Wert/10 ergibt Pixel). Gepackt wird das an der Aufrufstelle in UISubtitleRenderer. */
+#define TextureSize vec2(textureSize(Sampler0, 0))
+#define Blur (vertexColor.rg * 25.5)
 
 in vec2 texCoord0;
 in vec4 vertexColor;

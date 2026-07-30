@@ -80,6 +80,18 @@ public class ModelVAORenderer
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode)
     {
+        render(pipeline, modelVAO, modelView, normalMat, r, g, b, a, light, overlay, passMode, 0);
+    }
+
+    /**
+     * Wie oben, aber mit Kennung fuer den Auswahl-Durchgang.
+     *
+     * <p>Die Picker-Shader schreiben statt einer Farbe eine 24-Bit-Zahl, aus der der Klick
+     * das getroffene Objekt zurueckliest. Frueher stand sie im Uniform "Target"; jetzt ist
+     * sie Modus.y im gemeinsamen Block.
+     */
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode, int kennung)
+    {
         if (modelVAO.eckenZahl() <= 0)
         {
             return;
@@ -95,7 +107,7 @@ public class ModelVAORenderer
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, new Vector4f(r, g, b, a));
 
-        schreibeBlock(normalMat, light, overlay, passMode);
+        schreibeBlock(normalMat, light, overlay, passMode, kennung);
 
         /* Leeres Optional und leeres OptionalDouble heissen: Farb- und Tiefenpuffer NICHT
          * loeschen. Das Modell wird in das bestehende Weltbild gezeichnet — mit einem
@@ -126,7 +138,7 @@ public class ModelVAORenderer
      * sonst ueberschreibt das zweite Modell die Werte des ersten, bevor die Karte sie
      * gelesen hat.
      */
-    private static void schreibeBlock(Matrix3f normalMat, int light, int overlay, int passMode)
+    private static void schreibeBlock(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
     {
         if (block == null)
         {
@@ -150,10 +162,14 @@ public class ModelVAORenderer
             roh.putInt(light & 0xFFFF).putInt(light >> 16 & 0xFFFF);
             roh.putInt(overlay & 0xFFFF).putInt(overlay >> 16 & 0xFFFF);
 
-            /* Die Durchgangsart steuert die Zwei-Pass-Durchsichtigkeit im Fragmentshader:
-             * 0 = ein Durchgang, 1 = nur undurchsichtige Texel (schreiben Tiefe),
-             * 2 = nur halbdurchsichtige (sortiert, ohne Tiefenschreiben). */
-            roh.putInt(passMode).putInt(0).putInt(0).putInt(0);
+            /* Modus.x: die Durchgangsart der Zwei-Pass-Durchsichtigkeit -- 0 = ein
+             * Durchgang, 1 = nur undurchsichtige Texel (schreiben Tiefe), 2 = nur
+             * halbdurchsichtige (sortiert, ohne Tiefenschreiben).
+             *
+             * Modus.y: die Kennung des Auswahl-Durchgangs (frueher das Uniform "Target").
+             * Beim normalen Zeichnen ist sie 0 und wird nicht gelesen; die Picker-Shader
+             * bauen daraus die Zahl, die der Klick zurueckliest. */
+            roh.putInt(passMode).putInt(kennung).putInt(0).putInt(0);
 
             /* ⚠️ IViewRotMat steht bewusst NICHT im Block. Der alte Shader deklarierte es
              * ({@code uniform mat3 IViewRotMat}), benutzte es in main() aber nirgends —
