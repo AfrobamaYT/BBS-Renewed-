@@ -130,6 +130,30 @@ public final class ModelVAOPipeline
     public static final RenderPipeline UNDURCHSICHTIG = bauen("model", false, true, true);
 
     /**
+     * Ob eine Pipeline zum BBS-Modellweg gehoert — und damit die Durchgangsart
+     * ({@code Modus.x} im Uniform-Block) ueberhaupt auswertet.
+     *
+     * <p>Bis 1.21.1 fragte der Code {@code shader.getUniform("PassMode") != null}: nur
+     * BBS' eigener Modell-Shader hatte dieses Uniform, Vanilla- und Iris-Programme nicht.
+     * Genau diese Unterscheidung braucht die Durchsichtigkeits-Warteschlange weiterhin —
+     * sie darf nur dort in zwei Durchgaenge aufteilen, wo der Shader das auch umsetzt.
+     *
+     * <p>In 26.2 gibt es keine Einzel-Uniforms mehr, nach denen man fragen koennte. Die
+     * Frage lautet jetzt: ist es eine unserer Modell-Pipelines? Wer hier eine neue
+     * Konstante ergaenzt, muss sie mit aufnehmen — sonst faellt sie still aus der
+     * Zwei-Pass-Durchsichtigkeit heraus und halbdurchsichtige Modelle verlieren ihre
+     * Sortierung.
+     */
+    public static boolean istModellPipeline(RenderPipeline pipeline)
+    {
+        return pipeline == DURCHSICHTIG
+            || pipeline == DURCHSICHTIG_BEIDSEITIG
+            || pipeline == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN
+            || pipeline == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG
+            || pipeline == UNDURCHSICHTIG;
+    }
+
+    /**
      * Waehlt die Modell-Pipeline nach den beiden Schaltern, die der alte Code pro
      * Zeichenbefehl umlegte.
      *

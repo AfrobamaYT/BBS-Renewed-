@@ -15,7 +15,8 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -26,7 +27,7 @@ import java.util.function.Function;
 
 public class CubicVAORenderer extends CubicCubeRenderer
 {
-    private ShaderInstance program;
+    private RenderPipeline pipeline;
     private ModelInstance model;
     private Function<String, Link> textureResolver;
 
@@ -37,11 +38,11 @@ public class CubicVAORenderer extends CubicCubeRenderer
      */
     private Set<ModelGroup> weldedGroups;
 
-    public CubicVAORenderer(ShaderInstance program, ModelInstance model, int light, int overlay, StencilMap stencilMap, ShapeKeys shapeKeys, Function<String, Link> textureResolver)
+    public CubicVAORenderer(RenderPipeline pipeline, ModelInstance model, int light, int overlay, StencilMap stencilMap, ShapeKeys shapeKeys, Function<String, Link> textureResolver)
     {
         super(light, overlay, stencilMap, shapeKeys);
 
-        this.program = program;
+        this.pipeline = pipeline;
         this.model = model;
         this.textureResolver = textureResolver;
     }
@@ -113,30 +114,31 @@ public class CubicVAORenderer extends CubicCubeRenderer
                 texture = BBSModClient.getTextures().getLastBound();
             }
 
-            if (FormTranslucentQueue.needsSplit(this.program, this.stencilMap, texture, a))
+            if (FormTranslucentQueue.needsSplit(this.pipeline, this.stencilMap, texture, a))
             {
                 Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
                 Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                FormTranslucentQueue.setPassMode(this.program, FormTranslucentQueue.PASS_OPAQUE);
-                ModelVAORenderer.render(this.program, entry.getValue(), modelView, normalMat, r, g, b, a, light, this.overlay);
-                FormTranslucentQueue.setPassMode(this.program, FormTranslucentQueue.PASS_SINGLE);
+                /* Erster Durchgang: nur die undurchsichtigen Texel, die schreiben Tiefe.
+                 * Die Durchgangsart reist als Parameter mit, statt vorher gesetzt und
+                 * danach zurueckgestellt zu werden. */
+                ModelVAORenderer.render(this.pipeline, entry.getValue(), modelView, normalMat, r, g, b, a, light, this.overlay, FormTranslucentQueue.PASS_OPAQUE);
 
                 FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
             }
-            else if (FormTranslucentQueue.needsWholeDefer(this.program, this.stencilMap, a))
+            else if (FormTranslucentQueue.needsWholeDefer(this.pipeline, this.stencilMap, a))
             {
                 /* A uniform colour fade defers the whole draw into the sorted end-of-frame pass
                  * with depth kept on, so the faded model still self-occludes. */
                 Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
                 Matrix3f normalMat = new Matrix3f(stack.last().normal());
-                ShaderInstance program = this.program;
+                RenderPipeline pipeline = this.pipeline;
 
-                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), () -> program, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
+                FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), () -> pipeline, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
             }
             else
             {
-                ModelVAORenderer.render(this.program, entry.getValue(), stack, r, g, b, a, light, this.overlay);
+                ModelVAORenderer.render(this.pipeline, entry.getValue(), stack, r, g, b, a, light, this.overlay);
             }
         }
 

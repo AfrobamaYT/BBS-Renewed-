@@ -7,7 +7,9 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import mchorse.bbs_mod.cubic.render.vao.IModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -114,10 +116,10 @@ public class FormTranslucentQueue
      * queue scope (UI previews, first-person arm), during picking (the stencil needs every pixel),
      * and on shaders without the PassMode uniform (vanilla programs — the Iris path).
      */
-    public static boolean needsSplit(ShaderInstance shader, StencilMap stencilMap, Texture texture, float alpha)
+    public static boolean needsSplit(RenderPipeline pipeline, StencilMap stencilMap, Texture texture, float alpha)
     {
         return alpha >= 1F && texture != null && texture.hasTranslucency()
-            && isActive() && stencilMap == null && shader.getUniform("PassMode") != null;
+            && isActive() && stencilMap == null && ModelVAOPipeline.istModellPipeline(pipeline);
     }
 
     /**
@@ -129,20 +131,25 @@ public class FormTranslucentQueue
      * Iris program at the end of the frame lands after a deferred pack's shading composite
      * (Photon never shades it — the model vanishes).
      */
-    public static boolean needsWholeDefer(ShaderInstance shader, StencilMap stencilMap, float alpha)
+    public static boolean needsWholeDefer(RenderPipeline pipeline, StencilMap stencilMap, float alpha)
     {
-        return alpha < 1F && isActive() && stencilMap == null && shader.getUniform("PassMode") != null;
+        return alpha < 1F && isActive() && stencilMap == null && ModelVAOPipeline.istModellPipeline(pipeline);
     }
 
-    public static void setPassMode(ShaderInstance shader, int mode)
-    {
-        Uniform uniform = shader.getUniform("PassMode");
-
-        if (uniform != null)
-        {
-            uniform.set(mode);
-        }
-    }
+    /**
+     * ⛔ 26.2: setPassMode gibt es nicht mehr — und das ist Absicht.
+     *
+     * <p>Frueher wurde die Durchgangsart als Uniform am Shader-Objekt gesetzt und galt
+     * dann fuer alles Folgende. In 26.2 steht sie im Uniform-Block, den
+     * {@code ModelVAORenderer} je Zeichenaufruf fuellt, also reist sie als PARAMETER mit:
+     * {@code ModelVAORenderer.render(..., PASS_OPAQUE)}.
+     *
+     * <p>Der Unterschied ist nicht kosmetisch. Ein gesetzter Zustand galt bis zum
+     * naechsten Setzen — wer ihn zuruueckzusetzen vergass, faerbte fremde Zeichnungen ein.
+     * Ein Parameter kann das nicht.
+     */
+    private FormTranslucentQueue()
+    {}
 
     public static void add(DrawCommand command)
     {
@@ -306,7 +313,7 @@ public class FormTranslucentQueue
     public static class ModelVAOCommand extends DrawCommand
     {
         private final IModelVAO vao;
-        private final Supplier<ShaderInstance> shader;
+        private final Supplier<RenderPipeline> pipeline;
         private final int passMode;
         private final Texture texture;
         private final Matrix4f modelView;
@@ -321,12 +328,12 @@ public class FormTranslucentQueue
             this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, texture, modelView, normalMat, r, g, b, a, light, overlay, cull);
         }
 
-        public ModelVAOCommand(IModelVAO vao, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
+        public ModelVAOCommand(IModelVAO vao, Supplier<RenderPipeline> pipeline, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
         {
             super(modelView.getTranslation(new Vector3f()), cull, depthWrite);
 
             this.vao = vao;
-            this.shader = shader;
+            this.pipeline = pipeline;
             this.passMode = passMode;
             this.texture = texture;
             this.modelView = modelView;
@@ -342,16 +349,16 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderInstance shader = this.shader.get();
-
             if (this.texture != null)
             {
                 BBSModClient.getTextures().bindTexture(this.texture);
             }
 
-            setPassMode(shader, this.passMode);
-            ModelVAORenderer.render(shader, this.vao, this.modelView, this.normalMat, this.r, this.g, this.b, this.a, this.light, this.overlay);
-            setPassMode(shader, PASS_SINGLE);
+            /* 26.2: die Durchgangsart reist als Parameter mit, statt vorher am Shader
+             * gesetzt und danach zurueckgestellt zu werden. Das Zuruecksetzen entfaellt
+             * damit ersatzlos — ein Parameter kann keine fremde Zeichnung einfaerben. */
+            ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
+                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode);
         }
     }
 
@@ -415,9 +422,11 @@ public class FormTranslucentQueue
                 this.vao.updateMesh(null, this.armatureSnapshot);
             }
 
-            setPassMode(shader, this.passMode);
+            /* ⚠️ NICHT PORTIERT: BOBJModelVAO haengt noch an ShaderInstance und eigenen
+             * VAOs. Sobald es wie ModelVAO auf GpuBuffer und Pipeline steht, wandert
+             * this.passMode hier als letzter Parameter in den Zeichenaufruf — genau wie
+             * bei ModelVAOCommand darueber. */
             this.vao.render(shader, this.modelView, this.normalMat, this.r, this.g, this.b, this.a, null, this.light, this.overlay);
-            setPassMode(shader, PASS_SINGLE);
         }
     }
 
@@ -557,13 +566,12 @@ public class FormTranslucentQueue
                 }
             }
 
-            setPassMode(program, this.passMode);
-
+            /* ⚠️ NICHT PORTIERT: dieser Befehl zeichnet ueber VertexBuffer, den es in
+             * 26.2 nicht mehr gibt. this.passMode wandert in den Zeichenaufruf, sobald
+             * der Weg auf einen RenderPass steht. */
             this.buffer.bind();
             this.buffer.drawWithShader(this.modelView, RenderSystem.getProjectionMatrix(), program);
             VertexBuffer.unbind();
-
-            setPassMode(program, PASS_SINGLE);
 
             if (this.postDraw != null)
             {
