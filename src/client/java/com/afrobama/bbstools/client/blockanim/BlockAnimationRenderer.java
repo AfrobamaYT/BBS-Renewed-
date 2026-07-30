@@ -12,7 +12,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public final class BlockAnimationRenderer
         BlockRenderDispatcher brm = mc.getBlockRenderer();
         Vec3 camPos = ctx.camera().getPosition();
         PoseStack matrices = ctx.matrixStack();
-        MultiBufferSource.BufferSource consumers = mc.renderBuffers().bufferSource();
+        SubmitNodeCollector consumers = mc.renderBuffers().bufferSource();
 
         for (var ab : blocks)
         {

@@ -13,7 +13,7 @@
 // AFTER_TRANSLUCENT → push matrix → translate to interpolated world
 // pos → vanilla BlockRenderManager.getModelRenderer().render() with
 // the entity vertex consumer + immediate flush. This keeps Iris/
-// Sodium happy (we use the standard MultiBufferSource pipeline) and
+// Sodium happy (we use the standard SubmitNodeCollector pipeline) and
 // inherits resource-pack textures, biome tints, and block models for
 // free. Block-rendering throws on some virtual positions
 // (e.g. cross-shaped plants probing neighbor states) so each block
@@ -39,7 +39,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -333,7 +333,7 @@ public final class BlockSpawnAnimEffect
 
         BlockRenderDispatcher dispatcher = mc.getBlockRenderer();
         ModelBlockRenderer modelRenderer = dispatcher.getModelRenderer();
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        SubmitNodeCollector buffers = mc.renderBuffers().bufferSource();
         VertexConsumer consumer = buffers.getBuffer(RenderType.translucent());
         RandomSource rng = RandomSource.create();
 
@@ -426,7 +426,7 @@ public final class BlockSpawnAnimEffect
         matrices.popPose();
     }
 
-    private static void flush(MultiBufferSource.BufferSource buffers)
+    private static void flush(SubmitNodeCollector buffers)
     {
         /* 26.2: disableCull/enableCull entfallen ersatzlos. Rueckseiten-Culling ist kein
          * globaler Schalter mehr, sondern gehoert zur Pipeline des RenderType — hier also zu

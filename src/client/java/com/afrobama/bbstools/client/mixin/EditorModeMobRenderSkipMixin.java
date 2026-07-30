@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.editormode.EditorMode;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
@@ -23,14 +23,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class EditorModeMobRenderSkipMixin
 {
     @Inject(
-        method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
+        method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V",
         at = @At("HEAD"),
         cancellable = true
     )
     private void bbstools$skipMobRenderInEditorMode(Entity entity, double x, double y, double z,
                                                      float yaw, float tickDelta,
                                                      PoseStack matrices,
-                                                     MultiBufferSource vertexConsumers,
+                                                     SubmitNodeCollector vertexConsumers,
                                                      int light, CallbackInfo ci)
     {
         if (!(entity instanceof Mob mob)) return;

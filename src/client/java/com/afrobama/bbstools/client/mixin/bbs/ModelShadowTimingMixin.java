@@ -12,7 +12,7 @@ import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.renderer.ModelBlockEntityRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -36,11 +36,11 @@ public abstract class ModelShadowTimingMixin
     private static MethodHandle bbstools$exitGriff;
 
     @Inject(
-        method = "renderShadow(Lnet/minecraft/client/renderer/MultiBufferSource;Lcom/mojang/blaze3d/vertex/PoseStack;FDDDFFFFF)V",
+        method = "renderShadow(Lnet/minecraft/client/renderer/SubmitNodeCollector;Lcom/mojang/blaze3d/vertex/PoseStack;FDDDFFFFF)V",
         at = @At("HEAD"),
         cancellable = true,
         remap = false)
-    private static void bbstools$shadowEnter(MultiBufferSource provider, PoseStack matrices,
+    private static void bbstools$shadowEnter(SubmitNodeCollector provider, PoseStack matrices,
         float tickDelta, double x, double y, double z, float tx, float ty, float tz,
         float radius, float opacity, CallbackInfo ci)
     {
@@ -54,10 +54,10 @@ public abstract class ModelShadowTimingMixin
     }
 
     @Inject(
-        method = "renderShadow(Lnet/minecraft/client/renderer/MultiBufferSource;Lcom/mojang/blaze3d/vertex/PoseStack;FDDDFFFFF)V",
+        method = "renderShadow(Lnet/minecraft/client/renderer/SubmitNodeCollector;Lcom/mojang/blaze3d/vertex/PoseStack;FDDDFFFFF)V",
         at = @At("RETURN"),
         remap = false)
-    private static void bbstools$shadowExit(MultiBufferSource provider, PoseStack matrices,
+    private static void bbstools$shadowExit(SubmitNodeCollector provider, PoseStack matrices,
         float tickDelta, double x, double y, double z, float tx, float ty, float tz,
         float radius, float opacity, CallbackInfo ci)
     {

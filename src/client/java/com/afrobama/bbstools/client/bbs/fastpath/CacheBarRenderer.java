@@ -13,7 +13,7 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 
@@ -69,7 +69,7 @@ public final class CacheBarRenderer
     {
         if (stack == null) return;
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        MultiBufferSource.BufferSource immediate = mc.renderBuffers().bufferSource();
+        SubmitNodeCollector immediate = mc.renderBuffers().bufferSource();
         VertexConsumer vc = immediate.getBuffer(RenderTypes.lines());
 
         Matrix4f m = stack.last().pose();
