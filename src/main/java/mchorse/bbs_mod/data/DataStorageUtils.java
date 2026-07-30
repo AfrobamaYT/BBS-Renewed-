@@ -223,31 +223,31 @@ public class DataStorageUtils
     {
         if (element instanceof ByteTag nbtByte)
         {
-            return new ByteType(nbtByte.getAsByte());
+            return new ByteType(nbtByte.value());
         }
         else if (element instanceof DoubleTag nbtDouble)
         {
-            return new DoubleType(nbtDouble.getAsDouble());
+            return new DoubleType(nbtDouble.value());
         }
         else if (element instanceof FloatTag nbtFloat)
         {
-            return new FloatType(nbtFloat.getAsFloat());
+            return new FloatType(nbtFloat.value());
         }
         else if (element instanceof IntTag nbtInt)
         {
-            return new IntType(nbtInt.getAsInt());
+            return new IntType(nbtInt.value());
         }
         else if (element instanceof LongTag nbtLong)
         {
-            return new LongType(nbtLong.getAsLong());
+            return new LongType(nbtLong.value());
         }
         else if (element instanceof ShortTag nbtShort)
         {
-            return new ShortType(nbtShort.getAsShort());
+            return new ShortType(nbtShort.value());
         }
         else if (element instanceof StringTag nbtString)
         {
-            return new StringType(nbtString.getAsString());
+            return new StringType(nbtString.value());
         }
         else if (element instanceof ByteArrayTag nbtByteArray)
         {
