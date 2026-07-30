@@ -6,29 +6,47 @@ import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import net.minecraft.client.renderer.ShaderInstance;
-import org.joml.Matrix3f;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryUtil;
 
-public class BOBJModelVAO
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+public class BOBJModelVAO implements IModelVAO
 {
     public BOBJLoader.CompiledData data;
     public BOBJArmature armature;
 
-    private int vao;
     private int count;
 
-    /* GL buffers */
-    public int vertexBuffer;
-    public int normalBuffer;
-    public int lightBuffer;
-    public int texCoordBuffer;
-    public int tangentBuffer;
-    public int midTextureBuffer;
+    /**
+     * 26.2: aus sechs GL-Puffernummern werden drei GpuBuffer.
+     *
+     * <p>Position und Normale werden pro Bild neu beschrieben (das Skinning rechnet auf der
+     * CPU), die Texturkoordinaten liegen fest. Ihre GROESSE aendert sich nie — darum
+     * genuegt {@code writeToBuffer}, das den Inhalt ersetzt, ohne neu anzulegen.
+     *
+     * <p>⚠️ DREI PUFFER FEHLEN BEWUSST, und zwar dieselben wie bei {@link ModelVAO} plus
+     * einer:
+     * <ul>
+     *   <li>Tangenten und Mittel-UV wurden nur fuer Iris-Shader gefuellt; die Anbindung ist
+     *       im 26.2-Port ausgeschlossen.</li>
+     *   <li>Der Licht-Puffer trug im Stencil-Durchgang ein Licht JE ECKE (der Knochen mit
+     *       dem groessten Gewicht bestimmte es). Das ist kein konstanter Wert und passt
+     *       darum nicht in den Uniform-Block — es braucht eine vierte Vertex-Bindung und
+     *       eine eigene Pipeline-Variante. Solange die fehlt, faehrt auch der
+     *       Stencil-Durchgang mit dem konstanten Licht aus dem Block. Sichtbar wird das
+     *       nur im Picking, und nur bei Modellen mit knochenabhaengiger Beleuchtung.</li>
+     * </ul>
+     */
+    private GpuBuffer position;
+    private GpuBuffer normale;
+    private GpuBuffer texturUV;
 
     private float[] tmpVertices;
     private float[] tmpNormals;
@@ -57,46 +75,59 @@ public class BOBJModelVAO
      */
     private void initBuffers()
     {
-        this.vao = GL30.glGenVertexArrays();
-
-        GL30.glBindVertexArray(this.vao);
-
-        this.vertexBuffer = GL30.glGenBuffers();
-        this.normalBuffer = GL30.glGenBuffers();
-        this.lightBuffer = GL30.glGenBuffers();
-        this.texCoordBuffer = GL30.glGenBuffers();
-        this.tangentBuffer = GL30.glGenBuffers();
-        this.midTextureBuffer = GL30.glGenBuffers();
-
         this.count = this.data.normData.length / 3;
         this.tmpVertices = new float[this.data.posData.length];
         this.tmpNormals = new float[this.data.normData.length];
         this.tmpLight = new int[this.data.posData.length];
         this.tmpTangents = new float[this.count * 4];
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.vertexBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.posData, GL30.GL_DYNAMIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.POSITION, 3, GL30.GL_FLOAT, false, 0, 0);
+        this.position = puffer("bobj-position", this.data.posData);
+        this.normale = puffer("bobj-normale", this.data.normData);
+        this.texturUV = puffer("bobj-uv", this.data.texData);
+    }
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.normalBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.normData, GL30.GL_DYNAMIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.NORMAL, 3, GL30.GL_FLOAT, false, 0, 0);
+    /**
+     * Legt einen Vertexpuffer auf der Grafikkarte an.
+     *
+     * <p>Der Zwischenspeicher ist nativ (Mojangs Schnittstelle verlangt das) und wird
+     * gleich wieder freigegeben — {@code createBuffer} liest ihn beim Aufruf aus.
+     */
+    private static GpuBuffer puffer(String name, float[] werte)
+    {
+        ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Float.BYTES).order(ByteOrder.nativeOrder());
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.lightBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.tmpLight, GL30.GL_DYNAMIC_DRAW);
-        GL30.glVertexAttribIPointer(Attributes.LIGHTMAP_UV, 2, GL30.GL_INT, 0, 0);
+        try
+        {
+            roh.asFloatBuffer().put(werte);
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.texCoordBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.texData, GL30.GL_STATIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.TEXTURE_UV, 2, GL30.GL_FLOAT, false, 0, 0);
+            return RenderSystem.getDevice().createBuffer(() -> name, GpuBuffer.USAGE_VERTEX, roh);
+        }
+        finally
+        {
+            MemoryUtil.memFree(roh);
+        }
+    }
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.tangentBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.tmpTangents, GL30.GL_STATIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.TANGENTS, 4, GL30.GL_FLOAT, false, 0, 0);
+    /**
+     * Schreibt den Inhalt eines vorhandenen Puffers neu — fuer das Ergebnis des Skinnings.
+     *
+     * <p>Die Groesse bleibt gleich, es wird also nichts neu angelegt. Genau darum ist der
+     * Weg billig genug fuer jedes Bild.
+     */
+    private static void schreiben(GpuBuffer ziel, float[] werte)
+    {
+        ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Float.BYTES).order(ByteOrder.nativeOrder());
 
-        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, this.texCoordBuffer);
-        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, this.data.texData, GL30.GL_STATIC_DRAW);
-        GL30.glVertexAttribPointer(Attributes.MID_TEXTURE_UV, 2, GL30.GL_FLOAT, false, 0, 0);
+        try
+        {
+            roh.asFloatBuffer().put(werte);
+
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(ziel.slice(), roh);
+        }
+        finally
+        {
+            MemoryUtil.memFree(roh);
+        }
     }
 
     /**
@@ -104,14 +135,23 @@ public class BOBJModelVAO
      */
     public void delete()
     {
-        GL30.glDeleteVertexArrays(this.vao);
+        if (this.position != null)
+        {
+            this.position.close();
+            this.position = null;
+        }
 
-        GL15.glDeleteBuffers(this.vertexBuffer);
-        GL15.glDeleteBuffers(this.normalBuffer);
-        GL15.glDeleteBuffers(this.lightBuffer);
-        GL15.glDeleteBuffers(this.texCoordBuffer);
-        GL15.glDeleteBuffers(this.tangentBuffer);
-        GL15.glDeleteBuffers(this.midTextureBuffer);
+        if (this.normale != null)
+        {
+            this.normale.close();
+            this.normale = null;
+        }
+
+        if (this.texturUV != null)
+        {
+            this.texturUV.close();
+            this.texturUV = null;
+        }
     }
 
     public int getUploadCount()
@@ -219,73 +259,50 @@ public class BOBJModelVAO
 
         this.uploadCount += 1;
 
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vertexBuffer);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newVertices, GL15.GL_DYNAMIC_DRAW);
+        /* 26.2: Inhalt ersetzen statt Puffer neu anzulegen. Die Groesse aendert sich beim
+         * Skinning nie -- es bewegen sich nur die Ecken. */
+        schreiben(this.position, newVertices);
+        schreiben(this.normale, newNormals);
 
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.normalBuffer);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newNormals, GL15.GL_DYNAMIC_DRAW);
-
-        if (BBSRendering.isIrisShadersEnabled())
-        {
-            BBSRendering.calculateTangents(this.tmpTangents, newVertices, newNormals, this.data.texData);
-
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.tangentBuffer);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, this.tmpTangents, GL15.GL_DYNAMIC_DRAW);
-        }
-
-        if (stencilMap != null)
-        {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.lightBuffer);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, this.tmpLight, GL15.GL_DYNAMIC_DRAW);
-        }
+        /* ⚠️ Tangenten (Iris) und das knochenabhaengige Licht (Stencil) werden nicht mehr
+         * hochgeladen: fuer beide fehlt die Vertex-Bindung, siehe Feldkommentar oben. Die
+         * Rechnung dafuer entfaellt gleich mit -- sie waere Arbeit fuer einen Puffer, den
+         * niemand liest. Wer die Bindungen ergaenzt, holt beide Bloecke aus der
+         * Versionsgeschichte dieses Commits zurueck. */
     }
 
     protected void processData(float[] newVertices, float[] newNormals, Matrix4f[] matrices)
     {}
 
-    public void render(ShaderInstance shader, PoseStack stack, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
+    /**
+     * Legt die eigenen Vertexpuffer an die Bindungen der Pipeline und zeichnet.
+     *
+     * <p>Was frueher hier stand — VAO binden, Attribute ein- und ausschalten, konstante
+     * Attribute fuer Farbe, Licht und Overlay setzen, {@code shader.apply()} — gibt es in
+     * 26.2 nicht mehr. Die Bindungen stehen in der Pipeline, die konstanten Werte im
+     * Uniform-Block, und beides setzt {@link ModelVAORenderer} vor dem Aufruf.
+     */
+    @Override
+    public void zeichnen(RenderPass pass)
     {
-        this.render(shader, ModelVAORenderer.captureModelView(stack), stack.last().normal(), r, g, b, a, stencilMap, light, overlay);
+        if (this.position == null)
+        {
+            return;
+        }
+
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, this.position.slice());
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, this.normale.slice());
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
+
+        /* Reihenfolge: (Eckenzahl, Instanzen, erste Ecke, erste Instanz) — belegt an
+         * Vanillas Lightmap, PostPass und SkyRenderer. Die Verwechslung mit
+         * (erste Ecke, Anzahl) zeichnet lautlos nichts. */
+        pass.draw(this.count, 1, 0, 0);
     }
 
-    public void render(ShaderInstance shader, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
+    @Override
+    public int eckenZahl()
     {
-        boolean hasShaders = BBSRendering.isIrisShadersEnabled();
-
-        GL30.glVertexAttrib4f(Attributes.COLOR, r, g, b, a);
-        GL30.glVertexAttribI2i(Attributes.OVERLAY_UV, overlay & '\uffff', overlay >> 16 & '\uffff');
-        GL30.glVertexAttribI2i(Attributes.LIGHTMAP_UV, light & '\uffff', light >> 16 & '\uffff');
-
-        int currentVAO = GL30.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int currentElementArrayBuffer = GL30.glGetInteger(GL30.GL_ELEMENT_ARRAY_BUFFER_BINDING);
-
-        ModelVAORenderer.setupUniforms(shader, modelView, normalMat);
-
-        shader.apply();
-
-        GL30.glBindVertexArray(this.vao);
-
-        GL30.glEnableVertexAttribArray(Attributes.POSITION);
-        GL30.glEnableVertexAttribArray(Attributes.TEXTURE_UV);
-        GL30.glEnableVertexAttribArray(Attributes.NORMAL);
-
-        if (stencilMap != null) GL30.glEnableVertexAttribArray(Attributes.LIGHTMAP_UV);
-        if (hasShaders) GL30.glEnableVertexAttribArray(Attributes.TANGENTS);
-        if (hasShaders) GL30.glEnableVertexAttribArray(Attributes.MID_TEXTURE_UV);
-
-        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, this.count);
-
-        GL30.glDisableVertexAttribArray(Attributes.POSITION);
-        GL30.glDisableVertexAttribArray(Attributes.TEXTURE_UV);
-        GL30.glDisableVertexAttribArray(Attributes.NORMAL);
-
-        if (stencilMap != null) GL30.glDisableVertexAttribArray(Attributes.LIGHTMAP_UV);
-        if (hasShaders) GL30.glDisableVertexAttribArray(Attributes.TANGENTS);
-        if (hasShaders) GL30.glDisableVertexAttribArray(Attributes.MID_TEXTURE_UV);
-
-        shader.clear();
-
-        GL30.glBindVertexArray(currentVAO);
-        GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer);
+        return this.count;
     }
 }

@@ -370,7 +370,7 @@ public class FormTranslucentQueue
     public static class BOBJCommand extends DrawCommand
     {
         private final BOBJModelVAO vao;
-        private final Supplier<ShaderInstance> shader;
+        private final Supplier<RenderPipeline> pipeline;
         private final int passMode;
         private final Matrix4f[] armatureSnapshot;
         private final int uploadCount;
@@ -387,12 +387,12 @@ public class FormTranslucentQueue
             this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, cull);
         }
 
-        public BOBJCommand(BOBJModelVAO vao, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
+        public BOBJCommand(BOBJModelVAO vao, Supplier<RenderPipeline> pipeline, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
         {
             super(modelView.getTranslation(new Vector3f()), cull, depthWrite);
 
             this.vao = vao;
-            this.shader = shader;
+            this.pipeline = pipeline;
             this.passMode = passMode;
             this.armatureSnapshot = armatureSnapshot;
             this.uploadCount = uploadCount;
@@ -410,7 +410,7 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderInstance shader = this.shader.get();
+            /* Die Pipeline holt der Zeichenaufruf selbst — siehe unten. */
 
             if (this.texture != null)
             {
@@ -422,11 +422,11 @@ public class FormTranslucentQueue
                 this.vao.updateMesh(null, this.armatureSnapshot);
             }
 
-            /* ⚠️ NICHT PORTIERT: BOBJModelVAO haengt noch an ShaderInstance und eigenen
-             * VAOs. Sobald es wie ModelVAO auf GpuBuffer und Pipeline steht, wandert
-             * this.passMode hier als letzter Parameter in den Zeichenaufruf — genau wie
-             * bei ModelVAOCommand darueber. */
-            this.vao.render(shader, this.modelView, this.normalMat, this.r, this.g, this.b, this.a, null, this.light, this.overlay);
+            /* BOBJModelVAO steht jetzt auf GpuBuffer und implementiert IModelVAO — der
+             * Befehl geht damit denselben Weg wie ModelVAOCommand, und this.passMode
+             * reist als Parameter mit statt vorher gesetzt zu werden. */
+            ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
+                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode);
         }
     }
 
