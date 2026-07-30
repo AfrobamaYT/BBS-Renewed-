@@ -142,7 +142,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
-            gameRenderer.lightTexture().turnOnLightLayer();
+            // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
             gameRenderer.overlayTexture().setupOverlayColor();
 
             context.stack.pushPose();
@@ -173,7 +173,6 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
             context.stack.popPose();
 
-            gameRenderer.lightTexture().turnOffLightLayer();
             gameRenderer.overlayTexture().teardownOverlayColor();
         }
     }

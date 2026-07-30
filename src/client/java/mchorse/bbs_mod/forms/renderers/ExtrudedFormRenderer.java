@@ -122,7 +122,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
              * durchsichtige Variante BlendFunction.TRANSLUCENT traegt — genau die Mischung, die
              * defaultBlendFunc() einstellte. Beide Zeilen entfallen darum ersatzlos. */
 
-            gameRenderer.lightTexture().turnOnLightLayer();
+            // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
             gameRenderer.overlayTexture().setupOverlayColor();
 
             boolean irisWorld = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld();
@@ -189,7 +189,6 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
              * die blendfreie ModelVAOPipeline.UNDURCHSICHTIG, und die gehoert an die
              * Pipeline-Wahl des Draws, nicht an eine Zustandszeile hier. */
 
-            gameRenderer.lightTexture().turnOffLightLayer();
             gameRenderer.overlayTexture().teardownOverlayColor();
         }
     }

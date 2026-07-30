@@ -211,7 +211,7 @@ public class FormTranslucentQueue
 
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
-        gameRenderer.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gameRenderer.overlayTexture().setupOverlayColor();
 
         /* Tiefentest, Tiefenvergleich und Mischung wurden hier frueher global gesetzt
@@ -260,7 +260,6 @@ public class FormTranslucentQueue
          * bekommt Blend, Tiefe und Cull aus der Pipeline seines RenderType (RenderType.pipeline()),
          * also gibt es nichts mehr zurückzugeben. */
 
-        gameRenderer.lightTexture().turnOffLightLayer();
         gameRenderer.overlayTexture().teardownOverlayColor();
     }
 

@@ -138,7 +138,7 @@ public final class Tier2dParallelEmit
          * ⚠️ Er wirkt erst, wenn Phase D vom drawWithShader-Weg auf einen RenderPass mit
          * dieser Pipeline umgestellt ist — bis dahin fehlt die Mischung. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
-        gr.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gr.overlayTexture().setupOverlayColor();
 
         try
@@ -203,7 +203,6 @@ public final class Tier2dParallelEmit
         }
         finally
         {
-            gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
             /* 26.2: kein disableBlend — es gab nichts einzuschalten, also auch nichts
              * abzuschalten. Blend haengt an der Pipeline des Zeichenaufrufs. */

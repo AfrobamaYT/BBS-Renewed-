@@ -354,7 +354,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
          * der sortierten Warteschlange mit. */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
-        gameRenderer.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gameRenderer.overlayTexture().setupOverlayColor();
 
         PoseStack newStack = new PoseStack();
@@ -435,7 +435,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
         }
 
-        gameRenderer.lightTexture().turnOffLightLayer();
         gameRenderer.overlayTexture().teardownOverlayColor();
 
         /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur

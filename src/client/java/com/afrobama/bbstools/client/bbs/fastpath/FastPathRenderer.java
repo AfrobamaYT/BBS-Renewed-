@@ -87,7 +87,7 @@ public final class FastPathRenderer
          * BlendFunction.TRANSLUCENT, genau die Mischung, die defaultBlendFunc setzte.
          * Zu hoisten bleiben Lichtkarte und Overlay — die sind weiterhin globaler Zustand. */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
-        gameRenderer.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gameRenderer.overlayTexture().setupOverlayColor();
 
         try
@@ -118,7 +118,6 @@ public final class FastPathRenderer
         }
         finally
         {
-            gameRenderer.lightTexture().turnOffLightLayer();
             gameRenderer.overlayTexture().teardownOverlayColor();
             /* Kein disableBlend mehr: die Mischung gehoert der Pipeline (siehe oben), es
              * gibt keinen globalen Blend-Zustand, den dieses finally zuruecksetzen muesste. */

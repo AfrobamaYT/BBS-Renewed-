@@ -447,7 +447,7 @@ public final class Tier2hInstancedDraw
         boolean wasDepth = GL11C.glIsEnabled(GL11C.GL_DEPTH_TEST);
         boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
 
-        gr.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gr.overlayTexture().setupOverlayColor();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
@@ -464,7 +464,6 @@ public final class Tier2hInstancedDraw
         finally
         {
             gr.overlayTexture().teardownOverlayColor();
-            gr.lightTexture().turnOffLightLayer();
             if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
             if (!wasCull)  GL11C.glDisable(GL11C.GL_CULL_FACE);
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);

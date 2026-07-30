@@ -123,7 +123,7 @@ public final class Tier2eMergedDrawV2
          * Pipeline RenderPipelines.ENTITY_TRANSLUCENT_CULL traegt BlendFunction.TRANSLUCENT - genau
          * das, was defaultBlendFunc hier einstellte. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
-        gr.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gr.overlayTexture().setupOverlayColor();
 
         try
@@ -181,7 +181,6 @@ public final class Tier2eMergedDrawV2
         }
         finally
         {
-            gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
 
             /* 26.2: disableBlend() ist ersatzlos entfallen - es gibt keinen globalen Blend-Schalter

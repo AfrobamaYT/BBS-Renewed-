@@ -118,7 +118,7 @@ public final class Tier2cParallelSkin
          * BlendFunction.TRANSLUCENT bereits traegt — genau der Zustand, der hier frueher von
          * Hand gesetzt wurde. Gleiche Aufloesung wie in Tier2eMergedDraw#flushAll. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
-        gr.lightTexture().turnOnLightLayer();
+        // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         gr.overlayTexture().setupOverlayColor();
 
         try
@@ -183,7 +183,6 @@ public final class Tier2cParallelSkin
         }
         finally
         {
-            gr.lightTexture().turnOffLightLayer();
             gr.overlayTexture().teardownOverlayColor();
 
             /* disableBlend entfaellt ersatzlos: es gibt keinen globalen Mischzustand mehr,
