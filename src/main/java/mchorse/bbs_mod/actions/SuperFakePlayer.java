@@ -17,9 +17,13 @@ import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.network.chat.Component;
+import net.minecraft.commands.CommandSource;
 
 public class SuperFakePlayer extends ServerPlayer
 {
@@ -40,23 +44,48 @@ public class SuperFakePlayer extends ServerPlayer
         this.connection = new SuperFakePlayerNetworkHandler(this);
     }
 
+    /* 26.2: getPermissionLevel() ist weg, Rechte haengen an einem PermissionSet.
+     * GAMEMASTER ist die alte Stufe 2. */
     @Override
-    protected int getPermissionLevel()
+    public PermissionSet permissions()
     {
-        return 2;
+        return LevelBasedPermissionSet.GAMEMASTER;
     }
 
+    /* 26.2: ServerPlayer IST keine CommandSource mehr, sondern LIEFERT eine. Die beiden
+     * alten Ueberschreibungen (shouldInformAdmins/acceptsSuccess = false) wandern deshalb
+     * hierher -- sonst wuerde der Fake-Spieler ab dem Update Admins zuspammen, und zwar
+     * ohne dass irgendein Compiler-fehler darauf hinweist. */
     @Override
-    public boolean shouldInformAdmins()
+    public CommandSource commandSource()
     {
-        return false;
+        return SILENT_SOURCE;
     }
 
-    @Override
-    public boolean acceptsSuccess()
+    private static final CommandSource SILENT_SOURCE = new CommandSource()
     {
-        return false;
-    }
+        @Override
+        public void sendSystemMessage(Component message)
+        {}
+
+        @Override
+        public boolean acceptsSuccess()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean acceptsFailure()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean shouldInformAdmins()
+        {
+            return false;
+        }
+    };
 
     @Override
     public void tick()
@@ -75,7 +104,7 @@ public class SuperFakePlayer extends ServerPlayer
     {}
 
     @Override
-    public boolean isInvulnerableTo(DamageSource damageSource)
+    public boolean isInvulnerableTo(ServerLevel level, DamageSource damageSource)
     {
         return true;
     }
@@ -92,7 +121,7 @@ public class SuperFakePlayer extends ServerPlayer
     {}
 
     @Override
-    public boolean startRiding(Entity entity, boolean force)
+    public boolean startRiding(Entity entity, boolean force, boolean stopRiding)
     {
         return false;
     }

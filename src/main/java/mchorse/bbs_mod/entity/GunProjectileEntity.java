@@ -36,8 +36,12 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import mchorse.bbs_mod.utils.CommandSourceUtils;
+import mchorse.bbs_mod.utils.IPermissionSource;
 
-public class GunProjectileEntity extends Projectile implements IEntityFormProvider
+public class GunProjectileEntity extends Projectile implements IEntityFormProvider, IPermissionSource
 {
     private boolean despawn;
     private GunProperties properties = new GunProperties();
@@ -91,7 +95,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
             /* 26.2: siehe CommandActionClip -- gleicher aufbau wie vorher, welt als argument. */
             ServerLevel level = (ServerLevel) this.level();
 
-            level.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStackForNameResolution(level), command);
+            level.getServer().getCommands().performPrefixedCommand(CommandSourceUtils.of(this, level), command);
         }
     }
 
@@ -139,15 +143,9 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
     }
 
     @Override
-    protected int getPermissionLevel()
+    public PermissionSet getCommandPermissions()
     {
-        return 2;
-    }
-
-    @Override
-    public boolean acceptsSuccess()
-    {
-        return false;
+        return LevelBasedPermissionSet.GAMEMASTER;
     }
 
     @Override
@@ -241,7 +239,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
             {
                 this.onHit(hitResult);
 
-                this.hasImpulse = true;
+                this.hurtMarked = true;
             }
 
             v = this.getDeltaMovement();
@@ -273,7 +271,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
 
             this.setDeltaMovement(v.scale(friction).subtract(0, gravity, 0));
             this.setPos(x, y, z);
-            this.checkInsideBlocks();
+            this.applyEffectsFromBlocks();
         }
     }
 
@@ -330,14 +328,14 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
         DamageSource source = this.damageSources().magic();
 
         int fireTicks = entity.getRemainingFireTicks();
-        boolean deflectsArrows = entity.getType().is(EntityTypeTags.DEFLECTS_PROJECTILES);
+        boolean deflectsArrows = entity.getType().builtInRegistryHolder().is(EntityTypeTags.DEFLECTS_PROJECTILES);
 
         if (this.isOnFire() && !deflectsArrows)
         {
             entity.igniteForSeconds(5);
         }
 
-        if (entity.hurt(source, (float) damage))
+        if (entity.hurtServer((ServerLevel) this.level(), source, (float) damage))
         {
             if (entity instanceof LivingEntity livingEntity)
             {

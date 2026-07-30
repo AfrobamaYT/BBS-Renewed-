@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import mchorse.bbs_mod.utils.IPermissionSource;
 
-public class ActorEntity extends LivingEntity implements IEntityFormProvider
+public class ActorEntity extends LivingEntity implements IEntityFormProvider, IPermissionSource
 {
     public static AttributeSupplier.Builder createActorAttributes()
     {
@@ -91,18 +94,6 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider
     }
 
     @Override
-    public Iterable<ItemStack> getHandSlots()
-    {
-        return List.of(this.getItemBySlot(EquipmentSlot.MAINHAND), this.getItemBySlot(EquipmentSlot.OFFHAND));
-    }
-
-    @Override
-    public Iterable<ItemStack> getArmorSlots()
-    {
-        return List.of(this.getItemBySlot(EquipmentSlot.FEET), this.getItemBySlot(EquipmentSlot.LEGS), this.getItemBySlot(EquipmentSlot.CHEST), this.getItemBySlot(EquipmentSlot.HEAD));
-    }
-
-    @Override
     public ItemStack getItemBySlot(EquipmentSlot slot)
     {
         return this.equipment.getOrDefault(slot, ItemStack.EMPTY);
@@ -150,7 +141,7 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider
 
                 if (!entity.isRemoved() && !itemEntity.hasPickUpDelay())
                 {
-                    ((ServerLevel) this.level()).getChunkSource().broadcast(entity, new ClientboundTakeItemEntityPacket(entity.getId(), this.getId(), i));
+                    ((ServerLevel) this.level()).getChunkSource().sendToTrackingPlayers(entity, new ClientboundTakeItemEntityPacket(entity.getId(), this.getId(), i));
                     entity.discard();
                 }
             }
@@ -193,8 +184,8 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider
     }
 
     @Override
-    protected int getPermissionLevel()
+    public PermissionSet getCommandPermissions()
     {
-        return 4;
+        return LevelBasedPermissionSet.OWNER;
     }
 }

@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerLevel;
+import mchorse.bbs_mod.utils.CommandSourceUtils;
 
 public class GunItem extends Item
 {
@@ -74,7 +75,7 @@ public class GunItem extends Item
                 /* 26.2: siehe CommandActionClip -- gleicher aufbau wie vorher, welt als argument. */
                 ServerLevel level = (ServerLevel) world;
 
-                level.getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStackForNameResolution(level), properties.cmdFiring);
+                level.getServer().getCommands().performPrefixedCommand(CommandSourceUtils.of(owner, level), properties.cmdFiring);
             }
         }
 

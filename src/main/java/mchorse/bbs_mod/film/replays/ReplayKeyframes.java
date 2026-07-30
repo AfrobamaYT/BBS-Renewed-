@@ -415,7 +415,7 @@ public class ReplayKeyframes extends ValueGroup
             this.armorChest.insert(tick, entity.getEquipmentStack(EquipmentSlot.CHEST).copy());
             this.armorLegs.insert(tick, entity.getEquipmentStack(EquipmentSlot.LEGS).copy());
             this.armorFeet.insert(tick, entity.getEquipmentStack(EquipmentSlot.FEET).copy());
-            this.selectedSlot.insert(tick, entity.selected);
+            this.selectedSlot.insert(tick, entity.getSelectedSlot());
 
             for (int i = 0; i < 9; i++)
             {

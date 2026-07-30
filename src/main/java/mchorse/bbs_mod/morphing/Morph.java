@@ -18,6 +18,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import java.util.Arrays;
 import java.util.Optional;
+import mchorse.bbs_mod.utils.NbtSnapshotUtils;
 
 public class Morph
 {
@@ -54,7 +55,7 @@ public class Morph
         }
 
         MobForm form = new MobForm();
-        CompoundTag compound = target.saveWithoutId(new CompoundTag());
+        CompoundTag compound = NbtSnapshotUtils.ofEntity(target, target.level().registryAccess());
 
         for (String s : Arrays.asList("Pos", "Motion", "Rotation", "FallDistance", "Fire", "Air", "OnGround", "Invulnerable", "PortalCooldown", "UUID"))
         {

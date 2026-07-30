@@ -30,6 +30,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.item.component.TypedEntityData;
 
 public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedBlock
 {
@@ -61,7 +62,7 @@ public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedB
     }
 
     @Override
-    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state)
+    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData)
     {
         BlockEntity entity = world.getBlockEntity(pos);
 
@@ -69,12 +70,12 @@ public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedB
         {
             ItemStack stack = new ItemStack(this);
 
-            stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(modelBlock.saveWithId(world.registryAccess())));
+            stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(modelBlock.getType(), modelBlock.saveCustomOnly(world.registryAccess())));
 
             return stack;
         }
 
-        return super.getCloneItemStack(world, pos, state);
+        return super.getCloneItemStack(world, pos, state, includeData);
     }
 
     @Override
@@ -84,7 +85,7 @@ public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedB
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos)
+    public boolean propagatesSkylightDown(BlockState state)
     {
         return true;
     }
@@ -136,7 +137,7 @@ public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedB
             {
                 ItemStack stack = new ItemStack(this);
 
-                stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(model.saveWithId(world.registryAccess())));
+                stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(model.getType(), model.saveCustomOnly(world.registryAccess())));
 
                 Containers.dropContents(world, pos, NonNullList.withSize(1, stack));
             }

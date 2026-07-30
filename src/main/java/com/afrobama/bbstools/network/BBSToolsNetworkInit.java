@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minecraft.server.permissions.Permissions;
 
 public final class BBSToolsNetworkInit
 {
@@ -46,7 +47,7 @@ public final class BBSToolsNetworkInit
                 18L + (payload.blockState() == null ? 0 : payload.blockState().length()));
 
             ServerPlayer player = context.player();
-            if (!player.hasPermissions(REQUIRED_OP_LEVEL))
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             {
                 LOG.warn("BuilderActionPacket from non-op player {} dropped", player.getName().getString());
                 return;
@@ -69,7 +70,7 @@ public final class BBSToolsNetworkInit
             try
             {
                 BlockStateParser.BlockResult res = BlockStateParser.parseForBlock(
-                    BuiltInRegistries.BLOCK.asLookup(), payload.blockState(), false);
+                    BuiltInRegistries.BLOCK, payload.blockState(), false);
                 state = res.blockState();
             }
             catch (CommandSyntaxException e)

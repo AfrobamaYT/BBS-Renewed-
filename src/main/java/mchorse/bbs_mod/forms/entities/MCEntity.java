@@ -117,7 +117,7 @@ public class MCEntity implements IEntity
 
         if (this.mcEntity instanceof Player player)
         {
-            return player.getInventory().items.get(slot);
+            return player.getInventory().getItem(slot);
         }
 
         return ItemStack.EMPTY;
@@ -133,7 +133,7 @@ public class MCEntity implements IEntity
 
         if (this.mcEntity instanceof Player player)
         {
-            player.getInventory().items.set(slot, stack != null ? stack : ItemStack.EMPTY);
+            player.getInventory().setItem(slot, stack != null ? stack : ItemStack.EMPTY);
         }
     }
 
@@ -251,7 +251,7 @@ public class MCEntity implements IEntity
     @Override
     public float getFallDistance()
     {
-        return this.mcEntity.fallDistance;
+        return (float) this.mcEntity.fallDistance;
     }
 
     @Override

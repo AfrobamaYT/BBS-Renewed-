@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import mchorse.bbs_mod.utils.NbtSnapshotUtils;
 
 @Mixin(LevelChunk.class)
 public class WorldChunkMixin
@@ -40,7 +41,7 @@ public class WorldChunkMixin
 
             if (blockEntity != null)
             {
-                replaced.set(blockEntity.saveWithId(world.registryAccess()));
+                replaced.set(NbtSnapshotUtils.ofBlockEntity(blockEntity, world.registryAccess()));
             }
         }
     }

@@ -9,6 +9,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.server.level.ServerLevel;
+import mchorse.bbs_mod.utils.CommandSourceUtils;
 
 public class CommandActionClip extends ActionClip
 {
@@ -32,7 +33,7 @@ public class CommandActionClip extends ActionClip
          * ServerPlayer behaelt die alte, parameterlose methode. */
         CommandSourceStack source = actor == null
             ? player.createCommandSourceStack()
-            : actor.createCommandSourceStackForNameResolution((ServerLevel) actor.level());
+            : CommandSourceUtils.of(actor, (ServerLevel) actor.level());
 
         player.level().getServer().getCommands().performPrefixedCommand(source, command);
     }

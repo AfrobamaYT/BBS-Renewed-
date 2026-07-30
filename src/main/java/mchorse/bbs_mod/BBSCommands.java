@@ -349,14 +349,7 @@ public class BBSCommands
                     {
                         LevelSettings levelInfo = saveProperties.getLevelSettings();
 
-                        accessor.bbs$setLevelInfo(new LevelSettings(levelInfo.levelName(),
-                            levelInfo.gameType(),
-                            levelInfo.hardcore(),
-                            levelInfo.difficulty(),
-                            enabled,
-                            levelInfo.gameRules(),
-                            levelInfo.getDataConfiguration()
-                        ));
+                        accessor.bbs$setLevelInfo(levelInfo.withAllowCommands(enabled));
 
                         for (ServerPlayer serverPlayerEntity : server.getPlayerList().getPlayers())
                         {
@@ -529,7 +522,7 @@ public class BBSCommands
         BlockPos max = new BlockPos(Math.max(from.getX(), to.getX()), Math.max(from.getY(), to.getY()), Math.max(from.getZ(), to.getZ()));
         BlockPos size = max.subtract(min).offset(1, 1, 1);
 
-        structureTemplate.fillFromWorld(world, min, size, true, Blocks.STRUCTURE_VOID);
+        structureTemplate.fillFromWorld(world, min, size, true, java.util.List.of(Blocks.STRUCTURE_VOID));
 
         try
         {

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.actions;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.PacketSendListener;
@@ -20,7 +20,7 @@ public class SuperFakePlayerNetworkHandler extends ServerGamePacketListenerImpl
     }
 
     @Override
-    public void send(Packet<?> packet, @Nullable PacketSendListener callbacks)
+    public void send(Packet<?> packet, @Nullable io.netty.channel.ChannelFutureListener callbacks)
     {}
 
     private static final class FakeClientConnection extends Connection

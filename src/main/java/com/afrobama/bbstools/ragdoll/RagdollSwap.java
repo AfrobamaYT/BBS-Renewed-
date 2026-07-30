@@ -37,6 +37,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntitySpawnReason;
 
 /**
  * /ragdollswap [type] [x±N] [y±N] [z±N]
@@ -188,7 +190,7 @@ public final class RagdollSwap
                     living.setDeltaMovement(pk.vx(), pk.vy(), pk.vz());
                     living.hurtMarked = true;
                     LOG.info("Killing {} after delay", living.getType());
-                    living.kill();
+                    living.kill((ServerLevel) living.level());
                 }
                 else
                 {
@@ -587,9 +589,9 @@ public final class RagdollSwap
 
             if (player != null)
             {
-                player.teleportTo(pr.world(), tpX, tpY, tpZ, player.getYRot(), player.getXRot());
+                player.teleportTo(pr.world(), tpX, tpY, tpZ, java.util.Set.of(), player.getYRot(), player.getXRot(), false);
                 player.setGameMode(pr.previousGameMode());
-                player.displayClientMessage(Component.literal("§7[ragdoll-player] restored to "
+                player.sendSystemMessage(Component.literal("§7[ragdoll-player] restored to "
                     + pr.previousGameMode().getName() + " at clone's resting position."), false);
             }
         }
@@ -780,10 +782,10 @@ public final class RagdollSwap
         boolean substitutedPlayer = false;
         net.minecraft.server.level.ServerPlayer fakePlayer = null;
 
-        if (entityType == EntityType.PLAYER)
+        if (entityType == EntityTypes.PLAYER)
         {
             LOG.info("Player type requested — substituting Zombie with player-skin texture override.");
-            entityType = EntityType.ZOMBIE;
+            entityType = EntityTypes.ZOMBIE;
             substitutedPlayer = true;
         }
 
@@ -808,7 +810,7 @@ public final class RagdollSwap
         }
         else
         {
-            spawned = entityType.create(world);
+            spawned = entityType.create(world, EntitySpawnReason.COMMAND);
 
             if (spawned == null)
             {
@@ -902,7 +904,7 @@ public final class RagdollSwap
                 living.setDeltaMovement(finalVx, finalVy, finalVz);
                 living.hurtMarked = true;
                 LOG.info("Killing {} immediately (same tick)", living.getType());
-                living.kill();
+                living.kill((ServerLevel) living.level());
             }
             else
             {

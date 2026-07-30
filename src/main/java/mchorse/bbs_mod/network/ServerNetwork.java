@@ -53,6 +53,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.item.component.TypedEntityData;
 
 public class ServerNetwork
 {
@@ -263,11 +265,11 @@ public class ServerNetwork
 
                     if (stack.getItem() == BBSMod.MODEL_BLOCK_ITEM)
                     {
-                        CustomData beComponent = stack.get(DataComponents.BLOCK_ENTITY_DATA);
-                        CompoundTag beNbt = beComponent != null ? beComponent.copyTag() : new CompoundTag();
+                        TypedEntityData<BlockEntityType<?>> beComponent = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+                        CompoundTag beNbt = beComponent != null ? beComponent.copyTagWithoutId() : new CompoundTag();
 
                         beNbt.put("Properties", DataStorageUtils.toNbt(data));
-                        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(beNbt));
+                        stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BBSMod.MODEL_BLOCK_ENTITY, beNbt));
                     }
                     else if (stack.getItem() == BBSMod.GUN_ITEM)
                     {

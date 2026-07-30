@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.ragdoll;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -78,7 +78,7 @@ public final class ActorRagdollProxy
         try
         {
             Level world = mc.level;
-            Villager proxy = new Villager(EntityType.VILLAGER, world);
+            Villager proxy = new Villager(EntityTypes.VILLAGER, world);
             Vec3 pos = new Vec3(bbsActor.getX(), bbsActor.getY(), bbsActor.getZ());
             proxy.setPos(pos.x, pos.y, pos.z);
             proxy.setInvisible(true);
