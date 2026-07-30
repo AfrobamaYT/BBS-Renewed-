@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -108,7 +108,7 @@ public final class BlockSpawnAnimEffect
 
     public static void register()
     {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(BlockSpawnAnimEffect::onRender);
+        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(BlockSpawnAnimEffect::onRender);
         LOG.info("BlockSpawnAnimEffect registered — render hook armed");
     }
 
@@ -289,7 +289,7 @@ public final class BlockSpawnAnimEffect
         return a == null ? 0 : a.size();
     }
 
-    private static void onRender(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext context)
+    private static void onRender(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext context)
     {
         List<Entry> anim = activeAnim;
         if (anim == null || anim.isEmpty())

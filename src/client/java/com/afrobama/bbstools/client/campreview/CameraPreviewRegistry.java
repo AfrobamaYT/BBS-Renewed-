@@ -8,7 +8,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * <p><b>Phase 1 scope:</b> manual-pose previews only. The framebuffer
  * is rendered by capturing the main-framebuffer at a moment when the
- * world is fully drawn ({@code WorldRenderEvents.LAST}). Phase 2 adds a
+ * world is fully drawn ({@code LevelRenderEvents.END_MAIN}). Phase 2 adds a
  * proper re-entry into {@code GameRenderer.renderWorld} per preview so
  * each shows its own POV; tracker-mode binds to the keyframe interpolator.</p>
  */
@@ -258,7 +258,8 @@ public final class CameraPreviewRegistry
          *  are allocated. Actual world re-render is wired in
          *  CameraPreviewRenderHook (separate file) to keep this class focused
          *  on state mgmt. */
-        WorldRenderEvents.LAST.register(CameraPreviewRenderHook::onWorldRenderLast);
+        // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
+        LevelRenderEvents.END_MAIN.register(CameraPreviewRenderHook::onWorldRenderLast);
 
         BBSDebugRegistry.register("CameraPreview", out ->
         {

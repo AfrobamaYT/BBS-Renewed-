@@ -19,7 +19,7 @@ import mchorse.bbs_mod.utils.Pair;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -59,7 +59,7 @@ public final class BoneHoverPickRunner
      *  given clip. Writes back to {@link BoneHoverPickService#RESULTS}.
      *  Caller must have already bound a 3D render context (camera
      *  mutated + projection set). */
-    public static void runHover(UUID clipId, WorldRenderContext ctx, int fbW, int fbH)
+    public static void runHover(UUID clipId, LevelRenderContext ctx, int fbW, int fbH)
     {
         BoneHoverPickService.Request req = BoneHoverPickService.REQUESTS.get(clipId);
         if (req == null) return;
@@ -96,7 +96,7 @@ public final class BoneHoverPickRunner
      *        the cursor.</li>
      *  </ul>
      */
-    public static void runClick(UUID clipId, WorldRenderContext ctx, int fbW, int fbH)
+    public static void runClick(UUID clipId, LevelRenderContext ctx, int fbW, int fbH)
     {
         BoneHoverPickService.Request req = BoneHoverPickService.CLICKS.remove(clipId);
         if (req == null) return;
@@ -212,7 +212,7 @@ public final class BoneHoverPickRunner
         }
     }
 
-    private static Pair<Form, String> doPick(UUID clipId, WorldRenderContext ctx,
+    private static Pair<Form, String> doPick(UUID clipId, LevelRenderContext ctx,
                                               BoneHoverPickService.Request req,
                                               int fbW, int fbH)
     {

@@ -1,5 +1,5 @@
 // Coded by Afrobama/Claude — push BBSFxState uniforms into our
-// post-FX shaders every frame. Hooks WorldRenderEvents.AFTER_SETUP
+// post-FX shaders every frame. Hooks LevelRenderEvents.START_MAIN
 // so the values are visible to the shaders before they execute.
 // Reflective Veil API access — wrapped in try-catch so a Veil
 // API change doesn't kill the renderer.
@@ -10,7 +10,7 @@ import com.afrobama.bbstools.diag.BBSDiag;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +44,10 @@ public final class BBSFxUniformPusher
         if (registered) return;
         registered = true;
         /* Push uniforms each frame before world-rendering completes —
-         *  post-FX runs at WorldRenderEvents.LAST so AFTER_SETUP is
+         *  post-FX runs at LevelRenderEvents.END_MAIN so AFTER_SETUP is
          *  early enough to have values in place. */
-        WorldRenderEvents.AFTER_SETUP.register(ctx -> push());
+        // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
+        LevelRenderEvents.START_MAIN.register(ctx -> push());
         BBSDiag.feature("fx-uniforms").event("register").emit();
     }
 

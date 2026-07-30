@@ -10,8 +10,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.SofortZeichner;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -56,7 +56,12 @@ public final class BlockDestructionWireframe
 
     public static void register()
     {
-        WorldRenderEvents.LAST.register(BlockDestructionWireframe::onWorldRender);
+        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.LAST -- die Phase NACH
+         * allem, einschliesslich Wolken, Wetter und Nachbearbeitung. In 26.2 gibt es dafuer
+         * kein benanntes Gegenstueck; END_MAIN ist die letzte verfuegbare Phase, aber ob sie
+         * an derselben Stelle liegt, ist aus dem Bytecode NICHT ablesbar.
+         * Zu pruefen am laufenden Bild: sieht ein Export genauso aus wie das Fenster? */
+        LevelRenderEvents.END_MAIN.register(BlockDestructionWireframe::onWorldRender);
         LOG.info("Block-destruction wireframe overlay registered");
     }
 
@@ -72,7 +77,7 @@ public final class BlockDestructionWireframe
         VISIBLE.clear();
     }
 
-    private static void onWorldRender(WorldRenderContext ctx)
+    private static void onWorldRender(LevelRenderContext ctx)
     {
         if (VISIBLE.isEmpty()) return;
 

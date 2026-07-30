@@ -19,7 +19,7 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import mchorse.bbs_mod.film.BaseFilmController;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,7 +35,7 @@ public abstract class BaseFilmControllerFlushMixin
         method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
         at = @At("HEAD"),
         remap = false)
-    private void bbstools$stampRenderHead(WorldRenderContext context, CallbackInfo ci)
+    private void bbstools$stampRenderHead(LevelRenderContext context, CallbackInfo ci)
     {
         BBSPerfConfig.bbsRenderHeadNs = System.nanoTime();
     }
@@ -44,7 +44,7 @@ public abstract class BaseFilmControllerFlushMixin
         method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
         at = @At("RETURN"),
         remap = false)
-    private void bbstools$flushFastPathBatch(WorldRenderContext context, CallbackInfo ci)
+    private void bbstools$flushFastPathBatch(LevelRenderContext context, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): der rumpf dieses handlers wird beim klassenladen in
          * BaseFilmController gewoben und liegt damit im KnotClassLoader — vom kernel-swap

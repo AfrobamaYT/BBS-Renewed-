@@ -26,7 +26,7 @@ import com.afrobama.bbstools.client.blender.MixinBruecke;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.framework.UIContext;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -46,7 +46,7 @@ public abstract class UIFilmControllerStencilThrottleMixin
     @Unique private long bbstools$lastRunMs = 0L;
 
     @Inject(method = "renderStencil", at = @At("HEAD"), cancellable = true, remap = false)
-    private void bbstools$throttlePick(WorldRenderContext renderContext, UIContext context, boolean altPressed, CallbackInfo ci)
+    private void bbstools$throttlePick(LevelRenderContext renderContext, UIContext context, boolean altPressed, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
          * com.afrobama.blendertransform.UIFilmControllerStencilThrottleLogik. */

@@ -9,8 +9,8 @@
 package com.afrobama.bbstools.client.blockanim;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
@@ -26,11 +26,11 @@ public final class BlockAnimationRenderer
 
     public static void register()
     {
-        WorldRenderEvents.AFTER_ENTITIES.register(BlockAnimationRenderer::onRender);
+        LevelRenderEvents.AFTER_SOLID_FEATURES.register(BlockAnimationRenderer::onRender);
         LOG.info("Block-animation renderer registered");
     }
 
-    private static void onRender(WorldRenderContext ctx)
+    private static void onRender(LevelRenderContext ctx)
     {
         var blocks = BlockAnimation.getActiveBlocks();
         if (blocks.isEmpty()) return;

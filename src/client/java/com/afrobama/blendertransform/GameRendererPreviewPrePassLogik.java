@@ -10,7 +10,7 @@ import com.afrobama.bbstools.client.util.PreviewPassState;
 
 import mchorse.bbs_mod.client.BBSRendering;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -158,7 +158,7 @@ public final class GameRendererPreviewPrePassLogik
                     /* BBS overlays (replays/forms) — build the same
                      *  context BBS would receive from Fabric and feed it
                      *  to the BBS render entry point. */
-                    WorldRenderContext ctx = buildContext(mc, tickCounter, clipProjection);
+                    LevelRenderContext ctx = buildContext(mc, tickCounter, clipProjection);
                     BBSRendering.renderCoolStuff(ctx);
 
                     /* Flush entity vertex consumers — BBS forms write
@@ -218,7 +218,7 @@ public final class GameRendererPreviewPrePassLogik
         }
     }
 
-    private static WorldRenderContext buildContext(Minecraft mc,
+    private static LevelRenderContext buildContext(Minecraft mc,
                                                     DeltaTracker tickCounter,
                                                     Matrix4f projection)
     {

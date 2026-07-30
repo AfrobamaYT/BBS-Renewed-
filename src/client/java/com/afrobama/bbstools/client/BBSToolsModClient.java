@@ -101,14 +101,15 @@ public final class BBSToolsModClient implements ClientModInitializer
          * dem ersten. Die actors froren auf dem ersten tick ein und bekamen keine
          * keyframe-transforms mehr; der nutzer sah "70% szene, 30% falsche position".
          *
-         * WorldRenderEvents.END feuert pro welt-render, auch bei offenem screen. Damit
+         * LevelRenderEvents.END_MAIN feuert pro welt-render, auch bei offenem screen. Damit
          * zaehlt die id im editor wieder mit, das gate ist wieder self-gating wie gedacht.
          *
          * ⚠ Iris/shaderpacks koennen die welt mehrfach pro frame zeichnen (schatten-pass).
          * Mehr id-spruenge sind harmlos: das gate wird dadurch nur DURCHLAESSIGER (mehr
          * ticks laufen durch), nie strenger — es kann also nie wieder transforms verschlucken.
          */
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.END.register(
+        // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
+        net.fabricmc.fabric.api.client.rendering.v1.LevelRenderEvents.END_MAIN.register(
             kontext -> com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++);
 
         /* Per-frame counter for the heartbeat's "frame" + "fps" fields. */
@@ -582,7 +583,7 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* Block-Spawn Animation FX: per-block staggered drop-in for the
          *  1m pillager-manhunt cinematic. Pure render-side ghost overlay
-         *  via WorldRenderEvents.AFTER_TRANSLUCENT — does not modify
+         *  via LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN — does not modify
          *  world blocks. Triggered via /bbstools blockspawn <r> [dur]. */
         com.afrobama.bbstools.client.blockspawn.BlockSpawnAnimEffect.register();
         com.afrobama.bbstools.client.blockspawn.BlockSpawnAnimCommand.register();
