@@ -12,7 +12,7 @@ package com.afrobama.bbstools.client.bbs.fastpath;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
@@ -37,7 +37,7 @@ public final class CacheBarRenderer
     {
         if (REGISTERED) return;
         REGISTERED = true;
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
+        LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             if (!BBSPerfConfig.ENABLE_CACHE_LOADING_BAR || SNAP_COUNT == 0) return;
             try { draw(ctx.matrixStack()); }

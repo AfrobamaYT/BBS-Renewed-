@@ -128,7 +128,7 @@ public final class Tier2hInstancedDraw
 
     /* Option 2 — deferred draw outside Iris's gbuffers pass. The replay
      * batch is captured during BBS render (inside Iris's pipeline) but the
-     * raw-GL instanced draw is executed at WorldRenderEvents.AFTER_TRANSLUCENT,
+     * raw-GL instanced draw is executed at LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN,
      * after Iris finished its geometry passes. Doing raw GL inside Iris's
      * pass corrupts Iris's state tracking → particle crash (proven). */
     private static final Map<String, List<FastPathBatch.Submission>> DEFERRED = new HashMap<>();
@@ -167,7 +167,7 @@ public final class Tier2hInstancedDraw
      *  the world view (same phase the crowd draws correctly at). */
     public interface DeferredSelectedRender
     {
-        void render(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext ctx);
+        void render(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext ctx);
     }
     private static volatile DeferredSelectedRender PENDING_SELECTED = null;
     public static void setPendingSelected(DeferredSelectedRender r) { PENDING_SELECTED = r; }
@@ -180,7 +180,7 @@ public final class Tier2hInstancedDraw
     {
         if (EVENT_REGISTERED) return;
         EVENT_REGISTERED = true;
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
+        net.fabricmc.fabric.api.client.rendering.v1.LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             try { drawDeferred(ctx); }
             catch (Throwable t)
@@ -216,9 +216,9 @@ public final class Tier2hInstancedDraw
         }
     }
 
-    /** Fired at WorldRenderEvents.AFTER_TRANSLUCENT — runs the raw-GL
+    /** Fired at LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN — runs the raw-GL
      *  instanced draw on the captured batch, then clears it. */
-    public static void drawDeferred(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext ctx)
+    public static void drawDeferred(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext ctx)
     {
         if (AUTO_DISABLED) { DEFERRED.clear(); IDLE_REDRAW_PENDING = false; PENDING_SELECTED = null; return; }
 
@@ -430,7 +430,7 @@ public final class Tier2hInstancedDraw
 
     /**
      * CPU-renderer fallback for a bucket whose mesh can't be GPU-instanced (non-cubic IR,
-     * or a drawBucket throw). The instanced path runs at WorldRenderEvents.AFTER_TRANSLUCENT
+     * or a drawBucket throw). The instanced path runs at LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN
      * (drawDeferred) and sets up ONLY blend — its own shader is fullbright and binds the bone
      * palette to texture unit 1, so it never enables the vanilla lightmap/overlay or touches
      * depth. FastPathRenderer.renderOneFallback drives the vanilla BBS entity render, which
