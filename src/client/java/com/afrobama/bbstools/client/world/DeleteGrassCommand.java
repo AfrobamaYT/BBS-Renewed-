@@ -85,7 +85,7 @@ public final class DeleteGrassCommand
             return 0;
         }
 
-        ServerLevel world = player.serverLevel();
+        ServerLevel world = player.level();
         Vec3 pos = player.position();
         BlockPos center = BlockPos.containing(pos);
 

@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.fracture;
 import mchorse.bbs_mod.forms.entities.IEntity;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.joml.Vector3f;
@@ -77,7 +77,7 @@ public final class GravityGunHandler
 
     public static void register()
     {
-        keyGrab = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        keyGrab = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.gravity_grab",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,

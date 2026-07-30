@@ -35,7 +35,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -81,28 +81,28 @@ public final class EditorShortcuts
 
     public static void register()
     {
-        duplicateClip = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        duplicateClip = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_duplicate_clip",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
             "category.bbstools"
         ));
 
-        togglePlay = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        togglePlay = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_toggle_play",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_SPACE,
             "category.bbstools"
         ));
 
-        jumpStart = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        jumpStart = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_start",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_HOME,
             "category.bbstools"
         ));
 
-        jumpEnd = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        jumpEnd = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_end",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_END,

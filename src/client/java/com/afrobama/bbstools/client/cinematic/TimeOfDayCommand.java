@@ -99,7 +99,7 @@ public final class TimeOfDayCommand
             return 0;
         }
 
-        ServerLevel world = player.serverLevel();
+        ServerLevel world = player.level();
         long time = ((rawTime % DAY_TICKS) + DAY_TICKS) % DAY_TICKS;
 
         boolean ok = applyTimeOfDay(world, time);
@@ -122,7 +122,7 @@ public final class TimeOfDayCommand
             + "§f §7(" + timeFinal + " ticks)"), true);
 
         BBSToolsMod.LOG.info("/bbstools tod {} ({} ticks) on {}",
-            labelFinal, timeFinal, world.dimension().location());
+            labelFinal, timeFinal, world.dimension().identifier());
 
         return Command.SINGLE_SUCCESS;
     }

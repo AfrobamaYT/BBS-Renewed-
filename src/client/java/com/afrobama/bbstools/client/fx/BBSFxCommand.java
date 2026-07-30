@@ -44,7 +44,7 @@ import com.afrobama.bbstools.client.fx.effects.SupernovaEffect;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
@@ -57,9 +57,9 @@ public final class BBSFxCommand
     public static void register()
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("fx")
-                    .then(ClientCommandManager.literal("enable")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("fx")
+                    .then(ClientCommands.literal("enable")
                         .executes(c -> {
                             BBSFxPipelineRegistrar.setEnabled(true);
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] pipelines ENABLED — shadows + bloom + final tonemap will engage next tick"));
@@ -69,13 +69,13 @@ public final class BBSFxCommand
                             }
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("disable")
+                    .then(ClientCommands.literal("disable")
                         .executes(c -> {
                             BBSFxPipelineRegistrar.setEnabled(false);
                             c.getSource().sendFeedback(Component.literal("§e[bbstools fx] pipelines DISABLED — vanilla look restored next tick"));
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                         .executes(c -> {
                             c.getSource().sendFeedback(Component.literal("§b[bbstools fx] ENABLED=" + BBSFxPipelineRegistrar.ENABLED
                                 + " vibrance=" + BBSFxState.vibranceAmount
@@ -83,7 +83,7 @@ public final class BBSFxCommand
                                 + " supernovaTimer=" + BBSFxState.supernovaTimer));
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("supernova")
+                    .then(ClientCommands.literal("supernova")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -92,9 +92,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] supernova triggered 30 b above you"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -103,7 +103,7 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§a[bbstools fx] supernova triggered at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("nuke")
+                    .then(ClientCommands.literal("nuke")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -112,9 +112,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] nuke triggered at your position"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -123,7 +123,7 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§a[bbstools fx] nuke triggered at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("reveal-light")
+                    .then(ClientCommands.literal("reveal-light")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -132,9 +132,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§b[bbstools fx] reveal-light ON at your position — /bbstools fx reveal-light-off to fade out"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -143,13 +143,13 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§b[bbstools fx] reveal-light ON at (" + x + "," + y + "," + z + ") — /bbstools fx reveal-light-off to fade out"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("reveal-light-off")
+                    .then(ClientCommands.literal("reveal-light-off")
                         .executes(c -> {
                             RevealLightEffect.stop();
                             c.getSource().sendFeedback(Component.literal("§e[bbstools fx] reveal-light fading out (1s)"));
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("crystal")
+                    .then(ClientCommands.literal("crystal")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -158,9 +158,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§b[bbstools fx] CRYSTALLIZATION WAVE expanding from your position"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -169,7 +169,7 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§b[bbstools fx] CRYSTALLIZATION WAVE at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("antimatter")
+                    .then(ClientCommands.literal("antimatter")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -178,9 +178,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§9[bbstools fx] ANTIMATTER implosion forming at your position — light bending inward"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -189,7 +189,7 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§9[bbstools fx] ANTIMATTER implosion at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("glitch")
+                    .then(ClientCommands.literal("glitch")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -198,9 +198,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§5[bbstools fx] REALITY GLITCH opened at your position — corruption expanding outward"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -209,7 +209,7 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§5[bbstools fx] REALITY GLITCH opened at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("meteor")
+                    .then(ClientCommands.literal("meteor")
                         .executes(c -> {
                             Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
@@ -218,9 +218,9 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] meteor incoming — impact at your position in 2.5s"));
                             return 1;
                         })
-                        .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
-                            .then(ClientCommandManager.argument("y", FloatArgumentType.floatArg())
-                                .then(ClientCommandManager.argument("z", FloatArgumentType.floatArg())
+                        .then(ClientCommands.argument("x", FloatArgumentType.floatArg())
+                            .then(ClientCommands.argument("y", FloatArgumentType.floatArg())
+                                .then(ClientCommands.argument("z", FloatArgumentType.floatArg())
                                     .executes(c -> {
                                         float x = FloatArgumentType.getFloat(c, "x");
                                         float y = FloatArgumentType.getFloat(c, "y");
@@ -229,18 +229,18 @@ public final class BBSFxCommand
                                         c.getSource().sendFeedback(Component.literal("§a[bbstools fx] meteor incoming — impact at (" + x + "," + y + "," + z + ") in 2.5s"));
                                         return 1;
                                     })))))
-                    .then(ClientCommandManager.literal("demo")
+                    .then(ClientCommands.literal("demo")
                         .executes(c -> {
                             DemoSequencer.start();
                             c.getSource().sendFeedback(Component.literal("§a[bbstools fx] demo started — meteor → nuke → supernova chain (~24s)"));
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("help")
+                    .then(ClientCommands.literal("help")
                         .executes(c -> {
                             printHelp(c.getSource());
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("destroying-mc")
+                    .then(ClientCommands.literal("destroying-mc")
                         .executes(c -> {
                             /* One-button "give me the destroying-mc shader look":
                              *  enable pipelines + lock the look preset that
@@ -259,7 +259,7 @@ public final class BBSFxCommand
                             }
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("cancel")
+                    .then(ClientCommands.literal("cancel")
                         .executes(c -> {
                             SupernovaEffect.cancel();
                             NukeEffect.cancel();
@@ -272,42 +272,42 @@ public final class BBSFxCommand
                             c.getSource().sendFeedback(Component.literal("§e[bbstools fx] cancelled all effects"));
                             return 1;
                         }))
-                    .then(ClientCommandManager.literal("vibrance")
-                        .then(ClientCommandManager.argument("amount", FloatArgumentType.floatArg(0F, 1F))
+                    .then(ClientCommands.literal("vibrance")
+                        .then(ClientCommands.argument("amount", FloatArgumentType.floatArg(0F, 1F))
                             .executes(c -> {
                                 BBSFxState.vibranceAmount = FloatArgumentType.getFloat(c, "amount");
                                 c.getSource().sendFeedback(Component.literal("§a[bbstools fx] vibrance = " + BBSFxState.vibranceAmount));
                                 return 1;
                             })))
-                    .then(ClientCommandManager.literal("exposure")
-                        .then(ClientCommandManager.argument("value", FloatArgumentType.floatArg(0.1F, 5F))
+                    .then(ClientCommands.literal("exposure")
+                        .then(ClientCommands.argument("value", FloatArgumentType.floatArg(0.1F, 5F))
                             .executes(c -> {
                                 BBSFxState.tonemapExposure = FloatArgumentType.getFloat(c, "value");
                                 c.getSource().sendFeedback(Component.literal("§a[bbstools fx] exposure = " + BBSFxState.tonemapExposure));
                                 return 1;
                             })))
-                    .then(ClientCommandManager.literal("sundir")
-                        .then(ClientCommandManager.argument("xDeg", FloatArgumentType.floatArg(-180F, 180F))
-                            .then(ClientCommandManager.argument("zDeg", FloatArgumentType.floatArg(-180F, 180F))
+                    .then(ClientCommands.literal("sundir")
+                        .then(ClientCommands.argument("xDeg", FloatArgumentType.floatArg(-180F, 180F))
+                            .then(ClientCommands.argument("zDeg", FloatArgumentType.floatArg(-180F, 180F))
                                 .executes(c -> {
                                     BBSFxState.sunRotXDeg = FloatArgumentType.getFloat(c, "xDeg");
                                     BBSFxState.sunRotZDeg = FloatArgumentType.getFloat(c, "zDeg");
                                     c.getSource().sendFeedback(Component.literal("§a[bbstools fx] sundir = X" + BBSFxState.sunRotXDeg + "° Z" + BBSFxState.sunRotZDeg + "° (next frame)"));
                                     return 1;
                                 }))))
-                    .then(ClientCommandManager.literal("shake")
-                        .then(ClientCommandManager.argument("intensity", FloatArgumentType.floatArg(0.0F, 3.0F))
+                    .then(ClientCommands.literal("shake")
+                        .then(ClientCommands.argument("intensity", FloatArgumentType.floatArg(0.0F, 3.0F))
                             .executes(c -> {
                                 float i = FloatArgumentType.getFloat(c, "intensity");
                                 CameraShakeManager.addShake(i);
                                 c.getSource().sendFeedback(Component.literal("§a[bbstools fx] shake +" + i + " (decays ~88%/frame)"));
                                 return 1;
                             })))
-                    .then(ClientCommandManager.literal("preset")
-                        .then(ClientCommandManager.argument("name", StringArgumentType.word())
+                    .then(ClientCommands.literal("preset")
+                        .then(ClientCommands.argument("name", StringArgumentType.word())
                             .executes(c -> applyPreset(c.getSource(), StringArgumentType.getString(c, "name")))))
-                    .then(ClientCommandManager.literal("shadow-interval")
-                        .then(ClientCommandManager.argument("frames", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 10))
+                    .then(ClientCommands.literal("shadow-interval")
+                        .then(ClientCommands.argument("frames", com.mojang.brigadier.arguments.IntegerArgumentType.integer(0, 10))
                             .executes(c -> {
                                 int n = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c, "frames");
                                 BBSFxShadowmapPrePass.shadowInterval = n;

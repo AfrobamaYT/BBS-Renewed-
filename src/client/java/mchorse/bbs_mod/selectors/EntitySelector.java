@@ -62,7 +62,7 @@ public class EntitySelector implements IMapSerializable
 
     private boolean compare(CompoundTag source, CompoundTag base)
     {
-        for (String key : source.getAllKeys())
+        for (String key : source.keySet())
         {
             Tag a = source.get(key);
             Tag b = base.get(key);

@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -29,52 +29,52 @@ public final class CameraPreviewCommands
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("campreview")
-                    .then(ClientCommandManager.literal("add")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("campreview")
+                    .then(ClientCommands.literal("add")
                         .executes(ctx -> { runAdd(ctx.getSource(), "Camera"); return 1; })
-                        .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
+                        .then(ClientCommands.argument("name", StringArgumentType.greedyString())
                             .executes(ctx -> { runAdd(ctx.getSource(), StringArgumentType.getString(ctx, "name")); return 1; })))
-                    .then(ClientCommandManager.literal("clear")
+                    .then(ClientCommands.literal("clear")
                         .executes(ctx -> { runClear(ctx.getSource()); return 1; }))
-                    .then(ClientCommandManager.literal("list")
+                    .then(ClientCommands.literal("list")
                         .executes(ctx -> { runList(ctx.getSource()); return 1; }))
-                    .then(ClientCommandManager.literal("layout")
+                    .then(ClientCommands.literal("layout")
                         .executes(ctx -> { runLayout(ctx.getSource()); return 1; }))
-                    .then(ClientCommandManager.literal("track")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.string())
-                            .then(ClientCommandManager.argument("replayIndex", IntegerArgumentType.integer(0))
+                    .then(ClientCommands.literal("track")
+                        .then(ClientCommands.argument("camName", StringArgumentType.string())
+                            .then(ClientCommands.argument("replayIndex", IntegerArgumentType.integer(0))
                                 .executes(ctx -> { runTrack(ctx.getSource(),
                                     StringArgumentType.getString(ctx, "camName"),
                                     IntegerArgumentType.getInteger(ctx, "replayIndex")); return 1; }))))
-                    .then(ClientCommandManager.literal("untrack")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.string())
+                    .then(ClientCommands.literal("untrack")
+                        .then(ClientCommands.argument("camName", StringArgumentType.string())
                             .executes(ctx -> { runTrack(ctx.getSource(),
                                 StringArgumentType.getString(ctx, "camName"), -1); return 1; })))
-                    .then(ClientCommandManager.literal("res")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.string())
+                    .then(ClientCommands.literal("res")
+                        .then(ClientCommands.argument("camName", StringArgumentType.string())
                             .executes(ctx -> { runRes(ctx.getSource(),
                                 StringArgumentType.getString(ctx, "camName")); return 1; })))
-                    .then(ClientCommandManager.literal("offset")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.string())
-                            .then(ClientCommandManager.argument("x", DoubleArgumentType.doubleArg())
-                                .then(ClientCommandManager.argument("y", DoubleArgumentType.doubleArg())
-                                    .then(ClientCommandManager.argument("z", DoubleArgumentType.doubleArg())
+                    .then(ClientCommands.literal("offset")
+                        .then(ClientCommands.argument("camName", StringArgumentType.string())
+                            .then(ClientCommands.argument("x", DoubleArgumentType.doubleArg())
+                                .then(ClientCommands.argument("y", DoubleArgumentType.doubleArg())
+                                    .then(ClientCommands.argument("z", DoubleArgumentType.doubleArg())
                                         .executes(ctx -> { runOffset(ctx.getSource(),
                                             StringArgumentType.getString(ctx, "camName"),
                                             DoubleArgumentType.getDouble(ctx, "x"),
                                             DoubleArgumentType.getDouble(ctx, "y"),
                                             DoubleArgumentType.getDouble(ctx, "z")); return 1; }))))))
-                    .then(ClientCommandManager.literal("angle")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.string())
-                            .then(ClientCommandManager.argument("yaw", DoubleArgumentType.doubleArg())
-                                .then(ClientCommandManager.argument("pitch", DoubleArgumentType.doubleArg())
+                    .then(ClientCommands.literal("angle")
+                        .then(ClientCommands.argument("camName", StringArgumentType.string())
+                            .then(ClientCommands.argument("yaw", DoubleArgumentType.doubleArg())
+                                .then(ClientCommands.argument("pitch", DoubleArgumentType.doubleArg())
                                     .executes(ctx -> { runAngle(ctx.getSource(),
                                         StringArgumentType.getString(ctx, "camName"),
                                         DoubleArgumentType.getDouble(ctx, "yaw"),
                                         DoubleArgumentType.getDouble(ctx, "pitch")); return 1; })))))
-                    .then(ClientCommandManager.literal("remove")
-                        .then(ClientCommandManager.argument("camName", StringArgumentType.greedyString())
+                    .then(ClientCommands.literal("remove")
+                        .then(ClientCommands.argument("camName", StringArgumentType.greedyString())
                             .executes(ctx -> { runRemove(ctx.getSource(),
                                 StringArgumentType.getString(ctx, "camName")); return 1; })))));
         });

@@ -19,7 +19,7 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -32,16 +32,16 @@ public final class CinematicDistanceCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("cinematic-distance")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("cinematic-distance")
                     .executes(ctx -> doStatus(ctx.getSource()))
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                         .executes(ctx -> doStatus(ctx.getSource())))
-                    .then(ClientCommandManager.literal("off")
+                    .then(ClientCommands.literal("off")
                         .executes(ctx -> doToggle(ctx.getSource(), false)))
-                    .then(ClientCommandManager.literal("on")
+                    .then(ClientCommands.literal("on")
                         .executes(ctx -> doToggle(ctx.getSource(), true)))
-                    .then(ClientCommandManager.argument("blocks", IntegerArgumentType.integer(1, 2048))
+                    .then(ClientCommands.argument("blocks", IntegerArgumentType.integer(1, 2048))
                         .executes(ctx -> doSet(ctx.getSource(),
                             IntegerArgumentType.getInteger(ctx, "blocks"))))));
         });

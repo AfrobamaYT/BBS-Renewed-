@@ -14,7 +14,7 @@ package com.afrobama.bbstools.client.perf;
 import com.afrobama.bbstools.BBSToolsMod;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -27,11 +27,11 @@ public final class CinematicProfileCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("cinematic")
-                    .then(ClientCommandManager.literal("on")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("cinematic")
+                    .then(ClientCommands.literal("on")
                         .executes(ctx -> doOn(ctx.getSource())))
-                    .then(ClientCommandManager.literal("off")
+                    .then(ClientCommands.literal("off")
                         .executes(ctx -> doOff(ctx.getSource())))));
         });
     }

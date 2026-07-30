@@ -6,7 +6,7 @@ package com.afrobama.bbstools.client.veil;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -123,7 +123,7 @@ public final class MASCommands
     private static void registerTree(CommandDispatcher<FabricClientCommandSource> dispatcher)
     {
         com.mojang.brigadier.builder.LiteralArgumentBuilder<FabricClientCommandSource> root =
-            ClientCommandManager.literal("mas");
+            ClientCommands.literal("mas");
 
         /* One subcommand per Post-FX effect with on/off/toggle. */
         for (Map.Entry<String, MASPostFXFeature> entry : EFFECTS.entrySet())
@@ -131,18 +131,18 @@ public final class MASCommands
             String name = entry.getKey();
             MASPostFXFeature fx = entry.getValue();
 
-            root.then(ClientCommandManager.literal(name)
+            root.then(ClientCommands.literal(name)
                 .executes(ctx -> fxStatus(ctx, fx))
-                .then(ClientCommandManager.literal("on")
+                .then(ClientCommands.literal("on")
                     .executes(ctx -> fxOn(ctx, fx)))
-                .then(ClientCommandManager.literal("off")
+                .then(ClientCommands.literal("off")
                     .executes(ctx -> fxOff(ctx, fx)))
-                .then(ClientCommandManager.literal("toggle")
+                .then(ClientCommands.literal("toggle")
                     .executes(ctx -> fxToggle(ctx, fx))));
         }
 
         /* /mas help — categorised overview of everything available */
-        root.then(ClientCommandManager.literal("help")
+        root.then(ClientCommands.literal("help")
             .executes(ctx ->
             {
                 msg(ctx, "§6===== MAS / Veil Post-FX =====");
@@ -169,7 +169,7 @@ public final class MASCommands
             }));
 
         /* /mas list — show every effect + its current state */
-        root.then(ClientCommandManager.literal("list")
+        root.then(ClientCommands.literal("list")
             .executes(ctx ->
             {
                 msg(ctx, "§6[MAS] Available Post-FX effects:");
@@ -183,8 +183,8 @@ public final class MASCommands
             }));
 
         /* /mas all off — kill every effect at once. Useful when stacking gets noisy. */
-        root.then(ClientCommandManager.literal("all")
-            .then(ClientCommandManager.literal("off")
+        root.then(ClientCommands.literal("all")
+            .then(ClientCommands.literal("off")
                 .executes(ctx ->
                 {
                     int n = 0;
@@ -196,7 +196,7 @@ public final class MASCommands
         /* /mas preset <name> — apply a curated bundle. Default behaviour:
          *  disables every currently active effect first, then enables the
          *  preset's set. /mas preset list shows available presets. */
-        var presetNode = ClientCommandManager.literal("preset");
+        var presetNode = ClientCommands.literal("preset");
         presetNode.executes(ctx ->
         {
             msg(ctx, "§6[MAS] Available presets:");
@@ -211,10 +211,10 @@ public final class MASCommands
         {
             String presetName = entry.getKey();
             List<String> presetEffects = entry.getValue();
-            presetNode.then(ClientCommandManager.literal(presetName)
+            presetNode.then(ClientCommands.literal(presetName)
                 .executes(ctx -> applyPreset(ctx, presetName, presetEffects)));
         }
-        presetNode.then(ClientCommandManager.literal("reset")
+        presetNode.then(ClientCommands.literal("reset")
             .executes(ctx ->
             {
                 int n = 0;
@@ -228,7 +228,7 @@ public final class MASCommands
          *  Snapshots currently-active effects + intensities as JSON in
          *  bbs/presets/<bin>/<name>.json. Shows up immediately in the
          *  Power Bins dashboard tab. */
-        presetNode.then(ClientCommandManager.literal("save")
+        presetNode.then(ClientCommands.literal("save")
             .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
                 .<FabricClientCommandSource, String>argument(
                     "nameOrBin", com.mojang.brigadier.arguments.StringArgumentType.word())
@@ -249,7 +249,7 @@ public final class MASCommands
 
         /* /mas preset apply <bin> <name>  → loads JSON, applies to current state.
          *  Bypasses the curated PRESETS map; reads files written by 'save'. */
-        presetNode.then(ClientCommandManager.literal("apply")
+        presetNode.then(ClientCommands.literal("apply")
             .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
                 .<FabricClientCommandSource, String>argument(
                     "bin", com.mojang.brigadier.arguments.StringArgumentType.word())
@@ -269,7 +269,7 @@ public final class MASCommands
          *  all 5 catastrophes (supernova, blackhole, nuke, laser,
          *  planet). Values 0..3 (0=off without removing pipeline,
          *  1=normal, 3=over-driven). */
-        root.then(ClientCommandManager.literal("intensity")
+        root.then(ClientCommands.literal("intensity")
             .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
                 .<FabricClientCommandSource, String>argument(
                     "effect", com.mojang.brigadier.arguments.StringArgumentType.word())
@@ -297,12 +297,12 @@ public final class MASCommands
          *   /mas shader install <name> → materialise pack at resourcepacks/bbstools-user-shaders/
          *   /mas shader template       → write a starter template.fsh
          *   /mas shader docs           → in-chat tutorial */
-        root.then(ClientCommandManager.literal("shader")
-            .then(ClientCommandManager.literal("list").executes(MASCommands::shaderList))
-            .then(ClientCommandManager.literal("template").executes(MASCommands::shaderTemplate))
-            .then(ClientCommandManager.literal("docs").executes(MASCommands::shaderDocs))
-            .then(ClientCommandManager.literal("claude").executes(MASCommands::shaderClaude))
-            .then(ClientCommandManager.literal("install")
+        root.then(ClientCommands.literal("shader")
+            .then(ClientCommands.literal("list").executes(MASCommands::shaderList))
+            .then(ClientCommands.literal("template").executes(MASCommands::shaderTemplate))
+            .then(ClientCommands.literal("docs").executes(MASCommands::shaderDocs))
+            .then(ClientCommands.literal("claude").executes(MASCommands::shaderClaude))
+            .then(ClientCommands.literal("install")
                 .then(com.mojang.brigadier.builder.RequiredArgumentBuilder
                     .<FabricClientCommandSource, String>argument(
                         "name", com.mojang.brigadier.arguments.StringArgumentType.word())
@@ -315,12 +315,12 @@ public final class MASCommands
                     }))));
 
         /* /mas quasar test|smoke — spawn Quasar emitters at player */
-        root.then(ClientCommandManager.literal("quasar")
-            .then(ClientCommandManager.literal("test")
+        root.then(ClientCommands.literal("quasar")
+            .then(ClientCommands.literal("test")
                 .executes(MASCommands::quasarTest))
-            .then(ClientCommandManager.literal("smoke")
+            .then(ClientCommands.literal("smoke")
                 .executes(MASCommands::quasarTest))
-            .then(ClientCommandManager.literal("status")
+            .then(ClientCommands.literal("status")
                 .executes(MASCommands::quasarStatus)));
 
         /* /mas volcano — world-space eruption event. Spawns a Quasar
@@ -329,9 +329,9 @@ public final class MASCommands
          * a screen overlay. Catastrophe-class effect — same family as
          * supernova/blackhole etc but world-space (those are still
          * screen-space pending world-space rebuild). */
-        root.then(ClientCommandManager.literal("volcano")
+        root.then(ClientCommands.literal("volcano")
             .executes(MASCommands::volcanoSpawn)
-            .then(ClientCommandManager.literal("spawn")
+            .then(ClientCommands.literal("spawn")
                 .executes(MASCommands::volcanoSpawn)));
 
         dispatcher.register(root);

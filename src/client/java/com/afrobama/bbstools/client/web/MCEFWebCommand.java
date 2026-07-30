@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.web;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -40,10 +40,10 @@ public final class MCEFWebCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("web")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("web")
                     .executes(ctx -> open(ctx.getSource(), null))
-                    .then(ClientCommandManager.argument("url", StringArgumentType.greedyString())
+                    .then(ClientCommands.argument("url", StringArgumentType.greedyString())
                         .executes(ctx -> open(ctx.getSource(), StringArgumentType.getString(ctx, "url"))))));
         });
 

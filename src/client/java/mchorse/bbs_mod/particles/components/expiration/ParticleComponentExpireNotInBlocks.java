@@ -19,7 +19,7 @@ public class ParticleComponentExpireNotInBlocks extends ParticleComponentExpireB
 
         for (String block : this.blocks)
         {
-            if (current.getBlock().builtInRegistryHolder().key().location().toString().equals(block))
+            if (current.getBlock().builtInRegistryHolder().key().identifier().toString().equals(block))
             {
                 return;
             }

@@ -65,7 +65,7 @@ import mchorse.bbs_mod.utils.resources.MinecraftSourcePack;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -762,7 +762,7 @@ public class BBSModClient implements ClientModInitializer
 
     private KeyMapping createKey(String id, int key)
     {
-        return KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        return KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key." + BBSMod.MOD_ID + "." + id,
             InputConstants.Type.KEYSYM,
             key,
@@ -772,7 +772,7 @@ public class BBSModClient implements ClientModInitializer
 
     private KeyMapping createKeyMouse(String id, int button)
     {
-        return KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        return KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key." + BBSMod.MOD_ID + "." + id,
             InputConstants.Type.MOUSE,
             button,

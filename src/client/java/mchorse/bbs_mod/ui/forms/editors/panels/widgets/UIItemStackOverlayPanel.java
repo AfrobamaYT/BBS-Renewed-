@@ -40,7 +40,7 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
     {
         for (ResourceKey<Item> key : BuiltInRegistries.ITEM.registryKeySet())
         {
-            itemIDs.add(key.location().toString());
+            itemIDs.add(key.identifier().toString());
         }
 
         itemIDs.sort(String::compareToIgnoreCase);

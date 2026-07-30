@@ -16,7 +16,7 @@ import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.utils.clips.Clip;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
@@ -105,18 +105,18 @@ public final class TrackerFovPresets
             return builder.buildFuture();
         };
 
-        dispatcher.register(ClientCommandManager.literal("bbstools")
-            .then(ClientCommandManager.literal("fov")
-                .then(ClientCommandManager.literal("save")
-                    .then(ClientCommandManager.argument("name", StringArgumentType.word())
+        dispatcher.register(ClientCommands.literal("bbstools")
+            .then(ClientCommands.literal("fov")
+                .then(ClientCommands.literal("save")
+                    .then(ClientCommands.argument("name", StringArgumentType.word())
                         .executes(ctx ->
                         {
                             String name = StringArgumentType.getString(ctx, "name");
                             runSave(ctx.getSource(), name);
                             return 1;
                         })))
-                .then(ClientCommandManager.literal("load")
-                    .then(ClientCommandManager.argument("name", StringArgumentType.word())
+                .then(ClientCommands.literal("load")
+                    .then(ClientCommands.argument("name", StringArgumentType.word())
                         .suggests(nameSuggest)
                         .executes(ctx ->
                         {
@@ -124,7 +124,7 @@ public final class TrackerFovPresets
                             runLoad(ctx.getSource(), name);
                             return 1;
                         })))
-                .then(ClientCommandManager.literal("list")
+                .then(ClientCommands.literal("list")
                     .executes(ctx ->
                     {
                         runList(ctx.getSource());

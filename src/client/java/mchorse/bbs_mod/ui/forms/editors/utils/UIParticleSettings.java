@@ -35,7 +35,7 @@ public class UIParticleSettings extends UIElement
 
             for (ResourceKey<ParticleType<?>> key : BuiltInRegistries.PARTICLE_TYPE.registryKeySet())
             {
-                strings.add(key.location().toString());
+                strings.add(key.identifier().toString());
             }
 
             overlayPanel.addValues(strings);

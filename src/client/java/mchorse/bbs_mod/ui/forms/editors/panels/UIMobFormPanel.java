@@ -33,7 +33,7 @@ public class UIMobFormPanel extends UIFormPanel<MobForm>
 
         for (ResourceKey<EntityType<?>> key : BuiltInRegistries.ENTITY_TYPE.registryKeySet())
         {
-            mobIDs.add(key.location().toString());
+            mobIDs.add(key.identifier().toString());
         }
 
         mobIDs.sort(Comparator.comparing((a) -> a));

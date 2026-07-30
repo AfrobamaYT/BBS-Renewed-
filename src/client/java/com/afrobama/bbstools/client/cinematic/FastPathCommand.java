@@ -18,7 +18,7 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -31,13 +31,13 @@ public final class FastPathCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("fastpath")
-                    .then(ClientCommandManager.literal("on")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("fastpath")
+                    .then(ClientCommands.literal("on")
                         .executes(ctx -> setFlag(ctx, true)))
-                    .then(ClientCommandManager.literal("off")
+                    .then(ClientCommands.literal("off")
                         .executes(ctx -> setFlag(ctx, false)))
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                         .executes(FastPathCommand::printStatus))));
         });
     }

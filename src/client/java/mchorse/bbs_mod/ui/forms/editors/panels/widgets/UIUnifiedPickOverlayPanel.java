@@ -72,12 +72,12 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
     {
         for (ResourceKey<Item> key : BuiltInRegistries.ITEM.registryKeySet())
         {
-            ITEM_IDS.add(key.location().toString());
+            ITEM_IDS.add(key.identifier().toString());
         }
 
         for (ResourceKey<Block> key : BuiltInRegistries.BLOCK.registryKeySet())
         {
-            BLOCK_IDS.add(key.location().toString());
+            BLOCK_IDS.add(key.identifier().toString());
         }
 
         ITEM_IDS.sort(String::compareToIgnoreCase);

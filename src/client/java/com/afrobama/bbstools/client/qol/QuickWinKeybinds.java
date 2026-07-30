@@ -9,7 +9,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -70,7 +70,7 @@ public final class QuickWinKeybinds
 
     public static void register()
     {
-        cinematicToggle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        cinematicToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.cinematic_toggle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
@@ -80,7 +80,7 @@ public final class QuickWinKeybinds
         /* Coded by Afrobama/Claude — UNBOUND default (was F2 which collides
          * with MC's vanilla screenshot key → 10s freeze on press). User can
          * rebind in MC Controls if desired. */
-        veilCrowdToggle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        veilCrowdToggle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.veil_crowd_toggle",
             InputConstants.Type.KEYSYM,
             -1, /* GLFW_KEY_UNKNOWN — unbound default */
@@ -89,21 +89,21 @@ public final class QuickWinKeybinds
 
         /* F8 — BBS-core + instancing GLSL live-reload + Iris pack reload. (F7 collides with the
          * record-from-cursor hotkey, which swallowed the press → shader reload never fired.) */
-        shaderReload = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        shaderReload = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.shader_reload",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
             "category.bbstools"
         ));
 
-        gpuDebugCapture = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        gpuDebugCapture = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.gpu_debug_capture",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F11,
             "category.bbstools"
         ));
 
-        threadDump = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        threadDump = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.thread_dump",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F10,
@@ -125,7 +125,7 @@ public final class QuickWinKeybinds
          *                            MC-keybinding — dort kollidiert es also nicht)
          *
          * F6 ist auf MC-ebene frei; F9 bleibt damit für den keybind-editor. */
-        bugBundle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        bugBundle = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.bug_bundle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,

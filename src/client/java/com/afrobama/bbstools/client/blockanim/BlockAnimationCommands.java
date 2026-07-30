@@ -6,7 +6,7 @@
 //  explicit coords.)
 package com.afrobama.bbstools.client.blockanim;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +22,8 @@ public final class BlockAnimationCommands
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbsanim")
-                .then(ClientCommandManager.literal("clear")
+            dispatcher.register(ClientCommands.literal("bbsanim")
+                .then(ClientCommands.literal("clear")
                     .executes(ctx ->
                     {
                         BlockAnimation.clear();

@@ -15,7 +15,7 @@ package com.afrobama.bbstools.client.flashback;
 
 import com.afrobama.bbstools.BBSToolsMod;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -28,13 +28,13 @@ public final class FlashbackBridgeCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("record-world")
-                    .then(ClientCommandManager.literal("start")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("record-world")
+                    .then(ClientCommands.literal("start")
                         .executes(ctx -> doStart(ctx.getSource())))
-                    .then(ClientCommandManager.literal("stop")
+                    .then(ClientCommands.literal("stop")
                         .executes(ctx -> doStop(ctx.getSource())))
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                         .executes(ctx -> doStatus(ctx.getSource())))));
         });
 

@@ -6,7 +6,7 @@
 // recording without depending on the broken auto-pipeline.
 package com.afrobama.bbstools.client.tracker;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.network.chat.Component;
 
@@ -17,19 +17,19 @@ public final class SprintFovManualCommand
     public static void register()
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("sprintfov")
-                    .then(ClientCommandManager.literal("on").executes(c -> {
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("sprintfov")
+                    .then(ClientCommands.literal("on").executes(c -> {
                         SprintFovState.MANUAL_SPRINT = true;
                         c.getSource().sendFeedback(Component.literal("§a[bbstools] sprint FOV manual = ON (1.15x boost)"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("off").executes(c -> {
+                    .then(ClientCommands.literal("off").executes(c -> {
                         SprintFovState.MANUAL_SPRINT = false;
                         c.getSource().sendFeedback(Component.literal("§e[bbstools] sprint FOV manual = OFF (back to entity-detected)"));
                         return 1;
                     }))
-                    .then(ClientCommandManager.literal("toggle").executes(c -> {
+                    .then(ClientCommands.literal("toggle").executes(c -> {
                         SprintFovState.MANUAL_SPRINT = !SprintFovState.MANUAL_SPRINT;
                         boolean on = SprintFovState.MANUAL_SPRINT;
                         c.getSource().sendFeedback(Component.literal((on ? "§a" : "§e") + "[bbstools] sprint FOV manual = " + (on ? "ON" : "OFF")));

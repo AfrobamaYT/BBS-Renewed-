@@ -8,7 +8,7 @@ import com.google.gson.JsonParser;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
@@ -63,9 +63,9 @@ public final class SkinFetchCommand
 
     private static void registerCommand(CommandDispatcher<FabricClientCommandSource> dispatcher)
     {
-        dispatcher.register(ClientCommandManager.literal("bbstools")
-            .then(ClientCommandManager.literal("skin")
-                .then(ClientCommandManager.argument("username", StringArgumentType.word())
+        dispatcher.register(ClientCommands.literal("bbstools")
+            .then(ClientCommands.literal("skin")
+                .then(ClientCommands.argument("username", StringArgumentType.word())
                     .executes(ctx -> {
                         String username = StringArgumentType.getString(ctx, "username");
                         run(ctx.getSource(), username);

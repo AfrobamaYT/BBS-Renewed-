@@ -118,7 +118,7 @@ public class UIParticleColorPresets extends UIElement
 
             if (effect != null && args.equals(toArguments(effect)))
             {
-                return key.location();
+                return key.identifier();
             }
         }
 
@@ -132,7 +132,7 @@ public class UIParticleColorPresets extends UIElement
 
         for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())
         {
-            ids.add(key.location().toString());
+            ids.add(key.identifier().toString());
         }
 
         panel.addValues(ids);

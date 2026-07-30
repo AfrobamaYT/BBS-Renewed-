@@ -36,7 +36,7 @@ import mchorse.bbs_mod.actions.ActionManager;
 import mchorse.bbs_mod.actions.ActionPlayer;
 import mchorse.bbs_mod.film.replays.Replay;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
@@ -49,14 +49,14 @@ public final class CrowdModeCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("crowdmode")
-                    .then(ClientCommandManager.literal("all")
-                        .then(ClientCommandManager.literal("on")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("crowdmode")
+                    .then(ClientCommands.literal("all")
+                        .then(ClientCommands.literal("on")
                             .executes(ctx -> setAll(ctx, true)))
-                        .then(ClientCommandManager.literal("off")
+                        .then(ClientCommands.literal("off")
                             .executes(ctx -> setAll(ctx, false))))
-                    .then(ClientCommandManager.literal("status")
+                    .then(ClientCommands.literal("status")
                         .executes(CrowdModeCommand::printStatus))));
         });
     }

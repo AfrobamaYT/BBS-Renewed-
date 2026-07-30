@@ -17,7 +17,7 @@ package com.afrobama.bbstools.client.blockspawn;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
@@ -54,17 +54,17 @@ public final class BlockSpawnAnimCommand
     {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registry) ->
         {
-            dispatcher.register(ClientCommandManager.literal("bbstools")
-                .then(ClientCommandManager.literal("blockspawn")
-                    .then(ClientCommandManager.literal("clear")
+            dispatcher.register(ClientCommands.literal("bbstools")
+                .then(ClientCommands.literal("blockspawn")
+                    .then(ClientCommands.literal("clear")
                         .executes(ctx -> doClear(ctx.getSource())))
-                    .then(ClientCommandManager.argument("radius",
+                    .then(ClientCommands.argument("radius",
                             IntegerArgumentType.integer(MIN_RADIUS, MAX_RADIUS))
                         .executes(ctx -> doTrigger(
                             ctx.getSource(),
                             IntegerArgumentType.getInteger(ctx, "radius"),
                             DEFAULT_DURATION_TICKS))
-                        .then(ClientCommandManager.argument("durationTicks",
+                        .then(ClientCommands.argument("durationTicks",
                                 IntegerArgumentType.integer(MIN_DURATION_TICKS, MAX_DURATION_TICKS))
                             .executes(ctx -> doTrigger(
                                 ctx.getSource(),

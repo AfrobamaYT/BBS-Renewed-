@@ -47,18 +47,18 @@ public final class FractureTestCommand
 
     private static void registerCommand(CommandDispatcher<FabricClientCommandSource> dispatcher)
     {
-        dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("bbstools")
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-test")
+        dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("bbstools")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("fracture-test")
                 .executes(ctx -> {
                     runTest(ctx.getSource());
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-debug")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("fracture-debug")
                 .executes(ctx -> {
                     runDebug(ctx.getSource());
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-clear")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("fracture-clear")
                 .executes(ctx -> {
                     com.afrobama.bbstools.client.fracture.FractureRegistry.clearAll();
                     com.afrobama.bbstools.client.fracture.BonePhysicsSimulator.clearAll();
@@ -70,41 +70,41 @@ public final class FractureTestCommand
                     ctx.getSource().sendFeedback(Component.literal("§aAll fracture state cleared (" + restored + " blocks restored)"));
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-restore-blocks")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("fracture-restore-blocks")
                 .executes(ctx -> {
                     int restored = com.afrobama.bbstools.client.fracture.BlockSnapshotRegistry.restoreAll();
                     ctx.getSource().sendFeedback(Component.literal("§a" + restored + " blocks restored"));
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-help")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("fracture-help")
                 .executes(ctx -> {
                     runHelp(ctx.getSource());
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("verbose-chat")
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("on")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("verbose-chat")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("on")
                     .executes(ctx -> {
                         com.afrobama.bbstools.perf.BBSPerfConfig.VERBOSE_DESTRUCTION_CHAT = true;
                         ctx.getSource().sendFeedback(Component.literal("§a[BBSTools] §fVerbose destruction chat: §aON §7(per-fire diagnostics will print to chat)"));
                         return 1;
                     }))
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("off")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("off")
                     .executes(ctx -> {
                         com.afrobama.bbstools.perf.BBSPerfConfig.VERBOSE_DESTRUCTION_CHAT = false;
                         ctx.getSource().sendFeedback(Component.literal("§a[BBSTools] §fVerbose destruction chat: §cOFF §7(silent during recording, log file still has full diagnostics)"));
                         return 1;
                     })))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("editorcam")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("editorcam")
                 .executes(ctx -> {
                     runEditorCamInspect(ctx.getSource());
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("add-camera-replay")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("add-camera-replay")
                 .executes(ctx -> {
                     runAddCameraReplay(ctx.getSource());
                     return 1;
                 }))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("console-mark")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("console-mark")
                 .executes(ctx -> {
                     com.afrobama.bbstools.client.console.BBSActionRecorder.command("/bbstools console-mark");
                     com.afrobama.bbstools.client.console.LogConsoleBuffer.pushUserMarker(null);
@@ -121,7 +121,7 @@ public final class FractureTestCommand
                         sendChat(ctx.getSource(), "§a[BBSTools] §fMarker '§e" + label + "§f' pushed to log console.");
                         return 1;
                     })))
-            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("console-report")
+            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("console-report")
                 .executes(ctx -> {
                     com.afrobama.bbstools.client.console.ConsoleReport.write(ctx.getSource());
                     return 1;
