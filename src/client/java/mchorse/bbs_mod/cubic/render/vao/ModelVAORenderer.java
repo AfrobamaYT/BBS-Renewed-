@@ -52,11 +52,11 @@ public class ModelVAORenderer
      * <p>std140 richtet Felder unterschiedlich aus, je nach Typ — ein {@code ivec2} nach
      * einer {@code mat3} landet nicht dort, wo man es naiv erwartet, und die Folge waere
      * ein falsches Bild ohne Fehlermeldung. Darum steht hier alles als volle 16-Byte-Zeile:
-     * die Normalenmatrix als drei Zeilen, Licht und Overlay zusammen in einer, die
-     * Durchgangsart in einer letzten. Kein Feld braucht Fuellbytes, kein Offset ist
+     * die Normalenmatrix als drei Zeilen, Licht und Overlay zusammen in einer vierten,
+     * die Durchgangsart in einer fuenften. Kein Feld braucht Fuellbytes, kein Offset ist
      * geraten.
      */
-    private static final int BLOCK_GROESSE = 4 * 16;
+    private static final int BLOCK_GROESSE = 5 * 16;
 
     private static GpuBuffer block;
 
@@ -75,10 +75,10 @@ public class ModelVAORenderer
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay)
     {
-        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay);
+        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0);
     }
 
-    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay)
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode)
     {
         if (modelVAO.eckenZahl() <= 0)
         {
@@ -95,7 +95,7 @@ public class ModelVAORenderer
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, new Vector4f(r, g, b, a));
 
-        schreibeBlock(normalMat, light, overlay);
+        schreibeBlock(normalMat, light, overlay, passMode);
 
         /* Leeres Optional und leeres OptionalDouble heissen: Farb- und Tiefenpuffer NICHT
          * loeschen. Das Modell wird in das bestehende Weltbild gezeichnet — mit einem
@@ -126,7 +126,7 @@ public class ModelVAORenderer
      * sonst ueberschreibt das zweite Modell die Werte des ersten, bevor die Karte sie
      * gelesen hat.
      */
-    private static void schreibeBlock(Matrix3f normalMat, int light, int overlay)
+    private static void schreibeBlock(Matrix3f normalMat, int light, int overlay, int passMode)
     {
         if (block == null)
         {
@@ -150,11 +150,15 @@ public class ModelVAORenderer
             roh.putInt(light & 0xFFFF).putInt(light >> 16 & 0xFFFF);
             roh.putInt(overlay & 0xFFFF).putInt(overlay >> 16 & 0xFFFF);
 
+            /* Die Durchgangsart steuert die Zwei-Pass-Durchsichtigkeit im Fragmentshader:
+             * 0 = ein Durchgang, 1 = nur undurchsichtige Texel (schreiben Tiefe),
+             * 2 = nur halbdurchsichtige (sortiert, ohne Tiefenschreiben). */
+            roh.putInt(passMode).putInt(0).putInt(0).putInt(0);
+
             /* ⚠️ IViewRotMat steht bewusst NICHT im Block. Der alte Shader deklarierte es
              * ({@code uniform mat3 IViewRotMat}), benutzte es in main() aber nirgends —
-             * nachgelesen in model.vsh, nicht angenommen. Ein toter Wert kostet hier drei
-             * volle Zeilen, also bleibt er draussen. Wer ihn braucht, erweitert den Block
-             * um drei Zeilen UND zieht BLOCK_GROESSE mit. */
+             * nachgelesen in model.vsh, nicht angenommen. Ein toter Wert kostet drei volle
+             * Zeilen. Wer ihn braucht, erweitert den Block UND zieht BLOCK_GROESSE mit. */
 
             roh.flip();
 

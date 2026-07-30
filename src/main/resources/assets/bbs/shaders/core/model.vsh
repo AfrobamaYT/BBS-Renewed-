@@ -1,43 +1,63 @@
-#version 150
+#version 330
 
-#moj_import <light.glsl>
-#moj_import <fog.glsl>
+#moj_import <minecraft:light.glsl>
+#moj_import <minecraft:fog.glsl>
+#moj_import <minecraft:dynamictransforms.glsl>
+#moj_import <minecraft:projection.glsl>
+#moj_import <minecraft:sample_lightmap.glsl>
 
-in vec3 Position;
-in vec4 Color;
-in vec2 UV0;
-in ivec2 UV1;
-in ivec2 UV2;
-in vec3 Normal;
+/* ⛔ DIESER BLOCK IST EIN VERTRAG MIT ModelVAORenderer.schreibeBlock — Reihenfolge und
+ * Groesse muessen dort und hier gleich sein, und kein Compiler prueft das.
+ *
+ * Absichtlich nur volle 16-Byte-Zeilen: std140 richtet Felder je nach Typ unterschiedlich
+ * aus, ein ivec2 nach einer mat3 landet nicht dort, wo man es naiv erwartet. Die
+ * Normalenmatrix steht darum als drei vec4 (die w-Komponente ist Fuellung), Licht und
+ * Overlay teilen sich eine ivec4, die Durchgangsart bekommt eine eigene. */
+layout(std140) uniform ModelInfo {
+    vec4 NormalMat0;
+    vec4 NormalMat1;
+    vec4 NormalMat2;
+    ivec4 LichtOverlay;
+    ivec4 Modus;
+};
 
 uniform sampler2D Sampler1;
 uniform sampler2D Sampler2;
 
-uniform mat4 ModelViewMat;
-uniform mat3 NormalMat;
-uniform mat4 ProjMat;
-uniform mat3 IViewRotMat;
-uniform int FogShape;
+in vec3 Position;
+in vec2 UV0;
+in vec3 Normal;
 
-uniform vec3 Light0_Direction;
-uniform vec3 Light1_Direction;
-
-out float vertexDistance;
+out float sphericalVertexDistance;
+out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec4 lightMapColor;
 out vec4 overlayColor;
 out vec2 texCoord0;
-out vec4 normal;
 
 void main()
 {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
 
-    vertexDistance = fog_distance(Position, FogShape);
+    /* 26.2 rechnet mit ZWEI Nebeldistanzen statt einer: kugelfoermig fuer den
+     * Umgebungsnebel, zylindrisch fuer die Sichtweite. Das alte fog_distance(pos, FogShape)
+     * gibt es nicht mehr. */
+    sphericalVertexDistance = fog_spherical_distance(Position);
+    cylindricalVertexDistance = fog_cylindrical_distance(Position);
+
+    mat3 NormalMat = mat3(NormalMat0.xyz, NormalMat1.xyz, NormalMat2.xyz);
     vec3 fixNormal = normalize(NormalMat * Normal);
-    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, fixNormal, Color);
-    lightMapColor = texelFetch(Sampler2, UV2 / 16, 0);
-    overlayColor = texelFetch(Sampler1, UV1, 0);
+
+    /* Die Modellfarbe kommt aus ColorModulator (DynamicTransforms), nicht mehr aus einem
+     * Vertexattribut: ModelVAORenderer schreibt r/g/b/a ueber writeTransform genau dorthin.
+     * ⚠️ Darum darf der Fragmentshader NICHT noch einmal mit ColorModulator multiplizieren
+     * — die Farbe steckt bereits in vertexColor. */
+    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, fixNormal, ColorModulator);
+
+    /* Licht und Overlay waren frueher konstante Vertexattribute (UV2/UV1). Ein Attribut
+     * ohne Puffer gibt es in 26.2 nicht — die Koordinaten stehen jetzt im Block. */
+    lightMapColor = sample_lightmap(Sampler2, LichtOverlay.xy);
+    overlayColor = texelFetch(Sampler1, LichtOverlay.zw, 0);
+
     texCoord0 = UV0;
-    normal = ProjMat * ModelViewMat * vec4(Normal, 0.0);
 }
