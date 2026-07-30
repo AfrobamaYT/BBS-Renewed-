@@ -106,18 +106,51 @@ public final class ModelVAOPipeline
         .build();
 
     /** Der uebliche Durchgang: durchsichtig gemischt, Tiefe gelesen und geschrieben. */
-    public static final RenderPipeline DURCHSICHTIG = bauen("model", true, true);
+    public static final RenderPipeline DURCHSICHTIG = bauen("model", true, true, true);
 
     /** Wie {@link #DURCHSICHTIG}, aber beidseitig — fuer Modelle mit {@code isCulling() == false}. */
-    public static final RenderPipeline DURCHSICHTIG_BEIDSEITIG = bauen("model", true, false);
+    public static final RenderPipeline DURCHSICHTIG_BEIDSEITIG = bauen("model", true, false, true);
+
+    /**
+     * Durchsichtig, aber OHNE Tiefenschreiben — der zweite Durchgang der
+     * Zwei-Pass-Durchsichtigkeit.
+     *
+     * <p>Die sortierte Warteschlange zeichnet halbdurchsichtige Teile von hinten nach
+     * vorn und darf dabei keine Tiefe schreiben, sonst verdeckt das erste gezeichnete
+     * Teil alle dahinterliegenden. Frueher schaltete {@code depthMask(false)} das pro
+     * Zeichenbefehl um; in 26.2 ist es eine Eigenschaft der Pipeline, also braucht es
+     * eine zweite Konstante statt eines Schalters.
+     */
+    public static final RenderPipeline DURCHSICHTIG_OHNE_TIEFENSCHREIBEN = bauen("model", true, true, false);
+
+    /** Wie {@link #DURCHSICHTIG_OHNE_TIEFENSCHREIBEN}, aber beidseitig. */
+    public static final RenderPipeline DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG = bauen("model", true, false, false);
 
     /** Ohne Mischung: der Iris-Cutout-Fall, der frueher {@code disableBlend} rief. */
-    public static final RenderPipeline UNDURCHSICHTIG = bauen("model", false, true);
+    public static final RenderPipeline UNDURCHSICHTIG = bauen("model", false, true, true);
 
-    private static RenderPipeline bauen(String shader, boolean mischen, boolean culling)
+    /**
+     * Waehlt die Modell-Pipeline nach den beiden Schaltern, die der alte Code pro
+     * Zeichenbefehl umlegte.
+     *
+     * <p>Das ersetzt {@code enableCull()/disableCull()} und {@code depthMask(...)}: was
+     * frueher ein Zustandswechsel war, ist jetzt die Wahl einer von vier Konstanten.
+     */
+    public static RenderPipeline waehlen(boolean culling, boolean tiefeSchreiben)
+    {
+        if (tiefeSchreiben)
+        {
+            return culling ? DURCHSICHTIG : DURCHSICHTIG_BEIDSEITIG;
+        }
+
+        return culling ? DURCHSICHTIG_OHNE_TIEFENSCHREIBEN : DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG;
+    }
+
+    private static RenderPipeline bauen(String shader, boolean mischen, boolean culling, boolean tiefeSchreiben)
     {
         Identifier datei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + shader);
-        String name = shader + (mischen ? "_translucent" : "_opaque") + (culling ? "" : "_no_cull");
+        String name = shader + (mischen ? "_translucent" : "_opaque")
+            + (culling ? "" : "_no_cull") + (tiefeSchreiben ? "" : "_no_depth_write");
 
         RenderPipeline.Builder bauer = RenderPipeline.builder()
             .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/" + name))
@@ -139,7 +172,7 @@ public final class ModelVAOPipeline
          * GREATER_THAN_OR_EQUAL. Der alte Code rief hier GL_LEQUAL — das uebersetzt sich
          * NICHT zu LESS_THAN_OR_EQUAL, sondern zum Gegenstueck. Wer das mechanisch
          * uebersetzt, dreht den Tiefentest um und alles verschwindet hinter allem. */
-        bauer.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true));
+        bauer.withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, tiefeSchreiben));
 
         /* DEFAULT ist der ungemischte Zustand — kein `new ColorTargetState(null)`, dessen
          * Konstruktor die Mischfunktion in ein Optional packt und an null scheitern wuerde. */

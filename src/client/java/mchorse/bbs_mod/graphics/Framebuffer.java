@@ -10,7 +10,21 @@ import java.util.List;
 public class Framebuffer
 {
     private static final float[] CLEAR_COLOR = {0F, 0F, 0F, 0F};
-    private static final float[] CLEAR_DEPTH = {1F};
+    /**
+     * ⛔ 26.2 RECHNET DIE TIEFE UMGEKEHRT — darum 0, nicht 1.
+     *
+     * <p>Bis 1.21.1 war "am weitesten weg" die 1, der Test hiess LEQUAL, und dieser Puffer
+     * wurde entsprechend auf 1 geloescht. In 26.2 ist es andersherum: der Loeschwert ist 0
+     * ({@code RenderSystem.DEFAULT_DEPTH_CLEAR_VALUE}), der Test heisst
+     * GREATER_THAN_OR_EQUAL, und {@code LevelRenderer} schiebt beim Loeschen
+     * {@code dconst_0}.
+     *
+     * <p>Bliebe hier die 1 stehen, waere jeder GREATER-Test in BBS' eigenen Puffern von
+     * vornherein verloren: Picking und Stencil lieferten ein leeres Bild — <b>ohne
+     * Fehlermeldung, ohne Absturz, einfach nichts anklickbar</b>. Genau diese Falle hat
+     * eine der Zustands-Pruefungen vorhergesagt, bevor sie jemand gesehen hat.
+     */
+    private static final float[] CLEAR_DEPTH = {0F};
 
     public int id;
     public List<Texture> textures = new ArrayList<>();
@@ -125,6 +139,11 @@ public class Framebuffer
         }
         else
         {
+            /* Auch hier gilt der umgekehrte Tiefenbereich: glClear nimmt den Wert aus
+             * glClearDepth, und dessen GL-Vorgabe ist 1. Ohne diese Zeile loescht der
+             * Zweig auf 1, waehrend der Zweig darueber auf 0 loescht — zwei Puffer
+             * desselben Mods mit gegensaetzlicher Tiefe, je nach Anhang-Aufbau. */
+            GL11.glClearDepth(CLEAR_DEPTH[0]);
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
         }
     }

@@ -1,0 +1,125 @@
+package mchorse.bbs_mod.client;
+
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import mchorse.bbs_mod.BBSMod;
+import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.resources.Identifier;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Die Pipeline-Familie fuer BBS' einfache Hilfsgeometrie: Gizmos, Pfade, Drahtgitter,
+ * Kill-Ebenen, Dicklinien, Keyframe-Formen.
+ *
+ * <h2>Warum eine Familie statt einzelner Konstanten</h2>
+ *
+ * <p>Diese Klasse ist aus einer Messung entstanden, nicht aus einem Entwurf: eine Welle
+ * von zwoelf Pruefungen des Zustands-Blocks meldete unabhaengig voneinander immer
+ * dieselbe Luecke — {@code POSITION_COLOR}, gemischt, mal als Dreiecke, mal als Linien,
+ * mal als Streifen, mit oder ohne Tiefenpruefung. Im Baum stehen 44 Stellen mit
+ * {@code POSITION_COLOR} und 38 mit Dreiecks-Topologie.
+ *
+ * <p>Bis 1.21.1 war das kein Thema: man setzte Blend, Tiefe und Cull als globalen Zustand
+ * und zeichnete mit irgendeinem Shader. In 26.2 ist jede Kombination eine eigene
+ * Pipeline. Statt zwanzig fast gleiche Konstanten von Hand zu pflegen — oder schlimmer:
+ * jede Aufrufstelle baut sich ihre eigene — gibt es hier EINE Fabrik mit Zwischenspeicher.
+ *
+ * <h2>⛔ Tiefenpruefung AUS heisst hier auch Tiefenschreiben AUS</h2>
+ *
+ * <p>Das ist kein Schoenheitsfehler, sondern die Uebersetzung von rohem GL: schaltet man
+ * dort {@code GL_DEPTH_TEST} ab, schreibt die Karte auch keine Tiefe mehr. Wer nur den
+ * Test abschaltet und weiter schreiben laesst, legt mit einem Gizmo eine unsichtbare Wand
+ * vor alles, was danach kommt — genau der Fall, den das Alt-Kamera-Gitter und der
+ * Bewegungspfad melden.
+ *
+ * <p>⚠️ REVERSED-Z: bei eingeschalteter Pruefung ist der Vergleich
+ * {@code GREATER_THAN_OR_EQUAL}, nicht {@code LESS_THAN_OR_EQUAL}. 26.2 rechnet die Tiefe
+ * umgekehrt (Loeschwert 0.0, {@code DepthStencilState.DEFAULT} traegt GEQUAL). Die
+ * mechanische Uebersetzung von {@code GL_LEQUAL} waere hier der teuerste Fehler: sie
+ * dreht den Test um, und alles verschwindet hinter allem.
+ */
+public final class FormPipelines
+{
+    private static final Map<String, RenderPipeline> ZWISCHENSPEICHER = new HashMap<>();
+
+    /**
+     * Liefert die Pipeline fuer eine Zustandskombination und legt sie beim ersten Mal an.
+     *
+     * @param topologie   wie die Ecken zu Flaechen werden — {@code TRIANGLES},
+     *                    {@code DEBUG_LINES}, {@code TRIANGLE_STRIP}, {@code QUADS}
+     * @param mischen     Alphamischung (frueher {@code enableBlend} + {@code defaultBlendFunc})
+     * @param tiefePruefen Tiefentest UND Tiefenschreiben (frueher {@code enableDepthTest})
+     * @param culling     Rueckseiten verwerfen (frueher {@code enableCull})
+     */
+    public static RenderPipeline holen(PrimitiveTopology topologie, boolean mischen, boolean tiefePruefen, boolean culling)
+    {
+        return holen(DefaultVertexFormat.POSITION_COLOR, "position_color", topologie, mischen, tiefePruefen, culling);
+    }
+
+    /**
+     * Wie {@link #holen(PrimitiveTopology, boolean, boolean, boolean)}, aber mit frei
+     * waehlbarem Vertexformat und Vanilla-Shader — etwa {@code POSITION_TEX} fuer die
+     * texturierte Spur des Trail-Renderers.
+     *
+     * <p>Der Shadername ist der Vanilla-Kern ohne Pfad und Endung: {@code position_color},
+     * {@code position_tex}, {@code position_tex_color}. Sie liegen im minecraft-Namensraum
+     * und passen zu den gleichnamigen {@code DefaultVertexFormat}-Konstanten.
+     */
+    public static RenderPipeline holen(VertexFormat format, String shader, PrimitiveTopology topologie, boolean mischen, boolean tiefePruefen, boolean culling)
+    {
+        String schluessel = shader + "|" + topologie + "|" + mischen + "|" + tiefePruefen + "|" + culling;
+
+        return ZWISCHENSPEICHER.computeIfAbsent(schluessel,
+            (s) -> bauen(format, shader, topologie, mischen, tiefePruefen, culling));
+    }
+
+    private static RenderPipeline bauen(VertexFormat format, String shader, PrimitiveTopology topologie, boolean mischen, boolean tiefePruefen, boolean culling)
+    {
+        String name = shader + "_" + topologie.name().toLowerCase()
+            + (mischen ? "_blend" : "")
+            + (tiefePruefen ? "" : "_no_depth")
+            + (culling ? "" : "_no_cull");
+
+        Identifier datei = Identifier.withDefaultNamespace("core/" + shader);
+
+        RenderPipeline.Builder bauer = RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/" + name))
+            .withVertexShader(datei)
+            .withFragmentShader(datei)
+            .withVertexBinding(0, format)
+            .withPrimitiveTopology(topologie)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withCull(culling);
+
+        /* Texturierte Formate brauchen ihren Sampler; die reinen Farbformate nicht. Wer
+         * hier eine Bindegruppe ergaenzt, muss den Vanilla-Shader dazu pruefen — eine
+         * Gruppe, die der Shader nicht kennt, ist ein Fehler beim Uebersetzen, kein
+         * stiller Verlust. */
+        if (shader.contains("tex"))
+        {
+            bauer.withBindGroupLayout(BindGroupLayouts.SAMPLER0);
+        }
+
+        /* Test aus = Schreiben aus. Siehe Klassendoku: alles andere baut eine unsichtbare
+         * Tiefenwand vor alles Nachfolgende. */
+        bauer.withDepthStencilState(tiefePruefen
+            ? new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true)
+            : new DepthStencilState(CompareOp.ALWAYS_PASS, false));
+
+        return bauer.withColorTargetState(mischen
+            ? new ColorTargetState(BlendFunction.TRANSLUCENT)
+            : ColorTargetState.DEFAULT).build();
+    }
+
+    private FormPipelines()
+    {}
+}
