@@ -8,10 +8,10 @@ import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
  *
  * <h2>26.2: aus Shader-Objekten werden Pipelines</h2>
  *
- * <p>Bis 1.21.1 baute diese Klasse zehn {@code ShaderInstance}-Objekte, lud sie ueber
+ * <p>Bis 1.21.1 baute diese Klasse zehn {@code RenderPipeline}-Objekte, lud sie ueber
  * eine {@code ProxyResourceFactory} aus BBS' Namensraum und gab sie an die Aufrufer, die
  * ihre Uniforms dann selbst setzten. Nichts davon existiert in 26.2: kein
- * {@code ShaderInstance}, keine Einzel-Uniforms, und {@code RenderSystem.setShader} gibt
+ * {@code RenderPipeline}, keine Einzel-Uniforms, und {@code RenderSystem.setShader} gibt
  * es auch nicht mehr.
  *
  * <p>An ihre Stelle tritt die {@link RenderPipeline} — sie traegt Shader, Blend, Tiefe,
@@ -20,7 +20,7 @@ import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
  * definiert sind.
  *
  * <p>Die {@code ProxyResourceFactory} entfaellt ersatzlos. Sie existierte nur, weil
- * {@code ShaderInstance} seine Dateien immer im minecraft-Namensraum suchte; eine
+ * {@code RenderPipeline} seine Dateien immer im minecraft-Namensraum suchte; eine
  * Pipeline nimmt einen vollen {@code Identifier} entgegen, {@code bbs:core/model} findet
  * {@code assets/bbs/shaders/core/model}.
  *

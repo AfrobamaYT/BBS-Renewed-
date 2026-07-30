@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -26,7 +28,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix4f;
@@ -64,7 +66,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         VertexFormat format = DefaultVertexFormat.ENTITY;
 
-        this.renderModel(format, GameRenderer::getRendertypeEntityTranslucentShader,
+        this.renderModel(format, () -> RenderPipelines.ENTITY_TRANSLUCENT,
             stack,
             OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
             context.getTransition(), false
@@ -84,15 +86,15 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         }
 
         VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
-        Supplier<ShaderInstance> shader = this.getShader(context,
-            shading ? GameRenderer::getRendertypeEntityTranslucentShader : GameRenderer::getPositionTexColorShader,
+        Supplier<RenderPipeline> shader = this.getShader(context,
+            shading ? () -> RenderPipelines.ENTITY_TRANSLUCENT : GameRenderer::getPositionTexColorShader,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
 
         this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
 
-    private void renderModel(VertexFormat format, Supplier<ShaderInstance> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderModel(VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         Link t = this.form.texture.get();
 
@@ -168,7 +170,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer);
     }
 
-    private void renderQuad(VertexFormat format, Texture texture, Supplier<ShaderInstance> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         Color color = new Color().set(overlayColor, true);
         Matrix4f matrix = matrices.last().pose();
@@ -186,7 +188,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         gameRenderer.lightTexture().turnOnLightLayer();
         gameRenderer.overlayTexture().setupOverlayColor();
 
-        ShaderInstance finalShader = shader.get();
+        RenderPipeline finalShader = shader.get();
 
         BBSModClient.getTextures().bindTexture(texture);
         RenderSystem.setShader(() -> finalShader);

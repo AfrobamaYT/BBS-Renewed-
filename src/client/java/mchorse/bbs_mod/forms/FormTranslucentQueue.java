@@ -15,7 +15,6 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -513,7 +512,7 @@ public class FormTranslucentQueue
     public static class VertexBufferCommand extends DrawCommand
     {
         private final VertexBuffer buffer;
-        private final Supplier<ShaderInstance> shader;
+        private final Supplier<RenderPipeline> shader;
         private final int passMode;
         private final Texture texture;
         private final Matrix4f modelView;
@@ -522,12 +521,12 @@ public class FormTranslucentQueue
         private final Runnable postDraw;
 
         /** The split translucent replay: only the semi-transparent texels, no depth write. */
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderInstance> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        public VertexBufferCommand(VertexBuffer buffer, Supplier<RenderPipeline> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
             this(buffer, shader, PASS_TRANSLUCENT, false, texture, modelView, normalMat, cameraSpaceOrigin, cull, preDraw, postDraw);
         }
 
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        public VertexBufferCommand(VertexBuffer buffer, Supplier<RenderPipeline> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
             super(cameraSpaceOrigin, cull, depthWrite);
 
@@ -544,7 +543,7 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderInstance program = this.shader.get();
+            RenderPipeline program = this.shader.get();
 
             if (this.texture != null)
             {

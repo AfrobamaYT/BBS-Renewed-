@@ -26,7 +26,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import org.joml.Matrix3f;
@@ -491,7 +491,7 @@ public class ParticleEmitter
     /**
      * Render all the particles in this particle emitter
      */
-    public void render(VertexFormat format, Supplier<ShaderInstance> program, PoseStack stack, int overlay, float transition)
+    public void render(VertexFormat format, Supplier<RenderPipeline> program, PoseStack stack, int overlay, float transition)
     {
         if (this.scheme == null)
         {
@@ -529,7 +529,7 @@ public class ParticleEmitter
              *  getRendertypeEntityTranslucentShader sowie BBSShaders.getPickerParticlesProgram
              *  bzw. getPickerBillboardProgram durch. FormPipelines deckt davon keinen ab (nur
              *  position_color/position_tex/position_tex_color, ohne Lightmap-Sampler), und der
-             *  Ersatz fuer Supplier<ShaderInstance> aendert die Signatur — das trifft
+             *  Ersatz fuer Supplier<RenderPipeline> aendert die Signatur — das trifft
              *  ParticleFormRenderer und UIParticleSchemeRenderer, nicht diese Datei. */
             RenderSystem.setShader(program);
             RenderSystem.disableBlend();

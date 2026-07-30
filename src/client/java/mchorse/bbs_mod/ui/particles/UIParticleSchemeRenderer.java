@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.particles;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -137,7 +139,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
          * unaffected: they render through ParticleFormRenderer with the real light map. */
         RenderSystem.setShaderTexture(2, getWhiteLightmapTextureId());
 
-        this.emitter.render(DefaultVertexFormat.PARTICLE, GameRenderer::getParticleShader, stack, OverlayTexture.NO_OVERLAY, context.getTransition());
+        this.emitter.render(DefaultVertexFormat.PARTICLE, () -> RenderPipelines.TRANSLUCENT_PARTICLE, stack, OverlayTexture.NO_OVERLAY, context.getTransition());
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
 

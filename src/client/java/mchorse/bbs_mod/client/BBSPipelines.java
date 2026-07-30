@@ -11,7 +11,7 @@ import net.minecraft.resources.Identifier;
  *
  * <h2>Warum es diese Klasse gibt</h2>
  *
- * <p>Bis 1.21.1 war ein eigener Shader ein {@code ShaderInstance}, den man baute,
+ * <p>Bis 1.21.1 war ein eigener Shader ein {@code RenderPipeline}, den man baute,
  * dessen Uniforms man von Hand setzte und den man {@code RenderSystem.setShader}
  * ueberreichte. In 26.2 gibt es das nicht mehr: ein Shader ist Teil einer
  * {@link RenderPipeline}, die Blend-, Tiefen- und Vertexzustand gleich mitbringt.

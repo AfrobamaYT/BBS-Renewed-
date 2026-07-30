@@ -25,8 +25,8 @@ import java.util.OptionalDouble;
  * <h2>26.2: vom Shader-Objekt zum Zeichendurchgang</h2>
  *
  * <p>Frueher setzte diese Klasse ein Dutzend Uniforms von Hand an einem
- * {@code ShaderInstance}, rief {@code shader.apply()} und liess den VAO zeichnen. In 26.2
- * gibt es weder {@code ShaderInstance} noch einzelne Uniforms: gezeichnet wird in einen
+ * {@code RenderPipeline}, rief {@code shader.apply()} und liess den VAO zeichnen. In 26.2
+ * gibt es weder {@code RenderPipeline} noch einzelne Uniforms: gezeichnet wird in einen
  * {@link RenderPass}, der eine {@link RenderPipeline} bekommt und seine Werte aus
  * Uniform-Bloecken liest.
  *

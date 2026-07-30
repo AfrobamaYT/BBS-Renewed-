@@ -29,7 +29,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 
@@ -311,7 +311,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         int w = texture.width;
         int h = texture.height;
 
-        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)

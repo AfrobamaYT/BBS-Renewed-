@@ -53,7 +53,7 @@ import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -676,7 +676,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         int w = texture.width;
         int h = texture.height;
 
-        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)

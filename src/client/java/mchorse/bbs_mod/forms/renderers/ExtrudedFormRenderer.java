@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -21,7 +23,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix3f;
@@ -83,10 +85,10 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         }
 
         VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
-        Supplier<ShaderInstance> normal = shading && !BBSRendering.isIrisShadersEnabled()
+        Supplier<RenderPipeline> normal = shading && !BBSRendering.isIrisShadersEnabled()
             ? BBSShaders::getModel
-            : (shading ? GameRenderer::getRendertypeEntityTranslucentShader : GameRenderer::getPositionTexColorShader);
-        Supplier<ShaderInstance> shader = this.getShader(context,
+            : (shading ? () -> RenderPipelines.ENTITY_TRANSLUCENT : GameRenderer::getPositionTexColorShader);
+        Supplier<RenderPipeline> shader = this.getShader(context,
             normal,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
@@ -94,7 +96,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         this.renderModel(shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
 
-    private void renderModel(Supplier<ShaderInstance> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderModel(Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         Link texture = this.form.texture.get();
         ModelVAO data = BBSModClient.getTextures().getExtruder().get(texture);
@@ -133,7 +135,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             boolean cutout = defer && irisWorld && textureObject != null && textureObject.hasTranslucency()
                 && color.a >= 1F && !this.form.additiveColor.get();
 
-            ShaderInstance finalShader = cutout ? GameRenderer.getRendertypeEntityCutoutShader() : shader.get();
+            RenderPipeline finalShader = cutout ? GameRenderer.getRendertypeEntityCutoutShader() : shader.get();
             boolean wasActive = false;
 
             if (irisWorld)

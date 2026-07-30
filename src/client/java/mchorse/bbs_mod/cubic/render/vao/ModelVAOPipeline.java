@@ -21,7 +21,7 @@ import net.minecraft.resources.Identifier;
  *
  * <p>Drei unabhaengige Pruefungen des Zustands-Blocks kamen auf denselben Befund: BBS
  * zeichnet seine Modelle NICHT ueber einen {@code RenderType}, sondern ueber einen
- * eigenen VAO plus {@code ShaderInstance}. In 26.2 traegt die {@link RenderPipeline}
+ * eigenen VAO plus {@code RenderPipeline}. In 26.2 traegt die {@link RenderPipeline}
  * den Zustand — und wo es keine Pipeline gibt, gibt es keinen Ort fuer Blend, Tiefe
  * und Cull. Darum blieben 22 Zustandsstellen offen: sie haengen alle an DIESER
  * Entscheidung, nicht an 22 einzelnen.

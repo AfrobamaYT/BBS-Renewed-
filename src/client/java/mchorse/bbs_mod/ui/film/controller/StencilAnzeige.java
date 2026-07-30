@@ -10,7 +10,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import mchorse.bbs_mod.utils.Pair;
 import com.mojang.blaze3d.shaders.Uniform;
 
@@ -82,7 +82,7 @@ public final class StencilAnzeige
             return;
         }
 
-        ShaderInstance programm = BBSShaders.getReplayOutlineProgram();
+        RenderPipeline programm = BBSShaders.getReplayOutlineProgram();
 
         if (programm == null)
         {
@@ -108,7 +108,7 @@ public final class StencilAnzeige
             return;
         }
 
-        Supplier<ShaderInstance> lieferant = BBSShaders::getReplayOutlineProgram;
+        Supplier<RenderPipeline> lieferant = BBSShaders::getReplayOutlineProgram;
 
         setzeInt(programm, "TargetMin", abIndex);
         setzeFarbe(programm, "OutlineColor", farbe);
@@ -212,7 +212,7 @@ public final class StencilAnzeige
         return ueberfahren;
     }
 
-    private static void setzeInt(ShaderInstance programm, String name, int wert)
+    private static void setzeInt(RenderPipeline programm, String name, int wert)
     {
         Uniform uniform = programm.getUniform(name);
 
@@ -222,7 +222,7 @@ public final class StencilAnzeige
         }
     }
 
-    private static void setzeZwei(ShaderInstance programm, String name, float a, float b)
+    private static void setzeZwei(RenderPipeline programm, String name, float a, float b)
     {
         Uniform uniform = programm.getUniform(name);
 
@@ -232,7 +232,7 @@ public final class StencilAnzeige
         }
     }
 
-    private static void setzeFarbe(ShaderInstance programm, String name, int farbe)
+    private static void setzeFarbe(RenderPipeline programm, String name, int farbe)
     {
         Uniform uniform = programm.getUniform(name);
 

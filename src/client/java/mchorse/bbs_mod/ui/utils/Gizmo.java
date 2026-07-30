@@ -34,7 +34,6 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -466,7 +465,7 @@ public class Gizmo
         this.sphereHighlight.unbind();
         mc.getMainRenderTarget().bindWrite(true);
 
-        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)

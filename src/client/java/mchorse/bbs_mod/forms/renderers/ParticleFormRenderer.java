@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -18,7 +20,7 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.world.level.Level;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -161,9 +163,9 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
                 boolean shadersEnabled = BBSRendering.isIrisShadersEnabled();
 
                 VertexFormat format = shadersEnabled ? DefaultVertexFormat.NEW_ENTITY : DefaultVertexFormat.PARTICLE;
-                Supplier<ShaderInstance> shader = shadersEnabled
-                    ? this.getShader(context, GameRenderer::getRendertypeEntityTranslucentShader, BBSShaders::getPickerBillboardProgram)
-                    : this.getShader(context, GameRenderer::getParticleShader, BBSShaders::getPickerParticlesProgram);
+                Supplier<RenderPipeline> shader = shadersEnabled
+                    ? this.getShader(context, () -> RenderPipelines.ENTITY_TRANSLUCENT, BBSShaders::getPickerBillboardProgram)
+                    : this.getShader(context, () -> RenderPipelines.TRANSLUCENT_PARTICLE, BBSShaders::getPickerParticlesProgram);
 
                 emitter.setupCameraProperties(context.camera);
                 emitter.render(format, shader, context.stack, context.overlay, context.getTransition());

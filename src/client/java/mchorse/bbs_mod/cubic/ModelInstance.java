@@ -49,7 +49,7 @@ import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -499,7 +499,7 @@ public class ModelInstance implements IModelInstance
      * cubes deform against the seam or morph. A light capture pass fills the seams first — for picking
      * too, so the stencil matches the deformed geometry.
      */
-    private void renderHybrid(PoseStack stack, ShaderInstance shader, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver, Model model, List<WeldBinding> bindings)
+    private void renderHybrid(PoseStack stack, RenderPipeline shader, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver, Model model, List<WeldBinding> bindings)
     {
         Set<ModelGroup> weldedGroups = new HashSet<>();
 
@@ -522,7 +522,7 @@ public class ModelInstance implements IModelInstance
          * first-person hand during video export inherits a foreign NormalMat and darkens). The VAO bones use the same
          * shader so both halves of the model match. */
         boolean explicitWeld = stencilMap == null && !(BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld());
-        ShaderInstance drawShader = explicitWeld ? BBSShaders.getModel() : shader;
+        RenderPipeline drawShader = explicitWeld ? BBSShaders.getModel() : shader;
 
         CubicVAORenderer renderProcessor = new CubicVAORenderer(drawShader, this, light, overlay, stencilMap, keys, textureResolver);
 
@@ -574,7 +574,7 @@ public class ModelInstance implements IModelInstance
      * semi-transparent ones replay from a retained vertex buffer when the frame's translucent
      * queue flushes. Single-pass draws keep the old direct path.
      */
-    private void drawImmediate(BufferBuilder builder, ShaderInstance shader, PoseStack stack, Matrix3f normalMat, StencilMap stencilMap, Texture texture, float alpha)
+    private void drawImmediate(BufferBuilder builder, RenderPipeline shader, PoseStack stack, Matrix3f normalMat, StencilMap stencilMap, Texture texture, float alpha)
     {
         boolean split = FormTranslucentQueue.needsSplit(shader, stencilMap, texture, alpha);
         boolean whole = !split && FormTranslucentQueue.needsWholeDefer(shader, stencilMap, alpha);
@@ -654,9 +654,9 @@ public class ModelInstance implements IModelInstance
         return false;
     }
 
-    public void render(PoseStack stack, Supplier<ShaderInstance> program, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver)
+    public void render(PoseStack stack, Supplier<RenderPipeline> program, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver)
     {
-        ShaderInstance shader = program.get();
+        RenderPipeline shader = program.get();
 
         if (this.model instanceof Model model)
         {

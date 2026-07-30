@@ -21,7 +21,7 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.world.InteractionHand;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
@@ -219,7 +219,7 @@ public abstract class FormRenderer <T extends Form>
         return displacement;
     }
 
-    protected Supplier<ShaderInstance> getShader(FormRenderingContext context, Supplier<ShaderInstance> normal, Supplier<ShaderInstance> picking)
+    protected Supplier<RenderPipeline> getShader(FormRenderingContext context, Supplier<RenderPipeline> normal, Supplier<RenderPipeline> picking)
     {
         if (context.isPicking())
         {
@@ -231,7 +231,7 @@ public abstract class FormRenderer <T extends Form>
         return normal;
     }
 
-    protected void setupTarget(FormRenderingContext context, ShaderInstance program)
+    protected void setupTarget(FormRenderingContext context, RenderPipeline program)
     {
         Uniform target = program.getUniform("Target");
 

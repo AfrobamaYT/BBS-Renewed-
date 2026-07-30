@@ -20,7 +20,7 @@ import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 public class UIMultiLinkEditor extends UICanvasEditor
 {
@@ -223,7 +223,7 @@ public class UIMultiLinkEditor extends UICanvasEditor
                     context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.setA(Colors.RED, 0.25F));
                 }
 
-                ShaderInstance shader = GameRenderer.getPositionTexColorShader();
+                RenderPipeline shader = GameRenderer.getPositionTexColorShader();
 
                 if (needsMultLinkShader)
                 {
@@ -238,7 +238,7 @@ public class UIMultiLinkEditor extends UICanvasEditor
 
                 RenderSystem.setShaderTexture(3, context.render.getTextures().getTexture(Icons.ATLAS).id);
 
-                final ShaderInstance finalProgram = shader;
+                final RenderPipeline finalProgram = shader;
 
                 context.batcher.texturedBox(() -> finalProgram, texture, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
             }

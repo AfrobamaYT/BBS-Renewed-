@@ -1049,7 +1049,7 @@ public class UIPixelsEditor extends UICanvasEditor
      * Packt Phase und Skalierung in die Vertexfarbe, weil 26.2 einem GUI-Element keine
      * eigenen Uniforms erlaubt.
      *
-     * <p>Bis 1.21.1 waren das zwei {@code Uniform}-Objekte am {@code ShaderInstance}. Die
+     * <p>Bis 1.21.1 waren das zwei {@code Uniform}-Objekte am {@code RenderPipeline}. Die
      * Schnittstelle {@code GuiElementRenderState} hat dafuer keinen Haken mehr, also reisen
      * die Werte dort mit, wo pro Element noch Platz ist — dieselbe Loesung, die Vanilla fuer
      * die Staerke seiner Uebelkeits-Ueberlagerung benutzt.

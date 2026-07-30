@@ -93,7 +93,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Options;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 
@@ -1354,8 +1354,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
         int w = texture.width;
         int h = texture.height;
 
-        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
-        Supplier<ShaderInstance> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
+        RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
+        Supplier<RenderPipeline> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
         Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)

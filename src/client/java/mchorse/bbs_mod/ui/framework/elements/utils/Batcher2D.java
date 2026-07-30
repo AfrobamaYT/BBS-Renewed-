@@ -479,7 +479,7 @@ public class Batcher2D
     }
 
     /**
-     * MC 26.2: a custom GUI shader is no longer a {@code ShaderInstance} supplied to
+     * MC 26.2: a custom GUI shader is no longer a {@code RenderPipeline} supplied to
      * {@code RenderSystem.setShader}, it is a whole {@link RenderPipeline} named by the
      * render state. The supplier therefore yields a pipeline now; callers that passed
      * {@code BBSShaders::getPickerPreviewProgram} need that method to return a pipeline.

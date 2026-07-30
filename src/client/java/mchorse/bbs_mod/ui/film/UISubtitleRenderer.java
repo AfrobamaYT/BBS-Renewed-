@@ -18,7 +18,7 @@ import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -53,10 +53,10 @@ public class UISubtitleRenderer
             return;
         }
 
-        ShaderInstance program = BBSShaders.getSubtitlesProgram();
+        RenderPipeline program = BBSShaders.getSubtitlesProgram();
         Uniform blur = program.getUniform("Blur");
         Uniform textureSize = program.getUniform("TextureSize");
-        Supplier<ShaderInstance> supplier = () -> program;
+        Supplier<RenderPipeline> supplier = () -> program;
 
         com.mojang.blaze3d.pipeline.RenderTarget fb = Minecraft.getInstance().getMainRenderTarget();
         int width = fb.width;

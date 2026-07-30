@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -51,7 +53,7 @@ import mchorse.bbs_mod.utils.pose.PoseTransform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -302,8 +304,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
              * Gegenstueck zu GL_LEQUAL, nicht LESS_THAN_OR_EQUAL: 26.2 rechnet die Tiefe umgekehrt
              * (naeher = groesserer Wert, Tiefenpuffer wird auf 0.0 geloescht). */
 
-            Supplier<ShaderInstance> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
-                ? GameRenderer::getRendertypeEntityTranslucentCullShader
+            Supplier<RenderPipeline> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
+                ? () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
                 : BBSShaders::getModel;
 
             boolean additive = this.form.additiveColor.get();
@@ -330,7 +332,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         }
     }
 
-    private void renderModel(IEntity target, Supplier<ShaderInstance> program, PoseStack stack, ModelInstance model, int light, int overlay, Color contextColor, Color formColor, boolean additive, boolean ui, StencilMap stencilMap, float transition, PoseStack world)
+    private void renderModel(IEntity target, Supplier<RenderPipeline> program, PoseStack stack, ModelInstance model, int light, int overlay, Color contextColor, Color formColor, boolean additive, boolean ui, StencilMap stencilMap, float transition, PoseStack world)
     {
         this.ikAppliedThisRender = false;
         this.physicsAppliedThisRender = false;
@@ -691,8 +693,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             BBSModClient.getTextures().bindTexture(texture);
 
-            Supplier<ShaderInstance> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
-                ? GameRenderer::getRendertypeEntityTranslucentCullShader
+            Supplier<RenderPipeline> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
+                ? () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
                 : BBSShaders::getModel;
 
             /* 26.2: enableDepthTest() + enableBlend() sind ersatzlos entfallen. Der Arm laeuft durch
@@ -771,12 +773,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             boolean cutout = irisWorld && textureObject != null && textureObject.hasTranslucency()
                 && contextColor.a >= 1F && formColor.a >= 1F && !additive;
 
-            Supplier<ShaderInstance> mainShader = cutout
-                ? GameRenderer::getRendertypeEntityCutoutShader
+            Supplier<RenderPipeline> mainShader = cutout
+                ? () -> RenderPipelines.ENTITY_CUTOUT
                 : (irisWorld || !model.isVAORendered())
-                    ? GameRenderer::getRendertypeEntityTranslucentCullShader
+                    ? () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
                     : BBSShaders::getModel;
-            Supplier<ShaderInstance> shader = this.getShader(context, mainShader, BBSShaders::getPickerModelsProgram);
+            Supplier<RenderPipeline> shader = this.getShader(context, mainShader, BBSShaders::getPickerModelsProgram);
 
             boolean wasActive = false;
 
