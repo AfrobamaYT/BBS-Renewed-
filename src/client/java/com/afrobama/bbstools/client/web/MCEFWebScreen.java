@@ -128,7 +128,7 @@ public class MCEFWebScreen extends Screen
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderTexture(0, this.browser.getRenderer().getTextureID());
 
         Matrix4f matrix = context.pose().last().pose();

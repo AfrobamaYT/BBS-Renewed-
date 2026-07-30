@@ -47,6 +47,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.Minecraft;
 
 public final class BBSFxCommand
 {
@@ -60,22 +61,22 @@ public final class BBSFxCommand
                     .then(ClientCommandManager.literal("enable")
                         .executes(c -> {
                             BBSFxPipelineRegistrar.setEnabled(true);
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] pipelines ENABLED — shadows + bloom + final tonemap will engage next tick"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] pipelines ENABLED — shadows + bloom + final tonemap will engage next tick"));
                             if (isIrisActive())
                             {
-                                c.getSource().sendFeedback(Text.literal("§e[bbstools fx] WARN: Iris shaderpack is active. Iris owns the world render path; Veil-based FX may be inhibited or look wrong. Disable the shaderpack (or pick \"(internal)\") if FX doesn't appear."));
+                                c.getSource().sendFeedback(Component.literal("§e[bbstools fx] WARN: Iris shaderpack is active. Iris owns the world render path; Veil-based FX may be inhibited or look wrong. Disable the shaderpack (or pick \"(internal)\") if FX doesn't appear."));
                             }
                             return 1;
                         }))
                     .then(ClientCommandManager.literal("disable")
                         .executes(c -> {
                             BBSFxPipelineRegistrar.setEnabled(false);
-                            c.getSource().sendFeedback(Text.literal("§e[bbstools fx] pipelines DISABLED — vanilla look restored next tick"));
+                            c.getSource().sendFeedback(Component.literal("§e[bbstools fx] pipelines DISABLED — vanilla look restored next tick"));
                             return 1;
                         }))
                     .then(ClientCommandManager.literal("status")
                         .executes(c -> {
-                            c.getSource().sendFeedback(Text.literal("§b[bbstools fx] ENABLED=" + BBSFxPipelineRegistrar.ENABLED
+                            c.getSource().sendFeedback(Component.literal("§b[bbstools fx] ENABLED=" + BBSFxPipelineRegistrar.ENABLED
                                 + " vibrance=" + BBSFxState.vibranceAmount
                                 + " exposure=" + BBSFxState.tonemapExposure
                                 + " supernovaTimer=" + BBSFxState.supernovaTimer));
@@ -83,11 +84,11 @@ public final class BBSFxCommand
                         }))
                     .then(ClientCommandManager.literal("supernova")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             SupernovaEffect.trigger((float) p.x, (float) p.y + 30F, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] supernova triggered 30 b above you"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] supernova triggered 30 b above you"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -98,16 +99,16 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         SupernovaEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§a[bbstools fx] supernova triggered at (" + x + "," + y + "," + z + ")"));
+                                        c.getSource().sendFeedback(Component.literal("§a[bbstools fx] supernova triggered at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("nuke")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             NukeEffect.trigger((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] nuke triggered at your position"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] nuke triggered at your position"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -118,16 +119,16 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         NukeEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§a[bbstools fx] nuke triggered at (" + x + "," + y + "," + z + ")"));
+                                        c.getSource().sendFeedback(Component.literal("§a[bbstools fx] nuke triggered at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("reveal-light")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             RevealLightEffect.start((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§b[bbstools fx] reveal-light ON at your position — /bbstools fx reveal-light-off to fade out"));
+                            c.getSource().sendFeedback(Component.literal("§b[bbstools fx] reveal-light ON at your position — /bbstools fx reveal-light-off to fade out"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -138,22 +139,22 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         RevealLightEffect.start(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§b[bbstools fx] reveal-light ON at (" + x + "," + y + "," + z + ") — /bbstools fx reveal-light-off to fade out"));
+                                        c.getSource().sendFeedback(Component.literal("§b[bbstools fx] reveal-light ON at (" + x + "," + y + "," + z + ") — /bbstools fx reveal-light-off to fade out"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("reveal-light-off")
                         .executes(c -> {
                             RevealLightEffect.stop();
-                            c.getSource().sendFeedback(Text.literal("§e[bbstools fx] reveal-light fading out (1s)"));
+                            c.getSource().sendFeedback(Component.literal("§e[bbstools fx] reveal-light fading out (1s)"));
                             return 1;
                         }))
                     .then(ClientCommandManager.literal("crystal")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             CrystalEffect.trigger((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§b[bbstools fx] CRYSTALLIZATION WAVE expanding from your position"));
+                            c.getSource().sendFeedback(Component.literal("§b[bbstools fx] CRYSTALLIZATION WAVE expanding from your position"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -164,16 +165,16 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         CrystalEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§b[bbstools fx] CRYSTALLIZATION WAVE at (" + x + "," + y + "," + z + ")"));
+                                        c.getSource().sendFeedback(Component.literal("§b[bbstools fx] CRYSTALLIZATION WAVE at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("antimatter")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             AntimatterEffect.trigger((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§9[bbstools fx] ANTIMATTER implosion forming at your position — light bending inward"));
+                            c.getSource().sendFeedback(Component.literal("§9[bbstools fx] ANTIMATTER implosion forming at your position — light bending inward"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -184,16 +185,16 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         AntimatterEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§9[bbstools fx] ANTIMATTER implosion at (" + x + "," + y + "," + z + ")"));
+                                        c.getSource().sendFeedback(Component.literal("§9[bbstools fx] ANTIMATTER implosion at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("glitch")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             GlitchEffect.trigger((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§5[bbstools fx] REALITY GLITCH opened at your position — corruption expanding outward"));
+                            c.getSource().sendFeedback(Component.literal("§5[bbstools fx] REALITY GLITCH opened at your position — corruption expanding outward"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -204,16 +205,16 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         GlitchEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§5[bbstools fx] REALITY GLITCH opened at (" + x + "," + y + "," + z + ")"));
+                                        c.getSource().sendFeedback(Component.literal("§5[bbstools fx] REALITY GLITCH opened at (" + x + "," + y + "," + z + ")"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("meteor")
                         .executes(c -> {
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc.player == null) return 0;
                             Vec3d p = mc.player.getPos();
                             MeteorEffect.trigger((float) p.x, (float) p.y, (float) p.z);
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] meteor incoming — impact at your position in 2.5s"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] meteor incoming — impact at your position in 2.5s"));
                             return 1;
                         })
                         .then(ClientCommandManager.argument("x", FloatArgumentType.floatArg())
@@ -224,13 +225,13 @@ public final class BBSFxCommand
                                         float y = FloatArgumentType.getFloat(c, "y");
                                         float z = FloatArgumentType.getFloat(c, "z");
                                         MeteorEffect.trigger(x, y, z);
-                                        c.getSource().sendFeedback(Text.literal("§a[bbstools fx] meteor incoming — impact at (" + x + "," + y + "," + z + ") in 2.5s"));
+                                        c.getSource().sendFeedback(Component.literal("§a[bbstools fx] meteor incoming — impact at (" + x + "," + y + "," + z + ") in 2.5s"));
                                         return 1;
                                     })))))
                     .then(ClientCommandManager.literal("demo")
                         .executes(c -> {
                             DemoSequencer.start();
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] demo started — meteor → nuke → supernova chain (~24s)"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] demo started — meteor → nuke → supernova chain (~24s)"));
                             return 1;
                         }))
                     .then(ClientCommandManager.literal("help")
@@ -250,10 +251,10 @@ public final class BBSFxCommand
                             BBSFxState.tonemapExposure = 1.10F;
                             BBSFxState.sunRotXDeg      = 20F;
                             BBSFxState.sunRotZDeg      = -75F;
-                            c.getSource().sendFeedback(Text.literal("§a[bbstools fx] §6destroying-mc §alook applied — pipelines ON, vibrance 0.30, exposure 1.10, sun 20°/-75°"));
+                            c.getSource().sendFeedback(Component.literal("§a[bbstools fx] §6destroying-mc §alook applied — pipelines ON, vibrance 0.30, exposure 1.10, sun 20°/-75°"));
                             if (isIrisActive())
                             {
-                                c.getSource().sendFeedback(Text.literal("§e[bbstools fx] WARN: Iris shaderpack active — disable it (or pick \"(internal)\") to see the Veil-based FX look."));
+                                c.getSource().sendFeedback(Component.literal("§e[bbstools fx] WARN: Iris shaderpack active — disable it (or pick \"(internal)\") to see the Veil-based FX look."));
                             }
                             return 1;
                         }))
@@ -267,21 +268,21 @@ public final class BBSFxCommand
                             CrystalEffect.cancel();
                             RevealLightEffect.cancel();
                             DemoSequencer.cancel();
-                            c.getSource().sendFeedback(Text.literal("§e[bbstools fx] cancelled all effects"));
+                            c.getSource().sendFeedback(Component.literal("§e[bbstools fx] cancelled all effects"));
                             return 1;
                         }))
                     .then(ClientCommandManager.literal("vibrance")
                         .then(ClientCommandManager.argument("amount", FloatArgumentType.floatArg(0F, 1F))
                             .executes(c -> {
                                 BBSFxState.vibranceAmount = FloatArgumentType.getFloat(c, "amount");
-                                c.getSource().sendFeedback(Text.literal("§a[bbstools fx] vibrance = " + BBSFxState.vibranceAmount));
+                                c.getSource().sendFeedback(Component.literal("§a[bbstools fx] vibrance = " + BBSFxState.vibranceAmount));
                                 return 1;
                             })))
                     .then(ClientCommandManager.literal("exposure")
                         .then(ClientCommandManager.argument("value", FloatArgumentType.floatArg(0.1F, 5F))
                             .executes(c -> {
                                 BBSFxState.tonemapExposure = FloatArgumentType.getFloat(c, "value");
-                                c.getSource().sendFeedback(Text.literal("§a[bbstools fx] exposure = " + BBSFxState.tonemapExposure));
+                                c.getSource().sendFeedback(Component.literal("§a[bbstools fx] exposure = " + BBSFxState.tonemapExposure));
                                 return 1;
                             })))
                     .then(ClientCommandManager.literal("sundir")
@@ -290,7 +291,7 @@ public final class BBSFxCommand
                                 .executes(c -> {
                                     BBSFxState.sunRotXDeg = FloatArgumentType.getFloat(c, "xDeg");
                                     BBSFxState.sunRotZDeg = FloatArgumentType.getFloat(c, "zDeg");
-                                    c.getSource().sendFeedback(Text.literal("§a[bbstools fx] sundir = X" + BBSFxState.sunRotXDeg + "° Z" + BBSFxState.sunRotZDeg + "° (next frame)"));
+                                    c.getSource().sendFeedback(Component.literal("§a[bbstools fx] sundir = X" + BBSFxState.sunRotXDeg + "° Z" + BBSFxState.sunRotZDeg + "° (next frame)"));
                                     return 1;
                                 }))))
                     .then(ClientCommandManager.literal("shake")
@@ -298,7 +299,7 @@ public final class BBSFxCommand
                             .executes(c -> {
                                 float i = FloatArgumentType.getFloat(c, "intensity");
                                 CameraShakeManager.addShake(i);
-                                c.getSource().sendFeedback(Text.literal("§a[bbstools fx] shake +" + i + " (decays ~88%/frame)"));
+                                c.getSource().sendFeedback(Component.literal("§a[bbstools fx] shake +" + i + " (decays ~88%/frame)"));
                                 return 1;
                             })))
                     .then(ClientCommandManager.literal("preset")
@@ -310,7 +311,7 @@ public final class BBSFxCommand
                                 int n = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c, "frames");
                                 BBSFxShadowmapPrePass.shadowInterval = n;
                                 String desc = n == 0 ? "OFF (matrices only)" : "every " + n + " frame(s)";
-                                c.getSource().sendFeedback(Text.literal("§a[bbstools fx] shadow re-render: " + desc));
+                                c.getSource().sendFeedback(Component.literal("§a[bbstools fx] shadow re-render: " + desc));
                                 return 1;
                             })))
                 )

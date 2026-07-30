@@ -109,7 +109,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             if (blockHitResult.getType() != HitResult.Type.MISS)
             {
                 Vec3 hit = blockHitResult.getLocation();
-                BlockPos pos = this.modelBlock.getPos();
+                BlockPos pos = this.modelBlock.getBlockPos();
 
                 this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
                 this.fillData();
@@ -173,7 +173,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
         {
             this.modelBlock.getProperties().setGlobal(b.getValue());
-            MinecraftClient.getInstance().worldRenderer.reload();
+            Minecraft.getInstance().worldRenderer.reload();
         });
         this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, (b) -> this.modelBlock.getProperties().setLookAt(b.getValue()));
 
@@ -198,7 +198,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         if (this.modelBlock != null)
         {
-            BlockPos pos = this.modelBlock.getPos();
+            BlockPos pos = this.modelBlock.getBlockPos();
 
             PlayerUtils.teleport(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
             UIUtils.playClick();
@@ -313,7 +313,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         if (drag != null && transform != null)
         {
-            BlockPos pos = this.modelBlock.getPos();
+            BlockPos pos = this.modelBlock.getBlockPos();
 
             drag.setJacobian(GizmoDrag.computeTranslateJacobian(
                 transform,
@@ -404,7 +404,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
      */
     private void applyGizmoOrigin(PoseStack stack, Vec3 cameraPos)
     {
-        BlockPos pos = this.modelBlock.getPos();
+        BlockPos pos = this.modelBlock.getBlockPos();
         Transform transform = this.modelBlock.getProperties().getTransform();
 
         stack.translate(
@@ -579,7 +579,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         if (modelBlock != null)
         {
-            ClientNetwork.sendModelBlockForm(modelBlock.getPos(), modelBlock);
+            ClientNetwork.sendModelBlockForm(modelBlock.getBlockPos(), modelBlock);
         }
     }
 
@@ -720,11 +720,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         for (ModelBlockEntity entity : this.modelBlocks.getList())
         {
-            BlockPos blockPos = entity.getPos();
+            BlockPos blockPos = entity.getBlockPos();
 
             if (!this.isEditing(entity))
             {
-                context.matrixStack().push();
+                context.matrixStack().pushPose();
                 context.matrixStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
 
                 if (this.hovered == entity || entity == this.modelBlock)
@@ -736,7 +736,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
                     Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D);
                 }
 
-                context.matrixStack().pop();
+                context.matrixStack().popPose();
             }
         }
 
@@ -775,7 +775,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
     private AABB getHitbox(ModelBlockEntity closest)
     {
-        BlockPos pos = closest.getPos();
+        BlockPos pos = closest.getBlockPos();
 
         return new AABB(pos.getX(), pos.getY(), pos.getZ(), 1D, 1D, 1D);
     }

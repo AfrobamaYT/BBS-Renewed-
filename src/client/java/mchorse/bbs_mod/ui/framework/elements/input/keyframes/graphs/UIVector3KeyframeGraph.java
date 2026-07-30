@@ -112,7 +112,7 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         }
         
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
@@ -131,7 +131,7 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         }
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         context.batcher.unclip(context);
     }

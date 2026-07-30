@@ -70,7 +70,7 @@ public final class CameraFrustumMeshRenderer
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.lineWidth(2F);
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         PoseStack stack = ctx.matrixStack();
 

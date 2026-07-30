@@ -624,7 +624,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         this.renderGraphPointShapes(context, builder, matrix, keyframes);
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
@@ -737,7 +737,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         this.renderGraphPointShapes(context, builder, matrix, keyframes);
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         context.batcher.unclip(context);
     }

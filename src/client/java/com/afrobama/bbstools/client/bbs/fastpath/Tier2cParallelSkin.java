@@ -264,7 +264,7 @@ public final class Tier2cParallelSkin
             catch (Throwable ig) {}
         }
 
-        RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+        RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
         BufferBuilder builder = Tesselator.getInstance().begin(
             VertexFormat.Mode.TRIANGLES,

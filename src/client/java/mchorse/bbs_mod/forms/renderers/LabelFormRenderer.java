@@ -309,7 +309,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         if (FormTranslucentQueue.isGroupOpen())
         {

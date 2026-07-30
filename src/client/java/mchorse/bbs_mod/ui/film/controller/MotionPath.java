@@ -140,7 +140,7 @@ public class MotionPath
         Matrix4f matrix = stack.last().pose();
         float halfWidth = config.width.get() * 0.5F;
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
 

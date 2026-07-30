@@ -39,7 +39,7 @@ public final class BlockAnimationRenderer
         if (mc == null || mc.level == null) return;
 
         BlockRenderDispatcher brm = mc.getBlockRenderer();
-        Vec3 camPos = ctx.camera().getPos();
+        Vec3 camPos = ctx.camera().getPosition();
         PoseStack matrices = ctx.matrixStack();
         MultiBufferSource.BufferSource consumers = mc.renderBuffers().bufferSource();
 

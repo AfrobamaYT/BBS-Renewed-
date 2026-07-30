@@ -433,7 +433,7 @@ public final class Tier2dParallelEmit
             try { BBSModClient.getTextures().bindTexture(texture); }
             catch (Throwable ig) {}
         }
-        RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+        RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
         int drawCount = 0;
         int totalWritten = 0;

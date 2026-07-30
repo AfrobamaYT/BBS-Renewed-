@@ -82,7 +82,7 @@ public class UIColorPicker extends UIElement
     {
         Matrix4f matrix4f = batcher.getContext().pose().last().pose();
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.enableBlend();
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 

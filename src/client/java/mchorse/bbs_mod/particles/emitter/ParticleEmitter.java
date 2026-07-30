@@ -461,7 +461,7 @@ public class ParticleEmitter
                 render.renderUI(this.uiParticle, builder, matrix, transition);
             }
 
-            RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
             RenderSystem.disableCull();
             { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
             RenderSystem.enableCull();

@@ -13,13 +13,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import net.minecraft.network.chat.Component;
 
 /**
  * Background-only transparency state for the BBSTools UI overhaul.
  *
  * <p>{@link #PANEL_BG_ALPHA} is multiplied into the alpha channel of
  * panel-background draws by {@code Batcher2DBackgroundAlphaMixin}.
- * Text, icons, borders, sliders, buttons are NOT affected — content
+ * Component, icons, borders, sliders, buttons are NOT affected — content
  * stays fully opaque so the editor stays readable at any setting.</p>
  *
  * <p>Keybind: Ctrl + Alt + T toggles between 100% (no transparency)
@@ -58,19 +59,19 @@ public final class BBSToolsTransparency
         ClientTickEvents.END_CLIENT_TICK.register(client ->
         {
             if (client == null || client.getWindow() == null) return;
-            long handle = client.getWindow().getHandle();
-            boolean ctrl = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-                        || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
-            boolean alt = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_ALT)
-                       || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_ALT);
-            boolean t = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_T);
+            long handle = client.getWindow().getWindow();
+            boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
+                        || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
+            boolean alt = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_ALT)
+                       || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_ALT);
+            boolean t = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T);
             boolean combo = ctrl && alt && t;
             if (combo && !lastKeyDown)
             {
                 toggle();
                 if (client.player != null)
                 {
-                    client.player.sendMessage(Text.literal(
+                    client.player.sendMessage(Component.literal(
                         String.format("§a[BBSTools] §fEditor-Hintergrund-Transparenz: §b%d%%",
                             Math.round(PANEL_BG_ALPHA * 100F))), true);
                 }

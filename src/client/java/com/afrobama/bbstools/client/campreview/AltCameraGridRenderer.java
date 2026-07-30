@@ -79,7 +79,7 @@ public final class AltCameraGridRenderer
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableDepthTest();
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
             BufferBuilder bb = Tesselator.getInstance().begin(
                 VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);

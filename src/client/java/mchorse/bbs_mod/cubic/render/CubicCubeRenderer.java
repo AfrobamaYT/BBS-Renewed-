@@ -447,7 +447,7 @@ public class CubicCubeRenderer implements ICubicRenderer
     {
         builder.addVertex(x, y, z)
             .setColor(this.r * group.color.r, this.g * group.color.g, this.b * group.color.b, this.a * group.color.a)
-            .texture(u, v)
+            .setUv(u, v)
             .overlay(this.overlay);
 
         if (this.stencilMap != null)

@@ -379,7 +379,7 @@ public abstract class UIModelRenderer extends UIElement
     {
         Matrix4f matrix4f = context.batcher.getContext().pose().last().pose();
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int x = 0; x <= 10; x ++)

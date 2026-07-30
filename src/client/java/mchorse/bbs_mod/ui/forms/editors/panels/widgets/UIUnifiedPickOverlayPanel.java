@@ -488,7 +488,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             menu.actions.add(new ContextAction(Icons.BLOCK, key, () ->
             {
-                BlockState nextState = this.blockState.with((Property) property, (Comparable) value);
+                BlockState nextState = this.blockState.setValue((Property) property, (Comparable) value);
 
                 this.acceptBlock(nextState);
                 this.fillBlockProperties(nextState);

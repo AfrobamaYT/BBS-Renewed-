@@ -85,7 +85,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             Draw.fillBox(builder, stack, -outlineOffset, -outlineSize, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);
             Draw.fillBox(builder, stack, -axisOffset, -axisSize, -axisOffset, axisOffset, axisSize, axisOffset, 0, 1, 0);
 
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
             RenderSystem.disableDepthTest();
 
             { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
@@ -242,7 +242,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             }
         }
 
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }

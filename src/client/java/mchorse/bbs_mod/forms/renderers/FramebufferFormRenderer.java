@@ -315,6 +315,6 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
             return consumer.addVertex(matrix, x, y, 0F).setUv(u, v).setLight(light).setColor(color.r, color.g, color.b, color.a);
         }
 
-        return consumer.addVertex(matrix, x, y, 0F).setColor(color.r, color.g, color.b, color.a).texture(u, v).overlay(overlay).light(light).normal(entry, 0F, 0F, nz);
+        return consumer.addVertex(matrix, x, y, 0F).setColor(color.r, color.g, color.b, color.a).setUv(u, v).overlay(overlay).light(light).normal(entry, 0F, 0F, nz);
     }
 }

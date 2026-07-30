@@ -52,7 +52,7 @@ public class UIFilmPlayerSettingsOverlayPanel extends UIMessageBarOverlayPanel
         this.mobRecordingRadius.tooltip(UIKeys.FILM_PLAYER_SETTINGS_MOB_RECORDING_RADIUS_TOOLTIP);
 
         this.replaceInventory = new UIButton(UIKeys.FILM_REPLACE_INVENTORY, (b) ->
-            BaseValue.edit(this.film.inventory, (inv) -> inv.fromPlayer(MinecraftClient.getInstance().player)));
+            BaseValue.edit(this.film.inventory, (inv) -> inv.fromPlayer(Minecraft.getInstance().player)));
         this.replaceInventory.setEnabled(Minecraft.getInstance().player != null);
 
         this.applyToPlayer = new UIButton(UIKeys.FILM_APPLY_PLAYER_SETTINGS_TO_PLAYER, (b) -> ClientNetwork.sendApplyFilmPlayerSettingsToPlayer(this.film));

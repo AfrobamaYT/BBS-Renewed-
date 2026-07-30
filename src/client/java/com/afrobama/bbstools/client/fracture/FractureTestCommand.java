@@ -67,13 +67,13 @@ public final class FractureTestCommand
                     com.afrobama.bbstools.client.fracture.FracturedBoneRegistry.clearAll();
                     com.afrobama.bbstools.client.fracture.BlockShatterPropagator.clearAll();
                     int restored = com.afrobama.bbstools.client.fracture.BlockSnapshotRegistry.restoreAll();
-                    ctx.getSource().sendFeedback(Text.literal("§aAll fracture state cleared (" + restored + " blocks restored)"));
+                    ctx.getSource().sendFeedback(Component.literal("§aAll fracture state cleared (" + restored + " blocks restored)"));
                     return 1;
                 }))
             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-restore-blocks")
                 .executes(ctx -> {
                     int restored = com.afrobama.bbstools.client.fracture.BlockSnapshotRegistry.restoreAll();
-                    ctx.getSource().sendFeedback(Text.literal("§a" + restored + " blocks restored"));
+                    ctx.getSource().sendFeedback(Component.literal("§a" + restored + " blocks restored"));
                     return 1;
                 }))
             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("fracture-help")
@@ -85,13 +85,13 @@ public final class FractureTestCommand
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("on")
                     .executes(ctx -> {
                         com.afrobama.bbstools.perf.BBSPerfConfig.VERBOSE_DESTRUCTION_CHAT = true;
-                        ctx.getSource().sendFeedback(Text.literal("§a[BBSTools] §fVerbose destruction chat: §aON §7(per-fire diagnostics will print to chat)"));
+                        ctx.getSource().sendFeedback(Component.literal("§a[BBSTools] §fVerbose destruction chat: §aON §7(per-fire diagnostics will print to chat)"));
                         return 1;
                     }))
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("off")
                     .executes(ctx -> {
                         com.afrobama.bbstools.perf.BBSPerfConfig.VERBOSE_DESTRUCTION_CHAT = false;
-                        ctx.getSource().sendFeedback(Text.literal("§a[BBSTools] §fVerbose destruction chat: §cOFF §7(silent during recording, log file still has full diagnostics)"));
+                        ctx.getSource().sendFeedback(Component.literal("§a[BBSTools] §fVerbose destruction chat: §cOFF §7(silent during recording, log file still has full diagnostics)"));
                         return 1;
                     })))
             .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("editorcam")

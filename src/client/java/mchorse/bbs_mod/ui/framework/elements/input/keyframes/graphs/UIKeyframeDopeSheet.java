@@ -1272,7 +1272,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
@@ -1372,7 +1372,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         this.renderElementsTopmostKeyframes(context, builder, matrix, area, this.elements, this.getDopeSheetY());
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         context.batcher.unclip(context);
     }

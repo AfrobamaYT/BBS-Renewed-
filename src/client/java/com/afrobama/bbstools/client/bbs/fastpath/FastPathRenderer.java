@@ -17,7 +17,7 @@
 // 1-draw-per-model-id (skinning still CPU-side) and Tier 2 with GPU
 // instancing.
 //
-// Iris compat: uses vanilla GameRenderer::getRenderTypeEntityTranslucentCullProgram
+// Iris compat: uses vanilla GameRenderer::getRendertypeEntityTranslucentCullShader
 // — no custom shader, no transform-patcher friction. The output VBO
 // path is exactly what Iris already supports for vanilla entity render.
 package com.afrobama.bbstools.client.bbs.fastpath;

@@ -114,7 +114,7 @@ public class Batcher2D
         this.fillRect(builder, matrix4f, x, y, w, h, color1, color2, color3, color4);
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         this.context.flush();
@@ -203,7 +203,7 @@ public class Batcher2D
         builder.addVertex(matrix4f,right, top, 0).setColor(shadow);
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
@@ -247,7 +247,7 @@ public class Batcher2D
 
 
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         /* Draw opaque base */
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
@@ -410,7 +410,7 @@ public class Batcher2D
 
         Matrix4f matrix = this.context.pose().last().pose();
 
-        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
         this.fillTexturedBox(builder, matrix, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
@@ -458,7 +458,7 @@ public class Batcher2D
 
         Matrix4f matrix = this.context.pose().last().pose();
 
-        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderTexture(0, texture.id);
 
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);

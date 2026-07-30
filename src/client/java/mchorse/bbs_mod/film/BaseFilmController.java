@@ -173,8 +173,8 @@ public abstract class BaseFilmController
         }
 
         BlockPos pos = BlockPos.containing(position.x, position.y + 0.5D, position.z);
-        int sky = entity.getWorld().getLightLevel(LightLayer.SKY, pos);
-        int torch = entity.getWorld().getLightLevel(LightLayer.BLOCK, pos);
+        int sky = entity.getWorld().getBrightness(LightLayer.SKY, pos);
+        int torch = entity.getWorld().getBrightness(LightLayer.BLOCK, pos);
         int light = LightTexture.pack(torch, sky);
         int overlay = OverlayTexture.pack(OverlayTexture.u(0F), OverlayTexture.v(entity.getHurtTimer() > 0));
 
@@ -931,10 +931,10 @@ public abstract class BaseFilmController
                         if (anEntity instanceof ActorEntity actor)
                         {
                             /* Force synchronize entity angles */
-                            actor.setYaw(replay.keyframes.yaw.interpolate(replayTicks).floatValue());
-                            actor.setHeadYaw(replay.keyframes.headYaw.interpolate(replayTicks).floatValue());
-                            actor.setBodyYaw(replay.keyframes.bodyYaw.interpolate(replayTicks).floatValue());
-                            actor.setPitch(replay.keyframes.pitch.interpolate(replayTicks).floatValue());
+                            actor.setYRot(replay.keyframes.yaw.interpolate(replayTicks).floatValue());
+                            actor.setYHeadRot(replay.keyframes.headYaw.interpolate(replayTicks).floatValue());
+                            actor.setYBodyRot(replay.keyframes.bodyYaw.interpolate(replayTicks).floatValue());
+                            actor.setXRot(replay.keyframes.pitch.interpolate(replayTicks).floatValue());
                             replay.applyClientActions(replayTicks, new MCEntity(anEntity), this.film);
                         }
                         else if (anEntity instanceof Player player)
@@ -1469,7 +1469,7 @@ public abstract class BaseFilmController
         {
             FilmControllerContext filmContext = getFilmControllerContext(context, replay, entity);
 
-            filmContext.transition = getTransition(entity, context.tickCounter().getTickDelta(false));
+            filmContext.transition = getTransition(entity, context.tickCounter().getGameTimeDeltaPartialTick(false));
 
             renderEntity(filmContext);
         }

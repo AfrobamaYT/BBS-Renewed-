@@ -26,7 +26,7 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
     }
 
     @Override
-    public ResourceLocation getTexture(GunProjectileEntity entity)
+    public ResourceLocation getTextureLocation(GunProjectileEntity entity)
     {
         return ResourceLocation.parse("minecraft:textures/entity/player/wide/steve.png");
     }
@@ -39,8 +39,8 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         GunProperties properties = projectile.getProperties();
         int out = properties.lifeSpan - 2;
 
-        float bodyYaw = Mth.rotLerp(tickDelta, projectile.prevYaw, projectile.getYaw());
-        float pitch = Mth.rotLerp(tickDelta, projectile.prevPitch, projectile.getPitch());
+        float bodyYaw = Mth.rotLerp(tickDelta, projectile.yRotO, projectile.getYRot());
+        float pitch = Mth.rotLerp(tickDelta, projectile.xRotO, projectile.getXRot());
         float scale = Lerps.envelope(projectile.age + tickDelta, 0, properties.fadeIn, out - properties.fadeOut, out);
 
         if (properties.yaw) matrices.mulPose(Axis.YP.rotationDegrees(bodyYaw));

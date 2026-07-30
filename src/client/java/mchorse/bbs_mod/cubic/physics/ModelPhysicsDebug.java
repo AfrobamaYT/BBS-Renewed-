@@ -91,7 +91,7 @@ public final class ModelPhysicsDebug
 
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         stack.pushPose();
 
@@ -175,7 +175,7 @@ public final class ModelPhysicsDebug
         }
 
         RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         stack.pushPose();
 

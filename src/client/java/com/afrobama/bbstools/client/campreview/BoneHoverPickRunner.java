@@ -355,7 +355,7 @@ public final class BoneHoverPickRunner
             }
 
             PoseStack tempStack = new PoseStack();
-            float tickDelta = ctx.tickCounter().getTickDelta(false);
+            float tickDelta = ctx.tickCounter().getGameTimeDeltaPartialTick(false);
 
             BaseFilmController.renderEntity(FilmControllerContext.instance
                 .setup(editorEntities, selectedEntity, selectedReplay, altCam, tempStack,

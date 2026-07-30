@@ -84,6 +84,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -407,7 +412,7 @@ public class BBSModClient implements ClientModInitializer
         BBSSettings.language.postCallback((v, f) -> reloadLanguage(getLanguageKey()));
         BBSSettings.userIntefaceScale.postCallback((v, f) ->
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (mc.currentScreen instanceof UIScreen)
             {
@@ -518,13 +523,13 @@ public class BBSModClient implements ClientModInitializer
 
                 if (d > 0)
                 {
-                    MatrixStack stack = context.matrixStack();
+                    PoseStack stack = context.matrixStack();
                     Integer fromCurve = BBSRendering.getChromaSkyColorArgb();
                     Color color = Colors.COLOR.set(fromCurve != null ? fromCurve : BBSSettings.chromaSkyColor.get());
 
                     stack.push();
 
-                    MatrixStack.Entry peek = stack.peek();
+                    PoseStack.Entry peek = stack.peek();
 
                     peek.getPositionMatrix().identity();
                     peek.getNormalMatrix().identity();
@@ -532,9 +537,9 @@ public class BBSModClient implements ClientModInitializer
 
                     RenderSystem.enableDepthTest();
 
-                    BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                    BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-                    float fov = MinecraftClient.getInstance().options.getFov().getValue();
+                    float fov = Minecraft.getInstance().options.getFov().getValue();
                     float dd = d * (float) Math.pow(fov / 40F, 2F);
 
                     Draw.fillQuad(builder, stack,
@@ -545,9 +550,9 @@ public class BBSModClient implements ClientModInitializer
                         color.r, color.g, color.b, 1F
                     );
 
-                    RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+                    RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-                    { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+                    { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferUploader.drawWithGlobalProgram(__bbsBuilt); }
                     RenderSystem.disableDepthTest();
 
                     stack.pop();
@@ -587,7 +592,7 @@ public class BBSModClient implements ClientModInitializer
 
         ClientTickEvents.END_WORLD_TICK.register((client) ->
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (!mc.isPaused())
             {
@@ -599,7 +604,7 @@ public class BBSModClient implements ClientModInitializer
 
         ClientTickEvents.END_CLIENT_TICK.register((client) ->
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (mc.currentScreen instanceof UIScreen screen)
             {
@@ -618,14 +623,14 @@ public class BBSModClient implements ClientModInitializer
 
             worldExportSession.update();
 
-            while (keyDashboard.wasPressed()) UIScreen.open(getDashboard());
-            while (keyItemEditor.wasPressed()) this.keyOpenModelBlockEditor(mc);
-            while (keyPlayFilm.wasPressed()) this.keyPlayFilm();
-            while (keyPauseFilm.wasPressed()) this.keyPauseFilm();
-            while (keyRecordReplay.wasPressed()) this.keyRecordReplay();
-            while (keyRecordVideo.wasPressed()) this.keyRecordVideo(mc);
-            while (keyPlayFilmAndRecord.wasPressed()) this.keyPlayFilmAndRecord();
-            while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
+            while (keyDashboard.consumeClick()) UIScreen.open(getDashboard());
+            while (keyItemEditor.consumeClick()) this.keyOpenModelBlockEditor(mc);
+            while (keyPlayFilm.consumeClick()) this.keyPlayFilm();
+            while (keyPauseFilm.consumeClick()) this.keyPauseFilm();
+            while (keyRecordReplay.consumeClick()) this.keyRecordReplay();
+            while (keyRecordVideo.consumeClick()) this.keyRecordVideo(mc);
+            while (keyPlayFilmAndRecord.consumeClick()) this.keyPlayFilmAndRecord();
+            while (keyOpenReplays.consumeClick()) this.keyOpenReplays();
             /* Nicht neu oeffnen, solange der Waehler steht: derselbe Tastendruck BESTAETIGT
              * dort die Auswahl (UIQuickReplayOverlayPanel.subKeyPressed). Ohne den Test
              * bekaeme man beides — bestaetigen und sofort wieder aufmachen.
@@ -636,23 +641,23 @@ public class BBSModClient implements ClientModInitializer
              * 2026-07-30 hat genau diese Zeile ohne den Test eine Instanz mit 5,5 h Laufzeit
              * umgebracht, Sekunden nach dem Tausch. Die anderen Tasten oben brauchen ihn
              * nicht: sie existierten beim Start und behalten ihren Wert ueber den Tausch. */
-            while (keyOpenQuickReplays != null && keyOpenQuickReplays.wasPressed())
+            while (keyOpenQuickReplays != null && keyOpenQuickReplays.consumeClick())
             {
                 if (!UIQuickReplayOverlayPanel.isOpened()) QuickReplayWelt.oeffnen();
             }
-            while (keyOpenMorphing.wasPressed())
+            while (keyOpenMorphing.consumeClick())
             {
                 UIDashboard dashboard = getDashboard();
 
                 UIScreen.open(dashboard);
                 dashboard.setPanel(dashboard.getPanel(UIMorphingPanel.class));
             }
-            while (keyDemorph.wasPressed()) ClientNetwork.sendPlayerForm(null);
-            while (keyTeleport.wasPressed()) this.keyTeleport();
+            while (keyDemorph.consumeClick()) ClientNetwork.sendPlayerForm(null);
+            while (keyTeleport.consumeClick()) this.keyTeleport();
 
             if (mc.player != null)
             {
-                boolean zoom = keyZoom.isPressed();
+                boolean zoom = keyZoom.isDown();
                 ItemStack stack = mc.player.getMainHandStack();
 
                 if (gunZoom == null && zoom && stack.getItem() == BBSMod.GUN_ITEM)
@@ -667,11 +672,11 @@ public class BBSModClient implements ClientModInitializer
 
         HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
         {
-            BBSRendering.renderHud(drawContext, tickDelta.getTickDelta(false));
+            BBSRendering.renderHud(drawContext, tickDelta.getGameTimeDeltaPartialTick(false));
 
             if (gunZoom != null)
             {
-                gunZoom.update(keyZoom.isPressed(), MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration());
+                gunZoom.update(keyZoom.isDown(), Minecraft.getInstance().getRenderTickCounter().getLastFrameDuration());
 
                 if (gunZoom.canBeRemoved())
                 {
@@ -687,7 +692,7 @@ public class BBSModClient implements ClientModInitializer
             BBSRendering.setupFramebuffer();
             provider.register(new MinecraftSourcePack());
 
-            Window window = MinecraftClient.getInstance().getWindow();
+            Window window = Minecraft.getInstance().getWindow();
 
             originalFramebufferScale = window.getFramebufferWidth() / window.getWidth();
         });

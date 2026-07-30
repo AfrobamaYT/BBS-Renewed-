@@ -418,7 +418,7 @@ public final class Tier2eMergedDrawV2
             {
                 try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
             }
-            RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+            RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
             /* Single drawArrays via MC's BufferRenderer. Internally MC
              * caches a VertexBuffer per shader/format so the GL VBO id

@@ -137,7 +137,7 @@ public final class Tier2bDrawPath
 
                 /* Set the entity translucent-cull shader — vanilla MC,
                  * Iris-compat by construction. */
-                RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+                RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
                 /* Begin merged buffer for this bucket. */
                 BufferBuilder builder;

@@ -127,7 +127,7 @@ public class UIParticleColorPresets extends UIElement
 
     private void openPicker()
     {
-        UIListOverlayPanel panel = new UIListOverlayPanel(EFFECT_TITLE, (l) -> this.setEffect(Identifier.of(l)));
+        UIListOverlayPanel panel = new UIListOverlayPanel(EFFECT_TITLE, (l) -> this.setEffect(ResourceLocation.of(l)));
         List<String> ids = new ArrayList<>();
 
         for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())

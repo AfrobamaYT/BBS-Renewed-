@@ -1556,7 +1556,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
                 FilmControllerContext filmContext = FilmControllerContext.instance
                     .setup(this.getEntities(), entry.getValue(), replay, renderContext)
-                    .transition(isPlaying ? renderContext.tickCounter().getTickDelta(false) : 0)
+                    .transition(isPlaying ? renderContext.tickCounter().getGameTimeDeltaPartialTick(false) : 0)
                     .stencil(this.stencilMap)
                     .relative(replay.relative.get());
 
@@ -1588,7 +1588,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             this.editorController.renderStencilEntity(FilmControllerContext.instance
                 .setup(this.getEntities(), entity, replay, renderContext)
-                .transition(isPlaying ? renderContext.tickCounter().getTickDelta(false) : 0)
+                .transition(isPlaying ? renderContext.tickCounter().getGameTimeDeltaPartialTick(false) : 0)
                 .stencil(this.stencilMap)
                 .relative(replay.relative.get())
                 .bone(bone == null ? null : bone.a, bone != null && bone.b)

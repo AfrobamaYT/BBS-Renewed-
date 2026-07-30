@@ -370,7 +370,7 @@ public class OrbitViewGizmo
     private void draw(Batcher2D batcher, BufferBuilder builder)
     {
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferUploader.drawWithShader(builder.buildOrThrow());
 
         batcher.getContext().flush();

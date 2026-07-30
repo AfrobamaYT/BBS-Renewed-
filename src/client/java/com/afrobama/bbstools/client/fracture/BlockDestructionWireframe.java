@@ -95,7 +95,7 @@ public final class BlockDestructionWireframe
         RenderSystem.lineWidth(4F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         ms.pushPose();
         ms.translate(-camPos.x, -camPos.y, -camPos.z);

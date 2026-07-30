@@ -72,7 +72,7 @@ public class WorldFilmController extends BaseFilmController
         }
 
         this.context.clipData.clear();
-        this.context.setup(tick, context.tickCounter().getTickDelta(false));
+        this.context.setup(tick, context.tickCounter().getGameTimeDeltaPartialTick(false));
 
         for (Clip clip : clips)
         {

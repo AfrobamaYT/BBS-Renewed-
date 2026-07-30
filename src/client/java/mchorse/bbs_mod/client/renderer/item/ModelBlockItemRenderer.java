@@ -92,7 +92,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
             return this.map.get(stack);
         }
 
-        ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ZERO, BBSMod.MODEL_BLOCK.getDefaultState());
+        ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ZERO, BBSMod.MODEL_BLOCK.defaultBlockState());
         Item item = new Item(entity);
 
         this.map.put(stack, item);
@@ -108,7 +108,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
         if (world != null)
         {
-            entity.readNbt(nbtComponent.getUnsafe(), world.registryAccess());
+            entity.loadAdditional(nbtComponent.getUnsafe(), world.registryAccess());
         }
 
         return item;

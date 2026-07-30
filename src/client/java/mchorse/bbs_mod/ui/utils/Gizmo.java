@@ -859,7 +859,7 @@ public class Gizmo
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.disableCull();
 
         int segments = Math.max(2, (int) (Math.abs(sweepRad) / (float) (2D * Math.PI) * 64F));
@@ -964,7 +964,7 @@ public class Gizmo
             Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, Colors.BLUE);
         }
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -1149,7 +1149,7 @@ public class Gizmo
 
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
@@ -1259,7 +1259,7 @@ public class Gizmo
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
         RenderSystem.disableCull();
 
@@ -1550,7 +1550,7 @@ public class Gizmo
              * Re-assert the opacity modulator: the billboard view ring above sets
              * the shader colour itself and leaves it opaque. */
             RenderSystem.setShaderColor(1F, 1F, 1F, BBSSettings.gizmoOpacity.get());
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
             { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }
@@ -1834,7 +1834,7 @@ public class Gizmo
                 if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, STENCIL_SCALE_Z / 255F, 0F, 0F);
             }
 
-            RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
             { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }

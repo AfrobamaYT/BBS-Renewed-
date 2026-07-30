@@ -53,18 +53,18 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     {
         ClientLevel world = Minecraft.getInstance().level;
 
-        if (entity == null || entity.getWorld() != world)
+        if (entity == null || entity.level() != world)
         {
             entity = new ActorEntity(BBSMod.ACTOR_ENTITY, world);
         }
 
         entity.setPos(x, y, z);
-        entity.lastRenderX = x;
-        entity.lastRenderY = y;
-        entity.lastRenderZ = z;
-        entity.prevX = x;
-        entity.prevY = y;
-        entity.prevZ = z;
+        entity.xOld = x;
+        entity.yOld = y;
+        entity.zOld = z;
+        entity.xo = x;
+        entity.yo = y;
+        entity.zo = z;
 
         double distance = Minecraft.getInstance().getEntityRenderDispatcher().distanceToSqr(x, y, z);
 
@@ -73,7 +73,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         matrices.pushPose();
         matrices.translate(tx, ty, tz);
 
-        EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, provider, entity, opacity, tickDelta, entity.getWorld(), radius);
+        EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, provider, entity, opacity, tickDelta, entity.level(), radius);
 
         matrices.popPose();
     }
@@ -110,7 +110,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         Minecraft mc = Minecraft.getInstance();
         ModelProperties properties = entity.getProperties();
         Transform transform = properties.getTransform();
-        BlockPos pos = entity.getPos();
+        BlockPos pos = entity.getBlockPos();
 
         matrices.pushPose();
         matrices.translate(0.5F, 0F, 0.5F);
@@ -138,7 +138,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 
             MatrixStackUtils.applyTransform(matrices, applied);
 
-            int lightAbove = LevelRenderer.getLightColor(entity.getWorld(), pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
+            int lightAbove = LevelRenderer.getLightColor(entity.getLevel(), pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
             Camera camera = mc.gameRenderer.getMainCamera();
 
             RenderSystem.enableDepthTest();
@@ -188,7 +188,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             ? mc.player.getEyePosition(tickDelta)
             : camera.getPosition();
 
-        BlockPos pos = entity.getPos();
+        BlockPos pos = entity.getBlockPos();
         double x = pos.getX() + 0.5D + transform.translate.x;
         double y = pos.getY() + transform.translate.y;
         double z = pos.getZ() + 0.5D + transform.translate.z;

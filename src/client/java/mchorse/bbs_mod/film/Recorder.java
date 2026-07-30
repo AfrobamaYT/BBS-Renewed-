@@ -89,7 +89,7 @@ public class Recorder extends WorldFilmController
             .rotateX(MathUtils.toRad(-position.angle.pitch));
 
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         transformFrustum(vector, matrix, 1F, 1F);

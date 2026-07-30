@@ -13,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.HitResult;
 
 public abstract class UIActionClip <T extends ActionClip> extends UIClip<T>
 {
@@ -87,7 +89,7 @@ public abstract class UIActionClip <T extends ActionClip> extends UIClip<T>
 
         menu.action(Icons.BLOCK, UIKeys.ACTIONS_BLOCK_POSITION_FROM_LOOK, () ->
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             HitResult result = mc == null ? null : mc.crosshairTarget;
 
             if (result instanceof BlockHitResult bhr && result.getType() == HitResult.Type.BLOCK)

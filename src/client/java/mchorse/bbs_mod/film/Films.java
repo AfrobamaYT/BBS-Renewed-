@@ -54,7 +54,7 @@ public class Films
             {
                 ContentType.FILMS.getRepository().load(filmId, (data) ->
                 {
-                    MinecraftClient.getInstance().execute(() -> playFilm((Film) data, withCamera));
+                    Minecraft.getInstance().execute(() -> playFilm((Film) data, withCamera));
                 });
             }
         }

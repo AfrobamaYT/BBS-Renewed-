@@ -98,7 +98,7 @@ public class ModelVAORenderer
 
         if (shader.FOG_SHAPE != null)
         {
-            shader.FOG_SHAPE.set(RenderSystem.getShaderFogShape().getId());
+            shader.FOG_SHAPE.set(RenderSystem.getShaderFogShape().getIndex());
         }
 
         if (shader.COLOR_MODULATOR != null)

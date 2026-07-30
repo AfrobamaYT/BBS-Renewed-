@@ -141,7 +141,7 @@ public class ClientNetwork
     {
         crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            String filmId = packetByteBuf.readString();
+            String filmId = packetByteBuf.readUtf();
             boolean withCamera = packetByteBuf.readBoolean();
             Film film = new Film();
 
@@ -206,7 +206,7 @@ public class ClientNetwork
     {
         crusher.receive(buf, (bytes, packetByteBuf) ->
         {
-            String filmId = packetByteBuf.readString();
+            String filmId = packetByteBuf.readUtf();
             int replayId = packetByteBuf.readInt();
             int tick = packetByteBuf.readInt();
             BaseType data = DataStorageUtils.readFromBytes(bytes);
@@ -347,7 +347,7 @@ public class ClientNetwork
             if (entity instanceof GunProjectileEntity projectile)
             {
                 projectile.setProperties(properties);
-                projectile.calculateDimensions();
+                projectile.refreshDimensions();
             }
         });
     }
@@ -505,12 +505,12 @@ public class ClientNetwork
         {
             DataPath path = data.getPath();
 
-            packetByteBuf.writeString(filmId);
+            packetByteBuf.writeUtf(filmId);
             packetByteBuf.writeInt(path.strings.size());
 
             for (String string : path.strings)
             {
-                packetByteBuf.writeString(string);
+                packetByteBuf.writeUtf(string);
             }
         });
     }
@@ -550,7 +550,7 @@ public class ClientNetwork
 
         crusher.send(Minecraft.getInstance().player, ServerNetwork.SERVER_SHARED_FORM, mapType == null ? new MapType() : mapType, (packetByteBuf) ->
         {
-            packetByteBuf.writeUuid(uuid);
+            packetByteBuf.writeUUID(uuid);
         });
     }
 

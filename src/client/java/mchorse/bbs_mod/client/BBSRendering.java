@@ -229,7 +229,7 @@ public class BBSRendering
 
         ModelBlockEntityUpdateCallback.EVENT.register((entity) ->
         {
-            if (entity.getWorld().isClient())
+            if (entity.getLevel().isClientSide())
             {
                 capturedModelBlocks.add(entity);
             }
@@ -574,7 +574,7 @@ public class BBSRendering
         /* Feed the world camera orientation into the holder that replaced
          * RenderSystem's inverse view rotation matrix (removed in 1.21.1), so
          * billboards and particles keep facing the camera in world space. */
-        InverseView.set(new Matrix3f().rotation(worldRenderContext.camera().getRotation()));
+        InverseView.set(new Matrix3f().rotation(worldRenderContext.camera().rotation()));
 
         if (Minecraft.getInstance().screen instanceof UIScreen screen)
         {

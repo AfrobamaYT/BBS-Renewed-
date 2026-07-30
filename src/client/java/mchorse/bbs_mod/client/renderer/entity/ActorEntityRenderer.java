@@ -37,7 +37,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
     }
 
     @Override
-    public ResourceLocation getTexture(ActorEntity entity)
+    public ResourceLocation getTextureLocation(ActorEntity entity)
     {
         return ResourceLocation.parse("minecraft:textures/entity/player/wide/steve.png");
     }
@@ -47,10 +47,10 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
     {
         matrices.pushPose();
 
-        float bodyYaw = Mth.rotLerp(tickDelta, livingEntity.prevBodyYaw, livingEntity.bodyYaw);
+        float yBodyRot = Mth.rotLerp(tickDelta, livingEntity.yBodyRotO, livingEntity.yBodyRot);
         int overlay = LivingEntityRenderer.getOverlayCoords(livingEntity, 0F);
 
-        this.setupTransforms(livingEntity, matrices, bodyYaw, tickDelta);
+        this.setupTransforms(livingEntity, matrices, yBodyRot, tickDelta);
 
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
@@ -72,7 +72,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
 
     protected void setupTransforms(ActorEntity entity, PoseStack matrices, float bodyYaw, float tickDelta)
     {
-        if (!entity.isInPose(Pose.SLEEPING))
+        if (!entity.hasPose(Pose.SLEEPING))
         {
             matrices.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
         }

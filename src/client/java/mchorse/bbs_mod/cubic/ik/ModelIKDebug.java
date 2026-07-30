@@ -79,7 +79,7 @@ public final class ModelIKDebug
 
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         stack.pushPose();
 
@@ -153,7 +153,7 @@ public final class ModelIKDebug
         }
 
         RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         stack.pushPose();
 

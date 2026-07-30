@@ -286,7 +286,7 @@ public final class BBSPerfConfig
      *
      *  Collapses N {@code instance.render()} draws into 1 drawArrays per
      *  (model.id, texture) bucket. Iris-compat by construction (vanilla
-     *  MC ENTITY format + GameRenderer::getRenderTypeEntityTranslucentCullProgram).
+     *  MC ENTITY format + GameRenderer::getRendertypeEntityTranslucentCullShader).
      *
      *  Falls back to FastPathRenderer.flushAll path per-bucket when IR
      *  is null (BOBJ models, models with meshes, etc).

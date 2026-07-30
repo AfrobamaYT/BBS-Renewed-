@@ -163,7 +163,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         this.calculate(1, 1, a, b, c, d);
         builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.disableCull();
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         RenderSystem.enableCull();

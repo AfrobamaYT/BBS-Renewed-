@@ -175,7 +175,7 @@ public final class CameraPreviewRenderHook
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, src.getColorTextureId());
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 

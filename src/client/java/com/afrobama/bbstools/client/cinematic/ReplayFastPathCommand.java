@@ -70,7 +70,7 @@ public final class ReplayFastPathCommand
                     BENCH_SOURCE = null;
                     if (src != null)
                     {
-                        src.sendFeedback(Text.literal(String.format(
+                        src.sendFeedback(Component.literal(String.format(
                             "[bench] ===== %ds elapsed — auto-status =====", BENCH_SECONDS)));
                         emitStatus(src);
                     }

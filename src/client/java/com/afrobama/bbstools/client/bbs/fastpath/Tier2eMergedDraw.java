@@ -364,7 +364,7 @@ public final class Tier2eMergedDraw
             {
                 try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
             }
-            RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
+            RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
 
             BufferUploader.drawWithShader(masterBuilt);
             drewOk = true;

@@ -2050,7 +2050,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
 
         replay.category.set("");
 
-        BlockPos blockPos = modelBlock.getPos();
+        BlockPos blockPos = modelBlock.getBlockPos();
         ModelProperties properties = modelBlock.getProperties();
         Transform transform = properties.getTransform().copy();
         double x = blockPos.getX() + transform.translate.x + 0.5D;
