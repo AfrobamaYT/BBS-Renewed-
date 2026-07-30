@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
+import org.joml.Matrix4f;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
@@ -589,7 +591,7 @@ public class UIFilmPreview extends UIElement
 
         stack.pushMatrix();
 
-        stack.mul(context.batcher.getContext().pose().last().pose());
+        new Matrix4f().mul(stack.mul(context.batcher.getContext().pose()));
         stack.translate(area.x + 16, area.ey() - 12, 0F);
         stack.rotate(Axis.XN.rotationDegrees(mcCamera.xRot()));
         stack.rotate(Axis.YP.rotationDegrees(mcCamera.yRot()));

@@ -78,7 +78,7 @@ public class LineBuilder <T>
 
     public void render(Batcher2D batcher2D, ILineRenderer<T> renderer)
     {
-        Matrix4f matrix = batcher2D.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(batcher2D.getContext().pose());
         List<List<LinePoint<T>>> build = this.build();
 
         for (List<LinePoint<T>> points : build)

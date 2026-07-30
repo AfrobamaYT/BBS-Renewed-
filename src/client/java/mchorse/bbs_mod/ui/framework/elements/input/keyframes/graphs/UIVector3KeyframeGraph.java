@@ -101,7 +101,7 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         }
 
         /* Render track bars (horizontal lines) */
-        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
@@ -127,7 +127,7 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
     @Override
     public void renderTopmostKeyframes(UIContext context)
     {
-        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
         Area area = this.keyframes.graphArea;
 
         context.batcher.clip(area, context);

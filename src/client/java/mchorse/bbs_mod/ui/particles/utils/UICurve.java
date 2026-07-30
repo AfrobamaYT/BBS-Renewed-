@@ -257,7 +257,7 @@ public class UICurve extends UIElement
 
     private void drawGraph(UIContext context)
     {
-        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
         int c = this.curve.nodes.size();
 
 

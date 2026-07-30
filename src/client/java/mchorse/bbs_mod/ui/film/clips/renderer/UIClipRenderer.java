@@ -96,7 +96,7 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
      */
     private void renderEnvelope(UIContext context, Envelope envelope, int duration, int x1, int y1, int x2, int y2)
     {
-        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {

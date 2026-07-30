@@ -155,7 +155,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
     private void renderPlane(UIContext context, float a, float b, float c, float d)
     {
-        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
         final float alpha = 0.5F;
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))

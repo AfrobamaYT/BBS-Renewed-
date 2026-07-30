@@ -131,7 +131,7 @@ public class MCEFWebScreen extends Screen
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         RenderSystem.setShaderTexture(0, this.browser.getRenderer().getTextureID());
 
-        Matrix4f matrix = context.pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(context.pose());
         Tesselator tessellator = Tesselator.getInstance();
         BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 

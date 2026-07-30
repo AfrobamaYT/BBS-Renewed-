@@ -299,7 +299,7 @@ public class OrbitViewGizmo
 
     private void fillCircle(Batcher2D batcher, float x, float y, float radius, int color)
     {
-        Matrix4f matrix = batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(batcher.getContext().pose());
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
@@ -319,7 +319,7 @@ public class OrbitViewGizmo
 
     private void annulus(Batcher2D batcher, float x, float y, float inner, float outer, int color)
     {
-        Matrix4f matrix = batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(batcher.getContext().pose());
 
         /* SEGMENTS * 6 Ecken a 16 Byte (POSITION_COLOR) — gross genug angelegt,
          * damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
@@ -366,7 +366,7 @@ public class OrbitViewGizmo
         float nx = -dy / length * width / 2F;
         float ny = dx / length * width / 2F;
 
-        Matrix4f matrix = batcher.getContext().pose().last().pose();
+        Matrix4f matrix = new Matrix4f().mul(batcher.getContext().pose());
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(256))
         {

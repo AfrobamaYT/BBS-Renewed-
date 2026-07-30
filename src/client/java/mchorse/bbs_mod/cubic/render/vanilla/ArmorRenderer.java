@@ -121,25 +121,52 @@ public class ArmorRenderer
         return bipedModel.head;
     }
 
+    /**
+     * 26.2: es gibt keinen Puffer mehr zum Hineinschreiben — die Geometrie wird als AUFTRAG
+     * eingereicht und spaeter gezeichnet. Der Auftrag bekommt nur die KOPIERTE Pose des
+     * Einreich-Zeitpunkts ({@code CustomGeometryRenderer#render(PoseStack.Pose, VertexConsumer)}),
+     * {@link ModelPart#render} verlangt aber einen ganzen Stapel. Den uebergebenen Stapel im
+     * Auftrag weiterzubenutzen waere falsch: bis der Auftrag laeuft, ist er laengst
+     * weitergewandert. Also wird er hier aus der Pose neu aufgesetzt — {@code Pose#set} kopiert
+     * pose UND normal-matrix, der render-Aufruf selbst bleibt unveraendert.
+     */
+    private static PoseStack poseStack(PoseStack.Pose entry)
+    {
+        PoseStack stack = new PoseStack();
+
+        stack.last().set(entry);
+
+        return stack;
+    }
+
     private void renderArmorParts(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, ArmorItem item, boolean secondTextureLayer, float red, float green, float blue, String overlay)
     {
-        VertexConsumer base = vertexConsumers.getBuffer(RenderTypes.armorCutoutNoCull(this.getArmorTexture(item, secondTextureLayer, overlay)));
-        VertexConsumer vertexConsumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
+        vertexConsumers.submitCustomGeometry(matrices, RenderTypes.armorCutoutNoCull(this.getArmorTexture(item, secondTextureLayer, overlay)), (entry, base) ->
+        {
+            VertexConsumer vertexConsumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
 
-        part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+            part.render(poseStack(entry), vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+        });
     }
 
     private void renderTrim(ModelPart part, Holder<ArmorMaterial> material, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, ArmorTrim trim, boolean leggings)
     {
         TextureAtlasSprite sprite = this.armorTrimsAtlas.getSprite(leggings ? trim.innerTexture(material) : trim.outerTexture(material));
-        VertexConsumer vertexConsumer = sprite.wrap(vertexConsumers.getBuffer(Sheets.armorTrimsSheet(trim.pattern().value().decal())));
 
-        part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+        vertexConsumers.submitCustomGeometry(matrices, Sheets.armorTrimsSheet(trim.pattern().value().decal()), (entry, base) ->
+        {
+            VertexConsumer vertexConsumer = sprite.wrap(base);
+
+            part.render(poseStack(entry), vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+        });
     }
 
     private void renderGlint(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
     {
-        part.render(matrices, vertexConsumers.getBuffer(RenderTypes.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
+        vertexConsumers.submitCustomGeometry(matrices, RenderTypes.armorEntityGlint(), (entry, base) ->
+        {
+            part.render(poseStack(entry), base, light, OverlayTexture.NO_OVERLAY);
+        });
     }
 
     private HumanoidModel getModel(EquipmentSlot slot)

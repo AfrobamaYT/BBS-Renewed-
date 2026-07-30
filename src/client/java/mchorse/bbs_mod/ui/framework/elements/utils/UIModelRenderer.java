@@ -377,7 +377,7 @@ public abstract class UIModelRenderer extends UIElement
      */
     protected void renderGrid(UIContext context)
     {
-        Matrix4f matrix4f = context.batcher.getContext().pose().last().pose();
+        Matrix4f matrix4f = new Matrix4f().mul(context.batcher.getContext().pose());
 
         /* 26.2: der Zug bringt seinen Zustand selbst mit. Tiefenpruefung an — das ist das
          * depthFunc(GL_LEQUAL) aus renderModel: die Vorschau loescht vorher die Tiefe und
