@@ -164,8 +164,7 @@ public class BBSSettings {
 	public static ValueBoolean editorOrbitAxisOrtho;
 	public static ValueMotionPath editorMotionPath;
 	public static ValueBoolean editorOrbitTeleportOnSwitch;
-	public static ValueFloat editorOrbitZoomToReplay;
-	public static ValueFloat editorOrbitFrameDistance;
+	public static ValueFloat editorOrbitFrameMargin;
 	public static ValueFloat editorCameraSmoothness;
 	public static ValueInt editorCameraMode;
 	public static ValueBoolean editorPlayerFollowsCamera;
@@ -704,16 +703,10 @@ public class BBSSettings {
 		editorOrbitGizmoScale = builder.getFloat("orbit_gizmo_scale", 1F, 0.5F, 2F).slider();
 		editorOrbitAxisOrtho = builder.getBoolean("orbit_axis_ortho", true);
 		editorOrbitTeleportOnSwitch = builder.getBoolean("orbit_teleport_on_switch", true);
-		/* Anteil, um den sich der Abstand zum Replay pro Tick verkuerzt, solange Maustaste 4
-		 * gehalten wird. 0.12 heisst: nach einer Sekunde (20 Ticks) noch 0.88^20 = 8 % des
-		 * Abstands. 0 schaltet die Zufahrt ab. UNSERE Zahl — Blenders fortlaufendes Zoomen
-		 * haengt am Mausweg statt an der Zeit, dort gibt es keine Konstante zum Abschreiben. */
-		editorOrbitZoomToReplay = builder.getFloat("orbit_zoom_to_replay", 0.12F, 0F, 0.5F).slider();
-		/* Vielfaches der DARSTELLER-HOEHE als Rahmen-Abstand. 1.2 heisst bei einem 1,8 hohen
-		 * Spieler gut zwei Bloecke Abstand. Aus der Groesse gerechnet, nicht aus der bisherigen
-		 * Entfernung — deshalb wirkt ein Druck aus jeder Entfernung gleich (Blenders
-		 * "Frame Selected" macht es genauso). */
-		editorOrbitFrameDistance = builder.getFloat("orbit_frame_distance", 1.2F, 0.3F, 6F).slider();
+		/* Blenders VIEW3D_MARGIN aus view3d_view.cc: der Rand um die Huellbox beim Rahmen.
+		 * 1.4 ist dessen Wert, hier einstellbar, damit man enger oder weiter rahmen kann,
+		 * ohne an der Formel zu drehen (siehe OrbitFilmCameraController.rahmenAbstand). */
+		editorOrbitFrameMargin = builder.getFloat("orbit_frame_margin", 1.4F, 0.5F, 4F).slider();
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();

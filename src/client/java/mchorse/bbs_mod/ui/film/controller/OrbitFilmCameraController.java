@@ -67,8 +67,6 @@ public class OrbitFilmCameraController implements ICameraController
     /* Whether the pivot has been placed onto the subject after a reset. */
     private boolean positioned;
 
-    /* Maustaste 4 gehalten: pro Frame ein Stueck naeher ans Replay (siehe zoomeZumReplay). */
-    private boolean zoomtZumReplay;
 
     /*
      * When attached, pivot and rotation are stored relative to the selected
@@ -204,7 +202,7 @@ public class OrbitFilmCameraController implements ICameraController
     }
 
     /**
-     * Maustaste 4 gedrueckt: das Replay rahmen — und weiter zufahren, solange sie gehalten wird.
+     * Maustaste 4: das Replay rahmen — eine Bewegung an eine gerechnete Stelle, wie Blender.
      *
      * <p>Der Pivot wandert dabei zuerst auf das Replay; sonst faehrt man auf den alten
      * Drehpunkt zu, und das ist beim Orbiten fast nie der Darsteller, um den es gerade geht.</p>
@@ -222,7 +220,17 @@ public class OrbitFilmCameraController implements ICameraController
      * Genau das macht {@link #rahmenAbstand()} hier — und deshalb wirkt ein Druck aus jeder
      * Entfernung gleich.</p>
      *
-     * <p>Das Halten bleibt zusaetzlich erhalten: wer naeher will als der Rahmen, haelt weiter.</p>
+     * <h2>⛔ UND WARUM ES KEIN WEITER-ZUFAHREN BEIM HALTEN MEHR GIBT</h2>
+     *
+     * <p>Der zweite Entwurf rahmte zwar, fuhr danach aber weiter zu, solange die Taste lag.
+     * Der Nutzer: <em>"der zoom ist viel zu aggresiv und bei playern zoomt er auch so weit
+     * rein"</em>. Das war genau dieses Weiterfahren: schon ein kurzer Tipp dauert mehrere
+     * Ticks, und die fielen alle unter den Rahmen. Gemessen kam ein Tipp bei 1,1 statt bei
+     * den gerahmten 2,2 heraus.</p>
+     *
+     * <p>Blender kennt so ein Halten nicht — dort ist es EINE Bewegung an eine gerechnete
+     * Stelle. Damit ist es hier auch weg: Druck rahmt, fertig. Naeher kommt man mit dem Rad,
+     * das dafuer schon da ist.</p>
      */
     public void starteZoomZumReplay()
     {
@@ -241,8 +249,6 @@ public class OrbitFilmCameraController implements ICameraController
         {
             this.targetDistance = rahmen;
         }
-
-        this.zoomtZumReplay = true;
     }
 
     /**
@@ -259,59 +265,39 @@ public class OrbitFilmCameraController implements ICameraController
     private float rahmenAbstand()
     {
         IEntity entity = this.controller.getCurrentEntity();
+        Camera camera = this.controller.panel.getCamera();
 
-        if (entity == null)
+        if (entity == null || camera == null || camera.fov <= 0F)
         {
             return 0F;
         }
 
-        float hoehe = (float) entity.getPickingHitbox().h;
+        /* ⚠ NOCH DIE TREFFERBOX, NICHT DIE ECHTE MODELL-AUSDEHNUNG. hitboxHeight ist ein
+         * EINSTELLWERT der Form mit Vorgabe 1.8 — der Ender-Drache meldet damit dieselbe
+         * Hoehe wie ein Spieler, und man rahmt in ihn hinein. Fuer Spieler und Mobs stimmt
+         * es, fuer grosse Modelle nicht. Der Ersatz braucht eine echte Huellbox ueber die
+         * Modell-Geometrie; das steht als eigene Aufgabe (#73). */
+        double breite = entity.getPickingHitbox().w;
+        double hoehe = entity.getPickingHitbox().h;
+        float groesse = (float) Math.max(hoehe, breite);
 
-        if (hoehe <= 0F)
+        if (groesse <= 0F)
         {
             return 0F;
         }
 
-        return MathUtils.clamp(hoehe * BBSSettings.editorOrbitFrameDistance.get(), MIN_DISTANCE, MAX_DISTANCE);
-    }
+        /* Blenders Rechnung aus view_selected, eins zu eins (Quellen nachgelesen):
+         *   view3d_view.cc     dist = ED_view3d_radius_to_dist(..., (size / 2) * VIEW3D_MARGIN)
+         *   view3d_utils.cc    ED_view3d_radius_to_dist_persp(angle, radius)
+         *                        -> radius * (1 / tan(angle / 2))
+         * size ist die groesste Achse der Huellbox, VIEW3D_MARGIN = 1.4 der Rand, angle der
+         * volle Oeffnungswinkel. camera.fov ist genau dieser Winkel in Radiant (er geht so in
+         * JOMLs perspective()). Der Rand steht als Einstellung, damit man enger oder weiter
+         * rahmen kann, ohne die Formel anzufassen. */
+        float radius = (groesse / 2F) * BBSSettings.editorOrbitFrameMargin.get();
+        float abstand = radius / (float) Math.tan(camera.fov / 2F);
 
-    public void stoppeZoomZumReplay()
-    {
-        this.zoomtZumReplay = false;
-    }
-
-    /**
-     * Ein Frame Zufahrt.
-     *
-     * <h2>Warum hier KEINE eigene Flugkurve steht</h2>
-     *
-     * <p>Blender loest eine Sicht-Fahrt mit fester Dauer und der Kurve {@code 3t²−2t³}
-     * (nachgelesen in {@code view3d_navigate_smoothview.cc}: {@code factor = 3*f*f − 2*f*f*f},
-     * Dauer {@code smooth_viewtx}). Diese Klasse hat bereits eine Daempfung, die jede andere
-     * Orbit-Bewegung weich macht — {@link #applySmoothing()} zieht {@code distance} exponentiell
-     * an {@code targetDistance}. Bei der Vorgabe {@code camera_smoothness = 0.1} bleiben pro
-     * Tick 10 % Restweg, nach ~100 ms ist die Fahrt zu 99 % durch. Das ist "smooth aber
-     * schnell" — und eine zweite, andersartige Bewegung im selben Controller waere nur eine
-     * Quelle fuer Ruckler an der Naht zwischen beiden.</p>
-     *
-     * <p>Hier wird deshalb nur das ZIEL bewegt, pro Frame um denselben Anteil. Zeitbasiert
-     * ueber {@code dt}, damit die Fahrt bei 30 und bei 144 FPS gleich lang dauert.</p>
-     *
-     * <p>⚠ Die Rate ist UNSERE Zahl, nicht Blenders: Blenders fortlaufendes Zoomen haengt am
-     * Mausweg, nicht an der Zeit, es gibt dort also keine Konstante zum Abschreiben. Sie
-     * steht darum in den Einstellungen ({@code orbit_zoom_to_replay}).</p>
-     */
-    private void zoomeZumReplay(float dt)
-    {
-        float rate = MathUtils.clamp(BBSSettings.editorOrbitZoomToReplay.get(), 0F, 0.95F);
-
-        if (rate <= 0F)
-        {
-            return;
-        }
-
-        this.targetDistance = MathUtils.clamp(
-            this.targetDistance * (float) Math.pow(1F - rate, dt), MIN_DISTANCE, MAX_DISTANCE);
+        return MathUtils.clamp(abstand, MIN_DISTANCE, MAX_DISTANCE);
     }
 
     public boolean zoom(double mouseWheel)
@@ -336,12 +322,6 @@ public class OrbitFilmCameraController implements ICameraController
             return false;
         }
 
-        /* Vor der Daempfung: erst das Ziel bewegen, dann in EINEM Schritt hinterherziehen.
-         * Andersherum haenge die Kamera immer einen Frame zurueck. */
-        if (this.zoomtZumReplay)
-        {
-            this.zoomeZumReplay(MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration());
-        }
 
         this.applySmoothing();
 
