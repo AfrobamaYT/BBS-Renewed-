@@ -1,11 +1,14 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
+
 import mchorse.bbs_mod.actions.ActionState;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.replays.UIQuickReplayMenu;
+import mchorse.bbs_mod.ui.film.replays.overlays.UIQuickReplayOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -67,6 +70,10 @@ public class UIFilmControllerKeys
         /* Quick search: eigenes overlay, kein context-menue — es braucht eine tippbare
          * such-zeile, die ein UISimpleContextMenu nicht hat. */
         c.keys().register(Keys.FILM_CONTROLLER_QUICK_REPLAY, () -> UIQuickReplayMenu.open(c.panel)).category(category);
+        /* ⚠ AEHNLICHER NAME, GEGENTEILIGE WIRKUNG — die Zeile darueber ERZEUGT ein Replay zu
+         * einer Form, diese WAEHLT unter den vorhandenen aus. Die Taste war definiert und tot:
+         * ihr Empfaenger (ein Mixin des alten Forks) ging beim Fork-Wechsel verloren. */
+        c.keys().register(BBSToolsKeys.QUICK_REPLAY_PICKER, () -> UIQuickReplayOverlayPanel.imEditor(c.panel, c.getContext())).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_MOVE_REPLAY_TO_CURSOR, () ->
         {
             Area area = c.panel.preview.getViewport();

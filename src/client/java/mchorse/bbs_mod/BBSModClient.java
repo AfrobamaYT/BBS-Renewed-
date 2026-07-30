@@ -46,6 +46,8 @@ import mchorse.bbs_mod.selectors.EntitySelectors;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.replays.overlays.QuickReplayWelt;
+import mchorse.bbs_mod.ui.film.replays.overlays.UIQuickReplayOverlayPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
@@ -115,6 +117,7 @@ public class BBSModClient implements ClientModInitializer
     private static KeyBinding keyRecordVideo;
     private static KeyBinding keyPlayFilmAndRecord;
     private static KeyBinding keyOpenReplays;
+    private static KeyBinding keyOpenQuickReplays;
     private static KeyBinding keyOpenMorphing;
     private static KeyBinding keyDemorph;
     private static KeyBinding keyTeleport;
@@ -233,6 +236,12 @@ public class BBSModClient implements ClientModInitializer
     public static UIDashboard getDashboardIfCreated()
     {
         return dashboard;
+    }
+
+    /** Der Waehler braucht die Taste, um beim zweiten Druck zu bestaetigen statt zu oeffnen. */
+    public static KeyBinding getKeyOpenQuickReplays()
+    {
+        return keyOpenQuickReplays;
     }
 
     public static UIDashboard getDashboard()
@@ -485,6 +494,11 @@ public class BBSModClient implements ClientModInitializer
         keyRecordVideo = this.createKey("record_video", GLFW.GLFW_KEY_F4);
         keyPlayFilmAndRecord = this.createKey("play_film_and_record", GLFW.GLFW_KEY_F6);
         keyOpenReplays = this.createKey("open_replays", GLFW.GLFW_KEY_RIGHT_SHIFT);
+        /* Bestehendes Replay in der WELT waehlen, ohne ins Dashboard gezogen zu werden.
+         * Der Sprach-Schluessel key.bbs.open_quick_replays lag die ganze Zeit im Baum — die
+         * Taste war beim Fork-Wechsel verlorengegangen, die Uebersetzung nicht. Siehe
+         * UIQuickReplayOverlayPanel. */
+        keyOpenQuickReplays = this.createKey("open_quick_replays", GLFW.GLFW_KEY_RIGHT_BRACKET);
         keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
         keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
         keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);
@@ -615,6 +629,20 @@ public class BBSModClient implements ClientModInitializer
             while (keyRecordVideo.wasPressed()) this.keyRecordVideo(mc);
             while (keyPlayFilmAndRecord.wasPressed()) this.keyPlayFilmAndRecord();
             while (keyOpenReplays.wasPressed()) this.keyOpenReplays();
+            /* Nicht neu oeffnen, solange der Waehler steht: derselbe Tastendruck BESTAETIGT
+             * dort die Auswahl (UIQuickReplayOverlayPanel.subKeyPressed). Ohne den Test
+             * bekaeme man beides — bestaetigen und sofort wieder aufmachen.
+             *
+             * ⛔ DER NULL-TEST IST NICHT UEBERFLUESSIG. Bei einem HOTSWAP laufen statische
+             * Initialisierer NICHT, ein NEU hinzugekommenes Feld steht also auf null — und
+             * dieser Zugriff liegt in der Tick-Schleife, laeuft somit in JEDEM Frame. Am
+             * 2026-07-30 hat genau diese Zeile ohne den Test eine Instanz mit 5,5 h Laufzeit
+             * umgebracht, Sekunden nach dem Tausch. Die anderen Tasten oben brauchen ihn
+             * nicht: sie existierten beim Start und behalten ihren Wert ueber den Tausch. */
+            while (keyOpenQuickReplays != null && keyOpenQuickReplays.wasPressed())
+            {
+                if (!UIQuickReplayOverlayPanel.isOpened()) QuickReplayWelt.oeffnen();
+            }
             while (keyOpenMorphing.wasPressed())
             {
                 UIDashboard dashboard = getDashboard();
