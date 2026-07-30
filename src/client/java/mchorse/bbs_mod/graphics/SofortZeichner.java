@@ -6,6 +6,8 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
@@ -80,6 +82,22 @@ public final class SofortZeichner
      */
     public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe, TextureSetup textur)
     {
+        zeichnen(pipeline, netz, modelView, farbe, textur, null);
+    }
+
+    /**
+     * Wie oben, aber in ein anderes Ziel als das Hauptbild.
+     *
+     * <p>Gebraucht fuer Durchgaenge, die NICHT auf den Bildschirm gehen: der Pick-Puffer
+     * etwa bekommt Kennungsfarben statt sichtbarer Geometrie. Mit fest verdrahtetem
+     * Hauptziel waere das ein doppelter stiller Fehler — die Kennungen landeten sichtbar
+     * im Bild, und das Angeklickte waere nicht mehr auffindbar. Eine Pruefung der Welle
+     * hat genau deshalb vier Stellen offen gelassen, statt sie umzustellen.
+     *
+     * @param ziel das Render-Ziel, oder {@code null} fuer das Hauptbild
+     */
+    public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe, TextureSetup textur, RenderTarget ziel)
+    {
         if (netz == null)
         {
             return;
@@ -99,7 +117,7 @@ public final class SofortZeichner
 
             try
             {
-                zeichneMitPuffern(pipeline, zustand, zuSchliessen.indexBuffer(), ecken, modelView, farbe, textur);
+                zeichneMitPuffern(pipeline, zustand, zuSchliessen.indexBuffer(), ecken, modelView, farbe, textur, ziel);
             }
             finally
             {
@@ -109,7 +127,7 @@ public final class SofortZeichner
     }
 
     private static void zeichneMitPuffern(RenderPipeline pipeline, MeshData.DrawState zustand, ByteBuffer eigeneIndizes,
-        GpuBuffer ecken, Matrix4f modelView, Vector4f farbe, TextureSetup textur)
+        GpuBuffer ecken, Matrix4f modelView, Vector4f farbe, TextureSetup textur, RenderTarget zielOderNull)
     {
         GpuBuffer indizes;
         boolean eigen = eigeneIndizes != null;
@@ -128,7 +146,7 @@ public final class SofortZeichner
             indizes = RenderSystem.getSequentialBuffer(zustand.primitiveTopology()).getBuffer(zustand.indexCount());
         }
 
-        RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+        RenderTarget ziel = zielOderNull != null ? zielOderNull : Minecraft.getInstance().gameRenderer.mainRenderTarget();
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
 
@@ -138,12 +156,25 @@ public final class SofortZeichner
         {
             durchgang.setPipeline(pipeline);
 
+            /* Bindet Projection, Fog, Globals UND Lighting — gemessen im Bytecode von
+             * RenderSystem.bindDefaultUniforms. Das ist der Grund, warum hier auch Vanillas
+             * Entity-Pipelines laufen: fuenf Pruefungen der Welle meldeten diese Bloecke als
+             * fehlend, dabei setzt Mojang sie selbst. Zu liefern bleiben nur die
+             * Modellansicht und die Sampler. */
             RenderSystem.bindDefaultUniforms(durchgang);
             durchgang.setUniform("DynamicTransforms", transformationen);
 
+            /* ⛔ ALLE DREI SAMPLER, nicht nur der erste. Vanillas Entity-Shader lesen
+             * Sampler0 (Textur), Sampler1 (Overlay) und Sampler2 (Lichtkarte) — frueher
+             * stellten das `setupOverlayColor()` und `turnOnLightLayer()` global ein.
+             * Bindet man nur den ersten, zeichnet der Durchgang NICHT falsch, sondern GAR
+             * NICHT: eine Pipeline mit unvollstaendigen Bindungen faellt aus. Fuenf
+             * Pruefungen der Welle sind genau hier stehengeblieben, zu Recht. */
             if (textur != null)
             {
-                durchgang.bindTexture("Sampler0", textur.texure0(), textur.sampler0());
+                bindeWennDa(durchgang, "Sampler0", textur.texure0(), textur.sampler0());
+                bindeWennDa(durchgang, "Sampler1", textur.texure1(), textur.sampler1());
+                bindeWennDa(durchgang, "Sampler2", textur.texure2(), textur.sampler2());
             }
 
             durchgang.setVertexBuffer(0, ecken.slice());
@@ -163,6 +194,28 @@ public final class SofortZeichner
                 indizes.close();
             }
         }
+    }
+
+    private static void bindeWennDa(RenderPass durchgang, String name, GpuTextureView ansicht, GpuSampler abtaster)
+    {
+        if (ansicht != null)
+        {
+            durchgang.bindTexture(name, ansicht, abtaster);
+        }
+    }
+
+    /**
+     * Baut die Texturbindung fuer Vanillas Entity-Weg: BBS-Textur, Overlay und Lichtkarte.
+     *
+     * <p>Das ersetzt {@code setupOverlayColor()} und {@code turnOnLightLayer()}, die ihren
+     * Zustand frueher global setzten. In 26.2 gehoert er zum Zeichenaufruf.
+     *
+     * <p>⚠️ Die BBS-Textur liefert ihre eigene Ansicht seit dem Umbau auf GpuTexture — es
+     * braucht dafuer keine Umwege ueber rohe GL-Nummern mehr.
+     */
+    public static TextureSetup entityTextur(mchorse.bbs_mod.graphics.texture.Texture textur)
+    {
+        return TextureSetup.singleTextureWithLightmap(textur.view(), textur.sampler());
     }
 
     private SofortZeichner()

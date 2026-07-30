@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor;
 
@@ -689,6 +690,30 @@ public class Batcher2D
             v1 / (float) textureH, v2 / (float) textureH,
             color, this.scissors.peek(),
             bounds(pose, x0, y0, x0, y1, x1, y1, x1, y0)));
+    }
+
+    /**
+     * Reiht eigene Geometrie in die Oberflaeche ein — der richtige Weg fuer alles, was
+     * frueher ueber {@code Tesselator} + {@code BufferUploader} gezeichnet wurde.
+     *
+     * <p>⛔ NICHT {@code SofortZeichner} in der Oberflaeche benutzen. 26.2 zeichnet die GUI
+     * in zwei Phasen: dieser Durchlauf SAMMELT nur, {@code GuiRenderer.render()} zeichnet
+     * danach. Ein sofort geoeffneter Durchgang landet deshalb UNTER dem gesamten GUI —
+     * Keyframe-Punkte verschwinden hinter ihrem eigenen Hintergrund. Kein Compiler warnt
+     * davor; man sieht es erst am Bild, und dann sieht es nach fehlenden Elementen aus.
+     *
+     * <p>Der Eckenaufbau wandert in das Lambda, weil er spaeter laeuft — dann, wenn der
+     * Renderer an der Reihe ist. Bezugspunkte (Pose, Farben) muessen also entweder
+     * unveraenderlich sein oder im Lambda selbst gelesen werden.
+     *
+     * @param pipeline bestimmt Shader, Blend, Tiefe und Cull — aus {@code FormPipelines}
+     * @param ecken    schreibt die Ecken; das Format muss zur Pipeline passen
+     * @param bereich  die Bildschirmflaeche, die das Netz belegt (fuer Culling und
+     *                 Sortierung innerhalb einer Ebene)
+     */
+    public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, ScreenRectangle bereich)
+    {
+        this.submit(new UINetz(pipeline, ecken, null, this.scissors.peek(), bereich));
     }
 
     private void submit(GuiElementRenderState element)
