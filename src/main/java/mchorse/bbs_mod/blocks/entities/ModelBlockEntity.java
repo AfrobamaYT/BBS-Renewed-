@@ -19,6 +19,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.util.ProblemReporter;
 
 public class ModelBlockEntity extends BlockEntity
 {
@@ -110,28 +114,36 @@ public class ModelBlockEntity extends BlockEntity
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    /* 26.2: saveWithId schreibt jetzt in einen ValueOutput, statt einen CompoundTag
+     * zurueckzugeben. TagValueOutput ist die vom spiel mitgelieferte bruecke -- hinein
+     * schreiben, buildResult() liefert den tag. Gleiche daten wie vorher, nur der weg
+     * ist ein anderer. */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registryLookup)
     {
-        return this.saveWithId(registryLookup);
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registryLookup);
+
+        this.saveWithId(output);
+
+        return output.buildResult();
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup)
+    protected void saveAdditional(ValueOutput output)
     {
-        super.saveAdditional(nbt, registryLookup);
+        super.saveAdditional(output);
 
         MapType data = this.properties.toData();
 
-        DataStorageUtils.writeToNbtCompound(nbt, "Properties", data);
+        DataStorageUtils.writeToValueOutput(output, "Properties", data);
     }
 
     @Override
-    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup)
+    public void loadAdditional(ValueInput input)
     {
-        super.loadAdditional(nbt, registryLookup);
+        super.loadAdditional(input);
 
-        BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Properties");
+        BaseType baseType = DataStorageUtils.readFromValueInput(input, "Properties");
 
         if (baseType instanceof MapType mapType)
         {

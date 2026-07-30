@@ -34,6 +34,8 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 
 public class GunProjectileEntity extends Projectile implements IEntityFormProvider
 {
@@ -448,14 +450,14 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag nbt)
+    public void readAdditionalSaveData(ValueInput nbt)
     {
         super.readAdditionalSaveData(nbt);
-        this.despawn = nbt.getBoolean("despawn");
+        this.despawn = nbt.getBooleanOr("despawn", false);
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag nbt)
+    public void addAdditionalSaveData(ValueOutput nbt)
     {
         super.addAdditionalSaveData(nbt);
         nbt.putBoolean("despawn", true);

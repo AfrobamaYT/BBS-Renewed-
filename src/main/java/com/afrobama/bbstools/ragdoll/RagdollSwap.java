@@ -758,7 +758,7 @@ public final class RagdollSwap
                 return 0;
             }
 
-            entityType = BuiltInRegistries.ENTITY_TYPE.get(id);
+            entityType = BuiltInRegistries.ENTITY_TYPE.getValue(id);
         }
         else
         {
@@ -975,7 +975,7 @@ public final class RagdollSwap
 
             if (id != null && BuiltInRegistries.ENTITY_TYPE.containsKey(id))
             {
-                return BuiltInRegistries.ENTITY_TYPE.get(id);
+                return BuiltInRegistries.ENTITY_TYPE.getValue(id);
             }
         }
         catch (ClassNotFoundException e)

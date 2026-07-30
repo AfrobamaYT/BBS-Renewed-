@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 
 public class DataStorageUtils
 {
@@ -310,6 +312,35 @@ public class DataStorageUtils
         }
 
         return null;
+    }
+
+    /* ValueOutput/ValueInput-Bruecke (26.2) -----------------------------------
+     *
+     * Ab 26.2 bekommen saveAdditional/loadAdditional keinen CompoundTag mehr, sondern
+     * ValueOutput bzw. ValueInput. BBS speichert seine daten als Tag-baum. Uebersetzt
+     * wird genau HIER, an einer stelle: der rest des mods bleibt unberuehrt, und das
+     * format auf der platte aendert sich nicht (CompoundTag.CODEC schreibt den tag
+     * unveraendert) -- alte welten bleiben lesbar.
+     *
+     * ⛔ Nur CompoundTag-nutzlasten. ValueOutput legt einen tag ausschliesslich ueber
+     * einen Codec ab, und einen generischen Tag-Codec gibt es nicht. Ein ListTag oder
+     * skalar wuerde hier still verschwinden -- darum wirft es laut statt zu schweigen.
+     */
+    public static void writeToValueOutput(ValueOutput output, String key, BaseType data)
+    {
+        Tag tag = DataStorageUtils.toNbt(data);
+
+        if (!(tag instanceof CompoundTag compound))
+        {
+            throw new IllegalArgumentException("ValueOutput nimmt nur CompoundTag, bekam " + (tag == null ? "null" : tag.getClass().getSimpleName()) + " fuer \"" + key + "\"");
+        }
+
+        output.store(key, CompoundTag.CODEC, compound);
+    }
+
+    public static BaseType readFromValueInput(ValueInput input, String key)
+    {
+        return input.read(key, CompoundTag.CODEC).map(DataStorageUtils::fromNbt).orElse(null);
     }
 
     /* Vector2i */

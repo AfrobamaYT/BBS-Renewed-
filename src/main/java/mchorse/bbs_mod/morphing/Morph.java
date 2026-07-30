@@ -131,7 +131,7 @@ public class Morph
     {
         if (compound.contains("Form"))
         {
-            MapType map = (MapType) DataStorageUtils.fromNbt(compound.getCompound("Form"));
+            MapType map = (MapType) DataStorageUtils.fromNbt(compound.getCompoundOrEmpty("Form"));
 
             this.form = FormUtils.fromData(map);
         }

@@ -36,7 +36,7 @@ public class PlayerEntityMixin
         {
             if (nbt.contains("BBSMorph"))
             {
-                provider.getMorph().fromNbt(nbt.getCompound("BBSMorph"));
+                provider.getMorph().fromNbt(nbt.getCompoundOrEmpty("BBSMorph"));
             }
         }
     }
