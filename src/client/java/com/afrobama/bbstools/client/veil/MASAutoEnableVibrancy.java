@@ -16,7 +16,7 @@ package com.afrobama.bbstools.client.veil;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +24,8 @@ public final class MASAutoEnableVibrancy
 {
     private static final Logger LOG = LoggerFactory.getLogger("mas/auto-vibrancy");
 
-    private static final ResourceLocation BLOOM_DM = ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_dm");
-    private static final ResourceLocation POST_DESTROYING = ResourceLocation.fromNamespaceAndPath("bbstools", "post_destroying");
+    private static final Identifier BLOOM_DM = Identifier.fromNamespaceAndPath("bbstools", "bloom_dm");
+    private static final Identifier POST_DESTROYING = Identifier.fromNamespaceAndPath("bbstools", "post_destroying");
 
     private MASAutoEnableVibrancy() {}
 

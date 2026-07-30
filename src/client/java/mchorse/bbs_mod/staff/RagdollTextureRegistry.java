@@ -15,7 +15,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Client-side registry that maps an entity UUID to a custom texture loaded
@@ -29,14 +29,14 @@ public final class RagdollTextureRegistry
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbs/ragdoll-texture");
 
-    private static final Map<UUID, ResourceLocation> TEXTURES = new ConcurrentHashMap<>();
+    private static final Map<UUID, Identifier> TEXTURES = new ConcurrentHashMap<>();
     private static final Map<UUID, DynamicTexture> DYNAMIC = new ConcurrentHashMap<>();
 
     private RagdollTextureRegistry()
     {
     }
 
-    public static ResourceLocation get(UUID uuid)
+    public static Identifier get(UUID uuid)
     {
         return uuid == null ? null : TEXTURES.get(uuid);
     }
@@ -196,7 +196,7 @@ public final class RagdollTextureRegistry
 
             DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
-            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("bbs", texId);
+            Identifier id = Identifier.fromNamespaceAndPath("bbs", texId);
             Minecraft.getInstance().getTextureManager().register(id, tex);
 
             DynamicTexture prev = DYNAMIC.put(uuid, tex);
@@ -243,7 +243,7 @@ public final class RagdollTextureRegistry
 
             DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
-            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("bbs", texId);
+            Identifier id = Identifier.fromNamespaceAndPath("bbs", texId);
             Minecraft.getInstance().getTextureManager().register(id, tex);
 
             DynamicTexture prev = DYNAMIC.put(uuid, tex);

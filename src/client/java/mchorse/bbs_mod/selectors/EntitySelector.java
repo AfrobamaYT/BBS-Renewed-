@@ -12,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.LivingEntity;
 import java.util.Objects;
 
@@ -20,7 +20,7 @@ public class EntitySelector implements IMapSerializable
 {
     public boolean enabled = true;
     public Form form;
-    public ResourceLocation entity;
+    public Identifier entity;
     public String name = "";
     public CompoundTag nbt;
 
@@ -31,7 +31,7 @@ public class EntitySelector implements IMapSerializable
             return false;
         }
 
-        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(mcEntity.getType());
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(mcEntity.getType());
 
         if (!id.equals(this.entity))
         {
@@ -87,7 +87,7 @@ public class EntitySelector implements IMapSerializable
 
         if (data.has("enabled")) this.enabled = data.getBool("enabled");
         if (data.has("form")) this.form = FormUtils.fromData(data.getMap("form"));
-        if (data.has("entity")) this.entity = ResourceLocation.parse(data.getString("entity"));
+        if (data.has("entity")) this.entity = Identifier.parse(data.getString("entity"));
         if (data.has("name")) this.name = data.getString("name");
         if (data.has("nbt"))
         {

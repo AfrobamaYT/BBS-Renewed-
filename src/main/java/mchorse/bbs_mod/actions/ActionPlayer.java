@@ -187,7 +187,7 @@ public class ActionPlayer
 
         if (actor instanceof ServerPlayer player)
         {
-            int selectedSlot = player.getInventory().selected;
+            int selectedSlot = player.getInventory().getSelectedSlot();
             int slot = MathUtils.clamp(replay.keyframes.selectedSlot.interpolate(this.tick), 0, 8);
 
             if (selectedSlot != slot)

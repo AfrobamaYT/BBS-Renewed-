@@ -27,7 +27,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -749,7 +749,7 @@ public final class RagdollSwap
         {
             String typeIdLower = entityTypeOverride.toLowerCase();
             final String typeId = typeIdLower.contains(":") ? typeIdLower : "minecraft:" + typeIdLower;
-            ResourceLocation id = ResourceLocation.tryParse(typeId);
+            Identifier id = Identifier.tryParse(typeId);
 
             if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id))
             {
@@ -971,7 +971,7 @@ public final class RagdollSwap
                 return null;
             }
 
-            ResourceLocation id = ResourceLocation.tryParse(mobId);
+            Identifier id = Identifier.tryParse(mobId);
 
             if (id != null && BuiltInRegistries.ENTITY_TYPE.containsKey(id))
             {

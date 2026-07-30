@@ -4,7 +4,7 @@ import mchorse.bbs_mod.forms.forms.utils.ParticleSettings;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIParticleSettings;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class UIParticleSettingsKeyframeFactory extends UIKeyframeFactory<ParticleSettings>
 {
@@ -32,7 +32,7 @@ public class UIParticleSettingsKeyframeFactory extends UIKeyframeFactory<Particl
         }
 
         @Override
-        protected void setParticle(ResourceLocation id)
+        protected void setParticle(Identifier id)
         {
             this.editor.keyframe.preNotify();
             super.setParticle(id);

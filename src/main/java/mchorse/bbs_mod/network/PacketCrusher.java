@@ -4,7 +4,7 @@ import mchorse.bbs_mod.data.DataStorageUtils;
 import mchorse.bbs_mod.data.types.BaseType;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import java.io.ByteArrayOutputStream;
 import java.util.Collection;
@@ -54,22 +54,22 @@ public abstract class PacketCrusher
         }
     }
 
-    public void send(Player entity, ResourceLocation identifier, BaseType baseType, Consumer<FriendlyByteBuf> consumer)
+    public void send(Player entity, Identifier identifier, BaseType baseType, Consumer<FriendlyByteBuf> consumer)
     {
         this.send(Collections.singleton(entity), identifier, baseType, consumer);
     }
 
-    public void send(Player entity, ResourceLocation identifier, byte[] bytes, Consumer<FriendlyByteBuf> consumer)
+    public void send(Player entity, Identifier identifier, byte[] bytes, Consumer<FriendlyByteBuf> consumer)
     {
         this.send(Collections.singleton(entity), identifier, bytes, consumer);
     }
 
-    public void send(Collection<Player> entities, ResourceLocation identifier, BaseType baseType, Consumer<FriendlyByteBuf> consumer)
+    public void send(Collection<Player> entities, Identifier identifier, BaseType baseType, Consumer<FriendlyByteBuf> consumer)
     {
         this.send(entities, identifier, DataStorageUtils.writeToBytes(baseType), consumer);
     }
 
-    public void send(Collection<Player> entities, ResourceLocation identifier, byte[] bytes, Consumer<FriendlyByteBuf> consumer)
+    public void send(Collection<Player> entities, Identifier identifier, byte[] bytes, Consumer<FriendlyByteBuf> consumer)
     {
         if (bytes.length == 0)
         {
@@ -106,5 +106,5 @@ public abstract class PacketCrusher
         this.counter += 1;
     }
 
-    protected abstract void sendBuffer(Player entity, ResourceLocation identifier, FriendlyByteBuf buf);
+    protected abstract void sendBuffer(Player entity, Identifier identifier, FriendlyByteBuf buf);
 }

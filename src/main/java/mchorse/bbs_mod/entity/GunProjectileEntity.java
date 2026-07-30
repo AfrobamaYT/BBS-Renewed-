@@ -61,7 +61,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
 
     private void impact()
     {
-        if (this.level().isClientSide)
+        if (this.level().isClientSide())
         {
             return;
         }
@@ -162,7 +162,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
             this.form.update(this.getEntity());
         }
 
-        if (!this.level().isClientSide)
+        if (!this.level().isClientSide())
         {
             this.lifeLeft += 1;
 
@@ -311,7 +311,7 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
     {
         super.onHitEntity(entityHitResult);
 
-        if (this.level().isClientSide || this.properties.damage <= 0F)
+        if (this.level().isClientSide() || this.properties.damage <= 0F)
         {
             return;
         }

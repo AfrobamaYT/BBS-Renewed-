@@ -8,7 +8,7 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.quasar.particle.ParticleEmitter;
 import foundry.veil.api.quasar.particle.ParticleSystemManager;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +27,8 @@ public final class MASQuasarFeature
 {
     private static final Logger LOG = LoggerFactory.getLogger("mas/quasar");
 
-    public static final ResourceLocation SMOKE_TEST = ResourceLocation.fromNamespaceAndPath("bbstools", "smoke_test");
-    public static final ResourceLocation VOLCANO    = ResourceLocation.fromNamespaceAndPath("bbstools", "volcano");
+    public static final Identifier SMOKE_TEST = Identifier.fromNamespaceAndPath("bbstools", "smoke_test");
+    public static final Identifier VOLCANO    = Identifier.fromNamespaceAndPath("bbstools", "volcano");
 
     private MASQuasarFeature() {}
 
@@ -36,7 +36,7 @@ public final class MASQuasarFeature
      * Spawn an emitter by registered ID at the given world coordinate.
      * @return the spawned emitter, or null on failure
      */
-    public static ParticleEmitter spawnAt(ResourceLocation emitterId, double x, double y, double z)
+    public static ParticleEmitter spawnAt(Identifier emitterId, double x, double y, double z)
     {
         if (!VeilFeatureGate.isVeilLoaded())
         {

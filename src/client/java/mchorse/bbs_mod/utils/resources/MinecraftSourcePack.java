@@ -5,7 +5,7 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.StringUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import java.io.File;
@@ -31,9 +31,9 @@ public class MinecraftSourcePack implements ISourcePack
 
     public void setupPaths()
     {
-        Map<ResourceLocation, List<Resource>> map = this.manager.listResourceStacks("textures", (l) -> l.getNamespace().equals("minecraft") && l.getPath().endsWith(".png"));
+        Map<Identifier, List<Resource>> map = this.manager.listResourceStacks("textures", (l) -> l.getNamespace().equals("minecraft") && l.getPath().endsWith(".png"));
 
-        for (ResourceLocation id : map.keySet())
+        for (Identifier id : map.keySet())
         {
             DataPath path = new DataPath(id.getPath());
 
@@ -75,13 +75,13 @@ public class MinecraftSourcePack implements ISourcePack
     @Override
     public boolean hasAsset(Link link)
     {
-        return this.manager.getResource(ResourceLocation.parse(link.toString())).isPresent();
+        return this.manager.getResource(Identifier.parse(link.toString())).isPresent();
     }
 
     @Override
     public InputStream getAsset(Link link) throws IOException
     {
-        Optional<Resource> resource = this.manager.getResource(ResourceLocation.parse(link.toString()));
+        Optional<Resource> resource = this.manager.getResource(Identifier.parse(link.toString()));
 
         if (resource.isPresent())
         {

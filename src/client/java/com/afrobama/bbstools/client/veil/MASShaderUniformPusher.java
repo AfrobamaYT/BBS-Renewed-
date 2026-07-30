@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Registers a Veil PostProcessing pre-event handler that pushes
@@ -45,35 +45,35 @@ public final class MASShaderUniformPusher
      *  declare {@code uniform float MAS_Intensity;} multiply their
      *  additive contributions by it so the user can dial effect
      *  strength from 0 (off) to N (over-driven). */
-    private static final Map<ResourceLocation, Float> INTENSITIES = new ConcurrentHashMap<>();
+    private static final Map<Identifier, Float> INTENSITIES = new ConcurrentHashMap<>();
 
     /** Map pipeline-ID → shader-ID(s) that read MAS_GameTime. */
     /* All MAS shaders that receive MAS_GameTime and/or MAS_Intensity
      *  uniforms each frame. Map.ofEntries used because we have more
      *  than 10 pairs (Map.of max). */
-    private static final Map<ResourceLocation, ResourceLocation> ANIMATED_SHADERS = Map.ofEntries(
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "supernova"),  ResourceLocation.fromNamespaceAndPath("bbstools", "catastrophe/supernova")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "blackhole"),  ResourceLocation.fromNamespaceAndPath("bbstools", "catastrophe/blackhole")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "nuke"),       ResourceLocation.fromNamespaceAndPath("bbstools", "catastrophe/nuke")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "laser"),      ResourceLocation.fromNamespaceAndPath("bbstools", "catastrophe/laser")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "planet"),     ResourceLocation.fromNamespaceAndPath("bbstools", "catastrophe/planet")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "godrays"),    ResourceLocation.fromNamespaceAndPath("bbstools", "volumetric/godrays")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "grain"),      ResourceLocation.fromNamespaceAndPath("bbstools", "grain/grain")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "flare"),      ResourceLocation.fromNamespaceAndPath("bbstools", "flare/flare")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "vignette"),   ResourceLocation.fromNamespaceAndPath("bbstools", "vignette/vignette")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "cinematic"),  ResourceLocation.fromNamespaceAndPath("bbstools", "cinematic/cinematic")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "grade"),      ResourceLocation.fromNamespaceAndPath("bbstools", "grade/grade")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "dof"),        ResourceLocation.fromNamespaceAndPath("bbstools", "dof/dof")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "titlefade"),  ResourceLocation.fromNamespaceAndPath("bbstools", "cinematic_bars/titlefade")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "whiteout"),   ResourceLocation.fromNamespaceAndPath("bbstools", "cinematic_bars/whiteout")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "crosshatch"), ResourceLocation.fromNamespaceAndPath("bbstools", "retro/crosshatch")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "edge"),       ResourceLocation.fromNamespaceAndPath("bbstools", "retro/edge")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "halftone"),   ResourceLocation.fromNamespaceAndPath("bbstools", "retro/halftone")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "tiltshift"),  ResourceLocation.fromNamespaceAndPath("bbstools", "dof/tiltshift")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "oilpaint"),   ResourceLocation.fromNamespaceAndPath("bbstools", "retro/oilpaint")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "fisheye"),    ResourceLocation.fromNamespaceAndPath("bbstools", "lens/fisheye")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "glitch"),     ResourceLocation.fromNamespaceAndPath("bbstools", "glitch/glitch")),
-        Map.entry(ResourceLocation.fromNamespaceAndPath("bbstools", "masbloom"),   ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_simple/bloom_simple"))
+    private static final Map<Identifier, Identifier> ANIMATED_SHADERS = Map.ofEntries(
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "supernova"),  Identifier.fromNamespaceAndPath("bbstools", "catastrophe/supernova")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "blackhole"),  Identifier.fromNamespaceAndPath("bbstools", "catastrophe/blackhole")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "nuke"),       Identifier.fromNamespaceAndPath("bbstools", "catastrophe/nuke")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "laser"),      Identifier.fromNamespaceAndPath("bbstools", "catastrophe/laser")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "planet"),     Identifier.fromNamespaceAndPath("bbstools", "catastrophe/planet")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "godrays"),    Identifier.fromNamespaceAndPath("bbstools", "volumetric/godrays")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "grain"),      Identifier.fromNamespaceAndPath("bbstools", "grain/grain")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "flare"),      Identifier.fromNamespaceAndPath("bbstools", "flare/flare")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "vignette"),   Identifier.fromNamespaceAndPath("bbstools", "vignette/vignette")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "cinematic"),  Identifier.fromNamespaceAndPath("bbstools", "cinematic/cinematic")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "grade"),      Identifier.fromNamespaceAndPath("bbstools", "grade/grade")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "dof"),        Identifier.fromNamespaceAndPath("bbstools", "dof/dof")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "titlefade"),  Identifier.fromNamespaceAndPath("bbstools", "cinematic_bars/titlefade")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "whiteout"),   Identifier.fromNamespaceAndPath("bbstools", "cinematic_bars/whiteout")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "crosshatch"), Identifier.fromNamespaceAndPath("bbstools", "retro/crosshatch")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "edge"),       Identifier.fromNamespaceAndPath("bbstools", "retro/edge")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "halftone"),   Identifier.fromNamespaceAndPath("bbstools", "retro/halftone")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "tiltshift"),  Identifier.fromNamespaceAndPath("bbstools", "dof/tiltshift")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "oilpaint"),   Identifier.fromNamespaceAndPath("bbstools", "retro/oilpaint")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "fisheye"),    Identifier.fromNamespaceAndPath("bbstools", "lens/fisheye")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "glitch"),     Identifier.fromNamespaceAndPath("bbstools", "glitch/glitch")),
+        Map.entry(Identifier.fromNamespaceAndPath("bbstools", "masbloom"),   Identifier.fromNamespaceAndPath("bbstools", "bloom_simple/bloom_simple"))
     );
 
     private static boolean registered;
@@ -103,7 +103,7 @@ public final class MASShaderUniformPusher
         }
     }
 
-    private static void pushUniform(ResourceLocation pipelineId, PostPipeline.Context context)
+    private static void pushUniform(Identifier pipelineId, PostPipeline.Context context)
     {
         /* Special case: nuke pipeline needs destroying-mc-style uniforms
          * (NUKE_POS, smokeRiseTimer, flashTimer, GameTime). Routed
@@ -159,7 +159,7 @@ public final class MASShaderUniformPusher
             return;
         }
 
-        ResourceLocation shaderId = ANIMATED_SHADERS.get(pipelineId);
+        Identifier shaderId = ANIMATED_SHADERS.get(pipelineId);
         if (shaderId == null) return;
 
         try
@@ -195,7 +195,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "nuke/nuke"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "nuke/nuke"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -231,15 +231,15 @@ public final class MASShaderUniformPusher
             float screenW = (mc != null && mc.getWindow() != null) ? mc.getWindow().getWidth() : 1920;
             float screenH = (mc != null && mc.getWindow() != null) ? mc.getWindow().getHeight() : 1080;
 
-            ResourceLocation[] bloomShaders = new ResourceLocation[]
+            Identifier[] bloomShaders = new Identifier[]
             {
-                ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_dm/mipmaptree"),
-                ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_dm/blur/horizontal"),
-                ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_dm/blur/vertical"),
-                ResourceLocation.fromNamespaceAndPath("bbstools", "bloom_dm/bloom")
+                Identifier.fromNamespaceAndPath("bbstools", "bloom_dm/mipmaptree"),
+                Identifier.fromNamespaceAndPath("bbstools", "bloom_dm/blur/horizontal"),
+                Identifier.fromNamespaceAndPath("bbstools", "bloom_dm/blur/vertical"),
+                Identifier.fromNamespaceAndPath("bbstools", "bloom_dm/bloom")
             };
 
-            for (ResourceLocation sid : bloomShaders)
+            for (Identifier sid : bloomShaders)
             {
                 ShaderProgram program = context.getShader(sid);
                 if (program == null) continue;
@@ -265,7 +265,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "lightsource/lightsource"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "lightsource/lightsource"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -297,7 +297,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "meteor_custom/meteor_custom"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "meteor_custom/meteor_custom"));
             if (program == null) return;
 
             /* Trigger camera shake on first frame post-impact. */
@@ -342,11 +342,11 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "post/post"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "post/post"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
-            float intensity = INTENSITIES.getOrDefault(ResourceLocation.fromNamespaceAndPath("bbstools", "post_destroying"), 0.0F);
+            float intensity = INTENSITIES.getOrDefault(Identifier.fromNamespaceAndPath("bbstools", "post_destroying"), 0.0F);
 
             ShaderUniform u;
             u = program.getUniform("GameTime");
@@ -381,7 +381,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "cracks/cracks"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "cracks/cracks"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -416,7 +416,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "sky/sky"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "sky/sky"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -449,7 +449,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "planet/planet"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "planet/planet"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -479,7 +479,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "blackhole/black_hole"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "blackhole/black_hole"));
             if (program == null) return;
 
             float gameTime = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
@@ -506,7 +506,7 @@ public final class MASShaderUniformPusher
     {
         try
         {
-            ShaderProgram program = context.getShader(ResourceLocation.fromNamespaceAndPath("bbstools", "vibrant_world/vibrant_world"));
+            ShaderProgram program = context.getShader(Identifier.fromNamespaceAndPath("bbstools", "vibrant_world/vibrant_world"));
             if (program == null) return;
 
             /* Compute sun direction from MC world time. MC sun orbits
@@ -525,7 +525,7 @@ public final class MASShaderUniformPusher
                 sunZ = 0.0F;
             }
 
-            float intensity = INTENSITIES.getOrDefault(ResourceLocation.fromNamespaceAndPath("bbstools", "vibrant_world"), 1.0F);
+            float intensity = INTENSITIES.getOrDefault(Identifier.fromNamespaceAndPath("bbstools", "vibrant_world"), 1.0F);
 
             ShaderUniform u;
             u = program.getUniform("SunDir");
@@ -544,7 +544,7 @@ public final class MASShaderUniformPusher
 
     /** Set the intensity multiplier for a pipeline. Values clamped to
      *  [0.0, 3.0] — beyond 3 produces wild over-bright output. */
-    public static void setIntensity(ResourceLocation pipelineId, float value)
+    public static void setIntensity(Identifier pipelineId, float value)
     {
         INTENSITIES.put(pipelineId, Math.max(0.0F, Math.min(3.0F, value)));
         LOG.info("Set intensity for {} -> {}", pipelineId, value);
@@ -555,7 +555,7 @@ public final class MASShaderUniformPusher
         }
     }
 
-    public static float getIntensity(ResourceLocation pipelineId)
+    public static float getIntensity(Identifier pipelineId)
     {
         return INTENSITIES.getOrDefault(pipelineId, 1.0F);
     }

@@ -35,7 +35,7 @@ import foundry.veil.api.event.VeilRenderLevelStageEvent;
 import foundry.veil.platform.VeilEventPlatform;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -45,8 +45,8 @@ import org.lwjgl.opengl.GL11;
 
 public final class BBSFxShadowmapPrePass
 {
-    private static final ResourceLocation SHADOWS_SHADER     = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/shadows");
-    private static final ResourceLocation SHADOWMAP_FRAMEBUF = ResourceLocation.fromNamespaceAndPath("bbstools", "shadowmap");
+    private static final Identifier SHADOWS_SHADER     = Identifier.fromNamespaceAndPath("bbstools", "fx/shadows");
+    private static final Identifier SHADOWMAP_FRAMEBUF = Identifier.fromNamespaceAndPath("bbstools", "shadowmap");
 
     /** Re-render the shadowmap every N frames. 1 = every frame (full
      *  quality, doubles render cost). 2-3 = nearly invisible quality

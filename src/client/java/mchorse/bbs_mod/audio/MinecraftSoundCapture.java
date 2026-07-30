@@ -7,7 +7,7 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.resources.sounds.TickableSoundInstance;
 import net.minecraft.client.sounds.SoundEventListener;
 import net.minecraft.client.sounds.WeighedSoundEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.audio.ListenerTransform;
@@ -256,7 +256,7 @@ public class MinecraftSoundCapture implements SoundEventListener
     public static class CapturedSound
     {
         /** Resource location of the concrete .ogg file that was picked to play. */
-        public final ResourceLocation location;
+        public final Identifier location;
         /** Index of the recording frame the sound started at. */
         public final int frame;
 
@@ -288,7 +288,7 @@ public class MinecraftSoundCapture implements SoundEventListener
         /** Whether the loop's OpenAL source was ever observed playing (see hasLoopEnded). */
         private boolean seenPlaying;
 
-        public CapturedSound(ResourceLocation location, int frame, double x, double y, double z, boolean relative, boolean attenuate, float volume, float pitch, float range, boolean loop)
+        public CapturedSound(Identifier location, int frame, double x, double y, double z, boolean relative, boolean attenuate, float volume, float pitch, float range, boolean loop)
         {
             this.location = location;
             this.frame = frame;

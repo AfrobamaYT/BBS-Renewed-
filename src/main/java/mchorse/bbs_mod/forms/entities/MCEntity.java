@@ -92,7 +92,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof Player player)
         {
-            return player.getInventory().selected;
+            return player.getInventory().getSelectedSlot();
         }
 
         return 0;
@@ -103,7 +103,7 @@ public class MCEntity implements IEntity
     {
         if (this.mcEntity instanceof Player player)
         {
-            player.getInventory().selected = Math.max(0, Math.min(8, slot));
+            player.getInventory().setSelectedSlot(Math.max(0, Math.min(8, slot)));
         }
     }
 

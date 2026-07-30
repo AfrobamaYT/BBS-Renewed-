@@ -38,7 +38,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,39 +60,39 @@ public class ServerNetwork
     public static final int STATE_TRIGGER_MAIN_HAND_ITEM = 1;
     public static final int STATE_TRIGGER_OFF_HAND_ITEM = 2;
 
-    public static final ResourceLocation CLIENT_CLICKED_MODEL_BLOCK_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c1");
-    public static final ResourceLocation CLIENT_PLAYER_FORM_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c2");
-    public static final ResourceLocation CLIENT_PLAY_FILM_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c3");
-    public static final ResourceLocation CLIENT_MANAGER_DATA_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c4");
-    public static final ResourceLocation CLIENT_STOP_FILM_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c5");
-    public static final ResourceLocation CLIENT_HANDSHAKE = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c6");
-    public static final ResourceLocation CLIENT_RECORDED_ACTIONS = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c7");
-    public static final ResourceLocation CLIENT_ANIMATION_STATE_TRIGGER = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c8");
-    public static final ResourceLocation CLIENT_CHEATS_PERMISSION = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c9");
-    public static final ResourceLocation CLIENT_SHARED_FORM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c10");
-    public static final ResourceLocation CLIENT_ENTITY_FORM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c11");
-    public static final ResourceLocation CLIENT_ACTORS = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c12");
-    public static final ResourceLocation CLIENT_GUN_PROPERTIES = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c13");
-    public static final ResourceLocation CLIENT_PAUSE_FILM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c14");
-    public static final ResourceLocation CLIENT_SELECTED_SLOT = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c15");
-    public static final ResourceLocation CLIENT_ANIMATION_STATE_MODEL_BLOCK_TRIGGER = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c16");
-    public static final ResourceLocation CLIENT_REFRESH_MODEL_BLOCKS = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c17");
-    public static final ResourceLocation CLIENT_REQUEST_FILM_RESYNC = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "c18");
+    public static final Identifier CLIENT_CLICKED_MODEL_BLOCK_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c1");
+    public static final Identifier CLIENT_PLAYER_FORM_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c2");
+    public static final Identifier CLIENT_PLAY_FILM_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c3");
+    public static final Identifier CLIENT_MANAGER_DATA_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c4");
+    public static final Identifier CLIENT_STOP_FILM_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c5");
+    public static final Identifier CLIENT_HANDSHAKE = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c6");
+    public static final Identifier CLIENT_RECORDED_ACTIONS = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c7");
+    public static final Identifier CLIENT_ANIMATION_STATE_TRIGGER = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c8");
+    public static final Identifier CLIENT_CHEATS_PERMISSION = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c9");
+    public static final Identifier CLIENT_SHARED_FORM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c10");
+    public static final Identifier CLIENT_ENTITY_FORM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c11");
+    public static final Identifier CLIENT_ACTORS = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c12");
+    public static final Identifier CLIENT_GUN_PROPERTIES = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c13");
+    public static final Identifier CLIENT_PAUSE_FILM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c14");
+    public static final Identifier CLIENT_SELECTED_SLOT = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c15");
+    public static final Identifier CLIENT_ANIMATION_STATE_MODEL_BLOCK_TRIGGER = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c16");
+    public static final Identifier CLIENT_REFRESH_MODEL_BLOCKS = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c17");
+    public static final Identifier CLIENT_REQUEST_FILM_RESYNC = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "c18");
 
-    public static final ResourceLocation SERVER_MODEL_BLOCK_FORM_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s1");
-    public static final ResourceLocation SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s2");
-    public static final ResourceLocation SERVER_PLAYER_FORM_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s3");
-    public static final ResourceLocation SERVER_MANAGER_DATA_PACKET = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s4");
-    public static final ResourceLocation SERVER_ACTION_RECORDING = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s5");
-    public static final ResourceLocation SERVER_TOGGLE_FILM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s6");
-    public static final ResourceLocation SERVER_ACTION_CONTROL = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s7");
-    public static final ResourceLocation SERVER_FILM_DATA_SYNC = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s8");
-    public static final ResourceLocation SERVER_PLAYER_TP = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s9");
-    public static final ResourceLocation SERVER_ANIMATION_STATE_TRIGGER = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s10");
-    public static final ResourceLocation SERVER_SHARED_FORM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s11");
-    public static final ResourceLocation SERVER_ZOOM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s12");
-    public static final ResourceLocation SERVER_PAUSE_FILM = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s13");
-    public static final ResourceLocation SERVER_APPLY_FILM_PLAYER_SETTINGS = ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, "s14");
+    public static final Identifier SERVER_MODEL_BLOCK_FORM_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s1");
+    public static final Identifier SERVER_MODEL_BLOCK_TRANSFORMS_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s2");
+    public static final Identifier SERVER_PLAYER_FORM_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s3");
+    public static final Identifier SERVER_MANAGER_DATA_PACKET = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s4");
+    public static final Identifier SERVER_ACTION_RECORDING = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s5");
+    public static final Identifier SERVER_TOGGLE_FILM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s6");
+    public static final Identifier SERVER_ACTION_CONTROL = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s7");
+    public static final Identifier SERVER_FILM_DATA_SYNC = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s8");
+    public static final Identifier SERVER_PLAYER_TP = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s9");
+    public static final Identifier SERVER_ANIMATION_STATE_TRIGGER = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s10");
+    public static final Identifier SERVER_SHARED_FORM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s11");
+    public static final Identifier SERVER_ZOOM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s12");
+    public static final Identifier SERVER_PAUSE_FILM = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s13");
+    public static final Identifier SERVER_APPLY_FILM_PLAYER_SETTINGS = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "s14");
 
     private static ServerPacketCrusher crusher = new ServerPacketCrusher();
 
@@ -101,17 +101,17 @@ public class ServerNetwork
         crusher.reset();
     }
 
-    public static CustomPacketPayload.Type<BufPayload> idFor(ResourceLocation identifier)
+    public static CustomPacketPayload.Type<BufPayload> idFor(Identifier identifier)
     {
         return new CustomPacketPayload.Type<>(identifier);
     }
 
-    private static void registerC2S(ResourceLocation identifier)
+    private static void registerC2S(Identifier identifier)
     {
         PayloadTypeRegistry.playC2S().register(idFor(identifier), BufPayload.codecFor(idFor(identifier)));
     }
 
-    private static void registerS2C(ResourceLocation identifier)
+    private static void registerS2C(Identifier identifier)
     {
         PayloadTypeRegistry.playS2C().register(idFor(identifier), BufPayload.codecFor(idFor(identifier)));
     }
@@ -887,7 +887,7 @@ public class ServerNetwork
 
     public static void sendSelectedSlot(ServerPlayer player, int slot)
     {
-        player.getInventory().selected = slot;
+        player.getInventory().setSelectedSlot(slot);
 
         FriendlyByteBuf buf = PacketByteBufs.create();
 

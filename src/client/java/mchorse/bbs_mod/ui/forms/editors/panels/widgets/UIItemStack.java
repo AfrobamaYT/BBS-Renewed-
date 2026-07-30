@@ -17,7 +17,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -167,7 +167,7 @@ public class UIItemStack extends UIElement
             return;
         }
 
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         StringBuilder command = new StringBuilder("give @s ").append(id);
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
 

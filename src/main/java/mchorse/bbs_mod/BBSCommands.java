@@ -31,7 +31,7 @@ import net.minecraft.commands.arguments.coordinates.Coordinates;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -518,7 +518,7 @@ public class BBSCommands
 
         try
         {
-            structureTemplate = structureTemplateManager.getOrCreate(ResourceLocation.parse(name));
+            structureTemplate = structureTemplateManager.getOrCreate(Identifier.parse(name));
         }
         catch (ResourceLocationException e)
         {
@@ -533,7 +533,7 @@ public class BBSCommands
 
         try
         {
-            if (structureTemplateManager.save(ResourceLocation.parse(name)))
+            if (structureTemplateManager.save(Identifier.parse(name)))
             {
                 return 1;
             }

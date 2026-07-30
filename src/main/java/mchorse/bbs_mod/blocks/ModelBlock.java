@@ -130,7 +130,7 @@ public class ModelBlock extends Block implements EntityBlock, SimpleWaterloggedB
     @Override
     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, BlockEntity be, ItemStack tool)
     {
-        if (!world.isClientSide && !player.getAbilities().instabuild)
+        if (!world.isClientSide() && !player.getAbilities().instabuild)
         {
             if (be instanceof ModelBlockEntity model)
             {

@@ -30,7 +30,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -110,7 +110,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+                Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
 
                 return new ItemStack(item).getHoverName().getString();
             }
@@ -129,7 +129,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                return BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id)).getName().getString();
+                return BuiltInRegistries.BLOCK.get(Identifier.parse(id)).getName().getString();
             }
             catch (Exception e)
             {
@@ -144,7 +144,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                ResourceLocation rid = ResourceLocation.parse(id);
+                Identifier rid = Identifier.parse(id);
 
                 if (mode == PickerMode.ITEM)
                 {
@@ -367,7 +367,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
         if (this.mode == PickerMode.ITEM)
         {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
+            Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
             ItemStack selected;
 
             if (this.itemStack != null && !this.itemStack.isEmpty() && this.itemStack.getItem() == item)
@@ -393,7 +393,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         }
         else
         {
-            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
+            Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(id));
             BlockState selectedState = block.defaultBlockState();
 
             if (this.blockState != null && this.blockState.getBlock() == block)

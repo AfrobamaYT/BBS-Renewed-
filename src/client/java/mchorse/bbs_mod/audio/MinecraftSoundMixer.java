@@ -8,7 +8,7 @@ import mchorse.bbs_mod.audio.wav.WaveWriter;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import mchorse.bbs_mod.audio.Wave;
 import java.io.BufferedOutputStream;
@@ -145,7 +145,7 @@ public class MinecraftSoundMixer
     private static List<SoundCursor> createCursors(List<CapturedSound> sounds, List<ListenerFrame> frames, int sampleRate, double frameRate, long totalSamples)
     {
         List<SoundCursor> cursors = new ArrayList<>();
-        Map<ResourceLocation, Wave> waves = new HashMap<>();
+        Map<Identifier, Wave> waves = new HashMap<>();
 
         for (CapturedSound sound : sounds)
         {
@@ -199,7 +199,7 @@ public class MinecraftSoundMixer
      * Decode the sound's .ogg from the game's resources (resource packs included),
      * with caching - footsteps reuse the same handful of files hundreds of times.
      */
-    private static Wave read(Map<ResourceLocation, Wave> cache, ResourceLocation location)
+    private static Wave read(Map<Identifier, Wave> cache, Identifier location)
     {
         if (cache.containsKey(location))
         {

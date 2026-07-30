@@ -17,7 +17,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
@@ -114,7 +114,7 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
 
     private void setItem(String s)
     {
-        this.stack = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(s)));
+        this.stack = new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(s)));
 
         this.pickItemStack(this.stack);
         this.updateNbt();

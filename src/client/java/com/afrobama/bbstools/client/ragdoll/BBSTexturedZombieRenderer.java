@@ -7,12 +7,12 @@ package com.afrobama.bbstools.client.ragdoll;
 import mchorse.bbs_mod.staff.RagdollTextureRegistry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.monster.Zombie;
 
 /**
  * Drop-in replacement for vanilla {@code ZombieEntityRenderer} that
- * returns a BBS-derived {@link ResourceLocation} when the entity has a
+ * returns a BBS-derived {@link Identifier} when the entity has a
  * per-UUID override registered via {@link RagdollTextureRegistry}.
  *
  * <p>BBS already ships the same wrapper for {@code Villager} and
@@ -34,9 +34,9 @@ public class BBSTexturedZombieRenderer extends ZombieRenderer
     }
 
     @Override
-    public ResourceLocation getTextureLocation(Zombie entity)
+    public Identifier getTextureLocation(Zombie entity)
     {
-        ResourceLocation override = RagdollTextureRegistry.get(entity.getUUID());
+        Identifier override = RagdollTextureRegistry.get(entity.getUUID());
 
         return override != null ? override : super.getTextureLocation(entity);
     }

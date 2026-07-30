@@ -1,7 +1,7 @@
 package com.afrobama.blendertransform;
 
 import mchorse.bbs_mod.staff.RagdollTextureRegistry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -25,11 +25,11 @@ public final class LivingEntityTextureLogik
      * @param entity  das entity aus dem redirect (roher {@link Entity}-typ, wie im original)
      * @param vanilla die von {@code LivingEntityRenderer#getTexture} gelieferte textur
      */
-    public static ResourceLocation wähleTextur(Entity entity, ResourceLocation vanilla)
+    public static Identifier wähleTextur(Entity entity, Identifier vanilla)
     {
         if (entity instanceof LivingEntity living)
         {
-            ResourceLocation override = RagdollTextureRegistry.get(living.getUUID());
+            Identifier override = RagdollTextureRegistry.get(living.getUUID());
             if (override != null) return override;
         }
 

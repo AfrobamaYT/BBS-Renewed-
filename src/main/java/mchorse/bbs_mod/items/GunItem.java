@@ -46,7 +46,7 @@ public class GunItem extends Item
             return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
         }
 
-        if (!world.isClientSide)
+        if (!world.isClientSide())
         {
             /* Shoot projectiles */
             int projectiles = Math.max(properties.projectiles, 1);

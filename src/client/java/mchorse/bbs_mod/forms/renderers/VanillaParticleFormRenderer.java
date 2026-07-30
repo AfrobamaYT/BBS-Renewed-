@@ -23,7 +23,7 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -172,12 +172,12 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
 
             if (bareId && type == ParticleTypes.BLOCK)
             {
-                return new BlockParticleOption(ParticleTypes.BLOCK, BuiltInRegistries.BLOCK.get(ResourceLocation.parse(args)).defaultBlockState());
+                return new BlockParticleOption(ParticleTypes.BLOCK, BuiltInRegistries.BLOCK.get(Identifier.parse(args)).defaultBlockState());
             }
 
             if (bareId && type == ParticleTypes.ITEM)
             {
-                return new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(args))));
+                return new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(args))));
             }
 
             if (bareId && type == ParticleTypes.ENTITY_EFFECT)

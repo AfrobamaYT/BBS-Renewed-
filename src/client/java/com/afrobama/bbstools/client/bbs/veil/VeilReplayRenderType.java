@@ -13,7 +13,7 @@ import foundry.veil.api.client.render.rendertype.VeilRenderType;
 
 import mchorse.bbs_mod.resources.Link;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public final class VeilReplayRenderType
 
     /** RenderType identifier — must match the JSON file name under
      *  assets/bbstools/pinwheel/rendertypes/. */
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_replay");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath("bbstools", "bbs_replay");
 
     private static boolean warned;
     /* Veil-batch diagnostic logging r29 — one-time WARN when

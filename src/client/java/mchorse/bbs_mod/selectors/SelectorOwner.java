@@ -66,7 +66,7 @@ public class SelectorOwner
     {
         Level world = this.entity.getWorld();
 
-        if (!world.isClientSide)
+        if (!world.isClientSide())
         {
             return;
         }

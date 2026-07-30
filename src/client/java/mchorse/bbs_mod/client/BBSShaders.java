@@ -3,7 +3,7 @@ package mchorse.bbs_mod.client;
 import mchorse.bbs_mod.BBSMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceProvider;
@@ -126,11 +126,11 @@ public class BBSShaders
         }
 
         @Override
-        public Optional<Resource> getResource(ResourceLocation id)
+        public Optional<Resource> getResource(Identifier id)
         {
             if (id.getPath().contains("/core/"))
             {
-                return this.manager.getResource(ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, id.getPath()));
+                return this.manager.getResource(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, id.getPath()));
             }
 
             return this.manager.getResource(id);

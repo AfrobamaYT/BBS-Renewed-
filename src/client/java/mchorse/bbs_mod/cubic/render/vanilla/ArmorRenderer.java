@@ -17,7 +17,7 @@ import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 public class ArmorRenderer
 {
-    private static final Map<String, ResourceLocation> ARMOR_TEXTURE_CACHE = Maps.newHashMap();
+    private static final Map<String, Identifier> ARMOR_TEXTURE_CACHE = Maps.newHashMap();
     private final HumanoidModel innerModel;
     private final HumanoidModel outerModel;
     private final TextureAtlas armorTrimsAtlas;
@@ -152,17 +152,17 @@ public class ArmorRenderer
         return slot == EquipmentSlot.LEGS;
     }
 
-    private ResourceLocation getArmorTexture(ArmorItem item, boolean secondLayer, String overlay)
+    private Identifier getArmorTexture(ArmorItem item, boolean secondLayer, String overlay)
     {
         ResourceKey<ArmorMaterial> key = item.getMaterial().unwrapKey().orElse(null);
         String materialName = key == null ? "iron" : key.location().getPath();
         String id = "textures/models/armor/" + materialName + "_layer_" + (secondLayer ? 2 : 1) + (overlay == null ? "" : "_" + overlay) + ".png";
 
-        ResourceLocation found = ARMOR_TEXTURE_CACHE.get(id);
+        Identifier found = ARMOR_TEXTURE_CACHE.get(id);
 
         if (found == null)
         {
-            found = ResourceLocation.fromNamespaceAndPath("minecraft", id);
+            found = Identifier.fromNamespaceAndPath("minecraft", id);
             ARMOR_TEXTURE_CACHE.put(id, found);
         }
 

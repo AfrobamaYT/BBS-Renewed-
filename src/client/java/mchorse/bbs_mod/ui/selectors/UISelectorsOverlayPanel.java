@@ -21,7 +21,7 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import java.util.List;
 
 public class UISelectorsOverlayPanel extends UIOverlayPanel
@@ -67,7 +67,7 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
 
             try
             {
-                this.current.entity = id.isEmpty() ? null : ResourceLocation.parse(id);
+                this.current.entity = id.isEmpty() ? null : Identifier.parse(id);
             }
             catch (Exception e)
             {

@@ -11,7 +11,7 @@ import mchorse.bbs_mod.ui.utils.UI;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public class UIParticleColorPresets extends UIElement
      * {@link net.minecraft.core.particles.SimpleParticleType}s that ignore any colour, so a
      * {@code path.contains("effect")} test would offer presets that do nothing.</p>
      */
-    public static boolean supportsColor(ResourceLocation particle)
+    public static boolean supportsColor(Identifier particle)
     {
         return particle != null && BuiltInRegistries.PARTICLE_TYPE.get(particle) == ParticleTypes.ENTITY_EFFECT;
     }
@@ -92,7 +92,7 @@ public class UIParticleColorPresets extends UIElement
 
         if (supported)
         {
-            ResourceLocation preset = this.findPreset(settings.arguments);
+            Identifier preset = this.findPreset(settings.arguments);
 
             this.pick.label = preset == null ? PICK_EFFECT : IKey.raw(preset.toString());
         }
@@ -103,7 +103,7 @@ public class UIParticleColorPresets extends UIElement
      * rather than the numbers, so a hand-typed colour that no preset produces stays unnamed
      * instead of being labelled with a near miss.
      */
-    private ResourceLocation findPreset(String arguments)
+    private Identifier findPreset(String arguments)
     {
         String args = arguments == null ? "" : arguments.trim();
 
@@ -127,7 +127,7 @@ public class UIParticleColorPresets extends UIElement
 
     private void openPicker()
     {
-        UIListOverlayPanel panel = new UIListOverlayPanel(EFFECT_TITLE, (l) -> this.setEffect(ResourceLocation.parse(l)));
+        UIListOverlayPanel panel = new UIListOverlayPanel(EFFECT_TITLE, (l) -> this.setEffect(Identifier.parse(l)));
         List<String> ids = new ArrayList<>();
 
         for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())
@@ -141,7 +141,7 @@ public class UIParticleColorPresets extends UIElement
         UIOverlay.addOverlay(this.getContext(), panel);
     }
 
-    private void setEffect(ResourceLocation id)
+    private void setEffect(Identifier id)
     {
         MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(id);
 

@@ -130,7 +130,7 @@ public class ActorEntity extends LivingEntity implements IEntityFormProvider
             this.form.update(this.entity);
         }
 
-        if (this.level().isClientSide)
+        if (this.level().isClientSide())
         {
             return;
         }

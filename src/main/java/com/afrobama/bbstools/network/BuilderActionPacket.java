@@ -9,7 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record BuilderActionPacket(int blockX, int blockY, int blockZ, String blockState, byte action)
     implements CustomPacketPayload
@@ -17,8 +17,8 @@ public record BuilderActionPacket(int blockX, int blockY, int blockZ, String blo
     public static final byte ACTION_PLACE = 0;
     public static final byte ACTION_BREAK = 1;
 
-    public static final ResourceLocation CHANNEL =
-        ResourceLocation.fromNamespaceAndPath("bbstools", "builder_action");
+    public static final Identifier CHANNEL =
+        Identifier.fromNamespaceAndPath("bbstools", "builder_action");
 
     public static final CustomPacketPayload.Type<BuilderActionPacket> ID =
         new CustomPacketPayload.Type<>(CHANNEL);
