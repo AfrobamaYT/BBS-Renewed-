@@ -6,15 +6,16 @@ accessible field com/mojang/blaze3d/platform/GlStateManager TEXTURES [Lcom/mojan
 accessible field com/mojang/blaze3d/platform/GlStateManager activeTexture I
 accessible class com/mojang/blaze3d/platform/GlStateManager$Texture2DState
 
-accessible field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft/client/gl/Framebuffer;
-mutable field net/minecraft/client/MinecraftClient framebuffer Lnet/minecraft/client/gl/Framebuffer;
+accessible field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
+mutable field net/minecraft/client/Minecraft mainRenderTarget Lcom/mojang/blaze3d/pipeline/RenderTarget;
 
-accessible field net/minecraft/client/model/ModelPart children Ljava/util/Map;
+accessible field net/minecraft/client/model/geom/ModelPart children Ljava/util/Map;
 
 # MERGE 2026-07-28 (fsgh/2.5): CustomVertexConsumerProvider faengt translucent-ebenen ab und
 # haengt sie in FormTranslucentQueue, statt sie sofort zu zeichnen. Es braucht dafuer den
-# laufenden puffer der ebene. Seit dem 1.21.1-port ERBT die klasse nicht mehr von Immediate
+# laufenden puffer der ebene. Seit dem 1.21.1-port ERBT die klasse nicht mehr von BufferSource
 # (sie haelt ein delegate), also reicht "protected" nicht mehr.
-accessible field net/minecraft/client/render/VertexConsumerProvider$Immediate pending Ljava/util/Map;
-accessible field net/minecraft/client/render/VertexConsumerProvider$Immediate currentLayer Lnet/minecraft/client/render/RenderLayer;
-mutable field net/minecraft/client/render/VertexConsumerProvider$Immediate currentLayer Lnet/minecraft/client/render/RenderLayer;
+# MAPPINGS 2026-07-30: hiess unter Yarn VertexConsumerProvider$Immediate.pending/currentLayer.
+accessible field net/minecraft/client/renderer/MultiBufferSource$BufferSource startedBuilders Ljava/util/Map;
+accessible field net/minecraft/client/renderer/MultiBufferSource$BufferSource lastSharedType Lnet/minecraft/client/renderer/RenderType;
+mutable field net/minecraft/client/renderer/MultiBufferSource$BufferSource lastSharedType Lnet/minecraft/client/renderer/RenderType;
