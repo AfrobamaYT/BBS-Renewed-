@@ -1,17 +1,34 @@
-#version 150
+#version 330
 
 uniform sampler2D Sampler0;
 
-/* Animation phase for the marching-ants pattern; 0 or 1 (toggles each tick). */
-uniform float Phase;
-
-/* Screen (UI) pixels per document texel. Lets the outline keep a constant on-screen thickness and
- * dash size regardless of canvas size / zoom, instead of being one (possibly huge) document pixel. */
-uniform float Scale;
-
 in vec2 texCoord0;
+in vec4 vertexColor;
 
 out vec4 fragColor;
+
+/* ⛔ 26.2: die frueheren Uniforms "Phase" und "Scale" gibt es nicht mehr.
+ *
+ * Ein GuiElementRenderState kann keinen eigenen Uniform-Puffer binden — die
+ * Schnittstelle hat dafuer keinen Haken, und der GuiRenderer bindet nur seine
+ * eigene Projektion. Beide Werte reisen darum in der Vertexfarbe mit, genau wie
+ * Vanilla es bei der Uebelkeits-Ueberlagerung macht:
+ *
+ *   R, G  Scale als 16-Bit-Festkomma (Bildschirmpixel je Dokumenttexel, ×256)
+ *   B     Phase, 0 oder 255
+ *   A     ungenutzt, immer 255
+ *
+ * Gepackt wird das in UIPixelsEditor.auswahlFarbe. Wer eines von beiden aendert,
+ * muss das andere mitaendern — der Compiler sieht diesen Zusammenhang nicht. */
+float scaleAusFarbe()
+{
+    return vertexColor.r * 255.0 + vertexColor.g * (255.0 / 256.0);
+}
+
+float phaseAusFarbe()
+{
+    return vertexColor.b > 0.5 ? 1.0 : 0.0;
+}
 
 /* The selection mask, sampled as 1.0 inside the selection and 0.0 outside. Anything sampled outside
  * the texture counts as unselected, so a selection touching the document border still gets an edge. */
@@ -27,6 +44,9 @@ float maskAt(vec2 uv)
 
 void main()
 {
+    float Scale = scaleAusFarbe();
+    float Phase = phaseAusFarbe();
+
     ivec2 size = textureSize(Sampler0, 0);
     vec2 texel = 1.0 / vec2(size);
 

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.dashboard.textures;
 
-import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.BBSPipelines;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.graphics.window.ImageClipboard;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -25,13 +25,11 @@ import mchorse.bbs_mod.utils.interps.rasterizers.LineRasterizer;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
-import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.ui.dashboard.textures.data.TextureLayer;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import com.mojang.blaze3d.shaders.Uniform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1014,9 +1012,7 @@ public class UIPixelsEditor extends UICanvasEditor
             this.selectionMaskDirty = false;
         }
 
-        ShaderInstance shader = BBSShaders.getSelectionProgram();
-
-        if (shader == null || this.selectionMaskTexture == null)
+        if (this.selectionMaskTexture == null)
         {
             return;
         }
@@ -1033,30 +1029,47 @@ public class UIPixelsEditor extends UICanvasEditor
         int aw = area.w;
         int ah = area.h;
 
-        Uniform phase = shader.getUniform("Phase");
+        /* Only the parity matters for the marching ants, so toggle 0/1 (avoids float precision
+         * loss from feeding a huge millisecond count into the shader). */
+        float phase = (float) ((System.currentTimeMillis() / 150L) % 2L);
 
-        if (phase != null)
-        {
-            /* Only the parity matters for the marching ants, so toggle 0/1 (avoids float precision
-             * loss from feeding a huge millisecond count into the shader). */
-            phase.set((float) ((System.currentTimeMillis() / 150L) % 2L));
-        }
-
-        Uniform scale = shader.getUniform("Scale");
-
-        if (scale != null)
-        {
-            /* Screen pixels per document pixel, so the shader can keep the outline a constant
-             * on-screen size regardless of canvas size / zoom. */
-            scale.set(aw / (float) this.selectionMaskTexture.width);
-        }
+        /* Screen pixels per document pixel, so the shader can keep the outline a constant
+         * on-screen size regardless of canvas size / zoom. */
+        float scale = aw / (float) this.selectionMaskTexture.width;
 
         context.batcher.texturedBox(
-            () -> shader, this.selectionMaskTexture, Colors.WHITE,
+            BBSPipelines::getSelection, this.selectionMaskTexture, auswahlFarbe(phase, scale),
             ax, ay, aw, ah,
             0, 0, this.selectionMaskTexture.width, this.selectionMaskTexture.height,
             this.selectionMaskTexture.width, this.selectionMaskTexture.height
         );
+    }
+
+    /**
+     * Packt Phase und Skalierung in die Vertexfarbe, weil 26.2 einem GUI-Element keine
+     * eigenen Uniforms erlaubt.
+     *
+     * <p>Bis 1.21.1 waren das zwei {@code Uniform}-Objekte am {@code ShaderInstance}. Die
+     * Schnittstelle {@code GuiElementRenderState} hat dafuer keinen Haken mehr, also reisen
+     * die Werte dort mit, wo pro Element noch Platz ist — dieselbe Loesung, die Vanilla fuer
+     * die Staerke seiner Uebelkeits-Ueberlagerung benutzt.
+     *
+     * <p>⚠️ DIESE KODIERUNG HAT EIN GEGENSTUECK in selection.fsh. Der Compiler sieht den
+     * Zusammenhang nicht: wer hier etwas verschiebt und den Shader nicht mitzieht, bekommt
+     * keinen Fehler, sondern einen falschen Rahmen.
+     *
+     * <p>R und G tragen die Skalierung als 16-Bit-Festkomma (×256, also bis 255,996 mit einer
+     * Aufloesung von 1/256), B die Phase als 0 oder 255, A ist ungenutzt und bleibt voll.
+     */
+    private static int auswahlFarbe(float phase, float scale)
+    {
+        int fest = Math.round(Math.min(Math.max(scale, 0F), 255.99F) * 256F);
+
+        int r = (fest >> 8) & 0xFF;
+        int g = fest & 0xFF;
+        int b = phase >= 0.5F ? 0xFF : 0x00;
+
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     protected void wasChanged()
