@@ -15,13 +15,11 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UISearchList;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.RayTracing;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
@@ -298,7 +296,7 @@ public class UIQuickReplayMenu extends UIContextMenu
     private Vector3d getSpawnPosition(Camera camera)
     {
         Vector3d position = new Vector3d();
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
 
         if (world != null && BBSSettings.editorQuickReplaySnapToBlock.get())
         {
@@ -306,7 +304,7 @@ public class UIQuickReplayMenu extends UIContextMenu
 
             if (hit.getType() != HitResult.Type.MISS)
             {
-                Vec3d p = hit.getPos();
+                Vec3 p = hit.getLocation();
 
                 return position.set(p.x, p.y, p.z);
             }

@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.particles.components.appearance;
 
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.math.molang.MolangException;
@@ -11,8 +13,6 @@ import mchorse.bbs_mod.particles.components.appearance.colors.Solid;
 import mchorse.bbs_mod.particles.components.appearance.colors.Tint;
 import mchorse.bbs_mod.particles.emitter.Particle;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.VertexFormat;
 import org.joml.Matrix4f;
 
 public class ParticleComponentAppearanceTinting extends ParticleComponentBase implements IComponentParticleRender

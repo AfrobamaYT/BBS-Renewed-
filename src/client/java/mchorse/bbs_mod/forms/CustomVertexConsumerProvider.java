@@ -1,14 +1,14 @@
 package mchorse.bbs_mod.forms;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BuiltBuffer;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -19,15 +19,15 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class CustomVertexConsumerProvider implements VertexConsumerProvider
+public class CustomVertexConsumerProvider implements MultiBufferSource
 {
-    private static Consumer<RenderLayer> runnables;
+    private static Consumer<RenderType> runnables;
 
-    private final VertexConsumerProvider.Immediate delegate;
+    private final MultiBufferSource.BufferSource delegate;
     private Function<VertexConsumer, VertexConsumer> substitute;
     private boolean ui;
 
-    public static void drawLayer(RenderLayer layer)
+    public static void drawLayer(RenderType layer)
     {
         if (runnables != null)
         {
@@ -35,7 +35,7 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         }
     }
 
-    public static void hijackVertexFormat(Consumer<RenderLayer> runnable)
+    public static void hijackVertexFormat(Consumer<RenderType> runnable)
     {
         runnables = runnable;
     }
@@ -45,7 +45,7 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         runnables = null;
     }
 
-    public CustomVertexConsumerProvider(VertexConsumerProvider.Immediate delegate)
+    public CustomVertexConsumerProvider(MultiBufferSource.BufferSource delegate)
     {
         this.delegate = delegate;
     }
@@ -66,7 +66,7 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
     }
 
     @Override
-    public VertexConsumer getBuffer(RenderLayer renderLayer)
+    public VertexConsumer getBuffer(RenderType renderLayer)
     {
         VertexConsumer buffer = this.delegate.getBuffer(renderLayer);
 
@@ -97,39 +97,39 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
      * nicht mehr von {@code Immediate} (seit dem 1.21.1-port haelt diese klasse ein
      * delegate), darum sind sie im accesswidener geoeffnet.</p>
      *
-     * <p>KEIN {@code @Override}: das interface {@link VertexConsumerProvider} kennt nur
+     * <p>KEIN {@code @Override}: das interface {@link MultiBufferSource} kennt nur
      * {@code getBuffer}. Gerufen wird die methode aus unserem eigenen {@link #draw()}.</p>
      */
-    public void draw(RenderLayer layer)
+    public void draw(RenderType layer)
     {
         Vector3f origin = FormTranslucentQueue.getSortOrigin();
 
         /* Text layers defer only inside a recorded group (labels): the group preserves the
          * text-over-background order, and text keeps its depth writes there. */
-        boolean textLayer = FormTranslucentQueue.isGroupOpen() && layer.getVertexFormat() == VertexFormats.POSITION_COLOR_TEXTURE_LIGHT;
+        boolean textLayer = FormTranslucentQueue.isGroupOpen() && layer.format() == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP;
 
         if (origin == null || !FormTranslucentQueue.isActive() || !(textLayer || isDeferrableTranslucent(layer)))
         {
-            this.delegate.draw(layer);
+            this.delegate.endBatch(layer);
 
             return;
         }
 
         /* pending.remove == "diesen layer NICHT zeichnen, ich nehme den puffer selbst".
          * Steht nichts drin, hat die ebene diesen frame gar nichts gesammelt. */
-        BufferBuilder builder = this.delegate.pending.remove(layer);
+        BufferBuilder builder = this.delegate.startedBuilders.remove(layer);
 
         if (builder == null)
         {
             return;
         }
 
-        if (this.delegate.currentLayer == layer)
+        if (this.delegate.lastSharedType == layer)
         {
-            this.delegate.currentLayer = null;
+            this.delegate.lastSharedType = null;
         }
 
-        BuiltBuffer built = builder.endNullable();
+        MeshData built = builder.build();
 
         if (built == null)
         {
@@ -145,7 +145,7 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
         FormTranslucentQueue.add(new FormTranslucentQueue.RenderLayerCommand(layer, buffer, new Matrix4f(RenderSystem.getModelViewMatrix()), new Vector3f(origin), textLayer));
     }
 
-    private static boolean isDeferrableTranslucent(RenderLayer layer)
+    private static boolean isDeferrableTranslucent(RenderType layer)
     {
         String name = layer.toString();
 
@@ -160,12 +160,12 @@ public class CustomVertexConsumerProvider implements VertexConsumerProvider
          * in die translucent-queue dort nie an. Also gehen wir die offenen ebenen selbst
          * durch. Danach ist pending leer, und das delegate zeichnet nur noch, was es
          * ueber eigene allocator-ebenen haelt. */
-        for (RenderLayer layer : new ArrayList<>(this.delegate.pending.keySet()))
+        for (RenderType layer : new ArrayList<>(this.delegate.startedBuilders.keySet()))
         {
             this.draw(layer);
         }
 
-        this.delegate.draw();
+        this.delegate.endBatch();
 
         if (this.ui)
         {

@@ -6,7 +6,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.utils.UIUtils;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
@@ -310,7 +310,7 @@ public class VideoRecorder
         if (BBSSettings.videoOpenFolderAfterExport.get())
         {
             File folder = BBSRendering.getVideoFolder();
-            MinecraftClient.getInstance().execute(() -> UIUtils.openFolder(folder));
+            Minecraft.getInstance().execute(() -> UIUtils.openFolder(folder));
         }
     }
 

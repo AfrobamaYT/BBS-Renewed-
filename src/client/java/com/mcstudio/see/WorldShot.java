@@ -2,15 +2,13 @@ package com.mcstudio.see;
 
 import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.Window;
-
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.Window;
 import java.io.File;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 
 /**
  * WorldShot — the UI-FREE world frame. Renders MC's WORLD (terrain + sky + entities, NO HUD, NO BBS
@@ -58,7 +56,7 @@ import java.io.File;
 public final class WorldShot
 {
 	/** Our dedicated offscreen world FBO, allocated lazily on the render thread, resized to the window. */
-	private static SimpleFramebuffer fbo;
+	private static TextureTarget fbo;
 
 	private WorldShot()
 	{
@@ -102,7 +100,7 @@ public final class WorldShot
 	{
 		com.mojang.blaze3d.systems.RenderSystem.assertOnRenderThread();
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 
 		if (client == null)
 		{
@@ -111,7 +109,7 @@ public final class WorldShot
 
 		/* renderWorld dereferences client.world with NO null-guard (verified in 1.21.1 bytecode: it reads
 		 * client.world.getTickManager() etc.) — calling it in the menu would NPE. Fail loud instead. */
-		if (client.world == null)
+		if (client.level == null)
 		{
 			return "{\"error\":\"no world loaded (in menu?) — /shot_world needs an in-game world\"}";
 		}
@@ -132,19 +130,19 @@ public final class WorldShot
 
 		/* Match the window's framebuffer size so WorldRenderer's aux framebuffers (entity/translucent/particles),
 		 * which are sized to the window, depth-copy against our FBO consistently, and the aspect ratio is right. */
-		int width = window.getFramebufferWidth();
-		int height = window.getFramebufferHeight();
+		int width = window.getWidth();
+		int height = window.getHeight();
 
 		if (width <= 0 || height <= 0)
 		{
 			return "{\"error\":\"window framebuffer has zero size " + width + "x" + height + "\"}";
 		}
 
-		SimpleFramebuffer target = framebuffer(width, height);
+		TextureTarget target = framebuffer(width, height);
 
 		/* Keep the real on-screen framebuffer so we can restore it no matter what renderWorld does. This is the
 		 * ONLY game state we mutate, and it is restored in the finally below. */
-		Framebuffer mainFbo = client.getFramebuffer();
+		RenderTarget mainFbo = client.getMainRenderTarget();
 
 		long t0 = System.nanoTime();
 
@@ -162,26 +160,26 @@ public final class WorldShot
 			 * camera. Alpha stays 1 (opaque) so the composite treats the frame as a solid world layer. */
 			float[] clear = skyClearColor(client);
 			target.setClearColor(clear[0], clear[1], clear[2], 1.0F);
-			target.clear(MinecraftClient.IS_SYSTEM_MAC);
+			target.clear(Minecraft.ON_OSX);
 
 			/* THE SWAP: point client.framebuffer at our FBO so every getFramebuffer() inside
 			 * WorldRenderer.render targets OUR offscreen buffer, never the on-screen one. */
-			client.framebuffer = target;
+			client.mainRenderTarget = target;
 
-			target.beginWrite(true);
+			target.bindWrite(true);
 
 			/* Render ONLY the world — no HUD (that is drawn later in GameRenderer.render, which we do NOT call).
 			 * Uses the current live render tick counter (same one the game frame uses) for interpolation. */
-			RenderTickCounter tickCounter = client.getRenderTickCounter();
-			gameRenderer.renderWorld(tickCounter);
+			DeltaTracker tickCounter = client.getTimer();
+			gameRenderer.renderLevel(tickCounter);
 
-			target.endWrite();
+			target.unbindWrite();
 		}
 		catch (Throwable t)
 		{
 			/* Restore before returning so a failed render can never leave the game pointed at our FBO. */
-			client.framebuffer = mainFbo;
-			mainFbo.beginWrite(true);
+			client.mainRenderTarget = mainFbo;
+			mainFbo.bindWrite(true);
 
 			return "{\"error\":\"renderWorld failed: " + escape(String.valueOf(t)) + "\"}";
 		}
@@ -189,8 +187,8 @@ public final class WorldShot
 		{
 			/* ALWAYS restore the real framebuffer + rebind it, so the next real game frame renders to the
 			 * screen normally. Without this the whole game would keep drawing into our offscreen FBO = black screen. */
-			client.framebuffer = mainFbo;
-			mainFbo.beginWrite(true);
+			client.mainRenderTarget = mainFbo;
+			mainFbo.bindWrite(true);
 		}
 
 		/* Export our FBO to PNG via the shared Readback helper (see/ owns both). */
@@ -219,7 +217,7 @@ public final class WorldShot
 	 *   3. A neutral sky-blue constant — last-ditch so we NEVER fall back to black (the whole point of this fix).
 	 * Returns {r,g,b} in 0..1.
 	 */
-	private static float[] skyClearColor(MinecraftClient client)
+	private static float[] skyClearColor(Minecraft client)
 	{
 		try
 		{
@@ -238,9 +236,9 @@ public final class WorldShot
 
 		try
 		{
-			net.minecraft.util.math.Vec3d sky = client.world.getSkyColor(
-				client.gameRenderer.getCamera().getPos(),
-				client.getRenderTickCounter().getTickDelta(true));
+			net.minecraft.world.phys.Vec3 sky = client.level.getSkyColor(
+				client.gameRenderer.getMainCamera().getPosition(),
+				client.getTimer().getGameTimeDeltaPartialTick(true));
 
 			if (sky != null)
 			{
@@ -260,15 +258,15 @@ public final class WorldShot
 	 * Allocate (once) or resize our offscreen FBO to (w,h). Render thread only (SimpleFramebuffer allocates GL
 	 * objects). WITH a depth attachment — renderWorld needs depth for correct occlusion / translucency sorting.
 	 */
-	private static SimpleFramebuffer framebuffer(int w, int h)
+	private static TextureTarget framebuffer(int w, int h)
 	{
 		if (fbo == null)
 		{
-			fbo = new SimpleFramebuffer(w, h, true, MinecraftClient.IS_SYSTEM_MAC);
+			fbo = new TextureTarget(w, h, true, Minecraft.ON_OSX);
 		}
-		else if (fbo.textureWidth != w || fbo.textureHeight != h)
+		else if (fbo.width != w || fbo.height != h)
 		{
-			fbo.resize(w, h, MinecraftClient.IS_SYSTEM_MAC);
+			fbo.resize(w, h, Minecraft.ON_OSX);
 		}
 
 		return fbo;

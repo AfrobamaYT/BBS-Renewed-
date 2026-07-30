@@ -19,10 +19,8 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -155,13 +153,13 @@ public final class TrackerFovPresets
             list.add(new Entry(name, fov));
             saveAll(list);
 
-            source.sendFeedback(Text.literal(String.format(
+            source.sendFeedback(Component.literal(String.format(
                 "[BBSTools] Saved FOV preset '%s' = %.2f", name, fov)));
             log("Saved preset " + name + " = " + fov);
         }
         catch (Exception e)
         {
-            source.sendError(Text.literal("[BBSTools] Failed to save FOV preset: " + e.getMessage()));
+            source.sendError(Component.literal("[BBSTools] Failed to save FOV preset: " + e.getMessage()));
             log("ERROR saving preset " + name + ": " + e);
             e.printStackTrace();
         }
@@ -183,14 +181,14 @@ public final class TrackerFovPresets
             }
             if (hit == null)
             {
-                source.sendError(Text.literal("[BBSTools] No FOV preset named '" + name + "'"));
+                source.sendError(Component.literal("[BBSTools] No FOV preset named '" + name + "'"));
                 return;
             }
 
             boolean appliedToTracker = applyFovToActiveTracker(hit.fov);
             applyFovToMcOptions(hit.fov);
 
-            source.sendFeedback(Text.literal(String.format(
+            source.sendFeedback(Component.literal(String.format(
                 "[BBSTools] Loaded FOV preset '%s' = %.2f (%s)",
                 hit.name, hit.fov,
                 appliedToTracker ? "applied to active tracker" : "no active tracker, MC options only")));
@@ -198,7 +196,7 @@ public final class TrackerFovPresets
         }
         catch (Exception e)
         {
-            source.sendError(Text.literal("[BBSTools] Failed to load FOV preset: " + e.getMessage()));
+            source.sendError(Component.literal("[BBSTools] Failed to load FOV preset: " + e.getMessage()));
             log("ERROR loading preset " + name + ": " + e);
             e.printStackTrace();
         }
@@ -211,18 +209,18 @@ public final class TrackerFovPresets
             List<Entry> list = loadAll();
             if (list.isEmpty())
             {
-                source.sendFeedback(Text.literal("[BBSTools] No FOV presets saved yet. Use '/bbstools fov save <name>'."));
+                source.sendFeedback(Component.literal("[BBSTools] No FOV presets saved yet. Use '/bbstools fov save <name>'."));
                 return;
             }
-            source.sendFeedback(Text.literal("[BBSTools] FOV presets (" + list.size() + "):"));
+            source.sendFeedback(Component.literal("[BBSTools] FOV presets (" + list.size() + "):"));
             for (Entry e : list)
             {
-                source.sendFeedback(Text.literal(String.format("  - %s = %.2f", e.name, e.fov)));
+                source.sendFeedback(Component.literal(String.format("  - %s = %.2f", e.name, e.fov)));
             }
         }
         catch (Exception e)
         {
-            source.sendError(Text.literal("[BBSTools] Failed to list FOV presets: " + e.getMessage()));
+            source.sendError(Component.literal("[BBSTools] Failed to list FOV presets: " + e.getMessage()));
             log("ERROR list: " + e);
             e.printStackTrace();
         }
@@ -283,7 +281,7 @@ public final class TrackerFovPresets
         try
         {
             int clamped = Math.max(30, Math.min(110, Math.round(fov)));
-            MinecraftClient.getInstance().options.getFov().setValue(clamped);
+            Minecraft.getInstance().options.fov().set(clamped);
         }
         catch (Throwable t)
         {
@@ -343,7 +341,7 @@ public final class TrackerFovPresets
     {
         try
         {
-            return MinecraftClient.getInstance().options.getFov().getValue();
+            return Minecraft.getInstance().options.fov().get();
         }
         catch (Throwable t)
         {
@@ -357,7 +355,7 @@ public final class TrackerFovPresets
 
     private static Path presetsFile()
     {
-        Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path runDir = Minecraft.getInstance().gameDirectory.toPath();
         return runDir.resolve("bbs").resolve("fov-presets.json");
     }
 

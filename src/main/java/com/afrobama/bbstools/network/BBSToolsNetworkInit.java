@@ -8,13 +8,12 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.BlockState;
-import net.minecraft.command.argument.BlockArgumentParser;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
+import net.minecraft.commands.arguments.blocks.BlockStateParser;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,21 +45,21 @@ public final class BBSToolsNetworkInit
                 /* approx size = 16B header + state-string length */
                 18L + (payload.blockState() == null ? 0 : payload.blockState().length()));
 
-            ServerPlayerEntity player = context.player();
-            if (!player.hasPermissionLevel(REQUIRED_OP_LEVEL))
+            ServerPlayer player = context.player();
+            if (!player.hasPermissions(REQUIRED_OP_LEVEL))
             {
                 LOG.warn("BuilderActionPacket from non-op player {} dropped", player.getName().getString());
                 return;
             }
             BlockPos pos = new BlockPos(payload.blockX(), payload.blockY(), payload.blockZ());
-            double dsq = player.squaredDistanceTo(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+            double dsq = player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
             if (dsq > MAX_DISTANCE_SQ)
             {
                 LOG.warn("BuilderActionPacket from {} rejected: dist² = {} > {}",
                     player.getName().getString(), dsq, MAX_DISTANCE_SQ);
                 return;
             }
-            World world = player.getServerWorld();
+            Level world = player.serverLevel();
             if (payload.action() == BuilderActionPacket.ACTION_BREAK)
             {
                 world.removeBlock(pos, false);
@@ -69,8 +68,8 @@ public final class BBSToolsNetworkInit
             BlockState state;
             try
             {
-                BlockArgumentParser.BlockResult res = BlockArgumentParser.block(
-                    Registries.BLOCK.getReadOnlyWrapper(), payload.blockState(), false);
+                BlockStateParser.BlockResult res = BlockStateParser.parseForBlock(
+                    BuiltInRegistries.BLOCK.asLookup(), payload.blockState(), false);
                 state = res.blockState();
             }
             catch (CommandSyntaxException e)
@@ -78,7 +77,7 @@ public final class BBSToolsNetworkInit
                 LOG.warn("Bad blockstate '{}' from {} — dropped", payload.blockState(), player.getName().getString());
                 return;
             }
-            world.setBlockState(pos, state, 3);
+            world.setBlock(pos, state, 3);
         });
 
         LOG.info("BBSTools network init: BuilderActionPacket channel = {}", BuilderActionPacket.CHANNEL);

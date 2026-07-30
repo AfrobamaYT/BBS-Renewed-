@@ -11,14 +11,11 @@ package com.afrobama.bbstools.client.blockanim;
 
 import java.util.ArrayList;
 import java.util.List;
-
-
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +27,12 @@ public final class BlockAnimation
     public static final class AnimatedBlock
     {
         public final BlockState state;
-        public final Vec3d startPos;
-        public final Vec3d endPos;
+        public final Vec3 startPos;
+        public final Vec3 endPos;
         public final float duration;  /* seconds */
         public final long startTimeNanos;
 
-        public AnimatedBlock(BlockState state, Vec3d startPos, Vec3d endPos, float duration, long startTimeNanos)
+        public AnimatedBlock(BlockState state, Vec3 startPos, Vec3 endPos, float duration, long startTimeNanos)
         {
             this.state = state;
             this.startPos = startPos;
@@ -45,11 +42,11 @@ public final class BlockAnimation
         }
 
         /** Current world position interpolated by elapsed time. */
-        public Vec3d currentPos()
+        public Vec3 currentPos()
         {
             float elapsed = (System.nanoTime() - startTimeNanos) / 1_000_000_000F;
             float t = duration <= 0.0F ? 1.0F : Math.min(1.0F, elapsed / duration);
-            return new Vec3d(
+            return new Vec3(
                 startPos.x + (endPos.x - startPos.x) * t,
                 startPos.y + (endPos.y - startPos.y) * t,
                 startPos.z + (endPos.z - startPos.z) * t);
@@ -82,11 +79,11 @@ public final class BlockAnimation
     /** Region-AABB variant called by BlockAnimationClientClip. Iterates
      *  the inclusive AABB from min to max, captures non-air blocks,
      *  starts the animation along offset over duration. */
-    public static int captureAndAnimateRegion(BlockPos min, BlockPos max, Vec3d offset, float duration)
+    public static int captureAndAnimateRegion(BlockPos min, BlockPos max, Vec3 offset, float duration)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null) return 0;
-        World world = mc.world;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null) return 0;
+        Level world = mc.level;
         long now = System.nanoTime();
         List<AnimatedBlock> captured = new ArrayList<>();
         for (int x = min.getX(); x <= max.getX(); x++)
@@ -98,8 +95,8 @@ public final class BlockAnimation
                     BlockPos p = new BlockPos(x, y, z);
                     BlockState s = world.getBlockState(p);
                     if (s.isAir()) continue;
-                    Vec3d start = new Vec3d(x, y, z);
-                    Vec3d end = start.add(offset);
+                    Vec3 start = new Vec3(x, y, z);
+                    Vec3 end = start.add(offset);
                     captured.add(new AnimatedBlock(s, start, end, duration, now));
                 }
             }

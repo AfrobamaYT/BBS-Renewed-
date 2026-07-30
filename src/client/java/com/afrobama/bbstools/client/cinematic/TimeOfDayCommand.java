@@ -42,12 +42,11 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class TimeOfDayCommand
 {
@@ -68,45 +67,45 @@ public final class TimeOfDayCommand
     {
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
         {
-            dispatcher.register(CommandManager.literal("bbstools")
-                .then(CommandManager.literal("tod")
+            dispatcher.register(Commands.literal("bbstools")
+                .then(Commands.literal("tod")
                     /* Numeric form: /bbstools tod <0-24000>. Brigadier
                      *  enforces the range; we still % DAY_TICKS for
                      *  safety in case a future caller bypasses the
                      *  client parse path (e.g. macros). */
-                    .then(CommandManager.argument("time", IntegerArgumentType.integer(0, DAY_TICKS))
+                    .then(Commands.argument("time", IntegerArgumentType.integer(0, DAY_TICKS))
                         .executes(ctx -> doSet(ctx, IntegerArgumentType.getInteger(ctx, "time"), null)))
                     /* Named presets — separate literals so tab-complete
                      *  surfaces them as suggestions, no extra typing. */
-                    .then(CommandManager.literal("night").executes(ctx -> doSet(ctx, PRESET_NIGHT, "night")))
-                    .then(CommandManager.literal("noon") .executes(ctx -> doSet(ctx, PRESET_NOON,  "noon")))
-                    .then(CommandManager.literal("dawn") .executes(ctx -> doSet(ctx, PRESET_DAWN,  "dawn")))
-                    .then(CommandManager.literal("dusk") .executes(ctx -> doSet(ctx, PRESET_DUSK,  "dusk")))));
+                    .then(Commands.literal("night").executes(ctx -> doSet(ctx, PRESET_NIGHT, "night")))
+                    .then(Commands.literal("noon") .executes(ctx -> doSet(ctx, PRESET_NOON,  "noon")))
+                    .then(Commands.literal("dawn") .executes(ctx -> doSet(ctx, PRESET_DAWN,  "dawn")))
+                    .then(Commands.literal("dusk") .executes(ctx -> doSet(ctx, PRESET_DUSK,  "dusk")))));
         });
     }
 
-    private static int doSet(CommandContext<ServerCommandSource> ctx, int rawTime, String presetName)
+    private static int doSet(CommandContext<CommandSourceStack> ctx, int rawTime, String presetName)
     {
-        ServerCommandSource src = ctx.getSource();
-        ServerPlayerEntity player;
+        CommandSourceStack src = ctx.getSource();
+        ServerPlayer player;
         try
         {
-            player = src.getPlayerOrThrow();
+            player = src.getPlayerOrException();
         }
         catch (Exception e)
         {
-            src.sendFeedback(() -> Text.literal(
+            src.sendSuccess(() -> Component.literal(
                 "§c[tod] §fmust be run by a player §7(needs a world reference)"), false);
             return 0;
         }
 
-        ServerWorld world = player.getServerWorld();
+        ServerLevel world = player.serverLevel();
         long time = ((rawTime % DAY_TICKS) + DAY_TICKS) % DAY_TICKS;
 
         boolean ok = applyTimeOfDay(world, time);
         if (!ok)
         {
-            src.sendFeedback(() -> Text.literal(
+            src.sendSuccess(() -> Component.literal(
                 "§c[tod] §ffailed to set time §7(no setTimeOfDay/setDayTime method on "
                 + world.getClass().getName() + ")"), false);
             BBSToolsMod.LOG.warn("/bbstools tod could not find a time-setter on {}", world.getClass().getName());
@@ -118,12 +117,12 @@ public final class TimeOfDayCommand
          *  in their chat too — useful for sync-clapper-style takes. */
         final long timeFinal = time;
         final String labelFinal = presetName != null ? presetName : Long.toString(time);
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§a[tod] §ftime set to §a" + labelFinal
             + "§f §7(" + timeFinal + " ticks)"), true);
 
         BBSToolsMod.LOG.info("/bbstools tod {} ({} ticks) on {}",
-            labelFinal, timeFinal, world.getRegistryKey().getValue());
+            labelFinal, timeFinal, world.dimension().location());
 
         return Command.SINGLE_SUCCESS;
     }
@@ -132,13 +131,13 @@ public final class TimeOfDayCommand
      *  to reflection across the known method names (setTimeOfDay,
      *  method_29199 = intermediary, setDayTime = some mojmap variants).
      *  Returns true on success. */
-    private static boolean applyTimeOfDay(ServerWorld world, long time)
+    private static boolean applyTimeOfDay(ServerLevel world, long time)
     {
         try
         {
             /* Yarn 1.21.1: ServerWorld.setTimeOfDay(long). Direct call —
              *  bytecode is a single INVOKEVIRTUAL after JIT. */
-            world.setTimeOfDay(time);
+            world.setDayTime(time);
             return true;
         }
         catch (LinkageError directFail)

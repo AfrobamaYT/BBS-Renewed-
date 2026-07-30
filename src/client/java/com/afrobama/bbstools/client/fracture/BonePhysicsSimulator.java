@@ -2,12 +2,10 @@ package com.afrobama.bbstools.client.fracture;
 
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.forms.entities.IEntity;
-
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -93,7 +91,7 @@ public final class BonePhysicsSimulator
     {
         if (BY_ACTOR.isEmpty()) return;
 
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
 
         for (List<BonePhysicsBody> bodies : BY_ACTOR.values())
         {
@@ -314,7 +312,7 @@ public final class BonePhysicsSimulator
      * trails a wake. Threshold prevents settling/slow bodies from
      * emitting (which would look like incessant smoke clouds).
      */
-    private static void emitTrailIfFast(BonePhysicsBody b, World world)
+    private static void emitTrailIfFast(BonePhysicsBody b, Level world)
     {
         if (!b.enableSmokeTrail) return;
 
@@ -341,7 +339,7 @@ public final class BonePhysicsSimulator
             {
                 /* Fallback: vanilla SMOKE particle so the trail is at
                  *  least visible without PhysicsMod loaded. */
-                world.addParticle(net.minecraft.particle.ParticleTypes.SMOKE,
+                world.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE,
                     sx, sy, sz,
                     (Math.random() - 0.5D) * 0.02D,
                     Math.random() * 0.03D,
@@ -358,22 +356,22 @@ public final class BonePhysicsSimulator
      * grass). Volume + pitch scale with impact speed so harder
      * impacts sound heavier.
      */
-    private static void playImpactSound(World world, float x, float y, float z,
+    private static void playImpactSound(Level world, float x, float y, float z,
                                         BlockState impactedBlock, float impactSpeed)
     {
         try
         {
-            net.minecraft.sound.BlockSoundGroup group = impactedBlock.getSoundGroup();
+            net.minecraft.world.level.block.SoundType group = impactedBlock.getSoundType();
             if (group == null) return;
 
-            net.minecraft.sound.SoundEvent stepSound = group.getStepSound();
+            net.minecraft.sounds.SoundEvent stepSound = group.getStepSound();
             if (stepSound == null) return;
 
             float volume = Math.min(1F, 0.4F + impactSpeed * 0.5F);
             float pitch = 0.9F + (float) Math.random() * 0.15F;
 
-            world.playSound(x, y, z, stepSound,
-                net.minecraft.sound.SoundCategory.BLOCKS,
+            world.playLocalSound(x, y, z, stepSound,
+                net.minecraft.sounds.SoundSource.BLOCKS,
                 volume, pitch, false);
         }
         catch (Throwable ignored)
@@ -389,7 +387,7 @@ public final class BonePhysicsSimulator
      * Combined with dust + sound + smoke trail this gives heavy
      * impacts a layered, weighty "wham" feel.
      */
-    private static void spawnImpactSparks(World world, float x, float y, float z, float impactSpeed)
+    private static void spawnImpactSparks(Level world, float x, float y, float z, float impactSpeed)
     {
         try
         {
@@ -400,7 +398,7 @@ public final class BonePhysicsSimulator
                 double vx = (rng.nextDouble() - 0.5D) * impactSpeed * 0.8D;
                 double vy = rng.nextDouble() * impactSpeed * 0.5D;
                 double vz = (rng.nextDouble() - 0.5D) * impactSpeed * 0.8D;
-                world.addParticle(net.minecraft.particle.ParticleTypes.CRIT, x, y, z, vx, vy, vz);
+                world.addParticle(net.minecraft.core.particles.ParticleTypes.CRIT, x, y, z, vx, vy, vz);
             }
         }
         catch (Throwable ignored) {}
@@ -469,15 +467,15 @@ public final class BonePhysicsSimulator
      * "boom" effect — the user's request was to prefer PhysicsMod's
      * smoke over vanilla SMOKE.</p>
      */
-    private static void spawnImpactDust(World world, float x, float y, float z,
+    private static void spawnImpactDust(Level world, float x, float y, float z,
                                         BlockState impactedBlock, float impactSpeed)
     {
         try
         {
             int count = Math.min(20, Math.max(3, (int) (impactSpeed * 8F)));
-            net.minecraft.particle.BlockStateParticleEffect effect =
-                new net.minecraft.particle.BlockStateParticleEffect(
-                    net.minecraft.particle.ParticleTypes.BLOCK, impactedBlock);
+            net.minecraft.core.particles.BlockParticleOption effect =
+                new net.minecraft.core.particles.BlockParticleOption(
+                    net.minecraft.core.particles.ParticleTypes.BLOCK, impactedBlock);
 
             java.util.Random rng = new java.util.Random();
             for (int i = 0; i < count; i++)
@@ -595,7 +593,7 @@ public final class BonePhysicsSimulator
     private static final float MAX_ANGULAR_SPEED = 1.5F;
     private static final float MAX_LINEAR_SQ = MAX_LINEAR_SPEED * MAX_LINEAR_SPEED;
 
-    private static void tickBody(BonePhysicsBody b, World world)
+    private static void tickBody(BonePhysicsBody b, Level world)
     {
         /* 1. Apply gravity + damping to linear motion. Constants
          *  come from the body itself (set by FractureSpawner from
@@ -676,7 +674,7 @@ public final class BonePhysicsSimulator
      * along the dominant penetration axis and dampen velocity on
      * that axis (bounce). Simple but visually OK for cinematic falls.
      */
-    private static void resolveCollision(BonePhysicsBody b, World world)
+    private static void resolveCollision(BonePhysicsBody b, Level world)
     {
         float minX = b.position.x - b.halfExtents.x;
         float minY = b.position.y - b.halfExtents.y;
@@ -689,7 +687,7 @@ public final class BonePhysicsSimulator
         int by0 = (int) Math.floor(minY), by1 = (int) Math.floor(maxY);
         int bz0 = (int) Math.floor(minZ), bz1 = (int) Math.floor(maxZ);
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (int x = bx0; x <= bx1; x++)
         {
@@ -935,7 +933,7 @@ public final class BonePhysicsSimulator
         float tickDelta;
         try
         {
-            tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
+            tickDelta = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
             if (tickDelta < 0F) tickDelta = 0F;
             if (tickDelta > 1F) tickDelta = 1F;
         }

@@ -6,8 +6,8 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.utils.clips.Clip;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.world.entity.LivingEntity;
 
 public class CommandActionClip extends ActionClip
 {
@@ -24,11 +24,11 @@ public class CommandActionClip extends ActionClip
         this.applyPositionRotation(player, replay, tick);
 
         String command = this.command.get();
-        ServerCommandSource source = actor == null
-            ? player.getCommandSource()
-            : actor.getCommandSource();
+        CommandSourceStack source = actor == null
+            ? player.createCommandSourceStack()
+            : actor.createCommandSourceStack();
 
-        player.getServer().getCommandManager().executeWithPrefix(source, command);
+        player.getServer().getCommands().performPrefixedCommand(source, command);
     }
 
     @Override

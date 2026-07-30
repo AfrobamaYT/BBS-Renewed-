@@ -1,16 +1,16 @@
 package mchorse.bbs_mod.network;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 
 public class ServerPacketCrusher extends PacketCrusher
 {
     @Override
-    protected void sendBuffer(PlayerEntity entity, Identifier identifier, PacketByteBuf buf)
+    protected void sendBuffer(Player entity, ResourceLocation identifier, FriendlyByteBuf buf)
     {
-        ServerPlayNetworking.send((ServerPlayerEntity) entity, ServerNetwork.BufPayload.from(buf, ServerNetwork.idFor(identifier)));
+        ServerPlayNetworking.send((ServerPlayer) entity, ServerNetwork.BufPayload.from(buf, ServerNetwork.idFor(identifier)));
     }
 }

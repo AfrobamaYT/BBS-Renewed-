@@ -12,16 +12,13 @@ import mchorse.bbs_mod.client.BBSRendering;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.RenderTickCounter;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
-
+import com.mojang.blaze3d.vertex.VertexSorting;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +48,7 @@ public final class GameRendererPreviewPrePassLogik
 
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/pre-pass");
 
-    public static void render(RenderTickCounter tickCounter)
+    public static void render(DeltaTracker tickCounter)
     {
         if (PreviewPassState.PREVIEW_PASS_ACTIVE) return;
         if (!CameraPreviewPerf.ENABLED) return;
@@ -60,21 +57,21 @@ public final class GameRendererPreviewPrePassLogik
         if (active.isEmpty()) return;
         if (CameraPreviewPerf.shouldSkipFrame()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null) return;
 
-        Framebuffer mainFb = mc.getFramebuffer();
+        RenderTarget mainFb = mc.getMainRenderTarget();
         if (mainFb == null) return;
 
-        Camera camera = mc.gameRenderer.getCamera();
+        Camera camera = mc.gameRenderer.getMainCamera();
         if (camera == null) return;
 
         /* Snapshot vanilla state. */
-        double savedX = camera.getPos().x;
-        double savedY = camera.getPos().y;
-        double savedZ = camera.getPos().z;
-        float savedYaw = camera.getYaw();
-        float savedPitch = camera.getPitch();
+        double savedX = camera.getPosition().x;
+        double savedY = camera.getPosition().y;
+        double savedZ = camera.getPosition().z;
+        float savedYaw = camera.getYRot();
+        float savedPitch = camera.getXRot();
         Matrix4f savedProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
 
         CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
@@ -90,7 +87,7 @@ public final class GameRendererPreviewPrePassLogik
 
                 try
                 {
-                    SimpleFramebuffer fb = ClipViewportFramebuffers.get(a.id);
+                    TextureTarget fb = ClipViewportFramebuffers.get(a.id);
                     if (fb == null) continue;
 
                     CameraPreviewProfiler.recordPassStart();
@@ -111,12 +108,12 @@ public final class GameRendererPreviewPrePassLogik
                     invoker.bbsRenewed$setPos(usePose[0], usePose[1], usePose[2]);
                     invoker.bbsRenewed$setRotation((float) usePose[3], (float) usePose[4]);
 
-                    fb.beginWrite(true);
-                    RenderSystem.viewport(0, 0, fb.textureWidth, fb.textureHeight);
+                    fb.bindWrite(true);
+                    RenderSystem.viewport(0, 0, fb.width, fb.height);
                     RenderSystem.clearColor(0F, 0F, 0F, 1F);
                     RenderSystem.clear(org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
                         | org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT,
-                        MinecraftClient.IS_SYSTEM_MAC);
+                        Minecraft.ON_OSX);
 
                     /* Build projection matching framebuffer aspect.
                      *  ITER 29: also apply sprint-FOV multiplier here.
@@ -153,7 +150,7 @@ public final class GameRendererPreviewPrePassLogik
                     float far = 1024F;
                     Matrix4f clipProjection = new Matrix4f().perspective(
                         (float) Math.toRadians(fov), aspect, near, far);
-                    RenderSystem.setProjectionMatrix(clipProjection, VertexSorter.BY_DISTANCE);
+                    RenderSystem.setProjectionMatrix(clipProjection, VertexSorting.DISTANCE_TO_ORIGIN);
 
                     /* Grid reference plane at player Y. */
                     AltCameraGridRenderer.render(mc, camera, clipProjection);
@@ -167,7 +164,7 @@ public final class GameRendererPreviewPrePassLogik
                     /* Flush entity vertex consumers — BBS forms write
                      *  here but the outer renderer's draw() hasn't run
                      *  yet for this pass. */
-                    mc.getBufferBuilders().getEntityVertexConsumers().draw();
+                    mc.renderBuffers().bufferSource().endBatch();
 
                     /* Bone-hover + click pick at alt-cam POV. The
                      *  camera is still mutated and projection still set
@@ -186,8 +183,8 @@ public final class GameRendererPreviewPrePassLogik
                         /* Pick rebinds main FB at end — rebind our
                          *  preview FB so any leftover render hits it
                          *  not the main view. */
-                        fb.beginWrite(true);
-                        RenderSystem.viewport(0, 0, fb.textureWidth, fb.textureHeight);
+                        fb.bindWrite(true);
+                        RenderSystem.viewport(0, 0, fb.width, fb.height);
                     }
                     catch (Throwable t)
                     {
@@ -208,11 +205,11 @@ public final class GameRendererPreviewPrePassLogik
         {
             invoker.bbsRenewed$setPos(savedX, savedY, savedZ);
             invoker.bbsRenewed$setRotation(savedYaw, savedPitch);
-            RenderSystem.setProjectionMatrix(savedProjection, VertexSorter.BY_DISTANCE);
+            RenderSystem.setProjectionMatrix(savedProjection, VertexSorting.DISTANCE_TO_ORIGIN);
 
-            mainFb.beginWrite(true);
-            int sw = mc.getWindow().getFramebufferWidth();
-            int sh = mc.getWindow().getFramebufferHeight();
+            mainFb.bindWrite(true);
+            int sw = mc.getWindow().getWidth();
+            int sh = mc.getWindow().getHeight();
             RenderSystem.viewport(0, 0, sw, sh);
 
             PreviewPassState.PREVIEW_PASS_ACTIVE = false;
@@ -221,24 +218,24 @@ public final class GameRendererPreviewPrePassLogik
         }
     }
 
-    private static WorldRenderContext buildContext(MinecraftClient mc,
-                                                    RenderTickCounter tickCounter,
+    private static WorldRenderContext buildContext(Minecraft mc,
+                                                    DeltaTracker tickCounter,
                                                     Matrix4f projection)
     {
         WorldRenderContextImpl impl = new WorldRenderContextImpl();
         impl.prepare(
-            mc.worldRenderer,
+            mc.levelRenderer,
             tickCounter,
             false,
-            mc.gameRenderer.getCamera(),
+            mc.gameRenderer.getMainCamera(),
             mc.gameRenderer,
-            mc.gameRenderer.getLightmapTextureManager(),
+            mc.gameRenderer.lightTexture(),
             projection,
             RenderSystem.getModelViewMatrix(),
-            mc.getBufferBuilders().getEntityVertexConsumers(),
+            mc.renderBuffers().bufferSource(),
             mc.getProfiler(),
             false,
-            mc.world
+            mc.level
         );
         return impl;
     }

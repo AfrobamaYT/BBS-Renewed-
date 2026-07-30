@@ -8,8 +8,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * /bbstools campreview <add|clear|list|layout|track|untrack|res|offset|angle|remove>
@@ -93,7 +92,7 @@ public final class CameraPreviewCommands
     private static void runAdd(FabricClientCommandSource src, String name)
     {
         CameraPreview p = CameraPreviewRegistry.addAtPlayer(name);
-        src.sendFeedback(Text.literal(String.format(
+        src.sendFeedback(Component.literal(String.format(
             "§a[BBSTools] §fCamera preview '%s' added at (%.1f, %.1f, %.1f). Open dashboard.",
             p.name, p.posX, p.posY, p.posZ)));
     }
@@ -102,16 +101,16 @@ public final class CameraPreviewCommands
     {
         int n = CameraPreviewRegistry.list().size();
         CameraPreviewRegistry.clear();
-        src.sendFeedback(Text.literal("§a[BBSTools] §fCleared " + n + " camera preview(s)."));
+        src.sendFeedback(Component.literal("§a[BBSTools] §fCleared " + n + " camera preview(s)."));
     }
 
     private static void runList(FabricClientCommandSource src)
     {
         java.util.List<CameraPreview> list = CameraPreviewRegistry.list();
-        src.sendFeedback(Text.literal("§a[BBSTools] §f" + list.size() + " camera preview(s):"));
+        src.sendFeedback(Component.literal("§a[BBSTools] §f" + list.size() + " camera preview(s):"));
         for (CameraPreview p : list)
         {
-            src.sendFeedback(Text.literal(String.format(
+            src.sendFeedback(Component.literal(String.format(
                 "§7  - %s mode=%s pos=(%.1f, %.1f, %.1f) window=(%d,%d %dx%d) fb=%dx%d",
                 p.name, p.mode, p.posX, p.posY, p.posZ, p.windowX, p.windowY, p.windowW, p.windowH,
                 p.fbWidth, p.fbHeight)));
@@ -120,12 +119,12 @@ public final class CameraPreviewCommands
 
     private static void runLayout(FabricClientCommandSource src)
     {
-        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc == null || mc.getWindow() == null) return;
-        int w = mc.getWindow().getScaledWidth();
-        int h = mc.getWindow().getScaledHeight();
+        int w = mc.getWindow().getGuiScaledWidth();
+        int h = mc.getWindow().getGuiScaledHeight();
         CameraPreviewRegistry.autoLayout(w, h);
-        src.sendFeedback(Text.literal("§a[BBSTools] §fAuto-layout applied ("
+        src.sendFeedback(Component.literal("§a[BBSTools] §fAuto-layout applied ("
             + CameraPreviewRegistry.list().size() + " windows)"));
     }
 
@@ -134,14 +133,14 @@ public final class CameraPreviewCommands
         CameraPreview p = findByName(camName);
         if (p == null)
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No preview named '" + camName + "'"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No preview named '" + camName + "'"));
             return;
         }
 
         if (replayIndex < 0)
         {
             CameraPreviewRegistry.setTracker(p, null);
-            src.sendFeedback(Text.literal("§a[BBSTools] §f'" + camName + "' untracked → manual mode"));
+            src.sendFeedback(Component.literal("§a[BBSTools] §f'" + camName + "' untracked → manual mode"));
             return;
         }
 
@@ -156,13 +155,13 @@ public final class CameraPreviewCommands
 
         if (film == null || film.replays == null || replayIndex >= film.replays.getList().size())
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No film loaded or replay index out of range"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No film loaded or replay index out of range"));
             return;
         }
 
         mchorse.bbs_mod.film.replays.Replay r = film.replays.getList().get(replayIndex);
         CameraPreviewRegistry.setTracker(p, r);
-        src.sendFeedback(Text.literal("§a[BBSTools] §f'" + camName + "' now tracking replay #" + replayIndex
+        src.sendFeedback(Component.literal("§a[BBSTools] §f'" + camName + "' now tracking replay #" + replayIndex
             + " '" + (r.getName() == null ? "(unnamed)" : r.getName()) + "'"));
     }
 
@@ -171,11 +170,11 @@ public final class CameraPreviewCommands
         CameraPreview p = findByName(camName);
         if (p == null)
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No preview named '" + camName + "'"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No preview named '" + camName + "'"));
             return;
         }
         CameraPreviewRegistry.cycleResolution(p);
-        src.sendFeedback(Text.literal("§a[BBSTools] §f'" + camName + "' resolution → "
+        src.sendFeedback(Component.literal("§a[BBSTools] §f'" + camName + "' resolution → "
             + p.fbWidth + "x" + p.fbHeight));
     }
 
@@ -184,7 +183,7 @@ public final class CameraPreviewCommands
         CameraPreview p = findByName(camName);
         if (p == null)
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No preview named '" + camName + "'"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No preview named '" + camName + "'"));
             return;
         }
         if (p.mode == CameraPreview.Mode.TRACKER)
@@ -192,13 +191,13 @@ public final class CameraPreviewCommands
             p.trackOffsetX = (float) x;
             p.trackOffsetY = (float) y;
             p.trackOffsetZ = (float) z;
-            src.sendFeedback(Text.literal(String.format(
+            src.sendFeedback(Component.literal(String.format(
                 "§a[BBSTools] §f'%s' tracker offset → (%.2f, %.2f, %.2f)", camName, x, y, z)));
         }
         else
         {
             p.posX += x; p.posY += y; p.posZ += z;
-            src.sendFeedback(Text.literal(String.format(
+            src.sendFeedback(Component.literal(String.format(
                 "§a[BBSTools] §f'%s' moved by (%.2f, %.2f, %.2f) → (%.1f, %.1f, %.1f)",
                 camName, x, y, z, p.posX, p.posY, p.posZ)));
         }
@@ -209,21 +208,21 @@ public final class CameraPreviewCommands
         CameraPreview p = findByName(camName);
         if (p == null)
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No preview named '" + camName + "'"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No preview named '" + camName + "'"));
             return;
         }
         if (p.mode == CameraPreview.Mode.TRACKER)
         {
             p.trackOffsetYaw = (float) yaw;
             p.trackOffsetPitch = (float) pitch;
-            src.sendFeedback(Text.literal(String.format(
+            src.sendFeedback(Component.literal(String.format(
                 "§a[BBSTools] §f'%s' tracker angle offset → yaw=%.1f pitch=%.1f", camName, yaw, pitch)));
         }
         else
         {
             p.yaw = (float) yaw;
             p.pitch = (float) pitch;
-            src.sendFeedback(Text.literal(String.format(
+            src.sendFeedback(Component.literal(String.format(
                 "§a[BBSTools] §f'%s' angle set → yaw=%.1f pitch=%.1f", camName, yaw, pitch)));
         }
     }
@@ -233,11 +232,11 @@ public final class CameraPreviewCommands
         CameraPreview p = findByName(camName);
         if (p == null)
         {
-            src.sendFeedback(Text.literal("§c[BBSTools] No preview named '" + camName + "'"));
+            src.sendFeedback(Component.literal("§c[BBSTools] No preview named '" + camName + "'"));
             return;
         }
         CameraPreviewRegistry.remove(p.id);
-        src.sendFeedback(Text.literal("§a[BBSTools] §fRemoved preview '" + camName + "'"));
+        src.sendFeedback(Component.literal("§a[BBSTools] §fRemoved preview '" + camName + "'"));
     }
 
 }

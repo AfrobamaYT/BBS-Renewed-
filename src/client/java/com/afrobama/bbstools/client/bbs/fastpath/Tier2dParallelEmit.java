@@ -33,7 +33,14 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -44,18 +51,8 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.BuiltBuffer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.BufferAllocator;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -97,7 +94,7 @@ public final class Tier2dParallelEmit
      *  consumes (draws) every slot's buffer before the next pass resets that slot, so
      *  no two live BuiltBuffers ever share an allocator. Only task w touches slot w, so
      *  no cross-thread contention. Grown (preserving entries) in ensureWorkerResults. */
-    private static BufferAllocator[] ALLOC_POOL = new BufferAllocator[0];
+    private static ByteBufferBuilder[] ALLOC_POOL = new ByteBufferBuilder[0];
 
     /** Per-thread CubicMatrixRenderer pool, keyed by modelId. Phase A
      *  runs on main thread (single-threaded ThreadLocal context); each
@@ -132,9 +129,9 @@ public final class Tier2dParallelEmit
          * entire fast-path flush. */
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
-        gr.getLightmapTextureManager().enable();
-        gr.getOverlayTexture().setupOverlayColor();
+        GameRenderer gr = Minecraft.getInstance().gameRenderer;
+        gr.lightTexture().turnOnLightLayer();
+        gr.overlayTexture().setupOverlayColor();
 
         try
         {
@@ -198,8 +195,8 @@ public final class Tier2dParallelEmit
         }
         finally
         {
-            gr.getLightmapTextureManager().disable();
-            gr.getOverlayTexture().teardownOverlayColor();
+            gr.lightTexture().turnOffLightLayer();
+            gr.overlayTexture().teardownOverlayColor();
             RenderSystem.disableBlend();
         }
 
@@ -301,7 +298,7 @@ public final class Tier2dParallelEmit
                 int subsInChunk = end - start;
                 int initialCapacity = fEstimatedBytesPerInstance * subsInChunk + 4096;
 
-                BufferAllocator alloc;
+                ByteBufferBuilder alloc;
                 BufferBuilder builder;
                 boolean pooledAlloc = false;
                 try
@@ -312,16 +309,16 @@ public final class Tier2dParallelEmit
                          * touches ALLOC_POOL[w], and slot w's buffer from the previous pass
                          * was already drawn in Phase D, so reset() here can never wipe a
                          * still-undrawn buffer. */
-                        BufferAllocator pooled = ALLOC_POOL[w];
+                        ByteBufferBuilder pooled = ALLOC_POOL[w];
                         if (pooled == null)
                         {
-                            pooled = new BufferAllocator(initialCapacity);
+                            pooled = new ByteBufferBuilder(initialCapacity);
                             ALLOC_POOL[w] = pooled;
                             BBSPerfConfig.tier3AllocFreshAllocs++;
                         }
                         else
                         {
-                            pooled.reset();
+                            pooled.discard();
                             BBSPerfConfig.tier3AllocReuses++;
                         }
                         alloc = pooled;
@@ -329,11 +326,11 @@ public final class Tier2dParallelEmit
                     }
                     else
                     {
-                        alloc = new BufferAllocator(initialCapacity);
+                        alloc = new ByteBufferBuilder(initialCapacity);
                     }
                     builder = new BufferBuilder(alloc,
-                        VertexFormat.DrawMode.TRIANGLES,
-                        VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                        VertexFormat.Mode.TRIANGLES,
+                        DefaultVertexFormat.NEW_ENTITY);
                 }
                 catch (Throwable t)
                 {
@@ -372,10 +369,10 @@ public final class Tier2dParallelEmit
 
                 if (written > 0)
                 {
-                    BuiltBuffer built;
+                    MeshData built;
                     try
                     {
-                        built = builder.end();
+                        built = builder.buildOrThrow();
                     }
                     catch (Throwable t)
                     {
@@ -396,7 +393,7 @@ public final class Tier2dParallelEmit
                 else
                 {
                     /* Empty buffer — release allocator immediately unless pooled. */
-                    try { builder.end().close(); } catch (Throwable ig) {}
+                    try { builder.buildOrThrow().close(); } catch (Throwable ig) {}
                     if (!fPooledAlloc)
                     {
                         try { alloc.close(); } catch (Throwable ig) {}
@@ -446,7 +443,7 @@ public final class Tier2dParallelEmit
             if (r == null) continue;
             try
             {
-                BufferRenderer.drawWithGlobalProgram(r.built);
+                BufferUploader.drawWithShader(r.built);
                 drawCount++;
                 totalWritten += r.writtenCount;
             }
@@ -495,9 +492,9 @@ public final class Tier2dParallelEmit
         animator.applyActions(s.entity, instance, s.transition);
         instance.model.applyPose(selfA.bbstools$getPose());
 
-        MatrixStack stack = new MatrixStack();
-        stack.multiplyPositionMatrix(s.worldMatrix);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+        PoseStack stack = new PoseStack();
+        stack.mulPose(s.worldMatrix);
+        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
 
         CubicMatrixRenderer ex;
         if (BBSPerfConfig.ENABLE_TIER3_POOLS)
@@ -581,12 +578,12 @@ public final class Tier2dParallelEmit
         bone.transformDirection(nTmp);
 
         int ui = vIdx * 2;
-        builder.vertex(pTmp.x, pTmp.y, pTmp.z)
-            .color(cr, cg, cb, ca)
-            .texture(ir.uvs[ui], ir.uvs[ui + 1])
-            .overlay(overlay)
-            .light(lightU, lightV)
-            .normal(nTmp.x, nTmp.y, nTmp.z);
+        builder.addVertex(pTmp.x, pTmp.y, pTmp.z)
+            .setColor(cr, cg, cb, ca)
+            .setUv(ir.uvs[ui], ir.uvs[ui + 1])
+            .setOverlay(overlay)
+            .setUv2(lightU, lightV)
+            .setNormal(nTmp.x, nTmp.y, nTmp.z);
     }
 
     private static void ensureExtractorPool(int needed)
@@ -613,12 +610,12 @@ public final class Tier2dParallelEmit
 
     private static final class WorkerResult
     {
-        final BufferAllocator alloc;
-        final BuiltBuffer built;
+        final ByteBufferBuilder alloc;
+        final MeshData built;
         final int writtenCount;
         final boolean pooled;
 
-        WorkerResult(BufferAllocator alloc, BuiltBuffer built, int writtenCount, boolean pooled)
+        WorkerResult(ByteBufferBuilder alloc, MeshData built, int writtenCount, boolean pooled)
         {
             this.alloc = alloc;
             this.built = built;

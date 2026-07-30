@@ -29,20 +29,17 @@
 package com.afrobama.bbstools.client.ui;
 
 import com.afrobama.bbstools.BBSToolsMod;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +51,7 @@ import java.util.List;
 /**
  * Editor-only shortcuts that ship with BBSTools to fill in gaps left
  * by stock BBS (duplicate-clip, set-marker, play/pause, jump to start
- * /end). Polled per client tick via Fabric {@link KeyBinding}s; only
+ * /end). Polled per client tick via Fabric {@link KeyMapping}s; only
  * fires when a BBS {@code UIScreen} is open AND there is a loaded
  * film, so the bindings never collide with world-time interactions.
  *
@@ -65,18 +62,18 @@ public final class EditorShortcuts
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/ui/editor-shortcuts");
 
     /** Ctrl+D — duplicate the selected clip. */
-    private static KeyBinding duplicateClip;
+    private static KeyMapping duplicateClip;
 
     /** Space — toggle play/pause of the BBS timeline. */
-    private static KeyBinding togglePlay;
+    private static KeyMapping togglePlay;
 
     /** Home — jump the cursor to tick 0. */
-    private static KeyBinding jumpStart;
+    private static KeyMapping jumpStart;
 
     /** End — jump the cursor to film end. */
-    private static KeyBinding jumpEnd;
+    private static KeyMapping jumpEnd;
 
-    /** Track shifted modifiers ourselves because Fabric {@link KeyBinding}s
+    /** Track shifted modifiers ourselves because Fabric {@link KeyMapping}s
      *  only resolve to a single physical key — combos like Ctrl+D must
      *  be enforced by polling the modifier state when the main key
      *  pulse arrives. */
@@ -84,30 +81,30 @@ public final class EditorShortcuts
 
     public static void register()
     {
-        duplicateClip = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        duplicateClip = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.editor_duplicate_clip",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
             "category.bbstools"
         ));
 
-        togglePlay = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        togglePlay = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.editor_toggle_play",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_SPACE,
             "category.bbstools"
         ));
 
-        jumpStart = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        jumpStart = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.editor_jump_start",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_HOME,
             "category.bbstools"
         ));
 
-        jumpEnd = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        jumpEnd = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.editor_jump_end",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_END,
             "category.bbstools"
         ));
@@ -121,7 +118,7 @@ public final class EditorShortcuts
 
     /* === Tick loop ============================================ */
 
-    private static void tick(MinecraftClient client)
+    private static void tick(Minecraft client)
     {
         if (client == null) return;
 
@@ -147,7 +144,7 @@ public final class EditorShortcuts
             return;
         }
 
-        long handle = client.getWindow().getHandle();
+        long handle = client.getWindow().getWindow();
         boolean ctrl  = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
                      || isKeyHeld(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
         boolean shift = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
@@ -194,7 +191,7 @@ public final class EditorShortcuts
      *  editor (camera/action/screen) owns the selection. The clone is
      *  placed at {@code tick = original.tick + original.duration} so
      *  it sits flush after the source. */
-    private static void handleDuplicate(MinecraftClient client, UIFilmPanel panel)
+    private static void handleDuplicate(Minecraft client, UIFilmPanel panel)
     {
         try
         {
@@ -265,7 +262,7 @@ public final class EditorShortcuts
     /** Space: toggle BBS timeline play/pause. UIFilmPanel.
      *  togglePlayback() is the canonical entry — keep reflective so
      *  BBS-Renewed renames don't break compile. */
-    private static void handleTogglePlay(MinecraftClient client, UIFilmPanel panel)
+    private static void handleTogglePlay(Minecraft client, UIFilmPanel panel)
     {
         try
         {
@@ -305,7 +302,7 @@ public final class EditorShortcuts
     }
 
     /** Home: jump cursor to tick 0. */
-    private static void handleJumpStart(MinecraftClient client, UIFilmPanel panel)
+    private static void handleJumpStart(Minecraft client, UIFilmPanel panel)
     {
         try
         {
@@ -323,7 +320,7 @@ public final class EditorShortcuts
      *  film.camera.calculateDuration()} since the camera track is the
      *  film's authoritative end (matches what BBS uses for "end of
      *  film" everywhere). */
-    private static void handleJumpEnd(MinecraftClient client, UIFilmPanel panel)
+    private static void handleJumpEnd(Minecraft client, UIFilmPanel panel)
     {
         try
         {
@@ -388,9 +385,9 @@ public final class EditorShortcuts
      *  child screens too, and we still want Space/Home/End to behave
      *  consistently across them. The film-panel gate above filters
      *  out "screen is open but no film loaded yet". */
-    private static boolean isBBSScreenOpen(MinecraftClient client)
+    private static boolean isBBSScreenOpen(Minecraft client)
     {
-        Screen current = client.currentScreen;
+        Screen current = client.screen;
         if (current == null) return false;
 
         /* Best-effort: confirm it's a BBS UIScreen by class name so
@@ -412,11 +409,11 @@ public final class EditorShortcuts
      *  well-known UIScreen fields and look for the substring "text"
      *  in the focused element's class name. Safe fallback returns
      *  false (we'd rather miss the guard than swallow the shortcut). */
-    private static boolean isLikelyTypingInTextbox(MinecraftClient client)
+    private static boolean isLikelyTypingInTextbox(Minecraft client)
     {
         try
         {
-            Screen screen = client.currentScreen;
+            Screen screen = client.screen;
             if (screen == null) return false;
 
             /* Walk every declared field on the screen + superclasses
@@ -643,26 +640,26 @@ public final class EditorShortcuts
 
     /* === Input helpers ======================================== */
 
-    private static boolean drain(KeyBinding kb)
+    private static boolean drain(KeyMapping kb)
     {
         boolean any = false;
         if (kb == null) return false;
-        while (kb.wasPressed()) any = true;
+        while (kb.consumeClick()) any = true;
         return any;
     }
 
     private static boolean isKeyHeld(long handle, int key)
     {
-        try { return InputUtil.isKeyPressed(handle, key); } catch (Throwable t) { return false; }
+        try { return InputConstants.isKeyDown(handle, key); } catch (Throwable t) { return false; }
     }
 
-    private static void actionBar(MinecraftClient client, String msg)
+    private static void actionBar(Minecraft client, String msg)
     {
         try
         {
             if (client != null && client.player != null)
             {
-                client.player.sendMessage(Text.literal(msg), true);
+                client.player.displayClientMessage(Component.literal(msg), true);
             }
         }
         catch (Throwable ignored) {}

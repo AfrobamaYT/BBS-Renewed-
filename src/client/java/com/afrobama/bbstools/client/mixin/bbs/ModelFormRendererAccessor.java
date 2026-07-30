@@ -10,6 +10,7 @@
 // gives a compiled-class-stable API for the mixin to consume.
 package com.afrobama.bbstools.client.mixin.bbs;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.function.Supplier;
 
 import mchorse.bbs_mod.cubic.ModelInstance;
@@ -20,10 +21,7 @@ import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
-
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.util.math.MatrixStack;
-
+import net.minecraft.client.renderer.ShaderInstance;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -63,8 +61,8 @@ public interface ModelFormRendererAccessor
     @Invoker("renderModel")
     void bbstools$renderModel(
         IEntity target,
-        Supplier<ShaderProgram> program,
-        MatrixStack stack,
+        Supplier<ShaderInstance> program,
+        PoseStack stack,
         ModelInstance model,
         int light,
         int overlay,
@@ -74,5 +72,5 @@ public interface ModelFormRendererAccessor
         boolean ui,
         StencilMap stencilMap,
         float transition,
-        MatrixStack world);
+        PoseStack world);
 }

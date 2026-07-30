@@ -8,16 +8,16 @@ import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class ModelBlockEntity extends BlockEntity
@@ -35,7 +35,7 @@ public class ModelBlockEntity extends BlockEntity
 
     public String getName()
     {
-        BlockPos pos = this.getPos();
+        BlockPos pos = this.getBlockPos();
         Form form = this.getProperties().getForm();
         String s = "(" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")";
 
@@ -94,7 +94,7 @@ public class ModelBlockEntity extends BlockEntity
         this.currentYaw = currentYaw;
     }
 
-    public void tick(World world, BlockPos pos, BlockState state)
+    public void tick(Level world, BlockPos pos, BlockState state)
     {
         ModelBlockEntityUpdateCallback.EVENT.invoker().update(this);
 
@@ -105,21 +105,21 @@ public class ModelBlockEntity extends BlockEntity
 
     @Nullable
     @Override
-    public Packet<ClientPlayPacketListener> toUpdatePacket()
+    public Packet<ClientGamePacketListener> getUpdatePacket()
     {
-        return BlockEntityUpdateS2CPacket.create(this);
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registryLookup)
+    public CompoundTag getUpdateTag(HolderLookup.Provider registryLookup)
     {
-        return this.createNbtWithId(registryLookup);
+        return this.saveWithId(registryLookup);
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup)
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup)
     {
-        super.writeNbt(nbt, registryLookup);
+        super.saveAdditional(nbt, registryLookup);
 
         MapType data = this.properties.toData();
 
@@ -127,9 +127,9 @@ public class ModelBlockEntity extends BlockEntity
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup)
+    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup)
     {
-        super.readNbt(nbt, registryLookup);
+        super.loadAdditional(nbt, registryLookup);
 
         BaseType baseType = DataStorageUtils.readFromNbtCompound(nbt, "Properties");
 
@@ -139,14 +139,14 @@ public class ModelBlockEntity extends BlockEntity
         }
     }
 
-    public void updateForm(MapType data, World world)
+    public void updateForm(MapType data, Level world)
     {
         this.properties.fromData(data);
 
-        BlockPos pos = this.getPos();
+        BlockPos pos = this.getBlockPos();
         BlockState blockState = world.getBlockState(pos);
 
-        world.updateListeners(pos, blockState, blockState, Block.NOTIFY_LISTENERS);
-        world.markDirty(pos);
+        world.sendBlockUpdated(pos, blockState, blockState, Block.UPDATE_CLIENTS);
+        world.blockEntityChanged(pos);
     }
 }

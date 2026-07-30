@@ -1,10 +1,10 @@
 package com.afrobama.bbstools.client.fracture;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 /**
  * Tiny HUD overlay that shows next to the crosshair when the player
@@ -24,16 +24,16 @@ public final class GravityGunHud
         HudRenderCallback.EVENT.register(GravityGunHud::onHudRender);
     }
 
-    private static void onHudRender(DrawContext ctx, net.minecraft.client.render.RenderTickCounter tickCounter)
+    private static void onHudRender(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter)
     {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.options.hudHidden) return;
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.options.hideGui) return;
 
-        TextRenderer fr = client.textRenderer;
+        Font fr = client.font;
         if (fr == null) return;
 
-        int screenW = ctx.getScaledWindowWidth();
-        int screenH = ctx.getScaledWindowHeight();
+        int screenW = ctx.guiWidth();
+        int screenH = ctx.guiHeight();
         int cx = screenW / 2;
         int cy = screenH / 2;
 
@@ -41,8 +41,8 @@ public final class GravityGunHud
         {
             /* Held — show "Holding [bone]  [release G]" hint. */
             String label = "§a● §fHolding · release G to throw";
-            int w = fr.getWidth(label);
-            ctx.drawTextWithShadow(fr, Text.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
+            int w = fr.width(label);
+            ctx.drawString(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
         }
         else
         {
@@ -50,8 +50,8 @@ public final class GravityGunHud
             if (hover != null)
             {
                 String label = String.format("§e● §fG · grab '%s' (%.1fm)", hover.boneName, hover.distance);
-                int w = fr.getWidth(label);
-                ctx.drawTextWithShadow(fr, Text.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
+                int w = fr.width(label);
+                ctx.drawString(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
             }
         }
     }

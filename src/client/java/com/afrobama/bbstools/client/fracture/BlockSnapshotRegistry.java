@@ -1,15 +1,14 @@
 package com.afrobama.bbstools.client.fracture;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Stores BlockState snapshots so the impact-propagation feature can
@@ -59,7 +58,7 @@ public final class BlockSnapshotRegistry
     public static synchronized BlockState snapshotAndRemove(BlockPos pos)
     {
         if (pos == null) return null;
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         if (world == null) return null;
 
         long key = pos.asLong();
@@ -85,7 +84,7 @@ public final class BlockSnapshotRegistry
         {
             /* Flag 3 = update neighbours + send to listeners. Without
              *  flag 3 the change isn't visible to the client renderer. */
-            world.setBlockState(pos, net.minecraft.block.Blocks.AIR.getDefaultState(), 3);
+            world.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
         }
         catch (Throwable t)
         {
@@ -101,7 +100,7 @@ public final class BlockSnapshotRegistry
     public static synchronized int restoreAll()
     {
         if (SNAPSHOTS.isEmpty()) return 0;
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         if (world == null)
         {
             int n = SNAPSHOTS.size();
@@ -112,10 +111,10 @@ public final class BlockSnapshotRegistry
         int restored = 0;
         for (Map.Entry<Long, BlockState> e : SNAPSHOTS.entrySet())
         {
-            BlockPos pos = BlockPos.fromLong(e.getKey());
+            BlockPos pos = BlockPos.of(e.getKey());
             try
             {
-                world.setBlockState(pos, e.getValue(), 3);
+                world.setBlock(pos, e.getValue(), 3);
                 restored++;
             }
             catch (Throwable t)

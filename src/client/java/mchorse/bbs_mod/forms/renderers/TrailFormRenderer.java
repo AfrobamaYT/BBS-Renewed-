@@ -2,6 +2,12 @@ package mchorse.bbs_mod.forms.renderers;
 
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
@@ -12,13 +18,7 @@ import mchorse.bbs_mod.forms.forms.TrailForm;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -69,7 +69,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
 
         if (context.modelRenderer || context.ui)
         {
-            MatrixStack stack = context.stack;
+            PoseStack stack = context.stack;
             float scale = BBSSettings.axesScale.get();
             float axisSize = 1F;
             float axisOffset = 0.01F;
@@ -80,7 +80,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             outlineOffset *= scale; int i = 10;
 
 
-            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             Draw.fillBox(builder, stack, -outlineOffset, -outlineSize, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);
             Draw.fillBox(builder, stack, -axisOffset, -axisSize, -axisOffset, axisOffset, axisSize, axisOffset, 0, 1, 0);
@@ -88,7 +88,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
             RenderSystem.disableDepthTest();
 
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
             return;
         }
@@ -98,7 +98,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             return;
         }
 
-        MatrixStack stack = context.stack;
+        PoseStack stack = context.stack;
         Matrix4f camInverse = new Matrix4f(InverseView.get());
 
         Camera camera = context.camera;
@@ -116,7 +116,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
              * (view * translate(-cam) * formChain). Without it camInverse over-rotates the
              * sampled point and the recorded world position ends up depending on the camera,
              * which makes the trail smear whenever the camera moves rather than the object. */
-            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().getPositionMatrix());
+            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose());
 
             Vector4f top = new Vector4f(0F, 1F, 0F, 1F);
             Vector4f bottom = new Vector4f(0F, -1F, 0F, 1F);
@@ -168,7 +168,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
 
         BBSModClient.getTextures().bindTexture(this.form.texture.get());
 
-        stack.push();
+        stack.pushPose();
 
         Trail last = null;
         Trail trail;
@@ -177,12 +177,12 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
          * Build m so that (globalModelView * m) collapses to the pure camera view:
          * m = inv(globalModelView) * view. In the form editor the global model-view is
          * identity, so m stays the plain view and nothing changes. */
-        Matrix4f m = stack.peek().getPositionMatrix();
+        Matrix4f m = stack.last().pose();
 
         m.set(RenderSystem.getModelViewMatrix()).invert();
         m.mul(new Matrix4f(camInverse).invert());
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
         for (it = trails.iterator(); it.hasNext(); last = trail)
         {
@@ -210,30 +210,30 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
                     float u1 = trail.tick / length;
                     float u2 = last.tick / length;
 
-                    builder.vertex(m, (float) x1, (float) y1, (float) z1).texture(u1, 0F);
-                    builder.vertex(m, (float) x2, (float) y2, (float) z2).texture(u1, 1F);
-                    builder.vertex(m, (float) x3, (float) y3, (float) z3).texture(u2, 1F);
-                    builder.vertex(m, (float) x4, (float) y4, (float) z4).texture(u2, 0F);
+                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
                     /* Other side */
-                    builder.vertex(m, (float) x4, (float) y4, (float) z4).texture(u2, 0F);
-                    builder.vertex(m, (float) x3, (float) y3, (float) z3).texture(u2, 1F);
-                    builder.vertex(m, (float) x2, (float) y2, (float) z2).texture(u1, 1F);
-                    builder.vertex(m, (float) x1, (float) y1, (float) z1).texture(u1, 0F);
+                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
                 }
                 else
                 {
                     float u1 = (current - trail.tick) / length;
                     float u2 = (current - last.tick) / length;
 
-                    builder.vertex(m, (float) x1, (float) y1, (float) z1).texture(u1, 0F);
-                    builder.vertex(m, (float) x2, (float) y2, (float) z2).texture(u1, 1F);
-                    builder.vertex(m, (float) x3, (float) y3, (float) z3).texture(u2, 1F);
-                    builder.vertex(m, (float) x4, (float) y4, (float) z4).texture(u2, 0F);
+                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
                     /* Other side */
-                    builder.vertex(m, (float) x4, (float) y4, (float) z4).texture(u2, 0F);
-                    builder.vertex(m, (float) x3, (float) y3, (float) z3).texture(u2, 1F);
-                    builder.vertex(m, (float) x2, (float) y2, (float) z2).texture(u1, 1F);
-                    builder.vertex(m, (float) x1, (float) y1, (float) z1).texture(u1, 0F);
+                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
                 }
             }
             else
@@ -245,10 +245,10 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         RenderSystem.enableDepthTest();
 
-        stack.pop();
+        stack.popPose();
     }
 
     @Override

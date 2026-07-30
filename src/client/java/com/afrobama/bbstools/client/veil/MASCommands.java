@@ -9,9 +9,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.text.Text;
-
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -363,7 +361,7 @@ public final class MASCommands
          * target so the ray-march has a valid NUKE_POS + smokeRiseTimer. */
         if ("nuke".equals(fx.id().getPath()) && "bbstools".equals(fx.id().getNamespace()))
         {
-            net.minecraft.util.math.Vec3d target = MASNukeEvent.triggerAtPlayerTarget();
+            net.minecraft.world.phys.Vec3 target = MASNukeEvent.triggerAtPlayerTarget();
             if (target != null)
             {
                 msg(ctx, "§e[MAS nuke] §fDetonation at (" + (int)target.x + ", "
@@ -373,7 +371,7 @@ public final class MASCommands
         }
         if ("blackhole".equals(fx.id().getPath()) && "bbstools".equals(fx.id().getNamespace()))
         {
-            net.minecraft.util.math.Vec3d target = MASBlackHoleEvent.triggerAtPlayerTarget();
+            net.minecraft.world.phys.Vec3 target = MASBlackHoleEvent.triggerAtPlayerTarget();
             if (target != null)
             {
                 msg(ctx, "§e[MAS blackhole] §fSpawned at (" + (int)target.x + ", "
@@ -393,7 +391,7 @@ public final class MASCommands
         }
         if ("laser".equals(fx.id().getPath()) && "bbstools".equals(fx.id().getNamespace()))
         {
-            net.minecraft.util.math.Vec3d target = MASLaserEvent.triggerAtPlayerTarget();
+            net.minecraft.world.phys.Vec3 target = MASLaserEvent.triggerAtPlayerTarget();
             if (target != null)
             {
                 msg(ctx, "§e[MAS laser] §fOrbital laser firing at XZ (" + (int)target.x + ", " + (int)target.z
@@ -402,7 +400,7 @@ public final class MASCommands
         }
         if ("meteor".equals(fx.id().getPath()) && "bbstools".equals(fx.id().getNamespace()))
         {
-            net.minecraft.util.math.Vec3d target = MASMeteorEvent.triggerAtPlayerTarget();
+            net.minecraft.world.phys.Vec3 target = MASMeteorEvent.triggerAtPlayerTarget();
             if (target != null)
             {
                 msg(ctx, "§e[MAS meteor] §fMeteor incoming — diagonal trajectory to ("
@@ -412,7 +410,7 @@ public final class MASCommands
         }
         if ("lightsource".equals(fx.id().getPath()) && "bbstools".equals(fx.id().getNamespace()))
         {
-            net.minecraft.util.math.Vec3d target = MASLightSourceEvent.triggerAtPlayerTarget();
+            net.minecraft.world.phys.Vec3 target = MASLightSourceEvent.triggerAtPlayerTarget();
             if (target != null)
             {
                 msg(ctx, "§e[MAS lightsource] §fBlinding light placed at ("
@@ -686,7 +684,7 @@ public final class MASCommands
 
     private static void msg(CommandContext<FabricClientCommandSource> ctx, String text)
     {
-        ctx.getSource().sendFeedback(Text.literal(text));
+        ctx.getSource().sendFeedback(Component.literal(text));
     }
 
 }

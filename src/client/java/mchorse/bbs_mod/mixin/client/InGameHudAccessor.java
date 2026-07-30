@@ -1,9 +1,8 @@
 package mchorse.bbs_mod.mixin.client;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.render.RenderTickCounter;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
@@ -14,9 +13,9 @@ import org.spongepowered.asm.mixin.gen.Invoker;
  * editor open. renderMainHud draws hotbar, health, hunger and crosshair without those
  * guards — exactly what ends up in the exported video.
  */
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public interface InGameHudAccessor
 {
-    @Invoker("renderMainHud")
-    void bbs$renderMainHud(DrawContext context, RenderTickCounter counter);
+    @Invoker("renderHotbarAndDecorations")
+    void bbs$renderMainHud(GuiGraphics context, DeltaTracker counter);
 }

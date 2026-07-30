@@ -5,9 +5,7 @@ import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
-
-import net.minecraft.client.input.KeyboardInput;
-
+import net.minecraft.client.player.KeyboardInput;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -48,19 +46,19 @@ public final class KeyboardInputSteuerungLogik
             return false;
         }
 
-        input.pressingForward = Window.isKeyPressed(GLFW.GLFW_KEY_W);
-        input.pressingBack = Window.isKeyPressed(GLFW.GLFW_KEY_S);
-        input.pressingLeft = Window.isKeyPressed(GLFW.GLFW_KEY_A);
-        input.pressingRight = Window.isKeyPressed(GLFW.GLFW_KEY_D);
-        input.movementForward = richtung(input.pressingForward, input.pressingBack);
-        input.movementSideways = richtung(input.pressingLeft, input.pressingRight);
+        input.up = Window.isKeyPressed(GLFW.GLFW_KEY_W);
+        input.down = Window.isKeyPressed(GLFW.GLFW_KEY_S);
+        input.left = Window.isKeyPressed(GLFW.GLFW_KEY_A);
+        input.right = Window.isKeyPressed(GLFW.GLFW_KEY_D);
+        input.forwardImpulse = richtung(input.up, input.down);
+        input.leftImpulse = richtung(input.left, input.right);
         input.jumping = Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
-        input.sneaking = Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT);
+        input.shiftKeyDown = Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT);
 
         if (slowDown)
         {
-            input.movementSideways *= slowDownFactor;
-            input.movementForward *= slowDownFactor;
+            input.leftImpulse *= slowDownFactor;
+            input.forwardImpulse *= slowDownFactor;
         }
 
         return true;

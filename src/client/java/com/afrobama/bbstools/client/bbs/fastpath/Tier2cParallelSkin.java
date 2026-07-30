@@ -36,7 +36,13 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -47,17 +53,8 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -114,9 +111,9 @@ public final class Tier2cParallelSkin
         /* Hoist render state — same pattern as Tier 2-b. */
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
-        gr.getLightmapTextureManager().enable();
-        gr.getOverlayTexture().setupOverlayColor();
+        GameRenderer gr = Minecraft.getInstance().gameRenderer;
+        gr.lightTexture().turnOnLightLayer();
+        gr.overlayTexture().setupOverlayColor();
 
         try
         {
@@ -180,8 +177,8 @@ public final class Tier2cParallelSkin
         }
         finally
         {
-            gr.getLightmapTextureManager().disable();
-            gr.getOverlayTexture().teardownOverlayColor();
+            gr.lightTexture().turnOffLightLayer();
+            gr.overlayTexture().teardownOverlayColor();
             RenderSystem.disableBlend();
         }
 
@@ -269,9 +266,9 @@ public final class Tier2cParallelSkin
 
         RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-        BufferBuilder builder = Tessellator.getInstance().begin(
-            VertexFormat.DrawMode.TRIANGLES,
-            VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+        BufferBuilder builder = Tesselator.getInstance().begin(
+            VertexFormat.Mode.TRIANGLES,
+            DefaultVertexFormat.NEW_ENTITY);
 
         int written = 0;
         for (int i = 0; i < n; i++)
@@ -287,7 +284,7 @@ public final class Tier2cParallelSkin
         {
             try
             {
-                BufferRenderer.drawWithGlobalProgram(builder.end());
+                BufferUploader.drawWithShader(builder.buildOrThrow());
             }
             catch (Throwable t)
             {
@@ -301,7 +298,7 @@ public final class Tier2cParallelSkin
         }
         else
         {
-            try { builder.end(); } catch (Throwable ig) {}
+            try { builder.buildOrThrow(); } catch (Throwable ig) {}
         }
         BBSPerfConfig.tier2cPhaseCNsAccum += System.nanoTime() - phaseCNs;
 
@@ -335,9 +332,9 @@ public final class Tier2cParallelSkin
         animator.applyActions(s.entity, instance, s.transition);
         instance.model.applyPose(selfA.bbstools$getPose());
 
-        MatrixStack stack = new MatrixStack();
-        stack.multiplyPositionMatrix(s.worldMatrix);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+        PoseStack stack = new PoseStack();
+        stack.mulPose(s.worldMatrix);
+        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
 
         /* Always allocate a fresh CubicMatrixRenderer — its
          * ArrayList<Matrix4f> sizing depends on model.getAllGroupKeys.size(),
@@ -441,12 +438,12 @@ public final class Tier2cParallelSkin
     {
         int pi = instanceOffset + vIdx * 3;
         int ui = vIdx * 2;
-        builder.vertex(poolPos[pi], poolPos[pi + 1], poolPos[pi + 2])
-            .color(r, g, bcol, a)
-            .texture(uvs[ui], uvs[ui + 1])
-            .overlay(overlay)
-            .light(lightU, lightV)
-            .normal(poolNrm[pi], poolNrm[pi + 1], poolNrm[pi + 2]);
+        builder.addVertex(poolPos[pi], poolPos[pi + 1], poolPos[pi + 2])
+            .setColor(r, g, bcol, a)
+            .setUv(uvs[ui], uvs[ui + 1])
+            .setOverlay(overlay)
+            .setUv2(lightU, lightV)
+            .setNormal(poolNrm[pi], poolNrm[pi + 1], poolNrm[pi + 2]);
     }
 
     /**

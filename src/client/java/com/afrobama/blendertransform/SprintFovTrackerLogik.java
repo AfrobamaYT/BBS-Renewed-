@@ -1,6 +1,6 @@
 package com.afrobama.blendertransform;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * Logik des tracker-sprint-FOV-mixins — im kernel-paket, damit sie hotswapbar ist.
@@ -50,11 +50,11 @@ public final class SprintFovTrackerLogik
      * @param tickDelta     original-parameter aus getFov
      * @param baseFov       der bisherige rückgabewert
      */
-    public static Double apply(boolean manualSprint, MinecraftClient mc, float tickDelta, double baseFov)
+    public static Double apply(boolean manualSprint, Minecraft mc, float tickDelta, double baseFov)
     {
         try
         {
-            long worldTime = (mc == null || mc.world == null) ? 0L : mc.world.getTime();
+            long worldTime = (mc == null || mc.level == null) ? 0L : mc.level.getGameTime();
 
             if (!probed)
             {

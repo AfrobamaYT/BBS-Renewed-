@@ -17,8 +17,8 @@ import com.afrobama.bbstools.client.fx.BBSFxPipelineRegistrar;
 import com.afrobama.bbstools.diag.BBSDiag;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 public final class DemoSequencer
 {
@@ -44,9 +44,9 @@ public final class DemoSequencer
 
     public static void start()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
-        Vec3d p = mc.player.getPos();
+        Vec3 p = mc.player.position();
         anchorX = p.x;
         anchorY = p.y;
         anchorZ = p.z;

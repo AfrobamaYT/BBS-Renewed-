@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.multilink;
 
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -18,9 +19,8 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.FilteredLink;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 
 public class UIMultiLinkEditor extends UICanvasEditor
 {
@@ -223,22 +223,22 @@ public class UIMultiLinkEditor extends UICanvasEditor
                     context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.setA(Colors.RED, 0.25F));
                 }
 
-                ShaderProgram shader = GameRenderer.getPositionTexColorProgram();
+                ShaderInstance shader = GameRenderer.getPositionTexColorShader();
 
                 if (needsMultLinkShader)
                 {
                     shader = BBSShaders.getMultilinkProgram();
 
-                    GlUniform size = shader.getUniform("Size");
-                    GlUniform filters = shader.getUniform("Filters");
+                    Uniform size = shader.getUniform("Size");
+                    Uniform filters = shader.getUniform("Filters");
 
                     size.set((float) ow, (float) oh);
-                    filters.set((float) child.pixelate, child.erase ? 1F : 0F, 0F, 0F);
+                    filters.setMat2x2((float) child.pixelate, child.erase ? 1F : 0F, 0F, 0F);
                 }
 
                 RenderSystem.setShaderTexture(3, context.render.getTextures().getTexture(Icons.ATLAS).id);
 
-                final ShaderProgram finalProgram = shader;
+                final ShaderInstance finalProgram = shader;
 
                 context.batcher.texturedBox(() -> finalProgram, texture.id, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
             }

@@ -10,9 +10,9 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.utils.Pair;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import java.util.function.Supplier;
@@ -83,7 +83,7 @@ public final class StencilAnzeige
             return;
         }
 
-        ShaderProgram programm = BBSShaders.getReplayOutlineProgram();
+        ShaderInstance programm = BBSShaders.getReplayOutlineProgram();
 
         if (programm == null)
         {
@@ -109,7 +109,7 @@ public final class StencilAnzeige
             return;
         }
 
-        Supplier<ShaderProgram> lieferant = BBSShaders::getReplayOutlineProgram;
+        Supplier<ShaderInstance> lieferant = BBSShaders::getReplayOutlineProgram;
 
         setzeInt(programm, "TargetMin", abIndex);
         setzeFarbe(programm, "OutlineColor", farbe);
@@ -206,9 +206,9 @@ public final class StencilAnzeige
         return ueberfahren;
     }
 
-    private static void setzeInt(ShaderProgram programm, String name, int wert)
+    private static void setzeInt(ShaderInstance programm, String name, int wert)
     {
-        GlUniform uniform = programm.getUniform(name);
+        Uniform uniform = programm.getUniform(name);
 
         if (uniform != null)
         {
@@ -216,9 +216,9 @@ public final class StencilAnzeige
         }
     }
 
-    private static void setzeZwei(ShaderProgram programm, String name, float a, float b)
+    private static void setzeZwei(ShaderInstance programm, String name, float a, float b)
     {
-        GlUniform uniform = programm.getUniform(name);
+        Uniform uniform = programm.getUniform(name);
 
         if (uniform != null)
         {
@@ -226,9 +226,9 @@ public final class StencilAnzeige
         }
     }
 
-    private static void setzeFarbe(ShaderProgram programm, String name, int farbe)
+    private static void setzeFarbe(ShaderInstance programm, String name, int farbe)
     {
-        GlUniform uniform = programm.getUniform(name);
+        Uniform uniform = programm.getUniform(name);
 
         if (uniform != null)
         {

@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.film;
 
 import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
@@ -12,10 +12,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * we use the cursor from the last time it was open (BBS keeps the
  * panel instance alive between opens).</p>
  *
- * <p>Edge-detection via {@link InputUtil#isKeyPressed} per tick so
+ * <p>Edge-detection via {@link InputConstants#isKeyDown} per tick so
  * the press fires once per off→on transition — matching vanilla
  * {@code wasPressed()} semantics. Falls back gracefully if no film
  * is loaded.</p>
@@ -56,10 +53,10 @@ public final class RecordFromCursorHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
 
-            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getHandle(), BBSToolsKeys.RECORD_FROM_CURSOR);
+            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getWindow(), BBSToolsKeys.RECORD_FROM_CURSOR);
 
             if (nowPressed && !wasPressed)
             {
@@ -80,7 +77,7 @@ public final class RecordFromCursorHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputUtil.isKeyPressed(handle, k)) return false;
+            if (!InputConstants.isKeyDown(handle, k)) return false;
         }
         return true;
     }
@@ -95,7 +92,7 @@ public final class RecordFromCursorHandler
              *  same rule manually, otherwise the user can trigger an
              *  accidental recording while typing in an editor textbox
              *  or scrubbing the timeline. */
-            if (mc().currentScreen != null)
+            if (mc().screen != null)
             {
                 return;
             }
@@ -153,7 +150,7 @@ public final class RecordFromCursorHandler
              *  so the user can move their character. Mirrors what
              *  UIFilmController.startRecording(groups) does for the
              *  "outside" group. */
-            if (mc().currentScreen != null)
+            if (mc().screen != null)
             {
                 mc().setScreen(null);
             }
@@ -168,9 +165,9 @@ public final class RecordFromCursorHandler
         }
     }
 
-    private static MinecraftClient mc()
+    private static Minecraft mc()
     {
-        return MinecraftClient.getInstance();
+        return Minecraft.getInstance();
     }
 
     private static String safeName(Replay r)

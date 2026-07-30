@@ -9,9 +9,8 @@
 // beyond GameTime which is global. Auto-deactivates after 60 seconds.
 package com.afrobama.bbstools.client.veil;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,13 +20,13 @@ public final class MASBlackHoleEvent
 
     private static final float TOTAL_DURATION_SEC = 60.0F;
 
-    private static volatile Vec3d position = Vec3d.ZERO;
+    private static volatile Vec3 position = Vec3.ZERO;
     private static volatile long startTimeNanos = 0L;
     private static volatile boolean active = false;
 
     private MASBlackHoleEvent() {}
 
-    public static void trigger(Vec3d pos)
+    public static void trigger(Vec3 pos)
     {
         position = pos;
         startTimeNanos = System.nanoTime();
@@ -35,13 +34,13 @@ public final class MASBlackHoleEvent
         LOG.info("Black hole triggered at ({}, {}, {})", pos.x, pos.y, pos.z);
     }
 
-    public static Vec3d triggerAtPlayerTarget()
+    public static Vec3 triggerAtPlayerTarget()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return null;
-        Vec3d look = mc.player.getRotationVector();
-        Vec3d horiz = new Vec3d(look.x, 0.0, look.z).normalize();
-        Vec3d target = new Vec3d(
+        Vec3 look = mc.player.getLookAngle();
+        Vec3 horiz = new Vec3(look.x, 0.0, look.z).normalize();
+        Vec3 target = new Vec3(
             mc.player.getX() + horiz.x * 8.0,
             mc.player.getY() + 1.5,
             mc.player.getZ() + horiz.z * 8.0);
@@ -67,6 +66,6 @@ public final class MASBlackHoleEvent
         return true;
     }
 
-    public static Vec3d getPosition() { return position; }
+    public static Vec3 getPosition() { return position; }
 
 }

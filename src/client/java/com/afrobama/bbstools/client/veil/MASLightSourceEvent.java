@@ -13,9 +13,8 @@
 // future iter: array of lights via instanced rendering or single shader pass.
 package com.afrobama.bbstools.client.veil;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ public final class MASLightSourceEvent
     private static final float DEFAULT_OUTER_RADIUS = 14.0F;
     private static final float DEFAULT_INTENSITY = 1.0F;
 
-    private static volatile Vec3d position = Vec3d.ZERO;
+    private static volatile Vec3 position = Vec3.ZERO;
     private static volatile float innerRadius = DEFAULT_INNER_RADIUS;
     private static volatile float outerRadius = DEFAULT_OUTER_RADIUS;
     private static volatile float intensity = DEFAULT_INTENSITY;
@@ -36,7 +35,7 @@ public final class MASLightSourceEvent
 
     private MASLightSourceEvent() {}
 
-    public static void trigger(Vec3d pos)
+    public static void trigger(Vec3 pos)
     {
         position = pos;
         active = true;
@@ -44,13 +43,13 @@ public final class MASLightSourceEvent
             pos.x, pos.y, pos.z, innerRadius, outerRadius, intensity);
     }
 
-    public static Vec3d triggerAtPlayerTarget()
+    public static Vec3 triggerAtPlayerTarget()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return null;
         /* Place 5 blocks ahead in player look direction, slightly up. */
-        Vec3d look = mc.player.getRotationVector();
-        Vec3d target = new Vec3d(
+        Vec3 look = mc.player.getLookAngle();
+        Vec3 target = new Vec3(
             mc.player.getX() + look.x * 5.0,
             mc.player.getY() + 1.5 + look.y * 5.0,
             mc.player.getZ() + look.z * 5.0);
@@ -65,7 +64,7 @@ public final class MASLightSourceEvent
     }
 
     public static boolean isActive() { return active; }
-    public static Vec3d getPosition() { return position; }
+    public static Vec3 getPosition() { return position; }
     public static float getInnerRadius() { return innerRadius; }
     public static float getOuterRadius() { return outerRadius; }
     public static float getIntensity() { return intensity; }

@@ -6,8 +6,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.film.replays.FilmGizmoDrag;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
-
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * Who owns the mouse while an actor is being controlled — the two halves of one trade.
@@ -58,7 +57,7 @@ public class ControlMouse
 
         if (controller.isMouseLookMode() && ClientNetwork.isIsBBSModOnServer())
         {
-            MinecraftClient.getInstance().player.changeLookDirection((x - lastX) / 2F, (y - lastY) / 2F);
+            Minecraft.getInstance().player.turn((x - lastX) / 2F, (y - lastY) / 2F);
 
             return;
         }

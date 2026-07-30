@@ -4,14 +4,11 @@ package com.afrobama.bbstools.client.ui.theme;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +38,7 @@ public final class BBSToolsTransparency
      *  something to restore. */
     public static volatile float LAST_USER_VALUE = 0.5F;
 
-    private static KeyBinding toggleKey;
+    private static KeyMapping toggleKey;
     private static boolean lastKeyDown;
 
     private BBSToolsTransparency() {}
@@ -51,9 +48,9 @@ public final class BBSToolsTransparency
     {
         loadFromDisk();
 
-        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.ui_transparency_toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_T,
             "category.bbstools"
         ));

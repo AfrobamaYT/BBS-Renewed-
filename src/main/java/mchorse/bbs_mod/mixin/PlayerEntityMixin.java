@@ -3,10 +3,9 @@ package mchorse.bbs_mod.mixin;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.IMorphProvider;
 import mchorse.bbs_mod.morphing.Morph;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityPose;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,11 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * then the world will be locked for some reason... by extracting write/read NBT method to
  * a separate mixin fixes it...
  */
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public class PlayerEntityMixin
 {
-    @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
-    public void onWriteCustomDataToNbt(NbtCompound nbt, CallbackInfo info)
+    @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
+    public void onWriteCustomDataToNbt(CompoundTag nbt, CallbackInfo info)
     {
         if (this instanceof IMorphProvider provider)
         {
@@ -30,8 +29,8 @@ public class PlayerEntityMixin
         }
     }
 
-    @Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
-    public void onReadCustomDataFromNbt(NbtCompound nbt, CallbackInfo info)
+    @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
+    public void onReadCustomDataFromNbt(CompoundTag nbt, CallbackInfo info)
     {
         if (this instanceof IMorphProvider provider)
         {
@@ -42,7 +41,7 @@ public class PlayerEntityMixin
         }
     }
 
-    @Inject(method = "getBaseDimensions", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getDefaultDimensions", at = @At("RETURN"), cancellable = true)
     public void onGetDimensions(CallbackInfoReturnable<EntityDimensions> info)
     {
         if (this instanceof IMorphProvider provider)
@@ -51,9 +50,9 @@ public class PlayerEntityMixin
 
             if (form != null && form.hitbox.get())
             {
-                PlayerEntity player = (PlayerEntity) (Object) this;
+                Player player = (Player) (Object) this;
                 EntityDimensions dimensions = info.getReturnValue();
-                float height = form.hitboxHeight.get() * (player.isSneaking() ? form.hitboxSneakMultiplier.get() : 1F);
+                float height = form.hitboxHeight.get() * (player.isShiftKeyDown() ? form.hitboxSneakMultiplier.get() : 1F);
 
                 if (dimensions.fixed())
                 {
@@ -61,7 +60,7 @@ public class PlayerEntityMixin
                 }
                 else
                 {
-                    info.setReturnValue(EntityDimensions.changing(form.hitboxWidth.get(), height));
+                    info.setReturnValue(EntityDimensions.scalable(form.hitboxWidth.get(), height));
                 }
             }
         }

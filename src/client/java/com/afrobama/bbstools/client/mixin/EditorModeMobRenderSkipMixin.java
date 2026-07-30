@@ -2,13 +2,11 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.editormode.EditorMode;
-
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.MobEntity;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,17 +23,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class EditorModeMobRenderSkipMixin
 {
     @Inject(
-        method = "render(Lnet/minecraft/entity/Entity;DDDFFLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V",
+        method = "render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
         at = @At("HEAD"),
         cancellable = true
     )
     private void bbstools$skipMobRenderInEditorMode(Entity entity, double x, double y, double z,
                                                      float yaw, float tickDelta,
-                                                     MatrixStack matrices,
-                                                     VertexConsumerProvider vertexConsumers,
+                                                     PoseStack matrices,
+                                                     MultiBufferSource vertexConsumers,
                                                      int light, CallbackInfo ci)
     {
-        if (!(entity instanceof MobEntity mob)) return;
+        if (!(entity instanceof Mob mob)) return;
         if (EditorMode.shouldBypass(mob))
         {
             ci.cancel();

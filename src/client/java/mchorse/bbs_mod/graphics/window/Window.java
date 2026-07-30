@@ -4,13 +4,12 @@ import mchorse.bbs_mod.data.DataToString;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.ListType;
 import mchorse.bbs_mod.data.types.MapType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.system.MemoryUtil;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -34,7 +33,7 @@ public class Window
 
     public static long getWindow()
     {
-        return MinecraftClient.getInstance().getWindow().getHandle();
+        return Minecraft.getInstance().getWindow().getWindow();
     }
 
     public static void setVerticalScroll(int scroll)
@@ -75,7 +74,7 @@ public class Window
 
     public static boolean isKeyPressed(int key)
     {
-        return InputUtil.isKeyPressed(getWindow(), key);
+        return InputConstants.isKeyDown(getWindow(), key);
     }
 
     public static String getClipboard()

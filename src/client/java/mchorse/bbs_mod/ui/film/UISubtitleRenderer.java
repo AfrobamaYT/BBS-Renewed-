@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.ui.film;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.clips.misc.Subtitle;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -15,10 +17,8 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -46,21 +46,21 @@ public class UISubtitleRenderer
         });
     }
 
-    public static void renderSubtitles(MatrixStack stack, Batcher2D batcher, List<Subtitle> subtitles)
+    public static void renderSubtitles(PoseStack stack, Batcher2D batcher, List<Subtitle> subtitles)
     {
         if (subtitles.isEmpty())
         {
             return;
         }
 
-        ShaderProgram program = BBSShaders.getSubtitlesProgram();
-        GlUniform blur = program.getUniform("Blur");
-        GlUniform textureSize = program.getUniform("TextureSize");
-        Supplier<ShaderProgram> supplier = () -> program;
+        ShaderInstance program = BBSShaders.getSubtitlesProgram();
+        Uniform blur = program.getUniform("Blur");
+        Uniform textureSize = program.getUniform("TextureSize");
+        Supplier<ShaderInstance> supplier = () -> program;
 
-        net.minecraft.client.gl.Framebuffer fb = MinecraftClient.getInstance().getFramebuffer();
-        int width = fb.textureWidth;
-        int height = fb.textureHeight;
+        com.mojang.blaze3d.pipeline.RenderTarget fb = Minecraft.getInstance().getMainRenderTarget();
+        int width = fb.width;
+        int height = fb.height;
 
         Matrix4f cache = new Matrix4f(RenderSystem.getProjectionMatrix());
 
@@ -128,7 +128,7 @@ public class UISubtitleRenderer
             int fw = (int) ((contentW + 10) * scale);
             int fh = (int) ((contentH + 10) * scale);
 
-            RenderSystem.setProjectionMatrix(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), VertexSorter.BY_Z);
+            RenderSystem.setProjectionMatrix(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), VertexSorting.ORTHOGRAPHIC_Z);
 
             framebuffer.resize(fw, fh);
             framebuffer.applyClear();
@@ -169,15 +169,15 @@ public class UISubtitleRenderer
             }
 
             /* Render the texture */
-            fb.beginWrite(true);
+            fb.bindWrite(true);
 
-            RenderSystem.setProjectionMatrix(ortho, VertexSorter.BY_Z);
+            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
 
             Transform transform = new Transform();
 
             transform.lerp(subtitle.transform, 1F - subtitle.factor);
 
-            stack.push();
+            stack.pushPose();
             stack.translate(x, y, 0);
             MatrixStackUtils.applyTransform(stack, transform);
 
@@ -196,10 +196,10 @@ public class UISubtitleRenderer
 
             batcher.texturedBox(supplier, texture.id, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
 
-            stack.pop();
+            stack.popPose();
         }
 
-        RenderSystem.setProjectionMatrix(cache, VertexSorter.BY_Z);
+        RenderSystem.setProjectionMatrix(cache, VertexSorting.ORTHOGRAPHIC_Z);
         RenderSystem.enableCull();
     }
 }

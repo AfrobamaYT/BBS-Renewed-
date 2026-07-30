@@ -15,9 +15,6 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,9 +196,9 @@ public final class ActiveCameraClipRegistry
     {
         try
         {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-            if (mc == null || !(mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
-            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.currentScreen;
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc == null || !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
+            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.screen;
             mchorse.bbs_mod.ui.framework.UIBaseMenu menu = screen.getMenu();
             if (menu == null) return null;
             mchorse.bbs_mod.ui.framework.UIBaseMenu.UIRootElement root = menu.getRoot();

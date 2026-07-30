@@ -1,9 +1,8 @@
 package com.afrobama.bbstools.client.fracture;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,15 +64,15 @@ public final class WorldEditBridge
 
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.player == null) return null;
-            if (mc.getServer() == null)
+            if (mc.getSingleplayerServer() == null)
             {
                 LOG.warn("[worldedit] no integrated server — selection import only works in singleplayer");
                 return null;
             }
 
-            Object serverPlayer = mc.getServer().getPlayerManager().getPlayer(mc.player.getUuid());
+            Object serverPlayer = mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
             if (serverPlayer == null)
             {
                 LOG.warn("[worldedit] couldn't resolve ServerPlayerEntity for current client player");
@@ -83,7 +82,7 @@ public final class WorldEditBridge
             /* Adapt client → FabricPlayer (which implements SessionOwner). */
             Class<?> adapterCls = Class.forName("com.sk89q.worldedit.fabric.FabricAdapter");
             Method adaptPlayer = adapterCls.getMethod("adaptPlayer",
-                net.minecraft.server.network.ServerPlayerEntity.class);
+                net.minecraft.server.level.ServerPlayer.class);
             Object actor = adaptPlayer.invoke(null, serverPlayer);
             if (actor == null)
             {
@@ -112,8 +111,8 @@ public final class WorldEditBridge
             Object weWorld = null;
             try
             {
-                Method adaptWorld = adapterCls.getMethod("adapt", net.minecraft.world.World.class);
-                weWorld = adaptWorld.invoke(null, mc.world);
+                Method adaptWorld = adapterCls.getMethod("adapt", net.minecraft.world.level.Level.class);
+                weWorld = adaptWorld.invoke(null, mc.level);
             }
             catch (Throwable ignored) { /* zero-arg getSelection variant */ }
 
@@ -218,7 +217,7 @@ public final class WorldEditBridge
                                     ((Number) yf.get(bv)).intValue(),
                                     ((Number) zf.get(bv)).intValue());
             }
-            catch (Throwable ignored) { return BlockPos.ORIGIN; }
+            catch (Throwable ignored) { return BlockPos.ZERO; }
         }
     }
 

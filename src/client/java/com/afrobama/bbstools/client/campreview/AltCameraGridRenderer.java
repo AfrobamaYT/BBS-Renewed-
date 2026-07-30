@@ -1,18 +1,16 @@
 // Coded by Afrobama/Claude — Phase 15 v4: reference grid via proper matrix stack
 package com.afrobama.bbstools.client.campreview;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexSorting;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.slf4j.Logger;
@@ -43,7 +41,7 @@ public final class AltCameraGridRenderer
 
     private AltCameraGridRenderer() {}
 
-    public static void render(MinecraftClient mc, Camera camera, Matrix4f projection)
+    public static void render(Minecraft mc, Camera camera, Matrix4f projection)
     {
         if (mc == null || mc.player == null) return;
 
@@ -58,11 +56,11 @@ public final class AltCameraGridRenderer
             int gy = (int) Math.floor(centerY);
             int gz = (int) Math.floor(centerZ);
 
-            float camX = (float) camera.getPos().x;
-            float camY = (float) camera.getPos().y;
-            float camZ = (float) camera.getPos().z;
-            float pitchRad = (float) Math.toRadians(camera.getPitch());
-            float yawRad = (float) Math.toRadians(camera.getYaw() + 180F);
+            float camX = (float) camera.getPosition().x;
+            float camY = (float) camera.getPosition().y;
+            float camZ = (float) camera.getPosition().z;
+            float pitchRad = (float) Math.toRadians(camera.getXRot());
+            float yawRad = (float) Math.toRadians(camera.getYRot() + 180F);
 
             /* Build view matrix the same way MC's GameRenderer does:
              *  Rx(pitch) * Ry(yaw+180) * T(-camera). Push onto the
@@ -75,7 +73,7 @@ public final class AltCameraGridRenderer
             mvStack.translate(-camX, -camY, -camZ);
             RenderSystem.applyModelViewMatrix();
 
-            RenderSystem.setProjectionMatrix(projection, VertexSorter.BY_DISTANCE);
+            RenderSystem.setProjectionMatrix(projection, VertexSorting.DISTANCE_TO_ORIGIN);
 
             RenderSystem.disableCull();
             RenderSystem.enableBlend();
@@ -83,8 +81,8 @@ public final class AltCameraGridRenderer
             RenderSystem.disableDepthTest();
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-            BufferBuilder bb = Tessellator.getInstance().begin(
-                VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+            BufferBuilder bb = Tesselator.getInstance().begin(
+                VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
             for (int i = -HALF_EXTENT; i <= HALF_EXTENT; i++)
             {
@@ -112,15 +110,15 @@ public final class AltCameraGridRenderer
                 float fxMax = (float) gx + HALF_EXTENT;
 
                 /* Line parallel to Z axis (varying X = fx). */
-                bb.vertex(fx, fy, fzMin).color(r, g, b, alpha);
-                bb.vertex(fx, fy, fzMax).color(r, g, b, alpha);
+                bb.addVertex(fx, fy, fzMin).setColor(r, g, b, alpha);
+                bb.addVertex(fx, fy, fzMax).setColor(r, g, b, alpha);
 
                 /* Line parallel to X axis (varying Z = fz). */
-                bb.vertex(fxMin, fy, fz).color(r, g, b, alpha);
-                bb.vertex(fxMax, fy, fz).color(r, g, b, alpha);
+                bb.addVertex(fxMin, fy, fz).setColor(r, g, b, alpha);
+                bb.addVertex(fxMax, fy, fz).setColor(r, g, b, alpha);
             }
 
-            BufferRenderer.drawWithGlobalProgram(bb.end());
+            BufferUploader.drawWithShader(bb.buildOrThrow());
 
             RenderSystem.enableDepthTest();
             RenderSystem.enableCull();
@@ -133,7 +131,7 @@ public final class AltCameraGridRenderer
             {
                 loggedFirstRender = true;
                 LOG.info("Grid first-render OK at player Y={} (camera @ {},{},{} pitch={} yaw={})",
-                    gy, camX, camY, camZ, camera.getPitch(), camera.getYaw());
+                    gy, camX, camY, camZ, camera.getXRot(), camera.getYRot());
             }
         }
         catch (Throwable t)

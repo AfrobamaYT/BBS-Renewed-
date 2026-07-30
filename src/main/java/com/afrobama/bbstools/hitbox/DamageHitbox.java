@@ -18,16 +18,16 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Server-side damage tick handler + /hitbox commands.
@@ -77,7 +77,7 @@ public final class DamageHitbox
         double offsetZ;
         boolean active = true;
 
-        Box getBox(Vec3d entityPos)
+        AABB getBox(Vec3 entityPos)
         {
             double cx;
             double cy;
@@ -96,7 +96,7 @@ public final class DamageHitbox
                 cz = this.z;
             }
 
-            return new Box(cx - this.sizeX, cy, cz - this.sizeZ,
+            return new AABB(cx - this.sizeX, cy, cz - this.sizeZ,
                 cx + this.sizeX, cy + this.sizeY * 2D, cz + this.sizeZ);
         }
     }
@@ -111,95 +111,95 @@ public final class DamageHitbox
         });
     }
 
-    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<ServerCommandSource> buildTree()
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> buildTree()
     {
-        return CommandManager.literal("hitbox")
-            .requires(s -> s.hasPermissionLevel(2))
-            .then(CommandManager.literal("create")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("damage", FloatArgumentType.floatArg(0F))
-                        .then(CommandManager.argument("sizeX", DoubleArgumentType.doubleArg(0.1D, 50D))
-                            .then(CommandManager.argument("sizeY", DoubleArgumentType.doubleArg(0.1D, 50D))
-                                .then(CommandManager.argument("sizeZ", DoubleArgumentType.doubleArg(0.1D, 50D))
+        return Commands.literal("hitbox")
+            .requires(s -> s.hasPermission(2))
+            .then(Commands.literal("create")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("damage", FloatArgumentType.floatArg(0F))
+                        .then(Commands.argument("sizeX", DoubleArgumentType.doubleArg(0.1D, 50D))
+                            .then(Commands.argument("sizeY", DoubleArgumentType.doubleArg(0.1D, 50D))
+                                .then(Commands.argument("sizeZ", DoubleArgumentType.doubleArg(0.1D, 50D))
                                     .executes(ctx -> createHitbox(ctx.getSource(),
                                         StringArgumentType.getString(ctx, "name"),
                                         FloatArgumentType.getFloat(ctx, "damage"),
                                         DoubleArgumentType.getDouble(ctx, "sizeX"),
                                         DoubleArgumentType.getDouble(ctx, "sizeY"),
                                         DoubleArgumentType.getDouble(ctx, "sizeZ")))))))))
-            .then(CommandManager.literal("move")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("x", DoubleArgumentType.doubleArg())
-                        .then(CommandManager.argument("y", DoubleArgumentType.doubleArg())
-                            .then(CommandManager.argument("z", DoubleArgumentType.doubleArg())
+            .then(Commands.literal("move")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("x", DoubleArgumentType.doubleArg())
+                        .then(Commands.argument("y", DoubleArgumentType.doubleArg())
+                            .then(Commands.argument("z", DoubleArgumentType.doubleArg())
                                 .executes(ctx -> moveHitbox(ctx.getSource(),
                                     StringArgumentType.getString(ctx, "name"),
                                     DoubleArgumentType.getDouble(ctx, "x"),
                                     DoubleArgumentType.getDouble(ctx, "y"),
                                     DoubleArgumentType.getDouble(ctx, "z"))))))))
-            .then(CommandManager.literal("scale")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("sizeX", DoubleArgumentType.doubleArg(0.1D, 50D))
-                        .then(CommandManager.argument("sizeY", DoubleArgumentType.doubleArg(0.1D, 50D))
-                            .then(CommandManager.argument("sizeZ", DoubleArgumentType.doubleArg(0.1D, 50D))
+            .then(Commands.literal("scale")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("sizeX", DoubleArgumentType.doubleArg(0.1D, 50D))
+                        .then(Commands.argument("sizeY", DoubleArgumentType.doubleArg(0.1D, 50D))
+                            .then(Commands.argument("sizeZ", DoubleArgumentType.doubleArg(0.1D, 50D))
                                 .executes(ctx -> scaleHitbox(ctx.getSource(),
                                     StringArgumentType.getString(ctx, "name"),
                                     DoubleArgumentType.getDouble(ctx, "sizeX"),
                                     DoubleArgumentType.getDouble(ctx, "sizeY"),
                                     DoubleArgumentType.getDouble(ctx, "sizeZ"))))))))
-            .then(CommandManager.literal("damage")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("amount", FloatArgumentType.floatArg(0F))
+            .then(Commands.literal("damage")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("amount", FloatArgumentType.floatArg(0F))
                         .executes(ctx -> setDamage(ctx.getSource(),
                             StringArgumentType.getString(ctx, "name"),
                             FloatArgumentType.getFloat(ctx, "amount"))))))
-            .then(CommandManager.literal("attach")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("entity", StringArgumentType.greedyString())
+            .then(Commands.literal("attach")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("entity", StringArgumentType.greedyString())
                         .executes(ctx -> attachHitbox(ctx.getSource(),
                             StringArgumentType.getString(ctx, "name"),
                             StringArgumentType.getString(ctx, "entity"))))))
-            .then(CommandManager.literal("detach")
-                .then(CommandManager.argument("name", StringArgumentType.word())
+            .then(Commands.literal("detach")
+                .then(Commands.argument("name", StringArgumentType.word())
                     .executes(ctx -> detachHitbox(ctx.getSource(),
                         StringArgumentType.getString(ctx, "name")))))
-            .then(CommandManager.literal("offset")
-                .then(CommandManager.argument("name", StringArgumentType.word())
-                    .then(CommandManager.argument("x", DoubleArgumentType.doubleArg())
-                        .then(CommandManager.argument("y", DoubleArgumentType.doubleArg())
-                            .then(CommandManager.argument("z", DoubleArgumentType.doubleArg())
+            .then(Commands.literal("offset")
+                .then(Commands.argument("name", StringArgumentType.word())
+                    .then(Commands.argument("x", DoubleArgumentType.doubleArg())
+                        .then(Commands.argument("y", DoubleArgumentType.doubleArg())
+                            .then(Commands.argument("z", DoubleArgumentType.doubleArg())
                                 .executes(ctx -> offsetHitbox(ctx.getSource(),
                                     StringArgumentType.getString(ctx, "name"),
                                     DoubleArgumentType.getDouble(ctx, "x"),
                                     DoubleArgumentType.getDouble(ctx, "y"),
                                     DoubleArgumentType.getDouble(ctx, "z"))))))))
-            .then(CommandManager.literal("toggle")
-                .then(CommandManager.argument("name", StringArgumentType.word())
+            .then(Commands.literal("toggle")
+                .then(Commands.argument("name", StringArgumentType.word())
                     .executes(ctx -> toggleHitbox(ctx.getSource(),
                         StringArgumentType.getString(ctx, "name")))))
-            .then(CommandManager.literal("remove")
-                .then(CommandManager.argument("name", StringArgumentType.word())
+            .then(Commands.literal("remove")
+                .then(Commands.argument("name", StringArgumentType.word())
                     .executes(ctx -> removeHitbox(ctx.getSource(),
                         StringArgumentType.getString(ctx, "name")))))
-            .then(CommandManager.literal("clear")
+            .then(Commands.literal("clear")
                 .executes(ctx -> clearHitboxes(ctx.getSource())))
-            .then(CommandManager.literal("list")
+            .then(Commands.literal("list")
                 .executes(ctx -> listHitboxes(ctx.getSource())))
-            .then(CommandManager.literal("show")
+            .then(Commands.literal("show")
                 .executes(ctx ->
                 {
                     showDebug = true;
                     FilmHitboxBridge.showWireframe = true;
-                    ctx.getSource().sendFeedback(() -> Text.literal("§aHitbox debug particles + wireframe ON"), false);
+                    ctx.getSource().sendSuccess(() -> Component.literal("§aHitbox debug particles + wireframe ON"), false);
 
                     return Command.SINGLE_SUCCESS;
                 }))
-            .then(CommandManager.literal("hide")
+            .then(Commands.literal("hide")
                 .executes(ctx ->
                 {
                     showDebug = false;
                     FilmHitboxBridge.showWireframe = false;
-                    ctx.getSource().sendFeedback(() -> Text.literal("§cHitbox debug particles + wireframe OFF"), false);
+                    ctx.getSource().sendSuccess(() -> Component.literal("§cHitbox debug particles + wireframe OFF"), false);
 
                     return Command.SINGLE_SUCCESS;
                 }));
@@ -207,7 +207,7 @@ public final class DamageHitbox
 
     private static void onServerTick(net.minecraft.server.MinecraftServer server)
     {
-        long tick = server.getTicks();
+        long tick = server.getTickCount();
 
         /* Drain film-driven boxes pushed by DamageHitboxClip during the last
            render cycle. Snapshot so the wireframe renderer can read a stable
@@ -218,7 +218,7 @@ public final class DamageHitbox
 
         if (!filmBoxes.isEmpty())
         {
-            for (ServerWorld world : server.getWorlds())
+            for (ServerLevel world : server.getAllLevels())
             {
                 for (double[] fb : filmBoxes)
                 {
@@ -236,14 +236,18 @@ public final class DamageHitbox
                         cooldownTicks = 1;
                     }
 
-                    Box box = new Box(fx - fsx, fy, fz - fsz, fx + fsx, fy + fsy * 2D, fz + fsz);
+                    AABB box = new AABB(fx - fsx, fy, fz - fsz, fx + fsx, fy + fsy * 2D, fz + fsz);
 
                     if (fdmg > 0F)
                     {
                         Map<UUID, Long> cooldowns = COOLDOWNS.computeIfAbsent("__film__", k -> new ConcurrentHashMap<>());
 
-                        for (Entity e : world.getOtherEntities(null, box,
-                            ent -> ent instanceof LivingEntity && !(ent instanceof ServerPlayerEntity)))
+                        /* (Entity) null -- ohne den cast ist der aufruf unter Mojang-Mappings MEHRDEUTIG:
+                         * null passt sowohl auf getEntities(Entity, AABB, Predicate) als auch auf
+                         * <T>getEntities(EntityTypeTest, AABB, Predicate). Gemeint ist "kein
+                         * ausgeschlossenes entity", also die erste. */
+                        for (Entity e : world.getEntities((Entity) null, box,
+                            ent -> ent instanceof LivingEntity && !(ent instanceof ServerPlayer)))
                         {
                             LivingEntity living = (LivingEntity) e;
 
@@ -252,7 +256,7 @@ public final class DamageHitbox
                                 continue;
                             }
 
-                            UUID eid = living.getUuid();
+                            UUID eid = living.getUUID();
                             Long lastHit = cooldowns.get(eid);
 
                             if (lastHit != null && (tick - lastHit) < cooldownTicks)
@@ -260,7 +264,7 @@ public final class DamageHitbox
                                 continue;
                             }
 
-                            living.damage(world.getDamageSources().generic(), fdmg);
+                            living.hurt(world.damageSources().generic(), fdmg);
                             cooldowns.put(eid, tick);
                         }
                     }
@@ -273,7 +277,7 @@ public final class DamageHitbox
             return;
         }
 
-        for (ServerWorld world : server.getWorlds())
+        for (ServerLevel world : server.getAllLevels())
         {
             for (HitboxData hb : HITBOXES.values())
             {
@@ -282,7 +286,7 @@ public final class DamageHitbox
                     continue;
                 }
 
-                Vec3d entityPos = null;
+                Vec3 entityPos = null;
 
                 if (hb.attachedEntity != null)
                 {
@@ -294,12 +298,16 @@ public final class DamageHitbox
                     }
                 }
 
-                Box box = hb.getBox(entityPos);
+                AABB box = hb.getBox(entityPos);
 
                 Map<UUID, Long> cooldowns = COOLDOWNS.computeIfAbsent(hb.name, k -> new ConcurrentHashMap<>());
 
-                for (Entity e : world.getOtherEntities(null, box,
-                    ent -> ent instanceof LivingEntity && !(ent instanceof ServerPlayerEntity)))
+                /* (Entity) null -- ohne den cast ist der aufruf unter Mojang-Mappings MEHRDEUTIG:
+                 * null passt sowohl auf getEntities(Entity, AABB, Predicate) als auch auf
+                 * <T>getEntities(EntityTypeTest, AABB, Predicate). Gemeint ist "kein
+                 * ausgeschlossenes entity", also die erste. */
+                for (Entity e : world.getEntities((Entity) null, box,
+                    ent -> ent instanceof LivingEntity && !(ent instanceof ServerPlayer)))
                 {
                     LivingEntity living = (LivingEntity) e;
 
@@ -308,7 +316,7 @@ public final class DamageHitbox
                         continue;
                     }
 
-                    UUID eid = living.getUuid();
+                    UUID eid = living.getUUID();
                     Long lastHit = cooldowns.get(eid);
 
                     if (lastHit != null && (tick - lastHit) < DAMAGE_COOLDOWN_TICKS)
@@ -316,7 +324,7 @@ public final class DamageHitbox
                         continue;
                     }
 
-                    living.damage(world.getDamageSources().generic(), hb.damage);
+                    living.hurt(world.damageSources().generic(), hb.damage);
                     cooldowns.put(eid, tick);
                 }
 
@@ -333,9 +341,9 @@ public final class DamageHitbox
         }
     }
 
-    private static Vec3d findEntityPosition(ServerWorld world, String name)
+    private static Vec3 findEntityPosition(ServerLevel world, String name)
     {
-        for (Entity e : world.iterateEntities())
+        for (Entity e : world.getAllEntities())
         {
             if (e == null)
             {
@@ -344,7 +352,7 @@ public final class DamageHitbox
 
             if (e.hasCustomName() && name.equals(e.getCustomName().getString()))
             {
-                return e.getPos();
+                return e.position();
             }
 
             /* BBS ActorEntity replay nameTag (private field — reflection access). */
@@ -370,7 +378,7 @@ public final class DamageHitbox
 
                             if (result instanceof String s && name.equals(s))
                             {
-                                return e.getPos();
+                                return e.position();
                             }
                         }
                     }
@@ -387,7 +395,7 @@ public final class DamageHitbox
         return null;
     }
 
-    private static void spawnBoxParticles(ServerWorld world, Box box)
+    private static void spawnBoxParticles(ServerLevel world, AABB box)
     {
         double minX = box.minX;
         double minY = box.minY;
@@ -415,22 +423,22 @@ public final class DamageHitbox
         }
     }
 
-    private static void spawnParticle(ServerWorld world, double x, double y, double z)
+    private static void spawnParticle(ServerLevel world, double x, double y, double z)
     {
-        world.spawnParticles(ParticleTypes.DUST_PLUME, x, y, z, 1, 0D, 0D, 0D, 0D);
+        world.sendParticles(ParticleTypes.DUST_PLUME, x, y, z, 1, 0D, 0D, 0D, 0D);
     }
 
-    private static int createHitbox(ServerCommandSource source, String name, float damage,
+    private static int createHitbox(CommandSourceStack source, String name, float damage,
         double sizeX, double sizeY, double sizeZ)
     {
         if (HITBOXES.containsKey(name))
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' already exists"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' already exists"), false);
 
             return 0;
         }
 
-        Vec3d pos = source.getPosition();
+        Vec3 pos = source.getPosition();
         HitboxData hb = new HitboxData();
         hb.name = name;
         hb.x = pos.x;
@@ -442,19 +450,19 @@ public final class DamageHitbox
         hb.damage = damage;
         HITBOXES.put(name, hb);
 
-        source.sendFeedback(() -> Text.literal(String.format(
+        source.sendSuccess(() -> Component.literal(String.format(
             "§aHitbox '%s' created (%.1f DMG, %.1fx%.1fx%.1f)", name, damage, sizeX, sizeY, sizeZ)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int moveHitbox(ServerCommandSource source, String name, double x, double y, double z)
+    private static int moveHitbox(CommandSourceStack source, String name, double x, double y, double z)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
@@ -462,18 +470,18 @@ public final class DamageHitbox
         hb.x = x;
         hb.y = y;
         hb.z = z;
-        source.sendFeedback(() -> Text.literal(String.format("§aHitbox '%s' moved to %.2f %.2f %.2f", name, x, y, z)), false);
+        source.sendSuccess(() -> Component.literal(String.format("§aHitbox '%s' moved to %.2f %.2f %.2f", name, x, y, z)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int scaleHitbox(ServerCommandSource source, String name, double sizeX, double sizeY, double sizeZ)
+    private static int scaleHitbox(CommandSourceStack source, String name, double sizeX, double sizeY, double sizeZ)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
@@ -481,42 +489,42 @@ public final class DamageHitbox
         hb.sizeX = sizeX;
         hb.sizeY = sizeY;
         hb.sizeZ = sizeZ;
-        source.sendFeedback(() -> Text.literal(String.format("§aHitbox '%s' size: %.1fx%.1fx%.1f", name, sizeX, sizeY, sizeZ)), false);
+        source.sendSuccess(() -> Component.literal(String.format("§aHitbox '%s' size: %.1fx%.1fx%.1f", name, sizeX, sizeY, sizeZ)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setDamage(ServerCommandSource source, String name, float damage)
+    private static int setDamage(CommandSourceStack source, String name, float damage)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
 
         hb.damage = damage;
-        source.sendFeedback(() -> Text.literal(String.format("§aHitbox '%s' damage: %.1f", name, damage)), false);
+        source.sendSuccess(() -> Component.literal(String.format("§aHitbox '%s' damage: %.1f", name, damage)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int attachHitbox(ServerCommandSource source, String name, String entityName)
+    private static int attachHitbox(CommandSourceStack source, String name, String entityName)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
 
         boolean found = false;
 
-        for (ServerWorld world : source.getServer().getWorlds())
+        for (ServerLevel world : source.getServer().getAllLevels())
         {
             if (findEntityPosition(world, entityName) != null)
             {
@@ -527,33 +535,33 @@ public final class DamageHitbox
 
         if (!found)
         {
-            source.sendFeedback(() -> Text.literal("§cEntity '" + entityName + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cEntity '" + entityName + "' not found"), false);
 
             return 0;
         }
 
         hb.attachedEntity = entityName;
-        source.sendFeedback(() -> Text.literal(String.format("§aHitbox '%s' attached to '%s'", name, entityName)), false);
+        source.sendSuccess(() -> Component.literal(String.format("§aHitbox '%s' attached to '%s'", name, entityName)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int detachHitbox(ServerCommandSource source, String name)
+    private static int detachHitbox(CommandSourceStack source, String name)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
 
-        for (ServerWorld world : source.getServer().getWorlds())
+        for (ServerLevel world : source.getServer().getAllLevels())
         {
             if (hb.attachedEntity != null)
             {
-                Vec3d entityPos = findEntityPosition(world, hb.attachedEntity);
+                Vec3 entityPos = findEntityPosition(world, hb.attachedEntity);
 
                 if (entityPos != null)
                 {
@@ -568,18 +576,18 @@ public final class DamageHitbox
         hb.offsetX = 0D;
         hb.offsetY = 0D;
         hb.offsetZ = 0D;
-        source.sendFeedback(() -> Text.literal("§aHitbox '" + name + "' detached"), false);
+        source.sendSuccess(() -> Component.literal("§aHitbox '" + name + "' detached"), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int offsetHitbox(ServerCommandSource source, String name, double x, double y, double z)
+    private static int offsetHitbox(CommandSourceStack source, String name, double x, double y, double z)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
@@ -587,64 +595,64 @@ public final class DamageHitbox
         hb.offsetX = x;
         hb.offsetY = y;
         hb.offsetZ = z;
-        source.sendFeedback(() -> Text.literal(String.format("§aHitbox '%s' offset: %.2f %.2f %.2f", name, x, y, z)), false);
+        source.sendSuccess(() -> Component.literal(String.format("§aHitbox '%s' offset: %.2f %.2f %.2f", name, x, y, z)), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int toggleHitbox(ServerCommandSource source, String name)
+    private static int toggleHitbox(CommandSourceStack source, String name)
     {
         HitboxData hb = HITBOXES.get(name);
 
         if (hb == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
 
         hb.active = !hb.active;
         String state = hb.active ? "§aenabled" : "§cdisabled";
-        source.sendFeedback(() -> Text.literal("§eHitbox '" + name + "' " + state), false);
+        source.sendSuccess(() -> Component.literal("§eHitbox '" + name + "' " + state), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int removeHitbox(ServerCommandSource source, String name)
+    private static int removeHitbox(CommandSourceStack source, String name)
     {
         if (HITBOXES.remove(name) == null)
         {
-            source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' not found"), false);
+            source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' not found"), false);
 
             return 0;
         }
 
         COOLDOWNS.remove(name);
-        source.sendFeedback(() -> Text.literal("§cHitbox '" + name + "' removed"), false);
+        source.sendSuccess(() -> Component.literal("§cHitbox '" + name + "' removed"), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int clearHitboxes(ServerCommandSource source)
+    private static int clearHitboxes(CommandSourceStack source)
     {
         int count = HITBOXES.size();
         HITBOXES.clear();
         COOLDOWNS.clear();
-        source.sendFeedback(() -> Text.literal("§c" + count + " hitboxes removed"), false);
+        source.sendSuccess(() -> Component.literal("§c" + count + " hitboxes removed"), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int listHitboxes(ServerCommandSource source)
+    private static int listHitboxes(CommandSourceStack source)
     {
         if (HITBOXES.isEmpty())
         {
-            source.sendFeedback(() -> Text.literal("§7No hitboxes"), false);
+            source.sendSuccess(() -> Component.literal("§7No hitboxes"), false);
 
             return Command.SINGLE_SUCCESS;
         }
 
-        source.sendFeedback(() -> Text.literal("§6=== Hitboxes ==="), false);
+        source.sendSuccess(() -> Component.literal("§6=== Hitboxes ==="), false);
 
         for (HitboxData hb : HITBOXES.values())
         {
@@ -652,7 +660,7 @@ public final class DamageHitbox
             String status = hb.active ? "§a●" : "§c●";
             final String fAttached = attached;
             final HitboxData fHb = hb;
-            source.sendFeedback(() -> Text.literal(String.format(
+            source.sendSuccess(() -> Component.literal(String.format(
                 "%s §e%s §7(%.1f DMG, %.1fx%.1fx%.1f)%s",
                 status, fHb.name, fHb.damage, fHb.sizeX, fHb.sizeY, fHb.sizeZ, fAttached)), false);
         }

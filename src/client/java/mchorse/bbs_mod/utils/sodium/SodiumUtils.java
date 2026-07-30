@@ -5,9 +5,9 @@ package mchorse.bbs_mod.utils.sodium;
  * useBlockFaceCulling/useFogOcclusion (geprueft per javap gegen sodium-0.6.13). */
 import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexSodiumConsumer;
 import mchorse.bbs_mod.utils.colors.Color;
-import net.minecraft.client.render.VertexConsumer;
 
 public class SodiumUtils
 {

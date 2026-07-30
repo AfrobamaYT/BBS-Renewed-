@@ -18,7 +18,7 @@ import com.afrobama.bbstools.BBSToolsMod;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public final class FlashbackBridgeCommand
 {
@@ -99,7 +99,7 @@ public final class FlashbackBridgeCommand
 
     private static void msg(FabricClientCommandSource src, String s)
     {
-        src.sendFeedback(Text.literal(s));
+        src.sendFeedback(Component.literal(s));
     }
 
 }

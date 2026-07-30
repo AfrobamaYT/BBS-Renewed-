@@ -1,8 +1,7 @@
 package com.afrobama.blendertransform;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,7 @@ public final class SprintFovLogik
      * @param tickDelta    original-parameter aus getFov
      * @param baseFov      der bisherige rückgabewert (evtl. schon von upstream verändert)
      */
-    public static Double apply(MinecraftClient mc, boolean changingFov, float tickDelta, double baseFov)
+    public static Double apply(Minecraft mc, boolean changingFov, float tickDelta, double baseFov)
     {
         try
         {
@@ -52,12 +51,12 @@ public final class SprintFovLogik
             }
             catch (Throwable ignored) {}
 
-            AbstractClientPlayerEntity player = mc.player;
+            AbstractClientPlayer player = mc.player;
             if (player == null) return null;
 
             boolean isSprinting = player.isSprinting();
-            float fovMultiplier = player.getFovMultiplier();
-            long worldTime = mc.world == null ? 0L : mc.world.getTime();
+            float fovMultiplier = player.getFieldOfViewModifier();
+            long worldTime = mc.level == null ? 0L : mc.level.getGameTime();
 
             /* Iter-17 fix: do NOT bail when player stops sprinting, bail only when the
              * smoothed multiplier has already decayed back to 1.0. Previously the mixin

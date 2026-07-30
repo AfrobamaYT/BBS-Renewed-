@@ -22,7 +22,13 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -33,17 +39,8 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -94,9 +91,9 @@ public final class Tier2bDrawPath
          * for the entire fast-path flush. */
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
-        gr.getLightmapTextureManager().enable();
-        gr.getOverlayTexture().setupOverlayColor();
+        GameRenderer gr = Minecraft.getInstance().gameRenderer;
+        gr.lightTexture().turnOnLightLayer();
+        gr.overlayTexture().setupOverlayColor();
 
         try
         {
@@ -146,9 +143,9 @@ public final class Tier2bDrawPath
                 BufferBuilder builder;
                 try
                 {
-                    builder = Tessellator.getInstance().begin(
-                        VertexFormat.DrawMode.TRIANGLES,
-                        VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                    builder = Tesselator.getInstance().begin(
+                        VertexFormat.Mode.TRIANGLES,
+                        DefaultVertexFormat.NEW_ENTITY);
                 }
                 catch (Throwable t)
                 {
@@ -201,14 +198,14 @@ public final class Tier2bDrawPath
                     /* Nothing written — end the builder without drawing to
                      * release the resources. BufferBuilder.end() on an
                      * empty buffer throws IllegalStateException; swallow. */
-                    try { builder.end(); } catch (Throwable ig) {}
+                    try { builder.buildOrThrow(); } catch (Throwable ig) {}
                     continue;
                 }
 
                 /* Single draw per bucket. */
                 try
                 {
-                    BufferRenderer.drawWithGlobalProgram(builder.end());
+                    BufferUploader.drawWithShader(builder.buildOrThrow());
                     drawCalls++;
                     submissionsDrawn += bucketSubsWritten;
                     vertsDrawn += bucketVertsWritten;
@@ -226,8 +223,8 @@ public final class Tier2bDrawPath
         }
         finally
         {
-            gr.getLightmapTextureManager().disable();
-            gr.getOverlayTexture().teardownOverlayColor();
+            gr.lightTexture().turnOffLightLayer();
+            gr.overlayTexture().teardownOverlayColor();
             RenderSystem.disableBlend();
         }
 
@@ -276,9 +273,9 @@ public final class Tier2bDrawPath
 
         /* Build root matrix stack — must match what BBS does at
          * render3D line 625 (world matrix + 180° Y rotation). */
-        MatrixStack stack = new MatrixStack();
-        stack.multiplyPositionMatrix(s.worldMatrix);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+        PoseStack stack = new PoseStack();
+        stack.mulPose(s.worldMatrix);
+        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
 
         /* Extract per-group world-space Matrix4f via BBS's own
          * CubicMatrixRenderer. Index matches IR.boneIndices entries. */
@@ -363,12 +360,12 @@ public final class Tier2bDrawPath
         float tu = ir.uvs[ui];
         float tv = ir.uvs[ui + 1];
 
-        builder.vertex(pTmp.x, pTmp.y, pTmp.z)
-            .color(cr, cg, cb, ca)
-            .texture(tu, tv)
-            .overlay(overlay)
-            .light(lightU, lightV)
-            .normal(nTmp.x, nTmp.y, nTmp.z);
+        builder.addVertex(pTmp.x, pTmp.y, pTmp.z)
+            .setColor(cr, cg, cb, ca)
+            .setUv(tu, tv)
+            .setOverlay(overlay)
+            .setUv2(lightU, lightV)
+            .setNormal(nTmp.x, nTmp.y, nTmp.z);
     }
 
     public static String snapshot()

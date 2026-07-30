@@ -7,10 +7,10 @@ import mchorse.bbs_mod.audio.ogg.VorbisReader;
 import mchorse.bbs_mod.audio.wav.WaveWriter;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.resource.Resource;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import mchorse.bbs_mod.audio.Wave;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -145,7 +145,7 @@ public class MinecraftSoundMixer
     private static List<SoundCursor> createCursors(List<CapturedSound> sounds, List<ListenerFrame> frames, int sampleRate, double frameRate, long totalSamples)
     {
         List<SoundCursor> cursors = new ArrayList<>();
-        Map<Identifier, Wave> waves = new HashMap<>();
+        Map<ResourceLocation, Wave> waves = new HashMap<>();
 
         for (CapturedSound sound : sounds)
         {
@@ -199,7 +199,7 @@ public class MinecraftSoundMixer
      * Decode the sound's .ogg from the game's resources (resource packs included),
      * with caching - footsteps reuse the same handful of files hundreds of times.
      */
-    private static Wave read(Map<Identifier, Wave> cache, Identifier location)
+    private static Wave read(Map<ResourceLocation, Wave> cache, ResourceLocation location)
     {
         if (cache.containsKey(location))
         {
@@ -210,11 +210,11 @@ public class MinecraftSoundMixer
 
         try
         {
-            Optional<Resource> resource = MinecraftClient.getInstance().getResourceManager().getResource(location);
+            Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(location);
 
             if (resource.isPresent())
             {
-                try (InputStream stream = resource.get().getInputStream())
+                try (InputStream stream = resource.get().open())
                 {
                     wave = VorbisReader.read(new Link(location.getNamespace(), location.getPath()), stream);
                 }

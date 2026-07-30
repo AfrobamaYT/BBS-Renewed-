@@ -11,9 +11,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -221,7 +219,7 @@ public class UIBBSToolsUndoOverlay extends UIOverlayPanel
         {
             this.lastUndoSize = u;
             this.lastRedoSize = r;
-            MinecraftClient.getInstance().execute(this::invalidate);
+            Minecraft.getInstance().execute(this::invalidate);
         }
         super.render(context);
     }

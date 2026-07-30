@@ -242,8 +242,8 @@ public final class ActorRagdollRuntime
         java.util.UUID uuid = null;
         if (entity instanceof mchorse.bbs_mod.forms.entities.MCEntity mc)
         {
-            net.minecraft.entity.Entity raw = mc.getMcEntity();
-            if (raw != null) uuid = raw.getUuid();
+            net.minecraft.world.entity.Entity raw = mc.getMcEntity();
+            if (raw != null) uuid = raw.getUUID();
         }
         if (uuid == null) return;
 

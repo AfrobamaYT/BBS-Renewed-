@@ -75,12 +75,12 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
 import mchorse.bbs_mod.utils.pose.Transform;
 import mchorse.bbs_mod.utils.presets.PresetManager;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
@@ -1409,8 +1409,8 @@ public class UIReplayList extends UIList<ReplayListEntry>
 
         private ReplayBatchProcessor.GroundProvider createGroundProvider()
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            World world = mc.world;
+            Minecraft mc = Minecraft.getInstance();
+            Level world = mc.level;
 
             if (world == null)
             {
@@ -1432,15 +1432,15 @@ public class UIReplayList extends UIList<ReplayListEntry>
                     return cached;
                 }
 
-                double top = world.getTopY() + 5;
-                Vec3d pos = new Vec3d(x, top, z);
-                BlockHitResult result = RayTracing.rayTrace(world, pos, new Vec3d(0D, -1D, 0D), top - world.getBottomY() + 5D);
+                double top = world.getMaxBuildHeight() + 5;
+                Vec3 pos = new Vec3(x, top, z);
+                BlockHitResult result = RayTracing.rayTrace(world, pos, new Vec3(0D, -1D, 0D), top - world.getMinBuildHeight() + 5D);
 
                 double y = Double.NaN;
 
                 if (result != null && result.getType() != HitResult.Type.MISS)
                 {
-                    y = result.getPos().y;
+                    y = result.getLocation().y;
                 }
 
                 cache.put(key, y);
@@ -1948,11 +1948,11 @@ public class UIReplayList extends UIList<ReplayListEntry>
 
     public void addReplay()
     {
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         Camera camera = this.panel.getCamera();
 
         BlockHitResult blockHitResult = RayTracing.rayTrace(world, camera, 64F);
-        Vec3d p = blockHitResult.getPos();
+        Vec3 p = blockHitResult.getLocation();
         Vector3d position = new Vector3d(p.x, p.y, p.z);
 
         if (blockHitResult.getType() == HitResult.Type.MISS)

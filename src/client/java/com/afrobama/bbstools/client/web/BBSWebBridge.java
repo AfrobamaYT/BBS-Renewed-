@@ -15,10 +15,8 @@ import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.repos.IRepository;
 
 import net.fabricmc.loader.api.FabricLoader;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -128,7 +126,7 @@ public final class BBSWebBridge
 
                     return true;
                 case "player.name":
-                    MinecraftClient mc = MinecraftClient.getInstance();
+                    Minecraft mc = Minecraft.getInstance();
                     String name = mc.player != null ? mc.player.getGameProfile().getName() : "Player";
 
                     callback.success(GSON.toJson(name));
@@ -223,7 +221,7 @@ public final class BBSWebBridge
             return;
         }
 
-        MinecraftClient.getInstance().execute(() -> openInDashboard(id));
+        Minecraft.getInstance().execute(() -> openInDashboard(id));
         callback.success(GSON.toJson("ok"));
     }
 
@@ -234,7 +232,7 @@ public final class BBSWebBridge
 
         if (parent instanceof UIScreen screen && screen.getMenu() instanceof UIDashboard dashboard)
         {
-            MinecraftClient.getInstance().setScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
                 /* AUTONOMIE 2026-07-27: fs hat keine dokument-tabs (documentTabsBar/ContentType
                  * sind CML). Aequivalent im fs-kern: das film-panel aktivieren. Ein tab-streifen
                  * mit mehreren offenen filmen existiert dort nicht — es ist immer genau einer offen. */
@@ -243,7 +241,7 @@ public final class BBSWebBridge
         else
         {
             /* No BBS dashboard underneath (launched from the world) — just close the browser. */
-            MinecraftClient.getInstance().setScreen(null);
+            Minecraft.getInstance().setScreen(null);
             LOG.warn("[web] open: no BBS dashboard parent; open BBS first to load '{}'", id);
         }
     }
@@ -263,7 +261,7 @@ public final class BBSWebBridge
             return;
         }
 
-        MinecraftClient.getInstance().execute(() ->
+        Minecraft.getInstance().execute(() ->
         {
             try
             {
@@ -295,7 +293,7 @@ public final class BBSWebBridge
             return;
         }
 
-        MinecraftClient.getInstance().execute(() ->
+        Minecraft.getInstance().execute(() ->
         {
             try
             {
@@ -327,7 +325,7 @@ public final class BBSWebBridge
             return;
         }
 
-        MinecraftClient.getInstance().execute(() ->
+        Minecraft.getInstance().execute(() ->
         {
             try
             {
@@ -351,7 +349,7 @@ public final class BBSWebBridge
             return;
         }
 
-        MinecraftClient.getInstance().execute(() ->
+        Minecraft.getInstance().execute(() ->
         {
             try
             {

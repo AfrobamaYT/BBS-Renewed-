@@ -9,7 +9,7 @@
 // At 60fps + 600 capacity = 10sec window. Cheap: 1 int write per frame.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 public final class FpsSampler
 {
@@ -27,7 +27,7 @@ public final class FpsSampler
      */
     public static void recordCurrentFps()
     {
-        int fps = MinecraftClient.getInstance().getCurrentFps();
+        int fps = Minecraft.getInstance().getFps();
         BUFFER[writeIdx] = fps;
         writeIdx = (writeIdx + 1) % CAPACITY;
         if (count < CAPACITY) count++;

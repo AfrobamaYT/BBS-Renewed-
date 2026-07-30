@@ -5,9 +5,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.FilmManager;
 import mchorse.bbs_mod.utils.repos.FolderManagerRepository;
 import mchorse.bbs_mod.utils.repos.IRepository;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.io.File;
 
 /**
@@ -37,10 +35,10 @@ public final class ContentTypeFilmsAllWorldsLogik
      */
     public static IRepository<Film> forceGlobalEditor()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         /* SP — vanilla übernimmt (welt-lokale filme). */
-        if (mc.isIntegratedServerRunning())
+        if (mc.hasSingleplayerServer())
         {
             return null;
         }

@@ -1,6 +1,13 @@
 package mchorse.bbs_mod.cubic.ik;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
@@ -13,14 +20,7 @@ import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
 import mchorse.bbs_mod.settings.values.ui.ValueIKDebug;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -54,7 +54,7 @@ public final class ModelIKDebug
     {
     }
 
-    public static void render(MatrixStack stack, IModel model, MapType ikData, String selectedTip)
+    public static void render(PoseStack stack, IModel model, MapType ikData, String selectedTip)
     {
         ValueIKDebug config = BBSSettings.ikDebug;
 
@@ -81,11 +81,11 @@ public final class ModelIKDebug
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        stack.push();
+        stack.pushPose();
 
         if (model instanceof BOBJModel)
         {
-            stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
         for (ModelIKCache.CompiledChain chain : compiled.chains())
@@ -93,7 +93,7 @@ public final class ModelIKDebug
             drawChain(stack, frames, chain, selectedTip, config);
         }
 
-        stack.pop();
+        stack.popPose();
 
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
@@ -127,7 +127,7 @@ public final class ModelIKDebug
      * {@code stencilMap.objectIndex} as its colour and {@code addPicking} then
      * claims that same id. The matrix matches the visual overlay's.
      */
-    public static void renderStencil(MatrixStack stack, IModel model, MapType ikData, StencilMap stencilMap, Form form)
+    public static void renderStencil(PoseStack stack, IModel model, MapType ikData, StencilMap stencilMap, Form form)
     {
         ValueIKDebug config = BBSSettings.ikDebug;
         boolean targets = config.target.visible.get();
@@ -155,14 +155,14 @@ public final class ModelIKDebug
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        stack.push();
+        stack.pushPose();
 
         if (model instanceof BOBJModel)
         {
-            stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (ModelIKCache.CompiledChain chain : compiled.chains())
         {
@@ -189,16 +189,16 @@ public final class ModelIKDebug
             }
         }
 
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
-        stack.pop();
+        stack.popPose();
 
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
     }
 
     /** Draws one pickable marker — the element's own shape and size — encoding the next stencil id, and claims it for {@code bone}. */
-    private static void pickMarker(BufferBuilder builder, MatrixStack stack, StencilMap stencilMap, Form form, ValueDebugElement element, Vector3f p, float unit, String bone)
+    private static void pickMarker(BufferBuilder builder, PoseStack stack, StencilMap stencilMap, Form form, ValueDebugElement element, Vector3f p, float unit, String bone)
     {
         int id = stencilMap.objectIndex;
         float[] col = {(id & 0xFF) / 255F, (id >> 8 & 0xFF) / 255F, (id >> 16 & 0xFF) / 255F};
@@ -238,7 +238,7 @@ public final class ModelIKDebug
         return segments > 0 ? total / segments : 0.5F;
     }
 
-    private static void drawChain(MatrixStack stack, Map<String, PivotFrame> frames, ModelIKCache.CompiledChain chain, String selectedTip, ValueIKDebug config)
+    private static void drawChain(PoseStack stack, Map<String, PivotFrame> frames, ModelIKCache.CompiledChain chain, String selectedTip, ValueIKDebug config)
     {
         List<String> ids = chain.chainRootToEffector();
         int n = ids.size();
@@ -293,17 +293,17 @@ public final class ModelIKDebug
         boolean boxes = anyLine && thickness > 0F;
         boolean anyDot = joints || tipDot || targetDot || poleDot;
 
-        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Matrix4f matrix = stack.last().pose();
         float dash = unit * 0.12F;
 
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            BufferBuilder lines = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+            BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
             emitLines(lines, matrix, 0F, dash, pts, target, pole, a, config);
 
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = lines.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = lines.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }
 
         if (!anyDot && !boxes)
@@ -312,7 +312,7 @@ public final class ModelIKDebug
         }
 
         /* Solid geometry: joint/accent markers, plus the thick lines. */
-        BufferBuilder dots = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         if (boxes)
         {
@@ -346,7 +346,7 @@ public final class ModelIKDebug
             DebugOverlay.marker(dots, stack, config.pole.shape.get(), pole, unit * config.pole.size.get(), DebugOverlay.rgb(config.pole.color.get()), a);
         }
 
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = dots.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = dots.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
     /** The chain's wires plus the bridges to the goal and the pole — the bridges are always dashed relationship lines. */

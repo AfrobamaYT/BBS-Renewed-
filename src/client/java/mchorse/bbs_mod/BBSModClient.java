@@ -1,5 +1,6 @@
 package mchorse.bbs_mod;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.audio.MinecraftSoundCapture;
 import mchorse.bbs_mod.audio.SoundManager;
@@ -71,21 +72,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -109,19 +101,19 @@ public class BBSModClient implements ClientModInitializer
 
     private static ParticleManager particles;
 
-    private static KeyBinding keyDashboard;
-    private static KeyBinding keyItemEditor;
-    private static KeyBinding keyPlayFilm;
-    private static KeyBinding keyPauseFilm;
-    private static KeyBinding keyRecordReplay;
-    private static KeyBinding keyRecordVideo;
-    private static KeyBinding keyPlayFilmAndRecord;
-    private static KeyBinding keyOpenReplays;
-    private static KeyBinding keyOpenQuickReplays;
-    private static KeyBinding keyOpenMorphing;
-    private static KeyBinding keyDemorph;
-    private static KeyBinding keyTeleport;
-    private static KeyBinding keyZoom;
+    private static KeyMapping keyDashboard;
+    private static KeyMapping keyItemEditor;
+    private static KeyMapping keyPlayFilm;
+    private static KeyMapping keyPauseFilm;
+    private static KeyMapping keyRecordReplay;
+    private static KeyMapping keyRecordVideo;
+    private static KeyMapping keyPlayFilmAndRecord;
+    private static KeyMapping keyOpenReplays;
+    private static KeyMapping keyOpenQuickReplays;
+    private static KeyMapping keyOpenMorphing;
+    private static KeyMapping keyDemorph;
+    private static KeyMapping keyTeleport;
+    private static KeyMapping keyZoom;
 
     private static UIDashboard dashboard;
 
@@ -212,12 +204,12 @@ public class BBSModClient implements ClientModInitializer
         return gunZoom;
     }
 
-    public static KeyBinding getKeyZoom()
+    public static KeyMapping getKeyZoom()
     {
         return keyZoom;
     }
 
-    public static KeyBinding getKeyRecordVideo()
+    public static KeyMapping getKeyRecordVideo()
     {
         return keyRecordVideo;
     }
@@ -239,7 +231,7 @@ public class BBSModClient implements ClientModInitializer
     }
 
     /** Der Waehler braucht die Taste, um beim zweiten Druck zu bestaetigen statt zu oeffnen. */
-    public static KeyBinding getKeyOpenQuickReplays()
+    public static KeyMapping getKeyOpenQuickReplays()
     {
         return keyOpenQuickReplays;
     }
@@ -279,7 +271,7 @@ public class BBSModClient implements ClientModInitializer
      */
     public static float getGUIScale()
     {
-        return (float) MinecraftClient.getInstance().getWindow().getScaleFactor();
+        return (float) Minecraft.getInstance().getWindow().getGuiScale();
     }
 
     public static float getOriginalFramebufferScale()
@@ -313,9 +305,9 @@ public class BBSModClient implements ClientModInitializer
             return;
         }
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
 
-        if (player == null || MinecraftClient.getInstance().currentScreen != null)
+        if (player == null || Minecraft.getInstance().screen != null)
         {
             return;
         }
@@ -331,8 +323,8 @@ public class BBSModClient implements ClientModInitializer
             return;
 
         /* Animation state trigger for items*/
-        ModelProperties main = getItemStackProperties(player.getStackInHand(Hand.MAIN_HAND));
-        ModelProperties offhand = getItemStackProperties(player.getStackInHand(Hand.OFF_HAND));
+        ModelProperties main = getItemStackProperties(player.getItemInHand(InteractionHand.MAIN_HAND));
+        ModelProperties offhand = getItemStackProperties(player.getItemInHand(InteractionHand.OFF_HAND));
 
         if (main != null && main.getForm() != null && main.getForm().findState(key, (form, state) ->
         {
@@ -748,7 +740,7 @@ public class BBSModClient implements ClientModInitializer
         }
     }
 
-    private void keyRecordVideo(MinecraftClient mc)
+    private void keyRecordVideo(Minecraft mc)
     {
         if (worldExportSession.isExporting())
         {
@@ -760,29 +752,29 @@ public class BBSModClient implements ClientModInitializer
         worldExportSession.start(null, null);
     }
 
-    private KeyBinding createKey(String id, int key)
+    private KeyMapping createKey(String id, int key)
     {
-        return KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        return KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key." + BBSMod.MOD_ID + "." + id,
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             key,
             "category." + BBSMod.MOD_ID + ".main"
         ));
     }
 
-    private KeyBinding createKeyMouse(String id, int button)
+    private KeyMapping createKeyMouse(String id, int button)
     {
-        return KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        return KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key." + BBSMod.MOD_ID + "." + id,
-            InputUtil.Type.MOUSE,
+            InputConstants.Type.MOUSE,
             button,
             "category." + BBSMod.MOD_ID + ".main"
         ));
     }
 
-    private void keyOpenModelBlockEditor(MinecraftClient mc)
+    private void keyOpenModelBlockEditor(Minecraft mc)
     {
-        ItemStack stack = mc.player.getEquippedStack(EquipmentSlot.MAINHAND);
+        ItemStack stack = mc.player.getItemBySlot(EquipmentSlot.MAINHAND);
         ModelBlockItemRenderer.Item item = modelBlockItemRenderer.get(stack);
         GunItemRenderer.Item gunItem = gunItemRenderer.get(stack);
 
@@ -927,7 +919,7 @@ public class BBSModClient implements ClientModInitializer
     {
         if (key.isEmpty())
         {
-            key = MinecraftClient.getInstance().options.language;
+            key = Minecraft.getInstance().options.languageCode;
         }
 
         return key;

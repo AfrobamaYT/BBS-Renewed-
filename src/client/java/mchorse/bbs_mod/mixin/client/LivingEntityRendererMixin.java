@@ -4,24 +4,23 @@ import mchorse.bbs_mod.forms.renderers.MobFormRenderer;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.world.entity.LivingEntity;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.Map;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin
 {
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/model/EntityModel;setAngles(Lnet/minecraft/entity/Entity;FFFFF)V", ordinal = 0, shift = At.Shift.AFTER))
-    public void onSetAngles(LivingEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo info)
+    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/EntityModel;setupAnim(Lnet/minecraft/world/entity/Entity;FFFFF)V", ordinal = 0, shift = At.Shift.AFTER))
+    public void onSetAngles(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, CallbackInfo info)
     {
         Pose pose = MobFormRenderer.getCurrentPose();
         Pose poseOverlay = MobFormRenderer.getCurrentPoseOverlay();
@@ -63,12 +62,12 @@ public abstract class LivingEntityRendererMixin
                     {
                         Transform transform = new Transform();
 
-                        transform.translate.x = value.pivotX;
-                        transform.translate.y = value.pivotY;
-                        transform.translate.z = value.pivotZ;
-                        transform.rotate.x = value.pitch;
-                        transform.rotate.y = value.yaw;
-                        transform.rotate.z = value.roll;
+                        transform.translate.x = value.x;
+                        transform.translate.y = value.y;
+                        transform.translate.z = value.z;
+                        transform.rotate.x = value.xRot;
+                        transform.rotate.y = value.yRot;
+                        transform.rotate.z = value.zRot;
                         transform.scale.x = value.xScale;
                         transform.scale.y = value.yScale;
                         transform.scale.z = value.zScale;
@@ -78,12 +77,12 @@ public abstract class LivingEntityRendererMixin
                          * here instead of reading the stale rotate triple. */
                         Vector3f rotation = poseTransform.getEulerRotation(new Vector3f());
 
-                        value.pivotX += poseTransform.translate.x;
-                        value.pivotY += poseTransform.translate.y;
-                        value.pivotZ += poseTransform.translate.z;
-                        value.pitch += rotation.x;
-                        value.yaw += rotation.y;
-                        value.roll += rotation.z;
+                        value.x += poseTransform.translate.x;
+                        value.y += poseTransform.translate.y;
+                        value.z += poseTransform.translate.z;
+                        value.xRot += rotation.x;
+                        value.yRot += rotation.y;
+                        value.zRot += rotation.z;
                         value.xScale += poseTransform.scale.x - 1F;
                         value.yScale += poseTransform.scale.y - 1F;
                         value.zScale += poseTransform.scale.z - 1F;
@@ -96,19 +95,19 @@ public abstract class LivingEntityRendererMixin
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    public void onRenderEnd(LivingEntity livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo info)
+    public void onRenderEnd(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, CallbackInfo info)
     {
         for (Map.Entry<ModelPart, Transform> entry : MobFormRenderer.getCache().entrySet())
         {
             Transform transform = entry.getValue();
             ModelPart value = entry.getKey();
 
-            value.pivotX = transform.translate.x;
-            value.pivotY = transform.translate.y;
-            value.pivotZ = transform.translate.z;
-            value.pitch = transform.rotate.x;
-            value.yaw = transform.rotate.y;
-            value.roll = transform.rotate.z;
+            value.x = transform.translate.x;
+            value.y = transform.translate.y;
+            value.z = transform.translate.z;
+            value.xRot = transform.rotate.x;
+            value.yRot = transform.rotate.y;
+            value.zRot = transform.rotate.z;
             value.xScale = transform.scale.x;
             value.yScale = transform.scale.y;
             value.zScale = transform.scale.z;

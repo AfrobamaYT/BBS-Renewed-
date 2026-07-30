@@ -219,7 +219,20 @@ loom {
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	/* ⛔ MOJANG-MAPPINGS STATT YARN (2026-07-30, P2 des 26.2-ports).
+	 *
+	 * Fabric unterstuetzt Yarn ab 26.1 nicht mehr offiziell. Der umzug laeuft darum HIER
+	 * auf 1.21.1, wo das spiel noch laeuft und jede messung gegenpruefbar ist — nicht
+	 * gleichzeitig mit dem versionssprung.
+	 *
+	 * ⛔ ZWEI HAELFTEN, UND EINE ALLEIN BRINGT NUR FEHLER: `migrateMappings` schreibt den
+	 * QUELLTEXT um, diese zeile den CLASSPATH. Nach dem quelltext-umzug allein meldete
+	 * javac 100x "Package net.minecraft.core ist nicht vorhanden" — die quellen sprachen
+	 * schon Mojang, die gemappte MC-abhaengigkeit noch Yarn.
+	 *
+	 * `yarn_mappings` in gradle.properties ist damit unbenutzt, bleibt aber vorerst
+	 * stehen: der zweig 1.21.1 baut weiter darueber. */
+	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
@@ -318,6 +331,17 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
+
+	/* ⛔ DECKEL HOCH, SOLANGE DER PORT LAEUFT (2026-07-30).
+	 *
+	 * javac bricht nach 100 fehlern ab und schreibt "100 Fehler". Das ist ein DECKEL, keine
+	 * messung — und wer ihn als umfang meldet, meldet einen zaehler statt einer zahl. Beim
+	 * mappings-umzug stand dort zweimal 100, einmal waren es in wahrheit 2 (nach dem
+	 * classpath-wechsel) und einmal deutlich mehr. Ohne diese zeile weiss man nie, welches
+	 * von beidem man gerade vor sich hat.
+	 *
+	 * Kostet im gruenen zustand nichts: wo keine fehler sind, gibt es nichts zu zaehlen. */
+	it.options.compilerArgs << "-Xmaxerrs" << "10000"
 }
 
 java {

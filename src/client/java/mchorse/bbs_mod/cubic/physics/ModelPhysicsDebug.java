@@ -1,6 +1,14 @@
 package mchorse.bbs_mod.cubic.physics;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
@@ -13,15 +21,7 @@ import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
 import mchorse.bbs_mod.settings.values.ui.ValuePhysicsDebug;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.BuiltBuffer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -66,7 +66,7 @@ public final class ModelPhysicsDebug
     {
     }
 
-    public static void render(MatrixStack stack, IModel model, MapType physicsData, int age, String selectedRoot)
+    public static void render(PoseStack stack, IModel model, MapType physicsData, int age, String selectedRoot)
     {
         ValuePhysicsDebug config = BBSSettings.physicsDebug;
 
@@ -93,11 +93,11 @@ public final class ModelPhysicsDebug
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        stack.push();
+        stack.pushPose();
 
         if (model instanceof BOBJModel)
         {
-            stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
         /* The wind is one field for the whole model: resolve its world direction and base magnitude once,
@@ -105,7 +105,7 @@ public final class ModelPhysicsDebug
          * overlay's local drawing space for each arrow. */
         Vector3f windDir = new Vector3f();
         float windMagnitude = config.wind.visible.get() ? PhysicsForces.prepareWind(compiled.wind(), 1F, windDir) : 0F;
-        Matrix4f matrix = new Matrix4f(stack.peek().getPositionMatrix());
+        Matrix4f matrix = new Matrix4f(stack.last().pose());
         Matrix4f inverse = windMagnitude > 0F ? new Matrix4f(matrix).invert() : null;
 
         for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
@@ -118,7 +118,7 @@ public final class ModelPhysicsDebug
             }
         }
 
-        stack.pop();
+        stack.popPose();
 
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
@@ -151,7 +151,7 @@ public final class ModelPhysicsDebug
      * {@code stencilMap.objectIndex} as its colour and {@code addPicking} then
      * claims that same id. The matrix matches the visual overlay's.
      */
-    public static void renderStencil(MatrixStack stack, IModel model, MapType physicsData, StencilMap stencilMap, Form form)
+    public static void renderStencil(PoseStack stack, IModel model, MapType physicsData, StencilMap stencilMap, Form form)
     {
         ValuePhysicsDebug config = BBSSettings.physicsDebug;
 
@@ -177,14 +177,14 @@ public final class ModelPhysicsDebug
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        stack.push();
+        stack.pushPose();
 
         if (model instanceof BOBJModel)
         {
-            stack.multiply(RotationAxis.POSITIVE_Y.rotation(MathUtils.PI));
+            stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
         {
@@ -201,21 +201,21 @@ public final class ModelPhysicsDebug
             }
         }
 
-        BuiltBuffer built = builder.endNullable();
+        MeshData built = builder.build();
 
         if (built != null)
         {
-            BufferRenderer.drawWithGlobalProgram(built);
+            BufferUploader.drawWithShader(built);
         }
 
-        stack.pop();
+        stack.popPose();
 
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
     }
 
     /** Draws one pickable marker — the element's own shape and size — encoding the next stencil id, and claims it for {@code bone}. */
-    private static void pickMarker(BufferBuilder builder, MatrixStack stack, StencilMap stencilMap, Form form, ValueDebugElement element, Vector3f p, float unit, String bone)
+    private static void pickMarker(BufferBuilder builder, PoseStack stack, StencilMap stencilMap, Form form, ValueDebugElement element, Vector3f p, float unit, String bone)
     {
         int id = stencilMap.objectIndex;
         float[] col = {(id & 0xFF) / 255F, (id >> 8 & 0xFF) / 255F, (id >> 16 & 0xFF) / 255F};
@@ -279,7 +279,7 @@ public final class ModelPhysicsDebug
         return pts;
     }
 
-    private static void drawChain(MatrixStack stack, IModel model, Map<String, PivotFrame> frames, ModelPhysicsCache.CompiledChain chain, String selectedRoot, ValuePhysicsDebug config)
+    private static void drawChain(PoseStack stack, IModel model, Map<String, PivotFrame> frames, ModelPhysicsCache.CompiledChain chain, String selectedRoot, ValuePhysicsDebug config)
     {
         List<Vector3f> pts = chainPoints(model, frames, chain);
 
@@ -306,17 +306,17 @@ public final class ModelPhysicsDebug
         boolean boxes = anyLine && thickness > 0F;
         boolean anyDot = rootDot || joints || tipDot || attachDot;
 
-        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Matrix4f matrix = stack.last().pose();
         float dash = unit * 0.12F;
 
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            BufferBuilder lines = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+            BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
             emitLines(lines, matrix, 0F, dash, pts, target, a, config);
 
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = lines.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = lines.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }
 
         if (!anyDot && !boxes)
@@ -325,7 +325,7 @@ public final class ModelPhysicsDebug
         }
 
         /* Solid geometry: the pinned root, joints, the simulated tip and the attach bone, plus the thick lines. */
-        BufferBuilder dots = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         if (boxes)
         {
@@ -359,7 +359,7 @@ public final class ModelPhysicsDebug
             DebugOverlay.marker(dots, stack, config.attach.shape.get(), target, unit * config.attach.size.get(), DebugOverlay.rgb(config.attach.color.get()), a);
         }
 
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = dots.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = dots.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
     /** The chain's wires plus the bridge to the attach bone — the bridge is always a dashed relationship line. */
@@ -388,7 +388,7 @@ public final class ModelPhysicsDebug
      * Each arrow points in the displayed-world wind direction. The pinned root (point 0) feels no wind, so
      * it is skipped. Length is proportional to the force, scaled to the chain's segment length.
      */
-    private static void drawWind(MatrixStack stack, IModel model, Map<String, PivotFrame> frames, ModelPhysicsCache.CompiledChain chain, String selectedRoot, ModelPhysicsConfig.Wind wind, Vector3f windDir, float windMagnitude, int age, Matrix4f matrix, Matrix4f inverse, ValuePhysicsDebug config)
+    private static void drawWind(PoseStack stack, IModel model, Map<String, PivotFrame> frames, ModelPhysicsCache.CompiledChain chain, String selectedRoot, ModelPhysicsConfig.Wind wind, Vector3f windDir, float windMagnitude, int age, Matrix4f matrix, Matrix4f inverse, ValuePhysicsDebug config)
     {
         List<Vector3f> pts = chainPoints(model, frames, chain);
 
@@ -406,7 +406,7 @@ public final class ModelPhysicsDebug
         Vector3f force = new Vector3f();
         List<Vector3f> tips = new ArrayList<>(pts.size());
 
-        BufferBuilder lines = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 1; i < pts.size(); i++)
         {
@@ -432,25 +432,25 @@ public final class ModelPhysicsDebug
             tips.add(end);
         }
 
-        BuiltBuffer builtLines = lines.endNullable();
+        MeshData builtLines = lines.build();
 
         if (builtLines != null)
         {
-            BufferRenderer.drawWithGlobalProgram(builtLines);
+            BufferUploader.drawWithShader(builtLines);
         }
 
-        BufferBuilder dots = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (Vector3f end : tips)
         {
             DebugOverlay.marker(dots, stack, ValueDebugElement.SHAPE_SPHERE, end, unit * 0.05F, color, a);
         }
 
-        BuiltBuffer builtDots = dots.endNullable();
+        MeshData builtDots = dots.build();
 
         if (builtDots != null)
         {
-            BufferRenderer.drawWithGlobalProgram(builtDots);
+            BufferUploader.drawWithShader(builtDots);
         }
     }
 

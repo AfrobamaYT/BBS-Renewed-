@@ -2,13 +2,10 @@
 package com.afrobama.bbstools.client.campreview;
 
 import com.afrobama.bbstools.client.util.CameraFrustumVisibility;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +36,11 @@ public final class CameraMeshToggleHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
-            if (mc.currentScreen != null) return;
+            if (mc.screen != null) return;
 
-            boolean down = InputUtil.isKeyPressed(mc.getWindow().getHandle(), GLFW.GLFW_KEY_K);
+            boolean down = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_K);
             if (down && !wasPressed)
             {
                 CameraFrustumVisibility.toggle();
@@ -62,10 +59,10 @@ public final class CameraMeshToggleHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.sendMessage(Text.literal(msg), false);
+                mc.player.displayClientMessage(Component.literal(msg), false);
             }
         }
         catch (Throwable ignored) {}

@@ -2,9 +2,7 @@
 package com.afrobama.bbstools.client.campreview;
 
 import mchorse.bbs_mod.film.replays.Replay;
-
-import net.minecraft.client.gl.SimpleFramebuffer;
-
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import java.util.UUID;
 
 /**
@@ -52,7 +50,7 @@ public final class CameraPreview
 
     /** Allocated lazily on the render thread so we don't touch GL state
      *  from the wrong thread. Null until first render fires. */
-    public SimpleFramebuffer framebuffer;
+    public TextureTarget framebuffer;
 
     /** UI window position (in screen-space pixels). Free to drag. */
     public int windowX = 8;
@@ -87,7 +85,7 @@ public final class CameraPreview
     {
         if (this.framebuffer != null)
         {
-            try { this.framebuffer.delete(); }
+            try { this.framebuffer.destroyBuffers(); }
             catch (Throwable ignored) {}
             this.framebuffer = null;
         }

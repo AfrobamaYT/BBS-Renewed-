@@ -38,15 +38,14 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-
-import net.minecraft.block.Blocks;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 public final class DeleteGrassCommand
 {
@@ -63,39 +62,39 @@ public final class DeleteGrassCommand
     {
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
         {
-            dispatcher.register(CommandManager.literal("bbstools")
-                .then(CommandManager.literal("deletegrass")
+            dispatcher.register(Commands.literal("bbstools")
+                .then(Commands.literal("deletegrass")
                     .executes(ctx -> doDelete(ctx.getSource(), DEFAULT_RADIUS))
-                    .then(CommandManager.argument("radius", DoubleArgumentType.doubleArg(1.0, 256.0))
+                    .then(Commands.argument("radius", DoubleArgumentType.doubleArg(1.0, 256.0))
                         .executes(ctx -> doDelete(ctx.getSource(),
                             DoubleArgumentType.getDouble(ctx, "radius"))))));
         });
     }
 
-    private static int doDelete(ServerCommandSource src, double radius)
+    private static int doDelete(CommandSourceStack src, double radius)
     {
-        ServerPlayerEntity player;
+        ServerPlayer player;
         try
         {
-            player = src.getPlayerOrThrow();
+            player = src.getPlayerOrException();
         }
         catch (Exception e)
         {
-            src.sendFeedback(() -> Text.literal(
+            src.sendSuccess(() -> Component.literal(
                 "§c[deletegrass] §fmust be run by a player §7(needs a position to sweep around)"), false);
             return 0;
         }
 
-        ServerWorld world = player.getServerWorld();
-        Vec3d pos = player.getPos();
-        BlockPos center = BlockPos.ofFloored(pos);
+        ServerLevel world = player.serverLevel();
+        Vec3 pos = player.position();
+        BlockPos center = BlockPos.containing(pos);
 
         /* Inclusive integer-radius bounds. Math.ceil so a fractional
          *  radius (e.g. 64.5) still includes the outermost slice — the
          *  user expects "within 64 blocks" to mean ≤64, not <64. */
         int r = (int) Math.ceil(radius);
-        BlockPos min = center.add(-r, -r, -r);
-        BlockPos max = center.add( r,  r,  r);
+        BlockPos min = center.offset(-r, -r, -r);
+        BlockPos max = center.offset( r,  r,  r);
 
         double rSq = radius * radius;
         int deleted = 0;
@@ -109,7 +108,7 @@ public final class DeleteGrassCommand
          *  the chunk's pending-update list. Without toImmutable the
          *  cached entry mutates with us and later updates target the
          *  wrong column (subtle, only manifests at large radii). */
-        for (BlockPos p : BlockPos.iterate(min, max))
+        for (BlockPos p : BlockPos.betweenClosed(min, max))
         {
             scanned++;
 
@@ -132,7 +131,7 @@ public final class DeleteGrassCommand
                  *  matches /fill's default. Skip flag 16 (NO_REDRAW) so
                  *  the chunk re-meshes immediately and the user sees the
                  *  cleared area without re-logging. */
-                world.setBlockState(p.toImmutable(), Blocks.AIR.getDefaultState(), 3);
+                world.setBlock(p.immutable(), Blocks.AIR.defaultBlockState(), 3);
                 deleted++;
             }
         }
@@ -149,10 +148,10 @@ public final class DeleteGrassCommand
         final long elapsedFinal = elapsedMs;
         final int rFinal = r;
 
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§a[deletegrass] §fcleared §a" + deletedFinal
             + "§f grass blocks within §a" + rFinal + "§f b"), true);
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§7  scanned " + scannedFinal + " positions in " + elapsedFinal + " ms"), false);
 
         BBSToolsMod.LOG.info("/bbstools deletegrass r={} deleted={} scanned={} elapsed={}ms",

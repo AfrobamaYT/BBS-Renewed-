@@ -10,9 +10,7 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
-
-import net.minecraft.client.render.GameRenderer;
-
+import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,7 +23,7 @@ public abstract class GameRendererTrackerSprintFovMixin
      *  have non-private static fields. */
 
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
-    private void bbstools$applyTrackerSprintFov(net.minecraft.client.render.Camera camera,
+    private void bbstools$applyTrackerSprintFov(net.minecraft.client.Camera camera,
         float tickDelta, boolean changingFov, CallbackInfoReturnable<Double> cir)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in GameRenderer
@@ -35,7 +33,7 @@ public abstract class GameRendererTrackerSprintFovMixin
          * mitgetauscht. */
         Object neu = MixinBruecke.rufe("SprintFovTrackerLogik", "apply",
             com.afrobama.bbstools.client.tracker.SprintFovState.MANUAL_SPRINT,
-            net.minecraft.client.MinecraftClient.getInstance(), tickDelta, cir.getReturnValue());
+            net.minecraft.client.Minecraft.getInstance(), tickDelta, cir.getReturnValue());
 
         if (neu instanceof Double) cir.setReturnValue((Double) neu);
     }

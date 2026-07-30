@@ -5,10 +5,8 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import java.util.List;
 
 /**
@@ -31,7 +29,7 @@ public final class BBSToolsOverlayHelper
      *  reserve (0.35F-0.6F is the existing convention). */
     public static void open(UIOverlayPanel panel, int width, float heightPct)
     {
-        panel.onClose((event) -> MinecraftClient.getInstance().setScreen(null));
+        panel.onClose((event) -> Minecraft.getInstance().setScreen(null));
 
         UIScreen.open(new UIBaseMenu()
         {
@@ -55,7 +53,7 @@ public final class BBSToolsOverlayHelper
      *  {@code getOpened()} copies in each overlay. */
     public static <T extends UIOverlayPanel> T getOpened(Class<T> cls)
     {
-        Screen currentScreen = MinecraftClient.getInstance().currentScreen;
+        Screen currentScreen = Minecraft.getInstance().screen;
         if (!(currentScreen instanceof UIScreen uiScreen)) return null;
         List<T> panels = uiScreen.getMenu().getRoot().getChildren(cls);
         return panels.isEmpty() ? null : panels.get(0);

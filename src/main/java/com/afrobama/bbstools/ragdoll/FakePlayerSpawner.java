@@ -4,13 +4,11 @@
 package com.afrobama.bbstools.ragdoll;
 
 import com.mojang.authlib.GameProfile;
-
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Spawns a transient {@link ServerPlayerEntity} backed by BBS's
+ * Spawns a transient {@link ServerPlayer} backed by BBS's
  * {@link mchorse.bbs_mod.actions.SuperFakePlayerNetworkHandler} stub
  * so PhysicsMod's player-ragdoll path (correct arms-down humanoid
  * pose) kicks in on the next death hook.
@@ -36,7 +34,7 @@ import java.util.UUID;
  *   <li>Add the player via {@code world.spawnEntity} (in 1.21 this
  *       dispatches to {@code ServerWorld#addPlayer} for
  *       {@code ServerPlayerEntity} subclasses),</li>
- *   <li>Manually broadcast a {@link PlayerListS2CPacket} so every
+ *   <li>Manually broadcast a {@link ClientboundPlayerInfoUpdatePacket} so every
  *       client adds the profile to their player list — this is what
  *       wires the {@code PlayerEntityRenderer} skin pipeline (even
  *       though we override the texture via
@@ -61,7 +59,7 @@ public final class FakePlayerSpawner
     {
     }
 
-    public static ServerPlayerEntity spawn(ServerWorld world,
+    public static ServerPlayer spawn(ServerLevel world,
                                            double x,
                                            double y,
                                            double z,
@@ -82,14 +80,14 @@ public final class FakePlayerSpawner
         safeName = safeName + spawnCounter;
 
         GameProfile profile = new GameProfile(UUID.randomUUID(), safeName);
-        SyncedClientOptions options = SyncedClientOptions.createDefault();
+        ClientInformation options = ClientInformation.createDefault();
 
         /* Step 1: construct the player. Failure here means signature
          *  mismatch or BBS class missing — bail cleanly. */
-        ServerPlayerEntity player;
+        ServerPlayer player;
         try
         {
-            player = new ServerPlayerEntity(server, world, profile, options);
+            player = new ServerPlayer(server, world, profile, options);
             LOG.info("Constructed ServerPlayerEntity '{}' OK", safeName);
         }
         catch (Throwable t)
@@ -98,9 +96,9 @@ public final class FakePlayerSpawner
             return null;
         }
 
-        player.refreshPositionAndAngles(x, y, z, yaw, pitch);
-        player.setHeadYaw(yaw);
-        player.setBodyYaw(yaw);
+        player.moveTo(x, y, z, yaw, pitch);
+        player.setYHeadRot(yaw);
+        player.setYBodyRot(yaw);
 
         /* Step 2: install BBS's no-op network handler. This is what
          *  every other fake-player consumer in BBS uses. If we leave
@@ -108,7 +106,7 @@ public final class FakePlayerSpawner
          *  packet send NPEs. */
         try
         {
-            player.networkHandler = new mchorse.bbs_mod.actions.SuperFakePlayerNetworkHandler(player);
+            player.connection = new mchorse.bbs_mod.actions.SuperFakePlayerNetworkHandler(player);
             LOG.info("Step 2/4: SuperFakePlayerNetworkHandler installed");
         }
         catch (Throwable t)
@@ -123,7 +121,7 @@ public final class FakePlayerSpawner
         boolean spawnedOk;
         try
         {
-            spawnedOk = world.spawnEntity(player);
+            spawnedOk = world.addFreshEntity(player);
             LOG.info("Step 3/4: world.spawnEntity returned {}", spawnedOk);
         }
         catch (Throwable t)
@@ -145,11 +143,11 @@ public final class FakePlayerSpawner
          *  rendering instead. */
         try
         {
-            PlayerListS2CPacket addPacket = new PlayerListS2CPacket(
-                EnumSet.of(PlayerListS2CPacket.Action.ADD_PLAYER),
+            ClientboundPlayerInfoUpdatePacket addPacket = new ClientboundPlayerInfoUpdatePacket(
+                EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER),
                 List.of(player)
             );
-            server.getPlayerManager().sendToAll(addPacket);
+            server.getPlayerList().broadcastAll(addPacket);
             LOG.info("Step 4a/5: PlayerListS2CPacket(ADD_PLAYER) broadcast");
         }
         catch (Throwable t)
@@ -165,7 +163,7 @@ public final class FakePlayerSpawner
          *  the chunk-loading bookkeeping. */
         try
         {
-            world.onPlayerConnected(player);
+            world.addNewPlayer(player);
             LOG.info("Step 4b/5: world.onPlayerConnected wired up");
         }
         catch (Throwable t)
@@ -185,18 +183,18 @@ public final class FakePlayerSpawner
          *  fires, leaving no ragdoll. THIS is the missing link. */
         try
         {
-            net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket spawnPacket =
-                new net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket(
+            net.minecraft.network.protocol.game.ClientboundAddEntityPacket spawnPacket =
+                new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(
                     player.getId(),
-                    player.getUuid(),
+                    player.getUUID(),
                     player.getX(), player.getY(), player.getZ(),
-                    player.getPitch(),
-                    player.getYaw(),
+                    player.getXRot(),
+                    player.getYRot(),
                     player.getType(),
                     0,
-                    player.getVelocity(),
-                    player.getHeadYaw());
-            server.getPlayerManager().sendToAll(spawnPacket);
+                    player.getDeltaMovement(),
+                    player.getYHeadRot());
+            server.getPlayerList().broadcastAll(spawnPacket);
             LOG.info("Step 5/5: EntitySpawnS2CPacket broadcast — fake player now visible to clients");
         }
         catch (Throwable t)
@@ -212,7 +210,7 @@ public final class FakePlayerSpawner
          *    differently. */
         try
         {
-            player.changeGameMode(net.minecraft.world.GameMode.SURVIVAL);
+            player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         }
         catch (Throwable t)
         {
@@ -230,7 +228,7 @@ public final class FakePlayerSpawner
      * client's respawn-confirm packet). We force the removal so the
      * dead-pose body doesn't linger.
      */
-    public static void discardSilently(ServerPlayerEntity player)
+    public static void discardSilently(ServerPlayer player)
     {
         if (player == null) return;
         try
@@ -244,14 +242,14 @@ public final class FakePlayerSpawner
             {
                 if (player.getServer() != null)
                 {
-                    net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket removePacket =
-                        new net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket(List.of(player.getUuid()));
-                    player.getServer().getPlayerManager().sendToAll(removePacket);
+                    net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket removePacket =
+                        new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
+                    player.getServer().getPlayerList().broadcastAll(removePacket);
                 }
             }
             catch (Throwable t)
             {
-                LOG.debug("Could not broadcast PlayerRemoveS2CPacket for {}: {}", player.getUuid(), t.toString());
+                LOG.debug("Could not broadcast PlayerRemoveS2CPacket for {}: {}", player.getUUID(), t.toString());
             }
 
             player.discard();

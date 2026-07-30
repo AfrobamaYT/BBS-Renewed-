@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.staff;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,14 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.minecraft.client.texture.NativeImage;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Client-side registry that maps an entity UUID to a custom texture loaded
@@ -31,14 +29,14 @@ public final class RagdollTextureRegistry
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbs/ragdoll-texture");
 
-    private static final Map<UUID, Identifier> TEXTURES = new ConcurrentHashMap<>();
-    private static final Map<UUID, NativeImageBackedTexture> DYNAMIC = new ConcurrentHashMap<>();
+    private static final Map<UUID, ResourceLocation> TEXTURES = new ConcurrentHashMap<>();
+    private static final Map<UUID, DynamicTexture> DYNAMIC = new ConcurrentHashMap<>();
 
     private RagdollTextureRegistry()
     {
     }
 
-    public static Identifier get(UUID uuid)
+    public static ResourceLocation get(UUID uuid)
     {
         return uuid == null ? null : TEXTURES.get(uuid);
     }
@@ -55,7 +53,7 @@ public final class RagdollTextureRegistry
 
     public static void clearAll()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (mc == null)
         {
@@ -71,7 +69,7 @@ public final class RagdollTextureRegistry
     {
         int n = DYNAMIC.size();
 
-        for (Map.Entry<UUID, NativeImageBackedTexture> e : DYNAMIC.entrySet())
+        for (Map.Entry<UUID, DynamicTexture> e : DYNAMIC.entrySet())
         {
             try
             {
@@ -95,13 +93,13 @@ public final class RagdollTextureRegistry
         }
 
         TEXTURES.remove(uuid);
-        NativeImageBackedTexture tex = DYNAMIC.remove(uuid);
+        DynamicTexture tex = DYNAMIC.remove(uuid);
 
         if (tex != null)
         {
             try
             {
-                MinecraftClient mc = MinecraftClient.getInstance();
+                Minecraft mc = Minecraft.getInstance();
 
                 if (mc != null)
                 {
@@ -142,7 +140,7 @@ public final class RagdollTextureRegistry
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (mc == null)
         {
@@ -168,7 +166,7 @@ public final class RagdollTextureRegistry
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (mc == null)
         {
@@ -196,12 +194,12 @@ public final class RagdollTextureRegistry
                 img = NativeImage.read(in);
             }
 
-            NativeImageBackedTexture tex = new NativeImageBackedTexture(img);
+            DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
-            Identifier id = Identifier.of("bbs", texId);
-            MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("bbs", texId);
+            Minecraft.getInstance().getTextureManager().register(id, tex);
 
-            NativeImageBackedTexture prev = DYNAMIC.put(uuid, tex);
+            DynamicTexture prev = DYNAMIC.put(uuid, tex);
 
             if (prev != null)
             {
@@ -243,12 +241,12 @@ public final class RagdollTextureRegistry
                 img = NativeImage.read(in);
             }
 
-            NativeImageBackedTexture tex = new NativeImageBackedTexture(img);
+            DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
-            Identifier id = Identifier.of("bbs", texId);
-            MinecraftClient.getInstance().getTextureManager().registerTexture(id, tex);
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("bbs", texId);
+            Minecraft.getInstance().getTextureManager().register(id, tex);
 
-            NativeImageBackedTexture prev = DYNAMIC.put(uuid, tex);
+            DynamicTexture prev = DYNAMIC.put(uuid, tex);
 
             if (prev != null)
             {
@@ -299,7 +297,7 @@ public final class RagdollTextureRegistry
             rel = rel.substring(1);
         }
 
-        Path gameDir = MinecraftClient.getInstance().runDirectory.toPath();
+        Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
 
         return gameDir.resolve("config").resolve("bbs").resolve(source).resolve(rel);
     }

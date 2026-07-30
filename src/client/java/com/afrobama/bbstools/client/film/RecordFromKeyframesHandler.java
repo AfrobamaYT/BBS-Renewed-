@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.film;
 
 import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.film.Films;
 import mchorse.bbs_mod.film.Recorder;
@@ -13,11 +13,8 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.util.InputUtil;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,10 +65,10 @@ public final class RecordFromKeyframesHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
 
-            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getHandle(), BBSToolsKeys.RECORD_FROM_KEYFRAMES);
+            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getWindow(), BBSToolsKeys.RECORD_FROM_KEYFRAMES);
 
             if (nowPressed && !wasPressed)
             {
@@ -92,7 +89,7 @@ public final class RecordFromKeyframesHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputUtil.isKeyPressed(handle, k)) return false;
+            if (!InputConstants.isKeyDown(handle, k)) return false;
         }
         return true;
     }
@@ -101,7 +98,7 @@ public final class RecordFromKeyframesHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             /* Match vanilla V (KeyBinding.wasPressed) semantics — MC
              *  suppresses vanilla key bindings while any Screen is
@@ -109,7 +106,7 @@ public final class RecordFromKeyframesHandler
              *  same rule manually, otherwise the user can trigger an
              *  accidental recording while typing in an editor textbox
              *  or scrubbing the timeline. */
-            if (mc.currentScreen != null)
+            if (mc.screen != null)
             {
                 return;
             }
@@ -168,12 +165,12 @@ public final class RecordFromKeyframesHandler
              *  player's freshly-snapped position, so the first sample
              *  it captures matches the existing keyframe values at
              *  the cursor tick — seamless continuation. */
-            ClientPlayerEntity player = mc.player;
+            LocalPlayer player = mc.player;
             int teleported = teleportPlayerToKeyframes(player, replay.keyframes, cursor);
 
             /* Close editor screen so we're in-world for the recording —
              *  same behaviour as the in-editor "outside" group does. */
-            if (mc.currentScreen != null)
+            if (mc.screen != null)
             {
                 mc.setScreen(null);
             }
@@ -197,17 +194,17 @@ public final class RecordFromKeyframesHandler
      *
      * @return number of channels that contributed a teleport value
      */
-    private static int teleportPlayerToKeyframes(ClientPlayerEntity player, ReplayKeyframes k, int tick)
+    private static int teleportPlayerToKeyframes(LocalPlayer player, ReplayKeyframes k, int tick)
     {
         if (player == null || k == null) return 0;
 
         double x = player.getX();
         double y = player.getY();
         double z = player.getZ();
-        float yaw = player.getYaw();
-        float pitch = player.getPitch();
-        float headYaw = player.headYaw;
-        float bodyYaw = player.bodyYaw;
+        float yaw = player.getYRot();
+        float pitch = player.getXRot();
+        float headYaw = player.yHeadRot;
+        float bodyYaw = player.yBodyRot;
 
         int hits = 0;
 
@@ -235,13 +232,13 @@ public final class RecordFromKeyframesHandler
         /* refreshPositionAndAngles updates head/body yaw to the
          *  passed yaw — override those afterwards so independent
          *  head/body channels survive. */
-        player.refreshPositionAndAngles(x, y, z, yaw, pitch);
-        player.headYaw = headYaw;
-        player.bodyYaw = bodyYaw;
-        player.prevHeadYaw = headYaw;
-        player.prevBodyYaw = bodyYaw;
-        player.prevYaw = yaw;
-        player.prevPitch = pitch;
+        player.moveTo(x, y, z, yaw, pitch);
+        player.yHeadRot = headYaw;
+        player.yBodyRot = bodyYaw;
+        player.yHeadRotO = headYaw;
+        player.yBodyRotO = bodyYaw;
+        player.yRotO = yaw;
+        player.xRotO = pitch;
 
         return hits;
     }

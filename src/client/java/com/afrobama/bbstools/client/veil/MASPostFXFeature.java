@@ -6,9 +6,7 @@ package com.afrobama.bbstools.client.veil;
 
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.post.PostProcessingManager;
-
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class MASPostFXFeature
 {
     private final Logger log;
-    private final Identifier pipelineId;
+    private final ResourceLocation pipelineId;
     private final String displayName;
 
     /**
@@ -35,12 +33,12 @@ public class MASPostFXFeature
      */
     public MASPostFXFeature(String namespace, String path, String displayName)
     {
-        this.pipelineId = Identifier.of(namespace, path);
+        this.pipelineId = ResourceLocation.fromNamespaceAndPath(namespace, path);
         this.displayName = displayName;
         this.log = LoggerFactory.getLogger("mas/postfx/" + path.replace('/', '_'));
     }
 
-    public Identifier id() { return this.pipelineId; }
+    public ResourceLocation id() { return this.pipelineId; }
     public String displayName() { return this.displayName; }
 
     public boolean isActive()

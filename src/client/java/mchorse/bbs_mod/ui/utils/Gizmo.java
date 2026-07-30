@@ -1,7 +1,15 @@
 package mchorse.bbs_mod.ui.utils;
 
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -19,19 +27,10 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -436,12 +435,12 @@ public class Gizmo
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         this.sphereHighlight.setup(Link.bbs("gizmo_sphere_highlight"));
 
-        int w = mc.getWindow().getWidth();
-        int h = mc.getWindow().getHeight();
+        int w = mc.getWindow().getScreenWidth();
+        int h = mc.getWindow().getScreenHeight();
         Texture texture = this.sphereHighlight.getFramebuffer().getMainTexture();
 
         if (texture.width != w || texture.height != h)
@@ -454,23 +453,23 @@ public class Gizmo
         RenderSystem.disableDepthTest();
         RenderSystem.setShaderColor(STENCIL_TRACKBALL / 255F, 0F, 0F, 1F);
         this.rotateSphereVbo.bind();
-        this.rotateSphereVbo.draw(this.lastSphereMatrix, projection, GameRenderer.getPositionColorProgram());
+        this.rotateSphereVbo.drawWithShader(this.lastSphereMatrix, projection, GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.enableDepthTest();
 
         this.sphereHighlight.unbind();
-        mc.getFramebuffer().beginWrite(true);
+        mc.getMainRenderTarget().bindWrite(true);
 
-        ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
-        GlUniform target = previewProgram.getUniform("Target");
+        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)
         {
             target.set(STENCIL_TRACKBALL);
         }
 
-        GlUniform highlight = previewProgram.getUniform("HighlightColor");
+        Uniform highlight = previewProgram.getUniform("HighlightColor");
 
         if (highlight != null)
         {
@@ -611,18 +610,18 @@ public class Gizmo
         this.currentTransform = null;
     }
 
-    public void render(MatrixStack stack)
+    public void render(PoseStack stack)
     {
         if (BBSRendering.isIrisShadowPass())
         {
             return;
         }
 
-        stack.push();
+        stack.pushPose();
         MatrixStackUtils.scaleBack(stack);
         this.captureRenderMatrix(stack);
         this.drawGizmo(stack);
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -632,17 +631,17 @@ public class Gizmo
      * (the rotation sphere, the sweep pie, the view ring) composite through the
      * UI pipeline instead of the world shaders, which did not blend them.
      */
-    public void captureVisual(MatrixStack stack)
+    public void captureVisual(PoseStack stack)
     {
         if (BBSRendering.isIrisShadowPass())
         {
             return;
         }
 
-        stack.push();
+        stack.pushPose();
         MatrixStackUtils.scaleBack(stack);
         this.captureRenderMatrix(stack);
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -675,28 +674,28 @@ public class Gizmo
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         this.setViewportScale(context.menu.height / (float) area.h);
 
         context.batcher.flush();
 
         MatrixStackUtils.cacheMatrices();
-        RenderSystem.setProjectionMatrix(projection, VertexSorter.BY_Z);
+        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
 
         /* Map the UI area to a framebuffer-pixel viewport, exactly as the form
          * editor's model pass does, so the gizmo renders into the preview and is
          * clipped to it by the view frustum. */
         UIUtils.viewportArea(area);
 
-        MatrixStack stack = new MatrixStack();
+        PoseStack stack = new PoseStack();
         MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
 
         RenderSystem.disableDepthTest();
         this.drawGizmo(stack);
         RenderSystem.enableDepthTest();
 
-        RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
+        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
         MatrixStackUtils.restoreMatrices();
 
         /* Leave the depth state the UI expects after a 3D interlude (always-pass),
@@ -704,7 +703,7 @@ public class Gizmo
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
     }
 
-    private void drawGizmo(MatrixStack stack)
+    private void drawGizmo(PoseStack stack)
     {
         this.applyBakedRotation(stack);
 
@@ -718,21 +717,21 @@ public class Gizmo
              * pixel size for hover/pick distance checks. */
             this.lastSphereLocalRadius = 0.22F * BBSSettings.axesScale.get() * distanceScale;
 
-            stack.push();
+            stack.pushPose();
             stack.scale(distanceScale, distanceScale, distanceScale);
             this.lastSphereMatrix.set(modelView(stack));
             this.hasLastSphereMatrix = true;
             this.drawOccludedGizmo(stack);
-            stack.pop();
+            stack.popPose();
         }
         else
         {
             float distanceScale = this.getAxesDistanceScale(stack);
 
-            stack.push();
+            stack.pushPose();
             stack.scale(distanceScale, distanceScale, distanceScale);
             Draw.coolerAxes(stack, 0.25F, 0.008F);
-            stack.pop();
+            stack.popPose();
         }
 
         this.drawInfiniteLine(stack);
@@ -750,7 +749,7 @@ public class Gizmo
      * among themselves. The translucent sweep pie stays on top of everything and
      * writes no depth, so it can't punch holes in the handles.
      */
-    private void drawOccludedGizmo(MatrixStack stack)
+    private void drawOccludedGizmo(PoseStack stack)
     {
         float opacity = BBSSettings.gizmoOpacity.get();
 
@@ -790,7 +789,7 @@ public class Gizmo
      * of the handle pass so it can be composited last, on top of and without
      * disturbing the depth-sorted handles.
      */
-    private void drawRotatePieIfActive(MatrixStack stack)
+    private void drawRotatePieIfActive(PoseStack stack)
     {
         UIPropTransform transform = this.currentTransform;
 
@@ -826,7 +825,7 @@ public class Gizmo
      * and — being in the gizmo's own (distance-scaled) frame — its radius rides the
      * ring at any FOV.
      */
-    private void drawViewPie(MatrixStack stack)
+    private void drawViewPie(PoseStack stack)
     {
         float sweepRad = this.currentTransform.getViewScreenSweepRad();
 
@@ -835,7 +834,7 @@ public class Gizmo
             return;
         }
 
-        Matrix4f mat = stack.peek().getPositionMatrix();
+        Matrix4f mat = stack.last().pose();
         Matrix3f basis = mat.get3x3(new Matrix3f());
 
         if (Math.abs(basis.determinant()) < 1.0E-8F)
@@ -868,26 +867,26 @@ public class Gizmo
         Vector3f p1 = new Vector3f();
         Vector3f p2 = new Vector3f();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 0; i < segments; i++)
         {
             this.pieRim(p1, right, down, startRad + step * i, radius);
             this.pieRim(p2, right, down, startRad + step * (i + 1), radius);
 
-            builder.vertex(mat, 0, 0, 0).color(r, g, b, 0.25F);
-            builder.vertex(mat, p1.x, p1.y, p1.z).color(r, g, b, 0.25F);
-            builder.vertex(mat, p2.x, p2.y, p2.z).color(r, g, b, 0.25F);
+            builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, 0.25F);
+            builder.addVertex(mat, p1.x, p1.y, p1.z).setColor(r, g, b, 0.25F);
+            builder.addVertex(mat, p2.x, p2.y, p2.z).setColor(r, g, b, 0.25F);
         }
 
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         /* Bright radial edges at the grab angle and the leading angle, like the axis pie. */
         float thickness = 0.005F * scale;
-        builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         this.pieEdge(builder, mat, right, down, startRad, radius, thickness, r, g, b);
         this.pieEdge(builder, mat, right, down, startRad + sweepRad, radius, thickness, r, g, b);
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
@@ -913,25 +912,25 @@ public class Gizmo
         this.pieRim(rim, right, down, angle, radius);
         this.pieRim(perp, right, down, angle + (float) (Math.PI / 2D), thickness);
 
-        builder.vertex(mat, perp.x, perp.y, perp.z).color(r, g, b, 1F);
-        builder.vertex(mat, -perp.x, -perp.y, -perp.z).color(r, g, b, 1F);
-        builder.vertex(mat, rim.x - perp.x, rim.y - perp.y, rim.z - perp.z).color(r, g, b, 1F);
+        builder.addVertex(mat, perp.x, perp.y, perp.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, -perp.x, -perp.y, -perp.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, rim.x - perp.x, rim.y - perp.y, rim.z - perp.z).setColor(r, g, b, 1F);
 
-        builder.vertex(mat, perp.x, perp.y, perp.z).color(r, g, b, 1F);
-        builder.vertex(mat, rim.x - perp.x, rim.y - perp.y, rim.z - perp.z).color(r, g, b, 1F);
-        builder.vertex(mat, rim.x + perp.x, rim.y + perp.y, rim.z + perp.z).color(r, g, b, 1F);
+        builder.addVertex(mat, perp.x, perp.y, perp.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, rim.x - perp.x, rim.y - perp.y, rim.z - perp.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, rim.x + perp.x, rim.y + perp.y, rim.z + perp.z).setColor(r, g, b, 1F);
     }
 
-    private float getAxesDistanceScale(MatrixStack stack)
+    private float getAxesDistanceScale(PoseStack stack)
     {
-        Vector3f cameraRelative = stack.peek().getPositionMatrix().getTranslation(new Vector3f());
+        Vector3f cameraRelative = stack.last().pose().getTranslation(new Vector3f());
         Matrix4f proj = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
         float fov = proj.m33() == 0 ? (float) (2.0 * Math.atan(1.0 / proj.m11())) : BBSSettings.getFov();
 
         return BBSSettings.getAxesDistanceScale(cameraRelative.length(), fov) * this.viewportScale;
     }
 
-    private void drawInfiniteLine(MatrixStack stack)
+    private void drawInfiniteLine(PoseStack stack)
     {
         int debugIndex = this.index;
 
@@ -945,7 +944,7 @@ public class Gizmo
             return;
         }
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         float size = 10000F;
         float t = 0.005F;
@@ -967,7 +966,7 @@ public class Gizmo
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
     }
 
@@ -991,15 +990,15 @@ public class Gizmo
             float radius = 0.22F * scale;
             float thicknessRing = 0.02F * scale * thickness;
 
-            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-            Draw.arc3D(builder, new MatrixStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
+            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            Draw.arc3D(builder, new PoseStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
             this.rotateRingVbo.bind();
-            this.rotateRingVbo.upload(builder.end());
+            this.rotateRingVbo.upload(builder.buildOrThrow());
 
-            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-            Draw.sphere(builder, new MatrixStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
+            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            Draw.sphere(builder, new PoseStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
             this.rotateSphereVbo.bind();
-            this.rotateSphereVbo.upload(builder.end());
+            this.rotateSphereVbo.upload(builder.buildOrThrow());
 
             VertexBuffer.unbind();
 
@@ -1013,12 +1012,12 @@ public class Gizmo
      * in {@link RenderSystem#getModelViewMatrix()} themselves. In the form editor
      * that matrix is identity (the camera lives in the stack), but in the film
      * editor it carries the world camera, so omitting it left the rings adrift. */
-    private static Matrix4f modelView(MatrixStack stack)
+    private static Matrix4f modelView(PoseStack stack)
     {
-        return new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.peek().getPositionMatrix());
+        return new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose());
     }
 
-    private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, int color)
+    private void drawCachedRing(PoseStack stack, VertexBuffer vbo, Axis axis, int color)
     {
         float alpha = Colors.getA(color);
 
@@ -1030,20 +1029,20 @@ public class Gizmo
         this.drawCachedRing(stack, vbo, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
     }
 
-    private void drawCachedRing(MatrixStack stack, VertexBuffer vbo, Axis axis, float r, float g, float b, float a)
+    private void drawCachedRing(PoseStack stack, VertexBuffer vbo, Axis axis, float r, float g, float b, float a)
     {
-        stack.push();
+        stack.pushPose();
         
-        if (axis == Axis.X) stack.multiply(RotationAxis.POSITIVE_Z.rotation(MathUtils.PI / 2F));
-        if (axis == Axis.Z) stack.multiply(RotationAxis.POSITIVE_X.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
 
         RenderSystem.setShaderColor(r, g, b, a);
         vbo.bind();
-        vbo.draw(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorProgram());
+        vbo.drawWithShader(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -1054,9 +1053,9 @@ public class Gizmo
      * half. Writes the result into {@code out}; returns {@code false} only in
      * the degenerate case where the whole ring is hidden.
      */
-    private boolean visibleRingArc(MatrixStack stack, Axis axis, float radius, Vector2f out)
+    private boolean visibleRingArc(PoseStack stack, Axis axis, float radius, Vector2f out)
     {
-        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Matrix4f matrix = stack.last().pose();
 
         /* Camera position expressed in the gizmo's local frame (the inverse of
          * the model-view applied to the view-space origin), as the billboard
@@ -1139,7 +1138,7 @@ public class Gizmo
      * so it reads like the rings in a typical 3D gizmo. Immediate mode, since the
      * visible arc changes with the camera every frame.
      */
-    private void drawOccludedRing(MatrixStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
+    private void drawOccludedRing(PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
     {
         Vector2f arc = new Vector2f();
 
@@ -1148,17 +1147,17 @@ public class Gizmo
             return;
         }
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
-    private void drawCachedRingBillboard(MatrixStack stack, VertexBuffer vbo, float r, float g, float b, float a)
+    private void drawCachedRingBillboard(PoseStack stack, VertexBuffer vbo, float r, float g, float b, float a)
     {
-        stack.push();
+        stack.pushPose();
 
-        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Matrix4f matrix = stack.last().pose();
         Vector3f toCamera = matrix.getTranslation(new Vector3f()).negate();
         Matrix3f basis = matrix.get3x3(new Matrix3f());
 
@@ -1170,21 +1169,21 @@ public class Gizmo
         if (toCamera.lengthSquared() > 1.0E-8F)
         {
             toCamera.normalize();
-            stack.multiply(new Quaternionf().rotationTo(0F, 1F, 0F, toCamera.x, toCamera.y, toCamera.z));
+            stack.mulPose(new Quaternionf().rotationTo(0F, 1F, 0F, toCamera.x, toCamera.y, toCamera.z));
         }
 
         stack.scale(VIEW_RING_SCALE, VIEW_RING_SCALE, VIEW_RING_SCALE);
 
         RenderSystem.setShaderColor(r, g, b, a);
         vbo.bind();
-        vbo.draw(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorProgram());
+        vbo.drawWithShader(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
-        stack.pop();
+        stack.popPose();
     }
 
-    private void drawRotatePie(MatrixStack stack, Axis axis)
+    private void drawRotatePie(PoseStack stack, Axis axis)
     {
         if (this.currentTransform == null || this.currentTransform.getDrag() == null) return;
 
@@ -1245,10 +1244,10 @@ public class Gizmo
         float startDeg = MathUtils.toDeg((float) Math.atan2(pz, px));
         float sweepDeg = this.currentTransform.getAccumulatedRotateDeg() * sweepDir;
 
-        stack.push();
+        stack.pushPose();
         
-        if (axis == Axis.X) stack.multiply(RotationAxis.POSITIVE_Z.rotation(MathUtils.PI / 2F));
-        if (axis == Axis.Z) stack.multiply(RotationAxis.POSITIVE_X.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
+        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
 
         int color = axis == Axis.X ? Colors.RED : (axis == Axis.Y ? Colors.GREEN : Colors.BLUE);
         float r = Colors.getR(color);
@@ -1256,7 +1255,7 @@ public class Gizmo
         float b = Colors.getB(color);
         float a = 0.25F;
 
-        Matrix4f mat = stack.peek().getPositionMatrix();
+        Matrix4f mat = stack.last().pose();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -1264,7 +1263,7 @@ public class Gizmo
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
         RenderSystem.disableCull();
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         int segments = Math.max(12, (int) (Math.abs(sweepDeg) / 360F * 64F));
         float step = sweepDeg / segments;
@@ -1279,24 +1278,24 @@ public class Gizmo
             float x2 = (float) Math.cos(a2) * radius;
             float z2 = (float) Math.sin(a2) * radius;
 
-            builder.vertex(mat, 0, 0, 0).color(r, g, b, a);
+            builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, a);
             
             if (sweepDeg > 0)
             {
-                builder.vertex(mat, x1, 0, z1).color(r, g, b, a);
-                builder.vertex(mat, x2, 0, z2).color(r, g, b, a);
+                builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
+                builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
             }
             else
             {
-                builder.vertex(mat, x2, 0, z2).color(r, g, b, a);
-                builder.vertex(mat, x1, 0, z1).color(r, g, b, a);
+                builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
+                builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
             }
         }
         
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         float lineThickness = 0.005F * scale;
-        builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         
         float endDeg = startDeg + sweepDeg;
         
@@ -1307,30 +1306,30 @@ public class Gizmo
         
         Vector3f p1 = new Vector3f(-sz, 0, sx).normalize().mul(lineThickness);
         
-        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F);
-        builder.vertex(mat, -p1.x, 0, -p1.z).color(r, g, b, 1F);
-        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F);
+        builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, -p1.x, 0, -p1.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
         
-        builder.vertex(mat, p1.x, 0, p1.z).color(r, g, b, 1F);
-        builder.vertex(mat, sx - p1.x, 0, sz - p1.z).color(r, g, b, 1F);
-        builder.vertex(mat, sx + p1.x, 0, sz + p1.z).color(r, g, b, 1F);
+        builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, sx + p1.x, 0, sz + p1.z).setColor(r, g, b, 1F);
         
         Vector3f p2 = new Vector3f(-ez, 0, ex).normalize().mul(lineThickness);
-        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F);
-        builder.vertex(mat, -p2.x, 0, -p2.z).color(r, g, b, 1F);
-        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F);
+        builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, -p2.x, 0, -p2.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
         
-        builder.vertex(mat, p2.x, 0, p2.z).color(r, g, b, 1F);
-        builder.vertex(mat, ex - p2.x, 0, ez - p2.z).color(r, g, b, 1F);
-        builder.vertex(mat, ex + p2.x, 0, ez + p2.z).color(r, g, b, 1F);
+        builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
+        builder.addVertex(mat, ex + p2.x, 0, ez + p2.z).setColor(r, g, b, 1F);
 
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         RenderSystem.enableCull();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.disableBlend();
         
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -1405,7 +1404,7 @@ public class Gizmo
         return this.mode == Mode.COMBINED && !BBSSettings.rotateHideRings.get() ? COMBINED_INNER_SCALE : 1F;
     }
 
-    private void drawRotateHandles(MatrixStack stack, Handle active)
+    private void drawRotateHandles(PoseStack stack, Handle active)
     {
         this.updateVbos();
 
@@ -1449,7 +1448,7 @@ public class Gizmo
         return constrained ? channel * 0.25F + 0.3F : channel;
     }
 
-    private void drawAxes(MatrixStack stack, float axisSize, float axisOffset)
+    private void drawAxes(PoseStack stack, float axisSize, float axisOffset)
     {
         float scale = BBSSettings.axesScale.get();
         float thickness = BBSSettings.axesThickness.get();
@@ -1473,7 +1472,7 @@ public class Gizmo
 
         if (showMove || showScale)
         {
-            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
             building = true;
 
             /* The bars and planes read as move when move is on screen and as
@@ -1537,7 +1536,7 @@ public class Gizmo
         {
             if (!building)
             {
-                builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+                builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
                 building = true;
             }
 
@@ -1553,11 +1552,11 @@ public class Gizmo
             RenderSystem.setShaderColor(1F, 1F, 1F, BBSSettings.gizmoOpacity.get());
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }
     }
 
-    public void renderStencil(MatrixStack stack, StencilMap map)
+    public void renderStencil(PoseStack stack, StencilMap map)
     {
         if (BBSRendering.isIrisShadowPass())
         {
@@ -1569,11 +1568,11 @@ public class Gizmo
             return;
         }
 
-        stack.push();
+        stack.pushPose();
         MatrixStackUtils.scaleBack(stack);
         this.captureRenderMatrix(stack);
         this.drawStencilAxes(stack, map);
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -1582,18 +1581,18 @@ public class Gizmo
      * the world-pass {@link #renderStencil} and the UI-pass
      * {@link #renderStencilInterface}.
      */
-    private void drawStencilAxes(MatrixStack stack, StencilMap map)
+    private void drawStencilAxes(PoseStack stack, StencilMap map)
     {
         this.applyBakedRotation(stack);
 
         float distanceScale = this.getAxesDistanceScale(stack);
 
-        stack.push();
+        stack.pushPose();
         stack.scale(distanceScale, distanceScale, distanceScale);
         /* Same axisOffset as the visual pass (Gizmo#drawGizmo) so the pick hitbox
          * matches the drawn handles instead of overhanging them. */
         this.drawAxes(stack, map, 0.25F, 0.008F);
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -1617,12 +1616,12 @@ public class Gizmo
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         this.setViewportScale(context.menu.height / (float) area.h);
 
         MatrixStackUtils.cacheMatrices();
-        RenderSystem.setProjectionMatrix(projection, VertexSorter.BY_Z);
+        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
 
         /* Map the UI area to a framebuffer-pixel viewport, exactly as
          * renderInterface does, so the stencil matches the drawn visual pixel for
@@ -1630,16 +1629,16 @@ public class Gizmo
          * applies. */
         UIUtils.viewportArea(area);
 
-        MatrixStack stack = new MatrixStack();
+        PoseStack stack = new PoseStack();
         MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
 
         this.drawStencilAxes(stack, map);
 
-        RenderSystem.viewport(0, 0, mc.getWindow().getFramebufferWidth(), mc.getWindow().getFramebufferHeight());
+        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
         MatrixStackUtils.restoreMatrices();
     }
 
-    private void captureRenderMatrix(MatrixStack stack)
+    private void captureRenderMatrix(PoseStack stack)
     {
         /* The drag/pick math (computeWorldOrigin, computeWorldAxes, computeScreenCenter)
          * needs the FULL modelview — view * translate(-cam) * gizmoChain. Since 1.21.1 the
@@ -1671,7 +1670,7 @@ public class Gizmo
      * or the handles would be drawn off the frame they slide in. {@code null}
      * is the plain world axes, which is what the hosts without a scene use.
      */
-    public void reorientForSpace(MatrixStack stack, TransformSpace space, Matrix4f cameraView, Matrix3f globalAxes)
+    public void reorientForSpace(PoseStack stack, TransformSpace space, Matrix4f cameraView, Matrix3f globalAxes)
     {
         if (space == null || space == TransformSpace.LOCAL || space == TransformSpace.PARENT || cameraView == null)
         {
@@ -1684,7 +1683,7 @@ public class Gizmo
             return;
         }
 
-        Matrix4f matrix = stack.peek().getPositionMatrix();
+        Matrix4f matrix = stack.last().pose();
         Vector3f translation = matrix.getTranslation(new Vector3f());
 
         matrix.set(new Matrix4f(GizmoDrag.stackBasisForSpace(space, cameraView, globalAxes)).setTranslation(translation));
@@ -1700,7 +1699,7 @@ public class Gizmo
      * the restored orientation. The live {@link #lastRenderMatrix} is left
      * untouched for pick/projection helpers.
      */
-    private void applyBakedRotation(MatrixStack stack)
+    private void applyBakedRotation(PoseStack stack)
     {
         DragStrategy gesture = this.ringDragGesture();
 
@@ -1713,11 +1712,11 @@ public class Gizmo
 
         if (this.bakedGesture != gesture)
         {
-            this.bakedRotationMatrix.set(stack.peek().getPositionMatrix());
+            this.bakedRotationMatrix.set(stack.last().pose());
             this.bakedGesture = gesture;
         }
 
-        stack.peek().getPositionMatrix().set(this.bakedRotationMatrix);
+        stack.last().pose().set(this.bakedRotationMatrix);
     }
 
     /**
@@ -1741,7 +1740,7 @@ public class Gizmo
         return transform.getStrategy();
     }
 
-    private void drawAxes(MatrixStack stack, StencilMap map, float axisSize, float axisOffset)
+    private void drawAxes(PoseStack stack, StencilMap map, float axisSize, float axisOffset)
     {
         float scale = BBSSettings.axesScale.get();
         float thickness = BBSSettings.axesThickness.get();
@@ -1791,7 +1790,7 @@ public class Gizmo
             Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
             Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
 
-            BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, barX.index / 255F, 0F, 0F);
             if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, barY.index / 255F, 0F, 0F);
@@ -1837,7 +1836,7 @@ public class Gizmo
 
             RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         }
 
         RenderSystem.enableDepthTest();

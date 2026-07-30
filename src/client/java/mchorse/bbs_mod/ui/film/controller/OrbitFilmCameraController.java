@@ -39,7 +39,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 public class OrbitFilmCameraController implements ICameraController
 {
@@ -502,7 +502,7 @@ public class OrbitFilmCameraController implements ICameraController
             return;
         }
 
-        float dt = MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration();
+        float dt = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
         float factor = MathUtils.clamp(1F - (float) Math.pow(Math.min(smoothness, 0.99F), dt), 0F, 1F);
 
         this.rotation.lerp(this.targetRotation, factor);

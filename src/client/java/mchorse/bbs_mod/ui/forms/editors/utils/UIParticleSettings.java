@@ -7,11 +7,7 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
-import net.minecraft.particle.ParticleType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.ResourceLocation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -81,7 +77,7 @@ public class UIParticleSettings extends UIElement
         this.arguments.setText(args);
     }
 
-    protected void setParticle(Identifier id)
+    protected void setParticle(ResourceLocation id)
     {
         this.settings.particle = id;
 

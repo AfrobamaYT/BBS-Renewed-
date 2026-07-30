@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.ui.forms.editors.utils;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
@@ -25,12 +27,10 @@ import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 
 import java.util.function.Supplier;
@@ -161,7 +161,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         this.formEditor.preFormRender(context, this.form);
 
         FormRenderingContext formContext = new FormRenderingContext()
-            .set(FormRenderType.PREVIEW, this.target == null ? this.entity : this.target, context.batcher.getContext().getMatrices(), LightmapTextureManager.pack(15, 15), OverlayTexture.DEFAULT_UV, context.getTransition())
+            .set(FormRenderType.PREVIEW, this.target == null ? this.entity : this.target, context.batcher.getContext().pose(), LightTexture.pack(15, 15), OverlayTexture.NO_OVERLAY, context.getTransition())
             .camera(this.camera)
             .modelRenderer();
 
@@ -197,9 +197,9 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             FormUtilsClient.render(this.form, formContext.stencilMap(this.stencilMap));
 
             Matrix4f matrix = this.formEditor.getOrigin(context.getTransition());
-            MatrixStack stack = context.render.batcher.getContext().getMatrices();
+            PoseStack stack = context.render.batcher.getContext().pose();
 
-            stack.push();
+            stack.pushPose();
 
             if (matrix != null)
             {
@@ -215,15 +215,15 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
              * the F8 axes toggle is untouched here on purpose. */
             if (!UIBaseMenu.isHideGizmoHeld())
             {
-                Gizmo.INSTANCE.renderStencil(context.batcher.getContext().getMatrices(), this.stencilMap);
+                Gizmo.INSTANCE.renderStencil(context.batcher.getContext().pose(), this.stencilMap);
             }
 
-            stack.pop();
+            stack.popPose();
 
             this.stencil.pickGUI(context, this.area, BBSSettings.gizmoHoverTolerance.get(), Gizmo.STENCIL_MAX);
             this.stencil.unbind(this.stencilMap);
 
-            MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
 
             GlStateManager._enableScissorTest();
         }
@@ -238,9 +238,9 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
     private void renderAxes(UIContext context)
     {
         Matrix4f matrix = this.formEditor.getOrigin(context.getTransition());
-        MatrixStack stack = context.render.batcher.getContext().getMatrices();
+        PoseStack stack = context.render.batcher.getContext().pose();
 
-        stack.push();
+        stack.pushPose();
 
         if (matrix != null)
         {
@@ -264,7 +264,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             RenderSystem.enableDepthTest();
         }
 
-        stack.pop();
+        stack.popPose();
     }
 
     private void renderFormHitbox(UIContext context)
@@ -275,10 +275,10 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
 
         /* Draw look vector */
         final float thickness = 0.01F;
-        Draw.renderBox(context.batcher.getContext().getMatrices(), -thickness, -thickness + eyeHeight, -thickness, thickness, thickness, 2F, 1F, 0F, 0F);
+        Draw.renderBox(context.batcher.getContext().pose(), -thickness, -thickness + eyeHeight, -thickness, thickness, thickness, 2F, 1F, 0F, 0F);
 
         /* Draw hitbox */
-        Draw.renderBox(context.batcher.getContext().getMatrices(), -hitboxW / 2, 0, -hitboxW / 2, hitboxW, hitboxH, hitboxW);
+        Draw.renderBox(context.batcher.getContext().pose(), -hitboxW / 2, 0, -hitboxW / 2, hitboxW, hitboxH, hitboxW);
     }
 
     @Override
@@ -311,15 +311,15 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         int w = texture.width;
         int h = texture.height;
 
-        ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
-        GlUniform target = previewProgram.getUniform("Target");
+        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)
         {
             target.set(index);
         }
 
-        GlUniform highlight = previewProgram.getUniform("HighlightColor");
+        Uniform highlight = previewProgram.getUniform("HighlightColor");
 
         if (highlight != null)
         {

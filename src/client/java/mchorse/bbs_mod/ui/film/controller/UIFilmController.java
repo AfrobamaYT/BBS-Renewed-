@@ -15,10 +15,11 @@ import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
-
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
@@ -89,15 +90,12 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.world.World;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.Options;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 
 public class UIFilmController extends UIElement implements GizmoViewport
 {
@@ -188,15 +186,15 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
     private void toggleMousePointer(boolean disable)
     {
-        net.minecraft.client.util.Window window = MinecraftClient.getInstance().getWindow();
+        com.mojang.blaze3d.platform.Window window = Minecraft.getInstance().getWindow();
 
         if (disable)
         {
-            GLFW.glfwSetInputMode(window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
         }
         else
         {
-            GLFW.glfwSetInputMode(window.getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         }
     }
 
@@ -413,7 +411,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             if (replacePlayer && this.controlled != null)
             {
-                MCEntity player = Morph.getMorph(MinecraftClient.getInstance().player).entity;
+                MCEntity player = Morph.getMorph(Minecraft.getInstance().player).entity;
 
                 this.playerForm = player.getForm();
                 this.previousEntity = this.controlled;
@@ -487,7 +485,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         if (groups != null && groups.contains("outside"))
         {
-            MinecraftClient.getInstance().setScreen(null);
+            Minecraft.getInstance().setScreen(null);
 
             Replay replay = this.panel.replayEditor.getReplay();
             int index = this.panel.getData().replays.getList().indexOf(replay);
@@ -759,7 +757,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
                 return true;
             }
 
-            InputUtil.Key utilKey = InputUtil.fromKeyCode(context.getKeyCode(), context.getScanCode());
+            InputConstants.Key utilKey = InputConstants.getKey(context.getKeyCode(), context.getScanCode());
 
             if (this.canControlWithKeyboard(utilKey))
             {
@@ -770,22 +768,22 @@ public class UIFilmController extends UIElement implements GizmoViewport
         return super.subKeyPressed(context);
     }
 
-    private boolean canControlWithKeyboard(InputUtil.Key utilKey)
+    private boolean canControlWithKeyboard(InputConstants.Key utilKey)
     {
         if (!ClientNetwork.isIsBBSModOnServer())
         {
             return false;
         }
 
-        GameOptions options = MinecraftClient.getInstance().options;
+        Options options = Minecraft.getInstance().options;
 
-        return options.forwardKey.getDefaultKey() == utilKey
-            || options.backKey.getDefaultKey() == utilKey
-            || options.leftKey.getDefaultKey() == utilKey
-            || options.rightKey.getDefaultKey() == utilKey
-            || options.sneakKey.getDefaultKey() == utilKey
-            || options.sprintKey.getDefaultKey() == utilKey
-            || options.jumpKey.getDefaultKey() == utilKey;
+        return options.keyUp.getDefaultKey() == utilKey
+            || options.keyDown.getDefaultKey() == utilKey
+            || options.keyLeft.getDefaultKey() == utilKey
+            || options.keyRight.getDefaultKey() == utilKey
+            || options.keyShift.getDefaultKey() == utilKey
+            || options.keySprint.getDefaultKey() == utilKey
+            || options.keyJump.getDefaultKey() == utilKey;
     }
 
     public void pickRecording()
@@ -962,7 +960,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         boolean back = mode == CAMERA_MODE_THIRD_PERSON_BACK;
         Vector3f rotate = Matrices.rotation(rotation.x * (back ? 1 : -1), (back ? 0F : MathUtils.PI) - rotation.y);
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
 
         HitResult result = RayTracing.rayTraceEntity(
             world,
@@ -973,7 +971,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         if (result.getType() == HitResult.Type.BLOCK)
         {
-            distance = (float) position.distance(result.getPos().x, result.getPos().y, result.getPos().z) - 0.1F;
+            distance = (float) position.distance(result.getLocation().x, result.getLocation().y, result.getLocation().z) - 0.1F;
         }
 
         rotate.mul(distance);
@@ -1056,12 +1054,12 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         Replay replay = this.getReplay();
 
-        if (replay == null || MinecraftClient.getInstance().player == null)
+        if (replay == null || Minecraft.getInstance().player == null)
         {
             return;
         }
 
-        Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+        Morph morph = Morph.getMorph(Minecraft.getInstance().player);
 
         if (morph == null)
         {
@@ -1311,17 +1309,17 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorter.BY_Z);
+        RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorting.ORTHOGRAPHIC_Z);
         InverseView.set(new Matrix3f(BBSRendering.camera).invert());
 
         /* Render the stencil */
-        MatrixStack worldStack = this.worldRenderContext.matrixStack();
+        PoseStack worldStack = this.worldRenderContext.matrixStack();
 
-        worldStack.push();
-        worldStack.loadIdentity();
+        worldStack.pushPose();
+        worldStack.setIdentity();
         MatrixStackUtils.multiply(worldStack, BBSRendering.camera);
         this.renderStencil(this.worldRenderContext, this.getContext(), altPressed);
-        worldStack.pop();
+        worldStack.popPose();
 
         /* Return back to orthographic projection */
         MatrixStackUtils.restoreMatrices();
@@ -1351,16 +1349,16 @@ public class UIFilmController extends UIElement implements GizmoViewport
         int w = texture.width;
         int h = texture.height;
 
-        ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
-        Supplier<ShaderProgram> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
-        GlUniform target = previewProgram.getUniform("Target");
+        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        Supplier<ShaderInstance> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
+        Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)
         {
             target.set(index);
         }
 
-        GlUniform highlight = previewProgram.getUniform("HighlightColor");
+        Uniform highlight = previewProgram.getUniform("HighlightColor");
 
         if (highlight != null)
         {
@@ -1414,9 +1412,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
             MotionPath.render(context, motionPath, this, replay, bone, replay == null ? 0F : replay.getTick(this.getTick()));
         }
 
-        Mouse mouse = MinecraftClient.getInstance().mouse;
-        int x = (int) mouse.getX();
-        int y = (int) mouse.getY();
+        MouseHandler mouse = Minecraft.getInstance().mouseHandler;
+        int x = (int) mouse.xpos();
+        int y = (int) mouse.ypos();
 
         ControlMouse.steer(this, x, y, this.lastMouse.x, this.lastMouse.y);
 
@@ -1439,18 +1437,18 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return;
         }
 
-        net.minecraft.client.render.Camera camera = context.camera();
-        double x = center.x - camera.getPos().x;
-        double y = center.y - camera.getPos().y;
-        double z = center.z - camera.getPos().z;
+        net.minecraft.client.Camera camera = context.camera();
+        double x = center.x - camera.getPosition().x;
+        double y = center.y - camera.getPosition().y;
+        double z = center.z - camera.getPosition().z;
         float distanceScale = BBSSettings.getAxesDistanceScale((float) Math.sqrt(x * x + y * y + z * z));
-        MatrixStack stack = context.matrixStack();
+        PoseStack stack = context.matrixStack();
 
-        stack.push();
+        stack.pushPose();
         stack.translate(x, y, z);
         stack.scale(distanceScale, distanceScale, distanceScale);
         Draw.coolerAxes(stack, 0.12F, 0.007F);
-        stack.pop();
+        stack.popPose();
 
         RenderSystem.enableDepthTest();
     }
@@ -1611,7 +1609,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.stencil.unbind(this.stencilMap);
 
-        MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
+        Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
     }
 
     private void ensureStencilFramebuffer()

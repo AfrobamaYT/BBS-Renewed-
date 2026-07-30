@@ -4,15 +4,13 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +55,7 @@ public final class GravityGunHandler
     /** Throw velocity magnitude when key is released. */
     private static final float THROW_SPEED = 2.5F;
 
-    private static KeyBinding keyGrab;
+    private static KeyMapping keyGrab;
     /** Bone-body grab (our own fracture system). */
     private static BonePhysicsBody held;
     /** PhysicsMod ragdoll grab — the specific Body and its parent Ragdoll. */
@@ -79,9 +77,9 @@ public final class GravityGunHandler
 
     public static void register()
     {
-        keyGrab = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        keyGrab = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.gravity_grab",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,
             "category.bbstools.fracture"));
 
@@ -89,11 +87,11 @@ public final class GravityGunHandler
         LOG.info("Gravity-gun handler registered (default key: G)");
     }
 
-    private static void tick(MinecraftClient client)
+    private static void tick(Minecraft client)
     {
-        if (client == null || client.player == null || client.world == null) return;
+        if (client == null || client.player == null || client.level == null) return;
 
-        boolean nowPressed = keyGrab.isPressed();
+        boolean nowPressed = keyGrab.isDown();
 
         /* Edge: key just pressed → try to pick a bone body OR a
          *  PhysicsMod ragdoll body. */
@@ -130,7 +128,7 @@ public final class GravityGunHandler
                 /* Detect hotbar-scroll while held → use it to change
                  *  hold distance instead of switching slots. Revert
                  *  the slot so the hotbar stays put. */
-                int curSlot = client.player.getInventory().selectedSlot;
+                int curSlot = client.player.getInventory().selected;
                 if (lastObservedSlot >= 0 && curSlot != lastObservedSlot)
                 {
                     int delta = curSlot - lastObservedSlot;
@@ -141,7 +139,7 @@ public final class GravityGunHandler
                     holdDistance += delta * 0.6F;
                     if (holdDistance < MIN_holdDistance) holdDistance = MIN_holdDistance;
                     if (holdDistance > MAX_holdDistance) holdDistance = MAX_holdDistance;
-                    client.player.getInventory().selectedSlot = lastObservedSlot;
+                    client.player.getInventory().selected = lastObservedSlot;
                     curSlot = lastObservedSlot;
                 }
                 lastObservedSlot = curSlot;
@@ -157,11 +155,11 @@ public final class GravityGunHandler
         wasPressed = nowPressed;
     }
 
-    private static void tryPick(MinecraftClient client)
+    private static void tryPick(Minecraft client)
     {
         Vector3f camPos = new Vector3f(
             (float) client.player.getX(),
-            (float) (client.player.getY() + client.player.getStandingEyeHeight()),
+            (float) (client.player.getY() + client.player.getEyeHeight()),
             (float) client.player.getZ());
 
         Vector3f look = lookDir(client);
@@ -299,13 +297,13 @@ public final class GravityGunHandler
      *  ragdoll is kinematic, PhysX won't fight us — the body stays
      *  where we put it and joint-attached siblings get pulled along
      *  via PhysX joint constraints. */
-    private static void applyHoldPositionRagdoll(MinecraftClient client)
+    private static void applyHoldPositionRagdoll(Minecraft client)
     {
         if (heldRagdollBody == null) return;
 
         Vector3f camPos = new Vector3f(
             (float) client.player.getX(),
-            (float) (client.player.getY() + client.player.getStandingEyeHeight()),
+            (float) (client.player.getY() + client.player.getEyeHeight()),
             (float) client.player.getZ());
         Vector3f look = lookDir(client);
 
@@ -337,7 +335,7 @@ public final class GravityGunHandler
 
     /** Release the held ragdoll: restore kinematic flag + try to set
      *  initial throw velocity on the rigid body so it actually flies. */
-    private static void throwHeldRagdoll(MinecraftClient client)
+    private static void throwHeldRagdoll(Minecraft client)
     {
         if (heldRagdoll == null || heldRagdollBody == null) return;
 
@@ -392,11 +390,11 @@ public final class GravityGunHandler
         heldRagdollBody = null;
     }
 
-    private static void applyHoldPosition(MinecraftClient client)
+    private static void applyHoldPosition(Minecraft client)
     {
         Vector3f camPos = new Vector3f(
             (float) client.player.getX(),
-            (float) (client.player.getY() + client.player.getStandingEyeHeight()),
+            (float) (client.player.getY() + client.player.getEyeHeight()),
             (float) client.player.getZ());
 
         Vector3f look = lookDir(client);
@@ -433,7 +431,7 @@ public final class GravityGunHandler
         held.gravityGunHeld = true;
     }
 
-    private static void throwHeld(MinecraftClient client)
+    private static void throwHeld(Minecraft client)
     {
         Vector3f look = lookDir(client);
         held.linearVelocity.set(
@@ -446,9 +444,9 @@ public final class GravityGunHandler
         held = null;
     }
 
-    private static Vector3f lookDir(MinecraftClient client)
+    private static Vector3f lookDir(Minecraft client)
     {
-        net.minecraft.util.math.Vec3d v = client.player.getRotationVector();
+        net.minecraft.world.phys.Vec3 v = client.player.getLookAngle();
         return new Vector3f((float) v.x, (float) v.y, (float) v.z);
     }
 
@@ -518,12 +516,12 @@ public final class GravityGunHandler
      */
     public static synchronized HoverInfo getHoverInfo()
     {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.world == null) return null;
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.level == null) return null;
 
         Vector3f camPos = new Vector3f(
             (float) client.player.getX(),
-            (float) (client.player.getY() + client.player.getStandingEyeHeight()),
+            (float) (client.player.getY() + client.player.getEyeHeight()),
             (float) client.player.getZ());
         Vector3f look = lookDir(client);
 

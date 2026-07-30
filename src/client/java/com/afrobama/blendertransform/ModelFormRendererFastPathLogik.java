@@ -134,7 +134,7 @@ public final class ModelFormRendererFastPathLogik
             /* Capture transform snapshot — context.stack may be mutated downstream, copy NOW. */
             Matrix4f worldMatrix = context.stack == null
                 ? new Matrix4f()
-                : new Matrix4f(context.stack.peek().getPositionMatrix());
+                : new Matrix4f(context.stack.last().pose());
 
             if (BBSPerfConfig.RENDER_LOOP_BYPASS_COMPARE)
             {
@@ -179,11 +179,11 @@ public final class ModelFormRendererFastPathLogik
         try
         {
             if (context.entity == null) return;
-            net.minecraft.client.render.Camera cam =
-                net.minecraft.client.MinecraftClient.getInstance().gameRenderer.getCamera();
+            net.minecraft.client.Camera cam =
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera();
             if (cam == null) return;
 
-            double cx = cam.getPos().x, cy = cam.getPos().y, cz = cam.getPos().z;
+            double cx = cam.getPosition().x, cy = cam.getPosition().y, cz = cam.getPosition().z;
             Matrix4f candidate = mchorse.bbs_mod.film.BaseFilmController.getMatrixForRenderWithRotation(
                 context.entity, cx, cy, cz, context.getTransition());
 

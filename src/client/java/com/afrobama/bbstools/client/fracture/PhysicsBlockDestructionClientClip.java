@@ -6,9 +6,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.clips.Clip;
-
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.core.BlockPos;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,10 +98,10 @@ public class PhysicsBlockDestructionClientClip extends PhysicsBlockDestructionAc
 
         if (com.afrobama.bbstools.perf.BBSPerfConfig.VERBOSE_DESTRUCTION_CHAT)
         {
-            net.minecraft.client.MinecraftClient mcDbg = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mcDbg = net.minecraft.client.Minecraft.getInstance();
             if (mcDbg != null && mcDbg.player != null)
             {
-                mcDbg.player.sendMessage(net.minecraft.text.Text.literal(
+                mcDbg.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                     "§6[BBSTools-debug] §fblockMode=§e" + this.blockMode.get()
                     + " §fchunks/blk=§e" + this.chunksPerBlock.get()
                     + " §fmode=§e" + this.destructionMode.get()
@@ -118,7 +116,7 @@ public class PhysicsBlockDestructionClientClip extends PhysicsBlockDestructionAc
         final int bodiesBefore;
         try
         {
-            net.minecraft.world.World w = net.minecraft.client.MinecraftClient.getInstance().world;
+            net.minecraft.world.level.Level w = net.minecraft.client.Minecraft.getInstance().level;
             bodiesBefore = (w != null) ? FracturePhysicsBridge.snapshotBodyCount(w) : -1;
         }
         catch (Throwable t) { /* unreachable, but keep variable final */ throw new RuntimeException(t); }
@@ -168,10 +166,10 @@ public class PhysicsBlockDestructionClientClip extends PhysicsBlockDestructionAc
                 lastEmptyRegionWarnMs = nowWarn;
                 LOG.warn("[block-destruction] region is a single block at ({},{},{}) — did you forget to set Min/Max corners? Use the 'Set from looked-at' buttons in the clip editor.",
                     x0, y0, z0);
-                net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
                 if (mc != null && mc.player != null)
                 {
-                    mc.player.sendMessage(net.minecraft.text.Text.literal(
+                    mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                         "§e[BBSTools] §cBlock-destruction clip fired but region is empty — "
                         + "use 'Set Min/Max from looked-at' in the clip editor to mark a region. §7(throttled: once per 5s)"), false);
                 }

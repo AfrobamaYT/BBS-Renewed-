@@ -29,9 +29,7 @@ import foundry.veil.api.client.render.vertex.VertexArrayBuilder;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
-
-import net.minecraft.client.render.RenderLayer;
-
+import net.minecraft.client.renderer.RenderType;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL30C;
@@ -354,7 +352,7 @@ public final class VeilSkinnedBatch implements AutoCloseable
         }
 
         Object rl = VeilReplayRenderType.get(key.texture());
-        if (!(rl instanceof RenderLayer renderLayer))
+        if (!(rl instanceof RenderType renderLayer))
         {
             /* Veil hasn't activated the JSON-defined RenderType yet — skip
              * silently; caller already logs a one-time warning. */
@@ -385,7 +383,7 @@ public final class VeilSkinnedBatch implements AutoCloseable
             return;
         }
 
-        vertexArray.setDrawMode(net.minecraft.client.render.VertexFormat.DrawMode.TRIANGLES);
+        vertexArray.setDrawMode(com.mojang.blaze3d.vertex.VertexFormat.Mode.TRIANGLES);
         vertexArray.setIndexCount(vertexCount, VertexArray.IndexType.INT);
         /* Non-indexed draw: VertexArray.drawInstancedWithRenderType uses
          * the configured drawMode + indexCount internally — for TRIANGLES

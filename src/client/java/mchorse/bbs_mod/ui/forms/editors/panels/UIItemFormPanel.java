@@ -10,7 +10,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Color;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.minecraft.world.item.ItemDisplayContext;
 
 public class UIItemFormPanel extends UIFormPanel<ItemForm>
 {
@@ -46,11 +46,11 @@ public class UIItemFormPanel extends UIFormPanel<ItemForm>
         this.options.add(this.color, UI.labelRow(UIKeys.FORMS_EDITORS_ITEM_TRANSFORMS, this.modelTransform), this.itemStackEditor);
     }
 
-    private void setModelTransform(ModelTransformationMode value)
+    private void setModelTransform(ItemDisplayContext value)
     {
         this.form.modelTransform.set(value);
 
-        this.modelTransform.label = IKey.constant(value.asString());
+        this.modelTransform.label = IKey.constant(value.getSerializedName());
     }
 
     @Override

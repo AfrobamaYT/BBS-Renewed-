@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.panels.widgets;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.brigadier.StringReader;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
@@ -21,26 +22,24 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.context.ContextAction;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.BlockItem;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.StringNbtReader;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.state.property.Property;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.nbt.TagParser;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,14 +70,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
     static
     {
-        for (RegistryKey<Item> key : Registries.ITEM.getKeys())
+        for (ResourceKey<Item> key : BuiltInRegistries.ITEM.registryKeySet())
         {
-            ITEM_IDS.add(key.getValue().toString());
+            ITEM_IDS.add(key.location().toString());
         }
 
-        for (RegistryKey<Block> key : Registries.BLOCK.getKeys())
+        for (ResourceKey<Block> key : BuiltInRegistries.BLOCK.registryKeySet())
         {
-            BLOCK_IDS.add(key.getValue().toString());
+            BLOCK_IDS.add(key.location().toString());
         }
 
         ITEM_IDS.sort(String::compareToIgnoreCase);
@@ -91,14 +90,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
      */
     private static String minecraftLanguageKey()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (mc == null || mc.options == null)
         {
             return "en_us";
         }
 
-        String lang = mc.options.language;
+        String lang = mc.options.languageCode;
 
         return lang == null || lang.isEmpty() ? "en_us" : lang;
     }
@@ -111,9 +110,9 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                Item item = Registries.ITEM.get(Identifier.of(id));
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
 
-                return new ItemStack(item).getName().getString();
+                return new ItemStack(item).getHoverName().getString();
             }
             catch (Exception e)
             {
@@ -130,7 +129,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                return Registries.BLOCK.get(Identifier.of(id)).getName().getString();
+                return BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id)).getName().getString();
             }
             catch (Exception e)
             {
@@ -145,14 +144,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                Identifier rid = Identifier.of(id);
+                ResourceLocation rid = ResourceLocation.parse(id);
 
                 if (mode == PickerMode.ITEM)
                 {
-                    return new ItemStack(Registries.ITEM.get(rid));
+                    return new ItemStack(BuiltInRegistries.ITEM.get(rid));
                 }
 
-                Block block = Registries.BLOCK.get(rid);
+                Block block = BuiltInRegistries.BLOCK.get(rid);
                 Item item = block.asItem();
 
                 return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
@@ -185,7 +184,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
     private final UITextarea itemNbt;
 
     private ItemStack itemStack = ItemStack.EMPTY;
-    private BlockState blockState = Blocks.AIR.getDefaultState();
+    private BlockState blockState = Blocks.AIR.defaultBlockState();
     private String selectedId = "";
 
     public static UIUnifiedPickOverlayPanel forItem(Consumer<ItemStack> callback, ItemStack current)
@@ -195,7 +194,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
     public static UIUnifiedPickOverlayPanel forBlock(Consumer<BlockState> callback, BlockState current)
     {
-        return new UIUnifiedPickOverlayPanel(PickerMode.BLOCK, null, callback, ItemStack.EMPTY, current == null ? Blocks.AIR.getDefaultState() : current);
+        return new UIUnifiedPickOverlayPanel(PickerMode.BLOCK, null, callback, ItemStack.EMPTY, current == null ? Blocks.AIR.defaultBlockState() : current);
     }
 
     private UIUnifiedPickOverlayPanel(PickerMode mode, Consumer<ItemStack> itemCallback, Consumer<BlockState> blockCallback, ItemStack itemStack, BlockState blockState)
@@ -242,11 +241,11 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             if (value.isEmpty())
             {
-                this.itemStack.remove(DataComponentTypes.CUSTOM_NAME);
+                this.itemStack.remove(DataComponents.CUSTOM_NAME);
             }
             else
             {
-                this.itemStack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(value));
+                this.itemStack.set(DataComponents.CUSTOM_NAME, Component.literal(value));
             }
 
             this.acceptItem(this.itemStack.copy());
@@ -273,12 +272,12 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             try
             {
-                NbtCompound nbt = new StringNbtReader(new StringReader(v.toString())).parseCompound();
+                CompoundTag nbt = new TagParser(new StringReader(v.toString())).readStruct();
                 ItemStack parsed = ItemStack.CODEC.parse(NbtOps.INSTANCE, nbt).result().orElse(ItemStack.EMPTY);
 
                 this.acceptItem(parsed);
 
-                String id = Registries.ITEM.getId(parsed.getItem()).toString();
+                String id = BuiltInRegistries.ITEM.getKey(parsed.getItem()).toString();
 
                 if (!id.equals(this.selectedId))
                 {
@@ -326,14 +325,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
         if (mode == PickerMode.ITEM)
         {
-            this.selectedId = Registries.ITEM.getId(this.itemStack.getItem()).toString();
-            this.itemCount.limit(1, this.itemStack.getMaxCount(), true).setValue(this.itemStack.getCount());
-            this.itemName.setText(this.itemStack.getName().getString());
+            this.selectedId = BuiltInRegistries.ITEM.getKey(this.itemStack.getItem()).toString();
+            this.itemCount.limit(1, this.itemStack.getMaxStackSize(), true).setValue(this.itemStack.getCount());
+            this.itemName.setText(this.itemStack.getHoverName().getString());
             this.updateItemNbt();
         }
         else
         {
-            this.selectedId = Registries.BLOCK.getId(this.blockState.getBlock()).toString();
+            this.selectedId = BuiltInRegistries.BLOCK.getKey(this.blockState.getBlock()).toString();
             this.fillBlockProperties(this.blockState);
         }
 
@@ -368,7 +367,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
         if (this.mode == PickerMode.ITEM)
         {
-            Item item = Registries.ITEM.get(Identifier.of(id));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
             ItemStack selected;
 
             if (this.itemStack != null && !this.itemStack.isEmpty() && this.itemStack.getItem() == item)
@@ -381,21 +380,21 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
                 selected.setCount(Math.max(1, this.itemStack.getCount()));
 
-                if (this.itemStack.contains(DataComponentTypes.CUSTOM_NAME))
+                if (this.itemStack.has(DataComponents.CUSTOM_NAME))
                 {
-                    selected.set(DataComponentTypes.CUSTOM_NAME, this.itemStack.getName());
+                    selected.set(DataComponents.CUSTOM_NAME, this.itemStack.getHoverName());
                 }
             }
 
             this.acceptItem(selected);
-            this.itemCount.limit(1, selected.getMaxCount(), true).setValue(selected.getCount());
-            this.itemName.setText(selected.getName().getString());
+            this.itemCount.limit(1, selected.getMaxStackSize(), true).setValue(selected.getCount());
+            this.itemName.setText(selected.getHoverName().getString());
             this.updateItemNbt();
         }
         else
         {
-            Block block = Registries.BLOCK.get(Identifier.of(id));
-            BlockState selectedState = block.getDefaultState();
+            Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
+            BlockState selectedState = block.defaultBlockState();
 
             if (this.blockState != null && this.blockState.getBlock() == block)
             {
@@ -483,7 +482,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
             }
         };
 
-        for (Object value : property.getValues())
+        for (Object value : property.getPossibleValues())
         {
             IKey key = IKey.constant(value.toString());
 
@@ -501,7 +500,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
     private IKey propertyLabel(BlockState state, Property<?> property)
     {
-        return IKey.constant(property.getName() + ": " + state.get(property));
+        return IKey.constant(property.getName() + ": " + state.getValue(property));
     }
 
     private class UIItemHotbar extends UIElement
@@ -518,7 +517,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
                 return false;
             }
 
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (mc.player == null)
             {
@@ -542,7 +541,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
                 return false;
             }
 
-            ItemStack stack = mc.player.getInventory().getStack(index).copy();
+            ItemStack stack = mc.player.getInventory().getItem(index).copy();
 
             if (stack.isEmpty())
             {
@@ -552,14 +551,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
             if (UIUnifiedPickOverlayPanel.this.mode == PickerMode.ITEM)
             {
                 UIUnifiedPickOverlayPanel.this.acceptItem(stack);
-                UIUnifiedPickOverlayPanel.this.selectId(Registries.ITEM.getId(stack.getItem()).toString());
+                UIUnifiedPickOverlayPanel.this.selectId(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
             }
             else if (stack.getItem() instanceof BlockItem blockItem)
             {
-                BlockState state = blockItem.getBlock().getDefaultState();
+                BlockState state = blockItem.getBlock().defaultBlockState();
 
                 UIUnifiedPickOverlayPanel.this.acceptBlock(state);
-                UIUnifiedPickOverlayPanel.this.selectId(Registries.BLOCK.getId(state.getBlock()).toString());
+                UIUnifiedPickOverlayPanel.this.selectId(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
             }
 
             return true;
@@ -570,14 +569,14 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             super.render(context);
 
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
 
             if (mc.player == null)
             {
                 return;
             }
 
-            PlayerInventory inventory = mc.player.getInventory();
+            Inventory inventory = mc.player.getInventory();
             int contentWidth = SLOTS * SLOT_SIZE + (SLOTS - 1) * SLOT_GAP;
             int startX = this.area.mx(contentWidth);
             int y = this.area.my(SLOT_SIZE);
@@ -585,23 +584,23 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
             for (int i = 0; i < SLOTS; i++)
             {
                 int x = startX + i * (SLOT_SIZE + SLOT_GAP);
-                ItemStack stack = inventory.getStack(i);
-                int border = i == inventory.selectedSlot ? Colors.A100 | BBSSettings.primaryColor.get() : Colors.LIGHTER_GRAY;
+                ItemStack stack = inventory.getItem(i);
+                int border = i == inventory.selected ? Colors.A100 | BBSSettings.primaryColor.get() : Colors.LIGHTER_GRAY;
 
                 context.batcher.box(x, y, x + SLOT_SIZE, y + SLOT_SIZE, border);
                 context.batcher.box(x + 1, y + 1, x + SLOT_SIZE - 1, y + SLOT_SIZE - 1, Colors.A50);
 
                 if (!stack.isEmpty())
                 {
-                    MatrixStack matrices = context.batcher.getContext().getMatrices();
+                    PoseStack matrices = context.batcher.getContext().pose();
                     CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
-                    matrices.push();
+                    matrices.pushPose();
                     consumers.setUI(true);
-                    context.batcher.getContext().drawItem(stack, x + 2, y + 2);
-                    context.batcher.getContext().drawItemInSlot(context.batcher.getFont().getRenderer(), stack, x + 2, y + 2);
+                    context.batcher.getContext().renderItem(stack, x + 2, y + 2);
+                    context.batcher.getContext().renderItemDecorations(context.batcher.getFont().getRenderer(), stack, x + 2, y + 2);
                     consumers.setUI(false);
-                    matrices.pop();
+                    matrices.popPose();
                 }
 
             }
@@ -651,15 +650,15 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             if (!stack.isEmpty())
             {
-                MatrixStack matrices = context.batcher.getContext().getMatrices();
+                PoseStack matrices = context.batcher.getContext().pose();
                 CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
-                matrices.push();
+                matrices.pushPose();
                 consumers.setUI(true);
-                context.batcher.getContext().drawItem(stack, iconLeft + 1, iconTop + 1);
-                context.batcher.getContext().drawItemInSlot(context.batcher.getFont().getRenderer(), stack, iconLeft + 1, iconTop + 1);
+                context.batcher.getContext().renderItem(stack, iconLeft + 1, iconTop + 1);
+                context.batcher.getContext().renderItemDecorations(context.batcher.getFont().getRenderer(), stack, iconLeft + 1, iconTop + 1);
                 consumers.setUI(false);
-                matrices.pop();
+                matrices.popPose();
             }
 
             int textX = iconLeft + LIST_ICON_SLOT + LIST_ICON_GAP;

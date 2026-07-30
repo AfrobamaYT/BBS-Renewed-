@@ -8,8 +8,6 @@ package com.afrobama.bbstools.client.blockanim;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.text.Text;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

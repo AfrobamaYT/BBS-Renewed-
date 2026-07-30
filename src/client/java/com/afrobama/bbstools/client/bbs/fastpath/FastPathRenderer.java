@@ -26,7 +26,8 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -34,13 +35,9 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +81,9 @@ public final class FastPathRenderer
          * Mirrors what BBS does at the head of renderModel(...). */
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
-        gameRenderer.getLightmapTextureManager().enable();
-        gameRenderer.getOverlayTexture().setupOverlayColor();
+        GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
+        gameRenderer.lightTexture().turnOnLightLayer();
+        gameRenderer.overlayTexture().setupOverlayColor();
 
         try
         {
@@ -116,8 +113,8 @@ public final class FastPathRenderer
         }
         finally
         {
-            gameRenderer.getLightmapTextureManager().disable();
-            gameRenderer.getOverlayTexture().teardownOverlayColor();
+            gameRenderer.lightTexture().turnOffLightLayer();
+            gameRenderer.overlayTexture().teardownOverlayColor();
             RenderSystem.disableBlend();
         }
 
@@ -180,13 +177,13 @@ public final class FastPathRenderer
         /* Shader. Iris-compat by construction: vanilla MC entity
          * translucent cull program goes through Iris's gbuffers_entities
          * pipeline. */
-        Supplier<ShaderProgram> shader = GameRenderer::getRenderTypeEntityTranslucentCullProgram;
+        Supplier<ShaderInstance> shader = GameRenderer::getRendertypeEntityTranslucentCullShader;
 
         /* Build matrix stack from snapshot. Re-apply the 180° Y rotation
          * that vanilla does inside render3D line 625. */
-        MatrixStack stack = new MatrixStack();
-        stack.multiplyPositionMatrix(s.worldMatrix);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+        PoseStack stack = new PoseStack();
+        stack.mulPose(s.worldMatrix);
+        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
 
         if (BBSPerfConfig.ENABLE_FAST_PATH_DIRECT)
         {
@@ -232,8 +229,8 @@ public final class FastPathRenderer
     private static void renderDirect(FastPathBatch.Submission s,
                                      ModelFormRendererAccessor selfA,
                                      ModelInstance instance,
-                                     MatrixStack stack,
-                                     Supplier<ShaderProgram> shader,
+                                     PoseStack stack,
+                                     Supplier<ShaderInstance> shader,
                                      Color color,
                                      Link texture)
     {

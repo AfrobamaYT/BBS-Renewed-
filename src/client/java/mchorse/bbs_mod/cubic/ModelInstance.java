@@ -1,6 +1,16 @@
 package mchorse.bbs_mod.cubic;
 
+import mchorse.bbs_mod.cubic.IModel;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -38,17 +48,8 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.pose.Pose;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -283,7 +284,7 @@ public class ModelInstance implements IModelInstance
     {
         if (this.model instanceof BOBJModel model)
         {
-            MinecraftClient.getInstance().execute(model::setup);
+            Minecraft.getInstance().execute(model::setup);
         }
 
         /* A welded or shape-keyed model still builds VAOs: only its welded bones and shape-keyed groups render
@@ -296,9 +297,9 @@ public class ModelInstance implements IModelInstance
 
             if (bake)
             {
-                MinecraftClient.getInstance().execute(() ->
+                Minecraft.getInstance().execute(() ->
                 {
-                    CubicRenderer.processRenderModel(new CubicVAOBuilderRenderer(this.vaos), null, new MatrixStack(), model);
+                    CubicRenderer.processRenderModel(new CubicVAOBuilderRenderer(this.vaos), null, new PoseStack(), model);
                 });
             }
         }
@@ -380,7 +381,7 @@ public class ModelInstance implements IModelInstance
     {
         if (this.model instanceof Model model)
         {
-            MatrixStack stack = new MatrixStack();
+            PoseStack stack = new PoseStack();
             CubicMatrixRenderer renderer = new CubicMatrixRenderer(model);
 
             CubicRenderer.processRenderModel(renderer, null, stack, model);
@@ -467,7 +468,7 @@ public class ModelInstance implements IModelInstance
      * Runs a dedicated capture-only renderer that only touches welded cubes (and only their welded face's corners),
      * so it's a light matrix walk over the tree rather than a full per-vertex pass.
      */
-    private void captureWelds(List<WeldBinding> bindings, MatrixStack stack, Model model, int light, int overlay, StencilMap stencilMap, ShapeKeys keys)
+    private void captureWelds(List<WeldBinding> bindings, PoseStack stack, Model model, int light, int overlay, StencilMap stencilMap, ShapeKeys keys)
     {
         for (WeldBinding binding : bindings)
         {
@@ -498,7 +499,7 @@ public class ModelInstance implements IModelInstance
      * cubes deform against the seam or morph. A light capture pass fills the seams first — for picking
      * too, so the stencil matches the deformed geometry.
      */
-    private void renderHybrid(MatrixStack stack, ShaderProgram shader, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver, Model model, List<WeldBinding> bindings)
+    private void renderHybrid(PoseStack stack, ShaderInstance shader, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver, Model model, List<WeldBinding> bindings)
     {
         Set<ModelGroup> weldedGroups = new HashSet<>();
 
@@ -521,7 +522,7 @@ public class ModelInstance implements IModelInstance
          * first-person hand during video export inherits a foreign NormalMat and darkens). The VAO bones use the same
          * shader so both halves of the model match. */
         boolean explicitWeld = stencilMap == null && !(BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld());
-        ShaderProgram drawShader = explicitWeld ? BBSShaders.getModel() : shader;
+        ShaderInstance drawShader = explicitWeld ? BBSShaders.getModel() : shader;
 
         CubicVAORenderer renderProcessor = new CubicVAORenderer(drawShader, this, light, overlay, stencilMap, keys, textureResolver);
 
@@ -544,7 +545,7 @@ public class ModelInstance implements IModelInstance
 
         if (cpuGeometry)
         {
-            builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
         }
 
         CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
@@ -555,7 +556,7 @@ public class ModelInstance implements IModelInstance
 
             if (explicitWeld)
             {
-                GlUniform normalMat = drawShader.getUniform("NormalMat");
+                Uniform normalMat = drawShader.getUniform("NormalMat");
 
                 if (normalMat != null)
                 {
@@ -573,7 +574,7 @@ public class ModelInstance implements IModelInstance
      * semi-transparent ones replay from a retained vertex buffer when the frame's translucent
      * queue flushes. Single-pass draws keep the old direct path.
      */
-    private void drawImmediate(BufferBuilder builder, ShaderProgram shader, MatrixStack stack, Matrix3f normalMat, StencilMap stencilMap, Texture texture, float alpha)
+    private void drawImmediate(BufferBuilder builder, ShaderInstance shader, PoseStack stack, Matrix3f normalMat, StencilMap stencilMap, Texture texture, float alpha)
     {
         boolean split = FormTranslucentQueue.needsSplit(shader, stencilMap, texture, alpha);
         boolean whole = !split && FormTranslucentQueue.needsWholeDefer(shader, stencilMap, alpha);
@@ -582,8 +583,8 @@ public class ModelInstance implements IModelInstance
         {
             /* MERGE fs-2.5: ihr zwei-pass-pfad uebernommen, unsere null-absicherung darueber.
              * builder.end() wirft, wenn nichts gezeichnet wurde. */
-            { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable();
-              if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build();
+              if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
             return;
         }
@@ -594,7 +595,7 @@ public class ModelInstance implements IModelInstance
         VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
 
         buffer.bind();
-        buffer.upload(builder.end());
+        buffer.upload(builder.buildOrThrow());
 
         Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
 
@@ -604,7 +605,7 @@ public class ModelInstance implements IModelInstance
              * case skips this — it replays the entire mesh with depth at flush instead.) */
             if (normalMat != null)
             {
-                GlUniform normalUniform = shader.getUniform("NormalMat");
+                Uniform normalUniform = shader.getUniform("NormalMat");
 
                 if (normalUniform != null)
                 {
@@ -613,13 +614,13 @@ public class ModelInstance implements IModelInstance
             }
 
             FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_OPAQUE);
-            buffer.draw(modelView, RenderSystem.getProjectionMatrix(), shader);
+            buffer.drawWithShader(modelView, RenderSystem.getProjectionMatrix(), shader);
             FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_SINGLE);
         }
 
         VertexBuffer.unbind();
 
-        Vector3f origin = modelView.transformPosition(stack.peek().getPositionMatrix().getTranslation(new Vector3f()));
+        Vector3f origin = modelView.transformPosition(stack.last().pose().getTranslation(new Vector3f()));
 
         if (split)
         {
@@ -653,9 +654,9 @@ public class ModelInstance implements IModelInstance
         return false;
     }
 
-    public void render(MatrixStack stack, Supplier<ShaderProgram> program, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver)
+    public void render(PoseStack stack, Supplier<ShaderInstance> program, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver)
     {
-        ShaderProgram shader = program.get();
+        ShaderInstance shader = program.get();
 
         if (this.model instanceof Model model)
         {
@@ -682,7 +683,7 @@ public class ModelInstance implements IModelInstance
                 RenderSystem.setShader(() -> shader);
 
 
-                BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
                 CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
                 this.drawImmediate(builder, shader, stack, null, stencilMap, BBSModClient.getTextures().getLastBound(), color.a);
             }
@@ -693,8 +694,8 @@ public class ModelInstance implements IModelInstance
 
             if (!vaos.isEmpty())
             {
-                stack.push();
-                stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(180F));
+                stack.pushPose();
+                stack.mulPose(Axis.YP.rotationDegrees(180F));
 
                 model.getArmature().setupMatrices();
 
@@ -725,7 +726,7 @@ public class ModelInstance implements IModelInstance
                     if (FormTranslucentQueue.needsSplit(shader, stencilMap, texture, color.a))
                     {
                         Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                        Matrix3f normalMat = new Matrix3f(stack.peek().getNormalMatrix());
+                        Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
                         FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_OPAQUE);
                         vao.render(shader, modelView, normalMat, color.r, color.g, color.b, color.a, stencilMap, light, overlay);
@@ -738,7 +739,7 @@ public class ModelInstance implements IModelInstance
                         /* A uniform colour fade defers the whole draw into the sorted end-of-frame
                          * pass with depth kept on, so the faded model still self-occludes. */
                         Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                        Matrix3f normalMat = new Matrix3f(stack.peek().getNormalMatrix());
+                        Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
                         FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
                     }
@@ -748,7 +749,7 @@ public class ModelInstance implements IModelInstance
                     }
                 }
 
-                stack.pop();
+                stack.popPose();
             }
         }
     }

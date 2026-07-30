@@ -21,8 +21,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public final class FastPathCommand
 {
@@ -46,7 +45,7 @@ public final class FastPathCommand
     private static int setFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.CROWD_IRIS_FAST_PATH = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("CrowdIris fast-path %s — %s",
                 on ? "ON" : "OFF",
                 on ? "30-40 FPS, villagers TRANSPARENT (known bug)"
@@ -56,7 +55,7 @@ public final class FastPathCommand
 
     private static int printStatus(CommandContext<FabricClientCommandSource> ctx)
     {
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             "CrowdIris fast-path: " + (BBSPerfConfig.CROWD_IRIS_FAST_PATH ? "ON" : "OFF")));
         return Command.SINGLE_SUCCESS;
     }

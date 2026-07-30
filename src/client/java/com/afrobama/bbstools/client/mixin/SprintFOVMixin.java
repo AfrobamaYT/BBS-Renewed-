@@ -4,10 +4,8 @@ package com.afrobama.bbstools.client.mixin;
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.client.editormode.EditorModeClient;
 import com.afrobama.bbstools.editormode.EditorMode;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.GameRenderer;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -60,7 +58,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SprintFOVMixin
 {
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true, require = 0)
-    private void bbstools$reapplySprintFov(net.minecraft.client.render.Camera camera,
+    private void bbstools$reapplySprintFov(net.minecraft.client.Camera camera,
                                             float tickDelta,
                                             boolean changingFov,
                                             CallbackInfoReturnable<Double> info)
@@ -70,7 +68,7 @@ public abstract class SprintFOVMixin
          * gesamte smoothing-logik (inkl. mc/player-zugriff) liegt jetzt in
          * `com.afrobama.blendertransform.SprintFovLogik` und wird bei jedem swap mitgetauscht. */
         Object neu = MixinBruecke.rufe("SprintFovLogik", "apply",
-            MinecraftClient.getInstance(), changingFov, tickDelta, info.getReturnValue());
+            Minecraft.getInstance(), changingFov, tickDelta, info.getReturnValue());
 
         if (neu instanceof Double) info.setReturnValue((Double) neu);
     }

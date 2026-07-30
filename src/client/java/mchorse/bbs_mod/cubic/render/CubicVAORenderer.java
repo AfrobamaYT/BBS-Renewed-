@@ -14,21 +14,19 @@ import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
 public class CubicVAORenderer extends CubicCubeRenderer
 {
-    private ShaderProgram program;
+    private ShaderInstance program;
     private ModelInstance model;
     private Function<String, Link> textureResolver;
 
@@ -39,7 +37,7 @@ public class CubicVAORenderer extends CubicCubeRenderer
      */
     private Set<ModelGroup> weldedGroups;
 
-    public CubicVAORenderer(ShaderProgram program, ModelInstance model, int light, int overlay, StencilMap stencilMap, ShapeKeys shapeKeys, Function<String, Link> textureResolver)
+    public CubicVAORenderer(ShaderInstance program, ModelInstance model, int light, int overlay, StencilMap stencilMap, ShapeKeys shapeKeys, Function<String, Link> textureResolver)
     {
         super(light, overlay, stencilMap, shapeKeys);
 
@@ -54,7 +52,7 @@ public class CubicVAORenderer extends CubicCubeRenderer
     }
 
     @Override
-    public boolean renderGroup(BufferBuilder builder, MatrixStack stack, ModelGroup group, Model model)
+    public boolean renderGroup(BufferBuilder builder, PoseStack stack, ModelGroup group, Model model)
     {
         Map<String, ModelVAO> groupVaos = this.model.getVaos().get(group);
 
@@ -87,7 +85,7 @@ public class CubicVAORenderer extends CubicCubeRenderer
         }
         else
         {
-            int u = (int) Lerps.lerp(light & '\uffff', LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE, MathUtils.clamp(group.lighting, 0F, 1F));
+            int u = (int) Lerps.lerp(light & '\uffff', LightTexture.FULL_BLOCK, MathUtils.clamp(group.lighting, 0F, 1F));
             int v = light >> 16 & '\uffff';
 
             light = u | v << 16;
@@ -118,7 +116,7 @@ public class CubicVAORenderer extends CubicCubeRenderer
             if (FormTranslucentQueue.needsSplit(this.program, this.stencilMap, texture, a))
             {
                 Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                Matrix3f normalMat = new Matrix3f(stack.peek().getNormalMatrix());
+                Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
                 FormTranslucentQueue.setPassMode(this.program, FormTranslucentQueue.PASS_OPAQUE);
                 ModelVAORenderer.render(this.program, entry.getValue(), modelView, normalMat, r, g, b, a, light, this.overlay);
@@ -131,8 +129,8 @@ public class CubicVAORenderer extends CubicCubeRenderer
                 /* A uniform colour fade defers the whole draw into the sorted end-of-frame pass
                  * with depth kept on, so the faded model still self-occludes. */
                 Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
-                Matrix3f normalMat = new Matrix3f(stack.peek().getNormalMatrix());
-                ShaderProgram program = this.program;
+                Matrix3f normalMat = new Matrix3f(stack.last().normal());
+                ShaderInstance program = this.program;
 
                 FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(entry.getValue(), () -> program, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, r, g, b, a, light, this.overlay, this.model.isCulling()));
             }

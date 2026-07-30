@@ -41,10 +41,9 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import mchorse.bbs_mod.utils.presets.PresetManager;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.Perspective;
-
+import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +96,7 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
             this.gunProperties = gunProperties;
         }
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         OrbitDistanceCamera orbit = new OrbitDistanceCamera();
 
         orbit.distance.setX(14);
@@ -109,8 +108,8 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
         Camera camera = new Camera();
 
-        camera.position.set(player.getPos().x, player.getPos().y + 1D, player.getPos().z);
-        camera.rotation.set(0, MathUtils.toRad(player.bodyYaw), 0);
+        camera.position.set(player.position().x, player.position().y + 1D, player.position().z);
+        camera.rotation.set(0, MathUtils.toRad(player.yBodyRot), 0);
 
         orbit.setup(camera);
 
@@ -444,12 +443,12 @@ public class UIModelBlockEditorMenu extends UIBaseMenu
 
             if (element == this.sectionTp)
             {
-                MinecraftClient.getInstance().options.setPerspective(Perspective.THIRD_PERSON_FRONT);
+                Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT);
                 BBSModClient.getCameraController().add(this.orbitCameraController);
             }
             else
             {
-                MinecraftClient.getInstance().options.setPerspective(Perspective.FIRST_PERSON);
+                Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON);
                 BBSModClient.getCameraController().remove(this.orbitCameraController);
             }
         }

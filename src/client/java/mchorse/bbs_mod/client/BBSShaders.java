@@ -1,30 +1,29 @@
 package mchorse.bbs_mod.client;
 
 import mchorse.bbs_mod.BBSMod;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceFactory;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceProvider;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import java.io.IOException;
 import java.util.Optional;
 
 public class BBSShaders
 {
-    private static ShaderProgram model;
-    private static ShaderProgram multiLink;
-    private static ShaderProgram subtitles;
-    private static ShaderProgram selection;
+    private static ShaderInstance model;
+    private static ShaderInstance multiLink;
+    private static ShaderInstance subtitles;
+    private static ShaderInstance selection;
 
-    private static ShaderProgram pickerPreview;
-    private static ShaderProgram replayOutline;
-    private static ShaderProgram pickerBillboard;
-    private static ShaderProgram pickerBillboardNoShading;
-    private static ShaderProgram pickerParticles;
-    private static ShaderProgram pickerModels;
+    private static ShaderInstance pickerPreview;
+    private static ShaderInstance replayOutline;
+    private static ShaderInstance pickerBillboard;
+    private static ShaderInstance pickerBillboardNoShading;
+    private static ShaderInstance pickerParticles;
+    private static ShaderInstance pickerModels;
 
     static
     {
@@ -46,19 +45,19 @@ public class BBSShaders
 
         try
         {
-            ResourceFactory factory = new ProxyResourceFactory(MinecraftClient.getInstance().getResourceManager());
+            ResourceProvider factory = new ProxyResourceFactory(Minecraft.getInstance().getResourceManager());
 
-            model = new ShaderProgram(factory, "model", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
-            multiLink = new ShaderProgram(factory, "multilink", VertexFormats.POSITION_TEXTURE_COLOR);
-            subtitles = new ShaderProgram(factory, "subtitles", VertexFormats.POSITION_TEXTURE_COLOR);
-            selection = new ShaderProgram(factory, "selection", VertexFormats.POSITION_TEXTURE_COLOR);
+            model = new ShaderInstance(factory, "model", DefaultVertexFormat.NEW_ENTITY);
+            multiLink = new ShaderInstance(factory, "multilink", DefaultVertexFormat.POSITION_TEX_COLOR);
+            subtitles = new ShaderInstance(factory, "subtitles", DefaultVertexFormat.POSITION_TEX_COLOR);
+            selection = new ShaderInstance(factory, "selection", DefaultVertexFormat.POSITION_TEX_COLOR);
 
-            pickerPreview = new ShaderProgram(factory, "picker_preview", VertexFormats.POSITION_TEXTURE_COLOR);
-            replayOutline = new ShaderProgram(factory, "replay_outline", VertexFormats.POSITION_TEXTURE_COLOR);
-            pickerBillboard = new ShaderProgram(factory, "picker_billboard", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
-            pickerBillboardNoShading = new ShaderProgram(factory, "picker_billboard_no_shading", VertexFormats.POSITION_TEXTURE_LIGHT_COLOR);
-            pickerParticles = new ShaderProgram(factory, "picker_particles", VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
-            pickerModels = new ShaderProgram(factory, "picker_models", VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+            pickerPreview = new ShaderInstance(factory, "picker_preview", DefaultVertexFormat.POSITION_TEX_COLOR);
+            replayOutline = new ShaderInstance(factory, "replay_outline", DefaultVertexFormat.POSITION_TEX_COLOR);
+            pickerBillboard = new ShaderInstance(factory, "picker_billboard", DefaultVertexFormat.NEW_ENTITY);
+            pickerBillboardNoShading = new ShaderInstance(factory, "picker_billboard_no_shading", DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR);
+            pickerParticles = new ShaderInstance(factory, "picker_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
+            pickerModels = new ShaderInstance(factory, "picker_models", DefaultVertexFormat.NEW_ENTITY);
         }
         catch (IOException e)
         {
@@ -66,58 +65,58 @@ public class BBSShaders
         }
     }
 
-    public static ShaderProgram getModel()
+    public static ShaderInstance getModel()
     {
         return model;
     }
 
-    public static ShaderProgram getMultilinkProgram()
+    public static ShaderInstance getMultilinkProgram()
     {
         return multiLink;
     }
 
-    public static ShaderProgram getSubtitlesProgram()
+    public static ShaderInstance getSubtitlesProgram()
     {
         return subtitles;
     }
 
-    public static ShaderProgram getSelectionProgram()
+    public static ShaderInstance getSelectionProgram()
     {
         return selection;
     }
 
-    public static ShaderProgram getPickerPreviewProgram()
+    public static ShaderInstance getPickerPreviewProgram()
     {
         return pickerPreview;
     }
 
     /** Umriss um das bearbeitete Replay — liest die Kante aus demselben Stencil-Bild. */
-    public static ShaderProgram getReplayOutlineProgram()
+    public static ShaderInstance getReplayOutlineProgram()
     {
         return replayOutline;
     }
 
-    public static ShaderProgram getPickerBillboardProgram()
+    public static ShaderInstance getPickerBillboardProgram()
     {
         return pickerBillboard;
     }
 
-    public static ShaderProgram getPickerBillboardNoShadingProgram()
+    public static ShaderInstance getPickerBillboardNoShadingProgram()
     {
         return pickerBillboardNoShading;
     }
 
-    public static ShaderProgram getPickerParticlesProgram()
+    public static ShaderInstance getPickerParticlesProgram()
     {
         return pickerParticles;
     }
 
-    public static ShaderProgram getPickerModelsProgram()
+    public static ShaderInstance getPickerModelsProgram()
     {
         return pickerModels;
     }
 
-    private static class ProxyResourceFactory implements ResourceFactory
+    private static class ProxyResourceFactory implements ResourceProvider
     {
         private ResourceManager manager;
 
@@ -127,11 +126,11 @@ public class BBSShaders
         }
 
         @Override
-        public Optional<Resource> getResource(Identifier id)
+        public Optional<Resource> getResource(ResourceLocation id)
         {
             if (id.getPath().contains("/core/"))
             {
-                return this.manager.getResource(Identifier.of(BBSMod.MOD_ID, id.getPath()));
+                return this.manager.getResource(ResourceLocation.fromNamespaceAndPath(BBSMod.MOD_ID, id.getPath()));
             }
 
             return this.manager.getResource(id);

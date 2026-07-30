@@ -12,9 +12,8 @@
 //   Auto-deactivate after FALL_DURATION + AFTERMATH_DURATION (~7s total).
 package com.afrobama.bbstools.client.veil;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,20 +30,20 @@ public final class MASMeteorEvent
     /** Flash on impact: peaks at 2.0, fades to 0 over this duration. */
     private static final float FLASH_DURATION_SEC = 0.6F;
 
-    private static volatile Vec3d targetPos = Vec3d.ZERO;
-    private static volatile Vec3d startPos = Vec3d.ZERO;
-    private static volatile Vec3d direction = new Vec3d(0.0, -1.0, 0.0);
+    private static volatile Vec3 targetPos = Vec3.ZERO;
+    private static volatile Vec3 startPos = Vec3.ZERO;
+    private static volatile Vec3 direction = new Vec3(0.0, -1.0, 0.0);
     private static volatile long startTimeNanos = 0L;
     private static volatile boolean active = false;
     private static volatile boolean shakeFired = false;
 
     private MASMeteorEvent() {}
 
-    public static void trigger(Vec3d impactTarget)
+    public static void trigger(Vec3 impactTarget)
     {
         targetPos = impactTarget;
         /* Start position: 60 blocks SW horizontally + 100 blocks high → diagonal trajectory */
-        startPos = new Vec3d(impactTarget.x - 50.0, impactTarget.y + 90.0, impactTarget.z - 30.0);
+        startPos = new Vec3(impactTarget.x - 50.0, impactTarget.y + 90.0, impactTarget.z - 30.0);
         direction = targetPos.subtract(startPos).normalize();
         startTimeNanos = System.nanoTime();
         active = true;
@@ -52,14 +51,14 @@ public final class MASMeteorEvent
         LOG.info("Meteor triggered, impact at ({}, {}, {})", impactTarget.x, impactTarget.y, impactTarget.z);
     }
 
-    public static Vec3d triggerAtPlayerTarget()
+    public static Vec3 triggerAtPlayerTarget()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return null;
         /* Impact at player's horizontal look 12 blocks ahead at player's feet level. */
-        Vec3d look = mc.player.getRotationVector();
-        Vec3d horiz = new Vec3d(look.x, 0.0, look.z).normalize();
-        Vec3d target = new Vec3d(
+        Vec3 look = mc.player.getLookAngle();
+        Vec3 horiz = new Vec3(look.x, 0.0, look.z).normalize();
+        Vec3 target = new Vec3(
             mc.player.getX() + horiz.x * 12.0,
             mc.player.getY(),
             mc.player.getZ() + horiz.z * 12.0);
@@ -98,15 +97,15 @@ public final class MASMeteorEvent
     }
 
     /** Current meteor world position interpolated start -> target. */
-    public static Vec3d getMeteorPos()
+    public static Vec3 getMeteorPos()
     {
         if (!active) return targetPos;
         float p = getFallProgress();
         return startPos.lerp(targetPos, p);
     }
 
-    public static Vec3d getMeteorDir() { return direction; }
-    public static Vec3d getImpactPos() { return targetPos; }
+    public static Vec3 getMeteorDir() { return direction; }
+    public static Vec3 getImpactPos() { return targetPos; }
 
     /** Seconds since impact. 0 before impact. */
     public static float getAfterImpactSec()

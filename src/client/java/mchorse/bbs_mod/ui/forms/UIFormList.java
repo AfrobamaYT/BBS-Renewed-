@@ -22,8 +22,8 @@ import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.render.DiffuseLighting;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -324,11 +324,11 @@ public class UIFormList extends UIElement
             this.setSelected(selected);
         }
 
-        DiffuseLighting.method_34742();
+        Lighting.setupForEntityInInventory();
 
         super.render(context);
 
-        DiffuseLighting.disableGuiDepthLighting();
+        Lighting.setupForFlatItems();
 
         if (this.pendingScrollToSelected && this.forms.area.w > 0)
         {

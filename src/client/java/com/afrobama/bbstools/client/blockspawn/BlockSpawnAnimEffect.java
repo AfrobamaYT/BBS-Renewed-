@@ -35,21 +35,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.BlockModelRenderer;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.block.ModelBlockRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 public final class BlockSpawnAnimEffect
 {
@@ -130,8 +129,8 @@ public final class BlockSpawnAnimEffect
      */
     public static void trigger(BlockPos min, BlockPos max, int durationTicks)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ClientWorld world = mc.world;
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel world = mc.level;
 
         if (world == null)
         {
@@ -318,26 +317,26 @@ public final class BlockSpawnAnimEffect
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        ClientWorld world = mc.world;
+        Minecraft mc = Minecraft.getInstance();
+        ClientLevel world = mc.level;
         if (world == null) return;
 
-        MatrixStack matrices = context.matrixStack();
+        PoseStack matrices = context.matrixStack();
         if (matrices == null) return;
 
-        Vec3d cam = context.camera().getPos();
+        Vec3 cam = context.camera().getPos();
         double camX = cam.x;
         double camY = cam.y;
         double camZ = cam.z;
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-camX, -camY, -camZ);
 
-        BlockRenderManager dispatcher = mc.getBlockRenderManager();
-        BlockModelRenderer modelRenderer = dispatcher.getModelRenderer();
-        VertexConsumerProvider.Immediate buffers = mc.getBufferBuilders().getEntityVertexConsumers();
-        VertexConsumer consumer = buffers.getBuffer(RenderLayer.getTranslucent());
-        Random rng = Random.create();
+        BlockRenderDispatcher dispatcher = mc.getBlockRenderer();
+        ModelBlockRenderer modelRenderer = dispatcher.getModelRenderer();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        VertexConsumer consumer = buffers.getBuffer(RenderType.translucent());
+        RandomSource rng = RandomSource.create();
 
         int rendered = 0;
 
@@ -393,18 +392,18 @@ public final class BlockSpawnAnimEffect
                 continue;
             }
 
-            matrices.push();
+            matrices.pushPose();
             matrices.translate(wx, wy, wz);
 
             try
             {
-                modelRenderer.render(
+                modelRenderer.tesselateBlock(
                     world,
-                    dispatcher.getModel(e.state),
+                    dispatcher.getBlockModel(e.state),
                     e.state, e.pos,
                     matrices, consumer,
-                    false, rng, e.state.getRenderingSeed(e.pos),
-                    OverlayTexture.DEFAULT_UV
+                    false, rng, e.state.getSeed(e.pos),
+                    OverlayTexture.NO_OVERLAY
                 );
             }
             catch (Throwable ignore)
@@ -415,7 +414,7 @@ public final class BlockSpawnAnimEffect
                  *  the offender, keep rendering everything else. */
             }
 
-            matrices.pop();
+            matrices.popPose();
             rendered++;
 
             if (rendered >= MAX_BLOCKS)
@@ -425,13 +424,13 @@ public final class BlockSpawnAnimEffect
         }
 
         flush(buffers);
-        matrices.pop();
+        matrices.popPose();
     }
 
-    private static void flush(VertexConsumerProvider.Immediate buffers)
+    private static void flush(MultiBufferSource.BufferSource buffers)
     {
         RenderSystem.disableCull();
-        buffers.draw(RenderLayer.getTranslucent());
+        buffers.endBatch(RenderType.translucent());
         RenderSystem.enableCull();
     }
 

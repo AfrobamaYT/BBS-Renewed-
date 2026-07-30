@@ -5,20 +5,20 @@ import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class InGameHudMixin
 {
     @Inject(method = "render", at = @At(value = "HEAD"), cancellable = true)
-    public void render(DrawContext drawContext, RenderTickCounter tickCounter, CallbackInfo info)
+    public void render(GuiGraphics drawContext, DeltaTracker tickCounter, CallbackInfo info)
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
@@ -48,19 +48,19 @@ public class InGameHudMixin
             return;
         }
 
-        MinecraftClient.getInstance().options.hudHidden = false;
+        Minecraft.getInstance().options.hideGui = false;
         TrackerClientClip.beginHudRendering(drawContext);
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    public void onRenderEnd(DrawContext drawContext, RenderTickCounter tickCounter, CallbackInfo info)
+    public void onRenderEnd(GuiGraphics drawContext, DeltaTracker tickCounter, CallbackInfo info)
     {
         BBSRendering.onRenderBeforeScreen();
 
         if (TrackerClientClip.shouldRenderHud() && BBSModClient.getCameraController().getCurrent() != null)
         {
             TrackerClientClip.endHudRendering(drawContext);
-            MinecraftClient.getInstance().options.hudHidden = true;
+            Minecraft.getInstance().options.hideGui = true;
         }
     }
 }

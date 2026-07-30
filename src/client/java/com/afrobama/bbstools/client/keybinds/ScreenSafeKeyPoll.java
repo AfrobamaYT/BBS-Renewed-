@@ -2,16 +2,14 @@
 // offenem UI-screen feuert.
 package com.afrobama.bbstools.client.keybinds;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Liest den PHYSISCHEN zustand der taste, auf die ein {@link KeyBinding}
+ * Liest den PHYSISCHEN zustand der taste, auf die ein {@link KeyMapping}
  * gerade gebunden ist, und meldet die off&rarr;on-flanke.
  *
  * <p>WARUM das noetig ist: Minecraft pumpt keybindings nur im screen-losen
@@ -22,7 +20,7 @@ import org.lwjgl.glfw.GLFW;
  * weg ist — z.B. das debug-overlay ausblenden — ist der vanilla-kanal
  * damit der falsche. Deshalb fragen wir GLFW direkt.</p>
  *
- * <p>Die bindung selbst bleibt ein echtes {@link KeyBinding}: sie steht
+ * <p>Die bindung selbst bleibt ein echtes {@link KeyMapping}: sie steht
  * weiter im Controls-screen und ist dort umlegbar. Wir lesen nur bei jeder
  * abfrage neu, auf welche taste sie zeigt.</p>
  *
@@ -44,12 +42,12 @@ import org.lwjgl.glfw.GLFW;
  */
 public final class ScreenSafeKeyPoll
 {
-    private final KeyBinding binding;
+    private final KeyMapping binding;
     private final boolean requireNoModifiers;
 
     private boolean wasDown;
 
-    public ScreenSafeKeyPoll(KeyBinding binding, boolean requireNoModifiers)
+    public ScreenSafeKeyPoll(KeyMapping binding, boolean requireNoModifiers)
     {
         this.binding = binding;
         this.requireNoModifiers = requireNoModifiers;
@@ -59,18 +57,18 @@ public final class ScreenSafeKeyPoll
      * @return true genau einmal pro tastendruck (off&rarr;on-flanke),
      *         unabhaengig davon ob ein screen offen ist.
      */
-    public boolean pressed(MinecraftClient mc)
+    public boolean pressed(Minecraft mc)
     {
         /* Vanilla-schlange leeren (FALLE 2) — der rueckgabewert interessiert
          * uns nicht, wir entscheiden allein ueber den physischen zustand. */
         if (this.binding != null)
         {
-            while (this.binding.wasPressed()) { /* drain */ }
+            while (this.binding.consumeClick()) { /* drain */ }
         }
 
         if (mc == null || mc.getWindow() == null) return false;
 
-        long handle = mc.getWindow().getHandle();
+        long handle = mc.getWindow().getWindow();
         boolean down = this.pollDown(handle);
         boolean edge = down && !this.wasDown;
 
@@ -84,7 +82,7 @@ public final class ScreenSafeKeyPoll
 
     private boolean pollDown(long handle)
     {
-        InputUtil.Key key;
+        InputConstants.Key key;
 
         try
         {
@@ -95,28 +93,28 @@ public final class ScreenSafeKeyPoll
             return false;
         }
 
-        if (key == null || key == InputUtil.UNKNOWN_KEY) return false;
+        if (key == null || key == InputConstants.UNKNOWN) return false;
 
-        int code = key.getCode();
+        int code = key.getValue();
         if (code < 0) return false;
 
         /* Maus-codes (0..7) ueberschneiden sich mit GLFW-tastencodes, deshalb
          * entscheidet die kategorie ueber den abfrage-weg. */
-        if (key.getCategory() == InputUtil.Type.MOUSE)
+        if (key.getType() == InputConstants.Type.MOUSE)
         {
             return GLFW.glfwGetMouseButton(handle, code) == GLFW.GLFW_PRESS;
         }
 
-        return InputUtil.isKeyPressed(handle, code);
+        return InputConstants.isKeyDown(handle, code);
     }
 
     private static boolean anyModifierDown(long handle)
     {
-        return InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_SHIFT)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_CONTROL)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_ALT)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_ALT);
+        return InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_ALT)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_ALT);
     }
 }

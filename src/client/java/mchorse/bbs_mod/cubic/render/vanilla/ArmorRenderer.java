@@ -1,69 +1,68 @@
 package mchorse.bbs_mod.cubic.render.vanilla;
 
 import com.google.common.collect.Maps;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.utils.colors.Color;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.armortrim.ArmorTrim;
+import net.minecraft.world.item.component.DyedItemColor;
 import mchorse.bbs_mod.cubic.model.ArmorType;
 import mchorse.bbs_mod.forms.entities.IEntity;
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.model.BakedModelManager;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.DyedColorComponent;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ArmorItem;
-import net.minecraft.item.ArmorMaterial;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.trim.ArmorTrim;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.Identifier;
-
 import java.util.Map;
 
 public class ArmorRenderer
 {
-    private static final Map<String, Identifier> ARMOR_TEXTURE_CACHE = Maps.newHashMap();
-    private final BipedEntityModel innerModel;
-    private final BipedEntityModel outerModel;
-    private final SpriteAtlasTexture armorTrimsAtlas;
+    private static final Map<String, ResourceLocation> ARMOR_TEXTURE_CACHE = Maps.newHashMap();
+    private final HumanoidModel innerModel;
+    private final HumanoidModel outerModel;
+    private final TextureAtlas armorTrimsAtlas;
 
-    public ArmorRenderer(BipedEntityModel innerModel, BipedEntityModel outerModel, BakedModelManager bakery)
+    public ArmorRenderer(HumanoidModel innerModel, HumanoidModel outerModel, ModelManager bakery)
     {
         this.innerModel = innerModel;
         this.outerModel = outerModel;
-        this.armorTrimsAtlas = bakery.getAtlas(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE);
+        this.armorTrimsAtlas = bakery.getAtlas(Sheets.ARMOR_TRIMS_SHEET);
     }
 
-    public void renderArmorSlot(MatrixStack matrices, VertexConsumerProvider vertexConsumers, IEntity entity, EquipmentSlot armorSlot, ArmorType type, int light)
+    public void renderArmorSlot(PoseStack matrices, MultiBufferSource vertexConsumers, IEntity entity, EquipmentSlot armorSlot, ArmorType type, int light)
     {
         ItemStack itemStack = entity.getEquipmentStack(armorSlot);
         Item item = itemStack.getItem();
 
         if (item instanceof ArmorItem armorItem)
         {
-            if (armorItem.getSlotType() == armorSlot)
+            if (armorItem.getEquipmentSlot() == armorSlot)
             {
                 boolean innerModel = this.usesInnerModel(armorSlot);
-                BipedEntityModel bipedModel = this.getModel(armorSlot);
+                HumanoidModel bipedModel = this.getModel(armorSlot);
                 ModelPart part = this.getPart(bipedModel, type);
 
-                bipedModel.setVisible(true);
+                bipedModel.setAllVisible(true);
 
-                part.pivotX = part.pivotY = part.pivotZ = 0F;
-                part.pitch = part.yaw = part.roll = 0F;
+                part.x = part.y = part.z = 0F;
+                part.xRot = part.yRot = part.zRot = 0F;
                 part.xScale = part.yScale = part.zScale = 1F;
 
-                DyedColorComponent dyed = itemStack.get(DataComponentTypes.DYED_COLOR);
+                DyedItemColor dyed = itemStack.get(DataComponents.DYED_COLOR);
 
                 if (dyed != null)
                 {
@@ -80,14 +79,14 @@ public class ArmorRenderer
                     this.renderArmorParts(part, matrices, vertexConsumers, light, armorItem, innerModel, 1F, 1F, 1F, null);
                 }
 
-                ArmorTrim trim = itemStack.get(DataComponentTypes.TRIM);
+                ArmorTrim trim = itemStack.get(DataComponents.TRIM);
 
                 if (trim != null)
                 {
                     this.renderTrim(part, armorItem.getMaterial(), matrices, vertexConsumers, light, trim, innerModel);
                 }
 
-                if (itemStack.hasGlint())
+                if (itemStack.hasFoil())
                 {
                     this.renderGlint(part, matrices, vertexConsumers, light);
                 }
@@ -95,7 +94,7 @@ public class ArmorRenderer
         }
     }
 
-    private ModelPart getPart(BipedEntityModel bipedModel, ArmorType type)
+    private ModelPart getPart(HumanoidModel bipedModel, ArmorType type)
     {
         switch (type)
         {
@@ -122,28 +121,28 @@ public class ArmorRenderer
         return bipedModel.head;
     }
 
-    private void renderArmorParts(ModelPart part, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, ArmorItem item, boolean secondTextureLayer, float red, float green, float blue, String overlay)
+    private void renderArmorParts(ModelPart part, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ArmorItem item, boolean secondTextureLayer, float red, float green, float blue, String overlay)
     {
-        VertexConsumer base = vertexConsumers.getBuffer(RenderLayer.getArmorCutoutNoCull(this.getArmorTexture(item, secondTextureLayer, overlay)));
+        VertexConsumer base = vertexConsumers.getBuffer(RenderType.armorCutoutNoCull(this.getArmorTexture(item, secondTextureLayer, overlay)));
         VertexConsumer vertexConsumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
 
-        part.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV);
+        part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
     }
 
-    private void renderTrim(ModelPart part, RegistryEntry<ArmorMaterial> material, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, ArmorTrim trim, boolean leggings)
+    private void renderTrim(ModelPart part, Holder<ArmorMaterial> material, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ArmorTrim trim, boolean leggings)
     {
-        Sprite sprite = this.armorTrimsAtlas.getSprite(leggings ? trim.getLeggingsModelId(material) : trim.getGenericModelId(material));
-        VertexConsumer vertexConsumer = sprite.getTextureSpecificVertexConsumer(vertexConsumers.getBuffer(TexturedRenderLayers.getArmorTrims(trim.getPattern().value().decal())));
+        TextureAtlasSprite sprite = this.armorTrimsAtlas.getSprite(leggings ? trim.innerTexture(material) : trim.outerTexture(material));
+        VertexConsumer vertexConsumer = sprite.wrap(vertexConsumers.getBuffer(Sheets.armorTrimsSheet(trim.pattern().value().decal())));
 
-        part.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV);
+        part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
     }
 
-    private void renderGlint(ModelPart part, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light)
+    private void renderGlint(ModelPart part, PoseStack matrices, MultiBufferSource vertexConsumers, int light)
     {
-        part.render(matrices, vertexConsumers.getBuffer(RenderLayer.getArmorEntityGlint()), light, OverlayTexture.DEFAULT_UV);
+        part.render(matrices, vertexConsumers.getBuffer(RenderType.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
     }
 
-    private BipedEntityModel getModel(EquipmentSlot slot)
+    private HumanoidModel getModel(EquipmentSlot slot)
     {
         return this.usesInnerModel(slot) ? this.innerModel : this.outerModel;
     }
@@ -153,17 +152,17 @@ public class ArmorRenderer
         return slot == EquipmentSlot.LEGS;
     }
 
-    private Identifier getArmorTexture(ArmorItem item, boolean secondLayer, String overlay)
+    private ResourceLocation getArmorTexture(ArmorItem item, boolean secondLayer, String overlay)
     {
-        RegistryKey<ArmorMaterial> key = item.getMaterial().getKey().orElse(null);
-        String materialName = key == null ? "iron" : key.getValue().getPath();
+        ResourceKey<ArmorMaterial> key = item.getMaterial().unwrapKey().orElse(null);
+        String materialName = key == null ? "iron" : key.location().getPath();
         String id = "textures/models/armor/" + materialName + "_layer_" + (secondLayer ? 2 : 1) + (overlay == null ? "" : "_" + overlay) + ".png";
 
-        Identifier found = ARMOR_TEXTURE_CACHE.get(id);
+        ResourceLocation found = ARMOR_TEXTURE_CACHE.get(id);
 
         if (found == null)
         {
-            found = Identifier.of("minecraft", id);
+            found = ResourceLocation.fromNamespaceAndPath("minecraft", id);
             ARMOR_TEXTURE_CACHE.put(id, found);
         }
 

@@ -22,7 +22,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public final class CinematicDistanceCommand
 {
@@ -100,7 +100,7 @@ public final class CinematicDistanceCommand
 
     private static void msg(FabricClientCommandSource src, String s)
     {
-        src.sendFeedback(Text.literal(s));
+        src.sendFeedback(Component.literal(s));
     }
 
 }

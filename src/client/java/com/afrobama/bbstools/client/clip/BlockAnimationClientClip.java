@@ -16,10 +16,8 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.clips.Clip;
-
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +53,7 @@ public class BlockAnimationClientClip extends BlockAnimationActionClip
         BlockAnimation.captureAndAnimateRegion(
             new BlockPos(x0, y0, z0),
             new BlockPos(x1, y1, z1),
-            new Vec3d(this.offsetX.get(), this.offsetY.get(), this.offsetZ.get()),
+            new Vec3(this.offsetX.get(), this.offsetY.get(), this.offsetZ.get()),
             this.animDuration.get());
 
         LOG.info("BlockAnimationClip fired tick={} region ({},{},{})->({},{},{}) offset=({},{},{}) duration={}s",

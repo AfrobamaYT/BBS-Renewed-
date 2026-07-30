@@ -5,15 +5,14 @@
 package com.afrobama.bbstools.client.ragdoll;
 
 import mchorse.bbs_mod.staff.RagdollTextureRegistry;
-
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.ZombieEntityRenderer;
-import net.minecraft.entity.mob.ZombieEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.ZombieRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.monster.Zombie;
 
 /**
  * Drop-in replacement for vanilla {@code ZombieEntityRenderer} that
- * returns a BBS-derived {@link Identifier} when the entity has a
+ * returns a BBS-derived {@link ResourceLocation} when the entity has a
  * per-UUID override registered via {@link RagdollTextureRegistry}.
  *
  * <p>BBS already ships the same wrapper for {@code Villager} and
@@ -27,19 +26,19 @@ import net.minecraft.util.Identifier;
  * to the vanilla zombie texture — every other zombie in the world
  * still renders correctly.</p>
  */
-public class BBSTexturedZombieRenderer extends ZombieEntityRenderer
+public class BBSTexturedZombieRenderer extends ZombieRenderer
 {
-    public BBSTexturedZombieRenderer(EntityRendererFactory.Context ctx)
+    public BBSTexturedZombieRenderer(EntityRendererProvider.Context ctx)
     {
         super(ctx);
     }
 
     @Override
-    public Identifier getTexture(ZombieEntity entity)
+    public ResourceLocation getTextureLocation(Zombie entity)
     {
-        Identifier override = RagdollTextureRegistry.get(entity.getUuid());
+        ResourceLocation override = RagdollTextureRegistry.get(entity.getUUID());
 
-        return override != null ? override : super.getTexture(entity);
+        return override != null ? override : super.getTextureLocation(entity);
     }
 
 }

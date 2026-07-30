@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils.resources;
 
 import javax.imageio.ImageIO;
+import mchorse.bbs_mod.utils.resources.Pixels;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

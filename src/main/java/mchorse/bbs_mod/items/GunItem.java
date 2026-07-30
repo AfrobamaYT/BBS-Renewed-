@@ -3,50 +3,50 @@ package mchorse.bbs_mod.items;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class GunItem extends Item
 {
     public static Entity actor;
 
-    public GunItem(Settings settings)
+    public GunItem(Properties settings)
     {
         super(settings);
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand)
+    public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand)
     {
         Entity owner = actor == null ? user : actor;
-        ItemStack stack = user.getStackInHand(hand);
+        ItemStack stack = user.getItemInHand(hand);
         GunProperties properties = this.getProperties(stack);
 
         /* Launch the player */
         if (properties.launch)
         {
-            Vec3d rotationVector = owner.getRotationVector().multiply(properties.launchPower);
+            Vec3 rotationVector = owner.getLookAngle().scale(properties.launchPower);
 
             if (properties.launchAdditive)
             {
-                owner.addVelocity(rotationVector);
+                owner.push(rotationVector);
             }
             else
             {
-                owner.setVelocity(rotationVector);
+                owner.setDeltaMovement(rotationVector);
             }
 
-            return new TypedActionResult<>(ActionResult.SUCCESS, stack);
+            return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
         }
 
-        if (!world.isClient)
+        if (!world.isClientSide)
         {
             /* Shoot projectiles */
             int projectiles = Math.max(properties.projectiles, 1);
@@ -54,25 +54,25 @@ public class GunItem extends Item
             for (int i = 0; i < projectiles; i++)
             {
                 GunProjectileEntity projectile = new GunProjectileEntity(BBSMod.GUN_PROJECTILE_ENTITY, world);
-                float yaw = owner.getHeadYaw() + (float) (properties.scatterY * (Math.random() - 0.5D));
-                float pitch = owner.getPitch() + (float) (properties.scatterX * (Math.random() - 0.5D));
+                float yaw = owner.getYHeadRot() + (float) (properties.scatterY * (Math.random() - 0.5D));
+                float pitch = owner.getXRot() + (float) (properties.scatterX * (Math.random() - 0.5D));
 
                 projectile.setProperties(properties);
                 projectile.setForm(FormUtils.copy(properties.projectileForm));
-                projectile.setPos(owner.getX(), owner.getY() + owner.getEyeHeight(owner.getPose()), owner.getZ());
-                projectile.setVelocity(owner, pitch, yaw, 0F, properties.speed, 0F);
-                projectile.calculateDimensions();
+                projectile.setPosRaw(owner.getX(), owner.getY() + owner.getEyeHeight(owner.getPose()), owner.getZ());
+                projectile.shootFromRotation(owner, pitch, yaw, 0F, properties.speed, 0F);
+                projectile.refreshDimensions();
 
-                world.spawnEntity(projectile);
+                world.addFreshEntity(projectile);
             }
 
             if (!properties.cmdFiring.isEmpty())
             {
-                owner.getServer().getCommandManager().executeWithPrefix(owner.getCommandSource(), properties.cmdFiring);
+                owner.getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStack(), properties.cmdFiring);
             }
         }
 
-        return new TypedActionResult<>(ActionResult.PASS, stack);
+        return new InteractionResultHolder<>(InteractionResult.PASS, stack);
     }
 
     private GunProperties getProperties(ItemStack stack)

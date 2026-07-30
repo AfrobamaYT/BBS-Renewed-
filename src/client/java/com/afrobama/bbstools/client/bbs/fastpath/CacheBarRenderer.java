@@ -10,13 +10,11 @@
 package com.afrobama.bbstools.client.bbs.fastpath;
 
 import com.afrobama.bbstools.perf.BBSPerfConfig;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
-
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -67,15 +65,15 @@ public final class CacheBarRenderer
         SNAP_COUNT++;
     }
 
-    private static void draw(MatrixStack stack)
+    private static void draw(PoseStack stack)
     {
         if (stack == null) return;
-        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-        VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        VertexConsumer vc = immediate.getBuffer(RenderLayer.getLines());
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        MultiBufferSource.BufferSource immediate = mc.renderBuffers().bufferSource();
+        VertexConsumer vc = immediate.getBuffer(RenderType.lines());
 
-        Matrix4f m = stack.peek().getPositionMatrix();
-        MatrixStack.Entry entry = stack.peek();
+        Matrix4f m = stack.last().pose();
+        PoseStack.Pose entry = stack.last();
 
         float half = BAR_WIDTH * 0.5F;
         for (int i = 0; i < SNAP_COUNT; i++)
@@ -91,18 +89,18 @@ public final class CacheBarRenderer
             /* Green: cached portion. */
             if (p > 0.001F)
             {
-                vc.vertex(m, xL, y, z).color(60, 220, 90, 255).normal(entry, 1F, 0F, 0F);
-                vc.vertex(m, xMid, y, z).color(60, 220, 90, 255).normal(entry, 1F, 0F, 0F);
+                vc.addVertex(m, xL, y, z).setColor(60, 220, 90, 255).setNormal(entry, 1F, 0F, 0F);
+                vc.addVertex(m, xMid, y, z).setColor(60, 220, 90, 255).setNormal(entry, 1F, 0F, 0F);
             }
             /* Red: remaining (live) portion. */
             if (p < 0.999F)
             {
-                vc.vertex(m, xMid, y, z).color(210, 60, 60, 255).normal(entry, 1F, 0F, 0F);
-                vc.vertex(m, xR, y, z).color(210, 60, 60, 255).normal(entry, 1F, 0F, 0F);
+                vc.addVertex(m, xMid, y, z).setColor(210, 60, 60, 255).setNormal(entry, 1F, 0F, 0F);
+                vc.addVertex(m, xR, y, z).setColor(210, 60, 60, 255).setNormal(entry, 1F, 0F, 0F);
             }
         }
 
-        immediate.draw(RenderLayer.getLines());
+        immediate.endBatch(RenderType.lines());
     }
 
 }

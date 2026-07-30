@@ -1,7 +1,7 @@
 // Coded by Afrobama/Claude — BBS Renewed Camera Preview Phase 3 perf
 package com.afrobama.bbstools.client.campreview;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * Per-frame skip-decision helpers for camera previews. Public fork has
@@ -65,8 +65,8 @@ public final class CameraPreviewPerf
 
         if (SKIP_WHEN_DASHBOARD_CLOSED)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc != null && !(mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen))
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen))
             {
                 previewsSkippedDashboard++;
                 return true;
@@ -81,11 +81,11 @@ public final class CameraPreviewPerf
     {
         if (SKIP_WHEN_OFFSCREEN)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.getWindow() != null)
             {
-                int sw = mc.getWindow().getScaledWidth();
-                int sh = mc.getWindow().getScaledHeight();
+                int sw = mc.getWindow().getGuiScaledWidth();
+                int sh = mc.getWindow().getGuiScaledHeight();
                 if (p.windowX + p.windowW < 0 || p.windowY + p.windowH < 0
                     || p.windowX > sw || p.windowY > sh)
                 {

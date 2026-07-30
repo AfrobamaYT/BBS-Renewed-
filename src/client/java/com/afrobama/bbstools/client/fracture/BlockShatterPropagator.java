@@ -1,11 +1,5 @@
 package com.afrobama.bbstools.client.fracture;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
-
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +11,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Radial impact-point destruction propagator. When a fracture body
@@ -220,14 +219,14 @@ public final class BlockShatterPropagator
             this.physicsScale = physicsScale;
             this.debrisLifetime = debrisLifetime;
             this.noInterCollision = noInterCollision;
-            this.origin = origin.toImmutable();
+            this.origin = origin.immutable();
             this.impactDir = impactDir;
             this.maxRadius = maxRadius;
             this.blocksPerTick = Math.max(1, blocksPerTick);
             this.debrisChunksPerBlock = Math.max(1, debrisChunksPerBlock);
             this.destroyBlocks = destroyBlocks;
-            this.regionMin = regionMin == null ? null : regionMin.toImmutable();
-            this.regionMax = regionMax == null ? null : regionMax.toImmutable();
+            this.regionMin = regionMin == null ? null : regionMin.immutable();
+            this.regionMax = regionMax == null ? null : regionMax.immutable();
             this.scatterForce = scatterForce;
             this.upwardForce = upwardForce;
             this.directionX = directionX;
@@ -362,7 +361,7 @@ public final class BlockShatterPropagator
 
         if (ACTIVE.isEmpty()) return;
 
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         if (world == null)
         {
             /* Force-release every event's override before clearing so
@@ -499,7 +498,7 @@ public final class BlockShatterPropagator
                  *  total expansion. */
                 for (Direction d : Direction.values())
                 {
-                    BlockPos n = pos.offset(d);
+                    BlockPos n = pos.relative(d);
                     if (!e.visited.contains(n.asLong())) e.frontier.offer(n);
                 }
             }
@@ -521,7 +520,7 @@ public final class BlockShatterPropagator
          *  fallback for "default" blockMode). The BBS-emitter path also
          *  applies the mask itself, but redoing it on already-masked
          *  bodies is a harmless no-op. */
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         int bodiesBefore = (e.noInterCollision && world != null)
             ? FracturePhysicsBridge.snapshotBodyCount(world) : -1;
 
@@ -875,10 +874,10 @@ public final class BlockShatterPropagator
             long startBlocksDestroyed = rec[3];
             it.remove();
 
-            net.minecraft.world.World w;
+            net.minecraft.world.level.Level w;
             try
             {
-                w = net.minecraft.client.MinecraftClient.getInstance().world;
+                w = net.minecraft.client.Minecraft.getInstance().level;
                 if (w == null) continue;
             }
             catch (Throwable t) { continue; }
@@ -899,12 +898,12 @@ public final class BlockShatterPropagator
             {
                 try
                 {
-                    net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
                     if (mc != null && mc.player != null)
                     {
                         boolean dup = blocksDestroyed > 0 && spawnCalls > blocksDestroyed;
                         String color = dup ? "§c" : "§a";
-                        mc.player.sendMessage(net.minecraft.text.Text.literal(
+                        mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                             "§6[BBSTools-debug] §fdestroyed=§e" + blocksDestroyed
                             + " §fspawnCalls=" + color + spawnCalls
                             + " §fratio=" + color + String.format("%.2f", spawnRatio)

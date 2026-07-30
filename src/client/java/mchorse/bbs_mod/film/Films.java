@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import mchorse.bbs_mod.film.Film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -21,8 +22,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -145,7 +145,7 @@ public class Films
 
     public void startRecording(Film film, int replayId, int tick)
     {
-        Morph morph = Morph.getMorph(MinecraftClient.getInstance().player);
+        Morph morph = Morph.getMorph(Minecraft.getInstance().player);
 
         this.recorder = new Recorder(film, morph == null ? null : morph.getForm(), replayId, tick);
 
@@ -325,8 +325,8 @@ public class Films
                     }
                 }
 
-                int sw = MinecraftClient.getInstance().getWindow().getScaledWidth();
-                int sh = MinecraftClient.getInstance().getWindow().getScaledHeight();
+                int sw = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+                int sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
                 w = (int) (sw * BBSSettings.audioWaveformWidth.get());
                 x = sw / 2 - w / 2;
                 y = sh / 2 + 100;

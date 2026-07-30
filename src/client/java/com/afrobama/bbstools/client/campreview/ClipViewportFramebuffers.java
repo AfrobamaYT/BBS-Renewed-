@@ -2,13 +2,10 @@
 package com.afrobama.bbstools.client.campreview;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.SimpleFramebuffer;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,7 +15,7 @@ import java.util.UUID;
 
 /**
  * Per-active-clip framebuffer ownership. Lazily allocates a
- * {@link SimpleFramebuffer} the first time a clip activates and
+ * {@link TextureTarget} the first time a clip activates and
  * releases it when the clip leaves the active set for a few frames.
  *
  * <p>Default size 320×180 — Phase 13 can let the docked viewport
@@ -46,7 +43,7 @@ public final class ClipViewportFramebuffers
      *  gaps between consecutive Add-Camera clips in the timeline. */
     private static final int IDLE_FRAMES_BEFORE_FREE = 60;
 
-    private static final Map<UUID, SimpleFramebuffer> FBS = new HashMap<>();
+    private static final Map<UUID, TextureTarget> FBS = new HashMap<>();
     private static final Map<UUID, Integer> IDLE_TICKS = new HashMap<>();
 
     private ClipViewportFramebuffers() {}
@@ -56,22 +53,22 @@ public final class ClipViewportFramebuffers
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> disposeAll());
     }
 
-    public static SimpleFramebuffer get(UUID id)
+    public static TextureTarget get(UUID id)
     {
-        SimpleFramebuffer fb = FBS.get(id);
+        TextureTarget fb = FBS.get(id);
         if (fb == null)
         {
             try
             {
-                fb = new SimpleFramebuffer(DEFAULT_W, DEFAULT_H, true,
-                    MinecraftClient.IS_SYSTEM_MAC);
+                fb = new TextureTarget(DEFAULT_W, DEFAULT_H, true,
+                    Minecraft.ON_OSX);
                 fb.setClearColor(0F, 0F, 0F, 1F);
 
                 /* Linear filter so the tile blit smooths instead of
                  *  staircasing during replay motion. */
                 try
                 {
-                    fb.setTexFilter(org.lwjgl.opengl.GL11.GL_LINEAR);
+                    fb.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
                 }
                 catch (Throwable ignored) {}
 
@@ -95,10 +92,10 @@ public final class ClipViewportFramebuffers
      *  Free framebuffers that have idled past the grace period. */
     public static void garbageCollect(Set<UUID> renderedThisFrame)
     {
-        Iterator<Map.Entry<UUID, SimpleFramebuffer>> it = FBS.entrySet().iterator();
+        Iterator<Map.Entry<UUID, TextureTarget>> it = FBS.entrySet().iterator();
         while (it.hasNext())
         {
-            Map.Entry<UUID, SimpleFramebuffer> e = it.next();
+            Map.Entry<UUID, TextureTarget> e = it.next();
             UUID id = e.getKey();
             if (renderedThisFrame.contains(id))
             {
@@ -108,7 +105,7 @@ public final class ClipViewportFramebuffers
             int idle = IDLE_TICKS.getOrDefault(id, 0) + 1;
             if (idle >= IDLE_FRAMES_BEFORE_FREE)
             {
-                try { e.getValue().delete(); }
+                try { e.getValue().destroyBuffers(); }
                 catch (Throwable ignored) {}
                 IDLE_TICKS.remove(id);
                 it.remove();
@@ -132,9 +129,9 @@ public final class ClipViewportFramebuffers
 
     public static void disposeAll()
     {
-        for (SimpleFramebuffer fb : FBS.values())
+        for (TextureTarget fb : FBS.values())
         {
-            try { fb.delete(); }
+            try { fb.destroyBuffers(); }
             catch (Throwable ignored) {}
         }
         FBS.clear();

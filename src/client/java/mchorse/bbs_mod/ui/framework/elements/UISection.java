@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -9,8 +11,6 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
 
 /**
  * A collapsible section: a clickable header bar (a fold arrow and a title sitting
@@ -138,13 +138,13 @@ public class UISection extends UIElement
      */
     private void renderArrow(UIContext context, float cx, float cy)
     {
-        MatrixStack matrices = context.batcher.getContext().getMatrices();
+        PoseStack matrices = context.batcher.getContext().pose();
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(cx, cy, 0F);
-        matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(this.expanded ? 90F : 0F), 0F, 0F, 0F);
+        matrices.rotateAround(Axis.ZP.rotationDegrees(this.expanded ? 90F : 0F), 0F, 0F, 0F);
         context.batcher.icon(Icons.ARROW_SMALL, Colors.WHITE, 0, 0, 0.5F, 0.5F);
-        matrices.pop();
+        matrices.popPose();
     }
 
     @Override

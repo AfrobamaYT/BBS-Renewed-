@@ -6,8 +6,7 @@ import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
@@ -463,7 +462,7 @@ public class Scroll
 
         if (isInside)
         {
-            if (MinecraftClient.IS_SYSTEM_MAC)
+            if (Minecraft.ON_OSX)
             {
                 this.scrollByStep(scroll * BBSSettings.scrollingSensitivity.get());
             }
@@ -511,7 +510,7 @@ public class Scroll
     {
         if (this.isSmoothScrolling())
         {
-            float delta = MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration();
+            float delta = Minecraft.getInstance().getTimer().getGameTimeDeltaTicks();
 
             /* The higher the FPS, the smaller the lerp factor is,
              * the lower the FPS, the bigger the factor is */

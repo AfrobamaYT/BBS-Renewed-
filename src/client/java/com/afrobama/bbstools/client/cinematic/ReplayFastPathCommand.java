@@ -33,12 +33,9 @@ import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.client.MinecraftClient;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 
 import java.io.File;
@@ -195,7 +192,7 @@ public final class ReplayFastPathCommand
     private static int setArmyBakeFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_ARMY_BAKE = on;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools army-bake %s — record-on-render animation cache. First render of each "
             + "(replay,tick) is live + recorded; subsequent renders replay from cache (skips "
             + "animator, no race). Pause film → cached == live. %s",
@@ -207,7 +204,7 @@ public final class ReplayFastPathCommand
     private static int setShadowSkipFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.SKIP_BLOB_SHADOW = on;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools shadow-skip %s — skips per-replay blob-shadow buffer-fill (~2.9ms/frame "
             + "@3000). %s",
             on ? "ON" : "OFF",
@@ -221,7 +218,7 @@ public final class ReplayFastPathCommand
         BBSPerfConfig.bypassCompareCount = 0L;
         BBSPerfConfig.bypassCompareMismatches = 0L;
         BBSPerfConfig.bypassCompareMaxDelta = 0.0;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools bypass-compare %s — logs candidate-vs-BBS worldMatrix delta (no behavior "
             + "change). Play, then /bbstools replay-fast-path status → check bypass-compare maxDelta.",
             on ? "ON (counters reset)" : "OFF")));
@@ -234,7 +231,7 @@ public final class ReplayFastPathCommand
         BBSPerfConfig.bypassFrames = 0L;
         BBSPerfConfig.bypassReplays = 0L;
         BBSPerfConfig.bypassFallbacks = 0L;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools render-loop bypass %s — cancels BBS per-replay render loop for pure simple "
             + "crowds, parallel worldMatrix (16 cores) → Tier 2-h. Needs tier2-h ON. "
             + "VERIFY VISUALLY (replays still correct?). %s",
@@ -246,7 +243,7 @@ public final class ReplayFastPathCommand
     private static int setAnimatorCacheFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_ANIMATOR_CONFIG_CACHE = on;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools animator-cache %s — throttles ensureAnimator's per-tick ActionsConfig rebuild "
             + "(the editor-freeze hotspot at 3000 replays). Re-resolves every %dms. %s",
             on ? "ON" : "OFF", BBSPerfConfig.ANIMATOR_CACHE_THROTTLE_MS,
@@ -257,7 +254,7 @@ public final class ReplayFastPathCommand
     private static int setLoadingBarFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_CACHE_LOADING_BAR = on;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools cache bar %s — progress bar in the REPLAY MENU (select a replay → "
             + "shows baked %%). Needs render-loop bypass ON (publishes per-replay progress). %s",
             on ? "ON" : "OFF",
@@ -268,7 +265,7 @@ public final class ReplayFastPathCommand
     private static int setBgBakeFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_BG_BAKE = on;
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "BBSTools background-bake %s — fills the cache WHILE PAUSED (DaVinci-style), so the "
             + "menu bar climbs without playing. Bakes up to %d ticks/idle-frame. Needs army-bake + "
             + "render-loop bypass ON (pure crowd of simple replays). %s",
@@ -282,7 +279,7 @@ public final class ReplayFastPathCommand
         AnimationBakeCache.clear();
         com.afrobama.bbstools.client.bbs.fastpath.WorldTransformCache.clear();
         com.afrobama.bbstools.client.bbs.fastpath.BackgroundBaker.reset();
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             "BBSTools army-bake cache CLEARED (frames + counters + signatures). Re-fills on next play."));
         return Command.SINGLE_SUCCESS;
     }
@@ -290,7 +287,7 @@ public final class ReplayFastPathCommand
     private static int setFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_FAST_PATH = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path %s — Tier 1 measure mode (no render replacement yet)",
                 on ? "ON" : "OFF")));
         return Command.SINGLE_SUCCESS;
@@ -299,7 +296,7 @@ public final class ReplayFastPathCommand
     private static int setRenderFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_FAST_PATH_RENDER = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path RENDER %s — Tier 1.5b render-replace mode. " +
                 "When ON, accepted replays render via FastPathRenderer (state-hoisted + " +
                 "direct ModelInstance.render). Requires /bbstools replay-fast-path on.",
@@ -310,7 +307,7 @@ public final class ReplayFastPathCommand
     private static int setTier2Flag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_GPU = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2 %s — Tier 2-a scaffold mode. " +
                 "Builds SkinnedMeshIR cache + counters alongside Tier 1.5 draw. " +
                 "Tier 2-b will replace draw with real GPU-instanced path.",
@@ -321,7 +318,7 @@ public final class ReplayFastPathCommand
     private static int setTier2DrawFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_DRAW = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-DRAW %s — Tier 2-b merged-buffer path. " +
                 "Collapses N per-instance draws into 1 drawArrays per (model.id) bucket via " +
                 "CPU bone-skin from cached SkinnedMeshIR. Requires /bbstools replay-fast-path on + " +
@@ -333,7 +330,7 @@ public final class ReplayFastPathCommand
     private static int setTier2ParallelFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_PARALLEL_SKIN = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-PARALLEL %s — Tier 2-c 3-phase pipeline. " +
                 "Phase A serial animator+matrix-extract, Phase B parallel skin via ForkJoinPool, " +
                 "Phase C serial BufferBuilder emit + 1 drawArrays. Requires all of: replay-fast-path on, " +
@@ -345,7 +342,7 @@ public final class ReplayFastPathCommand
     private static int setTier2EmitFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_PARALLEL_EMIT = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-EMIT %s — Tier 2-d parallel BufferBuilder " +
                 "emit. N workers each build their own BufferBuilder in parallel (Iris extends each " +
                 "independently), main thread issues N back-to-back drawArrays under same shader/texture. " +
@@ -357,7 +354,7 @@ public final class ReplayFastPathCommand
     private static int setTier2MergeFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_MERGE = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-MERGE %s — Tier 2-e v1 merged-buffer draw. " +
                 "REGRESSION at 200 replays (50fps vs Tier 2-d's 70fps) — per-frame BufferAllocator + " +
                 "VBO recreation. Use tier2-e-v2 instead.",
@@ -368,7 +365,7 @@ public final class ReplayFastPathCommand
     private static int setTier2MergeV2Flag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_MERGE_V2 = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-E-V2 %s — Tier 2-e v2 persistent-buffer " +
                 "merged draw. REGRESSION at 1000reps (FPS=13 vs Tier 2-d's 20) — phaseF=38ms from " +
                 "memcpy 130MB+upload. Use tier2-h instead.",
@@ -379,7 +376,7 @@ public final class ReplayFastPathCommand
     private static int setTier2HFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_H = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-H %s — Tier 2-h GPU-instancing. ONE " +
                 "glDrawElementsInstanced per (model,texture) bucket; custom shader does bone-skin via " +
                 "per-instance SSBO. Replaces ALL Tier 2-b/c/d/e CPU emit paths. Top of dispatch ladder. " +
@@ -392,7 +389,7 @@ public final class ReplayFastPathCommand
     private static int setTier2PhaseAFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER2_PHASE_A_PARALLEL = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER2-PHASE-A %s — Tier 2-f parallelizes the " +
                 "animator+matrix-extract phase across ForkJoinPool. Per-replay state is per-renderer " +
                 "(StubEntity has no MC world race) so safe. Affects Tier 2-d (parallel-emit) only. " +
@@ -404,7 +401,7 @@ public final class ReplayFastPathCommand
     private static int setIncrementalEntitiesFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_INCREMENTAL_ENTITIES = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path INCREMENTAL-ENTITIES %s — replaces BBS's O(N) " +
                 "BaseFilmController.createEntities (used on every replay dupe) with a UUID-keyed " +
                 "cache. Dupe at 200-replay scale: 200 form-copies + 200 keyframe-applies → 1 new " +
@@ -416,7 +413,7 @@ public final class ReplayFastPathCommand
     private static int setTier3PoolsFlag(CommandContext<FabricClientCommandSource> ctx, boolean on)
     {
         BBSPerfConfig.ENABLE_TIER3_POOLS = on;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("BBSTools replay-fast-path TIER3-POOLS %s — Tier 3 lite per-thread pools. " +
                 "Workers reuse BufferAllocator via ThreadLocal (kill native malloc/free 15×/frame), " +
                 "main thread reuses CubicMatrixRenderer per modelId (kill ArrayList<Matrix4f> alloc " +
@@ -497,7 +494,7 @@ public final class ReplayFastPathCommand
         BENCH_SOURCE = ctx.getSource();
         BENCH_DEADLINE_NS = System.nanoTime() + (seconds * 1_000_000_000L);
 
-        ctx.getSource().sendFeedback(Text.literal(String.format(
+        ctx.getSource().sendFeedback(Component.literal(String.format(
             "[bench] production path ON (tier2-h + phase-a) + counters cleared. "
             + "Status auto-dumps in %d sec. Read frame-cost line for BBS-internal split.",
             seconds)));
@@ -590,8 +587,8 @@ public final class ReplayFastPathCommand
 
         /* Runtime envelope so Claude can see frame budget without
          * needing the user to type out FPS or heap manually. */
-        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-        int fps = mc.getCurrentFps();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        int fps = mc.getFps();
         long heapUsed = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024);
         long heapMax = Runtime.getRuntime().maxMemory() / (1024 * 1024);
         lines.add(String.format(
@@ -629,7 +626,7 @@ public final class ReplayFastPathCommand
 
         for (String line : lines)
         {
-            source.sendFeedback(Text.literal(line));
+            source.sendFeedback(Component.literal(line));
         }
 
         dumpStatusToFile(source, lines);
@@ -639,7 +636,7 @@ public final class ReplayFastPathCommand
     {
         try
         {
-            File runDir = MinecraftClient.getInstance().runDirectory;
+            File runDir = Minecraft.getInstance().gameDirectory;
             File out = new File(runDir, "bbstools-fastpath-status.txt");
 
             StringBuilder sb = new StringBuilder();
@@ -655,12 +652,12 @@ public final class ReplayFastPathCommand
             Files.writeString(out.toPath(), sb.toString(),
                 StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 
-            source.sendFeedback(Text.literal(
+            source.sendFeedback(Component.literal(
                 "[dump] appended to " + out.getAbsolutePath()));
         }
         catch (Throwable t)
         {
-            source.sendFeedback(Text.literal(
+            source.sendFeedback(Component.literal(
                 "[dump] write failed: " + t));
         }
     }
@@ -679,7 +676,7 @@ public final class ReplayFastPathCommand
         Tier2hInstancedDraw.resetCounters();
         FpsSampler.reset();
         BBSPerfConfig.fastPathCancellations = 0L;
-        ctx.getSource().sendFeedback(Text.literal("replay-fast-path counters reset (Tier 1.5 + Tier 2-a/b/c/d/e/e-v2/h + FPS sampler)"));
+        ctx.getSource().sendFeedback(Component.literal("replay-fast-path counters reset (Tier 1.5 + Tier 2-a/b/c/d/e/e-v2/h + FPS sampler)"));
         return Command.SINGLE_SUCCESS;
     }
 

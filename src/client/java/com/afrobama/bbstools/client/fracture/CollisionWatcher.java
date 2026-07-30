@@ -4,12 +4,10 @@ import com.afrobama.bbstools.fracture.ModelFractureActionClip;
 
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
-
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +144,7 @@ public final class CollisionWatcher
 
     private static void processWatcher(Watcher w, int filmTick)
     {
-        World world = MinecraftClient.getInstance().world;
+        Level world = Minecraft.getInstance().level;
         if (world == null) return;
 
         /* Re-extract every tick because the actor's pose may have
@@ -168,7 +166,7 @@ public final class CollisionWatcher
         float actorSpeedSq = actorVel.x * actorVel.x + actorVel.y * actorVel.y + actorVel.z * actorVel.z;
         if (actorSpeedSq < 0.0001F) return;
 
-        BlockPos.Mutable pos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
         for (BoneMeshExtractor.BoneFragment frag : fragments)
         {

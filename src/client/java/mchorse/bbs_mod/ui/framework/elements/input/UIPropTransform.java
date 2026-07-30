@@ -38,7 +38,7 @@ import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
@@ -1527,8 +1527,8 @@ public class UIPropTransform extends UITransform
          * being held! */
         GLFW.glfwGetCursorPos(Window.getWindow(), CURSOR_X, CURSOR_Y);
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        int w = mc.getWindow().getWidth();
+        Minecraft mc = Minecraft.getInstance();
+        int w = mc.getWindow().getScreenWidth();
 
         double rawX = CURSOR_X[0];
         double fx = Math.ceil(w / (double) context.menu.width);
@@ -1555,12 +1555,12 @@ public class UIPropTransform extends UITransform
 
             if (rawX <= border)
             {
-                Window.moveCursor(w - borderPadding, (int) mc.mouse.getY());
+                Window.moveCursor(w - borderPadding, (int) mc.mouseHandler.ypos());
                 wrapX = context.menu.width - (int) (borderPadding / fx);
             }
             else
             {
-                Window.moveCursor(borderPadding, (int) mc.mouse.getY());
+                Window.moveCursor(borderPadding, (int) mc.mouseHandler.ypos());
                 wrapX = (int) (borderPadding / fx);
             }
 

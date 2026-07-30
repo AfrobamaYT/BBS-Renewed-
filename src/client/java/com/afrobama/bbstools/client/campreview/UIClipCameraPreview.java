@@ -2,16 +2,13 @@
 package com.afrobama.bbstools.client.campreview;
 
 import com.afrobama.bbstools.clip.BBSToolsAddCameraClip;
-
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.colors.Colors;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.util.InputUtil;
-
+import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,8 +190,8 @@ public class UIClipCameraPreview extends UIElement
          *  doesn't ALSO fly with WASD (BBS's flight is also bound to
          *  F in the dashboard, both my hover-poll and BBS's KeybindManager
          *  would otherwise fire together). */
-        long handle = MinecraftClient.getInstance().getWindow().getHandle();
-        boolean fDown = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_F);
+        long handle = Minecraft.getInstance().getWindow().getWindow();
+        boolean fDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_F);
         if (hovered && fDown && !lastFPressed)
         {
             if (!this.freeMode)
@@ -247,13 +244,13 @@ public class UIClipCameraPreview extends UIElement
         /* Framebuffer blit fills the ENTIRE tile area — the drag-strip
          *  at the top sits invisibly over the framebuffer so there's no
          *  visual gap. */
-        SimpleFramebuffer fb = null;
+        TextureTarget fb = null;
         try { fb = ClipViewportFramebuffers.get(this.clipId); }
         catch (Throwable ignored) {}
 
         if (fb != null)
         {
-            int texId = fb.getColorAttachment();
+            int texId = fb.getColorTextureId();
             if (texId != 0)
             {
                 /* V-flip framebuffer (bottom-up) into UI space. */
@@ -302,17 +299,17 @@ public class UIClipCameraPreview extends UIElement
         {
             try
             {
-                net.minecraft.client.gl.ShaderProgram previewProgram =
+                net.minecraft.client.renderer.ShaderInstance previewProgram =
                     mchorse.bbs_mod.client.BBSShaders.getPickerPreviewProgram();
                 if (previewProgram != null)
                 {
-                    net.minecraft.client.gl.GlUniform target = previewProgram.getUniform("Target");
+                    com.mojang.blaze3d.shaders.Uniform target = previewProgram.getUniform("Target");
                     if (target != null) target.set(pick.pickedIndex);
 
                     com.mojang.blaze3d.systems.RenderSystem.enableBlend();
                     com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
 
-                    java.util.function.Supplier<net.minecraft.client.gl.ShaderProgram> supplier =
+                    java.util.function.Supplier<net.minecraft.client.renderer.ShaderInstance> supplier =
                         mchorse.bbs_mod.client.BBSShaders::getPickerPreviewProgram;
                     context.batcher.texturedBox(
                         supplier, pick.stencilTexId, Colors.WHITE,
@@ -409,11 +406,11 @@ public class UIClipCameraPreview extends UIElement
         BoneHoverPickService.Result pick = BoneHoverPickService.RESULTS.get(this.clipId);
         if (pick == null || pick.form == null) return true;
 
-        long handle = MinecraftClient.getInstance().getWindow().getHandle();
-        boolean shift = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);
-        boolean ctrl = InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
+        long handle = Minecraft.getInstance().getWindow().getWindow();
+        boolean shift = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);
+        boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
+            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
 
         mchorse.bbs_mod.ui.film.UIFilmPanel panel = BoneHoverPickRunner.findPanel();
         if (panel == null) return true;
@@ -515,18 +512,18 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
         double dx = 0, dy = 0, dz = 0;
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_SPACE))      { dy += speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { dy -= speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_SPACE))      { dy += speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { dy -= speed; }
 
         if (dx != 0 || dy != 0 || dz != 0)
         {
@@ -535,7 +532,7 @@ public class UIClipCameraPreview extends UIElement
         }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             rotSpeed *= 2F;
         }
@@ -544,10 +541,10 @@ public class UIClipCameraPreview extends UIElement
         double newYaw   = angle.y;
         boolean rotChanged = false;
 
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
 
         if (rotChanged)
         {
@@ -608,28 +605,28 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_SPACE)) { this.freePose[1] += speed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { this.freePose[1] -= speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_SPACE)) { this.freePose[1] += speed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { this.freePose[1] -= speed; }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             rotSpeed *= 2F;
         }
 
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_Q)) { this.freePose[3] -= rotSpeed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_E)) { this.freePose[3] += rotSpeed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_T)) { this.freePose[4] -= rotSpeed; }
-        if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_G)) { this.freePose[4] += rotSpeed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_Q)) { this.freePose[3] -= rotSpeed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_E)) { this.freePose[3] += rotSpeed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T)) { this.freePose[4] -= rotSpeed; }
+        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_G)) { this.freePose[4] += rotSpeed; }
 
         if (this.freePose[4] > 89F) this.freePose[4] = 89F;
         if (this.freePose[4] < -89F) this.freePose[4] = -89F;

@@ -8,9 +8,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-
-import net.minecraft.text.Text;
-
+import net.minecraft.network.chat.Component;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
@@ -71,7 +69,7 @@ public final class MCEFWebCommand
     {
         if (!FabricLoader.getInstance().isModLoaded("mcef"))
         {
-            src.sendFeedback(Text.literal("§c[web] MCEF not installed. Put mcef-fabric-2.1.6-1.21.1.jar in mods/ (it downloads Chromium on first launch), then restart."));
+            src.sendFeedback(Component.literal("§c[web] MCEF not installed. Put mcef-fabric-2.1.6-1.21.1.jar in mods/ (it downloads Chromium on first launch), then restart."));
 
             return 0;
         }
@@ -85,7 +83,7 @@ public final class MCEFWebCommand
 
         pending = target;
 
-        src.sendFeedback(Text.literal("§a[web] opening " + target + "  §7(Esc to close)"));
+        src.sendFeedback(Component.literal("§a[web] opening " + target + "  §7(Esc to close)"));
 
         return 1;
     }
@@ -102,7 +100,7 @@ public final class MCEFWebCommand
             {
                 if (in == null)
                 {
-                    src.sendFeedback(Text.literal("§c[web] bundled launchpad.html not found in the jar"));
+                    src.sendFeedback(Component.literal("§c[web] bundled launchpad.html not found in the jar"));
 
                     return null;
                 }
@@ -114,7 +112,7 @@ public final class MCEFWebCommand
         }
         catch (Exception e)
         {
-            src.sendFeedback(Text.literal("§c[web] " + e.getMessage()));
+            src.sendFeedback(Component.literal("§c[web] " + e.getMessage()));
 
             return null;
         }

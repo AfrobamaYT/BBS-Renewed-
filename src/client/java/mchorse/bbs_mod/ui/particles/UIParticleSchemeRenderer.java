@@ -1,7 +1,14 @@
 package mchorse.bbs_mod.ui.particles;
 
 import mchorse.bbs_mod.graphics.InverseView;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.particles.ParticleScheme;
 import mchorse.bbs_mod.particles.components.expiration.ParticleComponentKillPlane;
@@ -9,19 +16,9 @@ import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -33,7 +30,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
      * A 16x16 fully white texture bound to the particle shader's light map slot
      * (Sampler2) when previewing particles in the editor. See {@link #renderUserModel}.
      */
-    private static NativeImageBackedTexture whiteLightmapTexture;
+    private static DynamicTexture whiteLightmapTexture;
 
     private Vector3f vector = new Vector3f(0, 0, 0);
 
@@ -41,22 +38,22 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
     {
         if (whiteLightmapTexture == null)
         {
-            whiteLightmapTexture = new NativeImageBackedTexture(16, 16, false);
+            whiteLightmapTexture = new DynamicTexture(16, 16, false);
 
-            NativeImage image = whiteLightmapTexture.getImage();
+            NativeImage image = whiteLightmapTexture.getPixels();
 
             for (int y = 0; y < 16; y++)
             {
                 for (int x = 0; x < 16; x++)
                 {
-                    image.setColor(x, y, -1);
+                    image.setPixelRGBA(x, y, -1);
                 }
             }
 
             whiteLightmapTexture.upload();
         }
 
-        return whiteLightmapTexture.getGlId();
+        return whiteLightmapTexture.getId();
     }
 
     public UIParticleSchemeRenderer()
@@ -109,11 +106,11 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         this.emitter.setupCameraProperties(this.camera);
         this.emitter.rotation.identity();
 
-        MatrixStack stack = context.batcher.getContext().getMatrices();
+        PoseStack stack = context.batcher.getContext().pose();
 
-        stack.push();
-        stack.loadIdentity();
-        stack.multiplyPositionMatrix(new Matrix4f(InverseView.get()).invert());
+        stack.pushPose();
+        stack.setIdentity();
+        stack.mulPose(new Matrix4f(InverseView.get()).invert());
 
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
@@ -131,11 +128,11 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
          * unaffected: they render through ParticleFormRenderer with the real light map. */
         RenderSystem.setShaderTexture(2, getWhiteLightmapTextureId());
 
-        this.emitter.render(VertexFormats.POSITION_TEXTURE_COLOR_LIGHT, GameRenderer::getParticleProgram, stack, OverlayTexture.DEFAULT_UV, context.getTransition());
+        this.emitter.render(DefaultVertexFormat.PARTICLE, GameRenderer::getParticleShader, stack, OverlayTexture.NO_OVERLAY, context.getTransition());
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
 
-        stack.pop();
+        stack.popPose();
 
         ParticleComponentKillPlane plane = this.emitter.scheme.get(ParticleComponentKillPlane.class);
 
@@ -147,28 +144,28 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
     private void renderPlane(UIContext context, float a, float b, float c, float d)
     {
-        Matrix4f matrix = context.batcher.getContext().getMatrices().peek().getPositionMatrix();
+        Matrix4f matrix = context.batcher.getContext().pose().last().pose();
         final float alpha = 0.5F;
 
-        BufferBuilder builder = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         this.calculate(0, 0, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
         this.calculate(0, 1, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
         this.calculate(1, 0, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
 
         this.calculate(1, 0, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
         this.calculate(0, 1, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
         this.calculate(1, 1, a, b, c, d);
-        builder.vertex(matrix, this.vector.x, this.vector.y, this.vector.z).color(0, 1, 0, alpha);
+        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         RenderSystem.disableCull();
-        { net.minecraft.client.render.BuiltBuffer __bbsBuilt = builder.endNullable(); if (__bbsBuilt != null) BufferRenderer.drawWithGlobalProgram(__bbsBuilt); }
+        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         RenderSystem.enableCull();
     }
 
@@ -203,7 +200,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
         if (UIBaseMenu.shouldRenderAxes())
         {
-            Draw.coolerAxes(context.batcher.getContext().getMatrices(), 1F, 0.005F);
+            Draw.coolerAxes(context.batcher.getContext().pose(), 1F, 0.005F);
         }
     }
 }

@@ -46,10 +46,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.network.chat.Component;
 
 public final class BBSFxCommand
 {
@@ -331,25 +328,25 @@ public final class BBSFxCommand
             case "cinematic":
                 BBSFxState.vibranceAmount = 0.30F;
                 BBSFxState.tonemapExposure = 1.10F;
-                src.sendFeedback(Text.literal("§a[bbstools fx] preset cinematic — vibrance 0.30, exposure 1.10"));
+                src.sendFeedback(Component.literal("§a[bbstools fx] preset cinematic — vibrance 0.30, exposure 1.10"));
                 return 1;
             case "neutral":
                 BBSFxState.vibranceAmount = 0.00F;
                 BBSFxState.tonemapExposure = 1.00F;
-                src.sendFeedback(Text.literal("§a[bbstools fx] preset neutral — vibrance 0.00, exposure 1.00"));
+                src.sendFeedback(Component.literal("§a[bbstools fx] preset neutral — vibrance 0.00, exposure 1.00"));
                 return 1;
             case "moody":
                 BBSFxState.vibranceAmount = 0.15F;
                 BBSFxState.tonemapExposure = 0.85F;
-                src.sendFeedback(Text.literal("§a[bbstools fx] preset moody — vibrance 0.15, exposure 0.85"));
+                src.sendFeedback(Component.literal("§a[bbstools fx] preset moody — vibrance 0.15, exposure 0.85"));
                 return 1;
             case "action":
                 BBSFxState.vibranceAmount = 0.45F;
                 BBSFxState.tonemapExposure = 1.25F;
-                src.sendFeedback(Text.literal("§a[bbstools fx] preset action — vibrance 0.45, exposure 1.25"));
+                src.sendFeedback(Component.literal("§a[bbstools fx] preset action — vibrance 0.45, exposure 1.25"));
                 return 1;
             default:
-                src.sendFeedback(Text.literal("§c[bbstools fx] unknown preset '" + name + "' — try cinematic / neutral / moody / action"));
+                src.sendFeedback(Component.literal("§c[bbstools fx] unknown preset '" + name + "' — try cinematic / neutral / moody / action"));
                 return 0;
         }
     }
@@ -359,31 +356,31 @@ public final class BBSFxCommand
      *  exists. Grouped by purpose; mirrors the file-top javadoc. */
     private static void printHelp(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource src)
     {
-        src.sendFeedback(Text.literal("§6=== /bbstools fx commands ==="));
-        src.sendFeedback(Text.literal("§6 One-button look:"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx destroying-mc §7- enable + apply default look"));
-        src.sendFeedback(Text.literal("§e Pipeline:"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx enable §7- add post-FX pipelines to Veil"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx disable §7- remove them (vanilla look)"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx status §7- print current FX state"));
-        src.sendFeedback(Text.literal("§e Catastrophes:"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx supernova [x y z] §7- expanding bright burst"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx nuke [x y z] §7- flash + raymarched mushroom cloud"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx meteor [x y z] §7- sky tracer + impact handoff to nuke"));
-        src.sendFeedback(Text.literal("  §5/bbstools fx glitch [x y z] §7- REALITY GLITCH corruption tear (original)"));
-        src.sendFeedback(Text.literal("  §9/bbstools fx antimatter [x y z] §7- ANTIMATTER implosion (suck→release, original)"));
-        src.sendFeedback(Text.literal("  §b/bbstools fx crystal [x y z] §7- CRYSTALLIZATION wave (icy expansion, original)"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx demo §7- chain meteor→nuke→supernova (~24s)"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx cancel §7- stop all active effects"));
-        src.sendFeedback(Text.literal("§e Cinematic look:"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx vibrance <0..1> §7- saturation boost amount"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx exposure <0.1..5> §7- tonemap exposure"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx sundir <xDeg> <zDeg> §7- shadow sun rotation"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx preset <name> §7- cinematic|neutral|moody|action"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx shake <0..3> §7- manual camera shake beat"));
-        src.sendFeedback(Text.literal("§e Performance:"));
-        src.sendFeedback(Text.literal("  §a/bbstools fx shadow-interval <N> §7- shadow re-render frames"));
-        src.sendFeedback(Text.literal("§7  (0=off, 1=every frame [default], 2-3=cheap, 4+=visible lag)"));
+        src.sendFeedback(Component.literal("§6=== /bbstools fx commands ==="));
+        src.sendFeedback(Component.literal("§6 One-button look:"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx destroying-mc §7- enable + apply default look"));
+        src.sendFeedback(Component.literal("§e Pipeline:"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx enable §7- add post-FX pipelines to Veil"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx disable §7- remove them (vanilla look)"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx status §7- print current FX state"));
+        src.sendFeedback(Component.literal("§e Catastrophes:"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx supernova [x y z] §7- expanding bright burst"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx nuke [x y z] §7- flash + raymarched mushroom cloud"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx meteor [x y z] §7- sky tracer + impact handoff to nuke"));
+        src.sendFeedback(Component.literal("  §5/bbstools fx glitch [x y z] §7- REALITY GLITCH corruption tear (original)"));
+        src.sendFeedback(Component.literal("  §9/bbstools fx antimatter [x y z] §7- ANTIMATTER implosion (suck→release, original)"));
+        src.sendFeedback(Component.literal("  §b/bbstools fx crystal [x y z] §7- CRYSTALLIZATION wave (icy expansion, original)"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx demo §7- chain meteor→nuke→supernova (~24s)"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx cancel §7- stop all active effects"));
+        src.sendFeedback(Component.literal("§e Cinematic look:"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx vibrance <0..1> §7- saturation boost amount"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx exposure <0.1..5> §7- tonemap exposure"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx sundir <xDeg> <zDeg> §7- shadow sun rotation"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx preset <name> §7- cinematic|neutral|moody|action"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx shake <0..3> §7- manual camera shake beat"));
+        src.sendFeedback(Component.literal("§e Performance:"));
+        src.sendFeedback(Component.literal("  §a/bbstools fx shadow-interval <N> §7- shadow re-render frames"));
+        src.sendFeedback(Component.literal("§7  (0=off, 1=every frame [default], 2-3=cheap, 4+=visible lag)"));
     }
 
     /** Probe Iris for an active shaderpack. Reflective + try-catch so

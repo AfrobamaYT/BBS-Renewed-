@@ -19,10 +19,10 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.afrobama.bbstools.perf.BBSPerfHud;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 public final class BBSPerfHudRenderer
 {
@@ -72,20 +72,20 @@ public final class BBSPerfHudRenderer
         HudRenderCallback.EVENT.register(BBSPerfHudRenderer::onHudRender);
     }
 
-    private static void onHudRender(DrawContext ctx,
-        net.minecraft.client.render.RenderTickCounter tickCounter)
+    private static void onHudRender(GuiGraphics ctx,
+        net.minecraft.client.DeltaTracker tickCounter)
     {
         /* Early return — keeps the toggle cost a single volatile read
          *  when the HUD is OFF. */
         if (!BBSPerfHud.ENABLED) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         /* mc.player may be null on the main menu / between dimensions —
          *  rendering the HUD there is fine but skip if MC isn't ready. */
-        if (mc.options != null && mc.options.hudHidden) return;
+        if (mc.options != null && mc.options.hideGui) return;
 
-        TextRenderer fr = mc.textRenderer;
+        Font fr = mc.font;
         if (fr == null) return;
 
         /* Build the six rows. Each helper appends to SCRATCH then snapshots
@@ -119,18 +119,18 @@ public final class BBSPerfHudRenderer
             int color = (i == 2 && BBSPerfConfig.veilBatchFramesFallback >
                                    BBSPerfConfig.veilBatchFramesBatched)
                 ? WARN_COLOR : TEXT_COLOR;
-            ctx.drawText(fr, Text.literal(line), tx, ty + i * LINE_HEIGHT, color, true);
+            ctx.drawString(fr, Component.literal(line), tx, ty + i * LINE_HEIGHT, color, true);
         }
     }
 
-    private static void buildLines(MinecraftClient mc)
+    private static void buildLines(Minecraft mc)
     {
         /* Row 0 — FPS + RAM. */
         SCRATCH.setLength(0);
         Runtime rt = Runtime.getRuntime();
         long usedMb  = (rt.totalMemory() - rt.freeMemory()) / (1024L * 1024L);
         long maxMb   = rt.maxMemory() / (1024L * 1024L);
-        SCRATCH.append("FPS: ").append(mc.getCurrentFps())
+        SCRATCH.append("FPS: ").append(mc.getFps())
                .append("  RAM: ").append(usedMb).append('/')
                .append(maxMb).append(" MB");
         LINES[0] = SCRATCH.toString();

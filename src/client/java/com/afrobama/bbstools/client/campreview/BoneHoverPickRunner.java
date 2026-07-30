@@ -18,14 +18,12 @@ import mchorse.bbs_mod.utils.CollectionUtils;
 import mchorse.bbs_mod.utils.Pair;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import io.netty.util.collection.IntObjectMap;
 
 import org.joml.Matrix4f;
@@ -235,8 +233,8 @@ public final class BoneHoverPickRunner
          *  see alt-cam orientation. */
         Matrix4f savedBBSCamera = new Matrix4f(BBSRendering.camera);
 
-        float pitchRad = (float) Math.toRadians(altCam.getPitch());
-        float yawRad = (float) Math.toRadians(altCam.getYaw() + 180F);
+        float pitchRad = (float) Math.toRadians(altCam.getXRot());
+        float yawRad = (float) Math.toRadians(altCam.getYRot() + 180F);
 
         Matrix4f altCamView = new Matrix4f()
             .identity()
@@ -356,12 +354,12 @@ public final class BoneHoverPickRunner
                 catch (Throwable ignored) {}
             }
 
-            MatrixStack tempStack = new MatrixStack();
+            PoseStack tempStack = new PoseStack();
             float tickDelta = ctx.tickCounter().getTickDelta(false);
 
             BaseFilmController.renderEntity(FilmControllerContext.instance
                 .setup(editorEntities, selectedEntity, selectedReplay, altCam, tempStack,
-                    MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers(),
+                    Minecraft.getInstance().renderBuffers().bufferSource(),
                     tickDelta)
                 .transition(tickDelta)
                 .stencil(map)
@@ -371,7 +369,7 @@ public final class BoneHoverPickRunner
 
             /* Flush the entity vertex consumers so the stencil draws
              *  actually hit the framebuffer before we pick. */
-            try { MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().draw(); }
+            try { Minecraft.getInstance().renderBuffers().bufferSource().endBatch(); }
             catch (Throwable ignored) {}
 
             int px = (int) ((req.mouseX / (float) req.tileW) * fbW);
@@ -380,7 +378,7 @@ public final class BoneHoverPickRunner
             stencil.pick(px, py);
             stencil.unbind(map);
 
-            MinecraftClient.getInstance().getFramebuffer().beginWrite(true);
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
 
             boolean picked = stencil.hasPicked();
             LOG.info("Pick clip={} entities={} mouseTile=({},{}) stencilPx=({},{}) hasPicked={} picked={}",
@@ -414,9 +412,9 @@ public final class BoneHoverPickRunner
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc == null || !(mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
-            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.currentScreen;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
+            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.screen;
             mchorse.bbs_mod.ui.framework.UIBaseMenu menu = screen.getMenu();
             if (menu == null) return null;
             mchorse.bbs_mod.ui.framework.UIBaseMenu.UIRootElement root = menu.getRoot();
@@ -447,18 +445,18 @@ public final class BoneHoverPickRunner
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null) return;
-            ClientPlayerEntity player = mc.player;
+            LocalPlayer player = mc.player;
             if (player == null) return;
             if (picked == null || picked.a == null)
             {
-                player.sendMessage(Text.literal("§7[BBSTools] §oNo bone under cursor"), true);
+                player.displayClientMessage(Component.literal("§7[BBSTools] §oNo bone under cursor"), true);
                 return;
             }
             String msg = "§a[BBSTools] §fPicked: §b" + picked.a.getFormIdOrName()
                 + (picked.b != null && !picked.b.isEmpty() ? " §7— §e" + picked.b : "");
-            player.sendMessage(Text.literal(msg), true);
+            player.displayClientMessage(Component.literal(msg), true);
         }
         catch (Throwable ignored) {}
     }

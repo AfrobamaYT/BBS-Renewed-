@@ -11,10 +11,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -77,24 +75,24 @@ public final class SkinFetchCommand
 
     private static void run(FabricClientCommandSource source, String username)
     {
-        source.sendFeedback(Text.literal("[BBSTools] Fetching skin for " + username + "..."));
+        source.sendFeedback(Component.literal("[BBSTools] Fetching skin for " + username + "..."));
         log("Fetching skin for " + username);
 
         CompletableFuture
             .supplyAsync(() -> fetchAndSave(username))
             .whenComplete((savedPath, throwable) -> {
-                MinecraftClient mc = MinecraftClient.getInstance();
+                Minecraft mc = Minecraft.getInstance();
                 mc.execute(() -> {
                     if (throwable != null)
                     {
                         Throwable cause = (throwable.getCause() != null) ? throwable.getCause() : throwable;
                         String msg = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
-                        source.sendError(Text.literal("[BBSTools] Skin fetch failed: " + msg));
+                        source.sendError(Component.literal("[BBSTools] Skin fetch failed: " + msg));
                         log("ERROR: " + msg);
                         cause.printStackTrace();
                         return;
                     }
-                    source.sendFeedback(Text.literal("[BBSTools] Skin saved: " + savedPath));
+                    source.sendFeedback(Component.literal("[BBSTools] Skin saved: " + savedPath));
                     log("Saved skin to " + savedPath);
                 });
             });
@@ -168,7 +166,7 @@ public final class SkinFetchCommand
             // Use the canonical (correctly-cased) name from Mojang for the filename
             // so /bbstools skin Notch and /bbstools skin notch both produce Notch.png.
             String safeName = canonicalName.replaceAll("[^A-Za-z0-9_\\-]", "_");
-            Path runDir = MinecraftClient.getInstance().runDirectory.toPath();
+            Path runDir = Minecraft.getInstance().gameDirectory.toPath();
             Path skinsDir = runDir.resolve("bbs").resolve("skins");
             Files.createDirectories(skinsDir);
             Path out = skinsDir.resolve(safeName + ".png");

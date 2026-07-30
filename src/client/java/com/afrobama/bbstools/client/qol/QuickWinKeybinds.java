@@ -3,19 +3,16 @@ package com.afrobama.bbstools.client.qol;
 import com.afrobama.bbstools.BBSToolsMod;
 import com.afrobama.bbstools.client.shader.ShaderHotReload;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * Three one-press quick-win hotkeys: cinematic toggle, marker pin, and
  * Veil-crowd A/B toggle.
  *
- * <p>Each binding is a Fabric {@link KeyBinding} registered under the
+ * <p>Each binding is a Fabric {@link KeyMapping} registered under the
  * "category.bbstools" category so users see them in vanilla MC's
  * Controls screen alongside the other BBSTools shortcuts. The polling
  * loop drains {@code wasPressed()} once per tick — drain-style so that
@@ -37,28 +34,28 @@ public final class QuickWinKeybinds
 
     /** F4 — toggle cinematic profile (calls into the same knobs as
      *  /bbstools cinematic on|off). */
-    private static KeyBinding cinematicToggle;
+    private static KeyMapping cinematicToggle;
 
     /** F5 — pin a marker at the current scrub cursor. */
 
 
-    private static KeyBinding veilCrowdToggle;
+    private static KeyMapping veilCrowdToggle;
 
     /** F7 — Tier 4c: trigger Iris shaderpack hot-reload. Chosen over F5
      *  (already marker-pin) and F6 (vanilla "Perspective" / often grabbed
      *  by debug huds); F7 is reliably free in vanilla + most popular
      *  modpacks. */
-    private static KeyBinding shaderReload;
+    private static KeyMapping shaderReload;
 
     /** F11 — in-game GPU debugger capture (Phase 1). Fires BBSGpuDebug.captureNow
      *  which dumps current program / VAO / VBO / FBO / pipeline state to log. */
-    private static KeyBinding gpuDebugCapture;
+    private static KeyMapping gpuDebugCapture;
 
     /** F10 — Master debugger Module 5: thread dump on demand (deadlock detect + all stacks). */
-    private static KeyBinding threadDump;
+    private static KeyMapping threadDump;
 
     /** F9 — Master debugger Module 6: one-shot bug-report bundle (zips log+crash+modlist+screenshot). */
-    private static KeyBinding bugBundle;
+    private static KeyMapping bugBundle;
 
     /* F12 (debug-overlay) liegt seit 2026-07-28 in
      * com.afrobama.bbstools.client.keybinds.DebugOverlayKeybind. Grund: hier
@@ -73,9 +70,9 @@ public final class QuickWinKeybinds
 
     public static void register()
     {
-        cinematicToggle = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        cinematicToggle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.cinematic_toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
             "category.bbstools"
         ));
@@ -83,32 +80,32 @@ public final class QuickWinKeybinds
         /* Coded by Afrobama/Claude — UNBOUND default (was F2 which collides
          * with MC's vanilla screenshot key → 10s freeze on press). User can
          * rebind in MC Controls if desired. */
-        veilCrowdToggle = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        veilCrowdToggle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.veil_crowd_toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             -1, /* GLFW_KEY_UNKNOWN — unbound default */
             "category.bbstools"
         ));
 
         /* F8 — BBS-core + instancing GLSL live-reload + Iris pack reload. (F7 collides with the
          * record-from-cursor hotkey, which swallowed the press → shader reload never fired.) */
-        shaderReload = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        shaderReload = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.shader_reload",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
             "category.bbstools"
         ));
 
-        gpuDebugCapture = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        gpuDebugCapture = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.gpu_debug_capture",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F11,
             "category.bbstools"
         ));
 
-        threadDump = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        threadDump = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.thread_dump",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F10,
             "category.bbstools"
         ));
@@ -128,9 +125,9 @@ public final class QuickWinKeybinds
          *                            MC-keybinding — dort kollidiert es also nicht)
          *
          * F6 ist auf MC-ebene frei; F9 bleibt damit für den keybind-editor. */
-        bugBundle = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        bugBundle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
             "key.bbstools.bug_bundle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,
             "category.bbstools"
         ));
@@ -143,7 +140,7 @@ public final class QuickWinKeybinds
             + "F7 Iris shader hot-reload.");
     }
 
-    private static void tick(MinecraftClient client)
+    private static void tick(Minecraft client)
     {
         if (client == null) return;
 
@@ -162,21 +159,21 @@ public final class QuickWinKeybinds
         {
             /* Ctrl+F11 = GPU dev-loop layer 3: hard-reset poisoned GL state (no restart).
              * Plain F11 = capture snapshot. */
-            boolean ctrl = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS
-                || GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
+            boolean ctrl = GLFW.glfwGetKey(client.getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS
+                || GLFW.glfwGetKey(client.getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
 
             if (ctrl)
             {
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.resetGlState();
                 if (client.player != null)
-                    client.player.sendMessage(net.minecraft.text.Text.literal("§a[gpu-debug] GL state reset (VAO/program/buffers unbound)"), false);
+                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[gpu-debug] GL state reset (VAO/program/buffers unbound)"), false);
             }
             else
             {
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.enable(false);
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.captureNow("F11");
                 if (client.player != null)
-                    client.player.sendMessage(net.minecraft.text.Text.literal("§b[gpu-debug] capture fired — check bbstools-console.log"), false);
+                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§b[gpu-debug] capture fired — check bbstools-console.log"), false);
             }
         }
 
@@ -185,7 +182,7 @@ public final class QuickWinKeybinds
         {
             com.afrobama.bbstools.client.debug.master.jvm.ThreadDumper.dumpAll();
             if (client.player != null)
-                client.player.sendMessage(net.minecraft.text.Text.literal("§b[thread-dump] all threads dumped to log"), false);
+                client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§b[thread-dump] all threads dumped to log"), false);
         }
 
         boolean fireBugBundle = drain(bugBundle);
@@ -195,22 +192,22 @@ public final class QuickWinKeybinds
             {
                 java.nio.file.Path zip = com.afrobama.bbstools.client.debug.master.bundle.BugReportBundle.create("F9");
                 if (client.player != null)
-                    client.player.sendMessage(net.minecraft.text.Text.literal("§a[bug-bundle] saved: " + zip.getFileName()), false);
+                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[bug-bundle] saved: " + zip.getFileName()), false);
             }
             catch (Throwable t)
             {
                 LOG.error("Bug bundle creation threw", t);
                 if (client.player != null)
-                    client.player.sendMessage(net.minecraft.text.Text.literal("§c[bug-bundle] failed: " + t.getMessage()), false);
+                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§c[bug-bundle] failed: " + t.getMessage()), false);
             }
         }
     }
 
-    private static boolean drain(KeyBinding kb)
+    private static boolean drain(KeyMapping kb)
     {
         boolean any = false;
         if (kb == null) return false;
-        while (kb.wasPressed()) any = true;
+        while (kb.consumeClick()) any = true;
         return any;
     }
 
@@ -220,7 +217,7 @@ public final class QuickWinKeybinds
      *  CinematicProfileCommand exactly. We treat ENABLE_LOD == false as the
      *  "cinematic ON" state (LOD disabled when recording) and ENABLE_LOD ==
      *  true as the "cinematic OFF" state (LOD on for perf-mode). */
-    private static void handleCinematic(MinecraftClient client)
+    private static void handleCinematic(Minecraft client)
     {
         boolean wasCinematicOn = !BBSPerfConfig.ENABLE_LOD;
 
@@ -252,7 +249,7 @@ public final class QuickWinKeybinds
 
 
 
-    private static void handleVeilCrowd(MinecraftClient client)
+    private static void handleVeilCrowd(Minecraft client)
     {
         boolean after = !before;
 
@@ -262,7 +259,7 @@ public final class QuickWinKeybinds
     }
 
 
-    private static void handleShaderReload(MinecraftClient client)
+    private static void handleShaderReload(Minecraft client)
     {
         actionBar(client, "§a[BBSTools] Reloading shaders (Iris pack + BBS core/instancing)…");
         BBSToolsMod.LOG.info("F7 → ShaderHotReload.reload() + BBSShaders.setup() requested");
@@ -342,13 +339,13 @@ public final class QuickWinKeybinds
     /** Send a hotbar action-bar message (over-the-hotbar HUD line). Falls
      *  back silently when the player isn't loaded yet (early-boot
      *  scenario where the keybind somehow fired before world join). */
-    private static void actionBar(MinecraftClient client, String msg)
+    private static void actionBar(Minecraft client, String msg)
     {
         try
         {
             if (client != null && client.player != null)
             {
-                client.player.sendMessage(Text.literal(msg), true);
+                client.player.displayClientMessage(Component.literal(msg), true);
             }
         }
         catch (Throwable ignored) {}

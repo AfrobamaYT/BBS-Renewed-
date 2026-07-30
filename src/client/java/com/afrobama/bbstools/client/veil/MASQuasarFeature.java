@@ -7,10 +7,8 @@ package com.afrobama.bbstools.client.veil;
 import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.quasar.particle.ParticleEmitter;
 import foundry.veil.api.quasar.particle.ParticleSystemManager;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +27,8 @@ public final class MASQuasarFeature
 {
     private static final Logger LOG = LoggerFactory.getLogger("mas/quasar");
 
-    public static final Identifier SMOKE_TEST = Identifier.of("bbstools", "smoke_test");
-    public static final Identifier VOLCANO    = Identifier.of("bbstools", "volcano");
+    public static final ResourceLocation SMOKE_TEST = ResourceLocation.fromNamespaceAndPath("bbstools", "smoke_test");
+    public static final ResourceLocation VOLCANO    = ResourceLocation.fromNamespaceAndPath("bbstools", "volcano");
 
     private MASQuasarFeature() {}
 
@@ -38,7 +36,7 @@ public final class MASQuasarFeature
      * Spawn an emitter by registered ID at the given world coordinate.
      * @return the spawned emitter, or null on failure
      */
-    public static ParticleEmitter spawnAt(Identifier emitterId, double x, double y, double z)
+    public static ParticleEmitter spawnAt(ResourceLocation emitterId, double x, double y, double z)
     {
         if (!VeilFeatureGate.isVeilLoaded())
         {
@@ -59,10 +57,10 @@ public final class MASQuasarFeature
             if (mgr.getLevel() == null)
             {
                 /* Best-effort: set it from the current client world. */
-                MinecraftClient mc = MinecraftClient.getInstance();
-                if (mc != null && mc.world != null)
+                Minecraft mc = Minecraft.getInstance();
+                if (mc != null && mc.level != null)
                 {
-                    mgr.setLevel(mc.world);
+                    mgr.setLevel(mc.level);
                 }
                 else
                 {
@@ -93,7 +91,7 @@ public final class MASQuasarFeature
     /** Convenience: spawn the smoke_test at the player's current position. */
     public static ParticleEmitter spawnSmokeAtPlayer()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null)
         {
             LOG.info("spawnSmokeAtPlayer() — no player");
@@ -111,7 +109,7 @@ public final class MASQuasarFeature
      */
     public static ParticleEmitter spawnVolcanoAtTarget()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null)
         {
             LOG.info("spawnVolcanoAtTarget() — no player");
@@ -119,8 +117,8 @@ public final class MASQuasarFeature
         }
         /* Horizontal-only look direction so the volcano lands at ground
          * level regardless of pitch. */
-        net.minecraft.util.math.Vec3d look = mc.player.getRotationVector();
-        net.minecraft.util.math.Vec3d horiz = new net.minecraft.util.math.Vec3d(look.x, 0.0, look.z).normalize();
+        net.minecraft.world.phys.Vec3 look = mc.player.getLookAngle();
+        net.minecraft.world.phys.Vec3 horiz = new net.minecraft.world.phys.Vec3(look.x, 0.0, look.z).normalize();
         double tx = mc.player.getX() + horiz.x * 6.0;
         double ty = mc.player.getY();
         double tz = mc.player.getZ() + horiz.z * 6.0;

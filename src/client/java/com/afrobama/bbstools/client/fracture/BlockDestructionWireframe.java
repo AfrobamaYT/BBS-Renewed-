@@ -3,19 +3,17 @@ package com.afrobama.bbstools.client.fracture;
 import com.afrobama.bbstools.fracture.PhysicsBlockDestructionActionClip;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,9 +78,9 @@ public final class BlockDestructionWireframe
 
         Camera cam = ctx.camera();
         if (cam == null) return;
-        Vec3d camPos = cam.getPos();
+        Vec3 camPos = cam.getPosition();
 
-        MatrixStack ms = ctx.matrixStack();
+        PoseStack ms = ctx.matrixStack();
         if (ms == null) return;
 
         /* GL state for thick, always-visible debug lines:
@@ -99,12 +97,12 @@ public final class BlockDestructionWireframe
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        ms.push();
+        ms.pushPose();
         ms.translate(-camPos.x, -camPos.y, -camPos.z);
-        Matrix4f modelMat = ms.peek().getPositionMatrix();
+        Matrix4f modelMat = ms.last().pose();
 
-        BufferBuilder bb = Tessellator.getInstance().begin(
-            VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        BufferBuilder bb = Tesselator.getInstance().begin(
+            VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         synchronized (VISIBLE)
         {
@@ -117,14 +115,14 @@ public final class BlockDestructionWireframe
 
         try
         {
-            BufferRenderer.drawWithGlobalProgram(bb.end());
+            BufferUploader.drawWithShader(bb.buildOrThrow());
         }
         catch (Throwable t)
         {
             LOG.debug("Wireframe draw failed: {}", t.toString());
         }
 
-        ms.pop();
+        ms.popPose();
 
         /* Restore GL state. */
         RenderSystem.lineWidth(1F);
@@ -256,8 +254,8 @@ public final class BlockDestructionWireframe
                              float x2, float y2, float z2,
                              float r, float g, float b, float a)
     {
-        bb.vertex(m, x1, y1, z1).color(r, g, b, a);
-        bb.vertex(m, x2, y2, z2).color(r, g, b, a);
+        bb.addVertex(m, x1, y1, z1).setColor(r, g, b, a);
+        bb.addVertex(m, x2, y2, z2).setColor(r, g, b, a);
     }
 
 }

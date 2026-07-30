@@ -1,8 +1,7 @@
 // Coded by Afrobama/Claude — BBS Renewed Camera Preview Phase 2
 package com.afrobama.bbstools.client.mixin;
 
-import net.minecraft.client.render.Camera;
-
+import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
@@ -14,7 +13,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(Camera.class)
 public interface CameraInvokerMixin
 {
-    @Invoker("setPos")
+    @Invoker("setPosition")
     void bbsRenewed$setPos(double x, double y, double z);
 
     @Invoker("setRotation")

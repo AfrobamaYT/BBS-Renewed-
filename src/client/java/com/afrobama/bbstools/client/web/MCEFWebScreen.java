@@ -4,18 +4,16 @@ package com.afrobama.bbstools.client.web;
 import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.text.Text;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +40,7 @@ public class MCEFWebScreen extends Screen
 
     public MCEFWebScreen(String url)
     {
-        super(Text.literal("BBS Web"));
+        super(Component.literal("BBS Web"));
 
         this.url = url;
     }
@@ -72,7 +70,7 @@ public class MCEFWebScreen extends Screen
 
     private int scale(double value)
     {
-        return (int) (value * this.client.getWindow().getScaleFactor());
+        return (int) (value * this.minecraft.getWindow().getGuiScale());
     }
 
     private void resizeBrowser()
@@ -84,7 +82,7 @@ public class MCEFWebScreen extends Screen
     }
 
     @Override
-    public void resize(MinecraftClient mc, int w, int h)
+    public void resize(Minecraft mc, int w, int h)
     {
         super.resize(mc, w, h);
 
@@ -92,7 +90,7 @@ public class MCEFWebScreen extends Screen
     }
 
     @Override
-    public void close()
+    public void onClose()
     {
         if (this.browser != null)
         {
@@ -100,17 +98,17 @@ public class MCEFWebScreen extends Screen
             this.browser = null;
         }
 
-        super.close();
+        super.onClose();
     }
 
     @Override
-    public boolean shouldPause()
+    public boolean isPauseScreen()
     {
         return false;
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta)
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta)
     {
         if (!this.loggedFrame)
         {
@@ -120,7 +118,7 @@ public class MCEFWebScreen extends Screen
 
         if (this.browser == null)
         {
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("MCEF browser unavailable"), this.width / 2, this.height / 2, 0xFFFF5555);
+            context.drawCenteredString(this.font, Component.literal("MCEF browser unavailable"), this.width / 2, this.height / 2, 0xFFFF5555);
 
             return;
         }
@@ -133,16 +131,16 @@ public class MCEFWebScreen extends Screen
         RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
         RenderSystem.setShaderTexture(0, this.browser.getRenderer().getTextureID());
 
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        Matrix4f matrix = context.pose().last().pose();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
-        buffer.vertex(matrix, 0F, this.height, 0F).texture(0F, 1F).color(255, 255, 255, 255);
-        buffer.vertex(matrix, this.width, this.height, 0F).texture(1F, 1F).color(255, 255, 255, 255);
-        buffer.vertex(matrix, this.width, 0F, 0F).texture(1F, 0F).color(255, 255, 255, 255);
-        buffer.vertex(matrix, 0F, 0F, 0F).texture(0F, 0F).color(255, 255, 255, 255);
+        buffer.addVertex(matrix, 0F, this.height, 0F).setUv(0F, 1F).setColor(255, 255, 255, 255);
+        buffer.addVertex(matrix, this.width, this.height, 0F).setUv(1F, 1F).setColor(255, 255, 255, 255);
+        buffer.addVertex(matrix, this.width, 0F, 0F).setUv(1F, 0F).setColor(255, 255, 255, 255);
+        buffer.addVertex(matrix, 0F, 0F, 0F).setUv(0F, 0F).setColor(255, 255, 255, 255);
 
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
 
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.disableBlend();

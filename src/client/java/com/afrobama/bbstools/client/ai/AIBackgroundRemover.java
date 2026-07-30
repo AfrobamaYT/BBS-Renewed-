@@ -5,9 +5,8 @@ import com.google.gson.JsonParser;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.resources.PixelsImageBridge;
-
+import net.minecraft.client.Minecraft;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.MinecraftClient;
 import org.slf4j.Logger;
 
 import java.net.URI;
@@ -192,7 +191,7 @@ public final class AIBackgroundRemover
 
     private static void dispatch(Runnable r)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc != null) mc.execute(r);
         else r.run();
     }

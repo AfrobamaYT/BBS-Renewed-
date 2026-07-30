@@ -8,9 +8,7 @@ import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
 
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -93,10 +91,10 @@ public abstract class UIDashboardCamPreviewMixin
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.sendMessage(net.minecraft.text.Text.literal(msg), false);
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(msg), false);
             }
         }
         catch (Throwable ignored) {}

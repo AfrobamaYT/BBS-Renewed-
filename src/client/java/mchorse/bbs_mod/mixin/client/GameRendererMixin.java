@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.mixin.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.VertexSorter;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
@@ -11,12 +13,10 @@ import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.items.GunZoom;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.Camera;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,7 +33,7 @@ public class GameRendererMixin
      * This injection cancels bobbing when camera controller takes over
      */
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
-    public void onBob(MatrixStack matrices, float tickDelta, CallbackInfo ci)
+    public void onBob(PoseStack matrices, float tickDelta, CallbackInfo ci)
     {
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
@@ -104,20 +104,20 @@ public class GameRendererMixin
     /**
      * This injection replaces the camera roll when camera controller takes over
      */
-    @Inject(method = "tiltViewWhenHurt", at = @At("HEAD"), cancellable = true)
-    public void onTiltViewWhenHurt(MatrixStack matrices, float tickDelta, CallbackInfo info)
+    @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
+    public void onTiltViewWhenHurt(PoseStack matrices, float tickDelta, CallbackInfo info)
     {
         CameraController controller = BBSModClient.getCameraController();
 
         if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
         {
-            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(controller.getRoll()));
+            matrices.mulPose(Axis.ZP.rotationDegrees(controller.getRoll()));
 
             info.cancel();
         }
     }
 
-    @Inject(method = "renderHand", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
     public void onRenderHand(CallbackInfo info)
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
@@ -137,7 +137,7 @@ public class GameRendererMixin
         }
     }
 
-    @Inject(method = "renderHand", at = @At("RETURN"))
+    @Inject(method = "renderItemInHand", at = @At("RETURN"))
     public void onRenderHandEnd(CallbackInfo info)
     {
         if (TrackerClientClip.shouldRenderHand()
@@ -147,7 +147,7 @@ public class GameRendererMixin
         }
     }
 
-    @Inject(at = @At("HEAD"), method = "renderWorld")
+    @Inject(at = @At("HEAD"), method = "renderLevel")
     private void onWorldRenderBegin(CallbackInfo callbackInfo)
     {
         if (BBSModClient.getCameraController().getCurrent() != null)
@@ -167,14 +167,14 @@ public class GameRendererMixin
      * render would still have drawn.
      */
     @ModifyArg(
-        method = "renderWorld",
+        method = "renderLevel",
         at = @At(
             value = "INVOKE",
             /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): setupFrustum nimmt keinen MatrixStack mehr,
              * sondern (Vec3d, Matrix4f positionMatrix, Matrix4f projectionMatrix) — per javap
              * gegen die 1.21.1-jar geprueft. Die projektion bleibt argument 2. Mit dem alten
              * deskriptor fand mixin 0 ziele und der client startete gar nicht erst. */
-            target = "Lnet/minecraft/client/render/WorldRenderer;setupFrustum(Lnet/minecraft/util/math/Vec3d;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareCullFrustum(Lnet/minecraft/world/phys/Vec3;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
         ),
         index = 2
     )
@@ -184,7 +184,7 @@ public class GameRendererMixin
     }
 
     @ModifyArg(
-        method = "renderWorld",
+        method = "renderLevel",
         at = @At(
             value = "INVOKE",
             /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): WorldRenderer.render nimmt statt
@@ -192,7 +192,7 @@ public class GameRendererMixin
              * RenderTickCounter und gibt ZWEI matrizen mit (position, projektion).
              * Die projektion ist weiterhin das LETZTE argument — damit wandert sie von
              * index 7 auf 6. Signatur per javap gegen die 1.21.1-jar geprueft. */
-            target = "Lnet/minecraft/client/render/WorldRenderer;render(Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/GameRenderer;Lnet/minecraft/client/render/LightmapTextureManager;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
         ),
         index = 6
     )
@@ -202,25 +202,25 @@ public class GameRendererMixin
 
         if (ortho != projection)
         {
-            RenderSystem.setProjectionMatrix(ortho, VertexSorter.BY_Z);
+            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
         }
 
         return ortho;
     }
 
-    @Inject(at = @At("RETURN"), method = "renderWorld")
+    @Inject(at = @At("RETURN"), method = "renderLevel")
     private void onWorldRenderEnd(CallbackInfo callbackInfo)
     {
         TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
     }
 
-    @Inject(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/option/GameOptions;hudHidden:Z", opcode = Opcodes.GETFIELD, ordinal = 0), require = 0)
-    private void onBeforeHudRendering(RenderTickCounter tickCounter, boolean tick, CallbackInfo info)
+    @Inject(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Options;hideGui:Z", opcode = Opcodes.GETFIELD, ordinal = 0), require = 0)
+    private void onBeforeHudRendering(DeltaTracker tickCounter, boolean tick, CallbackInfo info)
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
-        if (MinecraftClient.getInstance().options.hudHidden && current == null)
+        if (Minecraft.getInstance().options.hideGui && current == null)
         {
             BBSRendering.onRenderBeforeScreen();
         }

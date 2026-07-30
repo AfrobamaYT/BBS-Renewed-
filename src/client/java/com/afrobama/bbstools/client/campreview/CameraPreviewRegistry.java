@@ -9,15 +9,10 @@ import mchorse.bbs_mod.film.replays.Replay;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.render.Camera;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -64,7 +59,7 @@ public final class CameraPreviewRegistry
     /** Add a manually-positioned preview at the player's current pose. */
     public static CameraPreview addAtPlayer(String name)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         CameraPreview p = new CameraPreview(name);
 
         if (mc != null && mc.player != null)
@@ -72,8 +67,8 @@ public final class CameraPreviewRegistry
             p.posX = mc.player.getX();
             p.posY = mc.player.getEyeY();
             p.posZ = mc.player.getZ();
-            p.yaw = mc.player.getYaw();
-            p.pitch = mc.player.getPitch();
+            p.yaw = mc.player.getYRot();
+            p.pitch = mc.player.getXRot();
         }
 
         PREVIEWS.add(p);
@@ -234,8 +229,8 @@ public final class CameraPreviewRegistry
     public static void ensureFramebuffer(CameraPreview p)
     {
         if (p.framebuffer != null
-            && p.framebuffer.textureWidth == p.fbWidth
-            && p.framebuffer.textureHeight == p.fbHeight)
+            && p.framebuffer.width == p.fbWidth
+            && p.framebuffer.height == p.fbHeight)
         {
             return;
         }
@@ -243,9 +238,9 @@ public final class CameraPreviewRegistry
 
         try
         {
-            p.framebuffer = new SimpleFramebuffer(
+            p.framebuffer = new TextureTarget(
                 p.fbWidth, p.fbHeight, true,
-                MinecraftClient.IS_SYSTEM_MAC);
+                Minecraft.ON_OSX);
             p.framebuffer.setClearColor(0F, 0F, 0F, 1F);
         }
         catch (Throwable t)

@@ -7,7 +7,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-
+import mchorse.bbs_mod.audio.ColorCode;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -25,7 +25,14 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -36,18 +43,8 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.BuiltBuffer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.BufferAllocator;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -95,9 +92,9 @@ public final class Tier2eMergedDraw
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
-        gr.getLightmapTextureManager().enable();
-        gr.getOverlayTexture().setupOverlayColor();
+        GameRenderer gr = Minecraft.getInstance().gameRenderer;
+        gr.lightTexture().turnOnLightLayer();
+        gr.overlayTexture().setupOverlayColor();
 
         try
         {
@@ -154,8 +151,8 @@ public final class Tier2eMergedDraw
         }
         finally
         {
-            gr.getLightmapTextureManager().disable();
-            gr.getOverlayTexture().teardownOverlayColor();
+            gr.lightTexture().turnOffLightLayer();
+            gr.overlayTexture().teardownOverlayColor();
             RenderSystem.disableBlend();
         }
 
@@ -216,14 +213,14 @@ public final class Tier2eMergedDraw
                 int subsInChunk = end - start;
                 int initialCapacity = fEstimatedBytesPerInstance * subsInChunk + 4096;
 
-                BufferAllocator alloc;
+                ByteBufferBuilder alloc;
                 BufferBuilder b;
                 try
                 {
-                    alloc = new BufferAllocator(initialCapacity);
+                    alloc = new ByteBufferBuilder(initialCapacity);
                     b = new BufferBuilder(alloc,
-                        VertexFormat.DrawMode.TRIANGLES,
-                        VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL);
+                        VertexFormat.Mode.TRIANGLES,
+                        DefaultVertexFormat.NEW_ENTITY);
                 }
                 catch (Throwable t)
                 {
@@ -257,10 +254,10 @@ public final class Tier2eMergedDraw
 
                 if (written > 0)
                 {
-                    BuiltBuffer built;
+                    MeshData built;
                     try
                     {
-                        built = b.end();
+                        built = b.buildOrThrow();
                     }
                     catch (Throwable t)
                     {
@@ -271,7 +268,7 @@ public final class Tier2eMergedDraw
                 }
                 else
                 {
-                    try { b.end().close(); } catch (Throwable ig) {}
+                    try { b.buildOrThrow().close(); } catch (Throwable ig) {}
                     try { alloc.close(); } catch (Throwable ig) {}
                 }
             });
@@ -300,16 +297,16 @@ public final class Tier2eMergedDraw
         int totalVerts = 0;
         int totalIndices = 0;
         int totalWritten = 0;
-        BuiltBuffer.DrawParameters refParams = null;
+        MeshData.DrawState refParams = null;
 
         for (int w = 0; w < nWorkers; w++)
         {
             WorkerResult r = WORKER_RESULTS[w];
             if (r == null) continue;
-            ByteBuffer buf = r.built.getBuffer();
+            ByteBuffer buf = r.built.vertexBuffer();
             int remaining = buf.remaining();
             if (remaining <= 0) continue;
-            BuiltBuffer.DrawParameters p = r.built.getDrawParameters();
+            MeshData.DrawState p = r.built.drawState();
             totalBytes += remaining;
             totalVerts += p.vertexCount();
             totalIndices += p.indexCount();
@@ -327,13 +324,13 @@ public final class Tier2eMergedDraw
         }
 
         /* Allocate master buffer + memcpy worker bytes. */
-        BufferAllocator masterAlloc = null;
-        BuiltBuffer masterBuilt = null;
+        ByteBufferBuilder masterAlloc = null;
+        MeshData masterBuilt = null;
         boolean drewOk = false;
         try
         {
-            masterAlloc = new BufferAllocator(totalBytes);
-            long masterPtr = masterAlloc.allocate(totalBytes);
+            masterAlloc = new ByteBufferBuilder(totalBytes);
+            long masterPtr = masterAlloc.reserve(totalBytes);
             ByteBuffer master = MemoryUtil.memByteBuffer(masterPtr, totalBytes);
             master.clear();
 
@@ -341,7 +338,7 @@ public final class Tier2eMergedDraw
             {
                 WorkerResult r = WORKER_RESULTS[w];
                 if (r == null) continue;
-                ByteBuffer src = r.built.getBuffer();
+                ByteBuffer src = r.built.vertexBuffer();
                 if (src.remaining() <= 0) continue;
                 int srcPos = src.position();
                 int srcLim = src.limit();
@@ -351,14 +348,14 @@ public final class Tier2eMergedDraw
             }
             master.flip();
 
-            BufferAllocator.CloseableBuffer cb = masterAlloc.getAllocated();
-            BuiltBuffer.DrawParameters mergedParams = new BuiltBuffer.DrawParameters(
+            ByteBufferBuilder.Result cb = masterAlloc.build();
+            MeshData.DrawState mergedParams = new MeshData.DrawState(
                 refParams.format(),
                 totalVerts,
                 totalIndices,
                 refParams.mode(),
                 refParams.indexType());
-            masterBuilt = new BuiltBuffer(cb, mergedParams);
+            masterBuilt = new MeshData(cb, mergedParams);
 
             /* Bind shared texture + shader. */
             Link texture = list.get(0).form.texture.get();
@@ -369,7 +366,7 @@ public final class Tier2eMergedDraw
             }
             RenderSystem.setShader(GameRenderer::getRenderTypeEntityTranslucentCullProgram);
 
-            BufferRenderer.drawWithGlobalProgram(masterBuilt);
+            BufferUploader.drawWithShader(masterBuilt);
             drewOk = true;
             BBSPerfConfig.tier2eMergedBytes += totalBytes;
         }
@@ -431,9 +428,9 @@ public final class Tier2eMergedDraw
         animator.applyActions(s.entity, instance, s.transition);
         instance.model.applyPose(selfA.bbstools$getPose());
 
-        MatrixStack stack = new MatrixStack();
-        stack.multiplyPositionMatrix(s.worldMatrix);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotation((float) MathUtils.PI));
+        PoseStack stack = new PoseStack();
+        stack.mulPose(s.worldMatrix);
+        stack.mulPose(Axis.YP.rotation((float) MathUtils.PI));
 
         CubicMatrixRenderer ex = new CubicMatrixRenderer(cubic);
         CubicRenderer.processRenderModel(ex, null, stack, cubic);
@@ -492,12 +489,12 @@ public final class Tier2eMergedDraw
         bone.transformDirection(nTmp);
 
         int ui = vIdx * 2;
-        builder.vertex(pTmp.x, pTmp.y, pTmp.z)
-            .color(cr, cg, cb, ca)
-            .texture(ir.uvs[ui], ir.uvs[ui + 1])
-            .overlay(overlay)
-            .light(lightU, lightV)
-            .normal(nTmp.x, nTmp.y, nTmp.z);
+        builder.addVertex(pTmp.x, pTmp.y, pTmp.z)
+            .setColor(cr, cg, cb, ca)
+            .setUv(ir.uvs[ui], ir.uvs[ui + 1])
+            .setOverlay(overlay)
+            .setUv2(lightU, lightV)
+            .setNormal(nTmp.x, nTmp.y, nTmp.z);
     }
 
     private static void ensureExtractorPool(int needed)
@@ -518,11 +515,11 @@ public final class Tier2eMergedDraw
 
     private static final class WorkerResult
     {
-        final BufferAllocator alloc;
-        final BuiltBuffer built;
+        final ByteBufferBuilder alloc;
+        final MeshData built;
         final int writtenCount;
 
-        WorkerResult(BufferAllocator alloc, BuiltBuffer built, int writtenCount)
+        WorkerResult(ByteBufferBuilder alloc, MeshData built, int writtenCount)
         {
             this.alloc = alloc;
             this.built = built;

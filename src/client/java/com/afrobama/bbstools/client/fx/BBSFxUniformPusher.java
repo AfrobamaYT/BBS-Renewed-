@@ -11,9 +11,7 @@ import foundry.veil.api.client.render.VeilRenderSystem;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,15 +19,15 @@ public final class BBSFxUniformPusher
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/fx/uniform-pusher");
 
-    private static final Identifier SHADOWS_SHADER     = Identifier.of("bbstools", "fx/shadows");
-    private static final Identifier FINAL_SHADER       = Identifier.of("bbstools", "fx/final");
-    private static final Identifier NUKE_SHADER        = Identifier.of("bbstools", "fx/nuke");
-    private static final Identifier GLITCH_SHADER     = Identifier.of("bbstools", "fx/glitch");
-    private static final Identifier ANTIMATTER_SHADER = Identifier.of("bbstools", "fx/antimatter");
-    private static final Identifier CRYSTAL_SHADER    = Identifier.of("bbstools", "fx/crystal");
-    private static final Identifier BLOOM_BLUR_H       = Identifier.of("bbstools", "fx/bloom/blur_h");
-    private static final Identifier BLOOM_BLUR_V       = Identifier.of("bbstools", "fx/bloom/blur_v");
-    private static final Identifier BLOOM_APPLY        = Identifier.of("bbstools", "fx/bloom/bloom_apply");
+    private static final ResourceLocation SHADOWS_SHADER     = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/shadows");
+    private static final ResourceLocation FINAL_SHADER       = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/final");
+    private static final ResourceLocation NUKE_SHADER        = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/nuke");
+    private static final ResourceLocation GLITCH_SHADER     = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/glitch");
+    private static final ResourceLocation ANTIMATTER_SHADER = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/antimatter");
+    private static final ResourceLocation CRYSTAL_SHADER    = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/crystal");
+    private static final ResourceLocation BLOOM_BLUR_H       = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/bloom/blur_h");
+    private static final ResourceLocation BLOOM_BLUR_V       = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/bloom/blur_v");
+    private static final ResourceLocation BLOOM_APPLY        = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/bloom/bloom_apply");
 
     private static boolean registered;
 
@@ -84,9 +82,9 @@ public final class BBSFxUniformPusher
             /* Hoist GameTime + screen size so both the nuke and glitch
              *  shader blocks can reference them without re-computing. */
             float gameTimeSec = (System.nanoTime() - START_NANOS) / 1_000_000_000F;
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-            float screenW = (mc != null && mc.getWindow() != null) ? mc.getWindow().getFramebufferWidth()  : 1920F;
-            float screenH = (mc != null && mc.getWindow() != null) ? mc.getWindow().getFramebufferHeight() : 1080F;
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            float screenW = (mc != null && mc.getWindow() != null) ? mc.getWindow().getWidth()  : 1920F;
+            float screenH = (mc != null && mc.getWindow() != null) ? mc.getWindow().getHeight() : 1080F;
 
             /* Nuke shader uniforms (mushroom cloud raymarch). */
             ShaderProgram nuke = VeilRenderSystem.renderer()
@@ -142,7 +140,7 @@ public final class BBSFxUniformPusher
              *  xLimit == 0) -> bloom_apply reads a cleared framebuffer
              *  -> no bloom emits at all. Same defaults as MAS pipeline.
              *  ScreenSize comes from the hoisted screenW/screenH above. */
-            for (Identifier sid : new Identifier[] { BLOOM_BLUR_H, BLOOM_BLUR_V, BLOOM_APPLY })
+            for (ResourceLocation sid : new ResourceLocation[] { BLOOM_BLUR_H, BLOOM_BLUR_V, BLOOM_APPLY })
             {
                 ShaderProgram p = VeilRenderSystem.renderer().getShaderManager().getShader(sid);
                 if (p == null) continue;

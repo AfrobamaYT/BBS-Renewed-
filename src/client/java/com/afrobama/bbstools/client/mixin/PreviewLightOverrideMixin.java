@@ -2,9 +2,7 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.util.PreviewPassState;
-
-import net.minecraft.client.render.LightmapTextureManager;
-
+import net.minecraft.client.renderer.LightTexture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Overrides {@link LightmapTextureManager#pack(int, int)} so any light
+ * Overrides {@link LightTexture#pack(int, int)} so any light
  * lookup during {@link PreviewPassState#PREVIEW_PASS_ACTIVE} returns
  * the max-bright lightmap UV. Result: replays/forms shown in the
  * alt-camera preview always render at full brightness regardless of
@@ -23,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * <p>Outside the preview pass this is a no-op — vanilla light wins for
  * the main world render and BBS export.</p>
  */
-@Mixin(LightmapTextureManager.class)
+@Mixin(LightTexture.class)
 public abstract class PreviewLightOverrideMixin
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/light-override");
@@ -35,7 +33,7 @@ public abstract class PreviewLightOverrideMixin
     {
         if (PreviewPassState.PREVIEW_PASS_ACTIVE)
         {
-            cir.setReturnValue(LightmapTextureManager.MAX_LIGHT_COORDINATE);
+            cir.setReturnValue(LightTexture.FULL_BRIGHT);
             if (!loggedFirstOverride)
             {
                 loggedFirstOverride = true;

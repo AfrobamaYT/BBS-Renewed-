@@ -1,7 +1,7 @@
 // Coded by Afrobama/Claude — Phase 17: editor-mode flag (skip mob ticks/renders during setup)
 package com.afrobama.bbstools.editormode;
 
-import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.world.entity.Mob;
 
 /**
  * Global flag for "editor mode" — the BBSTools companion mode where the
@@ -44,7 +44,7 @@ public final class EditorMode
     public static volatile boolean VIDEO_EXPORT_ACTIVE;
 
     /** True when the bypass logic should fire for the given mob. */
-    public static boolean shouldBypass(MobEntity mob)
+    public static boolean shouldBypass(Mob mob)
     {
         if (!ACTIVE) return false;
         if (VIDEO_EXPORT_ACTIVE) return false;

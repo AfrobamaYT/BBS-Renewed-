@@ -1,17 +1,16 @@
 package mchorse.bbs_mod.audio;
 
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.Sound;
-import net.minecraft.client.sound.SoundInstance;
-import net.minecraft.client.sound.SoundInstanceListener;
-import net.minecraft.client.sound.SoundListenerTransform;
-import net.minecraft.client.sound.TickableSoundInstance;
-import net.minecraft.client.sound.WeightedSoundSet;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.Sound;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.resources.sounds.TickableSoundInstance;
+import net.minecraft.client.sounds.SoundEventListener;
+import net.minecraft.client.sounds.WeighedSoundEvents;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.Vec3;
+import com.mojang.blaze3d.audio.ListenerTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +20,7 @@ import java.util.List;
  * video export is recording, so they can be mixed into the exported audio track
  * afterwards by {@link MinecraftSoundMixer}.
  *
- * <p>Registered as a vanilla {@link SoundInstanceListener} for the duration of the
+ * <p>Registered as a vanilla {@link SoundEventListener} for the duration of the
  * recording, so it sees every sound the player would hear. Vanilla notifies the
  * listeners after the category volume cull but before the master volume check and
  * before the OpenAL source is created, so capturing works even with muted speakers.
@@ -39,7 +38,7 @@ import java.util.List;
  * capture - a loop that began before the recording (and is still audible) can't be
  * seen through the listener API.
  */
-public class MinecraftSoundCapture implements SoundInstanceListener
+public class MinecraftSoundCapture implements SoundEventListener
 {
     private final List<CapturedSound> sounds = new ArrayList<>();
     private final List<ListenerFrame> frames = new ArrayList<>();
@@ -72,7 +71,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
         this.frames.clear();
         this.active = true;
 
-        MinecraftClient.getInstance().getSoundManager().registerListener(this);
+        Minecraft.getInstance().getSoundManager().addListener(this);
     }
 
     /**
@@ -88,7 +87,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
 
         this.active = false;
 
-        MinecraftClient.getInstance().getSoundManager().unregisterListener(this);
+        Minecraft.getInstance().getSoundManager().removeListener(this);
 
         /* Loops still playing keep endFrame == -1 (audible until the recording's end) */
         for (CapturedSound loop : this.playingLoops)
@@ -111,7 +110,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
             return;
         }
 
-        net.minecraft.client.sound.SoundManager soundManager = MinecraftClient.getInstance().getSoundManager();
+        net.minecraft.client.sounds.SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         Iterator<CapturedSound> it = this.playingLoops.iterator();
 
         while (it.hasNext())
@@ -143,9 +142,9 @@ public class MinecraftSoundCapture implements SoundInstanceListener
             it.remove();
         }
 
-        SoundListenerTransform transform = soundManager.getListenerTransform();
-        Vec3d position = transform.position();
-        Vec3d right = transform.right();
+        ListenerTransform transform = soundManager.getListenerTransform();
+        Vec3 position = transform.position();
+        Vec3 right = transform.right();
 
         this.frames.add(new ListenerFrame(position.x, position.y, position.z, right.x, right.y, right.z));
     }
@@ -157,14 +156,14 @@ public class MinecraftSoundCapture implements SoundInstanceListener
      * once, because with the master volume at zero vanilla never creates sources,
      * and isPlaying() stays false for sounds that are logically still playing.
      */
-    private boolean hasLoopEnded(net.minecraft.client.sound.SoundManager soundManager, CapturedSound loop)
+    private boolean hasLoopEnded(net.minecraft.client.sounds.SoundManager soundManager, CapturedSound loop)
     {
-        if (loop.instance instanceof TickableSoundInstance tickable && tickable.isDone())
+        if (loop.instance instanceof TickableSoundInstance tickable && tickable.isStopped())
         {
             return true;
         }
 
-        if (soundManager.isPlaying(loop.instance))
+        if (soundManager.isActive(loop.instance))
         {
             loop.seenPlaying = true;
 
@@ -175,7 +174,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
     }
 
     @Override
-    public void onSoundPlayed(SoundInstance instance, WeightedSoundSet soundSet, float range)
+    public void onPlaySound(SoundInstance instance, WeighedSoundEvents soundSet, float range)
     {
         if (!this.active)
         {
@@ -195,20 +194,20 @@ public class MinecraftSoundCapture implements SoundInstanceListener
 
     private void capture(SoundInstance instance, float range)
     {
-        SoundCategory category = instance.getCategory();
+        SoundSource category = instance.getSource();
 
         /* Background music isn't part of the scene */
-        if (category == SoundCategory.MUSIC)
+        if (category == SoundSource.MUSIC)
         {
             return;
         }
 
         boolean relative = instance.isRelative();
-        SoundInstance.AttenuationType attenuationType = instance.getAttenuationType();
+        SoundInstance.Attenuation attenuationType = instance.getAttenuation();
 
         /* UI clicks (vanilla buttons, BBS's own clicks) are master category, relative
          * and unattenuated - they aren't part of the scene either */
-        if (category == SoundCategory.MASTER && relative && attenuationType == SoundInstance.AttenuationType.NONE)
+        if (category == SoundSource.MASTER && relative && attenuationType == SoundInstance.Attenuation.NONE)
         {
             return;
         }
@@ -224,7 +223,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
          * not applied, so the exported mix doesn't depend on personal volume settings. */
         float volume = MathUtils.clamp(instance.getVolume(), 0F, 1F);
         float pitch = MathUtils.clamp(instance.getPitch(), 0.5F, 2F);
-        boolean loop = instance.isRepeatable() && instance.getRepeatDelay() == 0;
+        boolean loop = instance.isLooping() && instance.getDelay() == 0;
 
         /* Loops are kept even at zero volume - dynamic ones (minecarts) start silent */
         if (volume <= 0F && !loop)
@@ -233,11 +232,11 @@ public class MinecraftSoundCapture implements SoundInstanceListener
         }
 
         CapturedSound captured = new CapturedSound(
-            sound.getLocation(),
+            sound.getPath(),
             this.frames.size(),
             instance.getX(), instance.getY(), instance.getZ(),
             relative,
-            attenuationType == SoundInstance.AttenuationType.LINEAR,
+            attenuationType == SoundInstance.Attenuation.LINEAR,
             volume, pitch, range, loop
         );
 
@@ -257,7 +256,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
     public static class CapturedSound
     {
         /** Resource location of the concrete .ogg file that was picked to play. */
-        public final Identifier location;
+        public final ResourceLocation location;
         /** Index of the recording frame the sound started at. */
         public final int frame;
 
@@ -289,7 +288,7 @@ public class MinecraftSoundCapture implements SoundInstanceListener
         /** Whether the loop's OpenAL source was ever observed playing (see hasLoopEnded). */
         private boolean seenPlaying;
 
-        public CapturedSound(Identifier location, int frame, double x, double y, double z, boolean relative, boolean attenuate, float volume, float pitch, float range, boolean loop)
+        public CapturedSound(ResourceLocation location, int frame, double x, double y, double z, boolean relative, boolean attenuate, float volume, float pitch, float range, boolean loop)
         {
             this.location = location;
             this.frame = frame;

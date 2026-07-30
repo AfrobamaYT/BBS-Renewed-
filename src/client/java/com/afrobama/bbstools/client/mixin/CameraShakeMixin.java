@@ -2,9 +2,7 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.client.fracture.CameraShakeManager;
-
-import net.minecraft.client.render.Camera;
-
+import net.minecraft.client.Camera;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;

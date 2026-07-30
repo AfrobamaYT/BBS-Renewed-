@@ -4,10 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.joml.Vector3f;
 
 /**
@@ -142,7 +140,7 @@ public final class FractureTestCommand
     {
         try
         {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc == null || mc.player == null)
             {
                 sendChat(src, "§c[BBSTools] No player — can't read camera position.");
@@ -174,10 +172,10 @@ public final class FractureTestCommand
              *  Yaw flipped by 180° to match BBS's convention (the
              *  built-in addReplay does the same). */
             double px = mc.player.getX();
-            double py = mc.player.getY() + mc.player.getStandingEyeHeight();
+            double py = mc.player.getY() + mc.player.getEyeHeight();
             double pz = mc.player.getZ();
-            float pitch = mc.player.getPitch();
-            float yaw = mc.player.getYaw() + 180F;
+            float pitch = mc.player.getXRot();
+            float yaw = mc.player.getYRot() + 180F;
 
             r.keyframes.x.insert(0F, px);
             r.keyframes.y.insert(0F, py);
@@ -345,7 +343,7 @@ public final class FractureTestCommand
 
         if (!available) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null)
         {
             sendChat(src, "§cNo player entity — run inside a world");
@@ -353,7 +351,7 @@ public final class FractureTestCommand
         }
 
         double px = mc.player.getX();
-        double py = mc.player.getY() + mc.player.getStandingEyeHeight();
+        double py = mc.player.getY() + mc.player.getEyeHeight();
         double pz = mc.player.getZ();
 
         /* Synthetic cube vertices — 8 corners of a unit cube around the
@@ -409,7 +407,7 @@ public final class FractureTestCommand
 
     private static void sendChat(FabricClientCommandSource src, String msg)
     {
-        src.sendFeedback(Text.literal(msg));
+        src.sendFeedback(Component.literal(msg));
     }
 
 }

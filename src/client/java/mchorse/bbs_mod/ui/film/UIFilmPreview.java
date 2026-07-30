@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.audio.AudioRenderer;
@@ -46,9 +47,7 @@ import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.Clips;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.Minecraft;
 import org.joml.Matrix4fStack;
 import org.joml.Vector2i;
 
@@ -514,9 +513,9 @@ public class UIFilmPreview extends UIElement
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
-        if (mc.inGameHud == null || mc.player == null)
+        if (mc.gui == null || mc.player == null)
         {
             return;
         }
@@ -543,24 +542,24 @@ public class UIFilmPreview extends UIElement
 
         context.batcher.flush();
 
-        net.minecraft.client.gui.DrawContext draw = context.batcher.getContext();
-        net.minecraft.client.util.math.MatrixStack matrices = draw.getMatrices();
+        net.minecraft.client.gui.GuiGraphics draw = context.batcher.getContext();
+        com.mojang.blaze3d.vertex.PoseStack matrices = draw.pose();
 
         /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
          * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
         context.batcher.clip(area.x, area.y, area.w, area.h, context.menu.width, context.menu.height);
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(area.x, area.y, 0F);
         matrices.scale(scaleX, scaleY, 1F);
 
-        boolean hidden = mc.options.hudHidden;
+        boolean hidden = mc.options.hideGui;
 
         /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
          * zupflastern — es gehoert auf den bildschirm, nicht ins kamerabild. */
         boolean debugOverlay = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
 
-        mc.options.hudHidden = false;
+        mc.options.hideGui = false;
         com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = false;
 
         try
@@ -569,31 +568,31 @@ public class UIFilmPreview extends UIElement
              * (screen offen, kein spiel-tick). renderMainHud zeichnet hotbar, herzen,
              * hunger und fadenkreuz ohne diese guards — das ist genau das, was im
              * exportierten video landet. */
-            ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.inGameHud)
-                .bbs$renderMainHud(draw, mc.getRenderTickCounter());
+            ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.gui)
+                .bbs$renderMainHud(draw, mc.getTimer());
         }
         finally
         {
             com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = debugOverlay;
-            mc.options.hudHidden = hidden;
+            mc.options.hideGui = hidden;
 
             context.batcher.flush();
-            matrices.pop();
+            matrices.popPose();
             context.batcher.unclip(context);
         }
     }
 
     private void renderCursor(UIContext context)
     {
-        net.minecraft.client.render.Camera mcCamera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        net.minecraft.client.Camera mcCamera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Matrix4fStack stack = RenderSystem.getModelViewStack();
 
         stack.pushMatrix();
 
-        stack.mul(context.batcher.getContext().getMatrices().peek().getPositionMatrix());
+        stack.mul(context.batcher.getContext().pose().last().pose());
         stack.translate(area.x + 16, area.ey() - 12, 0F);
-        stack.rotate(RotationAxis.NEGATIVE_X.rotationDegrees(mcCamera.getPitch()));
-        stack.rotate(RotationAxis.POSITIVE_Y.rotationDegrees(mcCamera.getYaw()));
+        stack.rotate(Axis.XN.rotationDegrees(mcCamera.getXRot()));
+        stack.rotate(Axis.YP.rotationDegrees(mcCamera.getYRot()));
         stack.scale(-1F, -1F, -1F);
         RenderSystem.applyModelViewMatrix();
         RenderSystem.renderCrosshair(10);

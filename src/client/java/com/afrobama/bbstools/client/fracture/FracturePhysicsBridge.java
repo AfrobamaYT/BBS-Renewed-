@@ -1,9 +1,8 @@
 package com.afrobama.bbstools.client.fracture;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.Level;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
@@ -248,7 +247,7 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return null;
 
             Object physicsWorld = getPhysicsWorld(mcWorld);
@@ -305,10 +304,10 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return null;
 
-            net.minecraft.block.BlockState stone = net.minecraft.block.Blocks.STONE.getDefaultState();
+            net.minecraft.world.level.block.state.BlockState stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
 
             /* spawnServerBlockPhysicsParticle(BlockState, World,
              *  posX, posY, posZ, velX, velY, velZ). PhysicsMod auto-
@@ -357,10 +356,10 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return null;
 
-            net.minecraft.block.BlockState debrisState = pickDebrisState(debrisIndex);
+            net.minecraft.world.level.block.state.BlockState debrisState = pickDebrisState(debrisIndex);
 
             particleSpawnerServerBlock.invoke(null,
                 debrisState, mcWorld,
@@ -398,7 +397,7 @@ public final class FracturePhysicsBridge
      */
     public static Object spawnDebrisChunkWithState(double worldX, double worldY, double worldZ,
                                                    double velX, double velY, double velZ,
-                                                   net.minecraft.block.BlockState state,
+                                                   net.minecraft.world.level.block.state.BlockState state,
                                                    String blockMode)
     {
         if (!available || particleSpawnerServerBlock == null || state == null) return null;
@@ -438,7 +437,7 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return null;
 
             particleSpawnerServerBlock.invoke(null,
@@ -473,7 +472,7 @@ public final class FracturePhysicsBridge
     /** Backwards-compat overload — no block-mode override. */
     public static Object spawnDebrisChunkWithState(double worldX, double worldY, double worldZ,
                                                    double velX, double velY, double velZ,
-                                                   net.minecraft.block.BlockState state)
+                                                   net.minecraft.world.level.block.state.BlockState state)
     {
         return spawnDebrisChunkWithState(worldX, worldY, worldZ, velX, velY, velZ, state, null);
     }
@@ -560,7 +559,7 @@ public final class FracturePhysicsBridge
      */
     public static boolean spawnViaBbsEmitter(double worldX, double worldY, double worldZ,
                                              double velX, double velY, double velZ,
-                                             net.minecraft.block.BlockState state,
+                                             net.minecraft.world.level.block.state.BlockState state,
                                              String mode, float physicsScale, int lifetimeTicks,
                                              boolean noInterCollision)
     {
@@ -569,11 +568,11 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return false;
 
-            net.minecraft.util.math.Vec3d pos = new net.minecraft.util.math.Vec3d(worldX, worldY, worldZ);
-            net.minecraft.util.math.Vec3d vel = new net.minecraft.util.math.Vec3d(velX, velY, velZ);
+            net.minecraft.world.phys.Vec3 pos = new net.minecraft.world.phys.Vec3(worldX, worldY, worldZ);
+            net.minecraft.world.phys.Vec3 vel = new net.minecraft.world.phys.Vec3(velX, velY, velZ);
 
             /* If noInterCollision: install a thread-local mask override
              *  so PhysicsMod's body-creation mixins
@@ -686,7 +685,7 @@ public final class FracturePhysicsBridge
     /** Backwards-compat overload — collisions enabled (default behavior). */
     public static boolean spawnViaBbsEmitter(double worldX, double worldY, double worldZ,
                                              double velX, double velY, double velZ,
-                                             net.minecraft.block.BlockState state,
+                                             net.minecraft.world.level.block.state.BlockState state,
                                              String mode, float physicsScale, int lifetimeTicks)
     {
         return spawnViaBbsEmitter(worldX, worldY, worldZ, velX, velY, velZ,
@@ -728,7 +727,7 @@ public final class FracturePhysicsBridge
      *  Public so callers (e.g. BlockShatterPropagator's "default" blockMode
      *  path) can wrap their own legacy spawn batches with the same
      *  pre/post snapshot for noInterCollision support. */
-    public static int snapshotBodyCount(World mcWorld)
+    public static int snapshotBodyCount(Level mcWorld)
     {
         try
         {
@@ -749,7 +748,7 @@ public final class FracturePhysicsBridge
      *  Used for FRACTURED / FRACTURED_VOXEL where some shards are
      *  kinematic and don't accept setLinearVelocity. */
     private static volatile java.lang.reflect.Method cachedApplyRandomSpawnForces;
-    private static void kickStuckShards(World mcWorld, int bodiesBefore)
+    private static void kickStuckShards(Level mcWorld, int bodiesBefore)
     {
         /* Defense in depth: caller already guards on bodiesBefore >= 0
          *  but if any future caller forgets, the for loop's i=bodiesBefore
@@ -809,7 +808,7 @@ public final class FracturePhysicsBridge
      *  PhysicsEntity.physicsMask = COLLIDE_ALL_MINUS_DYANMIC_OBJECTS so
      *  it interacts with terrain but not other debris.
      *  Public — see {@link #snapshotBodyCount} for the pairing rationale. */
-    public static void applyNoCollisionMask(World mcWorld, int bodiesBefore)
+    public static void applyNoCollisionMask(Level mcWorld, int bodiesBefore)
     {
         /* Defensive: see kickStuckShards for the same rationale. */
         if (bodiesBefore < 0) return;
@@ -867,17 +866,17 @@ public final class FracturePhysicsBridge
     /** Cinematic-friendly debris BlockStates. Cycle by index so a
      *  single fracture event produces a visual mix rather than 200
      *  identical stones flying. */
-    private static net.minecraft.block.BlockState pickDebrisState(int idx)
+    private static net.minecraft.world.level.block.state.BlockState pickDebrisState(int idx)
     {
         int n = ((idx % 6) + 6) % 6;
         switch (n)
         {
-            case 0:  return net.minecraft.block.Blocks.STONE.getDefaultState();
-            case 1:  return net.minecraft.block.Blocks.COBBLESTONE.getDefaultState();
-            case 2:  return net.minecraft.block.Blocks.DIRT.getDefaultState();
-            case 3:  return net.minecraft.block.Blocks.OAK_LOG.getDefaultState();
-            case 4:  return net.minecraft.block.Blocks.IRON_BLOCK.getDefaultState();
-            default: return net.minecraft.block.Blocks.GRAVEL.getDefaultState();
+            case 0:  return net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            case 1:  return net.minecraft.world.level.block.Blocks.COBBLESTONE.defaultBlockState();
+            case 2:  return net.minecraft.world.level.block.Blocks.DIRT.defaultBlockState();
+            case 3:  return net.minecraft.world.level.block.Blocks.OAK_LOG.defaultBlockState();
+            case 4:  return net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState();
+            default: return net.minecraft.world.level.block.Blocks.GRAVEL.defaultBlockState();
         }
     }
 
@@ -889,7 +888,7 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return;
             Object physicsWorld = getPhysicsWorld(mcWorld);
             if (physicsWorld != null)
@@ -936,7 +935,7 @@ public final class FracturePhysicsBridge
 
         try
         {
-            World mcWorld = MinecraftClient.getInstance().world;
+            Level mcWorld = Minecraft.getInstance().level;
             if (mcWorld == null) return false;
 
             Object physicsWorld = getPhysicsWorld(mcWorld);
@@ -960,7 +959,7 @@ public final class FracturePhysicsBridge
 
     /* === Helpers === */
 
-    private static Object getPhysicsWorld(World mcWorld) throws IllegalAccessException
+    private static Object getPhysicsWorld(Level mcWorld) throws IllegalAccessException
     {
         Object instancesMap = physicsModInstancesField.get(null);
         if (!(instancesMap instanceof Map<?, ?> map)) return null;
@@ -969,7 +968,7 @@ public final class FracturePhysicsBridge
         return physicsModWorldField.get(physicsMod);
     }
 
-    private static Object getPhysicsModInstance(World mcWorld) throws IllegalAccessException
+    private static Object getPhysicsModInstance(Level mcWorld) throws IllegalAccessException
     {
         Object instancesMap = physicsModInstancesField.get(null);
         if (!(instancesMap instanceof Map<?, ?> map)) return null;
@@ -999,7 +998,7 @@ public final class FracturePhysicsBridge
     private static int cancelTotalQ2Removed;
     private static int cancelTotalCalls;
 
-    public static void cancelPendingPhysicsModUpdate(World mcWorld, net.minecraft.util.math.BlockPos pos)
+    public static void cancelPendingPhysicsModUpdate(Level mcWorld, net.minecraft.core.BlockPos pos)
     {
         if (!available || mcWorld == null || pos == null) return;
         cancelTotalCalls++;
@@ -1161,7 +1160,7 @@ public final class FracturePhysicsBridge
         if (f.get(target) == null) f.set(target, emptyList);
     }
 
-    private static Object buildPhysicsEntity(World mcWorld,
+    private static Object buildPhysicsEntity(Level mcWorld,
                                              double worldX, double worldY, double worldZ,
                                              Quaternionf rotation, Vector3f velocity) throws Exception
     {
@@ -1171,7 +1170,7 @@ public final class FracturePhysicsBridge
          *  Without a valid info, addBlockParticle's internal model
          *  creation has nothing to texture and the rigidbody renders
          *  invisibly even though physics simulation runs. */
-        net.minecraft.block.BlockState fallbackState = net.minecraft.block.Blocks.STONE.getDefaultState();
+        net.minecraft.world.level.block.state.BlockState fallbackState = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
         Object entity = physicsEntityCtor.newInstance(physicsEntityTypeBlock, fallbackState);
 
         trySetPositionFields(entity, worldX, worldY, worldZ);

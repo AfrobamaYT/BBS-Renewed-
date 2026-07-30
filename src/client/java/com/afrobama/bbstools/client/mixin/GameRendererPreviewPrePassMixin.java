@@ -2,10 +2,8 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
-
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.RenderTickCounter;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,8 +33,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public abstract class GameRendererPreviewPrePassMixin
 {
-    @Inject(method = "renderWorld", at = @At("HEAD"), require = 0)
-    private void bbstools$renderClipViewportsBeforeMain(RenderTickCounter tickCounter, CallbackInfo ci)
+    @Inject(method = "renderLevel", at = @At("HEAD"), require = 0)
+    private void bbstools$renderClipViewportsBeforeMain(DeltaTracker tickCounter, CallbackInfo ci)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in GameRenderer
          * gewoben und liegt damit im KnotClassLoader — vom kernel-swap unerreichbar. Die

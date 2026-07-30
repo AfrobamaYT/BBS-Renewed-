@@ -27,9 +27,8 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -120,7 +119,7 @@ public class UIFormCategory extends UIElement
                     Window.setClipboard("/bbs morph " + name + " " + stringifier.toString(data));
                 });
 
-                Collection<PlayerListEntry> playerList = MinecraftClient.getInstance().getNetworkHandler().getPlayerList();
+                Collection<PlayerInfo> playerList = Minecraft.getInstance().getConnection().getOnlinePlayers();
 
                 if (playerList.size() > 1)
                 {

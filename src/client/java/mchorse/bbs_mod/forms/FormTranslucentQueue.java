@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.forms;
 
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexBuffer;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -9,11 +11,9 @@ import mchorse.bbs_mod.cubic.render.vao.IModelVAO;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -115,7 +115,7 @@ public class FormTranslucentQueue
      * queue scope (UI previews, first-person arm), during picking (the stencil needs every pixel),
      * and on shaders without the PassMode uniform (vanilla programs — the Iris path).
      */
-    public static boolean needsSplit(ShaderProgram shader, StencilMap stencilMap, Texture texture, float alpha)
+    public static boolean needsSplit(ShaderInstance shader, StencilMap stencilMap, Texture texture, float alpha)
     {
         return alpha >= 1F && texture != null && texture.hasTranslucency()
             && isActive() && stencilMap == null && shader.getUniform("PassMode") != null;
@@ -130,14 +130,14 @@ public class FormTranslucentQueue
      * Iris program at the end of the frame lands after a deferred pack's shading composite
      * (Photon never shades it — the model vanishes).
      */
-    public static boolean needsWholeDefer(ShaderProgram shader, StencilMap stencilMap, float alpha)
+    public static boolean needsWholeDefer(ShaderInstance shader, StencilMap stencilMap, float alpha)
     {
         return alpha < 1F && isActive() && stencilMap == null && shader.getUniform("PassMode") != null;
     }
 
-    public static void setPassMode(ShaderProgram shader, int mode)
+    public static void setPassMode(ShaderInstance shader, int mode)
     {
-        GlUniform uniform = shader.getUniform("PassMode");
+        Uniform uniform = shader.getUniform("PassMode");
 
         if (uniform != null)
         {
@@ -204,10 +204,10 @@ public class FormTranslucentQueue
 
         commands.sort((a, b) -> Float.compare(b.distanceSq, a.distanceSq));
 
-        GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
+        GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
-        gameRenderer.getLightmapTextureManager().enable();
-        gameRenderer.getOverlayTexture().setupOverlayColor();
+        gameRenderer.lightTexture().turnOnLightLayer();
+        gameRenderer.overlayTexture().setupOverlayColor();
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -248,8 +248,8 @@ public class FormTranslucentQueue
         RenderSystem.depthMask(true);
         RenderSystem.disableBlend();
 
-        gameRenderer.getLightmapTextureManager().disable();
-        gameRenderer.getOverlayTexture().teardownOverlayColor();
+        gameRenderer.lightTexture().turnOffLightLayer();
+        gameRenderer.overlayTexture().teardownOverlayColor();
     }
 
     /** Drop any leftover commands (e.g. a frame whose flush point never ran) and free their resources. */
@@ -300,7 +300,7 @@ public class FormTranslucentQueue
     public static class ModelVAOCommand extends DrawCommand
     {
         private final IModelVAO vao;
-        private final Supplier<ShaderProgram> shader;
+        private final Supplier<ShaderInstance> shader;
         private final int passMode;
         private final Texture texture;
         private final Matrix4f modelView;
@@ -315,7 +315,7 @@ public class FormTranslucentQueue
             this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, texture, modelView, normalMat, r, g, b, a, light, overlay, cull);
         }
 
-        public ModelVAOCommand(IModelVAO vao, Supplier<ShaderProgram> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
+        public ModelVAOCommand(IModelVAO vao, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
         {
             super(modelView.getTranslation(new Vector3f()), cull, depthWrite);
 
@@ -336,7 +336,7 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderProgram shader = this.shader.get();
+            ShaderInstance shader = this.shader.get();
 
             if (this.texture != null)
             {
@@ -357,7 +357,7 @@ public class FormTranslucentQueue
     public static class BOBJCommand extends DrawCommand
     {
         private final BOBJModelVAO vao;
-        private final Supplier<ShaderProgram> shader;
+        private final Supplier<ShaderInstance> shader;
         private final int passMode;
         private final Matrix4f[] armatureSnapshot;
         private final int uploadCount;
@@ -374,7 +374,7 @@ public class FormTranslucentQueue
             this(vao, BBSShaders::getModel, PASS_TRANSLUCENT, false, armatureSnapshot, uploadCount, texture, modelView, normalMat, r, g, b, a, light, overlay, cull);
         }
 
-        public BOBJCommand(BOBJModelVAO vao, Supplier<ShaderProgram> shader, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
+        public BOBJCommand(BOBJModelVAO vao, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Matrix4f[] armatureSnapshot, int uploadCount, Texture texture, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, boolean cull)
         {
             super(modelView.getTranslation(new Vector3f()), cull, depthWrite);
 
@@ -397,7 +397,7 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderProgram shader = this.shader.get();
+            ShaderInstance shader = this.shader.get();
 
             if (this.texture != null)
             {
@@ -456,11 +456,11 @@ public class FormTranslucentQueue
      */
     public static class RenderLayerCommand extends DrawCommand
     {
-        private final net.minecraft.client.render.RenderLayer layer;
+        private final net.minecraft.client.renderer.RenderType layer;
         private final VertexBuffer buffer;
         private final Matrix4f modelView;
 
-        public RenderLayerCommand(net.minecraft.client.render.RenderLayer layer, VertexBuffer buffer, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
+        public RenderLayerCommand(net.minecraft.client.renderer.RenderType layer, VertexBuffer buffer, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
         {
             super(cameraSpaceOrigin, true, depthWrite);
 
@@ -472,16 +472,16 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            this.layer.startDrawing();
+            this.layer.setupRenderState();
 
             /* startDrawing applied the layer's own write mask — re-assert ours. */
             RenderSystem.depthMask(this.depthWrite);
 
             this.buffer.bind();
-            this.buffer.draw(this.modelView, RenderSystem.getProjectionMatrix(), RenderSystem.getShader());
+            this.buffer.drawWithShader(this.modelView, RenderSystem.getProjectionMatrix(), RenderSystem.getShader());
             VertexBuffer.unbind();
 
-            this.layer.endDrawing();
+            this.layer.clearRenderState();
         }
 
         @Override
@@ -498,7 +498,7 @@ public class FormTranslucentQueue
     public static class VertexBufferCommand extends DrawCommand
     {
         private final VertexBuffer buffer;
-        private final Supplier<ShaderProgram> shader;
+        private final Supplier<ShaderInstance> shader;
         private final int passMode;
         private final Texture texture;
         private final Matrix4f modelView;
@@ -507,12 +507,12 @@ public class FormTranslucentQueue
         private final Runnable postDraw;
 
         /** The split translucent replay: only the semi-transparent texels, no depth write. */
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderProgram> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderInstance> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
             this(buffer, shader, PASS_TRANSLUCENT, false, texture, modelView, normalMat, cameraSpaceOrigin, cull, preDraw, postDraw);
         }
 
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderProgram> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        public VertexBufferCommand(VertexBuffer buffer, Supplier<ShaderInstance> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
             super(cameraSpaceOrigin, cull, depthWrite);
 
@@ -529,7 +529,7 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            ShaderProgram program = this.shader.get();
+            ShaderInstance program = this.shader.get();
 
             if (this.texture != null)
             {
@@ -543,7 +543,7 @@ public class FormTranslucentQueue
 
             if (this.normalMat != null)
             {
-                GlUniform normalUniform = program.getUniform("NormalMat");
+                Uniform normalUniform = program.getUniform("NormalMat");
 
                 if (normalUniform != null)
                 {
@@ -554,7 +554,7 @@ public class FormTranslucentQueue
             setPassMode(program, this.passMode);
 
             this.buffer.bind();
-            this.buffer.draw(this.modelView, RenderSystem.getProjectionMatrix(), program);
+            this.buffer.drawWithShader(this.modelView, RenderSystem.getProjectionMatrix(), program);
             VertexBuffer.unbind();
 
             setPassMode(program, PASS_SINGLE);

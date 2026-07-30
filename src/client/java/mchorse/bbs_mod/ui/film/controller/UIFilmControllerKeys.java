@@ -14,11 +14,9 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import mchorse.bbs_mod.utils.RayTracing;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
 
@@ -78,7 +76,7 @@ public class UIFilmControllerKeys
         {
             Area area = c.panel.preview.getViewport();
             UIContext context = c.getContext();
-            World world = MinecraftClient.getInstance().world;
+            Level world = Minecraft.getInstance().level;
             Camera camera = c.panel.getCamera();
 
             Vector3f rayOffset = new Vector3f();
@@ -93,7 +91,7 @@ public class UIFilmControllerKeys
 
             if (result.getType() == HitResult.Type.BLOCK)
             {
-                c.panel.replayEditor.moveReplay(result.getPos().x, result.getPos().y, result.getPos().z);
+                c.panel.replayEditor.moveReplay(result.getLocation().x, result.getLocation().y, result.getLocation().z);
             }
         }).active(hasActor).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_RESTART_ACTIONS, () ->

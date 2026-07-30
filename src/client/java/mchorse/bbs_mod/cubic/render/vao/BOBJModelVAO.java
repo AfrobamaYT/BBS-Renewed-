@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.cubic.render.vao;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJLoader;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.joml.Matrices;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -243,12 +243,12 @@ public class BOBJModelVAO
     protected void processData(float[] newVertices, float[] newNormals, Matrix4f[] matrices)
     {}
 
-    public void render(ShaderProgram shader, MatrixStack stack, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
+    public void render(ShaderInstance shader, PoseStack stack, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
     {
-        this.render(shader, ModelVAORenderer.captureModelView(stack), stack.peek().getNormalMatrix(), r, g, b, a, stencilMap, light, overlay);
+        this.render(shader, ModelVAORenderer.captureModelView(stack), stack.last().normal(), r, g, b, a, stencilMap, light, overlay);
     }
 
-    public void render(ShaderProgram shader, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
+    public void render(ShaderInstance shader, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, StencilMap stencilMap, int light, int overlay)
     {
         boolean hasShaders = BBSRendering.isIrisShadersEnabled();
 
@@ -261,7 +261,7 @@ public class BOBJModelVAO
 
         ModelVAORenderer.setupUniforms(shader, modelView, normalMat);
 
-        shader.bind();
+        shader.apply();
 
         GL30.glBindVertexArray(this.vao);
 
@@ -283,7 +283,7 @@ public class BOBJModelVAO
         if (hasShaders) GL30.glDisableVertexAttribArray(Attributes.TANGENTS);
         if (hasShaders) GL30.glDisableVertexAttribArray(Attributes.MID_TEXTURE_UV);
 
-        shader.unbind();
+        shader.clear();
 
         GL30.glBindVertexArray(currentVAO);
         GL30.glBindBuffer(GL30.GL_ELEMENT_ARRAY_BUFFER, currentElementArrayBuffer);

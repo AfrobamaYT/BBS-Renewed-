@@ -2,7 +2,7 @@
 package com.afrobama.bbstools.client.editorcam;
 
 import com.afrobama.bbstools.client.keybinds.BBSToolsKeys;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
@@ -10,11 +10,8 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,17 +79,17 @@ public final class EditorCamHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
 
             /* Keep lastEditedFilm fresh while a dashboard screen is open
              *  so in-world F8 (no playback) still has a film to cycle. */
-            if (mc.currentScreen != null)
+            if (mc.screen != null)
             {
                 captureEditedFilm();
             }
 
-            long handle = mc.getWindow().getHandle();
+            long handle = mc.getWindow().getWindow();
 
             /* Check the SHIFT-modifier combo first — its key list
              *  contains the F8-equivalent main key + Shift. If both
@@ -131,7 +128,7 @@ public final class EditorCamHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputUtil.isKeyPressed(windowHandle, k)) return false;
+            if (!InputConstants.isKeyDown(windowHandle, k)) return false;
         }
         return true;
     }
@@ -315,9 +312,9 @@ public final class EditorCamHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc == null || !(mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
-            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.currentScreen;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
+            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.screen;
             mchorse.bbs_mod.ui.framework.UIBaseMenu menu = screen.getMenu();
             if (menu == null) return null;
             mchorse.bbs_mod.ui.framework.UIBaseMenu.UIRootElement root = menu.getRoot();
@@ -388,10 +385,10 @@ public final class EditorCamHandler
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.sendMessage(Text.literal(msg), false);
+                mc.player.displayClientMessage(Component.literal(msg), false);
             }
         }
         catch (Throwable ignored) {}

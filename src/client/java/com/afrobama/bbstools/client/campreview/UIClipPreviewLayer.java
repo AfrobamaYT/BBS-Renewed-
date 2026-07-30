@@ -3,9 +3,7 @@ package com.afrobama.bbstools.client.campreview;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -86,11 +84,11 @@ public class UIClipPreviewLayer extends UIElement
 
         /* Force the layer's area to span the full screen so child tile
          *  position lookups stay in absolute screen coords. */
-        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc != null && mc.getWindow() != null)
         {
-            int sw = mc.getWindow().getScaledWidth();
-            int sh = mc.getWindow().getScaledHeight();
+            int sw = mc.getWindow().getGuiScaledWidth();
+            int sh = mc.getWindow().getGuiScaledHeight();
             if (this.area.w != sw || this.area.h != sh)
             {
                 this.area.setSize(sw, sh);
@@ -161,9 +159,9 @@ public class UIClipPreviewLayer extends UIElement
      */
     private void applyAutoLayout()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.getWindow() == null) return;
-        int sw = mc.getWindow().getScaledWidth();
+        int sw = mc.getWindow().getGuiScaledWidth();
 
         /* Count tiles still under auto-layout. */
         int autoCount = 0;

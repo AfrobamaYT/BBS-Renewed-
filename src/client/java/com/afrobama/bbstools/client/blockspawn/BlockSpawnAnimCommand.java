@@ -20,11 +20,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,21 +77,21 @@ public final class BlockSpawnAnimCommand
 
     private static int doTrigger(FabricClientCommandSource src, int radius, int durationTicks)
     {
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null)
         {
-            src.sendFeedback(Text.literal("§c[blockspawn] no client player"));
+            src.sendFeedback(Component.literal("§c[blockspawn] no client player"));
             return 0;
         }
 
-        BlockPos center = player.getBlockPos();
-        BlockPos min = center.add(-radius, -radius, -radius);
-        BlockPos max = center.add( radius,  radius,  radius);
+        BlockPos center = player.blockPosition();
+        BlockPos min = center.offset(-radius, -radius, -radius);
+        BlockPos max = center.offset( radius,  radius,  radius);
 
         BlockSpawnAnimEffect.trigger(min, max, durationTicks);
 
         int n = BlockSpawnAnimEffect.activeCount();
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§a[blockspawn] §fdropping §a" + n + "§f blocks around you (r=" + radius
             + ", duration=" + durationTicks + "t)"));
         LOG.info("/bbstools blockspawn r={} duration={}t blocks={}", radius, durationTicks, n);
@@ -102,7 +101,7 @@ public final class BlockSpawnAnimCommand
     private static int doClear(FabricClientCommandSource src)
     {
         BlockSpawnAnimEffect.clear();
-        src.sendFeedback(Text.literal("§7[blockspawn] animation cleared"));
+        src.sendFeedback(Component.literal("§7[blockspawn] animation cleared"));
         return 1;
     }
 

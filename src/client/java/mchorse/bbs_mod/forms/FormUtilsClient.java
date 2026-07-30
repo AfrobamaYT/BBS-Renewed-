@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms;
 
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import mchorse.bbs_mod.forms.forms.AnchorForm;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
@@ -29,12 +30,10 @@ import mchorse.bbs_mod.forms.renderers.ParticleFormRenderer;
 import mchorse.bbs_mod.forms.renderers.TrailFormRenderer;
 import mchorse.bbs_mod.forms.renderers.VanillaParticleFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.model.ModelLoader;
-import net.minecraft.client.util.BufferAllocator;
-
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.resources.model.ModelBakery;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -83,39 +82,39 @@ public class FormUtilsClient
     {
         if (customVertexConsumerProvider == null)
         {
-            SequencedMap<RenderLayer, BufferAllocator> layers = new Object2ObjectLinkedOpenHashMap<>();
+            SequencedMap<RenderType, ByteBufferBuilder> layers = new Object2ObjectLinkedOpenHashMap<>();
 
-            assignAllocator(layers, TexturedRenderLayers.getEntitySolid());
-            assignAllocator(layers, TexturedRenderLayers.getEntityCutout());
-            assignAllocator(layers, TexturedRenderLayers.getBannerPatterns());
-            assignAllocator(layers, TexturedRenderLayers.getEntityTranslucentCull());
-            assignAllocator(layers, TexturedRenderLayers.getShieldPatterns());
-            assignAllocator(layers, TexturedRenderLayers.getBeds());
-            assignAllocator(layers, TexturedRenderLayers.getShulkerBoxes());
-            assignAllocator(layers, TexturedRenderLayers.getSign());
-            assignAllocator(layers, TexturedRenderLayers.getHangingSign());
-            assignAllocator(layers, TexturedRenderLayers.getChest());
-            assignAllocator(layers, RenderLayer.getArmorEntityGlint());
-            assignAllocator(layers, RenderLayer.getGlint());
-            assignAllocator(layers, RenderLayer.getGlintTranslucent());
-            assignAllocator(layers, RenderLayer.getEntityGlint());
-            assignAllocator(layers, RenderLayer.getDirectEntityGlint());
-            assignAllocator(layers, RenderLayer.getWaterMask());
+            assignAllocator(layers, Sheets.solidBlockSheet());
+            assignAllocator(layers, Sheets.cutoutBlockSheet());
+            assignAllocator(layers, Sheets.bannerSheet());
+            assignAllocator(layers, Sheets.translucentCullBlockSheet());
+            assignAllocator(layers, Sheets.shieldSheet());
+            assignAllocator(layers, Sheets.bedSheet());
+            assignAllocator(layers, Sheets.shulkerBoxSheet());
+            assignAllocator(layers, Sheets.signSheet());
+            assignAllocator(layers, Sheets.hangingSignSheet());
+            assignAllocator(layers, Sheets.chestSheet());
+            assignAllocator(layers, RenderType.armorEntityGlint());
+            assignAllocator(layers, RenderType.glint());
+            assignAllocator(layers, RenderType.glintTranslucent());
+            assignAllocator(layers, RenderType.entityGlint());
+            assignAllocator(layers, RenderType.entityGlintDirect());
+            assignAllocator(layers, RenderType.waterMask());
 
-            for (RenderLayer layer : ModelLoader.BLOCK_DESTRUCTION_RENDER_LAYERS)
+            for (RenderType layer : ModelBakery.DESTROY_TYPES)
             {
                 assignAllocator(layers, layer);
             }
 
-            customVertexConsumerProvider = new CustomVertexConsumerProvider(VertexConsumerProvider.immediate(layers, new BufferAllocator(1536)));
+            customVertexConsumerProvider = new CustomVertexConsumerProvider(MultiBufferSource.immediateWithBuffers(layers, new ByteBufferBuilder(1536)));
         }
 
         return customVertexConsumerProvider;
     }
 
-    private static void assignAllocator(SequencedMap<RenderLayer, BufferAllocator> layers, RenderLayer layer)
+    private static void assignAllocator(SequencedMap<RenderType, ByteBufferBuilder> layers, RenderType layer)
     {
-        layers.put(layer, new BufferAllocator(layer.getExpectedBufferSize()));
+        layers.put(layer, new ByteBufferBuilder(layer.bufferSize()));
     }
 
     public static <T extends Form> void register(Class<T> clazz, IFormRendererFactory<T> function)

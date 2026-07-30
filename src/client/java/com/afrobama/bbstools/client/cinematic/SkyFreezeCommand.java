@@ -43,13 +43,12 @@ import com.afrobama.bbstools.BBSToolsMod;
 import com.mojang.brigadier.Command;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.world.GameRules;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.GameRules;
 
 public final class SkyFreezeCommand
 {
@@ -66,23 +65,23 @@ public final class SkyFreezeCommand
     {
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
         {
-            dispatcher.register(CommandManager.literal("bbstools")
-                .then(CommandManager.literal("sky")
-                    .then(CommandManager.literal("freeze")
+            dispatcher.register(Commands.literal("bbstools")
+                .then(Commands.literal("sky")
+                    .then(Commands.literal("freeze")
                         .executes(ctx -> doFreeze(ctx.getSource())))
-                    .then(CommandManager.literal("unfreeze")
+                    .then(Commands.literal("unfreeze")
                         .executes(ctx -> doUnfreeze(ctx.getSource())))));
         });
     }
 
-    private static int doFreeze(ServerCommandSource src)
+    private static int doFreeze(CommandSourceStack src)
     {
-        ServerWorld world = src.getWorld();
+        ServerLevel world = src.getLevel();
         MinecraftServer server = src.getServer();
 
         if (world == null || server == null)
         {
-            src.sendFeedback(() -> Text.literal(
+            src.sendSuccess(() -> Component.literal(
                 "§c[sky] §fno world/server available — must be run in-game"), false);
             return 0;
         }
@@ -92,29 +91,29 @@ public final class SkyFreezeCommand
          *  /gamerule readout, etc.). Without the server arg the rule
          *  mutates silently which trips up debug tooling that reads it. */
         GameRules rules = world.getGameRules();
-        rules.get(GameRules.DO_DAYLIGHT_CYCLE).set(false, server);
-        rules.get(GameRules.DO_WEATHER_CYCLE ).set(false, server);
+        rules.getRule(GameRules.RULE_DAYLIGHT).set(false, server);
+        rules.getRule(GameRules.RULE_WEATHER_CYCLE ).set(false, server);
 
         /* 2. Re-anchor the timeOfDay to its current value. Belt-and-
          *  suspenders: if a same-tick handler already advanced the time
          *  before this command ran, we snap back to the visible angle
          *  the user is framing for, not the half-step in between. */
-        long now = world.getTimeOfDay();
-        world.setTimeOfDay(now);
+        long now = world.getDayTime();
+        world.setDayTime(now);
 
         /* 3. Force-clear the sky. ServerWorld.setWeather takes TICKS for
          *  the clear-duration arg (the vanilla /weather command converts
          *  seconds → ticks internally). We pass raining=false +
          *  thundering=false explicitly to ensure that even if it was
          *  currently raining the moment freeze runs, we stop it. */
-        world.setWeather(CLEAR_DURATION_TICKS, 0, false, false);
+        world.setWeatherParameters(CLEAR_DURATION_TICKS, 0, false, false);
 
         final long timeFinal = now;
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§a[sky] §fFROZEN §7— daylight cycle off, weather cycle off, sky cleared"), true);
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§7  timeOfDay=" + timeFinal + " (mod 24000=" + (timeFinal % 24000L) + ")"), false);
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§7  use §f/bbstools sky unfreeze §7to resume"), false);
 
         BBSToolsMod.LOG.info("/bbstools sky freeze — timeOfDay={} (tick-of-day={}), weather cleared for {} ticks",
@@ -123,14 +122,14 @@ public final class SkyFreezeCommand
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int doUnfreeze(ServerCommandSource src)
+    private static int doUnfreeze(CommandSourceStack src)
     {
-        ServerWorld world = src.getWorld();
+        ServerLevel world = src.getLevel();
         MinecraftServer server = src.getServer();
 
         if (world == null || server == null)
         {
-            src.sendFeedback(() -> Text.literal(
+            src.sendSuccess(() -> Component.literal(
                 "§c[sky] §fno world/server available — must be run in-game"), false);
             return 0;
         }
@@ -141,10 +140,10 @@ public final class SkyFreezeCommand
          *  shoot they want the sky to stay clear so they can review
          *  takes without lighting changes between them. */
         GameRules rules = world.getGameRules();
-        rules.get(GameRules.DO_DAYLIGHT_CYCLE).set(true, server);
-        rules.get(GameRules.DO_WEATHER_CYCLE ).set(true, server);
+        rules.getRule(GameRules.RULE_DAYLIGHT).set(true, server);
+        rules.getRule(GameRules.RULE_WEATHER_CYCLE ).set(true, server);
 
-        src.sendFeedback(() -> Text.literal(
+        src.sendSuccess(() -> Component.literal(
             "§e[sky] §fUNFROZEN §7— daylight cycle on, weather cycle on (sky stays clear until natural roll)"), true);
 
         BBSToolsMod.LOG.info("/bbstools sky unfreeze — daylight + weather cycles re-enabled (clear-sky timer left intact)");

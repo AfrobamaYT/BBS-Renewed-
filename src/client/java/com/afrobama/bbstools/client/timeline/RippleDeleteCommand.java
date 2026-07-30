@@ -9,9 +9,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.text.Text;
-
+import net.minecraft.network.chat.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -473,7 +471,7 @@ public final class RippleDeleteCommand
 
     private static void reply(FabricClientCommandSource source, String msg)
     {
-        source.sendFeedback(Text.literal("[BBSTools] " + msg));
+        source.sendFeedback(Component.literal("[BBSTools] " + msg));
     }
 
 }

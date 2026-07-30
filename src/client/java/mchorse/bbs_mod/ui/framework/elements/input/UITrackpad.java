@@ -13,7 +13,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Timer;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * A numeric field whose value is dragged relatively: the cursor's horizontal
@@ -281,8 +281,8 @@ public class UITrackpad extends UINumericInput<UITrackpad>
 
         if (dragging)
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            int ww = mc.getWindow().getWidth();
+            Minecraft mc = Minecraft.getInstance();
+            int ww = mc.getWindow().getScreenWidth();
 
             double factor = Math.ceil(ww / (double) context.menu.width);
             int mouseX = context.globalX(context.mouseX);
@@ -297,7 +297,7 @@ public class UITrackpad extends UINumericInput<UITrackpad>
 
                 if (mouseX <= border)
                 {
-                    Window.moveCursor(ww - (int) (factor * borderPadding), (int) mc.mouse.getY());
+                    Window.moveCursor(ww - (int) (factor * borderPadding), (int) mc.mouseHandler.ypos());
 
                     this.shiftX -= context.menu.width - borderPadding * 2;
                     this.changed.mark();
@@ -305,7 +305,7 @@ public class UITrackpad extends UINumericInput<UITrackpad>
                 }
                 else if (mouseX >= context.menu.width - border)
                 {
-                    Window.moveCursor((int) (factor * borderPadding), (int) mc.mouse.getY());
+                    Window.moveCursor((int) (factor * borderPadding), (int) mc.mouseHandler.ypos());
 
                     this.shiftX += context.menu.width - borderPadding * 2;
                     this.changed.mark();

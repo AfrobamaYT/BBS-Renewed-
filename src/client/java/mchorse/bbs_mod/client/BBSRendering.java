@@ -3,7 +3,12 @@ package mchorse.bbs_mod.client;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import mchorse.bbs_mod.graphics.InverseView;
+import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -33,14 +38,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.WindowFramebuffer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -87,8 +87,8 @@ public class BBSRendering
     private static float orthoDistance = -1F;
 
     private static boolean toggleFramebuffer;
-    private static Framebuffer framebuffer;
-    private static Framebuffer clientFramebuffer;
+    private static RenderTarget framebuffer;
+    private static RenderTarget clientFramebuffer;
     private static Texture texture;
     private static mchorse.bbs_mod.graphics.Framebuffer /* NECESSARY */ exportFramebuffer;
 
@@ -245,53 +245,53 @@ public class BBSRendering
 
     /* Framebuffers */
 
-    public static Framebuffer getFramebuffer()
+    public static RenderTarget getFramebuffer()
     {
         return framebuffer;
     }
 
     public static void setupFramebuffer()
     {
-        Window window = MinecraftClient.getInstance().getWindow();
+        Window window = Minecraft.getInstance().getWindow();
 
-        framebuffer = new WindowFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight());
+        framebuffer = new MainTarget(window.getWidth(), window.getHeight());
     }
 
     public static void resizeExtraFramebuffers()
     {
-        Set<Framebuffer> buffers = new HashSet<>();
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Set<RenderTarget> buffers = new HashSet<>();
+        Minecraft mc = Minecraft.getInstance();
 
-        buffers.add(mc.worldRenderer.getEntityOutlinesFramebuffer());
-        buffers.add(mc.worldRenderer.getTranslucentFramebuffer());
-        buffers.add(mc.worldRenderer.getEntityFramebuffer());
-        buffers.add(mc.worldRenderer.getParticlesFramebuffer());
-        buffers.add(mc.worldRenderer.getWeatherFramebuffer());
-        buffers.add(mc.worldRenderer.getCloudsFramebuffer());
+        buffers.add(mc.levelRenderer.entityTarget());
+        buffers.add(mc.levelRenderer.getTranslucentTarget());
+        buffers.add(mc.levelRenderer.getItemEntityTarget());
+        buffers.add(mc.levelRenderer.getParticlesTarget());
+        buffers.add(mc.levelRenderer.getWeatherTarget());
+        buffers.add(mc.levelRenderer.getCloudsTarget());
 
-        for (Framebuffer buffer : buffers)
+        for (RenderTarget buffer : buffers)
         {
             resizeFramebuffer(buffer);
         }
     }
 
-    public static void resizeFramebuffer(Framebuffer framebuffer)
+    public static void resizeFramebuffer(RenderTarget framebuffer)
     {
         if (framebuffer == null)
         {
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        int w = mc.getWindow().getFramebufferWidth();
-        int h = mc.getWindow().getFramebufferHeight();
+        Minecraft mc = Minecraft.getInstance();
+        int w = mc.getWindow().getWidth();
+        int h = mc.getWindow().getHeight();
 
-        if (framebuffer.textureWidth == w && framebuffer.textureHeight == h)
+        if (framebuffer.width == w && framebuffer.height == h)
         {
             return;
         }
 
-        framebuffer.resize(w, h, MinecraftClient.IS_SYSTEM_MAC);
+        framebuffer.resize(w, h, Minecraft.ON_OSX);
     }
 
     public static void toggleFramebuffer(boolean toggleFramebuffer)
@@ -301,36 +301,36 @@ public class BBSRendering
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         Window window = mc.getWindow();
 
         BBSRendering.toggleFramebuffer = toggleFramebuffer;
 
         if (toggleFramebuffer)
         {
-            int w = mc.getWindow().getFramebufferWidth();
-            int h = mc.getWindow().getFramebufferHeight();
+            int w = mc.getWindow().getWidth();
+            int h = mc.getWindow().getHeight();
 
             resizeExtraFramebuffers();
 
-            if (framebuffer.textureWidth != w || framebuffer.textureHeight != h)
+            if (framebuffer.width != w || framebuffer.height != h)
             {
-                framebuffer.resize(w, h, MinecraftClient.IS_SYSTEM_MAC);
+                framebuffer.resize(w, h, Minecraft.ON_OSX);
             }
 
-            clientFramebuffer = mc.getFramebuffer();
+            clientFramebuffer = mc.getMainRenderTarget();
 
             reassignFramebuffer(framebuffer);
 
-            framebuffer.beginWrite(true);
+            framebuffer.bindWrite(true);
         }
         else
         {
-            int drawW = window.getFramebufferWidth();
-            int drawH = window.getFramebufferHeight();
+            int drawW = window.getWidth();
+            int drawH = window.getHeight();
             reassignFramebuffer(clientFramebuffer);
 
-            mc.getFramebuffer().beginWrite(true);
+            mc.getMainRenderTarget().bindWrite(true);
 
             if (width != 0)
             {
@@ -341,15 +341,15 @@ public class BBSRendering
                     && dashboard.getPanels().panel instanceof UIFilmPanel;
                 if (!filmPanelShowing)
                 {
-                    framebuffer.draw(drawW, drawH);
+                    framebuffer.blitToScreen(drawW, drawH);
                 }
             }
         }
     }
 
-    private static void reassignFramebuffer(Framebuffer framebuffer)
+    private static void reassignFramebuffer(RenderTarget framebuffer)
     {
-        MinecraftClient.getInstance().framebuffer = framebuffer;
+        Minecraft.getInstance().mainRenderTarget = framebuffer;
     }
 
     /* Rendering */
@@ -360,7 +360,7 @@ public class BBSRendering
         {
             /* Give back the culling disabled for the previous ortho frame
              * (see setOrthoDistance); re-armed by the orbit if still on. */
-            MinecraftClient.getInstance().chunkCullingEnabled = true;
+            Minecraft.getInstance().smartCull = true;
 
             if (sodium)
             {
@@ -370,14 +370,14 @@ public class BBSRendering
 
         orthoDistance = -1F;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        BBSModClient.getFilms().startRenderFrame(mc.getRenderTickCounter().getTickDelta(false));
+        Minecraft mc = Minecraft.getInstance();
+        BBSModClient.getFilms().startRenderFrame(mc.getTimer().getGameTimeDeltaPartialTick(false));
 
         UIBaseMenu menu = UIScreen.getCurrentMenu();
 
         if (menu != null)
         {
-            menu.startRenderFrame(mc.getRenderTickCounter().getTickDelta(false));
+            menu.startRenderFrame(mc.getTimer().getGameTimeDeltaPartialTick(false));
         }
 
         renderingWorld = true;
@@ -392,14 +392,14 @@ public class BBSRendering
 
     public static void onWorldRenderEnd()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         if (BBSModClient.getCameraController().getCurrent() instanceof PlayCameraController controller)
         {
-            DrawContext drawContext = new DrawContext(mc, mc.getBufferBuilders().getEntityVertexConsumers());
+            GuiGraphics drawContext = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
             Batcher2D batcher = new Batcher2D(drawContext);
 
-            UISubtitleRenderer.renderSubtitles(batcher.getContext().getMatrices(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
+            UISubtitleRenderer.renderSubtitles(batcher.getContext().pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
         }
 
         if (!customSize)
@@ -415,7 +415,7 @@ public class BBSRendering
         {
             if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
             {
-                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.getContext().getMatrices(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
+                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.getContext().pose(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
             }
         }
 
@@ -451,10 +451,10 @@ public class BBSRendering
         int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int prevDraw = GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
 
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer.fbo);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer.frameBufferId);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, exportFramebuffer.id);
         GL30.glBlitFramebuffer(
-            0, 0, framebuffer.textureWidth, framebuffer.textureHeight,
+            0, 0, framebuffer.width, framebuffer.height,
             0, 0, targetWidth, targetHeight,
             GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
         );
@@ -470,7 +470,7 @@ public class BBSRendering
         {
             Runnable action = pendingExportResolutionAction;
             pendingExportResolutionAction = null;
-            MinecraftClient.getInstance().execute(action);
+            Minecraft.getInstance().execute(action);
         }
     }
 
@@ -482,12 +482,12 @@ public class BBSRendering
     public static void onRenderChunkLayer(Matrix4f positionMatrix)
     {
         WorldRenderContextImpl worldRenderContext = new WorldRenderContextImpl();
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         worldRenderContext.prepare(
-            mc.worldRenderer, mc.getRenderTickCounter(), false,
-            mc.gameRenderer.getCamera(), mc.gameRenderer, mc.gameRenderer.getLightmapTextureManager(),
-            RenderSystem.getProjectionMatrix(), positionMatrix, mc.getBufferBuilders().getEntityVertexConsumers(), mc.getProfiler(), false, mc.world
+            mc.levelRenderer, mc.getTimer(), false,
+            mc.gameRenderer.getMainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
+            RenderSystem.getProjectionMatrix(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
         );
 
         if (isIrisShadersEnabled())
@@ -496,7 +496,7 @@ public class BBSRendering
         }
     }
 
-    public static void renderHud(DrawContext drawContext, float tickDelta)
+    public static void renderHud(GuiGraphics drawContext, float tickDelta)
     {
         Batcher2D batcher2D = new Batcher2D(drawContext);
 
@@ -529,7 +529,7 @@ public class BBSRendering
 
             label = UIKeys.FILM_VIDEO_RECORDING.format(
                 count,
-                BBSModClient.getKeyRecordVideo().getBoundKeyLocalizedText().getString()
+                BBSModClient.getKeyRecordVideo().getTranslatedKeyMessage().getString()
             ).get();
         }
         else
@@ -537,12 +537,12 @@ public class BBSRendering
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        DrawContext drawContext = new DrawContext(mc, mc.getBufferBuilders().getEntityVertexConsumers());
+        Minecraft mc = Minecraft.getInstance();
+        GuiGraphics drawContext = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
 
         renderRecordingTimerOverlay(new Batcher2D(drawContext), label);
 
-        drawContext.draw();
+        drawContext.flush();
     }
 
     public static void renderRecordingTimerOverlay(Batcher2D batcher2D, String label)
@@ -565,9 +565,9 @@ public class BBSRendering
          * view matrix for forms and gizmos that still render against a stack. */
         if (worldRenderContext.matrixStack() == null && worldRenderContext instanceof WorldRenderContextImpl impl)
         {
-            MatrixStack matrices = new MatrixStack();
+            PoseStack matrices = new PoseStack();
 
-            matrices.multiplyPositionMatrix(worldRenderContext.positionMatrix());
+            matrices.mulPose(worldRenderContext.positionMatrix());
             impl.setMatrixStack(matrices);
         }
 
@@ -576,7 +576,7 @@ public class BBSRendering
          * billboards and particles keep facing the camera in world space. */
         InverseView.set(new Matrix3f().rotation(worldRenderContext.camera().getRotation()));
 
-        if (MinecraftClient.getInstance().currentScreen instanceof UIScreen screen)
+        if (Minecraft.getInstance().screen instanceof UIScreen screen)
         {
             screen.renderInWorld(worldRenderContext);
         }
@@ -612,7 +612,7 @@ public class BBSRendering
              * the screen edges. Disable it for the frame (Sodium honours the
              * same flag); the frustum and render distance still cull. Sodium's
              * own point-camera heuristics get the same treatment. */
-            MinecraftClient.getInstance().chunkCullingEnabled = false;
+            Minecraft.getInstance().smartCull = false;
 
             if (sodium)
             {
@@ -668,7 +668,7 @@ public class BBSRendering
          * which matters here because chunk occlusion culling is off (see
          * setOrthoDistance). */
         float near = -minHalfHeight;
-        float far = renderer.getFarPlaneDistance();
+        float far = renderer.getDepthFar();
 
         return new Matrix4f().setOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, near, far);
     }
@@ -773,7 +773,7 @@ public class BBSRendering
 
     public static Long getTimeOfDay()
     {
-        if (!MinecraftClient.getInstance().isOnThread())
+        if (!Minecraft.getInstance().isSameThread())
         {
             return null;
         }
@@ -794,7 +794,7 @@ public class BBSRendering
 
     public static Double getBrightness()
     {
-        if (!MinecraftClient.getInstance().isOnThread())
+        if (!Minecraft.getInstance().isSameThread())
         {
             return null;
         }
@@ -815,7 +815,7 @@ public class BBSRendering
 
     public static Double getWeather()
     {
-        if (!MinecraftClient.getInstance().isOnThread())
+        if (!Minecraft.getInstance().isSameThread())
         {
             return null;
         }
@@ -836,7 +836,7 @@ public class BBSRendering
 
     public static Integer getChromaSkyColorArgb()
     {
-        if (!MinecraftClient.getInstance().isOnThread())
+        if (!Minecraft.getInstance().isSameThread())
         {
             return null;
         }

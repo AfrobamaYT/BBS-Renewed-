@@ -58,9 +58,9 @@ public final class EditorModeClient
             {
                 return false;
             }
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc == null) return false;
-            return mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen;
+            return mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen;
         }
         catch (Throwable ignored) {}
         return false;

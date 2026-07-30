@@ -1,7 +1,10 @@
 package mchorse.bbs_mod.camera.clips.misc;
 
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
+import com.mojang.math.Axis;
 import mchorse.bbs_mod.camera.clips.CameraClipContext;
 import mchorse.bbs_mod.camera.clips.modifiers.TrackerClip;
 import mchorse.bbs_mod.camera.data.Angle;
@@ -11,21 +14,15 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 import mchorse.bbs_mod.utils.interps.Lerps;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.Perspective;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.RotationAxis;
-import com.mojang.blaze3d.systems.VertexSorter;
-
+import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 
@@ -146,7 +143,7 @@ public class TrackerClientClip extends TrackerClip
     private static int lastEquipTick = -1;
 
     /* === Level/HUD lifecycle === */
-    private static Perspective savedPerspectiveForLevel;
+    private static CameraType savedPerspectiveForLevel;
     private static boolean savedHudHidden;
     private static boolean savedHudHiddenForLevel;
     private static boolean levelRenderingActive;
@@ -202,10 +199,10 @@ public class TrackerClientClip extends TrackerClip
 
     private static void advanceShowTransitions()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        int tick = mc.player.age;
+        int tick = mc.player.tickCount;
         if (tick == lastTransitionTick) return;
         lastTransitionTick = tick;
 
@@ -227,7 +224,7 @@ public class TrackerClientClip extends TrackerClip
      * Bobbing
      * ======================================================== */
 
-    public static void applyBob(MatrixStack matrices, float tickDelta)
+    public static void applyBob(PoseStack matrices, float tickDelta)
     {
         float h = lastBobAmount + (bobAmount - lastBobAmount) * tickDelta;
         if (h < 0.002F) return;
@@ -240,9 +237,9 @@ public class TrackerClientClip extends TrackerClip
             (float) (-Math.abs(Math.cos((double) g * Math.PI) * (double) h)),
             0F
         );
-        matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(
+        matrices.mulPose(Axis.ZP.rotationDegrees(
             (float) (Math.sin((double) g * Math.PI) * (double) h * 3D)));
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(
+        matrices.mulPose(Axis.XP.rotationDegrees(
             (float) (Math.abs(Math.cos((double) g * Math.PI - 0.2D) * (double) h) * 5D)));
     }
 
@@ -320,7 +317,7 @@ public class TrackerClientClip extends TrackerClip
     {
         if (entityStateSwapped) return;
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || currentEntity == null) return;
 
         if (handStateSwapped) restoreHandState();
@@ -332,12 +329,12 @@ public class TrackerClientClip extends TrackerClip
             for (int i = 0; i < 9; i++) lastTrackedHotbar[i] = ItemStack.EMPTY;
         }
 
-        int currentTick = player.age;
+        int currentTick = player.tickCount;
         savedHotbarItems = new ItemStack[9];
 
         for (int i = 0; i < 9; i++)
         {
-            savedHotbarItems[i] = player.getInventory().main.get(i).copy();
+            savedHotbarItems[i] = player.getInventory().items.get(i).copy();
 
             ItemStack entityItem = currentEntity.getHotbarItem(i);
             ItemStack toSet = entityItem != null ? entityItem.copy() : ItemStack.EMPTY;
@@ -352,19 +349,19 @@ public class TrackerClientClip extends TrackerClip
             if (bobTime > 0 && !toSet.isEmpty())
             {
                 /* visual hotbar-change bob (small bounce) */
-                try { toSet.setBobbingAnimationTime(bobTime); }
+                try { toSet.setPopTime(bobTime); }
                 catch (Throwable ignore) {}
             }
 
-            player.getInventory().main.set(i, toSet);
+            player.getInventory().items.set(i, toSet);
         }
 
-        savedOffHandItem = player.getInventory().offHand.get(0).copy();
+        savedOffHandItem = player.getInventory().offhand.get(0).copy();
         ItemStack entityOffHand = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
-        player.getInventory().offHand.set(0, entityOffHand != null ? entityOffHand : ItemStack.EMPTY);
+        player.getInventory().offhand.set(0, entityOffHand != null ? entityOffHand : ItemStack.EMPTY);
 
-        savedSelectedSlot = player.getInventory().selectedSlot;
-        player.getInventory().selectedSlot = currentEntity.getSelectedSlot();
+        savedSelectedSlot = player.getInventory().selected;
+        player.getInventory().selected = currentEntity.getSelectedSlot();
 
         savedHurtTime = player.hurtTime;
         player.hurtTime = currentEntity.getHurtTimer();
@@ -372,15 +369,15 @@ public class TrackerClientClip extends TrackerClip
         savedHealth = player.getHealth();
         player.setHealth(currentEntity.getHealth());
 
-        savedFoodLevel = player.getHungerManager().getFoodLevel();
-        player.getHungerManager().setFoodLevel(currentEntity.getHunger());
+        savedFoodLevel = player.getFoodData().getFoodLevel();
+        player.getFoodData().setFoodLevel(currentEntity.getHunger());
 
         initHudTooltipReflection();
         if (hudTooltipFadeField != null && hudCurrentStackField != null)
         {
             try
             {
-                InGameHud hud = MinecraftClient.getInstance().inGameHud;
+                Gui hud = Minecraft.getInstance().gui;
                 savedTooltipFade = hudTooltipFadeField.getInt(hud);
                 savedCurrentStack = (ItemStack) hudCurrentStackField.get(hud);
 
@@ -413,24 +410,24 @@ public class TrackerClientClip extends TrackerClip
     {
         if (!entityStateSwapped) return;
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player != null)
         {
             for (int i = 0; i < 9; i++)
             {
-                player.getInventory().main.set(i, savedHotbarItems[i]);
+                player.getInventory().items.set(i, savedHotbarItems[i]);
             }
-            player.getInventory().offHand.set(0, savedOffHandItem);
-            player.getInventory().selectedSlot = savedSelectedSlot;
+            player.getInventory().offhand.set(0, savedOffHandItem);
+            player.getInventory().selected = savedSelectedSlot;
             player.hurtTime = savedHurtTime;
             player.setHealth(savedHealth);
-            player.getHungerManager().setFoodLevel(savedFoodLevel);
+            player.getFoodData().setFoodLevel(savedFoodLevel);
 
             if (hudTooltipFadeField != null && hudCurrentStackField != null)
             {
                 try
                 {
-                    InGameHud hud = MinecraftClient.getInstance().inGameHud;
+                    Gui hud = Minecraft.getInstance().gui;
                     hudTooltipFadeField.setInt(hud, savedTooltipFade);
                     hudCurrentStackField.set(hud, savedCurrentStack);
                 }
@@ -449,21 +446,21 @@ public class TrackerClientClip extends TrackerClip
     {
         if (handStateSwapped) return;
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || currentEntity == null) return;
 
         int entitySlot = currentEntity.getSelectedSlot();
         ItemStack entityMain = currentEntity.getHotbarItem(entitySlot);
         boolean entityHasMainItem = entityMain != null && !entityMain.isEmpty();
 
-        handSavedSelectedSlot = player.getInventory().selectedSlot;
+        handSavedSelectedSlot = player.getInventory().selected;
 
         if (entityHasMainItem)
         {
-            player.getInventory().selectedSlot = entitySlot;
+            player.getInventory().selected = entitySlot;
             handSwappedSlotIndex = entitySlot;
-            handSavedSlotItem = player.getInventory().main.get(entitySlot).copy();
-            player.getInventory().main.set(entitySlot, entityMain.copy());
+            handSavedSlotItem = player.getInventory().items.get(entitySlot).copy();
+            player.getInventory().items.set(entitySlot, entityMain.copy());
         }
         else
         {
@@ -472,24 +469,24 @@ public class TrackerClientClip extends TrackerClip
 
         ItemStack entityOff = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
         boolean entityHasOffItem = entityOff != null && !entityOff.isEmpty();
-        handSavedOffHandItem = player.getInventory().offHand.get(0).copy();
+        handSavedOffHandItem = player.getInventory().offhand.get(0).copy();
         if (entityHasOffItem)
         {
-            player.getInventory().offHand.set(0, entityOff.copy());
+            player.getInventory().offhand.set(0, entityOff.copy());
         }
 
         savedHurtTime = player.hurtTime;
         player.hurtTime = currentEntity.getHurtTimer();
 
-        savedSwingProgress = player.handSwingProgress;
-        savedLastSwingProgress = player.lastHandSwingProgress;
-        savedHandSwinging = player.handSwinging;
+        savedSwingProgress = player.attackAnim;
+        savedLastSwingProgress = player.oAttackAnim;
+        savedHandSwinging = player.swinging;
 
         float entitySwing = currentEntity.getHandSwingProgress(currentTickDelta);
-        player.handSwingProgress = Math.max(player.handSwingProgress, entitySwing);
-        player.lastHandSwingProgress = Math.max(player.lastHandSwingProgress, entitySwing);
+        player.attackAnim = Math.max(player.attackAnim, entitySwing);
+        player.oAttackAnim = Math.max(player.oAttackAnim, entitySwing);
 
-        if (player.handSwingProgress > 0F || entitySwing > 0F) player.handSwinging = true;
+        if (player.attackAnim > 0F || entitySwing > 0F) player.swinging = true;
 
         savedHealth = player.getHealth();
         player.setHealth(currentEntity.getHealth());
@@ -503,8 +500,8 @@ public class TrackerClientClip extends TrackerClip
             {
                 savedHeldMainHand = (ItemStack) heldMainHandField.get(cachedHeldItemRenderer);
                 savedHeldOffHand = (ItemStack) heldOffHandField.get(cachedHeldItemRenderer);
-                heldMainHandField.set(cachedHeldItemRenderer, player.getMainHandStack());
-                heldOffHandField.set(cachedHeldItemRenderer, player.getOffHandStack());
+                heldMainHandField.set(cachedHeldItemRenderer, player.getMainHandItem());
+                heldOffHandField.set(cachedHeldItemRenderer, player.getOffhandItem());
 
                 if (heldEquipMainField != null)
                 {
@@ -529,19 +526,19 @@ public class TrackerClientClip extends TrackerClip
     {
         if (!handStateSwapped) return;
 
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if (player != null)
         {
             if (handSwappedSlotIndex >= 0)
             {
-                player.getInventory().main.set(handSwappedSlotIndex, handSavedSlotItem);
+                player.getInventory().items.set(handSwappedSlotIndex, handSavedSlotItem);
             }
-            player.getInventory().offHand.set(0, handSavedOffHandItem);
-            player.getInventory().selectedSlot = handSavedSelectedSlot;
+            player.getInventory().offhand.set(0, handSavedOffHandItem);
+            player.getInventory().selected = handSavedSelectedSlot;
             player.hurtTime = savedHurtTime;
-            player.handSwingProgress = savedSwingProgress;
-            player.lastHandSwingProgress = savedLastSwingProgress;
-            player.handSwinging = savedHandSwinging;
+            player.attackAnim = savedSwingProgress;
+            player.oAttackAnim = savedLastSwingProgress;
+            player.swinging = savedHandSwinging;
             player.setHealth(savedHealth);
 
             if (cachedHeldItemRenderer != null && heldMainHandField != null)
@@ -573,10 +570,10 @@ public class TrackerClientClip extends TrackerClip
     {
         if (currentEntity == null) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        int tick = mc.player.age;
+        int tick = mc.player.tickCount;
         if (tick == lastEquipTick) return;
         lastEquipTick = tick;
 
@@ -606,7 +603,7 @@ public class TrackerClientClip extends TrackerClip
     {
         if (a.isEmpty()) return b.isEmpty();
         if (b.isEmpty()) return false;
-        return ItemStack.areItemsEqual(a, b) && a.getCount() == b.getCount();
+        return ItemStack.isSameItem(a, b) && a.getCount() == b.getCount();
     }
 
     /* ========================================================
@@ -620,7 +617,7 @@ public class TrackerClientClip extends TrackerClip
 
         try
         {
-            Field[] fields = InGameHud.class.getDeclaredFields();
+            Field[] fields = Gui.class.getDeclaredFields();
 
             for (Field f : fields)
             {
@@ -669,7 +666,7 @@ public class TrackerClientClip extends TrackerClip
 
         try
         {
-            GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
+            GameRenderer gr = Minecraft.getInstance().gameRenderer;
 
             for (Field f : gr.getClass().getDeclaredFields())
             {
@@ -732,8 +729,8 @@ public class TrackerClientClip extends TrackerClip
                 break;
             }
 
-            int sw = window.getScaledWidth();
-            int sh = window.getScaledHeight();
+            int sw = window.getGuiScaledWidth();
+            int sh = window.getGuiScaledHeight();
 
             for (Field f : wc.getDeclaredFields())
             {
@@ -771,15 +768,15 @@ public class TrackerClientClip extends TrackerClip
         if (levelRenderingActive) return;
 
         advanceShowTransitions();
-        MinecraftClient mc = MinecraftClient.getInstance();
-        savedHudHiddenForLevel = mc.options.hudHidden;
+        Minecraft mc = Minecraft.getInstance();
+        savedHudHiddenForLevel = mc.options.hideGui;
 
         if (handNeeded)
         {
-            mc.options.hudHidden = false;
+            mc.options.hideGui = false;
             swapHandState();
-            savedPerspectiveForLevel = mc.options.getPerspective();
-            mc.options.setPerspective(Perspective.FIRST_PERSON);
+            savedPerspectiveForLevel = mc.options.getCameraType();
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
         }
 
         levelRenderingActive = true;
@@ -794,23 +791,23 @@ public class TrackerClientClip extends TrackerClip
 
         if (savedPerspectiveForLevel != null)
         {
-            MinecraftClient.getInstance().options.setPerspective(savedPerspectiveForLevel);
+            Minecraft.getInstance().options.setCameraType(savedPerspectiveForLevel);
             savedPerspectiveForLevel = null;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        mc.options.hudHidden = shouldRenderHud() ? false : savedHudHiddenForLevel;
+        Minecraft mc = Minecraft.getInstance();
+        mc.options.hideGui = shouldRenderHud() ? false : savedHudHiddenForLevel;
     }
 
     public static void beginHandRendering()
     {
         if (!shouldRenderHand()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (!levelRenderingActive)
         {
-            savedHudHidden = mc.options.hudHidden;
-            mc.options.hudHidden = false;
+            savedHudHidden = mc.options.hideGui;
+            mc.options.hideGui = false;
             swapHandState();
         }
 
@@ -831,7 +828,7 @@ public class TrackerClientClip extends TrackerClip
         Matrix4f handProj = new Matrix4f(savedWorldProjection);
         handProj.m00(handProj.m00() * ratio);
         handProj.m11(handProj.m11() * ratio);
-        RenderSystem.setProjectionMatrix(handProj, VertexSorter.BY_DISTANCE);
+        RenderSystem.setProjectionMatrix(handProj, VertexSorting.DISTANCE_TO_ORIGIN);
     }
 
     public static void endHandRendering()
@@ -839,16 +836,16 @@ public class TrackerClientClip extends TrackerClip
         if (!levelRenderingActive)
         {
             restoreHandState();
-            MinecraftClient.getInstance().options.hudHidden = savedHudHidden;
+            Minecraft.getInstance().options.hideGui = savedHudHidden;
         }
         if (handProjectionSwapped)
         {
-            RenderSystem.setProjectionMatrix(savedWorldProjection, VertexSorter.BY_DISTANCE);
+            RenderSystem.setProjectionMatrix(savedWorldProjection, VertexSorting.DISTANCE_TO_ORIGIN);
             handProjectionSwapped = false;
         }
     }
 
-    public static void beginHudRendering(DrawContext drawContext)
+    public static void beginHudRendering(GuiGraphics drawContext)
     {
         advanceShowTransitions();
         swapEntityToPlayer();
@@ -856,23 +853,23 @@ public class TrackerClientClip extends TrackerClip
 
         if (hudShowProgress < 0.999F && drawContext != null)
         {
-            drawContext.getMatrices().push();
-            float offset = (1F - hudShowProgress) * (float) MinecraftClient.getInstance().getWindow().getScaledHeight();
-            drawContext.getMatrices().translate(0F, offset, 0F);
+            drawContext.pose().pushPose();
+            float offset = (1F - hudShowProgress) * (float) Minecraft.getInstance().getWindow().getGuiScaledHeight();
+            drawContext.pose().translate(0F, offset, 0F);
             hudMatrixPushed = true;
         }
     }
 
-    public static void endHudRendering(DrawContext drawContext)
+    public static void endHudRendering(GuiGraphics drawContext)
     {
         if (hudMatrixPushed && drawContext != null)
         {
-            drawContext.getMatrices().pop();
+            drawContext.pose().popPose();
             hudMatrixPushed = false;
         }
         endHudScaleRestore();
         restorePlayer();
-        MinecraftClient.getInstance().options.hudHidden = savedHudHiddenForLevel;
+        Minecraft.getInstance().options.hideGui = savedHudHiddenForLevel;
     }
 
     /* ========================================================
@@ -883,7 +880,7 @@ public class TrackerClientClip extends TrackerClip
     {
         if (originalGuiScale >= 0) return;
 
-        Screen screen = MinecraftClient.getInstance().currentScreen;
+        Screen screen = Minecraft.getInstance().screen;
         if (screen != null)
         {
             try
@@ -906,7 +903,7 @@ public class TrackerClientClip extends TrackerClip
         {
             try
             {
-                originalGuiScale = MinecraftClient.getInstance().options.getGuiScale().getValue();
+                originalGuiScale = Minecraft.getInstance().options.guiScale().get();
             }
             catch (Exception e)
             {
@@ -922,7 +919,7 @@ public class TrackerClientClip extends TrackerClip
         captureOriginalGuiScale();
         if (originalGuiScale < 0) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         Window window = mc.getWindow();
         initWindowReflection(window);
 
@@ -930,8 +927,8 @@ public class TrackerClientClip extends TrackerClip
 
         try
         {
-            int fbw = window.getFramebufferWidth();
-            int fbh = window.getFramebufferHeight();
+            int fbw = window.getWidth();
+            int fbh = window.getHeight();
             int gs = originalGuiScale;
             int origSF;
 
@@ -966,11 +963,11 @@ public class TrackerClientClip extends TrackerClip
              * gerastert. Alles was noch unter der alten ortho gebaut wurde, MUSS vor dem
              * projektions-wechsel geflusht werden — sonst rendert es halb-so-gross/verschoben
              * (hotbar-drift beim 4K-export, hearts/food links aus dem rahmen). */
-            mc.getBufferBuilders().getEntityVertexConsumers().draw();
+            mc.renderBuffers().bufferSource().endBatch();
 
             RenderSystem.backupProjectionMatrix();
             Matrix4f ortho = new Matrix4f().setOrtho(0F, (float) sw, (float) sh, 0F, 1000F, 21000F);
-            RenderSystem.setProjectionMatrix(ortho, VertexSorter.BY_Z);
+            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
             scaleChanged = true;
 
             /* 4K-HUD-FIX: acceleratedrendering tauscht MCs BufferSource gegen ihren beschleunigten
@@ -1003,7 +1000,7 @@ public class TrackerClientClip extends TrackerClip
          * beschleunigung exakt für die dauer des skalierten HUD-abschnitts aus war. */
         mchorse.bbs_mod.compat.AccelGuiGuard.pop();
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         Window window = mc.getWindow();
 
         try
@@ -1014,7 +1011,7 @@ public class TrackerClientClip extends TrackerClip
              * Ohne flush rastern sie nach restoreProjectionMatrix unter der editor-ortho
              * (z.B. 960 statt 480 gui breit) = halbe groesse, nach links/oben verschoben.
              * DAS war der 4K-export-hotbar-bug (gemessen, siehe wiki hud-scale-restore). */
-            mc.getBufferBuilders().getEntityVertexConsumers().draw();
+            mc.renderBuffers().bufferSource().endBatch();
 
             windowScaleFactorField.setDouble(window, savedScaleFactor);
             windowScaledWidthField.setInt(window, savedScaledWidth);

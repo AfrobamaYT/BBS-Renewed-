@@ -4,21 +4,15 @@ package com.afrobama.bbstools.client.campreview;
 import com.afrobama.bbstools.client.mixin.CameraInvokerMixin;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
@@ -84,10 +78,10 @@ public final class CameraPreviewRenderHook
          *  view, defeating the whole purpose. */
         if (com.afrobama.bbstools.client.util.PreviewPassState.isActive()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.worldRenderer == null || mc.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.levelRenderer == null || mc.level == null) return;
 
-        Framebuffer mainFb = mc.getFramebuffer();
+        RenderTarget mainFb = mc.getMainRenderTarget();
         if (mainFb == null) return;
 
         Camera camera = ctx.camera();
@@ -99,11 +93,11 @@ public final class CameraPreviewRenderHook
 
         /* Snapshot current Camera state so we can restore at the end of
          *  this hook. Camera is a singleton mutated in-place. */
-        double savedX = camera.getPos().x;
-        double savedY = camera.getPos().y;
-        double savedZ = camera.getPos().z;
-        float savedYaw = camera.getYaw();
-        float savedPitch = camera.getPitch();
+        double savedX = camera.getPosition().x;
+        double savedY = camera.getPosition().y;
+        double savedZ = camera.getPosition().z;
+        float savedYaw = camera.getYRot();
+        float savedPitch = camera.getXRot();
 
         CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
 
@@ -137,17 +131,17 @@ public final class CameraPreviewRenderHook
             invoker.bbsRenewed$setRotation(savedYaw, savedPitch);
 
             /* Restore main framebuffer. */
-            mainFb.beginWrite(true);
+            mainFb.bindWrite(true);
 
-            int sw = mc.getWindow().getFramebufferWidth();
-            int sh = mc.getWindow().getFramebufferHeight();
+            int sw = mc.getWindow().getWidth();
+            int sh = mc.getWindow().getHeight();
             RenderSystem.viewport(0, 0, sw, sh);
 
             RENDERING_PREVIEW = false;
         }
     }
 
-    private static void renderPreview(MinecraftClient mc, WorldRenderContext ctx,
+    private static void renderPreview(Minecraft mc, WorldRenderContext ctx,
                                       CameraInvokerMixin invoker, CameraPreview p)
     {
         double[] pose = CameraPreviewRegistry.resolvePose(p);
@@ -155,12 +149,12 @@ public final class CameraPreviewRenderHook
         invoker.bbsRenewed$setPos(pose[0], pose[1], pose[2]);
         invoker.bbsRenewed$setRotation((float) pose[3], (float) pose[4]);
 
-        Framebuffer fb = p.framebuffer;
-        fb.beginWrite(true);
-        RenderSystem.viewport(0, 0, fb.textureWidth, fb.textureHeight);
+        RenderTarget fb = p.framebuffer;
+        fb.bindWrite(true);
+        RenderSystem.viewport(0, 0, fb.width, fb.height);
         RenderSystem.clearColor(0F, 0F, 0F, 1F);
         RenderSystem.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT,
-            MinecraftClient.IS_SYSTEM_MAC);
+            Minecraft.ON_OSX);
 
         /* Phase 2.5 attempted to call worldRenderer.render() inside the
          *  LAST event — fatal NPE on Iris because the pipeline state
@@ -172,26 +166,26 @@ public final class CameraPreviewRenderHook
          *  Phase 2.6 (planned, separate session): mixin into
          *  GameRenderer.renderWorld HEAD, do all preview renders BEFORE
          *  Iris kicks in for the main pass. */
-        blitMainIntoPreview(mc.getFramebuffer(), fb);
+        blitMainIntoPreview(mc.getMainRenderTarget(), fb);
     }
 
-    private static void blitMainIntoPreview(Framebuffer src, Framebuffer dst)
+    private static void blitMainIntoPreview(RenderTarget src, RenderTarget dst)
     {
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        RenderSystem.setShaderTexture(0, src.getColorAttachment());
+        RenderSystem.setShaderTexture(0, src.getColorTextureId());
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
-        BufferBuilder bb = Tessellator.getInstance().begin(
-            VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
-        bb.vertex(-1F, -1F, 0F).texture(0F, 0F);
-        bb.vertex( 1F, -1F, 0F).texture(1F, 0F);
-        bb.vertex( 1F,  1F, 0F).texture(1F, 1F);
-        bb.vertex(-1F,  1F, 0F).texture(0F, 1F);
-        try { net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(bb.end()); }
+        BufferBuilder bb = Tesselator.getInstance().begin(
+            VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        bb.addVertex(-1F, -1F, 0F).setUv(0F, 0F);
+        bb.addVertex( 1F, -1F, 0F).setUv(1F, 0F);
+        bb.addVertex( 1F,  1F, 0F).setUv(1F, 1F);
+        bb.addVertex(-1F,  1F, 0F).setUv(0F, 1F);
+        try { com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow()); }
         catch (Throwable ignored) {}
 
         RenderSystem.enableDepthTest();

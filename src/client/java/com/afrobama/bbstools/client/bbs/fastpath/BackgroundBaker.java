@@ -37,9 +37,8 @@ import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.data.model.Model;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -229,7 +228,7 @@ public final class BackgroundBaker
         catch (Throwable t) { camDur = 0; }
 
         int liveTick = c.getTick();
-        int fullLight = LightmapTextureManager.pack(15, 15);
+        int fullLight = LightTexture.pack(15, 15);
 
         /* IDLE FAST-OUT. Once the previous full scan confirmed EVERY replay is
          * baked and the scene is stable (same replay count, not mid-edit), the
@@ -460,7 +459,7 @@ public final class BackgroundBaker
                 bbstools$pose(job, t);
                 FastPathBatch.Submission sub = new FastPathBatch.Submission(
                     job.renderer, job.entity, job.instance, job.form,
-                    IDENTITY, fullLight, OverlayTexture.DEFAULT_UV,
+                    IDENTITY, fullLight, OverlayTexture.NO_OVERLAY,
                     mchorse.bbs_mod.utils.colors.Colors.WHITE, 0F, false);
                 if (Tier2hInstancedDraw.bakeRecord(sub))
                 {
@@ -580,7 +579,7 @@ public final class BackgroundBaker
             bbstools$pose(job, s);
             FastPathBatch.Submission sub = new FastPathBatch.Submission(
                 job.renderer, job.entity, job.instance, job.form,
-                IDENTITY, fullLight, OverlayTexture.DEFAULT_UV,
+                IDENTITY, fullLight, OverlayTexture.NO_OVERLAY,
                 mchorse.bbs_mod.utils.colors.Colors.WHITE, 0F, false);
             float[] flat = Tier2hInstancedDraw.extractFlat(sub);
             if (flat != null) { parts.add(flat); total += flat.length; }
@@ -599,7 +598,7 @@ public final class BackgroundBaker
     {
         return new FastPathBatch.Submission(
             job.renderer, job.entity, job.instance, job.form,
-            IDENTITY, fullLight, OverlayTexture.DEFAULT_UV,
+            IDENTITY, fullLight, OverlayTexture.NO_OVERLAY,
             mchorse.bbs_mod.utils.colors.Colors.WHITE, 0F, false);
     }
 

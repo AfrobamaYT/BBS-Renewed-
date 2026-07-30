@@ -6,9 +6,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +51,9 @@ public final class UndoPersistence
             return false;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
-        return mc != null && mc.isIntegratedServerRunning();
+        return mc != null && mc.hasSingleplayerServer();
     }
 
     /** {@code null} heisst: fuer diesen Film gibt es keinen Ablageort. */

@@ -8,12 +8,11 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIListOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.utils.UI;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -49,16 +48,16 @@ public class UIParticleColorPresets extends UIElement
      *
      * <p>Compares the resolved type rather than matching the id's path: in 1.21.1
      * {@code minecraft:effect} and {@code minecraft:instant_effect} are plain
-     * {@link net.minecraft.particle.SimpleParticleType}s that ignore any colour, so a
+     * {@link net.minecraft.core.particles.SimpleParticleType}s that ignore any colour, so a
      * {@code path.contains("effect")} test would offer presets that do nothing.</p>
      */
-    public static boolean supportsColor(Identifier particle)
+    public static boolean supportsColor(ResourceLocation particle)
     {
-        return particle != null && Registries.PARTICLE_TYPE.get(particle) == ParticleTypes.ENTITY_EFFECT;
+        return particle != null && BuiltInRegistries.PARTICLE_TYPE.get(particle) == ParticleTypes.ENTITY_EFFECT;
     }
 
     /** The status effect's own colour, in the argument form the renderer parses. */
-    public static String toArguments(StatusEffect effect)
+    public static String toArguments(MobEffect effect)
     {
         int color = effect.getColor();
 
@@ -93,7 +92,7 @@ public class UIParticleColorPresets extends UIElement
 
         if (supported)
         {
-            Identifier preset = this.findPreset(settings.arguments);
+            ResourceLocation preset = this.findPreset(settings.arguments);
 
             this.pick.label = preset == null ? PICK_EFFECT : IKey.raw(preset.toString());
         }
@@ -104,7 +103,7 @@ public class UIParticleColorPresets extends UIElement
      * rather than the numbers, so a hand-typed colour that no preset produces stays unnamed
      * instead of being labelled with a near miss.
      */
-    private Identifier findPreset(String arguments)
+    private ResourceLocation findPreset(String arguments)
     {
         String args = arguments == null ? "" : arguments.trim();
 
@@ -113,13 +112,13 @@ public class UIParticleColorPresets extends UIElement
             return null;
         }
 
-        for (RegistryKey<StatusEffect> key : Registries.STATUS_EFFECT.getKeys())
+        for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())
         {
-            StatusEffect effect = Registries.STATUS_EFFECT.get(key);
+            MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(key);
 
             if (effect != null && args.equals(toArguments(effect)))
             {
-                return key.getValue();
+                return key.location();
             }
         }
 
@@ -131,9 +130,9 @@ public class UIParticleColorPresets extends UIElement
         UIListOverlayPanel panel = new UIListOverlayPanel(EFFECT_TITLE, (l) -> this.setEffect(Identifier.of(l)));
         List<String> ids = new ArrayList<>();
 
-        for (RegistryKey<StatusEffect> key : Registries.STATUS_EFFECT.getKeys())
+        for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())
         {
-            ids.add(key.getValue().toString());
+            ids.add(key.location().toString());
         }
 
         panel.addValues(ids);
@@ -142,9 +141,9 @@ public class UIParticleColorPresets extends UIElement
         UIOverlay.addOverlay(this.getContext(), panel);
     }
 
-    private void setEffect(Identifier id)
+    private void setEffect(ResourceLocation id)
     {
-        StatusEffect effect = Registries.STATUS_EFFECT.get(id);
+        MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(id);
 
         if (effect == null)
         {

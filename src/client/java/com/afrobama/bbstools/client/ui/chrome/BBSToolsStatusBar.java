@@ -7,8 +7,7 @@ import com.afrobama.bbstools.client.ui.undo.BBSToolsUndoStack;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
-
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * Phase 13 — bottom-most status row.
@@ -64,7 +63,7 @@ public class BBSToolsStatusBar extends UIElement
     {
         try
         {
-            int fps = MinecraftClient.getInstance().getCurrentFps();
+            int fps = Minecraft.getInstance().getFps();
             return "fps " + fps;
         }
         catch (Throwable ignored) { return "fps ?"; }

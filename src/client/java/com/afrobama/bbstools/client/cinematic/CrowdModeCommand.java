@@ -39,8 +39,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public final class CrowdModeCommand
 {
@@ -67,7 +66,7 @@ public final class CrowdModeCommand
         ActionManager actions = BBSMod.getActions();
         if (actions == null)
         {
-            ctx.getSource().sendError(Text.literal("BBS ActionManager unavailable"));
+            ctx.getSource().sendError(Component.literal("BBS ActionManager unavailable"));
             return 0;
         }
 
@@ -92,7 +91,7 @@ public final class CrowdModeCommand
 
         final int finalFilms = filmsTouched;
         final int finalReplays = replaysFlipped;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("crowdMode %s: %d film(s), %d replay(s) flipped",
                 on ? "ON" : "OFF", finalFilms, finalReplays)));
 
@@ -104,7 +103,7 @@ public final class CrowdModeCommand
         ActionManager actions = BBSMod.getActions();
         if (actions == null)
         {
-            ctx.getSource().sendError(Text.literal("BBS ActionManager unavailable"));
+            ctx.getSource().sendError(Component.literal("BBS ActionManager unavailable"));
             return 0;
         }
 
@@ -128,7 +127,7 @@ public final class CrowdModeCommand
         final int f = totalFilms;
         final int r = totalReplays;
         final int c = crowdReplays;
-        ctx.getSource().sendFeedback(Text.literal(
+        ctx.getSource().sendFeedback(Component.literal(
             String.format("crowdMode status: %d film(s), %d replay(s) total, %d in crowdMode",
                 f, r, c)));
 

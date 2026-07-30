@@ -16,11 +16,9 @@ import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.utils.colors.Colors;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.option.KeyBinding;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -88,7 +86,7 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
      */
     public static void open(UIQuickReplayOverlayPanel panel)
     {
-        panel.onClose((event) -> MinecraftClient.getInstance().setScreen(null));
+        panel.onClose((event) -> Minecraft.getInstance().setScreen(null));
 
         UIScreen.open(new UIBaseMenu()
         {
@@ -163,7 +161,7 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
 
     public static UIQuickReplayOverlayPanel getOpened()
     {
-        Screen currentScreen = MinecraftClient.getInstance().currentScreen;
+        Screen currentScreen = Minecraft.getInstance().screen;
 
         if (!(currentScreen instanceof UIScreen uiScreen))
         {
@@ -231,9 +229,9 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
             return;
         }
 
-        net.minecraft.client.util.Window mcWindow = MinecraftClient.getInstance().getWindow();
-        double fx = mcWindow.getWidth() / (double) context.menu.width;
-        double fy = mcWindow.getHeight() / (double) context.menu.height;
+        com.mojang.blaze3d.platform.Window mcWindow = Minecraft.getInstance().getWindow();
+        double fx = mcWindow.getScreenWidth() / (double) context.menu.width;
+        double fy = mcWindow.getScreenHeight() / (double) context.menu.height;
         int x = (int) Math.round(this.area.mx() * fx);
         int y = (int) Math.round(this.area.my() * fy);
 
@@ -365,9 +363,9 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
             return super.subKeyPressed(context);
         }
 
-        KeyBinding keybind = BBSModClient.getKeyOpenQuickReplays();
+        KeyMapping keybind = BBSModClient.getKeyOpenQuickReplays();
 
-        if (keybind != null && context.getKeyAction() == KeyAction.PRESSED && keybind.matchesKey(context.getKeyCode(), context.getScanCode()))
+        if (keybind != null && context.getKeyAction() == KeyAction.PRESSED && keybind.matches(context.getKeyCode(), context.getScanCode()))
         {
             this.confirmSelection();
 

@@ -13,8 +13,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,10 +195,10 @@ public class UIBBSToolsLaunchPad extends UIOverlayPanel
             /* For now: log and surface a chat message. Wiring the actual
              *  IntegratedServerLoader.start() varies across MC point
              *  releases; we'll add it once we lock the target version. */
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc.player != null)
             {
-                mc.player.sendMessage(net.minecraft.text.Text.literal(
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                     "§6[BBSTools] §fLaunchpad selected world: §e" + name
                     + "§7  (open-from-launchpad wires up in Phase 15b)"), false);
             }

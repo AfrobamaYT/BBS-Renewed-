@@ -34,7 +34,7 @@ import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-
+import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.animation.IAnimator;
@@ -46,12 +46,7 @@ import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.RotationAxis;
-
+import net.minecraft.client.Minecraft;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL12C;
@@ -447,13 +442,13 @@ public final class Tier2hInstancedDraw
      * around the fallback, then restore so the next instanced bucket is unaffected. */
     private static void bbstools$renderFallbackBucket(List<FastPathBatch.Submission> list)
     {
-        net.minecraft.client.render.GameRenderer gr = MinecraftClient.getInstance().gameRenderer;
+        net.minecraft.client.renderer.GameRenderer gr = Minecraft.getInstance().gameRenderer;
         int savedActiveTex = GL11C.glGetInteger(0x84E0);
         boolean wasDepth = GL11C.glIsEnabled(GL11C.GL_DEPTH_TEST);
         boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
 
-        gr.getLightmapTextureManager().enable();
-        gr.getOverlayTexture().setupOverlayColor();
+        gr.lightTexture().turnOnLightLayer();
+        gr.overlayTexture().setupOverlayColor();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
         GL11C.glDepthMask(true);
@@ -468,8 +463,8 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            gr.getOverlayTexture().teardownOverlayColor();
-            gr.getLightmapTextureManager().disable();
+            gr.overlayTexture().teardownOverlayColor();
+            gr.lightTexture().turnOffLightLayer();
             if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
             if (!wasCull)  GL11C.glDisable(GL11C.GL_CULL_FACE);
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);
@@ -1149,7 +1144,7 @@ public final class Tier2hInstancedDraw
         /* Bone matrices are extracted in MODEL-LOCAL space (NO world
          * matrix applied) — we apply world transform separately in
          * the vertex shader from the per-instance attribs. */
-        MatrixStack stack = new MatrixStack();
+        PoseStack stack = new PoseStack();
 
         CubicMatrixRenderer ex;
         if (BBSPerfConfig.ENABLE_TIER3_POOLS)

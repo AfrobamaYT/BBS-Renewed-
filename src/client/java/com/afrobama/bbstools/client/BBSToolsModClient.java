@@ -618,7 +618,7 @@ public final class BBSToolsModClient implements ClientModInitializer
         try
         {
             net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
-                net.minecraft.entity.EntityType.ZOMBIE,
+                net.minecraft.world.entity.EntityType.ZOMBIE,
                 com.afrobama.bbstools.client.ragdoll.BBSTexturedZombieRenderer::new);
             BBSToolsMod.LOG.info("Registered BBSTexturedZombieRenderer — /ragdollswap Player will carry BBS skin onto the zombie ragdoll.");
         }

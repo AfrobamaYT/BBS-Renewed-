@@ -5,20 +5,16 @@ import com.afrobama.bbstools.client.util.CameraFrustumVisibility;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import net.minecraft.util.math.RotationAxis;
-
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
@@ -60,15 +56,15 @@ public final class CameraFrustumMeshRenderer
         List<ActiveCameraClipRegistry.Active> active = ActiveCameraClipRegistry.snapshot();
         if (active.isEmpty()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
 
         Camera mainCam = ctx.camera();
         if (mainCam == null) return;
 
-        double camX = mainCam.getPos().x;
-        double camY = mainCam.getPos().y;
-        double camZ = mainCam.getPos().z;
+        double camX = mainCam.getPosition().x;
+        double camY = mainCam.getPosition().y;
+        double camZ = mainCam.getPosition().z;
 
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
@@ -76,7 +72,7 @@ public final class CameraFrustumMeshRenderer
         RenderSystem.lineWidth(2F);
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        MatrixStack stack = ctx.matrixStack();
+        PoseStack stack = ctx.matrixStack();
 
         for (ActiveCameraClipRegistry.Active a : active)
         {
@@ -96,21 +92,21 @@ public final class CameraFrustumMeshRenderer
         RenderSystem.enableCull();
     }
 
-    private static void drawFrustum(MatrixStack stack, ActiveCameraClipRegistry.Active a,
+    private static void drawFrustum(PoseStack stack, ActiveCameraClipRegistry.Active a,
                                     double camX, double camY, double camZ)
     {
         /* Translate to clip's pose relative to current main camera so
          *  the mesh aligns with the world position regardless of where
          *  the user is currently viewing from. */
-        stack.push();
+        stack.pushPose();
         stack.translate(a.pose[0] - camX, a.pose[1] - camY, a.pose[2] - camZ);
-        stack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-(float) a.pose[3]));
-        stack.multiply(RotationAxis.POSITIVE_X.rotationDegrees((float) a.pose[4]));
+        stack.mulPose(Axis.YP.rotationDegrees(-(float) a.pose[3]));
+        stack.mulPose(Axis.XP.rotationDegrees((float) a.pose[4]));
 
-        Matrix4f m = stack.peek().getPositionMatrix();
+        Matrix4f m = stack.last().pose();
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder bb = tess.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder bb = tess.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         /* Body box — small cube at origin (this is the camera's body). */
         float bs = 0.15F;   /* body size */
@@ -139,10 +135,10 @@ public final class CameraFrustumMeshRenderer
         addLine(bb, m, -ts, bs,       0F,   0F, bs + ts,  0F,  0.4F, 1F, 0.4F);
         addLine(bb, m,  ts, bs,       0F,   0F, bs + ts,  0F,  0.4F, 1F, 0.4F);
 
-        try { net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(bb.end()); }
+        try { com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow()); }
         catch (Throwable ignored) {}
 
-        stack.pop();
+        stack.popPose();
     }
 
     private static void addLine(BufferBuilder bb, Matrix4f m,
@@ -150,8 +146,8 @@ public final class CameraFrustumMeshRenderer
                                 float x2, float y2, float z2,
                                 float r, float g, float bl)
     {
-        bb.vertex(m, x1, y1, z1).color(r, g, bl, 1F);
-        bb.vertex(m, x2, y2, z2).color(r, g, bl, 1F);
+        bb.addVertex(m, x1, y1, z1).setColor(r, g, bl, 1F);
+        bb.addVertex(m, x2, y2, z2).setColor(r, g, bl, 1F);
     }
 
     private static void addBoxLines(BufferBuilder bb, Matrix4f m,

@@ -13,20 +13,20 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.joml.Matrices;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.command.argument.ParticleEffectArgumentType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.BlockStateParticleEffect;
-import net.minecraft.particle.EntityEffectParticleEffect;
-import net.minecraft.particle.ItemStackParticleEffect;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleType;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ColorHelper;
-import net.minecraft.world.World;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.commands.arguments.ParticleArgument;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ColorParticleOption;
+import net.minecraft.core.particles.ItemParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -69,7 +69,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
     {
         super.render3D(context);
 
-        Camera camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Matrix4f matrix = new Matrix4f(InverseView.get());
 
         /* Since 1.21.1 the world render keeps the camera view in RenderSystem's global
@@ -78,26 +78,26 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
          * model-view back in (identity, hence a no-op, in the form editor where the camera
          * lives in the stack) so the emitter's world position and direction come out right. */
         matrix.mul(RenderSystem.getModelViewMatrix());
-        matrix.mul(context.stack.peek().getPositionMatrix());
+        matrix.mul(context.stack.last().pose());
 
         Vector3d translation = new Vector3d(matrix.getTranslation(Vectors.TEMP_3F));
 
-        translation.add(camera.getPos().x, camera.getPos().y, camera.getPos().z);
-        context.stack.push();
-        context.stack.loadIdentity();
-        context.stack.multiplyPositionMatrix(new Matrix4f(InverseView.get()).invert());
+        translation.add(camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+        context.stack.pushPose();
+        context.stack.setIdentity();
+        context.stack.mulPose(new Matrix4f(InverseView.get()).invert());
 
         this.pos.set(translation);
         this.vel.set(0F, 0F, 1F);
         this.rot.set(matrix).transform(this.vel);
 
-        context.stack.pop();
+        context.stack.popPose();
     }
 
     @Override
     public void tick(IEntity entity)
     {
-        World world = entity.getWorld();
+        Level world = entity.getWorld();
         boolean paused = this.form.paused.get();
         Vector3f temp3f = new Vector3f();
 
@@ -112,7 +112,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
                 Matrix3f m = Matrices.TEMP_3F;
                 Vector3f v = Vectors.TEMP_3F;
                 ParticleSettings settings = this.form.settings.get();
-                ParticleEffect effect = createEffect(settings, world);
+                ParticleOptions effect = createEffect(settings, world);
 
                 for (int i = 0; i < count; i++)
                 {
@@ -161,28 +161,28 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
      * it is parsed exactly like the vanilla {@code /particle} command, so every particle type
      * still works. Falls back to flame when nothing parses.
      */
-    private static ParticleEffect createEffect(ParticleSettings settings, World world)
+    private static ParticleOptions createEffect(ParticleSettings settings, Level world)
     {
         String args = settings.arguments == null ? "" : settings.arguments.trim();
 
         try
         {
-            ParticleType<?> type = Registries.PARTICLE_TYPE.get(settings.particle);
+            ParticleType<?> type = BuiltInRegistries.PARTICLE_TYPE.get(settings.particle);
             boolean bareId = !args.isEmpty() && args.charAt(0) != '{';
 
             if (bareId && type == ParticleTypes.BLOCK)
             {
-                return new BlockStateParticleEffect(ParticleTypes.BLOCK, Registries.BLOCK.get(Identifier.of(args)).getDefaultState());
+                return new BlockParticleOption(ParticleTypes.BLOCK, BuiltInRegistries.BLOCK.get(ResourceLocation.parse(args)).defaultBlockState());
             }
 
             if (bareId && type == ParticleTypes.ITEM)
             {
-                return new ItemStackParticleEffect(ParticleTypes.ITEM, new ItemStack(Registries.ITEM.get(Identifier.of(args))));
+                return new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(args))));
             }
 
             if (bareId && type == ParticleTypes.ENTITY_EFFECT)
             {
-                ParticleEffect tinted = parseEntityEffectColor(args);
+                ParticleOptions tinted = parseEntityEffectColor(args);
 
                 if (tinted != null)
                 {
@@ -192,7 +192,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
 
             StringReader reader = new StringReader(settings.particle.toString() + args);
 
-            return ParticleEffectArgumentType.readParameters(reader, world.getRegistryManager());
+            return ParticleArgument.readParticle(reader, world.registryAccess());
         }
         catch (Exception e)
         {
@@ -211,7 +211,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
      * @return null when the arguments are not a float triple/quad, so the caller falls through
      *         to the vanilla parser instead of swallowing a valid but unusual argument string.
      */
-    private static ParticleEffect parseEntityEffectColor(String args)
+    private static ParticleOptions parseEntityEffectColor(String args)
     {
         String[] split = args.split("\\s+");
 
@@ -227,7 +227,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
             float b = Float.parseFloat(split[2]);
             float a = split.length == 4 ? Float.parseFloat(split[3]) : 1F;
 
-            return EntityEffectParticleEffect.create(ParticleTypes.ENTITY_EFFECT, ColorHelper.Argb.fromFloats(a, r, g, b));
+            return ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, FastColor.ARGB32.colorFromFloat(a, r, g, b));
         }
         catch (NumberFormatException e)
         {

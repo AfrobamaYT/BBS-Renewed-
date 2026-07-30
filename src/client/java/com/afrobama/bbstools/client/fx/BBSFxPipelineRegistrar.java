@@ -15,8 +15,7 @@ import foundry.veil.api.event.VeilRenderLevelStageEvent;
 import foundry.veil.platform.VeilEventPlatform;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,27 +23,27 @@ public final class BBSFxPipelineRegistrar
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/fx/registrar");
 
-    public static final Identifier SHADOWS_PIPELINE = Identifier.of("bbstools", "bbs_shadows");
-    public static final Identifier BLOOM_PIPELINE   = Identifier.of("bbstools", "bbs_bloom");
-    public static final Identifier FINAL_PIPELINE   = Identifier.of("bbstools", "bbs_final");
+    public static final ResourceLocation SHADOWS_PIPELINE = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_shadows");
+    public static final ResourceLocation BLOOM_PIPELINE   = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_bloom");
+    public static final ResourceLocation FINAL_PIPELINE   = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_final");
     /** Nuke pipeline — added alongside the others. The shader has a
      *  smokeRiseTimer > 0 guard so when no nuke is active it falls
      *  through to a single sampler copy (near-zero GPU cost). */
-    public static final Identifier NUKE_PIPELINE    = Identifier.of("bbstools", "bbs_nuke");
+    public static final ResourceLocation NUKE_PIPELINE    = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_nuke");
     /** REALITY GLITCH pipeline — original effect (not in destroying-mc).
      *  Shader has a glitchIntensity > 0 guard so idle = pass-through. */
-    public static final Identifier GLITCH_PIPELINE  = Identifier.of("bbstools", "bbs_glitch");
+    public static final ResourceLocation GLITCH_PIPELINE  = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_glitch");
     /** ANTIMATTER IMPLOSION pipeline — original effect (not in
      *  destroying-mc). Shader has antimatterIntensity > 0 guard. */
-    public static final Identifier ANTIMATTER_PIPELINE = Identifier.of("bbstools", "bbs_antimatter");
+    public static final ResourceLocation ANTIMATTER_PIPELINE = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_antimatter");
     /** CRYSTALLIZATION WAVE pipeline — third original effect. Shader
      *  has crystalIntensity > 0 guard so idle = passthrough. */
-    public static final Identifier CRYSTAL_PIPELINE    = Identifier.of("bbstools", "bbs_crystal");
+    public static final ResourceLocation CRYSTAL_PIPELINE    = ResourceLocation.fromNamespaceAndPath("bbstools", "bbs_crystal");
 
     /** Identifier used to register our deferred-buffer enable request
      *  with Veil. Veil keeps these per-mod so multiple mods asking for
      *  the same buffer don't conflict. */
-    private static final Identifier BUFFERS_ID = Identifier.of("bbstools", "fx_deferred");
+    private static final ResourceLocation BUFFERS_ID = ResourceLocation.fromNamespaceAndPath("bbstools", "fx_deferred");
 
     /** Master enable flag — toggled via /bbstools fx enable/disable.
      *  When true, the registrar adds our pipelines to Veil's active
@@ -238,7 +237,7 @@ public final class BBSFxPipelineRegistrar
         }
     }
 
-    private static void addIfMissing(PostProcessingManager mgr, Identifier id)
+    private static void addIfMissing(PostProcessingManager mgr, ResourceLocation id)
     {
         if (!mgr.isActive(id))
         {

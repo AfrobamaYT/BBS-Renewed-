@@ -25,14 +25,13 @@ import mchorse.bbs_mod.utils.interps.rasterizers.LineRasterizer;
 import mchorse.bbs_mod.utils.resources.Pixels;
 import mchorse.bbs_mod.utils.undo.IUndo;
 import mchorse.bbs_mod.utils.undo.UndoManager;
+import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.ui.dashboard.textures.data.TextureLayer;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
 import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-
+import com.mojang.blaze3d.shaders.Uniform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1015,7 +1014,7 @@ public class UIPixelsEditor extends UICanvasEditor
             this.selectionMaskDirty = false;
         }
 
-        ShaderProgram shader = BBSShaders.getSelectionProgram();
+        ShaderInstance shader = BBSShaders.getSelectionProgram();
 
         if (shader == null || this.selectionMaskTexture == null)
         {
@@ -1034,7 +1033,7 @@ public class UIPixelsEditor extends UICanvasEditor
         int aw = area.w;
         int ah = area.h;
 
-        GlUniform phase = shader.getUniform("Phase");
+        Uniform phase = shader.getUniform("Phase");
 
         if (phase != null)
         {
@@ -1043,7 +1042,7 @@ public class UIPixelsEditor extends UICanvasEditor
             phase.set((float) ((System.currentTimeMillis() / 150L) % 2L));
         }
 
-        GlUniform scale = shader.getUniform("Scale");
+        Uniform scale = shader.getUniform("Scale");
 
         if (scale != null)
         {

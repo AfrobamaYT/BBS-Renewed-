@@ -7,8 +7,6 @@
 // becomes a regular MAS Post-FX they can toggle via /mas user_<name>.
 package com.afrobama.bbstools.client.veil;
 
-import net.minecraft.client.MinecraftClient;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import net.minecraft.client.Minecraft;
 
 /**
  * Installs a user-supplied fragment shader into a generated resource
@@ -65,13 +64,13 @@ public final class MASUserShaderInstaller
 
     public static Path getUserShadersDir()
     {
-        return MinecraftClient.getInstance().runDirectory.toPath()
+        return Minecraft.getInstance().gameDirectory.toPath()
             .resolve("config").resolve("bbstools").resolve("shaders");
     }
 
     public static Path getResourcePackRoot()
     {
-        return MinecraftClient.getInstance().runDirectory.toPath()
+        return Minecraft.getInstance().gameDirectory.toPath()
             .resolve("resourcepacks").resolve(PACK_NAME);
     }
 

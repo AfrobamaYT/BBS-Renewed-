@@ -1,12 +1,10 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
-
-import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -24,9 +22,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class LivingEntityRendererTextureMixin
 {
     @Redirect(method = "render", at = @At(value = "INVOKE",
-        target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;getTexture(Lnet/minecraft/entity/Entity;)Lnet/minecraft/util/Identifier;"),
+        target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;getTextureLocation(Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/resources/ResourceLocation;"),
         require = 0)
-    private Identifier bbs$redirectGetTexture(LivingEntityRenderer<?, ?> self, Entity entity)
+    private ResourceLocation bbs$redirectGetTexture(LivingEntityRenderer<?, ?> self, Entity entity)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in
          * LivingEntityRenderer gewoben und liegt damit im KnotClassLoader — vom kernel-swap
@@ -34,11 +32,11 @@ public abstract class LivingEntityRendererTextureMixin
          * `com.afrobama.blendertransform.LivingEntityTextureLogik` und wird bei jedem swap
          * mitgetauscht. */
         @SuppressWarnings({"unchecked", "rawtypes"})
-        Identifier vanilla = ((LivingEntityRenderer) self).getTexture((LivingEntity) entity);
+        ResourceLocation vanilla = ((LivingEntityRenderer) self).getTextureLocation((LivingEntity) entity);
 
         Object ergebnis = MixinBruecke.rufe("LivingEntityTextureLogik", "wähleTextur", entity, vanilla);
 
-        return ergebnis instanceof Identifier ? (Identifier) ergebnis : vanilla;
+        return ergebnis instanceof ResourceLocation ? (ResourceLocation) ergebnis : vanilla;
     }
 
 }

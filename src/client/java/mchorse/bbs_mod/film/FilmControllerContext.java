@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -8,9 +9,8 @@ import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Matrix4f;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.MultiBufferSource;
 
 public class FilmControllerContext
 {
@@ -20,8 +20,8 @@ public class FilmControllerContext
     public IEntity entity;
     public Replay replay;
     public Camera camera;
-    public MatrixStack stack;
-    public VertexConsumerProvider consumers;
+    public PoseStack stack;
+    public MultiBufferSource consumers;
     public StencilMap map;
 
     public float transition;
@@ -92,7 +92,7 @@ public class FilmControllerContext
         return this;
     }
 
-    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, Camera camera, MatrixStack stack, VertexConsumerProvider consumers, float transition)
+    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, Camera camera, PoseStack stack, MultiBufferSource consumers, float transition)
     {
         this.reset();
 

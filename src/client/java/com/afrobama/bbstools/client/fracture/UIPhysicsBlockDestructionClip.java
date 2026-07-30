@@ -9,11 +9,10 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.utils.UI;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * Editor UI for {@link PhysicsBlockDestructionActionClip}. Lets the
@@ -199,10 +198,10 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
         java.util.List<String> replayNames = collectReplayNames();
         if (replayNames.isEmpty())
         {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.sendMessage(net.minecraft.text.Text.literal(
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                     "§e[BBSTools] §cNo replays in the current film. Add a replay first, then come back."), false);
             }
             return;
@@ -227,10 +226,10 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
         {
             /* Some BBS contexts may reject overlays when the editor
              *  isn't fully initialised. Fall back to chat instructions. */
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.sendMessage(net.minecraft.text.Text.literal(
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                     "§e[BBSTools] §cCouldn't open picker — type the replay name manually. Available: " + String.join(", ", replayNames)), false);
             }
         }
@@ -266,21 +265,21 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
 
     private void applyWorldEditSelection()
     {
-        net.minecraft.util.math.BlockPos[] sel = WorldEditBridge.getCurrentSelection();
+        net.minecraft.core.BlockPos[] sel = WorldEditBridge.getCurrentSelection();
         if (sel == null || sel.length < 2)
         {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
                 String reason = WorldEditBridge.isAvailable()
                     ? "no WorldEdit selection set — use //pos1 + //pos2 first"
                     : "WorldEdit-Fabric not installed";
-                mc.player.sendMessage(net.minecraft.text.Text.literal("§e[BBSTools] §c" + reason), false);
+                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[BBSTools] §c" + reason), false);
             }
             return;
         }
-        net.minecraft.util.math.BlockPos min = sel[0];
-        net.minecraft.util.math.BlockPos max = sel[1];
+        net.minecraft.core.BlockPos min = sel[0];
+        net.minecraft.core.BlockPos max = sel[1];
         this.clip.minX.set(min.getX()); this.clip.minY.set(min.getY()); this.clip.minZ.set(min.getZ());
         this.clip.maxX.set(max.getX()); this.clip.maxY.set(max.getY()); this.clip.maxZ.set(max.getZ());
         this.minX.setValue(min.getX()); this.minY.setValue(min.getY()); this.minZ.setValue(min.getZ());
@@ -299,10 +298,10 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
             this.impactX.setValue(cx); this.impactY.setValue(cy); this.impactZ.setValue(cz);
         }
 
-        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc != null && mc.player != null)
         {
-            mc.player.sendMessage(net.minecraft.text.Text.literal(
+            mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                 "§e[BBSTools] §aRegion set from WorldEdit: " + min + " → " + max), false);
         }
     }
@@ -384,10 +383,10 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
 
     private static BlockPos lookedAtBlock()
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.crosshairTarget == null) return null;
-        if (mc.crosshairTarget.getType() != HitResult.Type.BLOCK) return null;
-        return ((BlockHitResult) mc.crosshairTarget).getBlockPos();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.hitResult == null) return null;
+        if (mc.hitResult.getType() != HitResult.Type.BLOCK) return null;
+        return ((BlockHitResult) mc.hitResult).getBlockPos();
     }
 
     @Override

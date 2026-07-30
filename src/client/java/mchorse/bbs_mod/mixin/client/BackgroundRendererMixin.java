@@ -2,14 +2,14 @@ package mchorse.bbs_mod.mixin.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.client.BBSRendering;
-import net.minecraft.client.render.BackgroundRenderer;
-import net.minecraft.client.render.Camera;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.FogRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(BackgroundRenderer.class)
+@Mixin(FogRenderer.class)
 public class BackgroundRendererMixin
 {
     /**
@@ -20,8 +20,8 @@ public class BackgroundRendererMixin
      * additionally culls whole sections beyond the fog end it reads back from
      * RenderSystem). Push the fog out of reach for the ortho frame.
      */
-    @Inject(method = "applyFog", at = @At("TAIL"))
-    private static void onApplyFog(Camera camera, BackgroundRenderer.FogType fogType, float viewDistance, boolean thickFog, float tickDelta, CallbackInfo info)
+    @Inject(method = "setupFog", at = @At("TAIL"))
+    private static void onApplyFog(Camera camera, FogRenderer.FogMode fogType, float viewDistance, boolean thickFog, float tickDelta, CallbackInfo info)
     {
         if (BBSRendering.isOrthoActive())
         {

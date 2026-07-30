@@ -13,12 +13,10 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.KeyframeFactories;
-
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Vector2d;
 
 import java.util.ArrayList;
@@ -367,7 +365,7 @@ public class ReplayKeyframes extends ValueGroup
         this.itemUseTime.insert(tick, (double) this.getItemUseElapsed(entity));
         this.fire.insert(tick, entity.getFireTicks() > 0 ? 1D : 0D);
         this.particles.insert(tick, entity.isParticlesEnabled() ? 1D : 0D);
-        this.activeHand.insert(tick, entity.getActiveHand() == Hand.OFF_HAND ? 1D : 0D);
+        this.activeHand.insert(tick, entity.getActiveHand() == InteractionHand.OFF_HAND ? 1D : 0D);
 
         if (rotation)
         {
@@ -593,7 +591,7 @@ public class ReplayKeyframes extends ValueGroup
         entity.setItemUseTimeLeft(itemUseElapsed);
         entity.setFireTicks(this.getFireTicksAt(tick));
         entity.setParticlesEnabled(this.getParticlesAt(tick));
-        entity.setActiveHand(this.activeHand.interpolate(tick) > 0D ? Hand.OFF_HAND : Hand.MAIN_HAND);
+        entity.setActiveHand(this.activeHand.interpolate(tick) > 0D ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
 
         float[] sticks = entity.getExtraVariables();
 
@@ -777,8 +775,8 @@ public class ReplayKeyframes extends ValueGroup
             return entity.getItemUseTimeLeft();
         }
 
-        Hand hand = entity.getActiveHand();
-        EquipmentSlot slot = hand == Hand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
+        InteractionHand hand = entity.getActiveHand();
+        EquipmentSlot slot = hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
         ItemStack stack = entity.getEquipmentStack(slot);
 
         if (stack.isEmpty())
@@ -791,7 +789,7 @@ public class ReplayKeyframes extends ValueGroup
 
         if (entity instanceof MCEntity mcEntity && mcEntity.getMcEntity() instanceof LivingEntity living)
         {
-            max = stack.getMaxUseTime(living);
+            max = stack.getUseDuration(living);
         }
 
         if (max <= 0)

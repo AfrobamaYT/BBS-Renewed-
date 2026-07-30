@@ -23,20 +23,19 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.Registries;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 
 
 /**
@@ -70,7 +69,7 @@ public final class RagdollSwap
 
     private static final Set<UUID> RAGDOLLED = new HashSet<>();
 
-    private record PendingKill(UUID uuid, ServerWorld world, long killAtTick, double vx, double vy, double vz)
+    private record PendingKill(UUID uuid, ServerLevel world, long killAtTick, double vx, double vy, double vz)
     {
     }
 
@@ -84,9 +83,9 @@ public final class RagdollSwap
     private record PendingPlayerRestore(
         UUID playerUuid,
         UUID actorUuid,
-        ServerWorld world,
+        ServerLevel world,
         long restoreAtTick,
-        net.minecraft.world.GameMode previousGameMode)
+        net.minecraft.world.level.GameType previousGameMode)
     {
     }
 
@@ -97,7 +96,7 @@ public final class RagdollSwap
      *  death path expects a respawn confirm). We schedule their final
      *  discard a few ticks after the death-kill so PhysicsMod has time
      *  to capture the model on its render hook. */
-    private record PendingDiscard(UUID uuid, ServerWorld world, long discardAtTick)
+    private record PendingDiscard(UUID uuid, ServerLevel world, long discardAtTick)
     {
     }
 
@@ -113,20 +112,20 @@ public final class RagdollSwap
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
         {
-            dispatcher.register(CommandManager.literal("ragdollswap")
-                .requires(s -> s.hasPermissionLevel(2))
+            dispatcher.register(Commands.literal("ragdollswap")
+                .requires(s -> s.hasPermission(2))
                 .executes(ctx -> executeFromArgs(ctx.getSource(), ""))
-                .then(CommandManager.argument("args", StringArgumentType.greedyString())
+                .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeFromArgs(ctx.getSource(),
                         StringArgumentType.getString(ctx, "args")))));
 
             /* New /ragdoll command — preserves the BBS Actor with current
              *  pose + textures; verlet physics applies on top. Vanilla mob
              *  fallback when target is not an ActorEntity. */
-            dispatcher.register(CommandManager.literal("ragdoll")
-                .requires(s -> s.hasPermissionLevel(2))
+            dispatcher.register(Commands.literal("ragdoll")
+                .requires(s -> s.hasPermission(2))
                 .executes(ctx -> executeRagdoll(ctx.getSource(), ""))
-                .then(CommandManager.argument("args", StringArgumentType.greedyString())
+                .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdoll(ctx.getSource(),
                         StringArgumentType.getString(ctx, "args")))));
 
@@ -136,10 +135,10 @@ public final class RagdollSwap
              *  starts the verlet ragdoll. Cross-rig answer to "every model
              *  has its own bones": this rig is shipped with BBS so the
              *  per-limb path always matches. */
-            dispatcher.register(CommandManager.literal("ragdolly")
-                .requires(s -> s.hasPermissionLevel(2))
+            dispatcher.register(Commands.literal("ragdolly")
+                .requires(s -> s.hasPermission(2))
                 .executes(ctx -> executeRagdolly(ctx.getSource(), ""))
-                .then(CommandManager.argument("args", StringArgumentType.greedyString())
+                .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdolly(ctx.getSource(),
                         StringArgumentType.getString(ctx, "args")))));
 
@@ -150,10 +149,10 @@ public final class RagdollSwap
              *  as "you got thrown". After the delay the player is teleported
              *  to the clone's resting position and restored to their prior
              *  game mode. The clone despawns. */
-            dispatcher.register(CommandManager.literal("ragdollplayer")
-                .requires(s -> s.hasPermissionLevel(2))
+            dispatcher.register(Commands.literal("ragdollplayer")
+                .requires(s -> s.hasPermission(2))
                 .executes(ctx -> executeRagdollPlayer(ctx.getSource(), ""))
-                .then(CommandManager.argument("args", StringArgumentType.greedyString())
+                .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdollPlayer(ctx.getSource(),
                         StringArgumentType.getString(ctx, "args")))));
         });
@@ -172,7 +171,7 @@ public final class RagdollSwap
             return;
         }
 
-        long currentTick = server.getTicks();
+        long currentTick = server.getTickCount();
         Iterator<PendingKill> it = PENDING_KILLS.iterator();
 
         while (it.hasNext())
@@ -186,8 +185,8 @@ public final class RagdollSwap
 
                 if (e instanceof LivingEntity living && living.isAlive())
                 {
-                    living.setVelocity(pk.vx(), pk.vy(), pk.vz());
-                    living.velocityModified = true;
+                    living.setDeltaMovement(pk.vx(), pk.vy(), pk.vz());
+                    living.hurtMarked = true;
                     LOG.info("Killing {} after delay", living.getType());
                     living.kill();
                 }
@@ -199,7 +198,7 @@ public final class RagdollSwap
         }
     }
 
-    private static int executeRagdoll(ServerCommandSource source, String args)
+    private static int executeRagdoll(CommandSourceStack source, String args)
     {
         System.out.println("[BBS-DBG] /ragdoll invoked — args=\"" + args + "\" — ragdoll v2 build is running.");
 
@@ -223,8 +222,8 @@ public final class RagdollSwap
             }
         }
 
-        ServerWorld world = source.getWorld();
-        Vec3d sourcePos = source.getPosition();
+        ServerLevel world = source.getLevel();
+        Vec3 sourcePos = source.getPosition();
         double searchRadiusSq = SEARCH_RADIUS * SEARCH_RADIUS;
 
         Class<?> actorClass = null;
@@ -237,17 +236,17 @@ public final class RagdollSwap
         int totalEntities = 0;
         int livingCount = 0;
         int actorCount = 0;
-        for (Entity e : world.iterateEntities())
+        for (Entity e : world.getAllEntities())
         {
             totalEntities++;
             if (!(e instanceof LivingEntity le)) continue;
             livingCount++;
-            if (e instanceof PlayerEntity) continue;
-            if (RAGDOLLED.contains(e.getUuid())) continue;
+            if (e instanceof Player) continue;
+            if (RAGDOLLED.contains(e.getUUID())) continue;
             if (actorClass == null || !actorClass.isInstance(le)) continue;
             actorCount++;
 
-            double d = le.getPos().squaredDistanceTo(sourcePos);
+            double d = le.position().distanceToSqr(sourcePos);
             if (d > searchRadiusSq) continue;
             if (d < nearestDist)
             {
@@ -260,33 +259,33 @@ public final class RagdollSwap
         final int finalLiving = livingCount;
         final int finalActor = actorCount;
         final boolean classOk = actorClass != null;
-        source.sendFeedback(() -> Text.literal("§7[ragdoll-debug] scan: total=" + finalTotal
+        source.sendSuccess(() -> Component.literal("§7[ragdoll-debug] scan: total=" + finalTotal
             + " living=" + finalLiving + " actors=" + finalActor + " actorClass="
             + (classOk ? "OK" : "MISSING")), false);
 
         if (nearestActor == null)
         {
-            source.sendFeedback(() -> Text.literal("§cNo BBS Actor within " + (int) SEARCH_RADIUS + " blocks. Use /ragdollswap for vanilla mobs."), false);
+            source.sendSuccess(() -> Component.literal("§cNo BBS Actor within " + (int) SEARCH_RADIUS + " blocks. Use /ragdollswap for vanilla mobs."), false);
             return 0;
         }
 
         org.joml.Vector3f vel = new org.joml.Vector3f((float) vx, (float) vy, (float) vz);
         ActorRagdollRuntime.startTemplate(
-            nearestActor.getUuid(),
+            nearestActor.getUUID(),
             (float) nearestActor.getX(),
             (float) nearestActor.getY(),
             (float) nearestActor.getZ(),
-            nearestActor.getYaw(),
+            nearestActor.getYRot(),
             vel);
 
         final LivingEntity finalTarget = nearestActor;
-        source.sendFeedback(() -> Text.literal("§aRagdoll started on Actor "
-            + finalTarget.getUuid().toString().substring(0, 8) + " (active: " + ActorRagdollRuntime.activeCount() + ")"), false);
+        source.sendSuccess(() -> Component.literal("§aRagdoll started on Actor "
+            + finalTarget.getUUID().toString().substring(0, 8) + " (active: " + ActorRagdollRuntime.activeCount() + ")"), false);
 
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int executeRagdolly(ServerCommandSource source, String args)
+    private static int executeRagdolly(CommandSourceStack source, String args)
     {
         System.out.println("[BBS-DBG] /ragdolly invoked — args=\"" + args + "\".");
 
@@ -308,8 +307,8 @@ public final class RagdollSwap
             }
         }
 
-        ServerWorld world = source.getWorld();
-        Vec3d sourcePos = source.getPosition();
+        ServerLevel world = source.getLevel();
+        Vec3 sourcePos = source.getPosition();
         double searchRadiusSq = SEARCH_RADIUS * SEARCH_RADIUS;
 
         Class<?> actorClass = null;
@@ -318,14 +317,14 @@ public final class RagdollSwap
 
         LivingEntity nearestActor = null;
         double nearestDist = Double.MAX_VALUE;
-        for (Entity e : world.iterateEntities())
+        for (Entity e : world.getAllEntities())
         {
             if (!(e instanceof LivingEntity le)) continue;
-            if (e instanceof PlayerEntity) continue;
-            if (RAGDOLLED.contains(e.getUuid())) continue;
+            if (e instanceof Player) continue;
+            if (RAGDOLLED.contains(e.getUUID())) continue;
             if (actorClass == null || !actorClass.isInstance(le)) continue;
 
-            double d = le.getPos().squaredDistanceTo(sourcePos);
+            double d = le.position().distanceToSqr(sourcePos);
             if (d > searchRadiusSq) continue;
             if (d < nearestDist)
             {
@@ -336,7 +335,7 @@ public final class RagdollSwap
 
         if (nearestActor == null)
         {
-            source.sendFeedback(() -> Text.literal("§cNo BBS Actor within " + (int) SEARCH_RADIUS + " blocks."), false);
+            source.sendSuccess(() -> Component.literal("§cNo BBS Actor within " + (int) SEARCH_RADIUS + " blocks."), false);
             return 0;
         }
 
@@ -365,7 +364,7 @@ public final class RagdollSwap
              *  keeps the cached old form and would still walk the original
              *  rig's groups. Push the new form to every tracking player so
              *  the client-side ActorEntity flips to cml_ragdoll. */
-            for (net.minecraft.server.network.ServerPlayerEntity p : world.getPlayers())
+            for (net.minecraft.server.level.ServerPlayer p : world.players())
             {
                 mchorse.bbs_mod.network.ServerNetwork.sendEntityForm(p,
                     (mchorse.bbs_mod.entity.IEntityFormProvider) nearestActor);
@@ -374,24 +373,24 @@ public final class RagdollSwap
         catch (Throwable t)
         {
             LOG.warn("[ragdolly] form-swap failed: {}", t.toString());
-            source.sendFeedback(() -> Text.literal("§cForm-swap failed: " + t.getClass().getSimpleName()), false);
+            source.sendSuccess(() -> Component.literal("§cForm-swap failed: " + t.getClass().getSimpleName()), false);
             return 0;
         }
 
         /* Run the existing verlet ragdoll on the now-cml_ragdoll-shaped actor. */
         org.joml.Vector3f vel = new org.joml.Vector3f((float) vx, (float) vy, (float) vz);
         ActorRagdollRuntime.startTemplate(
-            nearestActor.getUuid(),
+            nearestActor.getUUID(),
             (float) nearestActor.getX(),
             (float) nearestActor.getY(),
             (float) nearestActor.getZ(),
-            nearestActor.getYaw(),
+            nearestActor.getYRot(),
             vel);
 
         final LivingEntity finalTarget = nearestActor;
         final String finalTex = texLinkStr;
-        source.sendFeedback(() -> Text.literal("§aRagdolly: actor "
-            + finalTarget.getUuid().toString().substring(0, 8)
+        source.sendSuccess(() -> Component.literal("§aRagdolly: actor "
+            + finalTarget.getUUID().toString().substring(0, 8)
             + " swapped to cml_ragdoll (texture="
             + (finalTex == null ? "default" : finalTex) + ")"), false);
 
@@ -403,13 +402,13 @@ public final class RagdollSwap
      *  spectator duration in server ticks (default 100 = 5 sec). */
     private static final int DEFAULT_RAGDOLL_PLAYER_DURATION_TICKS = 100;
 
-    private static int executeRagdollPlayer(ServerCommandSource source, String args)
+    private static int executeRagdollPlayer(CommandSourceStack source, String args)
     {
-        net.minecraft.server.network.ServerPlayerEntity player;
-        try { player = source.getPlayerOrThrow(); }
+        net.minecraft.server.level.ServerPlayer player;
+        try { player = source.getPlayerOrException(); }
         catch (com.mojang.brigadier.exceptions.CommandSyntaxException e)
         {
-            source.sendFeedback(() -> Text.literal("§c/ragdollplayer must be run as a player."), false);
+            source.sendSuccess(() -> Component.literal("§c/ragdollplayer must be run as a player."), false);
             return 0;
         }
 
@@ -443,13 +442,13 @@ public final class RagdollSwap
          *  the operator gets a visible result on first try. */
         if (vx == 0D && vy == 0D && vz == 0D)
         {
-            Vec3d look = player.getRotationVec(1F);
+            Vec3 look = player.getViewVector(1F);
             vx = -look.x * 1.5D;
             vy = 0.8D;
             vz = -look.z * 1.5D;
         }
 
-        ServerWorld world = source.getWorld();
+        ServerLevel world = source.getLevel();
 
         /* Build the clone actor. Reflectively look up
          *  mchorse.bbs_mod.entity.ActorEntity + BBSMod.ACTOR_ENTITY,
@@ -462,18 +461,18 @@ public final class RagdollSwap
             actorClass = Class.forName("mchorse.bbs_mod.entity.ActorEntity");
             Class<?> bbsModClass = Class.forName("mchorse.bbs_mod.BBSMod");
             Object actorType = bbsModClass.getField("ACTOR_ENTITY").get(null);
-            actorObj = actorClass.getConstructor(EntityType.class, net.minecraft.world.World.class).newInstance(actorType, world);
+            actorObj = actorClass.getConstructor(EntityType.class, net.minecraft.world.level.Level.class).newInstance(actorType, world);
         }
         catch (Throwable t)
         {
             LOG.warn("Could not build ActorEntity clone: {}", t.toString());
-            source.sendFeedback(() -> Text.literal("§cFailed to spawn clone actor — BBS classes missing?"), false);
+            source.sendSuccess(() -> Component.literal("§cFailed to spawn clone actor — BBS classes missing?"), false);
             return 0;
         }
 
         if (!(actorObj instanceof LivingEntity clone))
         {
-            source.sendFeedback(() -> Text.literal("§cActorEntity is not a LivingEntity."), false);
+            source.sendSuccess(() -> Component.literal("§cActorEntity is not a LivingEntity."), false);
             return 0;
         }
 
@@ -499,15 +498,15 @@ public final class RagdollSwap
         }
 
         /* Position + orient the clone at the player's exact spot. */
-        clone.refreshPositionAndAngles(player.getX(), player.getY(), player.getZ(), player.getYaw(), player.getPitch());
-        clone.setHeadYaw(player.getHeadYaw());
-        clone.setBodyYaw(player.bodyYaw);
-        clone.setVelocity(vx, vy, vz);
-        clone.velocityModified = true;
+        clone.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+        clone.setYHeadRot(player.getYHeadRot());
+        clone.setYBodyRot(player.yBodyRot);
+        clone.setDeltaMovement(vx, vy, vz);
+        clone.hurtMarked = true;
 
-        if (!world.spawnEntity(clone))
+        if (!world.addFreshEntity(clone))
         {
-            source.sendFeedback(() -> Text.literal("§cFailed to spawn clone in world."), false);
+            source.sendSuccess(() -> Component.literal("§cFailed to spawn clone in world."), false);
             return 0;
         }
 
@@ -516,18 +515,18 @@ public final class RagdollSwap
          *  the hit. The clone is the "ragdoll target" — apply the
          *  existing ActorRagdollRuntime template so verlet physics +
          *  bone-chain (if available) kick in just like /ragdoll. */
-        net.minecraft.world.GameMode prevMode = player.interactionManager.getGameMode();
-        player.changeGameMode(net.minecraft.world.GameMode.SPECTATOR);
+        net.minecraft.world.level.GameType prevMode = player.gameMode.getGameModeForPlayer();
+        player.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
 
         try
         {
             org.joml.Vector3f vel = new org.joml.Vector3f((float) vx, (float) vy, (float) vz);
             ActorRagdollRuntime.startTemplate(
-                clone.getUuid(),
+                clone.getUUID(),
                 (float) clone.getX(),
                 (float) clone.getY(),
                 (float) clone.getZ(),
-                clone.getYaw(),
+                clone.getYRot(),
                 vel);
         }
         catch (Throwable t)
@@ -536,15 +535,15 @@ public final class RagdollSwap
         }
 
         PENDING_RESTORES.add(new PendingPlayerRestore(
-            player.getUuid(),
-            clone.getUuid(),
+            player.getUUID(),
+            clone.getUUID(),
             world,
-            world.getServer().getTicks() + durationTicks,
+            world.getServer().getTickCount() + durationTicks,
             prevMode));
 
         final double fvx = vx, fvy = vy, fvz = vz;
         final int fduration = durationTicks;
-        source.sendFeedback(() -> Text.literal(String.format(
+        source.sendSuccess(() -> Component.literal(String.format(
             "§aRagdoll-player: clone tossed (%.2f, %.2f, %.2f), restore in %d ticks (%.1fs).",
             fvx, fvy, fvz, fduration, fduration / 20F)), false);
 
@@ -555,7 +554,7 @@ public final class RagdollSwap
     {
         if (PENDING_RESTORES.isEmpty()) return;
 
-        long currentTick = server.getTicks();
+        long currentTick = server.getTickCount();
         Iterator<PendingPlayerRestore> it = PENDING_RESTORES.iterator();
 
         while (it.hasNext())
@@ -564,7 +563,7 @@ public final class RagdollSwap
             if (currentTick < pr.restoreAtTick()) continue;
             it.remove();
 
-            net.minecraft.server.network.ServerPlayerEntity player = server.getPlayerManager().getPlayer(pr.playerUuid());
+            net.minecraft.server.level.ServerPlayer player = server.getPlayerList().getPlayer(pr.playerUuid());
             Entity actor = pr.world().getEntity(pr.actorUuid());
 
             double tpX, tpY, tpZ;
@@ -588,9 +587,9 @@ public final class RagdollSwap
 
             if (player != null)
             {
-                player.teleport(pr.world(), tpX, tpY, tpZ, player.getYaw(), player.getPitch());
-                player.changeGameMode(pr.previousGameMode());
-                player.sendMessage(Text.literal("§7[ragdoll-player] restored to "
+                player.teleportTo(pr.world(), tpX, tpY, tpZ, player.getYRot(), player.getXRot());
+                player.setGameMode(pr.previousGameMode());
+                player.displayClientMessage(Component.literal("§7[ragdoll-player] restored to "
                     + pr.previousGameMode().getName() + " at clone's resting position."), false);
             }
         }
@@ -600,7 +599,7 @@ public final class RagdollSwap
     {
         if (PENDING_FAKE_PLAYER_DISCARDS.isEmpty()) return;
 
-        long currentTick = server.getTicks();
+        long currentTick = server.getTickCount();
         Iterator<PendingDiscard> it = PENDING_FAKE_PLAYER_DISCARDS.iterator();
 
         while (it.hasNext())
@@ -610,7 +609,7 @@ public final class RagdollSwap
             it.remove();
 
             Entity e = pd.world().getEntity(pd.uuid());
-            if (e instanceof net.minecraft.server.network.ServerPlayerEntity sp)
+            if (e instanceof net.minecraft.server.level.ServerPlayer sp)
             {
                 /* Use removePlayer / discardSilently rather than kill —
                  *  the player is already dead, we just need to clear
@@ -618,7 +617,7 @@ public final class RagdollSwap
                  *  doesn't linger in the world. */
                 try
                 {
-                    server.getPlayerManager().remove(sp);
+                    server.getPlayerList().remove(sp);
                 }
                 catch (Throwable t)
                 {
@@ -634,7 +633,7 @@ public final class RagdollSwap
         }
     }
 
-    private static int executeFromArgs(ServerCommandSource source, String args)
+    private static int executeFromArgs(CommandSourceStack source, String args)
     {
         String[] parts = args.trim().split("\\s+");
         String entityType = null;
@@ -671,10 +670,10 @@ public final class RagdollSwap
         return execute(source, vx, vy, vz, entityType);
     }
 
-    private static int execute(ServerCommandSource source, double vx, double vy, double vz, String entityTypeOverride)
+    private static int execute(CommandSourceStack source, double vx, double vy, double vz, String entityTypeOverride)
     {
         LOG.info("Command executed! vx={} vy={} vz={} type={}", vx, vy, vz, entityTypeOverride);
-        ServerWorld world = source.getWorld();
+        ServerLevel world = source.getLevel();
 
         List<LivingEntity> bbsActors = new ArrayList<>();
         List<LivingEntity> allEntities = new ArrayList<>();
@@ -688,22 +687,22 @@ public final class RagdollSwap
         {
         }
 
-        Vec3d sourcePos = source.getPosition();
+        Vec3 sourcePos = source.getPosition();
         double searchRadiusSq = SEARCH_RADIUS * SEARCH_RADIUS;
 
-        for (Entity e : world.iterateEntities())
+        for (Entity e : world.getAllEntities())
         {
             if (e == null || !(e instanceof LivingEntity le))
             {
                 continue;
             }
 
-            if (e instanceof PlayerEntity)
+            if (e instanceof Player)
             {
                 continue;
             }
 
-            if (RAGDOLLED.contains(e.getUuid()))
+            if (RAGDOLLED.contains(e.getUUID()))
             {
                 continue;
             }
@@ -712,7 +711,7 @@ public final class RagdollSwap
                 continue;
             }
 
-            if (le.getPos().squaredDistanceTo(sourcePos) > searchRadiusSq)
+            if (le.position().distanceToSqr(sourcePos) > searchRadiusSq)
             {
                 continue;
             }
@@ -732,17 +731,17 @@ public final class RagdollSwap
         if (candidates.isEmpty())
         {
             LOG.warn("No entities found within radius!");
-            source.sendFeedback(() -> Text.literal("§cNo entity within " + (int) SEARCH_RADIUS + " blocks (army mobs ignored)"), false);
+            source.sendSuccess(() -> Component.literal("§cNo entity within " + (int) SEARCH_RADIUS + " blocks (army mobs ignored)"), false);
 
             return 0;
         }
 
-        candidates.sort(Comparator.comparingDouble(e -> e.getPos().squaredDistanceTo(sourcePos)));
+        candidates.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(sourcePos)));
         LivingEntity target = candidates.get(0);
-        LOG.info("Selected target: {} class={} at {}", target.getType(), target.getClass().getName(), target.getPos());
+        LOG.info("Selected target: {} class={} at {}", target.getType(), target.getClass().getName(), target.position());
 
-        Vec3d spawnPos = target.getPos();
-        float yaw = target.getYaw();
+        Vec3 spawnPos = target.position();
+        float yaw = target.getYRot();
 
         EntityType<?> entityType;
 
@@ -750,16 +749,16 @@ public final class RagdollSwap
         {
             String typeIdLower = entityTypeOverride.toLowerCase();
             final String typeId = typeIdLower.contains(":") ? typeIdLower : "minecraft:" + typeIdLower;
-            Identifier id = Identifier.tryParse(typeId);
+            ResourceLocation id = ResourceLocation.tryParse(typeId);
 
-            if (id == null || !Registries.ENTITY_TYPE.containsId(id))
+            if (id == null || !BuiltInRegistries.ENTITY_TYPE.containsKey(id))
             {
-                source.sendFeedback(() -> Text.literal("§cUnknown entity type: " + typeId), false);
+                source.sendSuccess(() -> Component.literal("§cUnknown entity type: " + typeId), false);
 
                 return 0;
             }
 
-            entityType = Registries.ENTITY_TYPE.get(id);
+            entityType = BuiltInRegistries.ENTITY_TYPE.get(id);
         }
         else
         {
@@ -779,7 +778,7 @@ public final class RagdollSwap
          *  confirmed 2026-05-13: arms-up pose acceptable, skin must
          *  carry. */
         boolean substitutedPlayer = false;
-        net.minecraft.server.network.ServerPlayerEntity fakePlayer = null;
+        net.minecraft.server.level.ServerPlayer fakePlayer = null;
 
         if (entityType == EntityType.PLAYER)
         {
@@ -788,7 +787,7 @@ public final class RagdollSwap
             substitutedPlayer = true;
         }
 
-        String entityTypeId = Registries.ENTITY_TYPE.getId(entityType).toString();
+        String entityTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType).toString();
         LOG.info("Final entity type: {}", entityTypeId);
 
         String bbsTextureLink = getBBSFormTextureLink(target);
@@ -814,7 +813,7 @@ public final class RagdollSwap
             if (spawned == null)
             {
                 LOG.error("Failed to create entity of type {}", entityTypeId);
-                source.sendFeedback(() -> Text.literal("§cEntity could not be created! Original actor kept."), false);
+                source.sendSuccess(() -> Component.literal("§cEntity could not be created! Original actor kept."), false);
 
                 return 0;
             }
@@ -830,12 +829,12 @@ public final class RagdollSwap
             /* Vanilla mob path: position + setup + spawn. Fake player
              *  was already positioned + added to world by
              *  FakePlayerSpawner.spawn() so we skip these calls. */
-            spawned.refreshPositionAndAngles(spawnPos.x, spawnPos.y, spawnPos.z, yaw, 0F);
+            spawned.moveTo(spawnPos.x, spawnPos.y, spawnPos.z, yaw, 0F);
             spawned.setSilent(true);
 
-            if (spawned instanceof MobEntity mob)
+            if (spawned instanceof Mob mob)
             {
-                mob.setAiDisabled(true);
+                mob.setNoAi(true);
                 /* Hostile mobs (Zombie, Husk, Skeleton…) self-discard on
                  *  the NEXT tick after spawn when world difficulty is
                  *  PEACEFUL — via HostileEntity.mobTick(). This kills the
@@ -844,7 +843,7 @@ public final class RagdollSwap
                  *  flows (e.g. random distance-based despawn); for the
                  *  peaceful-difficulty case the only reliable fix is to
                  *  kill same-tick (see below). */
-                mob.setPersistent();
+                mob.setPersistenceRequired();
             }
 
             /* Invulnerable: prevents stray damage (sunlight burn, fall,
@@ -854,13 +853,13 @@ public final class RagdollSwap
             spawned.setInvulnerable(true);
         }
 
-        spawned.setVelocity(finalVx, finalVy, finalVz);
+        spawned.setDeltaMovement(finalVx, finalVy, finalVz);
 
-        RAGDOLLED.add(spawned.getUuid());
+        RAGDOLLED.add(spawned.getUUID());
 
         if (fakePlayer == null)
         {
-            boolean added = world.spawnEntity(spawned);
+            boolean added = world.addFreshEntity(spawned);
             LOG.info("spawnEntity result: {}", added);
         }
         else
@@ -873,7 +872,7 @@ public final class RagdollSwap
            texture-override path (RagdollTextureRegistry). */
         if (bbsTextureLink != null && !bbsTextureLink.isEmpty())
         {
-            UUID spawnedUuid = spawned.getUuid();
+            UUID spawnedUuid = spawned.getUUID();
 
             try
             {
@@ -900,25 +899,25 @@ public final class RagdollSwap
              *  so behaviour is consistent. */
             if (KILL_DELAY_TICKS <= 0)
             {
-                living.setVelocity(finalVx, finalVy, finalVz);
-                living.velocityModified = true;
+                living.setDeltaMovement(finalVx, finalVy, finalVz);
+                living.hurtMarked = true;
                 LOG.info("Killing {} immediately (same tick)", living.getType());
                 living.kill();
             }
             else
             {
-                long killAt = world.getServer().getTicks() + KILL_DELAY_TICKS;
-                PENDING_KILLS.add(new PendingKill(spawned.getUuid(), world, killAt, finalVx, finalVy, finalVz));
+                long killAt = world.getServer().getTickCount() + KILL_DELAY_TICKS;
+                PENDING_KILLS.add(new PendingKill(spawned.getUUID(), world, killAt, finalVx, finalVy, finalVz));
                 LOG.info("Scheduled kill at tick {} (current: {}, substitutedPlayer={})",
-                    killAt, world.getServer().getTicks(), substitutedPlayer);
+                    killAt, world.getServer().getTickCount(), substitutedPlayer);
             }
         }
 
         final String finalTypeId = entityTypeId;
-        final Vec3d finalSpawnPos = spawnPos;
+        final Vec3 finalSpawnPos = spawnPos;
         final boolean finalSubbed = substitutedPlayer;
         final boolean finalFake = (fakePlayer != null);
-        source.sendFeedback(() -> Text.literal("§aRagdoll: " + finalTypeId
+        source.sendSuccess(() -> Component.literal("§aRagdoll: " + finalTypeId
             + (finalFake ? " §7(fake player)" : "")
             + (finalSubbed ? " §7(player→zombie fallback)" : "")
             + " @ " + String.format("%.1f %.1f %.1f", finalSpawnPos.x, finalSpawnPos.y, finalSpawnPos.z)
@@ -972,11 +971,11 @@ public final class RagdollSwap
                 return null;
             }
 
-            Identifier id = Identifier.tryParse(mobId);
+            ResourceLocation id = ResourceLocation.tryParse(mobId);
 
-            if (id != null && Registries.ENTITY_TYPE.containsId(id))
+            if (id != null && BuiltInRegistries.ENTITY_TYPE.containsKey(id))
             {
-                return Registries.ENTITY_TYPE.get(id);
+                return BuiltInRegistries.ENTITY_TYPE.get(id);
             }
         }
         catch (ClassNotFoundException e)

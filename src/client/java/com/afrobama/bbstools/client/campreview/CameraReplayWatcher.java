@@ -9,9 +9,7 @@ import mchorse.bbs_mod.forms.forms.AnchorForm;
 import mchorse.bbs_mod.forms.forms.Form;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,12 +133,12 @@ public final class CameraReplayWatcher
             CameraPreview p = CameraPreviewRegistry.addTracking(label, r);
             AUTO_BOUND.put(r, p.id);
 
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.getWindow() != null)
             {
                 CameraPreviewRegistry.autoLayout(
-                    mc.getWindow().getScaledWidth(),
-                    mc.getWindow().getScaledHeight());
+                    mc.getWindow().getGuiScaledWidth(),
+                    mc.getWindow().getGuiScaledHeight());
             }
 
             LOG.info("Auto-spawned preview '{}' tracking camera replay", label);
@@ -197,9 +195,9 @@ public final class CameraReplayWatcher
 
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc == null || !(mc.currentScreen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
-            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.currentScreen;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || !(mc.screen instanceof mchorse.bbs_mod.ui.framework.UIScreen)) return null;
+            mchorse.bbs_mod.ui.framework.UIScreen screen = (mchorse.bbs_mod.ui.framework.UIScreen) mc.screen;
             mchorse.bbs_mod.ui.framework.UIBaseMenu menu = screen.getMenu();
             if (menu == null) return null;
             mchorse.bbs_mod.ui.framework.UIBaseMenu.UIRootElement root = menu.getRoot();

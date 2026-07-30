@@ -172,7 +172,7 @@ public class UICameraPreviewWindow extends UIElement
         /* Framebuffer texture — only if allocated AND attachment is valid. */
         if (this.preview.framebuffer != null)
         {
-            int texId = this.preview.framebuffer.getColorAttachment();
+            int texId = this.preview.framebuffer.getColorTextureId();
             if (texId != 0)
             {
                 int top = y + HEADER_H;

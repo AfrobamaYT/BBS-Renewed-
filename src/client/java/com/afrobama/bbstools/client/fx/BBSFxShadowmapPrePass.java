@@ -33,12 +33,10 @@ import foundry.veil.api.client.render.framebuffer.AdvancedFbo;
 import foundry.veil.api.client.render.shader.program.ShaderProgram;
 import foundry.veil.api.event.VeilRenderLevelStageEvent;
 import foundry.veil.platform.VeilEventPlatform;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
@@ -47,8 +45,8 @@ import org.lwjgl.opengl.GL11;
 
 public final class BBSFxShadowmapPrePass
 {
-    private static final Identifier SHADOWS_SHADER     = Identifier.of("bbstools", "fx/shadows");
-    private static final Identifier SHADOWMAP_FRAMEBUF = Identifier.of("bbstools", "shadowmap");
+    private static final ResourceLocation SHADOWS_SHADER     = ResourceLocation.fromNamespaceAndPath("bbstools", "fx/shadows");
+    private static final ResourceLocation SHADOWMAP_FRAMEBUF = ResourceLocation.fromNamespaceAndPath("bbstools", "shadowmap");
 
     /** Re-render the shadowmap every N frames. 1 = every frame (full
      *  quality, doubles render cost). 2-3 = nearly invisible quality
@@ -110,11 +108,11 @@ public final class BBSFxShadowmapPrePass
         }
     }
 
-    private static void renderShadowmap(Camera camera, net.minecraft.client.render.RenderTickCounter tickCounter)
+    private static void renderShadowmap(Camera camera, net.minecraft.client.DeltaTracker tickCounter)
     {
         try
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             if (mc == null) return;
 
             AdvancedFbo shadowFbo = VeilRenderSystem.renderer()
@@ -126,7 +124,7 @@ public final class BBSFxShadowmapPrePass
                 return;
             }
 
-            Vec3d camPos = camera.getPos();
+            Vec3 camPos = camera.getPosition();
 
             buildOrthoProjection(projBuf);
             buildSunViewMatrix(viewBuf);

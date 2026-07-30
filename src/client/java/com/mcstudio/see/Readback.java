@@ -2,10 +2,7 @@ package com.mcstudio.see;
 
 import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -15,6 +12,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 
 import javax.imageio.ImageIO;
+import net.minecraft.client.Minecraft;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -80,14 +78,14 @@ public final class Readback
 	 */
 	public static String captureMainFramebuffer(String path)
 	{
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 
 		if (client == null)
 		{
 			return "{\"error\":\"MinecraftClient not available\"}";
 		}
 
-		Framebuffer fb = client.getFramebuffer();
+		RenderTarget fb = client.getMainRenderTarget();
 
 		if (fb == null)
 		{
@@ -105,12 +103,12 @@ public final class Readback
 	 * BufferedImage with a Y-FLIP (OpenGL origin is bottom-left, PNG/BufferedImage is top-left) -> ImageIO.
 	 * Timed with System.nanoTime around the whole capture+encode.
 	 */
-	public static String captureFramebuffer(Framebuffer fb, String path)
+	public static String captureFramebuffer(RenderTarget fb, String path)
 	{
 		RenderSystem.assertOnRenderThread();
 
-		int width = fb.textureWidth;
-		int height = fb.textureHeight;
+		int width = fb.width;
+		int height = fb.height;
 
 		if (width <= 0 || height <= 0)
 		{
@@ -121,7 +119,7 @@ public final class Readback
 
 		/* Bind THIS framebuffer as the read source. beginRead() binds the color texture; we need the FBO
 		 * itself bound as GL_READ_FRAMEBUFFER so glReadPixels(0,0,...) reads its attachment, not the screen. */
-		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fb.fbo);
+		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fb.frameBufferId);
 
 		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
 
@@ -199,8 +197,8 @@ public final class Readback
 	 */
 	static File shotsDir()
 	{
-		MinecraftClient client = MinecraftClient.getInstance();
-		File base = (client != null && client.runDirectory != null) ? client.runDirectory : new File(".");
+		Minecraft client = Minecraft.getInstance();
+		File base = (client != null && client.gameDirectory != null) ? client.gameDirectory : new File(".");
 		File dir = new File(base, "mcstudio-shots");
 		dir.mkdirs();
 		return dir;

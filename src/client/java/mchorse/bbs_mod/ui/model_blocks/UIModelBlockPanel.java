@@ -1,6 +1,8 @@
 package mchorse.bbs_mod.ui.model_blocks;
 
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
@@ -49,15 +51,13 @@ import mchorse.bbs_mod.utils.RayTracing;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.GlUniform;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -102,13 +102,13 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.keyDude = new UIElement().noCulling();
         this.keyDude.keys().register(Keys.MODEL_BLOCKS_MOVE_TO, () ->
         {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            Camera camera = mc.gameRenderer.getCamera();
-            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.world, camera.getPos(), RayTracing.fromVector3f(this.mouseDirection), 512F);
+            Minecraft mc = Minecraft.getInstance();
+            Camera camera = mc.gameRenderer.getMainCamera();
+            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.getPosition(), RayTracing.fromVector3f(this.mouseDirection), 512F);
 
             if (blockHitResult.getType() != HitResult.Type.MISS)
             {
-                Vec3d hit = blockHitResult.getPos();
+                Vec3 hit = blockHitResult.getLocation();
                 BlockPos pos = this.modelBlock.getPos();
 
                 this.modelBlock.getProperties().getTransform().translate.set(hit.x - pos.getX() - 0.5F, hit.y - pos.getY(), hit.z - pos.getZ() - 0.5F);
@@ -350,14 +350,14 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             && this.getChildren(UIFormPalette.class).isEmpty();
     }
 
-    private void renderGizmo(WorldRenderContext context, Vec3d cameraPos)
+    private void renderGizmo(WorldRenderContext context, Vec3 cameraPos)
     {
         if (!this.canShowGizmo())
         {
             return;
         }
 
-        MatrixStack stack = context.matrixStack();
+        PoseStack stack = context.matrixStack();
 
         /* Capture the on-screen camera frame for the drag math and the deferred UI
          * passes: the gizmo's visual and its pick stencil are both drawn later in
@@ -374,7 +374,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         /* Record the model-view at the block's gizmo origin so the UI-pass visual
          * and stencil (both read Gizmo#lastRenderMatrix) draw at the right place. */
-        stack.push();
+        stack.pushPose();
         this.applyGizmoOrigin(stack, cameraPos);
         /* Reorient into the active space (GLOBAL world axes / VIEW screen axes);
          * LOCAL keeps the block rotation applied above. The block's transform
@@ -392,7 +392,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
          * axes (UIModelRenderer#getSceneAxes) and follows the block. */
         Gizmo.INSTANCE.reorientForSpace(stack, space == TransformSpace.PARENT ? TransformSpace.GLOBAL : space, this.gizmoCamera.view, null);
         Gizmo.INSTANCE.captureVisual(stack);
-        stack.pop();
+        stack.popPose();
     }
 
     /**
@@ -402,7 +402,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
      * rotation, matching how the form editor's {@code getOrigin} behaves.
      * Caller owns the surrounding {@code push}/{@code pop}.
      */
-    private void applyGizmoOrigin(MatrixStack stack, Vec3d cameraPos)
+    private void applyGizmoOrigin(PoseStack stack, Vec3 cameraPos)
     {
         BlockPos pos = this.modelBlock.getPos();
         Transform transform = this.modelBlock.getProperties().getTransform();
@@ -435,12 +435,12 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
         this.gizmoStencil.setup(Link.bbs("stencil_model_block"));
 
-        int w = mc.getWindow().getWidth();
-        int h = mc.getWindow().getHeight();
+        int w = mc.getWindow().getScreenWidth();
+        int h = mc.getWindow().getScreenHeight();
         Texture texture = this.gizmoStencil.getFramebuffer().getMainTexture();
 
         if (texture.width != w || texture.height != h)
@@ -457,10 +457,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         Gizmo.INSTANCE.renderStencilInterface(context, this.gizmoProjection, this.getGizmoArea(), this.gizmoStencilMap);
 
-        this.gizmoStencil.pick((int) mc.mouse.getX(), (int) (h - mc.mouse.getY()), Math.round(BBSSettings.gizmoHoverTolerance.get() * BBSModClient.getGUIScale()), Gizmo.STENCIL_MAX);
+        this.gizmoStencil.pick((int) mc.mouseHandler.xpos(), (int) (h - mc.mouseHandler.ypos()), Math.round(BBSSettings.gizmoHoverTolerance.get() * BBSModClient.getGUIScale()), Gizmo.STENCIL_MAX);
         this.gizmoStencil.unbind(this.gizmoStencilMap);
 
-        mc.getFramebuffer().beginWrite(true);
+        mc.getMainRenderTarget().bindWrite(true);
     }
 
     private void addCameraController(UIFormPalette palette)
@@ -676,15 +676,15 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         int w = texture.width;
         int h = texture.height;
 
-        ShaderProgram previewProgram = BBSShaders.getPickerPreviewProgram();
-        GlUniform target = previewProgram.getUniform("Target");
+        ShaderInstance previewProgram = BBSShaders.getPickerPreviewProgram();
+        Uniform target = previewProgram.getUniform("Target");
 
         if (target != null)
         {
             target.set(this.gizmoStencil.getIndex());
         }
 
-        GlUniform highlight = previewProgram.getUniform("HighlightColor");
+        Uniform highlight = previewProgram.getUniform("HighlightColor");
 
         if (highlight != null)
         {
@@ -703,16 +703,16 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         super.renderInWorld(context);
 
         Camera camera = context.camera();
-        Vec3d pos = camera.getPos();
+        Vec3 pos = camera.getPosition();
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        double x = mc.mouse.getX();
-        double y = mc.mouse.getY();
+        Minecraft mc = Minecraft.getInstance();
+        double x = mc.mouseHandler.xpos();
+        double y = mc.mouseHandler.ypos();
 
         this.mouseDirection.set(CameraUtils.getMouseDirection(
             RenderSystem.getProjectionMatrix(),
             context.positionMatrix(),
-            (int) x, (int) y, 0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight()
+            (int) x, (int) y, 0, 0, mc.getWindow().getScreenWidth(), mc.getWindow().getScreenHeight()
         ));
         this.hovered = this.getClosestObject(new Vector3d(pos.x, pos.y, pos.z), this.mouseDirection);
 

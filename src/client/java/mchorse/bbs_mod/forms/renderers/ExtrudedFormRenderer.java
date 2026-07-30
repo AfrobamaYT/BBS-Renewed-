@@ -1,6 +1,9 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -16,14 +19,11 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.joml.Vectors;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgram;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -40,9 +40,9 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        MatrixStack stack = context.batcher.getContext().getMatrices();
+        PoseStack stack = context.batcher.getContext().pose();
 
-        stack.push();
+        stack.pushPose();
 
         Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
@@ -53,18 +53,18 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         stack.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
 
         /* Shading fix */
-        stack.peek().getNormalMatrix().getScale(Vectors.EMPTY_3F);
-        stack.peek().getNormalMatrix().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
+        stack.last().normal().getScale(Vectors.EMPTY_3F);
+        stack.last().normal().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
         this.renderModel(BBSShaders::getModel,
             stack,
-            OverlayTexture.DEFAULT_UV, LightmapTextureManager.MAX_LIGHT_COORDINATE, Colors.WHITE,
+            OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, Colors.WHITE,
             context.getTransition(), false
         );
         RenderSystem.depthFunc(GL11.GL_ALWAYS);
 
-        stack.pop();
+        stack.popPose();
     }
 
     @Override
@@ -77,11 +77,11 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             shading = true;
         }
 
-        VertexFormat format = shading ? VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL : VertexFormats.POSITION_TEXTURE_LIGHT_COLOR;
-        Supplier<ShaderProgram> normal = shading && !BBSRendering.isIrisShadersEnabled()
+        VertexFormat format = shading ? DefaultVertexFormat.NEW_ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
+        Supplier<ShaderInstance> normal = shading && !BBSRendering.isIrisShadersEnabled()
             ? BBSShaders::getModel
-            : (shading ? GameRenderer::getRenderTypeEntityTranslucentProgram : GameRenderer::getPositionTexColorProgram);
-        Supplier<ShaderProgram> shader = this.getShader(context,
+            : (shading ? GameRenderer::getRendertypeEntityTranslucentShader : GameRenderer::getPositionTexColorShader);
+        Supplier<ShaderInstance> shader = this.getShader(context,
             normal,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
@@ -89,7 +89,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         this.renderModel(shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
 
-    private void renderModel(Supplier<ShaderProgram> shader, MatrixStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderModel(Supplier<ShaderInstance> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
     {
         Link texture = this.form.texture.get();
         ModelVAO data = BBSModClient.getTextures().getExtruder().get(texture);
@@ -102,7 +102,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             }
 
             Color color = Colors.COLOR.set(overlayColor, true);
-            GameRenderer gameRenderer = MinecraftClient.getInstance().gameRenderer;
+            GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
             Color formColor = this.form.color.get();
 
             FormColorBlend.blend(color, formColor, this.form.additiveColor.get());
@@ -114,8 +114,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
-            gameRenderer.getLightmapTextureManager().enable();
-            gameRenderer.getOverlayTexture().setupOverlayColor();
+            gameRenderer.lightTexture().turnOnLightLayer();
+            gameRenderer.overlayTexture().setupOverlayColor();
 
             boolean irisWorld = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld();
 
@@ -127,7 +127,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             boolean cutout = defer && irisWorld && textureObject != null && textureObject.hasTranslucency()
                 && color.a >= 1F && !this.form.additiveColor.get();
 
-            ShaderProgram finalShader = cutout ? GameRenderer.getRenderTypeEntityCutoutProgram() : shader.get();
+            ShaderInstance finalShader = cutout ? GameRenderer.getRendertypeEntityCutoutShader() : shader.get();
             boolean wasActive = false;
 
             if (irisWorld)
@@ -145,7 +145,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                 if (defer && FormTranslucentQueue.needsSplit(finalShader, null, textureObject, color.a))
                 {
                     Matrix4f modelView = ModelVAORenderer.captureModelView(matrices);
-                    Matrix3f normalMat = new Matrix3f(matrices.peek().getNormalMatrix());
+                    Matrix3f normalMat = new Matrix3f(matrices.last().normal());
 
                     FormTranslucentQueue.setPassMode(finalShader, FormTranslucentQueue.PASS_OPAQUE);
                     ModelVAORenderer.render(finalShader, data, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay);
@@ -158,7 +158,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                     /* A uniform colour fade defers the whole draw into the sorted end-of-frame
                      * pass with depth kept on, so the faded form still self-occludes. */
                     Matrix4f modelView = ModelVAORenderer.captureModelView(matrices);
-                    Matrix3f normalMat = new Matrix3f(matrices.peek().getNormalMatrix());
+                    Matrix3f normalMat = new Matrix3f(matrices.last().normal());
 
                     FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(data, () -> finalShader, FormTranslucentQueue.PASS_SINGLE, true, textureObject, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, true));
                 }
@@ -177,8 +177,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             RenderSystem.disableBlend();
 
-            gameRenderer.getLightmapTextureManager().disable();
-            gameRenderer.getOverlayTexture().teardownOverlayColor();
+            gameRenderer.lightTexture().turnOffLightLayer();
+            gameRenderer.overlayTexture().teardownOverlayColor();
         }
     }
 }

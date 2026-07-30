@@ -12,11 +12,9 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.morphing.Morph;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -265,9 +263,9 @@ public final class BaseFilmControllerParallelLogik
 
     private static void runActorPass(ActorWork aw)
     {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null) return;
-        Entity anEntity = mc.world.getEntityById(aw.entityId());
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null) return;
+        Entity anEntity = mc.level.getEntity(aw.entityId());
         if (anEntity == null) return;
 
         if (anEntity instanceof mchorse.bbs_mod.entity.ActorEntity actor)
@@ -279,7 +277,7 @@ public final class BaseFilmControllerParallelLogik
                 aw.replay().properties.applyProperties(form, aw.tickPlusDelta());
             }
         }
-        else if (anEntity instanceof PlayerEntity player)
+        else if (anEntity instanceof Player player)
         {
             Morph morph = Morph.getMorph(player);
             if (morph != null)
@@ -296,14 +294,14 @@ public final class BaseFilmControllerParallelLogik
             float yawBody = aw.replay().keyframes.bodyYaw.interpolate(aw.tickPlusDelta()).floatValue();
             float pitch = aw.replay().keyframes.pitch.interpolate(aw.tickPlusDelta()).floatValue();
 
-            player.setYaw(yawHead);
-            player.setHeadYaw(yawHead);
-            player.setPitch(pitch);
-            player.setBodyYaw(yawBody);
-            player.prevYaw = yawHead;
-            player.prevHeadYaw = yawHead;
-            player.prevPitch = pitch;
-            player.prevBodyYaw = yawBody;
+            player.setYRot(yawHead);
+            player.setYHeadRot(yawHead);
+            player.setXRot(pitch);
+            player.setYBodyRot(yawBody);
+            player.yRotO = yawHead;
+            player.yHeadRotO = yawHead;
+            player.xRotO = pitch;
+            player.yBodyRotO = yawBody;
         }
     }
 

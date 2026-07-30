@@ -8,16 +8,13 @@
 // recording this is correct (BBS captures the rendered frames).
 package com.afrobama.bbstools.client.blockanim;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.BlockRenderManager;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,35 +35,35 @@ public final class BlockAnimationRenderer
         var blocks = BlockAnimation.getActiveBlocks();
         if (blocks.isEmpty()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null) return;
 
-        BlockRenderManager brm = mc.getBlockRenderManager();
-        Vec3d camPos = ctx.camera().getPos();
-        MatrixStack matrices = ctx.matrixStack();
-        VertexConsumerProvider.Immediate consumers = mc.getBufferBuilders().getEntityVertexConsumers();
+        BlockRenderDispatcher brm = mc.getBlockRenderer();
+        Vec3 camPos = ctx.camera().getPos();
+        PoseStack matrices = ctx.matrixStack();
+        MultiBufferSource.BufferSource consumers = mc.renderBuffers().bufferSource();
 
         for (var ab : blocks)
         {
-            Vec3d p = ab.currentPos();
-            matrices.push();
+            Vec3 p = ab.currentPos();
+            matrices.pushPose();
             matrices.translate(p.x - camPos.x, p.y - camPos.y, p.z - camPos.z);
             try
             {
-                brm.renderBlockAsEntity(
+                brm.renderSingleBlock(
                     ab.state,
                     matrices,
                     consumers,
                     0x00F000F0,  /* full brightness lightmap */
-                    net.minecraft.client.render.OverlayTexture.DEFAULT_UV);
+                    net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
             }
             catch (Throwable t)
             {
                 /* don't log per-block per-frame */
             }
-            matrices.pop();
+            matrices.popPose();
         }
-        consumers.draw();
+        consumers.endBatch();
     }
 
 }

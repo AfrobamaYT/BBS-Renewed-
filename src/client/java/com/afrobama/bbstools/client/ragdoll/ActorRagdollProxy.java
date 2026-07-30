@@ -1,14 +1,11 @@
 package com.afrobama.bbstools.client.ragdoll;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
-
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,15 +72,15 @@ public final class ActorRagdollProxy
     {
         if (bbsActor == null) return false;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc == null || mc.world == null || mc.player == null) return false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.level == null || mc.player == null) return false;
 
         try
         {
-            World world = mc.world;
-            VillagerEntity proxy = new VillagerEntity(EntityType.VILLAGER, world);
-            Vec3d pos = new Vec3d(bbsActor.getX(), bbsActor.getY(), bbsActor.getZ());
-            proxy.setPosition(pos.x, pos.y, pos.z);
+            Level world = mc.level;
+            Villager proxy = new Villager(EntityType.VILLAGER, world);
+            Vec3 pos = new Vec3(bbsActor.getX(), bbsActor.getY(), bbsActor.getZ());
+            proxy.setPos(pos.x, pos.y, pos.z);
             proxy.setInvisible(true);
             proxy.setSilent(true);
 
@@ -94,7 +91,7 @@ public final class ActorRagdollProxy
 
             /* Try the integrated-server spawn path; if we're a
              *  client-only world this fails silently. */
-            world.spawnEntity(proxy);
+            world.addFreshEntity(proxy);
 
             /* Kill scheduled to next tick — PhysicsMod's death
              *  renderer fires on the death animation tick which
