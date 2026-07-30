@@ -3,7 +3,7 @@ package com.afrobama.bbstools.client.fracture;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -24,7 +24,7 @@ public final class GravityGunHud
         HudRenderCallback.EVENT.register(GravityGunHud::onHudRender);
     }
 
-    private static void onHudRender(GuiGraphics ctx, net.minecraft.client.DeltaTracker tickCounter)
+    private static void onHudRender(GuiGraphicsExtractor ctx, net.minecraft.client.DeltaTracker tickCounter)
     {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null || client.gui.isHidden()) return;
@@ -42,7 +42,7 @@ public final class GravityGunHud
             /* Held — show "Holding [bone]  [release G]" hint. */
             String label = "§a● §fHolding · release G to throw";
             int w = fr.width(label);
-            ctx.drawString(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
+            ctx.text(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
         }
         else
         {
@@ -51,7 +51,7 @@ public final class GravityGunHud
             {
                 String label = String.format("§e● §fG · grab '%s' (%.1fm)", hover.boneName, hover.distance);
                 int w = fr.width(label);
-                ctx.drawString(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
+                ctx.text(fr, Component.literal(label), cx - w / 2, cy + 12, 0xFFFFFF);
             }
         }
     }

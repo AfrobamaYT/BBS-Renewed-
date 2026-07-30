@@ -39,7 +39,7 @@ import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -396,7 +396,7 @@ public class BBSRendering
 
         if (BBSModClient.getCameraController().getCurrent() instanceof PlayCameraController controller)
         {
-            GuiGraphics drawContext = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
+            GuiGraphicsExtractor drawContext = new GuiGraphicsExtractor(mc, mc.renderBuffers().bufferSource());
             Batcher2D batcher = new Batcher2D(drawContext);
 
             UISubtitleRenderer.renderSubtitles(batcher.getContext().pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
@@ -496,7 +496,7 @@ public class BBSRendering
         }
     }
 
-    public static void renderHud(GuiGraphics drawContext, float tickDelta)
+    public static void renderHud(GuiGraphicsExtractor drawContext, float tickDelta)
     {
         Batcher2D batcher2D = new Batcher2D(drawContext);
 
@@ -538,7 +538,7 @@ public class BBSRendering
         }
 
         Minecraft mc = Minecraft.getInstance();
-        GuiGraphics drawContext = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
+        GuiGraphicsExtractor drawContext = new GuiGraphicsExtractor(mc, mc.renderBuffers().bufferSource());
 
         renderRecordingTimerOverlay(new Batcher2D(drawContext), label);
 

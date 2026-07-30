@@ -2,7 +2,7 @@ package mchorse.bbs_mod.mixin.client;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
@@ -17,5 +17,5 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface InGameHudAccessor
 {
     @Invoker("renderHotbarAndDecorations")
-    void bbs$renderMainHud(GuiGraphics context, DeltaTracker counter);
+    void bbs$renderMainHud(GuiGraphicsExtractor context, DeltaTracker counter);
 }

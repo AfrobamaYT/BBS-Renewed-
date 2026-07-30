@@ -23,7 +23,7 @@ import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
@@ -842,7 +842,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
     }
 
-    public static void beginHudRendering(GuiGraphics drawContext)
+    public static void beginHudRendering(GuiGraphicsExtractor drawContext)
     {
         advanceShowTransitions();
         swapEntityToPlayer();
@@ -857,7 +857,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
     }
 
-    public static void endHudRendering(GuiGraphics drawContext)
+    public static void endHudRendering(GuiGraphicsExtractor drawContext)
     {
         if (hudMatrixPushed && drawContext != null)
         {

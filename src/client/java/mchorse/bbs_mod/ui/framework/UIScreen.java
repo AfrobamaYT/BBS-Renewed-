@@ -58,7 +58,7 @@ public class UIScreen extends Screen implements IFileDropListener
 
         this.menu = menu;
 
-        /* 26.2: there is no GuiGraphics to build up front any more. The GuiGraphicsExtractor
+        /* 26.2: there is no GuiGraphicsExtractor to build up front any more. The GuiGraphicsExtractor
          * only exists for the duration of one extraction pass and is handed in by vanilla, so
          * the batcher starts without one and gets it in extractRenderState(). */
         this.context = new UIRenderingContext(null);
@@ -212,7 +212,7 @@ public class UIScreen extends Screen implements IFileDropListener
     {}
 
     /**
-     * 26.2: {@code Screen.render(GuiGraphics, ...)} is gone. Drawing happens in two phases —
+     * 26.2: {@code Screen.render(GuiGraphicsExtractor, ...)} is gone. Drawing happens in two phases —
      * this pass only APPENDS elements to the GuiRenderState behind {@code context};
      * {@code GuiRenderer.render()} draws them afterwards.
      */

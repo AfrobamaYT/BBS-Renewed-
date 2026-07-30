@@ -39,7 +39,7 @@ import mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor;
  * {@link GuiElementRenderState} and enqueues it — there is no immediate mode and no
  * {@code flush()} any more.
  *
- * <p>Trap this class exists to avoid: swapping {@code GuiGraphics} for
+ * <p>Trap this class exists to avoid: swapping {@code GuiGraphicsExtractor} for
  * {@code GuiGraphicsExtractor} name-for-name compiles cleanly and draws NOTHING, because the
  * old Tesselator/BufferUploader path writes into a GL state that nobody submits.
  */
@@ -569,7 +569,7 @@ public class Batcher2D
             color = Colors.opaque(color);
         }
 
-        /* 26.2: GuiGraphics.drawString -> GuiGraphicsExtractor.text; the trailing
+        /* 26.2: GuiGraphicsExtractor.drawString -> GuiGraphicsExtractor.text; the trailing
          * RenderSystem.depthFunc(GL_ALWAYS) is gone with it — GUI space has no depth any
          * more, overlap is decided by GuiGraphicsExtractor.nextStratum(). */
         this.context.text(this.font.getRenderer(), label, (int) x, (int) y, color, shadow);

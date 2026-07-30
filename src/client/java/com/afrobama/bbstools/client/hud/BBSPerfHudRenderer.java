@@ -21,7 +21,7 @@ import com.afrobama.bbstools.perf.BBSPerfHud;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public final class BBSPerfHudRenderer
@@ -72,7 +72,7 @@ public final class BBSPerfHudRenderer
         HudRenderCallback.EVENT.register(BBSPerfHudRenderer::onHudRender);
     }
 
-    private static void onHudRender(GuiGraphics ctx,
+    private static void onHudRender(GuiGraphicsExtractor ctx,
         net.minecraft.client.DeltaTracker tickCounter)
     {
         /* Early return — keeps the toggle cost a single volatile read
@@ -119,7 +119,7 @@ public final class BBSPerfHudRenderer
             int color = (i == 2 && BBSPerfConfig.veilBatchFramesFallback >
                                    BBSPerfConfig.veilBatchFramesBatched)
                 ? WARN_COLOR : TEXT_COLOR;
-            ctx.drawString(fr, Component.literal(line), tx, ty + i * LINE_HEIGHT, color, true);
+            ctx.text(fr, Component.literal(line), tx, ty + i * LINE_HEIGHT, color, true);
         }
     }
 

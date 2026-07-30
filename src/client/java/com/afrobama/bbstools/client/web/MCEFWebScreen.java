@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -108,7 +108,7 @@ public class MCEFWebScreen extends Screen
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta)
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta)
     {
         if (!this.loggedFrame)
         {
@@ -118,7 +118,7 @@ public class MCEFWebScreen extends Screen
 
         if (this.browser == null)
         {
-            context.drawCenteredString(this.font, Component.literal("MCEF browser unavailable"), this.width / 2, this.height / 2, 0xFFFF5555);
+            context.text(this.font, Component.literal("MCEF browser unavailable"), this.width / 2, this.height / 2, 0xFFFF5555);
 
             return;
         }

@@ -544,7 +544,7 @@ public class UIFilmPreview extends UIElement
 
         context.batcher.flush();
 
-        net.minecraft.client.gui.GuiGraphics draw = context.batcher.getContext();
+        net.minecraft.client.gui.GuiGraphicsExtractor draw = context.batcher.getContext();
         com.mojang.blaze3d.vertex.PoseStack matrices = draw.pose();
 
         /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
