@@ -7,7 +7,7 @@
 // the hallmark of a GPU-bound thread spinning on the driver. This measures the GPU
 // clock directly.
 //
-// Method: glQueryCounter(GL_TIMESTAMP) at WorldRenderEvents.START and .END. The
+// Method: glQueryCounter(GL_TIMESTAMP) at LevelRenderEvents.START_MAIN and .END. The
 // diff = GPU time spent processing the world-render command stream. GL_TIMESTAMP
 // (unlike glBeginQuery/GL_TIME_ELAPSED) is NOT an "active query", so it cannot
 // conflict with Sodium/Iris timer queries. Double-buffered: frame N writes slot A,
@@ -22,7 +22,7 @@ package com.afrobama.bbstools.client.perf;
 
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public final class WorldGpuTimer
 
         /* START: read the PREVIOUS slot's result (GPU has finished it by now),
          *  then stamp this frame's start on the current slot. */
-        WorldRenderEvents.START.register(ctx ->
+        LevelRenderEvents.START_MAIN.register(ctx ->
         {
             if (!BBSPerfConfig.ENABLE_WORLD_GPU_TIMER)
             {
@@ -77,7 +77,10 @@ public final class WorldGpuTimer
         });
 
         /* END: stamp this frame's end, mark the slot ready, advance. */
-        WorldRenderEvents.END.register(ctx ->
+        /* ⚠️ PHASE NICHT BELEGT GLEICHWERTIG. Alt war WorldRenderEvents.END. END_MAIN ist die
+         * naechstliegende Phase; die alte Reihenfolge zwischen END und LAST geht dabei
+         * verloren, weil beide jetzt dieselbe Phase treffen. Am Bild zu pruefen. */
+        LevelRenderEvents.END_MAIN.register(ctx ->
         {
             if (!BBSPerfConfig.ENABLE_WORLD_GPU_TIMER || !generated)
             {
