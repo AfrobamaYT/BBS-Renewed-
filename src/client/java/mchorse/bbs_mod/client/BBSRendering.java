@@ -486,7 +486,7 @@ public class BBSRendering
 
         worldRenderContext.prepare(
             mc.levelRenderer, mc.getTimer(), false,
-            mc.gameRenderer.getMainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
+            mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
             RenderSystem.getProjectionMatrix(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
         );
 

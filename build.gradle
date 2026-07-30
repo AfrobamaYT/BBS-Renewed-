@@ -223,6 +223,49 @@ loom {
 	}
 }
 
+/* P3-26.2-AUS: integrations-code fremder mods aus dem build genommen.
+ *
+ * WARUM: diese 36 dateien sprechen die API von Iris, Veil, MCEF und PhysicsMod an. Deren
+ * abhaengigkeiten sind weiter unten stillgelegt (dieselbe markierung), also KOENNEN sie
+ * nicht uebersetzen -- sie meldeten 312 der 2292 client-fehler, also 14 %, ohne dass eine
+ * einzige davon etwas mit 26.2 zu tun hat. Sie verschwinden, wenn die fremdmods
+ * zurueckkommen, nicht durch portieren.
+ *
+ * ⛔ DER AUSSCHLUSS ALLEIN WAERE EIN STARTABBRUCH OHNE COMPILERFEHLER. Elf dieser klassen
+ * standen in `bbs.client.mixins.json` und eine konfiguration in `fabric.mod.json`. Ein
+ * mixin-eintrag, dessen klasse nicht im jar liegt, bricht den start ab. Darum gehoeren
+ * drei stellen zusammen und wurden zusammen geaendert:
+ *   1. dieser ausschluss
+ *   2. bbs.client.mixins.json  -> iris- und sodium-eintraege nach "_P3-26.2-AUS" verschoben
+ *   3. fabric.mod.json         -> bbstools.physicsmod.mixins.json ausgetragen
+ *
+ * ZURUECKHOLEN, einzeln und je mit eigenem beweis: abhaengigkeit anschalten, eintrag hier
+ * streichen, mixin-namen zurueck in die konfiguration, bauen, booten, wirkung messen.
+ */
+sourceSets {
+	client {
+		java {
+			exclude "com/afrobama/bbstools/client/bbs/veil/**"
+			exclude "com/afrobama/bbstools/client/veil/**"
+			exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
+			exclude "com/afrobama/bbstools/client/web/MCEFWeb*"
+			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdIris*"
+			exclude "com/afrobama/bbstools/client/fracture/BonePhysicsSimulator.java"
+			exclude "com/afrobama/bbstools/client/fracture/PhysicsBlockDestructionClientClip.java"
+			exclude "com/afrobama/bbstools/client/fracture/UIPhysicsBlockDestructionClip.java"
+			exclude "mchorse/bbs_mod/mixin/client/iris/**"
+			exclude "mchorse/bbs_mod/mixin/client/sodium/**"
+			exclude "mchorse/bbs_mod/utils/iris/**"
+			exclude "mchorse/bbs_mod/cubic/physics/ModelPhysicsDebug.java"
+			/* Nachlauf: reine Debug-Tracer FUER die oben ausgeschlossenen Klassen.
+			 * Sie tauchten erst im zweiten Bau auf -- ein Ausschluss erzeugt eine kleine
+			 * Welle, weil andere Dateien die entfernten Pakete importieren. */
+			exclude "com/afrobama/bbstools/client/mixin/debug/MixinMethodTracer_Veil*"
+		}
+	}
+}
+
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

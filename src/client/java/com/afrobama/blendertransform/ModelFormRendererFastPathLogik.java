@@ -180,7 +180,7 @@ public final class ModelFormRendererFastPathLogik
         {
             if (context.entity == null) return;
             net.minecraft.client.Camera cam =
-                net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera();
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera();
             if (cam == null) return;
 
             double cx = cam.getPosition().x, cy = cam.getPosition().y, cz = cam.getPosition().z;

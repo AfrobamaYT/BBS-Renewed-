@@ -96,7 +96,7 @@ public class UIScreen extends Screen implements IFileDropListener
     public void removed()
     {
         BBSModClient.setCustomGUIScale(false);
-        Minecraft.getInstance().resizeDisplay();
+        Minecraft.getInstance().resizeGui();
 
         super.removed();
 
@@ -112,7 +112,7 @@ public class UIScreen extends Screen implements IFileDropListener
     public void added()
     {
         BBSModClient.setCustomGUIScale(true);
-        Minecraft.getInstance().resizeDisplay();
+        Minecraft.getInstance().resizeGui();
 
         super.added();
 

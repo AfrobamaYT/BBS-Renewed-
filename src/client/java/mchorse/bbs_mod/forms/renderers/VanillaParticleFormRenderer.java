@@ -69,7 +69,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
     {
         super.render3D(context);
 
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
         Matrix4f matrix = new Matrix4f(InverseView.get());
 
         /* Since 1.21.1 the world render keeps the camera view in RenderSystem's global

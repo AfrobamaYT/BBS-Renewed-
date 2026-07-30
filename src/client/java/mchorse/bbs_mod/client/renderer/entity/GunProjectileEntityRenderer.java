@@ -51,7 +51,7 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
         RenderSystem.enableDepthTest();
         FormUtilsClient.render(projectile.getForm(), new FormRenderingContext()
             .set(FormRenderType.ENTITY, projectile.getEntity(), matrices, light, OverlayTexture.NO_OVERLAY, tickDelta)
-            .camera(Minecraft.getInstance().gameRenderer.getMainCamera()));
+            .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
         RenderSystem.disableDepthTest();
 
         matrices.popPose();

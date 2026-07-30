@@ -419,7 +419,7 @@ public class BBSModClient implements ClientModInitializer
 
             if (mc.gui.screen() instanceof UIScreen)
             {
-                mc.resizeDisplay();
+                mc.resizeGui();
             }
         });
         BBSSettings.editorSeconds.postCallback((v, f) ->

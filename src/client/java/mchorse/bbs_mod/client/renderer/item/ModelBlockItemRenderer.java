@@ -72,7 +72,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
                 RenderSystem.enableDepthTest();
                 FormUtilsClient.render(form, new FormRenderingContext()
                     .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false))
-                    .camera(Minecraft.getInstance().gameRenderer.getMainCamera()));
+                    .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
                 RenderSystem.disableDepthTest();
 
                 matrices.popPose();

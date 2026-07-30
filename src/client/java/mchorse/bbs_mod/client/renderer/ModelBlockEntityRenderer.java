@@ -139,7 +139,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             MatrixStackUtils.applyTransform(matrices, applied);
 
             int lightAbove = LevelRenderer.getLightColor(entity.getLevel(), pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
-            Camera camera = mc.gameRenderer.getMainCamera();
+            Camera camera = mc.gameRenderer.mainCamera();
 
             RenderSystem.enableDepthTest();
             FormUtilsClient.render(properties.getForm(), new FormRenderingContext()
@@ -183,7 +183,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     private Transform applyLookingAnimation(Minecraft mc, ModelBlockEntity entity, ModelProperties properties, float tickDelta)
     {
         Transform transform = properties.getTransform();
-        Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.mainCamera();
         Vec3 position = !mc.options.getCameraType().isFirstPerson() && mc.player != null
             ? mc.player.getEyePosition(tickDelta)
             : camera.getPosition();

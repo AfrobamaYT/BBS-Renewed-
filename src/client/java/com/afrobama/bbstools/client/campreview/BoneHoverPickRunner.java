@@ -233,8 +233,8 @@ public final class BoneHoverPickRunner
          *  see alt-cam orientation. */
         Matrix4f savedBBSCamera = new Matrix4f(BBSRendering.camera);
 
-        float pitchRad = (float) Math.toRadians(altCam.getXRot());
-        float yawRad = (float) Math.toRadians(altCam.getYRot() + 180F);
+        float pitchRad = (float) Math.toRadians(altCam.xRot());
+        float yawRad = (float) Math.toRadians(altCam.yRot() + 180F);
 
         Matrix4f altCamView = new Matrix4f()
             .identity()

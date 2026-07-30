@@ -63,15 +63,15 @@ public final class GameRendererPreviewPrePassLogik
         RenderTarget mainFb = mc.getMainRenderTarget();
         if (mainFb == null) return;
 
-        Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.mainCamera();
         if (camera == null) return;
 
         /* Snapshot vanilla state. */
         double savedX = camera.getPosition().x;
         double savedY = camera.getPosition().y;
         double savedZ = camera.getPosition().z;
-        float savedYaw = camera.getYRot();
-        float savedPitch = camera.getXRot();
+        float savedYaw = camera.yRot();
+        float savedPitch = camera.xRot();
         Matrix4f savedProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
 
         CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
@@ -227,7 +227,7 @@ public final class GameRendererPreviewPrePassLogik
             mc.levelRenderer,
             tickCounter,
             false,
-            mc.gameRenderer.getMainCamera(),
+            mc.gameRenderer.mainCamera(),
             mc.gameRenderer,
             mc.gameRenderer.lightTexture(),
             projection,

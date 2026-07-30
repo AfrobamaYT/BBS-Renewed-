@@ -56,7 +56,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
         RenderSystem.enableDepthTest();
         FormUtilsClient.render(livingEntity.getForm(), new FormRenderingContext()
             .set(FormRenderType.ENTITY, livingEntity.getEntity(), matrices, light, overlay, tickDelta)
-            .camera(Minecraft.getInstance().gameRenderer.getMainCamera()));
+            .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
 

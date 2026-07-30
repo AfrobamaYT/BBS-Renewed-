@@ -59,8 +59,8 @@ public final class AltCameraGridRenderer
             float camX = (float) camera.getPosition().x;
             float camY = (float) camera.getPosition().y;
             float camZ = (float) camera.getPosition().z;
-            float pitchRad = (float) Math.toRadians(camera.getXRot());
-            float yawRad = (float) Math.toRadians(camera.getYRot() + 180F);
+            float pitchRad = (float) Math.toRadians(camera.xRot());
+            float yawRad = (float) Math.toRadians(camera.yRot() + 180F);
 
             /* Build view matrix the same way MC's GameRenderer does:
              *  Rx(pitch) * Ry(yaw+180) * T(-camera). Push onto the
@@ -131,7 +131,7 @@ public final class AltCameraGridRenderer
             {
                 loggedFirstRender = true;
                 LOG.info("Grid first-render OK at player Y={} (camera @ {},{},{} pitch={} yaw={})",
-                    gy, camX, camY, camZ, camera.getXRot(), camera.getYRot());
+                    gy, camX, camY, camZ, camera.xRot(), camera.getYRot());
             }
         }
         catch (Throwable t)

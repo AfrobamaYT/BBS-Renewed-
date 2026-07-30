@@ -96,8 +96,8 @@ public final class CameraPreviewRenderHook
         double savedX = camera.getPosition().x;
         double savedY = camera.getPosition().y;
         double savedZ = camera.getPosition().z;
-        float savedYaw = camera.getYRot();
-        float savedPitch = camera.getXRot();
+        float savedYaw = camera.yRot();
+        float savedPitch = camera.xRot();
 
         CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
 
