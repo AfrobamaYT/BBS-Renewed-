@@ -279,7 +279,7 @@ public class DataStorageUtils
         {
             MapType map = new MapType();
 
-            for (String key : nbtCompound.getAllKeys())
+            for (String key : nbtCompound.keySet())
             {
                 BaseType converted = fromNbt(nbtCompound.get(key));
 

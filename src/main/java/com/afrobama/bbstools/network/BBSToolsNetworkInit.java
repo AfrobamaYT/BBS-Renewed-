@@ -33,7 +33,7 @@ public final class BBSToolsNetworkInit
 
     public static void init()
     {
-        PayloadTypeRegistry.playC2S().register(BuilderActionPacket.ID, BuilderActionPacket.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(BuilderActionPacket.ID, BuilderActionPacket.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(BuilderActionPacket.ID,
             (payload, context) ->

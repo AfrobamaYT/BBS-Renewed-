@@ -16,7 +16,7 @@ public class SuperFakePlayerNetworkHandler extends ServerGamePacketListenerImpl
 
     public SuperFakePlayerNetworkHandler(ServerPlayer player)
     {
-        super(player.getServer(), FAKE_CONNECTION, player, CommonListenerCookie.createInitial(player.getGameProfile(), false));
+        super(player.level().getServer(), FAKE_CONNECTION, player, CommonListenerCookie.createInitial(player.getGameProfile(), false));
     }
 
     @Override

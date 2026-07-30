@@ -240,11 +240,11 @@ public final class FakePlayerSpawner
              *  rendering. */
             try
             {
-                if (player.getServer() != null)
+                if (player.level().getServer() != null)
                 {
                     net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket removePacket =
                         new net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
-                    player.getServer().getPlayerList().broadcastAll(removePacket);
+                    player.level().getServer().getPlayerList().broadcastAll(removePacket);
                 }
             }
             catch (Throwable t)

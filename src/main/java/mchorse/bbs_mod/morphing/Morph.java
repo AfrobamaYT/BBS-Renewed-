@@ -61,7 +61,7 @@ public class Morph
             compound.remove(s);
         }
 
-        form.mobID.set(key.get().location().toString());
+        form.mobID.set(key.get().identifier().toString());
         form.mobNBT.set(compound.toString());
 
         return form;

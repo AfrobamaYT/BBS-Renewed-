@@ -27,7 +27,7 @@ import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.DataPath;
 import mchorse.bbs_mod.utils.repos.RepositoryOperation;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -467,7 +467,7 @@ public class ClientNetwork
 
     public static void sendActionRecording(String filmId, int replayId, int tick, int countdown, boolean state)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf(filmId);
         buf.writeInt(replayId);
@@ -480,7 +480,7 @@ public class ClientNetwork
 
     public static void sendToggleFilm(String filmId, boolean withCamera)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf(filmId);
         buf.writeBoolean(withCamera);
@@ -490,7 +490,7 @@ public class ClientNetwork
 
     public static void sendActionState(String filmId, ActionState state, int tick)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf(filmId);
         buf.writeByte(state.ordinal());
@@ -522,7 +522,7 @@ public class ClientNetwork
 
     public static void sendTeleport(double x, double y, double z, float yaw, float bodyYaw, float pitch)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeDouble(x);
         buf.writeDouble(y);
@@ -536,7 +536,7 @@ public class ClientNetwork
 
     public static void sendFormTrigger(String triggerId, int type)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf(triggerId);
         buf.writeInt(type);
@@ -556,7 +556,7 @@ public class ClientNetwork
 
     public static void sendZoom(boolean zoom)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeBoolean(zoom);
 
@@ -565,7 +565,7 @@ public class ClientNetwork
 
     public static void sendPauseFilm(String filmId)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeUtf(filmId);
 
@@ -574,7 +574,7 @@ public class ClientNetwork
 
     public static void sendApplyFilmPlayerSettingsToPlayer(Film film)
     {
-        FriendlyByteBuf buf = PacketByteBufs.create();
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
 
         buf.writeFloat(film.hp.get());
         buf.writeFloat(film.hunger.get());

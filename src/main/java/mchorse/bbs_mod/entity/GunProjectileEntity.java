@@ -33,6 +33,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.server.level.ServerLevel;
 
 public class GunProjectileEntity extends Projectile implements IEntityFormProvider
 {
@@ -85,7 +86,10 @@ public class GunProjectileEntity extends Projectile implements IEntityFormProvid
     {
         if (!command.isEmpty())
         {
-            this.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(), command);
+            /* 26.2: siehe CommandActionClip -- gleicher aufbau wie vorher, welt als argument. */
+            ServerLevel level = (ServerLevel) this.level();
+
+            level.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStackForNameResolution(level), command);
         }
     }
 

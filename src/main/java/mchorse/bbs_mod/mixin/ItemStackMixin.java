@@ -6,7 +6,6 @@ import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -20,7 +19,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ItemStackMixin
 {
     @Inject(method = "use", at = @At("HEAD"))
-    public void onUse(Level world, Player user, InteractionHand hand, CallbackInfoReturnable<InteractionResultHolder<ItemStack>> info)
+    /* 26.2: ItemStack.use gibt InteractionResult statt InteractionResultHolder<ItemStack>
+     * zurueck -- am jar geprueft. Der CallbackInfoReturnable-typparameter MUSS mitgehen,
+     * sonst wirft Mixin beim laden, nicht beim uebersetzen. */
+    public void onUse(Level world, Player user, InteractionHand hand, CallbackInfoReturnable<InteractionResult> info)
     {
         if (user instanceof ServerPlayer player)
         {

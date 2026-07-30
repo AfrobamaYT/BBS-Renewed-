@@ -8,6 +8,7 @@ import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.utils.clips.Clip;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerLevel;
 
 public class CommandActionClip extends ActionClip
 {
@@ -24,11 +25,16 @@ public class CommandActionClip extends ActionClip
         this.applyPositionRotation(player, replay, tick);
 
         String command = this.command.get();
+        /* 26.2: Entity.createCommandSourceStack() heisst jetzt
+         * createCommandSourceStackForNameResolution(ServerLevel) und braucht die welt als
+         * argument. Trotz des namens ist es derselbe aufbau wie vorher, inklusive
+         * rechtestufe 0 (PermissionSet.NO_PERMISSIONS) -- am bytecode geprueft.
+         * ServerPlayer behaelt die alte, parameterlose methode. */
         CommandSourceStack source = actor == null
             ? player.createCommandSourceStack()
-            : actor.createCommandSourceStack();
+            : actor.createCommandSourceStackForNameResolution((ServerLevel) actor.level());
 
-        player.getServer().getCommands().performPrefixedCommand(source, command);
+        player.level().getServer().getCommands().performPrefixedCommand(source, command);
     }
 
     @Override

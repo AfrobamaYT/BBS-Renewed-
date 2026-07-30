@@ -5,13 +5,13 @@ import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtils;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.server.level.ServerLevel;
 
 public class GunItem extends Item
 {
@@ -22,8 +22,11 @@ public class GunItem extends Item
         super(settings);
     }
 
+    /* 26.2: use() gibt InteractionResult direkt zurueck. InteractionResultHolder gab es
+     * nur, um den (moeglicherweise veraenderten) ItemStack mitzuliefern -- das macht das
+     * spiel jetzt selbst ueber die hand. Der stack wird hier ohnehin nie ersetzt. */
     @Override
-    public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand)
+    public InteractionResult use(Level world, Player user, InteractionHand hand)
     {
         Entity owner = actor == null ? user : actor;
         ItemStack stack = user.getItemInHand(hand);
@@ -43,7 +46,7 @@ public class GunItem extends Item
                 owner.setDeltaMovement(rotationVector);
             }
 
-            return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
+            return InteractionResult.SUCCESS;
         }
 
         if (!world.isClientSide())
@@ -68,11 +71,14 @@ public class GunItem extends Item
 
             if (!properties.cmdFiring.isEmpty())
             {
-                owner.getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStack(), properties.cmdFiring);
+                /* 26.2: siehe CommandActionClip -- gleicher aufbau wie vorher, welt als argument. */
+                ServerLevel level = (ServerLevel) world;
+
+                level.getServer().getCommands().performPrefixedCommand(owner.createCommandSourceStackForNameResolution(level), properties.cmdFiring);
             }
         }
 
-        return new InteractionResultHolder<>(InteractionResult.PASS, stack);
+        return InteractionResult.PASS;
     }
 
     private GunProperties getProperties(ItemStack stack)

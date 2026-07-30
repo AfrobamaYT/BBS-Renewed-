@@ -21,7 +21,7 @@ import mchorse.bbs_mod.network.ServerNetwork;
 import mchorse.bbs_mod.settings.Settings;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
-import net.minecraft.ResourceLocationException;
+import net.minecraft.IdentifierException;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -520,7 +520,7 @@ public class BBSCommands
         {
             structureTemplate = structureTemplateManager.getOrCreate(Identifier.parse(name));
         }
-        catch (ResourceLocationException e)
+        catch (IdentifierException e)
         {
             return 0;
         }
@@ -538,7 +538,7 @@ public class BBSCommands
                 return 1;
             }
         }
-        catch (ResourceLocationException var7)
+        catch (IdentifierException var7)
         {}
 
         return 0;
