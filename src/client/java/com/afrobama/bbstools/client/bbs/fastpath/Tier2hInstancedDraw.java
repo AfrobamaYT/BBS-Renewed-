@@ -448,7 +448,7 @@ public final class Tier2hInstancedDraw
         boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gr.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
         GL11C.glDepthMask(true);
@@ -463,7 +463,6 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            gr.overlayTexture().teardownOverlayColor();
             if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
             if (!wasCull)  GL11C.glDisable(GL11C.GL_CULL_FACE);
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);
@@ -733,7 +732,7 @@ public final class Tier2hInstancedDraw
         {
             GL20C.glUseProgram(PROGRAM);
 
-            Matrix4f mv  = RenderSystem.getModelViewMatrix();
+            Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
             Matrix4f prj = RenderSystem.getProjectionMatrix();
             mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
             prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);
@@ -1385,7 +1384,7 @@ public final class Tier2hInstancedDraw
         {
             GL20C.glUseProgram(PROGRAM);
 
-            Matrix4f mv  = RenderSystem.getModelViewMatrix();
+            Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
             Matrix4f prj = RenderSystem.getProjectionMatrix();
             mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
             prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);

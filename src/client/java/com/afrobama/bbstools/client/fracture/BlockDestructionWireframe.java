@@ -85,7 +85,7 @@ public final class BlockDestructionWireframe
         if (cam == null) return;
         Vec3 camPos = cam.position();
 
-        PoseStack ms = ctx.matrixStack();
+        PoseStack ms = ctx.poseStack();
         if (ms == null) return;
 
         /* GL state for thick, always-visible debug lines:

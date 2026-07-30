@@ -60,7 +60,7 @@ public final class GameRendererPreviewPrePassLogik
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.level == null) return;
 
-        RenderTarget mainFb = mc.getMainRenderTarget();
+        RenderTarget mainFb = mc.gameRenderer.mainRenderTarget();
         if (mainFb == null) return;
 
         Camera camera = mc.gameRenderer.mainCamera();
@@ -231,7 +231,7 @@ public final class GameRendererPreviewPrePassLogik
             mc.gameRenderer,
             mc.gameRenderer.lightTexture(),
             projection,
-            RenderSystem.getModelViewMatrix(),
+            RenderSystem.getModelViewMatrixCopy(),
             mc.renderBuffers().bufferSource(),
             mc.getProfiler(),
             false,

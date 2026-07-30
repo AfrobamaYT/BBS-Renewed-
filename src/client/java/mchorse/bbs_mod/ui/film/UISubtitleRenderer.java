@@ -58,7 +58,7 @@ public class UISubtitleRenderer
         Uniform textureSize = program.getUniform("TextureSize");
         Supplier<RenderPipeline> supplier = () -> program;
 
-        com.mojang.blaze3d.pipeline.RenderTarget fb = Minecraft.getInstance().getMainRenderTarget();
+        com.mojang.blaze3d.pipeline.RenderTarget fb = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         int width = fb.width;
         int height = fb.height;
 

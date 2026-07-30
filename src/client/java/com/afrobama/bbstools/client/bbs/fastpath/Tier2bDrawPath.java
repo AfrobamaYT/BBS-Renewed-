@@ -102,7 +102,7 @@ public final class Tier2bDrawPath
          * mit einer ungemischten werden die Modelle still undurchsichtig. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gr.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         try
         {
@@ -258,7 +258,6 @@ public final class Tier2bDrawPath
         }
         finally
         {
-            gr.overlayTexture().teardownOverlayColor();
             /* 26.2: disableBlend entfaellt ersatzlos. Der Aufruf nahm nur den
              * globalen Schalter von oben zurueck; den gibt es nicht mehr. Jede
              * folgende Zeichnung bringt ihr Mischverhalten in ihrer eigenen

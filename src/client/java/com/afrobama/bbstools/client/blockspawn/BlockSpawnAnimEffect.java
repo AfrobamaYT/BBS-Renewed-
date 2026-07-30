@@ -324,7 +324,7 @@ public final class BlockSpawnAnimEffect
         ClientLevel world = mc.level;
         if (world == null) return;
 
-        PoseStack matrices = context.matrixStack();
+        PoseStack matrices = context.poseStack();
         if (matrices == null) return;
 
         Vec3 cam = context.camera().getPosition();

@@ -167,14 +167,14 @@ public final class QuickWinKeybinds
             {
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.resetGlState();
                 if (client.player != null)
-                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[gpu-debug] GL state reset (VAO/program/buffers unbound)"), false);
+                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a[gpu-debug] GL state reset (VAO/program/buffers unbound)"));
             }
             else
             {
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.enable(false);
                 com.afrobama.bbstools.client.debug.BBSGpuDebug.captureNow("F11");
                 if (client.player != null)
-                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§b[gpu-debug] capture fired — check bbstools-console.log"), false);
+                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[gpu-debug] capture fired — check bbstools-console.log"));
             }
         }
 
@@ -183,7 +183,7 @@ public final class QuickWinKeybinds
         {
             com.afrobama.bbstools.client.debug.master.jvm.ThreadDumper.dumpAll();
             if (client.player != null)
-                client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§b[thread-dump] all threads dumped to log"), false);
+                client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§b[thread-dump] all threads dumped to log"));
         }
 
         boolean fireBugBundle = drain(bugBundle);
@@ -193,13 +193,13 @@ public final class QuickWinKeybinds
             {
                 java.nio.file.Path zip = com.afrobama.bbstools.client.debug.master.bundle.BugReportBundle.create("F9");
                 if (client.player != null)
-                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[bug-bundle] saved: " + zip.getFileName()), false);
+                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a[bug-bundle] saved: " + zip.getFileName()));
             }
             catch (Throwable t)
             {
                 LOG.error("Bug bundle creation threw", t);
                 if (client.player != null)
-                    client.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§c[bug-bundle] failed: " + t.getMessage()), false);
+                    client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c[bug-bundle] failed: " + t.getMessage()));
             }
         }
     }
@@ -346,7 +346,7 @@ public final class QuickWinKeybinds
         {
             if (client != null && client.player != null)
             {
-                client.player.displayClientMessage(Component.literal(msg), true);
+                client.player.sendOverlayMessage(Component.literal(msg));
             }
         }
         catch (Throwable ignored) {}

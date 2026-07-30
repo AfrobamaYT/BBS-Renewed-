@@ -1313,7 +1313,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         InverseView.set(new Matrix3f(BBSRendering.camera).invert());
 
         /* Render the stencil */
-        PoseStack worldStack = this.worldRenderContext.matrixStack();
+        PoseStack worldStack = this.worldRenderContext.poseStack();
 
         worldStack.pushPose();
         worldStack.setIdentity();
@@ -1406,7 +1406,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             if (povMode != UIFilmController.CAMERA_MODE_CAMERA && BBSSettings.recordingCameraPreview.get())
             {
-                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.camera(), context.matrixStack());
+                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.camera(), context.poseStack());
             }
         }
 
@@ -1455,7 +1455,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         double y = center.y - camera.position().y;
         double z = center.z - camera.position().z;
         float distanceScale = BBSSettings.getAxesDistanceScale((float) Math.sqrt(x * x + y * y + z * z));
-        PoseStack stack = context.matrixStack();
+        PoseStack stack = context.poseStack();
 
         stack.pushPose();
         stack.translate(x, y, z);
@@ -1625,7 +1625,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.stencil.unbind(this.stencilMap);
 
-        Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+        Minecraft.getInstance().gameRenderer.mainRenderTarget().bindWrite(true);
     }
 
     private void ensureStencilFramebuffer()

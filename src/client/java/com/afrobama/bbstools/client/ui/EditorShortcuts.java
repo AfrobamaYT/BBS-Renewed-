@@ -660,7 +660,7 @@ public final class EditorShortcuts
         {
             if (client != null && client.player != null)
             {
-                client.player.displayClientMessage(Component.literal(msg), true);
+                client.player.sendOverlayMessage(Component.literal(msg));
             }
         }
         catch (Throwable ignored) {}

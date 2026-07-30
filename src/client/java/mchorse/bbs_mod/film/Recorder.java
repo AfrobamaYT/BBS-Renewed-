@@ -253,7 +253,7 @@ public class Recorder extends WorldFilmController
     {
         super.render(context);
 
-        renderCameraPreview(this.position, context.camera(), context.matrixStack());
+        renderCameraPreview(this.position, context.camera(), context.poseStack());
     }
 
     @Override

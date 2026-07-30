@@ -132,7 +132,7 @@ public class MotionPath
         }
 
         Camera camera = context.camera();
-        PoseStack stack = context.matrixStack();
+        PoseStack stack = context.poseStack();
 
         double cx = camera.position().x;
         double cy = camera.position().y;

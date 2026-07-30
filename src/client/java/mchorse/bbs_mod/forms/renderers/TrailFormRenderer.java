@@ -130,7 +130,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
              * (view * translate(-cam) * formChain). Without it camInverse over-rotates the
              * sampled point and the recorded world position ends up depending on the camera,
              * which makes the trail smear whenever the camera moves rather than the object. */
-            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose());
+            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy()).mul(stack.last().pose());
 
             Vector4f top = new Vector4f(0F, 1F, 0F, 1F);
             Vector4f bottom = new Vector4f(0F, -1F, 0F, 1F);
@@ -193,7 +193,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
          * identity, so m stays the plain view and nothing changes. */
         Matrix4f m = stack.last().pose();
 
-        m.set(RenderSystem.getModelViewMatrix()).invert();
+        m.set(RenderSystem.getModelViewMatrixCopy()).invert();
         m.mul(new Matrix4f(camInverse).invert());
 
         /* Gross genug fuer alle Abschnitte dieses Bildes: acht Ecken je Abschnitt, POSITION_TEX

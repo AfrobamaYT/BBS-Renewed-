@@ -223,7 +223,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             this.stencil.pickGUI(context, this.area, BBSSettings.gizmoHoverTolerance.get(), Gizmo.STENCIL_MAX);
             this.stencil.unbind(this.stencilMap);
 
-            Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+            Minecraft.getInstance().gameRenderer.mainRenderTarget().bindWrite(true);
 
             GlStateManager._enableScissorTest();
         }

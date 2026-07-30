@@ -388,7 +388,7 @@ public final class EditorCamHandler
             Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.displayClientMessage(Component.literal(msg), false);
+                mc.player.sendSystemMessage(Component.literal(msg));
             }
         }
         catch (Throwable ignored) {}

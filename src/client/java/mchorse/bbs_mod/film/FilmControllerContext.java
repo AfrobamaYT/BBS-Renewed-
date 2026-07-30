@@ -85,7 +85,7 @@ public class FilmControllerContext
         this.entity = entity;
         this.replay = replay;
         this.camera = context.camera();
-        this.stack = context.matrixStack();
+        this.stack = context.poseStack();
         this.consumers = context.consumers();
         this.transition = context.tickCounter().getGameTimeDeltaPartialTick(false);
 

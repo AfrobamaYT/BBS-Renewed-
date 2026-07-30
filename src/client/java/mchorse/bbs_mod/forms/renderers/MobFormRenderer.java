@@ -272,7 +272,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
             int light = context.light;
             BooleanHolder first = new BooleanHolder();
-            Matrix4f cached = new Matrix4f(RenderSystem.getModelViewMatrix());
+            Matrix4f cached = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
 
             if (context.isPicking())
             {
@@ -342,7 +342,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             {
                 Vector3f origin = context.stack.last().pose().getTranslation(new Vector3f());
 
-                FormTranslucentQueue.setSortOrigin(new Matrix4f(RenderSystem.getModelViewMatrix()).transformPosition(origin));
+                FormTranslucentQueue.setSortOrigin(new Matrix4f(RenderSystem.getModelViewMatrixCopy()).transformPosition(origin));
             }
 
             Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), context.stack, consumers, light);
@@ -380,7 +380,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
              * Dies ist die EINZIGE schreibende Stelle im ganzen Baum -- alle 23 anderen
              * Vorkommen lesen nur und sind unkritisch. Der Ersatz ist getModelViewStack()
              * (existiert in 26.2 weiter, javap belegt), nicht die Kopie. */
-            RenderSystem.getModelViewMatrix().set(cached);
+            RenderSystem.getModelViewMatrixCopy().set(cached);
         }
     }
 

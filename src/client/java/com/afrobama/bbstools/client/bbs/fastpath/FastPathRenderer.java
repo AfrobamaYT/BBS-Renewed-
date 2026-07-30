@@ -88,7 +88,7 @@ public final class FastPathRenderer
          * Zu hoisten bleiben Lichtkarte und Overlay — die sind weiterhin globaler Zustand. */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gameRenderer.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         try
         {
@@ -118,7 +118,6 @@ public final class FastPathRenderer
         }
         finally
         {
-            gameRenderer.overlayTexture().teardownOverlayColor();
             /* Kein disableBlend mehr: die Mischung gehoert der Pipeline (siehe oben), es
              * gibt keinen globalen Blend-Zustand, den dieses finally zuruecksetzen muesste. */
         }

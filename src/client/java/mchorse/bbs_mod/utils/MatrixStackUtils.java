@@ -45,7 +45,7 @@ public class MatrixStackUtils
 
         position.getScale(scale);
 
-        RenderSystem.getModelViewMatrix().get3x3(billboardView);
+        RenderSystem.getModelViewMatrixCopy().get3x3(billboardView);
         billboardView.invert();
 
         position.m00(billboardView.m00()).m01(billboardView.m01()).m02(billboardView.m02());
@@ -61,7 +61,7 @@ public class MatrixStackUtils
     {
         /* Cache the global stuff */
         oldProjection.set(RenderSystem.getProjectionMatrix());
-        oldMV.set(RenderSystem.getModelViewMatrix());
+        oldMV.set(RenderSystem.getModelViewMatrixCopy());
         oldInverse.set(InverseView.get());
 
         Matrix4fStack renderStack = RenderSystem.getModelViewStack();

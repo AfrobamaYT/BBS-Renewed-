@@ -246,7 +246,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gameRenderer.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         BBSModClient.getTextures().bindTexture(texture);
         RenderSystem.setShader(shader);
@@ -306,7 +306,6 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
              * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
         }
 
-        gameRenderer.overlayTexture().teardownOverlayColor();
     }
 
     private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, PoseStack.Pose entry, float nz)

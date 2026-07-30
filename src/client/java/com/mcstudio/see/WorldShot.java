@@ -142,7 +142,7 @@ public final class WorldShot
 
 		/* Keep the real on-screen framebuffer so we can restore it no matter what renderWorld does. This is the
 		 * ONLY game state we mutate, and it is restored in the finally below. */
-		RenderTarget mainFbo = client.getMainRenderTarget();
+		RenderTarget mainFbo = client.gameRenderer.mainRenderTarget();
 
 		long t0 = System.nanoTime();
 

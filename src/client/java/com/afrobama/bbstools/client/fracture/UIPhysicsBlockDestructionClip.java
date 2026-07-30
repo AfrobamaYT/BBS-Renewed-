@@ -274,7 +274,7 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
                 String reason = WorldEditBridge.isAvailable()
                     ? "no WorldEdit selection set — use //pos1 + //pos2 first"
                     : "WorldEdit-Fabric not installed";
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[BBSTools] §c" + reason), false);
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e[BBSTools] §c" + reason));
             }
             return;
         }

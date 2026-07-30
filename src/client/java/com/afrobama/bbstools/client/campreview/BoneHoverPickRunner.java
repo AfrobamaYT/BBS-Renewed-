@@ -378,7 +378,7 @@ public final class BoneHoverPickRunner
             stencil.pick(px, py);
             stencil.unbind(map);
 
-            Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
+            Minecraft.getInstance().gameRenderer.mainRenderTarget().bindWrite(true);
 
             boolean picked = stencil.hasPicked();
             LOG.info("Pick clip={} entities={} mouseTile=({},{}) stencilPx=({},{}) hasPicked={} picked={}",
@@ -451,12 +451,12 @@ public final class BoneHoverPickRunner
             if (player == null) return;
             if (picked == null || picked.a == null)
             {
-                player.displayClientMessage(Component.literal("§7[BBSTools] §oNo bone under cursor"), true);
+                player.sendOverlayMessage(Component.literal("§7[BBSTools] §oNo bone under cursor"));
                 return;
             }
             String msg = "§a[BBSTools] §fPicked: §b" + picked.a.getFormIdOrName()
                 + (picked.b != null && !picked.b.isEmpty() ? " §7— §e" + picked.b : "");
-            player.displayClientMessage(Component.literal(msg), true);
+            player.sendOverlayMessage(Component.literal(msg));
         }
         catch (Throwable ignored) {}
     }

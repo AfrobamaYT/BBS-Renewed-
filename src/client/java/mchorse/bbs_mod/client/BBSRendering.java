@@ -318,7 +318,7 @@ public class BBSRendering
                 framebuffer.resize(w, h, Minecraft.ON_OSX);
             }
 
-            clientFramebuffer = mc.getMainRenderTarget();
+            clientFramebuffer = mc.gameRenderer.mainRenderTarget();
 
             reassignFramebuffer(framebuffer);
 
@@ -330,7 +330,7 @@ public class BBSRendering
             int drawH = window.getHeight();
             reassignFramebuffer(clientFramebuffer);
 
-            mc.getMainRenderTarget().bindWrite(true);
+            mc.gameRenderer.mainRenderTarget().bindWrite(true);
 
             if (width != 0)
             {
@@ -563,7 +563,7 @@ public class BBSRendering
         /* 1.21's Fabric no longer threads a matrix stack through the world render
          * context (it carries a position matrix instead), so rebuild one from the
          * view matrix for forms and gizmos that still render against a stack. */
-        if (worldRenderContext.matrixStack() == null && worldRenderContext instanceof WorldRenderContextImpl impl)
+        if (worldRenderContext.poseStack() == null && worldRenderContext instanceof WorldRenderContextImpl impl)
         {
             PoseStack matrices = new PoseStack();
 

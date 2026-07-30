@@ -357,7 +357,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             return;
         }
 
-        PoseStack stack = context.matrixStack();
+        PoseStack stack = context.poseStack();
 
         /* Capture the on-screen camera frame for the drag math and the deferred UI
          * passes: the gizmo's visual and its pick stencil are both drawn later in
@@ -460,7 +460,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.gizmoStencil.pick((int) mc.mouseHandler.xpos(), (int) (h - mc.mouseHandler.ypos()), Math.round(BBSSettings.gizmoHoverTolerance.get() * BBSModClient.getGUIScale()), Gizmo.STENCIL_MAX);
         this.gizmoStencil.unbind(this.gizmoStencilMap);
 
-        mc.getMainRenderTarget().bindWrite(true);
+        mc.gameRenderer.mainRenderTarget().bindWrite(true);
     }
 
     private void addCameraController(UIFormPalette palette)
@@ -729,19 +729,19 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
             if (!this.isEditing(entity))
             {
-                context.matrixStack().pushPose();
-                context.matrixStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
+                context.poseStack().pushPose();
+                context.poseStack().translate(blockPos.getX() - pos.x, blockPos.getY() - pos.y, blockPos.getZ() - pos.z);
 
                 if (this.hovered == entity || entity == this.modelBlock)
                 {
-                    Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
+                    Draw.renderBox(context.poseStack(), 0D, 0D, 0D, 1D, 1D, 1D, 0, 0.5F, 1F);
                 }
                 else
                 {
-                    Draw.renderBox(context.matrixStack(), 0D, 0D, 0D, 1D, 1D, 1D);
+                    Draw.renderBox(context.poseStack(), 0D, 0D, 0D, 1D, 1D, 1D);
                 }
 
-                context.matrixStack().popPose();
+                context.poseStack().popPose();
             }
         }
 

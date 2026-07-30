@@ -139,7 +139,7 @@ public final class Tier2dParallelEmit
          * dieser Pipeline umgestellt ist — bis dahin fehlt die Mischung. */
         GameRenderer gr = Minecraft.getInstance().gameRenderer;
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gr.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         try
         {
@@ -203,7 +203,6 @@ public final class Tier2dParallelEmit
         }
         finally
         {
-            gr.overlayTexture().teardownOverlayColor();
             /* 26.2: kein disableBlend — es gab nichts einzuschalten, also auch nichts
              * abzuschalten. Blend haengt an der Pipeline des Zeichenaufrufs. */
         }

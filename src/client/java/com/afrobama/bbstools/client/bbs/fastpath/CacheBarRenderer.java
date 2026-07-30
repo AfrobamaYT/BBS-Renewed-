@@ -40,7 +40,7 @@ public final class CacheBarRenderer
         LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             if (!BBSPerfConfig.ENABLE_CACHE_LOADING_BAR || SNAP_COUNT == 0) return;
-            try { draw(ctx.matrixStack(), ctx.submitNodeCollector()); }
+            try { draw(ctx.poseStack(), ctx.submitNodeCollector()); }
             catch (Throwable ignored) {}
         });
     }

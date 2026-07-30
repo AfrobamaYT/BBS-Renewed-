@@ -597,7 +597,7 @@ public class ModelInstance implements IModelInstance
         buffer.bind();
         buffer.upload(builder.buildOrThrow());
 
-        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
+        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
 
         if (split)
         {

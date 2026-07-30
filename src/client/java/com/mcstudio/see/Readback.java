@@ -85,7 +85,7 @@ public final class Readback
 			return "{\"error\":\"MinecraftClient not available\"}";
 		}
 
-		RenderTarget fb = client.getMainRenderTarget();
+		RenderTarget fb = client.gameRenderer.mainRenderTarget();
 
 		if (fb == null)
 		{

@@ -1289,7 +1289,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             }
 
             /* Die Modellansicht: frueher nahm drawWithShader stillschweigend
-             * RenderSystem.getModelViewMatrix(); in 26.2 muss sie uebergeben werden und
+             * RenderSystem.getModelViewMatrixCopy(); in 26.2 muss sie uebergeben werden und
              * heisst getModelViewMatrixCopy(). Die Zeilen-Matrix steckt bereits in den
              * Ecken (fillRect schreibt addVertex(matrix, ...)) — sie hier ein zweites Mal
              * zu uebergeben wuerde sie doppelt anwenden. */

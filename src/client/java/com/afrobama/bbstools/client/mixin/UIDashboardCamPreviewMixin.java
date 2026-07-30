@@ -94,7 +94,7 @@ public abstract class UIDashboardCamPreviewMixin
             Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(msg), false);
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(msg));
             }
         }
         catch (Throwable ignored) {}

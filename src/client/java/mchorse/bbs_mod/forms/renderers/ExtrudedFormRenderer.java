@@ -123,7 +123,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
              * defaultBlendFunc() einstellte. Beide Zeilen entfallen darum ersatzlos. */
 
             // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-            gameRenderer.overlayTexture().setupOverlayColor();
+            // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
             boolean irisWorld = BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld();
 
@@ -189,7 +189,6 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
              * die blendfreie ModelVAOPipeline.UNDURCHSICHTIG, und die gehoert an die
              * Pipeline-Wahl des Draws, nicht an eine Zustandszeile hier. */
 
-            gameRenderer.overlayTexture().teardownOverlayColor();
         }
     }
 }

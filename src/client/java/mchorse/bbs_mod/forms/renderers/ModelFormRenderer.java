@@ -355,7 +355,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
-        gameRenderer.overlayTexture().setupOverlayColor();
+        // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
         PoseStack newStack = new PoseStack();
 
@@ -435,7 +435,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
         }
 
-        gameRenderer.overlayTexture().teardownOverlayColor();
 
         /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur
          * den globalen Vorgabezustand fuer das her, was DANACH zeichnet - und das sind die Vanilla-

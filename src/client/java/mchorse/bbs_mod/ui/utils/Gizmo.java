@@ -463,7 +463,7 @@ public class Gizmo
         RenderSystem.enableDepthTest();
 
         this.sphereHighlight.unbind();
-        mc.getMainRenderTarget().bindWrite(true);
+        mc.gameRenderer.mainRenderTarget().bindWrite(true);
 
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");
@@ -1051,7 +1051,7 @@ public class Gizmo
      * editor it carries the world camera, so omitting it left the rings adrift. */
     private static Matrix4f modelView(PoseStack stack)
     {
-        return new Matrix4f(RenderSystem.getModelViewMatrix()).mul(stack.last().pose());
+        return new Matrix4f(RenderSystem.getModelViewMatrixCopy()).mul(stack.last().pose());
     }
 
     private void drawCachedRing(PoseStack stack, VertexBuffer vbo, Axis axis, int color)

@@ -142,7 +142,7 @@ public class CustomVertexConsumerProvider implements SubmitNodeCollector
         buffer.upload(built);
         VertexBuffer.unbind();
 
-        FormTranslucentQueue.add(new FormTranslucentQueue.RenderLayerCommand(layer, buffer, new Matrix4f(RenderSystem.getModelViewMatrix()), new Vector3f(origin), textLayer));
+        FormTranslucentQueue.add(new FormTranslucentQueue.RenderLayerCommand(layer, buffer, new Matrix4f(RenderSystem.getModelViewMatrixCopy()), new Vector3f(origin), textLayer));
     }
 
     private static boolean isDeferrableTranslucent(RenderType layer)
