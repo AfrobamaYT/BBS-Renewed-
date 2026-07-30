@@ -14,6 +14,8 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.cubic.ModelInstance;
+import mchorse.bbs_mod.cubic.data.model.Model;
+import mchorse.bbs_mod.cubic.render.CubicBoundingBoxRenderer;
 import mchorse.bbs_mod.film.BaseFilmController;
 import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -22,6 +24,7 @@ import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.forms.forms.utils.Anchor;
+import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.renderers.utils.FormFrameCache;
 import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
@@ -31,6 +34,7 @@ import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.keys.KeyAction;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
+import mchorse.bbs_mod.utils.AABB;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.interps.Lerps;
@@ -240,27 +244,79 @@ public class OrbitFilmCameraController implements ICameraController
         }
 
         this.teleportPivotToReplay();
+        this.zieleAufMitte();
 
         float rahmen = this.rahmenAbstand();
 
-        /* Nur HINEIN rahmen, nie heraus: steht man schon naeher als der Rahmen, waere ein
-         * Sprung nach hinten das Gegenteil von dem, was die Taste verspricht. */
-        if (rahmen > 0F && this.targetDistance > rahmen)
+        /* ABSOLUT gesetzt, auch wenn das die Kamera zurueckzieht.
+         *
+         * ⛔ Hier stand zuvor "nur HINEIN rahmen, nie heraus" — mit der Begruendung, ein Sprung
+         * nach hinten sei das Gegenteil dessen, was die Taste verspricht. Das war eine Annahme aus
+         * der Zeit, als jede Groesse 1,8 war: dann steht man praktisch immer zu weit weg, und die
+         * Klausel griff nie. Mit echten Ausdehnungen kehrt sich das um. Gemessen am Modell "Nuke"
+         * (Rahmenabstand 15,25): aus 4,0 Bloecken heraus gedrueckt blieb der Abstand bei 4,0 —
+         * die Taste tat sichtbar nichts, obwohl man mitten im Modell stand.
+         *
+         * Blender kennt die Klausel auch nicht: view3d_view.cc rechnet dist_new und uebergibt es
+         * an ED_view3d_smooth_view, ohne den bisherigen Abstand anzusehen. Der Nutzer wollte genau
+         * das — "egal wie weit du weg bist oder wo du gerade bist". */
+        if (rahmen > 0F)
         {
             this.targetDistance = rahmen;
         }
     }
 
     /**
+     * Hebt den Drehpunkt von der halben TREFFERBOX-Hoehe auf die halbe ECHTE Hoehe an.
+     *
+     * <h2>Warum das zum Rahmen dazugehoert</h2>
+     *
+     * <p>{@link #teleportPivotToReplay} setzt den Drehpunkt auf {@code Trefferbox.h / 2}, also bei
+     * jedem Modell auf 0,9 Bloecke — dieselbe Vorgabe, die auch den Abstand verdorben hat. Beim
+     * Abstand faellt es auf, beim Ziel nicht: es kommt ja ein Bild heraus, nur eben ein falsch
+     * angeschnittenes. Nachgerechnet am Modell "Nuke" (reicht von -1,44 bis 13,81, Rahmenabstand
+     * 15,25): die Oberkante steht 12,91 ueber dem Drehpunkt, das sind 40,2° — bei 35° halbem
+     * Sichtfeld liegt die Spitze AUSSERHALB des Bildes. Rahmen heisst Abstand UND Ziel; Blenders
+     * {@code view_selected} setzt beides in einem Zug ({@code ofs} und {@code dist}).</p>
+     *
+     * <p>Nur auf diesem Weg, nicht in {@link #teleportPivotToReplay} selbst: das setzt den
+     * Drehpunkt auch fuer das normale Umkreisen, und dort will niemand, dass sich der Bezugspunkt
+     * unter der Hand verschiebt.</p>
+     *
+     * <p>Y allein, kein X/Z: der Drehpunkt liegt in Anker-Koordinaten, und der Anker dreht nur um
+     * die Hochachse — eine Hoehenverschiebung ueberlebt das unveraendert, eine seitliche nicht.
+     * Seitlich steht die Geometrie ohnehin um ihren eigenen Ursprung.</p>
+     */
+    private void zieleAufMitte()
+    {
+        IEntity entity = this.controller.getCurrentEntity();
+
+        if (entity == null)
+        {
+            return;
+        }
+
+        AABB huelle = this.weltHuelle(entity);
+
+        if (huelle == null)
+        {
+            return;
+        }
+
+        float mitte = (float) (huelle.y + huelle.h / 2);
+        float bisher = (float) (entity.getPickingHitbox().h / 2);
+
+        this.targetPivot.y += mitte - bisher;
+    }
+
+    /**
      * Der Abstand, aus dem das Replay bildfuellend dasteht — aus seiner GROESSE, nicht aus
      * der bisherigen Entfernung.
      *
-     * <p>Die Hoehe kommt aus derselben Trefferbox, aus der schon der Orbit-Mittelpunkt seine
-     * halbe Hoehe zieht ({@link #getOrbitTarget}). Ein Spieler misst 1,8; mit dem Vorgabewert
-     * 1,2 steht die Kamera also gut zwei Bloecke weg und er fuellt rund 60 % der Bildhoehe.</p>
+     * <p>Die Groesse kommt aus {@link #ausdehnung}, also aus der echten Modellgeometrie.</p>
      *
-     * <p>0, wenn es nichts zu rahmen gibt (kein Darsteller, keine Trefferbox) — dann bleibt
-     * der Abstand, wie er ist, und nur das Halten wirkt.</p>
+     * <p>0, wenn es nichts zu rahmen gibt (kein Darsteller, keine Ausdehnung) — dann bleibt
+     * der Abstand, wie er ist.</p>
      */
     private float rahmenAbstand()
     {
@@ -272,14 +328,7 @@ public class OrbitFilmCameraController implements ICameraController
             return 0F;
         }
 
-        /* ⚠ NOCH DIE TREFFERBOX, NICHT DIE ECHTE MODELL-AUSDEHNUNG. hitboxHeight ist ein
-         * EINSTELLWERT der Form mit Vorgabe 1.8 — der Ender-Drache meldet damit dieselbe
-         * Hoehe wie ein Spieler, und man rahmt in ihn hinein. Fuer Spieler und Mobs stimmt
-         * es, fuer grosse Modelle nicht. Der Ersatz braucht eine echte Huellbox ueber die
-         * Modell-Geometrie; das steht als eigene Aufgabe (#73). */
-        double breite = entity.getPickingHitbox().w;
-        double hoehe = entity.getPickingHitbox().h;
-        float groesse = (float) Math.max(hoehe, breite);
+        float groesse = this.ausdehnung(entity);
 
         if (groesse <= 0F)
         {
@@ -298,6 +347,97 @@ public class OrbitFilmCameraController implements ICameraController
         float abstand = radius / (float) Math.tan(camera.fov / 2F);
 
         return MathUtils.clamp(abstand, MIN_DISTANCE, MAX_DISTANCE);
+    }
+
+    /**
+     * Wie gross der Darsteller in der Welt dasteht — Blenders {@code size}, die laengste Achse
+     * seiner Huellbox.
+     *
+     * <h2>Warum nicht die Trefferbox</h2>
+     *
+     * <p>Bis hierher stand hier {@code entity.getPickingHitbox()}. Deren Hoehe ist ein
+     * EINSTELLWERT der Form mit Vorgabe 1.8 — Spieler, Ender-Drache und ein 15 Bloecke hohes
+     * Modell meldeten alle dieselbe Zahl, und dieselbe rahmte man dann auch. Gemessen: mit der
+     * Trefferbox kamen 60, 25, 8 und 3 Bloecke grosse Vorlagen samt und sonders bei 1,80 heraus.
+     * Der Nutzer sah davon nur, dass es bei grossen Modellen "nicht richtig ranzoomt".</p>
+     *
+     * <h2>Die drei Faktoren, und warum keiner davon geraten ist</h2>
+     *
+     * <ol>
+     * <li>die Modellgeometrie selbst — {@link CubicBoundingBoxRenderer#messen}, das den Baum mit
+     * der Renderer-Kette abgeht (dort steht auch, warum die Ruhelage und nicht die laufende Pose);</li>
+     * <li>{@link ModelInstance#getScale()}, die Skalierung aus der {@code config.json} des Modells;</li>
+     * <li>die Transform der Form samt Overlay und zusaetzlichen — ueber
+     * {@link FormRenderer#createTransform()}, damit die Zusammensetzung nicht ein zweites Mal
+     * dasteht und auseinanderlaufen kann.</li>
+     * </ol>
+     *
+     * <p>Faktor 2 und 3 sind genau die, die {@link ModelFormRenderer#applyTransforms} beim
+     * Zeichnen auftraegt — dieselben zwei, in derselben Reihenfolge.</p>
+     *
+     * <h2>Rueckfall</h2>
+     *
+     * <p>Alles, was keine ModelForm ist (Block, Gegenstand, Vanilla-Mob), hat keine Cubic-Geometrie
+     * zum Ausmessen und faellt auf die Trefferbox zurueck. Fuer diese Formen ist sie auch die
+     * richtige Auskunft: ein Blockmodell IST einen Block gross.</p>
+     */
+    private float ausdehnung(IEntity entity)
+    {
+        AABB huelle = this.weltHuelle(entity);
+
+        return huelle == null ? 0F : (float) Math.max(huelle.w, Math.max(huelle.h, huelle.d));
+    }
+
+    /**
+     * Die Huellbox des Darstellers in Weltmassen, relativ zu seinem Fusspunkt — oder {@code null},
+     * wenn sich nichts messen laesst.
+     *
+     * <p>Eine Messung fuer beides, was zum Rahmen gehoert: die GROESSE bestimmt den Abstand, die
+     * MITTE bestimmt, worauf gezielt wird. Getrennt gemessen liefen die beiden auseinander.</p>
+     */
+    private AABB weltHuelle(IEntity entity)
+    {
+        Form form = entity.getForm();
+
+        if (form instanceof ModelForm modelForm)
+        {
+            ModelInstance instance = ModelFormRenderer.getModel(modelForm);
+
+            if (instance != null && instance.getModel() instanceof Model cubic)
+            {
+                AABB box = CubicBoundingBoxRenderer.messen(cubic);
+
+                if (box != null)
+                {
+                    Vector3f modellSkal = instance.getScale();
+                    Vector3f formSkal = FormUtilsClient.getRenderer(form).createTransform().scale;
+
+                    /* Je Achse eigen skalieren: ein Modell, das nur in der Hoehe gestreckt wird,
+                     * waere sonst zu klein gerahmt. */
+                    float sx = modellSkal.x * formSkal.x;
+                    float sy = modellSkal.y * formSkal.y;
+                    float sz = modellSkal.z * formSkal.z;
+
+                    return new AABB(
+                        box.x * sx, box.y * sy, box.z * sz,
+                        box.w * sx, box.h * sy, box.d * sz
+                    );
+                }
+            }
+        }
+
+        /* Alles ohne Cubic-Geometrie (Block, Gegenstand, Vanilla-Mob) faellt auf die Trefferbox
+         * zurueck — fuer diese Formen ist sie auch die richtige Auskunft: ein Blockmodell IST
+         * einen Block gross. Auf den Fusspunkt bezogen, wie die gemessene Box: die Trefferbox
+         * steht in Weltkoordinaten, ihre Hoehe beginnt aber ebenfalls am Fusspunkt. */
+        AABB trefferbox = entity.getPickingHitbox();
+
+        if (trefferbox == null || trefferbox.h <= 0)
+        {
+            return null;
+        }
+
+        return new AABB(-trefferbox.w / 2, 0, -trefferbox.d / 2, trefferbox.w, trefferbox.h, trefferbox.d);
     }
 
     public boolean zoom(double mouseWheel)

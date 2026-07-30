@@ -167,7 +167,16 @@ public abstract class FormRenderer <T extends Form>
         matrix.mul(this.createTransform().createMatrix());
     }
 
-    protected Transform createTransform()
+    /**
+     * Die Transform der Form, wie sie beim Zeichnen wirkt: eigene Transform, plus Overlay, plus
+     * die zusaetzlichen — in genau dieser Reihenfolge zusammengesetzt.
+     *
+     * <p>Oeffentlich, weil auch ausserhalb des Zeichnens jemand wissen muss, wie gross eine Form
+     * in der Welt steht (die Orbit-Kamera rahmt danach). Die Zusammensetzung selbst nachzubauen
+     * waere der Fehler: sie ist drei Zeilen lang, jede einzelne davon falsch nachgebaut liefert
+     * eine plausible Zahl, und "3.2 statt 3.0 Bloecke" sieht man einer Kamerafahrt nicht an.</p>
+     */
+    public Transform createTransform()
     {
         Transform transform = new Transform();
 
