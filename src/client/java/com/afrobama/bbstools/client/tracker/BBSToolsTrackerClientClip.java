@@ -357,8 +357,8 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         ItemStack entityOffHand = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
         player.getInventory().offhand.set(0, entityOffHand != null ? entityOffHand : ItemStack.EMPTY);
 
-        savedSelectedSlot = player.getInventory().selected;
-        player.getInventory().selected = currentEntity.selected;
+        savedSelectedSlot = player.getInventory().getSelectedSlot();
+        player.getInventory().setSelectedSlot(currentEntity.getSelectedSlot());
 
         savedHurtTime = player.hurtTime;
         player.hurtTime = currentEntity.getHurtTimer();
@@ -415,7 +415,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
                 player.getInventory().items.set(i, savedHotbarItems[i]);
             }
             player.getInventory().offhand.set(0, savedOffHandItem);
-            player.getInventory().selected = savedSelectedSlot;
+            player.getInventory().setSelectedSlot(savedSelectedSlot);
             player.hurtTime = savedHurtTime;
             player.setHealth(savedHealth);
             player.getFoodData().setFoodLevel(savedFoodLevel);
@@ -450,11 +450,11 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         ItemStack entityMain = currentEntity.getHotbarItem(entitySlot);
         boolean entityHasMainItem = entityMain != null && !entityMain.isEmpty();
 
-        handSavedSelectedSlot = player.getInventory().selected;
+        handSavedSelectedSlot = player.getInventory().getSelectedSlot();
 
         if (entityHasMainItem)
         {
-            player.getInventory().selected = entitySlot;
+            player.getInventory().setSelectedSlot(entitySlot);
             handSwappedSlotIndex = entitySlot;
             handSavedSlotItem = player.getInventory().items.get(entitySlot).copy();
             player.getInventory().items.set(entitySlot, entityMain.copy());
@@ -531,7 +531,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
                 player.getInventory().items.set(handSwappedSlotIndex, handSavedSlotItem);
             }
             player.getInventory().offhand.set(0, handSavedOffHandItem);
-            player.getInventory().selected = handSavedSelectedSlot;
+            player.getInventory().setSelectedSlot(handSavedSelectedSlot);
             player.hurtTime = savedHurtTime;
             player.attackAnim = savedSwingProgress;
             player.oAttackAnim = savedLastSwingProgress;

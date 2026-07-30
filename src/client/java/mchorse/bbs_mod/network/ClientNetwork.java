@@ -368,7 +368,7 @@ public class ClientNetwork
 
         client.execute(() ->
         {
-            client.player.getInventory().selected = slot;
+            client.player.getInventory().setSelectedSlot(slot);
         });
     }
 

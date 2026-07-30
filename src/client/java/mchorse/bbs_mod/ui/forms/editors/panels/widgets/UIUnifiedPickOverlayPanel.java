@@ -585,7 +585,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
             {
                 int x = startX + i * (SLOT_SIZE + SLOT_GAP);
                 ItemStack stack = inventory.getItem(i);
-                int border = i == inventory.selected ? Colors.A100 | BBSSettings.primaryColor.get() : Colors.LIGHTER_GRAY;
+                int border = i == inventory.getSelectedSlot() ? Colors.A100 | BBSSettings.primaryColor.get() : Colors.LIGHTER_GRAY;
 
                 context.batcher.box(x, y, x + SLOT_SIZE, y + SLOT_SIZE, border);
                 context.batcher.box(x + 1, y + 1, x + SLOT_SIZE - 1, y + SLOT_SIZE - 1, Colors.A50);

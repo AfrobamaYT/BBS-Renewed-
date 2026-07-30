@@ -128,7 +128,7 @@ public final class GravityGunHandler
                 /* Detect hotbar-scroll while held → use it to change
                  *  hold distance instead of switching slots. Revert
                  *  the slot so the hotbar stays put. */
-                int curSlot = client.player.getInventory().selected;
+                int curSlot = client.player.getInventory().getSelectedSlot();
                 if (lastObservedSlot >= 0 && curSlot != lastObservedSlot)
                 {
                     int delta = curSlot - lastObservedSlot;
@@ -139,7 +139,7 @@ public final class GravityGunHandler
                     holdDistance += delta * 0.6F;
                     if (holdDistance < MIN_holdDistance) holdDistance = MIN_holdDistance;
                     if (holdDistance > MAX_holdDistance) holdDistance = MAX_holdDistance;
-                    client.player.getInventory().selected = lastObservedSlot;
+                    client.player.getInventory().setSelectedSlot(lastObservedSlot);
                     curSlot = lastObservedSlot;
                 }
                 lastObservedSlot = curSlot;
