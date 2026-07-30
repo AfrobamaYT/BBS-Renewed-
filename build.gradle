@@ -268,7 +268,20 @@ dependencies {
  * (dann eben nur body-hotswap statt vollem).
  */
 tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach {
-	def jbr = file("${rootDir}/../jbr-dcevm-home/bin/java.exe")
+	/* WELCHE JBR — umschaltbar, weil der 26.2-port zwei braucht (2026-07-30).
+	 *
+	 * Der pfad stand hier fest verdrahtet. Fuer P1 des ports (beweisen, dass DCEVM auch auf
+	 * Java 25 traegt) muss zwischen 21 und 25 hin und her geschaltet werden — und zwar mit
+	 * demselben spiel, damit der vergleich etwas wert ist. Eine datei dafuer jedes mal zu
+	 * editieren ist genau die reibung, die man einmal beseitigt statt zwanzigmal ertraegt.
+	 *
+	 *     ./gradlew runClient                          -> ../jbr-dcevm-home   (21, wie bisher)
+	 *     ./gradlew runClient -Pbbs.jbr=jbr25-dcevm-home
+	 *
+	 * Der default ist bewusst der alte: wer nichts angibt, kriegt exakt das verhalten von
+	 * vorher. */
+	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr-dcevm-home"
+	def jbr = file("${rootDir}/../${jbrOrdner}/bin/java.exe")
 
 	if (jbr.exists())
 	{
