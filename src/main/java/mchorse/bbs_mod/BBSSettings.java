@@ -164,6 +164,7 @@ public class BBSSettings {
 	public static ValueBoolean editorOrbitAxisOrtho;
 	public static ValueMotionPath editorMotionPath;
 	public static ValueBoolean editorOrbitTeleportOnSwitch;
+	public static ValueFloat editorOrbitZoomToReplay;
 	public static ValueFloat editorCameraSmoothness;
 	public static ValueInt editorCameraMode;
 	public static ValueBoolean editorPlayerFollowsCamera;
@@ -702,6 +703,11 @@ public class BBSSettings {
 		editorOrbitGizmoScale = builder.getFloat("orbit_gizmo_scale", 1F, 0.5F, 2F).slider();
 		editorOrbitAxisOrtho = builder.getBoolean("orbit_axis_ortho", true);
 		editorOrbitTeleportOnSwitch = builder.getBoolean("orbit_teleport_on_switch", true);
+		/* Anteil, um den sich der Abstand zum Replay pro Tick verkuerzt, solange Maustaste 4
+		 * gehalten wird. 0.12 heisst: nach einer Sekunde (20 Ticks) noch 0.88^20 = 8 % des
+		 * Abstands. 0 schaltet die Zufahrt ab. UNSERE Zahl — Blenders fortlaufendes Zoomen
+		 * haengt am Mausweg statt an der Zeit, dort gibt es keine Konstante zum Abschreiben. */
+		editorOrbitZoomToReplay = builder.getFloat("orbit_zoom_to_replay", 0.12F, 0F, 0.5F).slider();
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();

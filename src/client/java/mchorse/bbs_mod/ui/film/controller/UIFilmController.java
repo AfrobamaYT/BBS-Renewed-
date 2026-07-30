@@ -731,6 +731,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
         this.panel.replayEditor.releaseViewport(context, this.orbit.wasDragged());
         this.orbit.stop();
 
+        /* Nur bei TASTE 4: das Zufahren soll weiterlaufen, wenn man zwischendurch die
+         * Orbit-Taste loslaesst — beides zusammen ist der eigentliche Zweck. */
+        if (context.mouseButton == 3)
+        {
+            this.orbit.stoppeZoomZumReplay();
+        }
+
         if (this.panel.isFlying() && context.mouseButton == 2)
         {
             this.panel.dashboard.orbit.release();

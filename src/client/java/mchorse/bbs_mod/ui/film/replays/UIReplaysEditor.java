@@ -1227,6 +1227,16 @@ public class UIReplaysEditor extends UIElement
 
     public boolean clickViewport(UIContext context, Area area)
     {
+        /* Maustaste 4 (GLFW 3): solange gehalten, auf das Replay zufahren. Steht VOR allen
+         * anderen Zweigen, weil sie sowohl im Flug als auch ueber einer Form gelten soll —
+         * man haelt sie mit dem Daumen, waehrend die andere Hand orbitet. */
+        if (area.isInside(context) && context.mouseButton == 3 && this.filmPanel.getController().orbit.enabled)
+        {
+            this.filmPanel.getController().orbit.starteZoomZumReplay();
+
+            return true;
+        }
+
         if (this.filmPanel.isFlying() && area.isInside(context))
         {
             if (context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)

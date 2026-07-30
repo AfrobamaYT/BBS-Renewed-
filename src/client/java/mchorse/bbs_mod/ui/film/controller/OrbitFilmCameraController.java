@@ -67,6 +67,9 @@ public class OrbitFilmCameraController implements ICameraController
     /* Whether the pivot has been placed onto the subject after a reset. */
     private boolean positioned;
 
+    /* Maustaste 4 gehalten: pro Frame ein Stueck naeher ans Replay (siehe zoomeZumReplay). */
+    private boolean zoomtZumReplay;
+
     /*
      * When attached, pivot and rotation are stored relative to the selected
      * replay's anchor (interpolated position + body yaw), and world values are
@@ -200,6 +203,64 @@ public class OrbitFilmCameraController implements ICameraController
         this.last.set(x, y);
     }
 
+    /**
+     * Maustaste 4 gedrueckt: auf das Replay zufahren, solange sie gehalten wird.
+     *
+     * <p>Der Pivot wandert dabei zuerst auf das Replay — sonst faehrt man auf den alten
+     * Drehpunkt zu, und das ist beim Orbiten fast nie der Darsteller, um den es gerade geht.
+     * {@link #teleportPivotToReplay()} ist derselbe Sprung, den die Orbit-Teleport-Taste
+     * macht; er setzt nur das ZIEL, die Daempfung faehrt ihn weich an.</p>
+     */
+    public void starteZoomZumReplay()
+    {
+        if (!this.enabled)
+        {
+            return;
+        }
+
+        this.teleportPivotToReplay();
+        this.zoomtZumReplay = true;
+    }
+
+    public void stoppeZoomZumReplay()
+    {
+        this.zoomtZumReplay = false;
+    }
+
+    /**
+     * Ein Frame Zufahrt.
+     *
+     * <h2>Warum hier KEINE eigene Flugkurve steht</h2>
+     *
+     * <p>Blender loest eine Sicht-Fahrt mit fester Dauer und der Kurve {@code 3t²−2t³}
+     * (nachgelesen in {@code view3d_navigate_smoothview.cc}: {@code factor = 3*f*f − 2*f*f*f},
+     * Dauer {@code smooth_viewtx}). Diese Klasse hat bereits eine Daempfung, die jede andere
+     * Orbit-Bewegung weich macht — {@link #applySmoothing()} zieht {@code distance} exponentiell
+     * an {@code targetDistance}. Bei der Vorgabe {@code camera_smoothness = 0.1} bleiben pro
+     * Tick 10 % Restweg, nach ~100 ms ist die Fahrt zu 99 % durch. Das ist "smooth aber
+     * schnell" — und eine zweite, andersartige Bewegung im selben Controller waere nur eine
+     * Quelle fuer Ruckler an der Naht zwischen beiden.</p>
+     *
+     * <p>Hier wird deshalb nur das ZIEL bewegt, pro Frame um denselben Anteil. Zeitbasiert
+     * ueber {@code dt}, damit die Fahrt bei 30 und bei 144 FPS gleich lang dauert.</p>
+     *
+     * <p>⚠ Die Rate ist UNSERE Zahl, nicht Blenders: Blenders fortlaufendes Zoomen haengt am
+     * Mausweg, nicht an der Zeit, es gibt dort also keine Konstante zum Abschreiben. Sie
+     * steht darum in den Einstellungen ({@code orbit_zoom_to_replay}).</p>
+     */
+    private void zoomeZumReplay(float dt)
+    {
+        float rate = MathUtils.clamp(BBSSettings.editorOrbitZoomToReplay.get(), 0F, 0.95F);
+
+        if (rate <= 0F)
+        {
+            return;
+        }
+
+        this.targetDistance = MathUtils.clamp(
+            this.targetDistance * (float) Math.pow(1F - rate, dt), MIN_DISTANCE, MAX_DISTANCE);
+    }
+
     public boolean zoom(double mouseWheel)
     {
         if (!this.enabled || this.controller.panel.isFlying() || mouseWheel == 0D)
@@ -220,6 +281,13 @@ public class OrbitFilmCameraController implements ICameraController
         if (!this.enabled)
         {
             return false;
+        }
+
+        /* Vor der Daempfung: erst das Ziel bewegen, dann in EINEM Schritt hinterherziehen.
+         * Andersherum haenge die Kamera immer einen Frame zurueck. */
+        if (this.zoomtZumReplay)
+        {
+            this.zoomeZumReplay(MinecraftClient.getInstance().getRenderTickCounter().getLastFrameDuration());
         }
 
         this.applySmoothing();
