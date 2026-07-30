@@ -1,11 +1,12 @@
 package mchorse.bbs_mod.ui.particles.utils;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.math.Constant;
@@ -260,36 +261,55 @@ public class UICurve extends UIElement
         int c = this.curve.nodes.size();
 
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
-        /* Top and bottom */
-        builder.addVertex(matrix, this.area.x, this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-        builder.addVertex(matrix, this.area.ex(), this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-
-        builder.addVertex(matrix, this.area.x, this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-        builder.addVertex(matrix, this.area.ex(), this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-
-        /* Left and right */
-        builder.addVertex(matrix, this.graph.x, this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-        builder.addVertex(matrix, this.graph.x, this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-
-        builder.addVertex(matrix, this.graph.ex(), this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-        builder.addVertex(matrix, this.graph.ex(), this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-
-        if (this.curve.type == ParticleCurveType.HERMITE && c >= 4)
+        /* 26.2: SofortZeichner statt Tesselator + BufferUploader. Den Zustand traegt jetzt
+         *  die Pipeline: gemischt (jede Linie hier hat Alpha 0.5 — ohne Mischung wird der
+         *  Rahmen undurchsichtig grau), OHNE Tiefenpruefung und damit auch ohne
+         *  Tiefenschreiben. Das ist fuer eine 2D-Oberflaeche das richtige: sie wird in
+         *  Zeichenreihenfolge gemalt, und ein schreibender Graph legte sonst eine
+         *  unsichtbare Wand vor alles, was danach ins Bild kommt.
+         *  Die Modellansicht dieses Zuges ist die EINHEITSMATRIX: die Ecken tragen die Pose
+         *  schon selbst (addVertex(matrix, ...)) — sie ein zweites Mal als DynamicTransforms
+         *  mitzugeben, wuerde sie doppelt anwenden.
+         *  build() darf null liefern (nichts gezeichnet); zeichnen() faengt das ab — die
+         *  alte Null-Absicherung um drawWithShader wird dadurch ueberfluessig. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            Vector2d first = this.getVector(1, this.range.x, this.range.y);
-            Vector2d last = this.getVector(c - 2, this.range.x, this.range.y);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-            /* Hermite bounds */
-            builder.addVertex(matrix, (float) first.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
-            builder.addVertex(matrix, (float) first.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+            /* Top and bottom */
+            builder.addVertex(matrix, this.area.x, this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            builder.addVertex(matrix, this.area.ex(), this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
 
-            builder.addVertex(matrix, (float) last.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
-            builder.addVertex(matrix, (float) last.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+            builder.addVertex(matrix, this.area.x, this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            builder.addVertex(matrix, this.area.ex(), this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+
+            /* Left and right */
+            builder.addVertex(matrix, this.graph.x, this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            builder.addVertex(matrix, this.graph.x, this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+
+            builder.addVertex(matrix, this.graph.ex(), this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            builder.addVertex(matrix, this.graph.ex(), this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+
+            if (this.curve.type == ParticleCurveType.HERMITE && c >= 4)
+            {
+                Vector2d first = this.getVector(1, this.range.x, this.range.y);
+                Vector2d last = this.getVector(c - 2, this.range.x, this.range.y);
+
+                /* Hermite bounds */
+                builder.addVertex(matrix, (float) first.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                builder.addVertex(matrix, (float) first.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+
+                builder.addVertex(matrix, (float) last.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                builder.addVertex(matrix, (float) last.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+            }
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false),
+                builder.build(),
+                new Matrix4f(),
+                null,
+                null);
         }
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         Color color = Colors.COLOR;
         LineBuilder line = new LineBuilder(0.75F);

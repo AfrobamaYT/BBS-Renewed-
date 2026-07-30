@@ -1,14 +1,14 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -28,7 +28,6 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 
 import java.util.Collections;
@@ -620,12 +619,26 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         lineBuilder.render(context.batcher, SolidColorLineRenderer.get(Colors.COLOR.set(Colors.setA(sheet.color, 1F))));
 
         /* Render track bars (horizontal lines) */
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        this.renderGraphPointShapes(context, builder, matrix, keyframes);
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            this.renderGraphPointShapes(context, builder, matrix, keyframes);
+
+            /* Mischen an: stand hier vorher als enableBlend() direkt vor dem Zug.
+             * Tiefe aus: die Keyframe-Formen sind flache UI-Geometrie, die frueher gar
+             * keinen eigenen Tiefenzustand setzte — sie darf weder gegen den Tiefenpuffer
+             * des Ziels pruefen noch in ihn schreiben, sonst verdeckt die Welt sie bzw.
+             * sie stellt eine unsichtbare Wand vor alles Nachfolgende.
+             * Cull aus: die Formen-Renderer legen ihre Ecken in wechselnder Drehrichtung
+             * an, eine Rueckseitenpruefung wuerde einzelne Formen still verschlucken. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                matrix,
+                null,
+                null);
+        }
     }
 
     protected void renderGraphPointShapes(UIContext context, BufferBuilder builder, Matrix4f matrix, List keyframes)
@@ -734,11 +747,22 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
         List keyframes = this.sheet.channel.getKeyframes();
 
         context.batcher.clip(area, context);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        this.renderGraphPointShapes(context, builder, matrix, keyframes);
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+            this.renderGraphPointShapes(context, builder, matrix, keyframes);
+
+            /* Gleiche Zustandskombination wie in renderGraph — Begruendung steht dort. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                matrix,
+                null,
+                null);
+        }
+
         context.batcher.unclip(context);
     }
 

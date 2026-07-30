@@ -1,11 +1,12 @@
 package mchorse.bbs_mod.ui.film.clips.renderer;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIClips;
@@ -97,21 +98,32 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
     {
         Matrix4f matrix = context.batcher.getContext().pose().last().pose();
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        if (envelope.keyframes.get())
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            if (!envelope.channel.isEmpty())
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            if (envelope.keyframes.get())
             {
-                this.renderEnvelopesKeyframes(builder, matrix, envelope.channel, duration, x1, y1, x2, y2);
+                if (!envelope.channel.isEmpty())
+                {
+                    this.renderEnvelopesKeyframes(builder, matrix, envelope.channel, duration, x1, y1, x2, y2);
+                }
             }
-        }
-        else
-        {
-            this.renderSimpleEnvelope(builder, matrix, envelope, duration, x1, y1, x2, y2);
-        }
+            else
+            {
+                this.renderSimpleEnvelope(builder, matrix, envelope, duration, x1, y1, x2, y2);
+            }
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Mischen an: ENVELOPE_COLOR ist Schwarz mit Alpha 0.25, die Huelle soll den Clip
+             * durchscheinen lassen. Der alte Weg erbte die Mischung aus dem GUI-Zustand, die
+             * Pipeline muss sie selbst mitbringen. Tiefe und Cull waren nie eingeschaltet. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false),
+                builder.build(),
+                matrix,
+                null,
+                null);
+        }
     }
 
     /**

@@ -1,9 +1,12 @@
 package mchorse.bbs_mod.ui.utils;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -14,7 +17,9 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
@@ -857,39 +862,55 @@ public class Gizmo
         float g = Colors.getG(color);
         float b = Colors.getB(color);
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.disableCull();
+        /* Der Zustand rund um die Zeichnung steckt jetzt in der Pipeline statt in
+         * globalen Schaltern: mischen (frueher enableBlend + defaultBlendFunc), kein
+         * Culling (disableCull), keine Tiefenpruefung — der Aufrufer drawOccludedGizmo
+         * legt die Torte mit depthFunc ALWAYS und depthMask(false) ueber die Griffe.
+         * Die abschliessenden enableCull()/disableBlend() entfallen ersatzlos: sie
+         * stellten nur den globalen Schalter fuer folgende Zuege her, und die holen ihr
+         * Blending jetzt aus ihrer eigenen Pipeline. */
+        RenderPipeline pipeline = FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false);
+
+        /* Die Gizmo-Deckkraft ritt bisher auf dem globalen Shaderfarbwert, den
+         * drawOccludedGizmo vor diesem Aufruf setzt (1,1,1,gizmoOpacity). Pipelines
+         * lesen keinen globalen Zustand mehr, darum reicht der Zug ihn selbst durch. */
+        Vector4f modulator = new Vector4f(1F, 1F, 1F, BBSSettings.gizmoOpacity.get());
+
+        /* Die Ecken tragen `mat` schon in sich (addVertex(mat, ...)); es fehlt nur die
+         * globale Modellansicht, die frueher BufferUploader selbst dazugelesen hat.
+         * NICHT modelView(stack) — das wuerde die Pose ein zweites Mal auftragen. */
+        Matrix4f globalModelView = RenderSystem.getModelViewMatrixCopy();
 
         int segments = Math.max(2, (int) (Math.abs(sweepRad) / (float) (2D * Math.PI) * 64F));
         float step = sweepRad / segments;
         Vector3f p1 = new Vector3f();
         Vector3f p2 = new Vector3f();
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        for (int i = 0; i < segments; i++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            this.pieRim(p1, right, down, startRad + step * i, radius);
-            this.pieRim(p2, right, down, startRad + step * (i + 1), radius);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, 0.25F);
-            builder.addVertex(mat, p1.x, p1.y, p1.z).setColor(r, g, b, 0.25F);
-            builder.addVertex(mat, p2.x, p2.y, p2.z).setColor(r, g, b, 0.25F);
+            for (int i = 0; i < segments; i++)
+            {
+                this.pieRim(p1, right, down, startRad + step * i, radius);
+                this.pieRim(p2, right, down, startRad + step * (i + 1), radius);
+
+                builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, 0.25F);
+                builder.addVertex(mat, p1.x, p1.y, p1.z).setColor(r, g, b, 0.25F);
+                builder.addVertex(mat, p2.x, p2.y, p2.z).setColor(r, g, b, 0.25F);
+            }
+
+            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+
+            /* Bright radial edges at the grab angle and the leading angle, like the axis pie. */
+            float thickness = 0.005F * scale;
+
+            builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            this.pieEdge(builder, mat, right, down, startRad, radius, thickness, r, g, b);
+            this.pieEdge(builder, mat, right, down, startRad + sweepRad, radius, thickness, r, g, b);
+
+            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
         }
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
-        /* Bright radial edges at the grab angle and the leading angle, like the axis pie. */
-        float thickness = 0.005F * scale;
-        builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        this.pieEdge(builder, mat, right, down, startRad, radius, thickness, r, g, b);
-        this.pieEdge(builder, mat, right, down, startRad + sweepRad, radius, thickness, r, g, b);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
-        RenderSystem.enableCull();
-        RenderSystem.disableBlend();
     }
 
     /** Point at screen angle {@code angle} and {@code radius} in the screen right/down
@@ -944,30 +965,40 @@ public class Gizmo
             return;
         }
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        float size = 10000F;
-        float t = 0.005F;
-
-        if (debugIndex == STENCIL_X || debugIndex == STENCIL_XZ || debugIndex == STENCIL_XY)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            Draw.fillBox(builder, stack, -size, -t, -t, size, t, t, Colors.RED);
-        }
-        
-        if (debugIndex == STENCIL_Y || debugIndex == STENCIL_XY || debugIndex == STENCIL_ZY)
-        {
-            Draw.fillBox(builder, stack, -t, -size, -t, t, size, t, Colors.GREEN);
-        }
-        
-        if (debugIndex == STENCIL_Z || debugIndex == STENCIL_XZ || debugIndex == STENCIL_ZY)
-        {
-            Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, Colors.BLUE);
-        }
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            float size = 10000F;
+            float t = 0.005F;
+
+            if (debugIndex == STENCIL_X || debugIndex == STENCIL_XZ || debugIndex == STENCIL_XY)
+            {
+                Draw.fillBox(builder, stack, -size, -t, -t, size, t, t, Colors.RED);
+            }
+
+            if (debugIndex == STENCIL_Y || debugIndex == STENCIL_XY || debugIndex == STENCIL_ZY)
+            {
+                Draw.fillBox(builder, stack, -t, -size, -t, t, size, t, Colors.GREEN);
+            }
+
+            if (debugIndex == STENCIL_Z || debugIndex == STENCIL_XZ || debugIndex == STENCIL_ZY)
+            {
+                Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, Colors.BLUE);
+            }
+
+            /* depthFunc(GL_ALWAYS) und die Wiederherstellung auf GL_LEQUAL entfallen:
+             * "keine Tiefenpruefung" steht jetzt in der Pipeline (und heisst dort auch
+             * kein Tiefenschreiben — die Linie darf keine Wand vor das Folgende legen).
+             * Der globale Vergleich bleibt damit auf dem Wert, den drawOccludedGizmo
+             * hinterlaesst, also demselben wie vorher nach dieser Methode. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, true),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
     }
 
     private void updateVbos()
@@ -990,17 +1021,24 @@ public class Gizmo
             float radius = 0.22F * scale;
             float thicknessRing = 0.02F * scale * thickness;
 
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            Draw.arc3D(builder, new PoseStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
-            this.rotateRingVbo.bind();
-            this.rotateRingVbo.upload(builder.buildOrThrow());
+            /* Hier wird nichts sofort gezeichnet — die Netze wandern in VBOs. Darum
+             * aendert sich nur der Anfang; der Speicher wird erst nach dem Hochladen
+             * geschlossen, sonst zieht das VBO aus freigegebenem Speicher. */
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(65536))
+            {
+                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            Draw.sphere(builder, new PoseStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
-            this.rotateSphereVbo.bind();
-            this.rotateSphereVbo.upload(builder.buildOrThrow());
+                Draw.arc3D(builder, new PoseStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
+                this.rotateRingVbo.bind();
+                this.rotateRingVbo.upload(builder.buildOrThrow());
 
-            VertexBuffer.unbind();
+                builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                Draw.sphere(builder, new PoseStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
+                this.rotateSphereVbo.bind();
+                this.rotateSphereVbo.upload(builder.buildOrThrow());
+
+                VertexBuffer.unbind();
+            }
 
             this.lastScale = scale;
             this.lastThickness = thickness;
@@ -1147,6 +1185,12 @@ public class Gizmo
             return;
         }
 
+        /* 26.2 OFFEN — bewusst NICHT auf SofortZeichner umgestellt: derselbe Aufruf dient
+         * zwei Durchgaengen. Sichtbar geht er aufs Hauptziel, als Pick-Kennung aber in den
+         * gebundenen Pick-Puffer (drawAxes(stack, map, ...) → StencilFormFramebuffer).
+         * SofortZeichner zeichnet fest ins Hauptziel; umgestellt malte er die Kennungen
+         * still ins Bild und die Ringe waeren nicht mehr anklickbar. Sobald zeichnen() ein
+         * Ziel annimmt: TRIANGLES, mischen, Culling an — Tiefe und Farbe je Durchgang. */
         BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -1257,77 +1301,88 @@ public class Gizmo
 
         Matrix4f mat = stack.last().pose();
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.disableCull();
+        /* Der Zustand um die Zeichnung steckt jetzt in der Pipeline statt in globalen
+         * Schaltern: mischen (frueher enableBlend + defaultBlendFunc), keine
+         * Tiefenpruefung (depthFunc ALWAYS; der Aufrufer drawOccludedGizmo haelt dazu
+         * depthMask(false), die Torte darf keine Tiefe schreiben) und kein Culling
+         * (disableCull). Das Zuruecksetzen danach entfaellt ersatzlos — folgende Zuege
+         * holen Blend, Tiefe und Cull aus ihrer eigenen Pipeline. */
+        RenderPipeline pipeline = FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* Die Gizmo-Deckkraft ritt bisher auf dem globalen Shaderfarbwert, den
+         * drawOccludedGizmo vor diesem Aufruf setzt (1,1,1,gizmoOpacity). Pipelines
+         * lesen keinen globalen Zustand mehr, darum reicht der Zug ihn selbst durch. */
+        Vector4f modulator = new Vector4f(1F, 1F, 1F, BBSSettings.gizmoOpacity.get());
 
-        int segments = Math.max(12, (int) (Math.abs(sweepDeg) / 360F * 64F));
-        float step = sweepDeg / segments;
+        /* Die Ecken tragen `mat` schon in sich (addVertex(mat, ...)); es fehlt nur die
+         * globale Modellansicht, die frueher BufferUploader selbst dazugelesen hat.
+         * NICHT modelView(stack) — das trueg die Pose ein zweites Mal auf. */
+        Matrix4f globalModelView = RenderSystem.getModelViewMatrixCopy();
 
-        for (int i = 0; i < segments; i++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            float a1 = MathUtils.toRad(startDeg + step * i);
-            float a2 = MathUtils.toRad(startDeg + step * (i + 1));
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            float x1 = (float) Math.cos(a1) * radius;
-            float z1 = (float) Math.sin(a1) * radius;
-            float x2 = (float) Math.cos(a2) * radius;
-            float z2 = (float) Math.sin(a2) * radius;
+            int segments = Math.max(12, (int) (Math.abs(sweepDeg) / 360F * 64F));
+            float step = sweepDeg / segments;
 
-            builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, a);
+            for (int i = 0; i < segments; i++)
+            {
+                float a1 = MathUtils.toRad(startDeg + step * i);
+                float a2 = MathUtils.toRad(startDeg + step * (i + 1));
+
+                float x1 = (float) Math.cos(a1) * radius;
+                float z1 = (float) Math.sin(a1) * radius;
+                float x2 = (float) Math.cos(a2) * radius;
+                float z2 = (float) Math.sin(a2) * radius;
+
+                builder.addVertex(mat, 0, 0, 0).setColor(r, g, b, a);
             
-            if (sweepDeg > 0)
-            {
-                builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
-                builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
+                if (sweepDeg > 0)
+                {
+                    builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
+                    builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
+                }
+                else
+                {
+                    builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
+                    builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
+                }
             }
-            else
-            {
-                builder.addVertex(mat, x2, 0, z2).setColor(r, g, b, a);
-                builder.addVertex(mat, x1, 0, z1).setColor(r, g, b, a);
-            }
+        
+            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+
+            float lineThickness = 0.005F * scale;
+            builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        
+            float endDeg = startDeg + sweepDeg;
+        
+            float sx = (float) Math.cos(MathUtils.toRad(startDeg)) * radius;
+            float sz = (float) Math.sin(MathUtils.toRad(startDeg)) * radius;
+            float ex = (float) Math.cos(MathUtils.toRad(endDeg)) * radius;
+            float ez = (float) Math.sin(MathUtils.toRad(endDeg)) * radius;
+        
+            Vector3f p1 = new Vector3f(-sz, 0, sx).normalize().mul(lineThickness);
+        
+            builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, -p1.x, 0, -p1.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
+        
+            builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, sx + p1.x, 0, sz + p1.z).setColor(r, g, b, 1F);
+        
+            Vector3f p2 = new Vector3f(-ez, 0, ex).normalize().mul(lineThickness);
+            builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, -p2.x, 0, -p2.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
+        
+            builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
+            builder.addVertex(mat, ex + p2.x, 0, ez + p2.z).setColor(r, g, b, 1F);
+
+            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
         }
-        
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
-        float lineThickness = 0.005F * scale;
-        builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        
-        float endDeg = startDeg + sweepDeg;
-        
-        float sx = (float) Math.cos(MathUtils.toRad(startDeg)) * radius;
-        float sz = (float) Math.sin(MathUtils.toRad(startDeg)) * radius;
-        float ex = (float) Math.cos(MathUtils.toRad(endDeg)) * radius;
-        float ez = (float) Math.sin(MathUtils.toRad(endDeg)) * radius;
-        
-        Vector3f p1 = new Vector3f(-sz, 0, sx).normalize().mul(lineThickness);
-        
-        builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, -p1.x, 0, -p1.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
-        
-        builder.addVertex(mat, p1.x, 0, p1.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, sx - p1.x, 0, sz - p1.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, sx + p1.x, 0, sz + p1.z).setColor(r, g, b, 1F);
-        
-        Vector3f p2 = new Vector3f(-ez, 0, ex).normalize().mul(lineThickness);
-        builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, -p2.x, 0, -p2.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
-        
-        builder.addVertex(mat, p2.x, 0, p2.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
-        builder.addVertex(mat, ex + p2.x, 0, ez + p2.z).setColor(r, g, b, 1F);
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-
-        RenderSystem.enableCull();
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
-        RenderSystem.disableBlend();
         
         stack.popPose();
     }
@@ -1470,89 +1525,98 @@ public class Gizmo
             this.drawRotateHandles(stack, active);
         }
 
-        if (showMove || showScale)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            building = true;
-
-            /* The bars and planes read as move when move is on screen and as
-             * scale only when scale stands alone — the same identity the pick
-             * stencil assigns, so the hide-inactive filter matches what a grab
-             * of that element actually drives. */
-            Handle barX = showMove ? Handle.MOVE_X : Handle.SCALE_X;
-            Handle barY = showMove ? Handle.MOVE_Y : Handle.SCALE_Y;
-            Handle barZ = showMove ? Handle.MOVE_Z : Handle.SCALE_Z;
-            Handle planeXZ = showMove ? Handle.MOVE_XZ : Handle.SCALE_XZ;
-            Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
-            Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
-
-            if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
-            if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
-            if (active == null || active == barZ) Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
-
-            /* Screen-space (view-plane) translate handle: a white cube at the centre,
-             * twice the bars' thickness. Drawn before the planes so they overlay it,
-             * and after the rotation sphere (above) so it stays visible in combined. */
-            if (showMove && (active == null || active == Handle.SCREEN))
+            if (showMove || showScale)
             {
-                float screenHalf = SCREEN_CUBE_HALF * scale * thickness;
-
-                Draw.fillBox(builder, stack, -screenHalf, -screenHalf, -screenHalf, screenHalf, screenHalf, screenHalf, Colors.WHITE);
-            }
-
-            /* Uniform-scale handle: the same centre cube, shown in scale mode only when
-             * move isn't (in combined the centre is the translate handle), so the pick
-             * is never ambiguous between the two. */
-            if (showScale && !showMove && (active == null || active == Handle.SCALE_ALL))
-            {
-                float scaleAllHalf = SCREEN_CUBE_HALF * scale * thickness;
-
-                Draw.fillBox(builder, stack, -scaleAllHalf, -scaleAllHalf, -scaleAllHalf, scaleAllHalf, scaleAllHalf, scaleAllHalf, Colors.WHITE);
-            }
-
-            /* The plane quad's footprint is a fixed fraction of the axis length,
-             * independent of axesThickness — thickness only fattens the bars and
-             * the flat slab depth, not how big the two-axis plane reads. */
-            float planeStart = axisSize * 0.2F;
-            float planeEnd = planeStart + axisSize * 0.2F;
-            float planeThickness = axisOffset * 0.5F;
-
-            if (active == null || active == planeXZ) Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, Colors.PLANE_XZ);
-            if (active == null || active == planeXY) Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, Colors.PLANE_XY);
-            if (active == null || active == planeZY) Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, Colors.PLANE_ZY);
-
-            if (showScale)
-            {
-                float cubeHalf = SCALE_CUBE_HALF * scale * thickness;
-
-                if (active == null || active == Handle.SCALE_X) Draw.fillBox(builder, stack, axisSize - cubeHalf, -cubeHalf, -cubeHalf, axisSize + cubeHalf, cubeHalf, cubeHalf, Colors.RED);
-                if (active == null || active == Handle.SCALE_Y) Draw.fillBox(builder, stack, -cubeHalf, axisSize - cubeHalf, -cubeHalf, cubeHalf, axisSize + cubeHalf, cubeHalf, Colors.GREEN);
-                if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, Colors.BLUE);
-            }
-        }
-
-        /* The centre cube is decoration, not a handle, so any filtered drag hides it. */
-        if (active == null && (showMove || showScale || showRotate))
-        {
-            if (!building)
-            {
-                builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
                 building = true;
+
+                /* The bars and planes read as move when move is on screen and as
+                 * scale only when scale stands alone — the same identity the pick
+                 * stencil assigns, so the hide-inactive filter matches what a grab
+                 * of that element actually drives. */
+                Handle barX = showMove ? Handle.MOVE_X : Handle.SCALE_X;
+                Handle barY = showMove ? Handle.MOVE_Y : Handle.SCALE_Y;
+                Handle barZ = showMove ? Handle.MOVE_Z : Handle.SCALE_Z;
+                Handle planeXZ = showMove ? Handle.MOVE_XZ : Handle.SCALE_XZ;
+                Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
+                Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
+
+                if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
+                if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
+                if (active == null || active == barZ) Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
+
+                /* Screen-space (view-plane) translate handle: a white cube at the centre,
+                 * twice the bars' thickness. Drawn before the planes so they overlay it,
+                 * and after the rotation sphere (above) so it stays visible in combined. */
+                if (showMove && (active == null || active == Handle.SCREEN))
+                {
+                    float screenHalf = SCREEN_CUBE_HALF * scale * thickness;
+
+                    Draw.fillBox(builder, stack, -screenHalf, -screenHalf, -screenHalf, screenHalf, screenHalf, screenHalf, Colors.WHITE);
+                }
+
+                /* Uniform-scale handle: the same centre cube, shown in scale mode only when
+                 * move isn't (in combined the centre is the translate handle), so the pick
+                 * is never ambiguous between the two. */
+                if (showScale && !showMove && (active == null || active == Handle.SCALE_ALL))
+                {
+                    float scaleAllHalf = SCREEN_CUBE_HALF * scale * thickness;
+
+                    Draw.fillBox(builder, stack, -scaleAllHalf, -scaleAllHalf, -scaleAllHalf, scaleAllHalf, scaleAllHalf, scaleAllHalf, Colors.WHITE);
+                }
+
+                /* The plane quad's footprint is a fixed fraction of the axis length,
+                 * independent of axesThickness — thickness only fattens the bars and
+                 * the flat slab depth, not how big the two-axis plane reads. */
+                float planeStart = axisSize * 0.2F;
+                float planeEnd = planeStart + axisSize * 0.2F;
+                float planeThickness = axisOffset * 0.5F;
+
+                if (active == null || active == planeXZ) Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, Colors.PLANE_XZ);
+                if (active == null || active == planeXY) Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, Colors.PLANE_XY);
+                if (active == null || active == planeZY) Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, Colors.PLANE_ZY);
+
+                if (showScale)
+                {
+                    float cubeHalf = SCALE_CUBE_HALF * scale * thickness;
+
+                    if (active == null || active == Handle.SCALE_X) Draw.fillBox(builder, stack, axisSize - cubeHalf, -cubeHalf, -cubeHalf, axisSize + cubeHalf, cubeHalf, cubeHalf, Colors.RED);
+                    if (active == null || active == Handle.SCALE_Y) Draw.fillBox(builder, stack, -cubeHalf, axisSize - cubeHalf, -cubeHalf, cubeHalf, axisSize + cubeHalf, cubeHalf, Colors.GREEN);
+                    if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, Colors.BLUE);
+                }
             }
 
-            Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, Colors.WHITE);
-        }
+            /* The centre cube is decoration, not a handle, so any filtered drag hides it. */
+            if (active == null && (showMove || showScale || showRotate))
+            {
+                if (!building)
+                {
+                    builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                    building = true;
+                }
 
-        if (building)
-        {
-            /* Depth func/mask is owned by {@link #drawOccludedGizmo} so bars,
-             * planes and cubes depth-sort against the rings and each other.
-             * Re-assert the opacity modulator: the billboard view ring above sets
-             * the shader colour itself and leaves it opaque. */
-            RenderSystem.setShaderColor(1F, 1F, 1F, BBSSettings.gizmoOpacity.get());
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+                Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, Colors.WHITE);
+            }
 
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            if (building)
+            {
+                /* Depth func/mask is owned by {@link #drawOccludedGizmo} so bars,
+                 * planes and cubes depth-sort against the rings and each other.
+                 * Tiefenpruefung + Tiefenschreiben stehen darum in der Pipeline (26.2
+                 * dreht den Vergleich um, das erledigt FormPipelines).
+                 *
+                 * Der Deckkraft-Modulator lief frueher ueber setShaderColor; er reist
+                 * jetzt als Farbe im Zug mit — noetig, weil der Billboard-Ring darueber
+                 * seine Shaderfarbe selbst setzt und undurchsichtig hinterlaesst. */
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                    builder.build(),
+                    RenderSystem.getModelViewMatrixCopy(),
+                    new Vector4f(1F, 1F, 1F, BBSSettings.gizmoOpacity.get()),
+                    null);
+            }
         }
     }
 
@@ -1790,6 +1854,13 @@ public class Gizmo
             Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
             Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
 
+            /* 26.2 OFFEN — bewusst NICHT auf SofortZeichner umgestellt: dieser Pass schreibt
+             * Kennungen in den GEBUNDENEN Pick-Framebuffer (StencilFormFramebuffer.apply()),
+             * SofortZeichner aber fest ins Hauptziel. Umgestellt laegen die Kennungen sichtbar
+             * im Bild und die Auswahl liefe ins Leere — ein stiller Fehlschlag, darum bleibt
+             * hier der Compilerfehler stehen. Gebrauchte Kombination, sobald zeichnen() ein
+             * Ziel annimmt: TRIANGLES, kein Mischen (Kennungen duerfen nicht verrechnet
+             * werden), keine Tiefenpruefung (disableDepthTest), Culling an, Farbe null. */
             BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, barX.index / 255F, 0F, 0F);

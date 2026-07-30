@@ -1,15 +1,16 @@
 package mchorse.bbs_mod.ui.framework.elements.utils;
 
 import mchorse.bbs_mod.graphics.InverseView;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.entities.StubEntity;
@@ -21,7 +22,6 @@ import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Intersectiond;
 import org.joml.Matrix3d;
 import org.joml.Matrix3f;
@@ -379,37 +379,52 @@ public abstract class UIModelRenderer extends UIElement
     {
         Matrix4f matrix4f = context.batcher.getContext().pose().last().pose();
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
-        for (int x = 0; x <= 10; x ++)
+        /* 26.2: der Zug bringt seinen Zustand selbst mit. Tiefenpruefung an — das ist das
+         * depthFunc(GL_LEQUAL) aus renderModel: die Vorschau loescht vorher die Tiefe und
+         * zeichnet das Modell danach, das Gitter soll also hinter dem Modell verschwinden.
+         * Kein Mischen (alle Linien undurchsichtig), kein Culling (bei Linien ohne Wirkung). */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            if (x == 0)
-            {
-                builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0F, 0F, 1F, 1F);
-                builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0F, 0F, 1F, 1F);
-            }
-            else
-            {
-                builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-            }
-        }
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-        for (int x = 0; x <= 10; x ++)
-        {
-            if (x == 0)
+            for (int x = 0; x <= 10; x ++)
             {
-                builder.addVertex(matrix4f, -5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
-                builder.addVertex(matrix4f, 5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
+                if (x == 0)
+                {
+                    builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0F, 0F, 1F, 1F);
+                    builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0F, 0F, 1F, 1F);
+                }
+                else
+                {
+                    builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0.25F, 0.25F, 0.25F, 1F);
+                    builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0.25F, 0.25F, 0.25F, 1F);
+                }
             }
-            else
-            {
-                builder.addVertex(matrix4f, -5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                builder.addVertex(matrix4f, 5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-            }
-        }
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            for (int x = 0; x <= 10; x ++)
+            {
+                if (x == 0)
+                {
+                    builder.addVertex(matrix4f, -5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
+                    builder.addVertex(matrix4f, 5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
+                }
+                else
+                {
+                    builder.addVertex(matrix4f, -5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
+                    builder.addVertex(matrix4f, 5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
+                }
+            }
+
+            /* matrix4f steckt schon in den Ecken (addVertex(matrix4f, ...)), darum geht als
+             * Modellansicht NUR der globale Wert mit — der, den
+             * BufferUploader.drawWithShader frueher selbst aus RenderSystem nahm. Die Pose
+             * hier noch einmal zu uebergeben wuerde das Gitter doppelt verschieben. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, false, true, false),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
     }
 }

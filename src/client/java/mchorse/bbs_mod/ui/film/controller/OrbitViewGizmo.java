@@ -1,12 +1,12 @@
 package mchorse.bbs_mod.ui.film.controller;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
@@ -14,7 +14,6 @@ import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -301,46 +300,56 @@ public class OrbitViewGizmo
     private void fillCircle(Batcher2D batcher, float x, float y, float radius, int color)
     {
         Matrix4f matrix = batcher.getContext().pose().last().pose();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
-        builder.addVertex(matrix, x, y, 0F).setColor(color);
 
-        for (int i = 0; i <= SEGMENTS; i++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            double a = i / (double) SEGMENTS * Math.PI * 2D;
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+            builder.addVertex(matrix, x, y, 0F).setColor(color);
 
-            builder.addVertex(matrix, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(color);
+            for (int i = 0; i <= SEGMENTS; i++)
+            {
+                double a = i / (double) SEGMENTS * Math.PI * 2D;
+
+                builder.addVertex(matrix, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(color);
+            }
+
+            this.draw(batcher, builder, PrimitiveTopology.TRIANGLE_FAN);
         }
-
-        this.draw(batcher, builder);
     }
 
     private void annulus(Batcher2D batcher, float x, float y, float inner, float outer, int color)
     {
         Matrix4f matrix = batcher.getContext().pose().last().pose();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        for (int i = 0; i < SEGMENTS; i++)
+        /* SEGMENTS * 6 Ecken a 16 Byte (POSITION_COLOR) — gross genug angelegt,
+         * damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(SEGMENTS * 6 * 16 + 256))
         {
-            double a1 = i / (double) SEGMENTS * Math.PI * 2D;
-            double a2 = (i + 1) / (double) SEGMENTS * Math.PI * 2D;
-            float ix1 = (float) (x - Math.cos(a1) * inner);
-            float iy1 = (float) (y + Math.sin(a1) * inner);
-            float ix2 = (float) (x - Math.cos(a2) * inner);
-            float iy2 = (float) (y + Math.sin(a2) * inner);
-            float ox1 = (float) (x - Math.cos(a1) * outer);
-            float oy1 = (float) (y + Math.sin(a1) * outer);
-            float ox2 = (float) (x - Math.cos(a2) * outer);
-            float oy2 = (float) (y + Math.sin(a2) * outer);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
-            builder.addVertex(matrix, ix1, iy1, 0F).setColor(color);
-            builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
-            builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
-            builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
-            builder.addVertex(matrix, ox2, oy2, 0F).setColor(color);
+            for (int i = 0; i < SEGMENTS; i++)
+            {
+                double a1 = i / (double) SEGMENTS * Math.PI * 2D;
+                double a2 = (i + 1) / (double) SEGMENTS * Math.PI * 2D;
+                float ix1 = (float) (x - Math.cos(a1) * inner);
+                float iy1 = (float) (y + Math.sin(a1) * inner);
+                float ix2 = (float) (x - Math.cos(a2) * inner);
+                float iy2 = (float) (y + Math.sin(a2) * inner);
+                float ox1 = (float) (x - Math.cos(a1) * outer);
+                float oy1 = (float) (y + Math.sin(a1) * outer);
+                float ox2 = (float) (x - Math.cos(a2) * outer);
+                float oy2 = (float) (y + Math.sin(a2) * outer);
+
+                builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
+                builder.addVertex(matrix, ix1, iy1, 0F).setColor(color);
+                builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
+                builder.addVertex(matrix, ix2, iy2, 0F).setColor(color);
+                builder.addVertex(matrix, ox1, oy1, 0F).setColor(color);
+                builder.addVertex(matrix, ox2, oy2, 0F).setColor(color);
+            }
+
+            this.draw(batcher, builder, PrimitiveTopology.TRIANGLES);
         }
-
-        this.draw(batcher, builder);
     }
 
     private void line(Batcher2D batcher, float x1, float y1, float x2, float y2, float width, int color)
@@ -358,30 +367,48 @@ public class OrbitViewGizmo
         float ny = dx / length * width / 2F;
 
         Matrix4f matrix = batcher.getContext().pose().last().pose();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        builder.addVertex(matrix, x1 - nx, y1 - ny, 0F).setColor(color);
-        builder.addVertex(matrix, x1 + nx, y1 + ny, 0F).setColor(color);
-        builder.addVertex(matrix, x2 + nx, y2 + ny, 0F).setColor(color);
-        builder.addVertex(matrix, x2 - nx, y2 - ny, 0F).setColor(color);
 
-        this.draw(batcher, builder);
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(256))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+            builder.addVertex(matrix, x1 - nx, y1 - ny, 0F).setColor(color);
+            builder.addVertex(matrix, x1 + nx, y1 + ny, 0F).setColor(color);
+            builder.addVertex(matrix, x2 + nx, y2 + ny, 0F).setColor(color);
+            builder.addVertex(matrix, x2 - nx, y2 - ny, 0F).setColor(color);
+
+            this.draw(batcher, builder, PrimitiveTopology.QUADS);
+        }
     }
 
-    private void draw(Batcher2D batcher, BufferBuilder builder)
+    /**
+     * Schickt das aufgebaute Netz ab. Die Topologie kommt vom Aufrufer herein, weil
+     * dieselbe Zeichnung in DREI Topologien laeuft — TRIANGLE_FAN (fillCircle),
+     * TRIANGLES (annulus) und QUADS (line) — und in 26.2 jede davon eine eigene
+     * Pipeline ist.
+     *
+     * Die drei Schalter von {@link FormPipelines#holen}:
+     * - mischen = true: der alte Block rief enableBlend(). Ohne das wuerden der
+     *   Hover-Hof und die Kugelfuellungen (Alpha 0.2/0.25/0.6 ueber Colors.setA)
+     *   deckend werden.
+     * - tiefePruefen = false: der alte Block setzte KEINEN Tiefenzustand — das Gizmo
+     *   ist ein 2D-Aufsatz, der in Aufrufreihenfolge oben liegt. Aus heisst hier auch
+     *   Tiefenschreiben aus, also kann es keine unsichtbare Wand vor spaetere
+     *   Zeichnungen legen.
+     * - culling = false: ebenfalls kein Zustand im alten Block. Flache 2D-Geometrie
+     *   gewinnt nichts durch Rueckseiten-Verwerfen, kann dadurch aber verschwinden.
+     *
+     * modelView ist die Einheitsmatrix: die Pose steckt bereits in jeder Ecke, weil
+     * die Aufrufer addVertex(matrix, ...) benutzen. Ein zweites Mal dieselbe Matrix
+     * wuerde die Zeichnung doppelt verschieben.
+     */
+    private void draw(Batcher2D batcher, BufferBuilder builder, PrimitiveTopology topologie)
     {
-        /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
-         *  enableBlend() richtet den Zustand fuer einen Draw ein, der ueber
-         *  setShader + BufferUploader.drawWithShader laeuft und keinen RenderType
-         *  hat — es gibt keine Pipeline, in die das Blending gehoeren koennte.
-         *  Gebraucht wird POSITION_COLOR, durchsichtig, in DREI Topologien: die
-         *  Aufrufer geben TRIANGLE_FAN (fillCircle), TRIANGLES (ring) und QUADS
-         *  (line) herein. Vanillas GUI-Sammelpuffer nimmt das nicht auf, der
-         *  traegt nur EIN Vertexformat und EINE Topologie (siehe BBSPipelines).
-         *  Loeschen waere still falsch: die Kugelfuellungen und der Hover-Hof
-         *  fahren auf Alpha 0.2/0.25/0.6 (Colors.setA) und wuerden deckend. */
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferUploader.drawWithShader(builder.buildOrThrow());
+        SofortZeichner.zeichnen(
+            FormPipelines.holen(topologie, true, false, false),
+            builder.build(),
+            new Matrix4f(),
+            null,
+            null);
 
         batcher.getContext().flush();
     }

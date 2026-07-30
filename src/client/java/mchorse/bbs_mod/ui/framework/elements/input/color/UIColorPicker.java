@@ -78,6 +78,26 @@ public class UIColorPicker extends UIElement
     private final Color tempColor = new Color();
     private final Color tempColor2 = new Color();
 
+    /**
+     * ⛔ OFFEN 26.2 — bleibt absichtlich stehen, NICHT auf SofortZeichner umgestellt:
+     *
+     * <p>Der Rest des Baums ersetzt {@code Tesselator} + {@code BufferUploader} durch
+     * {@code SofortZeichner} + {@code FormPipelines}. Hier waere das still falsch. Die
+     * Oberflaeche zeichnet in 26.2 in ZWEI Phasen (siehe Klassendoku von
+     * {@link Batcher2D}): waehrend {@code render()} laeuft, wird nichts gezeichnet,
+     * sondern nur in den {@code GuiRenderState} eingereiht; {@code GuiRenderer} malt die
+     * Liste erst danach. Ein Sofort-Durchgang mitten in dieser Einreih-Phase landet also
+     * VOR der gesamten Oberflaeche im Bild — der undurchsichtige Hintergrund des Pickers
+     * (in {@code render()} eine Zeile vorher eingereiht) deckt die Vorschau danach zu. Das
+     * kompiliert sauber und zeigt nichts.
+     *
+     * <p>Was fehlt, ist eine oeffentliche Einreichung fuer freie Dreiecke: {@code Batcher2D}
+     * HAT sie bereits ({@code triangle(...)} / {@code quad(...)}), aber privat. Sobald eine
+     * davon oeffentlich ist, sind es hier zwei Zeilen — die Zeichnung ist ein harter
+     * Diagonalschnitt (obere Haelfte undurchsichtig, untere in color.a), also zwei flache
+     * Dreiecke, KEIN Verlauf; das oeffentliche {@code box(...)} mit vier Eckfarben wuerde
+     * die Kante zu einem Verlauf verschmieren und die Vorschau verfaelschen.
+     */
     public static void renderAlphaPreviewQuad(Batcher2D batcher, int x1, int y1, int x2, int y2, Color color)
     {
         Matrix4f matrix4f = batcher.getContext().pose().last().pose();

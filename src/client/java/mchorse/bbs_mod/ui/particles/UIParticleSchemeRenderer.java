@@ -1,15 +1,16 @@
 package mchorse.bbs_mod.ui.particles;
 
 import mchorse.bbs_mod.graphics.InverseView;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.particles.ParticleScheme;
 import mchorse.bbs_mod.particles.components.expiration.ParticleComponentKillPlane;
 import mchorse.bbs_mod.particles.emitter.ParticleEmitter;
@@ -33,6 +34,14 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
     private static DynamicTexture whiteLightmapTexture;
 
     private Vector3f vector = new Vector3f(0, 0, 0);
+
+    /**
+     * Die Modellansicht der Kill-Ebene ist die Einheitsmatrix: ihre Ecken tragen die Pose
+     * bereits ({@code addVertex(matrix, ...)}), und die Projektion kommt aus dem
+     * Kamerablock des Vorschau-Renderers. Wer hier die Pose noch einmal uebergibt,
+     * verschiebt die Ebene ein zweites Mal.
+     */
+    private static final Matrix4f EBENEN_MODELLANSICHT = new Matrix4f();
 
     private static int getWhiteLightmapTextureId()
     {
@@ -147,26 +156,36 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         Matrix4f matrix = context.batcher.getContext().pose().last().pose();
         final float alpha = 0.5F;
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        this.calculate(0, 0, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
-        this.calculate(0, 1, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
-        this.calculate(1, 0, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(0, 0, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(0, 1, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(1, 0, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
 
-        this.calculate(1, 0, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
-        this.calculate(0, 1, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
-        this.calculate(1, 1, a, b, c, d);
-        builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(1, 0, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(0, 1, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
+            this.calculate(1, 1, a, b, c, d);
+            builder.addVertex(matrix, this.vector.x, this.vector.y, this.vector.z).setColor(0, 1, 0, alpha);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.disableCull();
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-        RenderSystem.enableCull();
+            /* Die drei Schalter sind der alte Zustandscode um genau diesen Zug herum:
+             * culling = false stand hier woertlich (disableCull/enableCull um den
+             * Zeichenbefehl), mischen und tiefePruefen = false, weil renderUserModel
+             * unmittelbar vor diesem Aufruf disableBlend() und disableDepthTest() ruft.
+             * Der Shader war der Vanilla-Kern position_color. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, false),
+                builder.build(),
+                EBENEN_MODELLANSICHT,
+                null,
+                null);
+        }
     }
 
     private void calculate(float i, float j, float a, float b, float c, float d)

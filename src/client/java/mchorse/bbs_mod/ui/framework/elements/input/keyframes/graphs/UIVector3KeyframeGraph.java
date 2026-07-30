@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -22,7 +22,6 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
 import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import mchorse.bbs_mod.utils.keyframes.factories.IKeyframeFactory;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -103,17 +102,26 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
 
         /* Render track bars (horizontal lines) */
         Matrix4f matrix = context.batcher.getContext().pose().last().pose();
-        
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        for (int axis = 0; axis < 3; axis++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            this.renderGraphPoints(context, builder, matrix, axis);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                this.renderGraphPoints(context, builder, matrix, axis);
+            }
+
+            /* Mischen an — das stand frueher als RenderSystem.enableBlend() direkt vor dem
+             * Zug. Tiefenpruefung und Cull wurden hier nie eingeschaltet, also bleiben beide
+             * aus (aus heisst in FormPipelines auch: kein Tiefenschreiben). */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                matrix,
+                null,
+                null);
         }
-        
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
     @Override
@@ -123,16 +131,25 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         Area area = this.keyframes.graphArea;
 
         context.batcher.clip(area, context);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        for (int axis = 0; axis < 3; axis++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            this.renderGraphPoints(context, builder, matrix, axis);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+            for (int axis = 0; axis < 3; axis++)
+            {
+                this.renderGraphPoints(context, builder, matrix, axis);
+            }
+
+            /* Gleiche Kombination wie in renderGraph: nur Mischen war an. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                matrix,
+                null,
+                null);
         }
 
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
         context.batcher.unclip(context);
     }
 

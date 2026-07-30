@@ -1,14 +1,15 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeElement;
@@ -30,7 +31,6 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeShape;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -1189,91 +1189,117 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             this.keyframes.spuren.zeichneZeile(context, row, by, bh);
         }
 
-        builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
-        /* Render bars indicating same values */
-        for (int j = 1; j < keyframes.size(); j++)
+        /* 26.2: Tesselator und BufferUploader sind weg — der Aufbau der Ecken bleibt
+         * unveraendert, nur Anfang und Ende des Blocks sind neu. enableBlend und
+         * setShader waren Zustandszeilen; beides steckt jetzt in der Pipeline.
+         *
+         * Die vier Schalter von FormPipelines.holen fuer diese Zeichnung:
+         *  - mischen = true       ← das enableBlend, das frueher unten stand
+         *  - tiefePruefen = false ← die Oberflaeche zeichnete mit depthFunc(GL_ALWAYS)
+         *                           (siehe UIBaseMenu.renderMenu), der Test darf also
+         *                           nie verwerfen. Damit faellt auch das Tiefenschreiben
+         *                           weg — sonst legt der Dope-Sheet eine unsichtbare
+         *                           Tiefenwand vor alles Nachfolgende.
+         *  - culling = false      ← es stand nie ein enableCull um diese Zeichnung.
+         *
+         * ⚠️ Der Speicher gehoert in try-with-resources: sonst leckt nativer Speicher
+         * pro Bild und Zeile, und zwar ohne Compilerfehler. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
         {
-            Keyframe previous = (Keyframe) keyframes.get(j - 1);
-            Keyframe frame = (Keyframe) keyframes.get(j);
-            int c = Colors.setA(sheet.color, TRACK_BAR_ALPHA);
-            int xx = this.keyframes.toGraphX(previous.getTick());
-            int xxx = this.keyframes.toGraphX(frame.getTick());
+            builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-            if (previous.getFactory().compare(previous.getValue(), frame.getValue()))
+            /* Render bars indicating same values */
+            for (int j = 1; j < keyframes.size(); j++)
             {
-                int w = trackWidth + 2;
+                Keyframe previous = (Keyframe) keyframes.get(j - 1);
+                Keyframe frame = (Keyframe) keyframes.get(j);
+                int c = Colors.setA(sheet.color, TRACK_BAR_ALPHA);
+                int xx = this.keyframes.toGraphX(previous.getTick());
+                int xxx = this.keyframes.toGraphX(frame.getTick());
 
-                context.batcher.fillRect(builder, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c, c, c, c);
+                if (previous.getFactory().compare(previous.getValue(), frame.getValue()))
+                {
+                    int w = trackWidth + 2;
+
+                    context.batcher.fillRect(builder, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c, c, c, c);
+                }
+
+                if (Math.abs(xxx - xx) < 5)
+                {
+                    c = Colors.setA(sheet.color, 0.5F);
+
+                    context.batcher.fillRect(builder, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
+                }
             }
 
-            if (Math.abs(xxx - xx) < 5)
-            {
-                c = Colors.setA(sheet.color, 0.5F);
+            /* Draw keyframe handles (outer) */
+            int forcedIndex = 0;
 
-                context.batcher.fillRect(builder, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
+            for (int j = 0; j < keyframes.size(); j++)
+            {
+                Keyframe frame = (Keyframe) keyframes.get(j);
+                float tick = frame.getTick();
+                int x1 = this.keyframes.toGraphX(tick);
+                int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
+
+                /* Render custom duration markers */
+                if (x1 != x2)
+                {
+                    int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
+                    int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
+
+                    context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
+                    context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
+                    context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
+
+                    forcedIndex += 1;
+                }
+
+                boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
+                boolean toRemove = Window.isCtrlPressed() && isPointHover;
+
+                if (this.keyframes.isSelecting())
+                {
+                    isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
+                }
+
+                int kc = frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color;
+                int c = (sheet.selection.has(j) || isPointHover ? Colors.WHITE : kc) | Colors.A100;
+
+                if (toRemove)
+                {
+                    c = Colors.RED | Colors.A100;
+                }
+
+                int pointOffset = toRemove ? 4 : 3;
+
+                renderShape(frame, context, builder, matrix, x1, my, pointOffset, c);
             }
+
+            /* Render keyframe handles (inner) */
+            for (int j = 0; j < keyframes.size(); j++)
+            {
+                Keyframe frame = (Keyframe) keyframes.get(j);
+                int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
+                int mx = this.keyframes.toGraphX(frame.getTick());
+                int mc = c | Colors.A100;
+                IKeyframeShapeRenderer shapeResult = renderShape(frame, context, builder, matrix, mx, my, 2, mc);
+
+                shapeResult.renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
+            }
+
+            /* Die Modellansicht: frueher nahm drawWithShader stillschweigend
+             * RenderSystem.getModelViewMatrix(); in 26.2 muss sie uebergeben werden und
+             * heisst getModelViewMatrixCopy(). Die Zeilen-Matrix steckt bereits in den
+             * Ecken (fillRect schreibt addVertex(matrix, ...)) — sie hier ein zweites Mal
+             * zu uebergeben wuerde sie doppelt anwenden. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
         }
-
-        /* Draw keyframe handles (outer) */
-        int forcedIndex = 0;
-
-        for (int j = 0; j < keyframes.size(); j++)
-        {
-            Keyframe frame = (Keyframe) keyframes.get(j);
-            float tick = frame.getTick();
-            int x1 = this.keyframes.toGraphX(tick);
-            int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
-
-            /* Render custom duration markers */
-            if (x1 != x2)
-            {
-                int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
-                int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
-
-                context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
-                context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
-                context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
-
-                forcedIndex += 1;
-            }
-
-            boolean isPointHover = this.isNear(this.keyframes.toGraphX(frame.getTick()), my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
-            boolean toRemove = Window.isCtrlPressed() && isPointHover;
-
-            if (this.keyframes.isSelecting())
-            {
-                isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
-            }
-
-            int kc = frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color;
-            int c = (sheet.selection.has(j) || isPointHover ? Colors.WHITE : kc) | Colors.A100;
-
-            if (toRemove)
-            {
-                c = Colors.RED | Colors.A100;
-            }
-
-            int pointOffset = toRemove ? 4 : 3;
-
-            renderShape(frame, context, builder, matrix, x1, my, pointOffset, c);
-        }
-
-        /* Render keyframe handles (inner) */
-        for (int j = 0; j < keyframes.size(); j++)
-        {
-            Keyframe frame = (Keyframe) keyframes.get(j);
-            int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
-            int mx = this.keyframes.toGraphX(frame.getTick());
-            int mc = c | Colors.A100;
-            IKeyframeShapeRenderer shapeResult = renderShape(frame, context, builder, matrix, mx, my, 2, mc);
-
-            shapeResult.renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
-        }
-
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
     private void renderSheetKeyframeShapes(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
@@ -1369,11 +1395,23 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Matrix4f matrix = context.batcher.getContext().pose().last().pose();
 
         context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        this.renderElementsTopmostKeyframes(context, builder, matrix, area, this.elements, this.getDopeSheetY());
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+
+        /* Gleiche Zustandskombination wie in renderSheet — Begruendung der vier Schalter
+         * steht dort. Der Speicher muss geschlossen werden, sonst leckt er pro Bild. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+            this.renderElementsTopmostKeyframes(context, builder, matrix, area, this.elements, this.getDopeSheetY());
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
+
         context.batcher.unclip(context);
     }
 

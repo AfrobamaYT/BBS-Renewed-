@@ -1,14 +1,14 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.cubic.animation.ActionConfig;
 import mchorse.bbs_mod.cubic.animation.ActionsConfig;
 import mchorse.bbs_mod.film.BaseFilmController;
@@ -20,6 +20,7 @@ import mchorse.bbs_mod.forms.forms.BodyPart;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.ModelForm;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.settings.values.ui.ValueMotionPath;
 import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -140,79 +141,84 @@ public class MotionPath
         Matrix4f matrix = stack.last().pose();
         float halfWidth = config.width.get() * 0.5F;
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
-         *  Der Pfad wird bewusst OHNE Tiefenpruefung gezeichnet — er soll durch Figur und Welt
-         *  hindurch zu sehen sein (siehe Klassenkommentar) — und OHNE Cull, weil das Band ein
-         *  flaches Quad je Segment ist, das je nach Blickrichtung von hinten getroffen wird.
-         *  Beides ist in 26.2 kein Schalter mehr, sondern Teil der Pipeline, und unter den
-         *  fertigen RenderPipelines ist keine ohne Tiefenpruefung. Das braucht eine eigene
-         *  Pipeline (TRIANGLES, POSITION_COLOR, ohne Tiefenpruefung, ohne Cull) UND den
-         *  portierten Zeichenweg darunter (Tesselator/BufferUploader). Streicht man die zwei
-         *  Zeilen, liegt der Pfad still hinter der Figur und verliert seine Rueckseiten. */
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        /* The interpolated curve: a camera-facing ribbon with a dot on every
-         * tick (so the spacing shows speed), the exact endpoints kept. */
-        trajectory.worldAt(first, POINT_A);
-        POINT_A.sub(cx, cy, cz);
-
-        gradient(config, first, currentTick, first, last, COLOR_A);
-
-        if (config.frames.get())
+        /* 26.2: Shader, Tiefe und Cull sind keine Schalter mehr, sie stehen in der Pipeline des
+         * Zeichenwegs. Der Pfad wird bewusst OHNE Tiefenpruefung gezeichnet — er soll durch
+         * Figur und Welt hindurch zu sehen sein (siehe Klassenkommentar) — und OHNE Cull, weil
+         * das Band ein flaches Quad je Segment ist, das je nach Blickrichtung von hinten
+         * getroffen wird. FormPipelines schaltet mit der Pruefung auch das Tiefenschreiben ab;
+         * andernfalls legte der Pfad eine unsichtbare Wand vor alles Nachfolgende. Gemischt
+         * wird nicht: alle Ecken hier tragen Alpha 1, und der alte Weg hat Blend nie gesetzt. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(16384))
         {
-            dot(builder, stack, POINT_A, config.frameSize.get(), brighten(COLOR_A, DOT_COLOR));
-        }
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        for (float tick = first; tick < last; )
-        {
-            tick = Math.min(tick + 1F, last);
+            /* The interpolated curve: a camera-facing ribbon with a dot on every
+             * tick (so the spacing shows speed), the exact endpoints kept. */
+            trajectory.worldAt(first, POINT_A);
+            POINT_A.sub(cx, cy, cz);
 
-            trajectory.worldAt(tick, POINT_B);
-            POINT_B.sub(cx, cy, cz);
-
-            gradient(config, tick, currentTick, first, last, COLOR_B);
-            ribbon(builder, matrix, POINT_A, POINT_B, COLOR_A, COLOR_B, halfWidth);
+            gradient(config, first, currentTick, first, last, COLOR_A);
 
             if (config.frames.get())
             {
-                dot(builder, stack, POINT_B, config.frameSize.get(), brighten(COLOR_B, DOT_COLOR));
+                dot(builder, stack, POINT_A, config.frameSize.get(), brighten(COLOR_A, DOT_COLOR));
             }
 
-            POINT_A.set(POINT_B);
-            System.arraycopy(COLOR_B, 0, COLOR_A, 0, 3);
-        }
-
-        /* A bigger marker on every keyframe inside the window. */
-        if (config.keyframes.get())
-        {
-            unpack(config.keyframeColor.get(), SCRATCH);
-
-            for (float tick : trajectory.keyframeTicks())
+            for (float tick = first; tick < last; )
             {
-                if (tick >= first && tick <= last)
+                tick = Math.min(tick + 1F, last);
+
+                trajectory.worldAt(tick, POINT_B);
+                POINT_B.sub(cx, cy, cz);
+
+                gradient(config, tick, currentTick, first, last, COLOR_B);
+                ribbon(builder, matrix, POINT_A, POINT_B, COLOR_A, COLOR_B, halfWidth);
+
+                if (config.frames.get())
                 {
-                    trajectory.worldAt(tick, POINT_B);
-                    POINT_B.sub(cx, cy, cz);
-                    dot(builder, stack, POINT_B, config.keyframeSize.get(), SCRATCH);
+                    dot(builder, stack, POINT_B, config.frameSize.get(), brighten(COLOR_B, DOT_COLOR));
+                }
+
+                POINT_A.set(POINT_B);
+                System.arraycopy(COLOR_B, 0, COLOR_A, 0, 3);
+            }
+
+            /* A bigger marker on every keyframe inside the window. */
+            if (config.keyframes.get())
+            {
+                unpack(config.keyframeColor.get(), SCRATCH);
+
+                for (float tick : trajectory.keyframeTicks())
+                {
+                    if (tick >= first && tick <= last)
+                    {
+                        trajectory.worldAt(tick, POINT_B);
+                        POINT_B.sub(cx, cy, cz);
+                        dot(builder, stack, POINT_B, config.keyframeSize.get(), SCRATCH);
+                    }
                 }
             }
-        }
 
-        /* The current frame's place on the path, when it falls inside the window. */
-        if (config.current.get() && currentTick >= first && currentTick <= last)
-        {
-            unpack(config.currentColor.get(), SCRATCH);
-            trajectory.worldAt(currentTick, POINT_B);
-            POINT_B.sub(cx, cy, cz);
-            dot(builder, stack, POINT_B, config.currentSize.get(), SCRATCH);
-        }
+            /* The current frame's place on the path, when it falls inside the window. */
+            if (config.current.get() && currentTick >= first && currentTick <= last)
+            {
+                unpack(config.currentColor.get(), SCRATCH);
+                trajectory.worldAt(currentTick, POINT_B);
+                POINT_B.sub(cx, cy, cz);
+                dot(builder, stack, POINT_B, config.currentSize.get(), SCRATCH);
+            }
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Die Ecken tragen die Pose bereits (addVertex(matrix, ...) und Draw.fillBox ueber
+             * den Stapel). Als Modellansicht gehoert deshalb NUR die globale Ansicht hierher —
+             * genau die, die drawWithShader frueher selbst gesetzt hat. Mit
+             * ModelVAORenderer.captureModelView(stack) laege die Pose zweimal drin. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, false),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
 
         /* 26.2: das Zuruecksetzen von Cull und Tiefe entfaellt ersatzlos. Die beiden Aufrufe
          * haben nur den globalen Zustand aufgeraeumt, den es nicht mehr gibt — Cull und Tiefe
