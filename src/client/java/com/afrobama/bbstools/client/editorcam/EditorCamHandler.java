@@ -89,7 +89,7 @@ public final class EditorCamHandler
                 captureEditedFilm();
             }
 
-            long handle = mc.getWindow().getWindow();
+            long handle = mc.getWindow().handle();
 
             /* Check the SHIFT-modifier combo first — its key list
              *  contains the F8-equivalent main key + Shift. If both

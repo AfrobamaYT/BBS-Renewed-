@@ -67,9 +67,9 @@ public final class GameRendererPreviewPrePassLogik
         if (camera == null) return;
 
         /* Snapshot vanilla state. */
-        double savedX = camera.getPosition().x;
-        double savedY = camera.getPosition().y;
-        double savedZ = camera.getPosition().z;
+        double savedX = camera.position().x;
+        double savedY = camera.position().y;
+        double savedZ = camera.position().z;
         float savedYaw = camera.yRot();
         float savedPitch = camera.xRot();
         Matrix4f savedProjection = new Matrix4f(RenderSystem.getProjectionMatrix());

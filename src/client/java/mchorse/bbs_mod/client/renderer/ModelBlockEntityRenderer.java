@@ -186,7 +186,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         Camera camera = mc.gameRenderer.mainCamera();
         Vec3 position = !mc.options.getCameraType().isFirstPerson() && mc.player != null
             ? mc.player.getEyePosition(tickDelta)
-            : camera.getPosition();
+            : camera.position();
 
         BlockPos pos = entity.getBlockPos();
         double x = pos.getX() + 0.5D + transform.translate.x;

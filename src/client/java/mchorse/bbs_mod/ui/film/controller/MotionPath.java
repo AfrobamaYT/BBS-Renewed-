@@ -133,9 +133,9 @@ public class MotionPath
         Camera camera = context.camera();
         PoseStack stack = context.matrixStack();
 
-        double cx = camera.getPosition().x;
-        double cy = camera.getPosition().y;
-        double cz = camera.getPosition().z;
+        double cx = camera.position().x;
+        double cy = camera.position().y;
+        double cz = camera.position().z;
 
         Matrix4f matrix = stack.last().pose();
         float halfWidth = config.width.get() * 0.5F;

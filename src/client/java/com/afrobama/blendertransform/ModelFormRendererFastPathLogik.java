@@ -183,7 +183,7 @@ public final class ModelFormRendererFastPathLogik
                 net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera();
             if (cam == null) return;
 
-            double cx = cam.getPosition().x, cy = cam.getPosition().y, cz = cam.getPosition().z;
+            double cx = cam.position().x, cy = cam.position().y, cz = cam.position().z;
             Matrix4f candidate = mchorse.bbs_mod.film.BaseFilmController.getMatrixForRenderWithRotation(
                 context.entity, cx, cy, cz, context.getTransition());
 

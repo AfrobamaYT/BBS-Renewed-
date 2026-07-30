@@ -190,11 +190,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         if (disable)
         {
-            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+            GLFW.glfwSetInputMode(window.handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
         }
         else
         {
-            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+            GLFW.glfwSetInputMode(window.handle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         }
     }
 
@@ -1438,9 +1438,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
 
         net.minecraft.client.Camera camera = context.camera();
-        double x = center.x - camera.getPosition().x;
-        double y = center.y - camera.getPosition().y;
-        double z = center.z - camera.getPosition().z;
+        double x = center.x - camera.position().x;
+        double y = center.y - camera.position().y;
+        double z = center.z - camera.position().z;
         float distanceScale = BBSSettings.getAxesDistanceScale((float) Math.sqrt(x * x + y * y + z * z));
         PoseStack stack = context.matrixStack();
 

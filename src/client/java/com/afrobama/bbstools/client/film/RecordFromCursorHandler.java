@@ -56,7 +56,7 @@ public final class RecordFromCursorHandler
             Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
 
-            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getWindow(), BBSToolsKeys.RECORD_FROM_CURSOR);
+            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().handle(), BBSToolsKeys.RECORD_FROM_CURSOR);
 
             if (nowPressed && !wasPressed)
             {

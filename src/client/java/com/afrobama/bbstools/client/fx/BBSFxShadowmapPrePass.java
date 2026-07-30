@@ -124,7 +124,7 @@ public final class BBSFxShadowmapPrePass
                 return;
             }
 
-            Vec3 camPos = camera.getPosition();
+            Vec3 camPos = camera.position();
 
             buildOrthoProjection(projBuf);
             buildSunViewMatrix(viewBuf);

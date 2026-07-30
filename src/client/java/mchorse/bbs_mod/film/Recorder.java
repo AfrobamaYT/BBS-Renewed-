@@ -75,9 +75,9 @@ public class Recorder extends WorldFilmController
 
         Vector4f vector = Vectors.TEMP_4F;
         Matrix4f matrix = Matrices.TEMP_4F;
-        float x = (float) (position.point.x - camera.getPosition().x);
-        float y = (float) (position.point.y - camera.getPosition().y);
-        float z = (float) (position.point.z - camera.getPosition().z);
+        float x = (float) (position.point.x - camera.position().x);
+        float y = (float) (position.point.y - camera.position().y);
+        float z = (float) (position.point.z - camera.position().z);
         float fov = MathUtils.toRad(position.angle.fov);
         float aspect = BBSRendering.getVideoWidth() / (float) BBSRendering.getVideoHeight();
         float thickness = 0.025F;

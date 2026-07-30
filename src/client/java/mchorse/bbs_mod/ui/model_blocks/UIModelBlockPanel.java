@@ -104,7 +104,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             Minecraft mc = Minecraft.getInstance();
             Camera camera = mc.gameRenderer.mainCamera();
-            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.getPosition(), RayTracing.fromVector3f(this.mouseDirection), 512F);
+            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.position(), RayTracing.fromVector3f(this.mouseDirection), 512F);
 
             if (blockHitResult.getType() != HitResult.Type.MISS)
             {
@@ -703,7 +703,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         super.renderInWorld(context);
 
         Camera camera = context.camera();
-        Vec3 pos = camera.getPosition();
+        Vec3 pos = camera.position();
 
         Minecraft mc = Minecraft.getInstance();
         double x = mc.mouseHandler.xpos();

@@ -12,7 +12,7 @@ public class WorldExportWindowSession
     public void begin(int width, int height)
     {
         Window window = Minecraft.getInstance().getWindow();
-        long handle = window.getWindow();
+        long handle = window.handle();
 
         if (this.snapshot == null)
         {
@@ -50,7 +50,7 @@ public class WorldExportWindowSession
         }
 
         Window window = Minecraft.getInstance().getWindow();
-        long handle = window.getWindow();
+        long handle = window.handle();
 
         if (!this.snapshot.fullscreen && this.changed)
         {

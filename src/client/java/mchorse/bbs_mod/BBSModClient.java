@@ -92,6 +92,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.platform.Window;
+import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
 public class BBSModClient implements ClientModInitializer
 {
@@ -766,7 +767,7 @@ public class BBSModClient implements ClientModInitializer
             "key." + BBSMod.MOD_ID + "." + id,
             InputConstants.Type.KEYSYM,
             key,
-            "category." + BBSMod.MOD_ID + ".main"
+            BBSKeyCategories.BBS_MAIN
         ));
     }
 
@@ -776,7 +777,7 @@ public class BBSModClient implements ClientModInitializer
             "key." + BBSMod.MOD_ID + "." + id,
             InputConstants.Type.MOUSE,
             button,
-            "category." + BBSMod.MOD_ID + ".main"
+            BBSKeyCategories.BBS_MAIN
         ));
     }
 

@@ -40,7 +40,7 @@ public final class CameraMeshToggleHandler
             if (mc == null || mc.getWindow() == null) return;
             if (mc.gui.screen() != null) return;
 
-            boolean down = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_K);
+            boolean down = InputConstants.isKeyDown(mc.getWindow().handle(), GLFW.GLFW_KEY_K);
             if (down && !wasPressed)
             {
                 CameraFrustumVisibility.toggle();

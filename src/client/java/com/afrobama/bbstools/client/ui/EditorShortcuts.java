@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
 /**
  * Editor-only shortcuts that ship with BBSTools to fill in gaps left
@@ -85,28 +86,28 @@ public final class EditorShortcuts
             "key.bbstools.editor_duplicate_clip",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_D,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         togglePlay = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_toggle_play",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_SPACE,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         jumpStart = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_start",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_HOME,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         jumpEnd = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.editor_jump_end",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_END,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
 
@@ -144,7 +145,7 @@ public final class EditorShortcuts
             return;
         }
 
-        long handle = client.getWindow().getWindow();
+        long handle = client.getWindow().handle();
         boolean ctrl  = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
                      || isKeyHeld(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
         boolean shift = isKeyHeld(handle, GLFW.GLFW_KEY_LEFT_SHIFT)

@@ -68,7 +68,7 @@ public final class ScreenSafeKeyPoll
 
         if (mc == null || mc.getWindow() == null) return false;
 
-        long handle = mc.getWindow().getWindow();
+        long handle = mc.getWindow().handle();
         boolean down = this.pollDown(handle);
         boolean edge = down && !this.wasDown;
 

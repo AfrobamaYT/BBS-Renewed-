@@ -367,7 +367,7 @@ public final class BBSToolsModClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STARTED
             .register(client ->
             {
-                long handle = client.getWindow().getWindow();
+                long handle = client.getWindow().handle();
                 com.afrobama.bbstools.perf.BBSUploadThread.initOnClient(handle);
             });
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING

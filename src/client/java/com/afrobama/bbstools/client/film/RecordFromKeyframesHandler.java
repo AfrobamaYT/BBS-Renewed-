@@ -68,7 +68,7 @@ public final class RecordFromKeyframesHandler
             Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
 
-            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().getWindow(), BBSToolsKeys.RECORD_FROM_KEYFRAMES);
+            boolean nowPressed = comboCurrentlyHeld(mc.getWindow().handle(), BBSToolsKeys.RECORD_FROM_KEYFRAMES);
 
             if (nowPressed && !wasPressed)
             {

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import net.minecraft.network.chat.Component;
+import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
 /**
  * Background-only transparency state for the BBSTools UI overhaul.
@@ -53,13 +54,13 @@ public final class BBSToolsTransparency
             "key.bbstools.ui_transparency_toggle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_T,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client ->
         {
             if (client == null || client.getWindow() == null) return;
-            long handle = client.getWindow().getWindow();
+            long handle = client.getWindow().handle();
             boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
                         || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
             boolean alt = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_ALT)

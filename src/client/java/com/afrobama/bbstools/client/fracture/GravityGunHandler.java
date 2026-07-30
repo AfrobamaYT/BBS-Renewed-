@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import java.util.Map;
+import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
 /**
  * Gmod-style gravity-gun for fractured bone bodies. Hold the
@@ -81,7 +82,7 @@ public final class GravityGunHandler
             "key.bbstools.gravity_grab",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,
-            "category.bbstools.fracture"));
+            BBSKeyCategories.FRACTURE));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client));
         LOG.info("Gravity-gun handler registered (default key: G)");

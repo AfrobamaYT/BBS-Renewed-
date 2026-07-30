@@ -78,7 +78,7 @@ public final class BlockDestructionWireframe
 
         Camera cam = ctx.camera();
         if (cam == null) return;
-        Vec3 camPos = cam.getPosition();
+        Vec3 camPos = cam.position();
 
         PoseStack ms = ctx.matrixStack();
         if (ms == null) return;

@@ -82,7 +82,7 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
 
         Vector3d translation = new Vector3d(matrix.getTranslation(Vectors.TEMP_3F));
 
-        translation.add(camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+        translation.add(camera.position().x, camera.position().y, camera.position().z);
         context.stack.pushPose();
         context.stack.setIdentity();
         context.stack.mulPose(new Matrix4f(InverseView.get()).invert());

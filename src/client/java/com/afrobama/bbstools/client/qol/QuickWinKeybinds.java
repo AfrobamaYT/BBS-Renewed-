@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
 /**
  * Three one-press quick-win hotkeys: cinematic toggle, marker pin, and
@@ -74,7 +75,7 @@ public final class QuickWinKeybinds
             "key.bbstools.cinematic_toggle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         /* Coded by Afrobama/Claude — UNBOUND default (was F2 which collides
@@ -84,7 +85,7 @@ public final class QuickWinKeybinds
             "key.bbstools.veil_crowd_toggle",
             InputConstants.Type.KEYSYM,
             -1, /* GLFW_KEY_UNKNOWN — unbound default */
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         /* F8 — BBS-core + instancing GLSL live-reload + Iris pack reload. (F7 collides with the
@@ -93,21 +94,21 @@ public final class QuickWinKeybinds
             "key.bbstools.shader_reload",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         gpuDebugCapture = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.gpu_debug_capture",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F11,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         threadDump = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.bbstools.thread_dump",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F10,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
         /* ⛔ NICHT F9 — und auch NICHT F2 (beides gemessen 2026-07-26).
@@ -129,7 +130,7 @@ public final class QuickWinKeybinds
             "key.bbstools.bug_bundle",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,
-            "category.bbstools"
+            BBSKeyCategories.BBSTOOLS
         ));
 
 
@@ -159,8 +160,8 @@ public final class QuickWinKeybinds
         {
             /* Ctrl+F11 = GPU dev-loop layer 3: hard-reset poisoned GL state (no restart).
              * Plain F11 = capture snapshot. */
-            boolean ctrl = GLFW.glfwGetKey(client.getWindow().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS
-                || GLFW.glfwGetKey(client.getWindow().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
+            boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS
+                || GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
 
             if (ctrl)
             {

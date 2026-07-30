@@ -237,7 +237,7 @@ public final class WorldShot
 		try
 		{
 			net.minecraft.world.phys.Vec3 sky = client.level.getSkyColor(
-				client.gameRenderer.mainCamera().getPosition(),
+				client.gameRenderer.mainCamera().position(),
 				client.getTimer().getGameTimeDeltaPartialTick(true));
 
 			if (sky != null)
