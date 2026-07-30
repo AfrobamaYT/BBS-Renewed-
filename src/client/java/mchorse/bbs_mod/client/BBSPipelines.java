@@ -44,6 +44,19 @@ public final class BBSPipelines
 {
     private static final RenderPipeline SELECTION = guiPipelineMit("selection");
 
+    /* Die uebrigen BBS-Shader, die ueber Batcher2D in die Oberflaeche zeichnen. Alle nach
+     * demselben Muster: Vanillas GUI-Zustand erben, nur die beiden Shader tauschen.
+     *
+     * ⚠️ Ihre frueheren Einzel-Uniforms (Blur/TextureSize, Size/Filters, Target/
+     * HighlightColor, Thickness/OutlineColor/…) haben in der GUI keinen Ort mehr --
+     * GuiElementRenderState kann keinen Uniform-Block binden. Sie reisen wie bei
+     * selection in der Vertexfarbe mit; welcher Wert in welchem Kanal steckt, steht im
+     * jeweiligen Fragmentshader UND an der Aufrufstelle. */
+    private static final RenderPipeline SUBTITLES = guiPipelineMit("subtitles");
+    private static final RenderPipeline MULTILINK = guiPipelineMit("multilink");
+    private static final RenderPipeline PICKER_PREVIEW = guiPipelineMit("picker_preview");
+    private static final RenderPipeline REPLAY_OUTLINE = guiPipelineMit("replay_outline");
+
     /**
      * Der Auswahlrahmen des Textur-Editors (laufende Ameisen um die Auswahl).
      *
@@ -54,6 +67,30 @@ public final class BBSPipelines
     public static RenderPipeline getSelection()
     {
         return SELECTION;
+    }
+
+    /** Untertitel-Blit im Filmfenster. Erwartet Weichzeichnung und Texturgroesse in der Vertexfarbe. */
+    public static RenderPipeline getSubtitles()
+    {
+        return SUBTITLES;
+    }
+
+    /** Der Mehrfach-Verweis-Editor. */
+    public static RenderPipeline getMultilink()
+    {
+        return MULTILINK;
+    }
+
+    /** Vorschaubild des Auswahl-Durchgangs (Gizmo, Formen-Editor, Modellblock-Panel). */
+    public static RenderPipeline getPickerPreview()
+    {
+        return PICKER_PREVIEW;
+    }
+
+    /** Umriss um das bearbeitete Replay -- liest die Kante aus demselben Stencil-Bild. */
+    public static RenderPipeline getReplayOutline()
+    {
+        return REPLAY_OUTLINE;
     }
 
     /**

@@ -129,6 +129,20 @@ public final class ModelVAOPipeline
     /** Ohne Mischung: der Iris-Cutout-Fall, der frueher {@code disableBlend} rief. */
     public static final RenderPipeline UNDURCHSICHTIG = bauen("model", false, true, true);
 
+    /*
+     * Die Auswahl-Durchgaenge (Picking): dieselben Vertexbindungen und derselbe
+     * Uniform-Block wie beim Modellweg, nur mit einem anderen Fragmentshader, der statt
+     * Farbe eine Kennung schreibt.
+     *
+     * ⚠️ OHNE MISCHUNG, das ist hier kein Geschmack: Kennungsfarben sind Zahlen, keine
+     * Farben. Werden sie gemischt, entsteht aus zwei Nachbarn eine dritte Kennung, die
+     * auf nichts zeigt -- der Klick trifft dann ein Objekt, das es nicht gibt.
+     */
+    public static final RenderPipeline PICKER_MODELLE = bauen("picker_models", false, true, true);
+    public static final RenderPipeline PICKER_BILLBOARD = bauen("picker_billboard", false, true, true);
+    public static final RenderPipeline PICKER_BILLBOARD_OHNE_SCHATTIERUNG = bauen("picker_billboard_no_shading", false, true, true);
+    public static final RenderPipeline PICKER_PARTIKEL = bauen("picker_particles", false, true, true);
+
     /**
      * Ob eine Pipeline zum BBS-Modellweg gehoert — und damit die Durchgangsart
      * ({@code Modus.x} im Uniform-Block) ueberhaupt auswertet.
