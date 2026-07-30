@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -106,7 +107,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             Vector3f origin = context.stack.last().pose().getTranslation(new Vector3f());
 
-            FormTranslucentQueue.beginGroup(new Matrix4f(RenderSystem.getModelViewMatrix()).transformPosition(origin), false);
+            FormTranslucentQueue.beginGroup(new Matrix4f(RenderSystem.getModelViewMatrixCopy()).transformPosition(origin), false);
         }
 
         if (this.form.max.get() <= 10)
@@ -296,7 +297,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         context.stack.translate(0, 0, -0.2F);
 
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         fillQuad(
             builder, context.stack,
@@ -321,7 +322,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
             FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
                 buffer, GameRenderer::getPositionColorShader, null,
-                new Matrix4f(RenderSystem.getModelViewMatrix()),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
                 null, new Vector3f(FormTranslucentQueue.getSortOrigin()), false, null, null
             ));
         }

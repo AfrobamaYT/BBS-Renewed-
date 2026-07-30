@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -25,9 +26,9 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -61,11 +62,11 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         stack.scale(1.5F, 1.5F, 1.5F);
         stack.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
 
-        VertexFormat format = DefaultVertexFormat.NEW_ENTITY;
+        VertexFormat format = DefaultVertexFormat.ENTITY;
 
         this.renderModel(format, GameRenderer::getRendertypeEntityTranslucentShader,
             stack,
-            OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, Colors.WHITE,
+            OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
             context.getTransition(), false
         );
 
@@ -82,7 +83,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             shading = true;
         }
 
-        VertexFormat format = shading ? DefaultVertexFormat.NEW_ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
+        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
         Supplier<ShaderInstance> shader = this.getShader(context,
             shading ? GameRenderer::getRendertypeEntityTranslucentShader : GameRenderer::getPositionTexColorShader,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
@@ -192,7 +193,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         texture.bind();
         texture.setFilterMipmap(this.form.linear.get(), this.form.mipmap.get());
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, format);
+        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, format);
 
         /* Front */
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
@@ -232,7 +233,7 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             buffer.upload(builder.buildOrThrow());
             VertexBuffer.unbind();
 
-            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
+            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
             Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
 
             FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(

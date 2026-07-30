@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -30,7 +31,6 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix3f;
@@ -194,7 +194,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         GL30.glCullFace(GL30.GL_BACK);
 
         boolean shading = !context.isPicking();
-        VertexFormat format = shading ? DefaultVertexFormat.NEW_ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
+        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
         Supplier<ShaderInstance> shader = shading ? GameRenderer::getRendertypeEntityTranslucentShader : GameRenderer::getPositionTexColorShader;
 
         this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
@@ -251,7 +251,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
 
         texture.bind();
         texture.setFilterMipmap(false, false);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, format);
+        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, format);
 
         /* Front */
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
@@ -288,7 +288,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
             buffer.upload(builder.buildOrThrow());
             VertexBuffer.unbind();
 
-            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix());
+            Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
             Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
 
             FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(

@@ -367,6 +367,14 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
              * disappears" when a MobForm is nested under a ModelForm). Restoring is correct for
              * the 3D viewport too. */
             RenderSystem.enableDepthTest();
+            /* ⛔ 26.2-PORT, NICHT MECHANISCH ERSETZEN: das hier SCHREIBT in die lebende
+             * Matrix. `getModelViewMatrix()` heisst in 26.2 `getModelViewMatrixCopy()` --
+             * aber eine Kopie zu beschreiben uebersetzt sauber und stellt NICHTS wieder her.
+             * Die Wiederherstellung oben faellt dann still aus, und die halbe UI verschwindet
+             * wieder (genau der Bug, den der Kommentar darueber beschreibt).
+             * Dies ist die EINZIGE schreibende Stelle im ganzen Baum -- alle 23 anderen
+             * Vorkommen lesen nur und sind unkritisch. Der Ersatz ist getModelViewStack()
+             * (existiert in 26.2 weiter, javap belegt), nicht die Kopie. */
             RenderSystem.getModelViewMatrix().set(cached);
         }
     }
