@@ -131,6 +131,18 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
             return;
         }
 
+        /* ⛔ SONST STAPELN SICH DIE BOXEN. Der Welt-Weg hat diesen Test in der Tick-Schleife,
+         * der Editor-Weg hatte ihn nicht: einmal auf der Taste bleiben und man hat fuenf
+         * Waehler uebereinander, von denen jeder einzeln weggeklickt werden will (der Nutzer
+         * am 2026-07-30: "ich kann ^ spammen und mehrere oeffnen"). Zweiter Druck schliesst,
+         * dieselbe Taste also auf und zu. */
+        if (isOpened())
+        {
+            closeOpened();
+
+            return;
+        }
+
         List<Replay> replays = panel.getData().replays.getList();
 
         if (replays.isEmpty())

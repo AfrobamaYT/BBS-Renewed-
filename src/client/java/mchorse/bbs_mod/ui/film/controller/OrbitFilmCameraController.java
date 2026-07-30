@@ -204,12 +204,25 @@ public class OrbitFilmCameraController implements ICameraController
     }
 
     /**
-     * Maustaste 4 gedrueckt: auf das Replay zufahren, solange sie gehalten wird.
+     * Maustaste 4 gedrueckt: das Replay rahmen — und weiter zufahren, solange sie gehalten wird.
      *
-     * <p>Der Pivot wandert dabei zuerst auf das Replay — sonst faehrt man auf den alten
-     * Drehpunkt zu, und das ist beim Orbiten fast nie der Darsteller, um den es gerade geht.
-     * {@link #teleportPivotToReplay()} ist derselbe Sprung, den die Orbit-Teleport-Taste
-     * macht; er setzt nur das ZIEL, die Daempfung faehrt ihn weich an.</p>
+     * <p>Der Pivot wandert dabei zuerst auf das Replay; sonst faehrt man auf den alten
+     * Drehpunkt zu, und das ist beim Orbiten fast nie der Darsteller, um den es gerade geht.</p>
+     *
+     * <h2>⛔ WARUM DER ERSTE ENTWURF FALSCH WAR</h2>
+     *
+     * <p>Zuerst gab es hier nur das fortlaufende Zufahren: pro Tick ein fester ANTEIL des
+     * Abstands. Der Nutzer am 2026-07-30: <em>"es zoomt nur ein wenig rein und das wars, bei
+     * blender zoomt das deutlich naeher ran egal wie weit du weg bist oder wo du gerade
+     * bist"</em>. Genau das ist der Unterschied zwischen anteilig und absolut — aus 60 Bloecken
+     * Entfernung bringt ein Anteil einen proportional naeher, aber eben nicht ANS Replay.</p>
+     *
+     * <p>Blenders "Frame Selected" rahmt das Objekt unabhaengig davon, wo man steht: die
+     * Zieldistanz kommt aus der GROESSE des Objekts, nicht aus der bisherigen Entfernung.
+     * Genau das macht {@link #rahmenAbstand()} hier — und deshalb wirkt ein Druck aus jeder
+     * Entfernung gleich.</p>
+     *
+     * <p>Das Halten bleibt zusaetzlich erhalten: wer naeher will als der Rahmen, haelt weiter.</p>
      */
     public void starteZoomZumReplay()
     {
@@ -219,7 +232,47 @@ public class OrbitFilmCameraController implements ICameraController
         }
 
         this.teleportPivotToReplay();
+
+        float rahmen = this.rahmenAbstand();
+
+        /* Nur HINEIN rahmen, nie heraus: steht man schon naeher als der Rahmen, waere ein
+         * Sprung nach hinten das Gegenteil von dem, was die Taste verspricht. */
+        if (rahmen > 0F && this.targetDistance > rahmen)
+        {
+            this.targetDistance = rahmen;
+        }
+
         this.zoomtZumReplay = true;
+    }
+
+    /**
+     * Der Abstand, aus dem das Replay bildfuellend dasteht — aus seiner GROESSE, nicht aus
+     * der bisherigen Entfernung.
+     *
+     * <p>Die Hoehe kommt aus derselben Trefferbox, aus der schon der Orbit-Mittelpunkt seine
+     * halbe Hoehe zieht ({@link #getOrbitTarget}). Ein Spieler misst 1,8; mit dem Vorgabewert
+     * 1,2 steht die Kamera also gut zwei Bloecke weg und er fuellt rund 60 % der Bildhoehe.</p>
+     *
+     * <p>0, wenn es nichts zu rahmen gibt (kein Darsteller, keine Trefferbox) — dann bleibt
+     * der Abstand, wie er ist, und nur das Halten wirkt.</p>
+     */
+    private float rahmenAbstand()
+    {
+        IEntity entity = this.controller.getCurrentEntity();
+
+        if (entity == null)
+        {
+            return 0F;
+        }
+
+        float hoehe = (float) entity.getPickingHitbox().h;
+
+        if (hoehe <= 0F)
+        {
+            return 0F;
+        }
+
+        return MathUtils.clamp(hoehe * BBSSettings.editorOrbitFrameDistance.get(), MIN_DISTANCE, MAX_DISTANCE);
     }
 
     public void stoppeZoomZumReplay()

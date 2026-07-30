@@ -497,8 +497,13 @@ public class BBSModClient implements ClientModInitializer
         /* Bestehendes Replay in der WELT waehlen, ohne ins Dashboard gezogen zu werden.
          * Der Sprach-Schluessel key.bbs.open_quick_replays lag die ganze Zeit im Baum — die
          * Taste war beim Fork-Wechsel verlorengegangen, die Uebersetzung nicht. Siehe
-         * UIQuickReplayOverlayPanel. */
-        keyOpenQuickReplays = this.createKey("open_quick_replays", GLFW.GLFW_KEY_RIGHT_BRACKET);
+         * UIQuickReplayOverlayPanel.
+         *
+         * ⛔ GRAVE (^) UND NICHT upstreams RIGHT_BRACKET: dieselbe Taste wie im Editor
+         * (BBSToolsKeys.QUICK_REPLAY_PICKER). Der Nutzer am 2026-07-30: "ich will das der
+         * button fuer die welt und im dashboard gleich sind" — zwei Tasten fuer dieselbe Box
+         * sind zwei Dinge zum Merken. */
+        keyOpenQuickReplays = this.createKey("open_quick_replays", GLFW.GLFW_KEY_GRAVE_ACCENT);
         keyOpenMorphing = this.createKey("open_morphing", GLFW.GLFW_KEY_B);
         keyDemorph = this.createKey("demorph", GLFW.GLFW_KEY_PERIOD);
         keyTeleport = this.createKey("teleport", GLFW.GLFW_KEY_Y);

@@ -165,6 +165,7 @@ public class BBSSettings {
 	public static ValueMotionPath editorMotionPath;
 	public static ValueBoolean editorOrbitTeleportOnSwitch;
 	public static ValueFloat editorOrbitZoomToReplay;
+	public static ValueFloat editorOrbitFrameDistance;
 	public static ValueFloat editorCameraSmoothness;
 	public static ValueInt editorCameraMode;
 	public static ValueBoolean editorPlayerFollowsCamera;
@@ -708,6 +709,11 @@ public class BBSSettings {
 		 * Abstands. 0 schaltet die Zufahrt ab. UNSERE Zahl — Blenders fortlaufendes Zoomen
 		 * haengt am Mausweg statt an der Zeit, dort gibt es keine Konstante zum Abschreiben. */
 		editorOrbitZoomToReplay = builder.getFloat("orbit_zoom_to_replay", 0.12F, 0F, 0.5F).slider();
+		/* Vielfaches der DARSTELLER-HOEHE als Rahmen-Abstand. 1.2 heisst bei einem 1,8 hohen
+		 * Spieler gut zwei Bloecke Abstand. Aus der Groesse gerechnet, nicht aus der bisherigen
+		 * Entfernung — deshalb wirkt ein Druck aus jeder Entfernung gleich (Blenders
+		 * "Frame Selected" macht es genauso). */
+		editorOrbitFrameDistance = builder.getFloat("orbit_frame_distance", 1.2F, 0.3F, 6F).slider();
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
