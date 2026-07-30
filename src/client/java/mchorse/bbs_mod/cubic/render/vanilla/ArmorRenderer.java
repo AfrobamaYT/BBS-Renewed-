@@ -7,7 +7,7 @@ import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -43,7 +43,7 @@ public class ArmorRenderer
         this.armorTrimsAtlas = bakery.getAtlas(Sheets.ARMOR_TRIMS_SHEET);
     }
 
-    public void renderArmorSlot(PoseStack matrices, MultiBufferSource vertexConsumers, IEntity entity, EquipmentSlot armorSlot, ArmorType type, int light)
+    public void renderArmorSlot(PoseStack matrices, SubmitNodeCollector vertexConsumers, IEntity entity, EquipmentSlot armorSlot, ArmorType type, int light)
     {
         ItemStack itemStack = entity.getEquipmentStack(armorSlot);
         Item item = itemStack.getItem();
@@ -121,7 +121,7 @@ public class ArmorRenderer
         return bipedModel.head;
     }
 
-    private void renderArmorParts(ModelPart part, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ArmorItem item, boolean secondTextureLayer, float red, float green, float blue, String overlay)
+    private void renderArmorParts(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, ArmorItem item, boolean secondTextureLayer, float red, float green, float blue, String overlay)
     {
         VertexConsumer base = vertexConsumers.getBuffer(RenderTypes.armorCutoutNoCull(this.getArmorTexture(item, secondTextureLayer, overlay)));
         VertexConsumer vertexConsumer = new RecolorVertexConsumer(base, new Color(red, green, blue, 1F));
@@ -129,7 +129,7 @@ public class ArmorRenderer
         part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
     }
 
-    private void renderTrim(ModelPart part, Holder<ArmorMaterial> material, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ArmorTrim trim, boolean leggings)
+    private void renderTrim(ModelPart part, Holder<ArmorMaterial> material, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, ArmorTrim trim, boolean leggings)
     {
         TextureAtlasSprite sprite = this.armorTrimsAtlas.getSprite(leggings ? trim.innerTexture(material) : trim.outerTexture(material));
         VertexConsumer vertexConsumer = sprite.wrap(vertexConsumers.getBuffer(Sheets.armorTrimsSheet(trim.pattern().value().decal())));
@@ -137,7 +137,7 @@ public class ArmorRenderer
         part.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
     }
 
-    private void renderGlint(ModelPart part, PoseStack matrices, MultiBufferSource vertexConsumers, int light)
+    private void renderGlint(ModelPart part, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
     {
         part.render(matrices, vertexConsumers.getBuffer(RenderTypes.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
     }

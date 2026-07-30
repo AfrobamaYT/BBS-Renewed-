@@ -10,7 +10,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Matrix4f;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 
 public class FilmControllerContext
 {
@@ -21,7 +21,7 @@ public class FilmControllerContext
     public Replay replay;
     public Camera camera;
     public PoseStack stack;
-    public MultiBufferSource consumers;
+    public SubmitNodeCollector consumers;
     public StencilMap map;
 
     public float transition;
@@ -92,7 +92,7 @@ public class FilmControllerContext
         return this;
     }
 
-    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, Camera camera, PoseStack stack, MultiBufferSource consumers, float transition)
+    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, Camera camera, PoseStack stack, SubmitNodeCollector consumers, float transition)
     {
         this.reset();
 

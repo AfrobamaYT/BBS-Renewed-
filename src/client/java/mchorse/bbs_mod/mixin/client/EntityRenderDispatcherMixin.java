@@ -4,7 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.renderer.MorphRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -20,10 +20,10 @@ public class EntityRenderDispatcherMixin
         method = "render",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/entity/EntityRenderer;render(Lnet/minecraft/world/entity/Entity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"
+            target = "Lnet/minecraft/client/renderer/entity/EntityRenderer;render(Lnet/minecraft/world/entity/Entity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;I)V"
         )
     )
-    private <E extends Entity> void wrapRender(EntityRenderer<E> renderer, E entity, float yaw, float tickDelta, PoseStack matrices, MultiBufferSource vcp, int light, Operation<Void> original)
+    private <E extends Entity> void wrapRender(EntityRenderer<E> renderer, E entity, float yaw, float tickDelta, PoseStack matrices, SubmitNodeCollector vcp, int light, Operation<Void> original)
     {
         if (entity instanceof LivingEntity livingEntity)
         {

@@ -14,7 +14,7 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -49,7 +49,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
     }
 
     @Override
-    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay)
+    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
     {
         Item item = this.get(stack);
 

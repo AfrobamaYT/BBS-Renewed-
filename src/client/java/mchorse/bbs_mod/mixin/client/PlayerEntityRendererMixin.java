@@ -8,7 +8,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.morphing.Morph;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class PlayerEntityRendererMixin
 {
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    public void onRender(AbstractClientPlayer abstractClientPlayerEntity, float f, float g, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, CallbackInfo info)
+    public void onRender(AbstractClientPlayer abstractClientPlayerEntity, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i, CallbackInfo info)
     {
         if (MorphRenderer.renderPlayer(abstractClientPlayerEntity, f, g, matrixStack, vertexConsumerProvider, i))
         {
@@ -42,7 +42,7 @@ public class PlayerEntityRendererMixin
     }
 
     @Inject(method = "renderHand", at = @At("HEAD"), cancellable = true)
-    public void onRenderArmBegin(PoseStack matrices, MultiBufferSource vertexConsumers, int light, AbstractClientPlayer player, ModelPart arm, ModelPart sleeve, CallbackInfo info)
+    public void onRenderArmBegin(PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, AbstractClientPlayer player, ModelPart arm, ModelPart sleeve, CallbackInfo info)
     {
         Morph morph = Morph.getMorph(player);
 

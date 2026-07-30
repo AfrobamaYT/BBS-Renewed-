@@ -18,7 +18,7 @@ import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -26,7 +26,7 @@ public class MorphRenderer
 {
     public static boolean hidePlayer = false;
 
-    public static boolean renderPlayer(AbstractClientPlayer player, float f, float g, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i)
+    public static boolean renderPlayer(AbstractClientPlayer player, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i)
     {
         if (hidePlayer)
         {
@@ -85,7 +85,7 @@ public class MorphRenderer
         return true;
     }
 
-    public static boolean renderLivingEntity(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, int o)
+    public static boolean renderLivingEntity(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i, int o)
     {
         if (!(livingEntity instanceof ISelectorOwnerProvider))
         {

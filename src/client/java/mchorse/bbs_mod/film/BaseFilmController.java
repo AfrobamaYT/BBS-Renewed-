@@ -58,7 +58,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -804,7 +804,7 @@ public abstract class BaseFilmController
         return MatrixStackUtils.stripScale(full);
     }
 
-    private static void renderNameTag(IEntity entity, Component text, PoseStack matrices, MultiBufferSource vertexConsumers, int light)
+    private static void renderNameTag(IEntity entity, Component text, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
     {
         boolean sneaking = !entity.isSneaking();
         float hitboxH = (float) entity.getPickingHitbox().h + 0.5F;

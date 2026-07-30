@@ -30,7 +30,7 @@ import mchorse.bbs_mod.forms.renderers.ParticleFormRenderer;
 import mchorse.bbs_mod.forms.renderers.TrailFormRenderer;
 import mchorse.bbs_mod.forms.renderers.VanillaParticleFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.Sheets;
@@ -107,7 +107,7 @@ public class FormUtilsClient
                 assignAllocator(layers, layer);
             }
 
-            customVertexConsumerProvider = new CustomVertexConsumerProvider(MultiBufferSource.immediateWithBuffers(layers, new ByteBufferBuilder(1536)));
+            customVertexConsumerProvider = new CustomVertexConsumerProvider(SubmitNodeCollector.immediateWithBuffers(layers, new ByteBufferBuilder(1536)));
         }
 
         return customVertexConsumerProvider;

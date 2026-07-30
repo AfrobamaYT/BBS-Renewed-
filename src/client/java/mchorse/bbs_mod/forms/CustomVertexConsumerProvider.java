@@ -7,7 +7,7 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -19,11 +19,11 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class CustomVertexConsumerProvider implements MultiBufferSource
+public class CustomVertexConsumerProvider implements SubmitNodeCollector
 {
     private static Consumer<RenderType> runnables;
 
-    private final MultiBufferSource.BufferSource delegate;
+    private final SubmitNodeCollector delegate;
     private Function<VertexConsumer, VertexConsumer> substitute;
     private boolean ui;
 
@@ -45,7 +45,7 @@ public class CustomVertexConsumerProvider implements MultiBufferSource
         runnables = null;
     }
 
-    public CustomVertexConsumerProvider(MultiBufferSource.BufferSource delegate)
+    public CustomVertexConsumerProvider(SubmitNodeCollector delegate)
     {
         this.delegate = delegate;
     }
@@ -97,7 +97,7 @@ public class CustomVertexConsumerProvider implements MultiBufferSource
      * nicht mehr von {@code Immediate} (seit dem 1.21.1-port haelt diese klasse ein
      * delegate), darum sind sie im accesswidener geoeffnet.</p>
      *
-     * <p>KEIN {@code @Override}: das interface {@link MultiBufferSource} kennt nur
+     * <p>KEIN {@code @Override}: das interface {@link SubmitNodeCollector} kennt nur
      * {@code getBuffer}. Gerufen wird die methode aus unserem eigenen {@link #draw()}.</p>
      */
     public void draw(RenderType layer)

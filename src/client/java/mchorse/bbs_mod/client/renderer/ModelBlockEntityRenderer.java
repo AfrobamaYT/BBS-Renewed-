@@ -32,7 +32,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
@@ -44,12 +44,12 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
 {
     private static ActorEntity entity;
 
-    public static void renderShadow(MultiBufferSource provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz)
+    public static void renderShadow(SubmitNodeCollector provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz)
     {
         renderShadow(provider, matrices, tickDelta, x, y, z, tx, ty, tz, 0.5F, 1F);
     }
 
-    public static void renderShadow(MultiBufferSource provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz, float radius, float opacity)
+    public static void renderShadow(SubmitNodeCollector provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz, float radius, float opacity)
     {
         ClientLevel world = Minecraft.getInstance().level;
 
@@ -105,7 +105,7 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     }
 
     @Override
-    public void render(ModelBlockEntity entity, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay)
+    public void render(ModelBlockEntity entity, float tickDelta, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
     {
         Minecraft mc = Minecraft.getInstance();
         ModelProperties properties = entity.getProperties();

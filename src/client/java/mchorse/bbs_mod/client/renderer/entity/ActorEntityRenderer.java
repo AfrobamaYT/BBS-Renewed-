@@ -10,7 +10,7 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidArmorModel;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -42,7 +42,7 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity>
     }
 
     @Override
-    public void render(ActorEntity livingEntity, float yaw, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light)
+    public void render(ActorEntity livingEntity, float yaw, float tickDelta, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
     {
         matrices.pushPose();
 

@@ -16,7 +16,7 @@ import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
     }
 
     @Override
-    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay)
+    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
     {
         Item item = this.get(stack);
 

@@ -10,7 +10,7 @@ import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -31,7 +31,7 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
     }
 
     @Override
-    public void render(GunProjectileEntity projectile, float yaw, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light)
+    public void render(GunProjectileEntity projectile, float yaw, float tickDelta, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
     {
         matrices.pushPose();
 
