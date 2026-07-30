@@ -694,7 +694,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         }
 
         RenderSystem.enableBlend();
-        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture.id, Colors.WHITE, 0, 0, context.menu.width, context.menu.height, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, 0, 0, context.menu.width, context.menu.height, 0, h, w, 0, w, h);
     }
 
     @Override

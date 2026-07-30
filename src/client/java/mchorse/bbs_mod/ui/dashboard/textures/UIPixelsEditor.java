@@ -1052,7 +1052,7 @@ public class UIPixelsEditor extends UICanvasEditor
         }
 
         context.batcher.texturedBox(
-            () -> shader, this.selectionMaskTexture.id, Colors.WHITE,
+            () -> shader, this.selectionMaskTexture, Colors.WHITE,
             ax, ay, aw, ah,
             0, 0, this.selectionMaskTexture.width, this.selectionMaskTexture.height,
             this.selectionMaskTexture.width, this.selectionMaskTexture.height

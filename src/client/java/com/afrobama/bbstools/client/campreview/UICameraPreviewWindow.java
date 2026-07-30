@@ -1,9 +1,14 @@
 // Coded by Afrobama/Claude — BBSTools Camera Preview Phase 5: header controls
 package com.afrobama.bbstools.client.campreview;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.colors.Colors;
+import net.minecraft.client.gui.render.TextureSetup;
+import net.minecraft.client.renderer.RenderPipelines;
 
 /**
  * Draggable + resizable window that displays one {@link CameraPreview}'s
@@ -23,6 +28,19 @@ public class UICameraPreviewWindow extends UIElement
     private static final int HEADER_H = 14;
     private static final int RESIZE_HANDLE_PX = 10;
     private static final int BUTTON_W = 12;
+
+    /**
+     * Die vorschau-textur als GUI-bindung.
+     *
+     * <p>26.2 nimmt keine rohe GL-nummer mehr entgegen, sondern ansicht + abtaster.
+     * NEAREST und CLAMP_TO_EDGE sind bewusst gewaehlt: das fenster zeigt ein
+     * kamerabild fuer machinima, da soll nichts weichgezeichnet und am rand nichts
+     * wiederholt werden.
+     */
+    private static TextureSetup vorschauTextur(GpuTextureView ansicht)
+    {
+        return TextureSetup.singleTexture(ansicht, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+    }
 
     private final CameraPreview preview;
 
@@ -172,14 +190,15 @@ public class UICameraPreviewWindow extends UIElement
         /* Framebuffer texture — only if allocated AND attachment is valid. */
         if (this.preview.framebuffer != null)
         {
-            int texId = this.preview.framebuffer.getColorTextureId();
-            if (texId != 0)
+            GpuTextureView texAnsicht = this.preview.framebuffer.getColorTextureView();
+            if (texAnsicht != null)
             {
                 int top = y + HEADER_H;
                 int bottom = y + h;
                 /* Flip V because framebuffer is bottom-up vs UI top-down. */
                 context.batcher.texturedBox(
-                    texId,
+                    () -> RenderPipelines.GUI_TEXTURED,
+                    vorschauTextur(texAnsicht),
                     Colors.WHITE,
                     x, top,
                     w, bottom - top,

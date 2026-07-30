@@ -474,11 +474,6 @@ public class Batcher2D
 
     public void texturedBox(Texture texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        this.texturedBox(texture.id, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
-    }
-
-    public void texturedBox(int texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
-    {
         this.texturedBox(() -> RenderPipelines.GUI_TEXTURED, texture, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
@@ -487,10 +482,27 @@ public class Batcher2D
      * {@code RenderSystem.setShader}, it is a whole {@link RenderPipeline} named by the
      * render state. The supplier therefore yields a pipeline now; callers that passed
      * {@code BBSShaders::getPickerPreviewProgram} need that method to return a pipeline.
+     *
+     * <p>⛔ 26.2: die Ueberladung mit roher GL-nummer ist WEG. Die GUI benennt ihre
+     * textur ueber {@code TextureSetup(GpuTextureView, GpuSampler)}, und beides kann
+     * nur das {@link Texture}-objekt liefern — aus einer nackten nummer laesst sich
+     * kein view mehr herstellen. Aufrufer reichen darum das objekt durch, nicht
+     * {@code texture.id}.
      */
-    public void texturedBox(Supplier<RenderPipeline> pipeline, int texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
+    public void texturedBox(Supplier<RenderPipeline> pipeline, Texture texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        this.blit(pipeline.get(), texture, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
+        this.blit(pipeline.get(), texture.guiSetup(), color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
+    }
+
+    /**
+     * Fuer texturen, die nicht BBS gehoeren — vor allem Mojangs {@code RenderTarget}, dessen
+     * farbanhang ein {@code GpuTextureView} ohne BBS-{@link Texture} ist. Frueher reichte
+     * dort die rohe GL-nummer aus {@code getColorTextureId()}; die gibt es in 26.2 nicht
+     * mehr, wohl aber {@code getColorTextureView()}.
+     */
+    public void texturedBox(Supplier<RenderPipeline> pipeline, TextureSetup setup, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
+    {
+        this.blit(pipeline.get(), setup, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
     /* Repeatable textured box */
@@ -511,7 +523,7 @@ public class Batcher2D
             float xw = ix == countX - 1 ? fillerX : tileW;
             float yh = iy == countY - 1 ? fillerY : tileH;
 
-            this.blit(RenderPipelines.GUI_TEXTURED, texture.id, color, xx, yy, xw, yh, u, v, u + xw, v + yh, tw, th);
+            this.blit(RenderPipelines.GUI_TEXTURED, texture.guiSetup(), color, xx, yy, xw, yh, u, v, u + xw, v + yh, tw, th);
         }
     }
 
@@ -663,7 +675,7 @@ public class Batcher2D
     }
 
     /** Enqueue one textured quad. Vanilla's own {@link BlitRenderState} already carries a tint. */
-    private void blit(RenderPipeline pipeline, int glTextureId, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
+    private void blit(RenderPipeline pipeline, TextureSetup setup, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
         Matrix3x2f pose = new Matrix3x2f(this.context.pose());
         int x0 = (int) x;
@@ -671,7 +683,7 @@ public class Batcher2D
         int x1 = (int) (x + w);
         int y1 = (int) (y + h);
 
-        this.submit(new BlitRenderState(pipeline, textureSetup(glTextureId), pose,
+        this.submit(new BlitRenderState(pipeline, setup, pose,
             x0, y0, x1, y1,
             u1 / (float) textureW, u2 / (float) textureW,
             v1 / (float) textureH, v2 / (float) textureH,
@@ -696,27 +708,6 @@ public class Batcher2D
         int maxY = (int) Math.ceil(Math.max(Math.max(y1, y2), Math.max(y3, y4)));
 
         return new ScreenRectangle(minX, minY, maxX - minX, maxY - minY).transformMaxBounds(pose);
-    }
-
-    /**
-     * NICHT UEBERSETZT — hier fehlt eine bruecke, die ausserhalb dieser datei gebaut werden muss.
-     *
-     * <p>26.2 nimmt in der GUI keine rohe GL-textur-id mehr entgegen. Ein
-     * {@link GuiElementRenderState} nennt seine textur ueber
-     * {@code TextureSetup.singleTexture(GpuTextureView, GpuSampler)}.
-     * {@link mchorse.bbs_mod.graphics.texture.Texture} ist aber reines rohes GL
-     * ({@code TextureUtil.generateTextureId()} + {@code GL11.glTexImage2D}) und hat keinen
-     * {@code GpuTextureView}; {@code com.mojang.blaze3d.opengl.GlTexture} hat nur einen
-     * {@code protected} konstruktor, eine fremde GL-id laesst sich also nicht umhuellen.
-     *
-     * <p>Solange {@code Texture} nicht auf {@code GpuTexture}/{@code GpuTextureView} umgestellt
-     * ist, kann dieser pfad nicht uebersetzt werden. Der aufruf bleibt ABSICHTLICH als
-     * compilerfehler stehen ({@code Texture.guiSetup(int)} existiert nicht), weil die
-     * alternative — irgendetwas plausibles einsetzen — eine leere UI ohne fehlermeldung waere.
-     */
-    private static TextureSetup textureSetup(int glTextureId)
-    {
-        return Texture.guiSetup(glTextureId);
     }
 
     /**

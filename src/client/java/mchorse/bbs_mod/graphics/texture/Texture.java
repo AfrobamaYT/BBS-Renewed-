@@ -1,9 +1,18 @@
 package mchorse.bbs_mod.graphics.texture;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import mchorse.bbs_mod.utils.resources.Pixels;
+import net.minecraft.client.gui.render.TextureSetup;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
@@ -11,8 +20,42 @@ import java.nio.ByteBuffer;
 
 /**
  * Texture class
- * 
+ *
  * This class is responsible for managing a state of a texture
+ *
+ * <h2>26.2-Port: warum diese Klasse jetzt zwei Gesichter hat</h2>
+ *
+ * <p>Bis 1.21.1 war eine Textur eine rohe GL-Nummer: {@code glGenTextures()},
+ * {@code glTexImage2D()}, {@code glBindTexture()} — und die GUI nahm diese Nummer
+ * entgegen. In 26.2 ist der zweite Teil weg: ein {@code GuiElementRenderState}
+ * benennt seine Textur ueber {@code TextureSetup.singleTexture(GpuTextureView,
+ * GpuSampler)}, eine rohe GL-Nummer akzeptiert die GUI nirgends mehr.
+ *
+ * <p>BBS kann aber nicht einfach auf Mojangs Texturen umsteigen: 54 Dateien zeichnen
+ * mit rohem GL (Weltrenderer, VAO-Pfad, eigene Framebuffer) und binden dafuer
+ * {@link #id}. Darum besitzt diese Klasse jetzt beides, und zwar aus EINER Quelle:
+ *
+ * <ul>
+ *   <li>Das GPU-Objekt ist die Wahrheit. Es entsteht ueber
+ *       {@code GpuDevice.createTexture(...)}.</li>
+ *   <li>{@link #id} ist kein eigenes {@code glGenTextures()} mehr, sondern
+ *       {@code ((GlTexture) gpu).glId()} — die GL-Nummer GENAU DIESER GPU-Textur.
+ *       Rohes GL und Mojangs GUI reden also ueber dasselbe Objekt, es gibt keine
+ *       zweite Textur und nichts muss gespiegelt werden.</li>
+ * </ul>
+ *
+ * <p>⚠️ VORAUSSETZUNG, GEMESSEN, NICHT ANGENOMMEN: {@code GlDevice.createTexture}
+ * legt den Speicher mit {@code texImage2D} an, NICHT mit {@code texStorage2D}
+ * (javap -c auf GlDevice: 2× texImage2D, 0× texStorage2D). Der Speicher ist also
+ * veraenderlich, und BBS' eigene {@code glTexImage2D}-Uploads auf dieselbe Nummer
+ * bleiben erlaubt. Stellt Mojang das je auf unveraenderlichen Speicher um, bricht
+ * jeder Upload dieser Klasse — dann muss {@link #uploadTexture} auf
+ * {@code CommandEncoder.writeToTexture} umgestellt werden.
+ *
+ * <p>⚠️ FILTER UND WRAP sind in 26.2 Sache des SAMPLERS, nicht der Textur. Sie
+ * werden hier weiterhin per {@code glTexParameteri} gesetzt (der rohe GL-Pfad
+ * braucht das unveraendert) UND gemerkt, damit {@link #sampler()} den passenden
+ * Sampler aus Mojangs Cache holen kann.
  */
 public class Texture
 {
@@ -29,6 +72,21 @@ public class Texture
     private AnimatedTexture parent;
     private TextureFormat format = TextureFormat.RGBA_U8;
     private int filter;
+
+    /**
+     * 26.2: das GPU-Objekt hinter {@link #id}. Wird angelegt, sobald die Groesse
+     * bekannt ist, und neu angelegt, wenn Groesse oder Format sich aendern — sonst
+     * wuerde {@code getWidth()} luegen und der {@link #view} die falschen Masse melden.
+     */
+    private GpuTexture gpu;
+    private GpuTextureView view;
+
+    private int gpuWidth;
+    private int gpuHeight;
+    private TextureFormat gpuFormat;
+
+    /** GL-Standard ist GL_REPEAT; der Sampler muss denselben Standard haben. */
+    private int wrap = GL11.GL_REPEAT;
 
     public static Pixels pixelsFromTexture(Texture texture)
     {
@@ -59,10 +117,136 @@ public class Texture
 
     public Texture()
     {
-        this.id = TextureUtil.generateTextureId();
         this.target = GL11.GL_TEXTURE_2D;
 
+        /* Eine 1x1-Platzhaltertextur, damit {@link #id} ab dem Konstruktor gueltig ist:
+         * die Aufrufer binden und setzen Parameter, bevor sie Pixel hochladen
+         * (siehe UIPixelsEditor.updateSelectionMaskTexture). Der erste echte Upload
+         * ersetzt sie durch eine Textur der richtigen Groesse. */
+        this.allocate(1, 1, this.format);
+
         this.bind();
+    }
+
+    /**
+     * Legt das GPU-Objekt neu an, wenn Groesse oder Format sich geaendert haben, und
+     * zieht {@link #id} nach.
+     *
+     * <p>Der alte {@link GpuTextureView} und die alte {@link GpuTexture} werden dabei
+     * geschlossen — das gibt auch die alte GL-Nummer frei, weshalb {@link #id}
+     * anschliessend IMMER neu gelesen werden muss. Wer die Nummer zwischenspeichert,
+     * zeichnet nach der naechsten Groessenaenderung eine fremde Textur.
+     */
+    private void allocate(int width, int height, TextureFormat format)
+    {
+        if (this.gpu != null && this.gpuWidth == width && this.gpuHeight == height && this.gpuFormat == format)
+        {
+            return;
+        }
+
+        this.closeGpu();
+
+        /* Alle Nutzungsarten, die BBS braucht: die GUI liest (TEXTURE_BINDING), Uploads
+         * schreiben (COPY_DST), pixelsFromTexture liest zurueck (COPY_SRC) und BBS' eigene
+         * Framebuffer haengen Texturen an (RENDER_ATTACHMENT). In GL kostet das nichts. */
+        int usage = GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_COPY_SRC
+            | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT;
+
+        this.gpu = RenderSystem.getDevice().createTexture(
+            "bbs-texture", usage, gpuFormatOf(format), width, height, 1, 1);
+        this.view = RenderSystem.getDevice().createTextureView(this.gpu);
+
+        this.gpuWidth = width;
+        this.gpuHeight = height;
+        this.gpuFormat = format;
+
+        this.id = ((GlTexture) this.gpu).glId();
+    }
+
+    private void closeGpu()
+    {
+        if (this.view != null)
+        {
+            this.view.close();
+            this.view = null;
+        }
+
+        if (this.gpu != null)
+        {
+            this.gpu.close();
+            this.gpu = null;
+        }
+
+        this.id = -1;
+    }
+
+    /**
+     * BBS' Formate auf Mojangs {@link GpuFormat}.
+     *
+     * <p>⚠️ DEPTH_F24 hat kein Gegenstueck: 26.2 kennt nur {@code D32_FLOAT}. Der
+     * anschliessende {@code glTexImage2D} dieser Klasse legt weiterhin echtes
+     * {@code DEPTH_COMPONENT24} an, das GPU-Objekt behauptet also 32 bit. Das ist
+     * folgenlos, solange Tiefentexturen nur an BBS' eigene Framebuffer gehen (dort
+     * bindet BBS selbst) — sobald eine davon durch Mojangs Render-Pfad laeuft, ist
+     * es eine Luege, die auffliegt.
+     */
+    private static GpuFormat gpuFormatOf(TextureFormat format)
+    {
+        switch (format)
+        {
+            case RGBA_U8: return GpuFormat.RGBA8_UNORM;
+            case RGB_U8: return GpuFormat.RGB8_UNORM;
+            case RGBA_F16: return GpuFormat.RGBA16_FLOAT;
+            case DEPTH_F24: return GpuFormat.D32_FLOAT;
+        }
+
+        return GpuFormat.RGBA8_UNORM;
+    }
+
+    /** Der {@link GpuTextureView} dieser Textur — das, was 26.2s GUI entgegennimmt. */
+    public GpuTextureView view()
+    {
+        return this.view;
+    }
+
+    /**
+     * Der Sampler, der zu {@link #setFilter} und {@link #setWrap} passt.
+     *
+     * <p>Bis 1.21.1 hingen Filter und Wrap an der Textur, in 26.2 haengen sie am
+     * Sampler. Mojangs Cache gibt fuer dieselbe Kombination dasselbe Objekt zurueck,
+     * hier entsteht also nichts Neues pro Bild.
+     */
+    public GpuSampler sampler()
+    {
+        AddressMode address = addressModeOf(this.wrap);
+        FilterMode mode = filterModeOf(this.filter);
+
+        return RenderSystem.getSamplerCache().getSampler(address, address, mode, mode, this.mipmap);
+    }
+
+    /** Diese Textur als GUI-Bindung, wie {@code GuiElementRenderState.textureSetup()} sie verlangt. */
+    public TextureSetup guiSetup()
+    {
+        return TextureSetup.singleTexture(this.view, this.sampler());
+    }
+
+    /**
+     * ⚠️ GL_MIRRORED_REPEAT hat in 26.2 kein Gegenstueck und faellt auf REPEAT zurueck.
+     * BBS benutzt es heute nirgends; wer es einfuehrt, bekommt still das falsche Bild.
+     */
+    private static AddressMode addressModeOf(int wrap)
+    {
+        return wrap == GL12.GL_CLAMP_TO_EDGE ? AddressMode.CLAMP_TO_EDGE : AddressMode.REPEAT;
+    }
+
+    /** Die Mipmap-Varianten unterscheiden sich nur in der Mipmap-Stufe, nicht im Filter selbst. */
+    private static FilterMode filterModeOf(int filter)
+    {
+        boolean linear = filter == GL11.GL_LINEAR
+            || filter == GL30.GL_LINEAR_MIPMAP_NEAREST
+            || filter == GL30.GL_LINEAR_MIPMAP_LINEAR;
+
+        return linear ? FilterMode.LINEAR : FilterMode.NEAREST;
     }
 
     public void setParent(AnimatedTexture parent)
@@ -120,9 +304,16 @@ public class Texture
         GL11.glBindTexture(this.target, this.id);
     }
 
+    /**
+     * ⚠️ 26.2: {@code GlStateManager} ist nach {@code com.mojang.blaze3d.opengl}
+     * gewandert und ist Mojangs interner Zustands-Zwischenspeicher. Diese Klasse
+     * bindet ohnehin an ihm vorbei (roher GL-Pfad), darum wird die Texturschicht
+     * direkt ueber LWJGL gewaehlt statt ueber Mojangs Zwischenspeicher — sonst
+     * stuende in seinem Speicher etwas anderes als in GL.
+     */
     public void bind(int texture)
     {
-        GlStateManager.glActiveTexture(texture);
+        GL13.glActiveTexture(texture);
         GL11.glBindTexture(this.target, this.id);
     }
 
@@ -133,7 +324,7 @@ public class Texture
 
     public void unbind(int texture)
     {
-        GlStateManager.glActiveTexture(texture);
+        GL13.glActiveTexture(texture);
         GL11.glBindTexture(this.target, 0);
     }
 
@@ -181,6 +372,8 @@ public class Texture
 
     public void setWrap(int mode)
     {
+        this.wrap = mode;
+
         this.setParameter(GL11.GL_TEXTURE_WRAP_S, mode);
         this.setParameter(GL11.GL_TEXTURE_WRAP_T, mode);
     }
@@ -190,16 +383,23 @@ public class Texture
         GL11.glTexParameteri(this.target, param, value);
     }
 
+    /**
+     * 26.2: die GL-Nummer gehoert dem GPU-Objekt, also gibt dessen {@code close()} sie
+     * frei — ein eigenes {@code glDeleteTextures} wuerde eine Nummer loeschen, die
+     * Mojang noch fuer vergeben haelt.
+     */
     public void delete()
     {
-        GL11.glDeleteTextures(this.id);
-        this.id = -1;
+        this.closeGpu();
     }
 
     public void setSize(int width, int height)
     {
         this.width = width;
         this.height = height;
+
+        this.allocate(width, height, this.format);
+        this.bind();
 
         GL11.glTexImage2D(this.target, 0, this.format.internal, width, height, 0, this.format.format, this.format.type, 0);
     }
@@ -246,6 +446,14 @@ public class Texture
 
     public void uploadTexture(int target, int level, int w, int h, ByteBuffer buffer)
     {
+        /* Nur die volle Stufe 0 bestimmt Groesse und Format der Textur; Mipmap-Stufen
+         * schreiben in den vorhandenen Speicher und duerfen ihn nicht neu anlegen. */
+        if (level == 0)
+        {
+            this.allocate(w, h, this.format);
+            this.bind();
+        }
+
         GL11.glPixelStorei(GL11.GL_UNPACK_ROW_LENGTH, w);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);

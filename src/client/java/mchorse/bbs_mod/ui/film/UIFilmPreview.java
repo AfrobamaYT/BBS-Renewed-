@@ -387,7 +387,7 @@ public class UIFilmPreview extends UIElement
 
         if (texture != null)
         {
-            context.batcher.texturedBox(texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+            context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
         }
 
         /* The navigation ball replaces the axes crosshair in the corner */

@@ -240,7 +240,7 @@ public class UIMultiLinkEditor extends UICanvasEditor
 
                 final ShaderInstance finalProgram = shader;
 
-                context.batcher.texturedBox(() -> finalProgram, texture.id, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
+                context.batcher.texturedBox(() -> finalProgram, texture, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
             }
         }
     }
