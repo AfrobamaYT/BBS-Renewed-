@@ -160,7 +160,26 @@ public class Texture
         this.gpuHeight = height;
         this.gpuFormat = format;
 
-        this.id = ((GlTexture) this.gpu).glId();
+        /* ⛔ HIER ENDET BBS UNTER VULKAN — und zwar mit Ansage, nicht mit einem
+         * ClassCastException-Rätsel im Absturzbericht.
+         *
+         * 26.2 hat zwei Grafik-Hintergründe: GlDevice und VulkanDevice. Der Spieler
+         * waehlt sie unter Optionen > Grafik ("Graphics API"). Der Standard probiert
+         * OpenGL zuerst (PreferredGraphicsApi.getBackendsToTry: nur bei VULKAN steht
+         * VulkanBackend vorn), BBS laeuft also normalerweise richtig.
+         *
+         * Waehlt jemand Vulkan, gibt es keine GL-Nummer — und ohne GL-Nummer kann
+         * KEINE der 54 Dateien zeichnen, die roh mit der Grafikkarte reden. Das ist
+         * keine Luecke dieser Klasse, sondern die Grenze des ganzen Mods. */
+        if (!(this.gpu instanceof GlTexture glTextur))
+        {
+            throw new IllegalStateException(
+                "BBS braucht die Grafik-API OpenGL, aktiv ist aber: " + RenderSystem.getBackendDescription()
+                + ". Umstellen unter Optionen > Grafik > Graphics API auf OpenGL, dann neu starten. "
+                + "(BBS zeichnet an vielen Stellen direkt ueber OpenGL; unter Vulkan gibt es dafuer keine Entsprechung.)");
+        }
+
+        this.id = glTextur.glId();
     }
 
     private void closeGpu()
