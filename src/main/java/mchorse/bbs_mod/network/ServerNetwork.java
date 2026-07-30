@@ -432,7 +432,7 @@ public class ServerNetwork
             }
             else
             {
-                sendPlayFilm(player, player.serverLevel(), filmId, withCamera);
+                sendPlayFilm(player, player.level(), filmId, withCamera);
             }
         });
     }
@@ -490,14 +490,14 @@ public class ServerNetwork
 
                     if (film != null)
                     {
-                        actionPlayer = actions.play(player, player.serverLevel(), film, tick, PlayerType.FILM_EDITOR);
+                        actionPlayer = actions.play(player, player.level(), film, tick, PlayerType.FILM_EDITOR);
                     }
                 }
                 else
                 {
                     actions.stop(filmId);
 
-                    actionPlayer = actions.play(player, player.serverLevel(), actionPlayer.film, tick, PlayerType.FILM_EDITOR);
+                    actionPlayer = actions.play(player, player.level(), actionPlayer.film, tick, PlayerType.FILM_EDITOR);
                 }
 
                 if (actionPlayer != null)
@@ -744,7 +744,7 @@ public class ServerNetwork
 
             if (film != null)
             {
-                BBSMod.getActions().play(player, player.serverLevel(), film, 0);
+                BBSMod.getActions().play(player, player.level(), film, 0);
 
                 crusher.send(player, CLIENT_PLAY_FILM_PACKET, film.toData(), (packetByteBuf) ->
                 {

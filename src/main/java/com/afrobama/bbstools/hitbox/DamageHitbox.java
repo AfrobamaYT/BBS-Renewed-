@@ -114,7 +114,7 @@ public final class DamageHitbox
     private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> buildTree()
     {
         return Commands.literal("hitbox")
-            .requires(s -> s.hasPermission(2))
+            .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
             .then(Commands.literal("create")
                 .then(Commands.argument("name", StringArgumentType.word())
                     .then(Commands.argument("damage", FloatArgumentType.floatArg(0F))

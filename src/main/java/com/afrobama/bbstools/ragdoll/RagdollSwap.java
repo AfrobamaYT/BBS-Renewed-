@@ -113,7 +113,7 @@ public final class RagdollSwap
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) ->
         {
             dispatcher.register(Commands.literal("ragdollswap")
-                .requires(s -> s.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(ctx -> executeFromArgs(ctx.getSource(), ""))
                 .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeFromArgs(ctx.getSource(),
@@ -123,7 +123,7 @@ public final class RagdollSwap
              *  pose + textures; verlet physics applies on top. Vanilla mob
              *  fallback when target is not an ActorEntity. */
             dispatcher.register(Commands.literal("ragdoll")
-                .requires(s -> s.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(ctx -> executeRagdoll(ctx.getSource(), ""))
                 .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdoll(ctx.getSource(),
@@ -136,7 +136,7 @@ public final class RagdollSwap
              *  has its own bones": this rig is shipped with BBS so the
              *  per-limb path always matches. */
             dispatcher.register(Commands.literal("ragdolly")
-                .requires(s -> s.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(ctx -> executeRagdolly(ctx.getSource(), ""))
                 .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdolly(ctx.getSource(),
@@ -150,7 +150,7 @@ public final class RagdollSwap
              *  to the clone's resting position and restored to their prior
              *  game mode. The clone despawns. */
             dispatcher.register(Commands.literal("ragdollplayer")
-                .requires(s -> s.hasPermission(2))
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(ctx -> executeRagdollPlayer(ctx.getSource(), ""))
                 .then(Commands.argument("args", StringArgumentType.greedyString())
                     .executes(ctx -> executeRagdollPlayer(ctx.getSource(),
@@ -498,7 +498,7 @@ public final class RagdollSwap
         }
 
         /* Position + orient the clone at the player's exact spot. */
-        clone.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+        clone.snapTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
         clone.setYHeadRot(player.getYHeadRot());
         clone.setYBodyRot(player.yBodyRot);
         clone.setDeltaMovement(vx, vy, vz);
@@ -829,7 +829,7 @@ public final class RagdollSwap
             /* Vanilla mob path: position + setup + spawn. Fake player
              *  was already positioned + added to world by
              *  FakePlayerSpawner.spawn() so we skip these calls. */
-            spawned.moveTo(spawnPos.x, spawnPos.y, spawnPos.z, yaw, 0F);
+            spawned.snapTo(spawnPos.x, spawnPos.y, spawnPos.z, yaw, 0F);
             spawned.setSilent(true);
 
             if (spawned instanceof Mob mob)

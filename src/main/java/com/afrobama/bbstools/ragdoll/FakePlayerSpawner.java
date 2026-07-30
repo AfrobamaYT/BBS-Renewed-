@@ -96,7 +96,7 @@ public final class FakePlayerSpawner
             return null;
         }
 
-        player.moveTo(x, y, z, yaw, pitch);
+        player.snapTo(x, y, z, yaw, pitch);
         player.setYHeadRot(yaw);
         player.setYBodyRot(yaw);
 

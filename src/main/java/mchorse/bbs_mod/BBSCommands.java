@@ -54,7 +54,7 @@ public class BBSCommands
 {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment)
     {
-        Predicate<CommandSourceStack> hasPermissions = (source) -> source.hasPermission(2);
+        Predicate<CommandSourceStack> hasPermissions = Commands.hasPermission(Commands.LEVEL_GAMEMASTERS);
         LiteralArgumentBuilder<CommandSourceStack> bbs = Commands.literal("bbs").requires((source) -> true);
 
         registerMorphCommand(bbs, environment, hasPermissions);
@@ -277,7 +277,7 @@ public class BBSCommands
     {
         LiteralArgumentBuilder<CommandSourceStack> config = Commands.literal("config");
 
-        config.requires((ctx) -> ctx.hasPermission(4)).then(
+        config.requires(Commands.hasPermission(Commands.LEVEL_OWNERS)).then(
             Commands.literal("set").then(
                 Commands.argument("option", StringArgumentType.word())
                     .suggests((ctx, builder) ->

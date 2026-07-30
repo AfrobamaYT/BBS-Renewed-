@@ -59,7 +59,7 @@ public final class BBSToolsNetworkInit
                     player.getName().getString(), dsq, MAX_DISTANCE_SQ);
                 return;
             }
-            Level world = player.serverLevel();
+            Level world = player.level();
             if (payload.action() == BuilderActionPacket.ACTION_BREAK)
             {
                 world.removeBlock(pos, false);

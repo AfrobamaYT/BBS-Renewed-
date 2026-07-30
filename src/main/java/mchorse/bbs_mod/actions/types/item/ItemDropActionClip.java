@@ -49,7 +49,7 @@ public class ItemDropActionClip extends ItemActionClip
         double y = this.relative.get() ? this.posY.get() + player.position().y : this.posY.get();
         double z = this.relative.get() ? this.posZ.get() + player.position().z : this.posZ.get();
         ItemEntity entity = new ItemEntity(
-            player.serverLevel(),
+            player.level(),
             x, y, z, this.itemStack.get().copy(),
             this.velocityX.get(), this.velocityY.get(), this.velocityZ.get()
         );
