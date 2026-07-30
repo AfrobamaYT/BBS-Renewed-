@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ServerPlayer.class)
 public class ServerPlayerEntityMixin
 {
-    @Inject(method = "dropItem", at = @At("RETURN"))
+    @Inject(method = "drop", at = @At("RETURN"))
     public void onDropItem(CallbackInfoReturnable<ItemEntity> info)
     {
         ItemEntity entity = info.getReturnValue();
