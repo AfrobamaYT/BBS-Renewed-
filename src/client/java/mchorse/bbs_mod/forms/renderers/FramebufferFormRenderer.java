@@ -71,7 +71,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         }
         else
         {
-            PoseStack stack = context.batcher.getContext().pose();
+            PoseStack stack = context.batcher.pose();
             Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
             RenderSystem.depthFunc(GL11.GL_LEQUAL);

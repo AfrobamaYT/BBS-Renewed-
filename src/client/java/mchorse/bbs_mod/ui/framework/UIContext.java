@@ -524,7 +524,7 @@ public class UIContext implements IViewportStack
     public void shiftX(int x)
     {
         this.mouseX += x;
-        this.render.batcher.getContext().pose().translate(-x, 0, 0);
+        this.render.batcher.pose().translate(-x, 0, 0);
         this.viewportStack.shiftX(x);
     }
 
@@ -532,7 +532,7 @@ public class UIContext implements IViewportStack
     public void shiftY(int y)
     {
         this.mouseY += y;
-        this.render.batcher.getContext().pose().translate(0, -y, 0);
+        this.render.batcher.pose().translate(0, -y, 0);
         this.viewportStack.shiftY(y);
     }
 
@@ -556,7 +556,7 @@ public class UIContext implements IViewportStack
 
     public void resetMatrix()
     {
-        this.render.batcher.getContext().pose().setIdentity();
+        this.render.batcher.pose().setIdentity();
     }
 
     public void update()

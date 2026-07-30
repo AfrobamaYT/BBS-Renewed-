@@ -527,7 +527,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     @SuppressWarnings({"rawtypes", "IntegerDivisionInFloatingPointContext"})
     protected void renderGraph(UIContext context)
     {
-        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
         UIKeyframeSheet sheet = this.sheet;
         List keyframes = sheet.channel.getKeyframes();
@@ -743,7 +743,7 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
     public void renderTopmostKeyframes(UIContext context)
     {
         Area area = this.keyframes.graphArea;
-        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
         List keyframes = this.sheet.channel.getKeyframes();
 
         context.batcher.clip(area, context);

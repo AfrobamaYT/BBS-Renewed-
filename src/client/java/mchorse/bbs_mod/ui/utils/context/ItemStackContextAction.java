@@ -28,7 +28,7 @@ public class ItemStackContextAction extends ContextAction
 
         if (this.stack != null && !this.stack.isEmpty())
         {
-            PoseStack matrices = context.batcher.getContext().pose();
+            PoseStack matrices = context.batcher.pose();
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
             matrices.pushPose();

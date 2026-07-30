@@ -591,7 +591,7 @@ public class UIFilmPreview extends UIElement
 
         stack.pushMatrix();
 
-        new Matrix4f().mul(stack.mul(context.batcher.getContext().pose()));
+        stack.mul(context.batcher.pose().last().pose());
         stack.translate(area.x + 16, area.ey() - 12, 0F);
         stack.rotate(Axis.XN.rotationDegrees(mcCamera.xRot()));
         stack.rotate(Axis.YP.rotationDegrees(mcCamera.yRot()));

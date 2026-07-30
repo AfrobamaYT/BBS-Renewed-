@@ -138,7 +138,7 @@ public class UISection extends UIElement
      */
     private void renderArrow(UIContext context, float cx, float cy)
     {
-        PoseStack matrices = context.batcher.getContext().pose();
+        PoseStack matrices = context.batcher.pose();
 
         matrices.pushPose();
         matrices.translate(cx, cy, 0F);

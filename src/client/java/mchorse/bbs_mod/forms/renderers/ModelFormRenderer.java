@@ -275,7 +275,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (this.animator != null && model != null)
         {
-            PoseStack stack = context.batcher.getContext().pose();
+            PoseStack stack = context.batcher.pose();
 
             stack.pushPose();
 

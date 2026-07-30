@@ -936,7 +936,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         Area area = this.keyframes.graphArea;
         int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
-        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
         BufferBuilder builder = null;
 
         context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
@@ -1392,7 +1392,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         Area area = this.keyframes.graphArea;
         int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
-        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
         context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
 
@@ -1448,7 +1448,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     {
         if (!this.elements.isEmpty())
         {
-            Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+            Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
             BufferBuilder builder = null;
 
             this.renderLabels(context, builder, matrix, this.elements, 0, this.getDopeSheetY());

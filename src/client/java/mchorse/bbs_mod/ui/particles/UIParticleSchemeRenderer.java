@@ -117,7 +117,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         this.emitter.setupCameraProperties(this.camera);
         this.emitter.rotation.identity();
 
-        PoseStack stack = context.batcher.getContext().pose();
+        PoseStack stack = context.batcher.pose();
 
         stack.pushPose();
         stack.setIdentity();
@@ -155,7 +155,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
     private void renderPlane(UIContext context, float a, float b, float c, float d)
     {
-        Matrix4f matrix = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
         final float alpha = 0.5F;
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
@@ -221,7 +221,7 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 
         if (UIBaseMenu.shouldRenderAxes())
         {
-            Draw.coolerAxes(context.batcher.getContext().pose(), 1F, 0.005F);
+            Draw.coolerAxes(context.batcher.pose(), 1F, 0.005F);
         }
     }
 }

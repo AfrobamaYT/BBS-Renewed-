@@ -100,7 +100,7 @@ public class UIColorPicker extends UIElement
      */
     public static void renderAlphaPreviewQuad(Batcher2D batcher, int x1, int y1, int x2, int y2, Color color)
     {
-        Matrix4f matrix4f = new Matrix4f().mul(batcher.getContext().pose());
+        Matrix4f matrix4f = new Matrix4f(batcher.pose().last().pose());
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.enableBlend();

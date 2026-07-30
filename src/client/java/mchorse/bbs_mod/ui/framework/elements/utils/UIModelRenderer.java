@@ -249,7 +249,7 @@ public abstract class UIModelRenderer extends UIElement
         this.setupPosition();
         this.setupViewport(context);
 
-        PoseStack stack = context.render.batcher.getContext().pose();
+        PoseStack stack = context.render.batcher.pose();
 
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
@@ -377,7 +377,7 @@ public abstract class UIModelRenderer extends UIElement
      */
     protected void renderGrid(UIContext context)
     {
-        Matrix4f matrix4f = new Matrix4f().mul(context.batcher.getContext().pose());
+        Matrix4f matrix4f = new Matrix4f(context.batcher.pose().last().pose());
 
         /* 26.2: der Zug bringt seinen Zustand selbst mit. Tiefenpruefung an — das ist das
          * depthFunc(GL_LEQUAL) aus renderModel: die Vorschau loescht vorher die Tiefe und

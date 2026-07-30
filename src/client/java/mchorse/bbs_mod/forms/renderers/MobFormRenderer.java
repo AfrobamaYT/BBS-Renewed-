@@ -213,7 +213,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
         if (this.entity != null)
         {
-            PoseStack stack = context.batcher.getContext().pose();
+            PoseStack stack = context.batcher.pose();
 
             stack.pushPose();
 

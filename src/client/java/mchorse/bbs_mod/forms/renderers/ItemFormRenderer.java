@@ -32,7 +32,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         context.batcher.getContext().flush();
 
         CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
-        PoseStack matrices = context.batcher.getContext().pose();
+        PoseStack matrices = context.batcher.pose();
 
         Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 

@@ -161,7 +161,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         this.formEditor.preFormRender(context, this.form);
 
         FormRenderingContext formContext = new FormRenderingContext()
-            .set(FormRenderType.PREVIEW, this.target == null ? this.entity : this.target, context.batcher.getContext().pose(), net.minecraft.util.LightCoordsUtil.pack(15, 15), OverlayTexture.NO_OVERLAY, context.getTransition())
+            .set(FormRenderType.PREVIEW, this.target == null ? this.entity : this.target, context.batcher.pose(), net.minecraft.util.LightCoordsUtil.pack(15, 15), OverlayTexture.NO_OVERLAY, context.getTransition())
             .camera(this.camera)
             .modelRenderer();
 
@@ -197,7 +197,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             FormUtilsClient.render(this.form, formContext.stencilMap(this.stencilMap));
 
             Matrix4f matrix = this.formEditor.getOrigin(context.getTransition());
-            PoseStack stack = context.render.batcher.getContext().pose();
+            PoseStack stack = context.render.batcher.pose();
 
             stack.pushPose();
 
@@ -215,7 +215,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
              * the F8 axes toggle is untouched here on purpose. */
             if (!UIBaseMenu.isHideGizmoHeld())
             {
-                Gizmo.INSTANCE.renderStencil(context.batcher.getContext().pose(), this.stencilMap);
+                Gizmo.INSTANCE.renderStencil(context.batcher.pose(), this.stencilMap);
             }
 
             stack.popPose();
@@ -238,7 +238,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
     private void renderAxes(UIContext context)
     {
         Matrix4f matrix = this.formEditor.getOrigin(context.getTransition());
-        PoseStack stack = context.render.batcher.getContext().pose();
+        PoseStack stack = context.render.batcher.pose();
 
         stack.pushPose();
 
@@ -275,10 +275,10 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
 
         /* Draw look vector */
         final float thickness = 0.01F;
-        Draw.renderBox(context.batcher.getContext().pose(), -thickness, -thickness + eyeHeight, -thickness, thickness, thickness, 2F, 1F, 0F, 0F);
+        Draw.renderBox(context.batcher.pose(), -thickness, -thickness + eyeHeight, -thickness, thickness, thickness, 2F, 1F, 0F, 0F);
 
         /* Draw hitbox */
-        Draw.renderBox(context.batcher.getContext().pose(), -hitboxW / 2, 0, -hitboxW / 2, hitboxW, hitboxH, hitboxW);
+        Draw.renderBox(context.batcher.pose(), -hitboxW / 2, 0, -hitboxW / 2, hitboxW, hitboxH, hitboxW);
     }
 
     @Override

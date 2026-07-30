@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.framework.elements.utils;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -59,6 +60,21 @@ public class Batcher2D
      */
     private final Deque<ScreenRectangle> scissors = new ArrayDeque<>();
 
+    /**
+     * BBS' dreidimensionaler Stapel innerhalb der Oberflaeche.
+     *
+     * <p>Bis 1.21.1 gab {@code GuiGraphics.pose()} einen {@link PoseStack} zurueck, und BBS
+     * hat ihn fuer alles benutzt, was in der Oberflaeche RAEUMLICH zeichnet: Modell-Vorschau,
+     * Form-Editoren, Item- und Blockvorschauen, Partikel-Vorschau. In 26.2 ist daraus ein
+     * {@link org.joml.Matrix3x2fStack} geworden — reine Flaeche, keine Tiefe, keine Normalen.
+     *
+     * <p>Der Ersatz steht darum hier: ein eigener {@link PoseStack}, dessen unterste Ebene
+     * die AKTUELLE 2D-Transformation der Oberflaeche als 4×4-Matrix traegt. Damit landet ein
+     * Modell weiterhin dort, wo das Element gerade steht — Elementversatz, Verschiebung durch
+     * Bildlauf und Skalierung wandern unveraendert mit.
+     */
+    private final PoseStack stapel = new PoseStack();
+
     public static FontRenderer getDefaultTextRenderer()
     {
         fontRenderer.setRenderer(Minecraft.getInstance().font);
@@ -90,6 +106,30 @@ public class Batcher2D
     public FontRenderer getFont()
     {
         return this.font;
+    }
+
+    /**
+     * Der raeumliche Stapel fuer alles, was in der Oberflaeche dreidimensional zeichnet.
+     * Ersetzt 1:1 das alte {@code batcher.pose()}.
+     *
+     * <p>Steht nichts auf dem Stapel, wird die unterste Ebene bei jedem Aufruf frisch mit der
+     * 2D-Transformation der Oberflaeche gefuellt — sie aendert sich waehrend eines Bildes
+     * staendig, weil jedes Element seinen Versatz aufschiebt.
+     *
+     * <p>⚠️ Steht dagegen schon etwas darauf ({@code pushPose} eines Aufrufers), bleibt der
+     * Stapel unangetastet. Sonst wuerde ein verschachtelter Aufruf die Verschiebung des
+     * aeusseren wegwischen — genau das Verhalten, das der geteilte GuiGraphics-Stapel frueher
+     * hatte. Wer aufschiebt, muss darum auch wieder abraeumen.
+     */
+    public PoseStack pose()
+    {
+        if (this.stapel.isEmpty())
+        {
+            this.stapel.setIdentity();
+            this.stapel.last().pose().mul(this.context.pose());
+        }
+
+        return this.stapel;
     }
 
     /* Screen space clipping */

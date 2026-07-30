@@ -91,7 +91,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
 
         if (emitter != null)
         {
-            PoseStack stack = context.batcher.getContext().pose();
+            PoseStack stack = context.batcher.pose();
             int scale = (y2 - y1) / 2;
 
             stack.pushPose();

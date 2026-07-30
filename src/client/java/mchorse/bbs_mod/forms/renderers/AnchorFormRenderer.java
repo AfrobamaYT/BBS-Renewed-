@@ -41,7 +41,7 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
         }
         else
         {
-            PoseStack stack = context.batcher.getContext().pose();
+            PoseStack stack = context.batcher.pose();
             Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
             /* 26.2: depthFunc(GL_LEQUAL) ist ersatzlos entfallen. Der Aufruf schaltete den

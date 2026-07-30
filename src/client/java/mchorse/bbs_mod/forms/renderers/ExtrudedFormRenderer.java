@@ -41,7 +41,7 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        PoseStack stack = context.batcher.getContext().pose();
+        PoseStack stack = context.batcher.pose();
 
         stack.pushPose();
 

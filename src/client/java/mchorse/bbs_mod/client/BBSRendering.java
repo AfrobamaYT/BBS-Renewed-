@@ -399,7 +399,7 @@ public class BBSRendering
             GuiGraphicsExtractor drawContext = new GuiGraphicsExtractor(mc, mc.renderBuffers().bufferSource());
             Batcher2D batcher = new Batcher2D(drawContext);
 
-            UISubtitleRenderer.renderSubtitles(batcher.getContext().pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
+            UISubtitleRenderer.renderSubtitles(batcher.pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
         }
 
         if (!customSize)
@@ -415,7 +415,7 @@ public class BBSRendering
         {
             if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
             {
-                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.getContext().pose(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
+                UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.pose(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
             }
         }
 

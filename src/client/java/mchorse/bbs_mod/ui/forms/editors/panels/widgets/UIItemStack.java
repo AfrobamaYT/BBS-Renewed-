@@ -105,7 +105,7 @@ public class UIItemStack extends UIElement
 
         if (!empty)
         {
-            PoseStack matrices = context.batcher.getContext().pose();
+            PoseStack matrices = context.batcher.pose();
             CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
             matrices.pushPose();
