@@ -1,14 +1,18 @@
 package mchorse.bbs_mod.particles.emitter;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.Camera;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.math.IExpression;
 import mchorse.bbs_mod.math.Variable;
@@ -440,7 +444,9 @@ public class ParticleEmitter
 
         if (!list.isEmpty())
         {
-            this.bindTexture();
+            /* 26.2: die Bindung allein reicht nicht mehr — der Zeichendurchgang unten braucht
+             * die Textur als eigene Bindung (Sampler0), darum wird sie hier festgehalten. */
+            Texture textur = this.bindTexture();
 
             if (this.uiParticle == null || this.uiParticle.isDead())
             {
@@ -454,17 +460,31 @@ public class ParticleEmitter
 
             Matrix4f matrix = stack.last().pose();
 
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
-
-            for (IComponentParticleRender render : list)
+            /* 26.2: Shader und Cull sind keine Schalter mehr, sondern Teil der Pipeline — das
+             * frueher umschliessende disableCull/enableCull wird zu culling=false. Gemischt
+             * wird, weil diese Zeichnung im GUI-Durchgang laeuft und dessen Mischung bisher
+             * global vorfand; ohne sie stuenden die durchsichtigen Teile der Partikeltextur
+             * als harte Rechtecke im Bild. Die Tiefe bleibt wie gehabt an (der alte Weg hat
+             * sie hier nie abgeschaltet). */
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
             {
-                render.renderUI(this.uiParticle, builder, matrix, transition);
-            }
+                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
 
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-            RenderSystem.disableCull();
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            RenderSystem.enableCull();
+                for (IComponentParticleRender render : list)
+                {
+                    render.renderUI(this.uiParticle, builder, matrix, transition);
+                }
+
+                /* Die Ecken tragen die Pose schon (renderUI bekommt matrix und rechnet sie
+                 * ein). Als Modellansicht gehoert deshalb nur die globale Ansicht hierher —
+                 * genau die, die drawWithShader frueher selbst gesetzt hat. */
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(DefaultVertexFormat.POSITION_TEX_COLOR, "position_tex_color", PrimitiveTopology.TRIANGLES, true, true, false),
+                    builder.build(),
+                    RenderSystem.getModelViewMatrixCopy(),
+                    null,
+                    textur == null ? null : textur.guiSetup());
+            }
         }
     }
 
@@ -503,6 +523,14 @@ public class ParticleEmitter
                 }
             }
 
+            /* ⛔ OFFEN 26.2 — steht absichtlich noch so da, nicht geraten:
+             *  Format und Shader kommen hier von aussen (Parameter format/program), nicht aus
+             *  dieser Methode. Die Aufrufer reichen PARTICLE + getParticleShader, NEW_ENTITY +
+             *  getRendertypeEntityTranslucentShader sowie BBSShaders.getPickerParticlesProgram
+             *  bzw. getPickerBillboardProgram durch. FormPipelines deckt davon keinen ab (nur
+             *  position_color/position_tex/position_tex_color, ohne Lightmap-Sampler), und der
+             *  Ersatz fuer Supplier<ShaderInstance> aendert die Signatur — das trifft
+             *  ParticleFormRenderer und UIParticleSchemeRenderer, nicht diese Datei. */
             RenderSystem.setShader(program);
             RenderSystem.disableBlend();
             RenderSystem.disableCull();
@@ -516,11 +544,14 @@ public class ParticleEmitter
         }
     }
 
-    private void bindTexture()
+    /** Gibt die gebundene Textur zurueck: 26.2 braucht sie als Sampler-Bindung am Durchgang. */
+    private Texture bindTexture()
     {
         Texture texture = BBSModClient.getTextures().getTexture(this.texture == null ? this.scheme.texture : this.texture);
 
         BBSModClient.getTextures().bindTexture(texture);
+
+        return texture;
     }
 
     public void setupCameraProperties(Camera camera)

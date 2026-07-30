@@ -84,13 +84,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import com.mojang.blaze3d.platform.Window;
 import com.afrobama.bbstools.client.keybinds.BBSKeyCategories;
 
@@ -539,31 +539,43 @@ public class BBSModClient implements ClientModInitializer
                     peek.normal().identity();
                     stack.translate(0F, 0F, -d);
 
-                    RenderSystem.enableDepthTest();
+                    /* 26.2: Tiefe, Mischung und Cull sind kein globaler Zustand mehr, sondern
+                     * stecken in der Pipeline dieses einen Zuges. Das enableDepthTest von
+                     * vorher ist damit erledigt — es ist jetzt tiefePruefen = true; das
+                     * disableDepthTest dahinter entfaellt ersatzlos, weil jeder folgende
+                     * Zeichenaufruf seinen Tiefenzustand selbst mitbringt. */
+                    try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+                    {
+                        BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-                    BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                        float fov = Minecraft.getInstance().options.fov().get();
+                        float dd = d * (float) Math.pow(fov / 40F, 2F);
 
-                    float fov = Minecraft.getInstance().options.fov().get();
-                    float dd = d * (float) Math.pow(fov / 40F, 2F);
+                        Draw.fillQuad(builder, stack,
+                            -dd, -dd, 0,
+                            dd, -dd, 0,
+                            dd, dd, 0,
+                            -dd, dd, 0,
+                            color.r, color.g, color.b, 1F
+                        );
 
-                    Draw.fillQuad(builder, stack,
-                        -dd, -dd, 0,
-                        dd, -dd, 0,
-                        dd, dd, 0,
-                        -dd, dd, 0,
-                        color.r, color.g, color.b, 1F
-                    );
-
-                    RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-                    { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-                    /* 26.2: das disableDepthTest hinter dem Zeichnen entfaellt ersatzlos — es
-                     * hat keinen Adressaten mehr, weil jeder folgende Zeichenaufruf seinen
-                     * Tiefenzustand aus seiner eigenen Pipeline bekommt.
-                     * ⚠️ Das enableDepthTest VOR dem Zeichnen (oben) ist NICHT erledigt: es
-                     * gilt diesem Zeichenaufruf und gehoert damit in dessen Pipeline. Die gibt
-                     * es noch nicht (TRIANGLES/POSITION_COLOR mit Tiefentest), darum steht es
-                     * unveraendert da und ist als offen gemeldet. */
+                        /* Kein Culling: die Flaeche haengt als Billboard direkt vor der
+                         * Kamera, Verwerfen spart hier nichts — koennte sie bei umgekehrter
+                         * Wicklung aber ganz verschlucken. Der alte Block schaltete Cull nie
+                         * ein. Kein Mischen: der Himmel ist undurchsichtig (Alpha 1).
+                         *
+                         * Die Ecken tragen die Pose bereits (Draw.fillQuad multipliziert
+                         * stack.last().pose() hinein), darum geht als Modellansicht NUR der
+                         * globale Wert mit — genau der, den BufferUploader.drawWithShader
+                         * frueher selbst aus RenderSystem nahm. Die Pose hier noch einmal zu
+                         * uebergeben wuerde die Flaeche doppelt verschieben. */
+                        SofortZeichner.zeichnen(
+                            FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, true, false),
+                            builder.build(),
+                            RenderSystem.getModelViewMatrixCopy(),
+                            null,
+                            null);
+                    }
 
                     stack.popPose();
                 }

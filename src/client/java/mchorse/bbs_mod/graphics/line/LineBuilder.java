@@ -1,13 +1,12 @@
 package mchorse.bbs_mod.graphics.line;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import mchorse.bbs_mod.client.FormPipelines;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -84,17 +83,31 @@ public class LineBuilder <T>
 
         for (List<LinePoint<T>> points : build)
         {
-
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            RenderSystem.enableBlend();
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-
-            for (LinePoint<T> point : points)
+            /* Zwei Ecken je Punkt a 16 Byte (POSITION_COLOR); der Puffer waechst
+             * notfalls nach, die Schaetzung spart nur das Nachwachsen. */
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(points.size() * 2 * 16 + 256))
             {
-                renderer.render(builder, matrix, point);
-            }
+                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+                for (LinePoint<T> point : points)
+                {
+                    renderer.render(builder, matrix, point);
+                }
+
+                /* mischen = true: der alte Block rief enableBlend() (die Linienfarben
+                 * kommen mit Alpha herein). tiefePruefen/culling = false: der alte Block
+                 * setzte dafuer nichts, und beides koennte eine 2D-Linie nur unsichtbar
+                 * machen — Tiefe aus heisst hier auch Tiefenschreiben aus, also bleibt
+                 * auch keine Wand vor spaeteren Zeichnungen stehen.
+                 * modelView ist die Einheitsmatrix: die Pose steckt schon in jeder Ecke,
+                 * ILineRenderer.render bekommt matrix herein und rechnet sie ein. */
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLE_STRIP, true, false, false),
+                    builder.build(),
+                    new Matrix4f(),
+                    null,
+                    null);
+            }
         }
     }
 }

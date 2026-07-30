@@ -3,18 +3,19 @@ package mchorse.bbs_mod.forms.renderers;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
@@ -302,42 +303,53 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         context.stack.translate(0, 0, -0.2F);
 
 
-        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        fillQuad(
-            builder, context.stack,
-            x + w + offset, y - offset, 0,
-            x - offset, y - offset, 0,
-            x - offset, y + h + offset, 0,
-            x + w + offset, y + h + offset, 0,
-            color.r, color.g, color.b, color.a
-        );
-
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        if (FormTranslucentQueue.isGroupOpen())
+        /* 26.2: ein Viereck aus zwei Dreiecken = 6 Ecken a 16 Byte (POSITION_COLOR).
+         * Der Aufbau bleibt gleich, nur Anfang und Ende gehen ueber SofortZeichner. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(6 * 16))
         {
-            VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            buffer.bind();
-            buffer.upload(builder.buildOrThrow());
-            VertexBuffer.unbind();
+            fillQuad(
+                builder, context.stack,
+                x + w + offset, y - offset, 0,
+                x - offset, y - offset, 0,
+                x - offset, y + h + offset, 0,
+                x + w + offset, y + h + offset, 0,
+                color.r, color.g, color.b, color.a
+            );
 
-            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
-                buffer, GameRenderer::getPositionColorShader, null,
-                new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
-                null, new Vector3f(FormTranslucentQueue.getSortOrigin()), false, null, null
-            ));
-        }
-        else
-        {
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build();
-                if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
-             * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
-             * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
+            if (FormTranslucentQueue.isGroupOpen())
+            {
+                VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+
+                buffer.bind();
+                buffer.upload(builder.buildOrThrow());
+                VertexBuffer.unbind();
+
+                FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
+                    buffer, GameRenderer::getPositionColorShader, null,
+                    new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
+                    null, new Vector3f(FormTranslucentQueue.getSortOrigin()), false, null, null
+                ));
+            }
+            else
+            {
+                /* Schalter aus den drei Zeilen, die hier vorher standen: enableBlend →
+                 * mischen (der Hintergrund hat eine eigene Deckkraft), enableDepthTest →
+                 * tiefePruefen. Kein Cull, weil render3D am Anfang disableCull ruft und
+                 * das fuer das ganze Label gilt. Die Modellansicht ist dieselbe, die der
+                 * Zweig darueber in die Warteschlange legt — die Ecken tragen die Pose
+                 * schon, also bleibt nur die globale Modellansicht. */
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false),
+                    builder.build(),
+                    RenderSystem.getModelViewMatrixCopy(),
+                    null,
+                    null);
+                /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
+                 * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
+                 * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
+            }
         }
 
         context.stack.popPose();

@@ -1,24 +1,24 @@
 package mchorse.bbs_mod.forms.renderers;
 
 import mchorse.bbs_mod.graphics.InverseView;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.forms.ITickable;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.TrailForm;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -80,15 +80,29 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
             outlineOffset *= scale; int i = 10;
 
 
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            /* 26.2: setShader und disableDepthTest sind entfallen — Shader, Mischung, Tiefe
+             * und Cull stehen jetzt in der Pipeline. Uebersetzt ist der alte Zustand dieses
+             * Blocks: kein enableBlend (mischen=false), disableDepthTest direkt vor dem Zug
+             * (tiefePruefen=false, das schaltet auch das Tiefenschreiben ab), kein
+             * disableCull (culling=true, der Vorgabezustand). */
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(2048))
+            {
+                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            Draw.fillBox(builder, stack, -outlineOffset, -outlineSize, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);
-            Draw.fillBox(builder, stack, -axisOffset, -axisSize, -axisOffset, axisOffset, axisSize, axisOffset, 0, 1, 0);
+                Draw.fillBox(builder, stack, -outlineOffset, -outlineSize, -outlineOffset, outlineOffset, outlineSize, outlineOffset, 0, 0, 0);
+                Draw.fillBox(builder, stack, -axisOffset, -axisSize, -axisOffset, axisOffset, axisSize, axisOffset, 0, 1, 0);
 
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            RenderSystem.disableDepthTest();
-
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+                /* Draw.fillBox backt stack.last().pose() schon in die Ecken. Als Modellansicht
+                 * bleibt genau das, was der alte drawWithShader zusaetzlich auftrug: die
+                 * globale. captureModelView waere hier falsch — es multipliziert die Pose ein
+                 * zweites Mal. */
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                    builder.build(),
+                    new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
+                    null,
+                    null);
+            }
 
             return;
         }
@@ -182,70 +196,90 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         m.set(RenderSystem.getModelViewMatrix()).invert();
         m.mul(new Matrix4f(camInverse).invert());
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-
-        for (it = trails.iterator(); it.hasNext(); last = trail)
+        /* Gross genug fuer alle Abschnitte dieses Bildes: acht Ecken je Abschnitt, POSITION_TEX
+         * ist 20 Byte je Ecke (3 Fliesskomma Position + 2 Fliesskomma UV). Zu klein waere kein
+         * Fehler, aber ein natives Umkopieren pro Bild. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(Math.max(4096, trails.size() * 8 * 20)))
         {
-            trail = it.next();
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
 
-            if (last != null && !last.stop && !trail.stop)
+            for (it = trails.iterator(); it.hasNext(); last = trail)
             {
-                double x1 = trail.top.x - baseX;
-                double x2 = trail.bottom.x - baseX;
-                double x3 = last.bottom.x - baseX;
-                double x4 = last.top.x - baseX;
+                trail = it.next();
 
-                double y1 = trail.top.y - baseY;
-                double y2 = trail.bottom.y - baseY;
-                double y3 = last.bottom.y - baseY;
-                double y4 = last.top.y - baseY;
-
-                double z1 = trail.top.z - baseZ;
-                double z2 = trail.bottom.z - baseZ;
-                double z3 = last.bottom.z - baseZ;
-                double z4 = last.top.z - baseZ;
-
-                if (loop)
+                if (last != null && !last.stop && !trail.stop)
                 {
-                    float u1 = trail.tick / length;
-                    float u2 = last.tick / length;
+                    double x1 = trail.top.x - baseX;
+                    double x2 = trail.bottom.x - baseX;
+                    double x3 = last.bottom.x - baseX;
+                    double x4 = last.top.x - baseX;
 
-                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
-                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
-                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
-                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
-                    /* Other side */
-                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
-                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
-                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
-                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    double y1 = trail.top.y - baseY;
+                    double y2 = trail.bottom.y - baseY;
+                    double y3 = last.bottom.y - baseY;
+                    double y4 = last.top.y - baseY;
+
+                    double z1 = trail.top.z - baseZ;
+                    double z2 = trail.bottom.z - baseZ;
+                    double z3 = last.bottom.z - baseZ;
+                    double z4 = last.top.z - baseZ;
+
+                    if (loop)
+                    {
+                        float u1 = trail.tick / length;
+                        float u2 = last.tick / length;
+
+                        builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                        builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                        builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                        builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                        /* Other side */
+                        builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                        builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                        builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                        builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    }
+                    else
+                    {
+                        float u1 = (current - trail.tick) / length;
+                        float u2 = (current - last.tick) / length;
+
+                        builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                        builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                        builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                        builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                        /* Other side */
+                        builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
+                        builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
+                        builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
+                        builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    }
                 }
                 else
                 {
-                    float u1 = (current - trail.tick) / length;
-                    float u2 = (current - last.tick) / length;
-
-                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
-                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
-                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
-                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
-                    /* Other side */
-                    builder.addVertex(m, (float) x4, (float) y4, (float) z4).setUv(u2, 0F);
-                    builder.addVertex(m, (float) x3, (float) y3, (float) z3).setUv(u2, 1F);
-                    builder.addVertex(m, (float) x2, (float) y2, (float) z2).setUv(u1, 1F);
-                    builder.addVertex(m, (float) x1, (float) y1, (float) z1).setUv(u1, 0F);
+                    length = current - trail.tick;
                 }
             }
-            else
-            {
-                length = current - trail.tick;
-            }
-        }
 
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableBlend();
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* 26.2: setShader, defaultBlendFunc und enableBlend sind entfallen — sie stehen
+             * jetzt in der Pipeline. Uebersetzt ist der alte Zustand: enableBlend +
+             * defaultBlendFunc (mischen=true), kein disableDepthTest in diesem Zweig
+             * (tiefePruefen=true, die Spur wird von Bloecken verdeckt), kein disableCull
+             * (culling=true — darum baut die Schleife oben die Rueckseite von Hand).
+             *
+             * Die Ecken tragen m bereits (addVertex(m, ...)); als Modellansicht bleibt die
+             * globale, die der alte drawWithShader zusaetzlich auftrug — genau die, gegen die
+             * m oben invertiert gerechnet wurde.
+             *
+             * Die Textur ging frueher ueber bindTexture() als globale GL-Bindung; in 26.2
+             * nennt der Durchgang seinen Sampler0 selbst. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(DefaultVertexFormat.POSITION_TEX, "position_tex", PrimitiveTopology.QUADS, true, true, true),
+                builder.build(),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
+                null,
+                BBSModClient.getTextures().getTexture(this.form.texture.get()).guiSetup());
+        }
         /* Der Tiefentest stand hier NACH dem Zeichnen — er stellte den globalen Zustand
          * fuer alles wieder her, was nach der Spur gezeichnet wird. Diesen globalen
          * Zustand gibt es in 26.2 nicht mehr: der Tiefenzustand steckt im

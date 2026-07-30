@@ -1,14 +1,14 @@
 package mchorse.bbs_mod.cubic.ik;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
@@ -16,11 +16,11 @@ import mchorse.bbs_mod.cubic.render.DebugOverlay;
 import mchorse.bbs_mod.cubic.render.ModelPivotFrames;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
 import mchorse.bbs_mod.settings.values.ui.ValueIKDebug;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -72,32 +72,13 @@ public final class ModelIKDebug
 
         Map<String, PivotFrame> frames = collectFrames(model, compiled);
 
-        if (config.xray.get())
-        {
-            /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
-             *  Die Roentgen-Option (BBSSettings.ikDebug.xray) will das Overlay
-             *  durch das Modell hindurch zeichnen. Tiefe ist in 26.2 kein
-             *  Schalter mehr, sondern Teil der Pipeline; unter den fertigen
-             *  RenderPipelines ist keine ohne Tiefenpruefung. Das braucht eine
-             *  eigene Pipeline UND einen Zeichenpfad, der pro Zug zwischen
-             *  normal und Roentgen waehlt — beides gehoert zur Portierung der
-             *  Zeichnung selbst (Tesselator/BufferUploader), nicht hierher. */
-            RenderSystem.disableDepthTest();
-        }
-
-        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
-         *  An dieser Stelle haengen ZWEI Zeichenwege. Die Haarlinien
-         *  (DEBUG_LINES) waeren von der LINES-Pipeline abgedeckt
-         *  (withCull(false), BlendFunction.TRANSLUCENT). Die Marker und die
-         *  dicken Linien sind aber TRIANGLES in POSITION_COLOR, und dafuer ist
-         *  keine fertige Pipeline nachgemessen, die ohne Cull UND durchsichtig
-         *  zeichnet. Cull anzuschalten wuerde Marker-Flaechen verschlucken;
-         *  Blend zu verlieren machte die Deckkraft-Einstellung
-         *  (config.opacity, dazu die 0.4/0.9-Faktoren) wirkungslos. */
-        RenderSystem.disableCull();
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
+        /* 26.2: der Zustandsblock, der hier stand, ist ersatzlos entfallen — Blend, Tiefe,
+         *  Cull und Shader sind kein globaler Schalter mehr, sondern die Pipeline, die
+         *  jeder einzelne Zug in drawChain selbst waehlt (FormPipelines.holen). Die drei
+         *  Entscheidungen wandern unveraendert mit:
+         *  - ohne Cull, sonst verschluckt die Karte Marker-Flaechen,
+         *  - mit Blend, sonst ist config.opacity (samt der 0.4/0.9-Faktoren) wirkungslos,
+         *  - Tiefe nur ohne Roentgen: xray heisst "durch das Modell hindurch". */
         stack.pushPose();
 
         if (model instanceof BOBJModel)
@@ -166,24 +147,11 @@ public final class ModelIKDebug
 
         Map<String, PivotFrame> frames = collectFrames(model, compiled);
 
-        if (config.xray.get())
-        {
-            /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
-             *  Der Pick-Pass muss dieselbe Tiefe fahren wie der sichtbare Pass,
-             *  sonst ist ein sichtbarer Marker nicht anklickbar. Gleiche Lage
-             *  wie in render(): keine fertige Pipeline ohne Tiefenpruefung. */
-            RenderSystem.disableDepthTest();
-        }
-
-        /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
-         *  Der Pick-Pass zeichnet TRIANGLES in POSITION_COLOR (ID-Farben, kein
-         *  Blend — deshalb steht hier auch keins). Ohne Cull, damit keine
-         *  Marker-Flaeche fehlt; eine fehlende Flaeche ist ein Loch im
-         *  Klickziel. Keine nachgemessene fertige Pipeline trifft "TRIANGLES,
-         *  POSITION_COLOR, ohne Cull, ohne Blend". */
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
+        /* 26.2: der Zustandsblock ist in die Pipeline des Zuges gewandert (unten). Der
+         *  Pick-Pass zeichnet ID-Farben: kein Blend (eine gemischte ID waere eine falsche
+         *  ID), ohne Cull — eine fehlende Marker-Flaeche ist ein Loch im Klickziel —, und
+         *  dieselbe Tiefe wie der sichtbare Pass in render(), sonst ist ein sichtbarer
+         *  Marker nicht anklickbar. */
         stack.pushPose();
 
         if (model instanceof BOBJModel)
@@ -191,34 +159,42 @@ public final class ModelIKDebug
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        for (ModelIKCache.CompiledChain chain : compiled.chains())
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            float unit = chainUnit(frames, chain.chainRootToEffector());
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-            if (targets)
+            for (ModelIKCache.CompiledChain chain : compiled.chains())
             {
-                Vector3f goal = position(frames, chain.target());
+                float unit = chainUnit(frames, chain.chainRootToEffector());
 
-                if (goal != null)
+                if (targets)
                 {
-                    pickMarker(builder, stack, stencilMap, form, config.target, goal, unit, chain.target());
+                    Vector3f goal = position(frames, chain.target());
+
+                    if (goal != null)
+                    {
+                        pickMarker(builder, stack, stencilMap, form, config.target, goal, unit, chain.target());
+                    }
+                }
+
+                if (poles && chain.poleTarget() != null && !chain.poleTarget().isEmpty())
+                {
+                    Vector3f pole = position(frames, chain.poleTarget());
+
+                    if (pole != null)
+                    {
+                        pickMarker(builder, stack, stencilMap, form, config.pole, pole, unit, chain.poleTarget());
+                    }
                 }
             }
 
-            if (poles && chain.poleTarget() != null && !chain.poleTarget().isEmpty())
-            {
-                Vector3f pole = position(frames, chain.poleTarget());
-
-                if (pole != null)
-                {
-                    pickMarker(builder, stack, stencilMap, form, config.pole, pole, unit, chain.poleTarget());
-                }
-            }
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, !config.xray.get(), false),
+                builder.build(),
+                modellansicht(),
+                null,
+                null);
         }
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
         stack.popPose();
 
@@ -325,14 +301,27 @@ public final class ModelIKDebug
         Matrix4f matrix = stack.last().pose();
         float dash = unit * 0.12F;
 
+        /* Der Zustand, den render() frueher global setzte, gehoert in 26.2 zum Zug: mit
+         *  Blend (config.opacity), ohne Cull (sonst fehlen Marker-Flaechen), Tiefe nur
+         *  ausserhalb der Roentgen-Option. */
+        boolean tiefe = !config.xray.get();
+
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+            {
+                BufferBuilder lines = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-            emitLines(lines, matrix, 0F, dash, pts, target, pole, a, config);
+                emitLines(lines, matrix, 0F, dash, pts, target, pole, a, config);
 
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = lines.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
+                    lines.build(),
+                    modellansicht(),
+                    null,
+                    null);
+            }
         }
 
         if (!anyDot && !boxes)
@@ -341,41 +330,67 @@ public final class ModelIKDebug
         }
 
         /* Solid geometry: joint/accent markers, plus the thick lines. */
-        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        if (boxes)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            emitLines(dots, matrix, thickness, dash, pts, target, pole, a, config);
-        }
+            BufferBuilder dots = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        if (joints)
-        {
-            float[] color = DebugOverlay.rgb(config.joints.color.get());
-            float radius = unit * config.joints.size.get();
-            int shape = config.joints.shape.get();
-
-            for (int i = 0; i < n - 1; i++)
+            if (boxes)
             {
-                DebugOverlay.marker(dots, stack, shape, pts.get(i), radius, color, a);
+                emitLines(dots, matrix, thickness, dash, pts, target, pole, a, config);
             }
-        }
 
-        if (tipDot)
-        {
-            DebugOverlay.marker(dots, stack, config.tip.shape.get(), tip, unit * config.tip.size.get(), DebugOverlay.rgb(config.tip.color.get()), a);
-        }
+            if (joints)
+            {
+                float[] color = DebugOverlay.rgb(config.joints.color.get());
+                float radius = unit * config.joints.size.get();
+                int shape = config.joints.shape.get();
 
-        if (targetDot)
-        {
-            DebugOverlay.marker(dots, stack, config.target.shape.get(), target, unit * config.target.size.get(), DebugOverlay.rgb(config.target.color.get()), a);
-        }
+                for (int i = 0; i < n - 1; i++)
+                {
+                    DebugOverlay.marker(dots, stack, shape, pts.get(i), radius, color, a);
+                }
+            }
 
-        if (poleDot)
-        {
-            DebugOverlay.marker(dots, stack, config.pole.shape.get(), pole, unit * config.pole.size.get(), DebugOverlay.rgb(config.pole.color.get()), a);
-        }
+            if (tipDot)
+            {
+                DebugOverlay.marker(dots, stack, config.tip.shape.get(), tip, unit * config.tip.size.get(), DebugOverlay.rgb(config.tip.color.get()), a);
+            }
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = dots.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            if (targetDot)
+            {
+                DebugOverlay.marker(dots, stack, config.target.shape.get(), target, unit * config.target.size.get(), DebugOverlay.rgb(config.target.color.get()), a);
+            }
+
+            if (poleDot)
+            {
+                DebugOverlay.marker(dots, stack, config.pole.shape.get(), pole, unit * config.pole.size.get(), DebugOverlay.rgb(config.pole.color.get()), a);
+            }
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
+                dots.build(),
+                modellansicht(),
+                null,
+                null);
+        }
+    }
+
+    /**
+     * Die Modellansicht fuer die Zuege dieses Overlays.
+     *
+     * <p>⚠️ NICHT {@code ModelVAORenderer.captureModelView(stack)} — das ist die Formel fuer
+     * Netze mit ROHEN Modellecken. Hier sind die Ecken schon durch die Pose gelaufen:
+     * {@code DebugOverlay.segment/line} schreiben mit {@code addVertex(matrix, ...)}, und
+     * {@code DebugOverlay.marker} baut ueber den PoseStack. Was fehlt, ist genau der Teil,
+     * den frueher {@code BufferUploader.drawWithShader} beisteuerte — die globale
+     * Modellansicht der Kamera. Wer hier die Pose noch einmal dazumultipliziert, zeichnet
+     * das Overlay ein zweites Mal transformiert an eine falsche Stelle.
+     */
+    private static Matrix4f modellansicht()
+    {
+        /* Gleiche Schreibweise wie ModelVAORenderer.captureModelView — nur ohne die Pose,
+         *  die hier schon in den Ecken steckt. */
+        return new Matrix4f(RenderSystem.getModelViewMatrixCopy());
     }
 
     /** The chain's wires plus the bridges to the goal and the pole — the bridges are always dashed relationship lines. */

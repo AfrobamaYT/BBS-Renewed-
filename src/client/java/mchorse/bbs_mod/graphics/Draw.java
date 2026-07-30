@@ -1,17 +1,16 @@
 package mchorse.bbs_mod.graphics;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Angle;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.colors.Colors;
-import net.minecraft.client.renderer.GameRenderer;
 import mchorse.bbs_mod.utils.MathUtils;
 import org.joml.Matrix4f;
 
@@ -36,29 +35,47 @@ public class Draw
         float fd = (float) d;
         float t = 1 / 96F + (float) (Math.sqrt(w * w + h + h + d + d) / 2000);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        /* 26.2: Tesselator und BufferUploader sind weg. Der Aufbau der Ecken bleibt
+         * unveraendert, nur Anfang und Ende gehen ueber SofortZeichner. Vorab so gross wie
+         * die Zeichnung wird: 12 Kaesten a 36 Ecken a 16 Byte (POSITION_COLOR), damit der
+         * Speicher nicht in jedem Bild nachwaechst. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(12 * 36 * 16))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            /* Pillars: fillBox(builder, -t, -t, -t, t, t, t, r, g, b, a); */
+            fillBox(builder, stack, -t, -t, -t, t, t + fh, t, r, g, b, a);
+            fillBox(builder, stack, -t + fw, -t, -t, t + fw, t + fh, t, r, g, b, a);
+            fillBox(builder, stack, -t, -t, -t + fd, t, t + fh, t + fd, r, g, b, a);
+            fillBox(builder, stack, -t + fw, -t, -t + fd, t + fw, t + fh, t + fd, r, g, b, a);
 
-        /* Pillars: fillBox(builder, -t, -t, -t, t, t, t, r, g, b, a); */
-        fillBox(builder, stack, -t, -t, -t, t, t + fh, t, r, g, b, a);
-        fillBox(builder, stack, -t + fw, -t, -t, t + fw, t + fh, t, r, g, b, a);
-        fillBox(builder, stack, -t, -t, -t + fd, t, t + fh, t + fd, r, g, b, a);
-        fillBox(builder, stack, -t + fw, -t, -t + fd, t + fw, t + fh, t + fd, r, g, b, a);
+            /* Top */
+            fillBox(builder, stack, -t, -t + fh, -t, t + fw, t + fh, t, r, g, b, a);
+            fillBox(builder, stack, -t, -t + fh, -t + fd, t + fw, t + fh, t + fd, r, g, b, a);
+            fillBox(builder, stack, -t, -t + fh, -t, t, t + fh, t + fd, r, g, b, a);
+            fillBox(builder, stack, -t + fw, -t + fh, -t, t + fw, t + fh, t + fd, r, g, b, a);
 
-        /* Top */
-        fillBox(builder, stack, -t, -t + fh, -t, t + fw, t + fh, t, r, g, b, a);
-        fillBox(builder, stack, -t, -t + fh, -t + fd, t + fw, t + fh, t + fd, r, g, b, a);
-        fillBox(builder, stack, -t, -t + fh, -t, t, t + fh, t + fd, r, g, b, a);
-        fillBox(builder, stack, -t + fw, -t + fh, -t, t + fw, t + fh, t + fd, r, g, b, a);
+            /* Bottom */
+            fillBox(builder, stack, -t, -t, -t, t + fw, t, t, r, g, b, a);
+            fillBox(builder, stack, -t, -t, -t + fd, t + fw, t, t + fd, r, g, b, a);
+            fillBox(builder, stack, -t, -t, -t, t, t, t + fd, r, g, b, a);
+            fillBox(builder, stack, -t + fw, -t, -t, t + fw, t, t + fd, r, g, b, a);
 
-        /* Bottom */
-        fillBox(builder, stack, -t, -t, -t, t + fw, t, t, r, g, b, a);
-        fillBox(builder, stack, -t, -t, -t + fd, t + fw, t, t + fd, r, g, b, a);
-        fillBox(builder, stack, -t, -t, -t, t, t, t + fd, r, g, b, a);
-        fillBox(builder, stack, -t + fw, -t, -t, t + fw, t, t + fd, r, g, b, a);
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Schalter: mischen JA — der Kasten wird mit Alpha gezeichnet (der
+             * Modellblock-Renderer uebergibt 0.5F), ohne Mischung waere er deckend.
+             * Tiefenpruefung NEIN — die Umrisse sind Markierungen und sollen durch
+             * Geometrie sichtbar bleiben; genau dafuer stand beim Aufrufer in
+             * ModelBlockEntityRenderer ein disableDepthTest direkt davor. Cull JA wie im
+             * Weltzustand: fillBox windet alle Flaechen nach aussen, es faellt nichts weg.
+             * Die Ecken tragen die Pose schon (fillQuad backt stack.last().pose() ein),
+             * darum bleibt als Modellansicht nur die globale. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, true),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
 
         stack.popPose();
     }
@@ -163,17 +180,28 @@ public class Draw
         axisOffset *= scale * thickness;
 
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* 4 Kaesten a 36 Ecken a 16 Byte (POSITION_COLOR). */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4 * 36 * 16))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
-        fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
-        fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
-        fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, Colors.WHITE);
+            fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, Colors.RED);
+            fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, Colors.GREEN);
+            fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, Colors.BLUE);
+            fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, Colors.WHITE);
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.disableDepthTest();
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Schalter: Tiefenpruefung NEIN — das stand hier vorher woertlich als
+             * RenderSystem.disableDepthTest(), damit die Achsen durch das Modell zu sehen
+             * sind (ModelBlockEntityRenderer verlaesst sich darauf: "der bringt seinen
+             * Tiefenzustand ebenfalls selbst mit"). Kein Mischen, die Achsenfarben sind
+             * undurchsichtig. Cull JA wie im Weltzustand. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                null);
+        }
     }
 
     public static void arc3D(BufferBuilder builder, PoseStack stack, Axis axis, float radius, float thickness, int color)

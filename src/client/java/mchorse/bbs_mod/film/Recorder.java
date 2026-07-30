@@ -1,16 +1,16 @@
 package mchorse.bbs_mod.film;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.data.Position;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.film.replays.Inventory;
 import mchorse.bbs_mod.film.replays.ReplayKeyframes;
@@ -19,6 +19,7 @@ import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.forms.MobForm;
 import mchorse.bbs_mod.graphics.Draw;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.morphing.Morph;
 import mchorse.bbs_mod.network.ClientNetwork;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -29,7 +30,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
@@ -89,25 +89,41 @@ public class Recorder extends WorldFilmController
             .rotateX(MathUtils.toRad(-position.angle.pitch));
 
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* 26.2: setShader ist entfallen — der Shader steht in der Pipeline. Uebersetzt ist der
+         * alte Zustand dieses Blocks: kein enableBlend (mischen=false, die Vorschau ist
+         * undurchsichtig), normaler Tiefentest (tiefePruefen=true, siehe Hinweis unten), kein
+         * disableCull (culling=true, der Vorgabezustand). Fuenf Kaesten mal sechs Flaechen mal
+         * sechs Ecken mal 16 Byte POSITION_COLOR passen in 4096. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        transformFrustum(vector, matrix, 1F, 1F);
-        Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            transformFrustum(vector, matrix, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
 
-        transformFrustum(vector, matrix, -1F, 1F);
-        Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            transformFrustum(vector, matrix, -1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
 
-        transformFrustum(vector, matrix, 1F, -1F);
-        Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            transformFrustum(vector, matrix, 1F, -1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
 
-        transformFrustum(vector, matrix, -1F, -1F);
-        Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            transformFrustum(vector, matrix, -1F, -1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
 
-        transformFrustum(vector, matrix, 0F, 0F);
-        Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 0F, 0.5F, 1F, 1F);
+            transformFrustum(vector, matrix, 0F, 0F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 0F, 0.5F, 1F, 1F);
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Draw.fillBoxTo backt stack.last().pose() schon in die Ecken. Als Modellansicht
+             * bleibt genau das, was der alte drawWithShader zusaetzlich auftrug: die globale
+             * (bei Weltzeichnungen die Kamerasicht). captureModelView waere hier falsch — es
+             * multipliziert die Pose ein zweites Mal. */
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, true, true),
+                builder.build(),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
+                null,
+                null);
+        }
 
         /* 26.2: das disableDepthTest, das hier stand, entfaellt ersatzlos. Es schaltete nach
          * dem Zeichnen den globalen Tiefentest ab; einen globalen Tiefenzustand gibt es nicht
