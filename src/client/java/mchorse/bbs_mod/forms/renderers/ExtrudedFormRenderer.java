@@ -26,7 +26,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import java.util.function.Supplier;
 
@@ -56,13 +55,19 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
         stack.last().normal().getScale(Vectors.EMPTY_3F);
         stack.last().normal().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
 
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline des Draws.
+         * Das alte GL_LEQUAL traegt ModelVAOPipeline: DepthStencilState mit
+         * GREATER_THAN_OR_EQUAL und Tiefenschreiben. Das ist KEIN Vorzeichenfehler — 26.2
+         * rechnet die Tiefe umgekehrt (reversed-Z), naeher heisst groesserer Wert. */
         this.renderModel(BBSShaders::getModel,
             stack,
             OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
             context.getTransition(), false
         );
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+
+        /* Das GL_ALWAYS danach setzte den Schalter fuer die Oberflaeche zurueck. Es entfaellt
+         * ersatzlos: der GUI-Raum hat keine Tiefe mehr, die Ueberdeckung entscheidet
+         * GuiGraphicsExtractor.nextStratum() (siehe Batcher2D). */
 
         stack.popPose();
     }
@@ -111,8 +116,9 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             BBSModClient.getTextures().bindTexture(textureObject);
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
+            /* 26.2: Blend ist kein Schalter mehr. Gezeichnet wird ueber ModelVAOPipeline, deren
+             * durchsichtige Variante BlendFunction.TRANSLUCENT traegt — genau die Mischung, die
+             * defaultBlendFunc() einstellte. Beide Zeilen entfallen darum ersatzlos. */
 
             gameRenderer.lightTexture().turnOnLightLayer();
             gameRenderer.overlayTexture().setupOverlayColor();
@@ -175,7 +181,11 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                 }
             }
 
-            RenderSystem.disableBlend();
+            /* Das abschliessende disableBlend() entfaellt ersatzlos: es schloss nur den globalen
+             * Schalter fuer die folgenden Draws, und die holen ihr Blending aus ihrer eigenen
+             * Pipeline. Das disableBlend() des Cutout-Falls oben bleibt dagegen offen — es will
+             * die blendfreie ModelVAOPipeline.UNDURCHSICHTIG, und die gehoert an die
+             * Pipeline-Wahl des Draws, nicht an eine Zustandszeile hier. */
 
             gameRenderer.lightTexture().turnOffLightLayer();
             gameRenderer.overlayTexture().teardownOverlayColor();

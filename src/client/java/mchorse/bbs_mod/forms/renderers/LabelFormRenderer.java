@@ -126,8 +126,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         CustomVertexConsumerProvider.clearRunnables();
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.enableCull();
+        /* 26.2: Tiefentest und Cull waren hier nur das Zuruecksetzen des globalen
+         * Zustands nach dem disableCull am Anfang von render3D. Einen globalen Zustand
+         * gibt es nicht mehr — jeder folgende Zeichenaufruf bringt Blend, Tiefe und Cull
+         * in der Pipeline seines RenderType mit. Es ist nichts zurueckzusetzen. */
 
         context.stack.popPose();
     }
@@ -177,8 +179,9 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             light
         );
 
-        RenderSystem.enableDepthTest();
-
+        /* 26.2: entfaellt. consumers.draw() spielt die RenderTypes ab, in die
+         * Font.drawInBatch geschrieben hat; deren Pipeline traegt den Tiefentest.
+         * Ein Zustandsaufruf davor erreicht sie nicht mehr. */
         consumers.draw();
 
         this.renderShadow(context, x, y, w, h);
@@ -276,8 +279,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         consumers.draw();
 
-        RenderSystem.enableDepthTest();
-
+        /* 26.2: entfaellt. Der Tiefentest der Textzeilen steckt in den Pipelines der
+         * RenderTypes, die consumers.draw() gerade abgespielt hat; fuer den danach
+         * folgenden Hintergrund-Quad gehoert er in dessen eigene Pipeline — die Stelle
+         * dafuer steht in renderShadow und ist dort noch offen. */
         this.renderShadow(context, x, y, w, h);
     }
 

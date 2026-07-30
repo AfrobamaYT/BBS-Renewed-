@@ -17,7 +17,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -209,10 +208,16 @@ public class FormTranslucentQueue
         gameRenderer.lightTexture().turnOnLightLayer();
         gameRenderer.overlayTexture().setupOverlayColor();
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* Tiefentest, Tiefenvergleich und Mischung wurden hier frueher global gesetzt
+         * (enableDepthTest, depthFunc(GL_LEQUAL), enableBlend, defaultBlendFunc). Seit 26.2
+         * gibt es diese Schalter nicht mehr — jeder Zeichenweg bringt den Zustand aus seiner
+         * eigenen Pipeline mit, und zwar in genau dieser Kombination: die Modell-Kommandos
+         * ueber ModelVAOPipeline.DURCHSICHTIG bzw. DURCHSICHTIG_BEIDSEITIG
+         * (BlendFunction.TRANSLUCENT + Tiefentest), RenderLayerCommand ueber die Pipeline
+         * seines RenderType (layer.pipeline()).
+         * ⛔ GL_LEQUAL heisst dort GREATER_THAN_OR_EQUAL, NICHT LESS_THAN_OR_EQUAL: 26.2
+         * rechnet die Tiefe umgekehrt (naeher = groesserer Wert, Loeschwert 0.0). Wer das
+         * mechanisch uebersetzt, dreht den Test um und alles verschwindet hinter allem. */
 
         for (DrawCommand command : commands)
         {

@@ -61,7 +61,6 @@ import net.minecraft.world.item.Items;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import org.joml.Vector3f;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -294,7 +293,14 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             stack.scale(scale, scale, scale);
 
             BBSModClient.getTextures().bindTexture(texture);
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+
+            /* 26.2: depthFunc(GL_LEQUAL) ist ersatzlos entfallen. Der Tiefentest ist kein
+             * umschaltbarer Zustand mehr, er steht in der Pipeline des Draws, der danach kommt:
+             * der Modell-Draw unten laeuft ueber ModelVAOPipeline (alle drei Varianten tragen
+             * DepthStencilState(GREATER_THAN_OR_EQUAL, true)) bzw. - ohne VAO und unter Iris -
+             * ueber die Pipeline des Entity-RenderTypes. GREATER_THAN_OR_EQUAL ist dabei das
+             * Gegenstueck zu GL_LEQUAL, nicht LESS_THAN_OR_EQUAL: 26.2 rechnet die Tiefe umgekehrt
+             * (naeher = groesserer Wert, Tiefenpuffer wird auf 0.0 geloescht). */
 
             Supplier<ShaderInstance> mainShader = (BBSRendering.isIrisShadersEnabled() && BBSRendering.isRenderingWorld()) || !model.isVAORendered()
                 ? GameRenderer::getRendertypeEntityTranslucentCullShader
@@ -315,7 +321,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             stack.popPose();
             stack.popPose();
 
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            /* 26.2: das abschliessende depthFunc(GL_ALWAYS) ist ersatzlos entfallen. Es stellte den
+             * UI-Vorgabezustand fuer alles her, was nach dem Modell noch in die Oberflaeche zeichnet
+             * - und der GUI-Raum hat keine Tiefe mehr: Batcher2D reicht seine Zeichnungen als
+             * GuiElementRenderState mit RenderPipelines.GUI bzw. GUI_TEXTURED ein, die Ueberdeckung
+             * entscheidet die Stapellage (GuiGraphicsExtractor.nextStratum()), kein Tiefenvergleich.
+             * Einen globalen Zustand, den man zuruecksetzen koennte, gibt es nicht mehr. */
         }
     }
 
@@ -329,13 +340,16 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         FormColorBlend.BlendMode blendMode = additive ? FormColorBlend.BlendMode.BRIGHTEN : FormColorBlend.BlendMode.MULTIPLY;
         FormColorBlend.blend(finalColor, formColor, blendMode);
 
-        if (!model.isCulling())
-        {
-            RenderSystem.disableCull();
-        }
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* 26.2: die drei Zustandszeilen, die hier standen (disableCull fuer Modelle ohne Culling,
+         * enableBlend + defaultBlendFunc vor dem Modell-Draw), sind ersatzlos entfallen. Blend und
+         * Cull sind keine Schalter mehr - sie stehen in der Pipeline und werden dort GEWAEHLT:
+         *   - Modelle mit isCulling() == false zeichnen mit ModelVAOPipeline.DURCHSICHTIG_BEIDSEITIG
+         *     (withCull(false)), alle anderen mit ModelVAOPipeline.DURCHSICHTIG;
+         *   - defaultBlendFunc ist BlendFunction.TRANSLUCENT, das beide tragen. Ohne VAO und unter
+         *     Iris bringt es die Pipeline des Entity-RenderTypes mit.
+         * Die Wahl gehoert an die Zeichenstelle (ModelInstance#render bzw. CubicVAORenderer); das
+         * Culling-Kennzeichen des Modells liegt dort schon vor - es reist bereits mit den Befehlen
+         * der sortierten Warteschlange mit. */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
         gameRenderer.lightTexture().turnOnLightLayer();
@@ -427,10 +441,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
          * Ruestungs- und Item-Renderer unten, die Blend und Cull aus der Pipeline ihres RenderType
          * mitbringen (RenderType#pipeline()). Einen globalen Schalter, den man zurueckstellen
          * koennte, gibt es nicht mehr.
-         * Ihre Gegenstuecke oben in dieser Methode (disableCull fuer Modelle ohne Culling, enableBlend
-         * + defaultBlendFunc vor dem Modell-Draw) sind damit NICHT erledigt: die richten den Zustand
-         * FUER einen Draw ein, der ueber ShaderInstance/VAO laeuft und keinen RenderType hat
-         * (ModelInstance#render). Der Zustand muss dort in die Pipeline der Draw-Stelle. */
+         * Ihre Gegenstuecke oben in dieser Methode richteten den Zustand dagegen FUER den Modell-Draw
+         * ein, der ueber VAO/eigenes Programm laeuft und keinen RenderType hat (ModelInstance#render).
+         * Sie sind seit dem Umbau des Zeichenwegs ebenfalls entfallen: ihr Zustand steht in
+         * ModelVAOPipeline (siehe den Kommentar oben, wo sie standen). */
 
         /* Render items */
         this.captureMatrices(model);
@@ -681,8 +695,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 ? GameRenderer::getRendertypeEntityTranslucentCullShader
                 : BBSShaders::getModel;
 
-            RenderSystem.enableDepthTest();
-            RenderSystem.enableBlend();
+            /* 26.2: enableDepthTest() + enableBlend() sind ersatzlos entfallen. Der Arm laeuft durch
+             * dasselbe renderModel wie jedes andere Modell, und Tiefentest wie Mischung kommen aus
+             * der Pipeline dieses Draws: ModelVAOPipeline traegt DepthStencilState(
+             * GREATER_THAN_OR_EQUAL, true) und BlendFunction.TRANSLUCENT, ohne VAO und unter Iris
+             * bringt es die Pipeline des Entity-RenderTypes mit. */
 
             boolean additive = this.form.additiveColor.get();
 
@@ -774,12 +791,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 wasActive = FormTranslucentQueue.suspend();
             }
 
-            if (cutout)
-            {
-                /* Blend off to match the vanilla cutout render type: semi-transparent texels
-                 * draw solid instead of smearing over the gbuffer. */
-                RenderSystem.disableBlend();
-            }
+            /* 26.2: das disableBlend() des Cutout-Falls ist ersatzlos entfallen. Es wollte den
+             * blendfreien Zustand des Vanilla-Cutout-RenderTypes (halbdurchsichtige Texel zeichnen
+             * solide, statt ueber den Gbuffer zu schmieren) - und genau der steht jetzt in der
+             * Pipeline, nicht in einer Zustandszeile: RenderPipelines.ENTITY_CUTOUT auf dem Weg,
+             * den `cutout` oben schon ueber die Programmwahl ansteuert, bzw.
+             * ModelVAOPipeline.UNDURCHSICHTIG (ColorTargetState.DEFAULT, keine Mischung) auf dem
+             * VAO-Weg. `cutout` bleibt die Bedingung, an der die Pipeline gewaehlt wird. */
 
             try
             {
@@ -789,9 +807,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             {
                 /* 26.2: das enableBlend() des cutout-Falls ist ersatzlos entfallen - es machte nur den
                  * globalen Schalter fuer die folgenden Draws wieder auf, und die holen ihr Blending
-                 * aus ihrer Pipeline. Das disableBlend() oben bleibt dagegen offen: es will die
-                 * blendfreie Cutout-Pipeline (RenderPipelines.ENTITY_CUTOUT), und die gehoert an die
-                 * Programm-/Pipeline-Wahl des Modell-Draws, nicht an eine Zustandszeile hier. */
+                 * aus ihrer Pipeline. Sein Gegenstueck, das disableBlend() oben, ebenso: es waehlt
+                 * jetzt die blendfreie Pipeline des Modell-Draws (RenderPipelines.ENTITY_CUTOUT bzw.
+                 * ModelVAOPipeline.UNDURCHSICHTIG), statt einen Zustand umzulegen. */
 
                 if (irisWorld)
                 {

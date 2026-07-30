@@ -213,6 +213,16 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, entry, -1F);
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, -1F);
 
+        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
+         *  Die beiden Aufrufe stellen die Mischung fuer den Zug darunter ein; defaultBlendFunc
+         *  plus enableBlend ist genau BlendFunction.TRANSLUCENT. In 26.2 gehoert das in die
+         *  Pipeline — nur hat dieser Zeichenweg noch keine: er laeuft ueber
+         *  RenderSystem.setShader + BufferUploader.drawWithShader, im aufgeschobenen Zweig ueber
+         *  den VertexBuffer in FormTranslucentQueue. Dazu wechselt der Shader je nach Fall
+         *  (Entity-Translucent oder PositionTexColor, beim Picken die beiden Picker-Programme),
+         *  und mit ihm das Vertexformat (ENTITY bzw. POSITION_TEX_LIGHTMAP_COLOR).
+         *  Blend hier einfach zu streichen waere still falsch: jede Textur mit weichem Rand und
+         *  jede Deckkraft unter 1 wuerde undurchsichtig. */
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
 

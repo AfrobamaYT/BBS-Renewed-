@@ -246,7 +246,12 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-        RenderSystem.enableDepthTest();
+        /* Der Tiefentest stand hier NACH dem Zeichnen — er stellte den globalen Zustand
+         * fuer alles wieder her, was nach der Spur gezeichnet wird. Diesen globalen
+         * Zustand gibt es in 26.2 nicht mehr: der Tiefenzustand steckt im
+         * DepthStencilState der RenderPipeline des folgenden Zeichenaufrufs (Vanilla
+         * ueber renderType.pipeline(), BBS-Modelle ueber ModelVAOPipeline.DURCHSICHTIG).
+         * Der Aufruf hat keinen Empfaenger mehr und entfaellt ersatzlos. */
 
         stack.popPose();
     }

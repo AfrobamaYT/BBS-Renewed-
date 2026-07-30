@@ -74,10 +74,13 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
             light = 0;
         }
-        else
-        {
-            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
-        }
+
+        /* 26.2: der else-Zweig ist ersatzlos entfallen - gleicher Grund wie in
+         * ModelFormRenderer#renderItems: sein Hijack tat nichts anderes, als je gezeichneter
+         * RenderType-Ebene den globalen Blend-Schalter anzuschalten. Die Item-Ebenen, die der
+         * Vanilla-Item-Renderer unten selbst waehlt, tragen ihr Blending in ihrer eigenen
+         * Pipeline (RenderType#pipeline()). clearRunnables() weiter unten bleibt stehen und
+         * laeuft im Nicht-Picking-Fall ins Leere - harmlos. */
 
         BlockFormRenderer.color.set(context.color);
         FormColorBlend.blend(BlockFormRenderer.color, this.form.color.get(), this.form.additiveColor.get());
@@ -101,6 +104,9 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         context.stack.popPose();
 
-        RenderSystem.enableDepthTest();
+        /* 26.2: das enableDepthTest() am Methodenende ist ersatzlos entfallen. Es stellte den
+         * globalen Tiefentest wieder her, den der Item-Draw verstellt haben koennte - beides
+         * gibt es nicht mehr. Jeder folgende Draw bekommt seine Tiefe aus der Pipeline seines
+         * RenderType (RenderType#pipeline()). */
     }
 }

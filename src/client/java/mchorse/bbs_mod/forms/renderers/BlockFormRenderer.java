@@ -86,10 +86,13 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
             light = 0;
         }
-        else
-        {
-            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
-        }
+
+        /* 26.2: der Hijack des Nicht-Picking-Zweigs ist ersatzlos entfallen. Er tat nichts
+         * anderes, als je gezeichneter RenderType-Ebene (RenderLayerMixin haengt an
+         * RenderType#setupRenderState) den globalen Blend-Schalter anzuschalten. Die
+         * Block-Ebenen, die der Vanilla-Blockrenderer unten selbst waehlt, tragen ihr Blending
+         * in ihrer eigenen Pipeline (RenderType#pipeline()). clearRunnables() unten bleibt
+         * stehen und laeuft nun ins Leere - harmlos. */
 
         color.set(context.color);
         FormColorBlend.blend(color, this.form.color.get(), this.form.additiveColor.get());
@@ -118,6 +121,8 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
             context.world.popPose();
         }
 
-        RenderSystem.enableDepthTest();
+        /* 26.2: hier ist nichts mehr zurueckzustellen. Der Tiefentest ist kein globaler Zustand
+         * mehr, den der Block-Draw verstellt haben koennte - jeder Draw bekommt ihn aus seiner
+         * Pipeline (RenderType#pipeline()). Ersatzlos entfallen. */
     }
 }

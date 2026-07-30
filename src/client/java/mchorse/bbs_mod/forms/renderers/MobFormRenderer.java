@@ -366,7 +366,12 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
              * dropped, so every UI element drawn afterwards landed off-screen ("half the UI
              * disappears" when a MobForm is nested under a ModelForm). Restoring is correct for
              * the 3D viewport too. */
-            RenderSystem.enableDepthTest();
+            /* 26.2: das enableDepthTest, das hier stand, entfaellt ersatzlos. Es stellte nach
+             * dem Zeichnen den globalen Tiefentest wieder her — den gibt es nicht mehr, jeder
+             * folgende Zeichenaufruf bekommt seinen Tiefenzustand aus seiner Pipeline.
+             * ⚠️ Nicht zu verwechseln mit dem depthFunc(GL_ALWAYS) am Ende von renderInUI: das
+             * setzt ABSICHTLICH einen abweichenden Zustand fuer das, was danach gezeichnet
+             * wird, und ist deshalb nicht geloescht, sondern als offen gemeldet. */
             /* ⛔ 26.2-PORT, NICHT MECHANISCH ERSETZEN: das hier SCHREIBT in die lebende
              * Matrix. `getModelViewMatrix()` heisst in 26.2 `getModelViewMatrixCopy()` --
              * aber eine Kopie zu beschreiben uebersetzt sauber und stellt NICHTS wieder her.

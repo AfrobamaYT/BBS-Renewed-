@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -14,7 +13,6 @@ import mchorse.bbs_mod.utils.joml.Vectors;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 public class AnchorFormRenderer extends FormRenderer<AnchorForm>
 {
@@ -46,7 +44,13 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
             PoseStack stack = context.batcher.getContext().pose();
             Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            /* 26.2: depthFunc(GL_LEQUAL) ist ersatzlos entfallen. Der Aufruf schaltete den
+             * Tiefentest fuer die Dauer des 3D-Einschubs vom Immer-Durchlassen der
+             * Oberflaeche auf den normalen Test zurueck. Genau den bringt jetzt jeder
+             * Teil-Draw selbst mit: BBS-Modelle ueber ModelVAOPipeline - dort steht
+             * GREATER_THAN_OR_EQUAL, das reversed-Z-Gegenstueck zu GL_LEQUAL, NICHT
+             * LESS_THAN_OR_EQUAL -, Item- und Blockteile ueber die Pipeline ihres
+             * RenderType (RenderType#pipeline()). */
             stack.pushPose();
 
             this.applyTransforms(uiMatrix, context.getTransition());
@@ -61,7 +65,12 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
                 .inUI());
 
             stack.popPose();
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+
+            /* 26.2: depthFunc(GL_ALWAYS) ist ersatzlos entfallen. Es stellte den Zustand
+             * her, den die 2D-Oberflaeche nach dem 3D-Einschub erwartete. Tiefe ist kein
+             * globaler Schalter mehr - was danach in der Oberflaeche zeichnet, bekommt sie
+             * aus seiner eigenen GUI-Pipeline (RenderPipelines.GUI_TEXTURED bzw.
+             * BBSPipelines). Es gibt nichts zurueckzustellen. */
         }
     }
 }
