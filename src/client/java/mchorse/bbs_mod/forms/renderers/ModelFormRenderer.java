@@ -421,12 +421,16 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         gameRenderer.lightTexture().turnOffLightLayer();
         gameRenderer.overlayTexture().teardownOverlayColor();
-        RenderSystem.disableBlend();
 
-        if (!model.isCulling())
-        {
-            RenderSystem.enableCull();
-        }
+        /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur
+         * den globalen Vorgabezustand fuer das her, was DANACH zeichnet - und das sind die Vanilla-
+         * Ruestungs- und Item-Renderer unten, die Blend und Cull aus der Pipeline ihres RenderType
+         * mitbringen (RenderType#pipeline()). Einen globalen Schalter, den man zurueckstellen
+         * koennte, gibt es nicht mehr.
+         * Ihre Gegenstuecke oben in dieser Methode (disableCull fuer Modelle ohne Culling, enableBlend
+         * + defaultBlendFunc vor dem Modell-Draw) sind damit NICHT erledigt: die richten den Zustand
+         * FUER einen Draw ein, der ueber ShaderInstance/VAO laeuft und keinen RenderType hat
+         * (ModelInstance#render). Der Zustand muss dort in die Pipeline der Draw-Stelle. */
 
         /* Render items */
         this.captureMatrices(model);
@@ -535,7 +539,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             MatrixStackUtils.applyTransform(stack, armorSlot.transform);
             stack.mulPose(Axis.XP.rotationDegrees(180F));
 
-            CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
+            /* 26.2: der Hijack ist ersatzlos entfallen. Er tat nichts anderes, als je gezeichneter
+             * RenderType-Ebene (RenderLayerMixin haengt an RenderType#setupRenderState) den globalen
+             * Blend-Schalter anzuschalten. Die Ruestungs-Ebenen, die der Vanilla-Renderer unten selbst
+             * waehlt, tragen ihr Blending in ihrer eigenen Pipeline (RenderType#pipeline()).
+             * clearRunnables() unten bleibt stehen und laeuft nun ins Leere - harmlos. */
 
             /* Translucent armor layers ride the deferred sorted pass (see
              * CustomVertexConsumerProvider#draw(RenderLayer)); only reached outside picking. */
@@ -551,8 +559,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             stack.popPose();
 
-            RenderSystem.enableBlend();
-            RenderSystem.enableDepthTest();
+            /* 26.2: hier ist nichts mehr zurueckzustellen. Blend und Tiefentest sind keine globalen
+             * Zustaende mehr, die der Ruestungs-Draw verstellt haben koennte - jeder Draw bekommt sie
+             * aus seiner Pipeline (RenderType#pipeline()). Ersatzlos entfallen. */
         }
     }
 
@@ -580,7 +589,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 stack.translate(0F, 0.125F, 0F);
                 MatrixStackUtils.applyTransform(stack, armorSlot.transform);
 
-                CustomVertexConsumerProvider.hijackVertexFormat((l) -> RenderSystem.enableBlend());
+                /* 26.2: der Hijack ist ersatzlos entfallen - gleicher Grund wie in renderArmor: er
+                 * schaltete je gezeichneter RenderType-Ebene den globalen Blend-Schalter an. Die
+                 * Item-Ebenen, die der Vanilla-Item-Renderer unten waehlt, bringen ihr Blending in
+                 * ihrer Pipeline mit (RenderType#pipeline()). */
 
                 /* Translucent item layers (potions, glass blocks in hand) ride the deferred
                  * sorted pass; only reached outside picking. */
@@ -611,7 +623,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
                 stack.popPose();
 
-                RenderSystem.enableDepthTest();
+                /* 26.2: nichts mehr zurueckzustellen - der Tiefentest ist kein globaler Zustand mehr,
+                 * jeder Draw bekommt ihn aus seiner Pipeline (RenderType#pipeline()). Ersatzlos
+                 * entfallen. */
             }
         }
     }
@@ -773,10 +787,11 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             }
             finally
             {
-                if (cutout)
-                {
-                    RenderSystem.enableBlend();
-                }
+                /* 26.2: das enableBlend() des cutout-Falls ist ersatzlos entfallen - es machte nur den
+                 * globalen Schalter fuer die folgenden Draws wieder auf, und die holen ihr Blending
+                 * aus ihrer Pipeline. Das disableBlend() oben bleibt dagegen offen: es will die
+                 * blendfreie Cutout-Pipeline (RenderPipelines.ENTITY_CUTOUT), und die gehoert an die
+                 * Programm-/Pipeline-Wahl des Modell-Draws, nicht an eine Zustandszeile hier. */
 
                 if (irisWorld)
                 {

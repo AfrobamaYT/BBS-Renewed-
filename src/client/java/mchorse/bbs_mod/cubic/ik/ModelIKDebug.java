@@ -74,9 +74,26 @@ public final class ModelIKDebug
 
         if (config.xray.get())
         {
+            /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
+             *  Die Roentgen-Option (BBSSettings.ikDebug.xray) will das Overlay
+             *  durch das Modell hindurch zeichnen. Tiefe ist in 26.2 kein
+             *  Schalter mehr, sondern Teil der Pipeline; unter den fertigen
+             *  RenderPipelines ist keine ohne Tiefenpruefung. Das braucht eine
+             *  eigene Pipeline UND einen Zeichenpfad, der pro Zug zwischen
+             *  normal und Roentgen waehlt — beides gehoert zur Portierung der
+             *  Zeichnung selbst (Tesselator/BufferUploader), nicht hierher. */
             RenderSystem.disableDepthTest();
         }
 
+        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
+         *  An dieser Stelle haengen ZWEI Zeichenwege. Die Haarlinien
+         *  (DEBUG_LINES) waeren von der LINES-Pipeline abgedeckt
+         *  (withCull(false), BlendFunction.TRANSLUCENT). Die Marker und die
+         *  dicken Linien sind aber TRIANGLES in POSITION_COLOR, und dafuer ist
+         *  keine fertige Pipeline nachgemessen, die ohne Cull UND durchsichtig
+         *  zeichnet. Cull anzuschalten wuerde Marker-Flaechen verschlucken;
+         *  Blend zu verlieren machte die Deckkraft-Einstellung
+         *  (config.opacity, dazu die 0.4/0.9-Faktoren) wirkungslos. */
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -95,8 +112,10 @@ public final class ModelIKDebug
 
         stack.popPose();
 
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        /* 26.2: ersatzlos entfallen. Die beiden Aufrufe haben nur den globalen
+         *  Zustand aufgeraeumt — den gibt es nicht mehr. Cull und Tiefe haengen
+         *  an der Pipeline, die jede folgende Zeichnung selbst mitbringt; auch
+         *  die Roentgen-Option oben braucht daher kein Zuruecksetzen. */
     }
 
     private static Map<String, PivotFrame> collectFrames(IModel model, ModelIKCache.Compiled compiled)
@@ -149,9 +168,19 @@ public final class ModelIKDebug
 
         if (config.xray.get())
         {
+            /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
+             *  Der Pick-Pass muss dieselbe Tiefe fahren wie der sichtbare Pass,
+             *  sonst ist ein sichtbarer Marker nicht anklickbar. Gleiche Lage
+             *  wie in render(): keine fertige Pipeline ohne Tiefenpruefung. */
             RenderSystem.disableDepthTest();
         }
 
+        /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
+         *  Der Pick-Pass zeichnet TRIANGLES in POSITION_COLOR (ID-Farben, kein
+         *  Blend — deshalb steht hier auch keins). Ohne Cull, damit keine
+         *  Marker-Flaeche fehlt; eine fehlende Flaeche ist ein Loch im
+         *  Klickziel. Keine nachgemessene fertige Pipeline trifft "TRIANGLES,
+         *  POSITION_COLOR, ohne Cull, ohne Blend". */
         RenderSystem.disableCull();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
@@ -193,8 +222,8 @@ public final class ModelIKDebug
 
         stack.popPose();
 
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        /* 26.2: ersatzlos entfallen — kein globaler Zustand mehr, nichts
+         *  zurueckzusetzen (siehe render()). */
     }
 
     /** Draws one pickable marker — the element's own shape and size — encoding the next stencil id, and claims it for {@code bone}. */

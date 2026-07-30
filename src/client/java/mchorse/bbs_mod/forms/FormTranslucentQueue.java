@@ -244,9 +244,10 @@ public class FormTranslucentQueue
 
         commands.clear();
 
-        RenderSystem.enableCull();
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
+        /* Cull, Tiefenmaske und Blend werden nicht mehr zurückgesetzt: seit 26.2 gibt es keinen
+         * globalen GL-Zustand, den ein späterer Zeichenweg erben könnte. Jeder folgende Aufruf
+         * bekommt Blend, Tiefe und Cull aus der Pipeline seines RenderType (RenderType.pipeline()),
+         * also gibt es nichts mehr zurückzugeben. */
 
         gameRenderer.lightTexture().turnOffLightLayer();
         gameRenderer.overlayTexture().teardownOverlayColor();

@@ -118,9 +118,24 @@ public final class AltCameraGridRenderer
 
             RenderSystem.setProjectionMatrix(projection, VertexSorting.DISTANCE_TO_ORIGIN);
 
-            RenderSystem.disableCull();
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
+            /* 26.2: Cull und Blend sind kein Schalter mehr, sondern Teil der
+             *  Pipeline — ersatzlos entfallen. Fuer diese Zeichnung traegt den
+             *  Zustand die LINES-Pipeline (oben nachgemessen: withCull(false)
+             *  == altes disableCull, BlendFunction.TRANSLUCENT == altes
+             *  enableBlend + defaultBlendFunc). Wer den Zeichenpfad unten
+             *  portiert, muss genau die waehlen — sonst wird das Gitter still
+             *  undurchsichtig und die Sortierung kippt. */
+
+            /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
+             *  Das Gitter will OHNE Tiefenpruefung zeichnen, und das ist hier
+             *  doppelt tragend. Erstens soll es durch Geometrie sichtbar
+             *  bleiben. Zweitens schreibt GL bei abgeschalteter Pruefung auch
+             *  keine Tiefe — sonst legt das 256-Bloecke-Gitter eine Tiefenwand
+             *  in den Alt-Kamera-Puffer und verdeckt den nachfolgenden
+             *  Form-Pass. LINES traegt DepthStencilState.DEFAULT (Pruefung UND
+             *  Schreiben an), trifft es also nicht, und unter den fertigen
+             *  RenderPipelines ist keine ohne Tiefe. Das waere eine eigene
+             *  Pipeline — zu bauen zusammen mit dem RenderPass oben. */
             RenderSystem.disableDepthTest();
             RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
@@ -163,9 +178,10 @@ public final class AltCameraGridRenderer
 
             BufferUploader.drawWithShader(bb.buildOrThrow());
 
-            RenderSystem.enableDepthTest();
-            RenderSystem.enableCull();
-            RenderSystem.disableBlend();
+            /* 26.2: ersatzlos entfallen. Die drei Aufrufe haben nur den
+             *  globalen Zustand aufgeraeumt — den gibt es nicht mehr. Blend,
+             *  Tiefe und Cull haengen an der Pipeline, und die bringt jede
+             *  folgende Zeichnung selbst mit. Nichts zurueckzusetzen. */
 
             mvStack.popMatrix();
             RenderSystem.applyModelViewMatrix();
