@@ -27,6 +27,8 @@
 // Tier 2-b/c use, so Iris's gbuffers_entities handles it normally.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshIR;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
@@ -440,7 +442,7 @@ public final class Tier2dParallelEmit
             try { BBSModClient.getTextures().bindTexture(texture); }
             catch (Throwable ig) {}
         }
-        RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
+        RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
         int drawCount = 0;
         int totalWritten = 0;

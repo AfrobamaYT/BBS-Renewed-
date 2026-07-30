@@ -263,7 +263,7 @@ public class UIClipCameraPreview extends UIElement
          *  gebunden werden. Die Framebuffer-Seite steht damit fest; offen ist
          *  die Gegenseite: Batcher2D.texturedBox(int, ...) ist noch nicht
          *  portiert (Batcher2D haengt selbst an Tesselator/BufferUploader/
-         *  ShaderInstance und gehoert in ein anderes Manifest). Diese Zeile
+         *  RenderPipeline und gehoert in ein anderes Manifest). Diese Zeile
          *  uebersetzt erst, wenn Batcher2D eine GpuTextureView-Ueberladung hat. */
         if (fb != null)
         {
@@ -315,7 +315,7 @@ public class UIClipCameraPreview extends UIElement
         if (haveFreshPick)
         {
             /* ⛔ 26.2, STEHENGELASSEN — NICHT ERFUNDEN:
-             *  ShaderInstance und com.mojang.blaze3d.shaders.Uniform gibt es in
+             *  RenderPipeline und com.mojang.blaze3d.shaders.Uniform gibt es in
              *  26.2 nicht mehr (jar-auskunft: kein Ersatz unter diesem Namen;
              *  Uniform existiert nur noch als com.mojang.blaze3d.opengl.Uniform,
              *  eine leere AutoCloseable-Schnittstelle). Einzelne Uniforms setzt
@@ -329,7 +329,7 @@ public class UIClipCameraPreview extends UIElement
              *  und wird gemeldet. */
             try
             {
-                net.minecraft.client.renderer.ShaderInstance previewProgram =
+                RenderPipeline previewProgram =
                     mchorse.bbs_mod.client.BBSShaders.getPickerPreviewProgram();
                 if (previewProgram != null)
                 {
@@ -346,7 +346,7 @@ public class UIClipCameraPreview extends UIElement
                      *  picker_preview MUSS diese Mischfunktion tragen, sonst sieht
                      *  die blaue Knochen-Markierung anders aus, ohne dass etwas meldet. */
 
-                    java.util.function.Supplier<net.minecraft.client.renderer.ShaderInstance> supplier =
+                    java.util.function.Supplier<RenderPipeline> supplier =
                         mchorse.bbs_mod.client.BBSShaders::getPickerPreviewProgram;
                     context.batcher.texturedBox(
                         supplier, pick.stencilTexId, Colors.WHITE,

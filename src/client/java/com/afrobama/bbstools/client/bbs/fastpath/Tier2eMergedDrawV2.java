@@ -31,6 +31,8 @@
 // ENABLE_TIER2_MERGE_V2 is on; everything else stays untouched.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshIR;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
@@ -424,7 +426,7 @@ public final class Tier2eMergedDrawV2
             {
                 try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
             }
-            RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
+            RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
             /* Single drawArrays via MC's BufferRenderer. Internally MC
              * caches a VertexBuffer per shader/format so the GL VBO id

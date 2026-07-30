@@ -19,6 +19,8 @@
 // format, Iris's MixinBufferBuilder extends each consistently).
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshIR;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
@@ -370,7 +372,7 @@ public final class Tier2eMergedDraw
             {
                 try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
             }
-            RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
+            RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
             /* ⛔ OFFEN 26.2 — steht absichtlich noch so da, nicht geraten:
              *  Der Zug zeichnet NEW_ENTITY-Dreiecke mit dem Entity-Translucent-Cull-Programm.

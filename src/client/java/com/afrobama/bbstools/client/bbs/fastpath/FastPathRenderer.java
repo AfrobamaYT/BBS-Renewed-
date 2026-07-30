@@ -17,10 +17,12 @@
 // 1-draw-per-model-id (skinning still CPU-side) and Tier 2 with GPU
 // instancing.
 //
-// Iris compat: uses vanilla GameRenderer::getRendertypeEntityTranslucentCullShader
+// Iris compat: uses vanilla () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL
 // — no custom shader, no transform-patcher friction. The output VBO
 // path is exactly what Iris already supports for vanilla entity render.
 package com.afrobama.bbstools.client.bbs.fastpath;
+
+import net.minecraft.client.renderer.RenderPipelines;
 
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
@@ -36,7 +38,7 @@ import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,7 +183,7 @@ public final class FastPathRenderer
         /* Shader. Iris-compat by construction: vanilla MC entity
          * translucent cull program goes through Iris's gbuffers_entities
          * pipeline. */
-        Supplier<ShaderInstance> shader = GameRenderer::getRendertypeEntityTranslucentCullShader;
+        Supplier<RenderPipeline> shader = () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL;
 
         /* Build matrix stack from snapshot. Re-apply the 180° Y rotation
          * that vanilla does inside render3D line 625. */
@@ -235,7 +237,7 @@ public final class FastPathRenderer
                                      ModelFormRendererAccessor selfA,
                                      ModelInstance instance,
                                      PoseStack stack,
-                                     Supplier<ShaderInstance> shader,
+                                     Supplier<RenderPipeline> shader,
                                      Color color,
                                      Link texture)
     {

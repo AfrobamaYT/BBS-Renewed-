@@ -16,6 +16,8 @@
 // strict gate already excludes most heavy cases.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshIR;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
@@ -144,7 +146,7 @@ public final class Tier2bDrawPath
 
                 /* Set the entity translucent-cull shader — vanilla MC,
                  * Iris-compat by construction. */
-                RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
+                RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
                 /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten.
                  *

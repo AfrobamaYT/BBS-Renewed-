@@ -21,7 +21,7 @@ import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.pose.Pose;
-import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -61,7 +61,7 @@ public interface ModelFormRendererAccessor
     @Invoker("renderModel")
     void bbstools$renderModel(
         IEntity target,
-        Supplier<ShaderInstance> program,
+        Supplier<RenderPipeline> program,
         PoseStack stack,
         ModelInstance model,
         int light,

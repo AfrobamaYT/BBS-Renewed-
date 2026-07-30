@@ -30,6 +30,8 @@
 // so far. No per-frame GC churn after warmup.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import net.minecraft.client.renderer.RenderPipelines;
+
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshIR;
 import com.afrobama.bbstools.client.mixin.bbs.ModelFormRendererAccessor;
@@ -271,7 +273,7 @@ public final class Tier2cParallelSkin
             catch (Throwable ig) {}
         }
 
-        RenderSystem.setShader(GameRenderer::getRendertypeEntityTranslucentCullShader);
+        RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
         BufferBuilder builder = Tesselator.getInstance().begin(
             VertexFormat.Mode.TRIANGLES,
