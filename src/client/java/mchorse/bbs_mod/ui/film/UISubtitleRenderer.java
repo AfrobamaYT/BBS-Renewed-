@@ -72,7 +72,9 @@ public class UISubtitleRenderer
         Matrix4f ortho = new Matrix4f().ortho(0, width, height, 0, -100, 100);
         FontRenderer font = Batcher2D.getDefaultTextRenderer();
 
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* 26.2: depthFunc(GL_ALWAYS) entfaellt ersatzlos — der GUI-Raum hat keine Tiefe mehr,
+         * die Ueberdeckung entscheidet GuiGraphicsExtractor.nextStratum() (siehe Batcher2D),
+         * und den Tiefenzustand bringt jeder Draw aus seiner Pipeline mit. */
         RenderSystem.disableCull();
 
         for (Subtitle subtitle : subtitles)
@@ -200,6 +202,10 @@ public class UISubtitleRenderer
         }
 
         RenderSystem.setProjectionMatrix(cache, VertexSorting.ORTHOGRAPHIC_Z);
-        RenderSystem.enableCull();
+
+        /* Das enableCull() entfaellt ersatzlos: einen globalen Cull-Schalter, den man
+         * zuruecksetzen koennte, gibt es nicht mehr — jede Pipeline bringt ihren eigenen mit.
+         * Das disableCull() oben bleibt dagegen offen: dort steht die Absicht (beidseitig
+         * zeichnen, weil die Untertitel-Transform spiegeln darf). */
     }
 }

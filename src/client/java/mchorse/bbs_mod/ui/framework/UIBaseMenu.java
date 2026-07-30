@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.framework;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.Keys;
@@ -16,7 +15,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 
 /**
  * Base class for GUI screens using this framework
@@ -266,7 +264,12 @@ public abstract class UIBaseMenu
 
     public void renderMenu(UIRenderingContext context, int mouseX, int mouseY)
     {
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* 26.2: depthFunc(GL_ALWAYS) entfaellt ersatzlos. Die Tiefenfunktion ist kein globaler
+         * Schalter mehr, sondern Teil der Pipeline des jeweiligen Zeichenwegs. Die Oberflaeche
+         * laeuft inzwischen ueber Vanillas GuiRenderer: Batcher2D reicht GuiElementRenderState
+         * ein und waehlt dort RenderPipelines.GUI bzw. GUI_TEXTURED, die ihren Tiefenzustand
+         * mitbringen — genau wie bei jedem Vanilla-Bildschirm, der auch ohne ALWAYS ueber der
+         * Welt landet. */
 
         this.context.resetMatrix();
         this.context.setMouse(mouseX, mouseY);
@@ -292,7 +295,11 @@ public abstract class UIBaseMenu
 
         this.context.applyCursor();
 
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        /* Das Zuruecksetzen auf GL_LEQUAL entfaellt mit dem ALWAYS oben: es gibt keinen
+         * globalen Tiefenzustand mehr, den ein spaeterer Zeichenweg erben koennte. Fuer
+         * spaetere Leser — eine mechanische Uebersetzung waere hier ohnehin falsch gewesen:
+         * 26.2 rechnet die Tiefe umgekehrt (reversed-Z), GL_LEQUAL entspraeche
+         * CompareOp.GREATER_THAN_OR_EQUAL, nicht LESS_THAN_OR_EQUAL. */
     }
 
     protected void preRenderMenu(UIRenderingContext context)

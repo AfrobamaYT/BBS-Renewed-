@@ -327,7 +327,13 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
         }
 
-        RenderSystem.enableBlend();
+        /* 26.2: enableBlend entfaellt ersatzlos — hier wirkte es ohnehin nicht mehr.
+         * texturedBox reicht die Zeichnung als GuiElementRenderState an Vanillas
+         * GUI-Renderer weiter (Batcher2D#blit -> BlitRenderState), und der oeffnet
+         * seinen Durchgang mit der Pipeline DES ELEMENTS; ein globaler Mischschalter
+         * hat darauf keinen Zugriff. Das Mischen muss also die Pipeline des
+         * Vorschau-Shaders mitbringen — so wie BBSPipelines#getSelection, das seinen
+         * ColorTargetState von RenderPipelines.GUI_TEXTURED erbt. */
         context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, 0, h, w, 0, w, h);
 
         if (pair != null && pair.a != null)

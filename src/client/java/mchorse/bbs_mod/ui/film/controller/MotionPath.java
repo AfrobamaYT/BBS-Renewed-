@@ -141,6 +141,16 @@ public class MotionPath
         float halfWidth = config.width.get() * 0.5F;
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
+         *  Der Pfad wird bewusst OHNE Tiefenpruefung gezeichnet — er soll durch Figur und Welt
+         *  hindurch zu sehen sein (siehe Klassenkommentar) — und OHNE Cull, weil das Band ein
+         *  flaches Quad je Segment ist, das je nach Blickrichtung von hinten getroffen wird.
+         *  Beides ist in 26.2 kein Schalter mehr, sondern Teil der Pipeline, und unter den
+         *  fertigen RenderPipelines ist keine ohne Tiefenpruefung. Das braucht eine eigene
+         *  Pipeline (TRIANGLES, POSITION_COLOR, ohne Tiefenpruefung, ohne Cull) UND den
+         *  portierten Zeichenweg darunter (Tesselator/BufferUploader). Streicht man die zwei
+         *  Zeilen, liegt der Pfad still hinter der Figur und verliert seine Rueckseiten. */
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
 
@@ -204,8 +214,9 @@ public class MotionPath
 
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
 
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        /* 26.2: das Zuruecksetzen von Cull und Tiefe entfaellt ersatzlos. Die beiden Aufrufe
+         * haben nur den globalen Zustand aufgeraeumt, den es nicht mehr gibt — Cull und Tiefe
+         * haengen an der Pipeline, die jede folgende Zeichnung selbst mitbringt. */
     }
 
     /**

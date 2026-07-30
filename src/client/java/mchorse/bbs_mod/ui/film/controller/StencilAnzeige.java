@@ -13,7 +13,6 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.renderer.ShaderInstance;
 import mchorse.bbs_mod.utils.Pair;
 import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import java.util.function.Supplier;
 
@@ -123,7 +122,14 @@ public final class StencilAnzeige
         int w = texture.width;
         int h = texture.height;
 
-        RenderSystem.enableBlend();
+        /* 26.2: enableBlend() entfaellt ersatzlos. Mischung ist kein Schalter mehr, sondern
+         * Teil der Pipeline, die der Batcher zum Zeichnen gereicht bekommt — die schlichte
+         * texturedBox-Ueberladung gibt dafuer RenderPipelines.GUI_TEXTURED durch.
+         *
+         * ⚠ Der Umriss braucht die Mischung zwingend: sein Shader liefert ueberall ausserhalb
+         * der Kante durchsichtige Pixel, ohne Mischung deckte diese Kachel das ganze
+         * Vorschaubild zu. Die Pipeline hinter getReplayOutlineProgram() muss deshalb
+         * BlendFunction.TRANSLUCENT tragen. */
         context.batcher.texturedBox(lieferant, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
     }
 

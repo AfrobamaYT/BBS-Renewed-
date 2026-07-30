@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.dashboard;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
@@ -324,9 +323,12 @@ public class UIDashboard extends UIBaseMenu
         Link background = BBSSettings.backgroundImage.get();
         int color = BBSSettings.backgroundColor.get();
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
+        /* 26.2: Blend ist kein umschaltbarer Zustand mehr — und der Batcher zeichnet hier
+         * ohnehin nicht sofort: box()/texturedBox() haengen nur einen
+         * GuiElementRenderState in die Liste, gezeichnet wird spaeter in
+         * GuiRenderer.render(). Die Mischung kommt aus der Pipeline des Elements:
+         * RenderPipelines.GUI fuer box(), RenderPipelines.GUI_TEXTURED fuer
+         * texturedBox(). */
         if (background == null)
         {
             context.batcher.box(0, 0, this.width, this.height, color);

@@ -1324,7 +1324,12 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Return back to orthographic projection */
         MatrixStackUtils.restoreMatrices();
 
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* Hier stand GL_ALWAYS, damit alles Folgende ueber dem Weltbild liegt. Alle diese
+         * Ueberlagerungen — Kugel-Hervorhebung, Ablesekarte, Umriss, Vorschaukachel — gehen
+         * ueber den Batcher in den GUI-Durchgang (Batcher2D#blit reicht einen BlitRenderState
+         * an den GuiRenderer). Der Tiefenzustand kommt dort aus der Pipeline des Elements
+         * (RenderPipelines.GUI_TEXTURED bzw. die davon geerbten BBS-Pipelines); einen
+         * globalen Tiefenvergleich, den man vorher umstellen koennte, gibt es nicht mehr. */
 
         this.hoveredReplayIndex = -1;
 
@@ -1366,7 +1371,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
             highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
         }
 
-        RenderSystem.enableBlend();
+        /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
+         * BBSPipelines (von RenderPipelines.GUI_TEXTURED geerbt), und deren ColorTargetState
+         * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
         context.batcher.texturedBox(getPickerPreviewProgram, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
         this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed,
@@ -1385,7 +1392,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         this.worldRenderContext = context;
 
-        RenderSystem.enableDepthTest();
+        /* Der frueher noetige enableDepthTest-Aufruf faellt ersatzlos weg: er sicherte nur ab,
+         * dass ein vorheriger Zeichenweg den globalen Tiefentest nicht abgeschaltet gelassen
+         * hat. In 26.2 traegt jede Pipeline ihren DepthStencilState selbst — was hier folgt
+         * (Formen ueber ModelVAOPipeline bzw. RenderType, Draw-Helfer ueber ihre eigene
+         * Pipeline), bringt den Tiefentest jeweils mit. */
 
         if (this.editorController != null)
         {
@@ -1420,7 +1431,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.lastMouse.set(x, y);
 
-        RenderSystem.disableDepthTest();
+        /* Hier wurde der Tiefentest fuer alles Nachfolgende abgeschaltet zurueckgelassen.
+         * Diesen globalen Zustand gibt es in 26.2 nicht mehr — jeder folgende Zeichenweg
+         * waehlt seine Pipeline und damit seinen Tiefentest selbst. Nichts zu uebergeben. */
     }
 
     private void renderOrbitCenterMarker(WorldRenderContext context)
@@ -1450,7 +1463,10 @@ public class UIFilmController extends UIElement implements GizmoViewport
         Draw.coolerAxes(stack, 0.12F, 0.007F);
         stack.popPose();
 
-        RenderSystem.enableDepthTest();
+        /* Stellte den Tiefentest wieder her, den Draw.coolerAxes global abschaltete, um die
+         * Achsen durch die Geometrie zu zeigen. In 26.2 leckt dieser Zustand nicht mehr aus
+         * dem Helfer heraus — er sitzt in dessen Pipeline —, also gibt es nichts
+         * wiederherzustellen. */
     }
 
     private float getCurrentTransition()

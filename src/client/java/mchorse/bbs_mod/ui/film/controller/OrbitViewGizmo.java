@@ -369,6 +369,16 @@ public class OrbitViewGizmo
 
     private void draw(Batcher2D batcher, BufferBuilder builder)
     {
+        /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten:
+         *  enableBlend() richtet den Zustand fuer einen Draw ein, der ueber
+         *  setShader + BufferUploader.drawWithShader laeuft und keinen RenderType
+         *  hat — es gibt keine Pipeline, in die das Blending gehoeren koennte.
+         *  Gebraucht wird POSITION_COLOR, durchsichtig, in DREI Topologien: die
+         *  Aufrufer geben TRIANGLE_FAN (fillCircle), TRIANGLES (ring) und QUADS
+         *  (line) herein. Vanillas GUI-Sammelpuffer nimmt das nicht auf, der
+         *  traegt nur EIN Vertexformat und EINE Topologie (siehe BBSPipelines).
+         *  Loeschen waere still falsch: die Kugelfuellungen und der Hover-Hof
+         *  fahren auf Alpha 0.2/0.25/0.6 (Colors.setA) und wuerden deckend. */
         RenderSystem.enableBlend();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         BufferUploader.drawWithShader(builder.buildOrThrow());

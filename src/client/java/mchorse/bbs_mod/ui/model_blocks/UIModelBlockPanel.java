@@ -693,7 +693,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
         }
 
-        RenderSystem.enableBlend();
+        /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
+         * BBSPipelines (von RenderPipelines.GUI_TEXTURED geerbt), und deren ColorTargetState
+         * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
         context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, 0, 0, context.menu.width, context.menu.height, 0, h, w, 0, w, h);
     }
 
@@ -716,7 +718,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         ));
         this.hovered = this.getClosestObject(new Vector3d(pos.x, pos.y, pos.z), this.mouseDirection);
 
-        RenderSystem.enableDepthTest();
+        /* Die Umrandungen unten sollen von der Welt verdeckt werden — das ist der normale
+         * Tiefentest, den in 26.2 die Pipeline von Draw.renderBox traegt (DepthStencilState
+         * mit GREATER_THAN_OR_EQUAL und Tiefenschreiben, das umgekehrte Z ist eingerechnet).
+         * Einen globalen Schalter, den man hier einschalten koennte, gibt es nicht mehr. */
 
         for (ModelBlockEntity entity : this.modelBlocks.getList())
         {
@@ -740,7 +745,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
             }
         }
 
-        RenderSystem.disableDepthTest();
+        /* Das Gegenstueck zum Abschalten oben faellt ebenfalls weg. renderGizmo zeichnet hier
+         * nichts, es faengt nur die Matrizen ein — die Handgriffe kommen spaeter im
+         * UI-Durchgang mit ihrer eigenen Pipeline. Es gibt also weder etwas zu uebergeben
+         * noch einen globalen Zustand, den man zuruecklassen koennte. */
 
         this.renderGizmo(context, pos);
     }
