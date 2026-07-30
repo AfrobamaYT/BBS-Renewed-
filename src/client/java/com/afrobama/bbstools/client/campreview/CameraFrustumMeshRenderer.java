@@ -3,20 +3,15 @@ package com.afrobama.bbstools.client.campreview;
 
 import com.afrobama.bbstools.client.util.CameraFrustumVisibility;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,69 +25,92 @@ import java.util.List;
  *
  * <p>Mesh shape: a body box + a pyramid frustum pointing along the
  * camera's forward direction + an up-triangle indicator on top. Drawn
- * as line segments in vanilla GL (no Sodium/Iris dependency).</p>
+ * as line segments (no Sodium/Iris dependency).</p>
  *
- * <p>Hooked at {@code WorldRenderEvents.AFTER_TRANSLUCENT} so the
- * wireframe overlays everything but doesn't fight with shader passes.
- * Skips when {@link CameraFrustumVisibility#visible} is false (toggled
+ * <p>Skips when {@link CameraFrustumVisibility#visible} is false (toggled
  * via K keybind).</p>
+ *
+ * <p><b>26.2:</b> die Geometrie wird nicht mehr selbst gezeichnet, sondern
+ * ueber {@code submitCustomGeometry} EINGEREICHT; wann sie auf dem Bild
+ * landet, entscheidet jetzt der RenderType, nicht mehr der Haken. Alle
+ * frueher von Hand geschalteten Zustaende stecken in
+ * {@code RenderTypes.LINES} — am Bytecode nachgelesen, siehe
+ * {@link #register()} und {@link #onRender(LevelRenderContext)}.</p>
  */
 public final class CameraFrustumMeshRenderer
 {
     private static final Logger LOG = LoggerFactory.getLogger("bbstools/cam-preview/frustum-mesh");
 
+    /* 26.2: RenderSystem.lineWidth() gibt es nicht mehr. Die Linienbreite ist
+     *  jetzt ein VERTEX-ATTRIBUT — RenderPipelines.LINES bindet
+     *  DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH (javap auf
+     *  RenderPipelines.<clinit>, LINES_SNIPPET). Vanilla setzt es je Vertex,
+     *  siehe ShapeOutlineFeatureRenderer (addVertex/setColor/setNormal/setLineWidth). */
+    private static final float LINE_WIDTH = 2F;
+
     private CameraFrustumMeshRenderer() {}
 
     public static void register()
     {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(CameraFrustumMeshRenderer::onRender);
+        /* 26.2: WorldRenderEvents.AFTER_TRANSLUCENT existiert nicht mehr. Der
+         *  Nachfolger ist NICHT einfach AFTER_TRANSLUCENT_TERRAIN/_FEATURES:
+         *  eingereichte Geometrie muss in der Sammelphase abgegeben werden,
+         *  sonst sind die Feature-Renderer schon durch und es wird STILL
+         *  nichts gezeichnet (kompiliert, bleibt unsichtbar).
+         *
+         *  Reihenfolge am Fabric-Mixin abgelesen (javap auf
+         *  fabric-rendering-v1-25.3.2 LevelRendererMixin):
+         *  afterCollectSubmits(COLLECT_SUBMITS) -> afterRenderSolidFeatures
+         *  -> afterRenderTranslucentFeatures -> endMainRender.
+         *  Die Zeichenreihenfolge kommt vom RenderType (LINES), nicht vom Haken. */
+        LevelRenderEvents.COLLECT_SUBMITS.register(CameraFrustumMeshRenderer::onRender);
         LOG.info("Camera frustum mesh renderer registered (Phase 14)");
     }
 
-    private static void onRender(WorldRenderContext ctx)
+    private static void onRender(LevelRenderContext ctx)
     {
         if (!CameraFrustumVisibility.visible) return;
 
         List<ActiveCameraClipRegistry.Active> active = ActiveCameraClipRegistry.snapshot();
         if (active.isEmpty()) return;
 
-        Minecraft mc = Minecraft.getInstance();
-        if (mc == null) return;
+        /* 26.2: LevelRenderContext hat kein camera() mehr. Die Kamera DIESES
+         *  Bildes steht im Renderzustand (Extract/Render-Trennung) — der
+         *  lebende Camera-Singleton kann zum Zeichenzeitpunkt schon woanders
+         *  stehen. javap: LevelRenderState.cameraRenderState,
+         *  CameraRenderState.pos (Vec3). */
+        CameraRenderState cameraState = ctx.levelState().cameraRenderState;
+        if (cameraState == null || cameraState.pos == null) return;
 
-        Camera mainCam = ctx.camera();
-        if (mainCam == null) return;
+        Vec3 camPos = cameraState.pos;
 
-        double camX = mainCam.getPosition().x;
-        double camY = mainCam.getPosition().y;
-        double camZ = mainCam.getPosition().z;
-
-        RenderSystem.disableCull();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.lineWidth(2F);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        PoseStack stack = ctx.matrixStack();
+        /* Frueher standen hier disableCull/enableBlend/defaultBlendFunc/
+         *  lineWidth/setShader(getPositionColorShader). Alle fuenf stecken
+         *  jetzt in der Pipeline hinter RenderTypes.LINES, am Bytecode geprueft
+         *  (RenderPipelines.LINES_SNIPPET): Shader core/rendertype_lines,
+         *  BlendFunction.TRANSLUCENT (= SRC_ALPHA/ONE_MINUS_SRC_ALPHA, also
+         *  genau der alte defaultBlendFunc), withCull(false), Topologie LINES,
+         *  DepthStencilState.DEFAULT. Der alte Aufrufplatz hat den Tiefentest
+         *  ebenfalls angelassen — die Zustandslage bleibt damit dieselbe. */
+        PoseStack stack = ctx.poseStack();
+        SubmitNodeCollector collector = ctx.submitNodeCollector();
 
         for (ActiveCameraClipRegistry.Active a : active)
         {
             if (!a.poseValid) continue;
             try
             {
-                drawFrustum(stack, a, camX, camY, camZ);
+                drawFrustum(collector, stack, a, camPos.x, camPos.y, camPos.z);
             }
             catch (Throwable t)
             {
                 LOG.debug("frustum mesh draw failed: {}", t.toString());
             }
         }
-
-        RenderSystem.lineWidth(1F);
-        RenderSystem.disableBlend();
-        RenderSystem.enableCull();
     }
 
-    private static void drawFrustum(PoseStack stack, ActiveCameraClipRegistry.Active a,
+    private static void drawFrustum(SubmitNodeCollector collector, PoseStack stack,
+                                    ActiveCameraClipRegistry.Active a,
                                     double camX, double camY, double camZ)
     {
         /* Translate to clip's pose relative to current main camera so
@@ -103,11 +121,17 @@ public final class CameraFrustumMeshRenderer
         stack.mulPose(Axis.YP.rotationDegrees(-(float) a.pose[3]));
         stack.mulPose(Axis.XP.rotationDegrees((float) a.pose[4]));
 
-        Matrix4f m = stack.last().pose();
+        /* Der Sammler kopiert die AKTUELLE Pose (javap:
+         *  CustomFeatureRenderer$Submit ist ein Record ueber PoseStack$Pose,
+         *  nicht ueber den Stack) — popPose() direkt danach ist also sicher. */
+        collector.submitCustomGeometry(stack, RenderTypes.LINES,
+            (pose, consumer) -> buildMesh(consumer, pose));
 
-        Tesselator tess = Tesselator.getInstance();
-        BufferBuilder bb = tess.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        stack.popPose();
+    }
 
+    private static void buildMesh(VertexConsumer bb, PoseStack.Pose m)
+    {
         /* Body box — small cube at origin (this is the camera's body). */
         float bs = 0.15F;   /* body size */
         addBoxLines(bb, m, -bs, -bs, -bs, bs, bs, bs, 0.3F, 0.7F, 1F);
@@ -134,23 +158,33 @@ public final class CameraFrustumMeshRenderer
         addLine(bb, m, -ts, bs,       0F,   ts, bs,       0F,  0.4F, 1F, 0.4F);
         addLine(bb, m, -ts, bs,       0F,   0F, bs + ts,  0F,  0.4F, 1F, 0.4F);
         addLine(bb, m,  ts, bs,       0F,   0F, bs + ts,  0F,  0.4F, 1F, 0.4F);
-
-        try { com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow()); }
-        catch (Throwable ignored) {}
-
-        stack.popPose();
     }
 
-    private static void addLine(BufferBuilder bb, Matrix4f m,
+    private static void addLine(VertexConsumer bb, PoseStack.Pose m,
                                 float x1, float y1, float z1,
                                 float x2, float y2, float z2,
                                 float r, float g, float bl)
     {
-        bb.addVertex(m, x1, y1, z1).setColor(r, g, bl, 1F);
-        bb.addVertex(m, x2, y2, z2).setColor(r, g, bl, 1F);
+        /* Die Normale ist bei LINES die Linienrichtung: der Shader
+         *  core/rendertype_lines spannt daraus im Bildraum das Band auf.
+         *  Ohne sie (oder mit Nullvektor) faellt die Linie zusammen und ist
+         *  unsichtbar — ohne Compilerfehler. */
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float dz = z2 - z1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (len <= 0F) return;
+
+        dx /= len;
+        dy /= len;
+        dz /= len;
+
+        bb.addVertex(m, x1, y1, z1).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(LINE_WIDTH);
+        bb.addVertex(m, x2, y2, z2).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(LINE_WIDTH);
     }
 
-    private static void addBoxLines(BufferBuilder bb, Matrix4f m,
+    private static void addBoxLines(VertexConsumer bb, PoseStack.Pose m,
                                     float x1, float y1, float z1,
                                     float x2, float y2, float z2,
                                     float r, float g, float bl)

@@ -27,6 +27,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.Supplier;
+import mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor;
 
 /**
  * BBS' own 2D drawing.
@@ -725,31 +726,14 @@ public class Batcher2D
      * extractor mit {@code GuiGraphicsExtractor(Minecraft, GuiRenderState, int, int)}), ein
      * Screen bekommt aber nur den fertigen extractor.
      *
-     * <p>NOTBEHELF bis ein accessor-mixin registriert ist (nur diese eine methode muss dann
-     * getauscht werden). Bewusst OHNE stillen fallback: ohne den state landet KEIN element in
-     * der liste, die {@code GuiRenderer} abarbeitet — das waere eine leere UI ohne fehler.
+     * <p>Der Zugriff laeuft ueber {@link GuiGraphicsExtractorAccessor} — ein Accessor-Mixin,
+     * kein Reflection-Griff. Der erste Anlauf las das Feld per {@code getDeclaredField}; das
+     * laeuft zwar, bindet BBS aber an einen Feldnamen, den kein Compiler prueft. Benennt
+     * Mojang ihn um, verschwindet die gesamte BBS-Oberflaeche — beim Nutzer, nicht im Bau.
      */
-    private static Field guiRenderStateField;
-
     private static GuiRenderState guiRenderState(GuiGraphicsExtractor context)
     {
-        try
-        {
-            if (guiRenderStateField == null)
-            {
-                Field field = GuiGraphicsExtractor.class.getDeclaredField("guiRenderState");
-
-                field.setAccessible(true);
-
-                guiRenderStateField = field;
-            }
-
-            return (GuiRenderState) guiRenderStateField.get(context);
-        }
-        catch (Exception e)
-        {
-            throw new IllegalStateException("BBS: GuiRenderState in GuiGraphicsExtractor nicht erreichbar — accessor-mixin fehlt", e);
-        }
+        return ((GuiGraphicsExtractorAccessor) (Object) context).bbs$getGuiRenderState();
     }
 
     /**

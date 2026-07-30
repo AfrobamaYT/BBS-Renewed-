@@ -18,6 +18,7 @@
     "LivingEntityRendererMixin",
     "InGameHudMixin",
     "InGameHudAccessor",
+    "GuiGraphicsExtractorAccessor",
     "KeyboardMixin",
     "ResourceReloadLoggerMixin",
     "RenderLayerMixin",

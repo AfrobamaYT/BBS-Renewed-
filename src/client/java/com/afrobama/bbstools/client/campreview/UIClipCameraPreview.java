@@ -4,6 +4,7 @@ package com.afrobama.bbstools.client.campreview;
 import com.afrobama.bbstools.clip.BBSToolsAddCameraClip;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
 import mchorse.bbs_mod.camera.data.Point;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -189,8 +190,14 @@ public class UIClipCameraPreview extends UIElement
          *  frame while our free-fly is active so the main BBS preview
          *  doesn't ALSO fly with WASD (BBS's flight is also bound to
          *  F in the dashboard, both my hover-poll and BBS's KeybindManager
-         *  would otherwise fire together). */
-        long handle = Minecraft.getInstance().getWindow().getWindow();
+         *  would otherwise fire together).
+         *
+         *  26.2: Window.getWindow() heisst nicht mehr so — der rohe GLFW-Zeiger
+         *  waere jetzt Window.handle(). Gebraucht wird er hier aber nicht mehr,
+         *  weil InputConstants.isKeyDown das Window-Objekt selbst nimmt
+         *  (javap: isKeyDown(com.mojang.blaze3d.platform.Window, int)).
+         *  Darum wandert der Typ von long auf Window durch alle Tastenabfragen. */
+        Window handle = Minecraft.getInstance().getWindow();
         boolean fDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_F);
         if (hovered && fDown && !lastFPressed)
         {
@@ -248,10 +255,20 @@ public class UIClipCameraPreview extends UIElement
         try { fb = ClipViewportFramebuffers.get(this.clipId); }
         catch (Throwable ignored) {}
 
+        /* ⛔ 26.2, OFFENE UEBERGABE — NICHT VON MIR ERFUNDEN:
+         *  RenderTarget hat keine GL-Textur-ID mehr (javap: nur noch
+         *  getColorTexture() und getColorTextureView()). Eine rohe int-ID
+         *  KANN es in 26.2 auch nicht mehr geben, weil Texturen ueber
+         *  RenderPass.bindTexture(String, GpuTextureView, GpuSampler)
+         *  gebunden werden. Die Framebuffer-Seite steht damit fest; offen ist
+         *  die Gegenseite: Batcher2D.texturedBox(int, ...) ist noch nicht
+         *  portiert (Batcher2D haengt selbst an Tesselator/BufferUploader/
+         *  ShaderInstance und gehoert in ein anderes Manifest). Diese Zeile
+         *  uebersetzt erst, wenn Batcher2D eine GpuTextureView-Ueberladung hat. */
         if (fb != null)
         {
-            int texId = fb.getColorTextureId();
-            if (texId != 0)
+            com.mojang.blaze3d.textures.GpuTextureView texId = fb.getColorTextureView();
+            if (texId != null)
             {
                 /* V-flip framebuffer (bottom-up) into UI space. */
                 context.batcher.texturedBox(
@@ -297,6 +314,19 @@ public class UIClipCameraPreview extends UIElement
 
         if (haveFreshPick)
         {
+            /* ⛔ 26.2, STEHENGELASSEN — NICHT ERFUNDEN:
+             *  ShaderInstance und com.mojang.blaze3d.shaders.Uniform gibt es in
+             *  26.2 nicht mehr (jar-auskunft: kein Ersatz unter diesem Namen;
+             *  Uniform existiert nur noch als com.mojang.blaze3d.opengl.Uniform,
+             *  eine leere AutoCloseable-Schnittstelle). Einzelne Uniforms setzt
+             *  man nicht mehr — Werte gehen als UBO in den RenderPass
+             *  (RenderPass.setUniform(String, GpuBufferSlice)). Ein 1:1-Ersatz
+             *  fuer getUniform("Target").set(int) EXISTIERT NICHT; das haengt am
+             *  Port von mchorse.bbs_mod.client.BBSShaders (eigenes Manifest:
+             *  15 eigene Shader, deren .json der ShaderManager nicht mehr liest)
+             *  und an der Shader-Ueberladung von Batcher2D. Alles, was ich hier
+             *  schreiben wuerde, waere geraten — darum bleibt der Block stehen
+             *  und wird gemeldet. */
             try
             {
                 net.minecraft.client.renderer.ShaderInstance previewProgram =
@@ -306,8 +336,15 @@ public class UIClipCameraPreview extends UIElement
                     com.mojang.blaze3d.shaders.Uniform target = previewProgram.getUniform("Target");
                     if (target != null) target.set(pick.pickedIndex);
 
-                    com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-                    com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+                    /* 26.2: enableBlend()/defaultBlendFunc() sind ersatzlos weg —
+                     *  das Mischen haengt jetzt an der Pipeline. Damit es beim
+                     *  Portieren von BBSShaders nicht STILL verlorengeht, hier der
+                     *  gemessene Sollwert: der alte defaultBlendFunc() entspricht
+                     *  exakt BlendFunction.TRANSLUCENT
+                     *  (SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA;
+                     *  javap auf BlendFunction.<clinit>). Die Ersatz-Pipeline fuer
+                     *  picker_preview MUSS diese Mischfunktion tragen, sonst sieht
+                     *  die blaue Knochen-Markierung anders aus, ohne dass etwas meldet. */
 
                     java.util.function.Supplier<net.minecraft.client.renderer.ShaderInstance> supplier =
                         mchorse.bbs_mod.client.BBSShaders::getPickerPreviewProgram;
@@ -406,7 +443,7 @@ public class UIClipCameraPreview extends UIElement
         BoneHoverPickService.Result pick = BoneHoverPickService.RESULTS.get(this.clipId);
         if (pick == null || pick.form == null) return true;
 
-        long handle = Minecraft.getInstance().getWindow().getWindow();
+        Window handle = Minecraft.getInstance().getWindow();
         boolean shift = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
             || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);
         boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
@@ -492,7 +529,7 @@ public class UIClipCameraPreview extends UIElement
     /** Polls movement/rotation keys. In Free Mode writes to the
      *  per-tile {@link #freePose}; in Camera Mode writes back to the
      *  clip's offset+angle properties (live-edit the timeline). */
-    private void tickFreeFly(long handle)
+    private void tickFreeFly(Window handle)
     {
         if (this.freeMode)
         {
@@ -595,7 +632,7 @@ public class UIClipCameraPreview extends UIElement
 
     /** Free-Mode variant: same WASD/space/ctrl/Q-E/T-G layout but
      *  writes to {@link #freePose} instead of mutating the clip. */
-    private void tickFreeFlyFreePose(long handle)
+    private void tickFreeFlyFreePose(Window handle)
     {
         float yawRad = (float) Math.toRadians(this.freePose[3]);
 
