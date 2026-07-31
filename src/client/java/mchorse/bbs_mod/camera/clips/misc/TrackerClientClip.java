@@ -963,9 +963,12 @@ public class TrackerClientClip extends TrackerClip
              * gerastert. Alles was noch unter der alten ortho gebaut wurde, MUSS vor dem
              * projektions-wechsel geflusht werden — sonst rendert es halb-so-gross/verschoben
              * (hotbar-drift beim 4K-export, hearts/food links aus dem rahmen). */
-            mc.renderBuffers().bufferSource().endBatch();
+            /* 26.2: der Aufruf ist ersatzlos entfallen, und mit ihm die Falle, die der Kommentar
+             * darueber beschreibt. Es gibt keinen halbfertigen Stapel mehr, den ein Wechsel der
+             * Projektion falsch rastern koennte: eingereicht wird ein AUFTRAG, gezeichnet wird er
+             * spaeter mit dem Zustand, den sein eigener Durchgang mitbringt. */
 
-            RenderSystem.backupProjectionMatrix();
+            mchorse.bbs_mod.graphics.Projektion.sichern();
             Matrix4f ortho = new Matrix4f().setOrtho(0F, (float) sw, (float) sh, 0F, 1000F, 21000F);
             mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
             scaleChanged = true;
@@ -1011,12 +1014,15 @@ public class TrackerClientClip extends TrackerClip
              * Ohne flush rastern sie nach restoreProjectionMatrix unter der editor-ortho
              * (z.B. 960 statt 480 gui breit) = halbe groesse, nach links/oben verschoben.
              * DAS war der 4K-export-hotbar-bug (gemessen, siehe wiki hud-scale-restore). */
-            mc.renderBuffers().bufferSource().endBatch();
+            /* 26.2: der Aufruf ist ersatzlos entfallen, und mit ihm die Falle, die der Kommentar
+             * darueber beschreibt. Es gibt keinen halbfertigen Stapel mehr, den ein Wechsel der
+             * Projektion falsch rastern koennte: eingereicht wird ein AUFTRAG, gezeichnet wird er
+             * spaeter mit dem Zustand, den sein eigener Durchgang mitbringt. */
 
             windowScaleFactorField.setDouble(window, savedScaleFactor);
             windowScaledWidthField.setInt(window, savedScaledWidth);
             windowScaledHeightField.setInt(window, savedScaledHeight);
-            RenderSystem.restoreProjectionMatrix();
+            mchorse.bbs_mod.graphics.Projektion.zurueck();
         }
         catch (Exception ignore) {}
     }

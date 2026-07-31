@@ -48,7 +48,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
 
         consumers.setSubstitute(BBSRendering.getColorConsumer(set));
         consumers.setUI(true);
-        Minecraft.getInstance().getItemRenderer().renderStatic(this.form.stack.get(), this.form.modelTransform.get(), LightTexture.FULL_BLOCK, OverlayTexture.NO_OVERLAY, matrices, consumers, Minecraft.getInstance().level, 0);
+        Minecraft.getInstance().getItemRenderer().renderStatic(this.form.stack.get(), this.form.modelTransform.get(), net.minecraft.util.LightCoordsUtil.pack(15, 0), OverlayTexture.NO_OVERLAY, matrices, consumers, Minecraft.getInstance().level, 0);
         consumers.draw();
         consumers.setUI(false);
         consumers.setSubstitute(null);

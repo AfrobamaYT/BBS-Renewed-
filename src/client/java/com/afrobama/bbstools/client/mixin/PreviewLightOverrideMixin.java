@@ -33,7 +33,7 @@ public abstract class PreviewLightOverrideMixin
     {
         if (PreviewPassState.PREVIEW_PASS_ACTIVE)
         {
-            cir.setReturnValue(LightTexture.FULL_BRIGHT);
+            cir.setReturnValue(net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
             if (!loggedFirstOverride)
             {
                 loggedFirstOverride = true;

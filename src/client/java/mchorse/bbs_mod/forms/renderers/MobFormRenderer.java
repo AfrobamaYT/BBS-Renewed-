@@ -250,7 +250,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             });
 
             consumers.setUI(true);
-            Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), stack, consumers, LightTexture.FULL_BLOCK);
+            Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), stack, consumers, net.minecraft.util.LightCoordsUtil.pack(15, 0));
             consumers.draw();
             consumers.setUI(false);
 

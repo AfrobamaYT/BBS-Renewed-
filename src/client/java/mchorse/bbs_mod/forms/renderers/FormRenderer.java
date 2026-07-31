@@ -125,7 +125,7 @@ public abstract class FormRenderer <T extends Form>
         int u = context.light & '\uffff';
         int v = context.light >> 16 & '\uffff';
 
-        u = (int) Lerps.lerp(u, LightTexture.FULL_BLOCK, lf);
+        u = (int) Lerps.lerp(u, net.minecraft.util.LightCoordsUtil.pack(15, 0), lf);
         context.light = u | v << 16;
 
         this.render3D(context);

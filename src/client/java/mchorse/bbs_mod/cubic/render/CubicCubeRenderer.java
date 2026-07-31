@@ -456,7 +456,7 @@ public class CubicCubeRenderer implements ICubicRenderer
         }
         else
         {
-            int lu = (int) Lerps.lerp(this.light & '\uffff', LightTexture.FULL_BLOCK, MathUtils.clamp(group.lighting, 0F, 1F));
+            int lu = (int) Lerps.lerp(this.light & '\uffff', net.minecraft.util.LightCoordsUtil.pack(15, 0), MathUtils.clamp(group.lighting, 0F, 1F));
             int lv = this.light >> 16 & '\uffff';
 
             builder.setUv2(lu, lv);

@@ -51,7 +51,7 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
 
         consumers.setSubstitute(BBSRendering.getColorConsumer(set));
         consumers.setUI(true);
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(this.form.blockState.get(), matrices, consumers, LightTexture.FULL_BLOCK, OverlayTexture.NO_OVERLAY);
+        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(this.form.blockState.get(), matrices, consumers, net.minecraft.util.LightCoordsUtil.pack(15, 0), OverlayTexture.NO_OVERLAY);
         consumers.draw();
         consumers.setUI(false);
         consumers.setSubstitute(null);

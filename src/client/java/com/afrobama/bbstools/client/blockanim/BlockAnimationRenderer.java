@@ -41,7 +41,7 @@ public final class BlockAnimationRenderer
         BlockRenderDispatcher brm = mc.getBlockRenderer();
         Vec3 camPos = ctx.levelState().cameraRenderState.pos;
         PoseStack matrices = ctx.poseStack();
-        SubmitNodeCollector consumers = mc.renderBuffers().bufferSource();
+        SubmitNodeCollector consumers = ctx.submitNodeCollector();
 
         for (var ab : blocks)
         {

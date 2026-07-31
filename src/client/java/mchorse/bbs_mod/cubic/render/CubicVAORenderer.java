@@ -86,7 +86,7 @@ public class CubicVAORenderer extends CubicCubeRenderer
         }
         else
         {
-            int u = (int) Lerps.lerp(light & '\uffff', LightTexture.FULL_BLOCK, MathUtils.clamp(group.lighting, 0F, 1F));
+            int u = (int) Lerps.lerp(light & '\uffff', net.minecraft.util.LightCoordsUtil.pack(15, 0), MathUtils.clamp(group.lighting, 0F, 1F));
             int v = light >> 16 & '\uffff';
 
             light = u | v << 16;
