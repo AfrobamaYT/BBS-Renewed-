@@ -154,7 +154,26 @@ public class TrackerClientClip extends TrackerClip
     private static float hudShowProgress;
     private static float prevHudShowProgress;
     private static int lastTransitionTick = -1;
-    private static boolean hudMatrixPushed;
+    /**
+     * ⛔ NICHT EIN BOOLEAN, SONDERN DER KONTEXT SELBST (2026-07-31).
+     *
+     * <p>Vorher stand hier {@code boolean hudMatrixPushed}. Der Absturz
+     * crash-2026-07-31_17.53 zeigt, warum das zu wenig ist:
+     *
+     * <pre>IllegalStateException: already at the bottom of the stack</pre>
+     *
+     * <p>Der Merker sagte "ich habe gepusht", der Matrizenstapel war trotzdem leer. In 26.2
+     * ist die Oberflaechen-Matrix ein {@code Matrix3x2fStack}, der PRO BILD neu aufgebaut
+     * wird -- ein Merker, der ueber Bildgrenzen hinweg lebt, kann davon nichts wissen. Kommt
+     * das Ende in einem anderen Durchlauf an als der Anfang, poppt es einen fremden (leeren)
+     * Stapel.
+     *
+     * <p>Gemerkt wird darum der KONTEXT, in dem gepusht wurde. Nur wenn das Ende denselben
+     * bekommt, gehoert das Gegenstueck dorthin. Das ist derselbe Fehlertyp, den der
+     * Netz-Waechter schon einmal produziert hat (Absturzhistorie G9): eine Pruefung, die
+     * etwas anderes misst als das, worauf es ankommt.
+     */
+    private static GuiGraphicsExtractor hudMatrixKontext;
     private static boolean controllerRanThisFrame;
 
     /* === Window scale reflection === */
@@ -860,17 +879,20 @@ public class TrackerClientClip extends TrackerClip
             drawContext.pose().pushMatrix();
             float offset = (1F - hudShowProgress) * (float) Minecraft.getInstance().getWindow().getGuiScaledHeight();
             drawContext.pose().translate(0F, offset);
-            hudMatrixPushed = true;
+            hudMatrixKontext = drawContext;
         }
     }
 
     public static void endHudRendering(GuiGraphicsExtractor drawContext)
     {
-        if (hudMatrixPushed && drawContext != null)
+        /* Nur poppen, wenn der Anfang in DIESEM Kontext lag -- sonst gehoert der Stapel
+         * einem anderen Bild und ist leer. */
+        if (drawContext != null && hudMatrixKontext == drawContext)
         {
             drawContext.pose().popMatrix();
-            hudMatrixPushed = false;
         }
+
+        hudMatrixKontext = null;
         endHudScaleRestore();
         restorePlayer();
         mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(savedHudHiddenForLevel);
@@ -1059,7 +1081,7 @@ public class TrackerClientClip extends TrackerClip
         prevFrameRenderHand = false;
         prevFrameRenderHud = false;
         lastTransitionTick = -1;
-        hudMatrixPushed = false;
+        hudMatrixKontext = null;
     }
 
     public static double extrapolate(double prev, double current, double tickDelta)
