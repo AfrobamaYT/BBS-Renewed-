@@ -75,7 +75,13 @@ public class ModelVAORenderer
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay)
     {
-        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0);
+        render(pipeline, modelVAO, stack, r, g, b, a, light, overlay, null);
+    }
+
+    /** Wie oben, aber mit der Modelltextur -- siehe die lange Fassung, warum sie noetig ist. */
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.graphics.texture.Texture textur)
+    {
+        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0, 0, textur);
     }
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode)
@@ -91,6 +97,29 @@ public class ModelVAORenderer
      * sie Modus.y im gemeinsamen Block.
      */
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode, int kennung)
+    {
+        render(pipeline, modelVAO, modelView, normalMat, r, g, b, a, light, overlay, passMode, kennung, null);
+    }
+
+    /**
+     * Wie oben, aber mit der MODELLTEXTUR.
+     *
+     * <h2>⛔ OHNE SIE ZEICHNET DAS MODELL WEISS (2026-07-31 gemessen)</h2>
+     *
+     * <p>Bis 1.21.1 band der Aufrufer die Textur global ({@code getTextures().bindTexture}),
+     * und der Zeichenaufruf las sie von dort. In 26.2 gehoert eine Textur zum ZUG: die
+     * Pipeline deklariert {@code Sampler0}, und wer ihn nicht bindet, bekommt keine Textur --
+     * ohne Fehler, ohne Log, einfach weiss.
+     *
+     * <p>Gemessen im Film-Editor: ein ModelForm-Replay fuellte 48 Prozent des Vorschaufeldes
+     * mit reinem Weiss (256691 von 534100 Bildpunkten ueber Helligkeit 200). Geometrie da,
+     * Textur fehlt.
+     *
+     * <p>⚠️ Sampler1 (Overlay) und Sampler2 (Lichtkarte) deklariert die Pipeline ebenfalls.
+     * Sie werden hier mitgebunden, weil ein Durchgang mit unvollstaendiger Bindegruppe
+     * scheitert -- nicht, weil das Modell sie unbedingt braeuchte.
+     */
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode, int kennung, mchorse.bbs_mod.graphics.texture.Texture textur)
     {
         if (modelVAO.eckenZahl() <= 0)
         {
@@ -124,6 +153,14 @@ public class ModelVAORenderer
              * Modellansicht, und genau die soll hier ueberschrieben werden. */
             durchgang.setUniform("DynamicTransforms", transformationen);
             durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK, block);
+
+            /* ⛔ OHNE DIESE BINDUNG ZEICHNET DAS MODELL WEISS. Die Pipeline deklariert
+             * Sampler0/1/2; in 26.2 gehoert die Textur zum Zug, nicht in einen globalen
+             * Aufruf davor. */
+            if (textur != null)
+            {
+                durchgang.bindTexture("Sampler0", textur.view(), textur.sampler());
+            }
 
             modelVAO.zeichnen(durchgang);
         }

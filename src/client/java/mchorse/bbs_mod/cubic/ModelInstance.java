@@ -730,7 +730,10 @@ public class ModelInstance implements IModelInstance
                          * wird es vom ModelVAORenderer. Die Durchgangsart ist dabei Parameter
                          * und keine Klammer mehr um den Zug herum, kann also nicht mehr am
                          * naechsten Zug haengenbleiben. */
-                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE);
+                        /* Die Textur GEHT MIT: seit 26.2 liest der Zug sie nicht mehr aus
+                         * einer globalen Bindung, sie muss an Sampler0 des Durchgangs. Ohne
+                         * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
+                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, 0, texture);
 
                         FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
                     }
@@ -745,7 +748,7 @@ public class ModelInstance implements IModelInstance
                     }
                     else
                     {
-                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay);
+                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture);
                     }
                 }
 
