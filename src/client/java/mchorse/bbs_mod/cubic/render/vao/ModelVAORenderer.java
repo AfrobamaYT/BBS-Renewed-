@@ -160,6 +160,20 @@ public class ModelVAORenderer
             if (textur != null)
             {
                 durchgang.bindTexture("Sampler0", textur.view(), textur.sampler());
+
+                /* ⚠️ ALLE DREI SAMPLER, die die Pipeline deklariert. Sampler1 (Overlay) und
+                 * Sampler2 (Lichtkarte) liest der Shader per texelFetch; eine Bindegruppe,
+                 * der ein deklarierter Sampler fehlt, ist unvollstaendig -- und ob ein
+                 * Durchgang dann zeichnet oder still verwirft, wollen wir nicht ausprobieren
+                 * muessen. Die Quellen sind Vanillas eigene (GameRenderer.lightmap /
+                 * overlayTexture), abgelesen an TextureSetup.singleTextureWithLightmap. */
+                net.minecraft.client.renderer.GameRenderer spielZeichner =
+                    Minecraft.getInstance().gameRenderer;
+                com.mojang.blaze3d.textures.GpuSampler glatt = RenderSystem.getSamplerCache()
+                    .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.LINEAR);
+
+                durchgang.bindTexture("Sampler1", spielZeichner.overlayTexture().getTextureView(), glatt);
+                durchgang.bindTexture("Sampler2", spielZeichner.lightmap(), glatt);
             }
 
             modelVAO.zeichnen(durchgang);
