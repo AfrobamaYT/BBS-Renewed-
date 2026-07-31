@@ -139,6 +139,20 @@ public class Texture
      */
     private void allocate(int width, int height, TextureFormat format)
     {
+        /* ⚠️ Eine Textur mit Kantenlaenge 0 ist in GL erlaubt und meldet keinen Fehler -- sie
+         * ist nur zu nichts zu gebrauchen. Haengt sie an einem Framebuffer, ist der
+         * unvollstaendig, und jeder Zeichenaufruf darauf ist undefiniert. Weil BBS' Filmpanel
+         * beim Oeffnen tatsaechlich 0/0 durchreicht (Log: "setCustomSize ... w=0 h=0"), wird
+         * hier geklemmt und EINMAL laut gemeldet -- geklemmt, damit der Aufrufer weiterlaeuft,
+         * gemeldet, damit die Null nicht still verschwindet. */
+        if (width <= 0 || height <= 0)
+        {
+            nullGroesseMelden(width, height);
+
+            width = Math.max(width, 1);
+            height = Math.max(height, 1);
+        }
+
         if (this.gpu != null && this.gpuWidth == width && this.gpuHeight == height && this.gpuFormat == format)
         {
             return;
@@ -180,6 +194,26 @@ public class Texture
         }
 
         this.id = glTextur.glId();
+    }
+
+    /**
+     * Meldet eine Textur mit Kantenlaenge 0 -- einmal, mit Stapelspur, damit der VERURSACHER
+     * im Log steht und nicht bloss die Tatsache.
+     */
+    private static boolean nullGroesseGemeldet;
+
+    private static void nullGroesseMelden(int width, int height)
+    {
+        if (nullGroesseGemeldet)
+        {
+            return;
+        }
+
+        nullGroesseGemeldet = true;
+
+        new IllegalStateException(
+            "Textur mit Kantenlaenge 0 angefordert (" + width + "x" + height
+            + ") -- auf 1x1 geklemmt. Stapelspur zeigt den Verursacher:").printStackTrace();
     }
 
     private void closeGpu()
@@ -463,10 +497,17 @@ public class Texture
             this.translucent = scanTranslucency(pixels);
         }
 
-        /* ⚠️ 26.2: IMMER RGBA, auch bei dreikanaligen Pixeln. GlDevice.createTexture lehnt
-         * RGB8 rundheraus ab; ein dreikanaliges Bild bekommt also ein ungenutztes Alpha statt
-         * einer Ausnahme mitten im Bild. Die Fallunterscheidung nach pixels.bits ist damit
-         * hinfaellig -- sie steht nur noch hier als Erklaerung, warum sie weg ist. */
+        /* ⚠️ 26.2: IMMER RGBA. GlDevice.createTexture lehnt RGB8 rundheraus ab, deshalb gibt
+         * es die frueher hier stehende Fallunterscheidung nach pixels.bits nicht mehr.
+         *
+         * ⛔ DIESER KOMMENTAR HAT FRUEHER DAS GEGENTEIL BEHAUPTET und damit einen Absturz
+         * getarnt: "ein dreikanaliges Bild bekommt also ein ungenutztes Alpha statt einer
+         * Ausnahme". Es bekommt kein Alpha. Der Treiber liest einfach ein Drittel MEHR, als im
+         * Puffer steht, und nimmt die JVM mit (Aufgabe 88).
+         *
+         * Dass hier immer RGBA hochgeladen wird, ist nur richtig, WEIL Pixels.fromPNGStream
+         * von STB vier Kanaele anfordert. Die beiden Stellen haengen zusammen -- wer eine
+         * davon aendert, muss die andere mitaendern. pufferPruefen() faengt den Bruch ab. */
         this.setFormat(TextureFormat.RGBA_U8);
         this.uploadTexture(target, level, pixels.width, pixels.height, pixels.getBuffer());
 
@@ -487,12 +528,57 @@ public class Texture
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_PIXELS, 0);
         GL11.glPixelStorei(GL11.GL_UNPACK_SKIP_ROWS, 0);
 
+        pufferPruefen(w, h, buffer);
+
         GL11.glTexImage2D(target, level, this.format.internal, w, h, 0, this.format.format, this.format.type, buffer);
 
         if (level == 0)
         {
             this.width = w;
             this.height = h;
+        }
+    }
+
+    /**
+     * Prueft VOR {@code glTexImage2D}, ob im Puffer ueberhaupt so viele Bytes stehen, wie der
+     * Treiber gleich lesen wird -- und scheitert LAUT, statt die JVM mitzunehmen.
+     *
+     * <h2>Warum das noetig ist</h2>
+     *
+     * <p>{@code glTexImage2D} liest ab {@code memAddress(buffer)}, und das ist die Adresse
+     * PLUS POSITION des Puffers, nicht sein Anfang. Zwei Fallen fuehren hier zu einem Lesen
+     * hinter dem Puffer, und beide enden mit einer Zugriffsverletzung ohne Stapelspur:
+     *
+     * <ul>
+     *   <li><b>Position nicht zurueckgesetzt.</b> {@code Pixels.getColor}/{@code setColor}
+     *       verschieben die Position; {@code Pixels.fromSize} laesst sie am Ende stehen. Wer
+     *       so einen Puffer hochlaedt, laesst den Treiber HINTER dem Puffer anfangen.</li>
+     *   <li><b>Kanalzahl passt nicht.</b> Ein dreikanaliges Bild aus STB hat nur w*h*3 Bytes,
+     *       diese Klasse laedt aber immer als RGBA hoch -- der Treiber will w*h*4.</li>
+     * </ul>
+     *
+     * <p>Ohne diese Pruefung sind beide Faelle formal gueltige GL-Aufrufe: {@code glGetError}
+     * bleibt still, und der Absturz passiert irgendwo im Treiber.
+     *
+     * @throws IllegalStateException wenn zu wenig Bytes bereitstehen
+     */
+    private void pufferPruefen(int w, int h, ByteBuffer buffer)
+    {
+        if (buffer == null)
+        {
+            return;
+        }
+
+        long noetig = (long) w * h * this.format.bytesProPixel();
+
+        if (buffer.remaining() < noetig)
+        {
+            throw new IllegalStateException(
+                "Texturupload wuerde hinter dem Puffer lesen: " + w + "x" + h + " als "
+                + this.format + " braucht " + noetig + " Bytes, verfuegbar sind aber nur "
+                + buffer.remaining() + " (Position " + buffer.position() + " von "
+                + buffer.capacity() + "). Entweder wurde die Pufferposition nicht "
+                + "zurueckgesetzt (Pixels.rewindBuffer) oder die Kanalzahl passt nicht.");
         }
     }
 

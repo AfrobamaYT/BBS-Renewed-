@@ -46,35 +46,34 @@ public class Pixels
 
             w = width.get(0);
             h = height.get(0);
-            bitsPerPixel = bits.get(0);
 
-            pixels = STBImage.stbi_load_from_memory(image, width, height, bits, 0);
+            /* ⛔ IMMER VIER KANAELE ANFORDERN -- der vierte Parameter ist STBs
+             * desired_channels, und er ist hier die Grenze zwischen einem Bild und einer
+             * Zugriffsverletzung.
+             *
+             * Vorher stand hier 0 ("nimm, was in der Datei steht"). Ein RGB-PNG kam damit als
+             * w*h*3 Bytes zurueck. Texture.uploadTexture laedt seit dem 26.2-Port aber IMMER
+             * als RGBA hoch (GlDevice lehnt dreikanalige Formate rundheraus ab), der Treiber
+             * liest also w*h*4 -- ein Drittel davon hinter dem Puffer. Das ist ein formal
+             * gueltiger GL-Aufruf: glGetError schweigt, es gibt keine Java-Ausnahme und keinen
+             * hs_err-Bericht, die JVM ist einfach weg (0xC0000005).
+             *
+             * Gekostet hat das den BBS-Editor: 1920x1080-Banner in UISelectionScreen, Absturz
+             * beim ersten Zeichnen des Dashboards (Aufgabe 88).
+             *
+             * STB erledigt damit auch die Graustufen-Umwandlung selbst -- die frueher hier von
+             * Hand geschriebene Schleife ist deshalb weg. */
+            pixels = STBImage.stbi_load_from_memory(image, width, height, bits, 4);
 
-            /* Convert grayscale to RGBA */
-            if (bitsPerPixel <= 2)
+            if (pixels == null)
             {
-                ByteBuffer newBuffer = MemoryUtil.memAlloc(w * h * 4);
+                MemoryUtil.memFree(image);
 
-                pixels.position(0);
-                pixels.limit(pixels.capacity());
-
-                for (int i = 0, c = pixels.limit() / bitsPerPixel; i < c; i++)
-                {
-                    byte g = pixels.get();
-                    byte a = bitsPerPixel == 1 ? (byte) 255 : pixels.get();
-
-                    newBuffer.put(g);
-                    newBuffer.put(g);
-                    newBuffer.put(g);
-                    newBuffer.put(a);
-                }
-
-                newBuffer.flip();
-                MemoryUtil.memFree(pixels);
-
-                pixels = newBuffer;
-                bitsPerPixel = 4;
+                throw new RuntimeException("Failed to decode image: " + STBImage.stbi_failure_reason());
             }
+
+            /* NICHT bits.get(0) -- dort steht die Kanalzahl der DATEI, nicht die des Puffers. */
+            bitsPerPixel = 4;
         }
 
         MemoryUtil.memFree(image);
