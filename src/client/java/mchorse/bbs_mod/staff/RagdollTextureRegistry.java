@@ -194,9 +194,16 @@ public final class RagdollTextureRegistry
                 img = NativeImage.read(in);
             }
 
-            DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
             Identifier id = Identifier.fromNamespaceAndPath("bbs", texId);
+
+            /* ⚠️ 26.2: DynamicTexture(NativeImage) gibt es nicht mehr — jede Textur muss
+             * einen Namen mitbringen (Supplier<String>). Der Name ist rein diagnostisch
+             * (Beschriftung im GPU-Debugger und in Absturzberichten); genommen wird der
+             * Bezeichner, unter dem die Textur unmittelbar danach registriert wird, damit
+             * beides im Log zusammenpasst. */
+            DynamicTexture tex = new DynamicTexture(id::toString, img);
+
             Minecraft.getInstance().getTextureManager().register(id, tex);
 
             DynamicTexture prev = DYNAMIC.put(uuid, tex);
@@ -241,9 +248,16 @@ public final class RagdollTextureRegistry
                 img = NativeImage.read(in);
             }
 
-            DynamicTexture tex = new DynamicTexture(img);
             String texId = "ragdoll/" + uuid.toString().toLowerCase(Locale.ROOT).replace('-', '_');
             Identifier id = Identifier.fromNamespaceAndPath("bbs", texId);
+
+            /* ⚠️ 26.2: DynamicTexture(NativeImage) gibt es nicht mehr — jede Textur muss
+             * einen Namen mitbringen (Supplier<String>). Der Name ist rein diagnostisch
+             * (Beschriftung im GPU-Debugger und in Absturzberichten); genommen wird der
+             * Bezeichner, unter dem die Textur unmittelbar danach registriert wird, damit
+             * beides im Log zusammenpasst. */
+            DynamicTexture tex = new DynamicTexture(id::toString, img);
+
             Minecraft.getInstance().getTextureManager().register(id, tex);
 
             DynamicTexture prev = DYNAMIC.put(uuid, tex);

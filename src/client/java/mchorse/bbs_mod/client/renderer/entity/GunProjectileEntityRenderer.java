@@ -4,20 +4,29 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.entity.GunProjectileEntity;
 import mchorse.bbs_mod.forms.FormUtilsClient;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderType;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.items.GunProperties;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
-public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEntity>
+/**
+ * ⚠️ 26.2 — ZWEI PHASEN STATT EINER, siehe Klassendoc von {@link ActorEntityRenderer}.
+ * {@code EntityRenderer} braucht zwei Typargumente, die Entity gibt es nur noch beim
+ * Einsammeln, gezeichnet wird aus dem Zustand.
+ */
+public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEntity, GunProjectileEntityRenderer.GunProjectileRenderState>
 {
     public GunProjectileEntityRenderer(EntityRendererProvider.Context ctx)
     {
@@ -25,40 +34,84 @@ public class GunProjectileEntityRenderer extends EntityRenderer<GunProjectileEnt
     }
 
     @Override
-    public Identifier getTextureLocation(GunProjectileEntity entity)
+    public GunProjectileRenderState createRenderState()
     {
-        return Identifier.parse("minecraft:textures/entity/player/wide/steve.png");
+        return new GunProjectileRenderState();
     }
 
     @Override
-    public void render(GunProjectileEntity projectile, float yaw, float tickDelta, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
+    public void extractRenderState(GunProjectileEntity projectile, GunProjectileRenderState zustand, float teilTick)
     {
-        matrices.pushPose();
+        super.extractRenderState(projectile, zustand, teilTick);
 
         GunProperties properties = projectile.getProperties();
         int out = properties.lifeSpan - 2;
 
-        float bodyYaw = Mth.rotLerp(tickDelta, projectile.yRotO, projectile.getYRot());
-        float pitch = Mth.rotLerp(tickDelta, projectile.xRotO, projectile.getXRot());
-        float scale = Lerps.envelope(projectile.tickCount + tickDelta, 0, properties.fadeIn, out - properties.fadeOut, out);
+        zustand.form = projectile.getForm();
+        zustand.bbsEntity = projectile.getEntity();
+        zustand.teilTick = teilTick;
 
-        if (properties.yaw) matrices.mulPose(Axis.YP.rotationDegrees(bodyYaw));
-        if (properties.pitch) matrices.mulPose(Axis.XP.rotationDegrees(-pitch));
-        matrices.scale(scale, scale, scale);
-        MatrixStackUtils.applyTransform(matrices, properties.projectileTransform);
+        /* Die komplette Flugbahn-Mathematik wandert vom Zeichnen ins Einsammeln — sie liest
+         * ausschliesslich Entity-Felder (yRotO/xRotO/tickCount) und die Waffen-Einstellung. */
+        zustand.drehen = properties.yaw;
+        zustand.neigen = properties.pitch;
+        zustand.koerperDrehung = Mth.rotLerp(teilTick, projectile.yRotO, projectile.getYRot());
+        zustand.neigung = Mth.rotLerp(teilTick, projectile.xRotO, projectile.getXRot());
+        zustand.skalierung = Lerps.envelope(projectile.tickCount + teilTick, 0, properties.fadeIn, out - properties.fadeOut, out);
+        zustand.transform = properties.projectileTransform;
+    }
+
+    @Override
+    public void submit(GunProjectileRenderState zustand, PoseStack matrices, SubmitNodeCollector sammler, CameraRenderState kamera)
+    {
+        matrices.pushPose();
+
+        if (zustand.drehen) matrices.mulPose(Axis.YP.rotationDegrees(zustand.koerperDrehung));
+        if (zustand.neigen) matrices.mulPose(Axis.XP.rotationDegrees(-zustand.neigung));
+        matrices.scale(zustand.skalierung, zustand.skalierung, zustand.skalierung);
+        MatrixStackUtils.applyTransform(matrices, zustand.transform);
 
         /* Das enableDepthTest/disableDepthTest-Paar um den Form-Aufruf entfaellt: seit 26.2
          * ist der Tiefentest Teil der Pipeline des jeweiligen Zeichenwegs und nicht mehr
          * umschaltbar. Die Form bringt ihn selbst mit — Modellformen ueber ModelVAOPipeline,
          * gepufferte Formen ueber die Pipeline ihres RenderType. Auch das Abschalten danach
-         * hat kein Ziel mehr: der Namensschild-Draw in super.render erbt keinen globalen
+         * hat kein Ziel mehr: der Namensschild-Draw in super.submit erbt keinen globalen
          * Zustand, sondern zieht seinen aus der eigenen Pipeline. */
-        FormUtilsClient.render(projectile.getForm(), new FormRenderingContext()
-            .set(FormRenderType.ENTITY, projectile.getEntity(), matrices, light, OverlayTexture.NO_OVERLAY, tickDelta)
+        FormUtilsClient.render(zustand.form, new FormRenderingContext()
+            .set(FormRenderType.ENTITY, zustand.bbsEntity, matrices, zustand.lightCoords, OverlayTexture.NO_OVERLAY, zustand.teilTick)
             .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
         matrices.popPose();
 
-        super.render(projectile, yaw, tickDelta, matrices, vertexConsumers, light);
+        /* Namensschild; hiess bis 1.21.1 super.render(...). */
+        super.submit(zustand, matrices, sammler, kamera);
+    }
+
+    /* ⚠️ getTextureLocation(GunProjectileEntity) ist ersatzlos entfallen — EntityRenderer hat
+     * in 26.2 keine Textur mehr. War hier ohnehin tot (die Form bringt ihre Textur mit). */
+
+    /**
+     * ⚠️ Wie bei {@link ActorEntityRenderer.ActorRenderState}: nur {@code extractRenderState}
+     * fuellt diese Felder. Zustandsobjekte werden wiederverwendet — ein nicht gesetztes Feld
+     * traegt den Wert des vorherigen Bildes.
+     */
+    public static class GunProjectileRenderState extends EntityRenderState
+    {
+        public Form form;
+        public IEntity bbsEntity;
+        public float teilTick;
+
+        /** Ob die Waffe das Geschoss um Hoch- bzw. Querachse ausrichtet. */
+        public boolean drehen;
+        public boolean neigen;
+
+        public float koerperDrehung;
+        public float neigung;
+
+        /** Ein-/Ausblend-Skalierung ueber die Lebenszeit. */
+        public float skalierung;
+
+        /** Feste Zusatz-Transformation aus der Waffen-Einstellung. */
+        public Transform transform;
     }
 }

@@ -16,15 +16,44 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 import mchorse.bbs_mod.utils.interps.Lerps;
+import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
+import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public class MorphRenderer
 {
     public static boolean hidePlayer = false;
+
+    /**
+     * ⚠️ 26.2 — DIE ENTITY FEHLT IM ZEICHEN-ZWEIG. Ein Renderer sieht beim Einreichen nur
+     * noch einen Zustand; die Entity gibt es ausschliesslich beim Einsammeln. Beide
+     * BBS-Haken hier brauchen sie aber (Morph am Spieler, SelectorOwner am Mob), und der
+     * Vanilla-Zustand traegt weder Entity noch UUID.
+     *
+     * <p>Der vorgesehene Weg dafuer ist Fabrics {@code RenderStateDataKey}: eine
+     * Zusatzablage, die Fabric per Mixin an JEDEN Render-Zustand haengt (geprueft:
+     * {@code RenderStateMixin implements FabricRenderState} listet
+     * {@code EntityRenderState} unter seinen Zielen). Gefuellt wird sie EINMAL, am Ende von
+     * {@code EntityRenderDispatcher.extractEntity} — siehe {@code EntityRenderDispatcherMixin}.
+     *
+     * <p>⚠️ Grenze: gefuellt ist der Schluessel nur fuer Zustaende, die ueber den
+     * Dispatcher gelaufen sind (das ist der ganze Welt-Zeichenweg). Wer einen Zustand
+     * direkt ueber {@code renderer.createRenderState(entity, delta)} baut, bekommt {@code
+     * null} zurueck — dann gilt Vanilla-Verhalten, nicht der Absturz.
+     */
+    public static final RenderStateDataKey<Entity> ENTITY_AM_ZUSTAND = RenderStateDataKey.create(() -> "bbs:entity");
+
+    /** Liest die beim Einsammeln hinterlegte Entity, oder {@code null}. */
+    public static Entity entityVon(EntityRenderState zustand)
+    {
+        return zustand == null ? null : ((FabricRenderState) zustand).getData(ENTITY_AM_ZUSTAND);
+    }
 
     public static boolean renderPlayer(AbstractClientPlayer player, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i)
     {
@@ -50,7 +79,13 @@ public class MorphRenderer
                  * RenderType, beim Modell-Zeichenweg ModelVAOPipeline.DURCHSICHTIG
                  * (GREATER_THAN_OR_EQUAL mit Tiefenschreiben, reversed-Z). */
                 float bodyYaw = Lerps.lerp(player.yBodyRotO, player.yBodyRot, g);
-                int overlay = LivingEntityRenderer.getOverlayCoords(player, 0F);
+
+                /* ⚠️ LivingEntityRenderer.getOverlayCoords nimmt in 26.2 einen
+                 * LivingEntityRenderState statt der Entity und liest daraus genau ein Feld:
+                 * hasRedOverlay. Wir haben hier keinen solchen Zustand — also packen wir
+                 * dasselbe Ergebnis direkt. Das ist Zeile fuer Zeile, was
+                 * getOverlayCoords(player, 0F) bis 1.21.1 tat. */
+                int overlay = OverlayTexture.pack(0F, player.hurtTime > 0 || player.deathTime > 0);
 
                 matrixStack.pushPose();
                 matrixStack.mulPose(Axis.YP.rotationDegrees(-bodyYaw));

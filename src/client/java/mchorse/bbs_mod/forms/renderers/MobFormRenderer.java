@@ -27,18 +27,24 @@ import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.storage.TagValueInput;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -185,12 +191,19 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
         try
         {
-            compound = (new TagParser(new StringReader(nbt))).readStruct();
+            /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>) und hat keinen oeffentlichen
+             * Konstruktor mehr. parseCompoundAsArgument ist das exakte Gegenstueck zum alten
+             * readStruct(): es liest EIN Compound aus dem Reader und meckert NICHT ueber
+             * Resttext dahinter. (parseCompoundFully waere strenger und wuerde bei Resttext
+             * werfen — das waere hier eine stille Verhaltensaenderung.) */
+            compound = TagParser.parseCompoundAsArgument(new StringReader(nbt));
         }
         catch (Exception e)
         {}
 
-        this.entity = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id)).create(Minecraft.getInstance().level);
+
+        this.entity = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id))
+            .create(Minecraft.getInstance().level, new EntitySpawnRequest(EntitySpawnReason.MOB_SUMMONED, true));
 
         if (this.entity == null && this.form.isPlayer())
         {
@@ -201,9 +214,50 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
         if (this.entity != null)
         {
             compound.putString("id", id);
-            this.entity.load(compound);
+
+            /* ⚠️ 26.2: load() nimmt keinen CompoundTag mehr, sondern einen ValueInput — die
+             * Lese-Schicht, die Fehler an einen ProblemReporter meldet. DISCARDING verwirft
+             * sie, also genau das Verhalten, das die alte Signatur hatte. */
+            this.entity.load(TagValueInput.create(ProblemReporter.DISCARDING, this.entity.registryAccess(), compound));
+
             this.entity.noPhysics = true;
         }
+    }
+
+    /**
+     * Reicht die Wegwerf-Entity beim Bildgraphen ein.
+     *
+     * <p>⚠️ 26.2: {@code EntityRenderDispatcher.render(entity, x, y, z, yaw, teilTick,
+     * stapel, verbraucher, licht)} gibt es nicht mehr — der Weg ist zweiphasig geworden:
+     * {@code extractEntity()} zieht den Zustand aus der Entity, {@code submit()} reicht ihn
+     * ein. Drei Dinge dabei, die man nicht raten darf:
+     *
+     * <ul>
+     *   <li><b>Der yaw-Parameter (hier immer 0F) faellt weg</b> — folgenlos: er wurde schon
+     *       in 1.21.1 nur an {@code EntityRenderer.render} durchgereicht, und
+     *       {@code LivingEntityRenderer} ignorierte ihn und rechnete seine Koerperdrehung
+     *       selbst aus {@code yBodyRotO}/{@code yBodyRot}. Genau die steht jetzt im
+     *       Zustand, aus derselben Quelle.</li>
+     *   <li><b>Das Licht wird nach dem Sammeln UEBERSCHRIEBEN.</b> Bis 1.21.1 war es ein
+     *       render()-Parameter; jetzt setzt {@code extractRenderState} es aus der
+     *       Weltposition der Wegwerf-Entity — und die steht irgendwo, nicht dort, wo die
+     *       Form erscheint. Ohne das Ueberschreiben waere eine Form in der Oberflaeche
+     *       stockdunkel.</li>
+     *   <li><b>Die Kamera kommt aus dem laufenden Bild</b>, nicht aus einer selbstgebauten:
+     *       {@code submit} reicht sie an den Namensschild- und den Flammen-Auftrag weiter,
+     *       eine erfundene wuerde beide falsch ausrichten.</li>
+     * </ul>
+     */
+    private void entityEinreichen(PoseStack stack, CustomVertexConsumerProvider consumers, float teilTick, int licht)
+    {
+        EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        EntityRenderState zustand = dispatcher.extractEntity(this.entity, teilTick);
+
+        zustand.lightCoords = licht;
+
+        CameraRenderState kamera = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+
+        dispatcher.submit(zustand, kamera, 0D, 0D, 0D, stack, consumers.sammler());
     }
 
     @Override
@@ -245,14 +299,22 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
              * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
 
             consumers.setUI(true);
-            Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), stack, consumers, net.minecraft.util.LightCoordsUtil.pack(15, 0));
+            this.entityEinreichen(stack, consumers, context.getTransition(), LightCoordsUtil.pack(15, 0));
             consumers.draw();
             consumers.setUI(false);
 
 
             stack.popPose();
 
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            /* ⛔ 26.2: RenderSystem.depthFunc(GL_ALWAYS) ist ersatzlos entfallen — es gibt
+             * keinen globalen Tiefenvergleich mehr, er steckt in der Pipeline des jeweiligen
+             * Zuges. Hier stand er ABSICHTLICH (nicht als Aufraeumen): alles, was nach einer
+             * Mob-Form in der Oberflaeche gezeichnet wurde, sollte deren Tiefenwerte
+             * ignorieren und immer davor landen.
+             * ⚠️ VERHALTENSAENDERUNG, GEMELDET: dieser Vorrang faellt weg. Zurueckholen
+             * laesst er sich nur ueber einen eigenen RenderType bzw. eine eigene Pipeline
+             * fuer die UI-Zuege danach — nicht ueber einen Schalter. Sichtbar wuerde es
+             * daran, dass ein UI-Element hinter einer Mob-Form verschwindet. */
         }
     }
 
@@ -320,7 +382,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
                 FormTranslucentQueue.setSortOrigin(new Matrix4f(RenderSystem.getModelViewMatrixCopy()).transformPosition(origin));
             }
 
-            Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), context.stack, consumers, light);
+            this.entityEinreichen(context.stack, consumers, context.getTransition(), light);
 
             currentPose = currentPoseOverlay = null;
 
@@ -343,9 +405,11 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             /* 26.2: das enableDepthTest, das hier stand, entfaellt ersatzlos. Es stellte nach
              * dem Zeichnen den globalen Tiefentest wieder her — den gibt es nicht mehr, jeder
              * folgende Zeichenaufruf bekommt seinen Tiefenzustand aus seiner Pipeline.
-             * ⚠️ Nicht zu verwechseln mit dem depthFunc(GL_ALWAYS) am Ende von renderInUI: das
-             * setzt ABSICHTLICH einen abweichenden Zustand fuer das, was danach gezeichnet
-             * wird, und ist deshalb nicht geloescht, sondern als offen gemeldet. */
+             * ⚠️ Nicht zu verwechseln mit dem depthFunc(GL_ALWAYS) am Ende von renderInUI:
+             * das setzte ABSICHTLICH einen abweichenden Zustand fuer das, was danach
+             * gezeichnet wird. Es ist inzwischen ebenfalls entfernt (es gibt keinen globalen
+             * Tiefenvergleich mehr) und dort als Verhaltensaenderung ausgewiesen — hier steht
+             * es nur, damit die beiden Faelle nicht verwechselt werden. */
             /* ⛔ 26.2-PORT, NICHT MECHANISCH ERSETZEN: das hier SCHREIBT in die lebende
              * Matrix. `getModelViewMatrix()` heisst in 26.2 `getModelViewMatrixCopy()` --
              * aber eine Kopie zu beschreiben uebersetzt sauber und stellt NICHTS wieder her.

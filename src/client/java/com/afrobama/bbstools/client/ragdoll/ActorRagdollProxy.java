@@ -2,7 +2,10 @@ package com.afrobama.bbstools.client.ragdoll;
 
 import mchorse.bbs_mod.forms.entities.IEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -95,11 +98,28 @@ public final class ActorRagdollProxy
 
             /* Kill scheduled to next tick — PhysicsMod's death
              *  renderer fires on the death animation tick which
-             *  triggers RagdollMapper.map() which fires our hook. */
+             *  triggers RagdollMapper.map() which fires our hook.
+             *
+             * ⚠️ 26.2: kill() verlangt jetzt eine ServerLevel. Damit wird sichtbar, was der
+             * Klassendoc oben ohnehin sagt: dieser Weg traegt nur im Einzelspieler. Der Proxy
+             * haengt im CLIENT-Level, und die Schadensverarbeitung lief auch vorher rein
+             * serverseitig — das parameterlose kill() der 1.21.1 verpuffte auf dem Client
+             * genauso, nur ohne es zuzugeben. Ohne eingebauten Server gibt es keine
+             * ServerLevel und damit keinen Kill; das wird gemeldet statt still uebersprungen. */
             mc.execute(() -> {
                 try
                 {
-                    proxy.kill();
+                    MinecraftServer server = mc.getSingleplayerServer();
+                    ServerLevel serverLevel = server == null ? null : server.getLevel(world.dimension());
+
+                    if (serverLevel == null)
+                    {
+                        LOG.debug("proxy kill skipped: no integrated server (client-only world)");
+
+                        return;
+                    }
+
+                    proxy.kill(serverLevel);
                 }
                 catch (Throwable t)
                 {

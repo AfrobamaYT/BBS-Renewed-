@@ -1,11 +1,11 @@
 package mchorse.bbs_mod.client.renderer;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.blocks.entities.ModelBlockEntity;
 import mchorse.bbs_mod.blocks.entities.ModelProperties;
+import mchorse.bbs_mod.client.renderer.entity.ActorEntityRenderer;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.model.View;
 import mchorse.bbs_mod.entity.ActorEntity;
@@ -19,7 +19,6 @@ import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.forms.renderers.ModelFormRenderer;
 import mchorse.bbs_mod.forms.renderers.utils.MatrixCache;
 import mchorse.bbs_mod.graphics.Draw;
-import mchorse.bbs_mod.mixin.client.EntityRendererDispatcherInvoker;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
@@ -31,16 +30,29 @@ import mchorse.bbs_mod.utils.pose.Transform;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity>
+/**
+ * ⚠️ 26.2 — ZWEI PHASEN STATT EINER, wie bei den Entity-Renderern. {@code
+ * BlockEntityRenderer} hat jetzt zwei Typargumente (Blockentity, Zustand): {@code
+ * extractRenderState} zieht einmal pro Bild alles Noetige aus der Blockentity, {@code submit}
+ * sieht nur noch den Zustand. Das ist der Grund, warum die Blick-Animation (die auf BBS'
+ * IEntity schreibt) hier ins Einsammeln gewandert ist — sie ist Zustands-Ermittlung, kein
+ * Zeichnen.
+ */
+public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockEntity, ModelBlockEntityRenderer.ModelBlockRenderState>
 {
     private static ActorEntity entity;
 
@@ -49,6 +61,10 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         renderShadow(provider, matrices, tickDelta, x, y, z, tx, ty, tz, 0.5F, 1F);
     }
 
+    /**
+     * ⚠️ SIGNATUR IST FESTGENAGELT: {@code ModelShadowTimingMixin} nennt sie mit vollem
+     * Deskriptor, {@code BaseFilmController} ruft genau diese Ueberladung. Nicht umbauen.
+     */
     public static void renderShadow(SubmitNodeCollector provider, PoseStack matrices, float tickDelta, double x, double y, double z, float tx, float ty, float tz, float radius, float opacity)
     {
         ClientLevel world = Minecraft.getInstance().level;
@@ -66,14 +82,40 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         entity.yo = y;
         entity.zo = z;
 
-        double distance = Minecraft.getInstance().getEntityRenderDispatcher().distanceToSqr(x, y, z);
+        /* ⚠️ EntityRenderDispatcher.renderShadow(...) — das Ziel des bisherigen Invokers —
+         * gibt es nicht mehr. Der Schatten ist in 26.2 ein Auftrag: die Bodenstuecke unter
+         * ihm werden beim EINSAMMELN ermittelt (EntityRenderer.extractShadow) und mit
+         * SubmitNodeCollector.submitShadow eingereicht.
+         *
+         * ⚠️ ZWEI ZEILEN SIND DABEI ENTFALLEN, WEIL VANILLA SIE JETZT SELBST MACHT — wer sie
+         * stehen laesst, rechnet doppelt:
+         *   - `distanceToSqr(x, y, z)` gibt es nicht mehr (nur noch distanceToSqr(Entity)),
+         *     UND wird nicht mehr gebraucht: extractShadow liest state.distanceToCameraSq.
+         *   - `opacity = (1 - distanz/256) * opacity` steht wortgleich in extractShadow
+         *     (Bytecode geprueft), mit getShadowStrength() als zweitem Faktor. Deshalb geht
+         *     `opacity` hier als STAERKE in die Sammlung und wird nicht vorher verrechnet.
+         *
+         * ⚠️ VERHALTENSAENDERUNG: extractShadow prueft zusaetzlich die Video-Einstellung
+         * "Entity Shadows" und state.isInvisible. Modellblock-Schatten folgen dieser
+         * Einstellung jetzt, vorher taten sie es nicht. */
+        EntityRenderer<? super ActorEntity, ?> renderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
 
-        opacity = (float) ((1D - distance / 256D) * opacity);
+        if (!(renderer instanceof ActorEntityRenderer actorRenderer))
+        {
+            return;
+        }
+
+        ActorEntityRenderer.ActorRenderState zustand = actorRenderer.zustandFuerSchatten(entity, tickDelta, radius, opacity);
+
+        if (zustand.shadowPieces.isEmpty())
+        {
+            return;
+        }
 
         matrices.pushPose();
         matrices.translate(tx, ty, tz);
 
-        EntityRendererDispatcherInvoker.bbs$renderShadow(matrices, provider, entity, opacity, tickDelta, entity.level(), radius);
+        provider.submitShadow(matrices, zustand.shadowRadius, zustand.shadowPieces);
 
         matrices.popPose();
     }
@@ -98,32 +140,57 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
     public ModelBlockEntityRenderer(BlockEntityRendererProvider.Context ctx)
     {}
 
+    /**
+     * ⚠️ VERHALTENSAENDERUNG, NICHT UEBERSEHEN: {@code shouldRenderOffScreen} nimmt in 26.2
+     * KEINE Blockentity mehr — die Antwort gilt fuer den ganzen RENDERER, nicht mehr je
+     * Block. Die Einstellung "global" pro Modellblock kann sie darum nicht mehr steuern.
+     *
+     * <p>Gewaehlt ist {@code true}, damit ein als global markierter Modellblock weiterhin
+     * ausserhalb des Sichtkegels gezeichnet wird (sonst waere ein sichtbares Feature still
+     * verschwunden). Preis: auch NICHT-globale Modellbloecke landen jetzt im globalen
+     * Durchgang und werden nicht mehr am Sichtkegel weggeschnitten — die Entfernungsgrenze
+     * aus {@link #getViewDistance()} (512) gilt weiter. Bei vielen Modellbloecken ist das
+     * eine Mehrlast, die gemessen gehoert.
+     */
     @Override
-    public boolean shouldRenderOffScreen(ModelBlockEntity blockEntity)
+    public boolean shouldRenderOffScreen()
     {
-        return blockEntity.getProperties().isGlobal();
+        return true;
     }
 
     @Override
-    public void render(ModelBlockEntity entity, float tickDelta, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
+    public ModelBlockRenderState createRenderState()
     {
+        return new ModelBlockRenderState();
+    }
+
+    @Override
+    public void extractRenderState(ModelBlockEntity entity, ModelBlockRenderState zustand, float teilTick, Vec3 kameraPos, ModelFeatureRenderer.CrumblingOverlay bruchOverlay)
+    {
+        BlockEntityRenderer.super.extractRenderState(entity, zustand, teilTick, kameraPos, bruchOverlay);
+
         Minecraft mc = Minecraft.getInstance();
         ModelProperties properties = entity.getProperties();
         Transform transform = properties.getTransform();
         BlockPos pos = entity.getBlockPos();
 
-        matrices.pushPose();
-        matrices.translate(0.5F, 0F, 0.5F);
+        zustand.teilTick = teilTick;
+        zustand.form = properties.getForm();
+        zustand.bbsEntity = entity.getEntity();
+        zustand.zeichnen = zustand.form != null && this.canRender(entity);
+        zustand.debugKasten = mc.getDebugOverlay().showDebugScreen();
+        zustand.achsen = false;
+        zustand.schatten = properties.isShadow();
 
-        if (properties.getForm() != null && this.canRender(entity))
+        if (zustand.zeichnen)
         {
-            matrices.pushPose();
-
-            Transform applied = transform;
-
+            /* ⚠️ Die Blick-Animation SCHREIBT auf BBS' IEntity (Kopfdrehung/Neigung). Das ist
+             * Zustands-Ermittlung und gehoert deshalb hierher — im submit-Zweig wuerde sie
+             * die Entity zu einem anderen Zeitpunkt lesen und schreiben als der Rest des
+             * Bildes. Der else-Zweig (zuruecksetzen) muss aus demselben Grund mit. */
             if (properties.isLookAt())
             {
-                applied = this.applyLookingAnimation(mc, entity, properties, tickDelta);
+                zustand.transform = this.applyLookingAnimation(mc, entity, properties, teilTick);
             }
             else
             {
@@ -134,12 +201,41 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
                 iEntity.setPrevHeadYaw(0F);
                 iEntity.setPitch(0F);
                 iEntity.setPrevPitch(0F);
+
+                zustand.transform = transform;
             }
 
-            MatrixStackUtils.applyTransform(matrices, applied);
+            /* ⚠️ LevelRenderer.getLightColor(Level, BlockPos) ist umgezogen und heisst jetzt
+             * LightCoordsUtil.getLightCoords(BlockAndLightGetter, BlockPos). Level erfuellt
+             * BlockAndLightGetter (ueber LevelReader), der Aufruf ist sonst unveraendert. */
+            zustand.lichtOben = LightCoordsUtil.getLightCoords(entity.getLevel(),
+                pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
 
-            int lightAbove = LevelRenderer.getLightColor(entity.getLevel(), pos.offset((int) transform.translate.x, (int) transform.translate.y, (int) transform.translate.z));
-            Camera camera = mc.gameRenderer.mainCamera();
+            zustand.achsen = this.canRenderAxes(entity) && UIBaseMenu.shouldRenderAxes();
+        }
+
+        if (zustand.schatten)
+        {
+            zustand.schattenTx = 0.5F + transform.translate.x;
+            zustand.schattenTy = transform.translate.y;
+            zustand.schattenTz = 0.5F + transform.translate.z;
+            zustand.schattenX = pos.getX() + zustand.schattenTx;
+            zustand.schattenY = pos.getY() + zustand.schattenTy;
+            zustand.schattenZ = pos.getZ() + zustand.schattenTz;
+        }
+    }
+
+    @Override
+    public void submit(ModelBlockRenderState zustand, PoseStack matrices, SubmitNodeCollector vertexConsumers, CameraRenderState kamera)
+    {
+        matrices.pushPose();
+        matrices.translate(0.5F, 0F, 0.5F);
+
+        if (zustand.zeichnen)
+        {
+            matrices.pushPose();
+
+            MatrixStackUtils.applyTransform(matrices, zustand.transform);
 
             /* Das Paar enableDepthTest/disableDepthTest um die Form faellt ersatzlos weg.
              * Die Form zeichnet ueber ihre eigene Pipeline (ModelVAOPipeline.DURCHSICHTIG,
@@ -147,11 +243,17 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
              * unter dem umgekehrten Z von 26.2) bzw. ueber einen RenderType, der ihn mitbringt.
              * Das anschliessende Abschalten galt Draw.coolerAxes darunter, und der bringt
              * seinen Tiefenzustand ebenfalls selbst mit. */
-            FormUtilsClient.render(properties.getForm(), new FormRenderingContext()
-                .set(FormRenderType.MODEL_BLOCK, entity.getEntity(), matrices, lightAbove, overlay, tickDelta)
-                .camera(camera));
 
-            if (this.canRenderAxes(entity) && UIBaseMenu.shouldRenderAxes())
+            /* ⚠️ Der Ueberlagerungs-Wert kam bis 1.21.1 als render()-Parameter herein — und war
+             * dort IMMER OverlayTexture.NO_OVERLAY (BlockEntityRenderDispatcher reichte
+             * nichts anderes durch). Der Bruch-Fortschritt liegt in 26.2 als
+             * zustand.breakProgress separat vor und ist kein Ueberlagerungs-UV mehr.
+             * Es geht also nichts verloren. */
+            FormUtilsClient.render(zustand.form, new FormRenderingContext()
+                .set(FormRenderType.MODEL_BLOCK, zustand.bbsEntity, matrices, zustand.lichtOben, OverlayTexture.NO_OVERLAY, zustand.teilTick)
+                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+
+            if (zustand.achsen)
             {
                 matrices.pushPose();
                 MatrixStackUtils.scaleBack(matrices);
@@ -165,23 +267,18 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
          * des Zuges. Absicht war: Tiefentest aus. */
 
-        if (mc.getDebugOverlay().showDebugScreen())
+        if (zustand.debugKasten)
         {
             Draw.renderBox(matrices, -0.5D, 0, -0.5D, 1, 1, 1, 0, 0.5F, 1F, 0.5F);
         }
 
         matrices.popPose();
 
-        if (properties.isShadow())
+        if (zustand.schatten)
         {
-            float tx = 0.5F + transform.translate.x;
-            float ty = transform.translate.y;
-            float tz = 0.5F + transform.translate.z;
-            double x = pos.getX() + tx;
-            double y = pos.getY() + ty;
-            double z = pos.getZ() + tz;
-
-            renderShadow(vertexConsumers, matrices, tickDelta, x, y, z, tx, ty, tz);
+            renderShadow(vertexConsumers, matrices, zustand.teilTick,
+                zustand.schattenX, zustand.schattenY, zustand.schattenZ,
+                zustand.schattenTx, zustand.schattenTy, zustand.schattenTz);
         }
     }
 
@@ -353,5 +450,43 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
         }
 
         return true;
+    }
+
+    /**
+     * Alles, was {@link #submit} braucht, EINMAL pro Bild aus der Blockentity gezogen.
+     *
+     * <p>⚠️ Nur {@link #extractRenderState} fuellt diese Felder; Zustandsobjekte werden
+     * wiederverwendet, ein nicht gesetztes Feld traegt den Wert des vorherigen Bildes.
+     */
+    public static class ModelBlockRenderState extends BlockEntityRenderState
+    {
+        public Form form;
+        public IEntity bbsEntity;
+
+        /** Die tatsaechlich angewandte Transformation (Blick-Animation schon eingerechnet). */
+        public Transform transform;
+
+        /** Licht am Ort ueber dem Block — der Modellblock beleuchtet sich nicht am Boden. */
+        public int lichtOben;
+
+        public float teilTick;
+
+        /** Ob die Form ueberhaupt gezeichnet wird (Einstellungen + Editor-Zustand). */
+        public boolean zeichnen;
+
+        /** Ob die Achsenkreuz-Hilfe dazu kommt. */
+        public boolean achsen;
+
+        /** Ob der Debug-Kasten gezeichnet wird (F3). */
+        public boolean debugKasten;
+
+        /** Ob dieser Block einen Schatten wirft, und wo. */
+        public boolean schatten;
+        public double schattenX;
+        public double schattenY;
+        public double schattenZ;
+        public float schattenTx;
+        public float schattenTy;
+        public float schattenTz;
     }
 }
