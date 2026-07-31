@@ -79,43 +79,21 @@ public class FormUtilsClient
      * layer. Own buffers guarantee that everything drawn while the hook is installed belongs to
      * the form being rendered.
      */
+    /**
+     * BBS' Einreichstelle fuer Formen.
+     *
+     * <p>⛔ 26.2: hier stand der Aufbau eines eigenen Sofort-Zeichners -- eine Zuordnung
+     * von einem Dutzend RenderTypes auf je einen Eckenspeicher, gebaut aus Sheets.*Sheet().
+     * Beides gibt es nicht mehr: Sheets fuehrt nur noch Atlas-Namen, und einen geteilten
+     * Sofort-Puffer je Ebene kennt 26.2 gar nicht. Der Bildgraph sammelt selbst.
+     *
+     * <p>Die Einreichstelle haengt sich darum an den Sammler des laufenden Weltdurchgangs
+     * (siehe FormSammler). Sie wird bei jedem Bild neu gebaut -- sie haelt nichts mehr,
+     * was sich zu behalten lohnte.
+     */
     public static CustomVertexConsumerProvider getProvider()
     {
-        if (customVertexConsumerProvider == null)
-        {
-            SequencedMap<RenderType, ByteBufferBuilder> layers = new Object2ObjectLinkedOpenHashMap<>();
-
-            assignAllocator(layers, Sheets.solidBlockSheet());
-            assignAllocator(layers, Sheets.cutoutBlockSheet());
-            assignAllocator(layers, Sheets.bannerSheet());
-            assignAllocator(layers, Sheets.translucentCullBlockSheet());
-            assignAllocator(layers, Sheets.shieldSheet());
-            assignAllocator(layers, Sheets.bedSheet());
-            assignAllocator(layers, Sheets.shulkerBoxSheet());
-            assignAllocator(layers, Sheets.signSheet());
-            assignAllocator(layers, Sheets.hangingSignSheet());
-            assignAllocator(layers, Sheets.chestSheet());
-            assignAllocator(layers, RenderTypes.armorEntityGlint());
-            assignAllocator(layers, RenderTypes.glint());
-            assignAllocator(layers, RenderTypes.glintTranslucent());
-            assignAllocator(layers, RenderTypes.entityGlint());
-            assignAllocator(layers, RenderType.entityGlintDirect());
-            assignAllocator(layers, RenderTypes.waterMask());
-
-            for (RenderType layer : ModelBakery.DESTROY_TYPES)
-            {
-                assignAllocator(layers, layer);
-            }
-
-            customVertexConsumerProvider = new CustomVertexConsumerProvider(SubmitNodeCollector.immediateWithBuffers(layers, new ByteBufferBuilder(1536)));
-        }
-
-        return customVertexConsumerProvider;
-    }
-
-    private static void assignAllocator(SequencedMap<RenderType, ByteBufferBuilder> layers, RenderType layer)
-    {
-        layers.put(layer, new ByteBufferBuilder(layer.bufferSize()));
+        return new CustomVertexConsumerProvider(FormSammler.pflicht());
     }
 
     public static <T extends Form> void register(Class<T> clazz, IFormRendererFactory<T> function)

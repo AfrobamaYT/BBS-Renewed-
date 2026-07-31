@@ -514,8 +514,20 @@ public class BBSModClient implements ClientModInitializer
          * unter der Erde startet). Eigene Klasse, siehe mchorse.bbs_mod.client.WeltDrahtgitter. */
         mchorse.bbs_mod.client.WeltDrahtgitter.anmelden();
 
+        /* Der Sammler des laufenden Weltdurchgangs wird angemeldet, solange BBS zeichnet,
+         * und danach wieder abgemeldet. Die Form-Renderer holen ihn dort ab (FormSammler);
+         * ihn durch ein Dutzend Signaturen zu reichen waere sauberer und ist der naechste
+         * Schritt, nicht dieser.
+         *
+         * ⚠️ Das Abmelden steht im finally: bleibt ein alter Sammler angemeldet, reichen
+         * die Formen des naechsten Bildes in einen Sammler ein, den niemand mehr
+         * abarbeitet -- sie verschwinden lautlos. */
         LevelRenderEvents.AFTER_SOLID_FEATURES.register((context) ->
         {
+            mchorse.bbs_mod.forms.FormSammler.anmelden(context.submitNodeCollector());
+
+            try
+            {
             if (!BBSRendering.isIrisShadersEnabled())
             {
                 BBSRendering.renderCoolStuff(context);
@@ -579,6 +591,11 @@ public class BBSModClient implements ClientModInitializer
 
                     stack.popPose();
                 }
+            }
+            }
+            finally
+            {
+                mchorse.bbs_mod.forms.FormSammler.abmelden();
             }
         });
 

@@ -463,38 +463,17 @@ public class FormTranslucentQueue
      * The layer's own startDrawing binds its texture and shader — with Iris that routes
      * through its override naturally.
      */
-    public static class RenderLayerCommand extends DrawCommand
-    {
-        private final net.minecraft.client.renderer.rendertype.RenderType layer;
-        private final GehaltenesNetz netz;
-        private final Matrix4f modelView;
-
-        public RenderLayerCommand(net.minecraft.client.renderer.rendertype.RenderType layer, GehaltenesNetz netz, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
-        {
-            super(cameraSpaceOrigin, true, depthWrite);
-
-            this.layer = layer;
-            this.netz = netz;
-            this.modelView = modelView;
-        }
-
-        @Override
-        public void draw()
-        {
-            /* 26.2: setupRenderState/clearRenderState sind entfallen -- eine RenderType
-             * setzte damit globalen GL-Zustand und nahm ihn danach zurueck. Was sie
-             * einstellte, steht jetzt in ihrer Pipeline, und die reicht sie heraus. Damit
-             * faellt auch das Nachziehen der Schreibmaske weg, das frueher noetig war, weil
-             * setupRenderState die eigene ueberschrieb. */
-            this.netz.zeichnen(this.layer.pipeline(), this.modelView, null, null, null, null);
-        }
-
-        @Override
-        public void release()
-        {
-            this.netz.close();
-        }
-    }
+    /* ⛔ HIER STAND RenderLayerCommand, und er ist ERLEDIGT statt portiert.
+     *
+     * Er spielte eine halbdurchsichtige VANILLA-Ebene ab, die BBS zuvor aus Vanillas
+     * Sofort-Warteschlange gestohlen hatte -- damit ihre Pixel nicht mitten im Bild Tiefe
+     * schrieben und spaeter gezeichnete Formen verdeckten. In 26.2 sortiert der Bildgraph
+     * eingereichte Auftraege selbst; genau das war der Zweck des Stehlens.
+     *
+     * ⚠️ Die uebrigen Befehle dieser Warteschlange bleiben. Sie tragen BBS' EIGENE
+     * Geometrie (Modellnetze, Billboards), und die kennt der Bildgraph nicht -- er kann
+     * sie also auch nicht einsortieren. Wer beides verwechselt, baut die geloeschte
+     * Haelfte wieder ein. */
 
     /**
      * Spielt Geometrie ab, die in einem {@link GehaltenesNetz} liegengeblieben ist -- der

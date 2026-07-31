@@ -1,55 +1,66 @@
 package mchorse.bbs_mod.forms;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class CustomVertexConsumerProvider implements SubmitNodeCollector
+/**
+ * BBS' Einreichstelle fuer Formen -- der Ort, an dem eine Umfaerbung dazwischenkommt.
+ *
+ * <h2>Was diese Klasse frueher war und warum davon wenig bleibt</h2>
+ *
+ * <p>Bis 1.21.1 hing BBS sich in Vanillas SOFORT-Zeichnung ein. Es gab einen geteilten
+ * Puffer je Ebene; man holte sich einen {@code VertexConsumer}, schrieb hinein, und am
+ * Ende des Bildes wurde Ebene fuer Ebene gezeichnet. Diese Klasse nutzte beide Enden:
+ *
+ * <ul>
+ *   <li>beim HOLEN legte sie einen Umfaerber um den Puffer, damit eine Form getoent
+ *       werden kann,</li>
+ *   <li>beim ZEICHNEN stahl sie halbdurchsichtige Ebenen aus Vanillas Warteschlange und
+ *       schob sie in BBS' eigene, sortierte -- sonst schrieben deren Pixel mitten im Bild
+ *       Tiefe und verdeckten Formen, die danach kamen.</li>
+ * </ul>
+ *
+ * <h2>26.2: der zweite Teil ist ERLEDIGT, nicht portiert</h2>
+ *
+ * <p>Es gibt keine Sofort-Zeichnung mehr. Man reicht einen Auftrag ein, und der Bildgraph
+ * zeichnet ihn spaeter -- sortiert. Genau das war der Zweck des Stehlens. Die Ebene aus
+ * einer Warteschlange zu ziehen, die es nicht mehr gibt, um sie in eine eigene zu legen,
+ * die dasselbe tut, waere doppelte Arbeit mit doppelter Fehlerquelle.
+ *
+ * <p>⚠️ BBS' eigene Warteschlange BLEIBT trotzdem -- aber nur fuer BBS' EIGENE Geometrie
+ * (Modellnetze, Billboards). Die kennt der Bildgraph nicht, also kann er sie auch nicht
+ * einsortieren. Wer beides verwechselt, baut die geloeschte Haelfte wieder ein.
+ *
+ * <p>Was bleibt, ist der erste Teil: die Umfaerbung. Sie greift jetzt dort, wo BBS seine
+ * Ecken WIRKLICH schreibt -- im Rumpf eines {@code submitCustomGeometry}, wo der
+ * Zeichenweg einem den Verbraucher reicht. {@link #umfaerben(VertexConsumer)} ist die
+ * Stelle, an der das passiert.
+ */
+public class CustomVertexConsumerProvider
 {
-    private static Consumer<RenderType> runnables;
+    private final SubmitNodeCollector sammler;
 
-    private final SubmitNodeCollector delegate;
     private Function<VertexConsumer, VertexConsumer> substitute;
-    private boolean ui;
 
-    public static void drawLayer(RenderType layer)
+    public CustomVertexConsumerProvider(SubmitNodeCollector sammler)
     {
-        if (runnables != null)
-        {
-            runnables.accept(layer);
-        }
+        this.sammler = sammler;
     }
 
-    public static void hijackVertexFormat(Consumer<RenderType> runnable)
+    public SubmitNodeCollector sammler()
     {
-        runnables = runnable;
+        return this.sammler;
     }
 
-    public static void clearRunnables()
-    {
-        runnables = null;
-    }
-
-    public CustomVertexConsumerProvider(SubmitNodeCollector delegate)
-    {
-        this.delegate = delegate;
-    }
-
+    /**
+     * Setzt die Umfaerbung fuer die naechsten Zuege, oder {@code null} zum Abschalten.
+     *
+     * <p>Bleibt ein Aufruf mit {@code null} aus, faerbt die naechste Form mit -- das war
+     * schon vor 26.2 so und ist der Grund, warum die Aufrufer sie paarweise setzen.
+     */
     public void setSubstitute(Function<VertexConsumer, VertexConsumer> substitute)
     {
         this.substitute = substitute;
@@ -60,119 +71,45 @@ public class CustomVertexConsumerProvider implements SubmitNodeCollector
         }
     }
 
-    public void setUI(boolean ui)
+    /**
+     * Legt die eingestellte Umfaerbung um einen Verbraucher.
+     *
+     * <p>Aufzurufen im Rumpf eines {@code submitCustomGeometry}, wo der Zeichenweg den
+     * Verbraucher reicht. Ohne eingestellte Umfaerbung kommt er unveraendert zurueck.
+     */
+    public VertexConsumer umfaerben(VertexConsumer verbraucher)
     {
-        this.ui = ui;
-    }
-
-    @Override
-    public VertexConsumer getBuffer(RenderType renderLayer)
-    {
-        VertexConsumer buffer = this.delegate.getBuffer(renderLayer);
-
-        if (this.substitute != null)
+        if (this.substitute == null)
         {
-            VertexConsumer apply = this.substitute.apply(buffer);
-
-            if (apply != null)
-            {
-                return apply;
-            }
+            return verbraucher;
         }
 
-        return buffer;
+        VertexConsumer umgefaerbt = this.substitute.apply(verbraucher);
+
+        return umgefaerbt == null ? verbraucher : umgefaerbt;
     }
 
     /**
-     * Translucent layers of buffered forms (blocks, items) defer into the frame's sorted
-     * translucent queue instead of drawing immediately — otherwise their semi-transparent
-     * pixels write depth mid-frame and occlude forms drawn after them. Active only when the
-     * current form renderer published its sort origin (never in picking or UI paths).
+     * ⛔ 26.2: ersatzlos entfallen, absichtlich als leerer Rumpf stehengelassen.
      *
-     * <p>MERGE fsgh/2.5 (1.20.4 → 1.21.1): upstream greift hier in die interna von
-     * {@code Immediate}. Deren 1.20.4-form (fallbackBuffer + activeConsumers-set +
-     * {@code Optional<RenderLayer> currentLayer} + {@code builder.isBuilding()}) gibt es in
-     * 1.21.1 nicht mehr — dort steht ein {@code pending}-map (layer → laufender builder)
-     * und ein nacktes {@code currentLayer}. Beide felder sind protected, wir erben aber
-     * nicht mehr von {@code Immediate} (seit dem 1.21.1-port haelt diese klasse ein
-     * delegate), darum sind sie im accesswidener geoeffnet.</p>
+     * <p>Frueher schaltete das den Tiefenvergleich fuer Formen in der Oberflaeche auf
+     * "immer bestehen", weil die Sofort-Zeichnung ihn auf GL_LESS zuruecksetzte. Beides
+     * gibt es nicht mehr: kein globaler Tiefenvergleich, keine Sofort-Zeichnung, die ihn
+     * verstellen koennte. Der Zustand gehoert jetzt zur Pipeline des jeweiligen Zuges.
      *
-     * <p>KEIN {@code @Override}: das interface {@link SubmitNodeCollector} kennt nur
-     * {@code getBuffer}. Gerufen wird die methode aus unserem eigenen {@link #draw()}.</p>
+     * <p>Der Rumpf bleibt leer statt die Methode zu loeschen, damit die zehn Aufrufstellen
+     * lesbar bleiben -- sie zeigen, welche Wege durch die Oberflaeche gehen, und das ist
+     * beim naechsten Schritt (eigener Durchgang je UI-Form) genau die Liste, die man braucht.
      */
-    public void draw(RenderType layer)
-    {
-        Vector3f origin = FormTranslucentQueue.getSortOrigin();
+    public void setUI(boolean ui)
+    {}
 
-        /* Text layers defer only inside a recorded group (labels): the group preserves the
-         * text-over-background order, and text keeps its depth writes there. */
-        boolean textLayer = FormTranslucentQueue.isGroupOpen() && layer.format() == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP;
-
-        if (origin == null || !FormTranslucentQueue.isActive() || !(textLayer || isDeferrableTranslucent(layer)))
-        {
-            this.delegate.endBatch(layer);
-
-            return;
-        }
-
-        /* pending.remove == "diesen layer NICHT zeichnen, ich nehme den puffer selbst".
-         * Steht nichts drin, hat die ebene diesen frame gar nichts gesammelt. */
-        BufferBuilder builder = this.delegate.startedBuilders.remove(layer);
-
-        if (builder == null)
-        {
-            return;
-        }
-
-        if (this.delegate.lastSharedType == layer)
-        {
-            this.delegate.lastSharedType = null;
-        }
-
-        MeshData built = builder.build();
-
-        if (built == null)
-        {
-            return;
-        }
-
-        VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-        buffer.bind();
-        buffer.upload(built);
-        VertexBuffer.unbind();
-
-        FormTranslucentQueue.add(new FormTranslucentQueue.RenderLayerCommand(layer, buffer, new Matrix4f(RenderSystem.getModelViewMatrixCopy()), new Vector3f(origin), textLayer));
-    }
-
-    private static boolean isDeferrableTranslucent(RenderType layer)
-    {
-        String name = layer.toString();
-
-        return name.contains("translucent") && !name.contains("glint");
-    }
-
+    /**
+     * ⛔ 26.2: ersatzlos entfallen, siehe {@link #setUI(boolean)}.
+     *
+     * <p>Es gibt keinen halbfertigen Stapel mehr, den man leeren koennte. Eingereichte
+     * Auftraege zeichnet der Bildgraph, wenn er an der Reihe ist.
+     */
     public void draw()
-    {
-        /* MERGE fsgh/2.5: {@code Immediate.draw()} ruft intern sein EIGENES draw(layer).
-         * Solange upstream von Immediate ERBTE, landete das per virtual dispatch in der
-         * ueberschriebenen methode; mit unserem delegate (1.21.1-port) kaeme die umleitung
-         * in die translucent-queue dort nie an. Also gehen wir die offenen ebenen selbst
-         * durch. Danach ist pending leer, und das delegate zeichnet nur noch, was es
-         * ueber eigene allocator-ebenen haelt. */
-        for (RenderType layer : new ArrayList<>(this.delegate.startedBuilders.keySet()))
-        {
-            this.draw(layer);
-        }
-
-        this.delegate.endBatch();
-
-        if (this.ui)
-        {
-            /* Force back the depth func because it seems like stuff rendered by a vertex
-             * consumer is resetting the depth func to GL_LESS, and since this vertex consumer
-             * is designed  */
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        }
-    }
+    {}
 }
