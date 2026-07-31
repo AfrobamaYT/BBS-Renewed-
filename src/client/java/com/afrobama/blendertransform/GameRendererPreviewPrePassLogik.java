@@ -108,12 +108,15 @@ public final class GameRendererPreviewPrePassLogik
                     invoker.bbsRenewed$setPos(usePose[0], usePose[1], usePose[2]);
                     invoker.bbsRenewed$setRotation((float) usePose[3], (float) usePose[4]);
 
-                    fb.bindWrite(true);
-                    RenderSystem.viewport(0, 0, fb.width, fb.height);
-                    RenderSystem.clearColor(0F, 0F, 0F, 1F);
-                    RenderSystem.clear(org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
-                        | org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT,
-                        Minecraft.ON_OSX);
+                    /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+                     * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+                     * zeichnen will, gibt das Ziel dort an. */
+                    /* 26.2: viewport, clearColor und clear als globaler GL-Zustand sind entfallen.
+                     * Geloescht wird ueber den Befehlsgeber, und der bekommt die Texturen des Ziels;
+                     * der Ausschnitt ergibt sich aus dem Ziel selbst. Der macOS-Schalter faellt weg. */
+                    RenderSystem.getDevice().createCommandEncoder()
+                        .clearColorAndDepthTextures(fb.getColorTexture(), new org.joml.Vector4f(0F, 0F, 0F, 1F),
+                            fb.getDepthTexture(), 0.0);
 
                     /* Build projection matching framebuffer aspect.
                      *  ITER 29: also apply sprint-FOV multiplier here.
@@ -183,7 +186,9 @@ public final class GameRendererPreviewPrePassLogik
                         /* Pick rebinds main FB at end — rebind our
                          *  preview FB so any leftover render hits it
                          *  not the main view. */
-                        fb.bindWrite(true);
+                        /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+                         * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+                         * zeichnen will, gibt das Ziel dort an. */
                         RenderSystem.viewport(0, 0, fb.width, fb.height);
                     }
                     catch (Throwable t)
@@ -207,7 +212,9 @@ public final class GameRendererPreviewPrePassLogik
             invoker.bbsRenewed$setRotation(savedYaw, savedPitch);
             mchorse.bbs_mod.graphics.Projektion.setzen(savedProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
-            mainFb.bindWrite(true);
+            /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+             * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+             * zeichnen will, gibt das Ziel dort an. */
             int sw = mc.getWindow().getWidth();
             int sh = mc.getWindow().getHeight();
             RenderSystem.viewport(0, 0, sw, sh);

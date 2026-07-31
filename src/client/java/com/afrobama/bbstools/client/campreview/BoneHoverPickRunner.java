@@ -379,7 +379,9 @@ public final class BoneHoverPickRunner
             stencil.pick(px, py);
             stencil.unbind(map);
 
-            Minecraft.getInstance().gameRenderer.mainRenderTarget().bindWrite(true);
+            /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+             * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+             * zeichnen will, gibt das Ziel dort an. */
 
             boolean picked = stencil.hasPicked();
             LOG.info("Pick clip={} entities={} mouseTile=({},{}) stencilPx=({},{}) hasPicked={} picked={}",

@@ -462,7 +462,9 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.gizmoStencil.pick((int) mc.mouseHandler.xpos(), (int) (h - mc.mouseHandler.ypos()), Math.round(BBSSettings.gizmoHoverTolerance.get() * BBSModClient.getGUIScale()), Gizmo.STENCIL_MAX);
         this.gizmoStencil.unbind(this.gizmoStencilMap);
 
-        mc.gameRenderer.mainRenderTarget().bindWrite(true);
+        /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+         * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+         * zeichnen will, gibt das Ziel dort an. */
     }
 
     private void addCameraController(UIFormPalette palette)

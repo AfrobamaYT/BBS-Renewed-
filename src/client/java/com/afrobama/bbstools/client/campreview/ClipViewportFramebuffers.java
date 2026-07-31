@@ -60,8 +60,8 @@ public final class ClipViewportFramebuffers
         {
             try
             {
-                fb = new TextureTarget(DEFAULT_W, DEFAULT_H, true,
-                    Minecraft.ON_OSX);
+                fb = new TextureTarget("bbstools-clip-viewport", DEFAULT_W, DEFAULT_H, true,
+                    com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
                 fb.setClearColor(0F, 0F, 0F, 1F);
 
                 /* Linear filter so the tile blit smooths instead of

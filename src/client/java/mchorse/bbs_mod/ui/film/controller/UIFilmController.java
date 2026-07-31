@@ -1626,7 +1626,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.stencil.unbind(this.stencilMap);
 
-        Minecraft.getInstance().gameRenderer.mainRenderTarget().bindWrite(true);
+        /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+         * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+         * zeichnen will, gibt das Ziel dort an. */
     }
 
     private void ensureStencilFramebuffer()

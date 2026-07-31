@@ -173,7 +173,9 @@ public class UISubtitleRenderer
             }
 
             /* Render the texture */
-            fb.bindWrite(true);
+            /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+             * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+             * zeichnen will, gibt das Ziel dort an. */
 
             mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 

@@ -160,26 +160,37 @@ public final class WorldShot
 			 * camera. Alpha stays 1 (opaque) so the composite treats the frame as a solid world layer. */
 			float[] clear = skyClearColor(client);
 			target.setClearColor(clear[0], clear[1], clear[2], 1.0F);
-			target.clear(Minecraft.ON_OSX);
+			/* 26.2: RenderTarget.clear() ist entfallen -- geloescht wird ueber den Befehlsgeber,
+			 * und der braucht die Texturen des Ziels, nicht das Ziel selbst. Der macOS-Schalter
+			 * faellt ersatzlos weg: den Sonderweg gibt es nicht mehr. */
+			com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder()
+			    .clearColorAndDepthTextures(target.getColorTexture(), new org.joml.Vector4f(0F, 0F, 0F, 1F),
+			        target.getDepthTexture(), 0.0);
 
 			/* THE SWAP: point client.framebuffer at our FBO so every getFramebuffer() inside
 			 * WorldRenderer.render targets OUR offscreen buffer, never the on-screen one. */
 			client.mainRenderTarget = target;
 
-			target.bindWrite(true);
+			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+			 * zeichnen will, gibt das Ziel dort an. */
 
 			/* Render ONLY the world — no HUD (that is drawn later in GameRenderer.render, which we do NOT call).
 			 * Uses the current live render tick counter (same one the game frame uses) for interpolation. */
 			DeltaTracker tickCounter = client.getDeltaTracker();
 			gameRenderer.renderLevel(tickCounter);
 
-			target.unbindWrite();
+			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+			 * zeichnen will, gibt das Ziel dort an. */
 		}
 		catch (Throwable t)
 		{
 			/* Restore before returning so a failed render can never leave the game pointed at our FBO. */
 			client.mainRenderTarget = mainFbo;
-			mainFbo.bindWrite(true);
+			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+			 * zeichnen will, gibt das Ziel dort an. */
 
 			return "{\"error\":\"renderWorld failed: " + escape(String.valueOf(t)) + "\"}";
 		}
@@ -188,7 +199,9 @@ public final class WorldShot
 			/* ALWAYS restore the real framebuffer + rebind it, so the next real game frame renders to the
 			 * screen normally. Without this the whole game would keep drawing into our offscreen FBO = black screen. */
 			client.mainRenderTarget = mainFbo;
-			mainFbo.bindWrite(true);
+			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+			 * zeichnen will, gibt das Ziel dort an. */
 		}
 
 		/* Export our FBO to PNG via the shared Readback helper (see/ owns both). */
@@ -262,11 +275,11 @@ public final class WorldShot
 	{
 		if (fbo == null)
 		{
-			fbo = new TextureTarget(w, h, true, Minecraft.ON_OSX);
+			fbo = new TextureTarget("mcstudio-weltbild", w, h, true, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
 		}
 		else if (fbo.width != w || fbo.height != h)
 		{
-			fbo.resize(w, h, Minecraft.ON_OSX);
+			fbo.resize(w, h);
 		}
 
 		return fbo;

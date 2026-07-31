@@ -238,9 +238,9 @@ public final class CameraPreviewRegistry
 
         try
         {
-            p.framebuffer = new TextureTarget(
-                p.fbWidth, p.fbHeight, true,
-                Minecraft.ON_OSX);
+            p.framebuffer = new TextureTarget("bbstools-kameravorschau",
+                    p.fbWidth, p.fbHeight, true,
+                    com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
             p.framebuffer.setClearColor(0F, 0F, 0F, 1F);
         }
         catch (Throwable t)

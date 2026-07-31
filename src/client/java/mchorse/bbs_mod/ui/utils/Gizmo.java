@@ -463,7 +463,9 @@ public class Gizmo
         RenderSystem.enableDepthTest();
 
         this.sphereHighlight.unbind();
-        mc.gameRenderer.mainRenderTarget().bindWrite(true);
+        /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+         * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+         * zeichnen will, gibt das Ziel dort an. */
 
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");

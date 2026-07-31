@@ -291,7 +291,7 @@ public class BBSRendering
             return;
         }
 
-        framebuffer.resize(w, h, Minecraft.ON_OSX);
+        framebuffer.resize(w, h);
     }
 
     public static void toggleFramebuffer(boolean toggleFramebuffer)
@@ -315,14 +315,16 @@ public class BBSRendering
 
             if (framebuffer.width != w || framebuffer.height != h)
             {
-                framebuffer.resize(w, h, Minecraft.ON_OSX);
+                framebuffer.resize(w, h);
             }
 
             clientFramebuffer = mc.gameRenderer.mainRenderTarget();
 
             reassignFramebuffer(framebuffer);
 
-            framebuffer.bindWrite(true);
+            /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+             * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+             * zeichnen will, gibt das Ziel dort an. */
         }
         else
         {
@@ -330,7 +332,9 @@ public class BBSRendering
             int drawH = window.getHeight();
             reassignFramebuffer(clientFramebuffer);
 
-            mc.gameRenderer.mainRenderTarget().bindWrite(true);
+            /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
+             * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
+             * zeichnen will, gibt das Ziel dort an. */
 
             if (width != 0)
             {

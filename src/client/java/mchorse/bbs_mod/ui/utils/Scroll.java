@@ -462,7 +462,11 @@ public class Scroll
 
         if (isInside)
         {
-            if (Minecraft.ON_OSX)
+            /* 26.2 hat Minecraft.ON_OSX gestrichen -- Vanilla braucht den Sonderweg nicht mehr.
+             * BBS schon: macOS-Trackpads liefern viele kleine Scrollwerte statt einzelner Rasten,
+             * und ohne den Zweig scrollt die Liste dort unbrauchbar schnell. Der Unterschied ist
+             * am Geraet, nicht an Vanilla, also bleibt er -- nur die Quelle der Auskunft wechselt. */
+            if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("mac"))
             {
                 this.scrollByStep(scroll * BBSSettings.scrollingSensitivity.get());
             }
