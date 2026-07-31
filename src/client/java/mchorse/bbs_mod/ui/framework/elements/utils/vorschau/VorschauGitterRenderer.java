@@ -41,14 +41,24 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
     }
 
     /**
-     * ⚠️ Die Pose kommt aus dem ZUSTAND, nicht vom uebergebenen Stapel. Der Stapel traegt
-     * die Bild-im-Bild-eigene Sicht; unsere Vorschau hat ihre eigene Kamera, deren Matrix
-     * beim Einreihen eingefroren wurde. Wer hier den Stapel nimmt, zeichnet das Gitter aus
-     * der falschen Richtung.
+     * ⛔ DIE KAMERAMATRIX GEHOERT AUF DEN UEBERGEBENEN STAPEL, NICHT NEBEN IHN.
+     *
+     * <p>Der erste Anlauf schrieb die Ecken mit einer eigenen Matrix und ignorierte den
+     * Stapel. Ergebnis: kein Absturz, kein Fehler, nur ein schwarzes Feld -- die Geometrie
+     * landete ausserhalb des Sichtfelds. Der Stapel steht naemlich bereits in der EIGENEN
+     * Projektion dieses Renderers; eine danebengelegte Matrix bezieht sich auf ein anderes
+     * Koordinatensystem.
+     *
+     * <p>An Vanilla abgelesen ({@code javap -c} auf {@code GuiEntityRenderer#renderToTexture}):
+     * dort steht {@code stapel.translate(...)} und {@code stapel.mulPose(...)}, und
+     * gezeichnet wird anschliessend mit der Pose DIESES Stapels.
      */
     @Override
     protected void renderToTexture(VorschauGitterZustand zustand, PoseStack stapel, SubmitNodeCollector sammler)
     {
+        stapel.pushPose();
+        stapel.mulPose(zustand.ansicht());
+
         sammler.submitCustomGeometry(stapel, RenderTypes.LINES, (pose, ecken) ->
         {
             for (int i = 0; i <= 10; i ++)
@@ -57,16 +67,18 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
 
                 if (i == 0)
                 {
-                    linie(ecken, pose, zustand.ansicht(), f, -5, f, 5, 0F, 0F, 1F);
-                    linie(ecken, pose, zustand.ansicht(), -5, f, 5, f, 1F, 0F, 0F);
+                    linie(ecken, pose, f, -5, f, 5, 0F, 0F, 1F);
+                    linie(ecken, pose, -5, f, 5, f, 1F, 0F, 0F);
                 }
                 else
                 {
-                    linie(ecken, pose, zustand.ansicht(), f, -5, f, 5, 0.25F, 0.25F, 0.25F);
-                    linie(ecken, pose, zustand.ansicht(), -5, f, 5, f, 0.25F, 0.25F, 0.25F);
+                    linie(ecken, pose, f, -5, f, 5, 0.25F, 0.25F, 0.25F);
+                    linie(ecken, pose, -5, f, 5, f, 0.25F, 0.25F, 0.25F);
                 }
             }
         });
+
+        stapel.popPose();
     }
 
     /**
@@ -86,7 +98,7 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
      * Normale wird mit der Pose gedreht, sonst zeigt sie in die falsche Richtung.
      */
     private static void linie(com.mojang.blaze3d.vertex.VertexConsumer ecken,
-        com.mojang.blaze3d.vertex.PoseStack.Pose pose, org.joml.Matrix4f ansicht,
+        com.mojang.blaze3d.vertex.PoseStack.Pose pose,
         float x1, float z1, float x2, float z2, float r, float g, float b)
     {
         float dx = x2 - x1;
@@ -101,7 +113,7 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
         dx /= laenge;
         dz /= laenge;
 
-        ecken.addVertex(ansicht, x1, 0F, z1).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
-        ecken.addVertex(ansicht, x2, 0F, z2).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
+        ecken.addVertex(pose, x1, 0F, z1).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
+        ecken.addVertex(pose, x2, 0F, z2).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
     }
 }
