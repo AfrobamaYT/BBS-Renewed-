@@ -443,7 +443,11 @@ public abstract class UIModelRenderer extends UIElement
             context.batcher.bildImBild(new VorschauGitterZustand(
                 new Matrix4f(matrix4f),
                 this.area.x, this.area.y, this.area.ex(), this.area.ey(),
-                null,
+                /* ⚠️ NICHT null: blitTexture reicht scissorArea an den BlitRenderState
+                 * durch. Ob null dort erlaubt ist, ist ungeprueft -- also lieber der
+                 * echte Bereich, der ohnehin richtig waere. */
+                new net.minecraft.client.gui.navigation.ScreenRectangle(
+                    this.area.x, this.area.y, this.area.w, this.area.h),
                 new net.minecraft.client.gui.navigation.ScreenRectangle(
                     this.area.x, this.area.y, this.area.w, this.area.h)));
         }
