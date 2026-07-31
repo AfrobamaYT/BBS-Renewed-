@@ -62,15 +62,14 @@ public final class ClipViewportFramebuffers
             {
                 fb = new TextureTarget("bbstools-clip-viewport", DEFAULT_W, DEFAULT_H, true,
                     com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
-                fb.setClearColor(0F, 0F, 0F, 1F);
+                /* 26.2: setClearColor ist entfallen -- die Loeschfarbe wird beim Loeschen
+                 * mitgegeben, nicht am Ziel geparkt (CameraPreviewRenderHook tut das). */
 
-                /* Linear filter so the tile blit smooths instead of
-                 *  staircasing during replay motion. */
-                try
-                {
-                    fb.setFilterMode(org.lwjgl.opengl.GL11.GL_LINEAR);
-                }
-                catch (Throwable ignored) {}
+                /* ⚠️ VERLOREN: setFilterMode gibt es nicht mehr. Die Filterung haengt jetzt
+                 * nicht mehr am Renderziel, sondern am GpuSampler des Zuges, der die Kachel
+                 * blittet -- das Ziel weiss gar nicht mehr, wie es spaeter gelesen wird.
+                 * Absicht war GL_LINEAR, damit die Kachel beim Abspielen glaettet statt zu
+                 * treppen. Wer das zurueckwill, muss es am Blit setzen, nicht hier. */
 
                 FBS.put(id, fb);
                 LOG.info("Allocated {}x{} viewport framebuffer for clip {}", DEFAULT_W, DEFAULT_H, id);

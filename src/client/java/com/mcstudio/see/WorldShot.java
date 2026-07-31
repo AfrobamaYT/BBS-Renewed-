@@ -159,12 +159,17 @@ public final class WorldShot
 			 * is legal + current); if that is unavailable/degenerate we fall back to world.getSkyColor for the
 			 * camera. Alpha stays 1 (opaque) so the composite treats the frame as a solid world layer. */
 			float[] clear = skyClearColor(client);
-			target.setClearColor(clear[0], clear[1], clear[2], 1.0F);
-			/* 26.2: RenderTarget.clear() ist entfallen -- geloescht wird ueber den Befehlsgeber,
-			 * und der braucht die Texturen des Ziels, nicht das Ziel selbst. Der macOS-Schalter
-			 * faellt ersatzlos weg: den Sonderweg gibt es nicht mehr. */
+
+			/* 26.2: setClearColor UND clear() sind beide entfallen -- die Loeschfarbe wird nicht
+			 * mehr am Ziel GEPARKT und spaeter benutzt, sondern beim Loeschen mitgegeben. Genau
+			 * hier lag ein Fehler aus einem frueheren Teil-Port: die Himmelsfarbe wurde oben
+			 * berechnet und dann verworfen, geloescht wurde hart auf Schwarz. Ein Bild mit
+			 * schwarzem statt Himmel-Hintergrund haette kein Compiler gemeldet.
+			 *
+			 * Der macOS-Schalter faellt ersatzlos weg: den Sonderweg gibt es nicht mehr. */
 			com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder()
-			    .clearColorAndDepthTextures(target.getColorTexture(), new org.joml.Vector4f(0F, 0F, 0F, 1F),
+			    .clearColorAndDepthTextures(
+			        target.getColorTexture(), new org.joml.Vector4f(clear[0], clear[1], clear[2], 1.0F),
 			        target.getDepthTexture(), 0.0);
 
 			/* THE SWAP: point client.framebuffer at our FBO so every getFramebuffer() inside

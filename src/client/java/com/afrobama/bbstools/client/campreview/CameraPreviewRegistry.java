@@ -241,7 +241,10 @@ public final class CameraPreviewRegistry
             p.framebuffer = new TextureTarget("bbstools-kameravorschau",
                     p.fbWidth, p.fbHeight, true,
                     com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
-            p.framebuffer.setClearColor(0F, 0F, 0F, 1F);
+            /* 26.2: setClearColor ist entfallen. Die Loeschfarbe wird nicht mehr am Ziel
+             * geparkt, sondern beim Loeschen mitgegeben -- das tut CameraPreviewRenderHook
+             * (siehe dort den 26.2-Ersatz fuer bindWrite + clearColor + clear). Hier ist
+             * also nichts zu ersetzen, die Zeile ist ersatzlos weg. */
         }
         catch (Throwable t)
         {

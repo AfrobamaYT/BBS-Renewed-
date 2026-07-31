@@ -635,7 +635,11 @@ public class BBSModClient implements ClientModInitializer
             BBSRendering.startTick();
         });
 
-        ClientTickEvents.END_WORLD_TICK.register((client) ->
+        /* 26.2 (fabric-lifecycle-events 4.1.3): START_WORLD_TICK/END_WORLD_TICK heissen jetzt
+         * START_LEVEL_TICK/END_LEVEL_TICK -- Fabric ist der Umbenennung von "world" zu "level"
+         * gefolgt. Der Rueckruf bekam schon vorher die Welt, nicht den Client; der Parameter
+         * heisst hier ab jetzt so, wie er ist. */
+        ClientTickEvents.END_LEVEL_TICK.register((welt) ->
         {
             Minecraft mc = Minecraft.getInstance();
 

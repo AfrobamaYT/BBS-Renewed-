@@ -85,7 +85,9 @@ public class BBSRendering
 
     private static boolean toggleFramebuffer;
     private static RenderTarget framebuffer;
-    private static RenderTarget clientFramebuffer;
+    /* 26.2: clientFramebuffer ist entfallen. Es hielt das vorherige Renderziel, um es nach
+     * dem Film-Rendern zurueckzusetzen -- ein Muster, das die neue Umlenkung nicht mehr
+     * kennt (siehe reassignFramebuffer: Normalzustand ist null, nicht "das alte Ziel"). */
     private static Texture texture;
     private static mchorse.bbs_mod.graphics.Framebuffer /* NECESSARY */ exportFramebuffer;
 
@@ -262,12 +264,16 @@ public class BBSRendering
         Set<RenderTarget> buffers = new HashSet<>();
         Minecraft mc = Minecraft.getInstance();
 
-        buffers.add(mc.levelRenderer.entityTarget());
-        buffers.add(mc.levelRenderer.getTranslucentTarget());
-        buffers.add(mc.levelRenderer.getItemEntityTarget());
-        buffers.add(mc.levelRenderer.getParticlesTarget());
-        buffers.add(mc.levelRenderer.getWeatherTarget());
-        buffers.add(mc.levelRenderer.getCloudsTarget());
+        /* 26.2: die sechs Ziel-Getter haben nur das get-Praefix verloren (entityTarget heisst
+         * jetzt entityOutlineTarget, weil es immer schon das Umriss-Ziel war). Kein Umbau --
+         * aber ein Muster, das in 26.2 oft zuschlaegt: eine Methode, die "weg" aussieht, hat
+         * haeufig nur das get verloren. Vor dem Aufgeben ohne Praefix nachsehen. */
+        buffers.add(mc.levelRenderer.entityOutlineTarget());
+        buffers.add(mc.levelRenderer.translucentTarget());
+        buffers.add(mc.levelRenderer.itemEntityTarget());
+        buffers.add(mc.levelRenderer.particlesTarget());
+        buffers.add(mc.levelRenderer.weatherTarget());
+        buffers.add(mc.levelRenderer.cloudsTarget());
 
         for (RenderTarget buffer : buffers)
         {
@@ -318,8 +324,11 @@ public class BBSRendering
                 framebuffer.resize(w, h);
             }
 
-            clientFramebuffer = mc.gameRenderer.mainRenderTarget();
-
+            /* 26.2: das Merken des vorherigen Ziels ist ersatzlos entfallen. Umgelenkt wird
+             * jetzt ueber RenderSystem.outputColorTextureOverride, und dessen Normalzustand
+             * ist null -- man stellt nicht das alte Ziel zurueck, man nimmt die Umlenkung
+             * weg (siehe reassignFramebuffer). Das alte Ziel zu merken und spaeter wieder zu
+             * setzen wuerde die Umlenkung stehen lassen. */
             reassignFramebuffer(framebuffer);
 
             /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
@@ -330,7 +339,7 @@ public class BBSRendering
         {
             int drawW = window.getWidth();
             int drawH = window.getHeight();
-            reassignFramebuffer(clientFramebuffer);
+            reassignFramebuffer(null);
 
             /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
              * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
@@ -351,9 +360,26 @@ public class BBSRendering
         }
     }
 
+    /**
+     * Lenkt das Zeichnen in ein anderes Ziel um — das Herzstueck davon, dass BBS den Film in
+     * seinen eigenen Rahmenpuffer rendert statt auf den Bildschirm.
+     *
+     * <p>26.2: das Feld {@code Minecraft.mainRenderTarget} gibt es nicht mehr; es war
+     * beschreibbar und genau so hat BBS umgelenkt. Der Nachfolger ist
+     * {@code RenderSystem.outputColorTextureOverride} — kein Renderziel mehr, sondern die
+     * Farb-TEXTURSICHT des Ziels. Vanilla macht es selbst genau so: {@code LevelRenderer}
+     * setzt das Feld auf {@code ziel.getColorTextureView()}, zeichnet, und setzt es danach
+     * wieder auf {@code null} (im Bytecode nachgesehen).</p>
+     *
+     * <p>⚠️ Daraus folgt eine Regel, die es vorher nicht gab: <b>{@code null} ist der
+     * Normalzustand</b>, nicht "der Bildschirm". Wer die Umlenkung stehen laesst, zeichnet
+     * auch alles Folgende ins fremde Ziel. Deshalb nimmt diese Methode {@code null} entgegen
+     * und bedeutet damit "zurueck auf den regulaeren Ausgang".</p>
+     */
     private static void reassignFramebuffer(RenderTarget framebuffer)
     {
-        Minecraft.getInstance().mainRenderTarget = framebuffer;
+        RenderSystem.outputColorTextureOverride =
+            framebuffer == null ? null : framebuffer.getColorTextureView();
     }
 
     /* Rendering */
@@ -486,7 +512,7 @@ public class BBSRendering
 
         worldRenderContext.prepare(
             mc.levelRenderer, mc.getDeltaTracker(), false,
-            mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
+            mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightmap(),
             mchorse.bbs_mod.graphics.Projektion.lesen(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
         );
 

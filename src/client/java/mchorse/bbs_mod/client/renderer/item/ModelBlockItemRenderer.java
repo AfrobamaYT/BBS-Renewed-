@@ -114,7 +114,11 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
         if (world != null)
         {
-            entity.loadAdditional(nbtComponent.getUnsafe(), world.registryAccess());
+            /* 26.2: getUnsafe() ist weg -- es reichte den LEBENDEN Tag heraus, an dem der
+             * Aufrufer dann versehentlich mitschreiben konnte. copyTag() ist der Nachfolger
+             * und gibt eine Kopie. Hier wird ohnehin nur gelesen, die Kopie kostet einen
+             * Tag pro Aufruf und nichts an Verhalten. */
+            entity.loadAdditional(nbtComponent.copyTag(), world.registryAccess());
         }
 
         return item;
