@@ -33,7 +33,6 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.iris.ShaderCurves;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
-import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -259,6 +258,49 @@ public class BBSRendering
         framebuffer = new MainTarget(window.getWidth(), window.getHeight());
     }
 
+    /* 26.2: RenderTarget.frameBufferId ist entfallen -- 26.2 gibt nur noch GpuTexture heraus,
+     * keine rohen GL-Kennungen mehr, weil der Renderer auf Vulkan umziehen soll.
+     *
+     * Der Export-Blit unten BRAUCHT aber einen Lese-Rahmenpuffer: er verkleinert linear
+     * (glBlitFramebuffer mit GL_LINEAR), und genau das kann weder copyTextureToTexture noch
+     * glCopyTexSubImage2D. Ohne die Verkleinerung liefe das Bild in voller Fenstergroesse in
+     * den Videorecorder -- falsche Aufloesung, und auf macOS ein Absturz.
+     *
+     * Also haengen wir die Farbtextur des Ziels selbst an einen EIGENEN Rahmenpuffer. Der
+     * wird einmal angelegt und nur neu behaengt, wenn sich die Textur aendert.
+     *
+     * ⛔ DAS IST BEWUSST NOCH ROHES GL UND HAT EIN ABLAUFDATUM. Unter dem Vulkan-Backend gibt
+     * es keine GL-Kennung mehr; dann muss der Export ueber den Befehlsgeber laufen und die
+     * Verkleinerung woanders herkommen (eigener Durchgang mit Sampler). Siehe
+     * docs/26.2-UMSTIEG-SPICKZETTEL.md. */
+    private static int leseFbo = 0;
+    private static int leseFboTextur = -1;
+
+    private static int leseFboFuer(RenderTarget ziel)
+    {
+        int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
+
+        if (leseFbo == 0)
+        {
+            leseFbo = GL30.glGenFramebuffers();
+            leseFboTextur = -1;
+        }
+
+        if (leseFboTextur != textur)
+        {
+            int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
+            GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+                GL11.GL_TEXTURE_2D, textur, 0);
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
+
+            leseFboTextur = textur;
+        }
+
+        return leseFbo;
+    }
+
     public static void resizeExtraFramebuffers()
     {
         Set<RenderTarget> buffers = new HashSet<>();
@@ -354,7 +396,17 @@ public class BBSRendering
                     && dashboard.getPanels().panel instanceof UIFilmPanel;
                 if (!filmPanelShowing)
                 {
-                    framebuffer.blitToScreen(drawW, drawH);
+                    /* 26.2: blitToScreen ist entfallen. Der Nachfolger sitzt an der
+                     * Fensterflaeche selbst: sie nimmt einen Befehlsgeber und die
+                     * Farb-Textursicht des Puffers.
+                     *
+                     * ⚠️ Die Zielgroesse (drawW/drawH) faellt dabei weg -- der Blit fuellt die
+                     * Flaeche. Fuer den Vollbild-Fall ist das dasselbe Ergebnis; wenn hier je
+                     * eine ANDERE Groesse als das Fenster ankommt, waere es eine Streckung,
+                     * die vorher nicht da war. */
+                    Minecraft.getInstance().windowSurface().blitFromTexture(
+                        RenderSystem.getDevice().createCommandEncoder(),
+                        framebuffer.getColorTextureView());
                 }
             }
         }
@@ -416,13 +468,28 @@ public class BBSRendering
         toggleFramebuffer(true);
     }
 
+    /**
+     * Baut einen Zeichner auf dem LEBENDEN GUI-Zustand.
+     *
+     * <p>26.2: der Konstruktor nimmt keinen Sofort-Puffer mehr (den gibt es nicht), sondern
+     * den {@code GuiRenderState} und die Groesse. Den Zustand holt {@link
+     * mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor} aus {@code Gui} -- einen eigenen
+     * zu bauen waere uebersetzbar und unsichtbar, weil ihn niemand zeichnet.</p>
+     */
+    private static GuiGraphicsExtractor zeichner(Minecraft mc)
+    {
+        return new GuiGraphicsExtractor(mc,
+            ((mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor) mc.gui).bbs$getGuiRenderState(),
+            mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+    }
+
     public static void onWorldRenderEnd()
     {
         Minecraft mc = Minecraft.getInstance();
 
         if (BBSModClient.getCameraController().getCurrent() instanceof PlayCameraController controller)
         {
-            GuiGraphicsExtractor drawContext = new GuiGraphicsExtractor(mc, mc.renderBuffers().bufferSource());
+            GuiGraphicsExtractor drawContext = zeichner(mc);
             Batcher2D batcher = new Batcher2D(drawContext);
 
             UISubtitleRenderer.renderSubtitles(batcher.pose(), batcher, SubtitleClip.getSubtitles(controller.getContext()));
@@ -477,7 +544,7 @@ public class BBSRendering
         int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int prevDraw = GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
 
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, framebuffer.frameBufferId);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFboFuer(framebuffer));
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, exportFramebuffer.id);
         GL30.glBlitFramebuffer(
             0, 0, framebuffer.width, framebuffer.height,
@@ -505,21 +572,35 @@ public class BBSRendering
         pendingExportResolutionAction = action;
     }
 
+    /**
+     * ⛔ STILLGELEGT IN 26.2 — tut nichts, und das ist eine bewusste Entscheidung, kein Versehen.
+     *
+     * <p>Der Haken zeichnete BBS-Formen mitten im Chunk-Ebenen-Durchgang, damit sie unter
+     * Iris-Shadern im richtigen Durchgang landen. Zwei Dinge stehen dem in 26.2 entgegen, und
+     * beide sind strukturell:</p>
+     *
+     * <ol>
+     * <li><b>Der Aufrufer kann nicht mehr einhaengen.</b> {@code WorldRendererMixin} zielte auf
+     *     {@code LevelRenderer.renderSectionLayer} -- die Methode existiert nicht mehr, das
+     *     Zeichnen der Ebenen ist nach {@code ChunkSectionsToRender#renderGroup} gewandert,
+     *     also in eine ANDERE KLASSE.</li>
+     * <li><b>Und selbst mit Haken fehlte das Werkzeug.</b> Man baute hier einen
+     *     {@code WorldRenderContextImpl} (Fabric-intern, ersatzlos gestrichen) und fuellte ihn
+     *     unter anderem mit {@code renderBuffers().bufferSource()}. Einen Sofort-Puffer gibt es
+     *     nicht mehr; Geometrie wird bei einem {@code SubmitNodeCollector} eingereicht, und den
+     *     bekommt man nur INNERHALB eines Durchgangs gereicht -- nicht an dieser Stelle.</li>
+     * </ol>
+     *
+     * <p>Einen Kontext hier zusammenzuluegen wuerde uebersetzen und nichts zeichnen. Deshalb
+     * steht die Methode leer da statt gefuellt: der Verlust ist sichtbar, nicht kaschiert.</p>
+     *
+     * <p><b>Zurueckholen</b> heisst: Mixin auf {@code ChunkSectionsToRender#renderGroup}
+     * umhaengen, den dortigen Sammler durchreichen und daraus eine eigene Umsetzung von
+     * {@code LevelRenderContext} bauen (fuenf Methoden: submitNodeCollector, poseStack,
+     * gameRenderer, levelRenderer, levelState). Gehoert in die Mixin-Runde.</p>
+     */
     public static void onRenderChunkLayer(Matrix4f positionMatrix)
     {
-        WorldRenderContextImpl worldRenderContext = new WorldRenderContextImpl();
-        Minecraft mc = Minecraft.getInstance();
-
-        worldRenderContext.prepare(
-            mc.levelRenderer, mc.getDeltaTracker(), false,
-            mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightmap(),
-            mchorse.bbs_mod.graphics.Projektion.lesen(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
-        );
-
-        if (isIrisShadersEnabled())
-        {
-            renderCoolStuff(worldRenderContext);
-        }
     }
 
     public static void renderHud(GuiGraphicsExtractor drawContext, float tickDelta)
@@ -564,11 +645,14 @@ public class BBSRendering
         }
 
         Minecraft mc = Minecraft.getInstance();
-        GuiGraphicsExtractor drawContext = new GuiGraphicsExtractor(mc, mc.renderBuffers().bufferSource());
+        GuiGraphicsExtractor drawContext = zeichner(mc);
 
         renderRecordingTimerOverlay(new Batcher2D(drawContext), label);
 
-        drawContext.flush();
+        /* 26.2: flush() gibt es nicht mehr -- es leerte den Sofort-Puffer. nextStratum() hebt
+         * die Stapellage, damit Folgendes ueber dieser Ueberlagerung liegt. Gezeichnet wird
+         * spaeter aus dem gesammelten Zustand. */
+        drawContext.nextStratum();
     }
 
     public static void renderRecordingTimerOverlay(Batcher2D batcher2D, String label)
@@ -586,16 +670,14 @@ public class BBSRendering
 
     public static void renderCoolStuff(LevelRenderContext worldRenderContext)
     {
-        /* 1.21's Fabric no longer threads a matrix stack through the world render
-         * context (it carries a position matrix instead), so rebuild one from the
-         * view matrix for forms and gizmos that still render against a stack. */
-        if (worldRenderContext.poseStack() == null && worldRenderContext instanceof WorldRenderContextImpl impl)
-        {
-            PoseStack matrices = new PoseStack();
-
-            matrices.mulPose(worldRenderContext.positionMatrix());
-            impl.setMatrixStack(matrices);
-        }
+        /* 26.2: die Notreparatur fuer einen fehlenden Matrizen-Stapel ist ersatzlos entfallen.
+         * Fabrics LevelRenderContext traegt jetzt IMMER einen poseStack() -- der Zweig hier
+         * konnte gar nicht mehr feuern, und WorldRenderContextImpl (Fabric-intern) gibt es
+         * nicht mehr, um hineinzuschreiben.
+         *
+         * ⚠️ Der Stapel ist die EINHEITSMATRIX, nicht die Ansichtsmatrix. Wer daraus einen
+         * Strahl baut, zielt an allem vorbei. Die Ansicht steht in
+         * levelState().cameraRenderState.viewRotationMatrix. */
 
         /* Feed the world camera orientation into the holder that replaced
          * RenderSystem's inverse view rotation matrix (removed in 1.21.1), so
@@ -690,7 +772,11 @@ public class BBSRendering
          * which matters here because chunk occlusion culling is off (see
          * setOrthoDistance). */
         float near = -minHalfHeight;
-        float far = renderer.getDepthFar();
+        /* 26.2: GameRenderer.getDepthFar() ist entfallen. Vanilla baut seine ferne Ebene heute
+         * aus der Sichtweite: Abschnitte mal 16, mindestens 32 -- derselbe Wert, den die
+         * perspektivische Projektion des Spiels benutzt. Er bleibt damit die Schranke, die
+         * alles Gezeichnete umschliesst, und haelt den Kasten eng genug fuers Culling. */
+        float far = Math.max(Minecraft.getInstance().options.getEffectiveRenderDistance() * 16F, 32F);
 
         return new Matrix4f().setOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, near, far);
     }

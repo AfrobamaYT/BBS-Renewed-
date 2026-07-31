@@ -28,6 +28,7 @@
     "ClientPlayerEntityAccessor",
     "SimpleOptionMixin",
     "BlockEntityRenderDispatcherMixin",
+    "GuiRenderStateAccessor",
     "LivingEntityRendererInvoker",
     "EntityRenderDispatcherMixin",
     "RenderTickCounterAccessor",
