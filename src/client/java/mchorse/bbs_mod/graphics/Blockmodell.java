@@ -176,8 +176,19 @@ public final class Blockmodell
              * zeichnet der Auftrag den Block, der zufaellig als naechstes aufgeloest wurde. */
             List<BlockStateModelPart> kopie = List.copyOf(teile);
 
+            /* ⛔ DIE UMFAERBUNG MUSS HIER EINGEFROREN WERDEN, nicht im Rumpf abgefragt.
+             * Bis 2026-07-31 stand hier anbieter.umfaerben(verbraucher) IM Rumpf -- und der
+             * Rumpf laeuft VERZOEGERT: submitCustomGeometry legt ihn als Feld in einem
+             * Auftrags-Record ab und fuehrt ihn erst beim Bauen des Bildes aus. Da hat die
+             * Aufrufstelle (BlockFormRenderer) ihr setSubstitute(null) laengst gesetzt, der
+             * Rumpf bekam den rohen Verbraucher, und die Form-Farbe war STILL WEG.
+             * Kein Compiler meldet das; gefunden wurde es beim Bau des Item-Gegenstuecks. */
+            java.util.function.Function<com.mojang.blaze3d.vertex.VertexConsumer,
+                com.mojang.blaze3d.vertex.VertexConsumer> umfaerbung =
+                    anbieter == null ? (v) -> v : anbieter.umfaerbungEinfrieren();
+
             sammler.submitCustomGeometry(stapel, ebene, (pose, verbraucher) ->
-                vierecke(kopie, pose, anbieter == null ? verbraucher : anbieter.umfaerben(verbraucher), toenung, hell, overlay));
+                vierecke(kopie, pose, umfaerbung.apply(verbraucher), toenung, hell, overlay));
 
             if (anzeige != null)
             {

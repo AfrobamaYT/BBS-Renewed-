@@ -72,6 +72,40 @@ public class CustomVertexConsumerProvider
     }
 
     /**
+     * Friert die AKTUELL eingestellte Umfaerbung ein.
+     *
+     * <p>⛔ DAS IST DIE VARIANTE, DIE MAN BEI {@code submitCustomGeometry} BRAUCHT, und der
+     * Unterschied ist kein Stilfrage. Der Rumpf eines {@code submitCustomGeometry} laeuft
+     * VERZOEGERT: der Sammler legt ihn als Feld in einem Auftrags-Record ab und fuehrt ihn
+     * erst aus, wenn der Bildgraph das Bild baut. Zu diesem Zeitpunkt hat die Aufrufstelle
+     * ihr {@code setSubstitute(null)} laengst gesetzt -- {@link #umfaerben} im Rumpf gibt
+     * dann den ROHEN Verbraucher zurueck, und die Form-Farbe ist still verloren.
+     *
+     * <p>Deshalb: hier einfrieren, BEVOR eingereicht wird, und die eingefrorene Funktion in
+     * den Rumpf mitnehmen. Sie traegt die Farbe im Abschluss (siehe
+     * {@code BBSRendering.getColorConsumer}), haengt also nicht mehr am Zustand des Anbieters.
+     *
+     * @return eine Funktion, die den Verbraucher umfaerbt -- oder ihn unveraendert
+     *         durchreicht, wenn beim Einreichen keine Umfaerbung eingestellt war.
+     */
+    public Function<VertexConsumer, VertexConsumer> umfaerbungEinfrieren()
+    {
+        Function<VertexConsumer, VertexConsumer> eingefroren = this.substitute;
+
+        if (eingefroren == null)
+        {
+            return (verbraucher) -> verbraucher;
+        }
+
+        return (verbraucher) ->
+        {
+            VertexConsumer umgefaerbt = eingefroren.apply(verbraucher);
+
+            return umgefaerbt == null ? verbraucher : umgefaerbt;
+        };
+    }
+
+    /**
      * Legt die eingestellte Umfaerbung um einen Verbraucher.
      *
      * <p>Aufzurufen im Rumpf eines {@code submitCustomGeometry}, wo der Zeichenweg den
