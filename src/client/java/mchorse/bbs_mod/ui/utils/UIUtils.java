@@ -108,7 +108,10 @@ public class UIUtils
         int vw = Math.round(area.w * scale);
         int vh = Math.round(area.h * scale);
 
-        RenderSystem.viewport(vx, vy, vw, vh);
+        /* 26.2: einen globalen viewport gibt es nicht mehr -- der Ausschnitt gehoert zu
+         * jedem Zeichendurchgang. Angemeldet wird er hier, freigegeben von der Stelle,
+         * die ihn gesetzt hat (siehe Zeichenbereich). */
+        mchorse.bbs_mod.graphics.Zeichenbereich.setzen(vx, vy, vw, vh);
 
         return new int[] {vx, vy, vw, vh};
     }

@@ -2,15 +2,11 @@ package mchorse.bbs_mod.ui.utils;
 
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import mchorse.bbs_mod.BBSSettings;
@@ -463,6 +459,29 @@ public class Gizmo
          * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
          * zeichnen will, gibt das Ziel dort an. */
 
+        /* ⛔ 26.2 OFFEN -- BEWUSST, MIT ENTSCHEIDUNG DAHINTER, NICHT VERGESSEN.
+         *
+         * Hier standen zwei Uniforms des picker_preview-Shaders: Target (die Kennung, die
+         * hervorgehoben werden soll) und HighlightColor (die Farbe dafuer, eine
+         * BBS-Einstellung). Beide gesetzt, dann ein texturedBox durch die Oberflaeche.
+         *
+         * DAS GEHT IN 26.2 NICHT MEHR, und zwar aus einem gemessenen Grund:
+         * GuiElementRenderState kennt genau vier Methoden (buildVertices, pipeline,
+         * textureSetup, scissorArea) und keinen Haken, ueber den ein Element einen eigenen
+         * Uniform-Block binden koennte. Vanilla loest so etwas, indem es Werte in der
+         * VERTEXFARBE mitreisen laesst.
+         *
+         * Das reicht hier nicht: Target braucht einen Kanal, HighlightColor vier -- fuenf
+         * Werte, vier Kanaele. Eine Kennung in die Farbe zu quetschen und die Hervorhebung
+         * fest zu verdrahten waere ein stiller Verlust einer Einstellung.
+         *
+         * DIE ENTSCHEIDUNG, die zu treffen ist: die Vorschau NICHT durch die
+         * GUI-Warteschlange zeichnen, sondern als eigener Durchgang mit eigener Pipeline und
+         * eigenem Uniform-Block -- genau so, wie ModelVAOPipeline es fuer die Modelle macht.
+         * Dieselbe Entscheidung steht fuer die Shader multilink und replay_outline an.
+         *
+         * Bis dahin bleibt hier der Compilerfehler stehen. Er ist ehrlicher als eine
+         * Vorschau, die still die falsche Kennung hervorhebt. */
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Uniform target = previewProgram.getUniform("Target");
 
@@ -479,8 +498,6 @@ public class Gizmo
 
             highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
         }
-
-        RenderSystem.enableBlend();
         context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
     }
 
@@ -693,16 +710,13 @@ public class Gizmo
         PoseStack stack = new PoseStack();
         MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
 
-        RenderSystem.disableDepthTest();
         this.drawGizmo(stack);
-        RenderSystem.enableDepthTest();
 
-        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
         MatrixStackUtils.restoreMatrices();
 
-        /* Leave the depth state the UI expects after a 3D interlude (always-pass),
-         * the same exit state as the form editor's model pass. */
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* 26.2: es gibt keinen Tiefenzustand mehr, den die Oberflaeche danach erwarten
+         * koennte -- jeder Zug bringt seinen eigenen mit. Das Zuruecksetzen entfaellt. */
     }
 
     private void drawGizmo(PoseStack stack)
@@ -1619,7 +1633,7 @@ public class Gizmo
 
         this.drawStencilAxes(stack, map);
 
-        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
         MatrixStackUtils.restoreMatrices();
     }
 

@@ -125,11 +125,18 @@ public class GehaltenesNetz implements AutoCloseable
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
 
+        /* Der Ausschnitt gehoert in 26.2 zum Durchgang, nicht mehr in einen globalen
+         * viewport-Aufruf. null heisst ganzes Ziel; siehe Zeichenbereich. */
+        RenderPass.RenderArea bereich = Zeichenbereich.aktiv();
+
         try (RenderPass durchgang = tiefenZiel == null
             ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
                 () -> "bbs-gehalten", farbZiel, Optional.empty())
-            : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-                () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty()))
+            : bereich == null
+                ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
+                : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                    () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich))
         {
             durchgang.setPipeline(pipeline);
 
