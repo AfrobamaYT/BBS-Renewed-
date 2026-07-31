@@ -120,6 +120,32 @@ public final class FormPipelines
             : ColorTargetState.DEFAULT).build();
     }
 
+    /**
+     * Die Tiefenwand: schreibt NUR Tiefe, keine Farbe, und besteht jeden Vergleich.
+     *
+     * <p>Gebraucht vom Gizmo: es stempelt zuerst seine Griff-Flaeche in den Tiefenpuffer,
+     * damit die Szene das Gizmo danach nicht verdecken kann, und zeichnet dann sichtbar
+     * gegen diese saubere Flaeche. Frueher waren das drei Zustandszeilen davor
+     * (colorMask(false...), depthFunc(ALWAYS), depthMask(true)) und drei danach; wer eine
+     * davon vergass, faerbte oder verdeckte alles Folgende.
+     */
+    public static RenderPipeline tiefenwand()
+    {
+        return ZWISCHENSPEICHER.computeIfAbsent("tiefenwand", (s) -> RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/tiefenwand"))
+            .withVertexShader(Identifier.withDefaultNamespace("core/position_color"))
+            .withFragmentShader(Identifier.withDefaultNamespace("core/position_color"))
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withCull(true)
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
+            .withColorTargetState(new ColorTargetState(java.util.Optional.empty(),
+                com.mojang.blaze3d.GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_NONE))
+            .build());
+    }
+
     private FormPipelines()
     {}
 }

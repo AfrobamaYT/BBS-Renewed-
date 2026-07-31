@@ -754,36 +754,27 @@ public class Gizmo
     private void drawOccludedGizmo(PoseStack stack)
     {
         float opacity = BBSSettings.gizmoOpacity.get();
+        Vector4f deckkraft = new Vector4f(1F, 1F, 1F, opacity);
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
-
-        GL11.glDepthRange(1D, 1D);
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.colorMask(false, false, false, false);
-        this.drawAxes(stack, 0.25F, 0.008F);
-
+        /* ⛔ UMGEKEHRTE TIEFE: der Durchgang stempelt die Griff-Flaeche auf die FERNE Ebene,
+         * damit das Modell davor das Gizmo nicht verdecken kann. In 1.21.1 lag fern bei 1,0
+         * (depthRange(1,1)); 26.2 rechnet umgekehrt, dort ist fern 0,0. Mechanisch
+         * uebernommen haette dieselbe Zeile das Gegenteil bewirkt -- das Gizmo waere ganz
+         * nach vorn gestempelt worden und haette die Szene ausgestanzt. */
+        GL11.glDepthRange(0D, 0D);
+        this.drawAxes(stack, FormPipelines.tiefenwand(), null, 0.25F, 0.008F);
         GL11.glDepthRange(0D, 1D);
-        RenderSystem.colorMask(true, true, true, true);
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
 
-        /* The gizmo opacity rides on the shader colour's alpha, which the
-         * position_color program multiplies into every vertex — so blend must be
-         * on for it to show (at opacity 1 this is just opaque, no change). */
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(1F, 1F, 1F, opacity);
-        this.drawAxes(stack, 0.25F, 0.008F);
+        /* Die Deckkraft reitet auf dem Alpha des Farbmodulators, den der position_color-Shader
+         * in jede Ecke multipliziert -- Mischen muss also an sein, damit sie sichtbar wird
+         * (bei Deckkraft 1 ist das schlicht undurchsichtig, kein Unterschied). */
+        this.drawAxes(stack, FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true), deckkraft, 0.25F, 0.008F);
 
-        /* The sweep pie overlays the handles and must not write depth. */
-        RenderSystem.depthMask(false);
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.setShaderColor(1F, 1F, 1F, opacity);
+        /* Die Kuchenscheibe liegt ueber den Griffen und darf keine Tiefe schreiben, sonst
+         * stanzt sie Loecher hinein. Frueher: depthMask(false) + depthFunc(ALWAYS) davor
+         * und zuruecksetzen danach -- jetzt traegt es die Pipeline der Scheibe selbst. */
         this.drawRotatePieIfActive(stack);
-        RenderSystem.depthMask(true);
 
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
     }
 
     /**
@@ -1425,7 +1416,15 @@ public class Gizmo
         return constrained ? channel * 0.25F + 0.3F : channel;
     }
 
-    private void drawAxes(PoseStack stack, float axisSize, float axisOffset)
+    /**
+     * Zeichnet die sichtbaren Griffe.
+     *
+     * <p>26.2: Pipeline und Farbmodulator sind PARAMETER geworden. Frueher standen sie
+     * als globaler Zustand vor dem Aufruf (depthFunc, colorMask, enableBlend,
+     * setShaderColor) und galten bis zum naechsten Setzen -- die Quelle, aus der der
+     * Tiefenwand-Durchgang und der sichtbare Durchgang sich gegenseitig stoerten.
+     */
+    private void drawAxes(PoseStack stack, RenderPipeline pipeline, Vector4f modulator, float axisSize, float axisOffset)
     {
         float scale = BBSSettings.axesScale.get();
         float thickness = BBSSettings.axesThickness.get();
