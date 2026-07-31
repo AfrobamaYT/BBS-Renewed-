@@ -753,7 +753,21 @@ public class Batcher2D
      */
     public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, ScreenRectangle bereich)
     {
-        this.submit(new UINetz(pipeline, ecken, null, this.scissors.peek(), bereich));
+        this.netz(pipeline, ecken, null, bereich);
+    }
+
+    /**
+     * Wie oben, aber mit Texturbindung.
+     *
+     * <p>⚠️ In 26.2 ist eine Textur KEIN globaler Zustand mehr: sie gehoert zum Zeichenzug.
+     * Wer texturierte Geometrie ohne {@code textur} einreiht, bekommt kein Fehlerbild,
+     * sondern ungebundene Sampler -- je nach Shader schwarz oder Muell. {@code TextureSetup}
+     * baut man z. B. mit {@code SofortZeichner.entityTextur(...)}, das Modelltextur, Overlay
+     * und Lichtkarte zusammenlegt.
+     */
+    public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, TextureSetup textur, ScreenRectangle bereich)
+    {
+        this.submit(new UINetz(pipeline, ecken, textur, this.scissors.peek(), bereich));
     }
 
     private void submit(GuiElementRenderState element)

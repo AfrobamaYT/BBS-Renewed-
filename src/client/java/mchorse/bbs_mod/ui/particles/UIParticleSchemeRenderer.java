@@ -128,7 +128,14 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         /* 26.2: setShaderTexture ist entfallen -- eine Textur wird im Durchgang
          * gebunden (TextureSetup/bindTexture), nicht global vorher. */
 
-        this.emitter.render(DefaultVertexFormat.PARTICLE, () -> RenderPipelines.TRANSLUCENT_PARTICLE, stack, OverlayTexture.NO_OVERLAY, context.getTransition());
+        /* ⛔ NICHT emitter.render(...) -- das oeffnet einen eigenen Zeichendurchgang und
+         * landet in der Oberflaeche UNTER dem GUI. Genau das machte die Vorschau schwarz,
+         * waehrend der Zaehler daneben aktive Partikel meldete (Aufgabe 94). */
+        this.emitter.renderInOberflaeche(context.batcher, DefaultVertexFormat.PARTICLE,
+            () -> RenderPipelines.TRANSLUCENT_PARTICLE, stack, OverlayTexture.NO_OVERLAY,
+            context.getTransition(),
+            new net.minecraft.client.gui.navigation.ScreenRectangle(
+                this.area.x, this.area.y, this.area.w, this.area.h));
         /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
          * des Zuges. Absicht war: Tiefentest aus. */
         /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline

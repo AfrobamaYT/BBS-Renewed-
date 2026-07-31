@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.particles.components.appearance;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.data.types.BaseType;
 import mchorse.bbs_mod.data.types.MapType;
@@ -64,13 +64,13 @@ public class ParticleComponentAppearanceTinting extends ParticleComponentBase im
     {}
 
     @Override
-    public void render(ParticleEmitter emitter, VertexFormat format, Particle particle, BufferBuilder builder, Matrix4f matrix, int overlay, float transition)
+    public void render(ParticleEmitter emitter, VertexFormat format, Particle particle, VertexConsumer builder, Matrix4f matrix, int overlay, float transition)
     {
         this.renderUI(particle, builder, matrix, transition);
     }
 
     @Override
-    public void renderUI(Particle particle, BufferBuilder builder, Matrix4f matrix, float transition)
+    public void renderUI(Particle particle, VertexConsumer builder, Matrix4f matrix, float transition)
     {
         if (this.color != null)
         {

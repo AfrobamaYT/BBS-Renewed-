@@ -12,6 +12,8 @@ import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import mchorse.bbs_mod.math.IExpression;
 import mchorse.bbs_mod.math.Variable;
 import mchorse.bbs_mod.particles.ParticleScheme;
@@ -489,6 +491,65 @@ public class ParticleEmitter
     /**
      * Render all the particles in this particle emitter
      */
+    /**
+     * Zeichnet die Partikel in eine OBERFLAECHE (Editor-Vorschau) statt in die Welt.
+     *
+     * <h2>⛔ WARUM ES DIESE ZWEITE METHODE GIBT (2026-07-31 gemessen)</h2>
+     *
+     * <p>{@link #render} oeffnet einen eigenen Zeichendurchgang. In der Welt ist das richtig.
+     * In der Oberflaeche NICHT: 26.2 sammelt dort erst alle Elemente und zeichnet sie danach
+     * in {@code GuiRenderer.render()}. Ein sofort geoeffneter Durchgang malt also VOR dem
+     * GUI und verschwindet unter dem Panel-Hintergrund.
+     *
+     * <p>Gemessen im Partikel-Editor: BBS' eigener Zaehler meldete "375P - 34A", im
+     * Vorschaufeld war ueber 1650 Rasterproben kein Pixel heller als 31 von 255. Die
+     * Simulation lief, gezeichnet wurde nichts Sichtbares.
+     *
+     * <p>⚠️ Das Lambda laeuft SPAETER. Die Molang-Variablen werden darum IM Lambda gesetzt,
+     * nicht davor -- sonst zeichnete man mit Werten, die inzwischen ein anderer Aufrufer
+     * ueberschrieben hat.
+     */
+    public void renderInOberflaeche(Batcher2D batcher, VertexFormat format, Supplier<RenderPipeline> program,
+        PoseStack stack, int overlay, float transition, ScreenRectangle bereich)
+    {
+        if (this.scheme == null || this.particles.isEmpty())
+        {
+            return;
+        }
+
+        List<IComponentParticleRender> renders = this.scheme.particleRender;
+        Matrix4f matrix = new Matrix4f(stack.last().pose());
+        Texture textur = this.bindTexture();
+
+        for (IComponentParticleRender component : renders)
+        {
+            component.preRender(this, transition);
+        }
+
+        batcher.netz(
+            program.get(),
+            (ecken) ->
+            {
+                for (Particle particle : this.particles)
+                {
+                    this.setEmitterVariables(transition);
+                    this.setParticleVariables(particle, transition);
+
+                    for (IComponentParticleRender component : renders)
+                    {
+                        component.render(this, format, particle, ecken, matrix, overlay, transition);
+                    }
+                }
+            },
+            textur == null ? null : SofortZeichner.entityTextur(textur),
+            bereich);
+
+        for (IComponentParticleRender component : renders)
+        {
+            component.postRender(this, transition);
+        }
+    }
+
     public void render(VertexFormat format, Supplier<RenderPipeline> program, PoseStack stack, int overlay, float transition)
     {
         if (this.scheme == null)
