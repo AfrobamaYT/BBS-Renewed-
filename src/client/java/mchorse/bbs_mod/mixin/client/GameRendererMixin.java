@@ -5,15 +5,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.CameraController;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.items.GunZoom;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -24,7 +21,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin
@@ -46,60 +42,22 @@ public class GameRendererMixin
         }
     }
 
-    /**
-     * This injection replaces the camera FOV when camera controller takes over
+    /* ⚠️ DAS SICHTFELD WIRD NICHT MEHR HIER UEBERSCHRIEBEN (26.2).
      *
-     * <p>changingFov ist vanillas trennung zwischen welt und erster-person-hand:
-     * renderWorld ruft getFov mit true, renderHand mit false, und getFov ueberspringt bei false
-     * den ganzen multiplikator-block. Im bytecode von 1.21.1 nachgelesen. Deshalb waechst im
-     * echten spiel beim rennen die welt, die hand aber nicht.</p>
+     * `GameRenderer.getFov(Camera, float, boolean)` gibt es nicht mehr. Das sichtfeld
+     * rechnet jetzt die KAMERA selbst, einmal je bild in `Camera.update(DeltaTracker)`:
      *
-     * <p>Die korrektur MUSS hier stehen, nicht in einem spaeteren injektor: setReturnValue
-     * cancelt den callback, und mixin springt danach sofort zurueck — jeder weitere
-     * RETURN-injektor wird uebersprungen, unabhaengig von seiner prioritaet. Gemessen
-     * 2026-07-28: nach diesem handler steht cir.isCancelled() == true. Zwei anlaeufe ueber
-     * eigene mixins (prioritaet 3000 bzw. @ModifyReturnValue mit 4000) blieben deshalb
-     * wirkungslos, obwohl ihre logik isoliert das richtige ergebnis lieferte.</p>
-     */
-    @Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
-    public void onGetFov(Camera camera, float tickDelta, boolean changingFov,
-        CallbackInfoReturnable<Double> info)
-    {
-        GunZoom gunZoom = BBSModClient.getGunZoom();
-
-        if (gunZoom != null)
-        {
-            info.setReturnValue((double) gunZoom.getFOV(info.getReturnValue().floatValue()));
-
-            return;
-        }
-
-        CameraController controller = BBSModClient.getCameraController();
-
-        if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
-        {
-            double fov = controller.getFOV();
-
-            /* camera.fov traegt den sprint-boost, den PositionFovLogik auf angle.fov legt.
-             * Fuer die welt ist das gewollt, fuer die hand nicht — sonst streckt sie sich beim
-             * rennen mit. Nur den sprint-anteil herausrechnen; das clip-FOV bleibt stehen,
-             * damit die hand weiterhin dem shot folgt.
-             *
-             * Abschaltbar, weil es eine bewusste abweichung vom alten fork ist: wer das alte
-             * verhalten will, schaltet "Hand follows sprint FOV" in den editor-settings an. */
-            if (!changingFov && !BBSSettings.editorHandSprintFov.get())
-            {
-                float sprint = com.afrobama.blendertransform.PositionFovLogik.sprintFaktor();
-
-                if (sprint > 1.001F)
-                {
-                    fov /= sprint;
-                }
-            }
-
-            info.setReturnValue(fov);
-        }
-    }
+     *     alignWithEntity(δ)                 <- pose (frueher Camera.setup)
+     *     this.fov    = calculateFov(δ)      <- welt   (frueher getFov(.., true))
+     *     this.hudFov = calculateHudFov(δ)   <- hand   (frueher getFov(.., false))
+     *     prepareCullFrustum(..) / setupPerspective(.., fov, ..)
+     *
+     * Der BBS-ueberschreiber (gun-zoom, clip-FOV, sprint-abzug fuer die hand) sitzt darum
+     * jetzt in {@link CameraMixin} — dieselbe zielklasse wie die kamerapose. Aus dem
+     * booleschen `changingFov` sind zwei getrennte methoden geworden; der schalter
+     * "Hand follows sprint FOV" wirkt entsprechend auf `calculateHudFov`.
+     *
+     * Gemessen am 26.2-jar (javap -c auf net.minecraft.client.Camera), nicht angenommen. */
 
     /**
      * This injection replaces the camera roll when camera controller takes over
@@ -166,47 +124,32 @@ public class GameRendererMixin
      * pushes its near plane back, so the frustum never culls a section the
      * render would still have drawn.
      */
-    @ModifyArg(
-        method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): setupFrustum nimmt keinen MatrixStack mehr,
-             * sondern (Vec3, Matrix4f positionMatrix, Matrix4f projectionMatrix) — per javap
-             * gegen die 1.21.1-jar geprueft. Die projektion bleibt argument 2. Mit dem alten
-             * deskriptor fand mixin 0 ziele und der client startete gar nicht erst. */
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareCullFrustum(Lnet/minecraft/world/phys/Vec3;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
-        ),
-        index = 2
-    )
-    private Matrix4f onSetupFrustumProjection(Matrix4f projection)
-    {
-        return BBSRendering.getOrthoProjection((GameRenderer) (Object) this, projection, 20F);
-    }
+    /* ⛔ HERAUSGENOMMEN 2026-07-31 -- die orthografische Editor-Kamera ist voruebergehend aus.
+     *
+     * Hier standen zwei @ModifyArg, die eine ORTHOGRAFISCHE Projektion unterschoben, wenn die
+     * Umlaufkamera des Film-Editors eine wollte: einmal am prepareCullFrustum-Aufruf (damit das
+     * Keulen zur gezeichneten Ansicht passt), einmal am renderLevel-Aufruf.
+     *
+     * Beide Ziele sind weg. Die Aufrufe sind von LevelRenderer nach Camera gewandert, und --
+     * das ist der eigentliche Punkt -- setupPerspective nimmt gar keine Matrix mehr entgegen,
+     * sondern (zNear, zFar, fov, breite, hoehe). Es gibt kein Matrix-Argument mehr, das man
+     * unterschieben koennte. Der Trick selbst ist also nicht mehr uebersetzbar, nicht nur der
+     * Deskriptor.
+     *
+     * ⭐ DER RUECKWEG IST BESSER ALS DAS ORIGINAL. 26.2 hat eine erstklassige orthografische
+     * Projektion: net.minecraft.client.renderer.Projection.setupOrtho(...) neben
+     * setupPerspective(...), und Camera haelt so ein Projection-Objekt als Feld. Statt eine
+     * fertige Matrix zu ersetzen, sagt man dem Projektionsobjekt, dass es orthografisch sein
+     * soll -- damit stimmen Keulen, nahe/ferne Ebene und Projektion automatisch ueberein,
+     * waehrend der alte Weg sie an ZWEI Stellen getrennt unterschieben musste und dabei (siehe
+     * die alten Kommentare) eine lose untere Schranke brauchte, damit das Keulen nicht zu viel
+     * wegschnitt.
+     *
+     * ZU TUN: in CameraMixin ein @Shadow auf das Projection-Feld, Injektor am RETURN von
+     * setupPerspective, und bei aktiver Umlaufkamera setupOrtho aufrufen. Die Parameterfolge
+     * von setupOrtho ist NICHT geraten nachzuschlagen, sondern an einem Vanilla-Aufrufer
+     * abzulesen. Bis dahin: der Film-Editor zeichnet perspektivisch statt orthografisch. */
 
-    @ModifyArg(
-        method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            /* MERGE fsgh/2.5 (1.20.4 -> 1.21.1): WorldRenderer.render nimmt statt
-             * (MatrixStack, tickDelta, limitTime, blockOutline, ...) jetzt einen
-             * RenderTickCounter und gibt ZWEI matrizen mit (position, projektion).
-             * Die projektion ist weiterhin das LETZTE argument — damit wandert sie von
-             * index 7 auf 6. Signatur per javap gegen die 1.21.1-jar geprueft. */
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V"
-        ),
-        index = 6
-    )
-    private Matrix4f onRenderProjection(Matrix4f projection)
-    {
-        Matrix4f ortho = BBSRendering.getOrthoProjection((GameRenderer) (Object) this, projection, 0F);
-
-        if (ortho != projection)
-        {
-            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
-        }
-
-        return ortho;
-    }
 
     @Inject(at = @At("RETURN"), method = "renderLevel")
     private void onWorldRenderEnd(CallbackInfo callbackInfo)

@@ -2,75 +2,68 @@
 package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
-import com.afrobama.bbstools.client.editormode.EditorModeClient;
-import com.afrobama.bbstools.editormode.EditorMode;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Re-applies vanilla's sprint FOV multiplier while the user is in BBS
- * editor mode.
+ * Legt vanillas sprint-multiplikator wieder auf das sichtfeld, waehrend BBS es ersetzt hat.
  *
- * <p>Vanilla MC pipes the sprint visual boost through
- * {@code GameRenderer.getFov(Camera, float, boolean)} — the third
- * boolean (changingFov) controls whether the smoothed
- * {@code fovMultiplier}/{@code lastFovMultiplier} fields modulate the
- * returned FOV. Upstream BBS replaces the entire return value of
- * {@code getFov} whenever its CameraController is active (see
- * {@code mchorse.bbs_mod.mixin.client.GameRendererMixin#onGetFov}), so
- * the sprint cue is silently dropped during cinematic playback and
- * editor scrubbing.</p>
+ * <h2>26.2: aus GameRenderer.getFov wurde Camera.calculateFov</h2>
  *
- * <p>This mixin sits on the same {@code @At("RETURN")} target with a
- * higher Mixin priority (2000 vs the default 1000) so it runs AFTER
- * upstream's injector — when both injectors fire on RETURN, the one
- * with the larger priority value is applied last and therefore sees /
- * wraps the value the earlier injector wrote via
- * {@code info.setReturnValue}.</p>
+ * <p>{@code GameRenderer.getFov(Camera, float, boolean)} gibt es nicht mehr. Die kamera
+ * rechnet ihr sichtfeld selbst, und der alte boolesche parameter {@code changingFov} ist zur
+ * METHODENWAHL geworden:</p>
  *
- * <p>Guard policy:</p>
- * <ul>
- *   <li>Bail when the third-person zoom multiplier is disabled
- *       ({@code changingFov == false}) — vanilla itself skips the
- *       sprint boost in that case (item-zoom, map-render, etc.).</li>
- *   <li>Bail when the local player is null or not sprinting — nothing
- *       to amplify.</li>
- *   <li>Bail unless we're in editor mode (covers the explicit
- *       {@link EditorMode#ACTIVE} toggle and the implicit
- *       "Add-Camera clip active in a BBS dashboard" preview state).
- *       Outside editor mode upstream BBS handles things correctly.</li>
- *   <li>Bail if BBS is rendering a video export — we don't want to
- *       perturb a frame that's being baked to disk.</li>
- * </ul>
+ * <pre>
+ *   getFov(.., changingFov = true)   ->  Camera.calculateFov(float)      welt
+ *   getFov(.., changingFov = false)  ->  Camera.calculateHudFov(float)   hand/HUD
+ * </pre>
  *
- * <p>The smoothing curve mirrors vanilla
- * {@code GameRenderer.updateFovMultiplier}: target = player's
- * {@code getFovMultiplier()} (the same hook vanilla reads), and we
- * exponentially approach it at {@code 0.5} per render call. This stays
- * close to the look of unmodded sprint FOV without us needing to
- * reflectively poke private fields on {@link GameRenderer}.</p>
+ * <p>Dieser handler haengt nur an {@code calculateFov}. Das ist keine kuerzung, sondern der
+ * unveraenderte gueltigkeitsbereich: die logik stieg schon immer bei {@code changingFov ==
+ * false} sofort aus. Der uebergebene wert ist darum konstant {@code true} — sonst wuerde der
+ * einzige aufruf, den es noch gibt, gleich wieder aussteigen.</p>
+ *
+ * <h2>⚠️ Zwei befunde, die vor dem naechsten anfassen zu lesen sind</h2>
+ *
+ * <p><b>1. Die begruendung im urspruenglichen javadoc traegt nicht.</b> Dort stand, dieser
+ * mixin laufe wegen der hoeheren prioritaet NACH dem BBS-injektor und koenne dessen wert
+ * umhuellen. Das stimmt nicht: BBS ruft {@code setReturnValue}, das cancelt den callback, und
+ * mixin ueberspringt danach jeden weiteren RETURN-injektor derselben methode — unabhaengig
+ * von der prioritaet (gemessen 2026-07-28, festgehalten in
+ * {@code mchorse.bbs_mod.mixin.client.CameraMixin#bbsFov}). Dieser handler laeuft also NUR,
+ * wenn KEINE BBS-kamera aktiv ist. Genau dort hat er aber nichts zu reparieren.</p>
+ *
+ * <p><b>2. In dem einen zweig, den er erreicht, verdoppelt er.</b> {@code calculateFov}
+ * multipliziert selbst schon mit {@code lerp(oldFovModifier, fovModifier)} — das IST vanillas
+ * sprint-boost (26.2-bytecode gelesen). {@code SprintFovLogik} legt seinen eigenen,
+ * gleich berechneten faktor noch einmal darauf. Das ist kein neuer schaden aus dem
+ * 26.2-umstieg — {@code getFov} tat in 1.21.1 dasselbe —, aber es ist der grund, warum diese
+ * datei einen bewussten entscheid braucht statt eines weiteren ports. Der befund ist an den
+ * leiter gemeldet; geloescht wird sie nicht im vorbeigehen.</p>
  */
-@Mixin(value = GameRenderer.class, priority = 2000)
+@Mixin(value = Camera.class, priority = 2000)
 public abstract class SprintFOVMixin
 {
-    @Inject(method = "getFov", at = @At("RETURN"), cancellable = true, require = 0)
-    private void bbstools$reapplySprintFov(net.minecraft.client.Camera camera,
-                                            float tickDelta,
-                                            boolean changingFov,
-                                            CallbackInfoReturnable<Double> info)
+    @Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true)
+    private void bbstools$reapplySprintFov(float tickDelta, CallbackInfoReturnable<Float> info)
     {
-        /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in GameRenderer
+        /* BRÜCKEN-MUSTER (2026-07-26): dieser handler wird beim klassenladen in die zielklasse
          * gewoben und liegt damit im KnotClassLoader — vom kernel-swap unerreichbar. Die
-         * gesamte smoothing-logik (inkl. mc/player-zugriff) liegt jetzt in
-         * `com.afrobama.blendertransform.SprintFovLogik` und wird bei jedem swap mitgetauscht. */
+         * gesamte smoothing-logik (inkl. mc/player-zugriff) liegt in
+         * `com.afrobama.blendertransform.SprintFovLogik` und wird bei jedem swap mitgetauscht.
+         *
+         * Die brücke bleibt auf double, obwohl das sichtfeld jetzt ein float ist: die logik
+         * ist damit unveraendert und kernel-seitig nichts nachzuziehen. Der handle-aufruf
+         * verbreitert float -> double von selbst. */
         Object neu = MixinBruecke.rufe("SprintFovLogik", "apply",
-            Minecraft.getInstance(), changingFov, tickDelta, info.getReturnValue());
+            Minecraft.getInstance(), true, tickDelta, (double) info.getReturnValue());
 
-        if (neu instanceof Double) info.setReturnValue((Double) neu);
+        if (neu instanceof Double d) info.setReturnValue(d.floatValue());
     }
 
 }
