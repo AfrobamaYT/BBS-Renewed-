@@ -90,11 +90,10 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         if (context.isPicking())
         {
-            CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
-            {
-                this.setupTarget(context, BBSShaders.getPickerModelsProgram());
-                RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
-            });
+            /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
+             * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
+             * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
+             * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
 
             light = 0;
         }
@@ -125,7 +124,6 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             FormTranslucentQueue.endGroup();
         }
 
-        CustomVertexConsumerProvider.clearRunnables();
 
         /* 26.2: Tiefentest und Cull waren hier nur das Zuruecksetzen des globalen
          * Zustands nach dem disableCull am Anfang von render3D. Einen globalen Zustand

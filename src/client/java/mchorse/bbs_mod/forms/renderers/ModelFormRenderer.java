@@ -569,7 +569,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             consumers.draw();
             FormTranslucentQueue.setSortOrigin(null);
 
-            CustomVertexConsumerProvider.clearRunnables();
 
             stack.popPose();
 
@@ -633,7 +632,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 consumers.setSubstitute(null);
                 FormTranslucentQueue.setSortOrigin(null);
 
-                CustomVertexConsumerProvider.clearRunnables();
 
                 stack.popPose();
 

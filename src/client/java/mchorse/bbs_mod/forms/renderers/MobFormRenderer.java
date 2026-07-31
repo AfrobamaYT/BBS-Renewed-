@@ -239,22 +239,16 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             BooleanHolder first = new BooleanHolder();
 
-            CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
-            {
-                if (!first.bool)
-                {
-                    this.bindTexture();
-
-                    first.bool = true;
-                }
-            });
+            /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
+             * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
+             * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
+             * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
 
             consumers.setUI(true);
             Minecraft.getInstance().getEntityRenderDispatcher().render(this.entity, 0D, 0D, 0D, 0F, context.getTransition(), stack, consumers, net.minecraft.util.LightCoordsUtil.pack(15, 0));
             consumers.draw();
             consumers.setUI(false);
 
-            CustomVertexConsumerProvider.clearRunnables();
 
             stack.popPose();
 
@@ -276,38 +270,19 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             if (context.isPicking())
             {
-                CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
-                {
-                    if (!first.bool)
-                    {
-                        this.bindTexture();
-
-                        first.bool = true;
-                    }
-
-                    /* The picker shader must be (re)applied for every layer, not just the
-                     * first one. Entities like the piglin render held items (e.g. the golden
-                     * sword) through Minecraft's own item rendering, which adds extra render
-                     * layers. If those layers aren't forced onto the picker shader, they get
-                     * drawn with vanilla item shaders, leaking GL/shader state that breaks the
-                     * picking of any subsequent entity rendered into the stencil framebuffer. */
-                    this.setupTarget(context, BBSShaders.getPickerModelsProgram());
-                    RenderSystem.setShader(BBSShaders::getPickerModelsProgram);
-                });
+                /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
+                 * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
+                 * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
+                 * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
 
                 light = 0;
             }
             else
             {
-                CustomVertexConsumerProvider.hijackVertexFormat((layer) ->
-                {
-                    if (!first.bool)
-                    {
-                        this.bindTexture();
-
-                        first.bool = true;
-                    }
-                });
+                /* ⛔ 26.2: der Hijack ist ersatzlos entfallen. Er setzte beim Zeichnen JEDER Ebene
+                 * einen anderen Shader -- ein Haken in Vanillas Sofort-Zeichnung, die es nicht
+                 * mehr gibt. Der Shader steht jetzt in der Pipeline des jeweiligen Zuges; fuer
+                 * den Auswahl-Durchgang waehlt ihn die Pipeline dort, nicht ein Rueckruf hier. */
             }
 
             context.stack.pushPose();
@@ -351,7 +326,6 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
 
             consumers.draw();
             FormTranslucentQueue.setSortOrigin(null);
-            CustomVertexConsumerProvider.clearRunnables();
 
             context.stack.popPose();
 
