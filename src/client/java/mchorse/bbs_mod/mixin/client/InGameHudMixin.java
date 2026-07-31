@@ -5,6 +5,7 @@ import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
 import mchorse.bbs_mod.camera.controller.ICameraController;
 import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
+import mchorse.bbs_mod.client.GuiZeichner;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -32,19 +33,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class InGameHudMixin
 {
     /** Zeichner auf dem lebenden GUI-Zustand -- siehe Klassendoku. */
+    /**
+     * ⚠️ NICHT je Haken einen neuen Zeichner bauen. Beide Haken dieser Klasse arbeiten
+     * zusammen -- der eine schiebt das HUD beiseite, der andere holt es zurueck -- und jeder
+     * Zeichner fuehrt einen EIGENEN Matrix-Stack. Zwei Zeichner heisst: der Push landet auf
+     * einem Stack, den beim Pop niemand mehr kennt ("already at the bottom of the stack").
+     * Darum haelt GuiZeichner genau einen je Bild.
+     */
+    private GuiGraphicsExtractor bbs$zeichnerFuerNeuesBild()
+    {
+        return GuiZeichner.neuFuerBild(Minecraft.getInstance());
+    }
+
     private GuiGraphicsExtractor bbs$zeichner()
     {
-        Minecraft mc = Minecraft.getInstance();
-
-        return new GuiGraphicsExtractor(mc,
-            ((GuiRenderStateAccessor) mc.gui).bbs$getGuiRenderState(),
-            mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+        return GuiZeichner.aktuell(Minecraft.getInstance());
     }
 
     @Inject(method = "extractRenderState", at = @At(value = "HEAD"), cancellable = true)
     public void render(DeltaTracker tickCounter, boolean bildschirmOffen, boolean hudVersteckt, CallbackInfo info)
     {
-        GuiGraphicsExtractor drawContext = this.bbs$zeichner();
+        GuiGraphicsExtractor drawContext = this.bbs$zeichnerFuerNeuesBild();
 
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 

@@ -494,9 +494,9 @@ public class BBSRendering
      */
     private static GuiGraphicsExtractor zeichner(Minecraft mc)
     {
-        return new GuiGraphicsExtractor(mc,
-            ((mchorse.bbs_mod.mixin.client.GuiRenderStateAccessor) mc.gui).bbs$getGuiRenderState(),
-            mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+        /* ⚠️ NICHT selbst bauen: ein eigener Zeichner haette einen eigenen Matrix-Stack,
+         * und ein Push hier passte dann zu keinem Pop anderswo. Siehe GuiZeichner. */
+        return GuiZeichner.aktuell(mc);
     }
 
     public static void onWorldRenderEnd()

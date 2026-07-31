@@ -138,7 +138,11 @@ public class FormUtilsClient
 
         if (renderer != null)
         {
-            renderer.renderUI(context, x1, y1, x2, y2);
+            /* ⚠️ EIGENER SAMMLER, kein Griff nach dem Weltsammler. Eine Form in einem
+             * Bedienelement wird ausserhalb des Weltdurchgangs gezeichnet -- dort gibt es
+             * keinen. Ruestung und Gegenstaende gehen aber ueber Vanillas Einreichweg und
+             * brauchen einen. Details und Herkunft des Verfahrens: FormSammler. */
+            FormSammler.mitEigenemSammler(() -> renderer.renderUI(context, x1, y1, x2, y2));
         }
     }
 
