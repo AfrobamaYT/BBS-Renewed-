@@ -58,7 +58,20 @@ public class ArmorRenderer
     {
         this.innerModel = innerModel;
         this.outerModel = outerModel;
-        this.armorTrimsAtlas = ctx.getAtlas(Sheets.ARMOR_TRIMS_SHEET);
+        /* ⛔ DAS WAR DER SCHWARZE BILDSCHIRM. Sheets.ARMOR_TRIMS_SHEET ist der TEXTURPFAD
+         * (minecraft:textures/atlas/armor_trims.png); getAtlas will in 26.2 eine ATLAS-KENNUNG
+         * (net.minecraft.data.AtlasIds.ARMOR_TRIMS). Der falsche Wert wirft
+         *     IllegalArgumentException: Invalid atlas id: minecraft:textures/atlas/armor_trims.png
+         * und zwar in EntityRenderDispatcher.onResourceManagerReload -- also MITTEN IM
+         * RESSOURCEN-RELOAD. Der bricht dadurch ab, kein Modell wird fertig gebacken, und das
+         * Spiel zeichnet ab da NICHTS mehr.
+         *
+         * ⚠️ WARUM DAS SO LANGE GEDAUERT HAT: es sieht nicht wie ein Renderfehler aus. Der
+         * Renderthread laeuft weiter, es kommt KEINE Ausnahme pro Bild, der Titelbildschirm
+         * meldet sich normal -- nur das Bild bleibt schwarz. Die Ausnahme faellt EINMAL, waehrend
+         * des Ladens, und steht danach still im Log. Der Hinweis, der es aufloeste, kam vom
+         * Nutzer: "Ladebildschirm war kurz da, DANN schwarz" -- also kippt es beim Reload-Ende. */
+        this.armorTrimsAtlas = ctx.getAtlas(net.minecraft.data.AtlasIds.ARMOR_TRIMS);
         this.equipmentAssets = ctx.getEquipmentAssets();
     }
 
