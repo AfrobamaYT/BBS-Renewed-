@@ -10,12 +10,9 @@ import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.ItemForm;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
 import mchorse.bbs_mod.ui.framework.UIContext;
-import mchorse.bbs_mod.utils.MatrixStackUtils;
-import mchorse.bbs_mod.utils.colors.Color;
-import mchorse.bbs_mod.utils.joml.Vectors;
+import mchorse.bbs_mod.ui.utils.UISymbol;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -26,34 +23,40 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         super(form);
     }
 
+    /**
+     * ⚠️ 26.2: die Vorschau ist das Inventarsymbol, nicht mehr die frei gedrehte 3D-Ansicht --
+     * Grund und Rueckweg stehen in {@link UISymbol}.
+     */
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        context.batcher.getContext().flush();
+        UISymbol.mittig(context, this.form.stack.get(), x1, y1, x2, y2, this.form.uiScale.get());
+    }
 
-        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
-        PoseStack matrices = context.batcher.pose();
+    /**
+     * Loest den Gegenstand in Zeichenauftraege auf und reicht sie ein -- der Ersatz fuer
+     * {@code ItemRenderer.renderStatic}.
+     *
+     * <p>⛔ HIER GEHT DIE FORM-FARBE VERLOREN, und zwar anders als beim Block. Vanillas
+     * Gegenstands-Auftrag ({@code ItemFeatureRenderer.Submit}) hat ueberhaupt kein Feld fuer
+     * eine Gesamtfarbe -- nur Toenungsschichten, die der Gegenstand selbst mitbringt
+     * (Traenkfarbe, gefaerbtes Leder). Beim Block gab es wenigstens ein Farbfeld, das die
+     * oeffentliche Methode nicht fuellte; hier gibt es keins. Wer die Farbe zurueckwill, muss
+     * die Vierecke je Schicht selbst einreichen, so wie {@link mchorse.bbs_mod.graphics.Blockmodell}
+     * es fuer Bloecke tut. Siehe Aufgabe #82.
+     *
+     * <p>Ein FRISCHER Zustand je Aufruf, kein geteilter: der Auftrag haelt die Vierecksliste
+     * des Zustands weiter (nicht kopiert, im Bytecode nachgesehen), bis der Bildgraph zeichnet.
+     * Ein wiederverwendeter Zustand wuerde dem schon abgeschickten Auftrag den Gegenstand
+     * unter den Fuessen wegtauschen.
+     */
+    private void einreichen(PoseStack stapel, CustomVertexConsumerProvider consumers, int licht, int overlay)
+    {
+        Minecraft mc = Minecraft.getInstance();
+        ItemStackRenderState zustand = new ItemStackRenderState();
 
-        Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
-
-        matrices.pushPose();
-        MatrixStackUtils.multiply(matrices, uiMatrix);
-        matrices.scale(this.form.uiScale.get(), this.form.uiScale.get(), this.form.uiScale.get());
-
-        matrices.last().normal().getScale(Vectors.EMPTY_3F);
-        matrices.last().normal().scale(1F / Vectors.EMPTY_3F.x, -1F / Vectors.EMPTY_3F.y, 1F / Vectors.EMPTY_3F.z);
-
-        Color set = Color.white();
-        FormColorBlend.blend(set, this.form.color.get(), this.form.additiveColor.get());
-
-        consumers.setSubstitute(BBSRendering.getColorConsumer(set));
-        consumers.setUI(true);
-        Minecraft.getInstance().getItemRenderer().renderStatic(this.form.stack.get(), this.form.modelTransform.get(), net.minecraft.util.LightCoordsUtil.pack(15, 0), OverlayTexture.NO_OVERLAY, matrices, consumers, Minecraft.getInstance().level, 0);
-        consumers.draw();
-        consumers.setUI(false);
-        consumers.setSubstitute(null);
-
-        matrices.popPose();
+        mc.getItemModelResolver().updateForTopItem(zustand, this.form.stack.get(), this.form.modelTransform.get(), mc.level, null, 0);
+        zustand.submit(stapel, consumers.sammler(), licht, overlay, 0);
     }
 
     @Override
@@ -94,7 +97,7 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         }
 
         consumers.setSubstitute(BBSRendering.getColorConsumer(BlockFormRenderer.color));
-        Minecraft.getInstance().getItemRenderer().renderStatic(this.form.stack.get(), this.form.modelTransform.get(), light, context.overlay, context.stack, consumers, context.entity.getWorld(), 0);
+        this.einreichen(context.stack, consumers, light, context.overlay);
         consumers.draw();
         consumers.setSubstitute(null);
         FormTranslucentQueue.setSortOrigin(null);

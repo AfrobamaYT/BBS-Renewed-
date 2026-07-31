@@ -13,7 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import mchorse.bbs_mod.graphics.Blockmodell;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,6 @@ public final class BlockAnimationRenderer
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.level == null) return;
 
-        BlockRenderDispatcher brm = mc.getBlockRenderer();
         Vec3 camPos = ctx.levelState().cameraRenderState.pos;
         PoseStack matrices = ctx.poseStack();
         SubmitNodeCollector consumers = ctx.submitNodeCollector();
@@ -50,7 +49,7 @@ public final class BlockAnimationRenderer
             matrices.translate(p.x - camPos.x, p.y - camPos.y, p.z - camPos.z);
             try
             {
-                brm.renderSingleBlock(
+                Blockmodell.einreichen(
                     ab.state,
                     matrices,
                     consumers,
@@ -63,7 +62,10 @@ public final class BlockAnimationRenderer
             }
             matrices.popPose();
         }
-        consumers.endBatch();
+
+        /* 26.2: endBatch ist ersatzlos entfallen. Es leerte den Sofort-Puffer der Ebene, die
+         * gerade beschrieben wurde. Es gibt keinen mehr: eingereichte Auftraege zeichnet der
+         * Bildgraph, wenn er an der Reihe ist. */
     }
 
 }
