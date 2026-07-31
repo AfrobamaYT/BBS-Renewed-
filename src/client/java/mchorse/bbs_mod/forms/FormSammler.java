@@ -121,7 +121,48 @@ public final class FormSammler
      */
     private static void zeichnenLassen(SubmitNodeStorage eigener)
     {
+        zielMelden();
+
         Minecraft.getInstance().gameRenderer.featureRenderDispatcher().renderAllFeatures(eigener);
+    }
+
+    /**
+     * Meldet EINMAL, gegen welche Masse hier tatsaechlich gezeichnet wird.
+     *
+     * <p>Die Fehlermeldung nennt nur die Zahlen, nicht ihre Herkunft ("Is 854x480 expected
+     * 2560x1440"). Solange nicht feststeht, WELCHE Flaeche welche Groesse hat, waere jeder
+     * Fix geraten -- und ein Ziel, das man nicht gemessen hat, ist ein Ziel, das man nicht
+     * kennt. Die Zeile faellt weg, sobald die Ursache steht.
+     */
+    private static boolean zielGemeldet;
+
+    private static void zielMelden()
+    {
+        if (zielGemeldet)
+        {
+            return;
+        }
+
+        zielGemeldet = true;
+
+        try
+        {
+            com.mojang.blaze3d.pipeline.RenderTarget haupt =
+                Minecraft.getInstance().gameRenderer.mainRenderTarget();
+
+            System.err.println("[ziel] hauptziel farbe="
+                + haupt.getColorTexture().getWidth(0) + "x" + haupt.getColorTexture().getHeight(0)
+                + " tiefe=" + (haupt.getDepthTexture() == null ? "KEINE"
+                    : haupt.getDepthTexture().getWidth(0) + "x" + haupt.getDepthTexture().getHeight(0))
+                + " | fenster=" + Minecraft.getInstance().getWindow().getWidth()
+                + "x" + Minecraft.getInstance().getWindow().getHeight()
+                + " | umleitung farbe=" + (com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride == null ? "keine" : "gesetzt")
+                + " tiefe=" + (com.mojang.blaze3d.systems.RenderSystem.outputDepthTextureOverride == null ? "keine" : "gesetzt"));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public static SubmitNodeCollector pflicht()
