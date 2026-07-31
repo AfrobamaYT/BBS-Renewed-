@@ -232,7 +232,9 @@ public final class RecordFromKeyframesHandler
         /* refreshPositionAndAngles updates head/body yaw to the
          *  passed yaw — override those afterwards so independent
          *  head/body channels survive. */
-        player.moveTo(x, y, z, yaw, pitch);
+        /* ⚠️ Entity.moveTo(x,y,z,yaw,pitch) heisst in 26.2 snapTo(...) — reine Umbenennung
+         * (Position und Blickwinkel hart setzen, ohne Interpolation). */
+        player.snapTo(x, y, z, yaw, pitch);
         player.yHeadRot = headYaw;
         player.yBodyRot = bodyYaw;
         player.yHeadRotO = headYaw;

@@ -31,6 +31,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -253,7 +254,12 @@ public class ClientNetwork
 
         client.execute(() ->
         {
-            client.player.setPermissionLevel(cheats ? 4 : 0);
+            /* ⚠️ 26.2 kennt keine Rechte-ZAHL mehr, sondern eine Rechte-MENGE. Die
+             * Entsprechung der alten Stufen liefert LevelBasedPermissionSet:
+             * Stufe 4 = OWNER, Stufe 0 = ALL (jeder). Gleiche Wirkung, anderer Typ. */
+            client.player.setPermissions(cheats
+                ? LevelBasedPermissionSet.OWNER
+                : LevelBasedPermissionSet.ALL);
         });
     }
 

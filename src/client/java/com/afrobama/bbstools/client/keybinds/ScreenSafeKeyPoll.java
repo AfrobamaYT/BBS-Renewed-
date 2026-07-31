@@ -86,7 +86,10 @@ public final class ScreenSafeKeyPoll
 
         try
         {
-            key = KeyBindingHelper.getBoundKeyOf(this.binding);
+            /* ⚠️ Fabric hat die Keybinding-API auf die neuen Vanilla-Namen gezogen:
+             * KeyBindingHelper heisst jetzt KeyMappingHelper (Paket ...client.keymapping.v1),
+             * getBoundKeyOf bleibt gleich. */
+            key = KeyMappingHelper.getBoundKeyOf(this.binding);
         }
         catch (Throwable t)
         {

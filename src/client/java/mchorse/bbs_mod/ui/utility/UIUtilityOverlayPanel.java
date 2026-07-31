@@ -197,7 +197,10 @@ public class UIUtilityOverlayPanel extends UIOverlayPanel
 
         for (String command : commands)
         {
-            Minecraft.getInstance().player.connection.sendUnsignedCommand(command);
+            /* ⚠️ sendUnsignedCommand ist weg; sendCommand sendet dasselbe Paket. NICHT
+             * sendUnattendedCommand(cmd, screen) nehmen — der setzt bei Erfolg den
+             * Bildschirm auf sein Argument und wuerde dieses BBS-Fenster zumachen. */
+            Minecraft.getInstance().player.connection.sendCommand(command);
         }
     }
 

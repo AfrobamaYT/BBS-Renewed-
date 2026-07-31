@@ -7,6 +7,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 
 public class PlayerUtils
@@ -22,9 +23,15 @@ public class PlayerUtils
 
         if (!ClientNetwork.isIsBBSModOnServer())
         {
-            String command = "tp " + player.getGameProfile().getName() + " " + x + " " + y + " " + z + " " + yaw + " " + pitch;
+            String command = "tp " + player.getGameProfile().name() + " " + x + " " + y + " " + z + " " + yaw + " " + pitch;
 
-            player.connection.sendUnsignedCommand(command);
+            /* ⚠️ sendUnsignedCommand ist weg. sendCommand ist der Nachfolger mit demselben
+             * Paket; der zweite Kandidat sendUnattendedCommand(cmd, screen) waere FALSCH,
+             * denn der setzt bei Erfolg den Bildschirm auf sein Argument — mit null wuerde
+             * er also den offenen BBS-Editor zumachen. Unterschied zu frueher: ein Befehl
+             * mit signierbaren Argumenten (Chat-artig, z.B. /me) wurde vom alten Weg still
+             * verworfen, sendCommand signiert und sendet ihn. Fuer /tp ohne Belang. */
+            player.connection.sendCommand(command);
         }
         else
         {
@@ -42,7 +49,7 @@ public class PlayerUtils
 
         if (!ClientNetwork.isIsBBSModOnServer())
         {
-            player.connection.sendUnsignedCommand("tp " + player.getGameProfile().getName() + " " + x + " " + y + " " + z);
+            player.connection.sendCommand("tp " + player.getGameProfile().name() + " " + x + " " + y + " " + z);
         }
         else
         {
@@ -57,9 +64,23 @@ public class PlayerUtils
             return DATA_PLAYER_MODE_CUSTOMISATION;
         }
 
-        public ProtectedAccess(Level world, BlockPos pos, float yaw, GameProfile gameProfile)
+        /* ⚠️ Der Player-Konstruktor nimmt in 26.2 nur noch Welt + Profil; Position und Blickwinkel
+         * setzt man danach ueber snapTo(). Die Klasse existiert ohnehin nur, um an das
+         * geschuetzte DATA_PLAYER_MODE_CUSTOMISATION heranzukommen (einziger Nutzer:
+         * MobFormRenderer) — sie wird nirgends instanziiert, deshalb faellt der ungenutzte
+         * pos/yaw-Teil der Signatur ersatzlos weg statt weitergereicht zu werden. */
+        public ProtectedAccess(Level world, GameProfile gameProfile)
         {
-            super(world, pos, yaw, gameProfile);
+            super(world, gameProfile);
+        }
+
+        /* ⚠️ Player#gameMode ist in 26.2 abstrakt (der Spielmodus haengt jetzt an der Entitaet,
+         * nicht mehr am Interaktionsmanager). SURVIVAL ist die Antwort, die zu den beiden
+         * bestehenden Ueberschreibungen unten passt (weder Zuschauer noch Kreativ). */
+        @Override
+        public GameType gameMode()
+        {
+            return GameType.SURVIVAL;
         }
 
         @Override

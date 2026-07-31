@@ -1432,7 +1432,12 @@ public class UIReplayList extends UIList<ReplayListEntry>
                     return cached;
                 }
 
-                double top = world.getMaxBuildHeight() + 5;
+                /* ⚠️ getMaxBuildHeight() ist weg, getMaxY() ist der Nachfolger — aber NICHT
+                 * derselbe Wert: der alte war die AUSSCHLIESSENDE Obergrenze (minY + hoehe),
+                 * getMaxY() ist die EINSCHLIESSENDE oberste Blockhoehe (minY + hoehe - 1).
+                 * Der Startpunkt des Strahls liegt damit einen Block tiefer; die +5 darueber
+                 * decken das ab, der Strahl beginnt weiterhin ueber jedem Block. */
+                double top = world.getMaxY() + 5;
                 Vec3 pos = new Vec3(x, top, z);
                 BlockHitResult result = RayTracing.rayTrace(world, pos, new Vec3(0D, -1D, 0D), top - world.getMinY() + 5D);
 

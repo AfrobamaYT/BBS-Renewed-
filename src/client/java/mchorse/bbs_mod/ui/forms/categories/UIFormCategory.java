@@ -111,7 +111,9 @@ public class UIFormCategory extends UIElement
                 {
                     MapType data = FormUtils.toData(this.selected);
                     DataStringifier stringifier = new DataStringifier();
-                    String name = Minecraft.getInstance().player.getGameProfile().getName();
+                    /* ⚠️ GameProfile ist in der neuen authlib ein record: getName/getId heissen
+                     * jetzt name()/id(). Reine Umbenennung, gleicher Wert. */
+                    String name = Minecraft.getInstance().player.getGameProfile().name();
 
                     stringifier.jsonLike();
                     stringifier.indent = "";
@@ -129,14 +131,14 @@ public class UIFormCategory extends UIElement
                         {
                             for (PlayerInfo entry : playerList)
                             {
-                                if (entry.getProfile().getId().equals(Minecraft.getInstance().player.getGameProfile().getId()))
+                                if (entry.getProfile().id().equals(Minecraft.getInstance().player.getGameProfile().id()))
                                 {
                                     continue;
                                 }
 
-                                newMenu.action(Icons.ARROW_RIGHT, IKey.constant(entry.getProfile().getName()), () ->
+                                newMenu.action(Icons.ARROW_RIGHT, IKey.constant(entry.getProfile().name()), () ->
                                 {
-                                    ClientNetwork.sendSharedForm(this.selected, entry.getProfile().getId());
+                                    ClientNetwork.sendSharedForm(this.selected, entry.getProfile().id());
                                 });
                             }
                         });

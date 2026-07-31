@@ -545,15 +545,21 @@ public class UIFilmPreview extends UIElement
         context.batcher.flush();
 
         net.minecraft.client.gui.GuiGraphicsExtractor draw = context.batcher.getContext();
-        com.mojang.blaze3d.vertex.PoseStack matrices = draw.pose();
+
+        /* ⚠️ 26.2: der Zeichen-Stapel der Oberflaeche ist ZWEIDIMENSIONAL geworden
+         * (Matrix3x2fStack statt PoseStack) — die Oberflaeche kennt kein Z mehr, die Tiefe
+         * regelt der Zeichengraph ueber die Reihenfolge. Deshalb heissen die Aufrufe
+         * pushMatrix/popMatrix und translate/scale nehmen nur noch x und y; das alte
+         * "0F" fuer Z faellt ersatzlos weg (es war hier ohnehin immer 0). */
+        org.joml.Matrix3x2fStack matrices = draw.pose();
 
         /* Scissor auf das viewport-rechteck: ohne das zeichnet das HUD ueber das ganze
          * dashboard (hotbar neben der replay-liste, siehe screenshot des nutzers). */
         context.batcher.clip(area.x, area.y, area.w, area.h, context.menu.width, context.menu.height);
 
-        matrices.pushPose();
-        matrices.translate(area.x, area.y, 0F);
-        matrices.scale(scaleX, scaleY, 1F);
+        matrices.pushMatrix();
+        matrices.translate(area.x, area.y);
+        matrices.scale(scaleX, scaleY);
 
         boolean hidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
@@ -579,7 +585,7 @@ public class UIFilmPreview extends UIElement
             mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
             context.batcher.flush();
-            matrices.popPose();
+            matrices.popMatrix();
             context.batcher.unclip(context);
         }
     }
@@ -597,7 +603,15 @@ public class UIFilmPreview extends UIElement
         stack.rotate(Axis.YP.rotationDegrees(mcCamera.yRot()));
         stack.scale(-1F, -1F, -1F);
         /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
-        RenderSystem.renderCrosshair(10);
+
+        /* ⚠️ FUNKTION VERLOREN: RenderSystem.renderCrosshair(int) gibt es in 26.2 nicht mehr.
+         * Der Aufruf zeichnete das kleine Achsenkreuz (X/Y/Z als drei farbige Linien) im
+         * Sofortmodus — und genau den gibt es nicht mehr. Vanillas Nachfolger fuer solche
+         * Hilfslinien ist net.minecraft.gizmos.Gizmos, das aber WELT-Linien beim Bildgraphen
+         * einreicht und nichts vom Modelview-Stapel einer Oberflaeche weiss; es taugt hier
+         * also nicht als Eins-zu-eins-Ersatz. Die Umrechnung oben bleibt absichtlich stehen,
+         * damit klar ist, wo das Kreuz sass, wenn es jemand neu zeichnet.
+         * FOLGE FUER DEN NUTZER: die Achsen-Anzeige unten links in der Filmvorschau fehlt. */
 
         stack.popMatrix();
         /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
