@@ -223,10 +223,30 @@ public final class Readback
 	}
 
 	/* Eigener Lese-Rahmenpuffer, an den die Farbtextur des jeweiligen Ziels gehaengt wird.
-	 * Einmal angelegt, nur bei Texturwechsel neu behaengt. Siehe Kommentar oben. */
+	 * Einmal angelegt, VOR JEDEM LESEN neu behaengt. Siehe Kommentar oben. */
 	private static int leseFbo = 0;
-	private static int leseFboTextur = -1;
 
+	/**
+	 * ⛔ HIER WIRD DIE TEXTURNUMMER NICHT GEMERKT -- das war ein Fehler, kein Verzicht auf
+	 * eine Optimierung.
+	 *
+	 * <p>Bis 2026-07-31 stand hier ein Zwischenspeicher (`leseFboTextur`), der das Behaengen
+	 * uebersprang, solange die GL-Nummer der Farbtextur gleich blieb. Die Annahme dahinter --
+	 * gleiche Nummer heisst gleiche Textur -- gilt in 26.2 nicht mehr: {@code RenderTarget.resize()}
+	 * schliesst die alte GpuTexture, und GL vergibt die freigewordene Nummer sofort wieder.
+	 * Nach einem Groessenwechsel zeigte der Anhang also auf ein totes Objekt, waehrend die
+	 * Nummer unveraendert aussah.
+	 *
+	 * <p>⚠️ Das Fatale daran ist nicht der Absturz, sondern dass es keinen gibt: glReadPixels
+	 * auf einen toten Anhang liefert lauter Nullen und keinen GL-Fehler. Das Werkzeug meldet
+	 * dann ein schwarzes Bild -- und man sucht den Fehler im Produkt statt im Messgeraet.
+	 * Genau das kostete in Aufgabe 91 eine Runde: derselbe Zwischenspeicher steckte in
+	 * {@code BBSRendering.leseFboFuer} und liess einen bereits wirksamen Fix wirkungslos
+	 * aussehen (dieselbe Textur: direkt gelesen Helligkeit 198, ueber den Puffer 0).
+	 *
+	 * <p>Das Behaengen kostet einen GL-Aufruf je Lesen. Ein Lesen kopiert ohnehin das ganze
+	 * Bild in den Hauptspeicher -- daneben faellt das nicht ins Gewicht.
+	 */
 	private static int leseFboFuer(RenderTarget ziel)
 	{
 		int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
@@ -234,20 +254,14 @@ public final class Readback
 		if (leseFbo == 0)
 		{
 			leseFbo = GL30.glGenFramebuffers();
-			leseFboTextur = -1;
 		}
 
-		if (leseFboTextur != textur)
-		{
-			int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+		int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
 
-			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
-			GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-				GL11.GL_TEXTURE_2D, textur, 0);
-			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
-
-			leseFboTextur = textur;
-		}
+		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
+		GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+			GL11.GL_TEXTURE_2D, textur, 0);
+		GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
 
 		return leseFbo;
 	}
