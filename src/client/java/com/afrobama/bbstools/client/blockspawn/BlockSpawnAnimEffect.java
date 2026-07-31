@@ -39,8 +39,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.block.BlockQuadOutput;
+import net.minecraft.client.renderer.block.BlockStateModelSet;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
@@ -293,7 +294,7 @@ public final class BlockSpawnAnimEffect
         return a == null ? 0 : a.size();
     }
 
-    private static void onRender(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext context)
+    private static void onRender(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context)
     {
         List<Entry> anim = activeAnim;
         if (anim == null || anim.isEmpty())
@@ -332,12 +333,20 @@ public final class BlockSpawnAnimEffect
         double camY = cam.y;
         double camZ = cam.z;
 
+        /* 26.2: das translate(-cam) ist ersatzlos entfallen -- der Zeichenweg unten rechnet
+         * keine Matrix ein, die Kamera-Verschiebung steckt jetzt in den Blockecken selbst
+         * (siehe Kommentar am submitCustomGeometry). Der Stapel bleibt gepusht, weil der
+         * Sammler die Pose beim Einreichen kopiert. */
         matrices.pushPose();
-        matrices.translate(-camX, -camY, -camZ);
 
-        BlockRenderDispatcher dispatcher = mc.getBlockRenderer();
-        ModelBlockRenderer modelRenderer = dispatcher.getModelRenderer();
-        RandomSource rng = RandomSource.create();
+        /* 26.2: der BlockRenderDispatcher ist weg; den ModelBlockRenderer baut man selbst.
+         * (ambientOcclusion, cull, blockColors) -- dieselben Werte, mit denen der
+         * Chunk-Uebersetzer ihn baut. Er ist ZUSTANDSBEHAFTET (eigene Teileliste, eigener
+         * Wuerfel, Toenungs-Zwischenspeicher), also einer je Aufruf und nicht geteilt.
+         * Den Wuerfel bringt er selbst mit; der frueher hier gehaltene RandomSource ist
+         * ersatzlos entfallen, es zaehlt nur noch der Positions-Seed unten. */
+        ModelBlockRenderer modelRenderer = new ModelBlockRenderer(true, true, mc.getBlockColors());
+        BlockStateModelSet modelle = mc.getModelManager().getBlockStateModelSet();
 
         /* 26.2: renderBuffers().bufferSource() gibt es nicht mehr, und es gibt keinen Puffer
          * mehr zum Hineinschreiben. Die Geometrie wird als AUFTRAG eingereicht und spaeter
@@ -351,19 +360,16 @@ public final class BlockSpawnAnimEffect
          * aus der kopierten Pose (Position UND Normale) gesetzt wird.
          *
          * Rueckseiten-Culling ist kein globaler Schalter mehr (kein disableCull), sondern
-         * gehoert zur Pipeline des RenderType — hier zu der von RenderType.translucent()
+         * gehoert zur Pipeline des RenderType — hier zu der von RenderTypes.translucentMovingBlock()
          * (RenderPipelines.TRANSLUCENT_BLOCK), genau der, die Vanilla fuer die
          * Translucent-Lage der Chunks faehrt. Unsere Geisterbloecke sind dieselben
          * Blockmodelle aus ModelBlockRenderer#tesselateBlock, nur um ein reines Translate
          * versetzt — Wicklung unveraendert. */
         SubmitNodeCollector sammler = context.submitNodeCollector();
 
-        sammler.submitCustomGeometry(matrices, RenderType.translucent(), (entry, consumer) ->
+        sammler.submitCustomGeometry(matrices, RenderTypes.translucentMovingBlock(), (entry, consumer) ->
         {
-        PoseStack lokal = new PoseStack();
-
-        lokal.last().pose().set(entry.pose());
-        lokal.last().normal().set(entry.normal());
+        BlockQuadOutput ausgabe = consumer::putBlockBakedQuad;
 
         int rendered = 0;
 
@@ -419,18 +425,14 @@ public final class BlockSpawnAnimEffect
                 continue;
             }
 
-            lokal.pushPose();
-            lokal.translate(wx, wy, wz);
-
             try
             {
                 modelRenderer.tesselateBlock(
-                    world,
-                    dispatcher.getBlockModel(e.state),
-                    e.state, e.pos,
-                    lokal, consumer,
-                    false, rng, e.state.getSeed(e.pos),
-                    OverlayTexture.NO_OVERLAY
+                    ausgabe,
+                    (float) (wx - camX), (float) (wy - camY), (float) (wz - camZ),
+                    world, e.pos, e.state,
+                    modelle.get(e.state),
+                    e.state.getSeed(e.pos)
                 );
             }
             catch (Throwable ignore)
@@ -441,7 +443,6 @@ public final class BlockSpawnAnimEffect
                  *  the offender, keep rendering everything else. */
             }
 
-            lokal.popPose();
             rendered++;
 
             if (rendered >= MAX_BLOCKS)
