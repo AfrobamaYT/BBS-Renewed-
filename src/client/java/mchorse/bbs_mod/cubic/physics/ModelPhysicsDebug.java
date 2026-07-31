@@ -86,12 +86,16 @@ public final class ModelPhysicsDebug
 
         if (config.xray.get())
         {
-            RenderSystem.disableDepthTest();
+            /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Tiefentest aus. */
         }
 
-        RenderSystem.disableCull();
-        RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: beidseitig zeichnen. */
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
         stack.pushPose();
 
@@ -120,8 +124,10 @@ public final class ModelPhysicsDebug
 
         stack.popPose();
 
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Rueckseiten verwerfen. */
+        /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest an. */
     }
 
     private static Map<String, PivotFrame> collectFrames(IModel model, ModelPhysicsCache.Compiled compiled)
@@ -171,11 +177,14 @@ public final class ModelPhysicsDebug
 
         if (config.xray.get())
         {
-            RenderSystem.disableDepthTest();
+            /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Tiefentest aus. */
         }
 
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: beidseitig zeichnen. */
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
         stack.pushPose();
 
@@ -210,8 +219,10 @@ public final class ModelPhysicsDebug
 
         stack.popPose();
 
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Rueckseiten verwerfen. */
+        /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest an. */
     }
 
     /** Draws one pickable marker — the element's own shape and size — encoding the next stencil id, and claims it for {@code bone}. */

@@ -424,7 +424,8 @@ public final class Tier2eMergedDrawV2
             {
                 try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
             }
-            RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
+            /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+             * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
             /* Single drawArrays via MC's BufferRenderer. Internally MC
              * caches a VertexBuffer per shader/format so the GL VBO id

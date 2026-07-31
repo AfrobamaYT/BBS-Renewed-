@@ -191,7 +191,8 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         RenderPipeline finalShader = shader.get();
 
         BBSModClient.getTextures().bindTexture(texture);
-        RenderSystem.setShader(() -> finalShader);
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
         texture.bind();
         texture.setFilterMipmap(this.form.linear.get(), this.form.mipmap.get());
@@ -225,8 +226,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
          *  und mit ihm das Vertexformat (ENTITY bzw. POSITION_TEX_LIGHTMAP_COLOR).
          *  Blend hier einfach zu streichen waere still falsch: jede Textur mit weichem Rand und
          *  jede Deckkraft unter 1 wuerde undurchsichtig. */
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableBlend();
+        /* 26.2: defaultBlendFunc ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Standardmischung (Quell-Alpha ueber Gegen-Alpha). */
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
 
         boolean linear = this.form.linear.get();
         boolean mipmap = this.form.mipmap.get();

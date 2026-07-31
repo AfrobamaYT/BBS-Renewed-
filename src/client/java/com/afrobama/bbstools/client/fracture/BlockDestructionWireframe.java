@@ -96,11 +96,17 @@ public final class BlockDestructionWireframe
          *  - line width 4 for clear visibility
          *  - additive-style blending so the colors pop against any
          *    background */
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.lineWidth(4F);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest aus. */
+        /* 26.2: depthMask ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefe schreiben = false. */
+        /* ⚠️ 26.2: RenderSystem.lineWidth ist entfallen und hat KEIN Gegenstueck --
+         * die Linienbreite ist kein Pipeline-Zustand. Dicke Linien brauchen
+         * Geometrie (Streifen statt GL_LINES); bis dahin zeichnet dies duenn. */
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
+        /* 26.2: defaultBlendFunc ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Standardmischung (Quell-Alpha ueber Gegen-Alpha). */
 
         ms.pushPose();
         ms.translate(-camPos.x, -camPos.y, -camPos.z);
@@ -150,7 +156,9 @@ public final class BlockDestructionWireframe
          * BBS-Modelle ueber ModelVAOPipeline.DURCHSICHTIG). Es gibt keinen globalen
          * Zustand mehr, den man hier wiederherstellen koennte oder muesste — die beiden
          * Aufrufe entfallen ersatzlos. */
-        RenderSystem.lineWidth(1F);
+        /* ⚠️ 26.2: RenderSystem.lineWidth ist entfallen und hat KEIN Gegenstueck --
+         * die Linienbreite ist kein Pipeline-Zustand. Dicke Linien brauchen
+         * Geometrie (Streifen statt GL_LINES); bis dahin zeichnet dies duenn. */
     }
 
     private static void drawClipWireframe(BufferBuilder bb, Matrix4f m, PhysicsBlockDestructionActionClip clip)

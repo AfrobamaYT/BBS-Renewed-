@@ -102,8 +102,10 @@ public class UIColorPicker extends UIElement
     {
         Matrix4f matrix4f = new Matrix4f(batcher.pose().last().pose());
 
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.enableBlend();
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
         BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         builder.addVertex(matrix4f, x1, y1, 0F).setColor(color.r, color.g, color.b, 1);

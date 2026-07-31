@@ -261,9 +261,11 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         /* Draw axes */
         if (UIBaseMenu.shouldRenderAxes())
         {
-            RenderSystem.disableDepthTest();
+            /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Tiefentest aus. */
             Gizmo.INSTANCE.render(stack);
-            RenderSystem.enableDepthTest();
+            /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Tiefentest an. */
         }
 
         stack.popPose();

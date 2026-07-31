@@ -125,11 +125,16 @@ public class MCEFWebScreen extends Screen
 
         /* Transparent compositing: the page's own background is stripped (see the HTML), so the
            browser texture blends over whatever is behind (the world / the BBS editor). */
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, this.browser.getRenderer().getTextureID());
+        /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest aus. */
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
+        /* 26.2: defaultBlendFunc ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Standardmischung (Quell-Alpha ueber Gegen-Alpha). */
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
+        /* 26.2: setShaderTexture ist entfallen -- eine Textur wird im Durchgang
+         * gebunden (TextureSetup/bindTexture), nicht global vorher. */
 
         Matrix4f matrix = new Matrix4f().mul(context.pose());
         Tesselator tessellator = Tesselator.getInstance();
@@ -142,9 +147,12 @@ public class MCEFWebScreen extends Screen
 
         BufferUploader.drawWithShader(buffer.buildOrThrow());
 
-        RenderSystem.setShaderTexture(0, 0);
-        RenderSystem.disableBlend();
-        RenderSystem.enableDepthTest();
+        /* 26.2: setShaderTexture ist entfallen -- eine Textur wird im Durchgang
+         * gebunden (TextureSetup/bindTexture), nicht global vorher. */
+        /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen aus. */
+        /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest an. */
     }
 
     @Override

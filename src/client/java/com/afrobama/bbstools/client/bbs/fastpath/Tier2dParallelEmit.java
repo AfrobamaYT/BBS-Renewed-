@@ -440,7 +440,8 @@ public final class Tier2dParallelEmit
             try { BBSModClient.getTextures().bindTexture(texture); }
             catch (Throwable ig) {}
         }
-        RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
+        /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+         * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
         int drawCount = 0;
         int totalWritten = 0;

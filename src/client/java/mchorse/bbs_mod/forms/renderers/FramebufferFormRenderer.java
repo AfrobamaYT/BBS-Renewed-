@@ -130,12 +130,16 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         int h = MathUtils.clamp(this.form.height.get(), 2, 4096);
         int prevDraw = GL30.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-        Vector3f light0 = RenderSystem.shaderLightDirections[0];
-        Vector3f light1 = RenderSystem.shaderLightDirections[1];
+        /* 26.2: die Lichtrichtungen sind kein Feld-Paar mehr, sondern ein Uniform-Block
+         * auf der Grafikkarte. Gesichert wird der Ausschnitt selbst. */
+        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
         Matrix4f projectionMatrix = new Matrix4f(mchorse.bbs_mod.graphics.Projektion.lesen());
 
         GL30.glCullFace(GL30.GL_FRONT);
-        RenderSystem.setShaderLights(new Vector3f(0F, 0F, 1F), new Vector3f(0F, 0F, 1F));
+        /* Beide Lichter frontal -- die Form soll flach und gleichmaessig ausgeleuchtet in
+         * ihren Puffer, ohne Schattierung von der Weltbeleuchtung. Vanilla hat genau dafuer
+         * eine Voreinstellung; die beiden Richtungsvektoren von Hand gibt es nicht mehr. */
+        Minecraft.getInstance().gameRenderer.lighting().setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ITEMS_FLAT);
         mchorse.bbs_mod.graphics.Projektion.setzen(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         RenderSystem.getModelViewStack().pushMatrix();
         RenderSystem.getModelViewStack().identity();
@@ -190,7 +194,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
         GL30.glViewport(0, 0, width, height);
 
-        RenderSystem.setShaderLights(light0, light1);
+        RenderSystem.setShaderLights(gesichertesLicht);
         RenderSystem.getModelViewStack().popMatrix();
         mchorse.bbs_mod.graphics.Projektion.setzen(projectionMatrix, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         GL30.glCullFace(GL30.GL_BACK);

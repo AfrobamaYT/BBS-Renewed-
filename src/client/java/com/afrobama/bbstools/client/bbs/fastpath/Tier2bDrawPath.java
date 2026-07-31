@@ -146,7 +146,8 @@ public final class Tier2bDrawPath
 
                 /* Set the entity translucent-cull shader — vanilla MC,
                  * Iris-compat by construction. */
-                RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
+                /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+                 * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
                 /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten.
                  *

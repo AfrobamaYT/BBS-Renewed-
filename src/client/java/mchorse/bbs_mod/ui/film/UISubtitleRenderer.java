@@ -77,7 +77,8 @@ public class UISubtitleRenderer
         /* 26.2: depthFunc(GL_ALWAYS) entfaellt ersatzlos — der GUI-Raum hat keine Tiefe mehr,
          * die Ueberdeckung entscheidet GuiGraphicsExtractor.nextStratum() (siehe Batcher2D),
          * und den Tiefenzustand bringt jeder Draw aus seiner Pipeline mit. */
-        RenderSystem.disableCull();
+        /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: beidseitig zeichnen. */
 
         for (Subtitle subtitle : subtitles)
         {
@@ -197,7 +198,8 @@ public class UISubtitleRenderer
                 textureSize.set((float) texture.width, (float) texture.height);
             }
 
-            RenderSystem.enableBlend();
+            /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: mischen an. */
             RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
 
             batcher.texturedBox(supplier, texture.id, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);

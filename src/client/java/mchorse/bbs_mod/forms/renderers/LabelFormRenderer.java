@@ -86,7 +86,8 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
         MatrixStackUtils.scaleStack(context.stack, scale, -scale, scale);
 
-        RenderSystem.disableCull();
+        /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: beidseitig zeichnen. */
 
         if (context.isPicking())
         {

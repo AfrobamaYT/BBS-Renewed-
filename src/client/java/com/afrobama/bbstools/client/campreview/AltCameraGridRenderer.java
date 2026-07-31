@@ -137,8 +137,10 @@ public final class AltCameraGridRenderer
              *  Schreiben an), trifft es also nicht, und unter den fertigen
              *  RenderPipelines ist keine ohne Tiefe. Das waere eine eigene
              *  Pipeline — zu bauen zusammen mit dem RenderPass oben. */
-            RenderSystem.disableDepthTest();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+            /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Tiefentest aus. */
+            /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+             * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
             /* 26.2: SofortZeichner statt Tesselator + BufferUploader. Den Zustand traegt die
              *  Pipeline, und zwar genau den oben nachgemessenen: mischen (LINES faehrt

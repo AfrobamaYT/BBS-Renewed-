@@ -123,10 +123,13 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
         stack.setIdentity();
         stack.mulPose(new Matrix4f(InverseView.get()).invert());
 
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
+        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen an. */
+        /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest an. */
 
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        /* 26.2: setShaderColor ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Farbmodulator = 1F, 1F, 1F, 1F. */
 
         /* The vanilla dynamic light map binding (Sampler2) does not survive into this screen's
          * draw call, so the particle shader (particle.vsh does vertexColor = Color *
@@ -137,11 +140,14 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
          * 16x16 white texture to Sampler2 right before the draw to get that fullbright result
          * without depending on the (here broken) light map binding. In-world particles are
          * unaffected: they render through ParticleFormRenderer with the real light map. */
-        RenderSystem.setShaderTexture(2, getWhiteLightmapTextureId());
+        /* 26.2: setShaderTexture ist entfallen -- eine Textur wird im Durchgang
+         * gebunden (TextureSetup/bindTexture), nicht global vorher. */
 
         this.emitter.render(DefaultVertexFormat.PARTICLE, () -> RenderPipelines.TRANSLUCENT_PARTICLE, stack, OverlayTexture.NO_OVERLAY, context.getTransition());
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableBlend();
+        /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest aus. */
+        /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: mischen aus. */
 
         stack.popPose();
 

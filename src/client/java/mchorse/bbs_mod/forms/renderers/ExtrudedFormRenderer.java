@@ -145,7 +145,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             if (cutout)
             {
-                RenderSystem.disableBlend();
+                /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
+                 * des Zuges. Absicht war: mischen aus. */
             }
 
             try

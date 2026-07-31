@@ -162,7 +162,8 @@ public class ModelBlockEntityRenderer implements BlockEntityRenderer<ModelBlockE
             matrices.popPose();
         }
 
-        RenderSystem.disableDepthTest();
+        /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
+         * des Zuges. Absicht war: Tiefentest aus. */
 
         if (mc.getDebugOverlay().showDebugScreen())
         {

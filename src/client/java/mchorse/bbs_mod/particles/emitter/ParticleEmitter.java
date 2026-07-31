@@ -531,11 +531,15 @@ public class ParticleEmitter
              *  position_color/position_tex/position_tex_color, ohne Lightmap-Sampler), und der
              *  Ersatz fuer Supplier<RenderPipeline> aendert die Signatur — das trifft
              *  ParticleFormRenderer und UIParticleSchemeRenderer, nicht diese Datei. */
-            RenderSystem.setShader(program);
-            RenderSystem.disableBlend();
-            RenderSystem.disableCull();
+            /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
+             * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
+            /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: mischen aus. */
+            /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: beidseitig zeichnen. */
             { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            RenderSystem.enableCull();
+            /* 26.2: enableCull ist entfallen -- der Zustand steckt in der Pipeline
+             * des Zuges. Absicht war: Rueckseiten verwerfen. */
         }
 
         for (IComponentParticleRender component : renders)
