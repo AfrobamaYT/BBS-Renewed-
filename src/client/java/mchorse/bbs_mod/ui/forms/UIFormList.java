@@ -324,11 +324,16 @@ public class UIFormList extends UIElement
             this.setSelected(selected);
         }
 
-        Lighting.setupForEntityInInventory();
+        /* 26.2: die beiden statischen Lighting-Aufrufe sind zu EINER Methode mit einer
+         * Voreinstellung geworden. Lighting ist kein statischer Zustandshalter mehr, sondern
+         * ein Objekt am GameRenderer, das den Lichtblock auf der Grafikkarte beschreibt --
+         * setupForEntityInInventory() heisst jetzt setupFor(Entry.ENTITY_IN_UI),
+         * setupForFlatItems() heisst setupFor(Entry.ITEMS_FLAT). Gleiche Wirkung, anderer Ort. */
+        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
         super.render(context);
 
-        Lighting.setupForFlatItems();
+        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_FLAT);
 
         if (this.pendingScrollToSelected && this.forms.area.w > 0)
         {

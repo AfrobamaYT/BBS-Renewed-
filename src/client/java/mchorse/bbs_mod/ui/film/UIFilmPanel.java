@@ -3064,8 +3064,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
             /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
              * MatrixStack base is just an identity stack for entity-relative rendering, so
-             * reading the view from it would drop the camera angle and misaim every raycast. */
-            this.lastView.set(context.positionMatrix());
+             * reading the view from it would drop the camera angle and misaim every raycast.
+             *
+             * 26.2: positionMatrix() gibt es an Fabrics LevelRenderContext nicht mehr --
+             * uebrig sind submitNodeCollector, poseStack, gameRenderer, levelRenderer und
+             * levelState. Derselbe Wert steht als viewRotationMatrix im eingefrorenen
+             * Kamerazustand, also direkt neben der Projektion eine Zeile darueber. */
+            this.lastView.set(context.levelState().cameraRenderState.viewRotationMatrix);
         }
 
         this.controller.renderFrame(context);

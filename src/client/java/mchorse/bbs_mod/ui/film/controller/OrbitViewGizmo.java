@@ -410,7 +410,19 @@ public class OrbitViewGizmo
             null,
             null);
 
-        batcher.getContext().flush();
+        /* 26.2: flush() gibt es nicht mehr. Frueher schob es Vanillas gesammelte GUI-Ecken
+         * sofort auf den Bildschirm, damit alles, was DANACH gezeichnet wird, ueber der
+         * gerade abgeschickten Rohgeometrie liegt. Die Oberflaeche ist jetzt zweiphasig
+         * (extractRenderState sammelt, GuiRenderer zeichnet), also gibt es nichts zu leeren;
+         * die Reihenfolge macht die Stapellage. nextStratum() hebt sie um eine Ebene an --
+         * dieselbe Absicht, anderer Hebel.
+         *
+         * ⚠️ Rest-Unterschied, den auch nextStratum nicht aufhebt: dieser Zug hier zeichnet
+         * SOFORT in den Bildpuffer, waehrend die Oberflaeche noch sammelt. Er liegt damit
+         * unter der GESAMTEN Oberflaeche, nicht nur unter dem, was nach ihm kommt. Wer das
+         * braucht, muss den Zug in die Sammelphase heben -- das ist ein Entwurf, kein
+         * Umbenennen. */
+        batcher.getContext().nextStratum();
     }
 
     private record Ball(int index, float x, float y, float z)

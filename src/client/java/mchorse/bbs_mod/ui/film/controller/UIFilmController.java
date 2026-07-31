@@ -17,7 +17,9 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.shaders.Uniform;
+/* 26.2: com.mojang.blaze3d.shaders.Uniform ist ersatzlos entfallen -- es gibt keine
+ * Einzel-Uniforms mehr, nur noch Uniform-BLOECKE, die ein Zeichendurchgang bindet. Diese
+ * Datei benutzte den Typ schon nicht mehr; nur der Import stand noch. */
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -758,7 +760,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
                 return true;
             }
 
-            InputConstants.Key utilKey = InputConstants.getKey(context.getKeyCode(), context.getScanCode());
+            /* 26.2: getKey(int, int) ist entfallen; uebrig sind getKey(KeyEvent) und
+             * getKey(String), und ein KeyEvent haben wir hier nicht. Die zwei Zeilen sind
+             * genau das, was die alte Ueberladung tat -- im Bytecode von getKey(KeyEvent)
+             * nachgelesen: bei unbekanntem Tastencode (-1) zaehlt der Scancode, sonst der
+             * Tastencode. Wer nur KEYSYM nimmt, verliert die Tasten ohne Symbol. */
+            InputConstants.Key utilKey = context.getKeyCode() == GLFW.GLFW_KEY_UNKNOWN
+                ? InputConstants.Type.SCANCODE.getOrCreate(context.getScanCode())
+                : InputConstants.Type.KEYSYM.getOrCreate(context.getKeyCode());
 
             if (this.canControlWithKeyboard(utilKey))
             {
@@ -1305,7 +1314,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         boolean altPressed = Window.isAltPressed();
 
-        RenderSystem.depthFunc(GL11.GL_LESS);
+        /* 26.2: depthFunc ist entfallen -- der Tiefenvergleich ist kein globaler Schalter
+         * mehr, er steht in der Pipeline jedes Zuges. Der Auswahl-Durchgang darunter zeichnet
+         * ueber ModelVAOPipeline.PICKER_* bzw. die Stencil-Wege, und die bringen ihren
+         * Vergleich selbst mit. ⚠️ GL_LESS heisst dort NICHT LESS_THAN: 26.2 rechnet die Tiefe
+         * umgekehrt (naeher = groesserer Wert), das Gegenstueck waere GREATER_THAN. */
 
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
@@ -1565,7 +1578,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
                 FilmControllerContext filmContext = FilmControllerContext.instance
                     .setup(this.getEntities(), entry.getValue(), replay, renderContext)
-                    .transition(isPlaying ? renderContext.tickCounter().getGameTimeDeltaPartialTick(false) : 0)
+                    /* 26.2: der Weltzeichen-Kontext traegt keinen tickCounter mehr (Fabrics
+                     * LevelRenderContext hat nur noch submitNodeCollector, poseStack,
+                     * gameRenderer, levelRenderer, levelState). Der DeltaTracker haengt jetzt
+                     * am Client -- derselbe Zaehler, nur anderer Halter. */
+                    .transition(isPlaying ? Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0)
                     .stencil(this.stencilMap)
                     .relative(replay.relative.get());
 
@@ -1597,7 +1614,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             this.editorController.renderStencilEntity(FilmControllerContext.instance
                 .setup(this.getEntities(), entity, replay, renderContext)
-                .transition(isPlaying ? renderContext.tickCounter().getGameTimeDeltaPartialTick(false) : 0)
+                /* 26.2: siehe oben -- tickCounter() ist am Weltkontext entfallen, der
+                 * DeltaTracker haengt am Client. */
+                .transition(isPlaying ? Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0)
                 .stencil(this.stencilMap)
                 .relative(replay.relative.get())
                 .bone(bone == null ? null : bone.a, bone != null && bone.b)

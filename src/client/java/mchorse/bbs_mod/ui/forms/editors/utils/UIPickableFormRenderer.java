@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.ui.forms.editors.utils;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.shaders.Uniform;
+/* 26.2: com.mojang.blaze3d.shaders.Uniform ist ersatzlos entfallen -- es gibt keine
+ * Einzel-Uniforms mehr, die man am Shader setzen koennte, nur noch Uniform-BLOECKE, die ein
+ * Zeichendurchgang bindet. Diese Datei hat das schon hinter sich; nur der Import stand noch. */
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSSettings;

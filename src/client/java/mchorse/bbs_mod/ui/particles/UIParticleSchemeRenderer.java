@@ -4,8 +4,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -20,7 +18,6 @@ import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -29,11 +26,21 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
 {
     public ParticleEmitter emitter;
 
-    /**
-     * A 16x16 fully white texture bound to the particle shader's light map slot
-     * (Sampler2) when previewing particles in the editor. See {@link #renderUserModel}.
-     */
-    private static DynamicTexture whiteLightmapTexture;
+    /* ⛔ 26.2: Hier lag eine 16x16 komplett weisse Textur samt ihrem Erzeuger
+     * (getWhiteLightmapTextureId). Sie wurde ueber RenderSystem.setShaderTexture an den
+     * Lichtkarten-Platz (Sampler2) des Partikel-Shaders gebunden, damit die Vorschau nicht
+     * pechschwarz zeichnet — siehe die Erklaerung in renderUserModel, wo diese Bindung
+     * ersatzlos entfallen ist.
+     *
+     * Beides ist weg, und zwar zusammen: eine Textur wird nicht mehr global vorher gesetzt,
+     * sondern im Durchgang gebunden, und eine rohe GL-Nummer (das war der Rueckgabewert)
+     * gibt DynamicTexture ohnehin nicht mehr heraus. Die Textur ohne ihre Bindestelle
+     * stehenzulassen haette nur einen Erzeuger ohne Aufrufer ergeben.
+     *
+     * ⚠️ OFFEN: ob die Vorschau ohne diese Bindung richtig aussieht, entscheidet die neue
+     * Pipeline (RenderPipelines.TRANSLUCENT_PARTICLE) — am laufenden Bild zu pruefen, nicht
+     * hier zu erraten. Wenn sie schwarz zeichnet, gehoert die Ersatzloesung in den Durchgang
+     * (TextureSetup), nicht wieder hierher. */
 
     private Vector3f vector = new Vector3f(0, 0, 0);
 
@@ -44,28 +51,6 @@ public class UIParticleSchemeRenderer extends UIModelRenderer
      * verschiebt die Ebene ein zweites Mal.
      */
     private static final Matrix4f EBENEN_MODELLANSICHT = new Matrix4f();
-
-    private static int getWhiteLightmapTextureId()
-    {
-        if (whiteLightmapTexture == null)
-        {
-            whiteLightmapTexture = new DynamicTexture(16, 16, false);
-
-            NativeImage image = whiteLightmapTexture.getPixels();
-
-            for (int y = 0; y < 16; y++)
-            {
-                for (int x = 0; x < 16; x++)
-                {
-                    image.setPixelRGBA(x, y, -1);
-                }
-            }
-
-            whiteLightmapTexture.upload();
-        }
-
-        return whiteLightmapTexture.getId();
-    }
 
     public UIParticleSchemeRenderer()
     {

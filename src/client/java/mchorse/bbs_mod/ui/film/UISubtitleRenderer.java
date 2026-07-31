@@ -53,6 +53,24 @@ public class UISubtitleRenderer
             return;
         }
 
+        /* ⛔ OFFEN 26.2 — die beiden Zeilen darunter bleiben absichtlich stehen.
+         *
+         * Einzel-Uniforms gibt es nicht mehr; der Shader ist dafuer schon umgebaut
+         * (assets/bbs/shaders/core/subtitles.fsh): TextureSize erfragt er selbst per
+         * textureSize(Sampler0, 0), und Blur soll laut seinem eigenen Kommentar in der
+         * VERTEXFARBE mitreisen -- R = Staerke, G = Schalter "deckend", jeweils in Zehnteln
+         * (#define Blur (vertexColor.rg * 25.5)).
+         *
+         * ⚠️ Warum es hier trotzdem NICHT gepackt wird: die letzte Zeile des Shaders lautet
+         * fragColor = color * vertexColor. Die Vertexfarbe modulhiert also weiterhin RGB. Der
+         * Aufruf unten reicht heute Weiss mit Deckkraft durch; packte man die Weichzeichnung
+         * in R/G, waeren das im Normalfall (keine Weichzeichnung) NULLEN -- und die Untertitel
+         * waeren schwarz statt weiss. Es kompiliert, es zeichnet, und es ist falsch.
+         *
+         * Zu beheben im Shader, nicht hier: die letzte Zeile muss auf die Deckkraft allein
+         * zielen (fragColor = color * vec4(1.0, 1.0, 1.0, vertexColor.a)). Danach kann diese
+         * Stelle die Weichzeichnung in die Farbe packen. Der Shader liegt ausserhalb dieses
+         * Auftrags-Manifests. */
         RenderPipeline program = BBSShaders.getSubtitlesProgram();
         Uniform blur = program.getUniform("Blur");
         Uniform textureSize = program.getUniform("TextureSize");
@@ -198,11 +216,15 @@ public class UISubtitleRenderer
                 textureSize.set((float) texture.width, (float) texture.height);
             }
 
-            /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: mischen an. */
-            RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            /* 26.2: enableBlend UND blendFuncSeparate sind entfallen -- beides ist kein
+             * globaler Zustand mehr. Die Mischung steht im ColorTargetState der Pipeline, und
+             * die des Untertitel-Shaders bringt sie mit (subtitles.json: srcalpha /
+             * 1-srcalpha, genau die vier Faktoren, die hier standen). Ersatzlos entfallen. */
 
-            batcher.texturedBox(supplier, texture.id, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
+            /* 26.2: texturedBox nimmt kein rohes GL-Handle mehr. Ein Zeichendurchgang bindet
+             * eine GpuTextureView plus Sampler, keine Nummer -- darum geht das Texturobjekt
+             * selbst hinein, und der Batcher holt sich view() und sampler() daraus. */
+            batcher.texturedBox(supplier, texture, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
 
             stack.popPose();
         }

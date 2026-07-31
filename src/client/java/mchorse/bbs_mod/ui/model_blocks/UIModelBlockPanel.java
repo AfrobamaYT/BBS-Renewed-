@@ -1,7 +1,9 @@
 package mchorse.bbs_mod.ui.model_blocks;
 
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import com.mojang.blaze3d.shaders.Uniform;
+/* 26.2: com.mojang.blaze3d.shaders.Uniform ist ersatzlos entfallen -- es gibt keine
+ * Einzel-Uniforms mehr, nur noch Uniform-BLOECKE, die ein Zeichendurchgang bindet. Der Typ
+ * wird in dieser Datei nicht mehr benutzt; nur der Import stand noch. */
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSModClient;
@@ -105,7 +107,10 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             Minecraft mc = Minecraft.getInstance();
             Camera camera = mc.gameRenderer.mainCamera();
-            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.pos, RayTracing.fromVector3f(this.mouseDirection), 512F);
+            /* 26.2: das oeffentliche Feld Camera.pos ist zur Methode position() geworden --
+             * gleicher Wert (Vec3), nur nicht mehr direkt lesbar. ⚠️ Nicht zu verwechseln mit
+             * CameraRenderState.pos, das es als FELD weiterhin gibt (siehe renderInWorld). */
+            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.position(), RayTracing.fromVector3f(this.mouseDirection), 512F);
 
             if (blockHitResult.getType() != HitResult.Type.MISS)
             {
@@ -174,7 +179,20 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.global = new UIToggle(UIKeys.MODEL_BLOCKS_GLOBAL, (b) ->
         {
             this.modelBlock.getProperties().setGlobal(b.getValue());
-            Minecraft.getInstance().levelRenderer.allChanged();
+
+            /* 26.2: allChanged() heisst jetzt invalidateCompiledGeometry(...) und bekommt die
+             * vier Dinge, die es frueher selbst am Weltzeichner fand: Welt, Optionen, Kamera
+             * und Blockfarben. Wirkung unveraendert -- Abschnitts-Uebersetzer neu bauen, alle
+             * Abschnitte neu backen. Das braucht der Schalter, weil "global" bestimmt, ob der
+             * Modellblock im Abschnittsnetz landet.
+             * ⚠️ Die Welt kommt jetzt vom Aufrufer statt aus dem Weltzeichner, also muss der
+             * Aufrufer sie pruefen -- die alte Methode tat das intern. */
+            Minecraft mc = Minecraft.getInstance();
+
+            if (mc.level != null)
+            {
+                mc.levelRenderer.invalidateCompiledGeometry(mc.level, mc.options, mc.gameRenderer.mainCamera(), mc.getBlockColors());
+            }
         });
         this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, (b) -> this.modelBlock.getProperties().setLookAt(b.getValue()));
 
@@ -370,8 +388,14 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         this.gizmoCamera.projection.set(this.gizmoProjection);
         /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
          * MatrixStack base is just an identity stack for entity-relative rendering, so
-         * reading the view from it would drop the camera angle and break picking/dragging. */
-        this.gizmoCamera.view.set(context.positionMatrix());
+         * reading the view from it would drop the camera angle and break picking/dragging.
+         *
+         * 26.2: positionMatrix() gibt es an Fabrics LevelRenderContext nicht mehr. Derselbe
+         * Wert steht im eingefrorenen Kamerazustand als viewRotationMatrix -- genau die
+         * Matrix, die Camera.getViewRotationMatrix liefert und die der Weltzeichner als
+         * Positionsmatrix hereinbekommt. Wer stattdessen poseStack() liest, bekommt die
+         * Einheitsmatrix und zielt an allem vorbei. */
+        this.gizmoCamera.view.set(context.levelState().cameraRenderState.viewRotationMatrix);
         this.gizmoCamera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
 
         /* Record the model-view at the block's gizmo origin so the UI-pass visual
@@ -684,8 +708,11 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
          * in die Oberflaeche -- ein GUI-Element kann die fuenf Werte nicht binden.
          * Entscheidung und verworfene Auswege stehen in Bildfilter. */
+        /* Die hervorzuhebende Kennung ist die zuletzt gepickte des Stencil-Puffers -- dieselbe
+         * Quelle wie in UIPickableFormRenderer und Gizmo. Sie stand frueher als Uniform
+         * "Index" am Vorschau-Shader; jetzt reist sie als Argument in den Filterdurchgang. */
         mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
-            this.gizmoStencil.zwischenbild(), index,
+            this.gizmoStencil.zwischenbild(), this.gizmoStencil.getIndex(),
             BBSSettings.stencilHighlightColor.get());
 
         /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
@@ -706,9 +733,13 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         double x = mc.mouseHandler.xpos();
         double y = mc.mouseHandler.ypos();
 
+        /* 26.2: positionMatrix() ist entfallen -- die Kameradrehung steht als
+         * viewRotationMatrix im eingefrorenen Kamerazustand. Siehe renderInWorld-Zwilling
+         * weiter oben; ein Griff auf poseStack() gaebe die Einheitsmatrix und der Mausstrahl
+         * zeigte immer geradeaus. */
         this.mouseDirection.set(CameraUtils.getMouseDirection(
             mchorse.bbs_mod.graphics.Projektion.lesen(),
-            context.positionMatrix(),
+            context.levelState().cameraRenderState.viewRotationMatrix,
             (int) x, (int) y, 0, 0, mc.getWindow().getScreenWidth(), mc.getWindow().getScreenHeight()
         ));
         this.hovered = this.getClosestObject(new Vector3d(pos.x, pos.y, pos.z), this.mouseDirection);

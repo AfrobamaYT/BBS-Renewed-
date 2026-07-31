@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.graphics.texture;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.resources.AssetProvider;
@@ -98,6 +97,23 @@ public class TextureManager implements IWatchDogListener
         this.bindTexture(texture, 0);
     }
 
+    /**
+     * ⚠️ 26.2: Das Binden selbst ist ersatzlos entfallen — {@code RenderSystem.setShaderTexture}
+     * setzte globalen Zustand, den der naechste Zeichenaufruf erbte. Eine Textur wird jetzt IM
+     * Durchgang gebunden (TextureSetup/Pipeline), also dort, wo BBS zeichnet, und nicht mehr
+     * vorher hier. Dieselbe Aufloesung wie in {@code ModelInstance} und {@code MCEFWebScreen}.
+     *
+     * <p>Was BLEIBT und der Grund, warum die Methode nicht geloescht wird: die Buchfuehrung.
+     * {@code trackTexture} zaehlt fuer die Statistik mit, und {@link #getLastBound()} ist die
+     * Vorgabetextur, die die Modell-Zeichner abholen, wenn ein Material keine eigene aufloest —
+     * die Aufrufer sagen mit diesem Aufruf also weiterhin etwas Wahres: "das ist ab jetzt die
+     * Textur dieses Formes". Nur die GL-Bindung reist jetzt als Parameter mit, statt hier
+     * global gesetzt zu werden.
+     *
+     * <p>⚠️ Der {@code unit}-Parameter hat damit keine Wirkung mehr; er bleibt stehen, weil die
+     * Aufrufstellen zeigen, welcher Zeichenweg welche Einheit meinte — genau die Liste, die man
+     * braucht, wenn die Bindung je Durchgang nachgezogen wird.
+     */
     public void bindTexture(Texture texture, int unit)
     {
         BBSRendering.trackTexture(texture);
@@ -106,8 +122,6 @@ public class TextureManager implements IWatchDogListener
         {
             this.lastBound = texture;
         }
-
-        RenderSystem.setShaderTexture(unit, texture.id);
     }
 
     /**

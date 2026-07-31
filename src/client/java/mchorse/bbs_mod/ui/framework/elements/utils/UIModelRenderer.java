@@ -244,7 +244,10 @@ public abstract class UIModelRenderer extends UIElement
      */
     private void renderModel(UIContext context)
     {
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline jedes Zuges.
+         * Fuer das Modell darunter traegt ihn ModelVAOPipeline (GREATER_THAN_OR_EQUAL, weil
+         * 26.2 die Tiefe umgekehrt rechnet), fuer das Gitter FormPipelines.holen(...). Ein
+         * Schalter hier erreicht sie nicht mehr. */
 
         this.setupPosition();
         this.setupViewport(context);
@@ -263,14 +266,23 @@ public abstract class UIModelRenderer extends UIElement
         stack.translate(-this.camera.position.x, -this.camera.position.y, -this.camera.position.z);
         MatrixStackUtils.multiply(stack, this.transform);
 
-        Vector3f a = new Vector3f(0F, 0.85F, -1F).normalize();
-        Vector3f b = new Vector3f(0F, 0.85F, 1F).normalize();
-        Matrix3f lightMatrix = new Matrix3f(this.camera.view);
+        /* ⚠️ VERHALTENSAENDERUNG 26.2: die beiden Lichtrichtungen sind weg.
+         *
+         * Hier standen zwei Richtungsvektoren (0, 0.85, ∓1), die mit der Kameraansicht
+         * mitgedreht wurden -- das Licht folgte also der Umlaufkamera des Editors.
+         * RenderSystem.setupLevelDiffuseLighting nahm sie entgegen und legte sie global ab.
+         *
+         * In 26.2 liegen die Lichtrichtungen in einem Uniform-Block auf der Grafikkarte, und
+         * Vanilla gibt sie nur noch als FESTE Voreinstellungen heraus (Lighting.Entry). Einen
+         * Weg, ein eigenes Richtungspaar zu setzen, gibt es oeffentlich nicht mehr; dafuer
+         * braeuchte es einen eigenen Lighting-Block, und das waere ein Entwurf.
+         *
+         * ENTITY_IN_UI ist Vanillas Voreinstellung fuer genau diesen Fall (eine Figur in einer
+         * Oberflaeche). Folge: das Licht steht jetzt FEST und dreht sich nicht mehr mit der
+         * Kamera -- beim Umlaufen wandert der Glanz nicht mehr mit. */
+        Minecraft mc = Minecraft.getInstance();
 
-        lightMatrix.transform(a);
-        lightMatrix.transform(b);
-
-        RenderSystem.setupLevelDiffuseLighting(a, b);
+        mc.gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
         if (this.grid)
         {
@@ -279,17 +291,20 @@ public abstract class UIModelRenderer extends UIElement
 
         this.renderUserModel(context);
 
-        Lighting.setupForFlatItems();
+        mc.gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_FLAT);
 
         stack.popPose();
 
         /* Return back to orthographic projection */
-        Minecraft mc = Minecraft.getInstance();
-
-        RenderSystem.viewport(0, 0, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        /* 26.2: RenderSystem.viewport ist entfallen -- der Ausschnitt gehoert zum
+         * Zeichendurchgang, nicht mehr in einen globalen Aufruf (siehe Zeichenbereich).
+         * Hier stand ohnehin nur das ZURUECKSETZEN auf das ganze Fenster; gesetzt hat ihn
+         * niemand mehr, seit setupViewport() unten ohne viewport-Aufruf auskommt. */
         MatrixStackUtils.restoreMatrices();
 
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        /* Das GL_ALWAYS entfaellt ersatzlos: es setzte den globalen Tiefenvergleich fuer die
+         * Oberflaeche zurueck. Der GUI-Raum hat keine Tiefe mehr, die Ueberdeckung entscheidet
+         * GuiGraphicsExtractor.nextStratum(). */
 
         this.processInputs(context);
     }
