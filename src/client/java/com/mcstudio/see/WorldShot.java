@@ -174,7 +174,10 @@ public final class WorldShot
 
 			/* THE SWAP: point client.framebuffer at our FBO so every getFramebuffer() inside
 			 * WorldRenderer.render targets OUR offscreen buffer, never the on-screen one. */
-			client.mainRenderTarget = target;
+			/* 26.2: das Feld Minecraft.mainRenderTarget gibt es nicht mehr. Umgelenkt wird ueber
+			 * RenderSystem.outputColorTextureOverride -- kein Renderziel, sondern dessen
+			 * Farb-Textursicht. Vanilla macht es selbst so (LevelRenderer, im Bytecode). */
+			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = target.getColorTextureView();
 
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
@@ -192,7 +195,10 @@ public final class WorldShot
 		catch (Throwable t)
 		{
 			/* Restore before returning so a failed render can never leave the game pointed at our FBO. */
-			client.mainRenderTarget = mainFbo;
+			/* 26.2: zurueckstellen heisst null, NICHT "das alte Ziel setzen". null ist der
+			 * Normalzustand der Umlenkung; wer stattdessen den Hauptpuffer einsetzt, laesst die
+			 * Umlenkung stehen und zeichnet alles Folgende dort hinein. */
+			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = null;
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
 			 * zeichnen will, gibt das Ziel dort an. */
@@ -203,7 +209,10 @@ public final class WorldShot
 		{
 			/* ALWAYS restore the real framebuffer + rebind it, so the next real game frame renders to the
 			 * screen normally. Without this the whole game would keep drawing into our offscreen FBO = black screen. */
-			client.mainRenderTarget = mainFbo;
+			/* 26.2: zurueckstellen heisst null, NICHT "das alte Ziel setzen". null ist der
+			 * Normalzustand der Umlenkung; wer stattdessen den Hauptpuffer einsetzt, laesst die
+			 * Umlenkung stehen und zeichnet alles Folgende dort hinein. */
+			com.mojang.blaze3d.systems.RenderSystem.outputColorTextureOverride = null;
 			/* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
 			 * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
 			 * zeichnen will, gibt das Ziel dort an. */
@@ -237,39 +246,61 @@ public final class WorldShot
 	 */
 	private static float[] skyClearColor(Minecraft client)
 	{
+		/* 26.2: BEIDE alten Wege sind entfallen -- RenderSystem.getShaderFogColor (der feste
+		 * Shader-Zustand ist weg) und ClientLevel.getSkyColor. Der Ersatz ist keine Notloesung,
+		 * sondern eine bessere Quelle: Nebel- und Himmelfarbe sind UMGEBUNGSATTRIBUTE geworden,
+		 * ortsabhaengig abfragbar und von den neuen Zeitleisten steuerbar.
+		 *
+		 * Reihenfolge bleibt wie vorher gedacht: erst der Nebel (das ist die Farbe, in die die
+		 * Ferne blendet, also genau das, was am Horizont fehlen wuerde), dann der Himmel.
+		 *
+		 * ⚠️ Die Attribute liefern gepacktes ARGB, keine 0..1-Fliesskommazahlen. */
+		net.minecraft.world.phys.Vec3 wo = client.gameRenderer.mainCamera().position();
+
 		try
 		{
-			float[] fog = com.mojang.blaze3d.systems.RenderSystem.getShaderFogColor();
+			int nebel = client.level.environmentAttributes()
+				.getValue(net.minecraft.world.attribute.EnvironmentAttributes.FOG_COLOR, wo);
 
-			/* Guard against an un-set fog colour (all-zero = would be the black we are trying to avoid). */
-			if (fog != null && fog.length >= 3 && (fog[0] + fog[1] + fog[2]) > 0.001F)
+			/* Gegen eine ungesetzte Farbe absichern -- ganz schwarz waere genau das, was wir
+			 * vermeiden wollen. */
+			if ((nebel & 0xFFFFFF) != 0)
 			{
-				return new float[]{ fog[0], fog[1], fog[2] };
+				return entpacken(nebel);
 			}
 		}
 		catch (Throwable ignored)
 		{
-			/* fall through to the sky-colour path */
+			/* weiter zum Himmel */
 		}
 
 		try
 		{
-			net.minecraft.world.phys.Vec3 sky = client.level.getSkyColor(
-				client.gameRenderer.mainCamera().position(),
-				client.getDeltaTracker().getGameTimeDeltaPartialTick(true));
+			int himmel = client.level.environmentAttributes()
+				.getValue(net.minecraft.world.attribute.EnvironmentAttributes.SKY_COLOR, wo);
 
-			if (sky != null)
+			if ((himmel & 0xFFFFFF) != 0)
 			{
-				return new float[]{ (float) sky.x, (float) sky.y, (float) sky.z };
+				return entpacken(himmel);
 			}
 		}
 		catch (Throwable ignored)
 		{
-			/* fall through to the constant */
+			/* weiter zur Konstanten */
 		}
 
 		/* Never black: a plain daytime sky-blue as the absolute last resort. */
 		return new float[]{ 0.47F, 0.65F, 1.0F };
+	}
+
+	/** Gepacktes ARGB in die drei 0..1-Kanaele, die der Loesch-Aufruf will. */
+	private static float[] entpacken(int argb)
+	{
+		return new float[]{
+			net.minecraft.util.ARGB.red(argb) / 255F,
+			net.minecraft.util.ARGB.green(argb) / 255F,
+			net.minecraft.util.ARGB.blue(argb) / 255F
+		};
 	}
 
 	/**

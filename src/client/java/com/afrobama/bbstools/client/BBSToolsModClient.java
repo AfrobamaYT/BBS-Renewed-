@@ -252,7 +252,17 @@ public final class BBSToolsModClient implements ClientModInitializer
          *  should be safe with Complementary Reimagined enabled. */
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         com.afrobama.bbstools.client.fx.effects.GlitchEffect.register();
-        com.afrobama.bbstools.client.fx.BBSFxCommand.register();
+        /* ⛔ P3-26.2-AUS — /bbstools fx ist AUS (Veil-nachbearbeitung: bloom, supernova,
+         * grain; auch das an/aus des glitch-pfads lief ueber diesen befehl).
+         * Hier stand:  com.afrobama.bbstools.client.fx.BBSFxCommand.register();
+         *
+         * Der befehl bedient nur die Veil-pipelines, und deren registrar
+         * (BBSFxPipelineRegistrar, BBSFxShadowmapPrePass, BBSFxUniformPusher) ist im
+         * ausschluss-block von build.gradle stillgelegt: Veil hat keinen 26.2-bau. Ohne
+         * pipelines hat der befehl nichts zu schalten.
+         *
+         * ZURUECK KOMMT ES MIT VEIL, NICHT DURCH PORTIEREN: Veil-abhaengigkeit anschalten,
+         * die drei ausschluss-zeilen streichen, diese zeile wieder einsetzen. */
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Other FX kept disabled — uncomment if/when their conflicts with
          *  Iris + shaderpack are resolved:
@@ -300,7 +310,7 @@ public final class BBSToolsModClient implements ClientModInitializer
         /* /bbstools accelrender on|off|status: Tier 1a — toggle the
          *  AcceleratedRendering GPU-compute crowd path. Requires
          *  AccelRender mod installed. Default OFF until tested. */
-        com.afrobama.bbstools.client.cinematic.AccelRenderCommand.register();
+
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
         /* Tier 1 — replay fast-path measure-mode toggle. Coded by Afrobama/Claude. */
         com.afrobama.bbstools.client.cinematic.ReplayFastPathCommand.register();
@@ -339,7 +349,7 @@ public final class BBSToolsModClient implements ClientModInitializer
             com.afrobama.bbstools.client.debug.ParkReapplyDebugger.INSTANCE);
         /* /bbstools crowdgpu on|off|status: Option B — GPU-instanced
          *  crowd renderer powered by iris-fork's custom crowd shader. */
-        com.afrobama.bbstools.client.cinematic.CrowdGpuCommand.register();
+
 
         /* Tier framework registration (2026-05-17 mega-session):
          *  Wire every new tier feature's IFeatureDebugger into
@@ -486,7 +496,7 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* Bridge legacy renderer ENABLED flags into BBSDebugRegistry so
          *  /bbsdebug crowdgpu on AND /bbstools crowdgpu on both work. */
-        com.afrobama.bbstools.client.debug.LegacyRendererDebuggers.registerAll();
+
         /* /bbstools sky freeze|unfreeze: locks daylight + weather cycles
          *  and forces clear sky so lighting stays constant across the
          *  dozens of takes per hero shot. Bundles two /gamerule toggles
@@ -568,8 +578,10 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.powerbins.WorldFrameCapture.register();
 
 
+        
         /* P3-26.2-AUS: fremd-mod ohne 26.2-bau, siehe ausschluss-block in build.gradle. */
 
+        
 
 
 

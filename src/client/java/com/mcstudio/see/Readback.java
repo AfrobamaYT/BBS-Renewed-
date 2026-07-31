@@ -119,7 +119,14 @@ public final class Readback
 
 		/* Bind THIS framebuffer as the read source. beginRead() binds the color texture; we need the FBO
 		 * itself bound as GL_READ_FRAMEBUFFER so glReadPixels(0,0,...) reads its attachment, not the screen. */
-		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fb.frameBufferId);
+		/* 26.2: RenderTarget.frameBufferId ist entfallen -- 26.2 gibt nur noch GpuTexture heraus,
+		 * keine rohen GL-Kennungen (der Renderer soll auf Vulkan umziehen). glReadPixels braucht
+		 * aber einen gebundenen Lese-Rahmenpuffer. Also haengen wir die Farbtextur des Ziels an
+		 * einen eigenen, einmal angelegten Rahmenpuffer.
+		 *
+		 * ⛔ BEWUSST ROHES GL MIT ABLAUFDATUM -- unter Vulkan gibt es keine glId mehr; dann muss
+		 * das Auslesen ueber den Befehlsgeber laufen. Siehe docs/26.2-UMSTIEG-SPICKZETTEL.md. */
+		GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFboFuer(fb));
 
 		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
 
@@ -213,5 +220,35 @@ public final class Readback
 		}
 
 		return s.replace("\\", "\\\\").replace("\"", "\\\"");
+	}
+
+	/* Eigener Lese-Rahmenpuffer, an den die Farbtextur des jeweiligen Ziels gehaengt wird.
+	 * Einmal angelegt, nur bei Texturwechsel neu behaengt. Siehe Kommentar oben. */
+	private static int leseFbo = 0;
+	private static int leseFboTextur = -1;
+
+	private static int leseFboFuer(RenderTarget ziel)
+	{
+		int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
+
+		if (leseFbo == 0)
+		{
+			leseFbo = GL30.glGenFramebuffers();
+			leseFboTextur = -1;
+		}
+
+		if (leseFboTextur != textur)
+		{
+			int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+
+			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
+			GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+				GL11.GL_TEXTURE_2D, textur, 0);
+			GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
+
+			leseFboTextur = textur;
+		}
+
+		return leseFbo;
 	}
 }
