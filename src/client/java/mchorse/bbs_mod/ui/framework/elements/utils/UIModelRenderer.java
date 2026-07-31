@@ -38,6 +38,15 @@ import org.lwjgl.opengl.GL11;
  */
 public abstract class UIModelRenderer extends UIElement
 {
+    /**
+     * ⛔ AUS, WEIL DER WEG DEN CLIENT REISST -- siehe {@link #renderGrid}.
+     *
+     * <p>Der Bild-im-Bild-Zeichner ist gebaut und seine Kette nachgewiesen, aber der
+     * Blit-Bereich stimmt noch nicht. Auf {@code true} stellen, sobald die Bedeutung von
+     * x0/y0/x1/y1 gemessen ist (Aufgabe 96).
+     */
+    private static final boolean GITTER_UEBER_BILD_IM_BILD = false;
+
     private static Vector3d vec = new Vector3d();
     private static Matrix3d mat = new Matrix3d();
 
@@ -408,12 +417,35 @@ public abstract class UIModelRenderer extends UIElement
          * Vorschau (beide Versuche gemessen, Aufgabe 96).
          *
          * Ein Bild-im-Bild-Zustand bekommt vom Bildgraphen eine eigene Textur MIT eigener
-         * Projektion. Die Matrix wird KOPIERT, weil der Stapel danach weiterbenutzt wird. */
-        context.batcher.bildImBild(new VorschauGitterZustand(
-            new Matrix4f(matrix4f),
-            this.area.x, this.area.y, this.area.ex(), this.area.ey(),
-            null,
-            new net.minecraft.client.gui.navigation.ScreenRectangle(
-                this.area.x, this.area.y, this.area.w, this.area.h)));
+         * Projektion.
+         *
+         * ⛔ ABGESCHALTET 2026-07-31, WEIL ER DEN CLIENT REISST:
+         *
+         *     IllegalArgumentException: RenderPass render area
+         *     RenderArea[x=422, y=281, width=1458, height=692]
+         *     is out of bounds for texture of 854x480
+         *
+         * Der Blit-Bereich aus this.area passt nicht zur Textur, die der Bild-im-Bild-Renderer
+         * anlegt. Beim blossen Ansehen faellt das nicht auf (das Feld blieb einfach schwarz) --
+         * erst als der Nutzer das FENSTER VERGROESSERTE, wuchs der Bereich weit genug hinaus
+         * und der Client starb. Ein Fehler, den kein Screenshot zeigt und keine Messung
+         * gefunden haette, die nur ein stehendes Bild ansieht.
+         *
+         * Der Bereich ist damit als Ursache BELEGT, nicht mehr vermutet (Kandidat 2 des
+         * Messplans in Aufgabe 96). Der Zeichner bleibt im Baum, der Aufruf ruht, bis die
+         * Bedeutung von x0/y0/x1/y1 gemessen ist -- ein Absturz beim Nutzer wiegt schwerer
+         * als ein fehlendes Gitter.
+         *
+         * DASS HIER NICHTS GEZEICHNET WIRD, IST KEIN RUECKSCHRITT: der alte Sofortzug war
+         * ebenfalls unsichtbar. Es fehlt genau so viel wie vorher, nur ohne Absturz. */
+        if (GITTER_UEBER_BILD_IM_BILD)
+        {
+            context.batcher.bildImBild(new VorschauGitterZustand(
+                new Matrix4f(matrix4f),
+                this.area.x, this.area.y, this.area.ex(), this.area.ey(),
+                null,
+                new net.minecraft.client.gui.navigation.ScreenRectangle(
+                    this.area.x, this.area.y, this.area.w, this.area.h)));
+        }
     }
 }
