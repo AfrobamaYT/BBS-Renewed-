@@ -19,6 +19,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -365,7 +366,15 @@ public class UIQuickReplayOverlayPanel extends UIOverlayPanel
 
         KeyMapping keybind = BBSModClient.getKeyOpenQuickReplays();
 
-        if (keybind != null && context.getKeyAction() == KeyAction.PRESSED && keybind.matches(context.getKeyCode(), context.getScanCode()))
+        /* ⚠️ 26.2: KeyMapping.matches(keyCode, scanCode) ist weg, der Ersatz nimmt ein
+         * KeyEvent-Record (key, scancode, modifiers). Der Bytecode von matches(KeyEvent) ist
+         * Zeile fuer Zeile die alte Methode: bei key == -1 wird gegen den SCANCODE verglichen,
+         * sonst gegen den KEYSYM — die modifiers werden NICHT angefasst. Deshalb ist die 0
+         * hier kein weggelassener Wert, sondern schlicht unbenutzt; das Verhalten bleibt
+         * identisch. (matches(InputConstants.Key) waere der andere Weg, aber die frueher dafuer
+         * passende Fabrik InputConstants.getKey(int,int) existiert in 26.2 nicht mehr.) */
+        if (keybind != null && context.getKeyAction() == KeyAction.PRESSED
+            && keybind.matches(new KeyEvent(context.getKeyCode(), context.getScanCode(), 0)))
         {
             this.confirmSelection();
 

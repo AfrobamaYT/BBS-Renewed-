@@ -92,7 +92,12 @@ public class UISelectorsOverlayPanel extends UIOverlayPanel
                 }
                 else
                 {
-                    this.current.nbt = (new TagParser(new StringReader(t))).readStruct();
+                    /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>), kein oeffentlicher
+                     * Konstruktor mehr. parseCompoundAsArgument == altes readStruct(): ein
+                     * Compound aus dem Reader, Resttext dahinter wird ignoriert. Bewusst
+                     * NICHT parseCompoundFully — hier tippt der Nutzer live, und jeder
+                     * Zwischenstand wuerde sonst als Fehler durchschlagen. */
+                    this.current.nbt = TagParser.parseCompoundAsArgument(new StringReader(t));
                 }
 
                 BBSModClient.getSelectors().update();

@@ -70,7 +70,12 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                CompoundTag nbtCompound = new TagParser(new StringReader(v)).readStruct();
+                /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>), kein oeffentlicher
+                 * Konstruktor mehr. parseCompoundAsArgument == altes readStruct(): ein
+                 * Compound aus dem Reader, Resttext dahinter wird ignoriert. Bewusst NICHT
+                 * parseCompoundFully — das wuerde bei Resttext werfen, und der Nutzer tippt
+                 * hier live, waehrend jeder Tastendruck neu parst. */
+                CompoundTag nbtCompound = TagParser.parseCompoundAsArgument(new StringReader(v));
                 ItemStack itemStack = ItemStack.CODEC.parse(NbtOps.INSTANCE, nbtCompound).result().orElse(ItemStack.EMPTY);
 
                 this.pickItemStack(itemStack);
@@ -101,7 +106,14 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
 
     private void updateNbt()
     {
-        this.nbt.setText((ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, this.stack).result().get()).getAsString());
+        /* ⚠️ 26.2: Tag.getAsString() ist weg. Der Ersatz heisst NICHT asString() — das gibt
+         * ein Optional<String> und ist auf einem Compound LEER (es liefert nur den Inhalt
+         * eines StringTag). Was hier gebraucht wird, ist der SNBT-Text, und den liefert
+         * toString() — genau das, was das alte getAsString() intern auch tat. Beweis in
+         * diesem Paket: UIUnifiedPickOverlayPanel.updateItemNbt schreibt denselben Text
+         * schon immer per toString(), und das Textfeld wird oben wieder per TagParser
+         * eingelesen — nur SNBT ueberlebt diese Runde. */
+        this.nbt.setText(ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, this.stack).result().get().toString());
     }
 
     private void pickItemStack(ItemStack itemStack)

@@ -8,8 +8,10 @@ import mchorse.bbs_mod.forms.entities.MCEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueOutput;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -89,7 +91,17 @@ public class SelectorOwner
             this.nbtCheck = 10;
 
             Set<String> keys = createWhitelist();
-            CompoundTag compound = this.mcEntity.saveWithoutId(new CompoundTag());
+
+            /* ⚠️ 26.2: saveWithoutId nimmt keinen CompoundTag mehr und gibt keinen zurueck —
+             * es bespielt ein ValueOutput, den fertigen Compound holt buildResult(). Laeuft
+             * hier alle 10 Pruefungen, also im heissen Pfad: buildResult() liefert den intern
+             * aufgebauten Compound, es entsteht keine zweite Kopie. ProblemReporter.DISCARDING,
+             * weil dieses Abbild nur mit dem letzten verglichen und nie gespeichert wird. */
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.mcEntity.registryAccess());
+
+            this.mcEntity.saveWithoutId(output);
+
+            CompoundTag compound = output.buildResult();
             CompoundTag newCompound = new CompoundTag();
 
             for (String key : keys)

@@ -173,7 +173,11 @@ public class UIItemStack extends UIElement
 
         if (customData != null && !customData.isEmpty())
         {
-            command.append("[minecraft:custom_data=").append(customData.getUnsafe()).append(']');
+            /* ⚠️ 26.2: CustomData.getUnsafe() (der Blick auf den internen Tag ohne Kopie) ist
+             * weg, oeffentlich ist nur noch copyTag(). Fuer den Befehlstext ist das identisch —
+             * angehaengt wird ohnehin nur dessen SNBT-Form. Unterschied: eine Kopie pro
+             * /give-Klick statt keiner; das passiert einmal pro Kontextmenue-Aktion. */
+            command.append("[minecraft:custom_data=").append(customData.copyTag()).append(']');
         }
 
         command.append(' ').append(stack.getCount());

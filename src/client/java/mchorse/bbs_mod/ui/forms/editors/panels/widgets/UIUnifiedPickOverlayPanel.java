@@ -272,7 +272,11 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
             try
             {
-                CompoundTag nbt = new TagParser(new StringReader(v.toString())).readStruct();
+                /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>), kein oeffentlicher
+                 * Konstruktor mehr. parseCompoundAsArgument == altes readStruct(): ein
+                 * Compound aus dem Reader, Resttext dahinter wird ignoriert. Bewusst NICHT
+                 * parseCompoundFully — hier tippt der Nutzer live ins Textfeld. */
+                CompoundTag nbt = TagParser.parseCompoundAsArgument(new StringReader(v.toString()));
                 ItemStack parsed = ItemStack.CODEC.parse(NbtOps.INSTANCE, nbt).result().orElse(ItemStack.EMPTY);
 
                 this.acceptItem(parsed);

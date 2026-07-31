@@ -13,7 +13,9 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.storage.TagValueOutput;
 import java.util.Objects;
 
 public class EntitySelector implements IMapSerializable
@@ -42,7 +44,17 @@ public class EntitySelector implements IMapSerializable
 
         if (this.nbt != null)
         {
-            CompoundTag entityCompound = mcEntity.saveWithoutId(new CompoundTag());
+            /* ⚠️ 26.2: saveWithoutId schreibt nicht mehr in einen CompoundTag und gibt auch
+             * keinen zurueck — es bespielt ein ValueOutput. Den Compound holt man danach mit
+             * buildResult(). ProblemReporter.DISCARDING = Schreibprobleme werden verschluckt;
+             * das ist hier richtig, weil dieser Aufruf nur ein Vergleichs-Abbild erzeugt und
+             * nie etwas speichert. registryAccess() liefert den Registry-Kontext, ohne den
+             * Codec-Felder (z.B. Item-Komponenten) nicht sauber serialisieren. */
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, mcEntity.registryAccess());
+
+            mcEntity.saveWithoutId(output);
+
+            CompoundTag entityCompound = output.buildResult();
 
             if (!this.compare(this.nbt, entityCompound))
             {
@@ -93,7 +105,13 @@ public class EntitySelector implements IMapSerializable
         {
             try
             {
-                this.nbt = (new TagParser(new StringReader(data.getString("nbt")))).readStruct();
+                /* ⚠️ 26.2: TagParser ist generisch (TagParser<T>), kein oeffentlicher
+                 * Konstruktor mehr. parseCompoundAsArgument entspricht dem alten readStruct()
+                 * exakt: ein Compound aus dem Reader, Resttext dahinter wird ignoriert (die
+                 * strengere Variante parseCompoundFully wuerde bei Resttext werfen und damit
+                 * bisher akzeptierte gespeicherte Selektoren stillschweigend verlieren).
+                 * Wirft weiterhin CommandSyntaxException — der catch unten bleibt gueltig. */
+                this.nbt = TagParser.parseCompoundAsArgument(new StringReader(data.getString("nbt")));
             }
             catch (CommandSyntaxException e)
             {
