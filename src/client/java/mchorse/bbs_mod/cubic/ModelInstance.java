@@ -614,7 +614,7 @@ public class ModelInstance implements IModelInstance
             }
 
             FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_OPAQUE);
-            buffer.drawWithShader(modelView, RenderSystem.getProjectionMatrix(), shader);
+            buffer.drawWithShader(modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), shader);
             FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_SINGLE);
         }
 

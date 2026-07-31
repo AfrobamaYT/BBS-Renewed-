@@ -72,7 +72,7 @@ public final class GameRendererPreviewPrePassLogik
         double savedZ = camera.position().z;
         float savedYaw = camera.yRot();
         float savedPitch = camera.xRot();
-        Matrix4f savedProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
+        Matrix4f savedProjection = new Matrix4f(mchorse.bbs_mod.graphics.Projektion.lesen());
 
         CameraInvokerMixin invoker = (CameraInvokerMixin) (Object) camera;
 
@@ -150,7 +150,7 @@ public final class GameRendererPreviewPrePassLogik
                     float far = 1024F;
                     Matrix4f clipProjection = new Matrix4f().perspective(
                         (float) Math.toRadians(fov), aspect, near, far);
-                    RenderSystem.setProjectionMatrix(clipProjection, VertexSorting.DISTANCE_TO_ORIGIN);
+                    mchorse.bbs_mod.graphics.Projektion.setzen(clipProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
                     /* Grid reference plane at player Y. */
                     AltCameraGridRenderer.render(mc, camera, clipProjection);
@@ -205,7 +205,7 @@ public final class GameRendererPreviewPrePassLogik
         {
             invoker.bbsRenewed$setPos(savedX, savedY, savedZ);
             invoker.bbsRenewed$setRotation(savedYaw, savedPitch);
-            RenderSystem.setProjectionMatrix(savedProjection, VertexSorting.DISTANCE_TO_ORIGIN);
+            mchorse.bbs_mod.graphics.Projektion.setzen(savedProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
             mainFb.bindWrite(true);
             int sw = mc.getWindow().getWidth();

@@ -202,7 +202,7 @@ public class GameRendererMixin
 
         if (ortho != projection)
         {
-            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
+            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         }
 
         return ortho;

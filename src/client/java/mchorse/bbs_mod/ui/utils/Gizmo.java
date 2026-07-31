@@ -685,7 +685,7 @@ public class Gizmo
         context.batcher.flush();
 
         MatrixStackUtils.cacheMatrices();
-        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
         /* Map the UI area to a framebuffer-pixel viewport, exactly as the form
          * editor's model pass does, so the gizmo renders into the preview and is
@@ -944,7 +944,7 @@ public class Gizmo
     private float getAxesDistanceScale(PoseStack stack)
     {
         Vector3f cameraRelative = stack.last().pose().getTranslation(new Vector3f());
-        Matrix4f proj = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
+        Matrix4f proj = mchorse.bbs_mod.graphics.Projektion.lesen();
         float fov = proj.m33() == 0 ? (float) (2.0 * Math.atan(1.0 / proj.m11())) : BBSSettings.getFov();
 
         return BBSSettings.getAxesDistanceScale(cameraRelative.length(), fov) * this.viewportScale;
@@ -1075,7 +1075,7 @@ public class Gizmo
 
         RenderSystem.setShaderColor(r, g, b, a);
         vbo.bind();
-        vbo.drawWithShader(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorShader());
+        vbo.drawWithShader(modelView(stack), mchorse.bbs_mod.graphics.Projektion.lesen(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
@@ -1219,7 +1219,7 @@ public class Gizmo
 
         RenderSystem.setShaderColor(r, g, b, a);
         vbo.bind();
-        vbo.drawWithShader(modelView(stack), RenderSystem.getProjectionMatrix(), GameRenderer.getPositionColorShader());
+        vbo.drawWithShader(modelView(stack), mchorse.bbs_mod.graphics.Projektion.lesen(), GameRenderer.getPositionColorShader());
         VertexBuffer.unbind();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
@@ -1684,7 +1684,7 @@ public class Gizmo
         this.setViewportScale(context.menu.height / (float) area.h);
 
         MatrixStackUtils.cacheMatrices();
-        RenderSystem.setProjectionMatrix(projection, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
         /* Map the UI area to a framebuffer-pixel viewport, exactly as
          * renderInterface does, so the stencil matches the drawn visual pixel for

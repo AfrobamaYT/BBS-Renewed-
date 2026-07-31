@@ -115,9 +115,9 @@ public final class AltCameraGridRenderer
             mvStack.rotateX(pitchRad);
             mvStack.rotateY(yawRad);
             mvStack.translate(-camX, -camY, -camZ);
-            RenderSystem.applyModelViewMatrix();
+            /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
 
-            RenderSystem.setProjectionMatrix(projection, VertexSorting.DISTANCE_TO_ORIGIN);
+            mchorse.bbs_mod.graphics.Projektion.setzen(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
             /* 26.2: Cull und Blend sind kein Schalter mehr, sondern Teil der
              *  Pipeline — ersatzlos entfallen. Fuer diese Zeichnung traegt den
@@ -211,7 +211,7 @@ public final class AltCameraGridRenderer
              *  folgende Zeichnung selbst mit. Nichts zurueckzusetzen. */
 
             mvStack.popMatrix();
-            RenderSystem.applyModelViewMatrix();
+            /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
 
             if (!loggedFirstRender)
             {

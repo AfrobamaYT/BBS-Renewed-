@@ -3058,7 +3058,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (!BBSRendering.isIrisShadowPass())
         {
-            this.lastProjection.set(RenderSystem.getProjectionMatrix());
+            /* 26.2: RenderSystem gibt die Projektion nur noch als GPU-Puffer heraus, nicht als
+             * Zahlen. Lesbar ist sie im eingefrorenen Kamerazustand des Weltdurchgangs --
+             * derselbe Wert, aber garantiert der DIESES Bildes. */
+            this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
             /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
              * MatrixStack base is just an identity stack for entity-relative rendering, so
              * reading the view from it would drop the camera angle and misaim every raycast. */

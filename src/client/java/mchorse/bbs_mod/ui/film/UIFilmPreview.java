@@ -596,10 +596,10 @@ public class UIFilmPreview extends UIElement
         stack.rotate(Axis.XN.rotationDegrees(mcCamera.xRot()));
         stack.rotate(Axis.YP.rotationDegrees(mcCamera.yRot()));
         stack.scale(-1F, -1F, -1F);
-        RenderSystem.applyModelViewMatrix();
+        /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
         RenderSystem.renderCrosshair(10);
 
         stack.popMatrix();
-        RenderSystem.applyModelViewMatrix();
+        /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
     }
 }

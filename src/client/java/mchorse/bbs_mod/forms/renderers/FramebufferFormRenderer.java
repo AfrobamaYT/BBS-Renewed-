@@ -132,11 +132,11 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         int prevRead = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         Vector3f light0 = RenderSystem.shaderLightDirections[0];
         Vector3f light1 = RenderSystem.shaderLightDirections[1];
-        Matrix4f projectionMatrix = new Matrix4f(RenderSystem.getProjectionMatrix());
+        Matrix4f projectionMatrix = new Matrix4f(mchorse.bbs_mod.graphics.Projektion.lesen());
 
         GL30.glCullFace(GL30.GL_FRONT);
         RenderSystem.setShaderLights(new Vector3f(0F, 0F, 1F), new Vector3f(0F, 0F, 1F));
-        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         RenderSystem.getModelViewStack().pushMatrix();
         RenderSystem.getModelViewStack().identity();
 
@@ -192,7 +192,7 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
 
         RenderSystem.setShaderLights(light0, light1);
         RenderSystem.getModelViewStack().popMatrix();
-        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(projectionMatrix, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         GL30.glCullFace(GL30.GL_BACK);
 
         boolean shading = !context.isPicking();

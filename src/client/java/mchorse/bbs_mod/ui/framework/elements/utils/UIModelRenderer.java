@@ -254,7 +254,7 @@ public abstract class UIModelRenderer extends UIElement
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        RenderSystem.setProjectionMatrix(this.camera.projection, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(this.camera.projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         InverseView.set(new Matrix3f(this.camera.view).invert());
 
         /* Rendering begins... */

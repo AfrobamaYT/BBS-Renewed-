@@ -365,7 +365,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
          * the UI pass (GizmoInteraction.renderGizmo / renderGizmoStencilInterface)
          * from this frame, so rendering, picking and dragging share one coordinate
          * frame. */
-        this.gizmoProjection.set(RenderSystem.getProjectionMatrix());
+        /* 26.2: lesbar nur noch im eingefrorenen Kamerazustand, siehe UIFilmPanel. */
+        this.gizmoProjection.set(context.levelState().cameraRenderState.projectionMatrix);
         this.gizmoCamera.projection.set(this.gizmoProjection);
         /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
          * MatrixStack base is just an identity stack for entity-relative rendering, so
@@ -713,7 +714,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         double y = mc.mouseHandler.ypos();
 
         this.mouseDirection.set(CameraUtils.getMouseDirection(
-            RenderSystem.getProjectionMatrix(),
+            mchorse.bbs_mod.graphics.Projektion.lesen(),
             context.positionMatrix(),
             (int) x, (int) y, 0, 0, mc.getWindow().getScreenWidth(), mc.getWindow().getScreenHeight()
         ));

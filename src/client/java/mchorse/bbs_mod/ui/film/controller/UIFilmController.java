@@ -1310,7 +1310,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        RenderSystem.setProjectionMatrix(this.panel.lastProjection, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         InverseView.set(new Matrix3f(BBSRendering.camera).invert());
 
         /* Render the stencil */

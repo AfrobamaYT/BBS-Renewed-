@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.utils;
 
 import mchorse.bbs_mod.graphics.InverseView;
+import mchorse.bbs_mod.graphics.Projektion;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -57,10 +58,21 @@ public class MatrixStackUtils
         stack.last().normal().identity();
     }
 
+    /**
+     * Merkt sich Projektion, Modelview und die inverse Sicht, damit ein eigener Durchgang
+     * sie danach unveraendert zuruecklassen kann.
+     *
+     * <p>26.2: die Projektion wird NICHT mehr als Matrix gemerkt. Sie liegt als
+     * Uniform-Puffer auf der Grafikkarte und kommt von dort nicht mehr als Zahlen zurueck;
+     * gesichert wird der Puffer selbst (siehe Projektion). Modelview und inverse Sicht
+     * bleiben Java-Werte und werden weiter kopiert.
+     *
+     * <p>applyModelViewMatrix ist ersatzlos entfallen: es lud den Stapel nach GL hoch.
+     * In 26.2 liest jeder Zeichenweg den Stapel selbst, hochzuladen gibt es nichts mehr.
+     */
     public static void cacheMatrices()
     {
-        /* Cache the global stuff */
-        oldProjection.set(RenderSystem.getProjectionMatrix());
+        Projektion.sichern();
         oldMV.set(RenderSystem.getModelViewMatrixCopy());
         oldInverse.set(InverseView.get());
 
@@ -68,19 +80,16 @@ public class MatrixStackUtils
 
         renderStack.pushMatrix();
         renderStack.identity();
-        RenderSystem.applyModelViewMatrix();
     }
 
     public static void restoreMatrices()
     {
-        /* Return back to orthographic projection */
-        RenderSystem.setProjectionMatrix(oldProjection, VertexSorting.ORTHOGRAPHIC_Z);
+        Projektion.zurueck();
         InverseView.set(oldInverse);
 
         Matrix4fStack renderStack = RenderSystem.getModelViewStack();
 
         renderStack.popMatrix();
-        RenderSystem.applyModelViewMatrix();
     }
 
     public static void applyTransform(PoseStack stack, Transform transform)

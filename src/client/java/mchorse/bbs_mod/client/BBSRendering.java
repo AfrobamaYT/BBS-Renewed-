@@ -483,7 +483,7 @@ public class BBSRendering
         worldRenderContext.prepare(
             mc.levelRenderer, mc.getDeltaTracker(), false,
             mc.gameRenderer.mainCamera(), mc.gameRenderer, mc.gameRenderer.lightTexture(),
-            RenderSystem.getProjectionMatrix(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
+            mchorse.bbs_mod.graphics.Projektion.lesen(), positionMatrix, mc.renderBuffers().bufferSource(), mc.getProfiler(), false, mc.level
         );
 
         if (isIrisShadersEnabled())

@@ -62,7 +62,9 @@ public class UISubtitleRenderer
         int width = fb.width;
         int height = fb.height;
 
-        Matrix4f cache = new Matrix4f(RenderSystem.getProjectionMatrix());
+        /* 26.2: die Projektion liegt auf der Grafikkarte und kommt nicht als Zahlen zurueck.
+         * Gesichert wird darum der Puffer selbst. */
+        mchorse.bbs_mod.graphics.Projektion.sichern();
 
         width /= 2;
         height /= 2;
@@ -130,7 +132,7 @@ public class UISubtitleRenderer
             int fw = (int) ((contentW + 10) * scale);
             int fh = (int) ((contentH + 10) * scale);
 
-            RenderSystem.setProjectionMatrix(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), VertexSorting.ORTHOGRAPHIC_Z);
+            mchorse.bbs_mod.graphics.Projektion.setzen(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
             framebuffer.resize(fw, fh);
             framebuffer.applyClear();
@@ -173,7 +175,7 @@ public class UISubtitleRenderer
             /* Render the texture */
             fb.bindWrite(true);
 
-            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
+            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
             Transform transform = new Transform();
 
@@ -201,7 +203,7 @@ public class UISubtitleRenderer
             stack.popPose();
         }
 
-        RenderSystem.setProjectionMatrix(cache, VertexSorting.ORTHOGRAPHIC_Z);
+        mchorse.bbs_mod.graphics.Projektion.zurueck();
 
         /* Das enableCull() entfaellt ersatzlos: einen globalen Cull-Schalter, den man
          * zuruecksetzen koennte, gibt es nicht mehr — jede Pipeline bringt ihren eigenen mit.

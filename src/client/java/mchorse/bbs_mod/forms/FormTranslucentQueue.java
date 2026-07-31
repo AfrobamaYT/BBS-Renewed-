@@ -490,7 +490,7 @@ public class FormTranslucentQueue
             RenderSystem.depthMask(this.depthWrite);
 
             this.buffer.bind();
-            this.buffer.drawWithShader(this.modelView, RenderSystem.getProjectionMatrix(), RenderSystem.getShader());
+            this.buffer.drawWithShader(this.modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), RenderSystem.getShader());
             VertexBuffer.unbind();
 
             this.layer.clearRenderState();
@@ -567,7 +567,7 @@ public class FormTranslucentQueue
              * 26.2 nicht mehr gibt. this.passMode wandert in den Zeichenaufruf, sobald
              * der Weg auf einen RenderPass steht. */
             this.buffer.bind();
-            this.buffer.drawWithShader(this.modelView, RenderSystem.getProjectionMatrix(), program);
+            this.buffer.drawWithShader(this.modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), program);
             VertexBuffer.unbind();
 
             if (this.postDraw != null)

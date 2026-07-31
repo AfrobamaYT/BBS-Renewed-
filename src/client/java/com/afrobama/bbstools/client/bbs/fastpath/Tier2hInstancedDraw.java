@@ -733,7 +733,7 @@ public final class Tier2hInstancedDraw
             GL20C.glUseProgram(PROGRAM);
 
             Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
-            Matrix4f prj = RenderSystem.getProjectionMatrix();
+            Matrix4f prj = mchorse.bbs_mod.graphics.Projektion.lesen();
             mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
             prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);
             if (uSampler0 >= 0)    GL20C.glUniform1i(uSampler0, 0);
@@ -1385,7 +1385,7 @@ public final class Tier2hInstancedDraw
             GL20C.glUseProgram(PROGRAM);
 
             Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
-            Matrix4f prj = RenderSystem.getProjectionMatrix();
+            Matrix4f prj = mchorse.bbs_mod.graphics.Projektion.lesen();
             mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
             prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);
             if (uSampler0 >= 0)    GL20C.glUniform1i(uSampler0, 0);

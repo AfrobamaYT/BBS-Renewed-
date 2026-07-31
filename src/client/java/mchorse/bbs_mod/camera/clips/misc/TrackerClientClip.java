@@ -819,7 +819,7 @@ public class TrackerClientClip extends TrackerClip
         }
 
         handProjectionSwapped = true;
-        savedWorldProjection = new Matrix4f(RenderSystem.getProjectionMatrix());
+        savedWorldProjection = new Matrix4f(mchorse.bbs_mod.graphics.Projektion.lesen());
 
         double baseFovRad = lastBaseFov * Math.PI / 180D;
         double sprintFovRad = lastBaseFov * (double) smoothed * Math.PI / 180D;
@@ -828,7 +828,7 @@ public class TrackerClientClip extends TrackerClip
         Matrix4f handProj = new Matrix4f(savedWorldProjection);
         handProj.m00(handProj.m00() * ratio);
         handProj.m11(handProj.m11() * ratio);
-        RenderSystem.setProjectionMatrix(handProj, VertexSorting.DISTANCE_TO_ORIGIN);
+        mchorse.bbs_mod.graphics.Projektion.setzen(handProj, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
     }
 
     public static void endHandRendering()
@@ -840,7 +840,7 @@ public class TrackerClientClip extends TrackerClip
         }
         if (handProjectionSwapped)
         {
-            RenderSystem.setProjectionMatrix(savedWorldProjection, VertexSorting.DISTANCE_TO_ORIGIN);
+            mchorse.bbs_mod.graphics.Projektion.setzen(savedWorldProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
             handProjectionSwapped = false;
         }
     }
@@ -967,7 +967,7 @@ public class TrackerClientClip extends TrackerClip
 
             RenderSystem.backupProjectionMatrix();
             Matrix4f ortho = new Matrix4f().setOrtho(0F, (float) sw, (float) sh, 0F, 1000F, 21000F);
-            RenderSystem.setProjectionMatrix(ortho, VertexSorting.ORTHOGRAPHIC_Z);
+            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
             scaleChanged = true;
 
             /* 4K-HUD-FIX: acceleratedrendering tauscht MCs BufferSource gegen ihren beschleunigten
