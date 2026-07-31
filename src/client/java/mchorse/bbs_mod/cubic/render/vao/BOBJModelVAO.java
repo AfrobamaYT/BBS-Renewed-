@@ -100,7 +100,13 @@ public class BOBJModelVAO implements IModelVAO
         {
             roh.asFloatBuffer().put(werte);
 
-            return RenderSystem.getDevice().createBuffer(() -> name, GpuBuffer.USAGE_VERTEX, roh);
+            /* ⚠️ USAGE_COPY_DST, obwohl der Puffer MIT Daten angelegt wird: das Skinning
+             * schreibt ihn per writeToBuffer jedes Bild neu (siehe schreiben()). Die Faustregel
+             * "mit Daten angelegt = fertig, braucht kein COPY_DST" gilt hier NICHT und hat
+             * genau deshalb einen Messlauf gekostet. Massgeblich ist nicht, wie der Puffer
+             * entsteht, sondern ob er je wieder beschrieben wird. */
+            return RenderSystem.getDevice().createBuffer(() -> name,
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, roh);
         }
         finally
         {

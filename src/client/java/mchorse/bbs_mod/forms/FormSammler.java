@@ -100,24 +100,12 @@ public final class FormSammler
     /**
      * Laesst den eingereichten Stapel zeichnen.
      *
-     * <h2>⚠️ NOCH NICHT FERTIG: das Ziel passt nicht zusammen</h2>
-     *
-     * <p>Der Zeichenweg oeffnet einen Durchgang mit Farb- UND Tiefenziel und lehnt ihn ab,
-     * wenn die Masse auseinandergehen: <em>"Depth texture: size does not match expected
-     * attachment size. Is 854x480 expected 2560x1440"</em>. 854x480 ist genau die
-     * oberflaechenskalierte Groesse eines 2560x1440-Fensters.
-     *
-     * <p>AUSGESCHLOSSEN, gemessen und nicht vermutet: es liegt NICHT an
-     * {@code RenderSystem.outputColorTextureOverride} / {@code outputDepthTextureOverride}.
-     * Beide wurden hier versuchsweise fuer die Dauer geleert und wiederhergestellt -- die
-     * Meldung blieb Wort fuer Wort dieselbe. Der Versuch ist deshalb wieder draussen, statt
-     * als unbelegter Ballast stehenzubleiben.
-     *
-     * <p>Der naechste Schritt ist der Weg, den Vanilla wirklich geht: seine Vorschaubilder
-     * zeichnen NIE ins Hauptbild, sondern in eine EIGENE Textur mit eigener Tiefe
-     * ({@code PictureInPictureRenderer.prepare} setzt vor dem Einreichen beide Umleitungen
-     * auf die eigene Textur und dazu die Projektion). Solange das fehlt, trifft der
-     * eingereichte Stapel auf ein Ziel, das ihm nicht gehoert.
+     * <p>⚠️ Hier werden die Ziel-Umleitungen NICHT angefasst, und das ist Absicht. Ein
+     * Versuch, sie zu setzen, stand hier zwischenzeitlich -- er half nicht, weil der
+     * Fehler, den er beheben sollte, aus dem WELTdurchgang kam und nicht von hier
+     * (LevelRenderer.render, nicht dieser Aufruf). Die Ursache lag in
+     * {@code BBSRendering.reassignFramebuffer}, das nur die Farbe umlenkte und die Tiefe
+     * stehen liess. Dokumentiert, damit niemand denselben Umweg noch einmal geht.
      */
     private static void zeichnenLassen(SubmitNodeStorage eigener)
     {

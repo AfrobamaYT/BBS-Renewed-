@@ -448,6 +448,25 @@ public class BBSRendering
     {
         RenderSystem.outputColorTextureOverride =
             framebuffer == null ? null : framebuffer.getColorTextureView();
+
+        /* ⛔ DIE TIEFE MUSS MIT. Sie ist eine ZWEITE, eigenstaendige Umleitung, und wer nur
+         * die Farbe umlenkt, baut ein Ziel aus zwei verschiedenen Flaechen zusammen.
+         *
+         * Nachgelesen in PreparedRenderType.drawFromBuffer: der Zeichenweg nimmt die Farbe
+         * aus outputColorTextureOverride (falls gesetzt, sonst vom Ziel des RenderTypes) und
+         * die Tiefe UNABHAENGIG DAVON aus outputDepthTextureOverride (falls gesetzt, sonst
+         * vom Ziel). Beide Zweige entscheiden getrennt -- eine halbe Umleitung ergibt also
+         * BBS' Farbflaeche mit fremder Tiefe.
+         *
+         * Der Zeichenweg prueft die Masse und bricht ab:
+         *   "Depth texture: size does not match expected attachment size.
+         *    Is 854x480 expected 2560x1440"
+         *
+         * ⚠️ Die Meldung erscheint im WELTdurchgang (LevelRenderer.render), nicht dort, wo
+         * umgelenkt wurde. Sie hat mich einen Messlauf lang in den Oberflaechen-Weg geschickt,
+         * wo gar nichts kaputt war. */
+        RenderSystem.outputDepthTextureOverride =
+            framebuffer == null || !framebuffer.useDepth ? null : framebuffer.getDepthTextureView();
     }
 
     /* Rendering */
