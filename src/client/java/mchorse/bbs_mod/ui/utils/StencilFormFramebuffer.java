@@ -92,6 +92,10 @@ public class StencilFormFramebuffer
     public void apply()
     {
         this.framebuffer.applyClear();
+
+        /* 26.2: das Binden allein reicht nicht mehr -- jeder Durchgang nennt sein Ziel
+         * selbst. Hier wird angemeldet, wohin die Kennungsfarben gehen; siehe PickZiel. */
+        mchorse.bbs_mod.graphics.PickZiel.anmelden(this.framebuffer.getMainTexture().view());
     }
 
     public void pickGUI(UIContext context, Area area)
@@ -239,6 +243,7 @@ public class StencilFormFramebuffer
 
     public void unbind()
     {
+        mchorse.bbs_mod.graphics.PickZiel.abmelden();
         this.framebuffer.unbind();
     }
 

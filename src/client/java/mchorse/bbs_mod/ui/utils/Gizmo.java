@@ -97,7 +97,7 @@ public class Gizmo
     public final static int STENCIL_MAX = STENCIL_SCALE_ALL;
 
     /** Radius of the view-plane ring relative to the per-axis rings. */
-    private final static float VIEW_RING_SCALE = 1.2F;
+    final static float VIEW_RING_SCALE = 1.2F;
 
     /** Move/scale handles shrink inside the rotation rings in combined mode. */
     private final static float COMBINED_INNER_SCALE = 0.6F;
@@ -115,18 +115,18 @@ public class Gizmo
     /** Half-size of the scale handle's end cube, in gizmo-local units (× axes scale × thickness).
      *  Based on scale/thickness rather than the per-pass line offset, so the cube is the same
      *  size in the visual and stencil passes and its hitbox matches the drawn cube exactly. */
-    private final static float SCALE_CUBE_HALF = 0.032F;
+    final static float SCALE_CUBE_HALF = 0.032F;
 
     /** Half-size of the centre cube shared by the screen-space (view-plane) translate
      *  handle and the uniform (three-axis) scale handle, in gizmo-local units
      *  (× axes scale × thickness). Deliberately large so the centre reads as an easy
      *  grab target. Like {@link #SCALE_CUBE_HALF} it is offset-independent so the visual
      *  and stencil passes match and the hitbox lines up with the drawn cube. */
-    private final static float SCREEN_CUBE_HALF = 0.03F;
+    final static float SCREEN_CUBE_HALF = 0.03F;
 
     public final static Gizmo INSTANCE = new Gizmo();
 
-    private Mode mode = Mode.COMBINED;
+    Mode mode = Mode.COMBINED;
     /** The mode to return to when combined mode is toggled off. */
     private Mode previousMode = Mode.TRANSLATE;
 
@@ -998,12 +998,12 @@ public class Gizmo
         }
     }
 
-    private void updateVbos()
+    void updateVbos()
     {
         this.ringe.auffrischen();
     }
 
-    private void drawCachedRing(PoseStack stack, Axis axis, int color)
+    void drawCachedRing(PoseStack stack, Axis axis, int color)
     {
         float alpha = Colors.getA(color);
 
@@ -1108,7 +1108,7 @@ public class Gizmo
      * so it reads like the rings in a typical 3D gizmo. Immediate mode, since the
      * visible arc changes with the camera every frame.
      */
-    private void drawOccludedRing(PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
+    void drawOccludedRing(PoseStack stack, Axis axis, float radius, float thickness, float r, float g, float b)
     {
         Vector2f arc = new Vector2f();
 
@@ -1117,19 +1117,34 @@ public class Gizmo
             return;
         }
 
-        /* 26.2 OFFEN — bewusst NICHT auf SofortZeichner umgestellt: derselbe Aufruf dient
-         * zwei Durchgaengen. Sichtbar geht er aufs Hauptziel, als Pick-Kennung aber in den
-         * gebundenen Pick-Puffer (drawAxes(stack, map, ...) → StencilFormFramebuffer).
-         * SofortZeichner zeichnet fest ins Hauptziel; umgestellt malte er die Kennungen
-         * still ins Bild und die Ringe waeren nicht mehr anklickbar. Sobald zeichnen() ein
-         * Ziel annimmt: TRIANGLES, mischen, Culling an — Tiefe und Farbe je Durchgang. */
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+        /* Derselbe Aufruf dient zwei Durchgaengen: sichtbar geht er ins Bild, als
+         * Kennung in BBS' Auswahl-Puffer. Welcher gerade laeuft, sagt PickZiel --
+         * angemeldet von StencilFormFramebuffer.apply(). Das war frueher die Bindung,
+         * die es in 26.2 nicht mehr gibt. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
+        {
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            Draw.arc3D(builder, stack, axis, radius, thickness, r, g, b, arc.x, arc.y);
+
+            com.mojang.blaze3d.textures.GpuTextureView ziel = mchorse.bbs_mod.graphics.PickZiel.aktiv();
+
+            if (ziel == null)
+            {
+                SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, null);
+            }
+            else
+            {
+                /* Kennungen duerfen nicht gemischt und nicht von Tiefe verschluckt werden --
+                 * sonst liest der Klick eine verrechnete Farbe oder gar keine. */
+                SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, ziel, null);
+            }
+        }
     }
 
-    private void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
+    void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
     {
         this.ringe.billboardZeichnen(stack, r, g, b, a, VIEW_RING_SCALE);
     }
@@ -1300,7 +1315,7 @@ public class Gizmo
      * is off. Both draw passes show only this handle when it is present. A
      * two-axis rotation has no handle of its own, so the primary ring stands in.
      */
-    private Handle activeDragHandle()
+    Handle activeDragHandle()
     {
         UIPropTransform transform = this.currentTransform;
 
@@ -1361,7 +1376,7 @@ public class Gizmo
      * rings in combined mode. With "hide rotation rings" on there is nothing to
      * nest inside, so they keep their full (larger) size.
      */
-    private float combinedInnerScale()
+    float combinedInnerScale()
     {
         return this.mode == Mode.COMBINED && !BBSSettings.rotateHideRings.get() ? COMBINED_INNER_SCALE : 1F;
     }
@@ -1711,113 +1726,15 @@ public class Gizmo
         return transform.getStrategy();
     }
 
+    /**
+     * Zeichnet die Griffe als Kennungen in BBS' Auswahl-Puffer.
+     *
+     * <p>Der Koerper steht in {@link GizmoAuswahl} -- er ist ueber hundert Zeilen lang und
+     * hat mit dem sichtbaren Zeichnen nur die Geometrie gemeinsam, nicht den Zweck.
+     */
     private void drawAxes(PoseStack stack, StencilMap map, float axisSize, float axisOffset)
     {
-        float scale = BBSSettings.axesScale.get();
-        float thickness = BBSSettings.axesThickness.get();
-
-        Handle active = this.activeDragHandle();
-
-        boolean showMove = this.mode.shows(Op.MOVE) && (active == null || active.op == Op.MOVE || active.op == Op.SCREEN);
-        boolean showScale = this.mode.shows(Op.SCALE) && (active == null || active.op == Op.SCALE || active.op == Op.SCALE_ALL);
-        boolean showRotate = this.mode.shows(Op.ROTATE) && (active == null || active.op == Op.ROTATE || active.op == Op.VIEW || active.op == Op.TRACKBALL);
-
-        axisSize *= scale * this.combinedInnerScale();
-        axisOffset *= scale * thickness;
-
-        RenderSystem.disableDepthTest();
-
-        if (showRotate)
-        {
-            this.updateVbos();
-
-            if (!BBSSettings.rotateHideRings.get())
-            {
-                /* Match the visual ring thickness (Gizmo#drawRotateHandles) so the
-                 * pick tube lines up with the drawn ring. */
-                float stencilThickness = 0.02F * scale * thickness;
-                float radius = 0.22F * scale;
-
-                if (active == null || active == Handle.ROTATE_Z) this.drawOccludedRing(stack, Axis.Z, radius, stencilThickness, STENCIL_ROTATE_Z / 255F, 0F, 0F);
-                if (active == null || active == Handle.ROTATE_X) this.drawOccludedRing(stack, Axis.X, radius, stencilThickness, STENCIL_ROTATE_X / 255F, 0F, 0F);
-                if (active == null || active == Handle.ROTATE_Y) this.drawOccludedRing(stack, Axis.Y, radius, stencilThickness, STENCIL_ROTATE_Y / 255F, 0F, 0F);
-            }
-
-            /* View ring stays pickable even when the rings are hidden (see drawAxes visual pass).
-             * Uses the same ring VBO as the visual so the pick matches its thickness. */
-            if (active == null || active == Handle.VIEW) this.drawCachedRingBillboard(stack, STENCIL_VIEW / 255F, 0F, 0F, 1F);
-        }
-
-        if (showMove || showScale)
-        {
-
-            /* The bar reads as move when move is on screen (combined) and as scale
-             * only when scale stands alone; the scale handle then lives on the end
-             * cubes, so move and scale never share an id under the cursor. */
-            Handle barX = showMove ? Handle.MOVE_X : Handle.SCALE_X;
-            Handle barY = showMove ? Handle.MOVE_Y : Handle.SCALE_Y;
-            Handle barZ = showMove ? Handle.MOVE_Z : Handle.SCALE_Z;
-            Handle planeXZ = showMove ? Handle.MOVE_XZ : Handle.SCALE_XZ;
-            Handle planeXY = showMove ? Handle.MOVE_XY : Handle.SCALE_XY;
-            Handle planeZY = showMove ? Handle.MOVE_ZY : Handle.SCALE_ZY;
-
-            /* 26.2 OFFEN — bewusst NICHT auf SofortZeichner umgestellt: dieser Pass schreibt
-             * Kennungen in den GEBUNDENEN Pick-Framebuffer (StencilFormFramebuffer.apply()),
-             * SofortZeichner aber fest ins Hauptziel. Umgestellt laegen die Kennungen sichtbar
-             * im Bild und die Auswahl liefe ins Leere — ein stiller Fehlschlag, darum bleibt
-             * hier der Compilerfehler stehen. Gebrauchte Kombination, sobald zeichnen() ein
-             * Ziel annimmt: TRIANGLES, kein Mischen (Kennungen duerfen nicht verrechnet
-             * werden), keine Tiefenpruefung (disableDepthTest), Culling an, Farbe null. */
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-            if (active == null || active == barX) Draw.fillBox(builder, stack, 0, -axisOffset, -axisOffset, axisSize, axisOffset, axisOffset, barX.index / 255F, 0F, 0F);
-            if (active == null || active == barY) Draw.fillBox(builder, stack, -axisOffset, 0, -axisOffset, axisOffset, axisSize, axisOffset, barY.index / 255F, 0F, 0F);
-            if (active == null || active == barZ) Draw.fillBox(builder, stack, -axisOffset, -axisOffset, 0, axisOffset, axisOffset, axisSize, barZ.index / 255F, 0F, 0F);
-            Draw.fillBox(builder, stack, -axisOffset, -axisOffset, -axisOffset, axisOffset, axisOffset, axisOffset, 0F, 0F, 0F);
-
-            /* Screen-space handle hitbox: drawn before the planes so they win the pick
-             * where they overlap (planes overlay the cube). Matches the visual cube. */
-            if (showMove && (active == null || active == Handle.SCREEN))
-            {
-                float screenHalf = SCREEN_CUBE_HALF * scale * thickness;
-
-                Draw.fillBox(builder, stack, -screenHalf, -screenHalf, -screenHalf, screenHalf, screenHalf, screenHalf, STENCIL_SCREEN / 255F, 0F, 0F);
-            }
-
-            /* Uniform-scale hitbox: matches the visual centre cube in scale-only mode. */
-            if (showScale && !showMove && (active == null || active == Handle.SCALE_ALL))
-            {
-                float scaleAllHalf = SCREEN_CUBE_HALF * scale * thickness;
-
-                Draw.fillBox(builder, stack, -scaleAllHalf, -scaleAllHalf, -scaleAllHalf, scaleAllHalf, scaleAllHalf, scaleAllHalf, STENCIL_SCALE_ALL / 255F, 0F, 0F);
-            }
-
-            /* The plane quad's footprint is a fixed fraction of the axis length,
-             * independent of axesThickness — thickness only fattens the bars and
-             * the flat slab depth, not how big the two-axis plane reads. */
-            float planeStart = axisSize * 0.2F;
-            float planeEnd = planeStart + axisSize * 0.2F;
-            float planeThickness = axisOffset * 0.5F;
-
-            if (active == null || active == planeXZ) Draw.fillBox(builder, stack, planeStart, -planeThickness, planeStart, planeEnd, planeThickness, planeEnd, planeXZ.index / 255F, 0F, 0F);
-            if (active == null || active == planeXY) Draw.fillBox(builder, stack, planeStart, planeStart, -planeThickness, planeEnd, planeEnd, planeThickness, planeXY.index / 255F, 0F, 0F);
-            if (active == null || active == planeZY) Draw.fillBox(builder, stack, -planeThickness, planeStart, planeStart, planeThickness, planeEnd, planeEnd, planeZY.index / 255F, 0F, 0F);
-
-            if (showScale)
-            {
-                float cubeHalf = SCALE_CUBE_HALF * scale * thickness;
-
-                if (active == null || active == Handle.SCALE_X) Draw.fillBox(builder, stack, axisSize - cubeHalf, -cubeHalf, -cubeHalf, axisSize + cubeHalf, cubeHalf, cubeHalf, STENCIL_SCALE_X / 255F, 0F, 0F);
-                if (active == null || active == Handle.SCALE_Y) Draw.fillBox(builder, stack, -cubeHalf, axisSize - cubeHalf, -cubeHalf, cubeHalf, axisSize + cubeHalf, cubeHalf, STENCIL_SCALE_Y / 255F, 0F, 0F);
-                if (active == null || active == Handle.SCALE_Z) Draw.fillBox(builder, stack, -cubeHalf, -cubeHalf, axisSize - cubeHalf, cubeHalf, cubeHalf, axisSize + cubeHalf, STENCIL_SCALE_Z / 255F, 0F, 0F);
-            }
-
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-        }
-
-        RenderSystem.enableDepthTest();
+        GizmoAuswahl.achsenZeichnen(this, stack, map, axisSize, axisOffset);
     }
 
     public static enum Mode

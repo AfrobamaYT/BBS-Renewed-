@@ -114,6 +114,27 @@ public final class SofortZeichner
     }
 
     /**
+     * Wie oben, aber mit den Zieltexturen statt eines {@link RenderTarget}.
+     *
+     * <p>Fuer BBS' eigene Puffer, die kein Vanilla-RenderTarget sind -- vor allem der
+     * Auswahl-Durchgang (siehe {@link PickZiel}).
+     */
+    public static void zeichnen(RenderPipeline pipeline, MeshData netz, Matrix4f modelView, Vector4f farbe,
+        TextureSetup textur, com.mojang.blaze3d.textures.GpuTextureView farbZiel,
+        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel)
+    {
+        if (netz == null)
+        {
+            return;
+        }
+
+        try (GehaltenesNetz kurzlebig = new GehaltenesNetz(netz))
+        {
+            kurzlebig.zeichnen(pipeline, modelView, farbe, textur, farbZiel, tiefenZiel, null);
+        }
+    }
+
+    /**
      * Baut die Texturbindung fuer Vanillas Entity-Weg: BBS-Textur, Overlay und Lichtkarte.
      *
      * <p>Das ersetzt {@code setupOverlayColor()} und {@code turnOnLightLayer()}, die ihren
