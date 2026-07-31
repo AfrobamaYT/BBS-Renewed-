@@ -22,6 +22,7 @@ import java.util.Map;
 public class StencilFormFramebuffer
 {
     private Framebuffer framebuffer;
+    private Texture zwischenbild;
     private Texture hervorhebung;
 
     private int index;
@@ -31,7 +32,7 @@ public class StencilFormFramebuffer
     private FloatBuffer pickBuffer;
 
     /**
-     * Das Zwischenbild fuer den Hervorhebungs-Filter.
+     * Das Zwischenbild der Filterdurchgaenge.
      *
      * <p>26.2: die Hervorhebung wird nicht mehr beim Zeichnen in die Oberflaeche
      * gerechnet, sondern VORHER in diese Textur (siehe Bildfilter) -- die Oberflaeche
@@ -42,24 +43,24 @@ public class StencilFormFramebuffer
      * Zeichenzeitpunkt von der naechsten Aufrufstelle ueberschrieben und alle zeigten
      * dasselbe.
      */
-    public Texture hervorhebung()
+    public Texture zwischenbild()
     {
         Texture quelle = this.framebuffer.getMainTexture();
 
-        if (this.hervorhebung == null)
+        if (this.zwischenbild == null)
         {
-            this.hervorhebung = new Texture();
-            this.hervorhebung.setFilter(GL11.GL_NEAREST);
-            this.hervorhebung.setWrap(GL13.GL_CLAMP_TO_EDGE);
+            this.zwischenbild = new Texture();
+            this.zwischenbild.setFilter(GL11.GL_NEAREST);
+            this.zwischenbild.setWrap(GL13.GL_CLAMP_TO_EDGE);
         }
 
-        if (this.hervorhebung.width != quelle.width || this.hervorhebung.height != quelle.height)
+        if (this.zwischenbild.width != quelle.width || this.zwischenbild.height != quelle.height)
         {
-            this.hervorhebung.bind();
-            this.hervorhebung.setSize(quelle.width, quelle.height);
+            this.zwischenbild.bind();
+            this.zwischenbild.setSize(quelle.width, quelle.height);
         }
 
-        return this.hervorhebung;
+        return this.zwischenbild;
     }
 
     public Framebuffer getFramebuffer()

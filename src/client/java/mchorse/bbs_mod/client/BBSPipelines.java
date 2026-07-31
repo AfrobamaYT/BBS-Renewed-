@@ -61,7 +61,6 @@ public final class BBSPipelines
      * selection in der Vertexfarbe mit; welcher Wert in welchem Kanal steckt, steht im
      * jeweiligen Fragmentshader UND an der Aufrufstelle. */
     private static final RenderPipeline SUBTITLES = guiPipelineMit("subtitles");
-    private static final RenderPipeline MULTILINK = guiPipelineMit("multilink");
     /** Der Name des eigenen Blocks der Filter-Pipelines. Muss zum layout(std140) im Shader passen. */
     public static final String FILTER_BLOCK = "FilterInfo";
 
@@ -76,8 +75,25 @@ public final class BBSPipelines
         .withSampler("Sampler0")
         .build();
 
-    private static final RenderPipeline PICKER_PREVIEW = filterPipeline("picker_preview");
-    private static final RenderPipeline REPLAY_OUTLINE = guiPipelineMit("replay_outline");
+    /**
+     * Wie {@link #GRUPPE_FILTER}, aber mit zwei Quelltexturen -- multilink liest zusaetzlich
+     * das Symbol-Atlasbild fuer das Radiergummi-Muster.
+     *
+     * <p>Zwei Gruppen statt einer mit optionalem zweiten Sampler: eine Pipeline mit einer
+     * Bindung, die niemand fuellt, zeichnet nicht falsch, sondern GAR NICHT.
+     */
+    private static final BindGroupLayout GRUPPE_FILTER2 = BindGroupLayout.builder()
+        .withUniform(FILTER_BLOCK, UniformType.UNIFORM_BUFFER)
+        .withSampler("Sampler0")
+        .withSampler("Sampler1")
+        .build();
+
+    private static final RenderPipeline PICKER_PREVIEW = filterPipeline("picker_preview", GRUPPE_FILTER);
+    private static final RenderPipeline REPLAY_OUTLINE = filterPipeline("replay_outline", GRUPPE_FILTER);
+
+    /* Nach den Bindegruppen, nicht davor: statische Felder werden der Reihe nach
+     * ausgewertet, und ein Vorgriff waere hier null statt eines Fehlers. */
+    private static final RenderPipeline MULTILINK = filterPipeline("multilink", GRUPPE_FILTER2);
 
     /**
      * Der Auswahlrahmen des Textur-Editors (laufende Ameisen um die Auswahl).
@@ -132,7 +148,7 @@ public final class BBSPipelines
      * danach ganz normal blittet. Deshalb darf sie haben, was ein GUI-Element nicht haben
      * kann.
      */
-    private static RenderPipeline filterPipeline(String name)
+    private static RenderPipeline filterPipeline(String name, BindGroupLayout gruppe)
     {
         Identifier shader = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + name);
 
@@ -144,7 +160,7 @@ public final class BBSPipelines
             .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-            .withBindGroupLayout(GRUPPE_FILTER)
+            .withBindGroupLayout(gruppe)
             .withCull(false)
             .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))

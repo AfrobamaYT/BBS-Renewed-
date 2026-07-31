@@ -14,9 +14,20 @@
  *
  * Der Block muss Zeile fuer Zeile zu Bildfilter.schreibeBlock passen -- std140 richtet
  * Felder je nach Typ unterschiedlich aus, darum steht alles als volle 16-Byte-Zeile. */
+/* Der gemeinsame Block ALLER Filter. Er muss vollstaendig und in dieser Reihenfolge
+ * stehen, auch die Felder, die dieser Shader nicht liest -- std140 richtet sonst anders
+ * aus und der Shader liest lautlos falsche Zahlen. Vertrag: Bildfilter.schreibeBlock.
+ *
+ *   Ganz.x  gesuchte Kennung bzw. kleinster Index, ab dem etwas dazugehoert
+ *   Ganz.y  Dicke der Umrandung bzw. Kantenlaenge der Verpixelung
+ *   Ganz.z  Radiergummi an/aus
+ *   Farbe   Hervorhebungs- bzw. Umrissfarbe
+ *   Masse.xy  Schrittweite in UV bzw. Groesse in Texeln
+ */
 layout(std140) uniform FilterInfo {
-    ivec4 Ziel;
-    vec4 Hervorhebung;
+    ivec4 Ganz;
+    vec4 Farbe;
+    vec4 Masse;
 };
 
 uniform sampler2D Sampler0;
@@ -37,10 +48,10 @@ void main()
 
     int index = int(color.r * 255.0) | (int(color.g * 255.0) << 8) | (int(color.b * 255.0) << 16);
 
-    if (index != Ziel.x)
+    if (index != Ganz.x)
     {
         discard;
     }
 
-    fragColor = Hervorhebung;
+    fragColor = Farbe;
 }

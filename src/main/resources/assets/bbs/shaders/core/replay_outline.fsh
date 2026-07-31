@@ -1,82 +1,77 @@
-/* ⛔ NICHT AUF 26.2 UMGESTELLT -- und das ist eine Entwurfsfrage, keine vergessene Zeile.
+#version 330
+
+/* ⛔ WARUM DIESER SHADER NICHT MEHR IN DIE OBERFLAECHE ZEICHNET (Entscheidung 2026-07-31)
  *
- * Dieser Shader braucht mehr eigene Werte, als in der Oberflaeche unterzubringen sind:
- * TargetMin, OutlineColor (4), Thickness und Schritt (2) -- zusammen acht.
- *
- * In 26.2 kann ein GUI-Element KEINE eigenen Uniforms binden (GuiElementRenderState hat
- * vier Methoden, keine davon fuer einen Uniform-Puffer). Der uebliche Ausweg -- Werte in
- * die Vertexfarbe packen -- geht hier NICHT: sie fasst vier Bytes, und vertexColor wird
- * von diesem Shader bereits als Farbe benutzt.
- *
- * Drei Wege stehen offen, alle drei sind Entwurf und keiner ist Uebersetzung:
- *   1. PictureInPictureRenderer -- Mojangs eigener Weg fuer GUI-Inhalte mit eigener
- *      Zeichenlogik (Entity-Vorschau, Buch, Skin). Rendert in eine eigene Textur und
- *      blittet sie; dort ist ein voller Render-Pass samt Uniforms erlaubt.
- *   2. Die Werte reduzieren, bis sie in vier Bytes passen.
- *   3. Ausserhalb der GUI zeichnen -- dann aber VOR dem GUI-Stapel, also nur brauchbar,
- *      wenn das Ergebnis ohnehin hinter der Oberflaeche liegen soll.
- *
- * Bis dahin bleibt die Datei auf #version 150 und dieser Shader laedt nicht. Er ist damit
- * sichtbar kaputt statt still falsch -- das ist Absicht.
+ * Er braucht acht eigene Werte. In 26.2 kann ein GUI-Element keine eigenen Uniforms
+ * binden; die Begruendung und die drei verworfenen Auswege stehen in Bildfilter. Der
+ * Durchgang laeuft jetzt vorher in eine eigene Textur, die die Oberflaeche danach als
+ * ganz normales Bild blittet.
  */
-#version 150
+/* Der gemeinsame Block ALLER Filter. Er muss vollstaendig und in dieser Reihenfolge
+ * stehen, auch die Felder, die dieser Shader nicht liest -- std140 richtet sonst anders
+ * aus und der Shader liest lautlos falsche Zahlen. Vertrag: Bildfilter.schreibeBlock.
+ *
+ *   Ganz.x  gesuchte Kennung bzw. kleinster Index, ab dem etwas dazugehoert
+ *   Ganz.y  Dicke der Umrandung bzw. Kantenlaenge der Verpixelung
+ *   Ganz.z  Radiergummi an/aus
+ *   Farbe   Hervorhebungs- bzw. Umrissfarbe
+ *   Masse.xy  Schrittweite in UV bzw. Groesse in Texeln
+ */
+layout(std140) uniform FilterInfo {
+    ivec4 Ganz;
+    vec4 Farbe;
+    vec4 Masse;
+};
 
 uniform sampler2D Sampler0;
 
-uniform vec4 ColorModulator;
-uniform int TargetMin;
-uniform vec4 OutlineColor;
-uniform int Thickness;
-uniform vec2 Schritt;
-
 in vec2 texCoord0;
-in vec4 vertexColor;
 
 out vec4 fragColor;
 
-/* Der Stencil traegt den Objekt-Index in RGB, Alpha 1 wo ueberhaupt etwas steht. */
+/* Das Auswahlbild traegt den Objekt-Index in RGB, Alpha 1 wo ueberhaupt etwas steht. */
 int indexVon(vec4 c)
 {
     return int(c.r * 255.0) | (int(c.g * 255.0) << 8) | (int(c.b * 255.0) << 16);
 }
 
-/* Alles AB TargetMin gehoert zum bearbeiteten Replay: dessen Index zaehlt beim Zeichnen
+/* Alles AB Ganz.x gehoert zum bearbeiteten Replay: dessen Index zaehlt beim Zeichnen
  * pro Knochen hoch, damit man Knochen anklicken kann. */
 bool gehoertDazu(vec2 uv)
 {
     vec4 c = texture(Sampler0, uv);
 
-    return c.a >= 1.0 && indexVon(c) >= TargetMin;
+    return c.a >= 1.0 && indexVon(c) >= Ganz.x;
 }
 
 void main()
 {
-    /* Innen wird nicht eingefaerbt — Blender umrandet, es fuellt nicht. */
+    /* Innen wird nicht eingefaerbt -- Blender umrandet, es fuellt nicht. */
     if (gehoertDazu(texCoord0))
     {
         discard;
     }
 
-    /* ⚠ Schritt kommt von aussen und ist EIN BILDSCHIRMPIXEL in UV-Einheiten, nicht ein
-     * Texel. Der Stencil hat Video-Aufloesung (2560x1440), das Viereck auf dem Schirm ist
-     * gut halb so breit — mit 1.0/textureSize lag der Nachbar im selben Bildschirmpixel und
-     * erreichte die Figur nie. Gemessen am 2026-07-29: ±1 Texel fand 402 Randpixel, ±4 weitere
-     * 978, ±12 nochmal 2375. Die Linie war also gestrichelt statt durchgezogen. */
-    for (int y = -Thickness; y <= Thickness; y++)
+    /* ⚠ Masse.xy ist EIN BILDSCHIRMPIXEL in UV-Einheiten, nicht ein Texel. Das
+     * Auswahlbild hat Videoaufloesung (2560x1440), das Viereck auf dem Schirm ist gut
+     * halb so breit -- mit 1.0/textureSize lag der Nachbar im selben Bildschirmpixel und
+     * erreichte die Figur nie. Gemessen am 2026-07-29: +-1 Texel fand 402 Randpixel, +-4
+     * weitere 978, +-12 nochmal 2375. Die Linie war also gestrichelt statt durchgezogen. */
+    for (int y = -Ganz.y; y <= Ganz.y; y++)
     {
-        for (int x = -Thickness; x <= Thickness; x++)
+        for (int x = -Ganz.y; x <= Ganz.y; x++)
         {
             if (x == 0 && y == 0)
             {
                 continue;
             }
 
-            /* Ein Pixel gehoert zur Linie, wenn er selbst draussen ist und in Reichweite ein
-             * Nachbar drinnen liegt. Quadratische Nachbarschaft statt Kreuz, sonst franst die
-             * Linie an schraegen Kanten aus. */
-            if (gehoertDazu(texCoord0 + vec2(float(x), float(y)) * Schritt))
+            /* Ein Pixel gehoert zur Linie, wenn er selbst draussen ist und in Reichweite
+             * ein Nachbar drinnen liegt. Quadratische Nachbarschaft statt Kreuz, sonst
+             * franst die Linie an schraegen Kanten aus. */
+            if (gehoertDazu(texCoord0 + vec2(float(x), float(y)) * Masse.xy))
             {
-                fragColor = OutlineColor * ColorModulator;
+                fragColor = Farbe;
 
                 return;
             }

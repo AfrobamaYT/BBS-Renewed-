@@ -12,7 +12,6 @@ import mchorse.bbs_mod.ui.utils.StencilFormFramebuffer;
 import mchorse.bbs_mod.utils.colors.Colors;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import mchorse.bbs_mod.utils.Pair;
-import com.mojang.blaze3d.shaders.Uniform;
 
 import java.util.function.Supplier;
 
@@ -108,16 +107,14 @@ public final class StencilAnzeige
             return;
         }
 
-        Supplier<RenderPipeline> lieferant = BBSShaders::getReplayOutlineProgram;
-
-        setzeInt(programm, "TargetMin", abIndex);
-        setzeFarbe(programm, "OutlineColor", farbe);
-        setzeInt(programm, "Thickness", breite);
-
-        /* Ein Bildschirmpixel in UV-Einheiten. Die Kachel unten spannt die ganze Textur auf,
-         * also ist 1/Breite genau ein Pixel — das muss der Shader wissen, weil der Stencil in
-         * Video-Aufloesung liegt und ein Texel dort viel kleiner ist als ein Pixel hier. */
-        setzeZwei(programm, "Schritt", 1F / area.w, 1F / area.h);
+        /* Der Umriss wird VORHER in ein eigenes Bild gerechnet; die Oberflaeche blittet
+         * danach nur ein fertiges Bild. Grund und verworfene Auswege: Bildfilter.
+         *
+         * ⚠ Die Schrittweite ist EIN BILDSCHIRMPIXEL in UV-Einheiten, nicht ein Texel. Die
+         * Kachel spannt die ganze Textur auf, also ist 1/Breite genau ein Pixel -- der
+         * Stencil liegt in Videoaufloesung und ein Texel dort ist viel kleiner. */
+        mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
+            abIndex, farbe, breite, 1F / area.w, 1F / area.h);
 
         int w = texture.width;
         int h = texture.height;
@@ -130,7 +127,7 @@ public final class StencilAnzeige
          * der Kante durchsichtige Pixel, ohne Mischung deckte diese Kachel das ganze
          * Vorschaubild zu. Die Pipeline hinter getReplayOutlineProgram() muss deshalb
          * BlendFunction.TRANSLUCENT tragen. */
-        context.batcher.texturedBox(lieferant, texture.id, Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, stencil.zwischenbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
     }
 
     /**
@@ -210,35 +207,5 @@ public final class StencilAnzeige
         }
 
         return ueberfahren;
-    }
-
-    private static void setzeInt(RenderPipeline programm, String name, int wert)
-    {
-        Uniform uniform = programm.getUniform(name);
-
-        if (uniform != null)
-        {
-            uniform.set(wert);
-        }
-    }
-
-    private static void setzeZwei(RenderPipeline programm, String name, float a, float b)
-    {
-        Uniform uniform = programm.getUniform(name);
-
-        if (uniform != null)
-        {
-            uniform.set(a, b);
-        }
-    }
-
-    private static void setzeFarbe(RenderPipeline programm, String name, int farbe)
-    {
-        Uniform uniform = programm.getUniform(name);
-
-        if (uniform != null)
-        {
-            uniform.set(Colors.getR(farbe), Colors.getG(farbe), Colors.getB(farbe), Colors.getA(farbe));
-        }
     }
 }

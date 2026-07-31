@@ -66,7 +66,18 @@ import java.nio.ByteOrder;
 public final class Bildfilter
 {
     /** Der Block ist absichtlich aus vollen 16-Byte-Zeilen gebaut, siehe ModelVAORenderer. */
-    private static final int BLOCK_GROESSE = 2 * 16;
+    /**
+     * EIN Block fuer alle Filter, absichtlich als Vereinigung statt drei getrennter.
+     *
+     * <p>Die drei Shader brauchen verschiedene Werte, aber alle nur wenige. Drei Bloecke
+     * hiessen drei Bindegruppen, drei Groessen und drei Gelegenheiten, std140 falsch
+     * auszurichten. Ein gemeinsamer Block kostet ein paar ungenutzte Bytes und hat dafuer
+     * genau EINE Reihenfolge, die Java und GLSL teilen.
+     *
+     * <p>⚠️ Jeder Shader muss den Block VOLLSTAENDIG und in gleicher Reihenfolge
+     * deklarieren, auch die Felder, die er nicht liest. std140 richtet sonst anders aus.
+     */
+    private static final int BLOCK_GROESSE = 3 * 16;
 
     private static GpuBuffer block;
 
@@ -80,14 +91,47 @@ public final class Bildfilter
      */
     public static void kennungHervorheben(Texture quelle, Texture ziel, int kennung, int farbe)
     {
-        schreibeBlock(kennung, farbe);
+        schreibeBlock(kennung, 0, 0, farbe, 0F, 0F);
 
-        /* Der Shader verwirft alles, was nicht getroffen ist -- ohne Loeschen bliebe
-         * dort das Bild des letzten Aufrufs stehen. */
+        loeschen(ziel);
+
+        lauf(BBSPipelines.getPickerPreview(), quelle, null, ziel.view());
+    }
+
+    /**
+     * Zeichnet einen Umriss um alles, was ab {@code abIndex} im Auswahlbild steht.
+     *
+     * @param schrittX ein BILDSCHIRMpixel in UV-Einheiten, nicht ein Texel -- das
+     *                 Auswahlbild hat Videoaufloesung, ein Texel darin ist viel kleiner
+     *                 als ein Pixel auf dem Schirm. Mit Texeln lag der Nachbar im selben
+     *                 Bildschirmpixel und die Linie war gestrichelt statt durchgezogen.
+     */
+    public static void umrissZeichnen(Texture quelle, Texture ziel, int abIndex, int farbe, int breite, float schrittX, float schrittY)
+    {
+        schreibeBlock(abIndex, breite, 0, farbe, schrittX, schrittY);
+        loeschen(ziel);
+
+        lauf(BBSPipelines.getReplayOutline(), quelle, null, ziel.view());
+    }
+
+    /**
+     * Verpixelt eine Textur oder legt das Radiergummi-Muster darueber.
+     *
+     * @param atlas das Symbol-Atlasbild -- der Radiergummi-Zweig liest sein Muster daraus
+     */
+    public static void pixelnRadieren(Texture quelle, Texture atlas, Texture ziel, float breite, float hoehe, int kantenlaenge, boolean radieren)
+    {
+        schreibeBlock(0, kantenlaenge, radieren ? 1 : 0, 0, breite, hoehe);
+        loeschen(ziel);
+
+        lauf(BBSPipelines.getMultilink(), quelle, atlas, ziel.view());
+    }
+
+    /** Der Shader verwirft, was er nicht trifft -- ohne Loeschen bliebe das letzte Bild stehen. */
+    private static void loeschen(Texture ziel)
+    {
         RenderSystem.getDevice().createCommandEncoder()
             .clearColorTexture(ziel.gpu(), new org.joml.Vector4f(0F, 0F, 0F, 0F));
-
-        lauf(BBSPipelines.getPickerPreview(), quelle, ziel.view());
     }
 
     /**
@@ -97,7 +141,7 @@ public final class Bildfilter
      * flache Projektion darauf -- der Durchgang deckt damit genau das Ziel ab, unabhaengig
      * von dessen Groesse.
      */
-    private static void lauf(RenderPipeline pipeline, Texture quelle, GpuTextureView ziel)
+    private static void lauf(RenderPipeline pipeline, Texture quelle, Texture zweite, GpuTextureView ziel)
     {
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(512))
         {
@@ -113,14 +157,16 @@ public final class Bildfilter
                 netz.zeichnen(pipeline,
                     new Matrix4f().setOrtho(0F, 1F, 0F, 1F, -1F, 1F),
                     null,
-                    TextureSetup.singleTexture(quelle.view(), quelle.sampler()),
+                    zweite == null
+                        ? TextureSetup.singleTexture(quelle.view(), quelle.sampler())
+                        : TextureSetup.doubleTexture(quelle.view(), quelle.sampler(), zweite.view(), zweite.sampler()),
                     ziel, null,
                     (durchgang) -> durchgang.setUniform(BBSPipelines.FILTER_BLOCK, block));
             }
         }
     }
 
-    private static void schreibeBlock(int kennung, int farbe)
+    private static void schreibeBlock(int ganz1, int ganz2, int ganz3, int farbe, float masseX, float masseY)
     {
         if (block == null)
         {
@@ -132,14 +178,18 @@ public final class Bildfilter
 
         try
         {
-            /* Zeile 1: die gesuchte Kennung, der Rest ist Fuellung. */
-            roh.putInt(kennung).putInt(0).putInt(0).putInt(0);
+            /* Zeile 1 (ivec4 Ganz): x = gesuchte Kennung bzw. kleinster Index, y = Dicke
+             * bzw. Kantenlaenge der Verpixelung, z = Radiergummi an/aus. */
+            roh.putInt(ganz1).putInt(ganz2).putInt(ganz3).putInt(0);
 
-            /* Zeile 2: die Farbe, aus ARGB in vier Fliesskommawerte zerlegt. */
+            /* Zeile 2 (vec4 Farbe): aus gepacktem ARGB in vier Fliesskommawerte. */
             roh.putFloat((farbe >> 16 & 0xFF) / 255F);
             roh.putFloat((farbe >> 8 & 0xFF) / 255F);
             roh.putFloat((farbe & 0xFF) / 255F);
-            roh.putFloat((farbe >> 24 & 0xFF) / 255F);
+            roh.putFloat((farbe >>> 24 & 0xFF) / 255F);
+
+            /* Zeile 3 (vec4 Masse): x/y = Schrittweite bzw. Groesse in Texeln. */
+            roh.putFloat(masseX).putFloat(masseY).putFloat(0F).putFloat(0F);
 
             roh.flip();
 

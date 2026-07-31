@@ -464,10 +464,10 @@ public class Gizmo
          * fuenf Werte als Uniform-Block haben, die ein GUI-Element nicht haben kann.
          * Entscheidung und Begruendung stehen in Bildfilter. */
         mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
-            this.sphereHighlight.hervorhebung(), STENCIL_TRACKBALL,
+            this.sphereHighlight.zwischenbild(), STENCIL_TRACKBALL,
             BBSSettings.stencilHighlightColor.get());
         context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-            this.sphereHighlight.hervorhebung(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+            this.sphereHighlight.zwischenbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
     }
 
     /**

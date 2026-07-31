@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.framework.elements.input.multilink;
 
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -24,6 +23,35 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 public class UIMultiLinkEditor extends UICanvasEditor
 {
+    /**
+     * Zwischenbilder der Filterdurchgaenge, eines je Kind.
+     *
+     * <p>Sie liegen hier und nicht am FilteredLink: der steht im gemeinsamen Quellbaum
+     * und darf keine Client-Textur kennen.
+     */
+    private final java.util.Map<Object, Texture> zwischenbilder = new java.util.HashMap<>();
+
+    private Texture zwischenbild(Object kind, Texture vorlage)
+    {
+        Texture bild = this.zwischenbilder.computeIfAbsent(kind, (k) ->
+        {
+            Texture neu = new Texture();
+
+            neu.setFilter(org.lwjgl.opengl.GL11.GL_NEAREST);
+            neu.setWrap(org.lwjgl.opengl.GL13.GL_CLAMP_TO_EDGE);
+
+            return neu;
+        });
+
+        if (bild.width != vorlage.width || bild.height != vorlage.height)
+        {
+            bild.bind();
+            bild.setSize(vorlage.width, vorlage.height);
+        }
+
+        return bild;
+    }
+
     public UITexturePicker picker;
     public FilteredLink link;
 
@@ -223,24 +251,27 @@ public class UIMultiLinkEditor extends UICanvasEditor
                     context.batcher.box(area.x, area.y, area.ex(), area.ey(), Colors.setA(Colors.RED, 0.25F));
                 }
 
-                RenderPipeline shader = GameRenderer.getPositionTexColorShader();
+                Texture zuZeichnen = texture;
 
                 if (needsMultLinkShader)
                 {
-                    shader = BBSShaders.getMultilinkProgram();
+                    /* Verpixeln und Radiergummi werden VORHER in ein eigenes Bild gerechnet; die
+                     * Oberflaeche blittet danach nur ein fertiges Bild. Grund und verworfene
+                     * Auswege stehen in Bildfilter.
+                     *
+                     * ⚠ Eigenes Zwischenbild je Kind: die Oberflaeche zeichnet erst, nachdem alles
+                     * gesammelt ist -- ein geteiltes waere zum Zeichenzeitpunkt vom naechsten Kind
+                     * ueberschrieben und alle zeigten dasselbe. */
+                    zuZeichnen = this.zwischenbild(child, texture);
 
-                    Uniform size = shader.getUniform("Size");
-                    Uniform filters = shader.getUniform("Filters");
-
-                    size.set((float) ow, (float) oh);
-                    filters.setMat2x2((float) child.pixelate, child.erase ? 1F : 0F, 0F, 0F);
+                    mchorse.bbs_mod.graphics.Bildfilter.pixelnRadieren(texture,
+                        context.render.getTextures().getTexture(Icons.ATLAS), zuZeichnen,
+                        ow, oh, child.pixelate, child.erase);
                 }
 
-                RenderSystem.setShaderTexture(3, context.render.getTextures().getTexture(Icons.ATLAS).id);
+                final Texture geblittet = zuZeichnen;
 
-                final RenderPipeline finalProgram = shader;
-
-                context.batcher.texturedBox(() -> finalProgram, texture, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
+                context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, geblittet, child.color, area.x, area.y, area.w, area.h, 0, 0, texture.width, texture.height, texture.width, texture.height);
             }
         }
     }
