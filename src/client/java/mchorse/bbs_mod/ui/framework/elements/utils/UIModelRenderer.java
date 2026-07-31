@@ -325,10 +325,24 @@ public abstract class UIModelRenderer extends UIElement
         stack.popPose();
 
         /* Return back to orthographic projection */
-        /* 26.2: RenderSystem.viewport ist entfallen -- der Ausschnitt gehoert zum
-         * Zeichendurchgang, nicht mehr in einen globalen Aufruf (siehe Zeichenbereich).
-         * Hier stand ohnehin nur das ZURUECKSETZEN auf das ganze Fenster; gesetzt hat ihn
-         * niemand mehr, seit setupViewport() unten ohne viewport-Aufruf auskommt. */
+        /* ⛔ HIER STAND, DAS ZURUECKSETZEN SEI UNNOETIG -- DAS WAR FALSCH (2026-08-01).
+         *
+         * Der alte Kommentar begruendete das Weglassen damit, "gesetzt hat ihn niemand mehr,
+         * seit setupViewport() ohne viewport-Aufruf auskommt". setupViewport() SETZT ihn
+         * aber: es ruft UIUtils.viewportArea, und die meldet den Ausschnitt bei
+         * Zeichenbereich an (UIUtils:114).
+         *
+         * Folge des Weglassens: der Ausschnitt dieser Vorschau blieb nach dem Bild stehen.
+         * Einziger Verbraucher ist GehaltenesNetz:133 -- also erbte JEDER spaetere
+         * Netz-Zeichenauftrag das Rechteck dieses Panels, bis zufaellig ein Gizmo aufraeumte
+         * (Gizmo:684 und :1605 sind die einzigen freigeben()-Aufrufe im Baum).
+         *
+         * ⚠️ Der Klassenkommentar von Zeichenbereich verspricht ein finally beim Aufrufer.
+         * Das loest dieser Aufruf NICHT ein: fliegt oben eine Ausnahme, bleibt der Ausschnitt
+         * stehen. Der normale Weg ist damit dicht, der Ausnahmeweg nicht -- bewusst so, weil
+         * ein try/finally hier den ganzen Rumpf einruecken wuerde. */
+        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
+
         MatrixStackUtils.restoreMatrices();
 
         /* Das GL_ALWAYS entfaellt ersatzlos: es setzte den globalen Tiefenvergleich fuer die

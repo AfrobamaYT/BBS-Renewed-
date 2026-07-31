@@ -21,9 +21,18 @@ import com.mojang.blaze3d.systems.RenderPass;
  * (in jedem einzelnen Zeichenaufruf). Ihn als Parameter durchzureichen hiesse, ein Dutzend
  * Signaturen anzufassen, die sonst nichts mit Oberflaeche zu tun haben.
  *
- * <p>Unterschied zum alten globalen Zustand: es steckt an EINER Stelle, es heisst wie das,
- * was es tut, und {@link #freigeben()} laeuft im finally-Zweig der Aufrufer -- ein
- * vergessenes Zuruecksetzen kann nicht wie frueher alle folgenden Bilder abschneiden.
+ * <p>Unterschied zum alten globalen Zustand: es steckt an EINER Stelle und es heisst wie
+ * das, was es tut.
+ *
+ * <p>⚠️ HIER STAND, {@link #freigeben()} laufe "im finally-Zweig der Aufrufer" -- das war
+ * nie wahr. Am 2026-08-01 gab es im ganzen Baum genau zwei Freigaben (Gizmo:684 und :1605)
+ * gegen drei Anmeldungen; der dritte Aufrufer (UIModelRenderer) gab nie frei, und sein
+ * Ausschnitt blieb ueber das Bild hinaus stehen. Ein vergessenes Zuruecksetzen schneidet
+ * hier sehr wohl alles Folgende ab -- nur trifft es statt aller Bilder eben alle
+ * Netz-Zeichenauftraege (einziger Verbraucher: GehaltenesNetz).
+ *
+ * <p>Wer {@link #setzen} ruft, gibt selbst wieder frei. Das ist eine Pflicht des Aufrufers,
+ * keine Eigenschaft dieser Klasse.
  *
  * <p>{@code null} bedeutet: ganzes Ziel, kein Ausschnitt. Das ist der Normalfall.
  */
