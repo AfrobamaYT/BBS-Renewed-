@@ -190,7 +190,7 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
         catch (Exception e)
         {}
 
-        this.entity = BuiltInRegistries.ENTITY_TYPE.get(Identifier.parse(id)).create(Minecraft.getInstance().level);
+        this.entity = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.parse(id)).create(Minecraft.getInstance().level);
 
         if (this.entity == null && this.form.isPlayer())
         {

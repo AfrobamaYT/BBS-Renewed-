@@ -167,17 +167,18 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
 
         try
         {
-            ParticleType<?> type = BuiltInRegistries.PARTICLE_TYPE.get(settings.particle);
+            ParticleType<?> type = BuiltInRegistries.PARTICLE_TYPE.getValue(settings.particle);
             boolean bareId = !args.isEmpty() && args.charAt(0) != '{';
 
             if (bareId && type == ParticleTypes.BLOCK)
             {
-                return new BlockParticleOption(ParticleTypes.BLOCK, BuiltInRegistries.BLOCK.get(Identifier.parse(args)).defaultBlockState());
+                return new BlockParticleOption(ParticleTypes.BLOCK, BuiltInRegistries.BLOCK.getValue(Identifier.parse(args)).defaultBlockState());
             }
 
             if (bareId && type == ParticleTypes.ITEM)
             {
-                return new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(args))));
+                /* 26.2: ItemParticleOption nimmt den Item, nicht mehr einen ItemStack. */
+                return new ItemParticleOption(ParticleTypes.ITEM, BuiltInRegistries.ITEM.getValue(Identifier.parse(args)));
             }
 
             if (bareId && type == ParticleTypes.ENTITY_EFFECT)

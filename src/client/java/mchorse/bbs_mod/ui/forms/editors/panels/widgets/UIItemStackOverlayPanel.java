@@ -114,7 +114,7 @@ public class UIItemStackOverlayPanel extends UIOverlayPanel
 
     private void setItem(String s)
     {
-        this.stack = new ItemStack(BuiltInRegistries.ITEM.get(Identifier.parse(s)));
+        this.stack = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(s)));
 
         this.pickItemStack(this.stack);
         this.updateNbt();

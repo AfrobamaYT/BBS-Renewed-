@@ -110,7 +110,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
+                Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(id));
 
                 return new ItemStack(item).getHoverName().getString();
             }
@@ -129,7 +129,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         {
             try
             {
-                return BuiltInRegistries.BLOCK.get(Identifier.parse(id)).getName().getString();
+                return BuiltInRegistries.BLOCK.getValue(Identifier.parse(id)).getName().getString();
             }
             catch (Exception e)
             {
@@ -148,10 +148,10 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
                 if (mode == PickerMode.ITEM)
                 {
-                    return new ItemStack(BuiltInRegistries.ITEM.get(rid));
+                    return new ItemStack(BuiltInRegistries.ITEM.getValue(rid));
                 }
 
-                Block block = BuiltInRegistries.BLOCK.get(rid);
+                Block block = BuiltInRegistries.BLOCK.getValue(rid);
                 Item item = block.asItem();
 
                 return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
@@ -367,7 +367,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
         if (this.mode == PickerMode.ITEM)
         {
-            Item item = BuiltInRegistries.ITEM.get(Identifier.parse(id));
+            Item item = BuiltInRegistries.ITEM.getValue(Identifier.parse(id));
             ItemStack selected;
 
             if (this.itemStack != null && !this.itemStack.isEmpty() && this.itemStack.getItem() == item)
@@ -393,7 +393,7 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
         }
         else
         {
-            Block block = BuiltInRegistries.BLOCK.get(Identifier.parse(id));
+            Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
             BlockState selectedState = block.defaultBlockState();
 
             if (this.blockState != null && this.blockState.getBlock() == block)

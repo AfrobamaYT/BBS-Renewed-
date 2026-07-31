@@ -53,7 +53,7 @@ public class UIParticleColorPresets extends UIElement
      */
     public static boolean supportsColor(Identifier particle)
     {
-        return particle != null && BuiltInRegistries.PARTICLE_TYPE.get(particle) == ParticleTypes.ENTITY_EFFECT;
+        return particle != null && BuiltInRegistries.PARTICLE_TYPE.getValue(particle) == ParticleTypes.ENTITY_EFFECT;
     }
 
     /** The status effect's own colour, in the argument form the renderer parses. */
@@ -114,7 +114,7 @@ public class UIParticleColorPresets extends UIElement
 
         for (ResourceKey<MobEffect> key : BuiltInRegistries.MOB_EFFECT.registryKeySet())
         {
-            MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(key);
+            MobEffect effect = BuiltInRegistries.MOB_EFFECT.getValue(key);
 
             if (effect != null && args.equals(toArguments(effect)))
             {
@@ -143,7 +143,7 @@ public class UIParticleColorPresets extends UIElement
 
     private void setEffect(Identifier id)
     {
-        MobEffect effect = BuiltInRegistries.MOB_EFFECT.get(id);
+        MobEffect effect = BuiltInRegistries.MOB_EFFECT.getValue(id);
 
         if (effect == null)
         {
