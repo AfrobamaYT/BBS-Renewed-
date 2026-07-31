@@ -89,7 +89,7 @@ public final class RecordFromKeyframesHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputConstants.isKeyDown(handle, k)) return false;
+            if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
         }
         return true;
     }

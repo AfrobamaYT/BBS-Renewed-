@@ -651,7 +651,7 @@ public final class EditorShortcuts
 
     private static boolean isKeyHeld(long handle, int key)
     {
-        try { return InputConstants.isKeyDown(handle, key); } catch (Throwable t) { return false; }
+        try { return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), key); } catch (Throwable t) { return false; }
     }
 
     private static void actionBar(Minecraft client, String msg)

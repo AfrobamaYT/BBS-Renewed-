@@ -61,11 +61,11 @@ public final class BBSToolsTransparency
         {
             if (client == null || client.getWindow() == null) return;
             long handle = client.getWindow().handle();
-            boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-                        || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
-            boolean alt = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_ALT)
-                       || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_ALT);
-            boolean t = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T);
+            boolean ctrl = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
+                        || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
+            boolean alt = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
+                       || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
+            boolean t = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T);
             boolean combo = ctrl && alt && t;
             if (combo && !lastKeyDown)
             {

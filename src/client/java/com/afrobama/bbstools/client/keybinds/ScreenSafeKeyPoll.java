@@ -105,16 +105,16 @@ public final class ScreenSafeKeyPoll
             return GLFW.glfwGetMouseButton(handle, code) == GLFW.GLFW_PRESS;
         }
 
-        return InputConstants.isKeyDown(handle, code);
+        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), code);
     }
 
     private static boolean anyModifierDown(long handle)
     {
-        return InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_ALT)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_ALT);
+        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_ALT)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_ALT);
     }
 }

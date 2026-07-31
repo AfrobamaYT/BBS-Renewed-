@@ -91,7 +91,7 @@ public final class FilmEditorUserActivity
 
             try
             {
-                if (InputConstants.isKeyDown(handle, key))
+                if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), key))
                 {
                     return true;
                 }

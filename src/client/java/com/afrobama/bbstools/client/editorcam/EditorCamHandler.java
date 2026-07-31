@@ -128,7 +128,7 @@ public final class EditorCamHandler
         for (Integer k : combo.keys)
         {
             if (k == null) return false;
-            if (!InputConstants.isKeyDown(windowHandle, k)) return false;
+            if (!InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), k)) return false;
         }
         return true;
     }

@@ -198,7 +198,7 @@ public class UIClipCameraPreview extends UIElement
          *  (javap: isKeyDown(com.mojang.blaze3d.platform.Window, int)).
          *  Darum wandert der Typ von long auf Window durch alle Tastenabfragen. */
         Window handle = Minecraft.getInstance().getWindow();
-        boolean fDown = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_F);
+        boolean fDown = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_F);
         if (hovered && fDown && !lastFPressed)
         {
             if (!this.freeMode)
@@ -444,10 +444,10 @@ public class UIClipCameraPreview extends UIElement
         if (pick == null || pick.form == null) return true;
 
         Window handle = Minecraft.getInstance().getWindow();
-        boolean shift = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_SHIFT);
-        boolean ctrl = InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
-            || InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_RIGHT_CONTROL);
+        boolean shift = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_SHIFT);
+        boolean ctrl = InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)
+            || InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_RIGHT_CONTROL);
 
         mchorse.bbs_mod.ui.film.UIFilmPanel panel = BoneHoverPickRunner.findPanel();
         if (panel == null) return true;
@@ -549,18 +549,18 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
         double dx = 0, dy = 0, dz = 0;
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_SPACE))      { dy += speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { dy -= speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_W)) { dx += forwardX * speed; dz += forwardZ * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_S)) { dx -= forwardX * speed; dz -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_A)) { dx -= rightX   * speed; dz -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_D)) { dx += rightX   * speed; dz += rightZ   * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_SPACE))      { dy += speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)) { dy -= speed; }
 
         if (dx != 0 || dy != 0 || dz != 0)
         {
@@ -569,7 +569,7 @@ public class UIClipCameraPreview extends UIElement
         }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             rotSpeed *= 2F;
         }
@@ -578,10 +578,10 @@ public class UIClipCameraPreview extends UIElement
         double newYaw   = angle.y;
         boolean rotChanged = false;
 
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_Q)) { newYaw -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_E)) { newYaw += rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T)) { newPitch -= rotSpeed; rotChanged = true; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_G)) { newPitch += rotSpeed; rotChanged = true; }
 
         if (rotChanged)
         {
@@ -642,28 +642,28 @@ public class UIClipCameraPreview extends UIElement
         float rightZ   =  (float) Math.sin(yawRad);
 
         float speed = MOVE_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             speed *= MOVE_FAST_MULT;
         }
 
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_SPACE)) { this.freePose[1] += speed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_CONTROL)) { this.freePose[1] -= speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_W)) { this.freePose[0] += forwardX * speed; this.freePose[2] += forwardZ * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_S)) { this.freePose[0] -= forwardX * speed; this.freePose[2] -= forwardZ * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_A)) { this.freePose[0] -= rightX   * speed; this.freePose[2] -= rightZ   * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_D)) { this.freePose[0] += rightX   * speed; this.freePose[2] += rightZ   * speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_SPACE)) { this.freePose[1] += speed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)) { this.freePose[1] -= speed; }
 
         float rotSpeed = ROT_BASE_PER_FRAME;
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_LEFT_SHIFT))
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT))
         {
             rotSpeed *= 2F;
         }
 
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_Q)) { this.freePose[3] -= rotSpeed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_E)) { this.freePose[3] += rotSpeed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_T)) { this.freePose[4] -= rotSpeed; }
-        if (InputConstants.isKeyDown(handle, GLFW.GLFW_KEY_G)) { this.freePose[4] += rotSpeed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_Q)) { this.freePose[3] -= rotSpeed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_E)) { this.freePose[3] += rotSpeed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_T)) { this.freePose[4] -= rotSpeed; }
+        if (InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_G)) { this.freePose[4] += rotSpeed; }
 
         if (this.freePose[4] > 89F) this.freePose[4] = 89F;
         if (this.freePose[4] < -89F) this.freePose[4] = -89F;
