@@ -766,11 +766,11 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
 
         advanceShowTransitions();
         Minecraft mc = Minecraft.getInstance();
-        savedHudHiddenForLevel = mc.gui.isHidden();
+        savedHudHiddenForLevel = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
         if (handNeeded)
         {
-            mc.gui.setHidden(false);
+            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
             swapHandState();
             savedPerspectiveForLevel = mc.options.getCameraType();
             mc.options.setCameraType(CameraType.FIRST_PERSON);
@@ -793,7 +793,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
 
         Minecraft mc = Minecraft.getInstance();
-        mc.gui.setHidden(shouldRenderHud() ? false : savedHudHiddenForLevel);
+        mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(shouldRenderHud() ? false : savedHudHiddenForLevel);
     }
 
     public static void beginHandRendering()
@@ -803,8 +803,8 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         Minecraft mc = Minecraft.getInstance();
         if (!levelRenderingActive)
         {
-            savedHudHidden = mc.gui.isHidden();
-            mc.gui.setHidden(false);
+            savedHudHidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
+            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
             swapHandState();
         }
 
@@ -833,7 +833,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         if (!levelRenderingActive)
         {
             restoreHandState();
-            Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = savedHudHidden;
+            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(savedHudHidden);
         }
         if (handProjectionSwapped)
         {
@@ -866,7 +866,7 @@ public class BBSToolsTrackerClientClip extends BBSToolsTrackerClip
         }
         endHudScaleRestore();
         restorePlayer();
-        Minecraft.getInstance().Minecraft.getInstance().gui.isHidden() = savedHudHiddenForLevel;
+        mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(savedHudHiddenForLevel);
     }
 
     /* ========================================================

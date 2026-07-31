@@ -1485,7 +1485,7 @@ public abstract class BaseFilmController
         {
             FilmControllerContext filmContext = getFilmControllerContext(context, replay, entity);
 
-            filmContext.transition = getTransition(entity, context.tickCounter().getGameTimeDeltaPartialTick(false));
+            filmContext.transition = getTransition(entity, net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
 
             renderEntity(filmContext);
         }

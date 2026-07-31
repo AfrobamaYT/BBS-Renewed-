@@ -903,11 +903,11 @@ public final class BlockShatterPropagator
                     {
                         boolean dup = blocksDestroyed > 0 && spawnCalls > blocksDestroyed;
                         String color = dup ? "§c" : "§a";
-                        mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                             "§6[BBSTools-debug] §fdestroyed=§e" + blocksDestroyed
                             + " §fspawnCalls=" + color + spawnCalls
                             + " §fratio=" + color + String.format("%.2f", spawnRatio)
-                            + (dup ? " §c(SPAWN-PATH DOUBLES!)" : " §a(spawn-path 1:1)")), false);
+                            + (dup ? " §c(SPAWN-PATH DOUBLES!)" : " §a(spawn-path 1:1)")));
                     }
                 }
                 catch (Throwable ignored) {}

@@ -72,9 +72,9 @@ public final class BBSToolsTransparency
                 toggle();
                 if (client.player != null)
                 {
-                    client.player.displayClientMessage(Component.literal(
+                    net.minecraft.client.Minecraft.getInstance().gui.hud.setOverlayMessage(Component.literal(
                         String.format("§a[BBSTools] §fEditor-Hintergrund-Transparenz: §b%d%%",
-                            Math.round(PANEL_BG_ALPHA * 100F))), true);
+                            Math.round(PANEL_BG_ALPHA * 100F))), false);
                 }
             }
             lastKeyDown = combo;

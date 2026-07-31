@@ -72,7 +72,7 @@ public class WorldFilmController extends BaseFilmController
         }
 
         this.context.clipData.clear();
-        this.context.setup(tick, context.tickCounter().getGameTimeDeltaPartialTick(false));
+        this.context.setup(tick, net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false));
 
         for (Clip clip : clips)
         {

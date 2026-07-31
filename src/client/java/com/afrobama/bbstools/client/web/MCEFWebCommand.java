@@ -60,7 +60,7 @@ public final class MCEFWebCommand
                 BBSWebBridge.bbsParent = client.gui.screen();
 
                 LoggerFactory.getLogger("bbstools-web").info("[web] tick-open MCEFWebScreen({}) parent={}", url, client.gui.screen());
-                client.setScreen(new MCEFWebScreen(url));
+                client.gui.setScreen(new MCEFWebScreen(url));
             }
         });
     }

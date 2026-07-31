@@ -92,7 +92,7 @@ public class FilmControllerContext
         this.camera = context.levelState().cameraRenderState;
         this.stack = context.poseStack();
         this.consumers = context.consumers();
-        this.transition = context.tickCounter().getGameTimeDeltaPartialTick(false);
+        this.transition = net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
 
         return this;
     }

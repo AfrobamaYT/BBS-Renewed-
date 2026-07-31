@@ -172,7 +172,7 @@ public final class RecordFromKeyframesHandler
              *  same behaviour as the in-editor "outside" group does. */
             if (mc.gui.screen() != null)
             {
-                mc.setScreen(null);
+                mc.gui.setScreen(null);
             }
 
             films.startRecording(panel.getData(), index, cursor);

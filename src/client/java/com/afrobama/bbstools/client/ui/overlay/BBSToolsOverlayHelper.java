@@ -29,7 +29,7 @@ public final class BBSToolsOverlayHelper
      *  reserve (0.35F-0.6F is the existing convention). */
     public static void open(UIOverlayPanel panel, int width, float heightPct)
     {
-        panel.onClose((event) -> Minecraft.getInstance().setScreen(null));
+        panel.onClose((event) -> Minecraft.getInstance().gui.setScreen(null));
 
         UIScreen.open(new UIBaseMenu()
         {

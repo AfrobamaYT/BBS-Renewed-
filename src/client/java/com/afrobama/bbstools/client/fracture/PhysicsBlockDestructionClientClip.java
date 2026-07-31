@@ -101,13 +101,13 @@ public class PhysicsBlockDestructionClientClip extends PhysicsBlockDestructionAc
             net.minecraft.client.Minecraft mcDbg = net.minecraft.client.Minecraft.getInstance();
             if (mcDbg != null && mcDbg.player != null)
             {
-                mcDbg.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                mcDbg.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                     "§6[BBSTools-debug] §fblockMode=§e" + this.blockMode.get()
                     + " §fchunks/blk=§e" + this.chunksPerBlock.get()
                     + " §fmode=§e" + this.destructionMode.get()
                     + " §fforce=§e" + String.format("%.1f", this.scatterForce.get())
                     + " §fdirF=§e" + String.format("%.1f", this.directionForce.get())
-                    + " §fdestroy=§e" + this.destroyBlocks.get()), false);
+                    + " §fdestroy=§e" + this.destroyBlocks.get()));
             }
         }
 
@@ -169,9 +169,9 @@ public class PhysicsBlockDestructionClientClip extends PhysicsBlockDestructionAc
                 net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
                 if (mc != null && mc.player != null)
                 {
-                    mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                    mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                         "§e[BBSTools] §cBlock-destruction clip fired but region is empty — "
-                        + "use 'Set Min/Max from looked-at' in the clip editor to mark a region. §7(throttled: once per 5s)"), false);
+                        + "use 'Set Min/Max from looked-at' in the clip editor to mark a region. §7(throttled: once per 5s)"));
                 }
             }
             return;

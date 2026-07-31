@@ -201,8 +201,8 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                    "§e[BBSTools] §cNo replays in the current film. Add a replay first, then come back."), false);
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "§e[BBSTools] §cNo replays in the current film. Add a replay first, then come back."));
             }
             return;
         }
@@ -229,8 +229,8 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc != null && mc.player != null)
             {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                    "§e[BBSTools] §cCouldn't open picker — type the replay name manually. Available: " + String.join(", ", replayNames)), false);
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "§e[BBSTools] §cCouldn't open picker — type the replay name manually. Available: " + String.join(", ", replayNames)));
             }
         }
     }
@@ -301,8 +301,8 @@ public class UIPhysicsBlockDestructionClip extends UIActionClip<PhysicsBlockDest
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if (mc != null && mc.player != null)
         {
-            mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
-                "§e[BBSTools] §aRegion set from WorldEdit: " + min + " → " + max), false);
+            mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "§e[BBSTools] §aRegion set from WorldEdit: " + min + " → " + max));
         }
     }
 

@@ -486,7 +486,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         if (groups != null && groups.contains("outside"))
         {
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
 
             Replay replay = this.panel.replayEditor.getReplay();
             int index = this.panel.getData().replays.getList().indexOf(replay);

@@ -83,7 +83,7 @@ public final class BBSPerfHudRenderer
         if (mc == null) return;
         /* mc.player may be null on the main menu / between dimensions —
          *  rendering the HUD there is fine but skip if MC isn't ready. */
-        if (mc.options != null && mc.gui.isHidden()) return;
+        if (mc.options != null && mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt()) return;
 
         Font fr = mc.font;
         if (fr == null) return;

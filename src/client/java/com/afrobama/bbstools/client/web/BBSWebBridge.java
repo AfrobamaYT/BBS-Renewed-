@@ -232,7 +232,7 @@ public final class BBSWebBridge
 
         if (parent instanceof UIScreen screen && screen.getMenu() instanceof UIDashboard dashboard)
         {
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().gui.setScreen(parent);
                 /* AUTONOMIE 2026-07-27: fs hat keine dokument-tabs (documentTabsBar/ContentType
                  * sind CML). Aequivalent im fs-kern: das film-panel aktivieren. Ein tab-streifen
                  * mit mehreren offenen filmen existiert dort nicht — es ist immer genau einer offen. */
@@ -241,7 +241,7 @@ public final class BBSWebBridge
         else
         {
             /* No BBS dashboard underneath (launched from the world) — just close the browser. */
-            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().gui.setScreen(null);
             LOG.warn("[web] open: no BBS dashboard parent; open BBS first to load '{}'", id);
         }
     }

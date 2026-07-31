@@ -198,9 +198,9 @@ public class UIBBSToolsLaunchPad extends UIOverlayPanel
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null)
             {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
                     "§6[BBSTools] §fLaunchpad selected world: §e" + name
-                    + "§7  (open-from-launchpad wires up in Phase 15b)"), false);
+                    + "§7  (open-from-launchpad wires up in Phase 15b)"));
             }
         }
         catch (Throwable t)

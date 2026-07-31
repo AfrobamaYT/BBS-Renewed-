@@ -555,13 +555,13 @@ public class UIFilmPreview extends UIElement
         matrices.translate(area.x, area.y, 0F);
         matrices.scale(scaleX, scaleY, 1F);
 
-        boolean hidden = mc.gui.isHidden();
+        boolean hidden = mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt();
 
         /* Unser debug-overlay haengt am HudRenderCallback und wuerde den viewport
          * zupflastern — es gehoert auf den bildschirm, nicht ins kamerabild. */
         boolean debugOverlay = com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED;
 
-        mc.gui.setHidden(false);
+        mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
         com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = false;
 
         try
@@ -576,7 +576,7 @@ public class UIFilmPreview extends UIElement
         finally
         {
             com.afrobama.bbstools.client.debug.master.hud.DebugOverlayHud.ENABLED = debugOverlay;
-            mc.gui.setHidden(hidden);
+            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(hidden);
 
             context.batcher.flush();
             matrices.popPose();

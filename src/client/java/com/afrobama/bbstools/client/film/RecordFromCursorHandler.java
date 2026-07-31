@@ -152,7 +152,7 @@ public final class RecordFromCursorHandler
              *  "outside" group. */
             if (mc().gui.screen() != null)
             {
-                mc().setScreen(null);
+                mc().gui.setScreen(null);
             }
 
             films.startRecording(panel.getData(), index, cursor);
