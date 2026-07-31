@@ -1,16 +1,10 @@
 package mchorse.bbs_mod.mixin.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
-import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
-import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,18 +12,43 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * ⚠️ NICHT FERTIG PORTIERT — die Datei UEBERSETZT, die Einhaengepunkte stimmen nicht.
+ * 26.2 nachgezogen. Von den sieben alten Einhaengepunkten hat KEINER seinen Namen behalten --
+ * {@code LevelRenderer} hat oeffentlich nur noch {@code render}, {@code prepareChunkRenders},
+ * {@code resize} und {@code endFrame}. Was aus den einzelnen Haken wurde:
  *
- * <p>Am 26.2-JAR gemessen: {@code LevelRenderer} hat oeffentlich nur noch
- * {@code render(...)}, {@code prepareChunkRenders(...)}, {@code resize(...)},
- * {@code endFrame()}. Von den hier benutzten Zielen existiert KEINES mehr unter seinem
- * Namen: {@code renderLevel} (heisst jetzt {@code render}), {@code renderSky},
- * {@code renderSectionLayer} (Chunk-Schichten zeichnet heute
- * {@code ChunkSectionsToRender#renderGroup(ChunkSectionLayer)}), {@code initOutline},
- * {@code prepareCullFrustum}. Mixin wird das beim Weben mit einer
- * InvalidInjectionException quittieren, d.h. der Start scheitert, bis die Ziele neu
- * gesetzt sind. Ein Teil davon zeigt auf eine ANDERE Klasse und braucht daher einen
- * neuen Eintrag in der Mixin-Liste — das macht der Leiter, nicht dieser Arbeiter.</p>
+ * <ul>
+ * <li>{@code renderLevel} → {@code render}. Reine Umbenennung.</li>
+ * <li>{@code prepareCullFrustum} → weg. Die Kameramatrix steht jetzt im
+ *     {@code CameraRenderState}, den {@code render} gereicht bekommt, also holen wir sie
+ *     dort ab. ⚠️ {@code viewRotationMatrix}, NICHT {@code projectionMatrix} -- das ist die
+ *     Entsprechung der alten {@code positionMatrix} (an anderer Stelle in diesem Port
+ *     gemessen).</li>
+ * <li>{@code initOutline} → weg, und ERSATZLOS richtig: der Haken rief dasselbe
+ *     {@code resizeExtraFramebuffers} wie der {@code resize}-Haken darunter. Er war schon
+ *     vorher doppelt gemoppelt, nur fiel es nicht auf.</li>
+ * <li>{@code renderSectionLayer} → in eine ANDERE KLASSE gewandert. Chunk-Schichten zeichnet
+ *     heute {@code ChunkSectionsToRender.renderGroup}; der Haken lebt deshalb in
+ *     {@link ChunkSectionsToRenderMixin} weiter.</li>
+ * <li>{@code renderSky} → weg, und mit ihm der Chroma-Himmel. Siehe unten.</li>
+ * </ul>
+ *
+ * <h2>⛔ Der Chroma-Himmel ist raus -- und der Weg zurueck ist BESSER als vorher</h2>
+ *
+ * <p>Der alte Haken faerbte den Himmel, indem er den Farbpuffer per {@code glClearColor} auf
+ * die Chroma-Farbe loeschte und Vanillas Himmel-Zeichnen abbrach. Beides gibt es nicht mehr:
+ * das Himmel-Zeichnen haengt im Bildgraphen ({@code addSkyPass}, privat), und einen globalen
+ * Loeschbefehl an dieser Stelle gibt es auch nicht.</p>
+ *
+ * <p>Die alte Fassung hatte dabei einen dokumentierten Mangel: ferne Landschaft blendete
+ * weiter in die VANILLA-Nebelfarbe, weil {@code setShaderFogColor} fehlte -- am Horizont
+ * blieb ein Farbsaum stehen, den man nicht wegkeyen konnte.</p>
+ *
+ * <p><b>Genau das loest 26.2.</b> Himmel- UND Nebelfarbe sind UMGEBUNGSATTRIBUTE geworden
+ * ({@code EnvironmentAttributes.SKY_COLOR} und {@code FOG_COLOR}, ortsabhaengig abfragbar
+ * ueber {@code level.environmentAttributes()}). Wer den Chroma-Himmel neu baut, setzt beide --
+ * und bekommt damit zum ersten Mal einen Horizont OHNE Saum. Das ist kein Nachbauen des alten
+ * Hakens, sondern die Gelegenheit, das Feature richtig zu machen. Eigener Schritt, bewusst
+ * nicht hier hineingezwaengt.</p>
  */
 @Mixin(LevelRenderer.class)
 public class WorldRendererMixin
@@ -41,83 +60,31 @@ public class WorldRendererMixin
      * entities render, and the queue flushes right before the translucent terrain layer so the
      * blending sits under water/glass the way vanilla entities do. The RETURN hook is a safety
      * net for frames where the translucent layer never draws (e.g. a replaced terrain pipeline). */
-    @Inject(method = "renderLevel", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"))
     public void onRenderWorldStart(CallbackInfo info)
     {
         FormTranslucentQueue.begin();
     }
 
-    @Inject(method = "renderLevel", at = @At("RETURN"))
+    @Inject(method = "render", at = @At("RETURN"))
     public void onRenderWorldEnd(CallbackInfo info)
     {
         FormTranslucentQueue.flush();
     }
 
-    /* MERGE fs-2.5: ihre renderSky-signatur nimmt MatrixStack als ersten parameter,
-     * unsere Matrix4f. UNSERE ist die, mit der der mixin auf 1.21.1 nachweislich laedt —
-     * ein mixin, dessen ziel es nicht gibt, laesst den start scheitern. Ihre queue-hooks
-     * darueber sind uebernommen, nur diese eine signatur bleibt unsere. */
-    @Inject(method = "renderSky(Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;FLnet/minecraft/client/Camera;ZLjava/lang/Runnable;)V", at = @At("HEAD"), cancellable = true)
-    public void onRenderSky(CallbackInfo info)
+    /**
+     * Die Kameramatrix fuer BBS, frueher aus {@code prepareCullFrustum}.
+     *
+     * <p>⚠️ Render-Zustaende werden WIEDERVERWENDET -- deshalb wird der Wert KOPIERT (set),
+     * nicht die Matrix als Referenz gehalten. Vanilla ueberschreibt sie im naechsten Bild.</p>
+     */
+    @Inject(method = "render", at = @At("HEAD"))
+    private void onSetupFrustum(com.mojang.blaze3d.resource.GraphicsResourceAllocator zuteiler,
+        net.minecraft.client.DeltaTracker takt, boolean bloecke, CameraRenderState kamera,
+        org.joml.Matrix4fc projektion, com.mojang.blaze3d.buffers.GpuBufferSlice nebel,
+        org.joml.Vector4f nebelFarbe, boolean himmel, CallbackInfo info)
     {
-        if (BBSSettings.chromaSkyEnabled.get())
-        {
-            Integer fromCurve = BBSRendering.getChromaSkyColorArgb();
-            int argb = fromCurve != null ? fromCurve : BBSSettings.chromaSkyColor.get();
-            Color color = Color.rgba(argb);
-
-            GL11.glClearColor(color.r, color.g, color.b, 1F);
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-
-            /* ⚠️ FUNKTION VERLOREN: RenderSystem.setShaderFogColor gibt es in 26.2 nicht mehr,
-             * und es gibt an dieser Stelle keinen Ersatz. Die Nebelfarbe ist kein globaler
-             * Schalter mehr, sondern liegt im Nebel-Uniformpuffer, den FogRenderer einmal pro
-             * Bild aus FogData baut (FogRenderer#updateBuffer). Wer sie faerben will, muss dort
-             * ansetzen — von einem Himmels-Hook aus ist der Puffer schon geschrieben.
-             * FOLGE FUER DEN NUTZER: der Chroma-Himmel ist weiterhin einfarbig, aber ferne
-             * Landschaft blendet weiter in die VANILLA-Nebelfarbe statt in die Chroma-Farbe,
-             * d.h. am Horizont bleibt ein Farbsaum stehen, der sich nicht wegkeyen laesst. */
-
-            info.cancel();
-        }
-    }
-
-    /* ⚠️ Die Chunk-Schicht ist in 26.2 kein RenderType mehr, sondern die Aufzaehlung
-     * ChunkSectionLayer (SOLID/CUTOUT/TRANSLUCENT). Der Vergleich muss deshalb gegen die
-     * Aufzaehlung gehen — RenderTypes.translucentMovingBlock() waere der Kolben-Typ und
-     * damit still NIE gleich, die Warteschlange wuerde nie gespuelt. */
-    @Inject(method = "renderSectionLayer", at = @At("HEAD"), cancellable = true)
-    public void onRenderLayer(ChunkSectionLayer renderLayer, double cameraX, double cameraY, double cameraZ, Matrix4f positionMatrix, Matrix4f projectionMatrix, CallbackInfo info)
-    {
-        /* Iris' shadow pass re-runs renderLayer into the shadow map early in the frame — its
-         * translucent layer must not fire the flush, or the queue deactivates before the main
-         * pass has even rendered the forms. */
-        if (renderLayer == ChunkSectionLayer.TRANSLUCENT && !BBSRendering.isIrisShadowPass())
-        {
-            FormTranslucentQueue.flush();
-        }
-
-        if (BBSSettings.chromaSkyEnabled.get() && !BBSSettings.chromaSkyTerrain.get())
-        {
-            BBSRendering.onRenderChunkLayer(positionMatrix);
-
-            info.cancel();
-        }
-    }
-
-    @Inject(method = "renderSectionLayer", at = @At("TAIL"))
-    public void onRenderChunkLayer(ChunkSectionLayer layer, double x, double y, double z, Matrix4f positionMatrix, Matrix4f projectionMatrix, CallbackInfo info)
-    {
-        if (layer == ChunkSectionLayer.SOLID)
-        {
-            BBSRendering.onRenderChunkLayer(positionMatrix);
-        }
-    }
-
-    @Inject(at = @At("RETURN"), method = "initOutline")
-    private void onLoadEntityOutlineShader(CallbackInfo info)
-    {
-        BBSRendering.resizeExtraFramebuffers();
+        BBSRendering.camera.set(kamera.viewRotationMatrix);
     }
 
     @Inject(at = @At("RETURN"), method = "resize")
@@ -129,11 +96,5 @@ public class WorldRendererMixin
         }
 
         BBSRendering.resizeExtraFramebuffers();
-    }
-
-    @Inject(method = "prepareCullFrustum", at = @At("HEAD"))
-    private void onSetupFrustum(Vec3 pos, Matrix4f positionMatrix, Matrix4f projectionMatrix, CallbackInfo info)
-    {
-        BBSRendering.camera.set(positionMatrix);
     }
 }

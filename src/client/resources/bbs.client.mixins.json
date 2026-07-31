@@ -29,6 +29,7 @@
     "ClientPlayerEntityAccessor",
     "SimpleOptionMixin",
     "BlockEntityRenderDispatcherMixin",
+    "ChunkSectionsToRenderMixin",
     "GuiRenderStateAccessor",
     "LivingEntityRendererInvoker",
     "EntityRenderDispatcherMixin",
