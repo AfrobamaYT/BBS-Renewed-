@@ -24,7 +24,7 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.FastColor;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.joml.Matrix3f;
@@ -142,7 +142,14 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
                     double y = this.pos.y + temp3f.y;
                     double z = this.pos.z + temp3f.z;
 
-                    world.addParticle(effect, true, x, y, z, v.x, v.y, v.z);
+                    /* ⚠️ 26.2: addParticle hat einen ZWEITEN Schalter bekommen. Der erste ist
+                     * unveraendert "force" (auch ausserhalb der Sichtweite erzeugen), der neue
+                     * zweite ist "decreased" -- ob der Partikel unter niedriger
+                     * Partikel-Einstellung ausgeduennt werden darf. false ist die alte
+                     * Bedeutung: Vanillas 7-Argument-Ueberladung setzt ihn ebenfalls auf false
+                     * (im Bytecode nachgelesen). Wer die Reihenfolge nicht mitzieht, schiebt
+                     * die x-Koordinate in einen boolean. */
+                    world.addParticle(effect, true, false, x, y, z, v.x, v.y, v.z);
                 }
 
                 this.tick = frequency;
@@ -228,7 +235,9 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
             float b = Float.parseFloat(split[2]);
             float a = split.length == 4 ? Float.parseFloat(split[3]) : 1F;
 
-            return ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, FastColor.ARGB32.colorFromFloat(a, r, g, b));
+            /* 26.2: FastColor.ARGB32 heisst jetzt ARGB -- gleiche Methoden, gleiche
+             * Argumentfolge (Alpha zuerst), nur ohne die innere Klasse. */
+            return ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, ARGB.colorFromFloat(a, r, g, b));
         }
         catch (NumberFormatException e)
         {

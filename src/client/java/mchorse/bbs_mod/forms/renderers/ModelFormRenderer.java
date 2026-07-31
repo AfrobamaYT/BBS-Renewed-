@@ -565,7 +565,15 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
             FormTranslucentQueue.setSortOrigin(new Matrix4f(RenderSystem.getModelViewMatrixCopy()).transformPosition(armorOrigin));
 
-            ActorEntityRenderer.armorRenderer.renderArmorSlot(stack, consumers, target, type.slot, type, light);
+            /* 26.2: der Ruestungs-Zeichner nimmt den SAMMLER, keinen Verbraucher-Anbieter mehr
+             * -- er reicht die Modellteile beim Zeichenweg ein statt in einen Puffer zu
+             * schreiben (ArmorRenderer.renderArmorSlot traegt die neue Signatur schon).
+             * Der Anbieter bleibt trotzdem in der Hand: er haelt den Sammler UND die
+             * Umfaerbung, und die Umfaerbung braucht der Item-Zweig weiter unten.
+             *
+             * ⚠️ Hier ist KEINE Umfaerbung gesetzt (setSubstitute wird nur im Item-Zweig
+             * benutzt), also verliert dieser Weg durch den Wechsel nichts. */
+            ActorEntityRenderer.armorRenderer.renderArmorSlot(stack, consumers.sammler(), target, type.slot, type, light);
             consumers.draw();
             FormTranslucentQueue.setSortOrigin(null);
 
@@ -614,6 +622,27 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 FormTranslucentQueue.setSortOrigin(new Matrix4f(RenderSystem.getModelViewMatrixCopy()).transformPosition(itemOrigin));
 
                 consumers.setSubstitute(BBSRendering.getColorConsumer(color));
+
+                /* ⛔ OFFEN 26.2 — die beiden getItemRenderer()-Aufrufe unten sind NICHT
+                 * portiert, und das ist Absicht.
+                 *
+                 * Minecraft.getItemRenderer() und ItemRenderer.renderStatic gibt es nicht
+                 * mehr. Der Weg heisst jetzt: ItemModelResolver.updateForTopItem(...) fuellt
+                 * einen ItemStackRenderState, und dessen submit(PoseStack, SubmitNodeCollector,
+                 * licht, overlay, umriss) reicht ihn beim Zeichenweg ein.
+                 *
+                 * ⚠️ Warum das hier nicht mechanisch geht: submit() gibt KEINEN VertexConsumer
+                 * heraus. Genau daran haengt aber die Zeile direkt darueber -- die Form-Farbe
+                 * eines gehaltenen Gegenstands kommt aus setSubstitute, und die greift nur
+                 * dort, wo BBS den Verbraucher in die Hand bekommt. Wer hier stumpf auf submit
+                 * umstellt, bekommt einen sichtbaren Gegenstand OHNE Faerbung: es kompiliert,
+                 * es zeichnet, und die Faerbung ist lautlos weg.
+                 *
+                 * Der Ausweg ist derselbe wie bei Bloecken (siehe graphics/Blockmodell): die
+                 * Ebenen des ItemStackRenderState selbst einreichen, ueber
+                 * SubmitNodeCollector.submitItem(pose, kontext, licht, overlay, toenung,
+                 * vierecke, folie) bzw. submitCustomGeometry. Das ist ein Entwurf, keine
+                 * Uebersetzung -- darum bleibt es stehen. */
 
                 /* For some reason, due to Sodium and my color consumer, in some cases items like Trident,
                  * shield, etc. not get rendered, but if in another arm there is another item, it does render...

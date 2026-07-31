@@ -647,7 +647,11 @@ public class ParticleComponentAppearanceBillboard extends ParticleComponentBase 
         {
             Vector3d pos = particle.getGlobalPosition(emitter);
             BlockPos blockPos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
-            int lightLevel = LevelRenderer.getLightColor(emitter.world, blockPos);
+            /* 26.2: LevelRenderer.getLightColor ist umgezogen und heisst jetzt
+             * LightCoordsUtil.getLightCoords -- dieselbe Rechnung (Eigenleuchten des Blocks
+             * beruecksichtigt), nur nicht mehr am Weltzeichner. Level erfuellt
+             * BlockAndLightGetter ueber LevelReader, also passt der Weltverweis unveraendert. */
+            int lightLevel = net.minecraft.util.LightCoordsUtil.getLightCoords(emitter.world, blockPos);
 
             this.light = lightLevel;
         }

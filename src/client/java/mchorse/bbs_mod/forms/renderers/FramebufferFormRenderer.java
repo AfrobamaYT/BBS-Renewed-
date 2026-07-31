@@ -74,7 +74,10 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
             PoseStack stack = context.batcher.pose();
             Matrix4f uiMatrix = ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2);
 
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline des Zuges.
+             * Fuer die Formen darunter traegt ihn ModelVAOPipeline bzw. die jeweilige
+             * RenderType-Pipeline -- GL_LEQUAL heisst dort GREATER_THAN_OR_EQUAL, weil 26.2
+             * die Tiefe umgekehrt rechnet. Gleicher Umbau wie in ExtrudedFormRenderer. */
             stack.pushPose();
 
             this.applyTransforms(uiMatrix, context.getTransition());
@@ -88,7 +91,9 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
                 .inUI());
 
             stack.popPose();
-            RenderSystem.depthFunc(GL11.GL_ALWAYS);
+            /* Das GL_ALWAYS danach setzte den Schalter fuer die Oberflaeche zurueck. Es
+             * entfaellt ersatzlos: der GUI-Raum hat keine Tiefe mehr, die Ueberdeckung
+             * entscheidet GuiGraphicsExtractor.nextStratum(). */
         }
     }
 
@@ -200,8 +205,18 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         GL30.glCullFace(GL30.GL_BACK);
 
         boolean shading = !context.isPicking();
-        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
-        Supplier<RenderPipeline> shader = shading ? () -> RenderPipelines.ENTITY_TRANSLUCENT : GameRenderer::getPositionTexColorShader;
+        /* ⚠️ 26.2: der unbeschattete Zweig schreibt POSITION_TEX_COLOR statt
+         * POSITION_TEX_LIGHTMAP_COLOR -- gleicher Grund wie in BillboardFormRenderer: der
+         * Shader dahinter (core/position_tex_color) kennt nur Position, UV0 und Color, die
+         * Lichtkoordinate wurde nie gelesen. In 26.2 wird das Format zur Pipeline-Bindung,
+         * und ein Attribut, das der Shader nicht kennt, ist dort ein Widerspruch. */
+        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_COLOR;
+        Supplier<RenderPipeline> shader = shading
+            ? () -> RenderPipelines.ENTITY_TRANSLUCENT
+            /* getPositionTexColorShader ist entfallen: Shader, Blend, Tiefe und Cull stehen in
+             * der Pipeline. Gemischt (das Bild hat einen durchsichtigen Hintergrund), Tiefe an,
+             * beidseitig (der Quad wird vorn UND hinten geschrieben). */
+            : () -> mchorse.bbs_mod.client.FormPipelines.holen(DefaultVertexFormat.POSITION_TEX_COLOR, "position_tex_color", PrimitiveTopology.TRIANGLES, true, true, false);
 
         this.renderModel(framebuffer.getMainTexture(), format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
     }
@@ -312,9 +327,11 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
 
     private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, PoseStack.Pose entry, float nz)
     {
-        if (format == DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR)
+        if (format == DefaultVertexFormat.POSITION_TEX_COLOR)
         {
-            return consumer.addVertex(matrix, x, y, 0F).setUv(u, v).setLight(light).setColor(color.r, color.g, color.b, color.a);
+            /* Ohne setLight: das Format hat keine Lichtkoordinate mehr, und der Shader
+             * core/position_tex_color hat sie nie gelesen. Siehe renderBodyParts. */
+            return consumer.addVertex(matrix, x, y, 0F).setUv(u, v).setColor(color.r, color.g, color.b, color.a);
         }
 
         return consumer.addVertex(matrix, x, y, 0F).setColor(color.r, color.g, color.b, color.a).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(entry, 0F, 0F, nz);

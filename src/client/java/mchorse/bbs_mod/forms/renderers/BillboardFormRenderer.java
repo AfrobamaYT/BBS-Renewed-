@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -7,15 +8,14 @@ import net.minecraft.client.renderer.RenderPipelines;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.forms.BillboardForm;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
@@ -86,9 +86,23 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             shading = true;
         }
 
-        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
+        /* ⚠️ 26.2: der unbeschattete Zweig schreibt jetzt POSITION_TEX_COLOR statt
+         * POSITION_TEX_LIGHTMAP_COLOR. Das ist KEIN Verlust: der Shader dahinter war schon
+         * immer core/position_tex_color, und der kennt nur Position, UV0 und Color -- die
+         * Lichtkoordinate wurde also nie gelesen. In 26.2 wird das Format aber zur
+         * Pipeline-Bindung, und ein Attribut, das der Shader nicht kennt, ist dort ein
+         * Widerspruch statt eines stillen Ueberhangs. Darum steht jetzt genau das Format da,
+         * das der Shader auch liest. */
+        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_COLOR;
         Supplier<RenderPipeline> shader = this.getShader(context,
-            shading ? () -> RenderPipelines.ENTITY_TRANSLUCENT : GameRenderer::getPositionTexColorShader,
+            shading
+                ? () -> RenderPipelines.ENTITY_TRANSLUCENT
+                /* getPositionTexColorShader ist entfallen -- der Shader steht in der Pipeline,
+                 * und mit ihm Blend, Tiefe und Cull. Die drei Schalter sind die des alten
+                 * Zustands: gemischt (weiche Raender, Deckkraft unter 1), Tiefe an,
+                 * beidseitig (render3D rief disableCull, und der Quad wird vorn UND hinten
+                 * geschrieben). */
+                : () -> FormPipelines.holen(DefaultVertexFormat.POSITION_TEX_COLOR, "position_tex_color", PrimitiveTopology.TRIANGLES, true, true, false),
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
 
@@ -220,20 +234,19 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, entry, -1F);
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, -1F);
 
-        /* ⛔ OFFEN 26.2 — stehen absichtlich noch da, nicht geraten:
-         *  Die beiden Aufrufe stellen die Mischung fuer den Zug darunter ein; defaultBlendFunc
-         *  plus enableBlend ist genau BlendFunction.TRANSLUCENT. In 26.2 gehoert das in die
-         *  Pipeline — nur hat dieser Zeichenweg noch keine: er laeuft ueber
-         *  RenderSystem.setShader + BufferUploader.drawWithShader, im aufgeschobenen Zweig ueber
-         *  den VertexBuffer in FormTranslucentQueue. Dazu wechselt der Shader je nach Fall
-         *  (Entity-Translucent oder PositionTexColor, beim Picken die beiden Picker-Programme),
-         *  und mit ihm das Vertexformat (ENTITY bzw. POSITION_TEX_LIGHTMAP_COLOR).
-         *  Blend hier einfach zu streichen waere still falsch: jede Textur mit weichem Rand und
-         *  jede Deckkraft unter 1 wuerde undurchsichtig. */
-        /* 26.2: defaultBlendFunc ist entfallen -- der Zustand steckt in der Pipeline
-         * des Zuges. Absicht war: Standardmischung (Quell-Alpha ueber Gegen-Alpha). */
-        /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
-         * des Zuges. Absicht war: mischen an. */
+        /* 26.2: enableBlend + defaultBlendFunc sind entfallen. Beides zusammen ist genau
+         * BlendFunction.TRANSLUCENT, und die traegt jetzt die Pipeline des Zuges: der
+         * beschattete Zweig ueber RenderPipelines.ENTITY_TRANSLUCENT, der unbeschattete ueber
+         * FormPipelines.holen(..., mischen = true, ...) in render3D. Ersatzlos zu streichen
+         * waere still falsch gewesen -- jede Textur mit weichem Rand und jede Deckkraft unter
+         * 1 waere undurchsichtig geworden.
+         *
+         * ⛔ OFFEN, nicht geraten: der AUSWAHL-Durchgang. getShader liefert beim Picken
+         * BBSShaders.getPickerBillboard(NoShading)Program, und das sind Pipelines aus
+         * ModelVAOPipeline -- sie erwarten DREI getrennte Vertexbindungen (Position, Normale,
+         * UV0). Dieser Weg hier baut ein verschraenktes Netz und bindet es an Bindung 0. Das
+         * passt nicht zusammen; es braucht eine Picker-Pipeline fuer das verschraenkte Format,
+         * und das ist ein Entwurf, keine Uebersetzung. */
 
         boolean linear = this.form.linear.get();
         boolean mipmap = this.form.mipmap.get();
@@ -246,17 +259,16 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
              * against other translucent forms — and it never occludes models behind it.
              * Linear/mipmap sampling manufactures fractional alpha at the edges even from a
              * binary-alpha texture, hence those flags count as translucency. */
-            VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-            buffer.bind();
-            buffer.upload(builder.buildOrThrow());
-            VertexBuffer.unbind();
+            /* 26.2: VertexBuffer ist entfallen, die Aufgabe nicht -- das Netz muss bis zum
+             * Leeren der Warteschlange auf der Karte liegenbleiben. GehaltenesNetz macht
+             * genau das; der Befehl gibt es in release() frei. */
+            GehaltenesNetz netz = new GehaltenesNetz(builder.buildOrThrow());
 
             Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
             Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
 
-            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
-                buffer, () -> finalShader, texture, modelView, null, origin, true,
+            FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(
+                netz, () -> finalShader, texture, modelView, null, origin, true,
                 () ->
                 {
                     texture.bind();
@@ -267,11 +279,14 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         }
         else
         {
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build();
-                if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
-             * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
-             * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
+            /* 26.2: BufferUploader ist entfallen. Abgeschickt wird ueber einen eigenen
+             * Durchgang, und der braucht drei Dinge, die frueher globaler Zustand waren:
+             * die Pipeline (Shader + Blend + Tiefe + Cull), die Modellansicht und die
+             * Texturbindung. build() gibt null, wenn nichts geschrieben wurde --
+             * SofortZeichner zeichnet dann nichts. */
+            SofortZeichner.zeichnen(finalShader, builder.build(),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
+                SofortZeichner.entityTextur(texture));
         }
 
         texture.setFilterMipmap(false, false);
@@ -280,9 +295,11 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
     private VertexConsumer fill(VertexFormat format, VertexConsumer consumer, Matrix4f matrix, float x, float y, Color color, float u, float v, int overlay, int light, PoseStack.Pose entry, float nz)
     {
-        if (format == DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR)
+        if (format == DefaultVertexFormat.POSITION_TEX_COLOR)
         {
-            return consumer.addVertex(matrix, x, y, 0F).setUv(u, v).setLight(light).setColor(color.r, color.g, color.b, color.a);
+            /* Ohne setLight: das Format hat keine Lichtkoordinate mehr, und der Shader
+             * core/position_tex_color hat sie nie gelesen. Siehe render3D. */
+            return consumer.addVertex(matrix, x, y, 0F).setUv(u, v).setColor(color.r, color.g, color.b, color.a);
         }
 
         return consumer.addVertex(matrix, x, y, 0F).setColor(color.r, color.g, color.b, color.a).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(entry, 0F, 0F, nz);

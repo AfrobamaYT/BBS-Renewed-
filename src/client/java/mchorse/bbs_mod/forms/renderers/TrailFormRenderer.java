@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -116,7 +115,11 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         PoseStack stack = context.stack;
         Matrix4f camInverse = new Matrix4f(InverseView.get());
 
-        CameraRenderState camera = context.camera;
+        /* ⚠️ Das ist BBS' EIGENE Kamera (mchorse.bbs_mod.camera.Camera) aus dem
+         * Formen-Zeichenkontext, NICHT Vanillas CameraRenderState. Sie traegt die Position als
+         * Vector3d im Feld position; der Vanilla-Zustand haette pos als Vec3. Wer die beiden
+         * verwechselt, verschiebt die aufgezeichnete Spur um die ganze Kameraposition. */
+        Camera camera = context.camera;
         double baseX = camera.position.x;
         double baseY = camera.position.y;
         double baseZ = camera.position.z;

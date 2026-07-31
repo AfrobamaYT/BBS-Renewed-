@@ -51,10 +51,17 @@ public abstract class FormRenderer <T extends Form>
 
     public final void renderUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        Vector3f lightA = new Vector3f(0F, 1F, -0.2F).normalize();
-        Vector3f lightB = new Vector3f(-0.85F, 0.85F, 1F).normalize();
-
-        RenderSystem.setupLevelDiffuseLighting(lightA, lightB);
+        /* ⚠️ VERHALTENSAENDERUNG 26.2: die beiden Lichtrichtungen fuer die Formvorschau in
+         * der Oberflaeche sind weg. Hier standen (0, 1, -0.2) und (-0.85, 0.85, 1);
+         * RenderSystem.setupLevelDiffuseLighting nahm sie entgegen und legte sie global ab.
+         *
+         * In 26.2 stehen die Lichtrichtungen in einem Uniform-Block auf der Grafikkarte, und
+         * Vanilla gibt sie nur als FESTE Voreinstellungen heraus (Lighting.Entry). Ein eigenes
+         * Richtungspaar braeuchte einen eigenen Lighting-Block -- ein Entwurf, keine
+         * Uebersetzung. ENTITY_IN_UI ist Vanillas Voreinstellung fuer genau diesen Fall.
+         * Folge: die Formvorschauen sind etwas anders ausgeleuchtet als vorher. */
+        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting()
+            .setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ENTITY_IN_UI);
 
         this.renderInUI(context, x1, y1, x2, y2);
 

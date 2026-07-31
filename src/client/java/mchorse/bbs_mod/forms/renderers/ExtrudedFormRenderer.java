@@ -84,6 +84,24 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             shading = true;
         }
 
+        /* ⛔ OFFEN 26.2 — beide Vanilla-Zweige unten (ENTITY_TRANSLUCENT und
+         * getPositionTexColorShader, und ebenso getRendertypeEntityCutoutShader weiter unten)
+         * sind hier STRUKTURELL falsch, nicht nur umbenannt:
+         *
+         *  Gezeichnet wird ueber ModelVAORenderer.render(pipeline, ModelVAO, ...). Der bindet
+         *  BBS' DREI getrennte Vertexpuffer (Position an Bindung 0, Normale an 1, UV0 an 2) --
+         *  siehe ModelVAOPipeline. Eine Vanilla-Pipeline erklaert dagegen EINE verschraenkte
+         *  Bindung 0 (DefaultVertexFormat.ENTITY bzw. POSITION_TEX_COLOR). Setzt man sie hier
+         *  ein, liest der Shader den reinen Positionspuffer als ganzen verschraenkten Vertex:
+         *  kein Fehler, sondern Muell im Bild.
+         *
+         *  Es braucht darum eine BBS-Modell-Pipeline je Fall -- eine unbeschattete Variante des
+         *  Modell-Shaders und eine Entscheidung, wie der Iris-Weg kuenftig laeuft. Das ist ein
+         *  Entwurf, keine Uebersetzung, und wird darum NICHT hier geraten.
+         *
+         *  format ist seit dem Port ohne Wirkung: renderModel nimmt kein Vertexformat mehr
+         *  entgegen, das Format steht in der Pipeline. Die Zeile bleibt stehen, weil sie die
+         *  offene Frage benennt (welches Format braucht die fehlende Pipeline). */
         VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
         Supplier<RenderPipeline> normal = shading && !BBSRendering.isIrisShadersEnabled()
             ? BBSShaders::getModel
@@ -156,9 +174,12 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
                     Matrix4f modelView = ModelVAORenderer.captureModelView(matrices);
                     Matrix3f normalMat = new Matrix3f(matrices.last().normal());
 
-                    FormTranslucentQueue.setPassMode(finalShader, FormTranslucentQueue.PASS_OPAQUE);
-                    ModelVAORenderer.render(finalShader, data, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay);
-                    FormTranslucentQueue.setPassMode(finalShader, FormTranslucentQueue.PASS_SINGLE);
+                    /* 26.2: die Durchgangsart wurde frueher als Uniform am Shader-Objekt
+                     * gesetzt (setPassMode), galt dann fuer alles Folgende und musste danach
+                     * zurueckgestellt werden. Jetzt reist sie als PARAMETER dieses einen
+                     * Zeichenaufrufs mit -- das Zuruecksetzen entfaellt damit ersatzlos, denn
+                     * ein Parameter kann keine fremde Zeichnung einfaerben. */
+                    ModelVAORenderer.render(finalShader, data, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE);
 
                     FormTranslucentQueue.add(new FormTranslucentQueue.ModelVAOCommand(data, textureObject, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, true));
                 }

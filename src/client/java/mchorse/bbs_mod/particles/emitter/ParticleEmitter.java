@@ -3,7 +3,6 @@ package mchorse.bbs_mod.particles.emitter;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -508,7 +507,7 @@ public class ParticleEmitter
         {
             Matrix4f matrix = stack.last().pose();
 
-            this.bindTexture();
+            Texture textur = this.bindTexture();
             /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
              * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
             ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
@@ -525,23 +524,26 @@ public class ParticleEmitter
                 }
             }
 
-            /* ⛔ OFFEN 26.2 — steht absichtlich noch so da, nicht geraten:
-             *  Format und Shader kommen hier von aussen (Parameter format/program), nicht aus
-             *  dieser Methode. Die Aufrufer reichen PARTICLE + getParticleShader, NEW_ENTITY +
-             *  getRendertypeEntityTranslucentShader sowie BBSShaders.getPickerParticlesProgram
-             *  bzw. getPickerBillboardProgram durch. FormPipelines deckt davon keinen ab (nur
-             *  position_color/position_tex/position_tex_color, ohne Lightmap-Sampler), und der
-             *  Ersatz fuer Supplier<RenderPipeline> aendert die Signatur — das trifft
-             *  ParticleFormRenderer und UIParticleSchemeRenderer, nicht diese Datei. */
-            /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
-             * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
-            /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: mischen aus. */
-            /* 26.2: disableCull ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: beidseitig zeichnen. */
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            /* 26.2: enableCull ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: Rueckseiten verwerfen. */
+            /* 26.2: BufferUploader ist entfallen. Format UND Pipeline kommen hier von aussen
+             * (Parameter format/program) -- die Aufrufer sind inzwischen umgestellt und reichen
+             * echte RenderPipelines durch (UIParticleSchemeRenderer:
+             * RenderPipelines.TRANSLUCENT_PARTICLE). Damit ist hier nichts mehr zu waehlen:
+             * die uebergebene Pipeline traegt Shader, Blend, Tiefe und Cull, also entfallen
+             * setShader, disableBlend und das disableCull/enableCull-Paar ersatzlos.
+             *
+             * Die Ecken tragen die Pose schon (die Komponenten schreiben addVertex(matrix, ...)),
+             * darum gehoert als Modellansicht nur die globale Ansicht hierher -- genau die, die
+             * drawWithShader frueher selbst setzte. Gleiche Rechnung wie im UI-Zweig oben.
+             *
+             * ⚠️ Die Textur ist kein globaler Zustand mehr: bindTexture() allein erreicht den
+             * Durchgang nicht, sie muss als Sampler-Bindung mitgegeben werden. entityTextur
+             * legt Modelltextur, Overlay und Lichtkarte zusammen. */
+            SofortZeichner.zeichnen(
+                program.get(),
+                builder.build(),
+                RenderSystem.getModelViewMatrixCopy(),
+                null,
+                textur == null ? null : SofortZeichner.entityTextur(textur));
         }
 
         for (IComponentParticleRender component : renders)

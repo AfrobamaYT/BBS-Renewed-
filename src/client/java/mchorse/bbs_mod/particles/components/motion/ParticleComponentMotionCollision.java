@@ -96,7 +96,12 @@ public class ParticleComponentMotionCollision extends ParticleComponentBase impl
             }
 
             AABB box = new AABB(prev.x - r, prev.y - r, prev.z - r, prev.x + r, prev.y + r, prev.z + r);
-            Vec3 vec = Entity.collideBoundingBox(null, new Vec3(x, y, z), box, emitter.world, Collections.emptyList());
+            /* 26.2: collideBoundingBox gibt es zusaetzlich mit einem CollisionContext als erstem
+             * Parameter, damit ist das nackte null mehrdeutig. Die Besetzung ist eine bewusste
+             * Wahl und keine Formalie: mit (Entity) null kollidiert der Partikel wie ein
+             * kontextloser Koerper — genau wie vorher. Ein CollisionContext wuerde stattdessen
+             * die Regeln einer Entitaet anlegen (Trittsteine, Pulverschnee). */
+            Vec3 vec = Entity.collideBoundingBox((Entity) null, new Vec3(x, y, z), box, emitter.world, Collections.emptyList());
 
             if (vec.x != x || vec.y != y || vec.z != z)
             {

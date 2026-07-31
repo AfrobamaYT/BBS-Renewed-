@@ -6,7 +6,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.client.FormPipelines;
@@ -15,6 +14,7 @@ import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
@@ -23,7 +23,8 @@ import mchorse.bbs_mod.utils.StringUtils;
 import mchorse.bbs_mod.utils.colors.Color;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -153,31 +154,11 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             context.stack.pushPose();
             context.stack.translate(0F, 0F, -0.1F);
-            renderer.drawInBatch(
-                content,
-                x + this.form.shadowX.get(),
-                y + this.form.shadowY.get(),
-                shadowColor.getARGBColor(), false,
-                context.stack.last().pose(),
-                consumers,
-                Font.DisplayMode.NORMAL,
-                0,
-                light
-            );
+            text(context.stack, consumers, x + this.form.shadowX.get(), y + this.form.shadowY.get(), content, shadowColor.getARGBColor(), light);
             context.stack.popPose();
         }
 
-        renderer.drawInBatch(
-            content,
-            x,
-            y,
-            color.getARGBColor(), false,
-            context.stack.last().pose(),
-            consumers,
-            Font.DisplayMode.NORMAL,
-            0,
-            light
-        );
+        text(context.stack, consumers, x, y, content, color.getARGBColor(), light);
 
         /* 26.2: entfaellt. consumers.draw() spielt die RenderTypes ab, in die
          * Font.drawInBatch geschrieben hat; deren Pipeline traegt den Tiefentest.
@@ -232,17 +213,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
             {
                 int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-                renderer.drawInBatch(
-                    line,
-                    x2 + this.form.shadowX.get(),
-                    y2 + this.form.shadowY.get(),
-                    shadowColor.getARGBColor(), false,
-                    context.stack.last().pose(),
-                    consumers,
-                    Font.DisplayMode.NORMAL,
-                    0,
-                    light
-                );
+                text(context.stack, consumers, x2 + this.form.shadowX.get(), y2 + this.form.shadowY.get(), line, shadowColor.getARGBColor(), light);
 
                 y2 += 12;
             }
@@ -262,17 +233,7 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         {
             int x2 = x + (this.form.anchorLines.get() ? (int) ((w - renderer.width(line)) * this.form.anchorX.get()) : 0);
 
-            renderer.drawInBatch(
-                line,
-                x2,
-                y2,
-                color, false,
-                context.stack.last().pose(),
-                consumers,
-                Font.DisplayMode.NORMAL,
-                0,
-                light
-            );
+            text(context.stack, consumers, x2, y2, line, color, light);
 
             y2 += 12;
         }
@@ -284,6 +245,40 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
          * folgenden Hintergrund-Quad gehoert er in dessen eigene Pipeline — die Stelle
          * dafuer steht in renderShadow und ist dort noch offen. */
         this.renderShadow(context, x, y, w, h);
+    }
+
+    /**
+     * Eine Textzeile einreichen -- der Ersatz fuer {@code Font.drawInBatch}.
+     *
+     * <h2>Was 26.2 daran geaendert hat</h2>
+     *
+     * <p>{@code drawInBatch} gibt es nicht mehr; Text wird beim Sammler EINGEREICHT
+     * ({@code submitText}) und vom Bildgraph in seiner Textphase gezeichnet. Die Reihenfolge
+     * der Argumente ist eine andere und im Bytecode von {@code TextFeatureRenderer.Submit}
+     * nachgelesen: Pose, x, y, Text, Schatten, Anzeigeart, LICHT, FARBE, Hintergrund, Umriss.
+     * ⚠️ Licht und Farbe stehen damit VOR dem Hintergrund -- im alten Aufruf war die Farbe
+     * das vierte und das Licht das letzte Argument. Wer die Werte mechanisch in derselben
+     * Folge stehen laesst, bekommt eine Schrift in Lichtfarbe.
+     *
+     * <p>⚠️ Der Sammler nimmt einen {@code PoseStack}, keine Matrix: er kopiert die oberste
+     * Pose beim Einreichen. Der Stapel darf danach weiterwandern.
+     *
+     * <p>{@code FormattedCharSequence.forward(text, Style.EMPTY)} ist die genaue Entsprechung
+     * der alten String-Ueberladung: beide gehen ueber {@code StringDecomposer.iterateFormatted}
+     * und werten damit die §-Codes aus, die {@code StringUtils.processColoredText} erzeugt.
+     */
+    private static void text(PoseStack stapel, CustomVertexConsumerProvider consumers, float x, float y, String inhalt, int farbe, int licht)
+    {
+        consumers.sammler().submitText(
+            stapel, x, y,
+            FormattedCharSequence.forward(inhalt, Style.EMPTY),
+            false,
+            Font.DisplayMode.NORMAL,
+            licht,
+            farbe,
+            0,
+            0
+        );
     }
 
     private void renderShadow(FormRenderingContext context, int x, int y, int w, int h)
@@ -319,14 +314,20 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
 
             if (FormTranslucentQueue.isGroupOpen())
             {
-                VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
+                /* 26.2: VertexBuffer ist entfallen, die Aufgabe nicht -- das Netz muss bis zum
+                 * Leeren der Warteschlange auf der Karte liegenbleiben. Das macht jetzt
+                 * GehaltenesNetz; der Befehl gibt es in release() wieder frei.
+                 *
+                 * Der Shader war GameRenderer::getPositionColorShader; ihn gibt es nicht mehr
+                 * einzeln, er steckt samt Blend, Tiefe und Cull in der Pipeline. Die vier
+                 * Schalter sind dieselben wie im Sofort-Zweig unten: POSITION_COLOR, gemischt
+                 * (der Hintergrund hat eine eigene Deckkraft), Tiefe an, ohne Cull. */
+                GehaltenesNetz netz = new GehaltenesNetz(builder.buildOrThrow());
 
-                buffer.bind();
-                buffer.upload(builder.buildOrThrow());
-                VertexBuffer.unbind();
-
-                FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
-                    buffer, GameRenderer::getPositionColorShader, null,
+                FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(
+                    netz,
+                    () -> FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, false),
+                    null,
                     new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
                     null, new Vector3f(FormTranslucentQueue.getSortOrigin()), false, null, null
                 ));
