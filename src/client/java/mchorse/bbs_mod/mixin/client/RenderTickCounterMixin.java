@@ -27,8 +27,17 @@ public class RenderTickCounterMixin
 
     private long lastFrameTime;
 
-    @Inject(method = "advanceTime", at = @At("HEAD"), cancellable = true)
-    public void onBeginRenderTick(long timeMillis, boolean tick, CallbackInfoReturnable<Integer> info)
+    /**
+     * ⚠️ 26.2: {@code advanceTime(long, boolean)} ist in ZWEI Methoden zerlegt worden --
+     * {@code advanceGameTime(long)} (gibt die Tickzahl zurueck) und
+     * {@code advanceRealTime(long)}. Der Boolean WAR die Fallunterscheidung; jetzt sagt der
+     * Methodenname, welche Zeit gemeint ist.
+     *
+     * <p>Dieser Haken zwingt beim Video-Export einen festen Zeitschritt auf und braucht die
+     * SPIELZEIT -- also {@code advanceGameTime}. Die Echtzeit bleibt unangetastet.</p>
+     */
+    @Inject(method = "advanceGameTime", at = @At("HEAD"), cancellable = true)
+    public void onBeginRenderTick(long timeMillis, CallbackInfoReturnable<Integer> info)
     {
         VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
 

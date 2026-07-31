@@ -14,6 +14,7 @@ import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.joml.Matrix4f;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,9 +29,14 @@ public class GameRendererMixin
     /**
      * This injection cancels bobbing when camera controller takes over
      */
+    /* ⚠️ 26.2: (CameraRenderState, PoseStack) statt (PoseStack, float). Der Teiltick wird
+     * nicht mehr gereicht -- das Wackeln haengt jetzt am Kamera-Zustand, nicht mehr an einem
+     * durchgereichten Zeitwert. Wir holen ihn dort, wo Vanilla ihn auch herholt. */
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
-    public void onBob(PoseStack matrices, float tickDelta, CallbackInfo ci)
+    public void onBob(CameraRenderState kamera, PoseStack matrices, CallbackInfo ci)
     {
+        float tickDelta = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
         if (BBSModClient.getCameraController().getCurrent() != null)
         {
             if (TrackerClientClip.shouldRenderHand())
@@ -62,8 +68,10 @@ public class GameRendererMixin
     /**
      * This injection replaces the camera roll when camera controller takes over
      */
+    /* ⚠️ 26.2: wie bobView -- (CameraRenderState, PoseStack). Der Teiltick wird hier gar
+     * nicht gebraucht, der Parameter faellt einfach weg. */
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-    public void onTiltViewWhenHurt(PoseStack matrices, float tickDelta, CallbackInfo info)
+    public void onTiltViewWhenHurt(CameraRenderState kamera, PoseStack matrices, CallbackInfo info)
     {
         CameraController controller = BBSModClient.getCameraController();
 

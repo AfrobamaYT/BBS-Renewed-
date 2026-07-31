@@ -53,8 +53,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public class WorldRendererMixin
 {
+    /* 26.2: das Feld heisst entityOutlineTarget -- es war immer schon das Umriss-Ziel, der
+     * Name sagt es jetzt. Ein @Shadow auf den alten Namen bricht den Start. */
     @Shadow
-    public RenderTarget entityTarget;
+    private RenderTarget entityOutlineTarget;
 
     /* Deferred form translucency spans the frame: forms enqueue their translucent pass while
      * entities render, and the queue flushes right before the translucent terrain layer so the
@@ -90,7 +92,7 @@ public class WorldRendererMixin
     @Inject(at = @At("RETURN"), method = "resize")
     private void onResized(CallbackInfo info)
     {
-        if (this.entityTarget == null)
+        if (this.entityOutlineTarget == null)
         {
             return;
         }

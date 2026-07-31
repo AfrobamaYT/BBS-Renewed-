@@ -32,7 +32,7 @@ public abstract class BaseFilmControllerFlushMixin
     /* #4 profiling — stamp render() entry so flush start can derive the
      * BBS serial per-replay render-loop window (HEAD → flush-start). */
     @Inject(
-        method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
+        method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/level/LevelRenderContext;)V",
         at = @At("HEAD"),
         remap = false)
     private void bbstools$stampRenderHead(LevelRenderContext context, CallbackInfo ci)
@@ -41,7 +41,7 @@ public abstract class BaseFilmControllerFlushMixin
     }
 
     @Inject(
-        method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/WorldRenderContext;)V",
+        method = "render(Lnet/fabricmc/fabric/api/client/rendering/v1/level/LevelRenderContext;)V",
         at = @At("RETURN"),
         remap = false)
     private void bbstools$flushFastPathBatch(LevelRenderContext context, CallbackInfo ci)
