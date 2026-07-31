@@ -1,14 +1,16 @@
 package mchorse.bbs_mod.cubic;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
+import mchorse.bbs_mod.graphics.SofortZeichner;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import mchorse.bbs_mod.cubic.IModel;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
@@ -530,39 +532,37 @@ public class ModelInstance implements IModelInstance
         renderProcessor.setWelds(bindings);
         renderProcessor.setWeldedGroups(weldedGroups);
 
-        RenderSystem.setShader(() -> drawShader);
-
-        /* The CPU path doesn't switch textures per material — it draws with whatever's bound. The VAO bones rebind
-         * per material as they draw, so remember the caller's default texture and restore it for the CPU draw
-         * (matches the old all-CPU path, which drew the welded cubes with that same default). */
-        int defaultTexture = RenderSystem.getShaderTexture(0);
+        /* 26.2: setShader, getShaderTexture und setShaderTexture sind alle drei entfallen --
+         * sie setzten globalen Zustand, den der naechste Zeichenaufruf erbte. Shader steht
+         * jetzt in der Pipeline, die Textur in der Bindung des Durchgangs.
+         *
+         * Was der alte Kommentar hier beschrieb, LOEST SICH DAMIT VON SELBST: der CPU-Weg
+         * musste sich die Vorgabetextur merken, weil die VAO-Knochen sie zwischendurch
+         * global umbanden. Ein Durchgang kann eine fremde Bindung nicht mehr erben, also
+         * gibt es nichts zurueckzustellen -- die Textur reist als Parameter mit. */
         Texture defaultTextureObject = BBSModClient.getTextures().getLastBound();
 
         /* Open the shared CPU buffer only if some group actually renders on the CPU (a visible bending welded
          * bone, or a visible bone with geometry but no VAO) — drawing an empty buffer would fail. */
         boolean cpuGeometry = this.hasCpuGeometry(model, bindings, weldedGroups);
         BufferBuilder builder = null;
+        ByteBufferBuilder eckenSpeicher = null;
 
         if (cpuGeometry)
         {
-            builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
+            /* 26.2: Tesselator ist entfallen. Sein geteilter Speicher war ein globaler
+             * Zwischenspeicher, den sich alle teilten; jetzt gehoert der Speicher dem
+             * Aufruf und wird am Ende wieder freigegeben. */
+            eckenSpeicher = new ByteBufferBuilder(4096);
+            builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
         }
 
         CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
 
         if (cpuGeometry)
         {
-            RenderSystem.setShaderTexture(0, defaultTexture);
-
-            if (explicitWeld)
-            {
-                Uniform normalMat = drawShader.getUniform("NormalMat");
-
-                if (normalMat != null)
-                {
-                    normalMat.set(WELD_NORMAL_MAT);
-                }
-            }
+            /* Die Normalenmatrix wird nicht mehr vorher am Shader gesetzt -- sie reist
+             * als Parameter in drawImmediate und landet dort im Modell-Block. */
 
             this.drawImmediate(builder, drawShader, stack, explicitWeld ? WELD_NORMAL_MAT : null, stencilMap, defaultTextureObject, color.a);
         }
@@ -581,10 +581,12 @@ public class ModelInstance implements IModelInstance
 
         if (!split && !whole)
         {
-            /* MERGE fs-2.5: ihr zwei-pass-pfad uebernommen, unsere null-absicherung darueber.
-             * builder.end() wirft, wenn nichts gezeichnet wurde. */
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build();
-              if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+            /* Ein Durchgang, kein Aufschieben: Tiefe schreiben, Cull nach Modelleinstellung.
+             * build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
+             * kommt damit zurecht und zeichnet dann nichts. */
+            SofortZeichner.zeichnen(ModelVAOPipeline.waehlen(this.isCulling(), true), builder.build(),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
+                texture == null ? null : SofortZeichner.entityTextur(texture), null);
 
             return;
         }
@@ -592,10 +594,10 @@ public class ModelInstance implements IModelInstance
         /* Both passes (and the deferred flush) need the geometry, so it's retained in our own
          * vertex buffer — drawWithGlobalProgram would consume it. The command owns the buffer
          * and frees it after the flush. */
-        VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-        buffer.bind();
-        buffer.upload(builder.buildOrThrow());
+        /* 26.2: VertexBuffer gibt es nicht mehr. Das Netz bleibt trotzdem liegen -- es wird
+         * zweimal gezeichnet (undurchsichtig jetzt, halbdurchsichtig beim Leeren der
+         * Warteschlange), und genau dafuer ist GehaltenesNetz da. */
+        GehaltenesNetz netz = new GehaltenesNetz(builder.buildOrThrow());
 
         Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
 
@@ -603,33 +605,28 @@ public class ModelInstance implements IModelInstance
         {
             /* Immediate opaque pass: the solid texels draw now and write depth. (The whole-defer
              * case skips this — it replays the entire mesh with depth at flush instead.) */
-            if (normalMat != null)
-            {
-                Uniform normalUniform = shader.getUniform("NormalMat");
 
-                if (normalUniform != null)
-                {
-                    normalUniform.set(normalMat);
-                }
-            }
-
-            FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_OPAQUE);
-            buffer.drawWithShader(modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), shader);
-            FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_SINGLE);
+            /* Undurchsichtiger Teildurchgang: Tiefe schreiben, Cull nach Modelleinstellung.
+             * Beides steckt jetzt in der Pipeline statt im globalen Zustand. */
+            netz.zeichnen(ModelVAOPipeline.waehlen(this.isCulling(), true), modelView, null,
+                texture == null ? null : SofortZeichner.entityTextur(texture), null,
+                (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK,
+                    ModelVAORenderer.blockFuer(normalMat != null ? normalMat : new Matrix3f(),
+                        net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                        FormTranslucentQueue.PASS_OPAQUE, 0)));
         }
 
-        VertexBuffer.unbind();
 
         Vector3f origin = modelView.transformPosition(stack.last().pose().getTranslation(new Vector3f()));
 
         if (split)
         {
-            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(buffer, () -> shader, texture, modelView, normalMat, origin, this.isCulling(), null, null));
+            FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(netz, () -> shader, texture, modelView, normalMat, origin, this.isCulling(), null, null));
         }
         else
         {
             /* Uniform colour fade: defer the whole mesh with depth on so it self-occludes. */
-            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(buffer, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, origin, this.isCulling(), null, null));
+            FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(netz, () -> shader, FormTranslucentQueue.PASS_SINGLE, true, texture, modelView, normalMat, origin, this.isCulling(), null, null));
         }
     }
 
@@ -680,10 +677,11 @@ public class ModelInstance implements IModelInstance
                 CubicCubeRenderer renderProcessor = new CubicCubeRenderer(light, overlay, stencilMap, keys);
 
                 renderProcessor.setColor(color.r, color.g, color.b, color.a);
-                RenderSystem.setShader(() -> shader);
-
-
-                BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
+                /* 26.2: setShader entfaellt -- der Shader steht in der Pipeline, die
+                 * drawImmediate weiter unten waehlt. Der Eckenspeicher gehoert jetzt dem
+                 * Aufruf statt einem geteilten Tesselator. */
+                ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+                BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.ENTITY);
                 CubicRenderer.processRenderModel(renderProcessor, builder, stack, model);
                 this.drawImmediate(builder, shader, stack, null, stencilMap, BBSModClient.getTextures().getLastBound(), color.a);
             }
@@ -728,9 +726,11 @@ public class ModelInstance implements IModelInstance
                         Matrix4f modelView = ModelVAORenderer.captureModelView(stack);
                         Matrix3f normalMat = new Matrix3f(stack.last().normal());
 
-                        FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_OPAQUE);
-                        vao.render(shader, modelView, normalMat, color.r, color.g, color.b, color.a, stencilMap, light, overlay);
-                        FormTranslucentQueue.setPassMode(shader, FormTranslucentQueue.PASS_SINGLE);
+                        /* BOBJModelVAO zeichnet nicht mehr selbst -- es IST das Netz, gezeichnet
+                         * wird es vom ModelVAORenderer. Die Durchgangsart ist dabei Parameter
+                         * und keine Klammer mehr um den Zug herum, kann also nicht mehr am
+                         * naechsten Zug haengenbleiben. */
+                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE);
 
                         FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
                     }
@@ -745,7 +745,7 @@ public class ModelInstance implements IModelInstance
                     }
                     else
                     {
-                        vao.render(shader, stack, color.r, color.g, color.b, color.a, stencilMap, light, overlay);
+                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay);
                     }
                 }
 

@@ -107,7 +107,7 @@ public class ModelVAORenderer
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, new Vector4f(r, g, b, a));
 
-        schreibeBlock(normalMat, light, overlay, passMode, kennung);
+        blockFuer(normalMat, light, overlay, passMode, kennung);
 
         /* Leeres Optional und leeres OptionalDouble heissen: Farb- und Tiefenpuffer NICHT
          * loeschen. Das Modell wird in das bestehende Weltbild gezeichnet — mit einem
@@ -130,7 +130,11 @@ public class ModelVAORenderer
     }
 
     /**
-     * Fuellt den eigenen Block fuer den naechsten Zeichenaufruf.
+     * Fuellt den eigenen Block fuer den naechsten Zeichenaufruf und gibt ihn zurueck.
+     *
+     * <p>Oeffentlich, weil nicht nur der VAO-Weg ihn braucht: die aufgeschobenen Zuege der
+     * durchsichtigen Warteschlange zeichnen CPU-Geometrie mit demselben Modell-Shader und
+     * damit mit demselben Block.
      *
      * <p>Der Puffer wird einmal angelegt und wiederbeschrieben. Das ist erlaubt, weil
      * zwischen dem Schreiben und dem Zeichnen kein zweiter Aufruf liegt — wer das aendert
@@ -138,7 +142,7 @@ public class ModelVAORenderer
      * sonst ueberschreibt das zweite Modell die Werte des ersten, bevor die Karte sie
      * gelesen hat.
      */
-    private static void schreibeBlock(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
+    public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
     {
         if (block == null)
         {
@@ -184,6 +188,8 @@ public class ModelVAORenderer
         {
             MemoryUtil.memFree(roh);
         }
+
+        return block;
     }
 
     /** Eine 16-Byte-Zeile: drei Werte plus eine Fuellstelle. */

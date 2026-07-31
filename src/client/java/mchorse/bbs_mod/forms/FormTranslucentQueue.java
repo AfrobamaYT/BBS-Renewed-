@@ -1,8 +1,10 @@
 package mchorse.bbs_mod.forms;
 
-import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
+import mchorse.bbs_mod.graphics.SofortZeichner;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -230,16 +232,11 @@ public class FormTranslucentQueue
             /* Split-pass commands hold only semi-transparent texels and never write depth;
              * whole-draw commands (the Iris path) carry the entire mesh, so they keep depth
              * writes for correct self-occlusion — the sort already ordered them between models. */
-            RenderSystem.depthMask(command.depthWrite);
-
-            if (command.cull)
-            {
-                RenderSystem.enableCull();
-            }
-            else
-            {
-                RenderSystem.disableCull();
-            }
+            /* 26.2: hier standen depthMask und enableCull/disableCull als globaler Zustand
+             * vor jedem Zug. Beides gibt es nicht mehr -- jeder Befehl waehlt seine Pipeline
+             * nach command.depthWrite und command.cull, und die traegt den Zustand. Der
+             * Unterschied ist nicht kosmetisch: ein gesetzter Zustand galt bis zum naechsten
+             * Setzen und faerbte alles ein, was danach kam. Eine Pipeline kann das nicht. */
 
             try
             {
@@ -469,47 +466,62 @@ public class FormTranslucentQueue
     public static class RenderLayerCommand extends DrawCommand
     {
         private final net.minecraft.client.renderer.rendertype.RenderType layer;
-        private final VertexBuffer buffer;
+        private final GehaltenesNetz netz;
         private final Matrix4f modelView;
 
-        public RenderLayerCommand(net.minecraft.client.renderer.rendertype.RenderType layer, VertexBuffer buffer, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
+        public RenderLayerCommand(net.minecraft.client.renderer.rendertype.RenderType layer, GehaltenesNetz netz, Matrix4f modelView, Vector3f cameraSpaceOrigin, boolean depthWrite)
         {
             super(cameraSpaceOrigin, true, depthWrite);
 
             this.layer = layer;
-            this.buffer = buffer;
+            this.netz = netz;
             this.modelView = modelView;
         }
 
         @Override
         public void draw()
         {
-            this.layer.setupRenderState();
-
-            /* startDrawing applied the layer's own write mask — re-assert ours. */
-            RenderSystem.depthMask(this.depthWrite);
-
-            this.buffer.bind();
-            this.buffer.drawWithShader(this.modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), RenderSystem.getShader());
-            VertexBuffer.unbind();
-
-            this.layer.clearRenderState();
+            /* 26.2: setupRenderState/clearRenderState sind entfallen -- eine RenderType
+             * setzte damit globalen GL-Zustand und nahm ihn danach zurueck. Was sie
+             * einstellte, steht jetzt in ihrer Pipeline, und die reicht sie heraus. Damit
+             * faellt auch das Nachziehen der Schreibmaske weg, das frueher noetig war, weil
+             * setupRenderState die eigene ueberschrieb. */
+            this.netz.zeichnen(this.layer.pipeline(), this.modelView, null, null, null, null);
         }
 
         @Override
         public void release()
         {
-            this.buffer.close();
+            this.netz.close();
         }
     }
 
     /**
-     * Replays geometry captured into a retained {@link VertexBuffer} (the CPU model path and
-     * billboards). The buffer is owned by the command and freed after the flush.
+     * Spielt Geometrie ab, die in einem {@link GehaltenesNetz} liegengeblieben ist -- der
+     * CPU-Modellweg und die Billboards. Das Netz gehoert dem Befehl und wird nach dem
+     * Leeren der Warteschlange freigegeben.
+     *
+     * <h2>26.2: drei Dinge wandern vom Zustand in den Zeichenaufruf</h2>
+     *
+     * <ul>
+     *   <li><b>Tiefenschreiben und Cull</b> standen frueher als globaler Zustand vor dem
+     *       Zeichnen ({@code depthMask}, {@code enableCull}). Jetzt sind sie Teil der
+     *       Pipeline, also waehlt der Befehl seine Pipeline danach aus.</li>
+     *   <li><b>Die Normalenmatrix</b> war ein Uniform am Shader-Objekt. Jetzt steht sie in
+     *       BBS' Modell-Block, den {@code ModelVAORenderer.blockFuer} fuellt -- derselbe
+     *       Block, den der VAO-Weg benutzt, damit beide Haelften eines Modells gleich
+     *       aussehen.</li>
+     *   <li><b>Die Durchgangsart</b> (ganz / nur undurchsichtig / nur halbdurchsichtig)
+     *       reist im selben Block mit, statt vorher gesetzt zu werden.</li>
+     * </ul>
+     *
+     * <p>⚠️ Die Textur wird ueber die Pipeline-Bindung gesetzt, nicht mehr ueber
+     * {@code bindTexture} als globalen Zustand -- ein Durchgang mit unvollstaendigen
+     * Bindungen zeichnet NICHT falsch, sondern gar nicht.
      */
-    public static class VertexBufferCommand extends DrawCommand
+    public static class NetzBefehl extends DrawCommand
     {
-        private final VertexBuffer buffer;
+        private final GehaltenesNetz netz;
         private final Supplier<RenderPipeline> shader;
         private final int passMode;
         private final Texture texture;
@@ -518,17 +530,17 @@ public class FormTranslucentQueue
         private final Runnable preDraw;
         private final Runnable postDraw;
 
-        /** The split translucent replay: only the semi-transparent texels, no depth write. */
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<RenderPipeline> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        /** Der geteilte halbdurchsichtige Durchgang: nur die durchscheinenden Texel, ohne Tiefenschreiben. */
+        public NetzBefehl(GehaltenesNetz netz, Supplier<RenderPipeline> shader, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
-            this(buffer, shader, PASS_TRANSLUCENT, false, texture, modelView, normalMat, cameraSpaceOrigin, cull, preDraw, postDraw);
+            this(netz, shader, PASS_TRANSLUCENT, false, texture, modelView, normalMat, cameraSpaceOrigin, cull, preDraw, postDraw);
         }
 
-        public VertexBufferCommand(VertexBuffer buffer, Supplier<RenderPipeline> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
+        public NetzBefehl(GehaltenesNetz netz, Supplier<RenderPipeline> shader, int passMode, boolean depthWrite, Texture texture, Matrix4f modelView, Matrix3f normalMat, Vector3f cameraSpaceOrigin, boolean cull, Runnable preDraw, Runnable postDraw)
         {
             super(cameraSpaceOrigin, cull, depthWrite);
 
-            this.buffer = buffer;
+            this.netz = netz;
             this.shader = shader;
             this.passMode = passMode;
             this.texture = texture;
@@ -541,11 +553,14 @@ public class FormTranslucentQueue
         @Override
         public void draw()
         {
-            RenderPipeline program = this.shader.get();
+            RenderPipeline pipeline = this.shader.get();
 
-            if (this.texture != null)
+            /* Die gewaehlte Pipeline traegt Tiefenschreiben und Cull dieses Befehls. Nur
+             * fuer BBS' eigene Modell-Pipelines gibt es die Varianten; eine fremde
+             * Pipeline (etwa eine Vanilla-Ebene) bringt ihren Zustand selbst mit. */
+            if (ModelVAOPipeline.istModellPipeline(pipeline))
             {
-                BBSModClient.getTextures().bindTexture(this.texture);
+                pipeline = ModelVAOPipeline.waehlen(this.cull, this.depthWrite);
             }
 
             if (this.preDraw != null)
@@ -553,22 +568,14 @@ public class FormTranslucentQueue
                 this.preDraw.run();
             }
 
-            if (this.normalMat != null)
-            {
-                Uniform normalUniform = program.getUniform("NormalMat");
+            GpuBuffer block = ModelVAORenderer.blockFuer(
+                this.normalMat != null ? this.normalMat : new Matrix3f(),
+                net.minecraft.util.LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                this.passMode, 0);
 
-                if (normalUniform != null)
-                {
-                    normalUniform.set(this.normalMat);
-                }
-            }
-
-            /* ⚠️ NICHT PORTIERT: dieser Befehl zeichnet ueber VertexBuffer, den es in
-             * 26.2 nicht mehr gibt. this.passMode wandert in den Zeichenaufruf, sobald
-             * der Weg auf einen RenderPass steht. */
-            this.buffer.bind();
-            this.buffer.drawWithShader(this.modelView, mchorse.bbs_mod.graphics.Projektion.lesen(), program);
-            VertexBuffer.unbind();
+            this.netz.zeichnen(pipeline, this.modelView, null,
+                this.texture == null ? null : SofortZeichner.entityTextur(this.texture), null,
+                (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK, block));
 
             if (this.postDraw != null)
             {
@@ -579,7 +586,7 @@ public class FormTranslucentQueue
         @Override
         public void release()
         {
-            this.buffer.close();
+            this.netz.close();
         }
     }
 }

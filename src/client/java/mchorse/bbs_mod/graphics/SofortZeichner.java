@@ -103,104 +103,13 @@ public final class SofortZeichner
             return;
         }
 
-        try (MeshData zuSchliessen = netz)
+        /* Sofort heisst hier: hochladen, einmal zeichnen, sofort wieder freigeben. Der
+         * Zeichenweg selbst ist derselbe wie beim gehaltenen Netz -- er steht dort einmal
+         * und nicht zweimal, damit ein spaeterer Eingriff (Sampler, Ziel, Uniform-Block)
+         * nicht an einer der beiden Kopien vorbeigeht. */
+        try (GehaltenesNetz kurzlebig = new GehaltenesNetz(netz))
         {
-            MeshData.DrawState zustand = zuSchliessen.drawState();
-
-            if (zustand.vertexCount() <= 0)
-            {
-                return;
-            }
-
-            GpuBuffer ecken = RenderSystem.getDevice().createBuffer(
-                () -> "bbs-sofort-ecken", GpuBuffer.USAGE_VERTEX, zuSchliessen.vertexBuffer());
-
-            try
-            {
-                zeichneMitPuffern(pipeline, zustand, zuSchliessen.indexBuffer(), ecken, modelView, farbe, textur, ziel);
-            }
-            finally
-            {
-                ecken.close();
-            }
-        }
-    }
-
-    private static void zeichneMitPuffern(RenderPipeline pipeline, MeshData.DrawState zustand, ByteBuffer eigeneIndizes,
-        GpuBuffer ecken, Matrix4f modelView, Vector4f farbe, TextureSetup textur, RenderTarget zielOderNull)
-    {
-        GpuBuffer indizes;
-        boolean eigen = eigeneIndizes != null;
-
-        if (eigen)
-        {
-            /* Sortierte Durchsichtigkeit liefert eigene Indizes mit — die haben eine
-             * Reihenfolge, die der geteilte Puffer nicht kennt. */
-            indizes = RenderSystem.getDevice().createBuffer(
-                () -> "bbs-sofort-indizes", GpuBuffer.USAGE_INDEX, eigeneIndizes);
-        }
-        else
-        {
-            /* Der Normalfall: Vierecke und Dreiecke haben eine feste Indexfolge, die sich
-             * alle teilen. Mojang haelt genau dafuer einen wachsenden Puffer bereit. */
-            indizes = RenderSystem.getSequentialBuffer(zustand.primitiveTopology()).getBuffer(zustand.indexCount());
-        }
-
-        RenderTarget ziel = zielOderNull != null ? zielOderNull : Minecraft.getInstance().gameRenderer.mainRenderTarget();
-        GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
-            .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
-
-        try (RenderPass durchgang = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "bbs-sofort", ziel.getColorTextureView(), Optional.empty(),
-            ziel.getDepthTextureView(), OptionalDouble.empty()))
-        {
-            durchgang.setPipeline(pipeline);
-
-            /* Bindet Projection, Fog, Globals UND Lighting — gemessen im Bytecode von
-             * RenderSystem.bindDefaultUniforms. Das ist der Grund, warum hier auch Vanillas
-             * Entity-Pipelines laufen: fuenf Pruefungen der Welle meldeten diese Bloecke als
-             * fehlend, dabei setzt Mojang sie selbst. Zu liefern bleiben nur die
-             * Modellansicht und die Sampler. */
-            RenderSystem.bindDefaultUniforms(durchgang);
-            durchgang.setUniform("DynamicTransforms", transformationen);
-
-            /* ⛔ ALLE DREI SAMPLER, nicht nur der erste. Vanillas Entity-Shader lesen
-             * Sampler0 (Textur), Sampler1 (Overlay) und Sampler2 (Lichtkarte) — frueher
-             * stellten das `setupOverlayColor()` und `turnOnLightLayer()` global ein.
-             * Bindet man nur den ersten, zeichnet der Durchgang NICHT falsch, sondern GAR
-             * NICHT: eine Pipeline mit unvollstaendigen Bindungen faellt aus. Fuenf
-             * Pruefungen der Welle sind genau hier stehengeblieben, zu Recht. */
-            if (textur != null)
-            {
-                bindeWennDa(durchgang, "Sampler0", textur.texure0(), textur.sampler0());
-                bindeWennDa(durchgang, "Sampler1", textur.texure1(), textur.sampler1());
-                bindeWennDa(durchgang, "Sampler2", textur.texure2(), textur.sampler2());
-            }
-
-            durchgang.setVertexBuffer(0, ecken.slice());
-            durchgang.setIndexBuffer(indizes, zustand.indexType());
-
-            /* Reihenfolge (Indexzahl, Instanzen, erster Index, Eckenversatz, erste Instanz)
-             * — abgelesen an Vanillas SkyRenderer, CubeMap und CloudRenderer, die alle
-             * drawIndexed(n, 1, 0, 0, 0) rufen. javap traegt keine Parameternamen, und die
-             * Verwechslung zeichnet lautlos nichts. */
-            durchgang.drawIndexed(zustand.indexCount(), 1, 0, 0, 0);
-        }
-        finally
-        {
-            /* Nur eigene Indexpuffer gehoeren uns — der geteilte lebt weiter. */
-            if (eigen)
-            {
-                indizes.close();
-            }
-        }
-    }
-
-    private static void bindeWennDa(RenderPass durchgang, String name, GpuTextureView ansicht, GpuSampler abtaster)
-    {
-        if (ansicht != null)
-        {
-            durchgang.bindTexture(name, ansicht, abtaster);
+            kurzlebig.zeichnen(pipeline, modelView, farbe, textur, ziel, null);
         }
     }
 
