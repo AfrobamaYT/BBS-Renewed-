@@ -221,6 +221,24 @@ loom {
 			runDir project.findProperty("laufordner") ?: "run"
 
 			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
+
+			/* GL-FEHLER LAUT MACHEN:  ./gradlew runQuick -PglDebug
+			 *
+			 * Ohne das schweigt der Treiber: ein ungueltiger GL-Aufruf reisst die JVM
+			 * kommentarlos mit einer Zugriffsverletzung (0xC0000005) ab -- kein Crashreport,
+			 * keine Ausnahme, nichts im Log. Genau so stirbt der BBS-Editor beim ersten
+			 * Zeichnen (Aufgabe 88).
+			 *
+			 * --checkGlErrors laesst Minecraft nach jedem Aufruf glGetError lesen und die
+			 * Stelle melden. Kostet Bilder pro Sekunde, deshalb nicht standardmaessig an --
+			 * aber beim Suchen eines nativen Absturzes ist es der Unterschied zwischen
+			 * "irgendwo im Zeichnen" und einer Zeilennummer.
+			 * --renderDebugLabels beschriftet zusaetzlich die GPU-Objekte, damit die Meldung
+			 * sagt WELCHER Puffer/welche Textur gemeint ist. */
+			if (project.hasProperty("glDebug"))
+			{
+				programArgs "--checkGlErrors", "--renderDebugLabels"
+			}
 		}
 	}
 }
