@@ -22,7 +22,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  *   <li><b>Die Aufrufstelle.</b> {@code getTextureLocation} wird nicht mehr aus {@code render}
  *       gerufen, sondern aus {@code getRenderType(zustand, ...)} (am Bytecode geprueft — in
  *       {@code submit}, dem Nachfolger von {@code render}, kommt sie gar nicht mehr vor). Ein
- *       Redirect auf {@code method = "render"} haette still nichts mehr getroffen.</li>
+ *       Redirect, der weiter auf {@code render} zielte, haette still nichts mehr getroffen.
+ *       ⚠️ Der Satz stand bis 2026-07-31 mit dem Selektor ausgeschrieben im Text — {@code
+ *       tools/mixin-ziele.py} liest den Quelltext ohne Kommentare zu entfernen und meldete
+ *       diese Datei deshalb als totes Ziel. Falschmeldung, keine Injektion: gemeldet.</li>
  *   <li><b>Das Argument.</b> {@code getTextureLocation} nimmt den RENDER-ZUSTAND statt der
  *       Entity. Der Zustand traegt aber weder Entity noch UUID, und die Auswahl haengt an der
  *       UUID — die Entity kommt darum aus der Zusatzablage, die
@@ -42,9 +45,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererTextureMixin
 {
+    /*
+     * ⛔ KEIN require = 0 MEHR (2026-07-31). Das stand hier waehrend des Umhaengens und haette
+     * aus einem lauten Weben-Fehler eine stille Wirkungslosigkeit gemacht — die Textur-
+     * Ueberschreibung waere einfach nie wieder gelaufen, ohne eine Zeile im Log.
+     * Das Ziel ist gemessen, nicht vermutet: getRenderType(S,ZZZ) beginnt mit
+     * `invokevirtual getTextureLocation:(LivingEntityRenderState;)Identifier` (javap -c am
+     * 26.2-jar). Bricht das kuenftig weg, SOLL der Start scheitern.
+     */
     @Redirect(method = "getRenderType", at = @At(value = "INVOKE",
-        target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;getTextureLocation(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;)Lnet/minecraft/resources/Identifier;"),
-        require = 0)
+        target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;getTextureLocation(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;)Lnet/minecraft/resources/Identifier;"))
     private Identifier bbs$redirectGetTexture(LivingEntityRenderer<?, ?, ?> self, LivingEntityRenderState zustand)
     {
         @SuppressWarnings({"unchecked", "rawtypes"})

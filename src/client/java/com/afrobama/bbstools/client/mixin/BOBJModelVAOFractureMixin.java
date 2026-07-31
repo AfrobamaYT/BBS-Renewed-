@@ -2,94 +2,87 @@ package com.afrobama.bbstools.client.mixin;
 
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 
+import com.mojang.blaze3d.systems.RenderPass;
+
 import mchorse.bbs_mod.cubic.render.vao.BOBJModelVAO;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.function.IntPredicate;
-
 /**
- * Skips drawing triangles whose dominant bone has been "fractured" —
- * detached from the actor and re-spawned as an independent PhysicsMod
- * rigidbody. Done in two complementary injections so we cover BOTH the
- * bulk-draw fast path AND the per-bone-texture slow path.
+ * Laesst dreiecke aus, deren dominanter knochen "fracturiert" wurde — vom actor geloest und
+ * als eigenstaendiger PhysicsMod-rigidbody neu gespawnt.
  *
- * <h2>Injection 1 — wrap the IntPredicate in {@code drawTriangles}</h2>
- * The slow path ({@code drawTriangles(predicate)}) is used when the
- * model has bones with texture overrides. We intercept the predicate
- * at HEAD and {@code AND} it with our fracture filter — fractured
- * bones return false, so their triangles are skipped in the per-bone
- * GL submission.
+ * <h2>26.2: aus zwei einhaengungen ist eine geworden</h2>
  *
- * <h2>Injection 2 — redirect the bulk {@code glDrawArrays} in {@code render}</h2>
- * The fast path ({@code glDrawArrays(GL_TRIANGLES, 0, count)} drawing
- * EVERY triangle) is hit when the model has no per-bone texture
- * overrides. We redirect that single call: if the active actor has any
- * fractured bones, route through a per-bone loop that skips them;
- * otherwise let the original bulk draw run unchanged (zero overhead
- * for actors that aren't being fractured).
+ * <p>Frueher gab es zwei zeichenwege in {@link BOBJModelVAO} und darum zwei injektionen:</p>
+ * <ul>
+ *   <li>{@code drawTriangles(IntPredicate)} — der langsame weg fuer modelle mit
+ *       textur-overrides je knochen. Das predicate wurde am HEAD abgefangen und mit dem
+ *       fracture-filter UND-verknuepft.</li>
+ *   <li>{@code render(...)} — der schnelle weg, ein einziges {@code glDrawArrays} ueber alle
+ *       dreiecke. Dieser aufruf wurde umgeleitet.</li>
+ * </ul>
  *
- * <p><b>Identity tracking:</b> the IEntity being rendered is captured
- * via {@link FractureRenderContext} (set by
- * {@code ModelFormRendererFractureCaptureMixin} at render3D HEAD/TAIL).
- * If null (e.g. preview render outside the actor pipeline) both
- * mixins fall back to "no filter" and the model renders normally.</p>
+ * <p><b>Beide methoden gibt es nicht mehr</b>, und der predicate-weg hat auch keinen
+ * nachfolger: 26.2 kennt kein rohes GL mehr, der VAO legt seine puffer an eine pipeline und
+ * schickt EINEN zug ab ({@code zeichnen(RenderPass)} -> {@code pass.draw(...)}). Damit faellt
+ * die erste injektion ersatzlos weg — sie deckte einen zweig ab, den es nicht mehr gibt —,
+ * und die zweite haengt jetzt an diesem einen zug. Inhaltlich verliert das nichts, im
+ * gegenteil: {@code BOBJModelSimpleVAO} erbt {@code zeichnen} und ist damit mit abgedeckt.</p>
+ *
+ * <p>Die argumentfolge von {@code RenderPass.draw} ist
+ * {@code (eckenZahl, instanzen, ersteEcke, ersteInstanz)} — nachgesehen im OpenGL-unterbau
+ * ({@code GlRenderPass.draw} -> {@code executeDraw} -> {@code drawFromBuffers} ->
+ * {@code glDrawArraysInstancedBaseInstance(mode, first, count, primcount, baseinstance)}),
+ * nicht geraten. Ein per-knochen-lauf ist damit {@code draw(laenge * 3, 1, start * 3, 0)}.</p>
+ *
+ * <p><b>Identität:</b> der gerenderte IEntity kommt ueber
+ * {@code FractureRenderContext} (gesetzt von {@code ModelFormRendererFractureCaptureMixin} an
+ * render3D HEAD/TAIL). Ist er null (z.B. preview-render ausserhalb der actor-pipeline), faellt
+ * die logik auf "kein filter" zurueck und das modell rendert normal.</p>
  */
-@Mixin(BOBJModelVAO.class)
+@Mixin(value = BOBJModelVAO.class, remap = false)
 public abstract class BOBJModelVAOFractureMixin
 {
-    @ModifyVariable(method = "drawTriangles(Ljava/util/function/IntPredicate;)V",
-                    at = @At("HEAD"),
-                    argsOnly = true,
-                    require = 0)
-    private IntPredicate bbstools$wrapPredicateWithFractureFilter(IntPredicate original)
-    {
-        /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
-         * com.afrobama.blendertransform.BOBJModelVAOFractureLogik und ist damit
-         * hotswapbar — siehe MixinBruecke-javadoc. */
-        Object ergebnis = MixinBruecke.rufe("BOBJModelVAOFractureLogik",
-            "wrapPredicateWithFractureFilter", original);
-
-        return ergebnis instanceof IntPredicate ? (IntPredicate) ergebnis : original;
-    }
-
     /**
-     * The bulk fast-path call inside {@code render(...)}. When NO bones
-     * are fractured we keep the original bulk draw (single GL call,
-     * zero overhead). When SOME bones are fractured we have to route
-     * through a per-triangle loop — implemented inline rather than
-     * calling the private drawTriangles, because @Redirect target's
-     * "this" reference would need an accessor and inline avoids that
-     * complexity.
+     * Der einzige zeichen-zug des modells. Ist kein knochen fracturiert, laeuft er unveraendert
+     * durch (ein zug, kein aufwand); sonst zerlegt ihn die logik in laeufe, die die
+     * fracturierten knochen ueberspringen.
      */
-    @Redirect(method = "render",
+    @Redirect(method = "zeichnen",
               at = @At(value = "INVOKE",
-                       target = "Lorg/lwjgl/opengl/GL30;glDrawArrays(III)V",
-                       ordinal = 0),
-              require = 0)
-    private void bbstools$conditionalBulkDraw(int mode, int first, int count)
+                       target = "Lcom/mojang/blaze3d/systems/RenderPass;draw(IIII)V"))
+    private void bbstools$bedingtZeichnen(RenderPass pass, int eckenZahl, int instanzen,
+        int ersteEcke, int ersteInstanz)
     {
         /* BRÜCKEN-MUSTER (2026-07-26): logik liegt in
          * com.afrobama.blendertransform.BOBJModelVAOFractureLogik und ist damit
-         * hotswapbar — siehe MixinBruecke-javadoc. BOBJModelVAOAccessor ist ein
-         * mixin-accessor-interface im stabilen loader, kein kernel-typ.
+         * hotswapbar — siehe MixinBruecke-javadoc.
+         *
+         * `this` geht als nacktes Object hinueber, nicht mehr als BOBJModelVAOAccessor: die
+         * logik hat den accessor-typ ohnehin nur entgegengenommen und sofort auf BOBJModelVAO
+         * zurueckgecastet. Ein CHECKCAST auf ein accessor-interface im heissesten zeichenpfad
+         * ist ein risiko ohne gegenwert — faellt der accessor-mixin aus, flaeche das hier pro
+         * zug mit einer ClassCastException auf, und die kann `rufe` nicht auffangen, weil sie
+         * VOR dem aufruf passiert.
          *
          * ⚠ DER FALLBACK IST PFLICHT (befund aus dem adversarischen review 2026-07-26).
-         * Dies ist ein @Redirect: der ERSETZTE aufruf ist `glDrawArrays`. Kommt die brücke
-         * nicht durch, zeichnet niemand — das modell verschwindet lautlos. Ein @Redirect ohne
-         * fallback verhält sich bei einem brücken-fehler SCHLECHTER als gar kein mixin.
+         * Dies ist ein @Redirect: der ERSETZTE aufruf ist der zeichen-zug selbst. Kommt die
+         * brücke nicht durch, zeichnet niemand — das modell verschwindet lautlos. Ein
+         * @Redirect ohne fallback verhaelt sich bei einem brücken-fehler SCHLECHTER als gar
+         * kein mixin.
          *
          * `rufe` liefert bei erfolg `Boolean.TRUE` (die kernel-methode hat gezeichnet), bei
-         * jedem fehler `null`. Nur dann holen wir den bulk-draw hier nach. */
-        Object gezeichnet = MixinBruecke.rufe("BOBJModelVAOFractureLogik", "conditionalBulkDraw",
-            (BOBJModelVAOAccessor)(Object) this, mode, first, count);
+         * jedem fehler `null` — und meldet den fehler EINMAL laut ueber BrueckenMeldung. Nur
+         * dann holen wir den zug hier nach. */
+        Object gezeichnet = MixinBruecke.rufe("BOBJModelVAOFractureLogik", "bedingtZeichnen",
+            this, pass, eckenZahl, instanzen, ersteEcke, ersteInstanz);
 
         if (!(gezeichnet instanceof Boolean b) || !b)
         {
-            org.lwjgl.opengl.GL30.glDrawArrays(mode, first, count);
+            pass.draw(eckenZahl, instanzen, ersteEcke, ersteInstanz);
         }
     }
 

@@ -32,6 +32,17 @@ public interface BOBJModelVAOAccessor
     @Accessor("armature")
     BOBJArmature bbstools$getArmature();
 
-    @Accessor("vao")
-    int bbstools$getVao();
+    /* ⛔ ENTFERNT 2026-07-31: @Accessor("vao") -- das Feld gibt es nicht mehr.
+     *
+     * 26.2 haelt keine rohe GL-Kennung mehr; BOBJModelVAO fuehrt jetzt drei GpuBuffer
+     * (position, normale, texturUV). Ein @Accessor auf ein Feld, das es nicht gibt, ist ein
+     * HARTER WEBFEHLER -- der Start scheitert, nicht der Bau.
+     *
+     * ⚠️ Und tools/mixin-ziele.py sieht das NICHT: es prueft Methodenziele, keine Feldziele.
+     * Gefunden hat es ein Arbeiter beim Lesen. Wer die Luecke schliessen will, muss dort die
+     * @Accessor/@Shadow-Felder mitpruefen.
+     *
+     * Aufgerufen wurde bbstools$getVao nirgends (gegrept), also ersatzlos raus. data und
+     * armature bleiben -- die Felder existieren weiter (und sind sogar public, der Accessor
+     * ist dort bequem, nicht noetig). */
 }
