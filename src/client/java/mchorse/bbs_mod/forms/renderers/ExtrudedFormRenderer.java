@@ -1,18 +1,16 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import net.minecraft.client.renderer.RenderPipelines;
-
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAO;
+import mchorse.bbs_mod.cubic.render.vao.ModelVAOPipeline;
 import mchorse.bbs_mod.cubic.render.vao.ModelVAORenderer;
 import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import mchorse.bbs_mod.forms.forms.ExtrudedForm;
+import mchorse.bbs_mod.graphics.ModellOhneSchattierung;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.forms.renderers.utils.FormColorBlend;
 import mchorse.bbs_mod.resources.Link;
@@ -84,28 +82,47 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             shading = true;
         }
 
-        /* ⛔ OFFEN 26.2 — beide Vanilla-Zweige unten (ENTITY_TRANSLUCENT und
-         * getPositionTexColorShader, und ebenso getRendertypeEntityCutoutShader weiter unten)
-         * sind hier STRUKTURELL falsch, nicht nur umbenannt:
+        /* ⛔ 26.2: JEDE Pipeline hier muss BBS' DREI Vertexbindungen tragen (Position an 0,
+         * Normale an 1, UV0 an 2). Gezeichnet wird ueber
+         * ModelVAORenderer.render(pipeline, ModelVAO, ...), und ModelVAO.zeichnen setzt genau
+         * diese drei Puffer. Eine Vanilla-Pipeline erklaert dagegen EINE verschraenkte
+         * Bindung 0 (ENTITY bzw. POSITION_TEX_COLOR); mit ihr liest der Shader den reinen
+         * Positionspuffer als ganzen Vertex -- kein Fehler, sondern Muell im Bild. Beide
+         * Vanilla-Zweige, die bis hierher standen, waren aus diesem Grund falsch, auch wenn
+         * sie uebersetzten.
          *
-         *  Gezeichnet wird ueber ModelVAORenderer.render(pipeline, ModelVAO, ...). Der bindet
-         *  BBS' DREI getrennte Vertexpuffer (Position an Bindung 0, Normale an 1, UV0 an 2) --
-         *  siehe ModelVAOPipeline. Eine Vanilla-Pipeline erklaert dagegen EINE verschraenkte
-         *  Bindung 0 (DefaultVertexFormat.ENTITY bzw. POSITION_TEX_COLOR). Setzt man sie hier
-         *  ein, liest der Shader den reinen Positionspuffer als ganzen verschraenkten Vertex:
-         *  kein Fehler, sondern Muell im Bild.
-         *
-         *  Es braucht darum eine BBS-Modell-Pipeline je Fall -- eine unbeschattete Variante des
-         *  Modell-Shaders und eine Entscheidung, wie der Iris-Weg kuenftig laeuft. Das ist ein
-         *  Entwurf, keine Uebersetzung, und wird darum NICHT hier geraten.
-         *
-         *  format ist seit dem Port ohne Wirkung: renderModel nimmt kein Vertexformat mehr
-         *  entgegen, das Format steht in der Pipeline. Die Zeile bleibt stehen, weil sie die
-         *  offene Frage benennt (welches Format braucht die fehlende Pipeline). */
-        VertexFormat format = shading ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR;
-        Supplier<RenderPipeline> normal = shading && !BBSRendering.isIrisShadersEnabled()
-            ? BBSShaders::getModel
-            : (shading ? () -> RenderPipelines.ENTITY_TRANSLUCENT : GameRenderer::getPositionTexColorShader);
+         * Die lokale Variable "format" ist ersatzlos entfallen. Sie war schon vor dem Port
+         * ohne Wirkung -- ModelVAORenderer nahm das Format des SHADERS, nie diese Variable --
+         * und in 26.2 steht das Format ohnehin in der Pipeline. */
+        Supplier<RenderPipeline> normal;
+
+        if (!shading)
+        {
+            /* Unbeschattet: die BBS-Pipeline mit model_no_shading. Sie tut genau das, was
+             * Vanillas position_tex_color hier tat -- Textur mal Formfarbe, ohne
+             * Richtungslicht, ohne Lichtkarte, ohne Nebel.
+             *
+             * ⚠️ Sie steht ABSICHTLICH nicht in ModelVAOPipeline.istModellPipeline: die
+             * Zwei-Pass-Durchsichtigkeit hing bis 1.21.1 am Uniform "PassMode", das nur BBS'
+             * beschatteter Modell-Shader hatte. position_tex_color hatte es nicht, dieser
+             * Fall lief also auch damals schon einpassig. */
+            normal = ModellOhneSchattierung::durchsichtig;
+        }
+        else
+        {
+            /* Beschattet. Unter Iris stand hier bis 1.21.1 Vanillas Entity-Shader, damit der
+             * Shaderpack die Form wie eine Entity beleuchtet. Das kann in 26.2 keine
+             * Vanilla-Pipeline mehr leisten (Bindungsproblem oben), und die Iris-Anbindung
+             * ist in diesem Port stillgelegt -- BBSRendering.isIrisShadersEnabled() liefert
+             * konstant false, der Iris-Zweig ist derzeit unerreichbar.
+             *
+             * ⚠️ VERHALTENSAENDERUNG, sobald Iris zurueckkommt: die Form wird dann von BBS'
+             * eigenem Zwei-Richtungslicht beschattet und NICHT mehr vom Shaderpack. Wer das
+             * zurueckwill, braucht eine Iris-gefuetterte Pipeline mit denselben drei
+             * Bindungen; eine Vanilla-Pipeline kann es nie sein. */
+            normal = BBSShaders::getModel;
+        }
+
         Supplier<RenderPipeline> shader = this.getShader(context,
             normal,
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
@@ -153,18 +170,24 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
             boolean cutout = defer && irisWorld && textureObject != null && textureObject.hasTranslucency()
                 && color.a >= 1F && !this.form.additiveColor.get();
 
-            RenderPipeline finalShader = cutout ? GameRenderer.getRendertypeEntityCutoutShader() : shader.get();
+            /* 26.2: der Cutout-Fall bekommt ModelVAOPipeline.UNDURCHSICHTIG statt Vanillas
+             * Entity-Cutout-Shader. Zwei Gruende, beide zwingend:
+             *
+             *  1. Vanillas Pipeline hat die falschen Vertexbindungen (siehe oben) -- sie
+             *     zeichnete hier Muell.
+             *  2. UNDURCHSICHTIG ist die blendfreie Variante des Modell-Shaders und ersetzt
+             *     damit das disableBlend(), das hier bis 1.21.1 vor dem Zug stand. In 26.2
+             *     ist Mischen kein Schalter mehr, sondern Teil der Pipeline -- die Absicht
+             *     "mischen aus" hat nur noch hier einen Ort.
+             *
+             * Die Verwerfungsschwelle bleibt dabei gleich: model.fsh verwirft bei a < 0.1,
+             * genau wie der Entity-Cutout-Shader. */
+            RenderPipeline finalShader = cutout ? ModelVAOPipeline.UNDURCHSICHTIG : shader.get();
             boolean wasActive = false;
 
             if (irisWorld)
             {
                 wasActive = FormTranslucentQueue.suspend();
-            }
-
-            if (cutout)
-            {
-                /* 26.2: disableBlend ist entfallen -- der Zustand steckt in der Pipeline
-                 * des Zuges. Absicht war: mischen aus. */
             }
 
             try
@@ -207,9 +230,8 @@ public class ExtrudedFormRenderer extends FormRenderer<ExtrudedForm>
 
             /* Das abschliessende disableBlend() entfaellt ersatzlos: es schloss nur den globalen
              * Schalter fuer die folgenden Draws, und die holen ihr Blending aus ihrer eigenen
-             * Pipeline. Das disableBlend() des Cutout-Falls oben bleibt dagegen offen — es will
-             * die blendfreie ModelVAOPipeline.UNDURCHSICHTIG, und die gehoert an die
-             * Pipeline-Wahl des Draws, nicht an eine Zustandszeile hier. */
+             * Pipeline. Das disableBlend() des Cutout-Falls ist oben in die Pipeline-Wahl
+             * gewandert (UNDURCHSICHTIG) -- dort, wo Mischen in 26.2 seinen Ort hat. */
 
         }
     }

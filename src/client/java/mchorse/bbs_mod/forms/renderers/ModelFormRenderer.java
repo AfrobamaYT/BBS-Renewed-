@@ -19,7 +19,9 @@ import mchorse.bbs_mod.cubic.data.model.ModelGroup;
 import mchorse.bbs_mod.cubic.ik.ModelIKDebug;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
 import mchorse.bbs_mod.cubic.constraints.ModelConstraintsRuntime;
-import mchorse.bbs_mod.cubic.physics.ModelPhysicsDebug;
+/* ⛔ P3-26.2-AUS: import von mchorse.bbs_mod.cubic.physics.ModelPhysicsDebug entfernt —
+ * die klasse ist im ausschluss-block von build.gradle stillgelegt. Ihre beiden aufrufe
+ * stehen weiter unten (renderModel / updateStencilMap) je mit begruendung. */
 import mchorse.bbs_mod.cubic.physics.ModelPhysicsRuntime;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
@@ -430,10 +432,30 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelIKDebug.render(newStack, model.model, ikMap, "");
         }
 
-        if (stencilMap == null && !this.renderingArm && this.form != null && this.form.physics.get() instanceof MapType physicsMap)
-        {
-            ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
-        }
+        /* ⛔ P3-26.2-AUS — die physik-ueberlagerung im modell-editor zeichnet nicht mehr.
+         * Hier stand, im gleichen if wie die IK-ueberlagerung darueber:
+         *   if (stencilMap == null && !this.renderingArm && this.form != null
+         *       && this.form.physics.get() instanceof MapType physicsMap)
+         *   {
+         *       ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
+         *   }
+         * Weg sind damit: kettendraehte, gelenk-marker, wurzel/spitze-einfaerbung, die
+         * gestrichelte linie zum attach-knochen und die wind-pfeile. Die PHYSIK SELBST
+         * laeuft weiter (ModelPhysicsRuntime, oben) — nur ihr bild fehlt.
+         *
+         * ⚠ ANDERE URSACHE ALS DIE UEBRIGEN P3-AUSSCHLUESSE, nicht verwechseln:
+         * ModelPhysicsDebug importiert KEINE fremd-mod (kein net.diebuddies, kein
+         * foundry.veil, kein net.irisshaders — die klasse hat nur mchorse/blaze3d/
+         * minecraft/joml-importe). Sie hat mit PhysicsMod nichts zu tun, das ist BBS-eigene
+         * knochenphysik. Sie steht im ausschluss, weil ihr zeichenweg halb umgestellt ist:
+         * sie beginnt schon ueber SofortZeichner, beendet aber noch mit
+         * BufferUploader.drawWithShader(builder.build()) aus dem gestrichenen sofortmodus.
+         *
+         * ⭐ SIE KOMMT ALSO DURCH PORTIEREN ZURUECK, nicht mit einer abhaengigkeit — und die
+         * vorlage liegt daneben: ModelIKDebug ist dieselbe zeichensprache und fertig
+         * portiert (try-with-resources um den ByteBufferBuilder, SofortZeichner.beginnen
+         * + SofortZeichner.zeichnen). Danach: ausschluss-zeile in build.gradle streichen,
+         * import und diese beiden bloecke zurueck. */
 
 
         /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur
@@ -623,26 +645,24 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
                 consumers.setSubstitute(BBSRendering.getColorConsumer(color));
 
-                /* ⛔ OFFEN 26.2 — die beiden getItemRenderer()-Aufrufe unten sind NICHT
-                 * portiert, und das ist Absicht.
+                /* 26.2: Minecraft.getItemRenderer() und ItemRenderer.renderStatic gibt es nicht
+                 * mehr. Beide Aufrufe gehen jetzt ueber graphics/Gegenstandsmodell -- das
+                 * Gegenstueck zu graphics/Blockmodell, aus demselben Grund:
+                 * ItemStackRenderState.submit(...) gibt KEINEN VertexConsumer heraus, an dem
+                 * die Umfaerbung greifen koennte. Wer stumpf darauf umstellt, bekommt einen
+                 * sichtbaren Gegenstand OHNE Faerbung -- es uebersetzt, es zeichnet, und die
+                 * Faerbung ist lautlos weg. Gegenstandsmodell faengt den Sammler ab und
+                 * reicht die Vierecke ueber submitCustomGeometry ein.
                  *
-                 * Minecraft.getItemRenderer() und ItemRenderer.renderStatic gibt es nicht
-                 * mehr. Der Weg heisst jetzt: ItemModelResolver.updateForTopItem(...) fuellt
-                 * einen ItemStackRenderState, und dessen submit(PoseStack, SubmitNodeCollector,
-                 * licht, overlay, umriss) reicht ihn beim Zeichenweg ein.
+                 * ⚠️ Die Umfaerbung wird DIREKT uebergeben, nicht aus setSubstitute oben
+                 * geholt: der Rumpf eines submitCustomGeometry laeuft erst beim Bauen des
+                 * Bildes, also lange nach dem setSubstitute(null) weiter unten. Dort abgeholt
+                 * waere sie null. Die Zeile mit setSubstitute bleibt trotzdem stehen -- sie
+                 * gilt fuer alles andere, was in diesem Abschnitt durch den Anbieter geht.
                  *
-                 * ⚠️ Warum das hier nicht mechanisch geht: submit() gibt KEINEN VertexConsumer
-                 * heraus. Genau daran haengt aber die Zeile direkt darueber -- die Form-Farbe
-                 * eines gehaltenen Gegenstands kommt aus setSubstitute, und die greift nur
-                 * dort, wo BBS den Verbraucher in die Hand bekommt. Wer hier stumpf auf submit
-                 * umstellt, bekommt einen sichtbaren Gegenstand OHNE Faerbung: es kompiliert,
-                 * es zeichnet, und die Faerbung ist lautlos weg.
-                 *
-                 * Der Ausweg ist derselbe wie bei Bloecken (siehe graphics/Blockmodell): die
-                 * Ebenen des ItemStackRenderState selbst einreichen, ueber
-                 * SubmitNodeCollector.submitItem(pose, kontext, licht, overlay, toenung,
-                 * vierecke, folie) bzw. submitCustomGeometry. Das ist ein Entwurf, keine
-                 * Uebersetzung -- darum bleibt es stehen. */
+                 * ⚠️ Der Linkshaender-Schalter (mode == THIRD_PERSON_LEFT_HAND) entfaellt:
+                 * 26.2 leitet ihn aus dem Anzeigekontext selbst ab. Fuer die beiden Kontexte,
+                 * die BBS hier reicht, ist das derselbe Wert. */
 
                 /* For some reason, due to Sodium and my color consumer, in some cases items like Trident,
                  * shield, etc. not get rendered, but if in another arm there is another item, it does render...
@@ -651,12 +671,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
                 {
                     stack.pushPose();
                     stack.scale(0F, 0F, 0F);
-                    Minecraft.getInstance().getItemRenderer().renderStatic(null, new ItemStack(Items.OAK_BUTTON), mode, mode == ItemDisplayContext.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);
+                    mchorse.bbs_mod.graphics.Gegenstandsmodell.einreichen(new ItemStack(Items.OAK_BUTTON), mode, stack, consumers.sammler(), BBSRendering.getColorConsumer(color), target.getWorld(), light, overlay);
                     consumers.draw();
                     stack.popPose();
                 }
 
-                Minecraft.getInstance().getItemRenderer().renderStatic(null, itemStack, mode, mode == ItemDisplayContext.THIRD_PERSON_LEFT_HAND, stack, consumers, target.getWorld(), light, overlay, 0);
+                mchorse.bbs_mod.graphics.Gegenstandsmodell.einreichen(itemStack, mode, stack, consumers.sammler(), BBSRendering.getColorConsumer(color), target.getWorld(), light, overlay);
                 consumers.draw();
                 consumers.setSubstitute(null);
                 FormTranslucentQueue.setSortOrigin(null);
@@ -863,10 +883,16 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelIKDebug.renderStencil(context.stack, model.model, ikMap, context.stencilMap, this.form);
         }
 
-        if (this.form != null && this.form.physics.get() instanceof MapType physicsMap)
-        {
-            ModelPhysicsDebug.renderStencil(context.stack, model.model, physicsMap, context.stencilMap, this.form);
-        }
+        /* ⛔ P3-26.2-AUS — zweite haelfte desselben features (begruendung oben in
+         * renderModel). Hier stand:
+         *   if (this.form != null && this.form.physics.get() instanceof MapType physicsMap)
+         *   {
+         *       ModelPhysicsDebug.renderStencil(context.stack, model.model, physicsMap, context.stencilMap, this.form);
+         *   }
+         * Das war der klick-durchgang: er spiegelte die attach-marker in die auswahl-maske,
+         * damit ein klick auf einen marker seinen (oft mesh-losen) knochen auswaehlt. Ohne
+         * ihn sind diese knochen im editor nur noch ueber die knochenliste erreichbar,
+         * nicht mehr durch anklicken im viewport. */
     }
 
     private void captureMatrices(ModelInstance model)

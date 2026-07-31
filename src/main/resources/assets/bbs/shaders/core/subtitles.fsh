@@ -89,5 +89,13 @@ void main()
         }
     }
 
-    fragColor = color * vertexColor;
+    /* ⛔ NUR die Deckkraft, NICHT vertexColor als Ganzes. Bis 1.21.1 stand hier
+     * color * vertexColor -- damals trug die Vertexfarbe Weiss mit Deckkraft, also war das
+     * dasselbe. Seit die Weichzeichnung in R/G mitreist (siehe #define Blur oben), sind R
+     * und G im Normalfall NULL: color * vertexColor faerbte die Untertitel dann schwarz.
+     * Der Fehler meldet sich nicht, er sieht nur falsch aus.
+     *
+     * Die Farbe des Textes steckt in Sampler0 -- die Aufrufstelle zeichnet ihn vorher in
+     * eine eigene Textur. Von hier kommt keine Faerbung mehr, nur die Ueberblendung. */
+    fragColor = color * vec4(1.0, 1.0, 1.0, vertexColor.a);
 }

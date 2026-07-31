@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.ui.film;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -53,27 +52,24 @@ public class UISubtitleRenderer
             return;
         }
 
-        /* ⛔ OFFEN 26.2 — die beiden Zeilen darunter bleiben absichtlich stehen.
+        /* 26.2: Einzel-Uniforms gibt es nicht mehr, und ein GUI-Element kann keinen eigenen
+         * Uniform-Block binden (GuiElementRenderState hat dafuer keinen Haken -- siehe
+         * BBSPipelines). Beide frueheren Uniforms sind darum ersetzt, nicht portiert:
          *
-         * Einzel-Uniforms gibt es nicht mehr; der Shader ist dafuer schon umgebaut
-         * (assets/bbs/shaders/core/subtitles.fsh): TextureSize erfragt er selbst per
-         * textureSize(Sampler0, 0), und Blur soll laut seinem eigenen Kommentar in der
-         * VERTEXFARBE mitreisen -- R = Staerke, G = Schalter "deckend", jeweils in Zehnteln
-         * (#define Blur (vertexColor.rg * 25.5)).
+         *   TextureSize -> der Shader erfragt sie selbst per textureSize(Sampler0, 0). Das
+         *                  ist derselbe Wert, den diese Stelle vorher hineinreichte: die
+         *                  Zieltextur wird je Untertitel auf fw x fh gebracht.
+         *   Blur        -> reist in der VERTEXFARBE mit (siehe untertitelFarbe unten),
+         *                  dieselbe Loesung wie beim Auswahlrahmen des Textur-Editors.
          *
-         * ⚠️ Warum es hier trotzdem NICHT gepackt wird: die letzte Zeile des Shaders lautet
-         * fragColor = color * vertexColor. Die Vertexfarbe modulhiert also weiterhin RGB. Der
-         * Aufruf unten reicht heute Weiss mit Deckkraft durch; packte man die Weichzeichnung
-         * in R/G, waeren das im Normalfall (keine Weichzeichnung) NULLEN -- und die Untertitel
-         * waeren schwarz statt weiss. Es kompiliert, es zeichnet, und es ist falsch.
-         *
-         * Zu beheben im Shader, nicht hier: die letzte Zeile muss auf die Deckkraft allein
-         * zielen (fragColor = color * vec4(1.0, 1.0, 1.0, vertexColor.a)). Danach kann diese
-         * Stelle die Weichzeichnung in die Farbe packen. Der Shader liegt ausserhalb dieses
-         * Auftrags-Manifests. */
+         * ⚠️ Dazu MUSSTE die letzte Zeile von subtitles.fsh mitgezogen werden. Sie lautete
+         * fragColor = color * vertexColor -- die Vertexfarbe modulierte also weiterhin RGB.
+         * Mit der Weichzeichnung in R/G waeren das im Normalfall NULLEN gewesen, und die
+         * Untertitel waeren schwarz geworden: es uebersetzt, es zeichnet, und es ist falsch.
+         * Jetzt zielt sie auf die Deckkraft allein (color * vec4(1.0, 1.0, 1.0,
+         * vertexColor.a)). Kodierung hier und Auswertung dort haengen aneinander, ohne dass
+         * ein Compiler es sieht. */
         RenderPipeline program = BBSShaders.getSubtitlesProgram();
-        Uniform blur = program.getUniform("Blur");
-        Uniform textureSize = program.getUniform("TextureSize");
         Supplier<RenderPipeline> supplier = () -> program;
 
         com.mojang.blaze3d.pipeline.RenderTarget fb = Minecraft.getInstance().gameRenderer.mainRenderTarget();
@@ -206,16 +202,6 @@ public class UISubtitleRenderer
             stack.translate(x, y, 0);
             MatrixStackUtils.applyTransform(stack, transform);
 
-            if (blur != null)
-            {
-                blur.set(subtitle.shadow, subtitle.shadowOpaque ? 1F : 0F);
-            }
-
-            if (textureSize != null)
-            {
-                textureSize.set((float) texture.width, (float) texture.height);
-            }
-
             /* 26.2: enableBlend UND blendFuncSeparate sind entfallen -- beides ist kein
              * globaler Zustand mehr. Die Mischung steht im ColorTargetState der Pipeline, und
              * die des Untertitel-Shaders bringt sie mit (subtitles.json: srcalpha /
@@ -224,7 +210,7 @@ public class UISubtitleRenderer
             /* 26.2: texturedBox nimmt kein rohes GL-Handle mehr. Ein Zeichendurchgang bindet
              * eine GpuTextureView plus Sampler, keine Nummer -- darum geht das Texturobjekt
              * selbst hinein, und der Batcher holt sich view() und sampler() daraus. */
-            batcher.texturedBox(supplier, texture, Colors.setA(Colors.WHITE, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
+            batcher.texturedBox(supplier, texture, untertitelFarbe(subtitle.shadow, subtitle.shadowOpaque, alpha), -fw * subtitle.anchorX, -fh * subtitle.anchorY, texture.width, texture.height, 0, 0, texture.width, texture.height, texture.width, texture.height);
 
             stack.popPose();
         }
@@ -235,5 +221,38 @@ public class UISubtitleRenderer
          * zuruecksetzen koennte, gibt es nicht mehr — jede Pipeline bringt ihren eigenen mit.
          * Das disableCull() oben bleibt dagegen offen: dort steht die Absicht (beidseitig
          * zeichnen, weil die Untertitel-Transform spiegeln darf). */
+    }
+
+    /**
+     * Packt Weichzeichnung und Deckkraft in die Vertexfarbe, weil 26.2 einem GUI-Element
+     * keine eigenen Uniforms erlaubt.
+     *
+     * <p>Bis 1.21.1 war die Weichzeichnung ein {@code Uniform} mit zwei Fliesskommazahlen am
+     * Shader-Objekt. {@code GuiElementRenderState} hat dafuer keinen Haken mehr; die Werte
+     * reisen dort mit, wo je Element noch Platz ist — dieselbe Loesung wie beim Auswahlrahmen
+     * des Textur-Editors ({@code UIPixelsEditor.auswahlFarbe}) und bei Vanillas
+     * Uebelkeits-Ueberlagerung.
+     *
+     * <p>⚠️ DIESE KODIERUNG HAT EIN GEGENSTUECK in {@code subtitles.fsh}
+     * ({@code #define Blur (vertexColor.rg * 25.5)}). Der Compiler sieht den Zusammenhang
+     * nicht: wer hier einen Kanal verschiebt und den Shader nicht mitzieht, bekommt keinen
+     * Fehler, sondern falsche Untertitel.
+     *
+     * <p>R traegt die Staerke in Zehntelpixeln (Byte-Wert / 10 = Pixel, also bis 25,5), G den
+     * Schalter "deckender Schatten" (Byte 10 ergibt im Shader 1.0, alles ueber 0 zaehlt), B
+     * bleibt frei, A ist die Deckkraft des Untertitels.
+     *
+     * <p>⚠️ Die RGB-Kanaele duerfen den Untertitel NICHT mehr einfaerben — genau dafuer wurde
+     * die letzte Zeile des Shaders auf {@code vertexColor.a} allein gezogen. Vorher stand hier
+     * Weiss mit Deckkraft; die Farbe des Textes selbst kommt aus der Zieltextur, nicht von
+     * hier.
+     */
+    private static int untertitelFarbe(float weichzeichnung, boolean deckend, float alpha)
+    {
+        int r = Math.round(Math.min(Math.max(weichzeichnung, 0F), 25.5F) * 10F);
+        int g = deckend ? 10 : 0;
+        int a = Math.round(Math.min(Math.max(alpha, 0F), 1F) * 255F);
+
+        return (a << 24) | (r << 16) | (g << 8);
     }
 }
