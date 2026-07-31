@@ -33,8 +33,8 @@ public class ItemStackContextAction extends ContextAction
 
             matrices.pushPose();
             consumers.setUI(true);
-            context.batcher.getContext().renderItem(this.stack, x + 2, y + 2);
-            context.batcher.getContext().renderItemDecorations(context.batcher.getFont().getRenderer(), this.stack, x + 2, y + 2);
+            context.batcher.getContext().item(this.stack, x + 2, y + 2);
+            context.batcher.getContext().itemDecorations(context.batcher.getFont().getRenderer(), this.stack, x + 2, y + 2);
             consumers.setUI(false);
             matrices.popPose();
         }

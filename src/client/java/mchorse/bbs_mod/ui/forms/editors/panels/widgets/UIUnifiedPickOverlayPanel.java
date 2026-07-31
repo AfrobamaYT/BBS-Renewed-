@@ -597,8 +597,8 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
                     matrices.pushPose();
                     consumers.setUI(true);
-                    context.batcher.getContext().renderItem(stack, x + 2, y + 2);
-                    context.batcher.getContext().renderItemDecorations(context.batcher.getFont().getRenderer(), stack, x + 2, y + 2);
+                    context.batcher.getContext().item(stack, x + 2, y + 2);
+                    context.batcher.getContext().itemDecorations(context.batcher.getFont().getRenderer(), stack, x + 2, y + 2);
                     consumers.setUI(false);
                     matrices.popPose();
                 }
@@ -655,8 +655,8 @@ public class UIUnifiedPickOverlayPanel extends UIOverlayPanel
 
                 matrices.pushPose();
                 consumers.setUI(true);
-                context.batcher.getContext().renderItem(stack, iconLeft + 1, iconTop + 1);
-                context.batcher.getContext().renderItemDecorations(context.batcher.getFont().getRenderer(), stack, iconLeft + 1, iconTop + 1);
+                context.batcher.getContext().item(stack, iconLeft + 1, iconTop + 1);
+                context.batcher.getContext().itemDecorations(context.batcher.getFont().getRenderer(), stack, iconLeft + 1, iconTop + 1);
                 consumers.setUI(false);
                 matrices.popPose();
             }

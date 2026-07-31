@@ -110,7 +110,7 @@ public class UIItemStack extends UIElement
 
             matrices.pushPose();
             consumers.setUI(true);
-            context.batcher.getContext().renderItem(this.stack, this.area.x + (slot - 16) / 2, this.area.my() - 8);
+            context.batcher.getContext().item(this.stack, this.area.x + (slot - 16) / 2, this.area.my() - 8);
             consumers.setUI(false);
             matrices.popPose();
         }
