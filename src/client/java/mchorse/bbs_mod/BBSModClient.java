@@ -613,6 +613,13 @@ public class BBSModClient implements ClientModInitializer
             }
         });
 
+        /* ⚠️ DER AUFBAU DER FORMKATEGORIEN HAENGT AM WELT-BEITRITT, nicht am Client-Start.
+         * Er legt Vorlage-Formen an, darunter einen ItemStack -- und dessen Komponenten sind
+         * in 26.2 datengetrieben, kommen also erst mit dem Datenpaket der Welt. Zweimal zu
+         * frueh versucht (Initialisierer, CLIENT_STARTED), beide Male "Components not bound
+         * yet". Begruendung ausfuehrlich in BBSResources.formulareAufbauen. */
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> BBSResources.formulareAufbauen());
+
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
         {
             dashboard = null;

@@ -207,7 +207,12 @@ public class BBSRendering
         if (texture == null)
         {
             texture = new Texture();
-            texture.setFormat(TextureFormat.RGB_U8);
+            /* ⚠️ 26.2: RGB8 GEHT NICHT MEHR. GlDevice.createTexture lehnt jedes dreikanalige
+             * Format ab ("RGB8_UNORM format cannot be used to create textures") -- der neue
+             * Zeichenweg legt Texturen ueber GpuDevice an, und der kennt nur ausgerichtete
+             * Formate. Vier Kanaele statt drei; das Alpha bleibt ungenutzt, kostet aber ein
+             * Byte je Bildpunkt. Kein Bildunterschied. */
+            texture.setFormat(TextureFormat.RGBA_U8);
             texture.setFilter(GL11.GL_NEAREST);
         }
 

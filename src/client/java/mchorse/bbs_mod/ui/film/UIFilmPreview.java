@@ -576,8 +576,13 @@ public class UIFilmPreview extends UIElement
              * (screen offen, kein spiel-tick). renderMainHud zeichnet hotbar, herzen,
              * hunger und fadenkreuz ohne diese guards — das ist genau das, was im
              * exportierten video landet. */
+            /* ⛔ 26.2, OFFEN BIS AM LAUFENDEN SPIEL GEPRUEFT: extractRenderState SAMMELT nur.
+             * Frueher zeichnete renderHotbarAndDecorations sofort in unser Bild; jetzt geht
+             * die HUD in den gemeinsamen GuiRenderState und wird zur normalen Zeit gezeichnet.
+             * Ob sie damit noch im exportierten Video landet oder nur auf dem Bildschirm, ist
+             * NICHT bewiesen. Erster Punkt der Sichtpruefliste. */
             ((mchorse.bbs_mod.mixin.client.InGameHudAccessor) mc.gui)
-                .bbs$renderMainHud(draw, mc.getDeltaTracker());
+                .bbs$renderMainHud(mc.getDeltaTracker(), false, false);
         }
         finally
         {

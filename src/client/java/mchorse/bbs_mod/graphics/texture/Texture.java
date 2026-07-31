@@ -463,7 +463,11 @@ public class Texture
             this.translucent = scanTranslucency(pixels);
         }
 
-        this.setFormat(pixels.bits == 4 ? TextureFormat.RGBA_U8 : TextureFormat.RGB_U8);
+        /* ⚠️ 26.2: IMMER RGBA, auch bei dreikanaligen Pixeln. GlDevice.createTexture lehnt
+         * RGB8 rundheraus ab; ein dreikanaliges Bild bekommt also ein ungenutztes Alpha statt
+         * einer Ausnahme mitten im Bild. Die Fallunterscheidung nach pixels.bits ist damit
+         * hinfaellig -- sie steht nur noch hier als Erklaerung, warum sie weg ist. */
+        this.setFormat(TextureFormat.RGBA_U8);
         this.uploadTexture(target, level, pixels.width, pixels.height, pixels.getBuffer());
 
         pixels.delete();
