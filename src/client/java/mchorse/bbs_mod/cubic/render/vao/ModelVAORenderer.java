@@ -126,6 +126,27 @@ public class ModelVAORenderer
             return;
         }
 
+        /* ⚠️ RUECKFALL AUF DIE ZULETZT GLOBAL GEBUNDENE TEXTUR -- eine BRUECKE, kein Entwurf.
+         *
+         * Nicht jeder Aufrufer reicht die Textur schon als Parameter durch. CubicVAORenderer
+         * #renderGroup -- der Weg JEDES cubic-Modells, also auch der ModelForms im Film --
+         * ruft hier ohne sie herein, bindet sie unmittelbar davor aber global; es ist derselbe
+         * Wert, den es auch in seinen aufgeschobenen Befehl legt (dort steht er schon als Feld).
+         * Ohne diesen Rueckfall bleibt Sampler0 ungebunden, und das Modell zeichnet WEISS --
+         * ohne Fehler, ohne Log (gemessen 2026-07-31: 118515 von 534100 Bildpunkten der
+         * Vorschauflaeche ueber Helligkeit 200, Aufgabe 99).
+         *
+         * ⛔ WER NEU HIER HEREINZEICHNET, GIBT DIE TEXTUR ALS PARAMETER MIT. Der Rueckfall
+         * liest einen globalen Zustand und ist nur so richtig wie die Bindung unmittelbar
+         * davor -- fuer einen AUFGESCHOBENEN Zug waere er falsch, weil zwischen Einreihen und
+         * Zeichnen beliebig viel anderes bindet. Darum reichen ModelVAOCommand und BOBJCommand
+         * ihre Textur ausdruecklich durch, statt sich hierauf zu verlassen. */
+        if (textur == null)
+        {
+            textur = mchorse.bbs_mod.BBSModClient.getTextures().getLastBound();
+        }
+
+
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         CommandEncoder schreiber = RenderSystem.getDevice().createCommandEncoder();
 

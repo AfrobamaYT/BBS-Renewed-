@@ -351,8 +351,13 @@ public class FormTranslucentQueue
             /* 26.2: die Durchgangsart reist als Parameter mit, statt vorher am Shader
              * gesetzt und danach zurueckgestellt zu werden. Das Zuruecksetzen entfaellt
              * damit ersatzlos — ein Parameter kann keine fremde Zeichnung einfaerben. */
+            /* Die Textur GEHT AUSDRUECKLICH MIT (Sampler0 des Zuges). Sie global zu binden
+             * -- die Zeile darueber -- erreicht den Durchgang seit 26.2 nicht mehr; ohne den
+             * Parameter zeichnet der aufgeschobene Zug weiss (Aufgabe 99). Der Rueckfall in
+             * ModelVAORenderer greift hier bewusst NICHT als Entwurf: zwischen Einreihen und
+             * Zeichnen liegt der Rest des Bildes, die globale Bindung waere dann geraten. */
             ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
-                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode);
+                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode, 0, this.texture);
         }
     }
 
@@ -419,8 +424,13 @@ public class FormTranslucentQueue
             /* BOBJModelVAO steht jetzt auf GpuBuffer und implementiert IModelVAO — der
              * Befehl geht damit denselben Weg wie ModelVAOCommand, und this.passMode
              * reist als Parameter mit statt vorher gesetzt zu werden. */
+            /* Die Textur GEHT AUSDRUECKLICH MIT (Sampler0 des Zuges). Sie global zu binden
+             * -- die Zeile darueber -- erreicht den Durchgang seit 26.2 nicht mehr; ohne den
+             * Parameter zeichnet der aufgeschobene Zug weiss (Aufgabe 99). Der Rueckfall in
+             * ModelVAORenderer greift hier bewusst NICHT als Entwurf: zwischen Einreihen und
+             * Zeichnen liegt der Rest des Bildes, die globale Bindung waere dann geraten. */
             ModelVAORenderer.render(this.pipeline.get(), this.vao, this.modelView, this.normalMat,
-                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode);
+                this.r, this.g, this.b, this.a, this.light, this.overlay, this.passMode, 0, this.texture);
         }
     }
 
