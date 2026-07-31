@@ -776,6 +776,24 @@ public class Batcher2D
     }
 
     /**
+     * Reiht einen Bild-im-Bild-Zustand ein -- der Weg fuer 3D-Inhalte in der Oberflaeche.
+     *
+     * <p>Anders als {@link #netz} bekommt so ein Zustand vom Bildgraphen eine EIGENE
+     * Textur mit eigener Projektion und eigenem Tiefenpuffer. Genau das braucht eine
+     * Modellvorschau: {@code netz} reiht die Geometrie zwar korrekt ein, sie wird dann
+     * aber mit der GUI-Projektion gezeichnet statt mit der Kameraprojektion der Vorschau
+     * (gemessen 2026-07-31, Aufgabe 96 -- die Geometrie kam an und blieb unsichtbar).
+     *
+     * <p>⚠️ Zu jedem Zustand muss ein Zeichner registriert sein
+     * ({@code PictureInPictureRendererRegistry}, siehe BBSModClient). Fehlt er, wird der
+     * Zustand STILL verworfen -- kein Fehler, kein Log, nur ein leeres Feld.
+     */
+    public void bildImBild(net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState zustand)
+    {
+        guiRenderState(this.context).addPicturesInPictureState(zustand);
+    }
+
+    /**
      * Axis-aligned screen bounds of a quad, as {@code GuiElementRenderState.bounds()} demands
      * (the renderer uses it for culling and for sorting inside a stratum).
      */

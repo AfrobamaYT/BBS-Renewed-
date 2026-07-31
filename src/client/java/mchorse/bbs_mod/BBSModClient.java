@@ -794,6 +794,18 @@ public class BBSModClient implements ClientModInitializer
 
         BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
+        /* Bild-im-Bild-Zeichner fuer die Modellvorschauen der Oberflaeche.
+         *
+         * ⚠️ OHNE DIESE REGISTRIERUNG PASSIERT NICHTS UND ES GIBT KEINEN FEHLER: ein
+         * eingereihter Zustand, fuer den kein Zeichner registriert ist, wird still
+         * verworfen. Wer den Zeichner baut und das hier vergisst, sucht den Fehler in
+         * seinem Zeichencode.
+         *
+         * Vorerst nur das Gitter -- siehe VorschauGitterRenderer, das ist ein
+         * Vertikalschnitt zum Beweis des Weges (Aufgabe 96). */
+        net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.register(
+            (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauGitterRenderer());
+
         /* 26.2: BuiltinItemRendererRegistry ist in fabric-rendering-v1 25.3.2 ERSATZLOS
          * gestrichen; einen Nachfolger hat Fabric nicht gebaut, weil Mojang selbst einen hat.
          * Ein eigener Zeichner haengt jetzt nicht mehr AM GEGENSTAND, sondern am MODELL: die

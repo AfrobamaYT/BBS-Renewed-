@@ -17,6 +17,7 @@ import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauGitterZustand;
 import mchorse.bbs_mod.ui.utils.UIUtils;
 import mchorse.bbs_mod.utils.Factor;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -398,48 +399,21 @@ public abstract class UIModelRenderer extends UIElement
          * depthFunc(GL_LEQUAL) aus renderModel: die Vorschau loescht vorher die Tiefe und
          * zeichnet das Modell danach, das Gitter soll also hinter dem Modell verschwinden.
          * Kein Mischen (alle Linien undurchsichtig), kein Culling (bei Linien ohne Wirkung). */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
-            for (int x = 0; x <= 10; x ++)
-            {
-                if (x == 0)
-                {
-                    builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0F, 0F, 1F, 1F);
-                    builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0F, 0F, 1F, 1F);
-                }
-                else
-                {
-                    builder.addVertex(matrix4f, x - 5, 0, -5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                    builder.addVertex(matrix4f, x - 5, 0, 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                }
-            }
-
-            for (int x = 0; x <= 10; x ++)
-            {
-                if (x == 0)
-                {
-                    builder.addVertex(matrix4f, -5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
-                    builder.addVertex(matrix4f, 5, 0, x - 5).setColor(1F, 0F, 0F, 1F);
-                }
-                else
-                {
-                    builder.addVertex(matrix4f, -5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                    builder.addVertex(matrix4f, 5, 0, x - 5).setColor(0.25F, 0.25F, 0.25F, 1F);
-                }
-            }
-
-            /* matrix4f steckt schon in den Ecken (addVertex(matrix4f, ...)), darum geht als
-             * Modellansicht NUR der globale Wert mit — der, den
-             * BufferUploader.drawWithShader frueher selbst aus RenderSystem nahm. Die Pose
-             * hier noch einmal zu uebergeben wuerde das Gitter doppelt verschieben. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, false, true, false),
-                builder.build(),
-                RenderSystem.getModelViewMatrixCopy(),
-                null,
-                null);
-        }
+        /* ⚠️ HIER STAND EIN SOFORTZUG, UND ER WAR SEIT DEM 26.2-PORT UNSICHTBAR.
+         *
+         * 26.2 sammelt die Oberflaeche erst und zeichnet sie danach; ein sofort geoeffneter
+         * Durchgang malt VOR dem GUI und verschwindet unter dem Panel-Hintergrund. Das
+         * blosse Einreihen ueber Batcher2D.netz half aber auch nicht -- die Geometrie kam an
+         * und wurde mit der GUI-Projektion gezeichnet statt mit der Kameraprojektion dieser
+         * Vorschau (beide Versuche gemessen, Aufgabe 96).
+         *
+         * Ein Bild-im-Bild-Zustand bekommt vom Bildgraphen eine eigene Textur MIT eigener
+         * Projektion. Die Matrix wird KOPIERT, weil der Stapel danach weiterbenutzt wird. */
+        context.batcher.bildImBild(new VorschauGitterZustand(
+            new Matrix4f(matrix4f),
+            this.area.x, this.area.y, this.area.ex(), this.area.ey(),
+            null,
+            new net.minecraft.client.gui.navigation.ScreenRectangle(
+                this.area.x, this.area.y, this.area.w, this.area.h)));
     }
 }
