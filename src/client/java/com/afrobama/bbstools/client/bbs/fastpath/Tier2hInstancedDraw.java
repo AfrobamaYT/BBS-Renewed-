@@ -82,13 +82,6 @@ public final class Tier2hInstancedDraw
     private static volatile boolean AUTO_DISABLED        = false;
 
     /* Shared shader program — lazy compile on first flush (render thread). */
-    private static int PROGRAM = 0;
-    private static int uProjMat = -1;
-    private static int uModelViewMat = -1;
-    private static int uSampler0 = -1;
-    private static int uBoneTex = -1;
-    private static int uUseLightmap = -1;
-    private static int uUseVAT = -1;
 
     /* Per-modelId GL bundle, cached forever once built. */
     private static final Map<String, MeshBundle> BUNDLES = new HashMap<>();
@@ -167,7 +160,7 @@ public final class Tier2hInstancedDraw
      *  the world view (same phase the crowd draws correctly at). */
     public interface DeferredSelectedRender
     {
-        void render(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext ctx);
+        void render(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext ctx);
     }
     private static volatile DeferredSelectedRender PENDING_SELECTED = null;
     public static void setPendingSelected(DeferredSelectedRender r) { PENDING_SELECTED = r; }
@@ -180,7 +173,7 @@ public final class Tier2hInstancedDraw
     {
         if (EVENT_REGISTERED) return;
         EVENT_REGISTERED = true;
-        net.fabricmc.fabric.api.client.rendering.v1.LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.AFTER_SOLID_FEATURES.register(ctx ->
         {
             try { drawDeferred(ctx); }
             catch (Throwable t)
@@ -218,7 +211,7 @@ public final class Tier2hInstancedDraw
 
     /** Fired at LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN — runs the raw-GL
      *  instanced draw on the captured batch, then clears it. */
-    public static void drawDeferred(net.fabricmc.fabric.api.client.rendering.v1.LevelRenderContext ctx)
+    public static void drawDeferred(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext ctx)
     {
         if (AUTO_DISABLED) { DEFERRED.clear(); IDLE_REDRAW_PENDING = false; PENDING_SELECTED = null; return; }
 
@@ -250,7 +243,9 @@ public final class Tier2hInstancedDraw
         {
             try
             {
-                RenderSystem.enableDepthTest();
+                /* 26.2: RenderSystem fuehrt keinen globalen Tiefentest mehr. Diese Datei zeichnet
+                 * mit eigenem GL-Programm, also schaltet sie ihn selbst -- wie alles andere hier. */
+                Tier2hGlZustand.tiefeAn();
                 sel.render(ctx);
             }
             catch (Throwable ig) { /* selected just won't draw this frame */ }
@@ -323,22 +318,15 @@ public final class Tier2hInstancedDraw
         /* Lazy program compile on render thread. On failure auto-disable;
          * the batch is the deferred copy (already drained from the live
          * path) so there's nothing to hand back to Tier 2-d here. */
-        if (PROGRAM == 0)
+        /* Das Programm uebersetzt sich beim ersten Zugriff selbst und meldet dort auch
+         * seine Fehler (Tier2hProgramm). Bleibt 0 uebrig, schaltet sich dieser Zeichner
+         * ab -- der Stapel ist die aufgeschobene Kopie, es gibt nichts zurueckzugeben. */
+        if (Tier2hProgramm.nummer() == 0)
         {
-            try { compileProgram(); }
-            catch (Throwable t)
-            {
-                LOG.error("[tier2h] shader compile failed — auto-disable", t);
-                AUTO_DISABLED = true;
-                BBSPerfConfig.ENABLE_TIER2_H = false;
-                return;
-            }
-            if (PROGRAM == 0)
-            {
-                AUTO_DISABLED = true;
-                BBSPerfConfig.ENABLE_TIER2_H = false;
-                return;
-            }
+            AUTO_DISABLED = true;
+            BBSPerfConfig.ENABLE_TIER2_H = false;
+
+            return;
         }
 
         int bucketsProcessed = 0;
@@ -347,8 +335,9 @@ public final class Tier2hInstancedDraw
         int instancedDraws   = 0;
 
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        /* 26.2: enableBlend/defaultBlendFunc sind entfallen. Eigenes GL-Programm, also
+         * eigener Zustand -- Standardmischung ist Quell-Alpha ueber Gegen-Alpha. */
+        Tier2hGlZustand.mischenAn();
 
         try
         {
@@ -405,7 +394,7 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            RenderSystem.disableBlend();
+            Tier2hGlZustand.mischenAus();
         }
 
         BBSPerfConfig.tier2hBucketsProcessed += bucketsProcessed;
@@ -443,9 +432,7 @@ public final class Tier2hInstancedDraw
     private static void bbstools$renderFallbackBucket(List<FastPathBatch.Submission> list)
     {
         net.minecraft.client.renderer.GameRenderer gr = Minecraft.getInstance().gameRenderer;
-        int savedActiveTex = GL11C.glGetInteger(0x84E0);
-        boolean wasDepth = GL11C.glIsEnabled(GL11C.GL_DEPTH_TEST);
-        boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
+        Tier2hGlZustand zustand = new Tier2hGlZustand();
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
@@ -463,9 +450,7 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
-            if (!wasCull)  GL11C.glDisable(GL11C.GL_CULL_FACE);
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);
+            zustand.zurueck();
         }
     }
 
@@ -694,8 +679,7 @@ public final class Tier2hInstancedDraw
 
         /* Upload bone palettes into the bone texture. bScratch is laid out
          * instance-major (one row = one instance's 4*boneCount texels). */
-        int savedActiveTex = GL11C.glGetInteger(0x84E0);
-        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
+        Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
         GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, b.boneTex);
         /* Force tight pixel-store state. Another mod (or MC) may leave
          * GL_UNPACK_ROW_LENGTH / SKIP_* non-zero — then glTexSubImage2D
@@ -712,7 +696,7 @@ public final class Tier2hInstancedDraw
             b.boneTexWidth, drawableN, GL11C.GL_RGBA, GL11C.GL_FLOAT, bScratch);
 
         /* Bind diffuse to unit 0 (shader reads Sampler0). */
-        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
+        Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
         Link texture = list.get(0).form.texture.get();
         if (texture == null) texture = list.get(0).instance.getTexture();
         if (texture != null)
@@ -721,8 +705,7 @@ public final class Tier2hInstancedDraw
         }
 
 
-        boolean wasDepth = GL11C.glIsEnabled(GL11C.GL_DEPTH_TEST);
-        boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
+        Tier2hGlZustand zustand = new Tier2hGlZustand();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
         GL11C.glDepthMask(true);
@@ -730,16 +713,16 @@ public final class Tier2hInstancedDraw
 
         try
         {
-            GL20C.glUseProgram(PROGRAM);
+            GL20C.glUseProgram(Tier2hProgramm.nummer());
 
             Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
             Matrix4f prj = mchorse.bbs_mod.graphics.Projektion.lesen();
-            mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
-            prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);
-            if (uSampler0 >= 0)    GL20C.glUniform1i(uSampler0, 0);
-            if (uBoneTex >= 0)     GL20C.glUniform1i(uBoneTex, 1);
-            if (uUseLightmap >= 0) GL20C.glUniform1i(uUseLightmap, 0);
-            if (uUseVAT >= 0)      GL20C.glUniform1i(uUseVAT, 0); /* per-frame palette path */
+            mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(Tier2hProgramm.uModelViewMat, false, mat4Tmp);
+            prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(Tier2hProgramm.uProjMat, false, mat4Tmp);
+            if (Tier2hProgramm.uSampler0 >= 0)    GL20C.glUniform1i(Tier2hProgramm.uSampler0, 0);
+            if (Tier2hProgramm.uBoneTex >= 0)     GL20C.glUniform1i(Tier2hProgramm.uBoneTex, 1);
+            if (Tier2hProgramm.uUseLightmap >= 0) GL20C.glUniform1i(Tier2hProgramm.uUseLightmap, 0);
+            if (Tier2hProgramm.uUseVAT >= 0)      GL20C.glUniform1i(Tier2hProgramm.uUseVAT, 0); /* per-frame palette path */
 
             GL30C.glBindVertexArray(b.vao);
             GL31C.glDrawElementsInstanced(GL11C.GL_TRIANGLES, b.indexCount,
@@ -748,15 +731,13 @@ public final class Tier2hInstancedDraw
         finally
         {
 
-            if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
-            if (wasCull)   GL11C.glEnable(GL11C.GL_CULL_FACE);
+            zustand.zurueck();
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
             GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
+            Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
             GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);
         }
 
         BBSPerfConfig.tier2hPhaseGNsAccum += System.nanoTime() - phaseGNs;
@@ -951,81 +932,6 @@ public final class Tier2hInstancedDraw
 
         GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
         GL30C.glBindVertexArray(0);
-    }
-
-    /* ================================================================
-     *                      Shader compile
-     * ================================================================ */
-
-    private static void compileProgram()
-    {
-        String vshSrc = loadResource("/assets/bbstools/pinwheel/shaders/program/tier2h_crowd.vsh");
-        String fshSrc = loadResource("/assets/bbstools/pinwheel/shaders/program/tier2h_crowd.fsh");
-        if (vshSrc == null || fshSrc == null)
-        {
-            LOG.error("[tier2h] shader sources missing");
-            return;
-        }
-        int vsh = compileShader(GL20C.GL_VERTEX_SHADER, vshSrc);
-        int fsh = compileShader(GL20C.GL_FRAGMENT_SHADER, fshSrc);
-        if (vsh == 0 || fsh == 0)
-        {
-            if (vsh != 0) GL20C.glDeleteShader(vsh);
-            if (fsh != 0) GL20C.glDeleteShader(fsh);
-            return;
-        }
-        int prog = GL20C.glCreateProgram();
-        GL20C.glAttachShader(prog, vsh);
-        GL20C.glAttachShader(prog, fsh);
-        GL20C.glLinkProgram(prog);
-        GL20C.glDetachShader(prog, vsh);
-        GL20C.glDetachShader(prog, fsh);
-        GL20C.glDeleteShader(vsh);
-        GL20C.glDeleteShader(fsh);
-        if (GL20C.glGetProgrami(prog, GL20C.GL_LINK_STATUS) == 0)
-        {
-            String log = GL20C.glGetProgramInfoLog(prog);
-            LOG.error("[tier2h] shader link failed: {}", log);
-            GL20C.glDeleteProgram(prog);
-            return;
-        }
-        uProjMat          = GL20C.glGetUniformLocation(prog, "ProjMat");
-        uModelViewMat     = GL20C.glGetUniformLocation(prog, "ModelViewMat");
-        uSampler0         = GL20C.glGetUniformLocation(prog, "Sampler0");
-        uBoneTex          = GL20C.glGetUniformLocation(prog, "BoneTex");
-        uUseLightmap      = GL20C.glGetUniformLocation(prog, "UseLightmap");
-        uUseVAT           = GL20C.glGetUniformLocation(prog, "UseVAT");
-        PROGRAM = prog;
-        LOG.info("[tier2h] program compiled prog={} uniforms(Proj={}, MV={}, S0={}, BoneTex={}, UseLight={}, UseVAT={})",
-            prog, uProjMat, uModelViewMat, uSampler0, uBoneTex, uUseLightmap, uUseVAT);
-    }
-
-    private static int compileShader(int type, String src)
-    {
-        int sh = GL20C.glCreateShader(type);
-        GL20C.glShaderSource(sh, src);
-        GL20C.glCompileShader(sh);
-        if (GL20C.glGetShaderi(sh, GL20C.GL_COMPILE_STATUS) == 0)
-        {
-            String log = GL20C.glGetShaderInfoLog(sh);
-            LOG.error("[tier2h] shader compile failed (type={}): {}", type, log);
-            GL20C.glDeleteShader(sh);
-            return 0;
-        }
-        return sh;
-    }
-
-    private static String loadResource(String path)
-    {
-        try (InputStream in = Tier2hInstancedDraw.class.getResourceAsStream(path))
-        {
-            if (in == null) return null;
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
-        catch (Throwable t)
-        {
-            return null;
-        }
     }
 
     /* ================================================================
@@ -1358,22 +1264,20 @@ public final class Tier2hInstancedDraw
 
     private static void bbstools$drawCore(MeshBundle b, Link texture, int drawableN, int mode)
     {
-        int savedActiveTex = GL11C.glGetInteger(0x84E0);
 
         /* Bone palette → unit 1 (already populated; no upload). VAT mode reuses
          * the persisted atlas texture, per-frame mode the per-instance bone tex. */
-        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
+        Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
         GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, mode == 1 ? b.atlasTex : b.boneTex);
 
         /* Diffuse → unit 0. */
-        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
+        Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE0);
         if (texture != null)
         {
             try { BBSModClient.getTextures().bindTexture(texture); } catch (Throwable ig) {}
         }
 
-        boolean wasDepth = GL11C.glIsEnabled(GL11C.GL_DEPTH_TEST);
-        boolean wasCull  = GL11C.glIsEnabled(GL11C.GL_CULL_FACE);
+        Tier2hGlZustand zustand = new Tier2hGlZustand();
         GL11C.glEnable(GL11C.GL_DEPTH_TEST);
         GL11C.glDepthFunc(GL11C.GL_LEQUAL);
         GL11C.glDepthMask(true);
@@ -1382,16 +1286,16 @@ public final class Tier2hInstancedDraw
         float[] mat4Tmp = new float[16];
         try
         {
-            GL20C.glUseProgram(PROGRAM);
+            GL20C.glUseProgram(Tier2hProgramm.nummer());
 
             Matrix4f mv  = RenderSystem.getModelViewMatrixCopy();
             Matrix4f prj = mchorse.bbs_mod.graphics.Projektion.lesen();
-            mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(uModelViewMat, false, mat4Tmp);
-            prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(uProjMat, false, mat4Tmp);
-            if (uSampler0 >= 0)    GL20C.glUniform1i(uSampler0, 0);
-            if (uBoneTex >= 0)     GL20C.glUniform1i(uBoneTex, 1);
-            if (uUseLightmap >= 0) GL20C.glUniform1i(uUseLightmap, 0);
-            if (uUseVAT >= 0)      GL20C.glUniform1i(uUseVAT, mode);
+            mv.get(mat4Tmp);  GL20C.glUniformMatrix4fv(Tier2hProgramm.uModelViewMat, false, mat4Tmp);
+            prj.get(mat4Tmp); GL20C.glUniformMatrix4fv(Tier2hProgramm.uProjMat, false, mat4Tmp);
+            if (Tier2hProgramm.uSampler0 >= 0)    GL20C.glUniform1i(Tier2hProgramm.uSampler0, 0);
+            if (Tier2hProgramm.uBoneTex >= 0)     GL20C.glUniform1i(Tier2hProgramm.uBoneTex, 1);
+            if (Tier2hProgramm.uUseLightmap >= 0) GL20C.glUniform1i(Tier2hProgramm.uUseLightmap, 0);
+            if (Tier2hProgramm.uUseVAT >= 0)      GL20C.glUniform1i(Tier2hProgramm.uUseVAT, mode);
 
             GL30C.glBindVertexArray(b.vao);
             GL31C.glDrawElementsInstanced(GL11C.GL_TRIANGLES, b.indexCount,
@@ -1399,15 +1303,13 @@ public final class Tier2hInstancedDraw
         }
         finally
         {
-            if (!wasDepth) GL11C.glDisable(GL11C.GL_DEPTH_TEST);
-            if (wasCull)   GL11C.glEnable(GL11C.GL_CULL_FACE);
+            zustand.zurueck();
             GL20C.glUseProgram(0);
             GL30C.glBindVertexArray(0);
             GL15C.glBindBuffer(GL15C.GL_ARRAY_BUFFER, 0);
             GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
+            Tier2hGlZustand.einheit(org.lwjgl.opengl.GL13C.GL_TEXTURE1);
             GL11C.glBindTexture(GL11C.GL_TEXTURE_2D, 0);
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(savedActiveTex);
         }
     }
 
