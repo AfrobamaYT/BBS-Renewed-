@@ -45,7 +45,7 @@ public abstract class UIModelRenderer extends UIElement
      * Blit-Bereich stimmt noch nicht. Auf {@code true} stellen, sobald die Bedeutung von
      * x0/y0/x1/y1 gemessen ist (Aufgabe 96).
      */
-    private static final boolean GITTER_UEBER_BILD_IM_BILD = true;
+    private static final boolean GITTER_UEBER_BILD_IM_BILD = false;
 
     private static Vector3d vec = new Vector3d();
     private static Matrix3d mat = new Matrix3d();
@@ -294,12 +294,31 @@ public abstract class UIModelRenderer extends UIElement
 
         mc.gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
 
-        if (this.grid)
+        /* ⭐ DER SAMMLER MUSS HIER HERUM (2026-07-31, an einem funktionierenden Fall
+         * abgelesen).
+         *
+         * Die Form-Palette des Morphing-Panels zeichnet ihre Vorschau korrekt -- ihr Weg
+         * fuehrt ueber FormUtilsClient.renderUI, und der wickelt den Aufruf in
+         * FormSammler.mitEigenemSammler. Das legt einen eigenen SubmitNodeStorage an, laesst
+         * zeichnen und ruft danach renderAllFeatures, was aus eingereichten Auftraegen erst
+         * ein Bild macht.
+         *
+         * UIModelRenderer rief renderUserModel direkt, ohne diese Klammer. In 26.2 heisst das:
+         * die Auftraege werden eingereicht und NIEMAND fuehrt sie aus. Kein Fehler, kein Log,
+         * nur ein schwarzes Feld -- betroffen waren Modell-Editor und Partikel-Editor
+         * (Aufgaben 94, 96).
+         *
+         * ⚠️ Das Gitter gehoert MIT hinein: es zeichnet in dieselbe Szene und braucht
+         * denselben Sammler. */
+        mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
         {
-            this.renderGrid(context);
-        }
+            if (this.grid)
+            {
+                this.renderGrid(context);
+            }
 
-        this.renderUserModel(context);
+            this.renderUserModel(context);
+        });
 
         mc.gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_FLAT);
 
