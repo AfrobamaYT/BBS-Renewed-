@@ -239,6 +239,21 @@ loom {
 			{
 				programArgs "--checkGlErrors", "--renderDebugLabels"
 			}
+
+			/* ZEICHENSPUR DER BBS-OBERFLAECHE:  ./gradlew runQuick -Pfuehler
+			 *
+			 * Ergaenzt --checkGlErrors um den Fall, den es NICHT faengt: einen Absturz, der
+			 * kein ungueltiger GL-Aufruf ist (glGetError bleibt still, die JVM stirbt trotzdem).
+			 * Der Fuehler schreibt vor JEDEM Oberflaechenelement eine ungepufferte Zeile nach
+			 * System.err -- die letzte Zeile im Log benennt dann den Verursacher.
+			 *
+			 * Siehe mchorse.bbs_mod.ui.framework.elements.utils.Zeichenfuehler. */
+			if (project.hasProperty("fuehler"))
+			{
+				/* ⚠️ Loom kennt kein jvmArgs -- die Startklasse heisst RunConfigSettings und
+				 * bietet vmArg(s)/property. property(k, v) setzt daraus ein -Dk=v. */
+				property "bbs.zeichenfuehler", "true"
+			}
 		}
 	}
 }
