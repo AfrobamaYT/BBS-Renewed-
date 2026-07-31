@@ -316,20 +316,12 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         int h = texture.height;
 
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
-        Uniform target = previewProgram.getUniform("Target");
-
-        if (target != null)
-        {
-            target.set(index);
-        }
-
-        Uniform highlight = previewProgram.getUniform("HighlightColor");
-
-        if (highlight != null)
-        {
-            int color = BBSSettings.stencilHighlightColor.get();
-            highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
-        }
+        /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
+         * in die Oberflaeche -- ein GUI-Element kann die fuenf Werte nicht binden.
+         * Entscheidung und verworfene Auswege stehen in Bildfilter. */
+        mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
+            this.stencil.zwischenbild(), index,
+            BBSSettings.stencilHighlightColor.get());
 
         /* 26.2: enableBlend entfaellt ersatzlos — hier wirkte es ohnehin nicht mehr.
          * texturedBox reicht die Zeichnung als GuiElementRenderState an Vanillas
@@ -338,7 +330,7 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
          * hat darauf keinen Zugriff. Das Mischen muss also die Pipeline des
          * Vorschau-Shaders mitbringen — so wie BBSPipelines#getSelection, das seinen
          * ColorTargetState von RenderPipelines.GUI_TEXTURED erbt. */
-        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.zwischenbild(), Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, 0, h, w, 0, w, h);
 
         if (pair != null && pair.a != null)
         {

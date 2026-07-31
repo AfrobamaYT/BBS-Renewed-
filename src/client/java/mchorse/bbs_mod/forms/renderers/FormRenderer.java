@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.forms.renderers;
 
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.BBSRendering;
@@ -223,24 +222,15 @@ public abstract class FormRenderer <T extends Form>
     {
         if (context.isPicking())
         {
-            this.setupTarget(context, picking.get());
-
+            /* 26.2: die Kennung wird nicht mehr als Uniform am Shader gesetzt. Sie reist
+             * als Parameter in den Zeichenaufruf (ModelVAORenderer.render(..., kennung))
+             * und landet dort im Modell-Block. Ein gesetztes Uniform galt bis zum
+             * naechsten Setzen -- wer es vergass, gab einer fremden Form die eigene
+             * Kennung, und der Klick traf das Falsche. */
             return picking;
         }
 
         return normal;
-    }
-
-    protected void setupTarget(FormRenderingContext context, RenderPipeline program)
-    {
-        Uniform target = program.getUniform("Target");
-
-        if (target != null)
-        {
-            int pickingIndex = context.getPickingIndex();
-
-            target.set(pickingIndex);
-        }
     }
 
     protected void updateStencilMap(FormRenderingContext context)

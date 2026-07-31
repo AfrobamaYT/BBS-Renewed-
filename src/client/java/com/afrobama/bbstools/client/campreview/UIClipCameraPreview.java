@@ -333,6 +333,17 @@ public class UIClipCameraPreview extends UIElement
                     mchorse.bbs_mod.client.BBSShaders.getPickerPreviewProgram();
                 if (previewProgram != null)
                 {
+                    /* ⛔ 26.2 OFFEN, mit bekanntem Rezept: die Hervorhebung muss VORHER in ein eigenes
+                     * Bild gerechnet werden (Bildfilter.kennungHervorheben), weil ein GUI-Element die
+                     * fuenf Werte nicht binden kann. Vier andere Aufrufstellen sind schon umgestellt.
+                     *
+                     * WAS HIER FEHLT: ein Zwischenbild. Die anderen holen es von ihrem
+                     * StencilFormFramebuffer; BoneHoverPickService.Result haelt aber nur rohe Zahlen
+                     * (stencilTexId, stencilW/H). Es braucht dort eine eigene Zieltextur -- eine
+                     * geteilte waere falsch, weil die Oberflaeche erst nach dem Sammeln zeichnet.
+                     *
+                     * Bis dahin bleibt der Compilerfehler stehen: eine Vorschau, die still die falsche
+                     * Kennung hervorhebt, ist teurer als eine, die nicht baut. */
                     com.mojang.blaze3d.shaders.Uniform target = previewProgram.getUniform("Target");
                     if (target != null) target.set(pick.pickedIndex);
 

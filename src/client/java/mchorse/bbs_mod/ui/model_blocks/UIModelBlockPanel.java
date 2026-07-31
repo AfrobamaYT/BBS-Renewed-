@@ -681,26 +681,17 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         int h = texture.height;
 
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
-        Uniform target = previewProgram.getUniform("Target");
-
-        if (target != null)
-        {
-            target.set(this.gizmoStencil.getIndex());
-        }
-
-        Uniform highlight = previewProgram.getUniform("HighlightColor");
-
-        if (highlight != null)
-        {
-            int color = BBSSettings.stencilHighlightColor.get();
-
-            highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
-        }
+        /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
+         * in die Oberflaeche -- ein GUI-Element kann die fuenf Werte nicht binden.
+         * Entscheidung und verworfene Auswege stehen in Bildfilter. */
+        mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
+            this.gizmoStencil.zwischenbild(), index,
+            BBSSettings.stencilHighlightColor.get());
 
         /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
          * BBSPipelines (von RenderPipelines.GUI_TEXTURED geerbt), und deren ColorTargetState
          * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
-        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, 0, 0, context.menu.width, context.menu.height, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.gizmoStencil.zwischenbild(), Colors.WHITE, 0, 0, context.menu.width, context.menu.height, 0, h, w, 0, w, h);
     }
 
     @Override
