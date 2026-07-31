@@ -184,7 +184,7 @@ public final class ModelPhysicsDebug
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
         {
@@ -312,7 +312,7 @@ public final class ModelPhysicsDebug
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            BufferBuilder lines = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
             emitLines(lines, matrix, 0F, dash, pts, target, a, config);
 
@@ -325,7 +325,7 @@ public final class ModelPhysicsDebug
         }
 
         /* Solid geometry: the pinned root, joints, the simulated tip and the attach bone, plus the thick lines. */
-        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder dots = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         if (boxes)
         {
@@ -406,7 +406,7 @@ public final class ModelPhysicsDebug
         Vector3f force = new Vector3f();
         List<Vector3f> tips = new ArrayList<>(pts.size());
 
-        BufferBuilder lines = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder lines = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 1; i < pts.size(); i++)
         {
@@ -439,7 +439,7 @@ public final class ModelPhysicsDebug
             BufferUploader.drawWithShader(builtLines);
         }
 
-        BufferBuilder dots = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder dots = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (Vector3f end : tips)
         {

@@ -225,8 +225,8 @@ public final class Tier2eMergedDraw
                 {
                     alloc = new ByteBufferBuilder(initialCapacity);
                     b = new BufferBuilder(alloc,
-                        VertexFormat.Mode.TRIANGLES,
-                        DefaultVertexFormat.NEW_ENTITY);
+                        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+                        DefaultVertexFormat.ENTITY);
                 }
                 catch (Throwable t)
                 {

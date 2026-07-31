@@ -177,8 +177,8 @@ public final class Tier2bDrawPath
                 try
                 {
                     builder = Tesselator.getInstance().begin(
-                        VertexFormat.Mode.TRIANGLES,
-                        DefaultVertexFormat.NEW_ENTITY);
+                        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+                        DefaultVertexFormat.ENTITY);
                 }
                 catch (Throwable t)
                 {

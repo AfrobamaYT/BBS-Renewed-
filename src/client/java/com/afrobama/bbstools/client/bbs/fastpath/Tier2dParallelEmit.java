@@ -336,8 +336,8 @@ public final class Tier2dParallelEmit
                         alloc = new ByteBufferBuilder(initialCapacity);
                     }
                     builder = new BufferBuilder(alloc,
-                        VertexFormat.Mode.TRIANGLES,
-                        DefaultVertexFormat.NEW_ENTITY);
+                        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+                        DefaultVertexFormat.ENTITY);
                 }
                 catch (Throwable t)
                 {

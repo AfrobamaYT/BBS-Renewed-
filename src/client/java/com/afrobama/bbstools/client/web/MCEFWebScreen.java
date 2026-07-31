@@ -133,7 +133,7 @@ public class MCEFWebScreen extends Screen
 
         Matrix4f matrix = new Matrix4f().mul(context.pose());
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder buffer = tessellator.begin(com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         buffer.addVertex(matrix, 0F, this.height, 0F).setUv(0F, 1F).setColor(255, 255, 255, 255);
         buffer.addVertex(matrix, this.width, this.height, 0F).setUv(1F, 1F).setColor(255, 255, 255, 255);

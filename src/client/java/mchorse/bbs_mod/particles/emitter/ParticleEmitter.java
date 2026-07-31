@@ -510,7 +510,7 @@ public class ParticleEmitter
             Matrix4f matrix = stack.last().pose();
 
             this.bindTexture();
-            BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, format);
+            BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, format);
 
             for (Particle particle : this.particles)
             {

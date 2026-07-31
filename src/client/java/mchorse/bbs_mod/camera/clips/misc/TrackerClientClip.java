@@ -381,7 +381,7 @@ public class TrackerClientClip extends TrackerClip
                 savedTooltipFade = hudTooltipFadeField.getInt(hud);
                 savedCurrentStack = (ItemStack) hudCurrentStackField.get(hud);
 
-                int entitySlot = currentEntity.selected;
+                int entitySlot = currentEntity.getSelectedSlot();
                 ItemStack entityHeld = currentEntity.getHotbarItem(entitySlot);
                 if (entityHeld == null) entityHeld = ItemStack.EMPTY;
 
@@ -449,7 +449,7 @@ public class TrackerClientClip extends TrackerClip
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || currentEntity == null) return;
 
-        int entitySlot = currentEntity.selected;
+        int entitySlot = currentEntity.getSelectedSlot();
         ItemStack entityMain = currentEntity.getHotbarItem(entitySlot);
         boolean entityHasMainItem = entityMain != null && !entityMain.isEmpty();
 
@@ -577,7 +577,7 @@ public class TrackerClientClip extends TrackerClip
         if (tick == lastEquipTick) return;
         lastEquipTick = tick;
 
-        int slot = currentEntity.selected;
+        int slot = currentEntity.getSelectedSlot();
         ItemStack newMain = currentEntity.getHotbarItem(slot);
         if (newMain == null) newMain = ItemStack.EMPTY;
 

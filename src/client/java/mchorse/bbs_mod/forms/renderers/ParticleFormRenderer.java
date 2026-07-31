@@ -162,7 +162,7 @@ public class ParticleFormRenderer extends FormRenderer<ParticleForm> implements 
             {
                 boolean shadersEnabled = BBSRendering.isIrisShadersEnabled();
 
-                VertexFormat format = shadersEnabled ? DefaultVertexFormat.NEW_ENTITY : DefaultVertexFormat.PARTICLE;
+                VertexFormat format = shadersEnabled ? DefaultVertexFormat.ENTITY : DefaultVertexFormat.PARTICLE;
                 Supplier<RenderPipeline> shader = shadersEnabled
                     ? this.getShader(context, () -> RenderPipelines.ENTITY_TRANSLUCENT, BBSShaders::getPickerBillboardProgram)
                     : this.getShader(context, () -> RenderPipelines.TRANSLUCENT_PARTICLE, BBSShaders::getPickerParticlesProgram);

@@ -274,8 +274,8 @@ public final class Tier2cParallelSkin
         RenderSystem.setShader(() -> RenderPipelines.ENTITY_TRANSLUCENT_CULL);
 
         BufferBuilder builder = Tesselator.getInstance().begin(
-            VertexFormat.Mode.TRIANGLES,
-            DefaultVertexFormat.NEW_ENTITY);
+            com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
+            DefaultVertexFormat.ENTITY);
 
         int written = 0;
         for (int i = 0; i < n; i++)

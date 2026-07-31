@@ -104,7 +104,7 @@ public class UIColorPicker extends UIElement
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.enableBlend();
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         builder.addVertex(matrix4f, x1, y1, 0F).setColor(color.r, color.g, color.b, 1);
         builder.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, 1);
