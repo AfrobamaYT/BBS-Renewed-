@@ -327,7 +327,7 @@ public final class BlockSpawnAnimEffect
         PoseStack matrices = context.poseStack();
         if (matrices == null) return;
 
-        Vec3 cam = context.camera().getPosition();
+        Vec3 cam = context.levelState().cameraRenderState.pos;
         double camX = cam.x;
         double camY = cam.y;
         double camZ = cam.z;

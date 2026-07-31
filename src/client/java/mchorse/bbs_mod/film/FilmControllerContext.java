@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.netty.util.collection.IntObjectMap;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -19,7 +20,11 @@ public class FilmControllerContext
     public IntObjectMap<IEntity> entities;
     public IEntity entity;
     public Replay replay;
-    public Camera camera;
+    /* 26.2: die kamera ist kein lebendes Camera-objekt mehr, sondern der zustand,
+     * den der weltdurchgang zu beginn eingefroren hat. Wer sie waehrend des zeichnens
+     * liest, bekommt damit garantiert den wert DIESES bildes -- vorher konnte sich das
+     * objekt mitten im durchgang weiterdrehen. */
+    public CameraRenderState camera;
     public PoseStack stack;
     public SubmitNodeCollector consumers;
     public StencilMap map;
@@ -84,7 +89,7 @@ public class FilmControllerContext
         this.entities = entities;
         this.entity = entity;
         this.replay = replay;
-        this.camera = context.camera();
+        this.camera = context.levelState().cameraRenderState;
         this.stack = context.poseStack();
         this.consumers = context.consumers();
         this.transition = context.tickCounter().getGameTimeDeltaPartialTick(false);
@@ -92,7 +97,7 @@ public class FilmControllerContext
         return this;
     }
 
-    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, Camera camera, PoseStack stack, SubmitNodeCollector consumers, float transition)
+    public FilmControllerContext setup(IntObjectMap<IEntity> entities, IEntity entity, Replay replay, CameraRenderState camera, PoseStack stack, SubmitNodeCollector consumers, float transition)
     {
         this.reset();
 

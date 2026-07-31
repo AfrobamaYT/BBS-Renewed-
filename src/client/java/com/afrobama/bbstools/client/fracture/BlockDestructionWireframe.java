@@ -1,5 +1,6 @@
 package com.afrobama.bbstools.client.fracture;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.afrobama.bbstools.fracture.PhysicsBlockDestructionActionClip;
 
 import com.mojang.blaze3d.PrimitiveTopology;
@@ -81,9 +82,9 @@ public final class BlockDestructionWireframe
     {
         if (VISIBLE.isEmpty()) return;
 
-        Camera cam = ctx.camera();
+        CameraRenderState cam = ctx.levelState().cameraRenderState;
         if (cam == null) return;
-        Vec3 camPos = cam.position();
+        Vec3 camPos = cam.pos;
 
         PoseStack ms = ctx.poseStack();
         if (ms == null) return;

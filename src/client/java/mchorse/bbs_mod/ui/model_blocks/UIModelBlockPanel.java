@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.model_blocks;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -104,7 +105,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
         {
             Minecraft mc = Minecraft.getInstance();
             Camera camera = mc.gameRenderer.mainCamera();
-            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.position(), RayTracing.fromVector3f(this.mouseDirection), 512F);
+            BlockHitResult blockHitResult = RayTracing.rayTrace(mc.level, camera.pos, RayTracing.fromVector3f(this.mouseDirection), 512F);
 
             if (blockHitResult.getType() != HitResult.Type.MISS)
             {
@@ -704,8 +705,8 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
     {
         super.renderInWorld(context);
 
-        Camera camera = context.camera();
-        Vec3 pos = camera.position();
+        CameraRenderState camera = context.levelState().cameraRenderState;
+        Vec3 pos = camera.pos;
 
         Minecraft mc = Minecraft.getInstance();
         double x = mc.mouseHandler.xpos();

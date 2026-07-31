@@ -1,6 +1,7 @@
 // Coded by Afrobama/Claude — Phase 15 v6: runs BBS stencil pick at alt-cam POV per-frame
 package com.afrobama.bbstools.client.campreview;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.film.BaseFilmController;
@@ -219,7 +220,7 @@ public final class BoneHoverPickRunner
         StencilFormFramebuffer stencil = BoneHoverPickService.getStencil(clipId);
         if (stencil == null) return null;
 
-        Camera altCam = ctx.camera();
+        CameraRenderState altCam = ctx.levelState().cameraRenderState;
         if (altCam == null) return null;
 
         /* Use whatever GL modelview the visible alt-cam render used —

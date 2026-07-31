@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import mchorse.bbs_mod.graphics.InverseView;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1406,7 +1407,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             if (povMode != UIFilmController.CAMERA_MODE_CAMERA && BBSSettings.recordingCameraPreview.get())
             {
-                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.camera(), context.poseStack());
+                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.levelState().cameraRenderState, context.poseStack());
             }
         }
 
@@ -1450,10 +1451,10 @@ public class UIFilmController extends UIElement implements GizmoViewport
             return;
         }
 
-        net.minecraft.client.Camera camera = context.camera();
-        double x = center.x - camera.position().x;
-        double y = center.y - camera.position().y;
-        double z = center.z - camera.position().z;
+        CameraRenderState camera = context.levelState().cameraRenderState;
+        double x = center.x - camera.pos.x;
+        double y = center.y - camera.pos.y;
+        double z = center.z - camera.pos.z;
         float distanceScale = BBSSettings.getAxesDistanceScale((float) Math.sqrt(x * x + y * y + z * z));
         PoseStack stack = context.poseStack();
 

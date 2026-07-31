@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.film.controller;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -131,12 +132,12 @@ public class MotionPath
             }
         }
 
-        Camera camera = context.camera();
+        CameraRenderState camera = context.levelState().cameraRenderState;
         PoseStack stack = context.poseStack();
 
-        double cx = camera.position().x;
-        double cy = camera.position().y;
-        double cz = camera.position().z;
+        double cx = camera.pos.x;
+        double cy = camera.pos.y;
+        double cz = camera.pos.z;
 
         Matrix4f matrix = stack.last().pose();
         float halfWidth = config.width.get() * 0.5F;

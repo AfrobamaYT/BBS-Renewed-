@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import mchorse.bbs_mod.graphics.InverseView;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -115,7 +116,7 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         PoseStack stack = context.stack;
         Matrix4f camInverse = new Matrix4f(InverseView.get());
 
-        Camera camera = context.camera;
+        CameraRenderState camera = context.camera;
         double baseX = camera.position.x;
         double baseY = camera.position.y;
         double baseZ = camera.position.z;

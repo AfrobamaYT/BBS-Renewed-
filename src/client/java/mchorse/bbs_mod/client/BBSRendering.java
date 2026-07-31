@@ -570,7 +570,7 @@ public class BBSRendering
         /* Feed the world camera orientation into the holder that replaced
          * RenderSystem's inverse view rotation matrix (removed in 1.21.1), so
          * billboards and particles keep facing the camera in world space. */
-        InverseView.set(new Matrix3f().rotation(worldRenderContext.camera().rotation()));
+        InverseView.set(new Matrix3f().rotation(worldRenderContext.levelState().cameraRenderState.orientation));
 
         if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen)
         {

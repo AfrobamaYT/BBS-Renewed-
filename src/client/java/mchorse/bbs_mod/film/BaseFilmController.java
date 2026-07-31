@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.film;
 
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import mchorse.bbs_mod.film.Film;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -95,7 +96,7 @@ public abstract class BaseFilmController
     {
         IntObjectMap<IEntity> entities = context.entities;
         IEntity entity = context.entity;
-        Camera camera = context.camera;
+        CameraRenderState camera = context.camera;
         PoseStack stack = context.stack;
         float transition = context.transition;
 
@@ -197,8 +198,8 @@ public abstract class BaseFilmController
              * (BBSRendering.renderCoolStuff), so overwriting it dropped the pass view and
              * the form rendered in the wrong place; multiplying preserves it, making the
              * on-screen result identical to vanilla. */
-            stack.last().pose().rotate(context.camera.rotation());
-            stack.last().normal().rotate(context.camera.rotation());
+            stack.last().pose().rotate(context.camera.orientation);
+            stack.last().normal().rotate(context.camera.orientation);
         }
 
         formContext.world.last().pose().identity();
