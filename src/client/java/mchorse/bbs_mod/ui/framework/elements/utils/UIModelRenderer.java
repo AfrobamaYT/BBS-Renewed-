@@ -45,7 +45,7 @@ public abstract class UIModelRenderer extends UIElement
      * Blit-Bereich stimmt noch nicht. Auf {@code true} stellen, sobald die Bedeutung von
      * x0/y0/x1/y1 gemessen ist (Aufgabe 96).
      */
-    private static final boolean GITTER_UEBER_BILD_IM_BILD = false;
+    private static final boolean GITTER_UEBER_BILD_IM_BILD = true;
 
     private static Vector3d vec = new Vector3d();
     private static Matrix3d mat = new Matrix3d();

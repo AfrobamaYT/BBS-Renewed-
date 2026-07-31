@@ -57,6 +57,7 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
     protected void renderToTexture(VorschauGitterZustand zustand, PoseStack stapel, SubmitNodeCollector sammler)
     {
         stapel.pushPose();
+
         stapel.mulPose(zustand.ansicht());
 
         sammler.submitCustomGeometry(stapel, RenderTypes.LINES, (pose, ecken) ->
