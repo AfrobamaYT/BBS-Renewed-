@@ -6,6 +6,7 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import net.minecraft.client.player.KeyboardInput;
+import net.minecraft.world.phys.Vec2;
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,10 +22,25 @@ public class KeyboardInputMixin
      * com.afrobama.blendertransform.KeyboardInputSteuerungLogik. tick laeuft 20x/s,
      * nicht pro frame -- der brueckenaufruf faellt nicht ins gewicht, und wie sich das
      * steuern anfuehlt, will man beim ausprobieren sofort sehen. */
+    /* 26.2: tick ist parameterlos geworden -- die Schleich-Daempfung kam frueher als
+     * (slowDown, slowDownFactor) herein und rechnet Minecraft inzwischen selbst am Spieler.
+     *
+     * moveVector ist geschuetzt und liegt auf der Oberklasse ClientInput; von aussen kommt
+     * niemand dran (der accessWidener ist waehrend der classTweaker-Umstellung abgeklemmt).
+     * Der @Shadow ist der sanktionierte Weg: die Logik rechnet den Vektor, wir schreiben ihn.
+     * null heisst "es wird gerade nichts gesteuert" -- dann bleibt Minecrafts Eingabe stehen. */
+    @Shadow
+    protected Vec2 moveVector;
+
     @Inject(method = "tick", at = @At("RETURN"))
-    public void onTick(boolean slowDown, float slowDownFactor, CallbackInfo info)
+    public void onTick(CallbackInfo info)
     {
-        MixinBruecke.rufe("KeyboardInputSteuerungLogik", "uebernehmen",
-            (KeyboardInput) (Object) this, slowDown, slowDownFactor);
+        Object vektor = MixinBruecke.rufe("KeyboardInputSteuerungLogik", "uebernehmen",
+            (KeyboardInput) (Object) this);
+
+        if (vektor instanceof Vec2 neu)
+        {
+            this.moveVector = neu;
+        }
     }
 }

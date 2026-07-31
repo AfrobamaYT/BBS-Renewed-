@@ -6,6 +6,8 @@ import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import net.minecraft.client.player.KeyboardInput;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.phys.Vec2;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -32,10 +34,25 @@ public final class KeyboardInputSteuerungLogik
     private KeyboardInputSteuerungLogik() {}
 
     /**
-     * @return {@code true}, wenn die Eingabe übernommen wurde — nur zur Beobachtung; der
-     *         Handler wertet es nicht aus.
+     * Übernimmt die Eingabe, solange ein Darsteller gesteuert wird.
+     *
+     * <p>26.2: die acht einzelnen Felder von {@code KeyboardInput} gibt es nicht mehr. Der
+     * Tastenzustand steckt jetzt im öffentlichen Feld {@code keyPresses}, einem
+     * <b>unveränderlichen</b> {@code Input}-Record — man setzt also einen neuen, statt Felder
+     * einzeln zu beschreiben. Die beiden Impulse sind zu einem {@code moveVector}
+     * zusammengefasst, und der ist <b>geschützt</b>: schreiben kann ihn nur, wer in der Klasse
+     * steht. Deshalb gibt diese Methode ihn zurück, statt ihn selbst zu setzen — das Mixin
+     * hält dafür einen {@code @Shadow}.</p>
+     *
+     * <p>⚠️ Die Verlangsamung beim Schleichen ist hier ersatzlos weg. {@code tick} nahm früher
+     * {@code slowDown}/{@code slowDownFactor} entgegen; in 26.2 ist der Rückruf parameterlos,
+     * Minecraft rechnet die Dämpfung inzwischen selbst am Spieler. Wir bekommen sie also gar
+     * nicht mehr gereicht und dürfen sie hier auch nicht nachbauen.</p>
+     *
+     * @return der neue Bewegungsvektor, oder {@code null} wenn gerade nichts gesteuert wird —
+     *         dann bleibt Minecrafts eigene Eingabe unangetastet.
      */
-    public static boolean uebernehmen(KeyboardInput input, boolean slowDown, float slowDownFactor)
+    public static Vec2 uebernehmen(KeyboardInput input)
     {
         UIBaseMenu menu = UIScreen.getCurrentMenu();
 
@@ -43,25 +60,26 @@ public final class KeyboardInputSteuerungLogik
             || !(dashboard.getPanels().panel instanceof UIFilmPanel filmPanel)
             || !filmPanel.getController().isControlling())
         {
-            return false;
+            return null;
         }
 
-        input.up = Window.isKeyPressed(GLFW.GLFW_KEY_W);
-        input.down = Window.isKeyPressed(GLFW.GLFW_KEY_S);
-        input.left = Window.isKeyPressed(GLFW.GLFW_KEY_A);
-        input.right = Window.isKeyPressed(GLFW.GLFW_KEY_D);
-        input.forwardImpulse = richtung(input.up, input.down);
-        input.leftImpulse = richtung(input.left, input.right);
-        input.jumping = Window.isKeyPressed(GLFW.GLFW_KEY_SPACE);
-        input.shiftKeyDown = Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT);
+        boolean vor = Window.isKeyPressed(GLFW.GLFW_KEY_W);
+        boolean zurueck = Window.isKeyPressed(GLFW.GLFW_KEY_S);
+        boolean links = Window.isKeyPressed(GLFW.GLFW_KEY_A);
+        boolean rechts = Window.isKeyPressed(GLFW.GLFW_KEY_D);
 
-        if (slowDown)
-        {
-            input.leftImpulse *= slowDownFactor;
-            input.forwardImpulse *= slowDownFactor;
-        }
+        /* Sprinten fassen wir nicht an — das tat die alte Fassung auch nicht. Der Wert kommt
+         * aus Minecrafts eigenem Durchlauf und wird hier nur durchgereicht. */
+        input.keyPresses = new Input(vor, zurueck, links, rechts,
+            Window.isKeyPressed(GLFW.GLFW_KEY_SPACE),
+            Window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT),
+            input.keyPresses.sprint());
 
-        return true;
+        /* Reihenfolge und Normalisierung sind aus KeyboardInput.tick abgelesen (Bytecode):
+         * new Vec2(seitwaerts, vorwaerts).normalized(). Das normalized() ist neu -- diagonal
+         * ist jetzt genauso schnell wie geradeaus, vorher war es Wurzel zwei mal schneller.
+         * Das ist Minecrafts Verhalten, und der Darsteller soll sich steuern wie der Spieler. */
+        return new Vec2(richtung(links, rechts), richtung(vor, zurueck)).normalized();
     }
 
     /** Beide oder keine gedrückt heißt still — sonst zieht eine Richtung dauerhaft. */

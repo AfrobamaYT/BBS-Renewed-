@@ -86,27 +86,50 @@ public final class SkyFreezeCommand
             return 0;
         }
 
-        /* 1. Stop the daylight cycle. GameRules.set(value, server) so
+        /* 1. Stop the daylight cycle. GameRules.set(rule, value, server) so
          *  the server broadcasts the change to listeners (commands, the
          *  /gamerule readout, etc.). Without the server arg the rule
-         *  mutates silently which trips up debug tooling that reads it. */
+         *  mutates silently which trips up debug tooling that reads it.
+         *
+         *  26.2: die Regeln heissen anders und der Zugriff ist flacher.
+         *  RULE_DAYLIGHT -> ADVANCE_TIME, RULE_WEATHER_CYCLE -> ADVANCE_WEATHER,
+         *  und statt getRule(K).set(wert, server) gibt es set(K, wert, server)
+         *  direkt (GameRule<Boolean> statt Key<BooleanValue>). */
         GameRules rules = world.getGameRules();
-        rules.getRule(GameRules.RULE_DAYLIGHT).set(false, server);
-        rules.getRule(GameRules.RULE_WEATHER_CYCLE ).set(false, server);
+        rules.set(GameRules.ADVANCE_TIME, false, server);
+        rules.set(GameRules.ADVANCE_WEATHER, false, server);
 
         /* 2. Re-anchor the timeOfDay to its current value. Belt-and-
          *  suspenders: if a same-tick handler already advanced the time
          *  before this command ran, we snap back to the visible angle
-         *  the user is framing for, not the half-step in between. */
-        long now = world.getDayTime();
-        world.setDayTime(now);
+         *  the user is framing for, not the half-step in between.
+         *
+         *  ⚠️ 26.2: getDayTime/setDayTime gibt es NICHT mehr -- die Tageszeit ist
+         *  keine Zahl an der Welt mehr, sondern eine benannte UHR
+         *  (net.minecraft.world.clock). Jede Dimension nennt ihre eigene:
+         *  dimensionType().defaultClock() ist ein Optional<Holder<WorldClock>>,
+         *  im Nether z.B. leer -- dort gibt es nichts zu verankern, deshalb der
+         *  ifPresent statt eines orElseThrow.
+         *
+         *  Level.getDefaultClockTime() ist exakt clockManager().getTotalTicks(
+         *  defaultClock) (im Bytecode nachgesehen), setTotalTicks ist also der
+         *  passende Gegenpart -- kein Vermischen von Tageszeit und Gesamtticks. */
+        long now = world.getDefaultClockTime();
 
-        /* 3. Force-clear the sky. ServerWorld.setWeather takes TICKS for
+        world.dimensionType().defaultClock().ifPresent(
+            uhr -> world.clockManager().setTotalTicks(uhr, world.getDefaultClockTime()));
+
+        /* 3. Force-clear the sky. setWeatherParameters takes TICKS for
          *  the clear-duration arg (the vanilla /weather command converts
          *  seconds → ticks internally). We pass raining=false +
          *  thundering=false explicitly to ensure that even if it was
-         *  currently raining the moment freeze runs, we stop it. */
-        world.setWeatherParameters(CLEAR_DURATION_TICKS, 0, false, false);
+         *  currently raining the moment freeze runs, we stop it.
+         *
+         *  26.2: die Methode ist von ServerLevel an den MinecraftServer gewandert
+         *  (so ruft WeatherCommand.setClear sie auch auf). Sie wirkt jetzt auf
+         *  ALLE Welten des Servers statt nur auf diese -- fuer einen Dreh ist das
+         *  die gewollte Wirkung, aber es ist ein Unterschied zum Vorher. */
+        server.setWeatherParameters(CLEAR_DURATION_TICKS, 0, false, false);
 
         final long timeFinal = now;
         src.sendSuccess(() -> Component.literal(
@@ -140,8 +163,8 @@ public final class SkyFreezeCommand
          *  shoot they want the sky to stay clear so they can review
          *  takes without lighting changes between them. */
         GameRules rules = world.getGameRules();
-        rules.getRule(GameRules.RULE_DAYLIGHT).set(true, server);
-        rules.getRule(GameRules.RULE_WEATHER_CYCLE ).set(true, server);
+        rules.set(GameRules.ADVANCE_TIME, true, server);
+        rules.set(GameRules.ADVANCE_WEATHER, true, server);
 
         src.sendSuccess(() -> Component.literal(
             "§e[sky] §fUNFROZEN §7— daylight cycle on, weather cycle on (sky stays clear until natural roll)"), true);
