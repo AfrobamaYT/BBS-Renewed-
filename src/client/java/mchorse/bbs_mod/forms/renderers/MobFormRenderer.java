@@ -211,6 +211,10 @@ public class MobFormRenderer extends FormRenderer<MobForm> implements ITickable
             this.entity.getEntityData().set(PlayerUtils.ProtectedAccess.getModelParts(), (byte) 0b1111111);
         }
 
+        /* 26.2: ohne Kennung stirbt der Zeichenweg mit "Tried to access entity ID before
+         * ID assignment" -- siehe AnzeigeEntity. */
+        AnzeigeEntity.kennungGeben(this.entity);
+
         if (this.entity != null)
         {
             compound.putString("id", id);
