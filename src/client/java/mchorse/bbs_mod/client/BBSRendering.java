@@ -290,8 +290,27 @@ public class BBSRendering
      * Verkleinerung woanders herkommen (eigener Durchgang mit Sampler). Siehe
      * docs/26.2-UMSTIEG-SPICKZETTEL.md. */
     private static int leseFbo = 0;
-    private static int leseFboTextur = -1;
 
+    /**
+     * ⛔ DER ANHANG WIRD JEDES MAL NEU GESETZT — die GL-Nummer zu merken war ein Fehler, und
+     * zwar ein stiller.
+     *
+     * <p>Hier stand ein Zwischenspeicher: "gleiche Texturnummer wie beim letzten Mal, also ist
+     * der Anhang noch gut". Das gilt in 26.2 nicht mehr. Eine Groessenaenderung von
+     * {@code RenderTarget} SCHLIESST die alte GPU-Textur und legt eine neue an; GL darf die
+     * freigewordene Nummer sofort wiederverwenden. Dann stimmt die Nummer ueberein, obwohl es
+     * ein anderes Objekt ist — der Zwischenspeicher meldet "unveraendert" und der Rahmenpuffer
+     * haengt weiter am toten Anhang. Dieselbe Falle steht in {@code Texture}: wer die Nummer
+     * zwischenspeichert, liest nach der naechsten Groessenaenderung ins Leere.
+     *
+     * <p>KOSTEN DES FEHLERS (Aufgabe 91): der Export-Blit las darueber und kopierte Schwarz,
+     * obwohl BBS' Rahmenpuffer gefuellt war. Zwei Messwege auf DIESELBE Textur zeigten es --
+     * direkt gelesen: Mittelwert 198, ueber diesen Rahmenpuffer gelesen: 0. Ohne die zweite
+     * Messung haette man weiter im Weltdurchgang gesucht, wo nichts kaputt war.
+     *
+     * <p>Ein {@code glFramebufferTexture2D} je Bild kostet nichts Messbares — der
+     * Zwischenspeicher sparte nichts und verbarg einen Fehler.
+     */
     private static int leseFboFuer(RenderTarget ziel)
     {
         int textur = ((com.mojang.blaze3d.opengl.GlTexture) ziel.getColorTexture()).glId();
@@ -299,20 +318,14 @@ public class BBSRendering
         if (leseFbo == 0)
         {
             leseFbo = GL30.glGenFramebuffers();
-            leseFboTextur = -1;
         }
 
-        if (leseFboTextur != textur)
-        {
-            int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
 
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
-            GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
-                GL11.GL_TEXTURE_2D, textur, 0);
-            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
-
-            leseFboTextur = textur;
-        }
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFbo);
+        GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+            GL11.GL_TEXTURE_2D, textur, 0);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
 
         return leseFbo;
     }
@@ -429,20 +442,29 @@ public class BBSRendering
     }
 
     /**
-     * Lenkt das Zeichnen in ein anderes Ziel um — das Herzstueck davon, dass BBS den Film in
-     * seinen eigenen Rahmenpuffer rendert statt auf den Bildschirm.
+     * Setzt die beiden Textursicht-Umleitungen.
      *
-     * <p>26.2: das Feld {@code Minecraft.mainRenderTarget} gibt es nicht mehr; es war
-     * beschreibbar und genau so hat BBS umgelenkt. Der Nachfolger ist
-     * {@code RenderSystem.outputColorTextureOverride} — kein Renderziel mehr, sondern die
-     * Farb-TEXTURSICHT des Ziels. Vanilla macht es selbst genau so: {@code LevelRenderer}
-     * setzt das Feld auf {@code ziel.getColorTextureView()}, zeichnet, und setzt es danach
-     * wieder auf {@code null} (im Bytecode nachgesehen).</p>
+     * <p>⛔ DAS IST NICHT DIE STELLE, AN DER BBS DEN FILM UMLENKT. Hier stand genau das --
+     * "das Herzstueck davon, dass BBS den Film in seinen eigenen Rahmenpuffer rendert" -- und
+     * es war falsch. Der Satz hat Aufgabe 91 verursacht: das Vorschaufeld blieb schwarz, weil
+     * die Welt nie in BBS' Puffer kam, und niemand suchte hier, weil hier ja angeblich die
+     * Umlenkung sass.
      *
-     * <p>⚠️ Daraus folgt eine Regel, die es vorher nicht gab: <b>{@code null} ist der
-     * Normalzustand</b>, nicht "der Bildschirm". Wer die Umlenkung stehen laesst, zeichnet
-     * auch alles Folgende ins fremde Ziel. Deshalb nimmt diese Methode {@code null} entgegen
-     * und bedeutet damit "zurueck auf den regulaeren Ausgang".</p>
+     * <p><b>Warum es nicht reicht</b> (im Bytecode nachgesehen, nicht geschlossen):
+     * {@code LevelRenderer.render} holt sein Ziel ueber {@code GameRenderer.mainRenderTarget()}
+     * und meldet es per {@code FrameGraphBuilder.importExternal("main", ...)} an -- DA faellt
+     * die Entscheidung. Dieselbe Methode setzt {@code outputColorTextureOverride} anschliessend
+     * SELBST und raeumt es danach wieder ab. Es ist ein kurzlebiger Schalter innerhalb eines
+     * Durchgangs; ein vorher gesetzter Wert ist weg, sobald Vanilla ihn ueberschreibt.
+     *
+     * <p><b>Wo die Umlenkung wirklich sitzt:</b> {@code GameRendererMixin#bbs$umlenkenAufFilmpuffer}
+     * gibt bei {@link #canReplaceFramebuffer()} BBS' Puffer aus {@code mainRenderTarget()} heraus.
+     * Das ist die 26.2-Entsprechung des frueher ueberschriebenen Feldes.
+     *
+     * <p>⚠️ Diese Methode bleibt trotzdem stehen: {@code null} ist der Normalzustand, nicht
+     * "der Bildschirm", und eine stehengelassene Umleitung zoege alles Folgende ins fremde
+     * Ziel. OFFEN und ungemessen ist, ob die Setzerei hier ueberhaupt noch etwas bewirkt --
+     * siehe Aufgabe 92, dort gehoert sie geprueft statt geraten.
      */
     private static void reassignFramebuffer(RenderTarget framebuffer)
     {

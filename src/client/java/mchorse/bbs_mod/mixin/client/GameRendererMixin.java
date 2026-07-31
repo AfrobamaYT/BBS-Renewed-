@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -22,10 +23,51 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin
 {
+    /**
+     * ⭐ HIER lenkt BBS das Rendern in seinen eigenen Rahmenpuffer um — der Nachfolger des
+     * ueberschriebenen {@code Minecraft.mainRenderTarget}-Feldes aus 1.21.1.
+     *
+     * <h2>Warum nicht ueber die Textursicht-Umleitung (das war der Fehler)</h2>
+     *
+     * <p>Der Port hatte dafuer {@code RenderSystem.outputColorTextureOverride} genommen, weil
+     * das Feld {@code Minecraft.mainRenderTarget} verschwunden war und jenes wie der Nachfolger
+     * aussah. Es ist keiner, und das laesst sich im Bytecode zeigen:
+     *
+     * <ul>
+     *   <li>{@code LevelRenderer.render} holt sein Ziel ueber {@code GameRenderer.mainRenderTarget()}
+     *       und meldet es mit {@code FrameGraphBuilder.importExternal("main", ...)} beim Bildgraphen
+     *       an. DA entscheidet sich, wohin die Welt geht.</li>
+     *   <li>Dieselbe Methode SETZT die beiden Override-Felder anschliessend selbst und raeumt sie
+     *       danach wieder ab. Es ist ein kurzlebiger Schalter INNERHALB eines Durchgangs, kein
+     *       globaler Umlenker — wer ihn vorher setzt, dessen Wert ist weg, sobald Vanilla ihn
+     *       ueberschreibt.</li>
+     * </ul>
+     *
+     * <p>Gemessen, nicht geschlossen: mit gesetzten Overrides blieb BBS' Puffer ueber den ganzen
+     * Weltdurchgang schwarz (Helligkeit 0 an beiden Enden), waehrend Mojangs Hauptziel gefuellt
+     * war. Genau deshalb blieb das Vorschaufeld des Film-Editors schwarz (Aufgabe 91).
+     *
+     * <p>⚠️ DIE BEDINGUNG MUSS DIESELBE SEIN WIE IN {@code WindowMixin}. {@code GameRenderer.render}
+     * vergleicht die Masse des Ziels mit {@code windowRenderState} und RESIZED das Ziel bei
+     * Abweichung. Solange beide an {@code canReplaceFramebuffer()} haengen, meldet das Fenster
+     * genau dann die Videogroesse, wenn hier auch BBS' Puffer herausgegeben wird — sonst
+     * schrumpfte Vanilla den Puffer auf Fenstergroesse und die Aufnahme haette die falsche
+     * Aufloesung.
+     */
+    @Inject(method = "mainRenderTarget", at = @At("HEAD"), cancellable = true)
+    private void bbs$umlenkenAufFilmpuffer(CallbackInfoReturnable<RenderTarget> info)
+    {
+        if (BBSRendering.canReplaceFramebuffer() && BBSRendering.getFramebuffer() != null)
+        {
+            info.setReturnValue(BBSRendering.getFramebuffer());
+        }
+    }
+
     /**
      * This injection cancels bobbing when camera controller takes over
      */
