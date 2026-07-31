@@ -9,6 +9,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.TextureSetup;
 import org.joml.Matrix4f;
@@ -118,6 +119,8 @@ public class GehaltenesNetz implements AutoCloseable
             return;
         }
 
+        bindungPruefen(pipeline);
+
         GpuBuffer indizes = this.eigeneIndizes != null
             ? this.eigeneIndizes
             : RenderSystem.getSequentialBuffer(this.zustand.primitiveTopology()).getBuffer(this.zustand.indexCount());
@@ -158,6 +161,71 @@ public class GehaltenesNetz implements AutoCloseable
             durchgang.setVertexBuffer(0, this.ecken.slice());
             durchgang.setIndexBuffer(indizes, this.zustand.indexType());
             durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
+        }
+    }
+
+    /**
+     * Prueft VOR dem Zeichnen, ob die Pipeline zu dem passt, was diese Klasse liefern KANN --
+     * und scheitert laut, statt die JVM mitzunehmen.
+     *
+     * <h2>Warum das noetig ist</h2>
+     *
+     * <p>Diese Klasse hat genau EINEN Eckenpuffer und bindet ihn auf Nummer 0. Eine Pipeline
+     * darf aber mehrere getrennte Bindungen erklaeren -- BBS' eigener Modellweg tut das
+     * (Position, Normale, UV0 als drei Puffer, siehe {@code ModelVAOPipeline}). Trifft so
+     * eine Pipeline auf ein verschraenktes Netz, geht zweierlei schief:
+     *
+     * <ul>
+     *   <li>Die Bindungen 1 und 2 bleiben ungesetzt, werden aber gelesen.</li>
+     *   <li>Bindung 0 bekommt den falschen Schritt: erklaert die Pipeline 12 Byte je Ecke
+     *       und das Netz liefert 36, nimmt der Shader jede dritte Byte-Gruppe als neue Ecke
+     *       und liest dreimal so weit, wie der Puffer reicht.</li>
+     * </ul>
+     *
+     * <p>Beides ist ein FORMAL GUELTIGER Zeichenaufruf: {@code glGetError} schweigt, es gibt
+     * keine Ausnahme, und die JVM verschwindet ohne Bericht. Genau so starb der Film-Editor
+     * (Aufgabe 89) -- gefunden nur ueber den Java-Stack in einem hs_err-Bericht, den es bei
+     * dieser Fehlerart nicht immer gibt.
+     *
+     * @throws IllegalStateException wenn die Pipeline mehr als einen Puffer erwartet oder
+     *                               ihr Format eine andere Eckenbreite hat als das Netz
+     */
+    private void bindungPruefen(RenderPipeline pipeline)
+    {
+        /* ⚠️ Das Feld hat IMMER die volle Laenge (16 Plaetze) und ist an den unbenutzten
+         * Stellen null -- seine Laenge sagt also nichts. Gezaehlt werden muss, was wirklich
+         * belegt ist. (Dieser Irrtum hat hier einmal 16 statt 1 gemeldet.) */
+        VertexFormat[] bindungen = pipeline.getVertexFormatBindings();
+        int belegt = 0;
+
+        for (VertexFormat format : bindungen)
+        {
+            if (format != null)
+            {
+                belegt += 1;
+            }
+        }
+
+        if (belegt != 1 || bindungen[0] == null)
+        {
+            throw new IllegalStateException(
+                "Pipeline " + pipeline.getLocation() + " erwartet " + belegt
+                + " getrennte Eckenpuffer (Bindung 0 " + (bindungen[0] == null ? "LEER" : "belegt")
+                + "), diese Klasse kann aber nur EINEN verschraenkten auf Nummer 0 binden."
+                + " Fuer den Sofortweg die verschraenkte Pipeline-Familie waehlen"
+                + " (ModelVAOPipeline.waehlenVerschraenkt), nicht die des VAO-Wegs.");
+        }
+
+        int erwartet = bindungen[0].getVertexSize();
+        int geliefert = this.zustand.format().getVertexSize();
+
+        if (erwartet != geliefert)
+        {
+            throw new IllegalStateException(
+                "Pipeline " + pipeline.getLocation() + " erwartet " + erwartet
+                + " Byte je Ecke, das Netz liefert aber " + geliefert + " ("
+                + this.zustand.format() + "). Der Shader wuerde " + geliefert + "/" + erwartet
+                + "-mal so weit lesen, wie der Puffer reicht.");
         }
     }
 

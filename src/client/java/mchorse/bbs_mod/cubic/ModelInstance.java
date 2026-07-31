@@ -584,7 +584,7 @@ public class ModelInstance implements IModelInstance
             /* Ein Durchgang, kein Aufschieben: Tiefe schreiben, Cull nach Modelleinstellung.
              * build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
              * kommt damit zurecht und zeichnet dann nichts. */
-            SofortZeichner.zeichnen(ModelVAOPipeline.waehlen(this.isCulling(), true), builder.build(),
+            SofortZeichner.zeichnen(ModelVAOPipeline.waehlenVerschraenkt(this.isCulling(), true), builder.build(),
                 new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
                 texture == null ? null : SofortZeichner.entityTextur(texture), null);
 
@@ -608,7 +608,7 @@ public class ModelInstance implements IModelInstance
 
             /* Undurchsichtiger Teildurchgang: Tiefe schreiben, Cull nach Modelleinstellung.
              * Beides steckt jetzt in der Pipeline statt im globalen Zustand. */
-            netz.zeichnen(ModelVAOPipeline.waehlen(this.isCulling(), true), modelView, null,
+            netz.zeichnen(ModelVAOPipeline.waehlenVerschraenkt(this.isCulling(), true), modelView, null,
                 texture == null ? null : SofortZeichner.entityTextur(texture), null,
                 (durchgang) -> durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK,
                     ModelVAORenderer.blockFuer(normalMat != null ? normalMat : new Matrix3f(),

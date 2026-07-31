@@ -539,7 +539,7 @@ public class FormTranslucentQueue
              * Pipeline (etwa eine Vanilla-Ebene) bringt ihren Zustand selbst mit. */
             if (ModelVAOPipeline.istModellPipeline(pipeline))
             {
-                pipeline = ModelVAOPipeline.waehlen(this.cull, this.depthWrite);
+                pipeline = ModelVAOPipeline.waehlenVerschraenkt(this.cull, this.depthWrite);
             }
 
             if (this.preDraw != null)

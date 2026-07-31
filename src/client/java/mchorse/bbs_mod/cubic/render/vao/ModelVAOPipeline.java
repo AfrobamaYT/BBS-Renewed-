@@ -9,6 +9,7 @@ import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSMod;
 import net.minecraft.client.renderer.BindGroupLayouts;
@@ -164,7 +165,74 @@ public final class ModelVAOPipeline
             || pipeline == DURCHSICHTIG_BEIDSEITIG
             || pipeline == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN
             || pipeline == DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG
-            || pipeline == UNDURCHSICHTIG;
+            || pipeline == UNDURCHSICHTIG
+            || pipeline == VERSCHRAENKT_DURCHSICHTIG
+            || pipeline == VERSCHRAENKT_DURCHSICHTIG_BEIDSEITIG
+            || pipeline == VERSCHRAENKT_OHNE_TIEFENSCHREIBEN
+            || pipeline == VERSCHRAENKT_OHNE_TIEFENSCHREIBEN_BEIDSEITIG;
+    }
+
+    /*
+     * ═══ DIE VERSCHRAENKTE FAMILIE: EIN PUFFER STATT DREI ═══
+     *
+     * BBS hat ZWEI Wege, dieselben Modelle zu zeichnen, und sie liefern ihre Ecken
+     * unterschiedlich verpackt:
+     *
+     *   ModelVAO / BOBJModelVAO  -> DREI getrennte Puffer (Position, Normale, UV0),
+     *                               gebunden auf die Nummern 0/1/2. Dafuer sind die
+     *                               Pipelines oben gebaut.
+     *   SofortZeichner / GehaltenesNetz -> EIN verschraenkter Puffer aus einem
+     *                               BufferBuilder im Vanilla-Format ENTITY, gebunden
+     *                               auf Nummer 0. Mehr kann MeshData gar nicht liefern.
+     *
+     * ⛔ WAS PASSIERT, WENN MAN DEN ZWEITEN WEG MIT DER ERSTEN PIPELINE ZEICHNET
+     * (genau das war Aufgabe 89, ein Absturz im Grafiktreiber):
+     *
+     *   - Die Bindungen 1 und 2 werden nie gesetzt. Die Pipeline liest sie trotzdem.
+     *   - Schlimmer noch die Bindung 0: FORMAT_POSITION ist 12 Byte breit, ENTITY ist
+     *     36. Der Shader nimmt also jede 12. Byte-Gruppe als neue Ecke und liest
+     *     dreimal so weit, wie der Puffer reicht.
+     *
+     * Beides ist ein FORMAL GUELTIGER Zeichenaufruf -- glGetError schweigt, es gibt
+     * keine Ausnahme, die JVM ist einfach weg. Dieselbe Fehlerklasse wie Aufgabe 88
+     * (dort las eine Textur ueber ihren Puffer hinaus), nur eine Ebene tiefer.
+     *
+     * ⚠️ Warum EIN Shader fuer beide Familien reicht: Blaze3D bindet Vertexattribute
+     * ueber ihren NAMEN, nicht ueber ihre Lage. ENTITY traegt Position, Color, UV0,
+     * UV1, UV2 und Normal (nachgemessen mit javap, nicht vermutet) -- die drei, die
+     * core/model liest, sind darunter. Die uebrigen bleiben ungelesen, das kostet
+     * Bandbreite, aber nichts an Richtigkeit.
+     */
+
+    /** Wie {@link #DURCHSICHTIG}, aber fuer EINEN verschraenkten Puffer im ENTITY-Format. */
+    public static final RenderPipeline VERSCHRAENKT_DURCHSICHTIG = bauenVerschraenkt("model", true, true, true);
+
+    /** Wie {@link #DURCHSICHTIG_BEIDSEITIG}, verschraenkt. */
+    public static final RenderPipeline VERSCHRAENKT_DURCHSICHTIG_BEIDSEITIG = bauenVerschraenkt("model", true, false, true);
+
+    /** Wie {@link #DURCHSICHTIG_OHNE_TIEFENSCHREIBEN}, verschraenkt. */
+    public static final RenderPipeline VERSCHRAENKT_OHNE_TIEFENSCHREIBEN = bauenVerschraenkt("model", true, true, false);
+
+    /** Wie {@link #DURCHSICHTIG_OHNE_TIEFENSCHREIBEN_BEIDSEITIG}, verschraenkt. */
+    public static final RenderPipeline VERSCHRAENKT_OHNE_TIEFENSCHREIBEN_BEIDSEITIG = bauenVerschraenkt("model", true, false, false);
+
+    /**
+     * Waehlt die Pipeline fuer den SOFORT-Weg -- also fuer alles, was ueber
+     * {@link mchorse.bbs_mod.graphics.SofortZeichner} oder
+     * {@link mchorse.bbs_mod.graphics.GehaltenesNetz} geht.
+     *
+     * <p>Wer einen BufferBuilder baut, braucht diese Methode. Wer drei eigene Puffer
+     * bindet, braucht {@link #waehlen(boolean, boolean)}. Die Verwechslung nimmt die JVM
+     * mit, ohne eine einzige Meldung zu hinterlassen.
+     */
+    public static RenderPipeline waehlenVerschraenkt(boolean culling, boolean tiefeSchreiben)
+    {
+        if (tiefeSchreiben)
+        {
+            return culling ? VERSCHRAENKT_DURCHSICHTIG : VERSCHRAENKT_DURCHSICHTIG_BEIDSEITIG;
+        }
+
+        return culling ? VERSCHRAENKT_OHNE_TIEFENSCHREIBEN : VERSCHRAENKT_OHNE_TIEFENSCHREIBEN_BEIDSEITIG;
     }
 
     /**
@@ -173,6 +241,11 @@ public final class ModelVAOPipeline
      *
      * <p>Das ersetzt {@code enableCull()/disableCull()} und {@code depthMask(...)}: was
      * frueher ein Zustandswechsel war, ist jetzt die Wahl einer von vier Konstanten.
+     *
+     * <p>⛔ NUR FUER DEN VAO-WEG, also fuer Aufrufer, die DREI eigene Puffer auf die
+     * Bindungen 0/1/2 legen ({@link ModelVAO}, {@link BOBJModelVAO}). Wer aus einem
+     * BufferBuilder zeichnet, braucht {@link #waehlenVerschraenkt(boolean, boolean)} --
+     * die Verwechslung nimmt die JVM mit, ohne eine Meldung zu hinterlassen (Aufgabe 89).
      */
     public static RenderPipeline waehlen(boolean culling, boolean tiefeSchreiben)
     {
@@ -186,17 +259,29 @@ public final class ModelVAOPipeline
 
     private static RenderPipeline bauen(String shader, boolean mischen, boolean culling, boolean tiefeSchreiben)
     {
+        return bauen(shader, mischen, culling, tiefeSchreiben, false);
+    }
+
+    /** Dieselbe Pipeline, aber mit EINER verschraenkten Bindung statt dreier getrennter. */
+    private static RenderPipeline bauenVerschraenkt(String shader, boolean mischen, boolean culling, boolean tiefeSchreiben)
+    {
+        return bauen(shader, mischen, culling, tiefeSchreiben, true);
+    }
+
+    private static RenderPipeline bauen(String shader, boolean mischen, boolean culling,
+        boolean tiefeSchreiben, boolean verschraenkt)
+    {
         Identifier datei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + shader);
         String name = shader + (mischen ? "_translucent" : "_opaque")
-            + (culling ? "" : "_no_cull") + (tiefeSchreiben ? "" : "_no_depth_write");
+            + (culling ? "" : "_no_cull") + (tiefeSchreiben ? "" : "_no_depth_write")
+            /* ⚠️ Der Name IST die Kennung der Pipeline. Ohne diesen Zusatz truegen beide
+             * Familien dieselbe und die zweite ueberschriebe die erste. */
+            + (verschraenkt ? "_interleaved" : "");
 
         RenderPipeline.Builder bauer = RenderPipeline.builder()
             .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/" + name))
             .withVertexShader(datei)
             .withFragmentShader(datei)
-            .withVertexBinding(BINDUNG_POSITION, FORMAT_POSITION)
-            .withVertexBinding(BINDUNG_NORMALE, FORMAT_NORMALE)
-            .withVertexBinding(BINDUNG_UV0, FORMAT_UV0)
             .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
             .withBindGroupLayout(BindGroupLayouts.PROJECTION)
@@ -204,6 +289,17 @@ public final class ModelVAOPipeline
             .withBindGroupLayout(BindGroupLayouts.FOG)
             .withBindGroupLayout(GRUPPE_MODELL)
             .withCull(culling);
+
+        if (verschraenkt)
+        {
+            bauer.withVertexBinding(0, DefaultVertexFormat.ENTITY);
+        }
+        else
+        {
+            bauer.withVertexBinding(BINDUNG_POSITION, FORMAT_POSITION)
+                .withVertexBinding(BINDUNG_NORMALE, FORMAT_NORMALE)
+                .withVertexBinding(BINDUNG_UV0, FORMAT_UV0);
+        }
 
         /* ⛔ 26.2 rechnet die Tiefe UMGEKEHRT (reversed-Z): naeher heisst groesserer Wert,
          * der Tiefenpuffer wird auf 0.0 geloescht, und DepthStencilState.DEFAULT traegt
