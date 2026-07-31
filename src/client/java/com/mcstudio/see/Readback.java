@@ -3,7 +3,7 @@ package com.mcstudio.see;
 import com.mcstudio.http.StudioServer;
 import com.mcstudio.util.RenderThread;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import org.lwjgl.BufferUtils;

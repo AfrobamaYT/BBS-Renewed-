@@ -956,8 +956,8 @@ public final class VeilCubicBatch implements AutoCloseable
              *  the saved values; GlStateManager is idempotent + cheap. */
             try
             {
-                com.mojang.blaze3d.platform.GlStateManager._glUseProgram(savedProgram);
-                com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(savedVao);
+                com.mojang.blaze3d.opengl.GlStateManager._glUseProgram(savedProgram);
+                com.mojang.blaze3d.opengl.GlStateManager._glBindVertexArray(savedVao);
                 if (savedBlend)    com.mojang.blaze3d.systems.RenderSystem.enableBlend();
                 else               com.mojang.blaze3d.systems.RenderSystem.disableBlend();
                 if (savedCullFace) com.mojang.blaze3d.systems.RenderSystem.enableCull();
