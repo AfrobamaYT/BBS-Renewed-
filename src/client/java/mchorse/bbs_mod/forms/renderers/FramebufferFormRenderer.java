@@ -1,15 +1,15 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import mchorse.bbs_mod.graphics.GehaltenesNetz;
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
@@ -248,12 +248,13 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.
         // 26.2: setup/teardownOverlayColor entfaellt -- das Overlay ist kein globaler Zustand mehr, sondern Sampler1 des Zeichenaufrufs (SofortZeichner bindet alle drei).
 
-        BBSModClient.getTextures().bindTexture(texture);
-        RenderSystem.setShader(shader);
-
-        texture.bind();
+        /* 26.2: setShader entfaellt -- der Shader steht in der Pipeline, die weiter unten
+         * gewaehlt wird. Der Filter bleibt am Texturobjekt; er gehoert zur Textur, nicht
+         * zum Zeichenzustand. */
         texture.setFilterMipmap(false, false);
-        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, format);
+
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, format);
 
         /* Front */
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
@@ -273,8 +274,9 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
         this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, entry, -1F);
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, -1F);
 
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.enableBlend();
+        /* 26.2: Mischen ist kein globaler Schalter mehr -- die gewaehlte Pipeline bringt
+         * ihre Mischfunktion mit. Die Absicht (normales Alpha-Mischen) steckt jetzt in
+         * der Wahl unten und nicht mehr in diesen zwei Zeilen. */
 
         if (defer && FormTranslucentQueue.isActive())
         {
@@ -283,27 +285,23 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
              * texture at flush — with several framebuffer forms at the same nesting depth they
              * share one framebuffer, so their deferred quads would all show the last-rendered
              * content; a known trade-off of the shared framebuffer scheme. */
-            RenderPipeline finalShader = RenderSystem.getShader();
-            VertexBuffer buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-            buffer.bind();
-            buffer.upload(builder.buildOrThrow());
-            VertexBuffer.unbind();
+            RenderPipeline finalShader = shader.get();
+            GehaltenesNetz netz = new GehaltenesNetz(builder.buildOrThrow());
 
             Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrixCopy());
             Vector3f origin = modelView.transformPosition(matrix.getTranslation(new Vector3f()));
 
-            FormTranslucentQueue.add(new FormTranslucentQueue.VertexBufferCommand(
-                buffer, () -> finalShader, texture, modelView, null, origin, true, null, null
+            FormTranslucentQueue.add(new FormTranslucentQueue.NetzBefehl(
+                netz, () -> finalShader, texture, modelView, null, origin, true, null, null
             ));
         }
         else
         {
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build();
-                if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
-            /* MERGE fs-2.5: ihr translucent-queue-zweig uebernommen, unsere
-             * null-absicherung darueber. builder.end() wirft, wenn nichts gezeichnet
-             * wurde; endNullable() gibt dann null. Beides wird gebraucht. */
+            /* build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
+             * kommt damit zurecht und zeichnet dann nichts. */
+            SofortZeichner.zeichnen(shader.get(), builder.build(),
+                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
+                SofortZeichner.entityTextur(texture), null);
         }
 
     }
