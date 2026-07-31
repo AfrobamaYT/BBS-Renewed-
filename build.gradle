@@ -51,14 +51,16 @@ loom {
 		}
 	}
 
-	/* P3-26.2-AUS: accesswidener stillgelegt fuer den kern-boot.
+	/* 2026-07-31 WIEDER AN. Er war stillgelegt mit der Begruendung, 26.x habe das FORMAT
+	 * ersetzt (classTweaker statt accessWidener v2). Das stimmt nicht: Fabrics eigene Datei
+	 * traegt in 26.2 unveraendert `accessWidener v2 official`. Der erste Boot scheiterte an
+	 * etwas anderem -- der Kopf stand auf Zeile 6 statt auf Zeile 1, weil ein Kommentarblock
+	 * davor gerutscht war. Die Fehlermeldung nannte das neue Format und schickte damit in die
+	 * falsche Richtung; Begruendung steht jetzt in der Datei selbst.
 	 *
-	 * 26.x hat das format ersetzt: `net.fabricmc.classtweaker` erwartet den kopf
-	 * `classTweaker <version> <namespace>` statt `accessWidener v2 <namespace>`.
-	 * Das ist eine echte umstellung (P4), kein einzeiler — und der widener dient
-	 * ausschliesslich UNSEREN features, die in P3 ohnehin aus sind.
-	 */
-//	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
+	 * Von sechs Eintraegen ist einer uebrig (ModelPart.children fuer den Blender-Export) --
+	 * die anderen fuenf zeigten auf Gestrichenes. */
+	accessWidenerPath.set(getRootProject().file("src/main/resources/bbs.accesswidener"))
 
 	/*
 	 * Ports der DEV-instanz — bewusst NEBEN denen der CurseForge-instanz.
@@ -387,12 +389,20 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	 * demselben spiel, damit der vergleich etwas wert ist. Eine datei dafuer jedes mal zu
 	 * editieren ist genau die reibung, die man einmal beseitigt statt zwanzigmal ertraegt.
 	 *
-	 *     ./gradlew runClient                          -> ../jbr-dcevm-home   (21, wie bisher)
-	 *     ./gradlew runClient -Pbbs.jbr=jbr25-dcevm-home
+	 *     ./gradlew runClient                          -> ../jbr25-dcevm-home  (25, ab 26.2)
+	 *     ./gradlew runClient -Pbbs.jbr=jbr-dcevm-home   (21, fuer vergleiche)
 	 *
-	 * Der default ist bewusst der alte: wer nichts angibt, kriegt exakt das verhalten von
-	 * vorher. */
-	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr-dcevm-home"
+	 * ⚠️ DER DEFAULT IST AM 2026-07-31 AUF 25 GEDREHT WORDEN, und zwar nicht aus vorliebe:
+	 * 26.2 LAEUFT AUF JAVA 21 GAR NICHT. Der erste boot des ports scheiterte daran, gemessen
+	 * am loader:
+	 *
+	 *     Mod 'Fabric API' (fabric-api) 0.156.0+26.2 requires version 25 or later of
+	 *     'OpenJDK 64-Bit Server VM' (java), but only the wrong version is present: 21!
+	 *
+	 * Der compile zielte laengst auf 25 (release = 25 weiter unten), nur die LAUFZEIT hing
+	 * noch auf der alten JBR -- eine haelfte umgestellt, die andere vergessen. Die 21er bleibt
+	 * ueber -Pbbs.jbr erreichbar, fuer den fall dass jemand die zwei vergleichen will. */
+	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr25-dcevm-home"
 	def jbr = file("${rootDir}/../${jbrOrdner}/bin/java.exe")
 
 	if (jbr.exists())
