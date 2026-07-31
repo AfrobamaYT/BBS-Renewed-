@@ -933,7 +933,9 @@ public final class BonePhysicsSimulator
         float tickDelta;
         try
         {
-            tickDelta = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+            /* 26.2: Minecraft#getTimer heisst getDeltaTracker — dieselbe Quelle, gleicher
+             * Rueckgabewert, nur umbenannt. */
+            tickDelta = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
             if (tickDelta < 0F) tickDelta = 0F;
             if (tickDelta > 1F) tickDelta = 1F;
         }

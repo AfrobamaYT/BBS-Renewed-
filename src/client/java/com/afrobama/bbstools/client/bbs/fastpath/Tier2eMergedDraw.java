@@ -355,11 +355,14 @@ public final class Tier2eMergedDraw
             master.flip();
 
             ByteBufferBuilder.Result cb = masterAlloc.build();
+            /* 26.2: DrawState.mode() heisst jetzt primitiveTopology() und liefert
+             * PrimitiveTopology statt VertexFormat.Mode -- reine Umbenennung, gleiche Stelle
+             * im Datensatz. */
             MeshData.DrawState mergedParams = new MeshData.DrawState(
                 refParams.format(),
                 totalVerts,
                 totalIndices,
-                refParams.mode(),
+                refParams.primitiveTopology(),
                 refParams.indexType());
             masterBuilt = new MeshData(cb, mergedParams);
 

@@ -14,7 +14,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderType;
+/* 26.2: die Fabrikmethoden (lines(), entityCutout(), ...) sitzen nicht mehr an RenderType
+ * selbst, sondern in der Nachbarklasse RenderTypes -- RenderType ist nur noch der Typ. */
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;

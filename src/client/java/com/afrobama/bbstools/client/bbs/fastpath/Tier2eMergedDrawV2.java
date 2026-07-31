@@ -409,11 +409,14 @@ public final class Tier2eMergedDrawV2
              * MASTER_ALLOC's cursor back to 0 so next frame starts
              * fresh — no per-frame native malloc/free. */
             ByteBufferBuilder.Result cb = MASTER_ALLOC.build();
+            /* 26.2: DrawState.mode() heisst jetzt primitiveTopology() und liefert
+             * PrimitiveTopology statt VertexFormat.Mode -- reine Umbenennung, gleiche Stelle
+             * im Datensatz. */
             MeshData.DrawState mergedParams = new MeshData.DrawState(
                 refParams.format(),
                 totalVerts,
                 totalIndices,
-                refParams.mode(),
+                refParams.primitiveTopology(),
                 refParams.indexType());
             masterBuilt = new MeshData(cb, mergedParams);
 

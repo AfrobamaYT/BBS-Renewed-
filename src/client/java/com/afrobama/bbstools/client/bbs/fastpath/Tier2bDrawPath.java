@@ -26,9 +26,9 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
@@ -149,35 +149,39 @@ public final class Tier2bDrawPath
                 /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
                  * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
-                /* ⛔ OFFEN 26.2 — steht absichtlich noch da, nicht geraten.
+                /* ⛔ HALB OFFEN 26.2 — Ecken-Aufbau und Zeichenaufruf sind umgestellt, die
+                 *  TEXTURBINDUNG ist es NICHT.
                  *
-                 *  Der Ecken-Aufbau waere trivial umzustellen (SofortZeichner.beginnen mit
-                 *  einem ByteBufferBuilder), aber ohne den Zeichenaufruf unten waere das ein
-                 *  halber Umbau. Und der Zeichenaufruf hat noch keine Pipeline:
+                 *  Der Zug unten laeuft ueber RenderPipelines.ENTITY_TRANSLUCENT_CULL, und der
+                 *  Entity-Shader liest DREI Sampler: Sampler0 (Modelltextur), Sampler1
+                 *  (Overlay), Sampler2 (Lichtkarte). Gebunden wird hier keiner davon --
+                 *  bindTexture() oben ist rohes GL und erreicht den Durchgang nicht mehr, und
+                 *  SofortZeichner.zeichnen bekommt unten null als TextureSetup.
                  *
-                 *   - Gebraucht wird NEW_ENTITY + core/rendertype_entity_translucent_cull,
-                 *     Topologie TRIANGLES, gemischt, mit Tiefe, mit Cull — also genau
-                 *     RenderPipelines.ENTITY_TRANSLUCENT_CULL (der Kommentar oben nennt sie
-                 *     schon). FormPipelines deckt nur die POSITION_COLOR/POSITION_TEX-Familie
-                 *     ab und haengt Sampler0 nur an Shadernamen mit "tex" — fuer den
-                 *     Entity-Shader ergaebe das eine Pipeline mit fehlenden Bindegruppen.
-                 *   - SofortZeichner bindet nur Sampler0 aus einem TextureSetup. Der
-                 *     Entity-Weg braucht zusaetzlich Sampler1 (Overlay) und Sampler2
-                 *     (Lightmap); beide werden hier oben noch ueber turnOnLightLayer /
-                 *     setupOverlayColor als globaler Zustand gesetzt, und die Textur kommt
-                 *     ueber BBSModClient.getTextures().bindTexture(...), also rohes GL —
-                 *     kein TextureSetup, das ein RenderPass binden koennte.
-                 *
-                 *  Zu raten, welche Bindung wohin gehoert, gaebe ein falsches Bild ohne
-                 *  Fehlermeldung. Erst Entity-Pipeline + Sampler-Weg bauen, dann ist das hier
-                 *  in einem Zug zu machen — zusammen mit den Geschwistern Tier2c/2d/2e, die
-                 *  dieselbe Kombination brauchen. */
+                 *  ⚠️ Folge: ein Durchgang mit unvollstaendigen Bindungen zeichnet nicht
+                 *  falsch, sondern GAR NICHT. Dieser schnelle Pfad ist damit bis auf Weiteres
+                 *  wirkungslos; der Fallback (FastPathRenderer.renderOneFallback) zeichnet
+                 *  weiterhin richtig. Zu beheben mit SofortZeichner.entityTextur(textur) --
+                 *  dieselbe Bindung, die Billboard- und Framebuffer-Form schon benutzen --,
+                 *  zusammen mit den Geschwistern Tier2c/2d/2e, die dieselbe Kombination
+                 *  brauchen. Hier NICHT nachgezogen, weil der Zeichenaufruf einem anderen
+                 *  Umbau gehoert. */
 
-                /* Begin merged buffer for this bucket. */
+                /* Begin merged buffer for this bucket.
+                 *
+                 * 26.2: Tesselator ist entfallen -- sein Eckenspeicher war ein GETEILTER
+                 * globaler Zwischenspeicher, den sich alle Sofortzeichner reihum liehen. Jetzt
+                 * gehoert der Speicher dem Aufruf, und mit ihm die Pflicht, ihn wieder
+                 * freizugeben: ByteBufferBuilder haelt nativen Speicher, den kein Sammler
+                 * einzieht. Darum steht close() an JEDEM Ausgang dieser Eimer-Schleife --
+                 * ein vergessener Ausgang leckt pro Bild und Eimer. */
+                ByteBufferBuilder eckenSpeicher;
                 BufferBuilder builder;
                 try
                 {
-                    builder = Tesselator.getInstance().begin(
+                    eckenSpeicher = new ByteBufferBuilder(4096);
+                    builder = SofortZeichner.beginnen(
+                        eckenSpeicher,
                         com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
                         DefaultVertexFormat.ENTITY);
                 }
@@ -187,7 +191,7 @@ public final class Tier2bDrawPath
                     if (!LOGGED_FIRST_FAILURE)
                     {
                         LOGGED_FIRST_FAILURE = true;
-                        LOG.warn("[tier2b] Tessellator.begin threw — falling back. cause={}", t.toString(), t);
+                        LOG.warn("[tier2b] BufferBuilder-Aufbau warf — falling back. cause={}", t.toString(), t);
                     }
                     for (FastPathBatch.Submission s : list)
                     {
@@ -233,12 +237,11 @@ public final class Tier2bDrawPath
                      * release the resources. BufferBuilder.end() on an
                      * empty buffer throws IllegalStateException; swallow. */
                     try { builder.buildOrThrow(); } catch (Throwable ig) {}
+                    eckenSpeicher.close();
                     continue;
                 }
 
-                /* Single draw per bucket.
-                 * ⛔ OFFEN 26.2 — Begruendung steht oben am Tesselator-Aufruf: es fehlt die
-                 * Entity-Pipeline und der Sampler-Weg fuer Overlay/Lightmap. */
+                /* Single draw per bucket. */
                 try
                 {
                     /* Der Shader stand frueher in einem setShader davor: ENTITY_TRANSLUCENT_CULL.
@@ -257,6 +260,10 @@ public final class Tier2bDrawPath
                         LOGGED_FIRST_FAILURE = true;
                         LOG.warn("[tier2b] drawWithGlobalProgram threw — cause={}", t.toString(), t);
                     }
+                }
+                finally
+                {
+                    eckenSpeicher.close();
                 }
             }
         }
