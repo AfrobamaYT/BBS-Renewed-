@@ -32,6 +32,10 @@ bin/
 
 run/
 run_2/
+# Weitere parallele instanzen fuer agentenarbeit (dev-neustart.ps1 -Nummer 3 und hoeher).
+# Ohne diese zeile schleppt jeder commit die kopierte welt mit -- beim ersten mal 1326
+# dateien und 487k zeilen, die der vertikalschnitt-guard zu recht blockte.
+run_[0-9]*/
 run_server/
 
 # java
