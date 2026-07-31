@@ -772,6 +772,30 @@ public class Batcher2D
 
     private void submit(GuiElementRenderState element)
     {
+        /* ⛔ 26.2 VERBIETET DEN LEEREN AUSSCHNITT, 1.21.1 ERLAUBTE IHN.
+         *
+         * Ueberschneiden sich zwei clip()-Rechtecke nicht, legt {@link #clip} nach Vanillas
+         * eigener Regel {@link ScreenRectangle#empty()} ab — ein 0x0-Rechteck. Bis 1.21.1 war
+         * das harmlos: der GL-Scissor schnitt dann eben alles weg. In 26.2 nennt jeder
+         * Zeichenzustand seinen Ausschnitt, und {@code RenderPass.enableScissor} wirft bei
+         * nicht-positiver Groesse:
+         *
+         *     IllegalArgumentException: Scissor size must be >0, was 0x0
+         *
+         * Der Absturz kommt dabei NICHT an der Stelle, die falsch geclippt hat, sondern erst
+         * am Bildende in GuiRenderer.executeDraw — im Trace steht keine einzige BBS-Zeile
+         * (live: 2026-08-01 00:41, run_3/crash-reports).
+         *
+         * Ein leerer Ausschnitt heisst "nichts davon ist sichtbar". Dann ist Einreichen
+         * ohnehin sinnlos, also gar nicht erst einreichen. Der Stapel bleibt unangetastet —
+         * clip/unclip muessen paarig bleiben, sonst erbt das naechste Element den Ausschnitt. */
+        ScreenRectangle ausschnitt = this.scissors.peek();
+
+        if (ausschnitt != null && (ausschnitt.width() <= 0 || ausschnitt.height() <= 0))
+        {
+            return;
+        }
+
         guiRenderState(this.context).addGuiElement(element);
     }
 
