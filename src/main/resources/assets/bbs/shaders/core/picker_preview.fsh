@@ -1,56 +1,46 @@
-/* ⛔ NICHT AUF 26.2 UMGESTELLT -- und das ist eine Entwurfsfrage, keine vergessene Zeile.
+#version 330
+
+/* ⛔ WARUM DIESER SHADER NICHT MEHR IN DIE OBERFLAECHE ZEICHNET (Entscheidung 2026-07-31)
  *
- * Dieser Shader braucht mehr eigene Werte, als in der Oberflaeche unterzubringen sind:
- * Target (Kennung) und HighlightColor (4 Werte) -- zusammen fuenf.
+ * Er braucht fuenf eigene Werte: die gesuchte Kennung und die Hervorhebungsfarbe. In 26.2
+ * kann ein GUI-Element keine eigenen Uniforms binden -- GuiRenderer bindet je Durchgang
+ * die Standard-Uniforms, EINEN eigenen Block und bis zu drei Sampler, mehr ist nicht
+ * vorgesehen. Werte in die Vertexfarbe zu packen (Vanillas Ausweg) scheitert an vier
+ * Kanaelen fuer fuenf Werte.
  *
- * In 26.2 kann ein GUI-Element KEINE eigenen Uniforms binden (GuiElementRenderState hat
- * vier Methoden, keine davon fuer einen Uniform-Puffer). Der uebliche Ausweg -- Werte in
- * die Vertexfarbe packen -- geht hier NICHT: sie fasst vier Bytes, und vertexColor wird
- * von diesem Shader bereits als Farbe benutzt.
+ * Statt Werte wegzulassen laeuft dieser Durchgang jetzt VORHER und in eine eigene Textur;
+ * die Oberflaeche blittet danach nur noch ein fertiges Bild. Der Durchgang gehoert BBS
+ * allein und darf darum haben, was ein GUI-Element nicht haben kann. Siehe Bildfilter.
  *
- * Drei Wege stehen offen, alle drei sind Entwurf und keiner ist Uebersetzung:
- *   1. PictureInPictureRenderer -- Mojangs eigener Weg fuer GUI-Inhalte mit eigener
- *      Zeichenlogik (Entity-Vorschau, Buch, Skin). Rendert in eine eigene Textur und
- *      blittet sie; dort ist ein voller Render-Pass samt Uniforms erlaubt.
- *   2. Die Werte reduzieren, bis sie in vier Bytes passen.
- *   3. Ausserhalb der GUI zeichnen -- dann aber VOR dem GUI-Stapel, also nur brauchbar,
- *      wenn das Ergebnis ohnehin hinter der Oberflaeche liegen soll.
- *
- * Bis dahin bleibt die Datei auf #version 150 und dieser Shader laedt nicht. Er ist damit
- * sichtbar kaputt statt still falsch -- das ist Absicht.
- */
-#version 150
+ * Der Block muss Zeile fuer Zeile zu Bildfilter.schreibeBlock passen -- std140 richtet
+ * Felder je nach Typ unterschiedlich aus, darum steht alles als volle 16-Byte-Zeile. */
+layout(std140) uniform FilterInfo {
+    ivec4 Ziel;
+    vec4 Hervorhebung;
+};
 
 uniform sampler2D Sampler0;
 
-uniform vec4 ColorModulator;
-uniform int Target;
-uniform vec4 HighlightColor;
-
 in vec2 texCoord0;
-in vec4 vertexColor;
 
 out vec4 fragColor;
 
 void main()
 {
-    vec4 color = texture(Sampler0, texCoord0) * vertexColor;
+    vec4 color = texture(Sampler0, texCoord0);
 
+    /* Alpha unter 1 heisst: an dieser Stelle steht ueberhaupt keine Kennung. */
     if (color.a < 1.0)
     {
         discard;
     }
 
-    int totalIndex = int(color.r * 255.0) | (int(color.g * 255.0) << 8) | (int(color.b * 255.0) << 16);
+    int index = int(color.r * 255.0) | (int(color.g * 255.0) << 8) | (int(color.b * 255.0) << 16);
 
-    if (totalIndex == Target)
-    {
-        color = HighlightColor;
-    }
-    else
+    if (index != Ziel.x)
     {
         discard;
     }
 
-    fragColor = color * ColorModulator;
+    fragColor = Hervorhebung;
 }

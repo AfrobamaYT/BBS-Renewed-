@@ -22,12 +22,45 @@ import java.util.Map;
 public class StencilFormFramebuffer
 {
     private Framebuffer framebuffer;
+    private Texture hervorhebung;
 
     private int index;
     private Map<Integer, Pair<Form, String>> indexMap = new HashMap<>();
 
     /** Reused readback buffer for the tolerance region pick (grows as needed). */
     private FloatBuffer pickBuffer;
+
+    /**
+     * Das Zwischenbild fuer den Hervorhebungs-Filter.
+     *
+     * <p>26.2: die Hervorhebung wird nicht mehr beim Zeichnen in die Oberflaeche
+     * gerechnet, sondern VORHER in diese Textur (siehe Bildfilter) -- die Oberflaeche
+     * blittet danach ein fertiges Bild.
+     *
+     * <p>⚠️ EIGENE Textur je Auswahl-Puffer, keine geteilte. Die Oberflaeche zeichnet
+     * erst, nachdem alles gesammelt ist; ein geteiltes Zwischenbild waere zum
+     * Zeichenzeitpunkt von der naechsten Aufrufstelle ueberschrieben und alle zeigten
+     * dasselbe.
+     */
+    public Texture hervorhebung()
+    {
+        Texture quelle = this.framebuffer.getMainTexture();
+
+        if (this.hervorhebung == null)
+        {
+            this.hervorhebung = new Texture();
+            this.hervorhebung.setFilter(GL11.GL_NEAREST);
+            this.hervorhebung.setWrap(GL13.GL_CLAMP_TO_EDGE);
+        }
+
+        if (this.hervorhebung.width != quelle.width || this.hervorhebung.height != quelle.height)
+        {
+            this.hervorhebung.bind();
+            this.hervorhebung.setSize(quelle.width, quelle.height);
+        }
+
+        return this.hervorhebung;
+    }
 
     public Framebuffer getFramebuffer()
     {

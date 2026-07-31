@@ -459,46 +459,15 @@ public class Gizmo
          * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
          * zeichnen will, gibt das Ziel dort an. */
 
-        /* ⛔ 26.2 OFFEN -- BEWUSST, MIT ENTSCHEIDUNG DAHINTER, NICHT VERGESSEN.
-         *
-         * Hier standen zwei Uniforms des picker_preview-Shaders: Target (die Kennung, die
-         * hervorgehoben werden soll) und HighlightColor (die Farbe dafuer, eine
-         * BBS-Einstellung). Beide gesetzt, dann ein texturedBox durch die Oberflaeche.
-         *
-         * DAS GEHT IN 26.2 NICHT MEHR, und zwar aus einem gemessenen Grund:
-         * GuiElementRenderState kennt genau vier Methoden (buildVertices, pipeline,
-         * textureSetup, scissorArea) und keinen Haken, ueber den ein Element einen eigenen
-         * Uniform-Block binden koennte. Vanilla loest so etwas, indem es Werte in der
-         * VERTEXFARBE mitreisen laesst.
-         *
-         * Das reicht hier nicht: Target braucht einen Kanal, HighlightColor vier -- fuenf
-         * Werte, vier Kanaele. Eine Kennung in die Farbe zu quetschen und die Hervorhebung
-         * fest zu verdrahten waere ein stiller Verlust einer Einstellung.
-         *
-         * DIE ENTSCHEIDUNG, die zu treffen ist: die Vorschau NICHT durch die
-         * GUI-Warteschlange zeichnen, sondern als eigener Durchgang mit eigener Pipeline und
-         * eigenem Uniform-Block -- genau so, wie ModelVAOPipeline es fuer die Modelle macht.
-         * Dieselbe Entscheidung steht fuer die Shader multilink und replay_outline an.
-         *
-         * Bis dahin bleibt hier der Compilerfehler stehen. Er ist ehrlicher als eine
-         * Vorschau, die still die falsche Kennung hervorhebt. */
-        RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
-        Uniform target = previewProgram.getUniform("Target");
-
-        if (target != null)
-        {
-            target.set(STENCIL_TRACKBALL);
-        }
-
-        Uniform highlight = previewProgram.getUniform("HighlightColor");
-
-        if (highlight != null)
-        {
-            int color = BBSSettings.stencilHighlightColor.get();
-
-            highlight.set(Colors.getR(color), Colors.getG(color), Colors.getB(color), Colors.getA(color));
-        }
-        context.batcher.texturedBox(BBSShaders::getPickerPreviewProgram, texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+        /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
+         * in die Oberflaeche. Der Filterdurchgang gehoert BBS allein und darf darum die
+         * fuenf Werte als Uniform-Block haben, die ein GUI-Element nicht haben kann.
+         * Entscheidung und Begruendung stehen in Bildfilter. */
+        mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
+            this.sphereHighlight.hervorhebung(), STENCIL_TRACKBALL,
+            BBSSettings.stencilHighlightColor.get());
+        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+            this.sphereHighlight.hervorhebung(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
     }
 
     /**

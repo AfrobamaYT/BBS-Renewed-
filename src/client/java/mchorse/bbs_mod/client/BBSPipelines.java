@@ -1,5 +1,13 @@
 package mchorse.bbs_mod.client;
 
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import mchorse.bbs_mod.BBSMod;
@@ -54,7 +62,21 @@ public final class BBSPipelines
      * jeweiligen Fragmentshader UND an der Aufrufstelle. */
     private static final RenderPipeline SUBTITLES = guiPipelineMit("subtitles");
     private static final RenderPipeline MULTILINK = guiPipelineMit("multilink");
-    private static final RenderPipeline PICKER_PREVIEW = guiPipelineMit("picker_preview");
+    /** Der Name des eigenen Blocks der Filter-Pipelines. Muss zum layout(std140) im Shader passen. */
+    public static final String FILTER_BLOCK = "FilterInfo";
+
+    /**
+     * Bindegruppe der Filter-Pipelines: ein eigener Uniform-Block plus die Quelltextur.
+     *
+     * <p>Genau das, was ein GUI-Element NICHT haben kann -- darum laufen die Filter auch
+     * nicht durch die Oberflaeche, sondern vorher in eine eigene Textur (siehe Bildfilter).
+     */
+    private static final BindGroupLayout GRUPPE_FILTER = BindGroupLayout.builder()
+        .withUniform(FILTER_BLOCK, UniformType.UNIFORM_BUFFER)
+        .withSampler("Sampler0")
+        .build();
+
+    private static final RenderPipeline PICKER_PREVIEW = filterPipeline("picker_preview");
     private static final RenderPipeline REPLAY_OUTLINE = guiPipelineMit("replay_outline");
 
     /**
@@ -102,6 +124,33 @@ public final class BBSPipelines
      * minecraft-Namensraum umleitete, wird damit ueberfluessig: 26.2 nimmt einen
      * vollen {@link Identifier} entgegen.
      */
+    /**
+     * Eine Pipeline fuer einen Filterdurchgang: bildfuellendes Viereck, kein Tiefentest,
+     * eigener Uniform-Block.
+     *
+     * <p>Sie zeichnet NICHT in die Oberflaeche, sondern in eine Textur, die die Oberflaeche
+     * danach ganz normal blittet. Deshalb darf sie haben, was ein GUI-Element nicht haben
+     * kann.
+     */
+    private static RenderPipeline filterPipeline(String name)
+    {
+        Identifier shader = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + name);
+
+        return RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "pipeline/" + name))
+            .withVertexShader(shader)
+            .withFragmentShader(shader)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withBindGroupLayout(GRUPPE_FILTER)
+            .withCull(false)
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .build();
+    }
+
     private static RenderPipeline guiPipelineMit(String name)
     {
         RenderPipeline vorlage = RenderPipelines.GUI_TEXTURED;

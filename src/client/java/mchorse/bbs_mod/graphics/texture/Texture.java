@@ -223,6 +223,12 @@ public class Texture
     }
 
     /** Der {@link GpuTextureView} dieser Textur — das, was 26.2s GUI entgegennimmt. */
+    /** Das GPU-Objekt selbst -- gebraucht, wo eine Ansicht nicht reicht (Loeschen). */
+    public GpuTexture gpu()
+    {
+        return this.gpu;
+    }
+
     public GpuTextureView view()
     {
         return this.view;
