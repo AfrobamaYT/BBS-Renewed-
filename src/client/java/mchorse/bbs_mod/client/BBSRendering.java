@@ -260,7 +260,18 @@ public class BBSRendering
     {
         Window window = Minecraft.getInstance().getWindow();
 
-        framebuffer = new MainTarget(window.getWidth(), window.getHeight());
+        /* ⛔ 26.2: KEIN MainTarget MEHR. MainTarget ist Minecrafts Klasse fuer DAS Hauptziel --
+         * es haengt an der Fensterflaeche und ist dafuer gedacht, genau einmal zu existieren.
+         * BBS braucht hier aber ein OFFSCREEN-Ziel, und dafuer gibt es TextureTarget.
+         *
+         * In 1.21.1 war der Unterschied folgenlos (beide waren Rahmenpuffer-Wrapper). In 26.2
+         * legt der neue Zeichenweg Texturen ueber GpuDevice an und verwaltet die Darstellung
+         * selbst -- ein zweites MainTarget ist damit kein harmloser Puffer mehr.
+         *
+         * RGBA8_UNORM, weil dreikanalige Formate abgelehnt werden (siehe getTexture). */
+        framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(
+            "bbs-film", window.getWidth(), window.getHeight(), true,
+            com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
     }
 
     /* 26.2: RenderTarget.frameBufferId ist entfallen -- 26.2 gibt nur noch GpuTexture heraus,
