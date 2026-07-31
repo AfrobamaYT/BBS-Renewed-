@@ -1,12 +1,9 @@
 package mchorse.bbs_mod.graphics.line;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import mchorse.bbs_mod.client.FormPipelines;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -76,6 +73,32 @@ public class LineBuilder <T>
         return output;
     }
 
+    /**
+     * Zeichnet die Linien in die Oberflaeche.
+     *
+     * <h2>⛔ WARUM HIER KEIN {@code SofortZeichner} STEHT (2026-07-31 gemessen)</h2>
+     *
+     * <p>Bis zu diesem Tag oeffnete diese Methode einen eigenen Zeichendurchgang
+     * ({@code SofortZeichner.beginnen} + {@code zeichnen}). Das kompiliert, laeuft ohne
+     * Fehler, wirft nichts — und man sieht KEINE EINZIGE LINIE.
+     *
+     * <p>26.2 zeichnet die Oberflaeche in zwei Phasen: der Durchlauf, in dem diese Methode
+     * laeuft, SAMMELT nur; gezeichnet wird alles spaeter in {@code GuiRenderer.render()}.
+     * Ein sofort geoeffneter Durchgang malt also, BEVOR das GUI gezeichnet wird — und
+     * verschwindet danach unter dem Panel-Hintergrund. {@link Batcher2D#netz} warnt
+     * woertlich davor; dieser Aufrufer hielt sich als einziger nicht daran.
+     *
+     * <p>Gemessen im Graph-Panel: dieselbe Methode zeichnete Gitter (ueber Batcher2D,
+     * sichtbar) und Kurve (ueber SofortZeichner, unsichtbar). Der Wechsel der Funktion von
+     * {@code sin(x)} auf {@code sin(x)*3} aenderte NUR das Textfeld; die Graphflaeche blieb
+     * Pixel fuer Pixel gleich. Betroffen waren ausserdem UIKeyframeGraph,
+     * UIVector3KeyframeGraph, UICurve und InterpolationRenderer -- also die Keyframe-Kurven
+     * des Film-Editors.
+     *
+     * <p>⚠️ Das Lambda laeuft SPAETER. Alles, was es liest, muss bis dahin gueltig sein:
+     * {@code matrix} und {@code points} werden hier fertig berechnet und danach nicht mehr
+     * angefasst.
+     */
     public void render(Batcher2D batcher2D, ILineRenderer<T> renderer)
     {
         Matrix4f matrix = new Matrix4f().mul(batcher2D.getContext().pose());
@@ -83,31 +106,55 @@ public class LineBuilder <T>
 
         for (List<LinePoint<T>> points : build)
         {
-            /* Zwei Ecken je Punkt a 16 Byte (POSITION_COLOR); der Puffer waechst
-             * notfalls nach, die Schaetzung spart nur das Nachwachsen. */
-            try (ByteBufferBuilder speicher = new ByteBufferBuilder(points.size() * 2 * 16 + 256))
+            if (points.isEmpty())
             {
-                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-
-                for (LinePoint<T> point : points)
-                {
-                    renderer.render(builder, matrix, point);
-                }
-
-                /* mischen = true: der alte Block rief enableBlend() (die Linienfarben
-                 * kommen mit Alpha herein). tiefePruefen/culling = false: der alte Block
-                 * setzte dafuer nichts, und beides koennte eine 2D-Linie nur unsichtbar
-                 * machen — Tiefe aus heisst hier auch Tiefenschreiben aus, also bleibt
-                 * auch keine Wand vor spaeteren Zeichnungen stehen.
-                 * modelView ist die Einheitsmatrix: die Pose steckt schon in jeder Ecke,
-                 * ILineRenderer.render bekommt matrix herein und rechnet sie ein. */
-                SofortZeichner.zeichnen(
-                    FormPipelines.holen(PrimitiveTopology.TRIANGLE_STRIP, true, false, false),
-                    builder.build(),
-                    new Matrix4f(),
-                    null,
-                    null);
+                continue;
             }
+
+            /* mischen = true: die Linienfarben kommen mit Alpha herein. tiefePruefen und
+             * culling = false: beides koennte eine 2D-Linie nur unsichtbar machen, und
+             * Tiefe aus heisst auch Tiefenschreiben aus -- es bleibt keine Wand vor
+             * spaeteren Zeichnungen stehen. */
+            batcher2D.netz(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLE_STRIP, true, false, false),
+                (ecken) ->
+                {
+                    for (LinePoint<T> point : points)
+                    {
+                        renderer.render(ecken, matrix, point);
+                    }
+                },
+                bereichVon(points));
         }
+    }
+
+    /**
+     * Die Bildschirmflaeche, die dieser Linienzug belegt.
+     *
+     * <p>{@code Batcher2D.netz} braucht sie zum Keulen und zum Sortieren innerhalb einer
+     * Ebene. ⚠️ Zu KLEIN angegeben heisst: das Netz wird weggekeult und man sucht den
+     * Fehler wieder im Zeichencode. Darum grosszuegig aufgerundet und um die halbe
+     * Linienbreite erweitert -- die Ecken liegen quer zur Linie ausserhalb der Punkte.
+     */
+    private ScreenRectangle bereichVon(List<LinePoint<T>> points)
+    {
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+
+        for (LinePoint<T> point : points)
+        {
+            minX = Math.min(minX, point.x);
+            minY = Math.min(minY, point.y);
+            maxX = Math.max(maxX, point.x);
+            maxY = Math.max(maxY, point.y);
+        }
+
+        int rand = (int) Math.ceil(this.thickness) + 2;
+        int x = (int) Math.floor(minX) - rand;
+        int y = (int) Math.floor(minY) - rand;
+
+        return new ScreenRectangle(x, y,
+            (int) Math.ceil(maxX) + rand - x,
+            (int) Math.ceil(maxY) + rand - y);
     }
 }

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.graphics.line;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.utils.colors.Color;
 import org.joml.Matrix4f;
 
@@ -35,7 +35,7 @@ public class SolidColorLineRenderer implements ILineRenderer
     }
 
     @Override
-    public void render(BufferBuilder builder, Matrix4f matrix, LinePoint point)
+    public void render(VertexConsumer builder, Matrix4f matrix, LinePoint point)
     {
         builder.addVertex(matrix, point.x, point.y, 0F).setColor(this.color.r, this.color.g, this.color.b, this.color.a);
     }
