@@ -91,6 +91,28 @@ public class GehaltenesNetz implements AutoCloseable
     public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
         TextureSetup textur, RenderTarget ziel, Consumer<RenderPass> zusatz)
     {
+        RenderTarget echtes = ziel != null ? ziel : Minecraft.getInstance().gameRenderer.mainRenderTarget();
+
+        this.zeichnen(pipeline, modelView, farbe, textur,
+            echtes.getColorTextureView(), echtes.getDepthTextureView(), zusatz);
+    }
+
+    /**
+     * Wie oben, aber mit den Zieltexturen statt eines {@link RenderTarget}.
+     *
+     * <p>Gebraucht fuer BBS' EIGENE Puffer: der Auswahl-Durchgang und die Kugel-Maske des
+     * Gizmos zeichnen in einen BBS-Framebuffer, der kein Vanilla-RenderTarget ist. Ohne
+     * diesen Weg landeten ihre Kennungsfarben sichtbar im Bild UND das Angeklickte waere
+     * nicht mehr auffindbar -- ein doppelter stiller Fehler.
+     *
+     * @param tiefenZiel darf {@code null} sein: ein Durchgang ohne Tiefenanhang. Richtig
+     *                   fuer Masken, die ohnehin ohne Tiefentest zeichnen; wer Tiefe
+     *                   braucht und {@code null} uebergibt, bekommt keine Fehlermeldung,
+     *                   sondern ein Bild ohne Verdeckung.
+     */
+    public void zeichnen(RenderPipeline pipeline, Matrix4f modelView, Vector4f farbe,
+        TextureSetup textur, GpuTextureView farbZiel, GpuTextureView tiefenZiel, Consumer<RenderPass> zusatz)
+    {
         if (this.ecken == null || this.zustand.vertexCount() <= 0)
         {
             return;
@@ -100,13 +122,14 @@ public class GehaltenesNetz implements AutoCloseable
             ? this.eigeneIndizes
             : RenderSystem.getSequentialBuffer(this.zustand.primitiveTopology()).getBuffer(this.zustand.indexCount());
 
-        RenderTarget echtesZiel = ziel != null ? ziel : Minecraft.getInstance().gameRenderer.mainRenderTarget();
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
 
-        try (RenderPass durchgang = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
-            () -> "bbs-gehalten", echtesZiel.getColorTextureView(), Optional.empty(),
-            echtesZiel.getDepthTextureView(), OptionalDouble.empty()))
+        try (RenderPass durchgang = tiefenZiel == null
+            ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> "bbs-gehalten", farbZiel, Optional.empty())
+            : RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+                () -> "bbs-gehalten", farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty()))
         {
             durchgang.setPipeline(pipeline);
 

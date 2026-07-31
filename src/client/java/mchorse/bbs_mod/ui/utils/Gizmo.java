@@ -153,10 +153,8 @@ public class Gizmo
     private DragStrategy bakedGesture;
 
     /* VBO caching for rotation rings to save resources */
-    private VertexBuffer rotateRingVbo;
-    private VertexBuffer rotateSphereVbo;
-    private float lastScale = -1F;
-    private float lastThickness = -1F;
+    /** Die vorgebauten Netze der Rotationsringe und der Mittelkugel, siehe GizmoRinge. */
+    private final GizmoRinge ringe = new GizmoRinge();
     /** World-space radius the sphere is drawn at, expressed in
      *  the local coordinate frame {@link #lastRenderMatrix} describes
      *  (i.e. already includes axesScale and the per-frame distanceScale).
@@ -434,7 +432,7 @@ public class Gizmo
     public void renderSphereHighlight(UIContext context, Matrix4f projection, Area area)
     {
         if (!this.sphereHovered || !this.hasLastSphereMatrix || !this.isSphereInteractive()
-            || !UIBaseMenu.shouldRenderAxes() || this.rotateSphereVbo == null || projection == null || area == null)
+            || !UIBaseMenu.shouldRenderAxes() || !this.ringe.bereit() || projection == null || area == null)
         {
             return;
         }
@@ -454,13 +452,11 @@ public class Gizmo
 
         this.sphereHighlight.apply();
 
-        RenderSystem.disableDepthTest();
-        RenderSystem.setShaderColor(STENCIL_TRACKBALL / 255F, 0F, 0F, 1F);
-        this.rotateSphereVbo.bind();
-        this.rotateSphereVbo.drawWithShader(this.lastSphereMatrix, projection, GameRenderer.getPositionColorShader());
-        VertexBuffer.unbind();
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-        RenderSystem.enableDepthTest();
+        /* Die Kugelmaske geht in BBS' eigenen Puffer, nicht ins Bild. Tiefentest aus,
+         * Farbe als Kennung -- beides steckt jetzt im Zeichenaufruf statt in vier Zeilen
+         * globalen Zustands drumherum. */
+        this.ringe.kugelMaskeZeichnen(this.lastSphereMatrix, STENCIL_TRACKBALL / 255F, 0F, 0F, 1F,
+            this.sphereHighlight.getFramebuffer().getMainTexture().view());
 
         this.sphereHighlight.unbind();
         /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
@@ -725,7 +721,7 @@ public class Gizmo
 
             stack.pushPose();
             stack.scale(distanceScale, distanceScale, distanceScale);
-            this.lastSphereMatrix.set(modelView(stack));
+            this.lastSphereMatrix.set(GizmoRinge.modellAnsicht(stack));
             this.hasLastSphereMatrix = true;
             this.drawOccludedGizmo(stack);
             stack.popPose();
@@ -879,7 +875,7 @@ public class Gizmo
 
         /* Die Ecken tragen `mat` schon in sich (addVertex(mat, ...)); es fehlt nur die
          * globale Modellansicht, die frueher BufferUploader selbst dazugelesen hat.
-         * NICHT modelView(stack) — das wuerde die Pose ein zweites Mal auftragen. */
+         * NICHT GizmoRinge.modellAnsicht(stack) — das wuerde die Pose ein zweites Mal auftragen. */
         Matrix4f globalModelView = RenderSystem.getModelViewMatrixCopy();
 
         int segments = Math.max(2, (int) (Math.abs(sweepRad) / (float) (2D * Math.PI) * 64F));
@@ -1004,59 +1000,10 @@ public class Gizmo
 
     private void updateVbos()
     {
-        float scale = BBSSettings.axesScale.get();
-        float thickness = BBSSettings.axesThickness.get();
-
-        if (this.rotateRingVbo == null || scale != this.lastScale || thickness != this.lastThickness)
-        {
-            if (this.rotateRingVbo != null)
-            {
-                this.rotateRingVbo.close();
-                this.rotateSphereVbo.close();
-            }
-
-            this.rotateRingVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-            this.rotateSphereVbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-
-
-            float radius = 0.22F * scale;
-            float thicknessRing = 0.02F * scale * thickness;
-
-            /* Hier wird nichts sofort gezeichnet — die Netze wandern in VBOs. Darum
-             * aendert sich nur der Anfang; der Speicher wird erst nach dem Hochladen
-             * geschlossen, sonst zieht das VBO aus freigegebenem Speicher. */
-            try (ByteBufferBuilder speicher = new ByteBufferBuilder(65536))
-            {
-                BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-                Draw.arc3D(builder, new PoseStack(), Axis.Y, radius, thicknessRing, 1F, 1F, 1F, 0F, 360F);
-                this.rotateRingVbo.bind();
-                this.rotateRingVbo.upload(builder.buildOrThrow());
-
-                builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-                Draw.sphere(builder, new PoseStack(), radius, 24, 24, 1F, 1F, 1F, 1F);
-                this.rotateSphereVbo.bind();
-                this.rotateSphereVbo.upload(builder.buildOrThrow());
-
-                VertexBuffer.unbind();
-            }
-
-            this.lastScale = scale;
-            this.lastThickness = thickness;
-        }
+        this.ringe.auffrischen();
     }
 
-    /* Cached gizmo geometry is uploaded as VBOs, so unlike the immediate-mode
-     * handles (which inherit the global model-view) the cached draws must fold
-     * in {@link RenderSystem#getModelViewMatrix()} themselves. In the form editor
-     * that matrix is identity (the camera lives in the stack), but in the film
-     * editor it carries the world camera, so omitting it left the rings adrift. */
-    private static Matrix4f modelView(PoseStack stack)
-    {
-        return new Matrix4f(RenderSystem.getModelViewMatrixCopy()).mul(stack.last().pose());
-    }
-
-    private void drawCachedRing(PoseStack stack, VertexBuffer vbo, Axis axis, int color)
+    private void drawCachedRing(PoseStack stack, Axis axis, int color)
     {
         float alpha = Colors.getA(color);
 
@@ -1065,23 +1012,7 @@ public class Gizmo
             alpha = 1F;
         }
 
-        this.drawCachedRing(stack, vbo, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
-    }
-
-    private void drawCachedRing(PoseStack stack, VertexBuffer vbo, Axis axis, float r, float g, float b, float a)
-    {
-        stack.pushPose();
-        
-        if (axis == Axis.X) stack.mulPose(com.mojang.math.Axis.ZP.rotation(MathUtils.PI / 2F));
-        if (axis == Axis.Z) stack.mulPose(com.mojang.math.Axis.XP.rotation(MathUtils.PI / 2F));
-
-        RenderSystem.setShaderColor(r, g, b, a);
-        vbo.bind();
-        vbo.drawWithShader(modelView(stack), mchorse.bbs_mod.graphics.Projektion.lesen(), GameRenderer.getPositionColorShader());
-        VertexBuffer.unbind();
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-
-        stack.popPose();
+        this.ringe.ringZeichnen(stack, axis, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
     }
 
     /**
@@ -1198,34 +1129,9 @@ public class Gizmo
         { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
     }
 
-    private void drawCachedRingBillboard(PoseStack stack, VertexBuffer vbo, float r, float g, float b, float a)
+    private void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
     {
-        stack.pushPose();
-
-        Matrix4f matrix = stack.last().pose();
-        Vector3f toCamera = matrix.getTranslation(new Vector3f()).negate();
-        Matrix3f basis = matrix.get3x3(new Matrix3f());
-
-        if (Math.abs(basis.determinant()) > 1.0E-8F)
-        {
-            basis.invert().transform(toCamera);
-        }
-
-        if (toCamera.lengthSquared() > 1.0E-8F)
-        {
-            toCamera.normalize();
-            stack.mulPose(new Quaternionf().rotationTo(0F, 1F, 0F, toCamera.x, toCamera.y, toCamera.z));
-        }
-
-        stack.scale(VIEW_RING_SCALE, VIEW_RING_SCALE, VIEW_RING_SCALE);
-
-        RenderSystem.setShaderColor(r, g, b, a);
-        vbo.bind();
-        vbo.drawWithShader(modelView(stack), mchorse.bbs_mod.graphics.Projektion.lesen(), GameRenderer.getPositionColorShader());
-        VertexBuffer.unbind();
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-
-        stack.popPose();
+        this.ringe.billboardZeichnen(stack, r, g, b, a, VIEW_RING_SCALE);
     }
 
     private void drawRotatePie(PoseStack stack, Axis axis)
@@ -1317,7 +1223,7 @@ public class Gizmo
 
         /* Die Ecken tragen `mat` schon in sich (addVertex(mat, ...)); es fehlt nur die
          * globale Modellansicht, die frueher BufferUploader selbst dazugelesen hat.
-         * NICHT modelView(stack) — das trueg die Pose ein zweites Mal auf. */
+         * NICHT GizmoRinge.modellAnsicht(stack) — das trueg die Pose ein zweites Mal auf. */
         Matrix4f globalModelView = RenderSystem.getModelViewMatrixCopy();
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
@@ -1494,7 +1400,7 @@ public class Gizmo
 
             /* This VBO ring sets the shader colour itself, so the opacity modulator
              * doesn't reach it — fold it into the alpha here instead. */
-            this.drawCachedRingBillboard(stack, this.rotateRingVbo, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
+            this.drawCachedRingBillboard(stack, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
         }
     }
 
@@ -1712,7 +1618,7 @@ public class Gizmo
          * rotation. modelView() folds the global model-view back in (and is a no-op in the
          * form editor, where the camera already lives in the stack), giving the same
          * coordinate frame the gizmo is actually drawn in. */
-        this.lastRenderMatrix.set(modelView(stack));
+        this.lastRenderMatrix.set(GizmoRinge.modellAnsicht(stack));
         this.hasLastRenderMatrix = true;
     }
 
@@ -1839,7 +1745,7 @@ public class Gizmo
 
             /* View ring stays pickable even when the rings are hidden (see drawAxes visual pass).
              * Uses the same ring VBO as the visual so the pick matches its thickness. */
-            if (active == null || active == Handle.VIEW) this.drawCachedRingBillboard(stack, this.rotateRingVbo, STENCIL_VIEW / 255F, 0F, 0F, 1F);
+            if (active == null || active == Handle.VIEW) this.drawCachedRingBillboard(stack, STENCIL_VIEW / 255F, 0F, 0F, 1F);
         }
 
         if (showMove || showScale)
