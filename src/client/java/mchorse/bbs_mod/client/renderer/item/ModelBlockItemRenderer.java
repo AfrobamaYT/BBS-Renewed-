@@ -10,28 +10,73 @@ import mchorse.bbs_mod.forms.entities.StubEntity;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderType;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
+import mchorse.bbs_mod.mixin.client.SpecialModelRenderersAccessor;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.DynamicItemRenderer
+/**
+ * Zwischenspeicher der Modell-Bloecke, die als GEGENSTAND gezeichnet werden, plus der
+ * Zeichenweg dafuer.
+ *
+ * <h2>⚠️ 26.2 — der Zeichner haengt am MODELL, nicht mehr am Gegenstand</h2>
+ *
+ * <p>Diese Klasse war ein {@code BuiltinItemRendererRegistry.DynamicItemRenderer}. Der
+ * Einstiegspunkt ist in fabric-rendering-v1 25.3.2 ERSATZLOS gestrichen; Mojangs Nachfolger
+ * ist {@code SpecialModelRenderer}, und der wird nicht mehr AM GEGENSTAND angemeldet,
+ * sondern von der Modell-Beschreibung des Gegenstands benannt
+ * ({@code assets/bbs/items/model.json}, Typ {@code minecraft:special}).
+ *
+ * <p>Deshalb ist diese Klasse jetzt zweigeteilt: hier liegt der Zustand (Zwischenspeicher
+ * je Gegenstands-Stapel, Verfall, Zeichnen), in {@link ModelBlockSpecialRenderer} liegt die
+ * Anbindung an Vanillas Zeichenweg.
+ *
+ * <h2>Warum der Zwischenspeicher STATISCH ist</h2>
+ *
+ * <p>Vanilla baeckt je Anzeigeart (Inventar, erste Person, ...) einen EIGENEN
+ * {@code SpecialModelRenderer}, und jeder davon fragt hier nach demselben Gegenstand. Haette
+ * jeder seinen eigenen Speicher, wuerde {@link #update()} — das {@code BBSModClient} genau
+ * einmal je Takt ruft — nur einen davon fortschreiten lassen: Animationen liefen in der Hand
+ * und stuenden im Inventar still. Vorher gab es genau ein Exemplar in {@code BBSModClient};
+ * ein gemeinsamer statischer Speicher haelt genau diesen Zustand.
+ */
+public class ModelBlockItemRenderer
 {
-    private Map<ItemStack, Item> map = new HashMap<>();
+    private static final Map<ItemStack, Item> MAP = new HashMap<>();
 
-    public void update()
+    /**
+     * Traegt {@link ModelBlockSpecialRenderer} unter der Kennung {@code bbs:model_block} in
+     * Vanillas Sonderzeichner-Tabelle ein. Ersetzt das alte
+     * {@code BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, ...)}.
+     *
+     * <p>Steht hier und nicht in {@code BBSModClient}, weil dort sonst zwei weitere Importe
+     * noetig waeren; der Aufruf selbst sitzt unveraendert an derselben Stelle wie vorher die
+     * Anmeldung.
+     *
+     * <p>⚠️ Genau EINMAL aufrufen — {@code LateBoundIdMapper.put} wirft bei doppelter
+     * Kennung. Nicht an ein Ressourcen-Neuladen haengen.
+     */
+    public static void registriereSonderzeichner()
     {
-        Iterator<Item> it = this.map.values().iterator();
+        SpecialModelRenderersAccessor.bbs$getIdMapper().put(
+            Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "model_block"),
+            ModelBlockSpecialRenderer.Unbaked.MAP_CODEC
+        );
+    }
+
+    public static void update()
+    {
+        Iterator<Item> it = MAP.values().iterator();
 
         while (it.hasNext())
         {
@@ -48,64 +93,82 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
         }
     }
 
-    @Override
-    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
+    /**
+     * War {@code render(ItemStack, ItemDisplayContext, ...)}. Zwei Aenderungen aus 26.2:
+     *
+     * <p>Der Gegenstands-Stapel ist weg. Vanilla trennt jetzt "was haengt am Gegenstand"
+     * ({@code SpecialModelRenderer.extractArgument}, einmal je Bild) vom Zeichnen
+     * ({@code submit}) — das Ergebnis des Auslesens kommt hier als {@code item} herein.
+     *
+     * <p>Die Anzeigeart kommt NICHT mehr von Vanilla: {@code submit} bekommt sie nicht
+     * gereicht (im Bytecode geprueft: {@code ItemStackRenderState.LayerRenderState.submit}
+     * reicht Pose, Sammler, Licht, Overlay, Glitzern, Farbe — mehr nicht). Sie steht darum
+     * in der Modell-Beschreibung und kommt ueber {@link ModelBlockSpecialRenderer} herein.
+     *
+     * <p>Die Pose ist dieselbe wie vorher: {@code ItemTransform.apply} endet in BEIDEN
+     * Zweigen mit {@code translate(-0.5F, -0.5F, -0.5F)} (nachgelesen), genau wie der alte
+     * {@code ItemRenderer} es vor dem Aufruf des Fabric-Zeichners tat. Der Ursprung liegt
+     * also weiterhin an der Blockecke, und das {@code translate(0.5F, 0F, 0.5F)} unten
+     * bleibt richtig.
+     */
+    public static void submit(Item item, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector sammler, int light, int overlay)
     {
-        Item item = this.get(stack);
+        ModelProperties properties = item.entity.getProperties();
+        Form form = properties.getForm(mode);
 
-        if (item != null)
+        if (form != null)
         {
-            ModelProperties properties = item.entity.getProperties();
-            Form form = properties.getForm(mode);
+            item.expiration = 20;
 
-            if (form != null)
-            {
-                item.expiration = 20;
+            Transform transform = properties.getTransform(mode);
 
-                Transform transform = properties.getTransform(mode);
+            matrices.pushPose();
+            matrices.translate(0.5F, 0F, 0.5F);
+            MatrixStackUtils.applyTransform(matrices, transform);
 
-                matrices.pushPose();
-                matrices.translate(0.5F, 0F, 0.5F);
-                MatrixStackUtils.applyTransform(matrices, transform);
+            /* 26.2: die beiden Tiefen-Schalter um diesen Aufruf herum entfallen ersatzlos.
+             * Tiefe ist kein globaler Zustand mehr, sondern Teil der Pipeline — den Zustand
+             * bringt der Form-Renderer mit, zu dem FormUtilsClient.render verzweigt (Modelle
+             * ueber ModelVAOPipeline.DURCHSICHTIG: DepthStencilState GREATER_THAN_OR_EQUAL
+             * mit Tiefenschreiben, alle uebrigen Formen ueber den RenderType, mit dem ihr
+             * Renderer zeichnet). Das enableDepthTest davor erzwang nur, was jede dieser
+             * Pipelines ohnehin traegt; das disableDepthTest danach stellte die alte
+             * GUI-Annahme wieder her, und die GUI zeichnet inzwischen selbst mit
+             * RenderPipelines.GUI/GUI_TEXTURED. */
+            FormUtilsClient.render(form, new FormRenderingContext()
+                .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
+                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
-                /* 26.2: die beiden Tiefen-Schalter um diesen Aufruf herum entfallen ersatzlos.
-                 * Tiefe ist kein globaler Zustand mehr, sondern Teil der Pipeline — den Zustand
-                 * bringt der Form-Renderer mit, zu dem FormUtilsClient.render verzweigt (Modelle
-                 * ueber ModelVAOPipeline.DURCHSICHTIG: DepthStencilState GREATER_THAN_OR_EQUAL
-                 * mit Tiefenschreiben, alle uebrigen Formen ueber den RenderType, mit dem ihr
-                 * Renderer zeichnet). Das enableDepthTest davor erzwang nur, was jede dieser
-                 * Pipelines ohnehin traegt; das disableDepthTest danach stellte die alte
-                 * GUI-Annahme wieder her, und die GUI zeichnet inzwischen selbst mit
-                 * RenderPipelines.GUI/GUI_TEXTURED. */
-                FormUtilsClient.render(form, new FormRenderingContext()
-                    .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
-                    .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-
-                matrices.popPose();
-            }
+            matrices.popPose();
         }
     }
 
-    public Item get(ItemStack stack)
+    public static Item get(ItemStack stack)
     {
         if (stack == null || stack.getItem() != BBSMod.MODEL_BLOCK_ITEM)
         {
             return null;
         }
 
-        if (this.map.containsKey(stack))
+        if (MAP.containsKey(stack))
         {
-            return this.map.get(stack);
+            return MAP.get(stack);
         }
 
         ModelBlockEntity entity = new ModelBlockEntity(BlockPos.ZERO, BBSMod.MODEL_BLOCK.defaultBlockState());
         Item item = new Item(entity);
 
-        this.map.put(stack, item);
+        MAP.put(stack, item);
 
-        CustomData nbtComponent = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+        /* 26.2: BLOCK_ENTITY_DATA traegt kein CustomData mehr, sondern TypedEntityData -- die
+         * Kennung des Blockentity-Typs reist jetzt MIT den Daten. Und das Laden macht man nicht
+         * mehr selbst: loadInto ist genau der Weg, den Vanillas BlockItem geht (im Bytecode
+         * nachgesehen). Es prueft nebenbei, dass der Typ passt, und ruft loadWithComponents --
+         * das alte handgeschriebene loadAdditional(tag, registries) sprang genau diese Pruefung. */
+        net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.level.block.entity.BlockEntityType<?>> daten =
+            stack.get(DataComponents.BLOCK_ENTITY_DATA);
 
-        if (nbtComponent == null)
+        if (daten == null)
         {
             return item;
         }
@@ -114,11 +177,7 @@ public class ModelBlockItemRenderer implements BuiltinItemRendererRegistry.Dynam
 
         if (world != null)
         {
-            /* 26.2: getUnsafe() ist weg -- es reichte den LEBENDEN Tag heraus, an dem der
-             * Aufrufer dann versehentlich mitschreiben konnte. copyTag() ist der Nachfolger
-             * und gibt eine Kopie. Hier wird ohnehin nur gelesen, die Kopie kostet einen
-             * Tag pro Aufruf und nichts an Verhalten. */
-            entity.loadAdditional(nbtComponent.copyTag(), world.registryAccess());
+            daten.loadInto(entity, world.registryAccess());
         }
 
         return item;

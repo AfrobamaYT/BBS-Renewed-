@@ -1,0 +1,16 @@
+{
+    "_kommentar": [
+        "Grundmodell des Modell-Block-Gegenstands. Traegt KEINE Geometrie -- gezeichnet wird",
+        "der Sonderzeichner bbs:model_block, siehe assets/bbs/items/model.json.",
+        "26.2 braucht dieses Modell trotzdem: minecraft:special liest daraus die",
+        "Anzeigetransformationen (display) und das GUI-Licht.",
+        "",
+        "ABSICHTLICH OHNE display-Block: BBS setzt seine eigene Transformation je Ansicht",
+        "(ModelProperties.getTransform). Ein display-Eintrag hier wuerde ZUSAETZLICH wirken.",
+        "Das entspricht dem Zustand vor 26.2, wo models/item/model.json ebenfalls keinen hatte.",
+        "",
+        "Das alte parent minecraft:builtin/entity ist in 26.2 ERSATZLOS weg (im JAR gibt es",
+        "kein assets/minecraft/models/builtin/ mehr) -- darum steht hier keins."
+    ],
+    "gui_light": "front"
+}

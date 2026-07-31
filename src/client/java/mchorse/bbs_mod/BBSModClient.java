@@ -67,7 +67,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
@@ -788,8 +787,15 @@ public class BBSModClient implements ClientModInitializer
 
         BlockEntityRendererRegistryImpl.register(BBSMod.MODEL_BLOCK_ENTITY, ModelBlockEntityRenderer::new);
 
-        BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.MODEL_BLOCK_ITEM, modelBlockItemRenderer);
-        BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, gunItemRenderer);
+        /* 26.2: BuiltinItemRendererRegistry ist in fabric-rendering-v1 25.3.2 ERSATZLOS
+         * gestrichen; einen Nachfolger hat Fabric nicht gebaut, weil Mojang selbst einen hat.
+         * Ein eigener Zeichner haengt jetzt nicht mehr AM GEGENSTAND, sondern am MODELL: die
+         * beiden Aufrufe tragen die Kennungen bbs:model_block und bbs:gun in Vanillas
+         * (private) Sonderzeichner-Tabelle ein, und die Modell-Beschreibungen
+         * assets/bbs/items/model.json und gun.json zeigen darauf.
+         * Details: ModelBlockSpecialRenderer, SpecialModelRenderersAccessor. */
+        ModelBlockItemRenderer.registriereSonderzeichner();
+        GunItemRenderer.registriereSonderzeichner();
 
         /* Create folders */
         BBSMod.getAudioFolder().mkdirs();

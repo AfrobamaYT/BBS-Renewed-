@@ -10,26 +10,52 @@ import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.forms.renderers.FormRenderType;
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
 import mchorse.bbs_mod.items.GunProperties;
+import mchorse.bbs_mod.mixin.client.SpecialModelRenderersAccessor;
 import mchorse.bbs_mod.ui.framework.UIScreen;
 import mchorse.bbs_mod.ui.model_blocks.UIModelBlockEditorMenu;
 import mchorse.bbs_mod.utils.MatrixStackUtils;
 import mchorse.bbs_mod.utils.pose.Transform;
-import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemRenderer
+/**
+ * Zwischenspeicher der Waffen, die als Gegenstand gezeichnet werden, plus der Zeichenweg
+ * dafuer.
+ *
+ * <p>⚠️ 26.2: dieselbe Umstellung wie bei {@link ModelBlockItemRenderer} — der Zeichner
+ * haengt am MODELL statt am Gegenstand, {@code BuiltinItemRendererRegistry} ist ersatzlos
+ * gestrichen. Die Anbindung an Vanillas Zeichenweg liegt in {@link GunSpecialRenderer},
+ * die Anzeigeart steht in {@code assets/bbs/items/gun.json}. Warum der Zwischenspeicher
+ * statisch sein MUSS, steht bei {@link ModelBlockItemRenderer}.
+ */
+public class GunItemRenderer
 {
-    private Map<ItemStack, Item> map = new HashMap<>();
+    private static final Map<ItemStack, Item> MAP = new HashMap<>();
 
-    public void update()
+    /**
+     * Traegt {@link GunSpecialRenderer} unter der Kennung {@code bbs:gun} in Vanillas
+     * Sonderzeichner-Tabelle ein. Ersetzt das alte
+     * {@code BuiltinItemRendererRegistry.INSTANCE.register(BBSMod.GUN_ITEM, ...)}.
+     * Begruendung fuer den Ort und das "genau einmal": siehe
+     * {@link ModelBlockItemRenderer#registriereSonderzeichner()}.
+     */
+    public static void registriereSonderzeichner()
     {
-        Iterator<Item> it = this.map.values().iterator();
+        SpecialModelRenderersAccessor.bbs$getIdMapper().put(
+            Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "gun"),
+            GunSpecialRenderer.Unbaked.MAP_CODEC
+        );
+    }
+
+    public static void update()
+    {
+        Iterator<Item> it = MAP.values().iterator();
 
         while (it.hasNext())
         {
@@ -46,69 +72,73 @@ public class GunItemRenderer implements BuiltinItemRendererRegistry.DynamicItemR
         }
     }
 
-    @Override
-    public void render(ItemStack stack, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, int overlay)
+    /**
+     * War {@code render(ItemStack, ItemDisplayContext, ...)}. Wie beim Modell-Block reicht
+     * 26.2 den Gegenstands-Stapel nicht mehr durch (das Auslesen sitzt in
+     * {@code SpecialModelRenderer.extractArgument}) und die Anzeigeart auch nicht — die
+     * kommt aus der Modell-Beschreibung ueber {@link GunSpecialRenderer} herein.
+     *
+     * <p>⚠️ Die Anzeigeart traegt hier MEHR als nur die Formwahl: {@code mode.firstPerson()}
+     * entscheidet, ob die Zielfernrohr-Form gezeigt wird. Steht in der Modell-Beschreibung
+     * die falsche Anzeigeart, zoomt die Waffe still nicht mehr.
+     */
+    public static void submit(Item item, ItemDisplayContext mode, PoseStack matrices, SubmitNodeCollector sammler, int light, int overlay)
     {
-        Item item = this.get(stack);
+        GunProperties properties = item.properties;
+        Form form = properties.getForm(mode);
+        Transform transform = properties.getTransform(mode);
+        boolean zoom = mode.firstPerson() && BBSModClient.getGunZoom() != null && properties.getZoomForm() != null;
 
-        if (item != null)
+        if (zoom)
         {
-            GunProperties properties = item.properties;
-            Form form = properties.getForm(mode);
-            Transform transform = properties.getTransform(mode);
-            boolean zoom = mode.firstPerson() && BBSModClient.getGunZoom() != null && properties.getZoomForm() != null;
+            form = properties.getZoomForm();
+            transform = properties.zoomTransform;
+        }
 
-            if (zoom)
-            {
-                form = properties.getZoomForm();
-                transform = properties.zoomTransform;
-            }
+        /* Preview zoom form */
+        if (UIScreen.getCurrentMenu() instanceof UIModelBlockEditorMenu editorMenu && editorMenu.currentSection == editorMenu.sectionZoom)
+        {
+            form = editorMenu.getGunProperties().getZoomForm();
+            transform = editorMenu.getGunProperties().zoomTransform;
+        }
 
-            /* Preview zoom form */
-            if (UIScreen.getCurrentMenu() instanceof UIModelBlockEditorMenu editorMenu && editorMenu.currentSection == editorMenu.sectionZoom)
-            {
-                form = editorMenu.getGunProperties().getZoomForm();
-                transform = editorMenu.getGunProperties().zoomTransform;
-            }
+        if (form != null)
+        {
+            item.expiration = 20;
 
-            if (form != null)
-            {
-                item.expiration = 20;
+            matrices.pushPose();
+            matrices.translate(0.5F, 0F, 0.5F);
+            MatrixStackUtils.applyTransform(matrices, transform);
 
-                matrices.pushPose();
-                matrices.translate(0.5F, 0F, 0.5F);
-                MatrixStackUtils.applyTransform(matrices, transform);
+            /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline des
+             * jeweiligen Draws. Die Form zeichnet ueber ModelVAOPipeline, deren
+             * DepthStencilState den Test anhat und Tiefe schreibt — das enableDepthTest()
+             * davor entfaellt damit ersatzlos. Das disableDepthTest() danach ebenso: es
+             * schloss nur den globalen Schalter fuer die folgenden Draws, und der GUI-Raum,
+             * in den das Item sonst zeichnet, hat ohnehin keine Tiefe mehr. */
+            FormUtilsClient.render(form, new FormRenderingContext()
+                .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
+                .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
 
-                /* 26.2: der Tiefentest ist kein Schalter mehr, er steckt in der Pipeline des
-                 * jeweiligen Draws. Die Form zeichnet ueber ModelVAOPipeline, deren
-                 * DepthStencilState den Test anhat und Tiefe schreibt — das enableDepthTest()
-                 * davor entfaellt damit ersatzlos. Das disableDepthTest() danach ebenso: es
-                 * schloss nur den globalen Schalter fuer die folgenden Draws, und der GUI-Raum,
-                 * in den das Item sonst zeichnet, hat ohnehin keine Tiefe mehr. */
-                FormUtilsClient.render(form, new FormRenderingContext()
-                    .set(FormRenderType.fromModelMode(mode), item.formEntity, matrices, light, overlay, Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))
-                    .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
-
-                matrices.popPose();
-            }
+            matrices.popPose();
         }
     }
 
-    public Item get(ItemStack stack)
+    public static Item get(ItemStack stack)
     {
         if (stack == null || stack.getItem() != BBSMod.GUN_ITEM)
         {
             return null;
         }
 
-        if (this.map.containsKey(stack))
+        if (MAP.containsKey(stack))
         {
-            return this.map.get(stack);
+            return MAP.get(stack);
         }
 
         Item item = new Item(GunProperties.get(stack));
 
-        this.map.put(stack, item);
+        MAP.put(stack, item);
 
         return item;
     }
