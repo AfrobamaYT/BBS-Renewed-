@@ -8,7 +8,7 @@ import mchorse.bbs_mod.staff.RagdollTextureRegistry;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 
 /**
  * Drop-in replacement for vanilla {@code ZombieEntityRenderer} that
