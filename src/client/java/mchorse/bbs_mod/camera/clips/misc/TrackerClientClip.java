@@ -334,7 +334,7 @@ public class TrackerClientClip extends TrackerClip
 
         for (int i = 0; i < 9; i++)
         {
-            savedHotbarItems[i] = player.getInventory().items.get(i).copy();
+            savedHotbarItems[i] = player.getInventory().getItem(i).copy();
 
             ItemStack entityItem = currentEntity.getHotbarItem(i);
             ItemStack toSet = entityItem != null ? entityItem.copy() : ItemStack.EMPTY;
@@ -353,12 +353,12 @@ public class TrackerClientClip extends TrackerClip
                 catch (Throwable ignore) {}
             }
 
-            player.getInventory().items.set(i, toSet);
+            player.getInventory().setItem(i, toSet);
         }
 
-        savedOffHandItem = player.getInventory().offhand.get(0).copy();
+        savedOffHandItem = player.getInventory().getItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND).copy();
         ItemStack entityOffHand = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
-        player.getInventory().offhand.set(0, entityOffHand != null ? entityOffHand : ItemStack.EMPTY);
+        player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, entityOffHand != null ? entityOffHand : ItemStack.EMPTY);
 
         savedSelectedSlot = player.getInventory().getSelectedSlot();
         player.getInventory().setSelectedSlot(currentEntity.getSelectedSlot());
@@ -415,9 +415,9 @@ public class TrackerClientClip extends TrackerClip
         {
             for (int i = 0; i < 9; i++)
             {
-                player.getInventory().items.set(i, savedHotbarItems[i]);
+                player.getInventory().setItem(i, savedHotbarItems[i]);
             }
-            player.getInventory().offhand.set(0, savedOffHandItem);
+            player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, savedOffHandItem);
             player.getInventory().setSelectedSlot(savedSelectedSlot);
             player.hurtTime = savedHurtTime;
             player.setHealth(savedHealth);
@@ -459,8 +459,8 @@ public class TrackerClientClip extends TrackerClip
         {
             player.getInventory().setSelectedSlot(entitySlot);
             handSwappedSlotIndex = entitySlot;
-            handSavedSlotItem = player.getInventory().items.get(entitySlot).copy();
-            player.getInventory().items.set(entitySlot, entityMain.copy());
+            handSavedSlotItem = player.getInventory().getItem(entitySlot).copy();
+            player.getInventory().setItem(entitySlot, entityMain.copy());
         }
         else
         {
@@ -469,10 +469,10 @@ public class TrackerClientClip extends TrackerClip
 
         ItemStack entityOff = currentEntity.getEquipmentStack(EquipmentSlot.OFFHAND);
         boolean entityHasOffItem = entityOff != null && !entityOff.isEmpty();
-        handSavedOffHandItem = player.getInventory().offhand.get(0).copy();
+        handSavedOffHandItem = player.getInventory().getItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND).copy();
         if (entityHasOffItem)
         {
-            player.getInventory().offhand.set(0, entityOff.copy());
+            player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, entityOff.copy());
         }
 
         savedHurtTime = player.hurtTime;
@@ -531,9 +531,9 @@ public class TrackerClientClip extends TrackerClip
         {
             if (handSwappedSlotIndex >= 0)
             {
-                player.getInventory().items.set(handSwappedSlotIndex, handSavedSlotItem);
+                player.getInventory().setItem(handSwappedSlotIndex, handSavedSlotItem);
             }
-            player.getInventory().offhand.set(0, handSavedOffHandItem);
+            player.getInventory().setItem(net.minecraft.world.entity.player.Inventory.SLOT_OFFHAND, handSavedOffHandItem);
             player.getInventory().setSelectedSlot(handSavedSelectedSlot);
             player.hurtTime = savedHurtTime;
             player.attackAnim = savedSwingProgress;
