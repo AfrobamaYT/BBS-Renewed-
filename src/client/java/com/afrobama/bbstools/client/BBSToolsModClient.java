@@ -496,7 +496,15 @@ public final class BBSToolsModClient implements ClientModInitializer
 
         /* Bridge legacy renderer ENABLED flags into BBSDebugRegistry so
          *  /bbsdebug crowdgpu on AND /bbstools crowdgpu on both work. */
-
+        /* 2026-07-31 WIEDER DA. Der Aufruf war entfernt, weil LegacyRendererDebuggers vom
+         * Compile ausgeschlossen ist -- und daran hingen nicht nur die drei Crowd-Schalter,
+         * sondern die SAMMELANMELDUNG VON RUND 40 DEBUGGERN: eval (der JShell-Kanal, ueber den
+         * unser Messwerkzeug dev.py/beweis.py laeuft), live-log, catch-track, jdwp,
+         * parallel-animator. Zwei Huellen kosteten achtunddreissig Werkzeuge.
+         *
+         * Die zwei stehen jetzt allein in LegacyCrowdDebuggers, nur die bleibt ausgeschlossen.
+         * crowdgpu und accelrender sind damit weiterhin aus -- der Rest ist zurueck. */
+        com.afrobama.bbstools.client.debug.LegacyRendererDebuggers.registerAll();
         /* /bbstools sky freeze|unfreeze: locks daylight + weather cycles
          *  and forces clear sky so lighting stays constant across the
          *  dozens of takes per hero shot. Bundles two /gamerule toggles
