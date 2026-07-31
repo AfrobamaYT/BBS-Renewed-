@@ -575,6 +575,21 @@ public class BBSRendering
 
     public static void onRenderBeforeScreen()
     {
+        /* ⛔ OHNE DIESEN TEST STIRBT DER VIDEO-EXPORT MIT EINEM NULLZEIGER.
+         *
+         * Belegt durch crash-2026-07-31_15.03: BBSRendering.leseFboFuer dereferenziert sein
+         * Argument in der ersten Zeile, und der Aufruf unten reicht das statische Feld
+         * `framebuffer` durch. Ist der Puffer noch nicht angelegt -- oder nach einem
+         * Groessenwechsel gerade abgeraeumt -- reisst es genau den Vorgang ab, bei dem am
+         * meisten Arbeit verloren geht.
+         *
+         * ⚠️ Der Test gehoert HIERHER und nicht in leseFboFuer: dort waere er
+         * Symptombehandlung, die einen halb aufgebauten Blit trotzdem weiterlaufen liesse. */
+        if (framebuffer == null)
+        {
+            return;
+        }
+
         Texture texture = getTexture();
         int targetWidth = getVideoWidth();
         int targetHeight = getVideoHeight();
