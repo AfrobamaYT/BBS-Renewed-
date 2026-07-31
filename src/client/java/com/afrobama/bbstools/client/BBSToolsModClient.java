@@ -112,8 +112,14 @@ public final class BBSToolsModClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.END_MAIN.register(
             kontext -> com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++);
 
-        /* Per-frame counter for the heartbeat's "frame" + "fps" fields. */
-        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(
+        /* Per-frame counter for the heartbeat's "frame" + "fps" fields.
+         *
+         * 26.2: HudRenderCallback ist gestrichen, Nachfolger HudElementRegistry (siehe
+         * BBSModClient). Dieses Element ZEICHNET nichts, es zaehlt nur -- der Zeichner wird
+         * gar nicht angefasst. addLast, weil der alte Rueckruf am Ende des HUD lief; fuer
+         * einen reinen Zaehler ist die Ebene ohnehin egal. */
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(com.afrobama.bbstools.BBSToolsMod.MOD_ID, "herzschlag"),
             (drawContext, tickDelta) ->
             {
                 com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrame();

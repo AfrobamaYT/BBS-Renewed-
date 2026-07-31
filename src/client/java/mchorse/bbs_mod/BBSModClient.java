@@ -69,12 +69,13 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.impl.client.rendering.BlockEntityRendererRegistryImpl;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -714,7 +715,19 @@ public class BBSModClient implements ClientModInitializer
             }
         });
 
-        HudRenderCallback.EVENT.register((drawContext, tickDelta) ->
+        /* 26.2: HudRenderCallback ist in fabric-rendering-v1 25.3.2 ersatzlos gestrichen (in
+         * 16.2.10 noch im JAR, in 25.3.2 nicht mehr). Nachfolger ist HudElementRegistry.
+         *
+         * addLast haengt uns an eine EIGENE Wurzelebene NACH allen Vanilla-Elementen
+         * (HudElementRegistryImpl haelt FIRST und LAST getrennt von der Vanilla-Liste) --
+         * das ist das exakte Gegenstueck zum alten Rueckruf, der am TAIL des HUD-Zeichnens
+         * feuerte. Wer eine andere Tiefe will, haengt sich mit attachElementBefore/After an
+         * ein benanntes VanillaHudElements-Element; die Reihenfolge ist jetzt explizit.
+         *
+         * ⚠️ extractRenderState heisst so, weil es nur SAMMELT. Zeichnen laeuft ueber den
+         * GuiGraphicsExtractor (der die volle Zeichen-API traegt) -- wer daneben einen
+         * eigenen RenderPass aufmacht, landet UNTER dem gesamten GUI. */
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "hud"), (drawContext, tickDelta) ->
         {
             BBSRendering.renderHud(drawContext, tickDelta.getGameTimeDeltaPartialTick(false));
 

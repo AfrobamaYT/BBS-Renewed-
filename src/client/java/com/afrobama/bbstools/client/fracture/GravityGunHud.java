@@ -1,10 +1,11 @@
 package com.afrobama.bbstools.client.fracture;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 /**
  * Tiny HUD overlay that shows next to the crosshair when the player
@@ -21,7 +22,12 @@ public final class GravityGunHud
 
     public static void register()
     {
-        HudRenderCallback.EVENT.register(GravityGunHud::onHudRender);
+        /* 26.2: HudRenderCallback ist gestrichen, Nachfolger HudElementRegistry (Begruendung
+         * in BBSModClient). Der Hinweis steht ueber allem, also addLast -- er soll auch dann
+         * lesbar bleiben, wenn das Fadenkreuz drunter liegt. */
+        HudElementRegistry.addLast(
+            Identifier.fromNamespaceAndPath(com.afrobama.bbstools.BBSToolsMod.MOD_ID, "gravity_gun"),
+            GravityGunHud::onHudRender);
     }
 
     private static void onHudRender(GuiGraphicsExtractor ctx, net.minecraft.client.DeltaTracker tickCounter)

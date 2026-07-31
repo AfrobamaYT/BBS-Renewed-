@@ -18,11 +18,12 @@ package com.afrobama.bbstools.client.hud;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 import com.afrobama.bbstools.perf.BBSPerfHud;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 public final class BBSPerfHudRenderer
 {
@@ -69,7 +70,12 @@ public final class BBSPerfHudRenderer
 
     public static void register()
     {
-        HudRenderCallback.EVENT.register(BBSPerfHudRenderer::onHudRender);
+        /* 26.2: HudRenderCallback ist gestrichen, Nachfolger HudElementRegistry (Begruendung
+         * in BBSModClient). addLast haelt die Messtafel ueber allem -- sie soll auch dann
+         * lesbar sein, wenn darunter Boss-Leiste oder Chat liegen. */
+        HudElementRegistry.addLast(
+            Identifier.fromNamespaceAndPath(com.afrobama.bbstools.BBSToolsMod.MOD_ID, "perf_hud"),
+            BBSPerfHudRenderer::onHudRender);
     }
 
     private static void onHudRender(GuiGraphicsExtractor ctx,
