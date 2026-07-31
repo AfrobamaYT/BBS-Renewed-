@@ -2,6 +2,7 @@
 package com.afrobama.bbstools.client.campreview;
 
 import com.afrobama.bbstools.clip.BBSToolsAddCameraClip;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
@@ -271,8 +272,23 @@ public class UIClipCameraPreview extends UIElement
             if (texId != null)
             {
                 /* V-flip framebuffer (bottom-up) into UI space. */
+                /* 26.2: Batcher2D nimmt keine rohe Texturkennung mehr. Eine Textursicht wird
+                 * ueber TextureSetup samt Abtaster gereicht -- die Filterung haengt jetzt am
+                 * Abtaster des Zuges, nicht mehr am Renderziel. GUI_TEXTURED ist die Pipeline,
+                 * die Batcher2D auch fuer seine anderen Bild-Kaesten nimmt. */
                 context.batcher.texturedBox(
-                    texId, Colors.WHITE,
+                    () -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    net.minecraft.client.gui.render.TextureSetup.singleTexture(texId,
+                        /* Filter und Randbehandlung haengen in 26.2 am ABTASTER, nicht mehr an
+                         * der Textur. Mojangs Zwischenspeicher gibt fuer dieselbe Kombination
+                         * dasselbe Objekt zurueck -- hier entsteht nichts pro Bild. NEAREST,
+                         * damit die Vorschau pixelig bleibt wie das Spiel. */
+                        com.mojang.blaze3d.systems.RenderSystem.getSamplerCache().getSampler(
+                            com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
+                            com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
+                            com.mojang.blaze3d.textures.FilterMode.NEAREST,
+                            com.mojang.blaze3d.textures.FilterMode.NEAREST, false)),
+                    Colors.WHITE,
                     x, y, w, h,
                     0, ClipViewportFramebuffers.getHeight(),
                     ClipViewportFramebuffers.getWidth(), 0,
@@ -344,8 +360,23 @@ public class UIClipCameraPreview extends UIElement
                      *
                      * Bis dahin bleibt der Compilerfehler stehen: eine Vorschau, die still die falsche
                      * Kennung hervorhebt, ist teurer als eine, die nicht baut. */
-                    com.mojang.blaze3d.shaders.Uniform target = previewProgram.getUniform("Target");
-                    if (target != null) target.set(pick.pickedIndex);
+                    /* ⛔ DIE HERVORHEBUNG IST WEG, und das ist die ehrlichere von zwei
+                     * schlechten Moeglichkeiten.
+                     *
+                     * Hier wurde dem Shader die Kennung des getroffenen Knochens als Uniform
+                     * uebergeben. Einzel-Uniforms gibt es in 26.2 nicht mehr -- nur noch
+                     * Uniform-BLOECKE, die ueber den Durchgang gebunden werden, und ein
+                     * GUI-Element macht keinen eigenen Durchgang auf.
+                     *
+                     * Der Wert (pick.pickedIndex) waere also stehengeblieben, was immer zuvor
+                     * darin stand: die Vorschau haette den FALSCHEN Knochen blau markiert, und
+                     * nichts haette es gemeldet. Lieber gar keine Markierung.
+                     *
+                     * ZURUECKHOLEN, Rezept steht: die Hervorhebung VORHER in ein eigenes Bild
+                     * rechnen (Bildfilter.kennungHervorheben -- vier andere Aufrufstellen sind
+                     * schon so umgestellt). Was fehlt, ist eine eigene Zieltextur an
+                     * BoneHoverPickService.Result; eine geteilte waere falsch, weil die
+                     * Oberflaeche erst nach dem Sammeln zeichnet. */
 
                     /* 26.2: enableBlend()/defaultBlendFunc() sind ersatzlos weg —
                      *  das Mischen haengt jetzt an der Pipeline. Damit es beim
@@ -357,13 +388,12 @@ public class UIClipCameraPreview extends UIElement
                      *  picker_preview MUSS diese Mischfunktion tragen, sonst sieht
                      *  die blaue Knochen-Markierung anders aus, ohne dass etwas meldet. */
 
-                    java.util.function.Supplier<RenderPipeline> supplier =
-                        mchorse.bbs_mod.client.BBSShaders::getPickerPreviewProgram;
-                    context.batcher.texturedBox(
-                        supplier, pick.stencilTexId, Colors.WHITE,
-                        x, y, w, h,
-                        0, pick.stencilH, pick.stencilW, 0,
-                        pick.stencilW, pick.stencilH);
+                    /* Der Zeichenaufruf ist mit der Hervorhebung entfallen. Er reichte die
+                     * rohe Stencil-Texturkennung durch; rohe GL-Nummern nimmt die GUI in 26.2
+                     * nirgends mehr an (es braucht eine Textursicht samt Abtaster), und ohne
+                     * die Kennung aus dem Uniform haette der Shader ohnehin nicht gewusst,
+                     * WELCHEN Knochen er faerben soll. Beides zusammen ergaebe ein Bild, das
+                     * plausibel aussieht und den falschen Knochen markiert. */
                 }
             }
             catch (Throwable ignored) {}

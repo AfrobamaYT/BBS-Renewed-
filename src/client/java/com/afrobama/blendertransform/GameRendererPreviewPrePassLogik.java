@@ -11,7 +11,6 @@ import com.afrobama.bbstools.client.util.PreviewPassState;
 import mchorse.bbs_mod.client.BBSRendering;
 
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
-import net.fabricmc.fabric.impl.client.rendering.WorldRenderContextImpl;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -161,27 +160,39 @@ public final class GameRendererPreviewPrePassLogik
                     /* BBS overlays (replays/forms) — build the same
                      *  context BBS would receive from Fabric and feed it
                      *  to the BBS render entry point. */
-                    LevelRenderContext ctx = buildContext(mc, tickCounter, clipProjection);
-                    BBSRendering.renderCoolStuff(ctx);
-
-                    /* Flush entity vertex consumers — BBS forms write
-                     *  here but the outer renderer's draw() hasn't run
-                     *  yet for this pass. */
-                    mc.renderBuffers().bufferSource().endBatch();
+                    /* ⛔ STILLGELEGT IN 26.2 -- hier standen der Aufbau eines Welt-Render-Kontexts
+                     * und der Aufruf von BBSRendering.renderCoolStuff, damit BBS-Formen und
+                     * Replays IM Blender-Vorschaufenster erscheinen.
+                     *
+                     * Der Grund ist derselbe wie bei BBSRendering.onRenderChunkLayer und
+                     * strukturell, nicht kosmetisch: Geometrie wird in 26.2 bei einem
+                     * SubmitNodeCollector EINGEREICHT, und den bekommt man nur INNERHALB eines
+                     * Durchgangs gereicht. An dieser Stelle gibt es keinen. Fabrics
+                     * WorldRenderContextImpl, aus dem der Kontext frueher gebaut wurde, ist
+                     * ebenfalls gestrichen, und sein Fuellstoff (bufferSource) existiert nicht mehr.
+                     *
+                     * Einen Kontext zusammenzuluegen wuerde uebersetzen und NICHTS zeichnen --
+                     * die Vorschau saehe leer aus, ohne dass irgendetwas meldet warum.
+                     *
+                     * ZURUECKHOLEN: den Sammler von dort durchreichen, wo dieser Vorlauf
+                     * aufgehaengt ist, und daraus eine eigene Umsetzung von LevelRenderContext
+                     * bauen (fuenf Methoden: submitNodeCollector, poseStack, gameRenderer,
+                     * levelRenderer, levelState). Gehoert in die Mixin-Runde. */
 
                     /* Bone-hover + click pick at alt-cam POV. The
                      *  camera is still mutated and projection still set
                      *  to the clip's perspective here. */
                     try
                     {
-                        com.afrobama.bbstools.client.campreview.BoneHoverPickRunner.runHover(
-                            a.id, ctx,
-                            ClipViewportFramebuffers.getWidth(),
-                            ClipViewportFramebuffers.getHeight());
-                        com.afrobama.bbstools.client.campreview.BoneHoverPickRunner.runClick(
-                            a.id, ctx,
-                            ClipViewportFramebuffers.getWidth(),
-                            ClipViewportFramebuffers.getHeight());
+                        /* ⛔ MIT STILLGELEGT: der Knochen-Zeiger und der Klick-Griff brauchten
+                         * denselben Welt-Render-Kontext, den es hier nicht mehr gibt (Begruendung
+                         * oben). Sie haben zusaetzlich ein EIGENES Problem, das auch mit Kontext
+                         * bliebe: sie zeichnen einen Stencil-Durchgang und LESEN DANACH SOFORT
+                         * PIXEL an der Mausposition. Das setzt voraus, dass der Zug schon durch
+                         * ist -- bei eingereichten Auftraegen ist er das nicht.
+                         *
+                         * ZURUECKHOLEN heisst deshalb nicht nur "Kontext beschaffen", sondern:
+                         * eigener Durchgang, danach ein Zaun, dann lesen. Siehe Aufgabe 85. */
 
                         /* Pick rebinds main FB at end — rebind our
                          *  preview FB so any leftover render hits it
@@ -189,7 +200,10 @@ public final class GameRendererPreviewPrePassLogik
                         /* 26.2: bindWrite/unbindWrite sind entfallen. Ein Renderziel wird nicht mehr global
                          * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
                          * zeichnen will, gibt das Ziel dort an. */
-                        RenderSystem.viewport(0, 0, fb.width, fb.height);
+                        /* 26.2: RenderSystem.viewport ist ersatzlos entfallen. Das Sichtfeld gehoert jetzt zum
+                         * Durchgang, nicht zu einem globalen Zustand -- wer in ein anderes Ziel zeichnet, gibt
+                         * die Groesse beim Anlegen des Durchgangs an. Hier war es das Zuruecksetzen nach einem
+                         * fremden Eingriff; ohne globalen Zustand gibt es nichts zurueckzusetzen. */
                     }
                     catch (Throwable t)
                     {
@@ -217,7 +231,10 @@ public final class GameRendererPreviewPrePassLogik
              * zeichnen will, gibt das Ziel dort an. */
             int sw = mc.getWindow().getWidth();
             int sh = mc.getWindow().getHeight();
-            RenderSystem.viewport(0, 0, sw, sh);
+            /* 26.2: RenderSystem.viewport ist ersatzlos entfallen. Das Sichtfeld gehoert jetzt zum
+             * Durchgang, nicht zu einem globalen Zustand -- wer in ein anderes Ziel zeichnet, gibt
+             * die Groesse beim Anlegen des Durchgangs an. Hier war es das Zuruecksetzen nach einem
+             * fremden Eingriff; ohne globalen Zustand gibt es nichts zurueckzusetzen. */
 
             PreviewPassState.PREVIEW_PASS_ACTIVE = false;
 
@@ -225,25 +242,7 @@ public final class GameRendererPreviewPrePassLogik
         }
     }
 
-    private static LevelRenderContext buildContext(Minecraft mc,
-                                                    DeltaTracker tickCounter,
-                                                    Matrix4f projection)
-    {
-        WorldRenderContextImpl impl = new WorldRenderContextImpl();
-        impl.prepare(
-            mc.levelRenderer,
-            tickCounter,
-            false,
-            mc.gameRenderer.mainCamera(),
-            mc.gameRenderer,
-            mc.gameRenderer.lightTexture(),
-            projection,
-            RenderSystem.getModelViewMatrixCopy(),
-            mc.renderBuffers().bufferSource(),
-            mc.getProfiler(),
-            false,
-            mc.level
-        );
-        return impl;
-    }
+    /* buildContext ist ersatzlos entfallen -- siehe die Begruendung oben an der Aufrufstelle.
+     * Es baute einen Fabric-internen WorldRenderContextImpl aus einem Sofort-Puffer; beides
+     * gibt es in 26.2 nicht mehr. */
 }

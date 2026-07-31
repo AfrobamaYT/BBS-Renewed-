@@ -234,8 +234,8 @@ public final class BoneHoverPickRunner
          *  see alt-cam orientation. */
         Matrix4f savedBBSCamera = new Matrix4f(BBSRendering.camera);
 
-        float pitchRad = (float) Math.toRadians(altCam.xRot());
-        float yawRad = (float) Math.toRadians(altCam.yRot() + 180F);
+        float pitchRad = (float) Math.toRadians(altCam.xRot);
+        float yawRad = (float) Math.toRadians(altCam.yRot + 180F);
 
         Matrix4f altCamView = new Matrix4f()
             .identity()
@@ -360,7 +360,9 @@ public final class BoneHoverPickRunner
 
             BaseFilmController.renderEntity(FilmControllerContext.instance
                 .setup(editorEntities, selectedEntity, selectedReplay, altCam, tempStack,
-                    Minecraft.getInstance().renderBuffers().bufferSource(),
+                    /* 26.2: bufferSource gibt es nicht mehr -- der Kontext traegt den Sammler.
+                     * Er kommt von der Stelle, die diesen Durchgang aufgemacht hat. */
+                    ctx.submitNodeCollector(),
                     tickDelta)
                 .transition(tickDelta)
                 .stencil(map)
@@ -368,10 +370,18 @@ public final class BoneHoverPickRunner
 
             int totalEntitiesRendered = 1;
 
-            /* Flush the entity vertex consumers so the stencil draws
-             *  actually hit the framebuffer before we pick. */
-            try { Minecraft.getInstance().renderBuffers().bufferSource().endBatch(); }
-            catch (Throwable ignored) {}
+            /* ⚠️ 26.2: HIER FEHLT DIE HALBE MECHANIK, und das ist der Grund, warum der Picker
+             * derzeit nicht aufgerufen wird (siehe GameRendererPreviewPrePassLogik).
+             *
+             * Frueher stand hier ein endBatch: die Stencil-Zuege in den Rahmenpuffer druecken,
+             * damit das glReadPixels darunter etwas VORFINDET. In 26.2 wird Geometrie
+             * eingereicht und vom Bildgraphen spaeter gezeichnet -- es gibt kein "jetzt
+             * fertigzeichnen" mehr. Ohne Ersatz liest der Picker einen Puffer, in dem noch
+             * nichts steht, und trifft immer daneben.
+             *
+             * Der ehrliche Weg zurueck: eigener Durchgang fuer den Stencil, danach ein Zaun
+             * (RenderSystem.queueFencedTask), erst dann lesen. Das ist ein Umbau, kein
+             * Nachschlag -- deshalb steht hier nichts Erfundenes. */
 
             int px = (int) ((req.mouseX / (float) req.tileW) * fbW);
             int py = (int) ((1F - req.mouseY / (float) req.tileH) * fbH);
