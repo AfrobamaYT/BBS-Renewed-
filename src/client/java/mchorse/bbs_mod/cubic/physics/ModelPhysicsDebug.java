@@ -1,12 +1,13 @@
 package mchorse.bbs_mod.cubic.physics;
 
+import mchorse.bbs_mod.graphics.SofortZeichner;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
@@ -193,7 +194,10 @@ public final class ModelPhysicsDebug
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
         {
@@ -323,7 +327,10 @@ public final class ModelPhysicsDebug
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            BufferBuilder lines = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+             * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+            ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+            BufferBuilder lines = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
             emitLines(lines, matrix, 0F, dash, pts, target, a, config);
 
@@ -336,7 +343,10 @@ public final class ModelPhysicsDebug
         }
 
         /* Solid geometry: the pinned root, joints, the simulated tip and the attach bone, plus the thick lines. */
-        BufferBuilder dots = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder dots = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         if (boxes)
         {
@@ -417,7 +427,10 @@ public final class ModelPhysicsDebug
         Vector3f force = new Vector3f();
         List<Vector3f> tips = new ArrayList<>(pts.size());
 
-        BufferBuilder lines = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder lines = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
         for (int i = 1; i < pts.size(); i++)
         {
@@ -450,7 +463,10 @@ public final class ModelPhysicsDebug
             BufferUploader.drawWithShader(builtLines);
         }
 
-        BufferBuilder dots = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder dots = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         for (Vector3f end : tips)
         {

@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.forms.renderers;
 
+import mchorse.bbs_mod.graphics.SofortZeichner;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import com.mojang.blaze3d.PrimitiveTopology;
@@ -8,7 +10,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -196,7 +197,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         texture.bind();
         texture.setFilterMipmap(this.form.linear.get(), this.form.mipmap.get());
-        BufferBuilder builder = Tesselator.getInstance().begin(PrimitiveTopology.TRIANGLES, format);
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, format);
 
         /* Front */
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);

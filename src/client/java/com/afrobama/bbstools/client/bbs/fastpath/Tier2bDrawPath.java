@@ -16,6 +16,7 @@
 // strict gate already excludes most heavy cases.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
@@ -25,7 +26,6 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -241,7 +241,10 @@ public final class Tier2bDrawPath
                  * Entity-Pipeline und der Sampler-Weg fuer Overlay/Lightmap. */
                 try
                 {
-                    BufferUploader.drawWithShader(builder.buildOrThrow());
+                    /* Der Shader stand frueher in einem setShader davor: ENTITY_TRANSLUCENT_CULL.
+                     * Jetzt waehlt ihn der Zeichenaufruf, und mit ihm Blend, Tiefe und Cull. */
+                    SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT_CULL, builder.buildOrThrow(),
+                        com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrixCopy(), null, null, null);
                     drawCalls++;
                     submissionsDrawn += bucketSubsWritten;
                     vertsDrawn += bucketVertsWritten;

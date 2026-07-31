@@ -30,6 +30,8 @@
 // so far. No per-frame GC churn after warmup.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import mchorse.bbs_mod.graphics.SofortZeichner;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
@@ -39,10 +41,8 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSModClient;
@@ -274,7 +274,10 @@ public final class Tier2cParallelSkin
         /* 26.2: setShader ist entfallen -- der Shader steht in der Pipeline, die der
          * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
 
-        BufferBuilder builder = Tesselator.getInstance().begin(
+        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+        BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, 
             com.mojang.blaze3d.PrimitiveTopology.TRIANGLES,
             DefaultVertexFormat.ENTITY);
 
@@ -292,7 +295,10 @@ public final class Tier2cParallelSkin
         {
             try
             {
-                BufferUploader.drawWithShader(builder.buildOrThrow());
+                /* Der Shader stand frueher in einem setShader davor: ENTITY_TRANSLUCENT_CULL.
+                 * Jetzt waehlt ihn der Zeichenaufruf, und mit ihm Blend, Tiefe und Cull. */
+                SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT_CULL, builder.buildOrThrow(),
+                    com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrixCopy(), null, null, null);
             }
             catch (Throwable t)
             {

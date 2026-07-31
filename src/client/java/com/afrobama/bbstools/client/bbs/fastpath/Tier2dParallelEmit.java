@@ -27,6 +27,7 @@
 // Tier 2-b/c use, so Iris's gbuffers_entities handles it normally.
 package com.afrobama.bbstools.client.bbs.fastpath;
 
+import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.renderer.RenderPipelines;
 
 import com.afrobama.bbstools.client.bbs.mesh.SkinnedMeshCache;
@@ -36,7 +37,6 @@ import com.afrobama.bbstools.perf.BBSPerfConfig;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
@@ -451,7 +451,10 @@ public final class Tier2dParallelEmit
             if (r == null) continue;
             try
             {
-                BufferUploader.drawWithShader(r.built);
+                /* Der Shader stand frueher in einem setShader davor: ENTITY_TRANSLUCENT_CULL.
+                 * Jetzt waehlt ihn der Zeichenaufruf, und mit ihm Blend, Tiefe und Cull. */
+                SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT_CULL, r.built,
+                    com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrixCopy(), null, null, null);
                 drawCount++;
                 totalWritten += r.writtenCount;
             }

@@ -7,7 +7,6 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.camera.Camera;
@@ -510,7 +509,10 @@ public class ParticleEmitter
             Matrix4f matrix = stack.last().pose();
 
             this.bindTexture();
-            BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, format);
+            /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
+             * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
+            ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
+            BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, format);
 
             for (Particle particle : this.particles)
             {

@@ -1,10 +1,9 @@
 package mchorse.bbs_mod.ui.framework.elements.input.color;
 
+import mchorse.bbs_mod.client.FormPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.ui.ValueColors;
@@ -106,16 +105,19 @@ public class UIColorPicker extends UIElement
          * Zeichenaufruf waehlt. Frueher galt er fuer alles Folgende. */
         /* 26.2: enableBlend ist entfallen -- der Zustand steckt in der Pipeline
          * des Zuges. Absicht war: mischen an. */
-        BufferBuilder builder = Tesselator.getInstance().begin(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        builder.addVertex(matrix4f, x1, y1, 0F).setColor(color.r, color.g, color.b, 1);
-        builder.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, 1);
-        builder.addVertex(matrix4f, x2, y1, 0F).setColor(color.r, color.g, color.b, 1);
-        builder.addVertex(matrix4f, x2, y1, 0F).setColor(color.r, color.g, color.b, color.a);
-        builder.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, color.a);
-        builder.addVertex(matrix4f, x2, y2, 0F).setColor(color.r, color.g, color.b, color.a);
-
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = builder.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+        /* ⛔ Diese Vorschau zeichnet IN die Oberflaeche, nicht in die Welt. Ein eigener
+         * Durchgang laege darum UNTER dem gesamten GUI-Stapel: 26.2 sammelt die Oberflaeche
+         * erst und zeichnet sie danach. Die Ecken gehen deshalb in dieselbe Warteschlange
+         * wie jedes andere Bedienelement (Batcher2D.netz). */
+        batcher.netz(FormPipelines.holen(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, true, false, false), (bauer) ->
+        {
+            bauer.addVertex(matrix4f, x1, y1, 0F).setColor(color.r, color.g, color.b, 1);
+            bauer.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, 1);
+            bauer.addVertex(matrix4f, x2, y1, 0F).setColor(color.r, color.g, color.b, 1);
+            bauer.addVertex(matrix4f, x2, y1, 0F).setColor(color.r, color.g, color.b, color.a);
+            bauer.addVertex(matrix4f, x1, y2, 0F).setColor(color.r, color.g, color.b, color.a);
+            bauer.addVertex(matrix4f, x2, y2, 0F).setColor(color.r, color.g, color.b, color.a);
+        }, new net.minecraft.client.gui.navigation.ScreenRectangle(x1, y1, x2 - x1, y2 - y1));
     }
 
     public UIColorPicker(Consumer<Integer> callback)
