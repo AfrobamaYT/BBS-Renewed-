@@ -178,9 +178,28 @@ public final class BBSPipelines
             .withFragmentShader(shader)
             .withVertexBinding(0, vorlage.getVertexFormatBinding(0))
             .withPrimitiveTopology(vorlage.getPrimitiveTopology())
-            .withDepthStencilState(vorlage.getDepthStencilState())
-            .withColorTargetState(vorlage.getColorTargetState())
             .withCull(vorlage.isCull());
+
+        /* ⚠️ BEIDE ZUSTAENDE DUERFEN null SEIN, die Setzer vertragen es aber NICHT: sie
+         * packen ihr Argument in ein Optional.of und werfen dabei eine NPE.
+         *
+         * GUI_TEXTURED ist genau so ein Fall -- die Oberflaeche zeichnet ohne Tiefentest,
+         * also traegt die Vorlage dort nichts. Uebernommen wurde das frueher blind, was den
+         * Klassenlader beim ersten Zugriff auf BBSPipelines mit einem
+         * ExceptionInInitializerError abbrechen liess (sichtbar erst, wenn der Film-Editor
+         * den Umriss-Shader anfasste, also weit weg von der Ursache).
+         *
+         * Nicht gesetzt heisst: der Bauer behaelt seinen eigenen Standard -- und der ist
+         * derselbe wie der der Vorlage, naemlich keiner. */
+        if (vorlage.getDepthStencilState() != null)
+        {
+            bauer.withDepthStencilState(vorlage.getDepthStencilState());
+        }
+
+        if (vorlage.getColorTargetState() != null)
+        {
+            bauer.withColorTargetState(vorlage.getColorTargetState());
+        }
 
         /* Die Bindegruppen bestimmen, welche Uniform-Bloecke und Sampler der Shader
          * ueberhaupt sehen darf. Uebernommen statt neu aufgezaehlt, sonst weicht die

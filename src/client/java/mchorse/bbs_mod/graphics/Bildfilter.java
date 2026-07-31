@@ -170,8 +170,13 @@ public final class Bildfilter
     {
         if (block == null)
         {
-            block = RenderSystem.getDevice().createBuffer(
-                () -> "bbs-bildfilter-block", GpuBuffer.USAGE_UNIFORM, BLOCK_GROESSE);
+            /* ⚠️ USAGE_COPY_DST ist PFLICHT, weil dieser Block pro Bild neu beschrieben wird
+             * (writeToBuffer weiter unten). 26.2 prueft die Nutzungsarten und lehnt das
+             * Schreiben sonst ab: "Buffer needs USAGE_COPY_DST to be a destination for a
+             * copy". Ein reiner USAGE_UNIFORM-Puffer waere ein Puffer, den man einmal
+             * fuellt und danach nur noch liest -- das ist dieser hier gerade nicht. */
+            block = RenderSystem.getDevice().createBuffer(() -> "bbs-bildfilter-block",
+                GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, BLOCK_GROESSE);
         }
 
         ByteBuffer roh = MemoryUtil.memAlloc(BLOCK_GROESSE).order(ByteOrder.nativeOrder());

@@ -146,8 +146,13 @@ public class ModelVAORenderer
     {
         if (block == null)
         {
-            block = RenderSystem.getDevice().createBuffer(
-                () -> "bbs-modell-block", GpuBuffer.USAGE_UNIFORM, BLOCK_GROESSE);
+            /* ⚠️ USAGE_COPY_DST ist PFLICHT: der Block wird pro Zeichenaufruf neu beschrieben.
+             * Ohne das Flag lehnt 26.2 das Schreiben ab ("Buffer needs USAGE_COPY_DST to be a
+             * destination for a copy"). Ein Puffer, der nur mit USAGE_UNIFORM angelegt wird,
+             * ist einer, den man EINMAL beim Anlegen fuellt -- das trifft hier nicht zu, denn
+             * angelegt wird nur mit einer Groesse. */
+            block = RenderSystem.getDevice().createBuffer(() -> "bbs-modell-block",
+                GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, BLOCK_GROESSE);
         }
 
         ByteBuffer roh = MemoryUtil.memAlloc(BLOCK_GROESSE).order(ByteOrder.nativeOrder());
