@@ -853,9 +853,13 @@ public class TrackerClientClip extends TrackerClip
 
         if (hudShowProgress < 0.999F && drawContext != null)
         {
-            drawContext.pose().pushPose();
+            /* 26.2: die GUI-Matrix ist ein org.joml.Matrix3x2fStack, kein PoseStack mehr —
+             * die Oberflaeche rechnet nur noch in 2D. Deshalb pushMatrix/popMatrix statt
+             * pushPose/popPose und ein Verschieben mit ZWEI Werten; die dritte Achse gab es
+             * hier ohnehin nur als 0. */
+            drawContext.pose().pushMatrix();
             float offset = (1F - hudShowProgress) * (float) Minecraft.getInstance().getWindow().getGuiScaledHeight();
-            drawContext.pose().translate(0F, offset, 0F);
+            drawContext.pose().translate(0F, offset);
             hudMatrixPushed = true;
         }
     }
@@ -864,7 +868,7 @@ public class TrackerClientClip extends TrackerClip
     {
         if (hudMatrixPushed && drawContext != null)
         {
-            drawContext.pose().popPose();
+            drawContext.pose().popMatrix();
             hudMatrixPushed = false;
         }
         endHudScaleRestore();

@@ -55,7 +55,15 @@ public final class SprintFovLogik
             if (player == null) return null;
 
             boolean isSprinting = player.isSprinting();
-            float fovMultiplier = player.getFieldOfViewModifier();
+            /* 26.2: getFieldOfViewModifier nimmt zwei Werte, die es sich frueher selbst holte.
+             * Erster: darf der Fernrohr-Zoom (fester Wert 0.1) durchschlagen. In 1.21.1 gab es
+             * den Schalter nicht, der Zweig griff immer — deshalb hier true, das ist die
+             * unveraenderte Bedingung. (Vanilla setzt inzwischen "nur in Ich-Perspektive" ein;
+             * fuer diesen Aufrufer ist es ohnehin gleich, der Wert wird nur beim SPRINTEN
+             * benutzt, und wer durch ein Fernrohr schaut, sprintet nicht.)
+             * Zweiter: die Mischstaerke aus den Optionen (fovEffectScale), die frueher in der
+             * Methode selbst nachgeschlagen wurde. */
+            float fovMultiplier = player.getFieldOfViewModifier(true, mc.options.fovEffectScale().get().floatValue());
             long worldTime = mc.level == null ? 0L : mc.level.getGameTime();
 
             /* Iter-17 fix: do NOT bail when player stops sprinting, bail only when the

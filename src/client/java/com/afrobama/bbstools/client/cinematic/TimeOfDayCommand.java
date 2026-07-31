@@ -135,9 +135,24 @@ public final class TimeOfDayCommand
     {
         try
         {
-            /* Yarn 1.21.1: ServerWorld.setTimeOfDay(long). Direct call —
-             *  bytecode is a single INVOKEVIRTUAL after JIT. */
-            world.setDayTime(time);
+            /* ⚠️ 26.2: setDayTime(long) gibt es nicht mehr. Die Tageszeit gehoert einer UHR,
+             * und eine Dimension muss keine haben — deshalb ein Optional. Gesetzt wird sie
+             * ueber den Uhrenverwalter der Welt.
+             * VERHALTENSAENDERUNG: in einer Dimension ohne eigene Uhr (Nether, Ende) gibt es
+             * nichts zu setzen; frueher schluckte setDayTime das stillschweigend, jetzt meldet
+             * der Befehl es als Fehlschlag und der Aufrufer sagt es dem Nutzer.
+             * ⚠️ Und die Uhr ist geteilt: alle Dimensionen, die dieselbe Uhr fuehren, springen
+             * mit — vorher stand die Zeit an der einzelnen Welt. */
+            java.util.Optional<net.minecraft.core.Holder<net.minecraft.world.clock.WorldClock>> uhr = world.dimensionType().defaultClock();
+
+            if (uhr.isEmpty())
+            {
+                BBSToolsMod.LOG.warn("/bbstools tod: dimension {} has no clock of its own, nothing to set", world.dimension().identifier());
+
+                return false;
+            }
+
+            world.clockManager().setTotalTicks(uhr.get(), time);
             return true;
         }
         catch (LinkageError directFail)

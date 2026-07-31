@@ -91,7 +91,9 @@ public class FilmControllerContext
         this.replay = replay;
         this.camera = context.levelState().cameraRenderState;
         this.stack = context.poseStack();
-        this.consumers = context.consumers();
+        /* 26.2: LevelRenderContext#consumers() heisst jetzt submitNodeCollector() — Fabric ist
+         * der Umstellung vom Sofort-Verbraucher auf den Auftrags-Sammler im Namen gefolgt. */
+        this.consumers = context.submitNodeCollector();
         this.transition = net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
 
         return this;

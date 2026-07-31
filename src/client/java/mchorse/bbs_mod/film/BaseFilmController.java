@@ -17,7 +17,6 @@ import mchorse.bbs_mod.film.replays.FormControlKeys;
 import mchorse.bbs_mod.film.replays.PerLimbService;
 import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.FormUtils;
-import mchorse.bbs_mod.forms.CustomVertexConsumerProvider;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.renderers.FormRenderer;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -56,8 +55,11 @@ import mchorse.bbs_mod.utils.keyframes.KeyframeSegment;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.ClientAvatarState;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -65,6 +67,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
@@ -113,9 +116,12 @@ public abstract class BaseFilmController
             Lerps.lerp(entity.getPrevZ(), entity.getZ(), transition)
         );
 
-        double cx = camera.position().x;
-        double cy = camera.position().y;
-        double cz = camera.position().z;
+        /* 26.2: CameraRenderState ist ein eingefrorener Zustand mit oeffentlichen Feldern,
+         * kein lebendes Camera-Objekt mehr — position() gibt es nicht, die Position steht
+         * in pos. */
+        double cx = camera.pos.x;
+        double cy = camera.pos.y;
+        double cz = camera.pos.z;
 
         boolean relative = context.replay != null && context.relative;
 
@@ -181,9 +187,19 @@ public abstract class BaseFilmController
 
         FormRenderingContext formContext = new FormRenderingContext()
             .set(FormRenderType.ENTITY, entity, stack, light, overlay, transition)
-            .camera(camera)
             .stencilMap(context.map)
             .color(context.color);
+
+        /* 26.2: FormRenderingContext#camera nimmt ein lebendes net.minecraft.client.Camera;
+         * hier liegt nur noch der eingefrorene CameraRenderState des Weltdurchgangs vor.
+         * Deshalb dieselben vier Werte von Hand — Zeile fuer Zeile das, was die
+         * Camera-Ueberladung tut, nur aus dem Zustand statt aus dem Objekt gelesen:
+         * Position, Neigung/Drehung in Radiant, Sichtfeld aus den Optionen und die
+         * Ansichtsdrehung aus dem Quaternion. */
+        formContext.camera.position.set(camera.pos.x, camera.pos.y, camera.pos.z);
+        formContext.camera.rotation.set(MathUtils.toRad(-camera.xRot), MathUtils.toRad(camera.yRot), 0F);
+        formContext.camera.fov = MathUtils.toRad(Minecraft.getInstance().options.fov().get());
+        formContext.camera.view.identity().rotate(camera.orientation);
 
         stack.pushPose();
 
@@ -291,7 +307,7 @@ public abstract class BaseFilmController
             stack.pushPose();
             stack.translate(position.x - cx, position.y - cy, position.z - cz);
 
-            renderNameTag(entity, Component.literal(StringUtils.processColoredText(context.nameTag)), stack, context.consumers, light);
+            renderNameTag(entity, Component.literal(StringUtils.processColoredText(context.nameTag)), stack, context.consumers, light, camera.orientation);
 
             stack.popPose();
         }
@@ -805,39 +821,51 @@ public abstract class BaseFilmController
         return MatrixStackUtils.stripScale(full);
     }
 
-    private static void renderNameTag(IEntity entity, Component text, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light)
+    /**
+     * ⚠️ 26.2: {@code cameraOrientation} wird jetzt hereingereicht statt aus dem
+     * EntityRenderDispatcher geholt — den Getter gibt es dort nicht mehr, die Kameradrehung
+     * steht im eingefrorenen {@link CameraRenderState#orientation} des Weltdurchgangs. Das
+     * ist zugleich die genauere Quelle: derselbe Wert, mit dem dieses Bild aufgebaut wird.
+     */
+    private static void renderNameTag(IEntity entity, Component text, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, org.joml.Quaternionf cameraOrientation)
     {
         boolean sneaking = !entity.isSneaking();
         float hitboxH = (float) entity.getPickingHitbox().h + 0.5F;
 
         matrices.pushPose();
         matrices.translate(0F, hitboxH, 0F);
-        matrices.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
+        matrices.mulPose(cameraOrientation);
         matrices.scale(0.025F, -0.025F, 0.025F);
 
-        Matrix4f matrix4f = matrices.last().pose();
         Font textRenderer = Minecraft.getInstance().font;
-        CustomVertexConsumerProvider consumers = FormUtilsClient.getProvider();
 
         float opacity = Minecraft.getInstance().options.getBackgroundOpacity(0.25F);
         int background = (int) (opacity * 255F) << 24;
         float h = (float) (-textRenderer.width(text) / 2);
+        FormattedCharSequence sequence = text.getVisualOrderText();
 
-        /* 26.2: disableCull/enableCull um diesen Block entfallen ersatzlos. Culling gehoert zur
-         * Pipeline des RenderType, und welchen Font#drawInBatch nimmt, entscheidet Vanilla
+        /* 26.2: Font#drawInBatch ist ersatzlos weg — Text in der Welt wird nicht mehr sofort
+         * gezeichnet, sondern beim Sammler eingereicht (submitText). Die Reihenfolge der
+         * Argumente ist eine andere: nach Anzeigemodus kommen Licht, Farbe, Hintergrund und
+         * Umriss (0 = keiner). Der Text muss als FormattedCharSequence vorliegen, weil der
+         * Auftrag ihn erst spaeter im Bild aufloest — die Component selbst koennte bis dahin
+         * schon veraendert sein.
+         *
+         * 26.2: disableCull/enableCull um diesen Block entfallen ersatzlos. Culling gehoert zur
+         * Pipeline des RenderType, und welchen der Text-Auftrag nimmt, entscheidet Vanilla
          * (Text bzw. Text-See-Through) — von hier aus ist daran nichts mehr zu drehen. Noetig
          * ist es auch nicht: Platzierung (cameraOrientation + scale(0.025, -0.025, 0.025)) und
          * Zeichenweg sind Vanillas eigener Namensschild-Weg, der ohne Cull-Abschaltung
          * auskommt, und ein zur Kamera gedrehtes Schild sieht man nie von hinten. */
-        textRenderer.drawInBatch(text, h, 0, 0x20ffffff, false, matrix4f, consumers, sneaking ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, background, light);
+        vertexConsumers.submitText(matrices, h, 0F, sequence, false, sneaking ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, light, 0x20ffffff, background, 0);
 
         if (sneaking)
         {
-            textRenderer.drawInBatch(text, h, 0, -1, false, matrix4f, consumers, Font.DisplayMode.NORMAL, 0, light);
+            vertexConsumers.submitText(matrices, h, 0F, sequence, false, Font.DisplayMode.NORMAL, light, -1, 0, 0);
         }
 
-        consumers.draw();
-
+        /* 26.2: das abschliessende draw() entfaellt — es leerte den Sofort-Stapel, den es nicht
+         * mehr gibt. Der Bildgraph zeichnet den eingereichten Text, wenn er an der Reihe ist. */
         matrices.popPose();
     }
 
@@ -1024,7 +1052,27 @@ public abstract class BaseFilmController
                             float dz = (float) (player.getZ() - player.zo);
                             float stride = grounded ? Math.min(0.1F, (float) Math.sqrt(dx * dx + dz * dz)) : 0F;
 
-                            player.bob = player.oBob + (stride - player.oBob) * 0.4F;
+                            /* 26.2: bob/oBob sind vom Spieler nach ClientAvatarState gewandert und dort
+                             * PRIVAT. Oeffentlich bleiben updateBob(f) — das rechnet
+                             * bobO = bob; bob += (f - bob) * 0.4F — und getInterpolatedBob(t), das
+                             * zwischen bobO (t=0) und bob (t=1) mischt und damit BEIDE Werte lesbar
+                             * macht. Frueher stand hier bob = oBob + (stride - oBob) * 0.4F, und oBob
+                             * blieb unangetastet (die Momentaufnahme kam vom Spieler-Tick).
+                             * Zwei Aufrufe stellen genau das her: der erste schiebt bobO zurueck auf
+                             * diese Momentaufnahme (Vanillas eigenes updateBob hat sie in DIESEM Tick
+                             * schon ueberschrieben), der zweite setzt bob auf den Zielwert. Der
+                             * Eingang wird dafuer jeweils rueckwaerts aufgeloest, siehe bobEingangFuer.
+                             * ⚠️ Sauberer waere ein Accessor-Mixin auf ClientAvatarState (bob/bobO);
+                             * solange es das nicht gibt, ist das hier der einzige exakte Weg. */
+                            if (player instanceof AbstractClientPlayer clientPlayer)
+                            {
+                                ClientAvatarState bobZustand = clientPlayer.avatarState();
+                                float bobVorTick = bobZustand.getInterpolatedBob(0F);
+                                float ziel = bobVorTick + (stride - bobVorTick) * 0.4F;
+
+                                bobZustand.updateBob(bobEingangFuer(bobZustand, bobVorTick));
+                                bobZustand.updateBob(bobEingangFuer(bobZustand, ziel));
+                            }
 
                             if (player instanceof ClientPlayerEntityAccessor accessor)
                             {
@@ -1033,7 +1081,14 @@ public abstract class BaseFilmController
 
                             if (player instanceof LocalPlayer playerEntity)
                             {
-                                playerEntity.input.shiftKeyDown = sneaking;
+                                /* 26.2: ClientInput haelt die Tastenlage nicht mehr als einzelne
+                                 * Felder, sondern als unveraenderlichen Input-Record aus sieben
+                                 * booleans. shiftKeyDown wird deshalb nicht gesetzt, sondern der
+                                 * Record mit getauschtem shift() neu gebaut; die uebrigen sechs
+                                 * Tasten kommen unveraendert aus dem alten. */
+                                Input tasten = playerEntity.input.keyPresses;
+
+                                playerEntity.input.keyPresses = new Input(tasten.forward(), tasten.backward(), tasten.left(), tasten.right(), tasten.jump(), sneaking, tasten.sprint());
                             }
 
                             player.fallDistance = replay.keyframes.fall.interpolate(ticks).floatValue();
@@ -1042,6 +1097,19 @@ public abstract class BaseFilmController
                 }
             }
         }
+    }
+
+    /**
+     * Der Eingang, den {@link ClientAvatarState#updateBob(float)} braucht, damit danach
+     * {@code bob == ziel} steht. updateBob rechnet {@code bob += (f - bob) * 0.4F}, also ist
+     * {@code f = (ziel - 0.6 * bob) / 0.4}. {@code getInterpolatedBob(1F)} liefert das aktuelle
+     * {@code bob}. Nur fuer den Namensschild-/Sichtwackel-Weg in {@link #updateEndWorld()}.
+     */
+    private static float bobEingangFuer(ClientAvatarState zustand, float ziel)
+    {
+        float bob = zustand.getInterpolatedBob(1F);
+
+        return (ziel - bob * 0.6F) / 0.4F;
     }
 
     protected void updateEntityAndForm(IEntity entity, int tick)
