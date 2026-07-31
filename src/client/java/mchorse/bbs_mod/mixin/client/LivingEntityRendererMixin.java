@@ -1,118 +1,70 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.forms.renderers.MobFormRenderer;
-import mchorse.bbs_mod.utils.pose.Pose;
-import mchorse.bbs_mod.utils.pose.PoseTransform;
-import mchorse.bbs_mod.utils.pose.Transform;
-import net.minecraft.client.model.geom.ModelPart;
+import com.mojang.blaze3d.vertex.PoseStack;
+import mchorse.bbs_mod.client.renderer.MobFormPose;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.world.entity.LivingEntity;
-import org.joml.Vector3f;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import com.mojang.blaze3d.vertex.PoseStack;
-import java.util.Map;
 
+/**
+ * BBS' Form-Pose auf einen Vanilla-Mob legen — die EINREICH-Haelfte.
+ *
+ * <p>⚠️ 26.2 — DIESER HAKEN HAT ZWEI HAELFTEN STATT EINER. Bis 1.21.1 stand hier alles:
+ * nach {@code setupAnim} die Modellteile um die Pose ergaenzen, und am Ende von
+ * {@code render} zuruecksetzen. {@code render} heisst jetzt {@code submit} — aber das
+ * {@code setupAnim} des RUMPFMODELLS ist gar nicht mehr hier drin. Es ist in die Zeichenphase
+ * gewandert ({@code ModelFeatureRenderer.prepareModel}, am Bytecode geprueft); was in
+ * {@code submit} noch danach greift, sind nur die EBENEN (Ruestung, Kleidung), fuer die
+ * Vanilla direkt vor der Ebenen-Schleife einmal {@code setupAnim} ruft.
+ *
+ * <p>Deshalb hier drei Haken statt zwei:
+ *
+ * <ol>
+ *   <li>Kopf: die Pose an den Zustand stempeln, damit sie die Zeichenphase erreicht —
+ *       {@code MobFormRenderer}s Pose-Fenster ist nur waehrend des Einreichens offen.</li>
+ *   <li>nach {@code setupAnim}: auflegen, damit die EBENEN mit der Pose eingereicht werden.</li>
+ *   <li>Ende: wieder herunternehmen — die Teile gehoeren dem geteilten Modell des Renderers.</li>
+ * </ol>
+ *
+ * <p>Die RUMPF-Haelfte sitzt in {@code ModelFeatureRendererMixin}. Beide rufen dieselbe
+ * Logik in {@link MobFormPose}.
+ */
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin
 {
-    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/EntityModel;setupAnim(Lnet/minecraft/world/entity/Entity;FFFFF)V", ordinal = 0, shift = At.Shift.AFTER))
-    public void onSetAngles(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i, CallbackInfo info)
+    /**
+     * ⚠️ Der Stempel MUSS auch dann laufen, wenn gerade keine Form gerendert wird: er setzt
+     * dann {@code null} und raeumt damit einen wiederverwendeten Zustand auf. Ein Ueberspringen
+     * wuerde die Pose der vorigen Form an einer fremden Entity hinterlassen.
+     */
+    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V", at = @At("HEAD"))
+    public void bbs$poseAnDenZustand(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
     {
-        Pose pose = MobFormRenderer.getCurrentPose();
-        Pose poseOverlay = MobFormRenderer.getCurrentPoseOverlay();
-
-        if (pose != null)
-        {
-            pose = pose.copy();
-
-            for (Map.Entry<String, PoseTransform> transformEntry : poseOverlay.transforms.entrySet())
-            {
-                PoseTransform poseTransform = pose.get(transformEntry.getKey());
-                PoseTransform value = transformEntry.getValue();
-
-                if (value.fix != 0)
-                {
-                    poseTransform.translate.lerp(value.translate, value.fix);
-                    poseTransform.scale.lerp(value.scale, value.fix);
-                    poseTransform.lerpRotation(value, value.fix);
-                }
-                else
-                {
-                    poseTransform.translate.add(value.translate);
-                    poseTransform.scale.add(value.scale).sub(1, 1, 1);
-                    poseTransform.addRotation(value);
-                }
-            }
-
-            Map<String, ModelPart> parts = MobFormRenderer.getParts().get(livingEntity.getClass());
-
-            if (parts != null)
-            {
-                for (Map.Entry<String, ModelPart> entry : parts.entrySet())
-                {
-                    String key = entry.getKey();
-                    ModelPart value = entry.getValue();
-                    PoseTransform poseTransform = pose.transforms.get(key);
-
-                    if (poseTransform != null)
-                    {
-                        Transform transform = new Transform();
-
-                        transform.translate.x = value.x;
-                        transform.translate.y = value.y;
-                        transform.translate.z = value.z;
-                        transform.rotate.x = value.xRot;
-                        transform.rotate.y = value.yRot;
-                        transform.rotate.z = value.zRot;
-                        transform.scale.x = value.xScale;
-                        transform.scale.y = value.yScale;
-                        transform.scale.z = value.zScale;
-
-                        /* Vanilla ModelPart holds euler pitch/yaw/roll only, so a
-                         * quaternion pose bone is decomposed to its euler equivalent
-                         * here instead of reading the stale rotate triple. */
-                        Vector3f rotation = poseTransform.getEulerRotation(new Vector3f());
-
-                        value.x += poseTransform.translate.x;
-                        value.y += poseTransform.translate.y;
-                        value.z += poseTransform.translate.z;
-                        value.xRot += rotation.x;
-                        value.yRot += rotation.y;
-                        value.zRot += rotation.z;
-                        value.xScale += poseTransform.scale.x - 1F;
-                        value.yScale += poseTransform.scale.y - 1F;
-                        value.zScale += poseTransform.scale.z - 1F;
-
-                        MobFormRenderer.getCache().put(value, transform);
-                    }
-                }
-            }
-        }
+        MobFormPose.stempeln(zustand);
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
-    public void onRenderEnd(LivingEntity livingEntity, float f, float g, PoseStack matrixStack, SubmitNodeCollector vertexConsumerProvider, int i, CallbackInfo info)
+    @Inject(
+        method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/model/EntityModel;setupAnim(Ljava/lang/Object;)V",
+            ordinal = 0,
+            shift = At.Shift.AFTER
+        )
+    )
+    public void onSetAngles(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
     {
-        for (Map.Entry<ModelPart, Transform> entry : MobFormRenderer.getCache().entrySet())
-        {
-            Transform transform = entry.getValue();
-            ModelPart value = entry.getKey();
+        MobFormPose.auflegen(zustand);
+    }
 
-            value.x = transform.translate.x;
-            value.y = transform.translate.y;
-            value.z = transform.translate.z;
-            value.xRot = transform.rotate.x;
-            value.yRot = transform.rotate.y;
-            value.zRot = transform.rotate.z;
-            value.xScale = transform.scale.x;
-            value.yScale = transform.scale.y;
-            value.zScale = transform.scale.z;
-        }
-
-        MobFormRenderer.getCache().clear();
+    @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V", at = @At("TAIL"))
+    public void onRenderEnd(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
+    {
+        MobFormPose.zuruecksetzen();
     }
 }
