@@ -495,6 +495,7 @@ public class BBSRendering
 
     public static void onWorldRenderBegin()
     {
+
         if (orthoDistance > 0F)
         {
             /* Give back the culling disabled for the previous ortho frame
