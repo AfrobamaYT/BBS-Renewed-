@@ -149,8 +149,6 @@ public class Batcher2D
      */
     public void clip(int x, int y, int w, int h, int sw, int sh)
     {
-        this.context.enableScissor(x, y, x + w, y + h);
-
         /* Same nesting rule the extractor applies: the new rect is intersected with the one
          * already in force, so an inner clip can never widen an outer one. */
         ScreenRectangle rect = new ScreenRectangle(x, y, w, h);
@@ -161,6 +159,29 @@ public class Batcher2D
             ScreenRectangle intersection = current.intersection(rect);
 
             rect = intersection == null ? ScreenRectangle.empty() : intersection;
+        }
+
+        /* ⛔ VANILLA BEKOMMT DASSELBE RECHTECK WIE DER SPIEGEL. Vorher stand dieser Aufruf
+         * GANZ OBEN und reichte das ROHE Rechteck durch, waehrend unten das GESCHNITTENE auf
+         * den eigenen Stapel ging -- zwei verschiedene Schnitte fuer denselben Abschnitt.
+         *
+         * Jeder Renderzustand nennt sein Schnittrechteck aus diesem Spiegel
+         * ({@code scissors.peek()}); ein leeres dort schneidet ALLES weg, was danach
+         * eingereiht wird. Beim Scrollen in einem Dock wandert Inhalt aus dem sichtbaren
+         * Bereich, der Schnitt wird leer -- und mit ihm verschwanden die Knoepfe des ganzen
+         * Docks, in mehreren Docks, weil alle denselben Weg nehmen (vom Nutzer gemeldet).
+         *
+         * Ein leerer Schnitt wird NICHT an Vanilla gereicht: enableScissor mit x2 <= x1
+         * ist nichts, was man einem fremden Zeichner zumutet. Der Spiegel traegt das leere
+         * Rechteck trotzdem -- dort ist es die richtige Aussage ("hier ist nichts sichtbar"),
+         * und die Zustaende lesen es korrekt. */
+        if (rect.width() > 0 && rect.height() > 0)
+        {
+            this.context.enableScissor(rect.left(), rect.top(), rect.right(), rect.bottom());
+        }
+        else
+        {
+            this.context.enableScissor(x, y, x, y);
         }
 
         this.scissors.push(rect);
