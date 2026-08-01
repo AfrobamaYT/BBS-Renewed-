@@ -58,8 +58,20 @@ public class MiniaturRenderer extends PictureInPictureRenderer<MiniaturZustand>
 
         try
         {
-            zustand.zeichner().zeichneMiniatur(zustand.kontext(),
-                zustand.x0(), zustand.y0(), zustand.x1(), zustand.y1());
+            /* ⛔ EIGENER SAMMLER, SONST STIRBT DAS SPIEL. Formen reichen ihre Geometrie bei
+             * einem SubmitNodeCollector ein; in einem Weltdurchgang meldet der Weltzeichner
+             * ihn an, hier gibt es keinen. Ohne diese Klammer wirft FormSammler.pflicht()
+             * "Kein Sammler angemeldet" -- und zwar in JEDEM Bild, was die Instanz sofort
+             * reisst (am 2026-08-01 genau so passiert, crash-2026-08-01_17.04.14).
+             *
+             * mitEigenemSammler macht die drei Schritte, die Vanilla in
+             * PictureInPictureRenderer.prepare auch macht: frischen Speicher anlegen,
+             * einreichen lassen, und die eingereichten Auftraege ZEICHNEN lassen. Ohne den
+             * dritten Schritt sammelt man Auftraege, die niemand ausfuehrt -- die Miniatur
+             * bliebe leer, ohne jede Meldung. */
+            mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
+                zustand.zeichner().zeichneMiniatur(zustand.kontext(),
+                    zustand.x0(), zustand.y0(), zustand.x1(), zustand.y1()));
         }
         finally
         {
