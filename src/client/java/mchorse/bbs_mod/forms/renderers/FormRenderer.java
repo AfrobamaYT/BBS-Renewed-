@@ -94,12 +94,30 @@ public abstract class FormRenderer <T extends Form>
          *
          * Derselbe Weg, den schon das Bodengitter (41ef900aa) und die grosse Vorschau
          * (2b95ec8e5) gegangen sind. Siehe MiniaturZustand. */
-        net.minecraft.client.gui.navigation.ScreenRectangle flaeche =
-            new net.minecraft.client.gui.navigation.ScreenRectangle(x1, y1, x2 - x1, y2 - y1);
-
-        context.batcher.bildImBild(
-            new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturZustand(
-                this, context, x1, y1, x2, y2, flaeche, flaeche));
+        /* ⛔ ABGESCHALTET, WEIL ER DAS SPIEL REISST. Der eingereihte Weg (MiniaturZustand)
+         * macht die Miniaturen sichtbar -- und kostete zwei Abstuerze:
+         *
+         *   crash-2026-08-01_17.24.56  Nutzer klickt im Morph-Panel
+         *   crash-2026-08-01_17.28.58  Panel nur geoeffnet, kein Klick noetig
+         *   beide: IllegalStateException: Pose stack not empty (LevelRenderer.checkPoseStack)
+         *
+         * Ausgeschlossen: alle Form-Zeichner sind in pushPose/popPose zaehlbar ausgeglichen,
+         * zwischen push und pop steht in keinem ein frueher return, und ein try/catch um den
+         * Zeichenaufruf aendert nichts -- es ist also KEIN Ausnahme-Leck, sondern ein echtes
+         * unausgeglichenes push. Der Verdacht: renderInUI legt auf context.batcher.pose(),
+         * und in der Bild-im-Bild-Phase ist das nicht mehr derselbe Stapel wie im
+         * UI-Durchlauf.
+         *
+         * Eine unsichtbare Miniatur ist ein Schoenheitsfehler. Ein Absturz kostet dem Nutzer
+         * seine Szene. Bis der Stapel geklaert ist, gilt der alte Weg.
+         *
+         * MiniaturZustand und MiniaturRenderer bleiben stehen -- samt Registrierung; sie
+         * kosten nichts, solange niemand einreiht, und der naechste Anlauf faengt nicht bei
+         * null an. Der vermutlich richtige Entwurf steht in docs/26-2-VIEWPORT-BEFUNDE.md:
+         * EIN bildschirmgrosser Sammel-Zustand fuer alle Miniaturen statt einer Textur je
+         * Zelle -- dann bleiben die Bildschirmkoordinaten gueltig und es gibt genau einen
+         * Stapel-Wechsel statt einem je Vorschau. */
+        this.renderInUI(context, x1, y1, x2, y2);
 
         FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();
