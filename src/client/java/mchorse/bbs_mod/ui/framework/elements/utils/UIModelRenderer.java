@@ -45,6 +45,19 @@ public abstract class UIModelRenderer extends UIElement
      * Blit-Bereich stimmt noch nicht. Auf {@code true} stellen, sobald die Bedeutung von
      * x0/y0/x1/y1 gemessen ist (Aufgabe 96).
      */
+    /**
+     * ⚠️ AUS, ABER NICHT MEHR AUS DEM ALTEN GRUND (2026-08-01).
+     *
+     * <p>Abgeschaltet wurde der Schalter, weil er den Client riss. Der Absturz kam vom
+     * ausgelaufenen Zeichenbereich und ist mit dessen Freigabe (06fbc62e0) weg: einmal
+     * angeschaltet und gemessen, kein Absturz mehr, und der Zeichner wird sauber erreicht
+     * (41 Einreihungen, 41 Zustellungen, Grenzen exakt 200,18 bis 620,340).
+     *
+     * <p>Er bleibt trotzdem aus, weil er noch NICHTS ZEICHNET: die uebergebene Ansicht ist
+     * eine Welt-Kameramatrix und passt nicht in den Raum des Bild-im-Bild-Zeichners. Ein
+     * Schalter, der je Bild einen Durchgang kostet und nichts liefert, gehoert aus.
+     * Anschalten, sobald die Ansicht stimmt -- Einzelheiten in VorschauGitterRenderer.
+     */
     private static final boolean GITTER_UEBER_BILD_IM_BILD = false;
 
     private static Vector3d vec = new Vector3d();

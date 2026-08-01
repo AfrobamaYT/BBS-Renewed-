@@ -814,6 +814,12 @@ public class Batcher2D
      */
     public void bildImBild(net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState zustand)
     {
+        /* Messfuehler Aufgabe 96: eingereiht ja/nein -- die Gegenprobe zum Zaehler im
+         * Zeichner. Stimmen beide Zahlen nicht ueberein, wird der Zustand unterwegs
+         * verworfen (fehlender Zeichner, siehe Warnung oben). */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("pip.eingereiht",
+            zustand.getClass().getSimpleName());
+
         guiRenderState(this.context).addPicturesInPictureState(zustand);
     }
 

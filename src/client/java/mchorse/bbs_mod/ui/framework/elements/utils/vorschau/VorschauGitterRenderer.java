@@ -25,6 +25,33 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
  * dass der Weg traegt, nicht die fertige Loesung. Modell, Partikel und die uebrigen
  * Vorschauinhalte folgen erst, wenn das Gitter gemessen sichtbar ist -- ein grosser Umbau
  * auf einen unbewiesenen Weg waere derselbe Fehler wie die zwei Versuche davor.
+ *
+ * <h2>⭐ STAND 2026-08-01: der Weg TRAEGT, es fehlt nur noch die Ansicht</h2>
+ *
+ * <p>Alles bis zum Bildpunkt ist gemessen, nichts davon vermutet:
+ *
+ * <pre>
+ * pip.eingereiht = 41                    der Zustand wird eingereiht
+ * pip.gitter     = 41                    renderToTexture wird erreicht
+ * ~pip.gitter    = 200,18 bis 620,340    die Grenzen sind exakt die Vorschauflaeche
+ * </pre>
+ *
+ * <p>Dazu eine Probe OHNE jede Kameramatrix -- zwei Kreuze in der Bodenebene, direkt im
+ * Koordinatensystem dieses Zeichners -- und die war SICHTBAR: 92 gelbe und 93 cyanfarbene
+ * Bildpunkte im Vorschaufeld. Das Zusammensetzen funktioniert also, der Blit kommt an, die
+ * Registrierung stimmt. Der fruehere Absturz ("render area out of bounds") kam vom
+ * ausgelaufenen Zeichenbereich und ist mit dessen Freigabe verschwunden.
+ *
+ * <p>⛔ Damit bleibt {@code zustand.ansicht()} als Ursache uebrig -- genau der Fehlermodus,
+ * den der Kommentar an {@link #renderToTexture} beschreibt. Die Probe lag als 92 Punkte
+ * breiter, EINEN Punkt hoher Strich am unteren Rand (y=641 von 644): die Kamera dieses Raums
+ * schaut waagerecht, die Bodenebene steht kantig dazu, und der Ursprung liegt nicht in der
+ * Mitte der Flaeche. Die Ansicht der Vorschau ist eine WELT-Kameramatrix und passt nicht in
+ * diesen Raum.
+ *
+ * <p>Naechster Schritt: an Vanillas {@code GuiEntityRenderer} ablesen ({@code javap -c}),
+ * welche Transformation der Grundzeichner selbst schon auf den Stapel legt, und die
+ * Vorschaukamera DARIN ausdruecken, statt sie darueberzumultiplizieren.
  */
 public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGitterZustand>
 {
@@ -56,6 +83,12 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
     @Override
     protected void renderToTexture(VorschauGitterZustand zustand, PoseStack stapel, SubmitNodeCollector sammler)
     {
+        /* Messfuehler Aufgabe 96: kommt der Bildgraph hier ueberhaupt an? Ohne das sind
+         * "der Zustand wird nie zugestellt" und "er wird zugestellt und zeichnet ins Leere"
+         * von aussen nicht zu unterscheiden. Standardmaessig aus, siehe Messpunkt. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("pip.gitter",
+            zustand.x0() + "," + zustand.y0() + " bis " + zustand.x1() + "," + zustand.y1());
+
         stapel.pushPose();
 
         stapel.mulPose(zustand.ansicht());
