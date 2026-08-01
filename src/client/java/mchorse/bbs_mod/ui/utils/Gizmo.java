@@ -871,6 +871,7 @@ public class Gizmo
                 builder.addVertex(mat, p2.x, p2.y, p2.z).setColor(r, g, b, 0.25F);
             }
 
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle1");
             SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
 
             /* Bright radial edges at the grab angle and the leading angle, like the axis pie. */
@@ -880,6 +881,7 @@ public class Gizmo
             this.pieEdge(builder, mat, right, down, startRad, radius, thickness, r, g, b);
             this.pieEdge(builder, mat, right, down, startRad + sweepRad, radius, thickness, r, g, b);
 
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle2");
             SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
         }
     }
@@ -963,6 +965,7 @@ public class Gizmo
              * kein Tiefenschreiben — die Linie darf keine Wand vor das Folgende legen).
              * Der globale Vergleich bleibt damit auf dem Wert, den drawOccludedGizmo
              * hinterlaesst, also demselben wie vorher nach dieser Methode. */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3");
             SofortZeichner.zeichnen(
                 FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, true),
                 builder.build(),
@@ -1105,6 +1108,7 @@ public class Gizmo
 
             if (ziel == null)
             {
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle4");
                 SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
                     builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, null);
             }
@@ -1112,6 +1116,7 @@ public class Gizmo
             {
                 /* Kennungen duerfen nicht gemischt und nicht von Tiefe verschluckt werden --
                  * sonst liest der Klick eine verrechnete Farbe oder gar keine. */
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle5");
                 SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
                     builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, ziel, null);
             }
@@ -1246,6 +1251,7 @@ public class Gizmo
                 }
             }
         
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle6");
             SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
 
             float lineThickness = 0.005F * scale;
@@ -1277,6 +1283,7 @@ public class Gizmo
             builder.addVertex(mat, ex - p2.x, 0, ez - p2.z).setColor(r, g, b, 1F);
             builder.addVertex(mat, ex + p2.x, 0, ez + p2.z).setColor(r, g, b, 1F);
 
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle7");
             SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
         }
         
@@ -1514,6 +1521,7 @@ public class Gizmo
                  * Der Deckkraft-Modulator lief frueher ueber setShaderColor; er reist
                  * jetzt als Farbe im Zug mit — noetig, weil der Billboard-Ring darueber
                  * seine Shaderfarbe selbst setzt und undurchsichtig hinterlaesst. */
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle8");
                 SofortZeichner.zeichnen(
                     FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
                     builder.build(),
