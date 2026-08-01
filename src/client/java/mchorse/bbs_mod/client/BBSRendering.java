@@ -619,11 +619,70 @@ public class BBSRendering
 
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, leseFboFuer(framebuffer));
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, exportFramebuffer.id);
+
+        /* ⛔ ALPHA MUSS 1 BLEIBEN, SONST FEHLT DER HIMMEL IM VORSCHAUFELD.
+         *
+         * Direkt aus BBS' Puffer gelesen (tools: Pufferprobe), nach dem Weltdurchgang:
+         *
+         *     Himmel  173,203,255,0     Farbe genau richtig (#ADCBFF), Alpha NULL
+         *     Boden   148,148,148,255
+         *     Modell  110,17,80,255
+         *
+         * Der Himmel wird also gezeichnet und ist nur vollstaendig durchsichtig -- Vanillas
+         * Himmelsdurchgang schreibt kein deckendes Alpha, weil der Bildschirm nie gemischt
+         * wird. Vanillas eigenes MainTarget zeigt dieselben Alpha-Nullen, das ist kein
+         * Portierfehler. In 1.21.1 stand hier Alpha 1, weil Vanillas Loeschen damals BBS'
+         * Puffer traf (BBS tauschte das Feld Minecraft.mainRenderTarget); in 26.2 gibt es
+         * dieses Feld nicht mehr.
+         *
+         * Und die durchsichtigen Stellen verschwinden nicht durch Mischung, sondern durch
+         * DISCARD im GUI-Fragmentshader: mit einer Pipeline ganz OHNE Mischfunktion
+         * (GUI_OPAQUE_TEXTURED_BACKGROUND, blendFunction=Optional.empty) blieben sie ebenso
+         * unsichtbar, waehrend alle Punkte mit Alpha 255 sauber durchkamen. Am Blit fuehrt
+         * deshalb kein Weg vorbei.
+         *
+         * Loesung: NACH dem Blit den Alphakanal allein auf 1 setzen.
+         *
+         * ⚠️ DIE REIHENFOLGE IST KEIN GESCHMACK, SONDERN SPEZIFIKATION. Erst versucht und
+         * gemessen wirkungslos: vorher mit Alpha 1 loeschen und den Blit mit maskiertem
+         * Alphakanal fahren. glBlitFramebuffer beachtet Schreibmasken NAEMLICH NICHT -- laut
+         * GL-Spezifikation wirken auf einen Blit nur Pixel-Ownership, Scissor und
+         * sRGB-Wandlung, der komplette Fragmentteil wird uebersprungen. Die Maske blieb also
+         * folgenlos und die Nullen kamen mit. glClear dagegen BEACHTET die Maske, deshalb
+         * geht es hinterher und nur ueber den Alphakanal.
+         *
+         * Ebenfalls verworfen: BBS' Puffer vor dem Weltdurchgang mit Alpha 1 vorzuloeschen --
+         * gemessen wirkungslos, der Weltdurchgang ueberschreibt Farbe UND Alpha (mit Rot als
+         * Loeschfarbe gegengeprueft). */
         GL30.glBlitFramebuffer(
             0, 0, framebuffer.width, framebuffer.height,
             0, 0, targetWidth, targetHeight,
             GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
         );
+
+        /* Scissor aus: glClear beachtet den Scissor-test, und ein von der Oberflaeche
+         * stehengelassenes Rechteck wuerde den Alphakanal nur teilweise setzen -- ein
+         * halb sichtbarer Himmel waere schwerer zu deuten als gar keiner. */
+        boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+
+        if (scissor)
+        {
+            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        }
+
+        GL11.glColorMask(false, false, false, true);
+        GL11.glClearColor(0F, 0F, 0F, 1F);
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+        GL11.glColorMask(true, true, true, true);
+
+        if (scissor)
+        {
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        }
+
+        /* ⚗️ Auf Anforderung genau das messen, was die Vorschau danach abtastet. */
+        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtLesenFbo(exportFramebuffer.id,
+            targetWidth, targetHeight, "export-textur");
 
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);

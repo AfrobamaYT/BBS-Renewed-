@@ -86,6 +86,58 @@ public class Pufferprobe
         }
     }
 
+    /**
+     * Wie {@link #vielleichtLesen}, aber fuer einen fertigen GL-Rahmenpuffer statt eines
+     * {@code RenderTarget} — gebraucht fuer BBS' Export-Rahmenpuffer, der kein RenderTarget
+     * ist. Beantwortet die Frage, mit welchem Alpha die Vorschau-Textur tatsaechlich
+     * ankommt, statt sie aus dem Quelltext zu erschliessen.
+     */
+    public static void vielleichtLesenFbo(int fbo, int breite, int hoehe, String stelle)
+    {
+        if (System.getProperty(ANFORDERUNG) == null)
+        {
+            return;
+        }
+
+        System.clearProperty(ANFORDERUNG);
+
+        int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+
+        try
+        {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fbo);
+
+            StringBuilder sb = new StringBuilder(stelle);
+
+            sb.append(" ").append(breite).append("x").append(hoehe);
+
+            ByteBuffer puffer = BufferUtils.createByteBuffer(4);
+
+            for (float anteil : ANTEILE)
+            {
+                puffer.clear();
+                GL11.glReadPixels(breite / 2, (int) (hoehe * anteil), 1, 1,
+                    GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, puffer);
+
+                sb.append(" | ").append((int) (anteil * 100)).append("%=")
+                    .append(puffer.get(0) & 255).append(",")
+                    .append(puffer.get(1) & 255).append(",")
+                    .append(puffer.get(2) & 255).append(",")
+                    .append(puffer.get(3) & 255);
+            }
+
+            System.setProperty(ERGEBNIS, sb.toString());
+        }
+        catch (Throwable t)
+        {
+            System.setProperty(ERGEBNIS, "FEHLER " + t);
+        }
+        finally
+        {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
+        }
+    }
+
     private static String lesen(RenderTarget ziel, String stelle)
     {
         if (ziel == null)
