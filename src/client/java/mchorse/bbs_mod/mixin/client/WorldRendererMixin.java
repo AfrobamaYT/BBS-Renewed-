@@ -71,7 +71,7 @@ public class WorldRendererMixin
     @Inject(method = "addSkyPass", at = @At("HEAD"))
     private void bbs$himmelspassGemessen(CallbackInfo info)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass");
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass", "hotswap-probe-1");
     }
 
     /* 26.2: das Feld heisst entityOutlineTarget -- es war immer schon das Umriss-Ziel, der
