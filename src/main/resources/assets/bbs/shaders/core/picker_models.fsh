@@ -1,5 +1,14 @@
 #version 330
 
+/* ⛔ OHNE DIESEN IMPORT KOMPILIERT DER SHADER NICHT (2026-08-01 im Log gefunden):
+ *     Couldn't compile fragment shader (bbs:core/picker_models):
+ *     0(24) : error C1503: undefined variable "ColorModulator"
+ * und damit auch nicht die Pipeline bbs:pipeline/picker_models_opaque.
+ *
+ * ColorModulator steckt seit 26.2 im Vanilla-Block DynamicTransforms. Der Kommentar
+ * darunter sagte das bereits richtig -- nur der Import dazu fehlte. */
+#moj_import <minecraft:dynamictransforms.glsl>
+
 /* Derselbe Block wie im Vertexshader -- Reihenfolge und Groesse muessen mit
  * ModelVAORenderer.schreibeBlock uebereinstimmen, kein Compiler prueft das. */
 layout(std140) uniform ModelInfo {
