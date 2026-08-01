@@ -2766,7 +2766,26 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             max = clips.loopMax;
         }
 
-        max = Math.min(max, this.data.camera.calculateDuration());
+        /* ⛔ OHNE DIESEN TEST STIRBT DER CLIENT, SOBALD DAS PANEL OHNE FILM ZEICHNET.
+         *
+         * updateLogic ruft diese Methode in JEDEM Bild, und render ruft updateLogic --
+         * ein Film muss dafuer nicht geladen sein. Ist keiner da, ist this.data null und
+         * der Zugriff auf .camera reisst die Instanz:
+         *
+         *     NullPointerException: Cannot read field "camera" because "this.data" is null
+         *       at UIFilmPanel.getLoopingRange:2769 <- updateLogic:2973 <- render:2922
+         *
+         * Live passiert am 2026-08-01 in der 1.21.1-instanz, waehrend der Nutzer eine Szene
+         * vorbereitete. KEIN Portschaden: der Code steht in 1.21.1 und 26.2 zeichengleich an
+         * derselben Zeile; im Port fiel es nur nicht auf, weil dort zufaellig ein Film offen
+         * war.
+         *
+         * Ohne Film gibt es keine Dauer, auf die man begrenzen koennte -- die Grenze bleibt
+         * dann einfach ungesetzt, statt zu raten. */
+        if (this.data != null && this.data.camera != null)
+        {
+            max = Math.min(max, this.data.camera.calculateDuration());
+        }
 
         return new Vector2i(min, max);
     }
