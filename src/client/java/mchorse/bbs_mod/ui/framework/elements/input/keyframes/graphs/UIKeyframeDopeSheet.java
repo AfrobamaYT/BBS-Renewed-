@@ -77,11 +77,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     /**
      * Ein gefuelltes Rechteck in ein eingereihtes Netz.
      *
-     * <p>Dieselben vier Ecken in derselben Reihenfolge wie {@code Batcher2D.fillRect}, nur
-     * auf {@link VertexConsumer} statt auf {@code BufferBuilder}: die Einreihung
-     * ({@code Batcher2D.netz}) uebergibt einen VertexConsumer, und Batcher2D wird in dieser
-     * Welle von einem anderen Arbeiter bearbeitet -- die Verbreiterung dort gehoert dem
-     * Leiter. Ist sie geschehen, faellt diese Methode ersatzlos weg.
+     * <p>⛔ NUR NOCH FUER {@code UIKeyframeGraph} DA -- diese Datei ruft sie nicht mehr.
+     * {@code Batcher2D.fillRect} nimmt seit 447bb3ef7 selbst einen {@link VertexConsumer},
+     * taugt also fuer den eingereihten Weg; alle Aufrufer hier rufen ihn direkt. Offen sind
+     * nur noch die drei Aufrufe in {@code UIKeyframeGraph} (ausserhalb dieses Auftrags) --
+     * sind die umgestellt, faellt diese Methode ersatzlos weg.
+     *
+     * <p>Vier Ecken, Zeile fuer Zeile dieselben wie in fillRect: (x,y), (x,y+h), (x+w,y+h),
+     * (x+w,y) -- gleiche Reihenfolge, gleiche Drehrichtung, eine Farbe fuer alle vier.
      */
     public static void rechteck(VertexConsumer ecken, Matrix4f matrix, float x, float y, float w, float h, int farbe)
     {
@@ -1258,14 +1261,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 {
                     int w = trackWidth + 2;
 
-                    rechteck(ecken, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c);
+                    context.batcher.fillRect(ecken, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c, c, c, c);
                 }
 
                 if (Math.abs(xxx - xx) < 5)
                 {
                     c = Colors.setA(sheet.color, 0.5F);
 
-                    rechteck(ecken, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c);
+                    context.batcher.fillRect(ecken, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
                 }
             }
 
@@ -1285,9 +1288,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                     int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
                     int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
 
-                    rechteck(ecken, matrix, x1, y1 - 2, 1, 5, color);
-                    rechteck(ecken, matrix, x2, y1 - 2, 1, 5, color);
-                    rechteck(ecken, matrix, x1 + 1, y1, x2 - x1, 1, color);
+                    context.batcher.fillRect(ecken, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
+                    context.batcher.fillRect(ecken, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
+                    context.batcher.fillRect(ecken, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
 
                     forcedIndex += 1;
                 }

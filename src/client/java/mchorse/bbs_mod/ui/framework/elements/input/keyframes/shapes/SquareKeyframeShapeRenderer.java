@@ -25,14 +25,9 @@ public class SquareKeyframeShapeRenderer implements IKeyframeShapeRenderer
     @Override
     public void renderKeyframe(UIContext uiContext, VertexConsumer builder, Matrix4f matrix4f, int x, int y, int offset, int c)
     {
-        /* ⛔ Hier stand batcher.fillRect(builder, ...) -- das nimmt einen Sofort-Puffer.
-         * Eingereiht wird aber ein VertexConsumer, und Batcher2D gehoert in dieser Welle
-         * einem anderen Arbeiter. Die vier Ecken sind Zeile fuer Zeile dieselben wie dort
-         * (oben links, unten links, unten rechts, oben rechts) -- gleiche Reihenfolge,
-         * gleiche Drehrichtung, alle vier Farben identisch. */
-        builder.addVertex(matrix4f, x - offset, y - offset, 0F).setColor(c);
-        builder.addVertex(matrix4f, x - offset, y + offset, 0F).setColor(c);
-        builder.addVertex(matrix4f, x + offset, y + offset, 0F).setColor(c);
-        builder.addVertex(matrix4f, x + offset, y - offset, 0F).setColor(c);
+        /* fillRect nimmt seit 447bb3ef7 einen VertexConsumer, taugt also auch fuer den
+         * eingereihten Weg -- die Abschrift der vier Ecken ist damit weg. Gleiche Ecken,
+         * gleiche Reihenfolge: (x,y) → (x,y+h) → (x+w,y+h) → (x+w,y), eine Farbe viermal. */
+        uiContext.batcher.fillRect(builder, matrix4f, x - offset, y - offset, offset * 2, offset * 2, c, c, c, c);
     }
 }
