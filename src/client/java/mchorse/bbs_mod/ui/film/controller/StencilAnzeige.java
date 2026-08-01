@@ -78,6 +78,8 @@ public final class StencilAnzeige
 
         if (texture == null)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("umriss.keine-textur");
+
             return;
         }
 
@@ -85,6 +87,8 @@ public final class StencilAnzeige
 
         if (programm == null)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("umriss.kein-programm");
+
             return;
         }
 
@@ -96,6 +100,8 @@ public final class StencilAnzeige
         {
             if (!aktiv())
             {
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("umriss.nicht-aktiv");
+
                 return;
             }
 
@@ -104,6 +110,8 @@ public final class StencilAnzeige
         }
         catch (Throwable t)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("umriss.einstellung-fehlt", String.valueOf(t));
+
             return;
         }
 
@@ -113,6 +121,8 @@ public final class StencilAnzeige
          * ⚠ Die Schrittweite ist EIN BILDSCHIRMPIXEL in UV-Einheiten, nicht ein Texel. Die
          * Kachel spannt die ganze Textur auf, also ist 1/Breite genau ein Pixel -- der
          * Stencil liegt in Videoaufloesung und ein Texel dort ist viel kleiner. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("umriss.gezeichnet", "farbe=" + Integer.toHexString(farbe) + " breite=" + breite);
+
         mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
             abIndex, farbe, breite, 1F / area.w, 1F / area.h);
 

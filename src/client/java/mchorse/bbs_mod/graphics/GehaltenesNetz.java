@@ -196,10 +196,19 @@ public class GehaltenesNetz implements AutoCloseable
      */
     private void messen(String was, RenderPipeline pipeline)
     {
+        if (!Messpunkt.istAn())
+        {
+            return;
+        }
+
+        /* ⭐ MIT AUFRUFER. Die Pipeline allein sagt "Dreiecke", aber nicht WER Linien durch
+         * eine Dreiecks-pipeline schickt -- und genau das ist die Frage (Viewport-befund 2:
+         * aus Hilfslinien wird eine gefuellte Flaeche). rufer() ist teuer, darum erst nach
+         * dem Schalter-test. */
         Messpunkt.zaehle("netz." + was,
             (pipeline == null ? "ohne" : String.valueOf(pipeline.getLocation()))
             + " vertex=" + (this.zustand == null ? -1 : this.zustand.vertexCount())
-            + " ecken=" + (this.ecken != null));
+            + " von " + Messpunkt.rufer(3));
     }
 
     /**

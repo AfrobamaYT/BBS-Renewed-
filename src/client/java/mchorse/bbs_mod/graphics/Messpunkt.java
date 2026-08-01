@@ -91,6 +91,12 @@ public final class Messpunkt
         StackTraceElement[] stapel = Thread.currentThread().getStackTrace();
         int gefunden = 0;
 
+        /* ⛔ DIE AUFRUFENDE KLASSE SELBST MUSS RAUS. Sonst liefert der Abzug nur ihre eigenen
+         * Rahmen zurueck ("GehaltenesNetz <- GehaltenesNetz <- GehaltenesNetz") und
+         * beantwortet die Frage "WER macht das" gerade nicht. Am 2026-08-01 genau so
+         * hineingelaufen -- das Werkzeug war schuld, nicht der Befund. */
+        String eigene = null;
+
         for (StackTraceElement e : stapel)
         {
             if (!e.getClassName().startsWith("mchorse.") && !e.getClassName().startsWith("com.afrobama."))
@@ -99,6 +105,16 @@ public final class Messpunkt
             }
 
             if (e.getClassName().endsWith("Messpunkt") || e.getClassName().endsWith("Batcher2D"))
+            {
+                continue;
+            }
+
+            if (eigene == null)
+            {
+                eigene = e.getClassName();
+            }
+
+            if (e.getClassName().equals(eigene))
             {
                 continue;
             }
