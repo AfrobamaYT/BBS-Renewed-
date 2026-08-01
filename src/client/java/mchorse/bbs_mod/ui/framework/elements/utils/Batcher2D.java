@@ -711,6 +711,18 @@ public class Batcher2D
     {
         Matrix3x2f pose = new Matrix3x2f(this.context.pose());
 
+        /* Messfuehler Aufgabe 96: WER malt den Kasten, unter dem die Modellvorschau liegt?
+         * Gemessen wurde die Farbe (#0F1217, 98,53 % der Flaeche), aber nicht der Urheber --
+         * und Greppen half nicht, weil ein Dutzend Stellen dieselbe Farbe benutzt. Die
+         * Bedingung haelt die teure Stapelabfrage von jedem anderen Kasten fern. */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn()
+            && (c1 & 0xFFFFFF) == 0x0F1217 && Math.abs(x3 - x1) > 300F && Math.abs(y3 - y1) > 200F)
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("hintergrund.tief",
+                ((int) x1) + "," + ((int) y1) + " " + ((int) (x3 - x1)) + "x" + ((int) (y3 - y1))
+                + "  von " + mchorse.bbs_mod.graphics.Messpunkt.rufer(3));
+        }
+
         this.submit(new UIQuad(pose, x1, y1, c1, x2, y2, c2, x3, y3, c3, x4, y4, c4,
             this.scissors.peek(), bounds(pose, x1, y1, x2, y2, x3, y3, x4, y4)));
     }

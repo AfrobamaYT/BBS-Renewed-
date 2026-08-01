@@ -64,6 +64,62 @@ public final class Messpunkt
         }
     }
 
+    /**
+     * Laeuft die Messung gerade?
+     *
+     * <p>⛔ VOR JEDER TEUREN EINZELHEIT ABFRAGEN. Java wertet Argumente aus, BEVOR die
+     * gerufene Methode ihren Schalter prueft: {@code zaehle("x", rufer(3))} macht den
+     * Stapelabzug also auch bei ausgeschalteter Messung. Genau so eingebaut und sofort
+     * wieder korrigiert (2026-08-01) -- ein Messfuehler, der im Normalbetrieb Leistung
+     * frisst, wird beim naechsten Profillauf zum vermeintlichen Produktfehler.
+     */
+    public static boolean istAn()
+    {
+        return System.getProperty(SCHALTER) != null;
+    }
+
+    /**
+     * Die naechsten BBS-Aufrufer oberhalb dieser Stelle, als eine Zeile.
+     *
+     * <p>Fuer die Frage "WER macht das eigentlich", wenn Greppen nicht weiterhilft, weil
+     * viele Stellen dasselbe tun koennten. Teuer (fuellt einen Stapelabzug) -- nur unter
+     * einer Bedingung aufrufen, nie je Bild.
+     */
+    public static String rufer(int tiefe)
+    {
+        StringBuilder text = new StringBuilder();
+        StackTraceElement[] stapel = Thread.currentThread().getStackTrace();
+        int gefunden = 0;
+
+        for (StackTraceElement e : stapel)
+        {
+            if (!e.getClassName().startsWith("mchorse.") && !e.getClassName().startsWith("com.afrobama."))
+            {
+                continue;
+            }
+
+            if (e.getClassName().endsWith("Messpunkt") || e.getClassName().endsWith("Batcher2D"))
+            {
+                continue;
+            }
+
+            if (gefunden > 0)
+            {
+                text.append(" <- ");
+            }
+
+            text.append(e.getClassName().substring(e.getClassName().lastIndexOf('.') + 1))
+                .append('.').append(e.getMethodName()).append(':').append(e.getLineNumber());
+
+            if (++ gefunden >= tiefe)
+            {
+                break;
+            }
+        }
+
+        return text.toString();
+    }
+
     public static String an(boolean ein)
     {
         if (ein)
