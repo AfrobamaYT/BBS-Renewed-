@@ -761,7 +761,28 @@ public class BBSModClient implements ClientModInitializer
 
             Window window = Minecraft.getInstance().getWindow();
 
-            originalFramebufferScale = window.getWidth() / window.getGuiScaledWidth();
+            /* ⛔ DER NENNER IST DIE FENSTERBREITE, NICHT DIE GUI-BREITE. Dieser Wert meint das
+             * Verhaeltnis Rahmenpuffer zu Fenster -- also die Anzeigeskalierung eines HiDPI-
+             * Bildschirms. Auf einem gewoehnlichen Bildschirm ist er 1.
+             *
+             * 1.21.1 rechnete `getFramebufferWidth() / getWidth()`. Die Namen sind in 26.2
+             * verschoben, und dabei ist der Nenner verrutscht (gemessen an einer laufenden
+             * Instanz, beide Seiten):
+             *
+             *     yarn getFramebufferWidth 1280  ->  mojmap getWidth          1280
+             *     yarn getWidth            1280  ->  mojmap getScreenWidth    1280
+             *     yarn getScaledWidth       640  ->  mojmap getGuiScaledWidth  640
+             *
+             * Mit getGuiScaledWidth kam 1280/640 = 2 heraus statt 1 -- der Wert war die
+             * GUI-Skalierung. WindowMixin.getWidth() gibt daraufhin `Videobreite * 2` heraus,
+             * und BBSRendering.setupFramebuffer legte den Filmpuffer mit 2560x1440 an, waehrend
+             * die Welt 1280x720 hineinzeichnet und das Vorschaufeld die Textur mit 1280x720
+             * abtastet. Sichtbar war das als Vorschaufeld, das nur zur Haelfte gefuellt ist:
+             * oben Himmel, unten der durchscheinende Panel-Hintergrund (#171A1F =
+             * BBSSettings.DARK_BASE_SURFACE). 1.21.1 fuellt dieselbe Flaeche vollstaendig.
+             *
+             * Ganzzahlige Division wie in 1.21.1 -- gleiche Rechnung, gleiches Ergebnis. */
+            originalFramebufferScale = window.getWidth() / window.getScreenWidth();
         });
 
         URLTextureErrorCallback.EVENT.register((url, error) ->
