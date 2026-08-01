@@ -71,7 +71,25 @@ public class WorldRendererMixin
     @Inject(method = "addSkyPass", at = @At("HEAD"))
     private void bbs$himmelspassGemessen(CallbackInfo info)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass", "hotswap-probe-1");
+        /* ⚗️ 2026-08-01, zweite Runde. Der erste Zaehler hat die Frage "laeuft der Pass"
+         * beantwortet: ja, 45x in 4 Sekunden. Und die Weltansicht OHNE BBS-Oberflaeche
+         * zeichnet #ADCBFF, also genau die Farbe, die 1.21.1 im Vorschaufeld zeigt. Der
+         * Himmel ist damit in Ordnung -- verloren geht er nur auf dem Vorschau-Weg, also
+         * dort, wo BBS das Renderziel auf seinen eigenen Puffer umlenkt.
+         *
+         * Diese Messung fragt genau das ab, was die Umlenkung entscheidet, und zwar im
+         * Augenblick des Himmelspasses: greift sie hier ueberhaupt? Wenn hier
+         * canReplace=false steht, waehrend die uebrige Welt in BBS' Puffer landet, dann
+         * zeichnet der Himmel ins Hauptziel von Vanilla und niemand sieht ihn. */
+        RenderTarget ziel = net.minecraft.client.Minecraft.getInstance()
+            .gameRenderer.mainRenderTarget();
+        RenderTarget bbs = BBSRendering.getFramebuffer();
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass",
+            "canReplace=" + BBSRendering.canReplaceFramebuffer()
+            + " | renderingWorld=" + BBSRendering.renderingWorld
+            + " | zielIstBBS=" + (ziel == bbs)
+            + " | ziel=" + (ziel == null ? "null" : ziel.width + "x" + ziel.height));
     }
 
     /* 26.2: das Feld heisst entityOutlineTarget -- es war immer schon das Umriss-Ziel, der
