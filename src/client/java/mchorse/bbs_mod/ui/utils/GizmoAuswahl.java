@@ -66,8 +66,20 @@ final class GizmoAuswahl
             }
 
             /* View ring stays pickable even when the rings are hidden (see drawAxes visual pass).
-             * Uses the same ring VBO as the visual so the pick matches its thickness. */
-            if (active == null || active == Handle.VIEW) gizmo.drawCachedRingBillboard(stack, Gizmo.STENCIL_VIEW / 255F, 0F, 0F, 1F);
+             * Uses the same ring VBO as the visual so the pick matches its thickness.
+             *
+             * ⚠️ Der Blickring ist ein GEHALTENES Netz (GizmoRinge.billboardZeichnen) und holt
+             * sein Ziel dort selbst bei PickZiel -- der Weg durch Gizmo.drawCachedRingBillboard
+             * reicht keines durch. Frueher fehlte es ganz: die Kennung ging ins Hauptbild, also
+             * ein dunkelroter Fleck IM BILD und ein Ring, den der Klick nicht fand. Der Aufruf
+             * hier prueft nur, dass ein Ziel angemeldet ist -- fehlt es, scheitert der
+             * Auswahl-Durchgang LAUT statt still wieder ins Bild zu malen. */
+            if (active == null || active == Handle.VIEW)
+            {
+                PickZiel.pflicht();
+
+                gizmo.drawCachedRingBillboard(stack, Gizmo.STENCIL_VIEW / 255F, 0F, 0F, 1F);
+            }
         }
 
         if (showMove || showScale)

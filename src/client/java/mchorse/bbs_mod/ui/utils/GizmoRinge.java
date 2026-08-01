@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.GehaltenesNetz;
+import mchorse.bbs_mod.graphics.PickZiel;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.utils.Axis;
@@ -153,6 +154,15 @@ public class GizmoRinge
     /**
      * Zeichnet den Ring dem Betrachter zugewandt -- der Ring, mit dem man um die Sichtachse
      * dreht.
+     *
+     * <p>⚠️ Derselbe Aufruf dient ZWEI Durchgaengen: sichtbar ins Bild und als Kennung in
+     * BBS' Auswahl-Puffer ({@code GizmoAuswahl}, Handle.VIEW). Welcher gerade laeuft, sagt
+     * {@link PickZiel} -- angemeldet von {@code StencilFormFramebuffer.apply()}. Genau so
+     * macht es {@code Gizmo.drawOccludedRing} fuer die drei Achsenringe.
+     *
+     * <p>Fehlte dieses Durchreichen, landete die Kennung im Hauptbild: ein dunkelroter Fleck
+     * SICHTBAR im Bild und ein Blickring, den der Klick nicht findet -- ein Fehler, der
+     * beides zugleich verursacht und nichts meldet.
      */
     public void billboardZeichnen(PoseStack stapel, float r, float g, float b, float a, float skalierung)
     {
@@ -180,7 +190,7 @@ public class GizmoRinge
 
         stapel.scale(skalierung, skalierung, skalierung);
 
-        zeichnen(this.ring, stapel, r, g, b, a, null);
+        zeichnen(this.ring, stapel, r, g, b, a, PickZiel.aktiv());
 
         stapel.popPose();
     }
@@ -217,9 +227,30 @@ public class GizmoRinge
         return new Matrix4f(RenderSystem.getModelViewMatrixCopy()).mul(stapel.last().pose());
     }
 
-    private static void zeichnen(GehaltenesNetz netz, PoseStack stapel, float r, float g, float b, float a, com.mojang.blaze3d.pipeline.RenderTarget ziel)
+    /**
+     * @param farbZiel {@code null} = sichtbar ins Hauptbild, mit Mischung und Tiefentest.
+     *                 Sonst BBS' Auswahl-Puffer -- und dann OHNE beides, wie bei
+     *                 {@link #kugelMaskeZeichnen} und {@code Gizmo.drawOccludedRing}: eine
+     *                 gemischte Kennung ist eine Zahl, die auf nichts zeigt, und eine von
+     *                 der Tiefe verschluckte gar keine. Kein Tiefenanhang, darum auch kein
+     *                 Tiefenziel.
+     */
+    private static void zeichnen(GehaltenesNetz netz, PoseStack stapel, float r, float g, float b, float a, GpuTextureView farbZiel)
     {
-        netz.zeichnen(pipeline(), modellAnsicht(stapel), new org.joml.Vector4f(r, g, b, a), null, ziel, null);
+        Matrix4f modellAnsicht = modellAnsicht(stapel);
+        org.joml.Vector4f farbe = new org.joml.Vector4f(r, g, b, a);
+
+        if (farbZiel == null)
+        {
+            netz.zeichnen(pipeline(), modellAnsicht, farbe, null, (com.mojang.blaze3d.pipeline.RenderTarget) null, null);
+
+            return;
+        }
+
+        /* Culling bleibt aus wie im sichtbaren Zug -- der Ring ist eine duenne Roehre, und
+         * die Kennung muss dieselbe Silhouette treffen wie das, was der Nutzer sieht. */
+        netz.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, false),
+            modellAnsicht, farbe, null, farbZiel, null, null);
     }
 
     /**
