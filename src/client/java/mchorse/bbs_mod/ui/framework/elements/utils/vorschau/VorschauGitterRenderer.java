@@ -55,6 +55,17 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
  */
 public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGitterZustand>
 {
+    /**
+     * Wie die Perspektive entsteht: durch eine untergeschobene Projektion (an) oder durch
+     * eigene Teilung durch w auf der CPU (aus).
+     *
+     * <p>Die CPU-Teilung ist BEWIESEN -- sie liefert das Gitter (41ef900aa). Sie traegt
+     * aber nur, weil ein Gitter 22 Ecken hat; fuer ein Modell mit Zehntausenden waere sie
+     * zu teuer. Darum dieser zweite Weg, hier am billigen Fall erprobt, bevor das Modell
+     * darauf umgestellt wird.
+     */
+    private static final boolean PROJEKTION_STATT_TEILUNG = true;
+
     @Override
     public Class<VorschauGitterZustand> getRenderStateClass()
     {
@@ -126,13 +137,38 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
          * fertige Geraeteraum-Koordinaten einreichen -- siehe linie(). Beim Gitter sind das
          * 22 Ecken je Bild, das faellt nicht ins Gewicht; fuer das Modell waere derselbe
          * Weg zu teuer und braucht eine andere Loesung. */
-        float halbeBreite = (zustand.x1() - zustand.x0()) / 2F;
-        float halbeHoehe = (zustand.y1() - zustand.y0()) / 2F;
+        if (!PROJEKTION_STATT_TEILUNG)
+        {
+            float halbeBreite = (zustand.x1() - zustand.x0()) / 2F;
+            float halbeHoehe = (zustand.y1() - zustand.y0()) / 2F;
 
-        stapel.translate(0F, -halbeHoehe, 0F);
-        stapel.scale(halbeBreite, -halbeHoehe, -1F);
+            stapel.translate(0F, -halbeHoehe, 0F);
+            stapel.scale(halbeBreite, -halbeHoehe, -1F);
+        }
 
-        org.joml.Matrix4f abbildung = zustand.ansicht();
+        /* ⚗️ VERSUCH (2026-08-01): statt die Teilung durch w selbst zu rechnen, dem
+         * Zeichendurchgang eine echte perspektivische Projektion unterschieben. Die
+         * CPU-Teilung traegt das Gitter (22 Ecken), aber nicht das Modell (Zehntausende).
+         * Geht das hier, geht es auch dort -- das ist der billige Beweis vor dem teuren Umbau.
+         *
+         * Der Grundzeichner richtet seine eigene Projektion in prepareTexturesAndProjection
+         * ein, also VOR diesem Aufruf; ein Setzen hier ueberschreibt sie fuer die Geometrie,
+         * die gleich eingereicht wird. */
+        if (PROJEKTION_STATT_TEILUNG)
+        {
+            /* Der Stapel traegt dann NUR die Ansicht -- die Bildpunkt-Abbildung des
+             * Grundzeichners muss weg, weil die Grafikkarte den Geraeteraum ohnehin selbst
+             * auf die Textur abbildet. Wer beides stehen laesst, projiziert zweimal. */
+            stapel.last().pose().identity();
+            stapel.mulPose(zustand.ansicht());
+
+            mchorse.bbs_mod.graphics.Projektion.setzen(zustand.projektion(),
+                com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+        }
+
+        org.joml.Matrix4f abbildung = PROJEKTION_STATT_TEILUNG
+            ? null
+            : new org.joml.Matrix4f(zustand.projektion()).mul(zustand.ansicht());
 
         sammler.submitCustomGeometry(stapel, RenderTypes.LINES, (pose, ecken) ->
         {
@@ -176,6 +212,28 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
         com.mojang.blaze3d.vertex.PoseStack.Pose pose, org.joml.Matrix4f abbildung,
         float x1, float z1, float x2, float z2, float r, float g, float b)
     {
+        /* Ohne Abbildung liegt die Perspektive im Durchgang selbst (untergeschobene
+         * Projektion): dann reisen die Ecken in WELT-koordinaten, und Pose und Projektion
+         * erledigen den Rest. */
+        if (abbildung == null)
+        {
+            float wx = x2 - x1;
+            float wz = z2 - z1;
+            float weite = (float) Math.sqrt(wx * wx + wz * wz);
+
+            if (weite == 0F)
+            {
+                return;
+            }
+
+            ecken.addVertex(pose, x1, 0F, z1).setColor(r, g, b, 1F)
+                .setNormal(pose, wx / weite, 0F, wz / weite).setLineWidth(2F);
+            ecken.addVertex(pose, x2, 0F, z2).setColor(r, g, b, 1F)
+                .setNormal(pose, wx / weite, 0F, wz / weite).setLineWidth(2F);
+
+            return;
+        }
+
         org.joml.Vector4f a = abbildung.transform(new org.joml.Vector4f(x1, 0F, z1, 1F));
         org.joml.Vector4f e = abbildung.transform(new org.joml.Vector4f(x2, 0F, z2, 1F));
 

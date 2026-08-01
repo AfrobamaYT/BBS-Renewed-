@@ -495,10 +495,12 @@ public abstract class UIModelRenderer extends UIElement
                  * eingerechnet; sie war es nie. Ohne sie gibt es keine Perspektive, und der
                  * Zeichner kann seinen Raum nicht auf die Flaeche abbilden.
                  *
-                 * Reihenfolge: erst Projektion, dann die Pose daraufmultiplizieren -- die
-                 * Pose traegt bereits Kameraansicht und die Verschiebung um die
-                 * Kameraposition (siehe renderModel). */
-                new Matrix4f(this.camera.projection).mul(matrix4f),
+                 * Projektion und Ansicht reisen GETRENNT: der Zeichner braucht beides
+                 * einzeln, je nachdem ob er die Projektion dem Durchgang unterschiebt oder
+                 * die Teilung durch w selbst rechnet. Die Pose traegt bereits Kameraansicht
+                 * und die Verschiebung um die Kameraposition (siehe renderModel). */
+                new Matrix4f(this.camera.projection),
+                new Matrix4f(matrix4f),
                 this.area.x, this.area.y, this.area.ex(), this.area.ey(),
                 /* ⚠️ NICHT null: blitTexture reicht scissorArea an den BlitRenderState
                  * durch. Ob null dort erlaubt ist, ist ungeprueft -- also lieber der

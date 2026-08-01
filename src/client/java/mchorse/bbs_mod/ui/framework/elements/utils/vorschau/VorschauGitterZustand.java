@@ -20,6 +20,9 @@ import org.joml.Matrix4f;
  * andere war. Ein Bild-in-Bild-Renderer bringt seine eigene Projektion mit -- das ist der
  * Unterschied.
  *
+ * @param projektion die Kameraprojektion der Vorschau, KOPIERT. Getrennt von der Ansicht,
+ *                   weil der Zeichner beides einzeln braucht: entweder er schiebt sie dem
+ *                   Durchgang unter, oder er rechnet die Teilung durch w selbst.
  * @param ansicht     die fertige Modell-Ansichts-Matrix, KOPIERT (der Stapel wird
  *                   weiterbenutzt, eine Referenz waere spaeter veraendert)
  * @param x0         linke Kante der Vorschauflaeche im GUI-Raum
@@ -30,6 +33,7 @@ import org.joml.Matrix4f;
  * @param bounds     die Flaeche fuer Keulen und Sortierung
  */
 public record VorschauGitterZustand(
+    Matrix4f projektion,
     Matrix4f ansicht,
     int x0,
     int y0,
