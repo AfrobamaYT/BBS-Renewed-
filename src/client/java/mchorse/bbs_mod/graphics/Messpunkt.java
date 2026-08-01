@@ -34,6 +34,10 @@ public final class Messpunkt
     private static final String SCHALTER = "bbs.mess";
     private static final String VORSATZ = "bbs.mess.";
 
+    /* Nur fuer stoerung(): Zaehler bleiben in den Systemeigenschaften, damit sie einen
+     * Hotswap ueberleben. Eine STOERUNG muss dagegen auch einen Absturz ueberleben. */
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+
     /** Einen Durchlauf an dieser Stelle zaehlen. Ohne Schalter passiert nichts. */
     public static void zaehle(String stelle)
     {
@@ -150,6 +154,24 @@ public final class Messpunkt
     public static void stoerung(String stelle, String was)
     {
         System.setProperty(VORSATZ + "!" + stelle, was == null ? "?" : was);
+
+        /* ⛔ AUCH INS LOG, nicht nur in die Systemeigenschaften.
+         *
+         * Eigenschaften sterben mit dem Prozess. Am 2026-08-01 hat genau das die Diagnose
+         * gefressen, fuer die diese Meldung gebaut wurde: die Stapelwache erkannte den
+         * liegengelassenen Matrizen-Stapel, die Instanz stuerzte einen Frame spaeter ab, und
+         * mit ihr war der Befund weg -- ein Melder, der mit dem Ungluecken untergeht, das er
+         * melden soll.
+         *
+         * Eine Zeile je Stoerung, nicht je Bild: die Eigenschaft wird ohnehin ueberschrieben,
+         * und dieselbe Stelle meldet in aller Regel dasselbe. Bei einem Zeichenpfad, der 60x
+         * je Sekunde stoert, waere das Log sonst unbrauchbar -- darum nur beim ERSTEN Mal je
+         * Stelle. */
+        if (System.getProperty(VORSATZ + "?gemeldet!" + stelle) == null)
+        {
+            System.setProperty(VORSATZ + "?gemeldet!" + stelle, "1");
+            LOGGER.warn("[bbs messpunkt] STOERUNG {}: {}", stelle, was);
+        }
     }
 
     public static String an(boolean ein)

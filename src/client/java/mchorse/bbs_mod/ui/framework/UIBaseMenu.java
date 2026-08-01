@@ -282,7 +282,19 @@ public abstract class UIBaseMenu
             this.context.reset();
             this.context.pushViewport(this.viewport);
 
-            this.root.render(this.context);
+            /* ⚗️ WACHE UM DEN GESAMTEN OBERFLAECHEN-DURCHLAUF.
+             *
+             * Vanilla bricht mit "Pose stack not empty" ab, aber erst beim naechsten
+             * Weltdurchgang und ohne eine einzige BBS-Zeile im Aufrufstapel. Eine Wache um
+             * die einzelnen Miniaturen (FormRenderer.renderUI) schlug bei 36 Panelwechseln
+             * NIE an -- die Form-Ebene ist also sauber, der Verursacher liegt darueber.
+             * Diese Wache faengt ihn auf der groben Ebene; ist sie rot, wird sie schrittweise
+             * nach unten verschoben, bis der Name feststeht.
+             *
+             * Der Name traegt das Panel mit, sonst sagt die Meldung nur DASS, nicht WO. */
+            mchorse.bbs_mod.graphics.Stapelwache.pruefen(
+                "menue:" + this.getClass().getSimpleName(), this.context.batcher.pose(),
+                () -> this.root.render(this.context));
 
             this.context.popViewport();
             this.context.postRender();
