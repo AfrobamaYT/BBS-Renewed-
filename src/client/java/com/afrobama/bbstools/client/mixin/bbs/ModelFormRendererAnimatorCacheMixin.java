@@ -47,7 +47,7 @@ public abstract class ModelFormRendererAnimatorCacheMixin
     /* BRÜCKEN-MUSTER, PRO-ENTITY-VARIANTE (2026-07-26) — siehe ModelShadowTimingMixin für die
      * volle begründung. Statisch (klassen-weit), weil der griff selbst nichts instanz-
      * spezifisches trägt — nur die throttle-ENTSCHEIDUNG bekommt instanz-primitive als arg. */
-    @Unique private static long bbstools$griffFrameStamp = Long.MIN_VALUE;
+    @Unique private static long bbstools$throttledGriffStamp = Long.MIN_VALUE;
     @Unique private static MethodHandle bbstools$throttledGriff;
 
     @Inject(method = "ensureAnimator", at = @At("HEAD"), cancellable = true, remap = false)
@@ -68,7 +68,7 @@ public abstract class ModelFormRendererAnimatorCacheMixin
             return;
         }
 
-        bbstools$refreshGriff();
+        bbstools$refreshThrottledGriff();
 
         long now = System.currentTimeMillis();
 
@@ -96,14 +96,28 @@ public abstract class ModelFormRendererAnimatorCacheMixin
         }
     }
 
-    /** Holt den griff neu, sobald ein neuer render-frame begonnen hat. */
-    private static void bbstools$refreshGriff()
+    /**
+     * Holt den griff neu, sobald ein neuer render-frame begonnen hat.
+     *
+     * <p>⛔ DER NAME MUSS UEBER ALLE MIXINS AUF {@code ModelFormRenderer} EINDEUTIG SEIN.
+     * Bis 2026-08-01 hiess diese methode {@code bbstools$refreshGriff} — genau wie die
+     * gleichnamige in {@link ModelFormRendererFastPathMixin}, das auf DIESELBE zielklasse
+     * geht. Mixin haelt dann eine und verwirft die andere:
+     *
+     * <pre>Method overwrite conflict for bbstools$refreshGriff ... Skipping method.</pre>
+     *
+     * <p>Die verworfene war diese hier. Folge: der aufruf oben landete im FastPath-rumpf,
+     * {@code bbstools$throttledGriff} blieb null, {@code bbstools$callThrottled} gab immer
+     * false zurueck — die ganze drossel lief leer. Kein crash, keine ausnahme, nur EINE
+     * WARN-zeile im log. Feld-namen schuetzt {@code @Unique}, methoden-namen NICHT.
+     */
+    private static void bbstools$refreshThrottledGriff()
     {
         long stamp = BBSPerfConfig.bbsRenderHeadNs;
 
-        if (stamp != bbstools$griffFrameStamp)
+        if (stamp != bbstools$throttledGriffStamp)
         {
-            bbstools$griffFrameStamp = stamp;
+            bbstools$throttledGriffStamp = stamp;
             bbstools$throttledGriff = MixinBruecke.griff("ModelFormRendererAnimatorCacheLogik", "throttled", 2);
         }
     }

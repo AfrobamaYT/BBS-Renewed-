@@ -39,7 +39,7 @@ public abstract class ModelFormRendererFastPathMixin
     /* BRÜCKEN-MUSTER, PRO-ENTITY-VARIANTE (2026-07-26) — siehe ModelShadowTimingMixin für die
      * volle begründung. DER teuerste der sechs mixins: trägt den ganzen crowd-fast-path. */
     @org.spongepowered.asm.mixin.Unique
-    private static long bbstools$griffFrameStamp = Long.MIN_VALUE;
+    private static long bbstools$classifyGriffStamp = Long.MIN_VALUE;
     @org.spongepowered.asm.mixin.Unique
     private static MethodHandle bbstools$classifyGriff;
 
@@ -50,7 +50,7 @@ public abstract class ModelFormRendererFastPathMixin
         remap = false)
     private void bbstools$fastPathClassify(FormRenderingContext context, CallbackInfo ci)
     {
-        bbstools$refreshGriff();
+        bbstools$refreshClassifyGriff();
 
         if (bbstools$classifyGriff == null) return;
 
@@ -73,13 +73,13 @@ public abstract class ModelFormRendererFastPathMixin
     }
 
     /** Holt den griff neu, sobald ein neuer render-frame begonnen hat. */
-    private static void bbstools$refreshGriff()
+    private static void bbstools$refreshClassifyGriff()
     {
         long stamp = BBSPerfConfig.bbsRenderHeadNs;
 
-        if (stamp != bbstools$griffFrameStamp)
+        if (stamp != bbstools$classifyGriffStamp)
         {
-            bbstools$griffFrameStamp = stamp;
+            bbstools$classifyGriffStamp = stamp;
             bbstools$classifyGriff = MixinBruecke.griff("ModelFormRendererFastPathLogik", "classify", 4);
         }
     }
