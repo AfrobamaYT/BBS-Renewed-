@@ -165,12 +165,30 @@ public class ModelVAORenderer
          * In der Welt bleibt es das Hauptbild; in einer Oberflaechen-Vorschau muss dasselbe
          * Modell in die Textur des Bild-im-Bild-Zeichners, sonst malt es ins Hauptbild und
          * verschwindet unter dem Panel-Hintergrund. Siehe Zeichenziel. */
-        com.mojang.blaze3d.textures.GpuTextureView farbZiel =
-            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+        /* ⛔ DER AUSWAHL-PUFFER GEHT VOR — sonst bleibt der Replay-Umriss aus.
+         *
+         * Laeuft gerade der Kennungs-Durchgang, hat StencilFormFramebuffer.apply() sein Ziel
+         * ueber PickZiel angemeldet. Ohne diese Abfrage zeichnete das Modell auch dann ins
+         * Hauptbild, und der Stencil blieb leer -- gemessen mit Pufferprobe: 0 von 3.686.400
+         * Punkten mit Alpha != 0, in der Quelle wie im Zwischenbild. Die Silhouette suchte
+         * man daraufhin drei Sitzungen lang am Blit und am Umriss-Shader, wo beide in Ordnung
+         * waren. Der Gizmo hat dieselbe Abfrage seit dem Port (Gizmo.java, PickZiel.aktiv()),
+         * der Formen-Weg hatte sie nie.
+         *
+         * OHNE TIEFE, wie beim Gizmo: PickZiel meldet nur die Farbansicht an, BBS' Stencil
+         * haengt seine Tiefe an einen Renderbuffer und der ist keine GpuTextureView. Fuer
+         * eine Kennung genuegt das -- gebraucht wird die Flaeche, nicht ihre Staffelung. */
+        com.mojang.blaze3d.textures.GpuTextureView kennungsZiel =
+            mchorse.bbs_mod.graphics.PickZiel.aktiv();
+
+        com.mojang.blaze3d.textures.GpuTextureView farbZiel = kennungsZiel != null
+            ? kennungsZiel
+            : mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
                 ? mchorse.bbs_mod.graphics.Zeichenziel.farbe()
                 : ziel.getColorTextureView();
-        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel =
-            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel = kennungsZiel != null
+            ? null
+            : mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
                 ? mchorse.bbs_mod.graphics.Zeichenziel.tiefe()
                 : ziel.getDepthTextureView();
 
@@ -190,11 +208,14 @@ public class ModelVAORenderer
          * richtig; in der Oberflaeche von 26.2 landet er VOR dem GUI und wird vom
          * Panel-Hintergrund uebermalt. Ob er beim schwarzen Vorschaufeld ueberhaupt laeuft,
          * sagt dieser Zaehler. Standardmaessig aus, siehe Messpunkt. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.vao-durchgang");
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+            "modell.vao-durchgang" + (kennungsZiel != null ? "-KENNUNG" : "-bild"));
 
-        try (RenderPass durchgang = schreiber.createRenderPass(
-            () -> "bbs-modell", farbZiel, Optional.empty(),
-            tiefenZiel, OptionalDouble.empty()))
+        try (RenderPass durchgang = tiefenZiel == null
+            ? schreiber.createRenderPass(() -> "bbs-modell", farbZiel, Optional.empty())
+            : schreiber.createRenderPass(
+                () -> "bbs-modell", farbZiel, Optional.empty(),
+                tiefenZiel, OptionalDouble.empty()))
         {
             durchgang.setPipeline(pipeline);
 
