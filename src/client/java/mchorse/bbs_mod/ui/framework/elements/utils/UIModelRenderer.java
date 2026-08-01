@@ -236,6 +236,16 @@ public abstract class UIModelRenderer extends UIElement
 
     private void updateLogic(UIContext context)
     {
+        /* Messwerkzeug, standardmaessig aus: haelt die Leerlauf-animation an, damit zwei
+         * Aufnahmen desselben Zustands bildpunktgleich sind. Siehe Standbild -- der
+         * Welt-Tick-Stopp erreicht diese Schleife nicht, sie zaehlt den UI-Tick. */
+        if (mchorse.bbs_mod.graphics.Standbild.an())
+        {
+            this.tick = context.getTick();
+
+            return;
+        }
+
         long tick = context.getTick();
         long i = tick - this.tick;
 

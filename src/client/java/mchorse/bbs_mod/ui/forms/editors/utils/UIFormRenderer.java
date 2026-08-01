@@ -55,7 +55,10 @@ public class UIFormRenderer extends UIModelRenderer
             context.batcher.bildImBild(new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauModellZustand(
                 this.form, this.entity, this.camera,
                 new org.joml.Matrix4f(this.camera.projection), pose,
-                context.getTransition(),
+                /* Im Standbild 0 statt des echten Uebergangs: sonst interpoliert der
+                 * Zeichner zwischen zwei Posen weiter, obwohl der Tick steht, und die
+                 * Nullinie einer Messung wird nie 0. */
+                mchorse.bbs_mod.graphics.Standbild.uebergang(context.getTransition()),
                 this.area.x, this.area.y, this.area.ex(), this.area.ey(),
                 flaeche, flaeche));
 
