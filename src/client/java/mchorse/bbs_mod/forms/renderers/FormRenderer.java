@@ -117,7 +117,13 @@ public abstract class FormRenderer <T extends Form>
          * EIN bildschirmgrosser Sammel-Zustand fuer alle Miniaturen statt einer Textur je
          * Zelle -- dann bleiben die Bildschirmkoordinaten gueltig und es gibt genau einen
          * Stapel-Wechsel statt einem je Vorschau. */
-        this.renderInUI(context, x1, y1, x2, y2);
+
+        /* ⚗️ WACHE UM DEN ZEICHENAUFRUF. Vanilla bricht mit "Pose stack not empty" ab, aber
+         * erst beim naechsten Weltdurchgang und ohne eine einzige BBS-Zeile im Stapel -- man
+         * sieht, DASS jemand liegengelassen hat, nie WER. Diese Wache nennt den Namen. */
+        mchorse.bbs_mod.graphics.Stapelwache.pruefen(
+            "miniatur:" + this.getClass().getSimpleName(), context.batcher.pose(),
+            () -> this.renderInUI(context, x1, y1, x2, y2));
 
         FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();
