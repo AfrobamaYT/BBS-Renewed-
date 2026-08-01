@@ -110,20 +110,29 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
          * multiplizieren ergibt ein Gitter von 20 Punkten Breite am unteren Rand -- genau
          * das war der Befund der Probe (92 Punkte breit, EINEN hoch, y=641 von 644).
          *
-         * Richtig ist der uebliche Weg: den Stapel so einrichten, dass er den normierten
-         * Geraeteraum (-1..1) auf die Flaeche abbildet, und DANN Projektion x Ansicht
-         * darauf. Drei Schritte:
-         *   1. Ursprung von unten in die Mitte
-         *   2. -1..1 auf die halbe Breite/Hoehe, Y dabei umdrehen (Welt zeigt hoch,
-         *      dieser Raum runter)
-         *   3. Projektion x Ansicht -- die steckt seit heute in ansicht(), vorher war es
-         *      nur die Ansicht, weshalb es keine Perspektive gab. */
+         * Der Stapel bildet darum nur noch den normierten Geraeteraum (-1..1) auf die
+         * Flaeche ab: Ursprung von unten in die Mitte, dann -1..1 auf die halben Kanten,
+         * Y umgedreht (die Welt zeigt hoch, dieser Raum runter).
+         *
+         * ⛔ DIE PERSPEKTIVE DARF NICHT IN DEN STAPEL. Ein erster Anlauf multiplizierte
+         * Projektion x Ansicht hier hinein. Ergebnis waren zwei riesige Linien statt eines
+         * Gitters, und der Grund ist rechnerisch zwingend: die Teilung durch w geschieht
+         * ganz am Ende, also NACH den Verschiebungen dieses Stapels -- eine Verschiebung,
+         * die durch w geteilt wird, verschiebt um den falschen Betrag. Vanillas eigene
+         * Bild-im-Bild-Zeichner umgehen das, indem sie gar keine Perspektive benutzen (die
+         * Figur im Inventar steht orthografisch da).
+         *
+         * Unsere Vorschau ist aber perspektivisch. Loesung: die Teilung selbst rechnen und
+         * fertige Geraeteraum-Koordinaten einreichen -- siehe linie(). Beim Gitter sind das
+         * 22 Ecken je Bild, das faellt nicht ins Gewicht; fuer das Modell waere derselbe
+         * Weg zu teuer und braucht eine andere Loesung. */
         float halbeBreite = (zustand.x1() - zustand.x0()) / 2F;
         float halbeHoehe = (zustand.y1() - zustand.y0()) / 2F;
 
         stapel.translate(0F, -halbeHoehe, 0F);
         stapel.scale(halbeBreite, -halbeHoehe, -1F);
-        stapel.mulPose(zustand.ansicht());
+
+        org.joml.Matrix4f abbildung = zustand.ansicht();
 
         sammler.submitCustomGeometry(stapel, RenderTypes.LINES, (pose, ecken) ->
         {
@@ -131,15 +140,15 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
             {
                 float f = i - 5;
 
-                if (i == 0)
+                if (i == 5)
                 {
-                    linie(ecken, pose, f, -5, f, 5, 0F, 0F, 1F);
-                    linie(ecken, pose, -5, f, 5, f, 1F, 0F, 0F);
+                    linie(ecken, pose, abbildung, f, -5, f, 5, 0F, 0F, 1F);
+                    linie(ecken, pose, abbildung, -5, f, 5, f, 1F, 0F, 0F);
                 }
                 else
                 {
-                    linie(ecken, pose, f, -5, f, 5, 0.25F, 0.25F, 0.25F);
-                    linie(ecken, pose, -5, f, 5, f, 0.25F, 0.25F, 0.25F);
+                    linie(ecken, pose, abbildung, f, -5, f, 5, 0.25F, 0.25F, 0.25F);
+                    linie(ecken, pose, abbildung, -5, f, 5, f, 0.25F, 0.25F, 0.25F);
                 }
             }
         });
@@ -164,12 +173,26 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
      * Normale wird mit der Pose gedreht, sonst zeigt sie in die falsche Richtung.
      */
     private static void linie(com.mojang.blaze3d.vertex.VertexConsumer ecken,
-        com.mojang.blaze3d.vertex.PoseStack.Pose pose,
+        com.mojang.blaze3d.vertex.PoseStack.Pose pose, org.joml.Matrix4f abbildung,
         float x1, float z1, float x2, float z2, float r, float g, float b)
     {
-        float dx = x2 - x1;
-        float dz = z2 - z1;
-        float laenge = (float) Math.sqrt(dx * dx + dz * dz);
+        org.joml.Vector4f a = abbildung.transform(new org.joml.Vector4f(x1, 0F, z1, 1F));
+        org.joml.Vector4f e = abbildung.transform(new org.joml.Vector4f(x2, 0F, z2, 1F));
+
+        /* Hinter der Kameraebene gibt es keine sinnvolle Teilung -- die Linie wuerde
+         * gespiegelt quer durchs Bild laufen. Ganze Linie verwerfen statt zu beschneiden:
+         * beim Gitter faellt eine fehlende Randlinie nicht auf, eine falsche schon. */
+        if (a.w <= 0.0001F || e.w <= 0.0001F)
+        {
+            return;
+        }
+
+        a.div(a.w);
+        e.div(e.w);
+
+        float dx = e.x - a.x;
+        float dy = e.y - a.y;
+        float laenge = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (laenge == 0F)
         {
@@ -177,9 +200,9 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
         }
 
         dx /= laenge;
-        dz /= laenge;
+        dy /= laenge;
 
-        ecken.addVertex(pose, x1, 0F, z1).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
-        ecken.addVertex(pose, x2, 0F, z2).setColor(r, g, b, 1F).setNormal(pose, dx, 0F, dz).setLineWidth(2F);
+        ecken.addVertex(pose, a.x, a.y, a.z).setColor(r, g, b, 1F).setNormal(pose, dx, dy, 0F).setLineWidth(2F);
+        ecken.addVertex(pose, e.x, e.y, e.z).setColor(r, g, b, 1F).setNormal(pose, dx, dy, 0F).setLineWidth(2F);
     }
 }
