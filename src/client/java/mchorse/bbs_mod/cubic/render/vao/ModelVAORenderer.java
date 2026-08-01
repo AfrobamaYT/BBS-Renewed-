@@ -164,15 +164,40 @@ public class ModelVAORenderer
         /* ⭐ WOHIN gezeichnet wird, entscheidet nicht mehr diese Zeile allein (Aufgabe 96).
          * In der Welt bleibt es das Hauptbild; in einer Oberflaechen-Vorschau muss dasselbe
          * Modell in die Textur des Bild-im-Bild-Zeichners, sonst malt es ins Hauptbild und
-         * verschwindet unter dem Panel-Hintergrund. Siehe Zeichenziel. */
-        com.mojang.blaze3d.textures.GpuTextureView farbZiel =
-            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
-                ? mchorse.bbs_mod.graphics.Zeichenziel.farbe()
-                : ziel.getColorTextureView();
-        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel =
-            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
-                ? mchorse.bbs_mod.graphics.Zeichenziel.tiefe()
-                : ziel.getDepthTextureView();
+         * verschwindet unter dem Panel-Hintergrund. Siehe Zeichenziel.
+         *
+         * ⛔ DER AUSWAHL-PUFFER GEHT VOR -- SEIN FEHLEN WAR DER LEERE STENCIL.
+         *
+         * Der Kennungs-Durchgang (StencilFormFramebuffer.apply() ... unbind()) meldete sein
+         * Ziel ueber PickZiel an, aber NUR der Gizmo-Weg fragte es ab (Gizmo, GizmoRinge,
+         * GizmoAuswahl). Dieser Weg hier -- der Weg JEDER Form, also des orangen
+         * Replay-Umrisses und der Bone-Auswahl -- las nur Zeichenziel und zeichnete seine
+         * Kennungen deshalb ins Hauptbild. Der Auswahl-Puffer bekam kein einziges Pixel:
+         * gemessen direkt hinter der Fuellung, 2560x1440, RGB!=0 = 0 und alpha!=0 = 0.
+         *
+         * Reihenfolge, nicht Geschmack: PickZiel ist nur zwischen apply() und unbind()
+         * gesetzt, und in diesem Fenster gehoert ALLES in den Kennungspuffer -- auch dann,
+         * wenn der Durchgang aus einer Vorschau heraus laeuft und Zeichenziel gleichzeitig
+         * auf deren Textur zeigt (UIPickableFormRenderer). Kennungsfarben in der Vorschau
+         * waeren sichtbarer Farbmuell UND ein leerer Auswahl-Puffer. */
+        com.mojang.blaze3d.textures.GpuTextureView farbZiel;
+        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel;
+
+        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
+        {
+            farbZiel = mchorse.bbs_mod.graphics.PickZiel.aktiv();
+            tiefenZiel = mchorse.bbs_mod.graphics.PickZiel.tiefe();
+        }
+        else if (mchorse.bbs_mod.graphics.Zeichenziel.eigenes())
+        {
+            farbZiel = mchorse.bbs_mod.graphics.Zeichenziel.farbe();
+            tiefenZiel = mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
+        }
+        else
+        {
+            farbZiel = ziel.getColorTextureView();
+            tiefenZiel = ziel.getDepthTextureView();
+        }
 
         /* Modellansicht und Farbe gehen in Vanillas DynamicTransforms-Block. BBS setzt eine
          * EIGENE Modellansicht (die eingefangene, siehe captureModelView) — writeTransform

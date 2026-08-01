@@ -5,7 +5,9 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Framebuffer
 {
@@ -29,6 +31,24 @@ public class Framebuffer
     public int id;
     public List<Texture> textures = new ArrayList<>();
     public final List<Renderbuffer> renderbuffers = new ArrayList<>();
+
+    /**
+     * Welche Textur an welchem Anhangspunkt haengt -- gebraucht von {@link #resize}.
+     *
+     * <p>⛔ 26.2: EINE TEXTUR WECHSELT BEI GROESSENAENDERUNG IHRE GL-NUMMER. Bis 1.21.1 war
+     * {@code Texture.id} fuer die Lebensdauer der Textur fest, ein {@code glTexImage2D} mit
+     * neuer Groesse schrieb einfach in dieselbe Nummer, und das FBO blieb gueltig. In 26.2
+     * gehoert die Nummer dem GPU-Objekt: {@code Texture.allocate} SCHLIESST es bei
+     * Groessenwechsel und legt ein neues an (dort steht der Satz "wer die Nummer
+     * zwischenspeichert, zeichnet nach der naechsten Groessenaenderung eine fremde Textur").
+     *
+     * <p>Das FBO speichert die Nummer -- im GL-Anhang. Ohne das Nachziehen hier zeigt es
+     * nach dem ersten {@code resize} auf eine freigegebene Textur: {@code glClear} loescht
+     * nichts (alte Kennungen bleiben stehen) und {@code glReadPixels} liest nichts (der
+     * Klick findet nichts). Das trifft JEDEN Auswahl-Puffer, denn sie beginnen alle 2x2 und
+     * werden sofort auf ihre echte Groesse gezogen.
+     */
+    private final Map<Texture, Integer> anhaenge = new IdentityHashMap<>();
 
     private boolean deleteTextures;
     private boolean advancedClearing;
@@ -63,6 +83,7 @@ public class Framebuffer
     public Framebuffer attach(Texture texture, int attachment)
     {
         this.textures.add(texture);
+        this.anhaenge.put(texture, attachment);
 
         this.bind();
         texture.bind();
@@ -160,10 +181,43 @@ public class Framebuffer
 
     public void resize(int w, int h)
     {
+        boolean neueNummern = false;
+
         for (Texture texture : this.textures)
         {
+            int alteNummer = texture.id;
+
             texture.bind();
             texture.setSize(w, h);
+
+            neueNummern |= texture.id != alteNummer;
+        }
+
+        /* Siehe {@link #anhaenge}: hat eine Textur ihre GL-Nummer gewechselt, haengt am FBO
+         * noch die alte, freigegebene. Nur dann wird neu angehaengt -- der Normalfall
+         * "gleiche Groesse" kostet keinen einzigen GL-Aufruf.
+         *
+         * ⚠️ Gebunden und wieder geloest wie in den setup()-Bloecken der Aufrufer:
+         * glFramebufferTexture2D wirkt ausschliesslich auf das gebundene FBO. */
+        if (neueNummern)
+        {
+            this.bind();
+
+            for (Texture texture : this.textures)
+            {
+                Integer anhang = this.anhaenge.get(texture);
+
+                if (anhang == null)
+                {
+                    continue;
+                }
+
+                texture.bind();
+
+                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
+            }
+
+            this.unbind();
         }
 
         for (Renderbuffer renderbuffer : this.renderbuffers)
@@ -187,6 +241,8 @@ public class Framebuffer
 
             this.textures.clear();
         }
+
+        this.anhaenge.clear();
 
         for (Renderbuffer renderbuffer : this.renderbuffers)
         {

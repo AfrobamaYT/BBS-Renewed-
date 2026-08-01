@@ -3,8 +3,8 @@ package mchorse.bbs_mod.ui.utils;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.graphics.Framebuffer;
-import mchorse.bbs_mod.graphics.Renderbuffer;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
@@ -98,14 +98,55 @@ public class StencilFormFramebuffer
             texture.setFilter(GL11.GL_NEAREST);
             texture.setWrap(GL13.GL_CLAMP_TO_EDGE);
 
-            Renderbuffer renderbuffer = new Renderbuffer();
+            /* ⛔ 26.2: DIE TIEFE MUSS EINE TEXTUR SEIN, KEIN RENDERBUFFER.
+             *
+             * Bis 1.21.1 hing hier ein Renderbuffer (DEPTH24_STENCIL8). Das reichte, weil
+             * das Ziel eines Zeichenaufrufs damals das GEBUNDENE FBO war -- was daran hing,
+             * war GL egal. In 26.2 nennt jeder Durchgang seine Anhaenge als
+             * {@code GpuTextureView}, und ein Renderbuffer ist keine. Er waere fuer den
+             * Kennungs-Durchgang schlicht nicht anmeldbar (siehe PickZiel), und ohne Tiefe
+             * pickt man verdeckte Knochen.
+             *
+             * Der GL-Stencil-Anteil des alten Renderbuffers faellt damit weg -- er wurde
+             * nirgends benutzt (kein GL_STENCIL_TEST auf diesem Puffer; "Stencil" heisst
+             * hier BBS' Kennungspuffer, nicht GLs Schablone).
+             *
+             * ⚠️ setFormat VOR setSize: setSize legt den Speicher mit dem Format an, das in
+             * diesem Augenblick gesetzt ist. Umgedreht entstuende eine Farbtextur, die
+             * anschliessend als Tiefe angehaengt wird -- ein unvollstaendiges FBO. */
+            Texture tiefe = new Texture();
 
-            renderbuffer.resize(2, 2);
+            tiefe.setFormat(TextureFormat.DEPTH_F24);
+            tiefe.setSize(2, 2);
+            tiefe.setFilter(GL11.GL_NEAREST);
+            tiefe.setWrap(GL13.GL_CLAMP_TO_EDGE);
 
             framebuffer.deleteTextures().attach(texture, GL30.GL_COLOR_ATTACHMENT0);
-            framebuffer.attach(renderbuffer);
+            framebuffer.attach(tiefe, GL30.GL_DEPTH_ATTACHMENT);
             framebuffer.unbind();
         });
+    }
+
+    /**
+     * Die Tiefenansicht dieses Auswahl-Puffers, oder {@code null}.
+     *
+     * <p>Gesucht wird ueber das FORMAT, nicht ueber einen Listenplatz: {@link #setup} legt
+     * die Tiefe zwar als zweite Textur an, aber ein Auswahl-Puffer, der vor dieser Aenderung
+     * schon im {@code FramebufferManager} lag (Hotswap in eine laufende Sitzung), hat gar
+     * keine. Dann ist {@code null} richtig und der Durchgang zeichnet ohne Verdeckung --
+     * eine Warnung je Zeichenaufruf, kein Absturz.
+     */
+    private com.mojang.blaze3d.textures.GpuTextureView tiefenAnsicht()
+    {
+        for (Texture texture : this.framebuffer.textures)
+        {
+            if (texture.getFormat().isDepth())
+            {
+                return texture.view();
+            }
+        }
+
+        return null;
     }
 
     public void resizeGUI(int w, int h)
@@ -128,8 +169,11 @@ public class StencilFormFramebuffer
         this.framebuffer.applyClear();
 
         /* 26.2: das Binden allein reicht nicht mehr -- jeder Durchgang nennt sein Ziel
-         * selbst. Hier wird angemeldet, wohin die Kennungsfarben gehen; siehe PickZiel. */
-        mchorse.bbs_mod.graphics.PickZiel.anmelden(this.framebuffer.getMainTexture().view());
+         * selbst. Hier wird angemeldet, wohin die Kennungsfarben gehen; siehe PickZiel.
+         * Farbe UND Tiefe: ohne Tiefe gewinnt beim Picken der zuletzt gezeichnete Knochen
+         * statt des vordersten. */
+        mchorse.bbs_mod.graphics.PickZiel.anmelden(
+            this.framebuffer.getMainTexture().view(), this.tiefenAnsicht());
     }
 
     public void pickGUI(UIContext context, Area area)

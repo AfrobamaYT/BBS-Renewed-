@@ -37,21 +37,52 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 public final class PickZiel
 {
     private static GpuTextureView aktiv;
+    private static GpuTextureView tiefe;
 
-    public static void anmelden(GpuTextureView ziel)
+    /**
+     * Meldet an, wohin die Kennungen gehen -- FARBE UND TIEFE.
+     *
+     * <h2>⛔ Warum die Tiefe dazugehoert und nicht weggelassen werden darf</h2>
+     *
+     * <p>Ein Kennungs-Durchgang ohne Tiefe zeichnet die Kennungen in der Reihenfolge, in
+     * der die Teile gezeichnet werden -- der zuletzt gezeichnete gewinnt, auch wenn er
+     * HINTER dem Koerper liegt. Der Klick trifft dann einen verdeckten Knochen. Genau
+     * dagegen hing bis 1.21.1 ein Tiefenpuffer am Auswahl-Puffer.
+     *
+     * <p>Dazu kommt: alle vier Picker-Pipelines tragen einen Tiefenzustand
+     * ({@code ModelVAOPipeline}). Blaze3D meldet einen Durchgang, dessen Pipeline Tiefe
+     * will und keine bekommt, mit "Render pipeline {} wants a depth texture but none was
+     * provided - this is probably a bug" -- je Zeichenaufruf, im Log abgelesen an
+     * {@code GlCommandEncoder}, nicht vermutet.
+     */
+    public static void anmelden(GpuTextureView farbZiel, GpuTextureView tiefenZiel)
     {
-        aktiv = ziel;
+        aktiv = farbZiel;
+        tiefe = tiefenZiel;
     }
 
     public static void abmelden()
     {
         aktiv = null;
+        tiefe = null;
     }
 
     /** Das angemeldete Ziel, oder {@code null} wenn gerade kein Auswahl-Durchgang laeuft. */
     public static GpuTextureView aktiv()
     {
         return aktiv;
+    }
+
+    /**
+     * Das Tiefenziel des laufenden Auswahl-Durchgangs.
+     *
+     * <p>{@code null} heisst: der Auswahl-Puffer hat keinen Tiefenanhang. Dann zeichnet
+     * der Durchgang ohne Verdeckungspruefung -- siehe {@link #anmelden}, warum das falsch
+     * ist. Es ist trotzdem kein Absturz, sondern eine Warnung je Zeichenaufruf.
+     */
+    public static GpuTextureView tiefe()
+    {
+        return tiefe;
     }
 
     /**
