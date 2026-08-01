@@ -86,6 +86,12 @@ public class WorldRendererMixin
         org.joml.Matrix4fc projektion, com.mojang.blaze3d.buffers.GpuBufferSlice nebel,
         org.joml.Vector4f nebelFarbe, boolean himmel, CallbackInfo info)
     {
+        /* Messfuehler: 26.2 uebergibt an LevelRenderer.render ein Flag, OB der Himmel
+         * gezeichnet wird. Der Himmel fehlt im Port komplett (schwarz statt blau, bei
+         * Tageszeit 6000) -- also zuerst nachsehen, was hier ankommt, statt den
+         * Himmelspass zu suchen. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("welt.himmel-" + himmel);
+
         BBSRendering.camera.set(kamera.viewRotationMatrix);
     }
 
