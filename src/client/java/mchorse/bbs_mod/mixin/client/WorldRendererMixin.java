@@ -90,7 +90,15 @@ public class WorldRendererMixin
          * gezeichnet wird. Der Himmel fehlt im Port komplett (schwarz statt blau, bei
          * Tageszeit 6000) -- also zuerst nachsehen, was hier ankommt, statt den
          * Himmelspass zu suchen. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("welt.himmel-" + himmel);
+        /* ⛔ MIXIN-KLASSEN SIND NICHT HOTSWAPBAR -- jede Messung hier kostet einen Boot.
+         * Darum ALLE verdaechtigen Werte auf einmal, nicht einen pro Lauf. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("welt.himmel-" + himmel,
+            "nebelfarbe=" + (nebelFarbe == null
+                ? "null"
+                : nebelFarbe.x + "," + nebelFarbe.y + "," + nebelFarbe.z + "," + nebelFarbe.w)
+            + " | nebelpuffer=" + (nebel != null)
+            + " | bloecke=" + bloecke
+            + " | projektion=" + (projektion == null ? "null" : String.valueOf(projektion.m00())));
 
         BBSRendering.camera.set(kamera.viewRotationMatrix);
     }
