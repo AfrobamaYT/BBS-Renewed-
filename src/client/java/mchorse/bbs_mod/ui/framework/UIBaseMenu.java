@@ -296,6 +296,12 @@ public abstract class UIBaseMenu
                 "menue:" + this.getClass().getSimpleName(), this.context.batcher.pose(),
                 () -> this.root.render(this.context));
 
+            /* ⭐ Die gesammelten Formvorschauen abgeben -- EIN bildschirmgrosser
+             * Bild-im-Bild-Zug fuer alle. Muss NACH root.render stehen: vorher ist die
+             * Schlange leer, weil die Elemente erst dort einreihen. Siehe Miniaturschlange. */
+            mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+                this.context, this.viewport.w, this.viewport.h);
+
             this.context.popViewport();
             this.context.postRender();
         }

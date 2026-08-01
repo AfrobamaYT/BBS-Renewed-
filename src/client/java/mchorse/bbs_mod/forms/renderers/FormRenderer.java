@@ -118,12 +118,17 @@ public abstract class FormRenderer <T extends Form>
          * Zelle -- dann bleiben die Bildschirmkoordinaten gueltig und es gibt genau einen
          * Stapel-Wechsel statt einem je Vorschau. */
 
-        /* ⚗️ WACHE UM DEN ZEICHENAUFRUF. Vanilla bricht mit "Pose stack not empty" ab, aber
-         * erst beim naechsten Weltdurchgang und ohne eine einzige BBS-Zeile im Stapel -- man
-         * sieht, DASS jemand liegengelassen hat, nie WER. Diese Wache nennt den Namen. */
-        mchorse.bbs_mod.graphics.Stapelwache.pruefen(
-            "miniatur:" + this.getClass().getSimpleName(), context.batcher.pose(),
-            () -> this.renderInUI(context, x1, y1, x2, y2));
+        /* ⭐ EINREIHEN STATT SOFORT ZEICHNEN. 26.2 zeichnet die GUI in zwei Phasen: dieser
+         * Durchlauf SAMMELT nur, GuiRenderer.render() zeichnet danach. Ein sofort geoeffneter
+         * Durchgang landet deshalb UNTER dem gesamten GUI und wird vom Panel-Hintergrund
+         * uebermalt -- die Miniaturen zeichneten (Zaehler oben: 366x in vier Sekunden) und
+         * waren trotzdem unsichtbar. Im A/B gegen 1.21.1 zeigte das Morph-Panel dort elf
+         * Modellvorschauen und der Port keine einzige.
+         *
+         * Abgegeben wird gesammelt am Ende des Oberflaechen-Durchlaufs, in EINE
+         * bildschirmgrosse Textur -- siehe MiniaturSammelZustand fuer den Grund. */
+        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.einreihen(
+            this, context, x1, y1, x2, y2);
 
         FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();

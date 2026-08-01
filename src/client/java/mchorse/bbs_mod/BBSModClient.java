@@ -830,9 +830,11 @@ public class BBSModClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.register(
             (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauModellRenderer());
         /* Die Miniaturen der Formpalette -- derselbe Weg, ein dritter Eintrag. Ohne ihn wird
-         * der eingereihte Zustand still verworfen (kein Zeichner fuer die Zustandsklasse). */
+         * der eingereihte Zustand still verworfen (kein Zeichner fuer die Zustandsklasse).
+         * ALLE Vorschauen eines Bildes teilen sich eine bildschirmgrosse Textur; warum, steht
+         * in MiniaturSammelZustand. */
         net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.register(
-            (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturRenderer());
+            (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturSammelRenderer());
 
         /* 26.2: BuiltinItemRendererRegistry ist in fabric-rendering-v1 25.3.2 ERSATZLOS
          * gestrichen; einen Nachfolger hat Fabric nicht gebaut, weil Mojang selbst einen hat.
