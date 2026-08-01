@@ -520,19 +520,32 @@ public class UIContext implements IViewportStack
         return this.viewportStack.localY(y);
     }
 
+    /**
+     * ⛔ DER STAPEL, DEN DIE ZEICHENAUFRUFE WIRKLICH LESEN.
+     *
+     * <p>{@code batcher.getContext().pose()} ist der Flaechenstapel des Extractors — aus ihm
+     * nehmen {@code Batcher2D.quad()}, {@code blit()} und die Textausgabe ihre Matrix.
+     * {@code batcher.pose()} dagegen ist BBS' eigener RAEUMLICHER Stapel fuer Modell- und
+     * Formvorschauen; kein Zeichenaufruf der Flaeche liest ihn. Eine Verschiebung dort
+     * uebersetzt fehlerfrei und bewirkt nichts.
+     *
+     * <p>1.21.1 stand hier {@code getContext().getMatrices().translate(-x, 0, 0)} — dieselbe
+     * Matrix, nur noch mit Tiefe; 26.1 schreibt {@code getContext().pose().translate(-x, 0)}.
+     */
     @Override
     public void shiftX(int x)
     {
         this.mouseX += x;
-        this.render.batcher.pose().translate(-x, 0, 0);
+        this.render.batcher.getContext().pose().translate(-x, 0);
         this.viewportStack.shiftX(x);
     }
 
+    /** Siehe {@link #shiftX(int)} — derselbe Stapel, nur die andere Achse. */
     @Override
     public void shiftY(int y)
     {
         this.mouseY += y;
-        this.render.batcher.pose().translate(0, -y, 0);
+        this.render.batcher.getContext().pose().translate(0, -y);
         this.viewportStack.shiftY(y);
     }
 
@@ -554,9 +567,14 @@ public class UIContext implements IViewportStack
         return this.viewportStack.getViewport();
     }
 
+    /**
+     * Setzt die Flaechenmatrix zum Bildanfang zurueck (Aufrufer: {@code UIBaseMenu.renderMenu}).
+     * Ziel ist derselbe Stapel wie in {@link #shiftX(int)}; 1.21.1: {@code loadIdentity()},
+     * 26.1: {@code identity()}.
+     */
     public void resetMatrix()
     {
-        this.render.batcher.pose().setIdentity();
+        this.render.batcher.getContext().pose().identity();
     }
 
     public void update()

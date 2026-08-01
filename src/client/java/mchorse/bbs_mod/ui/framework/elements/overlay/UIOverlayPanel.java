@@ -290,7 +290,16 @@ public class UIOverlayPanel extends UIElement
          * und das Panel selbst stand sofort in voller Größe da.
          *
          * Skaliert wird um die MITTE des Panels, nicht um seine Ecke — sonst wächst es aus
-         * der linken oberen Ecke heraus statt aufzugehen. */
+         * der linken oberen Ecke heraus statt aufzugehen.
+         *
+         * ⛔ AUF WELCHEN STAPEL — der Port hatte hier den falschen (26.2). Die Verschiebung
+         * muss auf {@code batcher.getContext().pose()}, den Flaechenstapel des Extractors:
+         * NUR den lesen {@code Batcher2D.quad()}, {@code blit()} und die Textausgabe. BBS'
+         * eigener {@code batcher.pose()} ist der RAEUMLICHE Stapel fuer Modellvorschauen;
+         * er wird von keinem Zeichenaufruf der Flaeche gelesen. Auf ihm zu schieben
+         * uebersetzt sauber und bewirkt NICHTS — die Panels standen deshalb ohne Animation
+         * sofort da. 1.21.1 stand hier {@code getContext().getMatrices()}, also derselbe
+         * Flaechenstapel; 26.1 macht es in UIContext genauso. */
         float transition = 1.0F;
 
         if (this.getParent() instanceof UIOverlay overlay)
@@ -308,10 +317,12 @@ public class UIOverlayPanel extends UIElement
             float cx = this.area.mx();
             float cy = this.area.my();
 
-            context.render.batcher.pose().pushPose();
-            context.render.batcher.pose().translate(cx, cy, 0.0F);
-            context.render.batcher.pose().scale(skalierung, skalierung, 1.0F);
-            context.render.batcher.pose().translate(-cx, -cy, 0.0F);
+            org.joml.Matrix3x2fStack pose = context.render.batcher.getContext().pose();
+
+            pose.pushMatrix();
+            pose.translate(cx, cy);
+            pose.scale(skalierung, skalierung);
+            pose.translate(-cx, -cy);
         }
 
         this.renderBackground(context);
@@ -343,7 +354,10 @@ public class UIOverlayPanel extends UIElement
          * seiner Endposition. */
         if (waechst)
         {
-            context.render.batcher.pose().popPose();
+            /* Gegenstueck zum pushMatrix oben — dieselbe Bedingung, damit der Flaechenstapel
+             * ausgeglichen bleibt. Ein liegengebliebener Eintrag reisst spaeter den
+             * Weltdurchgang mit "Pose stack not empty" mit. */
+            context.render.batcher.getContext().pose().popMatrix();
         }
     }
 
