@@ -132,6 +132,19 @@ public final class StencilAnzeige
         mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
             abIndex, farbe, breite, 1F / area.w, 1F / area.h);
 
+        /* ⚗️ Auf Anforderung nachsehen, ob der Umriss ueberhaupt IM Zwischenbild steht.
+         * Punktproben taugen bei einer Ein-Pixel-Kante nichts, darum wird die ganze Textur
+         * nach der Umrissfarbe durchgezaehlt. Trennt „wird nicht gezeichnet" von „wird
+         * gezeichnet und geht beim Blit verloren" -- der Unterschied ist von aussen
+         * unsichtbar und hat am Himmel zwei Sitzungen gekostet. */
+        /* Erste Messung: Zwischenbild vollstaendig leer (alpha!=0 = 0 von 3686400). Der Blit
+         * ist damit unschuldig, umrissZeichnen liefert nichts. Also rueckwaerts weiter zur
+         * QUELLE: traegt der Stencil ueberhaupt Indizes? Die Zahl hinter „alpha!=0" ist hier
+         * die Antwort, die gesuchte Farbe ist nur Beiwerk. */
+        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(
+            texture.id, texture.width, texture.height,
+            abIndex, 0, 0, 2, "stencil-quelle (abIndex=" + abIndex + ")");
+
         int w = texture.width;
         int h = texture.height;
 

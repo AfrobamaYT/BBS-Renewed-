@@ -138,6 +138,79 @@ public class Pufferprobe
         }
     }
 
+    /**
+     * Sucht in einer BBS-Textur nach einer FARBE und zaehlt die Treffer.
+     *
+     * <p>Fuer duenne Sachen — einen Umriss, eine Kante, ein paar Linien — taugt das
+     * Abtasten einzelner Punkte nichts: sechs Punkte in der Bildmitte treffen eine
+     * Ein-Pixel-Kante praktisch nie, und „nicht getroffen" liest sich dann wie „nicht da".
+     * Diese Messung liest die ganze Textur und zaehlt.</p>
+     *
+     * <p>Meldet ausserdem, wie viele Punkte ueberhaupt ein Alpha ungleich 0 tragen — damit
+     * laesst sich „das Bild ist leer" von „das Bild ist voll, nur nicht in dieser Farbe"
+     * trennen.</p>
+     */
+    public static void vielleichtFarbeZaehlen(int texturId, int breite, int hoehe,
+        int r, int g, int b, int toleranz, String stelle)
+    {
+        if (System.getProperty(ANFORDERUNG) == null)
+        {
+            return;
+        }
+
+        System.clearProperty(ANFORDERUNG);
+
+        int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        int fbo = GL30.glGenFramebuffers();
+
+        try
+        {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, fbo);
+            GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+                GL11.GL_TEXTURE_2D, texturId, 0);
+
+            ByteBuffer puffer = BufferUtils.createByteBuffer(breite * hoehe * 4);
+
+            GL11.glReadPixels(0, 0, breite, hoehe, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, puffer);
+
+            int treffer = 0;
+            int sichtbar = 0;
+
+            for (int i = 0; i < breite * hoehe; i++)
+            {
+                int pr = puffer.get(i * 4) & 255;
+                int pg = puffer.get(i * 4 + 1) & 255;
+                int pb = puffer.get(i * 4 + 2) & 255;
+                int pa = puffer.get(i * 4 + 3) & 255;
+
+                if (pa != 0)
+                {
+                    sichtbar++;
+                }
+
+                if (Math.abs(pr - r) <= toleranz && Math.abs(pg - g) <= toleranz
+                    && Math.abs(pb - b) <= toleranz && pa != 0)
+                {
+                    treffer++;
+                }
+            }
+
+            System.setProperty(ERGEBNIS, stelle + " " + breite + "x" + hoehe
+                + " | gesuchte farbe " + r + "," + g + "," + b + " (+-" + toleranz + ") = " + treffer
+                + " punkte | alpha!=0 = " + sichtbar
+                + " von " + (breite * hoehe));
+        }
+        catch (Throwable t)
+        {
+            System.setProperty(ERGEBNIS, "FEHLER " + t);
+        }
+        finally
+        {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
+            GL30.glDeleteFramebuffers(fbo);
+        }
+    }
+
     private static String lesen(RenderTarget ziel, String stelle)
     {
         if (ziel == null)
