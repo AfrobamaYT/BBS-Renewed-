@@ -53,6 +53,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public class WorldRendererMixin
 {
+    /**
+     * ⚗️ MESSFUEHLER (2026-08-01): wird der Himmelspass ueberhaupt in den Bildgraphen
+     * eingehaengt?
+     *
+     * <p>Der Himmel fehlt im Port vollstaendig, und die gesamte Eingabeseite ist bereits
+     * ausgeschlossen: Flag 124x true, Nebelfarbe = genau die fehlende Farbe (#ADCBFF),
+     * SKY_COLOR = #78A7FF, Pipelines registriert, und der Zustand WIRD eingesammelt
+     * (SkyRenderer.extractRenderState laeuft 127x). Damit bleiben drei Faelle, und dieser
+     * Zaehler trennt den ersten von den anderen beiden:
+     *
+     * <ul>
+     * <li>Zaehler 0 → der Pass wird gar nicht eingehaengt.</li>
+     * <li>Zaehler laeuft → er wird eingehaengt und zeichnet ins Leere oder wird uebermalt.</li>
+     * </ul>
+     */
+    @Inject(method = "addSkyPass", at = @At("HEAD"))
+    private void bbs$himmelspassGemessen(CallbackInfo info)
+    {
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass");
+    }
+
     /* 26.2: das Feld heisst entityOutlineTarget -- es war immer schon das Umriss-Ziel, der
      * Name sagt es jetzt. Ein @Shadow auf den alten Namen bricht den Start. */
     @Shadow

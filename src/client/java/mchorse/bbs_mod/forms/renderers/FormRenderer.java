@@ -63,6 +63,13 @@ public abstract class FormRenderer <T extends Form>
         net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting()
             .setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ENTITY_IN_UI);
 
+        /* Messfuehler: zeichnen die Miniaturen (Form-palette, 64x64-vorschau im
+         * Modell-editor) ueberhaupt, oder werden sie nur uebermalt? Genau diese Frage
+         * hing bei der grossen Vorschau wochenlang -- von aussen sehen beide Faelle
+         * gleich aus. Standardmaessig aus, siehe Messpunkt. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("miniatur." + this.getClass().getSimpleName(),
+            (x2 - x1) + "x" + (y2 - y1) + " @" + x1 + "," + y1);
+
         this.renderInUI(context, x1, y1, x2, y2);
 
         FontRenderer font = context.batcher.getFont();
