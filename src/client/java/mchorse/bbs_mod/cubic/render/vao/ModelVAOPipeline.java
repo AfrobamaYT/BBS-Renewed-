@@ -139,12 +139,10 @@ public final class ModelVAOPipeline
      * Farben. Werden sie gemischt, entsteht aus zwei Nachbarn eine dritte Kennung, die
      * auf nichts zeigt -- der Klick trifft dann ein Objekt, das es nicht gibt.
      */
-    /* Alle vier ohne Tiefenzustand — siehe bauenOhneTiefe. Ein Kennungs-Durchgang hat kein
-     * Tiefenziel, und mit Tiefentest verwirft er dann jedes Fragment. */
-    public static final RenderPipeline PICKER_MODELLE = bauenOhneTiefe("picker_models", true);
-    public static final RenderPipeline PICKER_BILLBOARD = bauenOhneTiefe("picker_billboard", true);
-    public static final RenderPipeline PICKER_BILLBOARD_OHNE_SCHATTIERUNG = bauenOhneTiefe("picker_billboard_no_shading", true);
-    public static final RenderPipeline PICKER_PARTIKEL = bauenOhneTiefe("picker_particles", true);
+    public static final RenderPipeline PICKER_MODELLE = bauen("picker_models", false, true, true);
+    public static final RenderPipeline PICKER_BILLBOARD = bauen("picker_billboard", false, true, true);
+    public static final RenderPipeline PICKER_BILLBOARD_OHNE_SCHATTIERUNG = bauen("picker_billboard_no_shading", false, true, true);
+    public static final RenderPipeline PICKER_PARTIKEL = bauen("picker_particles", false, true, true);
 
     /**
      * Ob eine Pipeline zum BBS-Modellweg gehoert — und damit die Durchgangsart
@@ -262,46 +260,6 @@ public final class ModelVAOPipeline
     private static RenderPipeline bauen(String shader, boolean mischen, boolean culling, boolean tiefeSchreiben)
     {
         return bauen(shader, mischen, culling, tiefeSchreiben, false);
-    }
-
-    /**
-     * ⛔ FUER DIE KENNUNGS-DURCHGAENGE: OHNE Tiefenzustand.
-     *
-     * <p>Ein Durchgang, der in BBS' Auswahl-Puffer zeichnet, hat kein Tiefenziel — {@code
-     * PickZiel} meldet nur die Farbansicht an, und BBS' Stencil haengt seine Tiefe an einen
-     * Renderbuffer, der in 26.2 keine {@code GpuTextureView} ist. Eine Pipeline mit
-     * Tiefentest gegen ein fehlendes Tiefenziel verwirft JEDES Fragment: der Durchgang
-     * laeuft, wirft nicht, und der Puffer bleibt leer.</p>
-     *
-     * <p>Gemessen am 2026-08-01: Kennungs-Durchgang lief (Zaehler 4), Stencil trotzdem
-     * 0 von 3.686.400 Punkten mit Alpha != 0, Rahmenpuffer nachweislich vollstaendig. Genau
-     * daran hing die orange Replay-Silhouette.</p>
-     *
-     * <p>Der Gizmo loest dasselbe im Port bereits so — er zeichnet seine Kennungen ueber
-     * {@code FormPipelines.holen(..., false, false, true)}, also ebenfalls ohne Tiefe. Fuer
-     * eine Kennung genuegt das: gebraucht wird die Flaeche, nicht ihre Staffelung.</p>
-     */
-    private static RenderPipeline bauenOhneTiefe(String shader, boolean culling)
-    {
-        Identifier datei = Identifier.fromNamespaceAndPath(BBSMod.MOD_ID, "core/" + shader);
-
-        return RenderPipeline.builder()
-            .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID,
-                "pipeline/" + shader + "_opaque_no_depth"))
-            .withVertexShader(datei)
-            .withFragmentShader(datei)
-            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
-            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
-            .withBindGroupLayout(BindGroupLayouts.LIGHTING)
-            .withBindGroupLayout(BindGroupLayouts.FOG)
-            .withBindGroupLayout(GRUPPE_MODELL)
-            .withCull(culling)
-            .withVertexBinding(BINDUNG_POSITION, FORMAT_POSITION)
-            .withVertexBinding(BINDUNG_NORMALE, FORMAT_NORMALE)
-            .withVertexBinding(BINDUNG_UV0, FORMAT_UV0)
-            .withColorTargetState(ColorTargetState.DEFAULT)
-            .build();
     }
 
     /** Dieselbe Pipeline, aber mit EINER verschraenkten Bindung statt dreier getrennter. */
