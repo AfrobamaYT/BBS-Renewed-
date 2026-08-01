@@ -67,7 +67,8 @@ public class Recorder extends WorldFilmController
     public int countdown;
     public final int initialTick;
 
-    public static void renderCameraPreview(Position position, CameraRenderState camera, PoseStack stack)
+    public static void renderCameraPreview(Position position, CameraRenderState camera, PoseStack stack,
+        net.minecraft.client.renderer.SubmitNodeCollector sammler)
     {
         if (!BBSSettings.recordingOverlays.get())
         {
@@ -90,14 +91,22 @@ public class Recorder extends WorldFilmController
             .rotateX(MathUtils.toRad(-position.angle.pitch));
 
 
-        /* 26.2: setShader ist entfallen — der Shader steht in der Pipeline. Uebersetzt ist der
-         * alte Zustand dieses Blocks: kein enableBlend (mischen=false, die Vorschau ist
-         * undurchsichtig), normaler Tiefentest (tiefePruefen=true, siehe Hinweis unten), kein
-         * disableCull (culling=true, der Vorgabezustand). Fuenf Kaesten mal sechs Flaechen mal
-         * sechs Ecken mal 16 Byte POSITION_COLOR passen in 4096. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
+        /* ⭐ EINREIHEN STATT SOFORTZUG (2026-08-01, an cmlup/26.1 abgelesen).
+         *
+         * Hier stand ein eigener Zeichendurchgang ueber FormPipelines.holen(TRIANGLES, ...)
+         * samt selbst uebergebener Modellansicht. Ergebnis im Bild: statt duenner Frustum-
+         * kanten eine grosse gefuellte weisse Flaeche ueber die halbe Vorschau
+         * (Paritaets-vergleich gegen 1.21.1, Befund 2).
+         *
+         * Die RECHNUNG war nie falsch -- sie ist zeichengleich mit 26.1. Falsch war der Weg
+         * zum Bild: 26.1 gibt die Kaesten an RenderTypes.debugFilledBox(), also an Vanillas
+         * eigenen Zeichentyp fuer genau diesen Zweck. In 26.2 gibt es den weiterhin, nur
+         * ohne draw() -- man reicht die Geometrie ueber den Sammler ein.
+         *
+         * Damit ist es DASSELBE Muster wie beim LineBuilder (a81b4d2a5) und beim Bodengitter:
+         * ein eigener Sofortzug, wo der vorgesehene RenderType gereicht haette. */
+        sammler.submitCustomGeometry(stack, net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox(), (pose, builder) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             transformFrustum(vector, matrix, 1F, 1F);
             Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
@@ -114,17 +123,7 @@ public class Recorder extends WorldFilmController
             transformFrustum(vector, matrix, 0F, 0F);
             Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 0F, 0.5F, 1F, 1F);
 
-            /* Draw.fillBoxTo backt stack.last().pose() schon in die Ecken. Als Modellansicht
-             * bleibt genau das, was der alte drawWithShader zusaetzlich auftrug: die globale
-             * (bei Weltzeichnungen die Kamerasicht). captureModelView waere hier falsch — es
-             * multipliziert die Pose ein zweites Mal. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, true, true),
-                builder.build(),
-                new Matrix4f(RenderSystem.getModelViewMatrixCopy()),
-                null,
-                null);
-        }
+        });
 
         /* 26.2: das disableDepthTest, das hier stand, entfaellt ersatzlos. Es schaltete nach
          * dem Zeichnen den globalen Tiefentest ab; einen globalen Tiefenzustand gibt es nicht
@@ -254,7 +253,7 @@ public class Recorder extends WorldFilmController
     {
         super.render(context);
 
-        renderCameraPreview(this.position, context.levelState().cameraRenderState, context.poseStack());
+        renderCameraPreview(this.position, context.levelState().cameraRenderState, context.poseStack(), context.submitNodeCollector());
     }
 
     @Override

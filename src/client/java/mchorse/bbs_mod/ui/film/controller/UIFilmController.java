@@ -1412,7 +1412,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
             if (povMode != UIFilmController.CAMERA_MODE_CAMERA && BBSSettings.recordingCameraPreview.get())
             {
-                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.levelState().cameraRenderState, context.poseStack());
+                Recorder.renderCameraPreview(this.panel.getRunner().getPosition(), context.levelState().cameraRenderState, context.poseStack(), context.submitNodeCollector());
             }
         }
 

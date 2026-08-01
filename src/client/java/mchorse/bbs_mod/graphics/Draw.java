@@ -3,6 +3,7 @@ package mchorse.bbs_mod.graphics;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -93,7 +94,7 @@ public class Draw
      * I.e. bottom left, bottom right, top left, top right, where left is -X and right is +X,
      * in case of a quad on fixed on Z axis.
      */
-    public static void fillTexturedNormalQuad(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float u1, float v1, float u2, float v2, float r, float g, float b, float a, float nx, float ny, float nz)
+    public static void fillTexturedNormalQuad(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float u1, float v1, float u2, float v2, float r, float g, float b, float a, float nx, float ny, float nz)
     {
         Matrix4f matrix4f = stack.last().pose();
 
@@ -107,7 +108,7 @@ public class Draw
         builder.addVertex(matrix4f, x3, y3, z3).setUv(u1, v1).setColor(r, g, b, a).setNormal(nx, ny, nz);
     }
 
-    public static void fillQuad(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a)
+    public static void fillQuad(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a)
     {
         Matrix4f matrix4f = stack.last().pose();
 
@@ -120,7 +121,7 @@ public class Draw
         builder.addVertex(matrix4f, x4, y4, z4).setColor(r, g, b, a);
     }
 
-    public static void fillBoxTo(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a)
+    public static void fillBoxTo(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a)
     {
         float dx = x2 - x1;
         float dy = y2 - y1;
@@ -139,7 +140,7 @@ public class Draw
         stack.popPose();
     }
 
-    public static void fillBox(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, int color)
+    public static void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, int color)
     {
         float alpha = Colors.getA(color);
 
@@ -151,12 +152,12 @@ public class Draw
         fillBox(builder, stack, x1, y1, z1, x2, y2, z2, Colors.getR(color), Colors.getG(color), Colors.getB(color), alpha);
     }
 
-    public static void fillBox(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
+    public static void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b)
     {
         fillBox(builder, stack, x1, y1, z1, x2, y2, z2, r, g, b, 1F);
     }
 
-    public static void fillBox(BufferBuilder builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a)
+    public static void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a)
     {
         /* X */
         fillQuad(builder, stack, x1, y1, z2, x1, y2, z2, x1, y2, z1, x1, y1, z1, r, g, b, a);
