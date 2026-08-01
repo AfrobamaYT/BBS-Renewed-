@@ -1535,8 +1535,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
         Area viewport = this.panel.preview.getViewport();
         boolean drin = viewport.isInside(context);
 
+        /* ⚗️ Zaehler an JEDER Abzweigung. Der Kennungs-Durchgang lief nur 4x auf 122 Bilder,
+         * und ohne diese Trennung ist nicht zu sagen, an welchem der drei Ausgaenge er
+         * haengenbleibt. Standardmaessig aus, siehe Messpunkt. */
         if (this.controlled != null || (!drin && !StencilAnzeige.ohneMaus(this.stencil)))
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.tor-zu",
+                "controlled=" + (this.controlled != null) + " drin=" + drin);
             this.stencil.clearPicking();
 
             return;
@@ -1546,8 +1551,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         if (entity == null && !altPressed)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.kein-entity");
+
             return;
         }
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.gerendert",
+            "altPressed=" + altPressed);
 
         this.ensureStencilFramebuffer();
 

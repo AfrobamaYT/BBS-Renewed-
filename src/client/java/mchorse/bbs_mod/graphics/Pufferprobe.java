@@ -55,6 +55,14 @@ public class Pufferprobe
     public static final String ANFORDERUNG = "bbs.pufferprobe";
     public static final String ERGEBNIS = "bbs.pufferprobe.ergebnis";
 
+    /* ⛔ EIGENER SCHLUESSEL JE MESSART, sonst gewinnt die haeufigste Sonde jedes Rennen.
+     * Am 2026-08-01 dreimal hintereinander passiert: die Sonde im Export-Blit laeuft jedes
+     * Bild, die im Stencil nur rund viermal je Sekunde -- die Anforderung war weg, bevor die
+     * zweite ueberhaupt dran war, und die Antwort kam verlaesslich von der falschen Stelle.
+     * Das sieht aus wie ein Ergebnis und ist keins. */
+    public static final String ANFORDERUNG_FARBE = "bbs.pufferprobe.farbe";
+    public static final String ERGEBNIS_FARBE = "bbs.pufferprobe.farbe.ergebnis";
+
     /** Von oben (95 % Hoehe) nach unten (5 %) — in GL-Koordinaten, also y von gross nach klein. */
     private static final float[] ANTEILE = {0.95F, 0.80F, 0.60F, 0.40F, 0.20F, 0.05F};
 
@@ -153,12 +161,12 @@ public class Pufferprobe
     public static void vielleichtFarbeZaehlen(int texturId, int breite, int hoehe,
         int r, int g, int b, int toleranz, String stelle)
     {
-        if (System.getProperty(ANFORDERUNG) == null)
+        if (System.getProperty(ANFORDERUNG_FARBE) == null)
         {
             return;
         }
 
-        System.clearProperty(ANFORDERUNG);
+        System.clearProperty(ANFORDERUNG_FARBE);
 
         int vorher = GL30.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         int fbo = GL30.glGenFramebuffers();
@@ -169,12 +177,30 @@ public class Pufferprobe
             GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
                 GL11.GL_TEXTURE_2D, texturId, 0);
 
+            /* ⛔ ERST DIE VOLLSTAENDIGKEIT PRUEFEN. Eine ungueltige Texturnummer (0, oder eine
+             * Textur aus dem neuen GpuDevice-Weg, die sich nicht klassisch anhaengen laesst)
+             * ergibt einen unvollstaendigen Rahmenpuffer, und glReadPixels liefert dann stumm
+             * lauter Nullen. Das liest sich exakt wie „das Bild ist leer" — ein Messgeraet,
+             * das nicht kann was verlangt wird, muss LAUT scheitern, sonst buche ich seinen
+             * Ausfall als Produktfehler. */
+            int status = GL30.glCheckFramebufferStatus(GL30.GL_READ_FRAMEBUFFER);
+
+            if (status != GL30.GL_FRAMEBUFFER_COMPLETE)
+            {
+                System.setProperty(ERGEBNIS_FARBE, stelle + ": MESSUNG UNGUELTIG — rahmenpuffer"
+                    + " unvollstaendig (status " + status + ", texturId " + texturId + ", "
+                    + breite + "x" + hoehe + "). Die Nullen unten waeren erfunden.");
+
+                return;
+            }
+
             ByteBuffer puffer = BufferUtils.createByteBuffer(breite * hoehe * 4);
 
             GL11.glReadPixels(0, 0, breite, hoehe, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, puffer);
 
             int treffer = 0;
             int sichtbar = 0;
+            int farbig = 0;
 
             for (int i = 0; i < breite * hoehe; i++)
             {
@@ -188,21 +214,33 @@ public class Pufferprobe
                     sichtbar++;
                 }
 
+                /* ⛔ RGB GETRENNT VON ALPHA ZAEHLEN. Die erste Fassung verlangte alpha != 0 und
+                 * haette einen Puffer voller Kennungen als "leer" gemeldet, wenn der Shader nur
+                 * RGB schreibt -- genau der Fall, der beim Himmel zwei Sitzungen gekostet hat
+                 * (#ADCBFF mit Alpha 0). Ein Messgeraet darf die Annahme nicht enthalten, die
+                 * gerade geprueft wird. */
+                if (pr != 0 || pg != 0 || pb != 0)
+                {
+                    farbig++;
+                }
+
                 if (Math.abs(pr - r) <= toleranz && Math.abs(pg - g) <= toleranz
-                    && Math.abs(pb - b) <= toleranz && pa != 0)
+                    && Math.abs(pb - b) <= toleranz)
                 {
                     treffer++;
                 }
             }
 
-            System.setProperty(ERGEBNIS, stelle + " " + breite + "x" + hoehe
+            System.setProperty(ERGEBNIS_FARBE, stelle + " " + breite + "x" + hoehe
+                + " (texturId " + texturId + ")"
                 + " | gesuchte farbe " + r + "," + g + "," + b + " (+-" + toleranz + ") = " + treffer
-                + " punkte | alpha!=0 = " + sichtbar
+                + " punkte | RGB!=0 = " + farbig
+                + " | alpha!=0 = " + sichtbar
                 + " von " + (breite * hoehe));
         }
         catch (Throwable t)
         {
-            System.setProperty(ERGEBNIS, "FEHLER " + t);
+            System.setProperty(ERGEBNIS_FARBE, "FEHLER " + t);
         }
         finally
         {

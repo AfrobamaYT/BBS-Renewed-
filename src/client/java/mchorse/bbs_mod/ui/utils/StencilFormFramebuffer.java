@@ -277,6 +277,16 @@ public class StencilFormFramebuffer
 
     public void unbind()
     {
+        /* ⚗️ HIER messen, nicht spaeter. Der Stencil wird gedrosselt gefuellt (rund 4 von 120
+         * Bildern, siehe UIFilmControllerStencilThrottleMixin) -- eine Probe irgendwo im
+         * UI-Durchlauf trifft den gefuellten Zustand also fast nie und meldet "leer", obwohl
+         * sie nur den falschen Augenblick erwischt hat. Genau hinter der Fuellung ist der
+         * einzige Ort, an dem die Antwort etwas wert ist. */
+        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(
+            this.framebuffer.getMainTexture().id,
+            this.framebuffer.getMainTexture().width, this.framebuffer.getMainTexture().height,
+            255, 255, 255, 255, "stencil DIREKT nach der fuellung");
+
         mchorse.bbs_mod.graphics.PickZiel.abmelden();
         this.framebuffer.unbind();
     }

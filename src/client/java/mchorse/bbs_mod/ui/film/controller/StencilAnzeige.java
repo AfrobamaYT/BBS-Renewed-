@@ -137,13 +137,12 @@ public final class StencilAnzeige
          * nach der Umrissfarbe durchgezaehlt. Trennt „wird nicht gezeichnet" von „wird
          * gezeichnet und geht beim Blit verloren" -- der Unterschied ist von aussen
          * unsichtbar und hat am Himmel zwei Sitzungen gekostet. */
-        /* Erste Messung: Zwischenbild vollstaendig leer (alpha!=0 = 0 von 3686400). Der Blit
-         * ist damit unschuldig, umrissZeichnen liefert nichts. Also rueckwaerts weiter zur
-         * QUELLE: traegt der Stencil ueberhaupt Indizes? Die Zahl hinter „alpha!=0" ist hier
-         * die Antwort, die gesuchte Farbe ist nur Beiwerk. */
-        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(
-            texture.id, texture.width, texture.height,
-            abIndex, 0, 0, 2, "stencil-quelle (abIndex=" + abIndex + ")");
+        /* ⛔ HIER STAND EINE SONDE, UND SIE HAT ZWEIMAL DAS FALSCHE GEMESSEN. Diese Methode
+         * laeuft JEDES Bild (120 in 4 s), der Stencil wird aber gedrosselt gefuellt (4 in 4 s).
+         * Eine Messung hier trifft den gefuellten Zustand also so gut wie nie und meldet
+         * verlaesslich „leer" -- und sie schnappt der Sonde in StencilFormFramebuffer.unbind()
+         * die Anforderung weg, die genau hinter der Fuellung sitzt und die richtige Antwort
+         * haette. Wer hier wieder misst, misst wieder den falschen Augenblick. */
 
         int w = texture.width;
         int h = texture.height;
