@@ -2784,7 +2784,15 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
          * dann einfach ungesetzt, statt zu raten. */
         if (this.data != null && this.data.camera != null)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("film.mit-daten");
+
             max = Math.min(max, this.data.camera.calculateDuration());
+        }
+        else
+        {
+            /* Genau der Zustand, der die 1.21.1-instanz gerissen hat -- der Zaehler belegt,
+             * dass der Waechter hier WIRKLICH greift und nicht nur im Code steht. */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("film.ohne-daten");
         }
 
         return new Vector2i(min, max);
