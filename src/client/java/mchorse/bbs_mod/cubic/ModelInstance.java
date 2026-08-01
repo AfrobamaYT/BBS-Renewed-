@@ -545,6 +545,11 @@ public class ModelInstance implements IModelInstance
         /* Open the shared CPU buffer only if some group actually renders on the CPU (a visible bending welded
          * bone, or a visible bone with geometry but no VAO) — drawing an empty buffer would fail. */
         boolean cpuGeometry = this.hasCpuGeometry(model, bindings, weldedGroups);
+
+        /* Messfuehler Aufgabe 96: CPU- oder VAO-Weg? Beide zeichnen SOFORT und waeren in der
+         * zweiphasigen Oberflaeche von 26.2 unsichtbar -- welcher hier laeuft, entscheidet,
+         * wo der Fix hingehoert. Standardmaessig aus, siehe Messpunkt. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.cpu-" + cpuGeometry);
         BufferBuilder builder = null;
         ByteBufferBuilder eckenSpeicher = null;
 
@@ -584,6 +589,8 @@ public class ModelInstance implements IModelInstance
             /* Ein Durchgang, kein Aufschieben: Tiefe schreiben, Cull nach Modelleinstellung.
              * build() gibt null zurueck, wenn nichts gezeichnet wurde -- SofortZeichner
              * kommt damit zurecht und zeichnet dann nichts. */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.sofortzug");
+
             SofortZeichner.zeichnen(ModelVAOPipeline.waehlenVerschraenkt(this.isCulling(), true), builder.build(),
                 new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
                 texture == null ? null : SofortZeichner.entityTextur(texture), null);

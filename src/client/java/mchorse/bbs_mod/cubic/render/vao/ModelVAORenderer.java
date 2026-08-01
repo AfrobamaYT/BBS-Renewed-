@@ -162,6 +162,12 @@ public class ModelVAORenderer
         /* Leeres Optional und leeres OptionalDouble heissen: Farb- und Tiefenpuffer NICHT
          * loeschen. Das Modell wird in das bestehende Weltbild gezeichnet — mit einem
          * Loeschwert waere die Welt weg. */
+        /* Messfuehler Aufgabe 96: dieser Durchgang zeichnet SOFORT ins Hauptziel. In der Welt
+         * richtig; in der Oberflaeche von 26.2 landet er VOR dem GUI und wird vom
+         * Panel-Hintergrund uebermalt. Ob er beim schwarzen Vorschaufeld ueberhaupt laeuft,
+         * sagt dieser Zaehler. Standardmaessig aus, siehe Messpunkt. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.vao-durchgang");
+
         try (RenderPass durchgang = schreiber.createRenderPass(
             () -> "bbs-modell", ziel.getColorTextureView(), Optional.empty(),
             ziel.getDepthTextureView(), OptionalDouble.empty()))

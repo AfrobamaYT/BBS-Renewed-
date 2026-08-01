@@ -116,9 +116,12 @@ public class GehaltenesNetz implements AutoCloseable
     {
         if (this.ecken == null || this.zustand.vertexCount() <= 0)
         {
+            messen("leer", pipeline);
+
             return;
         }
 
+        messen("kommt-an", pipeline);
         bindungPruefen(pipeline);
 
         GpuBuffer indizes = this.eigeneIndizes != null
@@ -161,7 +164,42 @@ public class GehaltenesNetz implements AutoCloseable
             durchgang.setVertexBuffer(0, this.ecken.slice());
             durchgang.setIndexBuffer(indizes, this.zustand.indexType());
             durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
+
+            messen("gezeichnet", pipeline);
         }
+    }
+
+    /**
+     * Messfuehler an der Grenze: WELCHE Geometrie kommt hier ueberhaupt an?
+     *
+     * <p>⭐ WOFUER (Aufgabe 96, schwarze Modellvorschau): diese Methode steigt oben still
+     * aus, wenn kein Eckenpuffer da ist oder der Zaehler 0 ergibt -- ohne Fehler, ohne
+     * Logzeile. Damit sehen "die Geometrie kommt gar nicht an" und "sie kommt an und wird
+     * nicht sichtbar" von aussen GENAU GLEICH aus. Das ist die Frage, die vor jedem
+     * weiteren Fix beantwortet sein muss, und sie war nie gemessen.
+     *
+     * <p>⛔ ZAEHLER IN SYSTEM-PROPERTIES, NICHT IN EINEM NEUEN FELD. Ein frisch
+     * hinzugefuegtes statisches Feld ist nach einem Hotswap NULL -- statische
+     * Initialisierer laufen beim Tausch nicht neu. Properties existieren schon und
+     * ueberleben jeden Tausch.
+     *
+     * <p>Standardmaessig AUS (kostet dann einen getProperty je Zeichenauftrag). Anschalten
+     * und auslesen ueber den EXEC-Kanal:
+     *
+     * <pre>
+     * System.setProperty("bbs.netz.mess", "1")
+     * System.getProperties().stringPropertyNames().stream()
+     *     .filter(s -&gt; s.startsWith("bbs.netz.")).sorted()
+     *     .map(s -&gt; s + "=" + System.getProperty(s))
+     *     .collect(java.util.stream.Collectors.joining("\n"))
+     * </pre>
+     */
+    private void messen(String was, RenderPipeline pipeline)
+    {
+        Messpunkt.zaehle("netz." + was,
+            (pipeline == null ? "ohne" : String.valueOf(pipeline.getLocation()))
+            + " vertex=" + (this.zustand == null ? -1 : this.zustand.vertexCount())
+            + " ecken=" + (this.ecken != null));
     }
 
     /**

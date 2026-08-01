@@ -16,8 +16,16 @@ public class UIFormRenderer extends UIModelRenderer
     @Override
     protected void renderUserModel(UIContext context)
     {
+        /* Messfuehler fuer Aufgabe 96 (schwarze Vorschau). Die Frage, die von aussen nicht
+         * zu beantworten ist: kommt hier ueberhaupt etwas an, und mit welcher Form?
+         * Standardmaessig aus, siehe Messpunkt. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.aufruf",
+            this.form == null ? "form=null" : "form=" + this.form.getClass().getSimpleName());
+
         if (this.form == null)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.form-fehlt");
+
             return;
         }
 
@@ -27,5 +35,7 @@ public class UIFormRenderer extends UIModelRenderer
             .modelRenderer();
 
         FormUtilsClient.render(this.form, formContext);
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.durch");
     }
 }
