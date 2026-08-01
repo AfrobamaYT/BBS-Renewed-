@@ -546,9 +546,18 @@ public class ModelInstance implements IModelInstance
          * bone, or a visible bone with geometry but no VAO) — drawing an empty buffer would fail. */
         boolean cpuGeometry = this.hasCpuGeometry(model, bindings, weldedGroups);
 
-        /* Messfuehler Aufgabe 96: CPU- oder VAO-Weg? Beide zeichnen SOFORT und waeren in der
-         * zweiphasigen Oberflaeche von 26.2 unsichtbar -- welcher hier laeuft, entscheidet,
-         * wo der Fix hingehoert. Standardmaessig aus, siehe Messpunkt. */
+        /* Messfuehler Aufgabe 96: CPU- oder VAO-Weg? Beide zeichnen SOFORT, also VOR dem GUI.
+         *
+         * ⚠️ HIER STAND "waeren in der Oberflaeche unsichtbar" -- das war ZU STARK und ist
+         * gemessen widerlegt (2026-08-01): im Morphing-Panel laufen dieselben Zaehler
+         * (vao-durchgang 3906, sofortzug 62) und das Modell ist deutlich SICHTBAR. Ein
+         * Sofortzug ist nicht grundsaetzlich unsichtbar.
+         *
+         * Er verliert nur gegen alles, was die Oberflaeche DANACH ueber dieselbe Stelle malt.
+         * Im Morphing-Panel liegt dort die Welt und niemand malt darueber; im Modell-Editor
+         * liegt dort ein undurchsichtiger Panel-Hintergrund. Gemessen: 98,53 % des
+         * Vorschaufelds sind exakt #0F1217 = BBSSettings.DARK_DEEP_SURFACE, bei nur 12
+         * verschiedenen Farben im ganzen Feld. Standardmaessig aus, siehe Messpunkt. */
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.cpu-" + cpuGeometry);
         BufferBuilder builder = null;
         ByteBufferBuilder eckenSpeicher = null;
