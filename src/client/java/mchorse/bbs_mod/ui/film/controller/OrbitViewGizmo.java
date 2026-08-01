@@ -9,6 +9,7 @@ import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.utils.Batcher2D;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.UIUtils;
@@ -313,7 +314,7 @@ public class OrbitViewGizmo
 
                 builder.addVertex(matrix, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(color);
             }
-        }, null);
+        }, kasten(x, y, radius));
     }
 
     private void annulus(Batcher2D batcher, float x, float y, float inner, float outer, int color)
@@ -348,7 +349,7 @@ public class OrbitViewGizmo
                 builder.addVertex(matrix, ox2, oy2, 0F).setColor(color);
             }
 
-        }, null);
+        }, kasten(x, y, outer));
     }
 
     private void line(Batcher2D batcher, float x1, float y1, float x2, float y2, float width, int color)
@@ -375,7 +376,33 @@ public class OrbitViewGizmo
             builder.addVertex(matrix, x1 + nx, y1 + ny, 0F).setColor(color);
             builder.addVertex(matrix, x2 + nx, y2 + ny, 0F).setColor(color);
             builder.addVertex(matrix, x2 - nx, y2 - ny, 0F).setColor(color);
-        }, null);
+        }, kasten(Math.min(x1, x2) - width, Math.min(y1, y2) - width,
+            Math.max(x1, x2) + width, Math.max(y1, y2) + width));
+    }
+
+    /**
+     * Die Flaeche, in der diese Zeichnung liegt.
+     *
+     * ⛔ NICHT NULL UEBERGEBEN. Der Bereich dient dem Aussortieren -- ein Element ohne
+     * Flaeche wird nicht gezeichnet. Beim ersten Umbau des Gizmos stand hier null: die
+     * Methoden liefen (762/381/381 Aufrufe je vier Sekunden), die Einreichung kam durch den
+     * Waechter (19964 durch, 0 verworfen), und der Bildschirm blieb trotzdem leer. Der
+     * funktionierende Nachbar UIColorPicker uebergibt seit jeher ein echtes Rechteck --
+     * derselbe Weg, dieselbe Topologie, nur dieser eine Unterschied.
+     */
+    private static ScreenRectangle kasten(float mx, float my, float radius)
+    {
+        return kasten(mx - radius, my - radius, mx + radius, my + radius);
+    }
+
+    private static ScreenRectangle kasten(float x1, float y1, float x2, float y2)
+    {
+        int ax = (int) Math.floor(Math.min(x1, x2));
+        int ay = (int) Math.floor(Math.min(y1, y2));
+
+        return new ScreenRectangle(ax, ay,
+            Math.max(1, (int) Math.ceil(Math.max(x1, x2)) - ax),
+            Math.max(1, (int) Math.ceil(Math.max(y1, y2)) - ay));
     }
 
     /* ⭐ HIER STAND draw(), EIN SOFORTZUG -- UND DAS WAR DER FEHLER (2026-08-01).
