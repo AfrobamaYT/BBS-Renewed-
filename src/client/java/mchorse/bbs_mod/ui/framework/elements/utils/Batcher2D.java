@@ -805,8 +805,15 @@ public class Batcher2D
 
         if (ausschnitt != null && (ausschnitt.width() <= 0 || ausschnitt.height() <= 0))
         {
+            /* Zaehler, weil dieser Waechter selbst zum Verdaechtigen wurde: er kann nur
+             * ENTFERNEN, und wenn Geometrie unsichtbar bleibt, muss man wissen, ob er es war. */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("submit.verworfen",
+                element.getClass().getSimpleName());
+
             return;
         }
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("submit.durch", element.getClass().getSimpleName());
 
         guiRenderState(this.context).addGuiElement(element);
     }

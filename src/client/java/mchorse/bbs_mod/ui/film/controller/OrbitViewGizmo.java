@@ -299,11 +299,12 @@ public class OrbitViewGizmo
 
     private void fillCircle(Batcher2D batcher, float x, float y, float radius, int color)
     {
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.fillCircle");
+
         Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLE_FAN, true, false, false), (builder) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
             builder.addVertex(matrix, x, y, 0F).setColor(color);
 
             for (int i = 0; i <= SEGMENTS; i++)
@@ -312,20 +313,19 @@ public class OrbitViewGizmo
 
                 builder.addVertex(matrix, (float) (x - Math.cos(a) * radius), (float) (y + Math.sin(a) * radius), 0F).setColor(color);
             }
-
-            this.draw(batcher, builder, PrimitiveTopology.TRIANGLE_FAN);
-        }
+        }, null);
     }
 
     private void annulus(Batcher2D batcher, float x, float y, float inner, float outer, int color)
     {
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.annulus");
+
         Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
 
         /* SEGMENTS * 6 Ecken a 16 Byte (POSITION_COLOR) — gross genug angelegt,
          * damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(SEGMENTS * 6 * 16 + 256))
+        batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false), (builder) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
             for (int i = 0; i < SEGMENTS; i++)
             {
@@ -348,12 +348,13 @@ public class OrbitViewGizmo
                 builder.addVertex(matrix, ox2, oy2, 0F).setColor(color);
             }
 
-            this.draw(batcher, builder, PrimitiveTopology.TRIANGLES);
-        }
+        }, null);
     }
 
     private void line(Batcher2D batcher, float x1, float y1, float x2, float y2, float width, int color)
     {
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo.line");
+
         float dx = x2 - x1;
         float dy = y2 - y1;
         float length = (float) Math.sqrt(dx * dx + dy * dy);
@@ -368,62 +369,29 @@ public class OrbitViewGizmo
 
         Matrix4f matrix = new Matrix4f(batcher.pose().last().pose());
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(256))
+        batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (builder) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
             builder.addVertex(matrix, x1 - nx, y1 - ny, 0F).setColor(color);
             builder.addVertex(matrix, x1 + nx, y1 + ny, 0F).setColor(color);
             builder.addVertex(matrix, x2 + nx, y2 + ny, 0F).setColor(color);
             builder.addVertex(matrix, x2 - nx, y2 - ny, 0F).setColor(color);
-
-            this.draw(batcher, builder, PrimitiveTopology.QUADS);
-        }
+        }, null);
     }
 
-    /**
-     * Schickt das aufgebaute Netz ab. Die Topologie kommt vom Aufrufer herein, weil
-     * dieselbe Zeichnung in DREI Topologien laeuft — TRIANGLE_FAN (fillCircle),
-     * TRIANGLES (annulus) und QUADS (line) — und in 26.2 jede davon eine eigene
-     * Pipeline ist.
+    /* ⭐ HIER STAND draw(), EIN SOFORTZUG -- UND DAS WAR DER FEHLER (2026-08-01).
      *
-     * Die drei Schalter von {@link FormPipelines#holen}:
-     * - mischen = true: der alte Block rief enableBlend(). Ohne das wuerden der
-     *   Hover-Hof und die Kugelfuellungen (Alpha 0.2/0.25/0.6 ueber Colors.setA)
-     *   deckend werden.
-     * - tiefePruefen = false: der alte Block setzte KEINEN Tiefenzustand — das Gizmo
-     *   ist ein 2D-Aufsatz, der in Aufrufreihenfolge oben liegt. Aus heisst hier auch
-     *   Tiefenschreiben aus, also kann es keine unsichtbare Wand vor spaetere
-     *   Zeichnungen legen.
-     * - culling = false: ebenfalls kein Zustand im alten Block. Flache 2D-Geometrie
-     *   gewinnt nichts durch Rueckseiten-Verwerfen, kann dadurch aber verschwinden.
+     * Alle drei Zeichnungen (Kreis, Ring, Linie) gingen ueber SofortZeichner.zeichnen mit
+     * einer eigenen Pipeline. In 26.2 sammelt die Oberflaeche erst und zeichnet danach; ein
+     * sofort geoeffneter Durchgang malt VOR dem GUI und verschwindet darunter. Im
+     * Paritaetsvergleich gegen 1.21.1 fehlten dem Gizmo darum saemtliche Achsen und Ringe --
+     * sichtbar blieben nur die Buchstaben, die ueber den normalen Textweg laufen.
      *
-     * modelView ist die Einheitsmatrix: die Pose steckt bereits in jeder Ecke, weil
-     * die Aufrufer addVertex(matrix, ...) benutzen. Ein zweites Mal dieselbe Matrix
-     * wuerde die Zeichnung doppelt verschieben.
-     */
-    private void draw(Batcher2D batcher, BufferBuilder builder, PrimitiveTopology topologie)
-    {
-        SofortZeichner.zeichnen(
-            FormPipelines.holen(topologie, true, false, false),
-            builder.build(),
-            new Matrix4f(),
-            null,
-            null);
+     * Jetzt reihen alle drei ueber Batcher2D.netz ein. Der Batcher lag die ganze Zeit als
+     * Parameter daneben und wurde nicht benutzt.
+     *
+     * Dasselbe Muster wie LineBuilder (a81b4d2a5), Bodengitter und Kamera-Frustum -- der
+     * vierte Fall derselben Sorte im Port. */
 
-        /* 26.2: flush() gibt es nicht mehr. Frueher schob es Vanillas gesammelte GUI-Ecken
-         * sofort auf den Bildschirm, damit alles, was DANACH gezeichnet wird, ueber der
-         * gerade abgeschickten Rohgeometrie liegt. Die Oberflaeche ist jetzt zweiphasig
-         * (extractRenderState sammelt, GuiRenderer zeichnet), also gibt es nichts zu leeren;
-         * die Reihenfolge macht die Stapellage. nextStratum() hebt sie um eine Ebene an --
-         * dieselbe Absicht, anderer Hebel.
-         *
-         * ⚠️ Rest-Unterschied, den auch nextStratum nicht aufhebt: dieser Zug hier zeichnet
-         * SOFORT in den Bildpuffer, waehrend die Oberflaeche noch sammelt. Er liegt damit
-         * unter der GESAMTEN Oberflaeche, nicht nur unter dem, was nach ihm kommt. Wer das
-         * braucht, muss den Zug in die Sammelphase heben -- das ist ein Entwurf, kein
-         * Umbenennen. */
-        batcher.getContext().nextStratum();
-    }
 
     private record Ball(int index, float x, float y, float z)
     {}
