@@ -37,10 +37,21 @@ public record MiniaturSammelZustand(
     ScreenRectangle bounds
 ) implements PictureInPictureRenderState
 {
-    /** Massstab 1: die Textur deckt den Bildschirm 1:1 ab, es gibt nichts zu skalieren. */
+    /**
+     * ⚠️ MASSSTAB = GUI-SKALIERUNG, nicht 1.
+     *
+     * <p>Mit 1 kamen alle Figuren exakt HALB so gross heraus wie in 1.21.1 (gemessen: erste
+     * Vorschau 55 statt 110 Bildpunkte hoch, bei GUI-Skalierung 2). Der Grund ist der
+     * Bezugsrahmen: {@code getUIMatrix} rechnet in GUI-Einheiten, die Textur des
+     * Bild-im-Bild-Zeichners entsteht aber in BILDPUNKTEN — und zwischen beiden liegt genau
+     * die GUI-Skalierung.</p>
+     *
+     * <p>{@code scale()} ist das Verhaeltnis Texturpunkte zu GUI-Einheiten; er muss deshalb
+     * die GUI-Skalierung tragen, sonst zeichnet man in eine halb so feine Flaeche.</p>
+     */
     @Override
     public float scale()
     {
-        return 1F;
+        return mchorse.bbs_mod.BBSModClient.getGUIScale();
     }
 }
