@@ -1,11 +1,8 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.client.FormPipelines;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -103,25 +100,19 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         /* Render track bars (horizontal lines) */
         Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        /* ⛔ HIER STAND EIN SOFORTZUG (2026-08-01). 26.2 sammelt die Oberflaeche erst und
+         * zeichnet danach -- ein eigener Durchgang liegt unter dem gesamten GUI und wird
+         * uebermalt; die Punkte der drei Achsen waren damit unsichtbar. Nur Mischen war je
+         * eingeschaltet, Tiefe und Cull bleiben aus.
+         *
+         * ⛔ Der Bereich ist die Graph-Flaeche, nicht null: null heisst gecullt. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (ecken) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
             for (int axis = 0; axis < 3; axis++)
             {
-                this.renderGraphPoints(context, builder, matrix, axis);
+                this.renderGraphPoints(context, ecken, matrix, axis);
             }
-
-            /* Mischen an — das stand frueher als RenderSystem.enableBlend() direkt vor dem
-             * Zug. Tiefenpruefung und Cull wurden hier nie eingeschaltet, also bleiben beide
-             * aus (aus heisst in FormPipelines auch: kein Tiefenschreiben). */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                matrix,
-                null,
-                null);
-        }
+        }, UIKeyframeDopeSheet.flaeche(this.keyframes.graphArea));
     }
 
     @Override
@@ -132,23 +123,14 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
 
         context.batcher.clip(area, context);
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        /* Eingereiht statt sofort gezeichnet -- Begruendung steht in renderGraph. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (ecken) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
             for (int axis = 0; axis < 3; axis++)
             {
-                this.renderGraphPoints(context, builder, matrix, axis);
+                this.renderGraphPoints(context, ecken, matrix, axis);
             }
-
-            /* Gleiche Kombination wie in renderGraph: nur Mischen war an. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                matrix,
-                null,
-                null);
-        }
+        }, UIKeyframeDopeSheet.flaeche(area));
 
         context.batcher.unclip(context);
     }
@@ -250,7 +232,7 @@ public class UIVector3KeyframeGraph extends UIKeyframeGraph
         }
     }
 
-    private void renderGraphPoints(UIContext context, BufferBuilder builder, Matrix4f matrix, int axis)
+    private void renderGraphPoints(UIContext context, VertexConsumer builder, Matrix4f matrix, int axis)
     {
         List<Keyframe> keyframes = this.sheet.channel.getKeyframes();
 

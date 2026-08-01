@@ -1,12 +1,9 @@
 package mchorse.bbs_mod.ui.film.clips.renderer;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.camera.clips.ClipFactoryData;
 import mchorse.bbs_mod.client.FormPipelines;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIClips;
@@ -21,6 +18,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeChannel;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
@@ -98,38 +96,35 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
     {
         Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        /* ⛔ HIER STAND EIN SOFORTZUG (2026-08-01). Die Huelle zeichnet IN die
+         * Oberflaeche: 26.2 sammelt die erst und zeichnet sie danach, ein eigener Durchgang
+         * landet also unter dem gesamten GUI und wird vom Clip-Hintergrund uebermalt.
+         *
+         * Mischen bleibt an -- ENVELOPE_COLOR ist Schwarz mit Alpha 0.25 und soll den Clip
+         * durchscheinen lassen; Tiefe und Cull waren nie eingeschaltet.
+         *
+         * ⛔ Der Bereich ist das Huellen-Rechteck selbst und NICHT null (null = gecullt);
+         * mindestens 1 Pixel breit/hoch, weil ein leeres Rechteck nichts zeichnen wuerde. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false), (ecken) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
             if (envelope.keyframes.get())
             {
                 if (!envelope.channel.isEmpty())
                 {
-                    this.renderEnvelopesKeyframes(builder, matrix, envelope.channel, duration, x1, y1, x2, y2);
+                    this.renderEnvelopesKeyframes(ecken, matrix, envelope.channel, duration, x1, y1, x2, y2);
                 }
             }
             else
             {
-                this.renderSimpleEnvelope(builder, matrix, envelope, duration, x1, y1, x2, y2);
+                this.renderSimpleEnvelope(ecken, matrix, envelope, duration, x1, y1, x2, y2);
             }
-
-            /* Mischen an: ENVELOPE_COLOR ist Schwarz mit Alpha 0.25, die Huelle soll den Clip
-             * durchscheinen lassen. Der alte Weg erbte die Mischung aus dem GUI-Zustand, die
-             * Pipeline muss sie selbst mitbringen. Tiefe und Cull waren nie eingeschaltet. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false),
-                builder.build(),
-                matrix,
-                null,
-                null);
-        }
+        }, new ScreenRectangle(x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1)));
     }
 
     /**
      * Render keyframe based envelope.
      */
-    private void renderEnvelopesKeyframes(BufferBuilder builder, Matrix4f matrix, KeyframeChannel<Double> channel, int duration, int x1, int y1, int x2, int y2)
+    private void renderEnvelopesKeyframes(VertexConsumer builder, Matrix4f matrix, KeyframeChannel<Double> channel, int duration, int x1, int y1, int x2, int y2)
     {
         Keyframe<Double> prevKeyframe = null;
         int c = ENVELOPE_COLOR.getARGBColor();
@@ -172,7 +167,7 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
      * Render simple envelope by sampling its actual shape, so the fade in/out edges
      * follow the chosen {@code pre}/{@code post} interpolation instead of straight lines.
      */
-    protected void renderSimpleEnvelope(BufferBuilder builder, Matrix4f matrix, Envelope envelope, int duration, int x1, int y1, int x2, int y2)
+    protected void renderSimpleEnvelope(VertexConsumer builder, Matrix4f matrix, Envelope envelope, int duration, int x1, int y1, int x2, int y2)
     {
         int width = x2 - x1;
         int height = y2 - y1;

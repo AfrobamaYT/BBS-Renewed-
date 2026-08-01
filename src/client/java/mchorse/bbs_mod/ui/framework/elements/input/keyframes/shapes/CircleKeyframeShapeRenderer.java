@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.shapes;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -23,7 +23,7 @@ public class CircleKeyframeShapeRenderer implements IKeyframeShapeRenderer
     }
 
     @Override
-    public void renderKeyframe(UIContext uiContext, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
+    public void renderKeyframe(UIContext uiContext, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         final int NUM_SEGMENTS = 32;
 
@@ -57,7 +57,7 @@ public class CircleKeyframeShapeRenderer implements IKeyframeShapeRenderer
     }
 
     @Override
-    public void renderKeyframeBackground(UIContext uiContext, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
+    public void renderKeyframeBackground(UIContext uiContext, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         float centerSize = offset * 0.2f;
         float half = centerSize * 2;

@@ -1,15 +1,12 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeElement;
@@ -31,6 +28,7 @@ import mchorse.bbs_mod.utils.Pair;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 import mchorse.bbs_mod.utils.keyframes.KeyframeShape;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -66,7 +64,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     private Scroll dopeSheet;
     private double trackHeight;
 
-    public static IKeyframeShapeRenderer renderShape(Keyframe frame, UIContext context, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
+    public static IKeyframeShapeRenderer renderShape(Keyframe frame, UIContext context, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         KeyframeShape keyframeShape = frame.getShape();
         IKeyframeShapeRenderer shape = KeyframeShapeRenderers.SHAPES.get(keyframeShape);
@@ -74,6 +72,36 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         shape.renderKeyframe(context, builder, matrix, x, y, offset, c);
 
         return shape;
+    }
+
+    /**
+     * Ein gefuelltes Rechteck in ein eingereihtes Netz.
+     *
+     * <p>Dieselben vier Ecken in derselben Reihenfolge wie {@code Batcher2D.fillRect}, nur
+     * auf {@link VertexConsumer} statt auf {@code BufferBuilder}: die Einreihung
+     * ({@code Batcher2D.netz}) uebergibt einen VertexConsumer, und Batcher2D wird in dieser
+     * Welle von einem anderen Arbeiter bearbeitet -- die Verbreiterung dort gehoert dem
+     * Leiter. Ist sie geschehen, faellt diese Methode ersatzlos weg.
+     */
+    public static void rechteck(VertexConsumer ecken, Matrix4f matrix, float x, float y, float w, float h, int farbe)
+    {
+        ecken.addVertex(matrix, x, y, 0F).setColor(farbe);
+        ecken.addVertex(matrix, x, y + h, 0F).setColor(farbe);
+        ecken.addVertex(matrix, x + w, y + h, 0F).setColor(farbe);
+        ecken.addVertex(matrix, x + w, y, 0F).setColor(farbe);
+    }
+
+    /**
+     * Die Bildschirmflaeche, in der ein eingereihtes Netz liegt.
+     *
+     * <p>⛔ NIE null uebergeben. Der Bereich dient dem Aussortieren -- ein Netz ohne Flaeche
+     * wird nicht gezeichnet, und das sieht exakt aus wie "nicht umgestellt": die Methode
+     * laeuft, der Bildschirm bleibt leer. Genau daran hing der Gizmo-Umbau schon einmal
+     * (siehe OrbitViewGizmo.kasten).
+     */
+    public static ScreenRectangle flaeche(Area area)
+    {
+        return new ScreenRectangle(area.x, area.y, Math.max(1, area.w), Math.max(1, area.h));
     }
 
     public UIKeyframeDopeSheet(UIKeyframes keyframes)
@@ -1189,25 +1217,34 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             this.keyframes.spuren.zeichneZeile(context, row, by, bh);
         }
 
-        /* 26.2: Tesselator und BufferUploader sind weg — der Aufbau der Ecken bleibt
-         * unveraendert, nur Anfang und Ende des Blocks sind neu. enableBlend und
-         * setShader waren Zustandszeilen; beides steckt jetzt in der Pipeline.
+        /* ⛔ HIER STAND EIN SOFORTZUG -- UND DAS WAR DER FEHLER (2026-08-01).
          *
-         * Die vier Schalter von FormPipelines.holen fuer diese Zeichnung:
+         * 26.2 zeichnet die Oberflaeche in ZWEI Phasen: dieser Durchlauf SAMMELT nur,
+         * GuiRenderer.render() zeichnet danach. Ein sofort geoeffneter Durchgang landet
+         * deshalb UNTER dem gesamten GUI -- der Zeilenhintergrund, der zwanzig Zeilen
+         * weiter oben mit context.batcher.box eingereiht wird, uebermalt ihn. Genau das
+         * meldete der Nutzer: die Keyframe-Symbole waren unsichtbar. Kein Compiler warnt
+         * davor, und es sieht nicht nach einem Zeichenfehler aus, sondern nach fehlenden
+         * Elementen.
+         *
+         * Die vier Schalter der Pipeline bleiben, was sie waren:
          *  - mischen = true       ← das enableBlend, das frueher unten stand
          *  - tiefePruefen = false ← die Oberflaeche zeichnete mit depthFunc(GL_ALWAYS)
-         *                           (siehe UIBaseMenu.renderMenu), der Test darf also
-         *                           nie verwerfen. Damit faellt auch das Tiefenschreiben
-         *                           weg — sonst legt der Dope-Sheet eine unsichtbare
-         *                           Tiefenwand vor alles Nachfolgende.
+         *                           (siehe UIBaseMenu.renderMenu), der Test darf also nie
+         *                           verwerfen. Damit faellt auch das Tiefenschreiben weg --
+         *                           sonst legt der Dope-Sheet eine unsichtbare Tiefenwand
+         *                           vor alles Nachfolgende.
          *  - culling = false      ← es stand nie ein enableCull um diese Zeichnung.
          *
-         * ⚠️ Der Speicher gehoert in try-with-resources: sonst leckt nativer Speicher
-         * pro Bild und Zeile, und zwar ohne Compilerfehler. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+         * Der Eckenaufbau wandert unveraendert ins Lambda: er laeuft spaeter, wenn der
+         * Renderer an der Reihe ist. matrix ist bereits eine KOPIE der Pose (der Aufrufer
+         * baut sie mit new Matrix4f(...)), bleibt also gueltig; der eigene Puffer und sein
+         * try-with-resources entfallen mitsamt der Leckgefahr.
+         *
+         * ⛔ flaeche(area) statt null: null heisst gecullt und sieht exakt aus wie "nicht
+         * umgestellt". */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (ecken) ->
         {
-            builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
             /* Render bars indicating same values */
             for (int j = 1; j < keyframes.size(); j++)
             {
@@ -1221,14 +1258,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 {
                     int w = trackWidth + 2;
 
-                    context.batcher.fillRect(builder, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c, c, c, c);
+                    rechteck(ecken, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c);
                 }
 
                 if (Math.abs(xxx - xx) < 5)
                 {
                     c = Colors.setA(sheet.color, 0.5F);
 
-                    context.batcher.fillRect(builder, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
+                    rechteck(ecken, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c);
                 }
             }
 
@@ -1248,9 +1285,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                     int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
                     int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
 
-                    context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
-                    context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
-                    context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
+                    rechteck(ecken, matrix, x1, y1 - 2, 1, 5, color);
+                    rechteck(ecken, matrix, x2, y1 - 2, 1, 5, color);
+                    rechteck(ecken, matrix, x1 + 1, y1, x2 - x1, 1, color);
 
                     forcedIndex += 1;
                 }
@@ -1273,7 +1310,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
                 int pointOffset = toRemove ? 4 : 3;
 
-                renderShape(frame, context, builder, matrix, x1, my, pointOffset, c);
+                renderShape(frame, context, ecken, matrix, x1, my, pointOffset, c);
             }
 
             /* Render keyframe handles (inner) */
@@ -1283,26 +1320,15 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
                 int mx = this.keyframes.toGraphX(frame.getTick());
                 int mc = c | Colors.A100;
-                IKeyframeShapeRenderer shapeResult = renderShape(frame, context, builder, matrix, mx, my, 2, mc);
+                IKeyframeShapeRenderer shapeResult = renderShape(frame, context, ecken, matrix, mx, my, 2, mc);
 
-                shapeResult.renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
+                shapeResult.renderKeyframeBackground(context, ecken, matrix, mx, my, 2, mc);
             }
 
-            /* Die Modellansicht: frueher nahm drawWithShader stillschweigend
-             * RenderSystem.getModelViewMatrixCopy(); in 26.2 muss sie uebergeben werden und
-             * heisst getModelViewMatrixCopy(). Die Zeilen-Matrix steckt bereits in den
-             * Ecken (fillRect schreibt addVertex(matrix, ...)) — sie hier ein zweites Mal
-             * zu uebergeben wuerde sie doppelt anwenden. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                RenderSystem.getModelViewMatrixCopy(),
-                null,
-                null);
-        }
+        }, flaeche(area));
     }
 
-    private void renderSheetKeyframeShapes(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
+    private void renderSheetKeyframeShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
     {
         if (!this.isVisible(sheet))
         {
@@ -1363,7 +1389,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
     }
 
-    private int renderElementsTopmostKeyframes(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int y)
+    private int renderElementsTopmostKeyframes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int y)
     {
         for (UIKeyframeElement element : elements)
         {
@@ -1396,21 +1422,14 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         context.batcher.clip(area.x, rulerBottom, area.ex(), area.ey(), context);
 
-        /* Gleiche Zustandskombination wie in renderSheet — Begruendung der vier Schalter
-         * steht dort. Der Speicher muss geschlossen werden, sonst leckt er pro Bild. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        /* Eingereiht statt sofort gezeichnet -- Begruendung und Schalter stehen in
+         * renderSheet. Diese Zeichnung liegt GANZ OBEN (topmost), also genau die Sorte, die
+         * ein Sofortzug nach ganz UNTEN verlegt haette. */
+        int dopeY = this.getDopeSheetY();
 
-            this.renderElementsTopmostKeyframes(context, builder, matrix, area, this.elements, this.getDopeSheetY());
-
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                RenderSystem.getModelViewMatrixCopy(),
-                null,
-                null);
-        }
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+            (ecken) -> this.renderElementsTopmostKeyframes(context, ecken, matrix, area, this.elements, dopeY),
+            flaeche(area));
 
         context.batcher.unclip(context);
     }

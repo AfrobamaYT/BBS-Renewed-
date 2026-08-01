@@ -1,14 +1,11 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.data.types.MapType;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.graphics.window.Window;
@@ -618,30 +615,23 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
         lineBuilder.render(context.batcher, SolidColorLineRenderer.get(Colors.COLOR.set(Colors.setA(sheet.color, 1F))));
 
-        /* Render track bars (horizontal lines) */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
-            this.renderGraphPointShapes(context, builder, matrix, keyframes);
-
-            /* Mischen an: stand hier vorher als enableBlend() direkt vor dem Zug.
-             * Tiefe aus: die Keyframe-Formen sind flache UI-Geometrie, die frueher gar
-             * keinen eigenen Tiefenzustand setzte — sie darf weder gegen den Tiefenpuffer
-             * des Ziels pruefen noch in ihn schreiben, sonst verdeckt die Welt sie bzw.
-             * sie stellt eine unsichtbare Wand vor alles Nachfolgende.
-             * Cull aus: die Formen-Renderer legen ihre Ecken in wechselnder Drehrichtung
-             * an, eine Rueckseitenpruefung wuerde einzelne Formen still verschlucken. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                matrix,
-                null,
-                null);
-        }
+        /* ⛔ HIER STAND EIN SOFORTZUG (2026-08-01). 26.2 sammelt die Oberflaeche erst
+         * und zeichnet sie danach; ein eigener Durchgang landet unter dem gesamten GUI und
+         * wird vom Panel-Hintergrund uebermalt -- die Keyframe-Symbole des Graphen waren
+         * damit unsichtbar. Schalter unveraendert: mischen an, keine Tiefenpruefung (und
+         * damit auch kein Tiefenschreiben), kein Cull -- die Formen-Renderer legen ihre
+         * Ecken in wechselnder Drehrichtung an.
+         *
+         * Die Modellansicht faellt weg: sie wurde hier als matrix mitgegeben, obwohl die
+         * Ecken dieselbe Pose ueber addVertex(matrix, ...) schon selbst tragen.
+         *
+         * ⛔ Der Bereich ist die Graph-Flaeche und NICHT null -- null hiesse gecullt. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+            (ecken) -> this.renderGraphPointShapes(context, ecken, matrix, keyframes),
+            UIKeyframeDopeSheet.flaeche(this.keyframes.graphArea));
     }
 
-    protected void renderGraphPointShapes(UIContext context, BufferBuilder builder, Matrix4f matrix, List keyframes)
+    protected void renderGraphPointShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, List keyframes)
     {
         /* Draw keyframe handles (outer) */
         int forcedIndex = 0;
@@ -661,9 +651,9 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 int y1 = y - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
                 int color = sheet.selection.has(i) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
 
-                context.batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
-                context.batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
-                context.batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
+                UIKeyframeDopeSheet.rechteck(builder, matrix, x1, y1 - 2, 1, 5, color);
+                UIKeyframeDopeSheet.rechteck(builder, matrix, x2, y1 - 2, 1, 5, color);
+                UIKeyframeDopeSheet.rechteck(builder, matrix, x1 + 1, y1, x2 - x1, 1, color);
 
                 forcedIndex += 1;
             }
@@ -748,20 +738,10 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
 
         context.batcher.clip(area, context);
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
-            this.renderGraphPointShapes(context, builder, matrix, keyframes);
-
-            /* Gleiche Zustandskombination wie in renderGraph — Begruendung steht dort. */
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
-                builder.build(),
-                matrix,
-                null,
-                null);
-        }
+        /* Eingereiht statt sofort gezeichnet -- Begruendung steht in renderGraph. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false),
+            (ecken) -> this.renderGraphPointShapes(context, ecken, matrix, keyframes),
+            UIKeyframeDopeSheet.flaeche(area));
 
         context.batcher.unclip(context);
     }

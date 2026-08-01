@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.shapes;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.icons.Icon;
@@ -32,7 +32,7 @@ public class StarsKeyframeShapeRenderer implements IKeyframeShapeRenderer
     }
 
     @Override
-    public void renderKeyframe(UIContext uiContext, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
+    public void renderKeyframe(UIContext uiContext, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         float fOffset = offset * 2F;
         float baseWidth = fOffset * 0.5F;
@@ -64,7 +64,7 @@ public class StarsKeyframeShapeRenderer implements IKeyframeShapeRenderer
     }
 
     @Override
-    public void renderKeyframeBackground(UIContext uiContext, BufferBuilder builder, Matrix4f matrix, int x, int y, int offset, int c)
+    public void renderKeyframeBackground(UIContext uiContext, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
         float centerSize = offset * 0.2F;
         float half = centerSize * 1.25F;

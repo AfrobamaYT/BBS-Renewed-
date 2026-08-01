@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui.framework.elements.input.keyframes.shapes;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -23,8 +23,16 @@ public class SquareKeyframeShapeRenderer implements IKeyframeShapeRenderer
     }
 
     @Override
-    public void renderKeyframe(UIContext uiContext, BufferBuilder builder, Matrix4f matrix4f, int x, int y, int offset, int c)
+    public void renderKeyframe(UIContext uiContext, VertexConsumer builder, Matrix4f matrix4f, int x, int y, int offset, int c)
     {
-        uiContext.batcher.fillRect(builder, matrix4f, x - offset, y - offset, offset * 2, offset * 2, c, c, c, c);
+        /* ⛔ Hier stand batcher.fillRect(builder, ...) -- das nimmt einen Sofort-Puffer.
+         * Eingereiht wird aber ein VertexConsumer, und Batcher2D gehoert in dieser Welle
+         * einem anderen Arbeiter. Die vier Ecken sind Zeile fuer Zeile dieselben wie dort
+         * (oben links, unten links, unten rechts, oben rechts) -- gleiche Reihenfolge,
+         * gleiche Drehrichtung, alle vier Farben identisch. */
+        builder.addVertex(matrix4f, x - offset, y - offset, 0F).setColor(c);
+        builder.addVertex(matrix4f, x - offset, y + offset, 0F).setColor(c);
+        builder.addVertex(matrix4f, x + offset, y + offset, 0F).setColor(c);
+        builder.addVertex(matrix4f, x + offset, y - offset, 0F).setColor(c);
     }
 }

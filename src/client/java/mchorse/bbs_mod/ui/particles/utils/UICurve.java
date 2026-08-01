@@ -1,12 +1,8 @@
 package mchorse.bbs_mod.ui.particles.utils;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
-import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.line.LineBuilder;
 import mchorse.bbs_mod.graphics.line.SolidColorLineRenderer;
 import mchorse.bbs_mod.math.Constant;
@@ -26,6 +22,7 @@ import mchorse.bbs_mod.utils.colors.Color;
 import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.utils.interps.Lerps;
 import mchorse.bbs_mod.utils.MathUtils;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
 
@@ -261,34 +258,37 @@ public class UICurve extends UIElement
         int c = this.curve.nodes.size();
 
 
-        /* 26.2: SofortZeichner statt Tesselator + BufferUploader. Den Zustand traegt jetzt
-         *  die Pipeline: gemischt (jede Linie hier hat Alpha 0.5 — ohne Mischung wird der
-         *  Rahmen undurchsichtig grau), OHNE Tiefenpruefung und damit auch ohne
-         *  Tiefenschreiben. Das ist fuer eine 2D-Oberflaeche das richtige: sie wird in
-         *  Zeichenreihenfolge gemalt, und ein schreibender Graph legte sonst eine
-         *  unsichtbare Wand vor alles, was danach ins Bild kommt.
-         *  Die Modellansicht dieses Zuges ist die EINHEITSMATRIX: die Ecken tragen die Pose
-         *  schon selbst (addVertex(matrix, ...)) — sie ein zweites Mal als DynamicTransforms
-         *  mitzugeben, wuerde sie doppelt anwenden.
-         *  build() darf null liefern (nichts gezeichnet); zeichnen() faengt das ab — die
-         *  alte Null-Absicherung um drawWithShader wird dadurch ueberfluessig. */
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+        /* ⛔ HIER STAND EIN SOFORTZUG (2026-08-01). Der Rahmen zeichnet IN die
+         * Oberflaeche; 26.2 sammelt die erst und zeichnet sie danach, ein sofort
+         * geoeffneter Durchgang landet unter dem gesamten GUI.
+         *
+         * ⚠️ TOPOLOGIE GEPRUEFT, nicht angenommen: die Linien bleiben DEBUG_LINES. Der
+         * GUI-Renderer nimmt sie an -- GuiRenderer liest RenderPipeline.getPrimitiveTopology()
+         * und reicht sie an StagedVertexBuffer.appendDraw weiter, das den Indexpuffer ueber
+         * RenderSystem.getSequentialBuffer(topologie) holt. Es wird also NICHT auf Vierecke
+         * gestellt; wer die Topologie hier auf QUADS aendern wuerde, malte gefuellte Flaechen
+         * statt eines Rahmens.
+         *
+         * Mischen bleibt an (jede Linie hier hat Alpha 0.5), Tiefe und Cull bleiben aus.
+         * Die Modellansicht war schon die Einheitsmatrix -- die Ecken tragen die Pose
+         * selbst -- und faellt damit ersatzlos weg.
+         *
+         * ⛔ Der Bereich ist die Flaeche des Elements, NICHT null: null heisst gecullt. */
+        context.batcher.netz(FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false), (ecken) ->
         {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-
             /* Top and bottom */
-            builder.addVertex(matrix, this.area.x, this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-            builder.addVertex(matrix, this.area.ex(), this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.area.x, this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.area.ex(), this.graph.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
 
-            builder.addVertex(matrix, this.area.x, this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-            builder.addVertex(matrix, this.area.ex(), this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.area.x, this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.area.ex(), this.graph.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
 
             /* Left and right */
-            builder.addVertex(matrix, this.graph.x, this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-            builder.addVertex(matrix, this.graph.x, this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.graph.x, this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.graph.x, this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
 
-            builder.addVertex(matrix, this.graph.ex(), this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
-            builder.addVertex(matrix, this.graph.ex(), this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.graph.ex(), this.area.y, 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
+            ecken.addVertex(matrix, this.graph.ex(), this.area.ey(), 0F).setColor(0.5F, 0.5F, 0.5F, 0.5F);
 
             if (this.curve.type == ParticleCurveType.HERMITE && c >= 4)
             {
@@ -296,20 +296,13 @@ public class UICurve extends UIElement
                 Vector2d last = this.getVector(c - 2, this.range.x, this.range.y);
 
                 /* Hermite bounds */
-                builder.addVertex(matrix, (float) first.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
-                builder.addVertex(matrix, (float) first.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                ecken.addVertex(matrix, (float) first.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                ecken.addVertex(matrix, (float) first.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
 
-                builder.addVertex(matrix, (float) last.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
-                builder.addVertex(matrix, (float) last.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                ecken.addVertex(matrix, (float) last.x, this.graph.y, 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
+                ecken.addVertex(matrix, (float) last.x, this.graph.ey(), 0F).setColor(0.25F, 0.25F, 0.25F, 0.5F);
             }
-
-            SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false),
-                builder.build(),
-                new Matrix4f(),
-                null,
-                null);
-        }
+        }, new ScreenRectangle(this.area.x, this.area.y, Math.max(1, this.area.w), Math.max(1, this.area.h)));
 
         Color color = Colors.COLOR;
         LineBuilder line = new LineBuilder(0.75F);
