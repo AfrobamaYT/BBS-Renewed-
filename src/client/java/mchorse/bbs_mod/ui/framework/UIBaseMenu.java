@@ -161,7 +161,23 @@ public abstract class UIBaseMenu
             this.context.popViewport();
 
             result = element != null;
+
+            /* Der Verbraucher steht schon HIER zur Verfuegung: UIElement.mouseClicked reicht
+             * das Ergebnis der Kinder UNVERAENDERT nach oben durch, an der Wurzel liegt also
+             * genau das Element, das den Klick angenommen hat.
+             *
+             * ⛔ NICHT in UIElement selbst melden (2026-08-01 versucht und zurueckgenommen):
+             * UIElement ist die Basisklasse des GESAMTEN UI-Baums. Ein JDWP-Redefine daran
+             * zwingt den Mixin-Agenten, jede Unterklasse neu zu weben — dabei scheiterte
+             * sofort ein Redirector in UIReplaysEditorUndoFast ("Critical injection failure").
+             * Eine Basisklasse anzufassen kostet die Webung ihrer ganzen Nachkommenschaft. */
+            com.afrobama.bbstools.client.debug.klick.Klickspur.angenommenVon(element);
         }
+
+        /* Ein physischer Klick faengt hier an und hoert hier auf — der einzige Punkt, an dem
+         * sich GENAU EINE Zeile schreiben laesst. Auch wenn niemand angenommen hat: gerade
+         * dieser Fall ist der Befund (Fehler liegt vor der Behandlung, nicht in ihr). */
+        com.afrobama.bbstools.client.debug.klick.Klickspur.abgeschlossen(mouseX, mouseY, mouseButton);
 
         return result;
     }
