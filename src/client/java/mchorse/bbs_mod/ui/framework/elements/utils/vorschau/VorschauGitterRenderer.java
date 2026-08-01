@@ -89,8 +89,40 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("pip.gitter",
             zustand.x0() + "," + zustand.y0() + " bis " + zustand.x1() + "," + zustand.y1());
 
+        /* ⭐ WAS LIEGT SCHON AUF DEM STAPEL? Das ist die Frage, an der zwei Versuche
+         * gescheitert sind, und sie ist hier direkt abzulesen -- kein Dekompilieren noetig.
+         * Der Grundzeichner hat den Stapel bereits eingerichtet; wer seine eigene Matrix
+         * darueber multipliziert, muss wissen, worauf. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("pip.stapel",
+            "vorgabe=" + stapel.last().pose().toString().replace('\n', ' ')
+            + " || ansicht=" + zustand.ansicht().toString().replace('\n', ' '));
+
         stapel.pushPose();
 
+        /* ⭐ VOM BILDPUNKT-RAUM IN DEN NORMIERTEN GERAETERAUM (2026-08-01, Vorgabe gemessen).
+         *
+         * Der Grundzeichner uebergibt den Stapel so:
+         *
+         *     scale(2, 2, -2) . translate(420, 644, 0)
+         *
+         * Also Bildpunkte, Ursprung waagerecht MITTIG und senkrecht UNTEN, Y nach unten,
+         * eine Einheit = ein GUI-Punkt. Eine Welt-Kameramatrix direkt darauf zu
+         * multiplizieren ergibt ein Gitter von 20 Punkten Breite am unteren Rand -- genau
+         * das war der Befund der Probe (92 Punkte breit, EINEN hoch, y=641 von 644).
+         *
+         * Richtig ist der uebliche Weg: den Stapel so einrichten, dass er den normierten
+         * Geraeteraum (-1..1) auf die Flaeche abbildet, und DANN Projektion x Ansicht
+         * darauf. Drei Schritte:
+         *   1. Ursprung von unten in die Mitte
+         *   2. -1..1 auf die halbe Breite/Hoehe, Y dabei umdrehen (Welt zeigt hoch,
+         *      dieser Raum runter)
+         *   3. Projektion x Ansicht -- die steckt seit heute in ansicht(), vorher war es
+         *      nur die Ansicht, weshalb es keine Perspektive gab. */
+        float halbeBreite = (zustand.x1() - zustand.x0()) / 2F;
+        float halbeHoehe = (zustand.y1() - zustand.y0()) / 2F;
+
+        stapel.translate(0F, -halbeHoehe, 0F);
+        stapel.scale(halbeBreite, -halbeHoehe, -1F);
         stapel.mulPose(zustand.ansicht());
 
         sammler.submitCustomGeometry(stapel, RenderTypes.LINES, (pose, ecken) ->

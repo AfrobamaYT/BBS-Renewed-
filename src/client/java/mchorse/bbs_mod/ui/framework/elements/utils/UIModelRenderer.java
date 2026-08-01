@@ -58,7 +58,7 @@ public abstract class UIModelRenderer extends UIElement
      * Schalter, der je Bild einen Durchgang kostet und nichts liefert, gehoert aus.
      * Anschalten, sobald die Ansicht stimmt -- Einzelheiten in VorschauGitterRenderer.
      */
-    private static final boolean GITTER_UEBER_BILD_IM_BILD = false;
+    private static final boolean GITTER_UEBER_BILD_IM_BILD = true;
 
     private static Vector3d vec = new Vector3d();
     private static Matrix3d mat = new Matrix3d();
@@ -487,7 +487,18 @@ public abstract class UIModelRenderer extends UIElement
         if (GITTER_UEBER_BILD_IM_BILD)
         {
             context.batcher.bildImBild(new VorschauGitterZustand(
-                new Matrix4f(matrix4f),
+                /* ⭐ PROJEKTION x ANSICHT, nicht nur die Ansicht (2026-08-01 gemessen).
+                 *
+                 * Hier stand nur die Pose des Stapels -- eine reine Ansichtsmatrix, an der
+                 * unteren Zeile 0,0,0,1 abzulesen. Der Kommentar an scale() in
+                 * VorschauGitterZustand behauptete, die Projektion sei darin schon
+                 * eingerechnet; sie war es nie. Ohne sie gibt es keine Perspektive, und der
+                 * Zeichner kann seinen Raum nicht auf die Flaeche abbilden.
+                 *
+                 * Reihenfolge: erst Projektion, dann die Pose daraufmultiplizieren -- die
+                 * Pose traegt bereits Kameraansicht und die Verschiebung um die
+                 * Kameraposition (siehe renderModel). */
+                new Matrix4f(this.camera.projection).mul(matrix4f),
                 this.area.x, this.area.y, this.area.ex(), this.area.ey(),
                 /* ⚠️ NICHT null: blitTexture reicht scissorArea an den BlitRenderState
                  * durch. Ob null dort erlaubt ist, ist ungeprueft -- also lieber der
