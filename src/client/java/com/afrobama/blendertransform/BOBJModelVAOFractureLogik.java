@@ -1,5 +1,6 @@
 package com.afrobama.blendertransform;
 
+import com.mojang.blaze3d.systems.RenderPass;
 import com.afrobama.bbstools.client.fracture.FractureRenderContext;
 import com.afrobama.bbstools.client.fracture.FracturedBoneRegistry;
 import com.afrobama.bbstools.client.mixin.BOBJModelVAOAccessor;
@@ -73,6 +74,74 @@ public final class BOBJModelVAOFractureLogik
      * holt den bulk-draw nach, wenn er das nicht bekommt (befund aus dem adversarischen
      * review 2026-07-26).</p>
      */
+    /**
+     * Zeichnet das Modell und laesst gebrochene Knochen aus -- die 26.2-Fassung.
+     *
+     * ⛔ WARUM ES DIESE METHODE GIBT. Das Mixin wurde beim Port auf die neue Signatur
+     * gezogen (RenderPass statt glDrawArrays, deutsche Namen), die Logikklasse nicht. Der
+     * Brueckenaufruf suchte seither `bedingtZeichnen` mit sechs Argumenten und fand nur
+     * `conditionalBulkDraw` mit vier. Ergebnis im Log, bei JEDEM Start:
+     *
+     *     MixinBruecke: keine STATISCHE methode mit passender parameter-zahl --
+     *     BOBJModelVAOFractureLogik#bedingtZeichnen. Der handler ist WIRKUNGSLOS.
+     *
+     * Das Fracture-feature war damit seit dem Port tot -- ohne dass etwas abstuerzte. Der
+     * Fehler stand die ganze Zeit im Log (Aufgabe 100).
+     *
+     * <p>⚠️ RUECKGABE UMGEKEHRT ZUR ALTEN FASSUNG. Die alte zeichnete im Normalfall selbst
+     * und meldete "erledigt". Hier meldet {@code false} "ich habe nichts getan, zeichne du"
+     * -- genau das erwartet der Aufrufer, und es spart den Normalfall komplett.
+     *
+     * <p>{@code draw} nimmt (Eckenzahl, Instanzen, erste Ecke, erste Instanz) -- an der
+     * laufenden JVM abgefragt, nicht geraten.
+     */
+    public static boolean bedingtZeichnen(Object zielVao, RenderPass durchgang,
+        int eckenZahl, int instanzen, int ersteEcke, int ersteInstanz)
+    {
+        IEntity actor = FractureRenderContext.current();
+        Set<Integer> gebrochen = (actor == null) ? java.util.Collections.emptySet()
+                                                 : FracturedBoneRegistry.snapshot(actor);
+
+        if (gebrochen.isEmpty())
+        {
+            return false;
+        }
+
+        int[] knochen = dominanteKnochen((BOBJModelVAO) zielVao, eckenZahl);
+
+        if (knochen == null)
+        {
+            return false;
+        }
+
+        int start = -1;
+
+        for (int i = 0; i < knochen.length; i++)
+        {
+            boolean zeichnen = !gebrochen.contains(knochen[i]);
+
+            if (zeichnen && start == -1)
+            {
+                start = i;
+            }
+            else if (!zeichnen && start != -1)
+            {
+                durchgang.draw((i - start) * 3, instanzen, ersteEcke + start * 3, ersteInstanz);
+                start = -1;
+            }
+        }
+
+        if (start != -1)
+        {
+            durchgang.draw((knochen.length - start) * 3, instanzen,
+                ersteEcke + start * 3, ersteInstanz);
+        }
+
+        /* Wir HABEN gezeichnet -- der Aufrufer darf nicht nochmal, sonst laegen die
+         * gebrochenen Dreiecke wieder darueber. */
+        return true;
+    }
+
     public static boolean conditionalBulkDraw(BOBJModelVAOAccessor zielVao,
                                               int mode, int first, int count)
     {
