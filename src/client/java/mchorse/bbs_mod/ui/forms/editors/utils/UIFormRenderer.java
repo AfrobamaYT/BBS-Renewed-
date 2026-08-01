@@ -11,6 +11,16 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 
 public class UIFormRenderer extends UIModelRenderer
 {
+    /**
+     * Modell als Bild im Bild einreihen (an) oder wie bisher sofort zeichnen (aus).
+     *
+     * <p>Der Sofortzug ist nicht kaputt -- er ist nur zu frueh. Wo nichts darueber gemalt
+     * wird (Morphing-Panel), sieht man das Modell auch damit. Im Modell-Editor deckt der
+     * Panel-Hintergrund es zu; nur dort bringt der Umweg etwas. Der Schalter bleibt, bis
+     * beide Faelle gemessen sind.
+     */
+    private static final boolean MODELL_UEBER_BILD_IM_BILD = true;
+
     public Form form;
 
     @Override
@@ -25,6 +35,31 @@ public class UIFormRenderer extends UIModelRenderer
         if (this.form == null)
         {
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.form-fehlt");
+
+            return;
+        }
+
+        /* ⭐ AUFGABE 96: das Modell als Bild im Bild einreihen statt sofort zeichnen.
+         *
+         * Der Sofortzug funktioniert -- er zeichnete 574 Mal in vier Sekunden --, aber er
+         * landet VOR dem gesamten GUI, und UIModelEditorPanel:303 malt danach einen
+         * deckenden Kasten darueber. Eingereiht wird der fertige Ausschnitt IM GUI-strom
+         * geblittet, also nach dem Hintergrund. Am Bodengitter bewiesen (41ef900aa). */
+        if (MODELL_UEBER_BILD_IM_BILD)
+        {
+            org.joml.Matrix4f pose = new org.joml.Matrix4f(context.batcher.pose().last().pose());
+            net.minecraft.client.gui.navigation.ScreenRectangle flaeche =
+                new net.minecraft.client.gui.navigation.ScreenRectangle(
+                    this.area.x, this.area.y, this.area.w, this.area.h);
+
+            context.batcher.bildImBild(new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauModellZustand(
+                this.form, this.entity, this.camera,
+                new org.joml.Matrix4f(this.camera.projection), pose,
+                context.getTransition(),
+                this.area.x, this.area.y, this.area.ex(), this.area.ey(),
+                flaeche, flaeche));
+
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("formrenderer.eingereiht");
 
             return;
         }

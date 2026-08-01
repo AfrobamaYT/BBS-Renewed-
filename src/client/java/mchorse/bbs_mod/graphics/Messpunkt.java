@@ -120,6 +120,22 @@ public final class Messpunkt
         return text.toString();
     }
 
+    /**
+     * Eine Stoerung festhalten, die NICHT still bleiben darf -- unabhaengig vom Schalter.
+     *
+     * <p>Fuer den Fall, dass ein Weg wegbricht, den man von aussen nicht sieht: ein
+     * Reflexionszugriff, der nach einem Spiel-Update ins Leere greift, ein Ziel, das fehlt.
+     * Ein {@code catch}, das nur {@code null} zurueckgibt, verwandelt so etwas in ein
+     * schwarzes Feld ohne Erklaerung -- und danach sucht man tagelang am falschen Ende.
+     *
+     * <p>Auslesen mit {@link #bericht()} wie alles andere; der Eintrag traegt das Praefix
+     * {@code !} und faellt damit auf.
+     */
+    public static void stoerung(String stelle, String was)
+    {
+        System.setProperty(VORSATZ + "!" + stelle, was == null ? "?" : was);
+    }
+
     public static String an(boolean ein)
     {
         if (ein)

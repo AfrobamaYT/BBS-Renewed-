@@ -150,6 +150,19 @@ public class ModelVAORenderer
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         CommandEncoder schreiber = RenderSystem.getDevice().createCommandEncoder();
 
+        /* ⭐ WOHIN gezeichnet wird, entscheidet nicht mehr diese Zeile allein (Aufgabe 96).
+         * In der Welt bleibt es das Hauptbild; in einer Oberflaechen-Vorschau muss dasselbe
+         * Modell in die Textur des Bild-im-Bild-Zeichners, sonst malt es ins Hauptbild und
+         * verschwindet unter dem Panel-Hintergrund. Siehe Zeichenziel. */
+        com.mojang.blaze3d.textures.GpuTextureView farbZiel =
+            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+                ? mchorse.bbs_mod.graphics.Zeichenziel.farbe()
+                : ziel.getColorTextureView();
+        com.mojang.blaze3d.textures.GpuTextureView tiefenZiel =
+            mchorse.bbs_mod.graphics.Zeichenziel.eigenes()
+                ? mchorse.bbs_mod.graphics.Zeichenziel.tiefe()
+                : ziel.getDepthTextureView();
+
         /* Modellansicht und Farbe gehen in Vanillas DynamicTransforms-Block. BBS setzt eine
          * EIGENE Modellansicht (die eingefangene, siehe captureModelView) — writeTransform
          * fuellt genau diesen Block fuer einen Zeichenaufruf und gibt den Ausschnitt
@@ -169,8 +182,8 @@ public class ModelVAORenderer
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.vao-durchgang");
 
         try (RenderPass durchgang = schreiber.createRenderPass(
-            () -> "bbs-modell", ziel.getColorTextureView(), Optional.empty(),
-            ziel.getDepthTextureView(), OptionalDouble.empty()))
+            () -> "bbs-modell", farbZiel, Optional.empty(),
+            tiefenZiel, OptionalDouble.empty()))
         {
             durchgang.setPipeline(pipeline);
 
