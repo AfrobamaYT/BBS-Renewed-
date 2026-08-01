@@ -835,6 +835,10 @@ public class BBSModClient implements ClientModInitializer
          * in MiniaturSammelZustand. */
         net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.register(
             (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturSammelRenderer());
+        /* Das Gizmo -- vierter Eintrag, selber Grund: ohne ihn wird der eingereihte Zustand
+         * still verworfen. Warum es den Weg braucht, steht in GizmoZustand. */
+        net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry.register(
+            (kontext) -> new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.GizmoRenderer());
 
         /* 26.2: BuiltinItemRendererRegistry ist in fabric-rendering-v1 25.3.2 ERSATZLOS
          * gestrichen; einen Nachfolger hat Fabric nicht gebaut, weil Mojang selbst einen hat.

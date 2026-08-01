@@ -20,6 +20,9 @@ import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.ui.framework.UIBaseMenu;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.utils.vorschau.GizmoRenderer;
+import mchorse.bbs_mod.ui.framework.elements.utils.vorschau.GizmoZug;
+import mchorse.bbs_mod.ui.framework.elements.utils.vorschau.GizmoZustand;
 import mchorse.bbs_mod.ui.framework.elements.input.UIPropTransform;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragStrategy;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp;
@@ -633,59 +636,52 @@ public class Gizmo
     }
 
     /**
-     * Draw the gizmo's visual over a {@link GizmoViewport} in the UI pass, from
-     * the model-view captured this frame ({@link #lastRenderMatrix}, set by
-     * {@link #captureVisual} or {@link #renderStencil}).
+     * Reiht das Gizmo als Bild im Bild ein, aus der in diesem Bild eingefangenen Modellansicht
+     * ({@link #lastRenderMatrix}, gesetzt von {@link #captureVisual} oder
+     * {@link #renderStencil}).
      *
-     * <p>It draws straight onto the main framebuffer through the UI pipeline with
-     * the GL viewport set to {@code area} — the same setup the form editor's
-     * model pass uses ({@link mchorse.bbs_mod.ui.framework.elements.utils.UIModelRenderer}).
-     * This fixes the transparency the world shaders mangled (the whole point of
-     * the move) and places the gizmo correctly: the film world is itself
-     * rendered into that same {@code area}, and {@code projection} maps NDC onto
-     * the area, so the gizmo lines up with the model and stays inside the
-     * preview (the frustum clips it to the viewport rect). It is NOT rendered
-     * to an off-screen buffer and blitted, the way the pick stencil and sphere
-     * highlight are: those are opaque masks, but the rotation pie is translucent,
-     * and an intermediate buffer applies its alpha twice (once on draw, once on
-     * blit), leaving it nearly invisible.
-     *
-     * <p>The projection is applied before drawing because
-     * {@link #getAxesDistanceScale} reads it back from {@link RenderSystem} to
-     * keep the gizmo a constant on-screen size.
+     * <p>26.2 zeichnet die Oberflaeche in ZWEI Phasen: der UI-Durchlauf sammelt nur,
+     * {@code GuiRenderer.render()} zeichnet danach. Der bisherige Sofortzug landete damit
+     * UNTER dem gesamten GUI — das Gizmo war seit dem Port unsichtbar. Warum es dafuer ein
+     * eigenes Ziel braucht und {@code Batcher2D.netz} nicht reicht, steht in {@link GizmoZustand};
+     * gezeichnet wird in {@link GizmoRenderer}.
      */
     public void renderInterface(UIContext context, Matrix4f projection, Area area)
     {
-        if (BBSRendering.isIrisShadowPass() || !this.hasLastRenderMatrix
-            || context == null || projection == null || area == null)
+        /* Eine Flaeche ohne Ausdehnung ergaebe eine Textur ohne Ausdehnung, und der Absturz
+         * kaeme erst am Bildende in GuiRenderer ("Scissor size must be >0") — ohne eine
+         * einzige BBS-Zeile im Trace. */
+        if (BBSRendering.isIrisShadowPass() || !this.hasLastRenderMatrix || context == null
+            || projection == null || area == null || area.w <= 0 || area.h <= 0)
         {
             return;
         }
 
-        Minecraft mc = Minecraft.getInstance();
+        float viewportScale = context.menu.height / (float) area.h;
 
-        this.setViewportScale(context.menu.height / (float) area.h);
+        this.setViewportScale(viewportScale);
 
-        context.batcher.flush();
+        GizmoZug.einreihen(context, projection, this.lastRenderMatrix, area, viewportScale);
+    }
 
-        MatrixStackUtils.cacheMatrices();
-        mchorse.bbs_mod.graphics.Projektion.setzen(projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
-
-        /* Map the UI area to a framebuffer-pixel viewport, exactly as the form
-         * editor's model pass does, so the gizmo renders into the preview and is
-         * clipped to it by the view frustum. */
-        UIUtils.viewportArea(area);
+    /**
+     * Zeichnet das Gizmo in die Textur des Bild-im-Bild-Zeichners. NUR von dort rufen —
+     * Projektion, globale Modellansicht und Zeichenziel richtet {@link GizmoRenderer} ein.
+     *
+     * <p>⚠️ Diese Phase laeuft NACH dem UI-Durchlauf. {@link #lastSphereMatrix} und
+     * {@link #lastSphereLocalRadius} entstehen erst hier, also nachdem die Hervorhebung der
+     * Kugel und die Zeigerpruefung sie gelesen haben: beide arbeiten mit dem Wert des VORIGEN
+     * Bildes. {@link #lastRenderMatrix} ist nicht betroffen — die faengt der Weltdurchgang ein.
+     */
+    public void zeichneInTextur(Matrix4f ansicht, float viewportSkalierung)
+    {
+        this.setViewportScale(viewportSkalierung);
 
         PoseStack stack = new PoseStack();
-        MatrixStackUtils.multiply(stack, this.lastRenderMatrix);
+
+        MatrixStackUtils.multiply(stack, ansicht);
 
         this.drawGizmo(stack);
-
-        mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
-        MatrixStackUtils.restoreMatrices();
-
-        /* 26.2: es gibt keinen Tiefenzustand mehr, den die Oberflaeche danach erwarten
-         * koennte -- jeder Zug bringt seinen eigenen mit. Das Zuruecksetzen entfaellt. */
     }
 
     private void drawGizmo(PoseStack stack)
@@ -872,7 +868,7 @@ public class Gizmo
             }
 
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle1");
-            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+            GizmoZug.zeichnen(pipeline, builder.build(), globalModelView, modulator);
 
             /* Bright radial edges at the grab angle and the leading angle, like the axis pie. */
             float thickness = 0.005F * scale;
@@ -882,7 +878,7 @@ public class Gizmo
             this.pieEdge(builder, mat, right, down, startRad + sweepRad, radius, thickness, r, g, b);
 
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle2");
-            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+            GizmoZug.zeichnen(pipeline, builder.build(), globalModelView, modulator);
         }
     }
 
@@ -966,11 +962,10 @@ public class Gizmo
              * Der globale Vergleich bleibt damit auf dem Wert, den drawOccludedGizmo
              * hinterlaesst, also demselben wie vorher nach dieser Methode. */
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3");
-            SofortZeichner.zeichnen(
+            GizmoZug.zeichnen(
                 FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, true),
                 builder.build(),
                 RenderSystem.getModelViewMatrixCopy(),
-                null,
                 null);
         }
     }
@@ -1109,8 +1104,8 @@ public class Gizmo
             if (ziel == null)
             {
                 mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle4");
-                SofortZeichner.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
-                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null, null, null);
+                GizmoZug.zeichnen(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
+                    builder.build(), RenderSystem.getModelViewMatrixCopy(), null);
             }
             else
             {
@@ -1125,6 +1120,23 @@ public class Gizmo
 
     void drawCachedRingBillboard(PoseStack stack, float r, float g, float b, float a)
     {
+        /* Das gehaltene Netz von GizmoRinge zeichnet ohne Zielangabe, also fest ins
+         * Hauptbild -- in der Bild-im-Bild-Phase waere der Blickring damit das einzige Teil
+         * des Gizmos, das fehlt. Begruendung: GizmoZug#blickring.
+         *
+         * ⛔ DER AUSWAHL-DURCHGANG GEHT IMMER DEN ALTEN WEG, auch wenn ein Zeichenziel
+         * stuende: seine Kennung gehoert in BBS' Auswahl-Puffer. Landete sie in der
+         * Bild-im-Bild-Textur, waere das ein doppelter stiller Fehler -- ein dunkelroter
+         * Fleck SICHTBAR im Bild und ein Blickring, den der Klick nicht findet (die Falle,
+         * vor der GizmoRinge#billboardZeichnen warnt). */
+        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() == null
+            && mchorse.bbs_mod.graphics.Zeichenziel.eigenes())
+        {
+            GizmoZug.blickring(stack, r, g, b, a, VIEW_RING_SCALE);
+
+            return;
+        }
+
         this.ringe.billboardZeichnen(stack, r, g, b, a, VIEW_RING_SCALE);
     }
 
@@ -1252,7 +1264,7 @@ public class Gizmo
             }
         
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle6");
-            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+            GizmoZug.zeichnen(pipeline, builder.build(), globalModelView, modulator);
 
             float lineThickness = 0.005F * scale;
             builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
@@ -1284,7 +1296,7 @@ public class Gizmo
             builder.addVertex(mat, ex + p2.x, 0, ez + p2.z).setColor(r, g, b, 1F);
 
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle7");
-            SofortZeichner.zeichnen(pipeline, builder.build(), globalModelView, modulator, null);
+            GizmoZug.zeichnen(pipeline, builder.build(), globalModelView, modulator);
         }
         
         stack.popPose();
@@ -1522,12 +1534,11 @@ public class Gizmo
                  * jetzt als Farbe im Zug mit — noetig, weil der Billboard-Ring darueber
                  * seine Shaderfarbe selbst setzt und undurchsichtig hinterlaesst. */
                 mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle8");
-                SofortZeichner.zeichnen(
+                GizmoZug.zeichnen(
                     FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, true, true),
                     builder.build(),
                     RenderSystem.getModelViewMatrixCopy(),
-                    new Vector4f(1F, 1F, 1F, BBSSettings.gizmoOpacity.get()),
-                    null);
+                    new Vector4f(1F, 1F, 1F, BBSSettings.gizmoOpacity.get()));
             }
         }
     }
