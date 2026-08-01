@@ -49,6 +49,19 @@ public abstract class FormRenderer <T extends Form>
         return Collections.emptyList();
     }
 
+    /**
+     * Der eigentliche Zeichenaufruf einer Miniatur, gerufen aus
+     * {@code MiniaturRenderer.renderToTexture} — also spaeter im Bild und mit gesetztem
+     * {@code Zeichenziel}.
+     *
+     * <p>Existiert nur, weil {@link #renderInUI} geschuetzt ist und der Bild-im-Bild-Zeichner
+     * in einem anderen Paket liegt. Keine Logik, nur die Tuer.</p>
+     */
+    public final void zeichneMiniatur(UIContext context, int x1, int y1, int x2, int y2)
+    {
+        this.renderInUI(context, x1, y1, x2, y2);
+    }
+
     public final void renderUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         /* ⚠️ VERHALTENSAENDERUNG 26.2: die beiden Lichtrichtungen fuer die Formvorschau in
@@ -70,7 +83,23 @@ public abstract class FormRenderer <T extends Form>
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("miniatur." + this.getClass().getSimpleName(),
             (x2 - x1) + "x" + (y2 - y1) + " @" + x1 + "," + y1);
 
-        this.renderInUI(context, x1, y1, x2, y2);
+        /* ⭐ BILD IM BILD STATT SOFORTZUG. 26.2 zeichnet die GUI in zwei Phasen: dieser
+         * Durchlauf SAMMELT nur, GuiRenderer.render() zeichnet danach. Ein sofort
+         * geoeffneter Durchgang landet deshalb UNTER dem gesamten GUI und wird vom
+         * Panel-Hintergrund uebermalt -- die Miniaturen zeichneten (Zaehler oben: 366x in
+         * vier Sekunden) und waren trotzdem unsichtbar.
+         *
+         * Gemessen im A/B gegen 1.21.1 (Morph-Panel, gleiche Welt, gleicher Standpunkt):
+         * die alte Version zeigt elf Modellvorschauen, der Port keine einzige.
+         *
+         * Derselbe Weg, den schon das Bodengitter (41ef900aa) und die grosse Vorschau
+         * (2b95ec8e5) gegangen sind. Siehe MiniaturZustand. */
+        net.minecraft.client.gui.navigation.ScreenRectangle flaeche =
+            new net.minecraft.client.gui.navigation.ScreenRectangle(x1, y1, x2 - x1, y2 - y1);
+
+        context.batcher.bildImBild(
+            new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturZustand(
+                this, context, x1, y1, x2, y2, flaeche, flaeche));
 
         FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();
