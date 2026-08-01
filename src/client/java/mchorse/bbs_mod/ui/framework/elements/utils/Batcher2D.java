@@ -237,7 +237,21 @@ public class Batcher2D
         );
     }
 
-    public void fillRect(BufferBuilder builder, Matrix4f matrix4f, float x, float y, float w, float h, int color1, int color2, int color3, int color4)
+    /**
+     * ⛔ NIMMT {@link VertexConsumer}, NICHT {@code BufferBuilder}.
+     *
+     * <p>{@code BufferBuilder} ist der SOFORT-Puffer. Wer diesen Helfer damit tippt, zwingt
+     * jeden Aufrufer in den Sofortzug — und der landet in 26.2 unter dem gesamten GUI, weil
+     * die Oberflaeche in zwei Phasen gezeichnet wird. Genau daran hingen die unsichtbaren
+     * Keyframe-Symbole.</p>
+     *
+     * <p>{@code BufferBuilder} implementiert {@code VertexConsumer}, der alte Aufrufweg
+     * bleibt also gueltig. Die Verbreiterung nimmt niemandem etwas und erlaubt beiden Wegen,
+     * denselben Helfer zu benutzen — ohne sie muss jeder eingereihte Aufrufer seine vier
+     * Ecken selbst schreiben, und genau solche Abschriften standen nach der Umstellung an
+     * zwei Stellen im Baum.</p>
+     */
+    public void fillRect(VertexConsumer builder, Matrix4f matrix4f, float x, float y, float w, float h, int color1, int color2, int color3, int color4)
     {
         /* c1 ---- c2
          * |        |
