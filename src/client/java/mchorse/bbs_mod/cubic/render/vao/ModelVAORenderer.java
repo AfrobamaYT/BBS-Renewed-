@@ -141,10 +141,21 @@ public class ModelVAORenderer
          * davor -- fuer einen AUFGESCHOBENEN Zug waere er falsch, weil zwischen Einreihen und
          * Zeichnen beliebig viel anderes bindet. Darum reichen ModelVAOCommand und BOBJCommand
          * ihre Textur ausdruecklich durch, statt sich hierauf zu verlassen. */
+        boolean durchgereicht = textur != null;
+
         if (textur == null)
         {
             textur = mchorse.bbs_mod.BBSModClient.getTextures().getLastBound();
         }
+
+        /* Messfuehler Aufgabe 99 (Figur erscheint magenta = Fehltextur): kommt eine Textur
+         * hier an, und ueber welchen Weg -- als Parameter oder ueber den globalen Rueckfall,
+         * vor dem der Kommentar oben warnt? */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.textur",
+            (durchgereicht ? "parameter" : "rueckfall") + " "
+            + (textur == null
+                ? "NULL"
+                : "id=" + textur.id + " " + textur.width + "x" + textur.height));
 
 
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
