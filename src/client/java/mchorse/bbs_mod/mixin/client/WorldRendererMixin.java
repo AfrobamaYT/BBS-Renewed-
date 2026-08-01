@@ -111,6 +111,19 @@ public class WorldRendererMixin
     public void onRenderWorldEnd(CallbackInfo info)
     {
         FormTranslucentQueue.flush();
+
+        /* ⚗️ Auf Anforderung EIN Bild aus BBS' Puffer lesen — hier, weil das der
+         * Render-Thread ist und die Welt gerade fertig gezeichnet wurde. Ohne Anforderung
+         * kostet der Aufruf nur eine Abfrage einer Systemeigenschaft. Siehe Pufferprobe. */
+        /* Das AKTIVE Hauptziel, nicht BBS' Puffer: bei offenem Editor sind beide dasselbe
+         * (zielIstBBS=true gemessen), bei geschlossenem Editor ist es Vanillas Ziel. Damit
+         * beantwortet DIESELBE Probe die Frage, ob Alpha 0 im Himmel eine Eigenheit von BBS'
+         * Puffer ist oder in 26.2 ueberall so aussieht. */
+        RenderTarget haupt = net.minecraft.client.Minecraft.getInstance()
+            .gameRenderer.mainRenderTarget();
+
+        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtLesen(haupt,
+            "hauptziel" + (haupt == BBSRendering.getFramebuffer() ? "(BBS)" : "(vanilla)"));
     }
 
     /**
