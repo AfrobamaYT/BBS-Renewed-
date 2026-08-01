@@ -69,9 +69,34 @@ public class MiniaturRenderer extends PictureInPictureRenderer<MiniaturZustand>
              * einreichen lassen, und die eingereichten Auftraege ZEICHNEN lassen. Ohne den
              * dritten Schritt sammelt man Auftraege, die niemand ausfuehrt -- die Miniatur
              * bliebe leer, ohne jede Meldung. */
-            mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
-                zustand.zeichner().zeichneMiniatur(zustand.kontext(),
-                    zustand.x0(), zustand.y0(), zustand.x1(), zustand.y1()));
+            /* ⛔ KEINE AUSNAHME DARF HIER ENTWEICHEN -- sonst reisst EINE kaputte Form das
+             * ganze Spiel.
+             *
+             * Der Nutzer hat am 2026-08-01 im Morph-Panel geklickt und bekam
+             * crash-2026-08-01_17.24.56: "IllegalStateException: Pose stack not empty" aus
+             * LevelRenderer.checkPoseStack. Jeder Form-Zeichner klammert seinen Aufbau mit
+             * pushPose/popPose -- gezaehlt sind alle ausgeglichen, und ein frueher return
+             * zwischen beiden existiert nirgends (beides nachgeprueft). Bleibt der Weg ueber
+             * eine AUSNAHME: fliegt sie zwischen push und pop, bleibt der Stapel stehen, und
+             * Vanilla bricht beim naechsten Weltdurchgang ab -- weit weg von der Ursache.
+             *
+             * Vor dem Umbau lief renderInUI inmitten des UI-Durchlaufs; jetzt laeuft es in
+             * der Bild-im-Bild-Phase, wo eine Ausnahme niemanden mehr findet, der sie
+             * auffaengt. Eine unsichtbare Miniatur ist ein Schoenheitsfehler, ein Absturz
+             * kostet dem Nutzer seine Arbeit. */
+            try
+            {
+                mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
+                    zustand.zeichner().zeichneMiniatur(zustand.kontext(),
+                        zustand.x0(), zustand.y0(), zustand.x1(), zustand.y1()));
+            }
+            catch (Throwable t)
+            {
+                /* Laut, aber nicht toedlich: der Grund landet im Messpunkt, auch ohne
+                 * eingeschaltete Messung. Still verschlucken waere der schlimmere Fehler. */
+                Messpunkt.stoerung("miniatur.zeichnen",
+                    zustand.zeichner().getClass().getSimpleName() + ": " + t);
+            }
         }
         finally
         {
