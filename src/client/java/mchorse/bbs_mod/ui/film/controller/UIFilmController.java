@@ -1350,6 +1350,10 @@ public class UIFilmController extends UIElement implements GizmoViewport
         mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
         InverseView.set(new Matrix3f(BBSRendering.camera).invert());
 
+        /* ⚗️ ALLE eingaenge dieser stelle auf einmal — gegenstueck haengt in
+         * UIFilmPanel#renderInWorld. Vergleich: python tools/lagen.py stencil weltbild */
+        mchorse.bbs_mod.graphics.Zeichenlage.melden("stencil");
+
         /* Render the stencil */
         PoseStack worldStack = this.worldRenderContext.poseStack();
 
