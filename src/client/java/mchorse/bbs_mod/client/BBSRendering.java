@@ -573,7 +573,32 @@ public class BBSRendering
         renderingWorld = false;
     }
 
+    /**
+     * Fuellen UND Abschliessen — der bisherige Weg, unveraendert fuer alle Aufrufer, die
+     * beides in einem Rutsch wollen (Welt-Modus).
+     */
     public static void onRenderBeforeScreen()
+    {
+        fuellen();
+        abschliessen();
+    }
+
+    /**
+     * Nur die Vorschau-Textur fuellen, ohne den Framebuffer abzuhaengen.
+     *
+     * <p>⛔ WOFUER (2026-08-02, #19): im Editor haengt das Fuellen am TAIL von
+     * {@code Gui.extractRenderState} — gemessen per Stapelabzug. In 26.2 werden dort erst
+     * ALLE UI-Elemente eingesammelt und danach gezeichnet: der Blit des Vorschaufeldes ist
+     * also schon eingereiht, wenn die Textur gefuellt wird. Das Feld zeigt deshalb immer
+     * das Bild des VORIGEN Durchgangs (gemessen: beim Blit stand die Fuellung auf 132,
+     * waehrend sie bei 133 war), und der aktuelle Replay-Umriss darueber sitzt bei
+     * Kamerabewegung daneben.
+     *
+     * <p>Das Fuellen darf deshalb vorziehen, das ABHAENGEN nicht: InGameHudMixin sagt
+     * "dort muss der framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im
+     * haupt-framebuffer statt im viewport". Genau diese Trennung macht diese Methode.
+     */
+    public static void fuellen()
     {
         /* ⛔ OHNE DIESEN TEST STIRBT DER VIDEO-EXPORT MIT EINEM NULLZEIGER.
          *
@@ -687,7 +712,6 @@ public class BBSRendering
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);
 
-        abschliessen();
     }
 
     /**

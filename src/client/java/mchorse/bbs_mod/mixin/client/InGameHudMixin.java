@@ -57,10 +57,20 @@ public class InGameHudMixin
 
         ICameraController current = BBSModClient.getCameraController().getCurrent();
 
-        /* Nur der welt-modus blittet hier schon: onRenderBeforeScreen haengt den
-         * offscreen-framebuffer ab. Im editor laeuft RunnerCameraController — dort muss
-         * der framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im
-         * haupt-framebuffer statt im viewport. Beide erben CameraWorkCameraController. */
+        /* ⛔ FUELLEN GEHOERT HIERHER, ABHAENGEN AN DEN TAIL (2026-08-02, Aufgabe #19).
+         *
+         * In 26.2 sammelt extractRenderState erst ALLE UI-Elemente ein und zeichnet danach.
+         * Wurde die Vorschau-Textur erst am TAIL gefuellt, war der Blit des Vorschaufeldes
+         * laengst eingereiht — das Feld zeigte deshalb immer das Bild des VORIGEN Durchgangs
+         * (gemessen per Reihenfolge-Sonden: beim Blit stand die Fuellung auf 132, waehrend
+         * sie bei 133 war). Der aktuelle Replay-Umriss darueber sass bei Kamerabewegung
+         * daneben, und der Abstand skalierte mit der Bildzeit.
+         *
+         * Der Welt-Modus (PlayCameraController) macht wie bisher beides auf einmal — dort
+         * SOLL der Framebuffer hier schon abgehaengt werden. Im Editor laeuft
+         * RunnerCameraController: dort wird jetzt nur GEFUELLT, und das Abhaengen bleibt am
+         * TAIL, weil der Framebuffer bis dahin gebunden sein muss (sonst landet das HUD im
+         * haupt-framebuffer statt im viewport). Beide erben CameraWorkCameraController. */
         if (current instanceof PlayCameraController)
         {
             BBSRendering.onRenderBeforeScreen();
@@ -71,6 +81,12 @@ public class InGameHudMixin
 
                 return;
             }
+        }
+
+        else
+        {
+            /* Editor und alles Uebrige: nur fuellen, nicht abhaengen. */
+            BBSRendering.fuellen();
         }
 
         if (!TrackerClientClip.shouldRenderHud())
@@ -92,7 +108,8 @@ public class InGameHudMixin
     {
         GuiGraphicsExtractor drawContext = this.bbs$zeichner();
 
-        BBSRendering.onRenderBeforeScreen();
+        /* Nur noch der Schluss — gefuellt wurde bereits am HEAD (siehe dort). */
+        BBSRendering.abschliessen();
 
         if (TrackerClientClip.shouldRenderHud() && BBSModClient.getCameraController().getCurrent() != null)
         {
