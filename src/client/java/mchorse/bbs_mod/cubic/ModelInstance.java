@@ -748,6 +748,16 @@ public class ModelInstance implements IModelInstance
                         texture = BBSModClient.getTextures().getLastBound();
                     }
 
+                    /* Messfuehler 2026-08-02: der Grundindex kam als 0 an, obwohl er
+                     * durchgereicht wird. Diese Zeile trennt die zwei Moeglichkeiten —
+                     * stencilMap ist hier null, ODER fillStencilMap lief nie (aktuelleBasis
+                     * steht dann auf dem Feld-Vorgabewert 0). */
+                    if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
+                    mchorse.bbs_mod.graphics.Messpunkt.zaehle("pick.basis",
+                        "stencilMap=" + (stencilMap == null ? "NULL" : "da")
+                        + " basis=" + (stencilMap == null ? -1 : stencilMap.aktuelleBasis)
+                        + " objectIndex=" + (stencilMap == null ? -1 : stencilMap.objectIndex));
+
                     vao.updateMesh(stencilMap);
 
                     if (FormTranslucentQueue.needsSplit(shader, stencilMap, texture, color.a))
