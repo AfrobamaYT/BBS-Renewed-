@@ -787,7 +787,10 @@ public class ModelInstance implements IModelInstance
                     }
                     else
                     {
-                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture);
+                        /* Der Weg des Auswahl-Durchgangs: beide Zweige darueber verlangen
+                         * stencilMap == null, hier landet das Picken also immer. Der
+                         * Grundindex der Form muss darum HIER mit, nicht nur oben. */
+                        ModelVAORenderer.render(shader, vao, stack, color.r, color.g, color.b, color.a, light, overlay, texture, stencilMap == null ? 0 : stencilMap.aktuelleBasis);
                     }
                 }
 

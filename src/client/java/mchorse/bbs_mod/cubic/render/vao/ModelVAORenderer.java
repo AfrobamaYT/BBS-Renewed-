@@ -81,7 +81,23 @@ public class ModelVAORenderer
     /** Wie oben, aber mit der Modelltextur -- siehe die lange Fassung, warum sie noetig ist. */
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.graphics.texture.Texture textur)
     {
-        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0, 0, textur);
+        render(pipeline, modelVAO, stack, r, g, b, a, light, overlay, textur, 0);
+    }
+
+    /**
+     * Wie oben, aber mit dem Grundindex der Form fuer den Auswahl-Durchgang.
+     *
+     * <p>⛔ DIESE Fassung ist die des Auswahl-Durchgangs, nicht die mit {@code passMode}
+     * (2026-08-02 gemessen). {@link FormTranslucentQueue#needsSplit} und
+     * {@link FormTranslucentQueue#needsWholeDefer} verlangen beide {@code stencilMap == null};
+     * beim Picken IST die Karte gesetzt, also faellt der Zug immer in den schlichten
+     * {@code else}-Zweig der Aufrufer -- und der reichte die Kennung als 0 herein. Wer den
+     * Grundindex nur in den Aufschub-Zweig legt, aendert eine Stelle, die im Auswahl-Durchgang
+     * nie laeuft, und misst danach unveraendert {@code kennung=0}.
+     */
+    public static void render(RenderPipeline pipeline, IModelVAO modelVAO, PoseStack stack, float r, float g, float b, float a, int light, int overlay, mchorse.bbs_mod.graphics.texture.Texture textur, int kennung)
+    {
+        render(pipeline, modelVAO, captureModelView(stack), stack.last().normal(), r, g, b, a, light, overlay, 0, kennung, textur);
     }
 
     public static void render(RenderPipeline pipeline, IModelVAO modelVAO, Matrix4f modelView, Matrix3f normalMat, float r, float g, float b, float a, int light, int overlay, int passMode)

@@ -138,7 +138,11 @@ public class CubicVAORenderer extends CubicCubeRenderer
             }
             else
             {
-                ModelVAORenderer.render(this.pipeline, entry.getValue(), stack, r, g, b, a, light, this.overlay);
+                /* Der Weg des Auswahl-Durchgangs: needsSplit und needsWholeDefer verlangen
+                 * beide stencilMap == null, beim Picken landet der Zug also immer hier.
+                 * light traegt den KNOCHEN-Index (oben gesetzt), die Kennung den GRUND-Index
+                 * der Form -- der Shader addiert beide (picker_models.fsh:43). */
+                ModelVAORenderer.render(this.pipeline, entry.getValue(), stack, r, g, b, a, light, this.overlay, texture, this.stencilMap == null ? 0 : this.stencilMap.aktuelleBasis);
             }
         }
 
