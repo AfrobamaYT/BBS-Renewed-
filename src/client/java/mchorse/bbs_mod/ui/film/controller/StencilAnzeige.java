@@ -125,6 +125,11 @@ public final class StencilAnzeige
             "farbe=" + Integer.toHexString(farbe) + " breite=" + breite
             + " abIndex=" + abIndex
             + " quelle=" + texture.width + "x" + texture.height
+            /* Die GL-Nummer der Textur, aus der der Umriss LIEST -- gegen die Nummer, die
+             * StencilFormFramebuffer beim Zuruecklesen bindet (Sonde stencil.leseziel).
+             * Zwei verschiedene Nummern hiesse: der Umriss sieht Kennungen, der Klick
+             * greift auf einen anderen Puffer. */
+            + " texturId=" + texture.id + " pufferId=" + puffer.id
             + " zwischenbild=" + (stencil.zwischenbild() == null ? "null"
                 : stencil.zwischenbild().width + "x" + stencil.zwischenbild().height)
             + " flaeche=" + area.w + "x" + area.h);

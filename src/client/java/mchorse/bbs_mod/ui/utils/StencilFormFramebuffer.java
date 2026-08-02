@@ -31,6 +31,7 @@ public class StencilFormFramebuffer
     /** Reused readback buffer for the tolerance region pick (grows as needed). */
     private FloatBuffer pickBuffer;
 
+
     /**
      * Das Zwischenbild der Filterdurchgaenge.
      *
@@ -199,13 +200,95 @@ public class StencilFormFramebuffer
         this.pick(Math.round(x * scale), Math.round(y * scale));
     }
 
+    /**
+     * Liest eine Region AUS DEM EIGENEN Puffer zurueck.
+     *
+     * <h2>⛔ OHNE DAS BINDEN LIEST DER PICKER DEN BILDSCHIRM (2026-08-02 gemessen)</h2>
+     *
+     * <p>{@code glReadPixels} nimmt keine Zieltextur entgegen -- es liest, was gerade als
+     * {@code GL_READ_FRAMEBUFFER} gebunden ist. Bis 1.21.1 band {@link #apply()} den
+     * Auswahlpuffer global, und das Lesen darunter fand ihn vor. In 26.2 nennt jeder
+     * Durchgang sein Ziel selbst; {@code apply()} meldet nur noch {@code PickZiel} an und
+     * bindet nichts mehr. Gemessen an der Sonde {@code stencil.leseziel}:
+     * {@code gebunden=0 eigener=29} -- gelesen wurde der Standard-Framebuffer, also das
+     * fertige Bild, dessen RGB keine Kennungen traegt. Ergebnis: {@code index=0} an jeder
+     * Mausposition, an Kopf wie an Bein.
+     *
+     * <p>⚠️ ROHES {@code GL30} statt {@code GlStateManager}, mit Absicht: dessen
+     * 26.2-Fassung merkt sich {@code readFbo} und UEBERSPRINGT den Aufruf bei einem
+     * Treffer. Hier wird der ECHTE Zustand gelesen und exakt wiederhergestellt -- ein
+     * Zwischenspeicher, der etwas anderes glaubt, wuerde die Bindung verschlucken und
+     * genau den Fehler zurueckbringen, den diese Methode behebt.
+     *
+     * <h2>⛔ DER KLICK FINDET TROTZDEM NICHTS -- WAS BEREITS AUSGESCHLOSSEN IST</h2>
+     *
+     * <p>Damit hier niemand dieselben drei Sackgassen nochmal laeuft. Alles mit den Sonden
+     * {@code stencil.leseziel} und {@code stencil.inhalt} gemessen, am laufenden Editor:
+     *
+     * <ul>
+     * <li><b>FBO und Anhang stimmen:</b> {@code anhang=732 textur=732},
+     *     {@code status=0x8cd5} (COMPLETE) -- und es ist DIESELBE Textur, aus der der
+     *     Umriss liest ({@code umriss.gezeichnet: texturId=732 pufferId=29}).
+     * <li><b>Nicht der Zeitpunkt:</b> weder ein {@code glFinish} unmittelbar vor dem Lesen
+     *     noch das Lesen VOR {@code applyClear()} (also auf dem Puffer des vorigen Bildes)
+     *     aendert etwas. Beides gemessen, beides {@code deckung=0/30625}.
+     * <li><b>Nicht die Kennung:</b> die kommt seit {@code 869c910a7} am Zeichenaufruf an
+     *     ({@code pick.einreichung: kennung=20}).
+     * </ul>
+     *
+     * <p>Der offene Widerspruch, an dem es weitergeht: der orange Umriss ist im Bild
+     * SICHTBAR und speist sich aus genau dieser Textur, waehrend ein Abzug derselben
+     * Textur ({@code TextureDumper#dumpTexture}) sie voellig leer zeigt. Entweder liest
+     * der Abzug falsch, oder der Umriss bezieht sein Ergebnis nicht aus dem Auswahlpuffer.
+     * DAS zuerst klaeren -- vor dem naechsten Reparaturversuch.
+     */
+    private void leseEigenenPuffer(int x, int y, int w, int h, FloatBuffer ziel)
+    {
+        if (this.framebuffer == null)
+        {
+            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_FLOAT, ziel);
+
+            return;
+        }
+
+        int vorher = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.framebuffer.id);
+
+        try
+        {
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                /* Haengt am FBO noch DIE Textur, in die 26.2 zeichnet? Framebuffer#resize
+                 * zieht den Anhang nach, wenn eine Textur ihre GL-Nummer wechselt -- bleibt
+                 * hier eine alte Nummer stehen, liest glReadPixels eine freigegebene Textur
+                 * und findet nichts, egal wie richtig Zeitpunkt und Bindung sind. */
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.leseziel",
+                    "gebunden=" + GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING)
+                        + " eigener=" + this.framebuffer.id
+                        + " anhang=" + GL30.glGetFramebufferAttachmentParameteri(
+                            GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+                            GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
+                        + " textur=" + this.framebuffer.getMainTexture().id
+                        + " status=0x" + Integer.toHexString(
+                            GL30.glCheckFramebufferStatus(GL30.GL_READ_FRAMEBUFFER)));
+            }
+
+            GL11.glReadPixels(x, y, w, h, GL11.GL_RGBA, GL11.GL_FLOAT, ziel);
+        }
+        finally
+        {
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, vorher);
+        }
+    }
+
     public void pick(int x, int y)
     {
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             FloatBuffer floats = stack.mallocFloat(4);
 
-            GL11.glReadPixels(x, y, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floats);
+            this.leseEigenenPuffer(x, y, 1, 1, floats);
 
             /* TODO: make other channels work */
             int r = (int) (floats.get() * 255F);
@@ -262,7 +345,7 @@ public class StencilFormFramebuffer
         FloatBuffer floats = this.pickBuffer;
 
         floats.clear();
-        GL11.glReadPixels(x0, y0, w, h, GL11.GL_RGBA, GL11.GL_FLOAT, floats);
+        this.leseEigenenPuffer(x0, y0, w, h, floats);
 
         {
             int centerId = 0;
@@ -308,6 +391,42 @@ public class StencilFormFramebuffer
             }
 
             this.index = nearestHandle != 0 ? nearestHandle : centerId;
+
+            /* Messfuehler 2026-08-02, zweiter Anlauf: das Leseziel stimmt inzwischen
+             * (gebunden=29=eigener), der Index bleibt 0. Diese Zeile trennt die zwei
+             * verbliebenen Ursachen -- LEERER Puffer (Bildgraph zeichnet erst spaeter,
+             * dann ist deckung=0) gegen FALSCHE STELLE (Puffer traegt Kennungen, nur
+             * nicht unter der Maus, dann ist deckung>0 bei maxId>0). */
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                int deckung = 0;
+                int maxId = 0;
+
+                for (int py = 0; py < h; py++)
+                {
+                    for (int px = 0; px < w; px++)
+                    {
+                        int base = (py * w + px) * 4;
+
+                        if ((int) (floats.get(base + 3) * 255F) < 1)
+                        {
+                            continue;
+                        }
+
+                        deckung++;
+                        maxId = Math.max(maxId, (int) (floats.get(base) * 255F)
+                            | ((int) (floats.get(base + 1) * 255F) << 8)
+                            | ((int) (floats.get(base + 2) * 255F) << 16));
+                    }
+                }
+
+                Texture t = this.framebuffer.getMainTexture();
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.inhalt",
+                    "deckung=" + deckung + "/" + (w * h) + " maxId=" + maxId
+                        + " region=" + x0 + "," + y0 + " " + w + "x" + h
+                        + " textur=" + t.width + "x" + t.height);
+            }
 
             /* Messfuehler 2026-08-02: prueft die ANNAHME aus ModelInstance#fillStencilMap --
              * dass orderedGroups/orderedBones der Reihenfolge entspricht, die
