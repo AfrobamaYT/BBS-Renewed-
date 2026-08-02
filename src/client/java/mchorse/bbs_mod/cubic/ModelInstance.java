@@ -353,6 +353,19 @@ public class ModelInstance implements IModelInstance
 
     public void fillStencilMap(StencilMap stencilMap, ModelForm form)
     {
+        /* Der Grundindex DIESER Form — der erste Summand der Kennung, siehe
+         * StencilMap.aktuelleBasis und picker_models.fsh:43. Er muss VOR dem ersten
+         * addPicking gelesen werden; danach ist objectIndex schon weitergezaehlt.
+         *
+         * ⚠️ ANNAHME, die die Messung bestaetigen muss: die Reihenfolge unten
+         * (orderedGroups bzw. armature.orderedBones) entspricht dem Knochenindex, den
+         * BOBJModelVAO.updateMesh als lightBone ins Licht-Attribut schreibt
+         * (boneIndexData, Knochen mit dem groessten Gewicht). Nur dann ergibt
+         * Grund + Knochen eine eindeutige Kennung. Stimmt die Reihenfolge nicht, zeigt
+         * die Gegenprobe einen falschen, aber NICHT-NULL Index — daran ist es zu
+         * erkennen, und dann braucht es eine echte Zuordnung statt einer Addition. */
+        stencilMap.aktuelleBasis = stencilMap.objectIndex;
+
         if (this.model instanceof Model model)
         {
             for (ModelGroup group : model.getOrderedGroups())
@@ -749,7 +762,7 @@ public class ModelInstance implements IModelInstance
                         /* Die Textur GEHT MIT: seit 26.2 liest der Zug sie nicht mehr aus
                          * einer globalen Bindung, sie muss an Sampler0 des Durchgangs. Ohne
                          * das zeichnet das Modell weiss (gemessen, Aufgabe 99). */
-                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, 0, texture);
+                        ModelVAORenderer.render(shader, vao, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, FormTranslucentQueue.PASS_OPAQUE, stencilMap == null ? 0 : stencilMap.aktuelleBasis, texture);
 
                         FormTranslucentQueue.add(new FormTranslucentQueue.BOBJCommand(vao, vao.snapshotArmature(), vao.getUploadCount(), texture, modelView, normalMat, color.r, color.g, color.b, color.a, light, overlay, this.isCulling()));
                     }

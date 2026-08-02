@@ -42,6 +42,24 @@ public class StencilMap
         }
     }
 
+    /**
+     * Der Grundindex der Form, die gerade eingetragen wird — der erste Summand der Kennung.
+     *
+     * <p>⛔ WOFUER (2026-08-02 gemessen). {@code picker_models.fsh:43} rechnet
+     * {@code totalIndex = Modus.y + LichtOverlay.x}: die Kennung ist eine SUMME aus dem
+     * Grundindex der FORM und dem Index des KNOCHENS. Den Knochenteil backt
+     * {@code BOBJModelVAO.updateMesh} ins Licht-Attribut; der Formteil reist als Parameter
+     * {@code kennung} in den Modell-Block — und wurde in {@code ModelInstance} fest als 0
+     * uebergeben. Ergebnis: jede Form teilte sich denselben Zahlenraum, der Auswahlpuffer
+     * trug Alpha (100928 Punkte) aber RGB = 0, und {@code pick()} dekodierte immer 0.
+     * Daran hingen zugleich der fehlende orange Umriss und das tote Alt+Klick.
+     *
+     * <p>Festgehalten wird er dort, wo er entsteht: beim ERSTEN Eintrag einer Form steht
+     * {@link #objectIndex} noch auf ihrem Anfang. Nach dem Fuellen zeigt er auf den letzten
+     * vergebenen Wert — wer ihn erst beim Zeichnen abgreift, bekommt die falsche Zahl.
+     */
+    public int aktuelleBasis;
+
     public void addPicking(Form form)
     {
         this.addPicking(form, "");
