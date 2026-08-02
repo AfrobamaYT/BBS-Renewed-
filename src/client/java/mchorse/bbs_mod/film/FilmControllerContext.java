@@ -63,6 +63,31 @@ public class FilmControllerContext
      */
     public boolean gizmoOnly;
 
+    /**
+     * Läuft gerade der SAMMEL-Durchgang (COLLECT_SUBMITS) statt des Zeichen-Durchgangs
+     * (AFTER_SOLID_FEATURES)?
+     *
+     * <p>⛔ WOFÜR: Schatten und Namensschild werden in 26.2 nicht gezeichnet, sondern
+     * EINGEREICHT ({@code SubmitNodeCollector.submitShadow} / {@code submitText}). Vanilla
+     * reicht in der Sammelphase ein und zeichnet unmittelbar danach — BBS hing seinen
+     * ganzen Film-Durchgang aber an AFTER_SOLID_FEATURES, also NACH dem Punkt, an dem die
+     * Sammlung geleert wird. Das Eingereichte landete damit in einer frischen Sammlung und
+     * wurde erst im NÄCHSTEN Bild gezeichnet — mit einer Matrix, die relativ zur Kamera des
+     * VORIGEN Bildes gebaut war. Versatz = camPos(N) − camPos(N+1): im Stillstand exakt
+     * null, beim Schwenk gleitend, beim Anhalten zurückschnappend.
+     *
+     * <p>Deshalb läuft der Durchgang jetzt zweimal: einmal in der Sammelphase, wo NUR das
+     * Aufschiebbare (Schatten, Namensschild) eingereicht wird, und einmal wie bisher in
+     * AFTER_SOLID_FEATURES für alles, was sofort gezeichnet wird. Das Modell selbst war nie
+     * betroffen — es wird direkt gezeichnet ({@code ModelVAORenderer}) und stand deshalb
+     * still, während sein Schatten hinterherzog.
+     *
+     * <p>⚠️ STATISCH UND NICHT IN {@link #reset()}: das Flag beschreibt die PHASE des
+     * ganzen Durchgangs, nicht eine einzelne Figur. {@code reset()} läuft pro Figur und
+     * würde es mitten im Durchgang löschen.
+     */
+    public static boolean sammelDurchgang;
+
     private FilmControllerContext()
     {}
 

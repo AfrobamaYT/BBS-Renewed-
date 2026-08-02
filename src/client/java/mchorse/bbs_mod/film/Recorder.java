@@ -267,7 +267,14 @@ public class Recorder extends WorldFilmController
     {
         super.render(context);
 
-        renderCameraPreview(this.position, context.levelState().cameraRenderState, context.poseStack(), context.submitNodeCollector());
+        /* Die Kamera-Vorschau wird EINGEREICHT (submitNodeCollector), nicht gezeichnet —
+         * sie gehört damit in den Sammel-Durchgang, genau wie Schatten und Namensschild
+         * (siehe FilmControllerContext#sammelDurchgang). Ohne diese Bedingung liefe sie in
+         * BEIDEN Durchgängen und würde doppelt eingereicht. */
+        if (FilmControllerContext.sammelDurchgang)
+        {
+            renderCameraPreview(this.position, context.levelState().cameraRenderState, context.poseStack(), context.submitNodeCollector());
+        }
     }
 
     @Override

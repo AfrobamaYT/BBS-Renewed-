@@ -522,6 +522,60 @@ public class BBSModClient implements ClientModInitializer
          * ⚠️ Das Abmelden steht im finally: bleibt ein alter Sammler angemeldet, reichen
          * die Formen des naechsten Bildes in einen Sammler ein, den niemand mehr
          * abarbeitet -- sie verschwinden lautlos. */
+        /* ⛔ SAMMEL-DURCHGANG: Schatten und Namensschild MÜSSEN hier eingereicht werden,
+         * nicht unten in AFTER_SOLID_FEATURES (2026-08-02 am Bytecode gelesen und behoben).
+         *
+         * Reihenfolge in 26.2:
+         *   1. submitFeatures(...)                      <- COLLECT_SUBMITS feuert HIER
+         *   2. prepareFrame -> drainPhases -> sortInto(), und sortInto endet mit clear()
+         *   3. Hauptpass executeSolid()                 <- AFTER_SOLID_FEATURES feuert HIER
+         *
+         * Schatten (submitShadow) und Namensschild (submitText) werden nicht gezeichnet,
+         * sondern EINGEREICHT. Aus Schritt 3 eingereicht landeten sie in einer frischen
+         * Sammlung und wurden erst im NÄCHSTEN Bild gezeichnet — mit einer Matrix, die
+         * relativ zur Kamera des VORIGEN Bildes gebaut war. Versatz = camPos(N) − camPos(N+1):
+         * im Stillstand exakt null, beim Schwenk gleitend, beim Anhalten zurückschnappend.
+         * Das Modell war nie betroffen, es wird sofort gezeichnet (ModelVAORenderer) — daher
+         * stand die Figur still, während ihr Schatten hinterherzog.
+         *
+         * ⚠️ NUR der Film-Durchgang, und NUR sein aufschiebbarer Teil (FilmControllerContext
+         * #sammelDurchgang). Den ganzen renderCoolStuff hierher zu ziehen wäre falsch: der
+         * Hauptpass ruft danach clearColorAndDepthTextures, die sofort gezeichneten Modelle
+         * wären weg. */
+        LevelRenderEvents.COLLECT_SUBMITS.register((context) ->
+        {
+            if (BBSRendering.isIrisShadersEnabled())
+            {
+                return;
+            }
+
+            mchorse.bbs_mod.forms.FormSammler.anmelden(context.submitNodeCollector());
+            mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang = true;
+
+            try
+            {
+                /* ⛔ BEIDE WEGE. Im EDITOR läuft der Film NICHT über Films.getControllers()
+                 * — die Liste ist dort leer (gemessen 2026-08-02) — sondern über
+                 * UIScreen.renderInWorld. Wer nur films.render() sammelt, nimmt dem Editor
+                 * den Schatten ganz weg, statt ihn zu reparieren: aus dem Zeichen-Durchgang
+                 * entfernt, im Sammel-Durchgang nie erreicht. Genau so gemessen, bevor diese
+                 * Zeile dazukam. renderCoolStuff ruft beide, in dieser Reihenfolge. */
+                if (Minecraft.getInstance().gui.screen() instanceof UIScreen screen)
+                {
+                    screen.renderInWorld(context);
+                }
+
+                BBSModClient.getFilms().render(context);
+            }
+            finally
+            {
+                /* Beides im finally: ein hängengebliebenes Flag würde im Zeichen-Durchgang
+                 * das Modell unterdrücken — die Figuren wären unsichtbar. */
+                mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang = false;
+                mchorse.bbs_mod.forms.FormSammler.abmelden();
+            }
+        });
+
         LevelRenderEvents.AFTER_SOLID_FEATURES.register((context) ->
         {
             mchorse.bbs_mod.forms.FormSammler.anmelden(context.submitNodeCollector());

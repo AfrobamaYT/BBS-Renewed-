@@ -227,7 +227,10 @@ public abstract class BaseFilmController
         /* gizmoOnly draws everything but the body (see FilmControllerContext#gizmoOnly). Skipping the render
          * does NOT move the gizmo below: renderAxes resolves its bone through collectMatrices, which evaluates
          * the pose itself (rest -> actions -> pose -> IK) instead of reading what the render left behind. */
-        if (!context.gizmoOnly)
+        /* Im SAMMEL-Durchgang wird nichts gezeichnet, nur eingereicht (Schatten, Namensschild
+         * weiter unten) — siehe FilmControllerContext#sammelDurchgang. Das Modell geht einen
+         * anderen Weg (ModelVAORenderer zeichnet sofort) und darf hier nicht doppelt laufen. */
+        if (!context.gizmoOnly && !FilmControllerContext.sammelDurchgang)
         {
             FormUtilsClient.render(form, formContext);
         }
@@ -239,7 +242,7 @@ public abstract class BaseFilmController
          * which was taken before the states moved the pose. */
         FormFrameCache gizmoFrame = UIBaseMenu.shouldRenderAxes() ? new FormFrameCache() : null;
 
-        if (UIBaseMenu.shouldRenderAxes())
+        if (UIBaseMenu.shouldRenderAxes() && !FilmControllerContext.sammelDurchgang)
         {
             if (context.bone != null) renderAxes(context.bone, context.local, context.space, context.gizmoView, context.map, form, entity, transition, stack, gizmoFrame);
             /* The axes preview is a passive marker, not an editing handle: it follows the body and stays out
@@ -249,68 +252,16 @@ public abstract class BaseFilmController
 
         stack.popPose();
 
-        if (UIBaseMenu.shouldRenderAxes() && context.anchorGizmo)
+        if (UIBaseMenu.shouldRenderAxes() && context.anchorGizmo && !FilmControllerContext.sammelDurchgang)
         {
             renderAnchorGizmo(entities, entity, target, defaultMatrix, cx, cy, cz, transition, context.anchorLocal, context.space, context.gizmoView, context.map, stack, gizmoFrame);
         }
 
-        if (!relative && !context.gizmoOnly && context.map == null && opacity > 0F && context.shadowRadius > 0F && form.visible.get())
-        {
-            /* Skip the shadow when the form is hidden (form.visible, animatable via keyframes): the form
-             * itself renders nothing then - see FormRenderer.render - so its shadow must vanish too.
-             * The animated value is live here, applied to form.visible in startRenderFrame this frame.
-             *
-             * Place the shadow under the replay's perceived position: shift the actual shadow position
-             * by how far the model (form transform + anchor-bone root motion) has moved from rest,
-             * mapped from form-local into world axes via the render target. Moving the position itself
-             * (not just translating the quad) makes the shadow's ground projection and shading match. */
-            double shadowX = position.x;
-            double shadowY = position.y;
-            double shadowZ = position.z;
-
-            FormRenderer renderer = FormUtilsClient.getRenderer(FormUtils.getRoot(form));
-
-            if (renderer != null && !BBSRendering.isIrisShadowPass() && context.replay != null && context.replay.shadowFollow.get())
-            {
-                Vector3f displacement = renderer.getShadowDisplacement(entity, transition);
-
-                if (displacement != null)
-                {
-                    target.transformDirection(displacement);
-
-                    shadowX += displacement.x;
-                    shadowY += displacement.y;
-                    shadowZ += displacement.z;
-                }
-
-                /* Extra world-space nudge to seat the shadow on the model's real floor (added after the
-                 * form-local displacement is mapped to world, so it stays vertical regardless of facing). */
-                Point offset = context.replay.shadowOffset.get();
-
-                shadowX += offset.x;
-                shadowY += offset.y;
-                shadowZ += offset.z;
-            }
-
-            stack.pushPose();
-            stack.translate(shadowX - cx, shadowY - cy, shadowZ - cz);
-
-            ModelBlockEntityRenderer.renderShadow(context.consumers, stack, transition, shadowX, shadowY, shadowZ, 0F, 0F, 0F, context.shadowRadius, opacity);
-
-            stack.popPose();
-        }
-
-        if (!relative && !context.gizmoOnly && !context.nameTag.isEmpty() && context.map == null && form.visible.get())
-        {
-            /* Hide the name tag along with the form (form.visible, animatable via keyframes): when the
-             * form renders nothing, its name tag must vanish too - same reasoning as the shadow above. */
-            stack.pushPose();
-            stack.translate(position.x - cx, position.y - cy, position.z - cz);
-
-            renderNameTag(entity, Component.literal(StringUtils.processColoredText(context.nameTag)), stack, context.consumers, light, camera.orientation);
-
-            stack.popPose();
-        }
+        /* Schatten und Namensschild werden EINGEREICHT, nicht gezeichnet — sie laufen
+         * deshalb in einer eigenen Phase und stehen in einer eigenen Datei.
+         * Siehe SchattenUndSchild und FilmControllerContext#sammelDurchgang. */
+        SchattenUndSchild.einreichen(context, form, entity, position, target, stack,
+            transition, opacity, cx, cy, cz, light, relative);
 
         /* 26.2: enableDepthTest() entfaellt ersatzlos. Der Tiefentest ist kein globaler
          * Schalter mehr, den ein Aufgerufener verstellen und den man danach zuruecksetzen
@@ -827,7 +778,9 @@ public abstract class BaseFilmController
      * steht im eingefrorenen {@link CameraRenderState#orientation} des Weltdurchgangs. Das
      * ist zugleich die genauere Quelle: derselbe Wert, mit dem dieses Bild aufgebaut wird.
      */
-    private static void renderNameTag(IEntity entity, Component text, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, org.joml.Quaternionf cameraOrientation)
+    /* Paketweit statt privat: SchattenUndSchild reicht das Namensschild ein — beide
+     * gehoeren zum selben Vorgang, nur in getrennten Dateien. */
+    static void renderNameTag(IEntity entity, Component text, PoseStack matrices, SubmitNodeCollector vertexConsumers, int light, org.joml.Quaternionf cameraOrientation)
     {
         boolean sneaking = !entity.isSneaking();
         float hitboxH = (float) entity.getPickingHitbox().h + 0.5F;
