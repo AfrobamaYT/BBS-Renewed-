@@ -1323,7 +1323,31 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+        /* ⛔ PERSPECTIVE, NICHT ORTHOGRAPHIC — DIE ART DER PROJEKTION, NICHT DIE MATRIX
+         * (gemessen 2026-08-02, drei Laeufe).
+         *
+         * lastProjection ist die PERSPEKTIVISCHE Kameramatrix des Vorschaubildes (gesetzt in
+         * UIFilmPanel aus cameraRenderState, benutzt auch von UIFilmPreview). Hier war sie
+         * als ORTHOGRAPHIC angemeldet, und der Auswahlpuffer bekam die Figur daraufhin rund
+         * 5x zu breit und 2,6x zu hoch hinein -- x genau doppelt so stark gedehnt wie y.
+         *
+         * Wie es aufgefallen ist, und warum der naheliegende Schluss falsch war:
+         * Der orange Umriss lag als grosse getreppte Wolke neben der Figur. Ein Abzug des
+         * Auswahlpuffers zeigte, dass der Umriss KORREKT rechnet -- er zeichnet den Rand
+         * dessen, was im Puffer steht, und im Puffer stand die verzerrte Figur. Eine Sonde
+         * in StencilFormFramebuffer.apply() schloss den Viewport aus (viewport=0,0 2560x1440
+         * bei ziel=2560x1440, deckungsgleich), womit nur die Projektion uebrigblieb.
+         *
+         * 26.1 setzt hier GAR NICHTS und erbt die Projektion des Weltdurchgangs. Das
+         * nachzumachen war der erste Versuch und war FALSCH: der Puffer blieb danach voellig
+         * leer. Beim SAMMELN ist in 26.2 keine brauchbare Projektion aktiv -- dieselbe Falle
+         * steht schon in Bildfilter.lauf beschrieben (w = 0 an allen vier Ecken, entartete
+         * Flaeche, kein Fragment, keine Fehlermeldung).
+         *
+         * ⚠️ Also: die Zeile MUSS hier stehen, und zwar mit der Art, die zur Matrix passt.
+         * Jede andere Stelle im Baum macht das fuer Kameramatrizen ebenso
+         * (AltCameraGridRenderer, TrackerClientClip, GameRendererPreviewPrePassLogik). */
+        mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
         InverseView.set(new Matrix3f(BBSRendering.camera).invert());
 
         /* Render the stencil */

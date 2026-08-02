@@ -139,11 +139,19 @@ public class StencilFormFramebuffer
      */
     private com.mojang.blaze3d.textures.GpuTextureView tiefenAnsicht()
     {
+        Texture tiefe = this.tiefenTextur();
+
+        return tiefe == null ? null : tiefe.view();
+    }
+
+    /** Dieselbe Suche wie {@link #tiefenAnsicht()}, nur die Textur selbst — zum Leeren. */
+    private Texture tiefenTextur()
+    {
         for (Texture texture : this.framebuffer.textures)
         {
             if (texture.getFormat().isDepth())
             {
-                return texture.view();
+                return texture;
             }
         }
 
@@ -167,7 +175,22 @@ public class StencilFormFramebuffer
 
     public void apply()
     {
-        this.framebuffer.applyClear();
+        /* Setzt das Sichtfeld auf die Puffergroesse. Das Binden darin braucht der
+         * Auswahl-Durchgang nicht mehr (siehe PickZiel unten), das Sichtfeld schon. */
+        this.framebuffer.apply();
+
+        this.leeren();
+
+        int[] sichtfeld = new int[4];
+
+        org.lwjgl.opengl.GL11.glGetIntegerv(org.lwjgl.opengl.GL11.GL_VIEWPORT, sichtfeld);
+
+        Texture ziel = this.framebuffer.getMainTexture();
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.durchgang",
+            "viewport=" + sichtfeld[0] + "," + sichtfeld[1] + " " + sichtfeld[2] + "x" + sichtfeld[3]
+            + " ziel=" + ziel.width + "x" + ziel.height
+            + " guiSkala=" + BBSModClient.getGUIScale());
 
         /* 26.2: das Binden allein reicht nicht mehr -- jeder Durchgang nennt sein Ziel
          * selbst. Hier wird angemeldet, wohin die Kennungsfarben gehen; siehe PickZiel.
@@ -175,6 +198,57 @@ public class StencilFormFramebuffer
          * statt des vordersten. */
         mchorse.bbs_mod.graphics.PickZiel.anmelden(
             this.framebuffer.getMainTexture().view(), this.tiefenAnsicht());
+    }
+
+    /**
+     * Leert Farbe und Tiefe des Auswahlpuffers.
+     *
+     * <h2>⛔ WARUM NICHT Framebuffer#clear() — DER PUFFER SAMMELTE SICH AN (2026-08-02)</h2>
+     *
+     * <p>{@code Framebuffer#clear()} loescht ueber {@code glClearBufferfv}, und das trifft
+     * den Puffer, der GERADE GEBUNDEN ist. Genau daran haengt es in 26.2: das Binden laeuft
+     * ueber den FBO-Cache des GlStateManagers, waehrend die Durchgaenge von 26.2 ihr Ziel
+     * selbst nennen und den Cache dabei auseinanderlaufen lassen. Das Loeschen ging also
+     * ins Leere -- ohne GL-Fehler, ohne Logzeile.</p>
+     *
+     * <p>Was der Nutzer davon sah: bei jeder Kamerabewegung standen mehrere orange Umrisse
+     * gleichzeitig im Bild. Es waren die Silhouetten aller vorherigen Kamerawinkel, die sich
+     * im Auswahlpuffer aufeinanderstapelten. Ein Abzug des Puffers im Standbild zeigt EINE
+     * saubere Figur, derselbe Abzug nach ein paar Sekunden Bewegung eine grosse Masse aus
+     * Dutzenden ueberlagerten Silhouetten -- das ist der Beweis, und die beiden Abzuege
+     * unterscheiden die Ursache eindeutig von einer falschen Projektion.</p>
+     *
+     * <p>⚠️ Diese Verwechslung hat mich Stunden gekostet: die aufgestapelte Masse SIEHT aus
+     * wie eine viel zu gross gezeichnete Figur. Wer hier eine Skalierung nachmisst, misst
+     * die Summe vieler Bilder. Immer zuerst im STANDBILD messen.</p>
+     *
+     * <p>Der Weg hier nennt beide Zieltexturen direkt, damit ueberhaupt kein Bindezustand
+     * mehr dazwischensteht -- derselbe Weg, den {@code Bildfilter#loeschen} schon geht.</p>
+     */
+    private void leeren()
+    {
+        Texture farbe = this.framebuffer.getMainTexture();
+        Texture tiefe = this.tiefenTextur();
+
+        if (farbe == null)
+        {
+            return;
+        }
+
+        com.mojang.blaze3d.systems.CommandEncoder schreiber =
+            com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder();
+
+        /* Tiefe 0, nicht 1: 26.2 rechnet den Tiefenbereich umgekehrt (naeher = groesserer
+         * Wert). Derselbe Wert steht in Framebuffer.CLEAR_DEPTH. */
+        if (tiefe == null)
+        {
+            schreiber.clearColorTexture(farbe.gpu(), new org.joml.Vector4f(0F, 0F, 0F, 0F));
+        }
+        else
+        {
+            schreiber.clearColorAndDepthTextures(farbe.gpu(), new org.joml.Vector4f(0F, 0F, 0F, 0F),
+                tiefe.gpu(), 0D);
+        }
     }
 
     public void pickGUI(UIContext context, Area area)
