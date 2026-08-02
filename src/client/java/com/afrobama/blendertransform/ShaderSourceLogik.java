@@ -16,21 +16,32 @@ public final class ShaderSourceLogik
 {
     private ShaderSourceLogik() {}
 
-    /** HEAD von {@code glShaderSource}: baut den quelltext-string und meldet ihn. */
-    public static void shaderSource(int shader, java.util.List<String> source)
+    /**
+     * HEAD von {@code glShaderSource}: meldet den quelltext des shaders.
+     *
+     * <p>⛔ 26.2 REICHT EINEN STRING, NICHT MEHR EINE LISTE (2026-08-02 per javap gemessen:
+     * {@code public static void glShaderSource(int, java.lang.String)}). Bis 1.21.1 nahm die
+     * methode eine {@code List<String>} aus mehreren teilstuecken, die hier
+     * zusammengehaengt wurden.</p>
+     *
+     * <p>Das war nicht nur eine typaenderung: der zugehoerige injektionspunkt im mixin trug
+     * weiterhin den alten deskriptor {@code (ILjava/util/List;)V} und traf damit ins leere.
+     * Weil er {@code require = 0} hat, schwieg er beim start — der shader-mitschnitt war
+     * seit dem port tot, ohne eine einzige logzeile.</p>
+     */
+    public static void shaderSource(int shader, String source)
     {
         if (!com.afrobama.bbstools.client.debug.master.shader.ShaderDebugger.ENABLED) return;
 
         try
         {
-            StringBuilder sb = new StringBuilder(2048);
+            /* Weiterhin ein StringBuilder, weil onShaderSource genau den nimmt — und weil
+             * die aufrufstelle so unveraendert bleibt. */
+            StringBuilder sb = new StringBuilder(source == null ? 0 : source.length());
 
             if (source != null)
             {
-                for (String chunk : source)
-                {
-                    if (chunk != null) sb.append(chunk);
-                }
+                sb.append(source);
             }
 
             com.afrobama.bbstools.client.debug.master.shader.ShaderDebugger.onShaderSource(shader, sb);
