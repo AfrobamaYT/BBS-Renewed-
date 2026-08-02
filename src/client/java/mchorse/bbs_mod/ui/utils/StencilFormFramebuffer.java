@@ -308,6 +308,25 @@ public class StencilFormFramebuffer
             }
 
             this.index = nearestHandle != 0 ? nearestHandle : centerId;
+
+            /* Messfuehler 2026-08-02: prueft die ANNAHME aus ModelInstance#fillStencilMap --
+             * dass orderedGroups/orderedBones der Reihenfolge entspricht, die
+             * BOBJModelVAO.updateMesh als Knochenteil ins Licht-Attribut backt. Der
+             * Formteil kommt seit 869c910a7 an; ob die SUMME den richtigen Knochen
+             * trifft, sagt erst der zurueckgelesene Name.
+             *
+             * Steht HIER und nicht im Aufrufer: UIFilmController ist Mixin-Ziel eines
+             * Redirectors, dessen Neuwebung beim Hotswap scheitert (ClassFormatError).
+             * Diese Klasse ist ungewoben und damit live tauschbar. */
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                Pair<Form, String> getroffen = this.getPicked();
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.getroffen",
+                    "index=" + this.index
+                        + " knochen=" + (getroffen == null ? "NICHTS" : "'" + getroffen.b + "'")
+                        + " gizmoTreffer=" + nearestHandle + " mitte=" + centerId);
+            }
         }
     }
 
