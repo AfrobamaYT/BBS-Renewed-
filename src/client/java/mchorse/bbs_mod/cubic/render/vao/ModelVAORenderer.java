@@ -208,6 +208,16 @@ public class ModelVAORenderer
 
         blockFuer(normalMat, light, overlay, passMode, kennung);
 
+        /* Messfuehler 2026-08-02: der Auswahlpuffer traegt Alpha (100928 Punkte gemessen),
+         * aber RGB = 0 — die Kennung kommt also nicht an, obwohl der Durchgang laeuft.
+         * Diese Zeile sagt, WELCHE Kennung und WELCHER Modus hier ueberhaupt eingereicht
+         * werden. Nur im Kennungs-Fenster, sonst waere es Rauschen aus dem Weltdurchgang. */
+        if (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null)
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("pick.einreichung",
+                "kennung=" + kennung + " passMode=" + passMode + " farbe=" + r + "," + g + "," + b + "," + a);
+        }
+
         /* Leeres Optional und leeres OptionalDouble heissen: Farb- und Tiefenpuffer NICHT
          * loeschen. Das Modell wird in das bestehende Weltbild gezeichnet — mit einem
          * Loeschwert waere die Welt weg. */
