@@ -215,7 +215,27 @@ public class GameRendererMixin
         mchorse.bbs_mod.graphics.Stapelwache.abschnitt("level:ende");
     }
 
-    @Inject(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Options;hideGui:Z", opcode = Opcodes.GETFIELD, ordinal = 0), require = 0)
+    /**
+     * ⛔ EINHAENGUNG ZURUECK AUF DIE FORM DER VORLAGE (2026-08-02).
+     *
+     * <p>Hier stand eine FIELD-Injektion auf {@code Options.hideGui} — spezifischer als
+     * noetig, und genau deshalb zerbrochen: das Feld gibt es in 26.2 nicht mehr, weder als
+     * Feld noch als Methode. Mit {@code require = 0} scheiterte der Haken STILL: 0 Stellen
+     * im Bytecode, keine Logzeile, das Feature einfach tot. Gefunden hat es
+     * {@code tools/mixin-haken-feuert.py} — beim ersten Lauf, nachdem das Werkzeug selbst
+     * repariert war (es stuerzte vorher bei JEDEM Aufruf ab und lief nie).</p>
+     *
+     * <p>26.1 macht es schlichter und robuster: {@code @At("HEAD")} auf {@code render},
+     * Bedingung im Java-Code. Diese Form ueberlebt einen Feldwechsel, weil sie an keinem
+     * Feld haengt. Wir hatten sie im Port ohne Not verschaerft.</p>
+     *
+     * <p>Die Bedingung selbst kennt den 26.2-Weg bereits: {@code HudSichtbarkeit.istVersteckt()}
+     * liest {@code Minecraft.getInstance().gui.hud.isHidden()}.</p>
+     *
+     * <p><b>require = 1 ist Absicht.</b> Faellt das Ziel beim naechsten Mapping-Wechsel weg,
+     * soll der Start LAUT scheitern statt still ein Feature zu verlieren.</p>
+     */
+    @Inject(method = "render", at = @At("HEAD"), require = 1)
     private void onBeforeHudRendering(DeltaTracker tickCounter, boolean tick, CallbackInfo info)
     {
         ICameraController current = BBSModClient.getCameraController().getCurrent();
