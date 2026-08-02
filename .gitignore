@@ -56,3 +56,12 @@ OrthoCamera-1.20.1
 # migrateMappings-ausgabe: generiert, gehoert nicht in die historie
 remappedSrc/
 remappedSrc-client/
+
+# Arbeits-Logs der Werkzeuge — sie standen als untracked im `git status` und haben mich am
+# 2026-08-02 zu einer Nachpruefung gezwungen ("ist das eine fremde Aenderung?"). Ein
+# Statuslauf, der nur echte Aenderungen zeigt, ist die halbe Miete beim Aufraeumen.
+bau.log
+boot.log
+swap.log
+welle.log
+.claude/worktrees/
