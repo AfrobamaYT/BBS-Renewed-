@@ -3085,9 +3085,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         if (!BBSRendering.isIrisShadowPass())
         {
-            /* 26.2: RenderSystem gibt die Projektion nur noch als GPU-Puffer heraus, nicht als
-             * Zahlen. Lesbar ist sie im eingefrorenen Kamerazustand des Weltdurchgangs --
-             * derselbe Wert, aber garantiert der DIESES Bildes. */
+            /* 26.2: Projektion gibt es nur noch als GPU-Puffer, lesbar im Kamerazustand.
+             * ⚠ Das ist NICHT die Zeichenmatrix (Sonde projektion.paar: gleich=false) — daher
+             * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
             /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
              * MatrixStack base is just an identity stack for entity-relative rendering, so

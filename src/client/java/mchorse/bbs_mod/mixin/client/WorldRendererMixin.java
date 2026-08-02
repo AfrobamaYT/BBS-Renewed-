@@ -152,6 +152,26 @@ public class WorldRendererMixin
             + " | bloecke=" + bloecke
             + " | projektion=" + (projektion == null ? "null" : String.valueOf(projektion.m00())));
 
+        /* ⚗️ WELCHE PROJEKTION ZEICHNET DIE WELT — und welche bekommt der Auswahlpuffer?
+         *
+         * Gemessen ist: die beiden Puffer sind im Stillstand pixelgenau deckungsgleich und
+         * laufen bei Kamerabewegung ~50 px auseinander (beide aus EINEM Dump-Aufruf). Kamera-
+         * POSITION ist dabei identisch (kamera.gleich = 1935, kamera.weicht-ab = 0), Ortho ist
+         * aus. Uebrig bleibt die Projektion — und die beiden Kandidaten stehen genau hier
+         * nebeneinander: der Parameter, mit dem gezeichnet wird, gegen den eingefrorenen
+         * Kamerazustand, aus dem UIFilmPanel#lastProjection gesetzt wird und den der Stencil
+         * spaeter aktiviert. Der Verdacht: sie sind nicht dieselbe Matrix (lastProjection
+         * steht fest bei m00=0,7505 = Fenster-Seitenverhaeltnis, dieser Parameter schwankt). */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("projektion.paar",
+            "gezeichnet=" + (projektion == null ? "null"
+                : projektion.m00() + "/" + projektion.m11())
+            + " | kamerazustand=" + (kamera == null || kamera.projectionMatrix == null ? "null"
+                : kamera.projectionMatrix.m00() + "/" + kamera.projectionMatrix.m11())
+            + " | gleich=" + (projektion != null && kamera != null
+                && projektion.equals(kamera.projectionMatrix)));
+
+        BBSRendering.zeichenProjektionStempeln(projektion);
+
         BBSRendering.camera.set(kamera.viewRotationMatrix);
     }
 

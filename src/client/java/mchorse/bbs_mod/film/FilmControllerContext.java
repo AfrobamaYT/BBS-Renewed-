@@ -121,6 +121,13 @@ public class FilmControllerContext
         this.consumers = context.submitNodeCollector();
         this.transition = net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
 
+        /* ⚗️ HIER STAND EINE KAMERA-SONDE, UND SIE HAT DIE FRAGE BEANTWORTET (2026-08-03):
+         * kamera.gleich = 22527, kamera.weicht-ab = 0. Die Kameraposition, mit der der
+         * Auswahlpuffer rendert, ist EXAKT die des Weltdurchgangs — auch bei bewegter Kamera.
+         * Die gemessene Divergenz der beiden Puffer kommt also nicht von der Position.
+         * Wieder entfernt, weil diese Methode je Bild mehrfach laeuft und der String-Bau
+         * dort echte Bilder kostet; der Befund steht in der Aufgabe und braucht sie nicht. */
+
         return this;
     }
 
