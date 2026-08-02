@@ -464,6 +464,26 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	def heap = project.findProperty("bbs.heap") ?: "3G"
 	def jvmOptionen = ["-Xmx${heap}"]
 
+	/* Zusaetzliche JVM-flags fuer messreihen, z.B. -Pbbs.jvm=-XX:+UseSerialGC
+	 *
+	 * ⛔ WOFUER: am 2026-08-02 starb die JVM DREIMAL an derselben adresse
+	 * (ChangePointersObjectClosure::do_object, jvmtiEnhancedRedefineClasses.cpp) beim
+	 * redefine der FilmController-hierarchie. Der stack ist reines G1
+	 * (G1ParallelObjectIterator), und DCEVM erzwang urspruenglich SERIAL GC — die
+	 * groessenveraendernden GC-eingriffe stecken nur im mark-and-compact-algorithmus.
+	 * Ohne diesen schalter liesse sich die naheliegendste gegenprobe gar nicht fahren:
+	 * dieselbe reihe einmal unter G1 und einmal unter Serial.
+	 *
+	 * Bewusst allgemein gehalten und ohne vorgabe — ein GC still umzustellen waere eine
+	 * verhaltensaenderung, die niemand beauftragt hat. */
+	def extra = project.findProperty("bbs.jvm")
+
+	if (extra)
+	{
+		jvmOptionen += extra.toString().split(" ").findAll { it }
+		it.doFirst { logger.lifecycle("[jvm] zusatz-flags: ${extra}") }
+	}
+
 	if (jbr.exists())
 	{
 		it.executable = jbr.absolutePath
