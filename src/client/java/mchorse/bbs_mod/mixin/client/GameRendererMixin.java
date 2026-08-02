@@ -164,6 +164,11 @@ public class GameRendererMixin
         }
 
         BBSRendering.onWorldRenderBegin();
+
+        /* Brotkrume fuer den naechsten "Pose stack not empty": vanillas checkPoseStack
+         * nennt keinen BBS-Rahmen, weil es den Ungleichstand nur als letztes bemerkt.
+         * So steht im Bericht wenigstens, WAS zuletzt lief. */
+        mchorse.bbs_mod.graphics.Stapelwache.abschnitt("level:begin");
     }
 
     /**
@@ -206,6 +211,8 @@ public class GameRendererMixin
     {
         TrackerClientClip.endLevelRendering();
         BBSRendering.onWorldRenderEnd();
+
+        mchorse.bbs_mod.graphics.Stapelwache.abschnitt("level:ende");
     }
 
     @Inject(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Options;hideGui:Z", opcode = Opcodes.GETFIELD, ordinal = 0), require = 0)

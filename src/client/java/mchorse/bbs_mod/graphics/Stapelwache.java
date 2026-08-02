@@ -105,4 +105,40 @@ public final class Stapelwache
             }
         }
     }
+
+    /* ---------------------------------------------------------------------
+     * BROTKRUME — welcher BBS-Abschnitt lief zuletzt?
+     *
+     * ⛔ WOFUER: der Absturz "Pose stack not empty" kommt aus vanillas checkPoseStack, und
+     * im Stack steht KEIN BBS-Rahmen. Vanilla merkt den Ungleichstand nur als letzter; wer
+     * ihn hinterliess, ist daraus nicht ablesbar. Sechs Berichte am 2026-08-01 sahen alle
+     * gleich aus und nannten keinen Verursacher.
+     *
+     * Diese Krume kostet ein Feld und eine Zuweisung je Abschnitt. Dafuer sagt der naechste
+     * Bericht, WAS zuletzt lief — und das grenzt die Suche von "irgendwo im Frame" auf einen
+     * Abschnitt ein.
+     * ------------------------------------------------------------------ */
+
+    private static volatile String letzterAbschnitt = "(keiner)";
+
+    /** Einen BBS-Abschnitt betreten/verlassen vermerken. */
+    public static void abschnitt(String name)
+    {
+        letzterAbschnitt = name;
+    }
+
+    /** Was zuletzt lief — fuer Absturzberichte und den Debugger. */
+    public static String letzterAbschnitt()
+    {
+        return letzterAbschnitt;
+    }
+
+    /* ⛔ HIER STAND EIN BEGIN/END-PAAR (merken/vergleichen) MIT EINER static-final-Map.
+     *    Es wurde am 2026-08-02 gebaut und im selben Zug wieder entfernt: es rief niemand,
+     *    und sein `static final`-Feld machte die Klasse ohne Not hotswap-feindlich — der
+     *    Tausch endete mit "die instanz ist jetzt scharf", weil ein neues statisches Feld
+     *    nach dem Swap null ist und ein finales sich per Reflexion nicht setzen laesst.
+     *
+     *    Lehre: spekulativ gebaute API kostet nicht nur den Bau. Sie kann eine laufende
+     *    Instanz gefaehrden, bevor sie den ersten Nutzen hatte. */
 }
