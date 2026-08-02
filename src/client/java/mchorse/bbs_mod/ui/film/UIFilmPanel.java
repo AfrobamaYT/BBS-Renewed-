@@ -45,6 +45,9 @@ import mchorse.bbs_mod.ui.film.controller.ControlMouse;
 import mchorse.bbs_mod.ui.film.controller.UIFilmController;
 import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.UIFilmUndoHandler;
+import mchorse.bbs_mod.ui.film.dock.DockStackGeometry;
+import mchorse.bbs_mod.ui.film.dock.DockStackInfo;
+import mchorse.bbs_mod.ui.film.utils.undo.FilmUndoHistoryDock;
 import mchorse.bbs_mod.ui.film.utils.undo.UIUndoHistoryOverlay;
 import mchorse.bbs_mod.ui.film.utils.undo.UndoPersistence;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -172,18 +175,21 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private static final float DROP_EDGE_MARGIN = 0.2F;
     private static final int EDITOR_MIN_SIZE_FOR_PX_HANDLES = 10;
     private static final int DOCK_STACK_TABS_HEIGHT_PX = 20;
-    private static final int PANEL_GAP_PX = 4;
-    private static final float PANEL_EDGE_EPS = 0.001F;
     private static final String PANEL_MAIN_ID = "main";
     private static final String PANEL_PREVIEW_ID = "preview";
     private static final String PANEL_EDIT_AREA_ID = "editArea";
     private static final String PANEL_REPLAYS_LIST_ID = "replaysList";
     private static final String PANEL_REPLAY_PROPS_ID = "replayProps";
+    private static final String PANEL_UNDO_HISTORY_ID = FilmUndoHistoryDock.PANEL_ID;
     /** Top offset (px) for parameters panels when layout is unlocked (space for drag icon). Used for lock button size too. */
     public static final int EDIT_PANEL_TOP_OFFSET_PX = 20;
     private static final int FILM_TOP_BAR_BUTTON_SIZE = UIDataTabs.TABS_HEIGHT_PX;
     private static final int FILM_TOP_BAR_SEPARATOR_WIDTH = 8;
     private static final int FILM_TOP_BAR_ACTIONS_WIDTH = FILM_TOP_BAR_BUTTON_SIZE * 3 + FILM_TOP_BAR_SEPARATOR_WIDTH;
+    /** The undo history as a sixth dock panel; it also owns the on/off state and the default slot. */
+    private final FilmUndoHistoryDock undoHistoryDock = new FilmUndoHistoryDock(
+        () -> this.undoHandler == null ? null : this.undoHandler.getUndoManager(),
+        this::getData, this::getCurrentFilmLayoutRoot, this::setCurrentFilmLayoutRoot, this::refreshCurrentFilmLayout);
     private final List<UIDockStackTabs> dockStackTabs = new ArrayList<>();
     private final Map<String, DockStackInfo> dockStackByPanelId = new HashMap<>();
     private UIElement selectedMainEditorPanel;
@@ -194,36 +200,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private String dropTargetPanelId;
     private int dropTargetZone = DROP_ZONE_CENTER;
     private final List<Integer> draggedSplitterIndices = new ArrayList<>();
-
-    private static class DockStackInfo
-    {
-        public final List<String> panelIds;
-        public final String activePanelId;
-        public final float x;
-        public final float y;
-        public final float w;
-        public final float h;
-
-        public DockStackInfo(List<String> panelIds, String activePanelId, float x, float y, float w, float h)
-        {
-            this.panelIds = panelIds;
-            this.activePanelId = activePanelId;
-            this.x = x;
-            this.y = y;
-            this.w = w;
-            this.h = h;
-        }
-
-        public boolean isStacked()
-        {
-            return this.panelIds.size() > 1;
-        }
-
-        public String getAnchorPanelId()
-        {
-            return this.panelIds.isEmpty() ? "" : this.panelIds.get(0);
-        }
-    }
 
     private static class UIDockStackTabs extends UIElement
     {
@@ -393,6 +369,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.panelById.put(PANEL_REPLAYS_LIST_ID, this.replayEditor.replaysList);
         this.panelById.put(PANEL_REPLAY_PROPS_ID, this.replayEditor.replayProperties);
+        /* Registered unconditionally so it gets a drag handle and can take part in stacks like any
+         * other panel; whether it is SHOWN follows from the layout tree (see updateTabVisibility). */
+        this.panelById.put(PANEL_UNDO_HISTORY_ID, this.undoHistoryDock.getPanel());
         this.selectedMainEditorPanel = this.cameraEditor;
 
         /* Film panel keeps common CRUD actions inside film settings menu instead of the sidebar. */
@@ -431,7 +410,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.dragHandlesById.put(id, handle);
             this.editor.add(handle);
         }
-        this.main.add(this.editArea, this.cameraEditor, this.replayEditor, this.preview, this.replayEditor.replaysList, this.replayEditor.replayProperties);
+        this.main.add(this.editArea, this.cameraEditor, this.replayEditor, this.preview, this.replayEditor.replaysList, this.replayEditor.replayProperties, this.undoHistoryDock.getPanel());
         this.add(this.controller);
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
@@ -778,6 +757,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             case PANEL_EDIT_AREA_ID: return Icons.EDITOR;
             case PANEL_REPLAYS_LIST_ID: return Icons.LIST;
             case PANEL_REPLAY_PROPS_ID: return Icons.PROPERTIES;
+            case PANEL_UNDO_HISTORY_ID: return Icons.UNDO;
             case PANEL_MAIN_ID: return Icons.FILM;
             default: return Icons.FILE;
         }
@@ -993,7 +973,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.clearSplitterDragState();
 
         List<DockStackInfo> stackInfos = new ArrayList<>();
-        this.collectDockStacks(root, 0F, 0F, 1F, 1F, stackInfos);
+        DockStackGeometry.collect(root, 0F, 0F, 1F, 1F, stackInfos);
 
         for (UIElement el : this.panelById.values())
         {
@@ -1063,11 +1043,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         boolean hasList = ids.contains(PANEL_REPLAYS_LIST_ID);
         boolean hasProps = ids.contains(PANEL_REPLAY_PROPS_ID);
 
-        if (hasList && hasProps)
-        {
-            return root;
-        }
-
         EditorLayoutNode out = root;
 
         if (!hasList)
@@ -1080,7 +1055,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             out = EditorLayoutNode.copyWithInsertSplitAt(out, PANEL_REPLAYS_LIST_ID, PANEL_REPLAY_PROPS_ID, EditorLayoutNode.EDGE_RIGHT);
         }
 
-        return out;
+        /* Last, so the undo history's default anchor (the replay list) is guaranteed to exist by now. */
+        return this.undoHistoryDock.reconcile(out);
     }
 
     private void collectPanelIds(EditorLayoutNode node, HashSet<String> out)
@@ -1283,96 +1259,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         return new Vector2i(hx, hy);
     }
 
-    private void collectDockStacks(EditorLayoutNode node, float x, float y, float w, float h, List<DockStackInfo> out)
-    {
-        if (node instanceof EditorLayoutNode.PanelNode)
-        {
-            String panelId = ((EditorLayoutNode.PanelNode) node).getPanelId();
-            List<String> ids = new ArrayList<>();
-            ids.add(panelId);
-            out.add(new DockStackInfo(ids, panelId, x, y, w, h));
-
-            return;
-        }
-
-        if (node instanceof EditorLayoutNode.StackNode)
-        {
-            EditorLayoutNode.StackNode stack = (EditorLayoutNode.StackNode) node;
-            out.add(new DockStackInfo(new ArrayList<>(stack.getPanelIds()), stack.getActivePanelId(), x, y, w, h));
-
-            return;
-        }
-
-        if (!(node instanceof EditorLayoutNode.SplitterNode))
-        {
-            return;
-        }
-
-        EditorLayoutNode.SplitterNode splitter = (EditorLayoutNode.SplitterNode) node;
-
-        if (splitter.isHorizontal())
-        {
-            float h1 = h * splitter.getRatio();
-
-            this.collectDockStacks(splitter.getFirst(), x, y, w, h1, out);
-            this.collectDockStacks(splitter.getSecond(), x, y + h1, w, h - h1, out);
-        }
-        else
-        {
-            float w1 = w * splitter.getRatio();
-
-            this.collectDockStacks(splitter.getFirst(), x, y, w1, h, out);
-            this.collectDockStacks(splitter.getSecond(), x + w1, y, w - w1, h, out);
-        }
-    }
-
+    /** Rect of the preview stack, or null — handed to the gutter maths, which treats it as an outer edge. */
     private float[] previewStackRect(List<DockStackInfo> stackInfos)
     {
-        for (DockStackInfo info : stackInfos)
-        {
-            if (info.panelIds.contains(PANEL_PREVIEW_ID))
-            {
-                return new float[] {info.x, info.y, info.w, info.h};
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Per-edge gaps so seams between panels don't double up: a full gap where a
-     * side does not get a matching half from the other side — the editor's outer
-     * edge or the frameless preview — and a half gap where a regular neighbour
-     * meets it. Returns left, top, right, bottom offsets in pixels.
-     */
-    private int[] panelGutter(DockStackInfo info, float[] preview)
-    {
-        int half = PANEL_GAP_PX / 2;
-        float x = info.x, y = info.y, w = info.w, h = info.h;
-
-        boolean left = x <= PANEL_EDGE_EPS;
-        boolean top = y <= PANEL_EDGE_EPS;
-        boolean right = x + w >= 1F - PANEL_EDGE_EPS;
-        boolean bottom = y + h >= 1F - PANEL_EDGE_EPS;
-
-        if (preview != null)
-        {
-            float vx = preview[0], vy = preview[1], vw = preview[2], vh = preview[3];
-            boolean spanY = y < vy + vh - PANEL_EDGE_EPS && y + h > vy + PANEL_EDGE_EPS;
-            boolean spanX = x < vx + vw - PANEL_EDGE_EPS && x + w > vx + PANEL_EDGE_EPS;
-
-            left |= spanY && Math.abs(x - (vx + vw)) <= PANEL_EDGE_EPS;
-            right |= spanY && Math.abs((x + w) - vx) <= PANEL_EDGE_EPS;
-            top |= spanX && Math.abs(y - (vy + vh)) <= PANEL_EDGE_EPS;
-            bottom |= spanX && Math.abs((y + h) - vy) <= PANEL_EDGE_EPS;
-        }
-
-        return new int[] {
-            left ? PANEL_GAP_PX : half,
-            top ? PANEL_GAP_PX : half,
-            right ? PANEL_GAP_PX : half,
-            bottom ? PANEL_GAP_PX : half
-        };
+        return DockStackGeometry.stackRect(stackInfos, PANEL_PREVIEW_ID);
     }
 
     private void applyPanelBoundsFromStacks(List<DockStackInfo> stackInfos)
@@ -1394,7 +1284,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                     continue;
                 }
 
-                int[] g = panel == this.preview ? new int[4] : this.panelGutter(info, preview);
+                int[] g = panel == this.preview ? new int[4] : DockStackGeometry.gutter(info, preview);
 
                 panel.relative(this.editor)
                     .x(info.x, g[0])
@@ -1426,7 +1316,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             UIDockStackTabs tabs = new UIDockStackTabs(this);
             tabs.configure(info);
-            int[] g = this.panelGutter(info, preview);
+            int[] g = DockStackGeometry.gutter(info, preview);
 
             tabs.relative(this.editor).x(info.x, g[0]).y(info.y, g[1]).w(info.w, -g[0] - g[2]).h(DOCK_STACK_TABS_HEIGHT_PX);
             this.dockStackTabs.add(tabs);
@@ -1474,7 +1364,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             DockStackInfo info = stackedInfos.get(i);
 
             tabs.configure(info);
-            int[] g = this.panelGutter(info, preview);
+            int[] g = DockStackGeometry.gutter(info, preview);
 
             tabs.relative(this.editor).x(info.x, g[0]).y(info.y, g[1]).w(info.w, -g[0] - g[2]).h(DOCK_STACK_TABS_HEIGHT_PX);
         }
@@ -1503,7 +1393,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
             float tabsOffset = info.isStacked() ? (float) DOCK_STACK_TABS_HEIGHT_PX / editorHeight : 0F;
 
-            int[] g = PANEL_PREVIEW_ID.equals(info.activePanelId) ? new int[4] : this.panelGutter(info, preview);
+            int[] g = PANEL_PREVIEW_ID.equals(info.activePanelId) ? new int[4] : DockStackGeometry.gutter(info, preview);
 
             handle.relative(this.editor)
                 .x(info.x, g[0])
@@ -1518,7 +1408,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         List<DockStackInfo> stackInfos = new ArrayList<>();
 
-        this.collectDockStacks(root, 0F, 0F, 1F, 1F, stackInfos);
+        DockStackGeometry.collect(root, 0F, 0F, 1F, 1F, stackInfos);
         this.applyPanelBoundsFromStacks(stackInfos);
 
         if (!this.updateDockStackTabsBoundsOnly(stackInfos))
@@ -1792,6 +1682,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         menu.action(Icons.LINK, UIKeys.FILM_LAYOUT_BIND_TO_EDITOR, this.isCurrentFilmLayoutBound(), this::toggleCurrentFilmLayoutBinding);
         menu.action(Icons.REFRESH, UIKeys.FILM_LAYOUT_RESET, this::resetFilmLayout);
         menu.action(this.layoutLocked ? Icons.UNLOCKED : Icons.LOCKED, this.layoutLocked ? UIKeys.FILM_LAYOUT_UNLOCK : UIKeys.FILM_LAYOUT_LOCK, this.layoutLocked, this::toggleLayoutLock);
+
+        menu.action(Icons.UNDO, UIKeys.FILM_DOCK_HISTORY, this.undoHistoryDock.isDocked(), this.undoHistoryDock::toggleDocked);
 
         menu.action(Icons.LIST, UIKeys.FILM_OPEN_HISTORY, () ->
         {
@@ -2482,6 +2374,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         BBSRendering.setCustomSize(true);
         MorphRenderer.hidePlayer = true;
+        /* Catches the dock setting being flipped in the settings screen while the film editor was away. */
+        this.undoHistoryDock.syncWithSettings();
 
         CameraController cameraController = this.getCameraController();
 
