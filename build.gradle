@@ -438,6 +438,32 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr25-dcevm-home"
 	def jbr = file("${rootDir}/../${jbrOrdner}/bin/java.exe")
 
+	/* ⛔ HEAP-DECKEL, WEIL ES OHNE IHN KEINEN GIBT (2026-08-02, user-order nach RAM-defekt).
+	 *
+	 * Es stand NIRGENDS ein -Xmx fuer den client — nur der gradle-daemon hatte einen
+	 * (gradle.properties, 4G). Ohne -Xmx nimmt die JVM ein VIERTEL des physischen RAM:
+	 * auf dieser 32-GB-maschine also 8 GB JE INSTANZ. Bei referenz + patient + quick sind
+	 * das 24 GB, die sich das spiel nehmen DARF — neben Cyberpunk und den werkzeugen.
+	 * Anlass war handfest: zwei 16-GB-riegel sind tot, die maschine bleibt bei 32 GB.
+	 *
+	 * Umstellbar ohne die datei anzufassen, wie bei bbs.jbr:
+	 *
+	 *     ./gradlew runClient                      -> 3G
+	 *     ./gradlew runClient -Pbbs.heap=2G        -> 2G  (kleine testwelt, sichtweite 2)
+	 *     ./gradlew runClient -Pbbs.heap=6G        -> 6G  (wenn eine messung mehr braucht)
+	 *
+	 * ⚠️ WARUM JDK_JAVA_OPTIONS UND NICHT vmArgs: derselbe grund wie bei den -XX-flags
+	 * unten — loom startet ueber net.fabricmc.devlaunchinjector.Main, und diese JVM erbt
+	 * vmArgs NICHT. Ein -Xmx dort waere still wirkungslos geblieben und haette wie ein
+	 * fix ausgesehen. Gegenprobe im laufenden spiel:
+	 *
+	 *     python tools/dev.py ev 'Runtime.getRuntime().maxMemory() / 1048576'
+	 *
+	 * Der wert steht AUSSERHALB des jbr-zweigs, weil der deckel auch dann gelten muss,
+	 * wenn die JBR fehlt — sonst haengt die speichergrenze an einer hotswap-frage. */
+	def heap = project.findProperty("bbs.heap") ?: "3G"
+	def jvmOptionen = ["-Xmx${heap}"]
+
 	if (jbr.exists())
 	{
 		it.executable = jbr.absolutePath
@@ -452,8 +478,8 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 		 * flags auf der prozess-kommandozeile standen.
 		 *
 		 * JDK_JAVA_OPTIONS liest JEDE JVM der kette beim start — damit kommen sie an. */
-		it.environment "JDK_JAVA_OPTIONS",
-			"-XX:+AllowEnhancedClassRedefinition -XX:+AllowRedefinitionToAddDeleteMethods"
+		jvmOptionen += ["-XX:+AllowEnhancedClassRedefinition",
+		                "-XX:+AllowRedefinitionToAddDeleteMethods"]
 
 		it.doFirst { logger.lifecycle("[hotswap] client auf JBR + volle redefinition: ${jbr.absolutePath}") }
 	}
@@ -461,6 +487,9 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	{
 		it.doFirst { logger.lifecycle("[hotswap] ../jbr-dcevm-home fehlt — nur body-hotswap moeglich") }
 	}
+
+	it.environment "JDK_JAVA_OPTIONS", jvmOptionen.join(" ")
+	it.doFirst { logger.lifecycle("[speicher] heap-deckel ${heap} (umstellen mit -Pbbs.heap=<wert>)") }
 }
 
 processResources {
