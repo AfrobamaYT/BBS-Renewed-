@@ -68,6 +68,14 @@ public final class Zeichenlage
      */
     public static void melden(String stelle)
     {
+        /* ⛔ SCHALTER ZUERST. Messpunkt#zaehle prueft ihn auch, aber erst INNEN — der
+         * StringBuilder samt acht Abfragen liefe dann in jedem Bild mit, obwohl niemand
+         * misst. Eine Sonde, die im Ruhezustand Bilder kostet, wird wieder ausgebaut. */
+        if (System.getProperty("bbs.mess") == null)
+        {
+            return;
+        }
+
         StringBuilder b = new StringBuilder();
 
         b.append("kamera=").append(wert(Zeichenlage::kamera));

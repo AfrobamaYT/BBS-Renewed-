@@ -22,7 +22,21 @@ import java.util.Map;
 public class StencilFormFramebuffer
 {
     private Framebuffer framebuffer;
-    private Texture zwischenbild;
+
+    /**
+     * Zwei Zwischenbilder im Wechsel — siehe {@link #zwischenbild()} fuer den Grund.
+     *
+     * <p>⛔ NICHT final, NICHT im Feldinitialisierer: nach einem Hotswap laufen auch
+     * Instanz-Initialisierer nicht erneut, und ein neues Feld steht auf null. Das gilt fuer
+     * das ARRAY genauso wie fuer die Texturen darin — am 2026-08-03 genau daran eine Instanz
+     * verloren ({@code Cannot load from object array because "this.zwischenbilder" is null},
+     * in JEDEM Bild beim Zeichnen des Umrisses). Der Kommentar, dass die Texturen traege
+     * entstehen, stand da schon; das Array war trotzdem eifrig.</p>
+     */
+    private Texture[] zwischenbilder;
+    private int zwischenbildIndex;
+    private long letztesBild = Long.MIN_VALUE;
+
     private Texture hervorhebung;
 
     private int index;
@@ -48,20 +62,58 @@ public class StencilFormFramebuffer
     {
         Texture quelle = this.framebuffer.getMainTexture();
 
-        if (this.zwischenbild == null)
+        /* ⛔ ZWEI TEXTUREN IM WECHSEL, NICHT EINE (2026-08-03, der Umriss-Versatz).
+         *
+         * Der Kommentar oben loeste das Problem fuer mehrere AUFRUFSTELLEN — nicht fuer
+         * mehrere BILDER. 26.2 sammelt die Oberflaeche erst und zeichnet danach: der
+         * Filterdurchgang fuellt diese Textur SOFORT, `batcher.texturedBox` reicht dagegen
+         * nur einen Auftrag ein. Zwischen Einreichen und Ausfuehren liegt der Rest des
+         * Bildes — und im naechsten Bild fuellt derselbe Puffer neu. Der Blit zeigt dann,
+         * was inzwischen drinsteht, nicht was er angefordert hat.
+         *
+         * Im Stillstand faellt das nicht auf (beide Bilder gleich); bei Kamerabewegung steht
+         * der Umriss genau um die Bewegung eines Bildes daneben. Gemessen: Stillstand mit
+         * mittiger Figur 1-2 px, Kamera ausgelenkt ~50 px.
+         *
+         * ⚠️ 1.21.1 hat diesen Puffer NICHT — dort laeuft der Umriss-Shader IM Blit
+         * (StencilAnzeige: setzeZwei("Schritt"...) + texturedBox(texture.id, ...)), ein
+         * Durchgang, nichts kann altern. Der Zwischenpuffer kam erst mit 26.2, weil ein
+         * GUI-Element dort keine eigenen Uniforms mehr binden kann (Begruendung und drei
+         * verworfene Auswege: Bildfilter). Er bleibt also — aber er darf nicht derselbe
+         * sein wie der, aus dem gerade noch gezeichnet wird.
+         *
+         * Gewechselt wird je BILD, nicht je Aufruf: alle Aufrufstellen desselben Bildes
+         * muessen dieselbe Textur sehen, sonst zeichnet die zweite in eine leere. */
+        if (this.zwischenbilder == null)
         {
-            this.zwischenbild = new Texture();
-            this.zwischenbild.setFilter(GL11.GL_NEAREST);
-            this.zwischenbild.setWrap(GL13.GL_CLAMP_TO_EDGE);
+            this.zwischenbilder = new Texture[2];
         }
 
-        if (this.zwischenbild.width != quelle.width || this.zwischenbild.height != quelle.height)
+        long bild = net.minecraft.client.Minecraft.getInstance().getFrameTimeNs();
+
+        if (bild != this.letztesBild)
         {
-            this.zwischenbild.bind();
-            this.zwischenbild.setSize(quelle.width, quelle.height);
+            this.letztesBild = bild;
+            this.zwischenbildIndex ^= 1;
         }
 
-        return this.zwischenbild;
+        Texture ziel = this.zwischenbilder[this.zwischenbildIndex];
+
+        if (ziel == null)
+        {
+            ziel = new Texture();
+            ziel.setFilter(GL11.GL_NEAREST);
+            ziel.setWrap(GL13.GL_CLAMP_TO_EDGE);
+            this.zwischenbilder[this.zwischenbildIndex] = ziel;
+        }
+
+        if (ziel.width != quelle.width || ziel.height != quelle.height)
+        {
+            ziel.bind();
+            ziel.setSize(quelle.width, quelle.height);
+        }
+
+        return ziel;
     }
 
     public Framebuffer getFramebuffer()
