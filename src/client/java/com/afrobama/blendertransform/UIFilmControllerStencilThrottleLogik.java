@@ -111,6 +111,103 @@ public final class UIFilmControllerStencilThrottleLogik
     }
 
     /**
+     * Ist gerade ein Replay ausgewaehlt, wird also ein Umriss aus dem Stencil GEZEICHNET?
+     *
+     * <p>Bewusst tolerant: laesst sich das nicht feststellen, verhaelt sich der Throttle wie
+     * bisher — ein Anzeigefehler ist aergerlich, ein gerissener Renderpfad schlimmer.
+     */
+    private static boolean zeigtUmriss(Object zielObjekt)
+    {
+        try
+        {
+            if (!mchorse.bbs_mod.BBSSettings.editorReplayOutline.get())
+            {
+                return false;
+            }
+
+            mchorse.bbs_mod.ui.film.controller.UIFilmController controller =
+                (mchorse.bbs_mod.ui.film.controller.UIFilmController) zielObjekt;
+
+            return controller.panel.replayEditor.getReplay() != null;
+        }
+        catch (Throwable t)
+        {
+            return false;
+        }
+    }
+
+    /**
+     * Die Kamera dieses Bildes, als Zahl zum Vergleichen.
+     *
+     * <p>⛔ DRITTER FALL DERSELBEN LÜCKE (vom Nutzer gemeldet 2026-08-02): „die orangene
+     * silhoute bewegt sich genau wie das schatten problem bei kamera bewegung".
+     *
+     * <p>Die Annahme des Throttles war ursprünglich „das Pick-Ergebnis ändert sich nur, wenn
+     * sich der CURSOR bewegt". Zweimal hat sie schon nicht gereicht — Playback und Scrubben
+     * kamen als {@code szeneBewegt} dazu. Der dritte Fall ist die KAMERA: beim Fliegen fängt
+     * der Editor den Cursor ein ({@code toggleMousePointer}), {@code context.mouseX/Y} steht
+     * also still, und ohne laufendes Playback wechselt auch kein Tick. Der Puffer wird dann
+     * bis zu einer Sekunde nicht neu gefüllt, während sich das Bild darunter komplett
+     * verschiebt — und weil aus diesem Puffer seit dem Replay-Umriss GEZEICHNET wird, steht
+     * die Silhouette sichtbar neben der Figur.
+     *
+     * <p>Gemessen vor dem Fix (Editor offen, Cursor still): {@code stencil.eingang} = 5 gegen
+     * {@code umriss.gezeichnet} = 159 in derselben Messung — der Umriss lief also 30× so oft
+     * wie die Füllung, aus der er liest.
+     *
+     * <p>Verglichen wird die View-Rotation, die der Weltdurchgang zu Beginn jedes Bildes in
+     * {@code BBSRendering.camera} stempelt (WorldRendererMixin, HEAD von LevelRenderer.render)
+     * — dieselbe Matrix, mit der {@code renderStencil} den Puffer füllt. Bewusst tolerant:
+     * geht das Lesen schief, verhält sich der Throttle wie bisher.
+     */
+    private static long kameraStand()
+    {
+        try
+        {
+            /* ⛔ POSITION UND DREHUNG, NICHT NUR DREHUNG (2026-08-02, erster Anlauf war zu
+             *    schmal). Zuerst stand hier BBSRendering.camera — das ist aber die
+             *    viewRotationMatrix, also reine DREHUNG. Wer geradeaus fliegt, dreht nichts:
+             *    der Auslöser schwieg, und der Nutzer meldete zu Recht „der stencil bewegt
+             *    sich immernoch mit der kamera mit". Gemessen blieb das Verhältnis bei
+             *    1:20 (eingang 230 gegen umriss 4714) statt auf 1:1 zu gehen.
+             *    mainCamera() trägt beides und ist der Stand DIESES Bildes. */
+            net.minecraft.client.Camera k =
+                net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera();
+
+            net.minecraft.world.phys.Vec3 p = k.position();
+
+            /* Es geht nur um „hat sich etwas geändert", nicht um den Wert. */
+            return java.lang.Double.doubleToLongBits(p.x) * 31L
+                 + java.lang.Double.doubleToLongBits(p.y) * 131L
+                 + java.lang.Double.doubleToLongBits(p.z) * 1531L
+                 + java.lang.Float.floatToIntBits(k.xRot()) * 15131L
+                 + java.lang.Float.floatToIntBits(k.yRot()) * 151531L;
+        }
+        catch (Throwable t)
+        {
+            return 0L;
+        }
+    }
+
+    /** Kamerastand des letzten Füllens, je Controller-Instanz. */
+    private static volatile java.util.Map<Object, Long> letzteKamera;
+
+    private static synchronized java.util.Map<Object, Long> kameraSpeicher()
+    {
+        java.util.Map<Object, Long> m = letzteKamera;
+
+        if (m == null)
+        {
+            /* Lazy wie tickSpeicher(): nach einem Hotswap laufen statische Initialisierer
+             * nicht, das Feld bliebe null und der erste Zugriff würde in JEDEM Bild werfen. */
+            m = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+            letzteKamera = m;
+        }
+
+        return m;
+    }
+
+    /**
      * @return {@code true}, wenn der aufrufende handler {@code ci.cancel()} rufen soll
      *         (cursor stand still, letztes pick bleibt gültig).
      */
@@ -154,11 +251,44 @@ public final class UIFilmControllerStencilThrottleLogik
          * gedacht war: im wirklich stehenden Bild. Dann ist der alte Puffer ja korrekt. */
         int tick = aktuellerTick(zielObjekt);
         Integer vorigerTick = tickSpeicher().get(zielObjekt);
+        long kamera = kameraStand();
+        Long vorigeKamera = kameraSpeicher().get(zielObjekt);
+        boolean kameraBewegt = vorigeKamera != null && vorigeKamera.longValue() != kamera;
+
+        /* ⛔ WIRD AUS DEM PUFFER GEZEICHNET, DARF ER NICHT ALTERN (2026-08-02).
+         *
+         * Der Throttle stammt aus einer Zeit, in der dieser Puffer NUR gepickt wurde: teuer
+         * ist der glReadPixels-Stall, und ein Pick-Ergebnis aendert sich nur unter einem
+         * bewegten Cursor. Seit dem Replay-Umriss wird aus demselben Puffer GEZEICHNET —
+         * damit ist jedes uebersprungene Bild direkt sichtbar.
+         *
+         * Drei Anlaeufe haben das mit immer feineren Bewegungs-Erkennern zu retten versucht
+         * (Playback, Tick, Kamera). Der letzte ist gemessen gescheitert: der Kamera-Vergleich
+         * meldete bei bewegter Kamera 186 Bewegungen gegen 6198 Stillstaende — 97 % der
+         * Bilder galten als ruhig, und der Nutzer sah den Versatz weiter. Welche Kamera der
+         * Editor wirklich fuehrt, ist damit offen; eine vierte Vermutung waere geraten.
+         *
+         * Deshalb die Regel, die keine Vermutung braucht: ist der Umriss SICHTBAR, wird
+         * nicht gedrosselt. Dann ist der Puffer ein Anzeige-Element und muss zu dem Bild
+         * passen, ueber dem er liegt. Ohne ausgewaehltes Replay (kein Umriss) greift der
+         * Throttle unveraendert voll — dort ist der eingesparte Stall echter Gewinn. */
+        boolean umrissSichtbar = zeigtUmriss(zielObjekt);
+
         boolean szeneBewegt = spieltAb(zielObjekt)
-            || (tick != Integer.MIN_VALUE && vorigerTick != null && vorigerTick.intValue() != tick);
+            || (tick != Integer.MIN_VALUE && vorigerTick != null && vorigerTick.intValue() != tick)
+            || kameraBewegt
+            || umrissSichtbar;
+
+        /* ⚗️ Zaehler an der ENTSCHEIDUNG. Nach dem Kamera-Auslöser fiel das Verhältnis von
+         * 1:32 auf 1:13 — er greift also, aber nicht durchgängig. Nur diese drei Zahlen
+         * trennen die Fälle: bewegt sich die Kamera und wird TROTZDEM gedrosselt, oder
+         * merkt der Vergleich die Bewegung gar nicht erst? */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+            kameraBewegt ? "throttle.kamera-bewegt" : "throttle.kamera-still");
 
         if (!moved && !altChanged && !szeneBewegt && (now - lastRunMs) < 1000L)
         {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("throttle.gedrosselt");
             /* Cursor stationär, Bild steht → letztes pick bleibt gültig → stencil-render +
              * glReadPixels-stall überspringen. */
             com.afrobama.bbstools.perf.BBSPerfConfig.stencilPickSkips++;
@@ -170,6 +300,7 @@ public final class UIFilmControllerStencilThrottleLogik
         MixinBruecke.feldSchreiben(zielObjekt, "bbstools$lastAlt", altPressed);
         MixinBruecke.feldSchreiben(zielObjekt, "bbstools$lastRunMs", now);
         tickSpeicher().put(zielObjekt, tick);
+        kameraSpeicher().put(zielObjekt, kamera);
 
         return false;
     }
