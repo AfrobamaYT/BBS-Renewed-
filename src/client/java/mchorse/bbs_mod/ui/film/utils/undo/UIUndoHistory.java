@@ -1,0 +1,157 @@
+package mchorse.bbs_mod.ui.film.utils.undo;
+
+import mchorse.bbs_mod.settings.values.core.ValueGroup;
+import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.utils.UIUtils;
+import mchorse.bbs_mod.utils.undo.UndoManager;
+
+import java.util.ArrayList;
+import java.util.function.Supplier;
+
+/**
+ * The undo history itself — a list of an {@link UndoManager}'s stack where clicking an entry drives the
+ * manager until its position reaches that entry.
+ *
+ * <p>This is the CONTENT, not the window: it knows nothing about where it is shown. That separation is
+ * what makes the history dockable at all — {@link UIUndoHistoryOverlay} wraps it in a floating panel
+ * (used by the model editor, which has no docks), while the film editor hands the very same element to
+ * its dock layout as a regular panel. Established practice: Qt ADS wraps a "content widget" in a
+ * CDockWidget, Godot wraps a Control in either a dock slot or a WindowWrapper.</p>
+ *
+ * <p>⚠ FALLE — the manager is a {@link Supplier}, never a stored reference. A docked history outlives
+ * many films, and {@code UIFilmPanel.fillData} builds a BRAND NEW UIFilmUndoHandler (and therefore a new
+ * UndoManager) on every film switch. A stored reference would keep showing the previous film's stack and
+ * silently drive the wrong manager.</p>
+ *
+ * <p>⚠ FALLE — {@link mchorse.bbs_mod.ui.framework.elements.input.list.UIList#setList} keeps a LIVE
+ * reference to the manager's list, so new entries appear on their own, but the scroll size and the
+ * highlighted row do not. A permanently visible panel therefore has to re-sync per frame; polling in
+ * {@link #render} is used because {@link UndoManager} has room for exactly ONE listener and
+ * {@code UIFormUndoHandler} already owns it.</p>
+ */
+public class UIUndoHistory extends UIElement
+{
+    private final Supplier<UndoManager<ValueGroup>> undoManager;
+    private final UIUndoList<ValueGroup> list;
+
+    /** Identity of the manager the list is currently bound to — a change means "different film". */
+    private UndoManager<ValueGroup> boundManager;
+    private int lastSize = -1;
+    private int lastIndex = Integer.MIN_VALUE;
+
+    /**
+     * @param undoManager where the stack comes from; may return null while no data is loaded.
+     * @param context     the value tree undo/redo is applied to (the film, the model config, ...).
+     * @param onApplied   run after driving the manager to the picked entry. Editors whose widgets
+     *                    live-track the data (the film timeline) pass null; ones with static widgets
+     *                    (the model editor) pass their rebuild.
+     */
+    public UIUndoHistory(Supplier<UndoManager<ValueGroup>> undoManager, Supplier<ValueGroup> context, Runnable onApplied)
+    {
+        this.undoManager = undoManager;
+
+        this.list = new UIUndoList<ValueGroup>((l) ->
+        {
+            UndoManager<ValueGroup> manager = this.getUndoManager();
+
+            if (manager == null)
+            {
+                return;
+            }
+
+            int index = this.list.getIndex();
+
+            while (manager.getCurrentUndoIndex() != index)
+            {
+                if (manager.getCurrentUndoIndex() > index)
+                {
+                    manager.undo(context.get());
+                }
+                else
+                {
+                    manager.redo(context.get());
+                }
+            }
+
+            if (onApplied != null)
+            {
+                onApplied.run();
+            }
+
+            UIUtils.playClick();
+        });
+
+        this.list.full(this);
+
+        this.add(this.list);
+    }
+
+    public UndoManager<ValueGroup> getUndoManager()
+    {
+        return this.undoManager.get();
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        this.syncFromManager();
+
+        super.render(context);
+    }
+
+    /**
+     * Cheap per-frame reconciliation: only manager identity, stack length and position are compared, so
+     * the common case (nothing changed) costs three integer reads.
+     */
+    private void syncFromManager()
+    {
+        UndoManager<ValueGroup> manager = this.getUndoManager();
+
+        if (manager == null)
+        {
+            if (this.boundManager != null)
+            {
+                this.boundManager = null;
+                this.lastSize = -1;
+                this.lastIndex = Integer.MIN_VALUE;
+
+                /* ⚠ FALLE — NOT list.clear(): UIList.clear() empties its BACKING list, and that
+                 * backing list IS the manager's live undo stack. Swapping in a fresh empty list is
+                 * the only way to blank the view without destroying the history. */
+                this.list.setList(new ArrayList<>());
+                this.list.deselect();
+            }
+
+            return;
+        }
+
+        if (manager != this.boundManager)
+        {
+            this.boundManager = manager;
+            this.lastSize = -1;
+            this.lastIndex = Integer.MIN_VALUE;
+
+            this.list.setList(manager.getUndos());
+        }
+
+        int size = manager.getTotalUndos();
+        int index = manager.getCurrentUndoIndex();
+
+        if (size != this.lastSize)
+        {
+            this.lastSize = size;
+
+            /* Resyncs the scroll bar to the new row count — the list itself shares the manager's
+             * List instance, so the rows are already there. */
+            this.list.update();
+        }
+
+        if (index != this.lastIndex)
+        {
+            this.lastIndex = index;
+
+            this.list.setIndex(index);
+        }
+    }
+}

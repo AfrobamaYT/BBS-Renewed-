@@ -181,6 +181,8 @@ public class BBSSettings {
 	public static ValueBoolean editorHorizontalClipEditor;
 	public static ValueBoolean editorMinutesBackup;
 	public static ValueBoolean editorResizablePanels;
+	/** Whether the film editor's undo history is a docked panel instead of a floating window. */
+	public static ValueBoolean editorUndoHistoryDocked;
 	public static ValueInt editorTrackWidth;
 	public static ValueInt keyframeDefaultShape;
 	public static ValueString keyframeDefaultInterpolation;
@@ -725,6 +727,9 @@ public class BBSSettings {
 		editorHorizontalClipEditor = builder.getBoolean("horizontal_clip_editor", true);
 		editorMinutesBackup = builder.getBoolean("minutes_backup", true);
 		editorResizablePanels = builder.getBoolean("resizable_panels", true);
+		/* Off by default: the history was a floating window before, so an existing layout must not
+		 * suddenly grow a sixth panel. Where it sits once enabled lives in the layout tree. */
+		editorUndoHistoryDocked = builder.getBoolean("undo_history_docked", false);
 		editorPreviewSizeMode = builder.getInt("preview_size_mode", 0, 0, 2);
 		editorPreviewCustomWidth = builder.getInt("preview_custom_width", 1280, 2, 16384);
 		editorPreviewCustomHeight = builder.getInt("preview_custom_height", 720, 2, 16384);

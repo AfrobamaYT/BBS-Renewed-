@@ -510,7 +510,12 @@ public abstract class EditorLayoutNode
         return node;
     }
 
-    private static boolean containsPanel(EditorLayoutNode node, String panelId)
+    /**
+     * Whether panelId sits anywhere in this tree. Public because callers that INSERT a panel have to
+     * verify the insert landed: {@link #copyWithInsertSplitAt} returns the tree unchanged when the
+     * anchor is missing, which is otherwise a silent no-op.
+     */
+    public static boolean containsPanel(EditorLayoutNode node, String panelId)
     {
         if (node == null)
         {
