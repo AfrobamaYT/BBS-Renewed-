@@ -687,6 +687,29 @@ public class BBSRendering
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevRead);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDraw);
 
+        abschliessen();
+    }
+
+    /**
+     * Der Schluss des Bildes: Aufnahme-Overlay, Framebuffer abhaengen, ein anstehender
+     * Aufloesungswechsel.
+     *
+     * <p>⛔ GETRENNT VOM FUELLEN (2026-08-02). Beides stand in {@code onRenderBeforeScreen()},
+     * und die Methode haengt im Editor am TAIL von {@code Gui.extractRenderState}
+     * (gemessen per Stapelabzug: {@code Gui.handler$...$bbs$onRenderEnd <- extractRenderState
+     * <- GameRenderer.extract}). In 26.2 werden dort erst ALLE UI-Elemente eingesammelt und
+     * danach gezeichnet — der Blit des Vorschaufeldes war also laengst eingereiht, wenn die
+     * Textur gefuellt wurde. Ergebnis: das Vorschaufeld zeigt immer das Bild des VORIGEN
+     * Durchgangs, und jede Ueberlagerung darueber (Replay-Umriss) sitzt bei Kamerabewegung
+     * daneben. Gemessen: beim Blit stand die Fuellung auf 132, waehrend sie bei 133 war.
+     *
+     * <p>Das Abhaengen MUSS am TAIL bleiben — siehe InGameHudMixin: "dort muss der
+     * framebuffer bis zum TAIL gebunden bleiben, sonst landet das HUD im haupt-framebuffer
+     * statt im viewport". Nur das FUELLEN darf vorziehen, und genau das trennt diese
+     * Methode ab.
+     */
+    public static void abschliessen()
+    {
         renderRecordingOverlay();
 
         toggleFramebuffer(false);
