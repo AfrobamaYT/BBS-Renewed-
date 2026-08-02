@@ -143,6 +143,29 @@ public final class Bildfilter
      */
     private static void lauf(RenderPipeline pipeline, Texture quelle, Texture zweite, GpuTextureView ziel)
     {
+        /* ⛔ DIE PROJEKTION GEHOERT DIESEM DURCHGANG, NICHT DEM LETZTEN WELTBILD (2026-08-02).
+         *
+         * Der Vertex-Shader rechnet ProjMat * ModelViewMat * Position. Hier wurde nur die
+         * ModelViewMat uebergeben (die flache Ortho unten); ProjMat kam ueber
+         * GehaltenesNetz -> RenderSystem.bindDefaultUniforms aus dem GLOBALEN Puffer, und der
+         * traegt an dieser Stelle die PERSPEKTIVE des Weltdurchgangs: GameRenderer setzt in
+         * 26.2 nur noch PERSPECTIVE, die GUI-Ortho setzt erst GuiRenderer.draw() -- also im
+         * ZEICHNEN, waehrend dieser Filter im SAMMELN laeuft.
+         *
+         * Perspektive heisst w = -z_eye. Nach der flachen ModelViewMat liegt das Viereck bei
+         * z_eye = 0, also w = 0 an ALLEN VIER ECKEN: die Flaeche ist entartet und liefert
+         * KEIN Fragment. Kein GL-Fehler, keine Logzeile, alle Zaehler voll -- der Umriss
+         * wurde 1008-mal "gezeichnet" und war nie zu sehen.
+         *
+         * Vanilla umgeht das bei seinen Vollbildfiltern ueber core/screenquad.vsh (gar keine
+         * Matrizen, NDC direkt aus gl_VertexID); FramebufferFormRenderer setzt die Projektion
+         * selbst. Nur dieser Weg tat weder das eine noch das andere.
+         *
+         * Die Ortho wandert damit von der ModelView in die Projektion, und die ModelView wird
+         * die Einheitsmatrix -- zweimal projizieren waere derselbe Fehler nur andersherum. */
+        Projektion.sichern();
+        Projektion.setzenFlach(new Matrix4f().setOrtho(0F, 1F, 0F, 1F, -1F, 1F));
+
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(512))
         {
             BufferBuilder bauer = SofortZeichner.beginnen(speicher, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
@@ -155,7 +178,7 @@ public final class Bildfilter
             try (GehaltenesNetz netz = new GehaltenesNetz(bauer.buildOrThrow()))
             {
                 netz.zeichnen(pipeline,
-                    new Matrix4f().setOrtho(0F, 1F, 0F, 1F, -1F, 1F),
+                    new Matrix4f(),
                     null,
                     zweite == null
                         ? TextureSetup.singleTexture(quelle.view(), quelle.sampler())
@@ -163,6 +186,10 @@ public final class Bildfilter
                     ziel, null,
                     (durchgang) -> durchgang.setUniform(BBSPipelines.FILTER_BLOCK, block));
             }
+        }
+        finally
+        {
+            Projektion.zurueck();
         }
     }
 

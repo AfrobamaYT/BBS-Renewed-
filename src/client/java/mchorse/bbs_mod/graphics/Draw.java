@@ -110,9 +110,46 @@ public class Draw
 
     public static void fillQuad(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a)
     {
+        fillQuad(builder, stack, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, r, g, b, a, false);
+    }
+
+    /**
+     * Eine Flaeche schreiben — als Dreiecksliste (Standard) oder als Viereck.
+     *
+     * <p>⛔ DIE TOPOLOGIE MUSS ZUR PIPELINE PASSEN, SONST GIBT ES SPLITTER STATT FLAECHEN
+     * (2026-08-02 an der laufenden 26.2 belegt). {@code RenderTypes.debugFilledBox()} faehrt
+     * {@code PrimitiveTopology.QUADS} — an der laufenden JVM abgefragt, nicht vermutet. Wer
+     * dort eine Dreiecksliste hineinschreibt, bekommt vom Indexpuffer 4er-Gruppen
+     * {@code (0,1,2,2,3,0)} ueber eine 6er-Folge gelegt: von 12 richtigen Dreiecken je Kasten
+     * ueberleben 3, der Rest wird zu flaechenuebergreifenden Splittern und entarteten
+     * Dreiecken. Das ist das gemeldete Bild "manche Straenge haarfein, und man sieht
+     * hindurch"; dass es sich mit der Blickrichtung aendert, kommt von {@code sortOnUpload()},
+     * das 4er-Gruppen nach Abstand sortiert.
+     *
+     * <p>26.1 hatte das Problem nicht, weil es sein Netz selbst mit {@code Mode.TRIANGLES}
+     * baute und fertig uebergab — in 26.2 gibt es {@code RenderType.draw(MeshData)} nicht
+     * mehr, der Port wich auf {@code submitCustomGeometry} aus und verlor dabei die
+     * Topologie.
+     *
+     * <p>Die Geometrie steht bewusst NUR HIER. Eine zweite Kastenroutine daneben waere eine
+     * zweite Quelle fuer dieselbe Frage — die stimmen genau so lange ueberein, bis jemand
+     * eine aendert.
+     */
+    public static void fillQuad(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a, boolean vierecke)
+    {
         Matrix4f matrix4f = stack.last().pose();
 
         /* 1 - BR, 2 - BL, 3 - TL, 4 - TR */
+        if (vierecke)
+        {
+            builder.addVertex(matrix4f, x1, y1, z1).setColor(r, g, b, a);
+            builder.addVertex(matrix4f, x2, y2, z2).setColor(r, g, b, a);
+            builder.addVertex(matrix4f, x3, y3, z3).setColor(r, g, b, a);
+            builder.addVertex(matrix4f, x4, y4, z4).setColor(r, g, b, a);
+
+            return;
+        }
+
         builder.addVertex(matrix4f, x1, y1, z1).setColor(r, g, b, a);
         builder.addVertex(matrix4f, x2, y2, z2).setColor(r, g, b, a);
         builder.addVertex(matrix4f, x3, y3, z3).setColor(r, g, b, a);
@@ -122,6 +159,12 @@ public class Draw
     }
 
     public static void fillBoxTo(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a)
+    {
+        fillBoxTo(builder, stack, x1, y1, z1, x2, y2, z2, thickness, r, g, b, a, false);
+    }
+
+    /** Wie oben, aber mit Wahl der Topologie — siehe {@link #fillQuad} zum Warum. */
+    public static void fillBoxTo(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float thickness, float r, float g, float b, float a, boolean vierecke)
     {
         float dx = x2 - x1;
         float dy = y2 - y1;
@@ -135,7 +178,7 @@ public class Draw
         stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(angle.yaw));
         stack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(angle.pitch));
 
-        fillBox(builder, stack, -thickness / 2, -thickness / 2, 0, thickness / 2, thickness / 2, (float) distance, r, g, b, a);
+        fillBox(builder, stack, -thickness / 2, -thickness / 2, 0, thickness / 2, thickness / 2, (float) distance, r, g, b, a, vierecke);
 
         stack.popPose();
     }
@@ -159,17 +202,23 @@ public class Draw
 
     public static void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a)
     {
+        fillBox(builder, stack, x1, y1, z1, x2, y2, z2, r, g, b, a, false);
+    }
+
+    /** Wie oben, aber mit Wahl der Topologie — siehe {@link #fillQuad} zum Warum. */
+    public static void fillBox(VertexConsumer builder, PoseStack stack, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a, boolean vierecke)
+    {
         /* X */
-        fillQuad(builder, stack, x1, y1, z2, x1, y2, z2, x1, y2, z1, x1, y1, z1, r, g, b, a);
-        fillQuad(builder, stack, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, r, g, b, a);
+        fillQuad(builder, stack, x1, y1, z2, x1, y2, z2, x1, y2, z1, x1, y1, z1, r, g, b, a, vierecke);
+        fillQuad(builder, stack, x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, r, g, b, a, vierecke);
 
         /* Y */
-        fillQuad(builder, stack, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
-        fillQuad(builder, stack, x2, y2, z1, x1, y2, z1, x1, y2, z2, x2, y2, z2, r, g, b, a);
+        fillQuad(builder, stack, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a, vierecke);
+        fillQuad(builder, stack, x2, y2, z1, x1, y2, z1, x1, y2, z2, x2, y2, z2, r, g, b, a, vierecke);
 
         /* Z */
-        fillQuad(builder, stack, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a);
-        fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
+        fillQuad(builder, stack, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a, vierecke);
+        fillQuad(builder, stack, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a, vierecke);
     }
 
     public static void coolerAxes(PoseStack stack, float axisSize, float axisOffset)

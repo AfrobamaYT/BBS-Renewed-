@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.graphics;
 
+import com.mojang.blaze3d.opengl.GlStateManager;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -169,14 +170,29 @@ public class Framebuffer
         }
     }
 
+    /* ⛔ UEBER GlStateManager BINDEN, NICHT ROH — 26.2 FUEHRT EINEN CACHE (2026-08-02).
+     *
+     * Hier stand `GL30.glBindFramebuffer(...)` direkt. In 1.21.1 war das gleichwertig: dortiges
+     * `GlStateManager._glBindFramebuffer` rief bedingungslos durch. In 26.2 haelt der
+     * GlStateManager die Felder `readFbo` und `writeFbo` (an der laufenden JVM nachgesehen) und
+     * UEBERSPRINGT den GL-Aufruf, wenn der gewuenschte Puffer schon gebunden zu sein scheint.
+     *
+     * Wer roh daran vorbei bindet, laesst diesen Cache auseinanderlaufen: nach unserem
+     * unbind() (bindet 0) glaubt Blaze3D weiter, sein eigenes FBO sei gebunden, ueberspringt
+     * das naechste Binden — und der folgende Zug landet in Puffer 0. Kein GL-Fehler, keine
+     * Logzeile. Gleicher BBS-Code, geaenderte Umgebung: das Portmuster.
+     *
+     * Signatur an der laufenden 26.2 geprueft: `public static _glBindFramebuffer(int, int)`.
+     * Der Weg ueber den Manager ist strikt sicherer als der rohe — er kann den Cache nur
+     * richtig halten, nie zusaetzlich verwirren. */
     public void bind()
     {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.id);
+        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, this.id);
     }
 
     public void unbind()
     {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
     }
 
     public void resize(int w, int h)

@@ -104,24 +104,38 @@ public class Recorder extends WorldFilmController
          * ohne draw() -- man reicht die Geometrie ueber den Sammler ein.
          *
          * Damit ist es DASSELBE Muster wie beim LineBuilder (a81b4d2a5) und beim Bodengitter:
-         * ein eigener Sofortzug, wo der vorgesehene RenderType gereicht haette. */
+         * ein eigener Sofortzug, wo der vorgesehene RenderType gereicht haette.
+         *
+         * ⛔ NACHTRAG 2026-08-02, DER ZWEITE HALBE SCHRITT: der RenderType allein reicht
+         * nicht -- die GEOMETRIE muss seine Topologie sprechen. debugFilledBox() faehrt
+         * PrimitiveTopology.QUADS (an der laufenden 26.2 abgefragt, nicht vermutet), Draw
+         * schrieb aber eine Dreiecksliste mit 6 Ecken je Flaeche. Der Indexpuffer legt dann
+         * 4er-Gruppen (0,1,2,2,3,0) ueber eine 6er-Folge: von 12 richtigen Dreiecken je
+         * Kasten ueberleben 3, der Rest wird zu Splittern zwischen den Flaechen. Genau das
+         * meldete der Nutzer -- "manche Straenge haarfein, man sieht hindurch". Darum die
+         * Vierecks-Variante von Draw.
+         *
+         * ⚠️ Die Durchsicht hat ZWEI Anteile: die Splitter (hiermit weg) und
+         * DEBUG_FILLED_BOX mit writeDepth=false (gemessen). Der zweite ist eine
+         * ENTSCHEIDUNG, keine Panne -- 26.1 macht es genauso -- und bleibt deshalb, bis der
+         * Nutzer etwas anderes will. */
         sammler.submitCustomGeometry(stack, net.minecraft.client.renderer.rendertype.RenderTypes.debugFilledBox(), (pose, builder) ->
         {
 
             transformFrustum(vector, matrix, 1F, 1F);
-            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F, true);
 
             transformFrustum(vector, matrix, -1F, 1F);
-            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F, true);
 
             transformFrustum(vector, matrix, 1F, -1F);
-            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F, true);
 
             transformFrustum(vector, matrix, -1F, -1F);
-            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 1F, 1F, 1F, 1F, true);
 
             transformFrustum(vector, matrix, 0F, 0F);
-            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 0F, 0.5F, 1F, 1F);
+            Draw.fillBoxTo(builder, stack, x, y, z, x + vector.x, y + vector.y, z + vector.z, thickness, 0F, 0.5F, 1F, 1F, true);
 
         });
 
