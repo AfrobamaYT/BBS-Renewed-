@@ -3089,7 +3089,34 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * ⚠ Das ist NICHT die Zeichenmatrix (Sonde projektion.paar: gleich=false) — daher
              * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
-            mchorse.bbs_mod.graphics.Zeichenlage.melden("weltbild");
+            /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (gemessen: lage.weltbild 400 gegen
+             * lage.stencil 200, alle uebrigen Werte identisch). Zwei Durchgaenge in denselben
+             * Puffer erklaeren ein Wandern der Bodentextur bei starker Bewegung — aber nur,
+             * wenn sie WIRKLICH dasselbe Ziel haben. Darum getrennt zaehlen. */
+            mchorse.bbs_mod.graphics.Zeichenlage.melden(
+                mchorse.bbs_mod.client.BBSRendering.renderingWorld ? "weltbild-bbs" : "weltbild-vanilla");
+
+            /* ⚗️ WER ruft das hier zusaetzlich? renderInWorld feuert oefter als es Bilder
+             * gibt (1764 gegen 1552, waehrend ALLE anderen Renderzaehler exakt 1552 stehen).
+             *
+             * ⛔ UNGEFILTERT: Messpunkt#rufer siebt auf mchorse./com.afrobama., ein gewobener
+             * Mixin-Handler steht aber unter dem VANILLA-Namen im Stapel — gefiltert kam bei
+             * genau so einer Frage schon einmal eine leere Zeile heraus, ungefiltert die exakte
+             * Fundstelle. */
+            if (System.getProperty("bbs.mess") != null)
+            {
+                StackTraceElement[] stapel = Thread.currentThread().getStackTrace();
+                StringBuilder ruf = new StringBuilder();
+
+                for (int i = 2; i < Math.min(stapel.length, 9); i++)
+                {
+                    ruf.append(i > 2 ? " <- " : "").append(stapel[i].getClassName())
+                       .append('.').append(stapel[i].getMethodName())
+                       .append(':').append(stapel[i].getLineNumber());
+                }
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("weltbild.rufer", ruf.toString());
+            }
             /* 1.21.1 carries the camera view rotation in positionMatrix(); the context's
              * MatrixStack base is just an identity stack for entity-relative rendering, so
              * reading the view from it would drop the camera angle and misaim every raycast.
