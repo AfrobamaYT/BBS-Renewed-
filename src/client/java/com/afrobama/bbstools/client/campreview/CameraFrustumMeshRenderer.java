@@ -46,7 +46,59 @@ public final class CameraFrustumMeshRenderer
      *  DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH (javap auf
      *  RenderPipelines.<clinit>, LINES_SNIPPET). Vanilla setzt es je Vertex,
      *  siehe ShapeOutlineFeatureRenderer (addVertex/setColor/setNormal/setLineWidth). */
+    /** Breite in Pixeln des ZIELPUFFERS — nicht des Bildschirms. Siehe {@link #linienbreite()}. */
     private static final float LINE_WIDTH = 2F;
+
+    /**
+     * Die Linienbreite, hochgerechnet auf die Verkleinerung des Vorschaufeldes.
+     *
+     * <h2>⛔ Warum eine feste Zahl hier falsch ist (gemessen 2026-08-03)</h2>
+     *
+     * <p>1.21.1 rief {@code RenderSystem.lineWidth(2F)} und zeichnete direkt ins Fenster: zwei
+     * Pixel blieben zwei Pixel. In 26.2 ist die Breite ein Vertexattribut, der Shader rechnet
+     * {@code lineOffset = LineWidth / ScreenSize} — auch das ergibt Pixel, aber Pixel <b>des
+     * Zielpuffers</b>. Und der Film-Editor zeichnet nicht ins Fenster, sondern in den
+     * Videopuffer (1280x720) und blittet den danach ins Vorschaufeld.</p>
+     *
+     * <p>Gemessen mit unveraendertem {@code LINE_WIDTH = 2F}:</p>
+     * <pre>
+     *   im Videopuffer 1280x720 : Median 3 px   (Shader arbeitet korrekt)
+     *   im Vorschaufeld  472 px : etwa 1 px     (Puffer um Faktor 2,7 geschrumpft)
+     * </pre>
+     *
+     * <p>Die Zahl wurde also richtig portiert und trotzdem duenner — der Umweg ueber den
+     * Videopuffer kam dazwischen. Deshalb wird sie hier gegen das Verhaeltnis gerechnet
+     * statt hochgesetzt: eine feste 5F waere bei einem anderen Fenster oder einer anderen
+     * Videoaufloesung wieder falsch, nur in die andere Richtung.</p>
+     *
+     * <p>⚠ Nach oben begrenzt: bei einem sehr kleinen Vorschaufeld liefe der Faktor sonst
+     * davon und der Frustum wuerde zum Klotz.</p>
+     */
+    private static float linienbreite()
+    {
+        try
+        {
+            mchorse.bbs_mod.ui.film.UIFilmPanel panel = mchorse.bbs_mod.BBSModClient.getDashboard()
+                .getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
+
+            int feld = panel.preview.getViewport().w * (int) net.minecraft.client.Minecraft
+                .getInstance().getWindow().getGuiScale();
+            int puffer = mchorse.bbs_mod.client.BBSRendering.getVideoWidth();
+
+            if (feld <= 0 || puffer <= 0)
+            {
+                return LINE_WIDTH;
+            }
+
+            return LINE_WIDTH * Math.min(4F, Math.max(1F, puffer / (float) feld));
+        }
+        catch (Throwable t)
+        {
+            /* Kein Filmpanel (Weltansicht, Hauptmenue): dann wird direkt gezeichnet und die
+             * unveraenderte Breite ist die richtige. Ein fehlendes Panel ist kein Fehler. */
+            return LINE_WIDTH;
+        }
+    }
 
     private CameraFrustumMeshRenderer() {}
 
@@ -180,8 +232,8 @@ public final class CameraFrustumMeshRenderer
         dy /= len;
         dz /= len;
 
-        bb.addVertex(m, x1, y1, z1).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(LINE_WIDTH);
-        bb.addVertex(m, x2, y2, z2).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(LINE_WIDTH);
+        bb.addVertex(m, x1, y1, z1).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(linienbreite());
+        bb.addVertex(m, x2, y2, z2).setColor(r, g, bl, 1F).setNormal(m, dx, dy, dz).setLineWidth(linienbreite());
     }
 
     private static void addBoxLines(VertexConsumer bb, PoseStack.Pose m,
