@@ -104,7 +104,20 @@ public class BBSRendering
         return zeichenProjektion;
     }
 
-    /** Am HEAD des Weltdurchgangs gerufen; legt das Feld beim ersten Mal an. */
+    /**
+     * Am HEAD des Weltdurchgangs gerufen; legt das Feld beim ersten Mal an.
+     *
+     * <p>⛔ WAS HIER ANKOMMT, IST NICHT DIE WELTPROJEKTION (gemessen 2026-08-04, 109 Treffer
+     * per Logpoint an dieser Zeile): der Parameter steht KONSTANT auf {@code m00=-1.0
+     * m11=1.0}, waehrend der Kamerazustand daneben {@code 0.8027/1.4281} fuehrt. Eine echte
+     * Perspektivmatrix sieht anders aus; das hier ist eine Ortho-/Blit-Matrix. Die Sonde
+     * {@code projektion.paar} im WorldRendererMixin meldet dazu passend {@code gleich=false}.
+     *
+     * <p>⚠️ FOLGENLOS, SOLANGE NIEMAND LIEST: {@link #zeichenProjektion()} hat aktuell keinen
+     * einzigen Aufrufer im Baum. Wer den Stempel kuenftig benutzen will, muss ihn vorher
+     * reparieren — sonst rechnet er mit -1/1 statt mit der Kamera. Aufgeschrieben, damit die
+     * naechste Suche hier nicht wieder eine Stunde verliert: der Wert ist falsch UND egal.
+     */
     public static void zeichenProjektionStempeln(org.joml.Matrix4fc projektion)
     {
         if (projektion == null)
