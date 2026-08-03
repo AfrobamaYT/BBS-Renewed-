@@ -237,6 +237,15 @@ public class StencilFormFramebuffer
         com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
             "BBS Auswahlpuffer (Stencil)");
 
+        /* ⭐ DERSELBE ABSCHNITT FUER NSIGHT (2026-08-03). Zwei Zeilen statt einer, weil die
+         * beiden Werkzeuge verschiedene Seiten messen: die GL-Debuggruppe darueber sieht
+         * RenderDoc/apitrace im FRAME, dieser Bereich hier taucht in Nsights ZEITACHSE auf.
+         * Erst zusammen beantworten sie "welcher Zeichenaufruf" UND "wie lange dauerte er".
+         * Kostet nichts, wenn NVTX nicht angehaengt ist -- rangePush prueft ATTACHED und
+         * kehrt sofort zurueck. */
+        com.afrobama.bbstools.client.debug.master.external.NvtxBridge.rangePush(
+            "BBS Auswahlpuffer (Stencil)");
+
         /* Setzt das Sichtfeld auf die Puffergroesse. Das Binden darin braucht der
          * Auswahl-Durchgang nicht mehr (siehe PickZiel unten), das Sichtfeld schon. */
         this.framebuffer.apply();
@@ -611,6 +620,11 @@ public class StencilFormFramebuffer
         /* Gegenstueck zum pushGroup in apply() — ohne das Paar verschachtelt sich der Event
          * Browser falsch, was schlimmer ist als gar kein Marker. */
         com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+
+        /* Gegenstueck zum rangePush in apply(). Muss auf JEDEM Weg aus dem Durchgang
+         * laufen, sonst wandert der Bereich in Nsight bis ans Ende der Aufzeichnung und
+         * die Zeitachse ist unlesbar. */
+        com.afrobama.bbstools.client.debug.master.external.NvtxBridge.rangePop();
     }
 
     public void clearPicking()
