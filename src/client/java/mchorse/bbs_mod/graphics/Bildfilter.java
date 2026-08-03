@@ -175,6 +175,10 @@ public final class Bildfilter
             bauer.addVertex(1F, 1F, 0F).setUv(1F, 1F);
             bauer.addVertex(1F, 0F, 0F).setUv(1F, 0F);
 
+
+            com.afrobama.bbstools.client.debug.BBSGpuDebug.beforeDraw(
+                "Bildfilter.lauf/umriss", 0, 0, 0, 4, 1);
+
             try (GehaltenesNetz netz = new GehaltenesNetz(bauer.buildOrThrow()))
             {
                 netz.zeichnen(pipeline,
