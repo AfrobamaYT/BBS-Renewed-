@@ -1,10 +1,13 @@
 package com.afrobama.bbstools.gametest;
 
+import mchorse.bbs_mod.ui.dashboard.UIDashboard;
+import mchorse.bbs_mod.ui.framework.UIScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonAlgorithm;
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotComparisonOptions;
+import net.minecraft.network.chat.Component;
 
 /**
  * Bildbeweis ueber Fabrics eigene Vergleichs-API statt ueber selbst gebaute Pixellogik.
@@ -34,31 +37,27 @@ public class BBSClientGameTest implements FabricClientGameTest {
 	 */
 	private static final boolean AUFNEHMEN = Boolean.getBoolean("bbs.gametest.aufnehmen");
 
-	/**
-	 * Mittlerer quadratischer Fehler (0..1), ab dem zwei Bilder als verschieden gelten.
+	/*
+	 * ⭐ WARUM HIER KEINE TOLERANZ STEHT, SONDERN exact() -- gemessen, nicht gewaehlt.
 	 *
-	 * <p>⛔ NICHT GERATEN, SONDERN GEMESSEN -- und Fabrics Vorgabe von 0.005 waere hier
-	 * fast nutzlos gewesen. Gegen dieselbe Testwelt gemessen:
+	 * Die Oberflaeche zeichnet BITGLEICH. Zwei vollstaendige Laeufe gegen dieselbe Vorlage:
 	 *
-	 * <pre>
-	 *   Rauschen zwischen zwei echten Laeufen   0.000006   (max. 3 von 255 je Pixel)
-	 *   SCHWELLE (hier)                         0.00005
-	 *   1-Pixel-Streifen ueber die volle Breite  0.000054
-	 *   Fabrics Vorgabe                         0.005      = erst ab ~12 % Bildflaeche rot
-	 * </pre>
+	 *   MSE 0.00000000   abweichende Pixel 0.00 %   groesste Einzelabweichung 0
+	 *   MSE 0.00000000   abweichende Pixel 0.00 %   groesste Einzelabweichung 0
 	 *
-	 * <p>Die Vorgabe haette einen Fehler also erst bemerkt, wenn ein Achtel des Bildes
-	 * falsch ist. Belegt: ein 60-Pixel-Streifen quer durchs Bild kam auf 0.005489 und ging
-	 * damit gerade eben durch -- ein Test, der praktisch nichts prueft. Hier faellt schon
-	 * eine einzelne falsche Pixelzeile auf, und zwischen ihr und dem Rauschen liegt immer
-	 * noch Faktor 8.
+	 * Damit ist jede Toleranz nur eine Luecke, durch die echte Fehler schluepfen. exact()
+	 * meldet jedes einzelne veraenderte Pixel.
 	 *
-	 * <p>⚠️ {@code exact()} ist KEINE Alternative: die Welt rendert nicht bitgleich (max. 3
-	 * Stufen Unterschied durch Dithering), der Test waere bei jedem Lauf zufaellig rot.
-	 * Wird die Testwelt geaendert, gehoert diese Zahl neu gemessen -- Ist-Bild aus
-	 * {@code build/run/clientGameTest/screenshots/} gegen die Vorlage rechnen.
+	 * ⛔ FUER DIE WELT GILT DAS NICHT, und der Unterschied ist gross: dort ergaben zwei
+	 * Laeufe 0.000006 und 0.000073 -- Faktor 12 Streuung, ohne Codeaenderung. Deshalb wird
+	 * die Welt hier nicht verglichen (Begruendung in runTest).
+	 *
+	 * ⚠️ Fabrics Vorgabe waere in beiden Faellen falsch gewesen: meanSquaredDifference(0.005)
+	 * schlaegt erst ab rund 12 % veraenderter Bildflaeche an. Belegt an der Gegenprobe -- ein
+	 * 60-Pixel-Streifen quer durchs Bild kam auf 0.005489 und ging damit gerade eben durch.
+	 * Ein Test, der praktisch nichts prueft, und ohne die Gegenprobe waere er als Erfolg
+	 * gemeldet worden.
 	 */
-	private static final float SCHWELLE = 0.00005F;
 
 	@Override
 	public void runTest(ClientGameTestContext context) {
@@ -74,7 +73,33 @@ public class BBSClientGameTest implements FabricClientGameTest {
 			//   sourceSets.gametest.compileClasspath
 			welt.getConnection().waitForChunksRender();
 
-			pruefe(context, "welt-geladen");
+			/* ⛔ DIE WELT SELBST WIRD NICHT VERGLICHEN -- gemessen, nicht aufgegeben.
+			 * Zwei Laeufe gegen dieselbe Vorlage ergaben MSE 0.000006 (max. 3 Stufen) und
+			 * 0.000073 (max. 8) -- Faktor 12 Streuung, ohne dass sich irgendetwas am Code
+			 * geaendert haette. Ursache ist die Welt selbst: Tageszeit, Wolken, Beleuchtung
+			 * laufen weiter. Jede Schwelle, die diese Streuung durchlaesst, laesst auch
+			 * echte Fehler durch; jede engere macht den Test zufaellig rot.
+			 *
+			 * Ein Test, der mal so und mal so ausgeht, ist schlimmer als keiner: er wird
+			 * nach dem dritten Fehlalarm ignoriert, und dann faellt der echte Fehler auch
+			 * nicht mehr auf.
+			 *
+			 * Die Welt wird trotzdem geladen -- der Editor braucht sie. Verglichen wird die
+			 * OBERFLAECHE: die zeichnet deterministisch, und sie ist der Teil, um den es
+			 * bei BBS ueberhaupt geht. */
+
+			// ⭐ ERST HIERDURCH TAUGT DER BILDBEWEIS FUER BBS-ARBEIT. Ohne diesen Teil
+			// prueft er nur, ob Vanilla eine Welt zeichnet -- das sagt ueber unseren
+			// Editor nichts. UIScreen ist die Screen-Huelle, UIDashboard das Menue darin;
+			// setScreen ist der von Fabric vorgesehene Weg und umgeht jede Tastensimulation.
+			context.setScreen(() -> new UIScreen(Component.empty(), new UIDashboard()));
+
+			// Das Dashboard baut seine Panels erst im ersten Zeichendurchlauf auf. Ohne
+			// Wartezeit faengt der Screenshot ein halb aufgebautes Fenster ein und der
+			// Vergleich wird flatterhaft -- derselbe Grund wie beim Warten auf die Chunks.
+			context.waitTicks(20);
+
+			pruefe(context, "bbs-dashboard");
 		}
 	}
 
@@ -89,7 +114,7 @@ public class BBSClientGameTest implements FabricClientGameTest {
 	private static void pruefe(ClientGameTestContext context, String name) {
 		TestScreenshotComparisonOptions optionen = TestScreenshotComparisonOptions.of(name)
 			.withGrayscale()
-			.withAlgorithm(TestScreenshotComparisonAlgorithm.meanSquaredDifference(SCHWELLE));
+			.withAlgorithm(TestScreenshotComparisonAlgorithm.exact());
 
 		if (AUFNEHMEN) {
 			context.takeScreenshot(name);
