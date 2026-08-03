@@ -404,6 +404,25 @@ dependencies {
 	// P3-26.2-AUS: implementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
 	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.8.8+1.21.1-fabric"
 
+	/* ⭐ spark — ETABLIERTER PROFILER STATT EIGENER ZAEHLER (2026-08-03).
+	 *
+	 * Warum fremd statt selbst: an einem Tag haben fuenf eigene Messwerkzeuge falsche
+	 * Auskunft gegeben (Details: docs/WERKZEUG-ERSATZ.md). spark ist der Industriestandard
+	 * im Minecraft-Umfeld -- PaperMC empfiehlt es, Mojang zitiert es in Bugreports,
+	 * 200 Mio+ Downloads. Es misst ohne Safepoint-Verzerrung, zeigt Aufrufbaeume als
+	 * Flamegraph und analysiert die Heap-Verteilung im laufenden Spiel.
+	 *
+	 * modRuntimeOnly, NICHT implementation: es ist ein Werkzeug fuer die
+	 * Entwicklungsumgebung und darf weder gebuendelt noch zur Laufzeit verlangt werden.
+	 *
+	 * Bedienung im Spiel:  /spark profiler start  ...  /spark profiler stop
+	 * 1.10.173 ist die erste Fassung mit Minecraft 26.2 (ueber die Modrinth-API geprueft,
+	 * nicht geraten). */
+	/* spark liegt NICHT als Gradle-Abhaengigkeit vor: dieses Loom-Setup stellt keine
+	 * mod*-Dependency-Konfigurationen bereit (geprueft: nur modCompileClasspath
+	 * existiert). Das Jar liegt stattdessen in run_N/mods/ -- Fabric Loader nimmt es
+	 * von dort. Siehe docs/WERKZEUG-ERSATZ.md. */
+
 	/* AUTONOMIE 2026-07-27: fremd-mods gegen die com/afrobama kompiliert.
 	 * Alle compileOnly — sie werden NICHT gebuendelt und NICHT zur laufzeit verlangt;
 	 * die betroffenen features (Veil-FX, PhysicsMod-fracture, accelerated crowd-rendering,
