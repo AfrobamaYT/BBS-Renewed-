@@ -254,6 +254,28 @@ loom {
 				 * bietet vmArg(s)/property. property(k, v) setzt daraus ein -Dk=v. */
 				property "bbs.zeichenfuehler", "true"
 			}
+
+			/* MIXIN-AUDIT, standardmaessig AN (2026-08-03).
+			 *
+			 * Schreibt beim Start run_N/.mixin.out/audit/mixin_implementation_report.txt:
+			 * jede Klasse, der ein Mixin ein Interface anhaengt, ohne dessen Methoden zu
+			 * implementieren. Das ist ein stiller Fehler -- er faellt erst als
+			 * AbstractMethodError auf, wenn die Methode zufaellig gerufen wird.
+			 *
+			 * Kostet nichts messbares (Start unveraendert bei 21 s). Erster Lauf: drei
+			 * Befunde, alle FREMD (zweimal Fabrics PacketListenerExtensions, einmal
+			 * PreparableReloadListener an LevelRenderer) -- keiner aus unserem Code. Damit
+			 * ist diese Fehlerklasse fuer uns ausgeschlossen, was vorher niemand wusste.
+			 *
+			 * Die gewobenen Klassen zusaetzlich auf die Platte schreiben (viele Dateien,
+			 * nur zur Fehlersuche):   ./gradlew runQuick -PmixinExport */
+			property "mixin.checks.interfaces", "true"
+
+			if (project.hasProperty("mixinExport"))
+			{
+				property "mixin.debug.export", "true"
+				property "mixin.debug.verbose", "true"
+			}
 		}
 	}
 }
