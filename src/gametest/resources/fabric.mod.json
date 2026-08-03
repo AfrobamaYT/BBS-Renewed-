@@ -1,0 +1,17 @@
+{
+	"schemaVersion": 1,
+	"id": "bbs-gametest",
+	"version": "1.0.0",
+	"name": "BBS Client-Gametests",
+	"description": "Bildbeweis ueber Fabrics Vergleichs-API statt ueber selbst gebaute Pixellogik. Laeuft nur im Test, nie im ausgelieferten Mod.",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.afrobama.bbstools.gametest.BBSClientGameTest"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.17.4",
+		"fabric-client-gametest-api-v1": "*"
+	}
+}
