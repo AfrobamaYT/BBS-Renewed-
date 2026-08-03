@@ -28,6 +28,9 @@
 // Default ON (ENABLE_CURRENT_ENTITY_CACHE). Scoped to getCurrentEntity only.
 package com.afrobama.bbstools.client.mixin.bbs;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+
 import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 
@@ -38,7 +41,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.invoke.MethodHandle;
@@ -64,15 +66,36 @@ public abstract class UIFilmControllerCurrentEntityFastMixin
      * Der redirect fand dort kein ziel und riss beim OEFFNEN DES DASHBOARDS den ganzen
      * client mit (UIFilmPanel:142 laedt die klasse lazy — deshalb erst beim klick,
      * nicht beim boot). Semantik unveraendert: dieselbe liste, derselbe replay. */
-    @Redirect(
+    /* ⭐ @WrapOperation STATT @Redirect (2026-08-03).
+     *
+     * ⛔ WAS ES NICHT LOEST -- GEMESSEN, DAMIT ES NIEMAND ERNEUT PROBIERT:
+     * Die Hoffnung war, dass UIFilmController dadurch hotswapbar wird. Diese Klasse ist die
+     * einzige im Umriss-Zeichenweg, die sich nicht live tauschen laesst; jede Sonde darin
+     * kostet einen Neustart. Der Umbau aendert daran NICHTS -- der Mixin-Transformer bricht
+     * beim Re-Weben unveraendert ab, nur mit anderem Wortlaut:
+     *
+     *   vorher   Critical injection failure: Redirector bbstools$fastCurrentIndex(List;Object)I
+     *   nachher  Critical injection failure: Callback method bbstools$fastCurrentIndex(...Operation;
+     *
+     * Die Ursache liegt also nicht am Injektor-TYP, sondern daran, dass diese Klasse sich
+     * grundsaetzlich nicht neu weben laesst. Wer den Hotswap will, muss dort ansetzen.
+     *
+     * WARUM DER UMBAU TROTZDEM BLEIBT, zwei unabhaengige Gruende:
+     * 1. KONFLIKTE. Ein Redirect ist eine harte Inkompatibilitaet -- nur EIN Mod darf
+     *    dieselbe Stelle umleiten, ein zweiter scheitert. WrapOperation stapelt sich.
+     * 2. EHRLICHER FALLBACK. Frueher rief bbstools$callResolve im Fehlerfall
+     *    `list.indexOf(replay)` NACHGEBAUT auf -- zufaellig richtig, aber eine eigene
+     *    Annahme darueber, was an der Stelle steht. `original.call(...)` ruft das, was
+     *    WIRKLICH dort steht, und folgt einer Aenderung im Ziel automatisch. */
+    @WrapOperation(
         method = "getCurrentReplayIndex",
         at = @At(value = "INVOKE", target = "Ljava/util/List;indexOf(Ljava/lang/Object;)I"),
         remap = false)
-    private int bbstools$fastCurrentIndex(List list, Object replay)
+    private int bbstools$fastCurrentIndex(List list, Object replay, Operation<Integer> original)
     {
         bbstools$refreshGriffe();
 
-        int idx = bbstools$callResolve(list, replay);
+        int idx = bbstools$callResolve(list, replay, original);
 
         /* Schreibt den cache immer zurück: bei einem hit sind es dieselben werte (no-op),
          * bei einem miss die frisch aufgelösten — identisch zum verhalten vor dem umbau. */
@@ -93,7 +116,7 @@ public abstract class UIFilmControllerCurrentEntityFastMixin
         bbstools$callPublish(cir.getReturnValue());
     }
 
-    private int bbstools$callResolve(List list, Object replay)
+    private int bbstools$callResolve(List list, Object replay, Operation<Integer> original)
     {
         try
         {
@@ -103,9 +126,12 @@ public abstract class UIFilmControllerCurrentEntityFastMixin
                     list, replay, this.bbstools$lastReplay, this.bbstools$lastIndex, this.bbstools$lastSize);
             }
         }
-        catch (Throwable ignored) { /* fällt auf den echten indexOf zurück */ }
+        catch (Throwable ignored) { /* faellt auf den echten Aufruf zurueck */ }
 
-        return list.indexOf(replay);
+        /* ⛔ original.call statt list.indexOf(replay): das ruft, was an der Stelle WIRKLICH
+         * steht, statt eine eigene Annahme darueber. Aendert sich der Aufruf im Ziel, folgt
+         * der Fallback automatisch mit. */
+        return original.call(list, replay);
     }
 
     private static void bbstools$callPublish(Object resolvedEntity)
