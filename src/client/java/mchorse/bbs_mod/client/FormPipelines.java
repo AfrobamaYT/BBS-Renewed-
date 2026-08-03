@@ -65,6 +65,45 @@ public final class FormPipelines
     }
 
     /**
+     * Linien MIT einstellbarer Breite. Fuer alles, was Striche zeichnet.
+     *
+     * <p>⛔ WARUM ES DIESE METHODE BRAUCHT (2026-08-03, am Frame gemessen). Wer Linien ueber
+     * {@link #holen(PrimitiveTopology, boolean, boolean, boolean)} zeichnet, bekommt den
+     * Shader {@code core/position_color} — und dessen Eingangssignatur ist genau
+     * {@code Color, Position}. Der Vanilla-Linienshader rechnet aber
+     * {@code lineOffset = richtung * LineWidth / ScreenSize}; ohne das Attribut
+     * {@code LineWidth} im Format kommt dort eine Null an und JEDE Linie kollabiert auf
+     * einen Pixel. Das ist kein vergessener Aufruf, den man nachtragen koennte: ein Format
+     * ohne LineWidth KANN keine Breite tragen. Belegt im RenderDoc-Capture — der einzige
+     * Linienaufruf des Bildes hatte stride 16, zwei Attribute, Shader-Eingaenge
+     * "Color, Position".
+     *
+     * <p>Gebaut aus {@code RenderPipelines.LINES_SNIPPET}: von dort kommen Shader,
+     * Vertexformat ({@code Position, Color, Normal, LineWidth}) und alle drei
+     * Bindegruppen fertig mit. Selbst zusammengesetzt fehlt sonst die Gruppe mit
+     * {@code ScreenSize}, und der Shader rechnet wieder ins Leere.
+     *
+     * <p><b>Die Normale ist bei Linien die Linienrichtung</b>, nicht die Flaechennormale —
+     * der Shader spannt die Linie senkrecht dazu auf. Mit Nullvektor faellt sie zusammen.
+     *
+     * @param tiefePruefen ob die Linie hinter Geometrie verschwindet. {@code false} =
+     *                     immer sichtbar (frueher {@code disableDepthTest}).
+     *                     Tiefe wird NIE geschrieben — sonst legt ein grosses Gitter eine
+     *                     Tiefenwand in den Puffer und verdeckt den folgenden Durchgang.
+     */
+    public static RenderPipeline linien(boolean tiefePruefen)
+    {
+        return ZWISCHENSPEICHER.computeIfAbsent("vanilla_lines|" + tiefePruefen, (s) ->
+            RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.LINES_SNIPPET)
+                .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID,
+                    "pipeline/lines" + (tiefePruefen ? "" : "_no_depth")))
+                .withDepthStencilState(new DepthStencilState(
+                    tiefePruefen ? CompareOp.GREATER_THAN_OR_EQUAL : CompareOp.ALWAYS_PASS,
+                    false))
+                .build());
+    }
+
+    /**
      * Wie {@link #holen(PrimitiveTopology, boolean, boolean, boolean)}, aber mit frei
      * waehlbarem Vertexformat und Vanilla-Shader — etwa {@code POSITION_TEX} fuer die
      * texturierte Spur des Trail-Renderers.

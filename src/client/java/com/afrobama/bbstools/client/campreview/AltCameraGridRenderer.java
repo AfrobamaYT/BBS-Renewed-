@@ -12,6 +12,7 @@ import mchorse.bbs_mod.graphics.SofortZeichner;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.slf4j.Logger;
@@ -39,6 +40,11 @@ public final class AltCameraGridRenderer
      *  horizon at most reasonable camera distances; cost is trivial
      *  (2 × HALF_EXTENT × 2 vertices in DEBUG_LINES). */
     private static final int HALF_EXTENT = 256;
+
+    /** Strichbreite in Pixeln des Zielpuffers. Wirkt erst, seit das Vertexformat das
+     *  Attribut LineWidth ueberhaupt traegt — vorher war jede Linie einen Pixel breit,
+     *  egal welcher Wert hier stand (am Frame gemessen 2026-08-03). */
+    private static final float LINIENBREITE = 2F;
 
     private AltCameraGridRenderer() {}
 
@@ -158,12 +164,21 @@ public final class AltCameraGridRenderer
              *  Alt-Kamera-Puffer des Aufrufers. Wer die Schnittstelle dieser Methode um das
              *  Ziel erweitert (siehe ⛔ oben), muss den Durchgang dorthin fuehren; bis dahin
              *  ist diese Methode NICHT portiert, auch wenn der Zeichenblock uebersetzt ist. */
-            try (ByteBufferBuilder speicher = new ByteBufferBuilder((2 * HALF_EXTENT + 1) * 4 * 16))
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder((2 * HALF_EXTENT + 1) * 4 * 24))
             {
-                /* Vier Ecken je Schritt, 16 Byte je Ecke in POSITION_COLOR — von vornherein
-                 * gross genug, damit der Puffer waehrend des Aufbaus nicht nachwaechst. */
+                /* Vier Ecken je Schritt, 24 Byte je Ecke in POSITION_COLOR_NORMAL_LINE_WIDTH
+                 * — von vornherein gross genug, damit der Puffer waehrend des Aufbaus nicht
+                 * nachwaechst.
+                 *
+                 * ⛔ FRUEHER STANDEN HIER POSITION_COLOR UND 16 BYTE. Das war der Grund,
+                 * warum die Gitterlinien haarfein waren: der Vanilla-Linienshader rechnet
+                 * `lineOffset = richtung * LineWidth / ScreenSize`, und ein Format ohne
+                 * LineWidth liefert dort eine Null. Am Frame gemessen (RenderDoc,
+                 * 2026-08-03): der einzige Linienaufruf des Bildes hatte stride 16, zwei
+                 * Attribute und die Shader-Eingaenge "Color, Position" — 2052 Indizes,
+                 * exakt (2*256+1)*4, also dieses Gitter. */
                 BufferBuilder bb = SofortZeichner.beginnen(
-                    speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+                    speicher, PrimitiveTopology.LINES, RenderTypes.LINES.format());
 
                 for (int i = -HALF_EXTENT; i <= HALF_EXTENT; i++)
                 {
@@ -190,17 +205,29 @@ public final class AltCameraGridRenderer
                     float fxMin = (float) gx - HALF_EXTENT;
                     float fxMax = (float) gx + HALF_EXTENT;
 
+                    /* Die Normale ist bei Linien die LINIENRICHTUNG, nicht die
+                     * Flaechennormale — der Shader spannt die Linie senkrecht dazu auf.
+                     * Mit Nullvektor faellt sie zusammen. */
+
                     /* Line parallel to Z axis (varying X = fx). */
-                    bb.addVertex(fx, fy, fzMin).setColor(r, g, b, alpha);
-                    bb.addVertex(fx, fy, fzMax).setColor(r, g, b, alpha);
+                    bb.addVertex(fx, fy, fzMin).setColor(r, g, b, alpha)
+                        .setNormal(0F, 0F, 1F).setLineWidth(LINIENBREITE);
+                    bb.addVertex(fx, fy, fzMax).setColor(r, g, b, alpha)
+                        .setNormal(0F, 0F, 1F).setLineWidth(LINIENBREITE);
 
                     /* Line parallel to X axis (varying Z = fz). */
-                    bb.addVertex(fxMin, fy, fz).setColor(r, g, b, alpha);
-                    bb.addVertex(fxMax, fy, fz).setColor(r, g, b, alpha);
+                    bb.addVertex(fxMin, fy, fz).setColor(r, g, b, alpha)
+                        .setNormal(1F, 0F, 0F).setLineWidth(LINIENBREITE);
+                    bb.addVertex(fxMax, fy, fz).setColor(r, g, b, alpha)
+                        .setNormal(1F, 0F, 0F).setLineWidth(LINIENBREITE);
                 }
 
+                /* Vanillas Linien-Pipeline statt der eigenen POSITION_COLOR-Fassung: nur
+                 * sie traegt den Shader, der LineWidth ueberhaupt auswertet. Tiefenpruefung
+                 * bleibt AUS wie bisher (das Gitter soll durch Geometrie sichtbar bleiben),
+                 * Tiefe wird weiterhin nicht geschrieben. */
                 SofortZeichner.zeichnen(
-                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, false, false),
+                    FormPipelines.linien(false),
                     bb.build(),
                     mvStack,
                     null,
