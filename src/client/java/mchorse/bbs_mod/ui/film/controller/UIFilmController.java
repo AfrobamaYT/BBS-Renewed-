@@ -1354,6 +1354,35 @@ public class UIFilmController extends UIElement implements GizmoViewport
          * UIFilmPanel#renderInWorld. Vergleich: python tools/lagen.py stencil weltbild */
         mchorse.bbs_mod.graphics.Zeichenlage.melden("stencil");
 
+        /* ⚗️ Gegenstueck zu sicht.welt-* in UIFilmPanel: HIER wird BBSRendering.camera
+         * gleich als Ansicht gesetzt (setIdentity + multiply weiter unten). Weicht der Wert
+         * von dem ab, den der Weltdurchgang benutzt, ist genau das der Versatz.
+         * Inline und nicht als Methode in Zeichenlage: eine NEUE Methode laesst sich nicht
+         * hotswappen ("add method not implemented"), ein geaenderter Koerper schon. */
+        if (System.getProperty("bbs.mess") != null)
+        {
+            try
+            {
+                org.joml.Vector3f b = new org.joml.Vector3f(0F, 0F, 1F);
+                org.joml.Vector3f v = new org.joml.Vector3f(0F, 0F, 1F);
+
+                new org.joml.Matrix3f(BBSRendering.camera).transform(b);
+                new org.joml.Matrix3f(new org.joml.Matrix4f(this.worldRenderContext
+                    .levelState().cameraRenderState.viewRotationMatrix)).transform(v);
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("sicht.stencil",
+                    String.format(java.util.Locale.ROOT,
+                        "bbs=%.3f | vanilla=%.3f | bild=%d",
+                        Math.toDegrees(Math.atan2(-b.x, b.z)),
+                        Math.toDegrees(Math.atan2(-v.x, v.z)),
+                        Minecraft.getInstance().getFrameTimeNs()));
+            }
+            catch (Throwable t)
+            {
+                mchorse.bbs_mod.graphics.Messpunkt.stoerung("sicht.stencil", String.valueOf(t));
+            }
+        }
+
         /* Render the stencil */
         PoseStack worldStack = this.worldRenderContext.poseStack();
 

@@ -90,6 +90,13 @@ public final class Zeichenlage
         Messpunkt.zaehle("lage." + stelle, b.toString());
     }
 
+    /* ⛔ HIER STAND EINE NEUE METHODE ansicht(...) — SIE KOSTETE EINEN HOTSWAP (2026-08-03).
+     * Die JVM lehnt das Hinzufuegen von Methoden an einer geladenen Klasse ab
+     * ("add method not implemented"), auch mit AllowEnhancedClassRedefinition. Geaenderte
+     * KOERPER gehen, neue Methoden nicht. Die Sonde steht deshalb inline an den beiden
+     * Zeichenstellen (UIFilmPanel#renderInWorld, UIFilmController) und ruft direkt
+     * Messpunkt#zaehle — das ist eine Zeile mehr Text und spart einen Neustart. */
+
     /** Ein einzelner Wert darf ausfallen, ohne die Sonde zu reissen. */
     private static String wert(java.util.function.Supplier<String> holen)
     {
