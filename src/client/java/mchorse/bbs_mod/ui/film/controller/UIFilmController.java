@@ -1348,47 +1348,38 @@ public class UIFilmController extends UIElement implements GizmoViewport
          * Jede andere Stelle im Baum macht das fuer Kameramatrizen ebenso
          * (AltCameraGridRenderer, TrackerClientClip, GameRendererPreviewPrePassLogik). */
         mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
-        InverseView.set(new Matrix3f(BBSRendering.camera).invert());
+
+        /* ⛔ DIE ANSICHT AUS DEM CONTEXT, NICHT AUS BBSRendering.camera. Beide tragen
+         * dieselbe Drehung, aber aus verschiedenen Augenblicken -- gemischt ergibt das den
+         * Umriss-Versatz bei Kamerabewegung (Messwerte und ganze Begruendung: Pufferlage
+         * #sichtvergleich). Der Kontext gewinnt: mit IHM ist das sichtbare Weltbild
+         * entstanden, und er geht unten an renderStencilEntity weiter. */
+        org.joml.Matrix4f ansicht = new org.joml.Matrix4f(
+            this.worldRenderContext.levelState().cameraRenderState.viewRotationMatrix);
+
+        InverseView.set(new Matrix3f(ansicht).invert());
 
         /* ⚗️ ALLE eingaenge dieser stelle auf einmal — gegenstueck haengt in
          * UIFilmPanel#renderInWorld. Vergleich: python tools/lagen.py stencil weltbild */
         mchorse.bbs_mod.graphics.Zeichenlage.melden("stencil");
 
-        /* ⚗️ Gegenstueck zu sicht.welt-* in UIFilmPanel: HIER wird BBSRendering.camera
-         * gleich als Ansicht gesetzt (setIdentity + multiply weiter unten). Weicht der Wert
-         * von dem ab, den der Weltdurchgang benutzt, ist genau das der Versatz.
-         * Inline und nicht als Methode in Zeichenlage: eine NEUE Methode laesst sich nicht
-         * hotswappen ("add method not implemented"), ein geaenderter Koerper schon. */
-        if (System.getProperty("bbs.mess") != null)
-        {
-            try
-            {
-                org.joml.Vector3f b = new org.joml.Vector3f(0F, 0F, 1F);
-                org.joml.Vector3f v = new org.joml.Vector3f(0F, 0F, 1F);
-
-                new org.joml.Matrix3f(BBSRendering.camera).transform(b);
-                new org.joml.Matrix3f(new org.joml.Matrix4f(this.worldRenderContext
-                    .levelState().cameraRenderState.viewRotationMatrix)).transform(v);
-
-                mchorse.bbs_mod.graphics.Messpunkt.zaehle("sicht.stencil",
-                    String.format(java.util.Locale.ROOT,
-                        "bbs=%.3f | vanilla=%.3f | bild=%d",
-                        Math.toDegrees(Math.atan2(-b.x, b.z)),
-                        Math.toDegrees(Math.atan2(-v.x, v.z)),
-                        Minecraft.getInstance().getFrameTimeNs()));
-            }
-            catch (Throwable t)
-            {
-                mchorse.bbs_mod.graphics.Messpunkt.stoerung("sicht.stencil", String.valueOf(t));
-            }
-        }
+        /* ⚗️ Die zwei Kameraquellen nebeneinander — Begruendung und Messwerte in Pufferlage. */
+        mchorse.bbs_mod.graphics.Pufferlage.sichtvergleich(
+            this.worldRenderContext.levelState().cameraRenderState.viewRotationMatrix);
 
         /* Render the stencil */
         PoseStack worldStack = this.worldRenderContext.poseStack();
 
         worldStack.pushPose();
         worldStack.setIdentity();
-        MatrixStackUtils.multiply(worldStack, BBSRendering.camera);
+        /* Dieselbe Quelle wie InverseView oben — siehe die Begruendung dort. */
+        MatrixStackUtils.multiply(worldStack, ansicht);
+
+        /* ⚗️ Die ENDGUELTIGE Zeichenlage, mit der der Puffer gefuellt wird — Begruendung und
+         * bisheriger Messstand stehen in Pufferlage. */
+        mchorse.bbs_mod.graphics.Pufferlage.melden(
+            worldStack, this.getCurrentEntity(), this.isPlaying());
+
         this.renderStencil(this.worldRenderContext, this.getContext(), altPressed);
         worldStack.popPose();
 

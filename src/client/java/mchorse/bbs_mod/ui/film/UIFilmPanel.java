@@ -3096,53 +3096,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             mchorse.bbs_mod.graphics.Zeichenlage.melden(
                 mchorse.bbs_mod.client.BBSRendering.renderingWorld ? "weltbild-bbs" : "weltbild-vanilla");
 
-            /* ⚗️ DIE ANSICHT, MIT DER WIRKLICH GEZEICHNET WIRD — inline, weil eine neue
-             * Methode in Zeichenlage den Hotswap kostet ("add method not implemented").
-             *
-             * Warum ueberhaupt: die acht Werte von Zeichenlage#melden lesen mainCamera(),
-             * die im ganzen Bild gleich ist — Fuell- und Weltstelle melden dort IMMER
-             * dasselbe, auch waehrend einer Bewegung. Der Auswahlpuffer zeichnet aber mit
-             * BBSRendering.camera. Verglichen wird die BLICKRICHTUNG; zwei Rotationsmatrizen
-             * sind als Zahlen nicht vergleichbar, zwei Winkel schon.
-             *
-             * Getrennt nach Phase, weil renderInWorld zweimal je Bild laeuft. */
-            if (System.getProperty("bbs.mess") != null)
-            {
-                try
-                {
-                    org.joml.Vector3f b = new org.joml.Vector3f(0F, 0F, 1F);
-                    org.joml.Vector3f v = new org.joml.Vector3f(0F, 0F, 1F);
-
-                    new org.joml.Matrix3f(BBSRendering.camera).transform(b);
-                    new org.joml.Matrix3f(new org.joml.Matrix4f(
-                        context.levelState().cameraRenderState.viewRotationMatrix)).transform(v);
-
-                    /* ⛔ DIE POSITION MITMESSEN, NICHT NUR DIE DREHUNG. Die Ansicht ist reine
-                     * Rotation - die Kameraposition steckt darin gar nicht, sondern in der
-                     * kamerarelativen Verschiebung jedes Objekts. Gemessen wurde bisher nur
-                     * mainCamera(), und das ist im Film-Editor nicht zwingend dieselbe
-                     * Kamera, mit der der Viewport rendert. */
-                    net.minecraft.world.phys.Vec3 mp =
-                        Minecraft.getInstance().gameRenderer.mainCamera().position();
-                    net.minecraft.world.phys.Vec3 rp = context.levelState().cameraRenderState.pos;
-
-                    mchorse.bbs_mod.graphics.Messpunkt.zaehle("sicht."
-                        + (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang
-                            ? "welt-sammeln" : "welt-zeichnen"),
-                        String.format(java.util.Locale.ROOT,
-                            "gier-bbs=%.3f gier-vanilla=%.3f "
-                            + "| pos-render=%.3f %.3f %.3f | pos-main=%.3f %.3f %.3f | bild=%d",
-                            Math.toDegrees(Math.atan2(-b.x, b.z)),
-                            Math.toDegrees(Math.atan2(-v.x, v.z)),
-                            rp.x, rp.y, rp.z, mp.x, mp.y, mp.z,
-                            Minecraft.getInstance().getFrameTimeNs()));
-                }
-                catch (Throwable t)
-                {
-                    mchorse.bbs_mod.graphics.Messpunkt.stoerung("sicht.welt", String.valueOf(t));
-                }
-            }
-
             /* ⚗️ WER ruft das hier zusaetzlich? renderInWorld feuert oefter als es Bilder
              * gibt (1764 gegen 1552, waehrend ALLE anderen Renderzaehler exakt 1552 stehen).
              *

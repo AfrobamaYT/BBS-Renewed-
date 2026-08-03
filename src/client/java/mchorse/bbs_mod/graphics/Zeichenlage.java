@@ -184,6 +184,21 @@ public final class Zeichenlage
      */
     private static String bildnummer()
     {
-        return String.valueOf(Minecraft.getInstance().getFrameTimeNs());
+        /* ⛔ DAS IST DIE FRAME-DAUER, KEINE BILDNUMMER — und damit als Vergleichswert
+         * UNBRAUCHBAR (gemessen 2026-08-03). Zwei Sonden aus VERSCHIEDENEN Bildern melden
+         * denselben Wert, sobald beide Bilder gleich lange dauerten; zwei aus DEMSELBEN Bild
+         * melden verschiedene, sobald die Dauer dazwischen neu gesetzt wurde. Ausgerechnet
+         * der Wert, mit dem die Regel "IMMER die Bildnummer mitmessen" abgesichert werden
+         * sollte, sichert also nichts — und die Vergleichbarkeitspruefung in tools/lagen.py
+         * ("VERSCHIEDENE BILDER -> nicht vergleichbar") haengt daran.
+         *
+         * WARUM ES TROTZDEM NOCH HIER STEHT: 26.2 bietet keinen erreichbaren Bildzaehler.
+         * Minecraft hat keinen (nachgesehen: framebufferSizeChanged, getFrameTimeNs,
+         * getFramerateLimitTracker, getPendingTasksCount, renderFrame — sonst nichts), und
+         * RenderSystem darf aus dem EXEC-Kanal nicht gefragt werden (Render-Thread-Guard).
+         * Der Ausweg ist ein eigener Zaehler, hochgezaehlt in einem echten Render-Hook —
+         * ein neues statisches Feld, also erst beim naechsten ohnehin faelligen Boot.
+         * BIS DAHIN: Urteilen aus "gleiche Bildnummer" NICHT trauen. */
+        return String.valueOf(Minecraft.getInstance().getFrameTimeNs()) + " (DAUER, keine Nr)";
     }
 }
