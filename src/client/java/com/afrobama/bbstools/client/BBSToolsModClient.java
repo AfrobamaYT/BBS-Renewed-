@@ -81,6 +81,20 @@ public final class BBSToolsModClient implements ClientModInitializer
             client ->
             {
                 com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onTick();
+
+                /* ⭐ TAKTMARKE FUER NSIGHT (2026-08-04). Ohne einen Marker, der IMMER
+                 * feuert, bleibt die Nsight-Zeitachse in aller Regel leer: der zweite
+                 * Marker sitzt am Auswahlpuffer, und der laeuft ausschliesslich beim
+                 * Bone-Hover-Picking (BoneHoverPickRunner) -- also nur mit Maus ueber der
+                 * Kameravorschau. Gemessen: 25 s Aufzeichnung im offenen Film-Editor
+                 * ergaben NULL Bereiche.
+                 *
+                 * Mit dieser Marke hat jede Aufzeichnung ein Taktraster, an dem sich alles
+                 * andere einordnen laesst -- und Tick-Aussetzer werden als Luecke sichtbar.
+                 * Kosten: ein Funktionsaufruf je Tick (20/s), und er faellt sofort zurueck,
+                 * wenn NVTX nicht angehaengt oder das Feature aus ist. */
+                com.afrobama.bbstools.client.debug.master.external.NvtxBridge.mark("tick");
+
                 /* afrobama — mirror the BBS top-bar "Bake" menu flags into perf config. */
                 com.afrobama.bbstools.client.qol.BakeMenuSync.tick();
 
