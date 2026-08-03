@@ -160,23 +160,78 @@ public final class UIFilmControllerStencilThrottleLogik
      * — dieselbe Matrix, mit der {@code renderStencil} den Puffer füllt. Bewusst tolerant:
      * geht das Lesen schief, verhält sich der Throttle wie bisher.
      */
+    /**
+     * Alte, parameterlose Fassung — bleibt bestehen, damit die Klasse HOTSWAPBAR bleibt.
+     *
+     * <p>⛔ NICHT LOESCHEN. Beim Ersetzen der Signatur schlug der Tausch fehl mit
+     * {@code UnsupportedOperationException: delete method not implemented} — JDI kann
+     * Methoden hinzufuegen, aber nicht entfernen. Eine Signaturaenderung ist damit ein
+     * Boot-Grund, ein Zusatz nicht. Sie liegt hier also nur, um genau den zu vermeiden.</p>
+     */
     private static long kameraStand()
     {
+        return kameraStand(null);
+    }
+
+    private static long kameraStand(Object zielObjekt)
+    {
+        /* ⛔ VIERTER ANLAUF — UND DIESMAL KEINE VERMUTUNG, SONDERN DER WERT, MIT DEM
+         *    GEZEICHNET WIRD (2026-08-04).
+         *
+         * Hier stand `gameRenderer.mainCamera()`. Gemessen hat dieser Vergleich bei bewegter
+         * Kamera 186 Bewegungen gegen 6198 Stillstaende gezaehlt — 97 % der Bilder galten als
+         * ruhig, und der Nutzer sah den Versatz weiter. Der Kommentar von damals schloss mit
+         * "welche Kamera der Editor wirklich fuehrt, ist damit offen".
+         *
+         * Seit dem Umriss-Fix ist sie nicht mehr offen: der Editor zeichnet mit
+         * `worldRenderContext.levelState().cameraRenderState` (UIFilmController, Zeile ~1358).
+         * mainCamera() ist eine ANDERE Kamera — deshalb konnte der Vergleich die Bewegung
+         * gar nicht sehen. Eine Sonde, die einen anderen Wert liest als den benutzten, kann
+         * den Fehler nicht finden; sie beendet die Suche mit Gewissheit.
+         *
+         * Gelesen wird Drehung UND Position: wer geradeaus fliegt, dreht nichts, und der
+         * dritte Anlauf ist genau daran gescheitert.
+         *
+         * Bewusst tolerant: geht das Lesen schief, faellt es auf mainCamera() zurueck und
+         * der Throttle verhaelt sich wie bisher — schlechter als vorher wird es nie. */
         try
         {
-            /* ⛔ POSITION UND DREHUNG, NICHT NUR DREHUNG (2026-08-02, erster Anlauf war zu
-             *    schmal). Zuerst stand hier BBSRendering.camera — das ist aber die
-             *    viewRotationMatrix, also reine DREHUNG. Wer geradeaus fliegt, dreht nichts:
-             *    der Auslöser schwieg, und der Nutzer meldete zu Recht „der stencil bewegt
-             *    sich immernoch mit der kamera mit". Gemessen blieb das Verhältnis bei
-             *    1:20 (eingang 230 gegen umriss 4714) statt auf 1:1 zu gehen.
-             *    mainCamera() trägt beides und ist der Stand DIESES Bildes. */
+            java.lang.reflect.Field f = zielObjekt.getClass().getDeclaredField("worldRenderContext");
+            f.setAccessible(true);
+            Object ctx = f.get(zielObjekt);
+
+            if (ctx != null)
+            {
+                Object levelState = ctx.getClass().getMethod("levelState").invoke(ctx);
+                Object cam = levelState.getClass().getField("cameraRenderState").get(levelState);
+
+                org.joml.Matrix4f dreh =
+                    (org.joml.Matrix4f) cam.getClass().getField("viewRotationMatrix").get(cam);
+                net.minecraft.world.phys.Vec3 p =
+                    (net.minecraft.world.phys.Vec3) cam.getClass().getField("pos").get(cam);
+
+                /* Es geht nur um "hat sich etwas geaendert", nicht um den Wert. */
+                return java.lang.Double.doubleToLongBits(p.x) * 31L
+                     + java.lang.Double.doubleToLongBits(p.y) * 131L
+                     + java.lang.Double.doubleToLongBits(p.z) * 1531L
+                     + java.lang.Float.floatToIntBits(dreh.m00()) * 15131L
+                     + java.lang.Float.floatToIntBits(dreh.m02()) * 151531L
+                     + java.lang.Float.floatToIntBits(dreh.m20()) * 1515131L
+                     + java.lang.Float.floatToIntBits(dreh.m22()) * 15151531L;
+            }
+        }
+        catch (Throwable ignoriert)
+        {
+            /* faellt unten auf den alten Weg zurueck */
+        }
+
+        try
+        {
             net.minecraft.client.Camera k =
                 net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera();
 
             net.minecraft.world.phys.Vec3 p = k.position();
 
-            /* Es geht nur um „hat sich etwas geändert", nicht um den Wert. */
             return java.lang.Double.doubleToLongBits(p.x) * 31L
                  + java.lang.Double.doubleToLongBits(p.y) * 131L
                  + java.lang.Double.doubleToLongBits(p.z) * 1531L
@@ -251,7 +306,7 @@ public final class UIFilmControllerStencilThrottleLogik
          * gedacht war: im wirklich stehenden Bild. Dann ist der alte Puffer ja korrekt. */
         int tick = aktuellerTick(zielObjekt);
         Integer vorigerTick = tickSpeicher().get(zielObjekt);
-        long kamera = kameraStand();
+        long kamera = kameraStand(zielObjekt);
         Long vorigeKamera = kameraSpeicher().get(zielObjekt);
         boolean kameraBewegt = vorigeKamera != null && vorigeKamera.longValue() != kamera;
 
