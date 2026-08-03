@@ -227,6 +227,16 @@ public class StencilFormFramebuffer
 
     public void apply()
     {
+        /* ⭐ NAME FUER DEN FRAME-DEBUGGER. RenderDocs Event Browser ist ohne Gruppen eine
+         * flache Liste — unser Frame hat ueber 2000 Zeichenaufrufe, und die RenderDoc-Doku
+         * sagt selbst, den richtigen darin zu finden "kann sehr lange dauern". Genau daran
+         * hing der Umriss-Versatz zwei Tage. Der Marker sitzt HIER und nicht beim Aufrufer,
+         * weil apply()/unbind() die Klammer um den Durchgang sind: eine Aufrufstelle statt
+         * vieler, und der Name kann nicht vergessen werden. Kosten: ein GL-Aufruf je
+         * Durchgang. Warum die Marker vorher nie feuerten: ApiTraceBridge#pushGroup. */
+        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
+            "BBS Auswahlpuffer (Stencil)");
+
         /* Setzt das Sichtfeld auf die Puffergroesse. Das Binden darin braucht der
          * Auswahl-Durchgang nicht mehr (siehe PickZiel unten), das Sichtfeld schon. */
         this.framebuffer.apply();
@@ -597,6 +607,10 @@ public class StencilFormFramebuffer
 
         mchorse.bbs_mod.graphics.PickZiel.abmelden();
         this.framebuffer.unbind();
+
+        /* Gegenstueck zum pushGroup in apply() — ohne das Paar verschachtelt sich der Event
+         * Browser falsch, was schlimmer ist als gar kein Marker. */
+        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
     }
 
     public void clearPicking()
