@@ -196,6 +196,36 @@ public final class Blockmodell
          * dieselbe Rechnung wie in BlockModelRenderState.submitModel. */
         int hell = LightCoordsUtil.max(licht, ZUSTAND.blockLightCoords);
 
+        /* ⭐ FABRIC-WEG ZUERST PRUEFEN (Bugliste #15): mit Indigo bleibt modelParts leer und
+         * die Vierecke liegen in der Masche. Ohne diesen Zweig zeichnet eine Block-Form
+         * ueberhaupt nichts -- gemessen in Welt UND Vorschau. */
+        if ((teile == null || teile.isEmpty()) && ebene != null)
+        {
+            int[] toenungM = toenung(zugriff);
+            int hellM = LightCoordsUtil.max(licht, ZUSTAND.blockLightCoords);
+            Matrix4fc anzeigeM = zugriff.bbs$getTransformation();
+            java.util.function.Function<VertexConsumer, VertexConsumer> umfaerbungM =
+                anbieter == null ? (v) -> v : anbieter.umfaerbungEinfrieren();
+
+            if (anzeigeM != null)
+            {
+                stapel.pushPose();
+                stapel.mulPose(anzeigeM);
+            }
+
+            sammler.submitCustomGeometry(stapel, ebene, (pose, verbraucher) ->
+                viereckeAusMasche(pose, umfaerbungM.apply(verbraucher), toenungM, hellM, overlay, ZUSTAND));
+
+            if (anzeigeM != null)
+            {
+                stapel.popPose();
+            }
+
+            sonderzeichner(zugriff, stapel, sammler, hellM, overlay);
+
+            return;
+        }
+
         if (teile != null && !teile.isEmpty() && ebene != null)
         {
             int[] toenung = toenung(zugriff);
@@ -335,7 +365,10 @@ public final class Blockmodell
 
         if (teile == null || teile.isEmpty())
         {
-            return false;
+            /* Siehe viereckeAusMasche: mit Fabric Indigo liegt die Geometrie dort. */
+            return viereckeAusMasche(pose, verbraucher, toenung(zugriff),
+                LightCoordsUtil.max(licht, zustandVorschau().blockLightCoords), overlay,
+                zustandVorschau());
         }
 
         vierecke(List.copyOf(teile), pose, verbraucher, toenung(zugriff),
@@ -401,6 +434,84 @@ public final class Blockmodell
 
         return true;
     }
+
+    /**
+     * Die Vierecke aus Fabrics Masche schreiben -- der Weg, den 26.2 mit Fabric WIRKLICH nimmt.
+     *
+     * <h2>⛔ Warum es das gibt (2026-08-04, Bugliste #15)</h2>
+     *
+     * <p>{@code BlockModelResolver.update} fuellt hier NIE {@code modelParts}. Gemessen in
+     * beiden Wegen -- Weltdurchgang und Oberflaechen-Vorschau -- immer {@code teile=null},
+     * waehrend die Zeichenebene steht. Die Sonde auf das Nachbarfeld zeigt, wohin die
+     * Geometrie geht:</p>
+     *
+     * <pre>
+     *   mesh = net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableMeshImpl
+     * </pre>
+     *
+     * <p>Fabrics Indigo-Renderer faengt die Aufloesung ab und legt die Vierecke in seine eigene
+     * Masche. Wer {@code modelParts} liest, liest ein Feld, das in dieser Umgebung niemand
+     * fuellt -- und zeichnet folgerichtig nichts. Genau daran hingen die unsichtbaren
+     * Block-Formen.</p>
+     *
+     * <p>Ueber Reflexion statt ueber einen Accessor, weil ein neuer {@code @Accessor} eine
+     * Mixin-Aenderung waere und damit einen Boot kostet; das Feld ist stabil benannt und der
+     * Zugriff laeuft einmal je Block, nicht je Viereck.</p>
+     *
+     * @return {@code false}, wenn keine Masche da ist oder sie leer ist
+     */
+    private static boolean viereckeAusMasche(PoseStack.Pose pose, VertexConsumer verbraucher,
+        int[] toenung, int licht, int overlay, BlockModelRenderState zustand)
+    {
+        Object masche = masche(zustand);
+
+        if (!(masche instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh mm)
+            || mm.size() == 0)
+        {
+            return false;
+        }
+
+        VIERECK.setLightCoords(licht);
+        VIERECK.setOverlayCoords(overlay);
+
+        mm.forEach((viereck) ->
+        {
+            BakedQuad gebacken = viereck.toBakedQuad(null);
+            int index = gebacken.materialInfo().tintIndex();
+            boolean getoent = index != -1 && index < toenung.length;
+
+            /* Dieselbe Toenungsregel wie im Vanilla-Weg -- siehe vierecke(). */
+            VIERECK.setColor(getoent ? ARGB.multiply(-1, toenung[index]) : -1);
+
+            verbraucher.putBakedQuad(pose, gebacken, VIERECK);
+        });
+
+        return true;
+    }
+
+    /** Das Maschenfeld des Zustands, per Reflexion (siehe {@link #viereckeAusMasche}). */
+    private static Object masche(BlockModelRenderState zustand)
+    {
+        try
+        {
+            if (maschenFeld == null)
+            {
+                maschenFeld = BlockModelRenderState.class.getDeclaredField("mesh");
+
+                maschenFeld.setAccessible(true);
+            }
+
+            return maschenFeld.get(zustand);
+        }
+        catch (Throwable t)
+        {
+            Messpunkt.stoerung("blockmodell.masche", t.getClass().getSimpleName() + ": " + t.getMessage());
+
+            return null;
+        }
+    }
+
+    private static java.lang.reflect.Field maschenFeld;
 
     private static int[] toenung(BlockModelRenderStateAccessor zugriff)
     {
