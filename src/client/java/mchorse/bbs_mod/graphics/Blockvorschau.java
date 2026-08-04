@@ -120,7 +120,12 @@ public final class Blockvorschau
             return false;
         }
 
-        SofortZeichner.zeichnen(ebene.pipeline(), netz, modelView, farbe, blockAtlas());
+        /* ⛔ NICHT ebene.pipeline() (2026-08-04 gemessen): die Block-Pipelines sind fuer den
+         * Weltdurchgang gebaut. In der Bild-im-Bild-Phase kam damit fast nichts an -- 794
+         * sichtbare Bildpunkte gegen 19138 beim Symbol. ENTITY_TRANSLUCENT ist die Pipeline,
+         * die BillboardFormRenderer an derselben Stelle erfolgreich benutzt. */
+        SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
+            netz, modelView, farbe, blockAtlas());
 
         return true;
     }

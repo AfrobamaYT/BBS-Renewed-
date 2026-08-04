@@ -320,9 +320,14 @@ public final class Blockmodell
         BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) zustandVorschau();
         List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
 
+        Object m = masche(zustandVorschau());
+
         Messpunkt.zaehle("blockmodell.aufloesung", "teile="
             + (teile == null ? "null" : String.valueOf(teile.size()))
-            + " ebene=" + zugriff.bbs$getRenderType());
+            + " ebene=" + (zugriff.bbs$getRenderType() == null ? "null" : "da")
+            + " masche=" + (m == null ? "null"
+                : (m instanceof net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh mm
+                    ? mm.size() + " vierecke" : m.getClass().getSimpleName())));
 
         return zugriff.bbs$getRenderType();
     }
