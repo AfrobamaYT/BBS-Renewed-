@@ -1702,15 +1702,6 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
     private void ensureStencilFramebuffer()
     {
-        this.stencil.setup(Link.bbs("stencil_film"));
-
-        Texture mainTexture = this.stencil.getFramebuffer().getMainTexture();
-        int w = BBSRendering.getVideoWidth();
-        int h = BBSRendering.getVideoHeight();
-
-        if (mainTexture.width != w || mainTexture.height != h)
-        {
-            this.stencil.resizeGUI(w, h);
-        }
+        StencilPuffergroesse.sicherstellen(this.stencil);
     }
 }
