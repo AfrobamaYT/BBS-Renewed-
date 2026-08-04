@@ -124,7 +124,24 @@ public final class BBSToolsModClient implements ClientModInitializer
          */
         // PHASE NICHT BELEGT GLEICHWERTIG: alt war LAST/END/AFTER_SETUP. 26.2 hat dafuer kein benanntes Gegenstueck -- ob diese Phase an derselben Stelle liegt, ist am laufenden Bild zu pruefen (Export gegen Fenster).
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.END_MAIN.register(
-            kontext -> com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++);
+            kontext ->
+            {
+                com.afrobama.bbstools.perf.BBSPerfConfig.bbstoolsRenderFrameId++;
+
+                /* ⛔ ZWEITER ANTRIEB FUER DEN HERZSCHLAG — der HUD-Antrieb unten steht still,
+                 * sobald ein Screen offen ist, und offen ist er in JEDER Editor-Sitzung.
+                 * Gemessen 2026-08-04: frame blieb 45 Minuten auf 11930 und fps auf 30,
+                 * waehrend die Instanz mit 85–140 fps lief. Ein eingefrorener Wert, der wie
+                 * ein Messwert aussieht, ist teurer als gar keiner: er beendet die Suche.
+                 * Hier laeuft es je Weltdurchgang, also auch hinter dem Editor. */
+                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrame();
+                try
+                {
+                    com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
+                        net.minecraft.client.Minecraft.getInstance().getFps());
+                }
+                catch (Throwable ig) {}
+            });
 
         /* Per-frame counter for the heartbeat's "frame" + "fps" fields.
          *
