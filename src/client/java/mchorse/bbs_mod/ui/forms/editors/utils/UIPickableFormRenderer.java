@@ -169,21 +169,35 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
 
         if (this.renderForm == null || this.renderForm.get())
         {
-            /* The form editor viewport gets the same deferred translucency as the world: the
-             * form's semi-transparent pixels draw after all its opaque ones, sorted, without
-             * hiding bones behind them. */
-            FormTranslucentQueue.begin();
-            FormUtilsClient.render(this.form, formContext);
-            FormTranslucentQueue.flush();
+            /* ⛔ EINREIHEN STATT SOFORT ZEICHNEN (2026-08-04, Bugliste #16).
+             *
+             * Hier stand ein Sofortzug. Der landet in 26.2 im Standard-Framebuffer, BEVOR die
+             * Oberflaeche gezeichnet wird -- und der Panel-Hintergrund des Editors deckt ihn
+             * anschliessend zu. Gemessen, in dieser Reihenfolge:
+             *
+             *   editor.zielpuffer: gebunden=0        der Zug ging ins Standardziel
+             *   0 von 30 Bildern sichtbar            im Ruhezustand, 0 von 20 in Bewegung
+             *   Auswahlpuffer: Inhalt (805,151)-(1114,780) in 1920x970 -- Figur vollstaendig
+             *
+             * Der richtige Weg war die ganze Zeit da und wurde nur uebersprungen: die
+             * Basisklasse {@link UIFormRenderer#renderUserModel} reiht das Modell als Bild im
+             * Bild ein (Aufgabe 96, Schalter MODELL_UEBER_BILD_IM_BILD steht auf true), und
+             * diese Unterklasse ueberschreibt genau diese Methode, ohne sie zu rufen.
+             *
+             * Bewusst nicht per super-Aufruf: die Basis nimmt {@code this.entity}, der Editor
+             * braucht {@link #getTargetEntity()} (beim Bearbeiten einer Form AUF einem Replay
+             * sind das verschiedene). Der Rest ist derselbe Zustand. */
+            org.joml.Matrix4f pose = new org.joml.Matrix4f(context.batcher.pose().last().pose());
+            net.minecraft.client.gui.navigation.ScreenRectangle flaeche =
+                new net.minecraft.client.gui.navigation.ScreenRectangle(
+                    this.area.x, this.area.y, this.area.w, this.area.h);
 
-            /* MESSUNG Bugliste #16 (2026-08-04): das Modell ist gemessen zu 100 % unsichtbar
-             * (0 von 30 Bildern), liegt aber vollstaendig im Auswahlpuffer. Die Erklaerung im
-             * Kommentar von ModelVAORenderer lautet "zeichnet sofort ins Hauptziel und wird vom
-             * GUI uebermalt" -- dann MUSS hier das Hauptziel gebunden sein und nicht der
-             * Vorschaupuffer. Genau das steht in dieser Zeile, statt weiter geraten zu werden. */
-            mchorse.bbs_mod.graphics.Messpunkt.zaehle("editor.zielpuffer",
-                "gebunden=" + org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING)
-                + " | eigener stencil=" + (this.stencil.getFramebuffer() == null ? -1 : this.stencil.getFramebuffer().id));
+            context.batcher.bildImBild(new mchorse.bbs_mod.ui.framework.elements.utils.vorschau.VorschauModellZustand(
+                this.form, this.getTargetEntity(), this.camera,
+                new Matrix4f(this.camera.projection), pose,
+                mchorse.bbs_mod.graphics.Standbild.uebergang(context.getTransition()),
+                this.area.x, this.area.y, this.area.ex(), this.area.ey(),
+                flaeche, flaeche));
 
             if (this.form.hitbox.get())
             {
