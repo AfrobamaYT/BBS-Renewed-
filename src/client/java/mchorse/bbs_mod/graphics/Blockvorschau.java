@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
+import mchorse.bbs_mod.graphics.Messpunkt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -35,6 +36,30 @@ import org.joml.Vector4f;
  * Puffer schreiben und mit {@link SofortZeichner} abschicken. Damit landet der Block in der
  * Aufloesung der Kachel statt als vergroessertes Symbol.</p>
  *
+ * <h2>⛔ STAND 2026-08-04: GEBAUT, ABER ES KOMMEN KEINE VIERECKE</h2>
+ *
+ * <p>Verdrahtet und am laufenden Spiel gemessen. Der Weg laeuft (Zaehler {@code blockvorschau}
+ * = 7464), die Zeichenebene wird gefunden -- aber die Modellteile fehlen:</p>
+ *
+ * <pre>
+ *   blockmodell.aufloesung = teile=null  ebene=RenderType[item_cutout: ... blocks.png ...]
+ *   blockvorschau          = keine vierecke
+ * </pre>
+ *
+ * <p>{@code BlockModelResolver.update(zustand, block, kontext)} fuellt in dieser Phase also die
+ * Ebene, aber nicht {@code modelParts}. Geprueft und AUSGESCHLOSSEN: der geteilte
+ * {@code BlockModelRenderState} ist es nicht -- die Vorschau bekam einen eigenen
+ * ({@code Blockmodell#zustandVorschau}), das Ergebnis blieb {@code teile=null}.</p>
+ *
+ * <p>OFFENE FRAGE, an der es weitergeht: warum liefert derselbe Aufloeser im Weltdurchgang
+ * Teile und in der Bild-im-Bild-Phase nicht? Der direkte Vergleich fehlt noch, weil in dieser
+ * Instanz gerade keine Block-Form in der Welt zeichnet ({@code blockmodell.welt} zaehlt nicht).
+ * Beide Sonden stehen im Baum; sobald eine Block-Form gleichzeitig in Welt und Vorschau
+ * sichtbar ist, steht die Antwort in einem Bild.</p>
+ *
+ * <p>⚠️ DARUM IST DER AUFRUFER NICHT VERDRAHTET: solange hier nichts herauskommt, waere es ein
+ * Weg, der jedes Bild aufloest und dann doch aufs Symbol zurueckfaellt.</p>
+ *
  * <p>⚠️ EIGENE KLASSE, nicht eine Methode in {@link Blockmodell}: der Aufrufer
  * ({@code BlockFormRenderer}) muss hotswapbar bleiben, und neue Klassen laden lazy, waehrend eine
  * neue Methode an einer geladenen Klasse ueber den Mixin-Weg nicht nachtraeglich hineingeht.</p>
@@ -62,6 +87,8 @@ public final class Blockvorschau
 
         RenderType ebene = Blockmodell.ebeneFuer(block);
 
+        Messpunkt.zaehle("blockvorschau", ebene == null ? "keine ebene" : "ebene=" + ebene);
+
         if (ebene == null)
         {
             return false;
@@ -74,14 +101,19 @@ public final class Blockvorschau
 
         BufferBuilder bauer = SofortZeichner.beginnen(speicher, ebene.primitiveTopology(), ebene.format());
 
-        if (!Blockmodell.vierecke(block, stapel.last(), bauer, licht, overlay))
+        if (!Blockmodell.viereckeAusZustand(stapel.last(), bauer, licht, overlay))
         {
+            Messpunkt.zaehle("blockvorschau", "keine vierecke");
+
             bauer.build();
 
             return false;
         }
 
         MeshData netz = bauer.build();
+
+        Messpunkt.zaehle("blockvorschau.netz", netz == null ? "leer"
+            : netz.drawState().vertexCount() + " ecken");
 
         if (netz == null)
         {

@@ -202,6 +202,16 @@ public class Pufferprobe
             int sichtbar = 0;
             int farbig = 0;
 
+            /* ⭐ WO liegt der Inhalt, nicht nur WIEVIEL (2026-08-04). "1815 Punkte mit Alpha"
+             * beantwortet nicht, ob sie an der richtigen Stelle liegen -- und genau daran hing
+             * die Frage, ob eine unsichtbare Vorschau am Blit oder an den Koordinaten liegt.
+             * Der Puffer wird ohnehin ganz gelesen; das hier sind zwei Vergleiche mehr, keine
+             * zweite Messung. */
+            int minX = Integer.MAX_VALUE;
+            int minY = Integer.MAX_VALUE;
+            int maxX = -1;
+            int maxY = -1;
+
             for (int i = 0; i < breite * hoehe; i++)
             {
                 int pr = puffer.get(i * 4) & 255;
@@ -212,6 +222,14 @@ public class Pufferprobe
                 if (pa != 0)
                 {
                     sichtbar++;
+
+                    int px = i % breite;
+                    int py = i / breite;
+
+                    if (px < minX) minX = px;
+                    if (py < minY) minY = py;
+                    if (px > maxX) maxX = px;
+                    if (py > maxY) maxY = py;
                 }
 
                 /* ⛔ RGB GETRENNT VON ALPHA ZAEHLEN. Die erste Fassung verlangte alpha != 0 und
@@ -231,8 +249,11 @@ public class Pufferprobe
                 }
             }
 
+            String lage = maxX < 0 ? " | inhalt: KEINER"
+                : " | inhalt liegt in (" + minX + "," + minY + ")-(" + maxX + "," + maxY + ")";
+
             System.setProperty(ERGEBNIS_FARBE, stelle + " " + breite + "x" + hoehe
-                + " (texturId " + texturId + ")"
+                + " (texturId " + texturId + ")" + lage
                 + " | gesuchte farbe " + r + "," + g + "," + b + " (+-" + toleranz + ") = " + treffer
                 + " punkte | RGB!=0 = " + farbig
                 + " | alpha!=0 = " + sichtbar

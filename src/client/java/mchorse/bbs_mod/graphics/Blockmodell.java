@@ -93,6 +93,17 @@ public final class Blockmodell
 
     private static final BlockModelRenderState ZUSTAND = new BlockModelRenderState();
 
+    /**
+     * ⛔ EIGENER ZUSTAND FUER DIE VORSCHAU (2026-08-04 gemessen).
+     *
+     * <p>{@link #ZUSTAND} gehoert dem Weltdurchgang. Loest die Oberflaeche DENSELBEN Block noch
+     * einmal darin auf, kommt nichts zurueck: gemessen {@code teile=null ebene=item_cutout} --
+     * die Ebene steht, die Modellteile fehlen, weil der eingereichte Auftrag des Weltdurchgangs
+     * die Liste laengst uebernommen hat. Der Klassenkopf warnt genau davor ("Zustand und
+     * Aufloeser sind geteilt und wiederverwendet"); die Vorschau ist der zweite Leser.</p>
+     */
+    private static BlockModelRenderState zustandVorschau;
+
     private static final QuadInstance VIERECK = new QuadInstance();
 
     private static BlockModelResolver aufloeser;
@@ -155,6 +166,11 @@ public final class Blockmodell
         BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) ZUSTAND;
         List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
         RenderType ebene = zugriff.bbs$getRenderType();
+
+        /* Vergleichssonde zur Vorschau (2026-08-04): bekommt DER WELTWEG Modellteile? */
+        Messpunkt.zaehle("blockmodell.welt", "teile="
+            + (teile == null ? "null" : String.valueOf(teile.size()))
+            + " ebene=" + (ebene == null ? "null" : "da"));
 
         /* Eigenleuchtende Bloecke (Fackel, Glowstone, Lava) ziehen ihr eigenes Licht hoch --
          * dieselbe Rechnung wie in BlockModelRenderState.submitModel. */
@@ -246,12 +262,19 @@ public final class Blockmodell
      */
     public static RenderType ebeneFuer(BlockState block)
     {
-        if (!aufloesen(block))
+        if (!aufloesenVorschau(block))
         {
             return null;
         }
 
-        return ((BlockModelRenderStateAccessor) ZUSTAND).bbs$getRenderType();
+        BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) zustandVorschau();
+        List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
+
+        Messpunkt.zaehle("blockmodell.aufloesung", "teile="
+            + (teile == null ? "null" : String.valueOf(teile.size()))
+            + " ebene=" + zugriff.bbs$getRenderType());
+
+        return zugriff.bbs$getRenderType();
     }
 
     /**
@@ -271,7 +294,23 @@ public final class Blockmodell
             return false;
         }
 
-        BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) ZUSTAND;
+        return viereckeAusZustand(pose, verbraucher, licht, overlay);
+    }
+
+    /**
+     * Wie {@link #vierecke}, aber OHNE neu aufzuloesen -- fuer Aufrufer, die schon
+     * {@link #ebeneFuer} gerufen haben.
+     *
+     * <p>⛔ WARUM ES DAS BRAUCHT (2026-08-04 gemessen): zweimal hintereinander aufzuloesen
+     * liefert beim ZWEITEN Mal keine Modellteile mehr. Der Zaehler sagte
+     * {@code blockvorschau = 56 | keine vierecke}, obwohl derselbe Block im Weltdurchgang
+     * einwandfrei zeichnet. {@code BlockModelRenderState} ist geteilt und wiederverwendet;
+     * wer ihn zweimal fuellen laesst, bekommt beim zweiten Mal eine leere Liste.</p>
+     */
+    public static boolean viereckeAusZustand(PoseStack.Pose pose, VertexConsumer verbraucher,
+        int licht, int overlay)
+    {
+        BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) zustandVorschau();
         List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
 
         if (teile == null || teile.isEmpty())
@@ -280,9 +319,46 @@ public final class Blockmodell
         }
 
         vierecke(List.copyOf(teile), pose, verbraucher, toenung(zugriff),
-            LightCoordsUtil.max(licht, ZUSTAND.blockLightCoords), overlay);
+            LightCoordsUtil.max(licht, zustandVorschau().blockLightCoords), overlay);
 
         return true;
+    }
+
+    /** Wie {@link #aufloesen}, aber in den Vorschau-Zustand -- siehe {@link #zustandVorschau()}. */
+    private static boolean aufloesenVorschau(BlockState block)
+    {
+        if (block == null || !RenderSystem.isOnRenderThread())
+        {
+            return false;
+        }
+
+        ModelManager verwalter = Minecraft.getInstance().getModelManager();
+
+        if (aufloeser == null || fuer != verwalter)
+        {
+            aufloeser = new BlockModelResolver(verwalter);
+            fuer = verwalter;
+        }
+
+        aufloeser.update(zustandVorschau(), block, KONTEXT);
+
+        return true;
+    }
+
+    /**
+     * Der Vorschau-Zustand, traege angelegt.
+     *
+     * <p>Traege, weil ein nachtraeglich eingefuegtes statisches Feld nach einem Hotswap
+     * {@code null} ist und dieser Pfad in jedem Bild laeuft.</p>
+     */
+    private static BlockModelRenderState zustandVorschau()
+    {
+        if (zustandVorschau == null)
+        {
+            zustandVorschau = new BlockModelRenderState();
+        }
+
+        return zustandVorschau;
     }
 
     /** Der gemeinsame Auflöseschritt von {@link #einreichen}, {@link #ebeneFuer} und {@link #vierecke}. */
