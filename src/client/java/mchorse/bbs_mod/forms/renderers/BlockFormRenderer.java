@@ -31,6 +31,25 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
      * ⚠️ 26.2: die Vorschau ist das Inventarsymbol des Blocks, nicht mehr die frei gedrehte
      * 3D-Ansicht -- Grund und Rueckweg stehen in {@link UISymbol}. Farbe und Drehung der Form
      * wirken hier darum nicht; im Film (render3D) wirken beide unveraendert.
+     *
+     * <p>⛔ WIE PIXELIG ES IST, IST GEMESSEN (2026-08-04, Bugliste #13): die Treppenstufe an
+     * der schraegen Wuerfelkante betraegt 4-5 Bildpunkte bei ~140 px Kantenlaenge -- die Quelle
+     * hatte also ~30 px, ein 32-px-Atlassymbol, 4,4-fach vergroessert. Nicht die Textur ist
+     * grob, das fertige Bild wird aufgeblasen. Die Meldung des Nutzers ist damit bestaetigt.</p>
+     *
+     * <p>⭐ DER ERSATZ IST GEBAUT, ABER NICHT VERDRAHTET: {@link mchorse.bbs_mod.graphics.Blockvorschau}
+     * schreibt die Vierecke selbst in einen Puffer und schickt sie sofort ab -- der Weg, den
+     * auch {@code BillboardFormRenderer} geht. Verdrahten heisst hier: statt {@code UISymbol}
+     * {@code Blockvorschau.zeichnen(state, stapel, getUIMatrix(...), farbe, FULL_BRIGHT,
+     * NO_OVERLAY)} rufen und bei {@code false} auf das Symbol zurueckfallen.</p>
+     *
+     * <p>⚠️ WARUM NOCH NICHT: es ist nicht BELEGT, dass es sichtbar zeichnet. Der vorherige
+     * Anlauf ueber {@code Blockmodell.einreichen} sah genauso plausibel aus und zeichnete NICHTS
+     * (22085 Blockpixel mit Symbol, 0 mit Einreihung, wieder 22085 danach). Zum Nachmessen fehlt
+     * eine Buehne, in der eine Blockkachel zuverlaessig im Bild liegt -- die Kacheln der
+     * Formpalette liegen bei GUI y=240 und damit unter dem Rand, und die Rollung ueber die
+     * Bruecke greift nicht. Ein Renderfix ohne Bild ist eine Behauptung; deshalb steht hier
+     * weiter das Symbol.</p>
      */
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)

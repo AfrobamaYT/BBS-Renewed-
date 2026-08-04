@@ -236,6 +236,76 @@ public final class Blockmodell
         }
     }
 
+    /**
+     * Die Zeichenebene eines Blocks, ohne ihn einzureihen.
+     *
+     * <p>Gebraucht von {@link Blockvorschau}: wer die Vierecke selbst in einen Puffer schreibt,
+     * braucht vorher Format und Topologie, und beides haengt an der Ebene.</p>
+     *
+     * @return {@code null}, wenn der Block kein Backmodell hat (Truhe, Schild, Kopf)
+     */
+    public static RenderType ebeneFuer(BlockState block)
+    {
+        if (!aufloesen(block))
+        {
+            return null;
+        }
+
+        return ((BlockModelRenderStateAccessor) ZUSTAND).bbs$getRenderType();
+    }
+
+    /**
+     * Schreibt die Vierecke eines Blocks direkt in einen Verbraucher.
+     *
+     * <p>Der Unterschied zu {@link #einreichen}: dort geht ein AUFTRAG an den Bildgraphen des
+     * Weltdurchgangs, hier werden die Ecken sofort geschrieben. Nur so kommt ein Block in die
+     * Oberflaeche -- siehe {@link Blockvorschau} fuer den gemessenen Befund dahinter.</p>
+     *
+     * @return {@code false}, wenn es nichts zu zeichnen gab
+     */
+    public static boolean vierecke(BlockState block, PoseStack.Pose pose, VertexConsumer verbraucher,
+        int licht, int overlay)
+    {
+        if (!aufloesen(block))
+        {
+            return false;
+        }
+
+        BlockModelRenderStateAccessor zugriff = (BlockModelRenderStateAccessor) ZUSTAND;
+        List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
+
+        if (teile == null || teile.isEmpty())
+        {
+            return false;
+        }
+
+        vierecke(List.copyOf(teile), pose, verbraucher, toenung(zugriff),
+            LightCoordsUtil.max(licht, ZUSTAND.blockLightCoords), overlay);
+
+        return true;
+    }
+
+    /** Der gemeinsame Auflöseschritt von {@link #einreichen}, {@link #ebeneFuer} und {@link #vierecke}. */
+    private static boolean aufloesen(BlockState block)
+    {
+        if (block == null || !RenderSystem.isOnRenderThread())
+        {
+            return false;
+        }
+
+        ModelManager verwalter = Minecraft.getInstance().getModelManager();
+
+        if (aufloeser == null || fuer != verwalter)
+        {
+            aufloeser = new BlockModelResolver(verwalter);
+            fuer = verwalter;
+        }
+
+        aufloeser.update(ZUSTAND, block, KONTEXT);
+
+        return true;
+    }
+
     private static int[] toenung(BlockModelRenderStateAccessor zugriff)
     {
         it.unimi.dsi.fastutil.ints.IntList schichten = zugriff.bbs$getTintLayers();
