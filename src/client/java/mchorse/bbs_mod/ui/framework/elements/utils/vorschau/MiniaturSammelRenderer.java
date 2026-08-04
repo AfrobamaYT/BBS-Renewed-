@@ -68,6 +68,33 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                  * bei einem SubmitNodeCollector ein, und der des UI-Durchlaufs ist hier
                  * laengst geschlossen (FormSammler.pflicht wirft sonst "Kein Sammler
                  * angemeldet", in JEDEM Bild). */
+                /* ⛔ DIE MAUS MUSS IN DENSELBEN RAUM WIE DIE KACHEL (2026-08-04, Bugliste #13).
+                 *
+                 * Miniaturschlange legt die Kachel in BILDPUNKTEN ab (px1 = x1 * guiScale),
+                 * weil die Sammeltextur in Bildpunkten liegt. {@code context.mouseX} bleibt
+                 * aber in GUI-Einheiten -- und ModelFormRenderer#getUIMatrix rechnet beides
+                 * gegeneinander:
+                 *
+                 *     angle = toRad(context.mouseX - (x1 + x2) / 2) + PI
+                 *
+                 * Bei GUI-Skalierung 2 ist die Kachelmitte doppelt so gross wie die Maus, die
+                 * Vorschau dreht sich also um die halbe Kachelmitte zu weit. Gemessen an der
+                 * laufenden Instanz (Silhouettenbreite, Kachel GUI 45..85 = Punkte 90..170):
+                 *
+                 *     Maus GUI  65 (GUI-Mitte)   -> 20 px breit  (Modell steht seitlich)
+                 *     Maus GUI 130 (Punkt-Mitte) -> 30 px breit  (Modell steht frontal)
+                 *
+                 * Frontal wird es an der PUNKT-Mitte statt an der GUI-Mitte -- genau der
+                 * Faktor guiScale. Hier umgerechnet und im finally zurueckgesetzt: es ist die
+                 * eine Stelle, an der beide Raeume aufeinandertreffen. */
+                mchorse.bbs_mod.ui.framework.UIContext kontext = e.kontext();
+                int mausX = kontext.mouseX;
+                int mausY = kontext.mouseY;
+                float skalierung = mchorse.bbs_mod.BBSModClient.getGUIScale();
+
+                kontext.mouseX = Math.round(mausX * skalierung);
+                kontext.mouseY = Math.round(mausY * skalierung);
+
                 try
                 {
                     mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
@@ -78,6 +105,13 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 {
                     Messpunkt.stoerung("miniatur.zeichnen",
                         e.zeichner().getClass().getSimpleName() + ": " + t);
+                }
+                finally
+                {
+                    /* Zurueck in GUI-Einheiten -- der naechste Leser ist wieder die
+                     * Oberflaeche selbst, und die rechnet dort. */
+                    kontext.mouseX = mausX;
+                    kontext.mouseY = mausY;
                 }
             }
         }
