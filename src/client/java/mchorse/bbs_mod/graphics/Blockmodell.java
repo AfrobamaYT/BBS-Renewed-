@@ -167,10 +167,30 @@ public final class Blockmodell
         List<BlockStateModelPart> teile = zugriff.bbs$getModelParts();
         RenderType ebene = zugriff.bbs$getRenderType();
 
-        /* Vergleichssonde zur Vorschau (2026-08-04): bekommt DER WELTWEG Modellteile? */
+        /* Vergleichssonde zur Vorschau (2026-08-04): bekommt DER WELTWEG Modellteile?
+         * Dazu das Feld `mesh`, das 26.2 neben modelParts fuehrt -- die Frage ist, ob die
+         * Geometrie dort landet statt in modelParts. */
+        String maschen;
+
+        try
+        {
+            var mf = BlockModelRenderState.class.getDeclaredField("mesh");
+
+            mf.setAccessible(true);
+
+            Object mm = mf.get(ZUSTAND);
+
+            maschen = mm == null ? "null" : mm.getClass().getSimpleName() + "=" + mm;
+        }
+        catch (Throwable t)
+        {
+            maschen = "unlesbar " + t.getClass().getSimpleName();
+        }
+
         Messpunkt.zaehle("blockmodell.welt", "teile="
             + (teile == null ? "null" : String.valueOf(teile.size()))
-            + " ebene=" + (ebene == null ? "null" : "da"));
+            + " ebene=" + (ebene == null ? "null" : "da")
+            + " mesh=" + maschen);
 
         /* Eigenleuchtende Bloecke (Fackel, Glowstone, Lava) ziehen ihr eigenes Licht hoch --
          * dieselbe Rechnung wie in BlockModelRenderState.submitModel. */
