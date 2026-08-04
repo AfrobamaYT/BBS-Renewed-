@@ -133,6 +133,19 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
             /* ⛔ IMMER freigeben. Bliebe das Ziel stehen, zeichnete alles Folgende -- Welt
              * eingeschlossen -- in diese Vorschautextur (die Falle von 06fbc62e0). */
             Zeichenziel.freigeben();
+
+            /* MESSUNG (2026-08-04): liegt ueberhaupt Inhalt in der Sammeltextur? Die Probe
+             * liest nur, wenn sie angefordert wurde -- sonst kostet sie einen Vergleich. */
+            if (farbe instanceof com.mojang.blaze3d.opengl.GlTextureView ansicht)
+            {
+                var tex = ansicht.texture();
+
+                mchorse.bbs_mod.graphics.Pufferprobe.vielleichtFarbeZaehlen(ansicht.glId(),
+                    tex.getWidth(0), tex.getHeight(0),
+                    255, 255, 255, 40, "sammeltextur ECHTE groesse " + tex.getWidth(0) + "x"
+                        + tex.getHeight(0) + " zustand " + (zustand.x1() - zustand.x0()) + "x"
+                        + (zustand.y1() - zustand.y0()));
+            }
         }
     }
 
