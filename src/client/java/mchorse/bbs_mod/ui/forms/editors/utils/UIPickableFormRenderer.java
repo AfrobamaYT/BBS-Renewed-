@@ -176,6 +176,15 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             FormUtilsClient.render(this.form, formContext);
             FormTranslucentQueue.flush();
 
+            /* MESSUNG Bugliste #16 (2026-08-04): das Modell ist gemessen zu 100 % unsichtbar
+             * (0 von 30 Bildern), liegt aber vollstaendig im Auswahlpuffer. Die Erklaerung im
+             * Kommentar von ModelVAORenderer lautet "zeichnet sofort ins Hauptziel und wird vom
+             * GUI uebermalt" -- dann MUSS hier das Hauptziel gebunden sein und nicht der
+             * Vorschaupuffer. Genau das steht in dieser Zeile, statt weiter geraten zu werden. */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("editor.zielpuffer",
+                "gebunden=" + org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING)
+                + " | eigener stencil=" + (this.stencil.getFramebuffer() == null ? -1 : this.stencil.getFramebuffer().id));
+
             if (this.form.hitbox.get())
             {
                 this.renderFormHitbox(context);
