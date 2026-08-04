@@ -175,14 +175,17 @@ public class Batcher2D
          * ist nichts, was man einem fremden Zeichner zumutet. Der Spiegel traegt das leere
          * Rechteck trotzdem -- dort ist es die richtige Aussage ("hier ist nichts sichtbar"),
          * und die Zustaende lesen es korrekt. */
-        if (rect.width() > 0 && rect.height() > 0)
+        ScreenRectangle anVanilla = rect;
+
+        if (rect.width() <= 0 || rect.height() <= 0)
         {
-            this.context.enableScissor(rect.left(), rect.top(), rect.right(), rect.bottom());
+            /* 0x0 an Vanilla ist ein Absturz am Bildende, nicht hier -- warum, steht in
+             * LeererSchnitt. Unser eigener Spiegel behaelt das leere Rechteck: dort ist es
+             * die richtige Aussage, und submit() wirft darauf hin nichts ein. */
+            anVanilla = LeererSchnitt.ersatzPunkt(this.scissors, x, y, sw, sh);
         }
-        else
-        {
-            this.context.enableScissor(x, y, x, y);
-        }
+
+        this.context.enableScissor(anVanilla.left(), anVanilla.top(), anVanilla.right(), anVanilla.bottom());
 
         this.scissors.push(rect);
     }

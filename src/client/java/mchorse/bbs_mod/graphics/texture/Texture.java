@@ -248,7 +248,26 @@ public class Texture
         switch (format)
         {
             case RGBA_U8: return GpuFormat.RGBA8_UNORM;
-            case RGB_U8: return GpuFormat.RGB8_UNORM;
+
+            /* ⛔ NICHT RGB8_UNORM -- das ist ein sicherer Absturz, kein Format (Bugliste #11,
+             * Absturzgruppe G6: "RGB8_UNORM format cannot be used", Texture.allocate:155).
+             *
+             * Am 2026-08-04 an der laufenden Instanz gemessen, GlConst gefragt statt geraten:
+             *
+             *   RGB8_UNORM:   intern=0      extern=6407   typ=5121
+             *   RGBA8_UNORM:  intern=32856  extern=6408   typ=5121
+             *
+             * GlDevice.createTexture wirft eine IllegalArgumentException, sobald eine der drei
+             * Abbildungen 0 ist. 26.2s GL-Backend hat fuer dreikanaliges RGB8 keine interne ID
+             * -- der Wurf ist also nicht selten, sondern SICHER, bei jedem Aufruf.
+             *
+             * Das GPU-Objekt behauptet damit einen Alphakanal, den die anschliessende
+             * glTexImage2D dieser Klasse nicht anlegt (sie laedt weiter GL_RGB8/GL_RGB). Das ist
+             * dieselbe folgenlose Luege wie unten bei der Tiefe, und aus demselben Grund
+             * ertraeglich: BBS bindet seine eigenen Texturen selbst. Wichtig ist, was daraus
+             * NICHT folgt -- gelesen wird weiter dreikanalig, der Treiber liest also nicht ueber
+             * das Pufferende hinaus (siehe TextureFormat#bytesProPixel). */
+            case RGB_U8: return GpuFormat.RGBA8_UNORM;
             case RGBA_F16: return GpuFormat.RGBA16_FLOAT;
             case DEPTH_F24: return GpuFormat.D32_FLOAT;
         }
