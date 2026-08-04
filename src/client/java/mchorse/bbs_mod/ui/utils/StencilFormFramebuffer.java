@@ -45,6 +45,14 @@ public class StencilFormFramebuffer
     /** Reused readback buffer for the tolerance region pick (grows as needed). */
     private FloatBuffer pickBuffer;
 
+    /**
+     * Eigener FBO NUR zum Zurueklesen — 0 heisst "noch nicht erzeugt".
+     *
+     * <p>Ohne Initialisierer, damit ein Hotswap dieser Klasse das Feld nicht auf einem
+     * Bytecode-Default haengen laesst, den kein {@code <clinit>} mehr fuellt.</p>
+     */
+    private int leseFbo;
+
 
     /**
      * Das Zwischenbild der Filterdurchgaenge.
@@ -398,7 +406,28 @@ public class StencilFormFramebuffer
 
         int vorher = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
 
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.framebuffer.id);
+        /* ⛔ EIGENER LESE-FBO STATT DES ZEICHEN-FBOs (2026-08-04, per Bisect gefunden).
+         *
+         * Aus dem Zeichen-FBO herauszulesen lieferte an JEDER Position Nullen -- bei
+         * vollstaendigem FBO, passendem Anhang (724) und Status COMPLETE. Ein
+         * ausdrueckliches glReadBuffer(COLOR_ATTACHMENT0) aenderte daran nichts.
+         *
+         * Der zweite Lesepfad (Pufferprobe) las DIESELBE Textur und fand 21606 Punkte
+         * ungleich 0 -- exakt die Zahl, die auch RenderDoc im Capture zaehlt. Er
+         * unterscheidet sich in genau einem Punkt: er legt einen EIGENEN FBO an und
+         * haengt die Textur selbst dort an. Das wird hier nachgezogen.
+         *
+         * Der FBO wird einmal erzeugt und behalten; die Textur wird bei jedem Lesen neu
+         * angehaengt, weil sie sich bei einer Groessenaenderung ersetzen kann. */
+        if (this.leseFbo == 0)
+        {
+            this.leseFbo = GL30.glGenFramebuffers();
+        }
+
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.leseFbo);
+        GL30.glFramebufferTexture2D(GL30.GL_READ_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,
+            GL11.GL_TEXTURE_2D, this.framebuffer.getMainTexture().id, 0);
+        GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT0);
 
         try
         {
@@ -491,6 +520,34 @@ public class StencilFormFramebuffer
 
         floats.clear();
         this.leseEigenenPuffer(x0, y0, w, h, floats);
+
+        /* ⚗️ ROHE WERTE, BEVOR DIE ALPHA-ANNAHME GREIFT (2026-08-04).
+         *
+         * Die Schleife unten ueberspringt jeden Texel mit alpha < 1. Steht in diesem Puffer
+         * eine Kennung MIT alpha 0, sieht sie von aussen exakt aus wie ein leerer Puffer --
+         * und der sichtbare Umriss, der dieselbe Textur im Shader liest, widerspricht dem.
+         * Genau dieser Fehlertyp ("alpha != 0 als Annahme IM Messgeraet") hat hier schon
+         * einmal Stunden gekostet. Also erst die rohen Maxima, dann urteilen. */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            float maxA = 0F;
+            float maxRGB = 0F;
+            int mitte = (((y - y0) * w) + (x - x0)) * 4;
+
+            for (int i = 0; i + 3 < needed; i += 4)
+            {
+                maxA = Math.max(maxA, floats.get(i + 3));
+                maxRGB = Math.max(maxRGB, Math.max(floats.get(i), Math.max(floats.get(i + 1), floats.get(i + 2))));
+            }
+
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.roh",
+                "maxAlpha=" + maxA + " maxRGB=" + maxRGB
+                    + " mitte=" + (mitte >= 0 && mitte + 3 < needed
+                        ? floats.get(mitte) + "/" + floats.get(mitte + 1) + "/"
+                            + floats.get(mitte + 2) + "/" + floats.get(mitte + 3)
+                        : "ausserhalb")
+                    + " region=" + x0 + "," + y0 + " " + w + "x" + h);
+        }
 
         {
             int centerId = 0;
