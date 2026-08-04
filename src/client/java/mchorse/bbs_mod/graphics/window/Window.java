@@ -57,19 +57,32 @@ public class Window
         return GLFW.glfwGetMouseButton(getWindow(), mouse) == GLFW.GLFW_PRESS;
     }
 
+    /* ⛔ MODIFIKATOREN LAUFEN DURCH DEN UEBERNAHME-HALTER (2026-08-04 verdrahtet).
+     *
+     * Ohne das kann kein Test eine Taste GEHALTEN pruefen -- und genau daran haengt der
+     * halbe Editor: Alt schaltet den Auswahlpuffer von Knochen- auf Replay-Kennungen um.
+     * Der Weg ueber das Betriebssystem wurde gemessen und verworfen (Robot ist headless,
+     * Win32-Fokus scheitert still in der Haelfte der Faelle); Begruendung mit Zahlen steht
+     * im Klassen-Javadoc von VirtuelleTasten.
+     *
+     * Nicht scharf -- Normalfall, auch beim Nutzer -- heisst: echter Wert unveraendert,
+     * Kosten ein volatile-Read je Abfrage. */
     public static boolean isCtrlPressed()
     {
-        return Minecraft.getInstance().hasControlDown();
+        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.strg(
+            Minecraft.getInstance().hasControlDown());
     }
 
     public static boolean isShiftPressed()
     {
-        return Minecraft.getInstance().hasShiftDown();
+        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.umschalt(
+            Minecraft.getInstance().hasShiftDown());
     }
 
     public static boolean isAltPressed()
     {
-        return Minecraft.getInstance().hasAltDown();
+        return com.afrobama.bbstools.client.autotest.VirtuelleTasten.alt(
+            Minecraft.getInstance().hasAltDown());
     }
 
     public static boolean isKeyPressed(int key)
