@@ -87,9 +87,31 @@ public abstract class UIFilmControllerCurrentEntityFastMixin
      *    `list.indexOf(replay)` NACHGEBAUT auf -- zufaellig richtig, aber eine eigene
      *    Annahme darueber, was an der Stelle steht. `original.call(...)` ruft das, was
      *    WIRKLICH dort steht, und folgt einer Aenderung im Ziel automatisch. */
+    /* ⭐ require = 0 IST DER HOTSWAP-SCHALTER (2026-08-04, Bugliste #6).
+     *
+     * Der Absatz darueber sagt, diese Klasse lasse sich "grundsaetzlich nicht neu weben".
+     * Das war zu allgemein. Der rohe Grund steht im Log der Instanz, nicht in der
+     * uebersetzten Fehlermeldung des Werkzeugs:
+     *
+     *   Critical injection failure: Callback method bbstools$fastCurrentIndex(...)
+     *   failed injection check, (0/1) succeeded. Scanned 0 target(s).
+     *
+     * "Scanned 0 target(s)" heisst: beim ZWEITEN Weben gibt es das gesuchte
+     * List.indexOf nicht mehr -- der erste Webvorgang hat es laengst durch den Wrapper
+     * ersetzt. Der Injektor findet also nichts, weil seine Arbeit schon getan ist, und
+     * die Vorgabe require=1 macht daraus einen Abbruch fuer die GANZE Klasse.
+     *
+     * require = 0 nimmt dem Fund seine Pflicht, expect = 1 behaelt die Warnung. Damit
+     * scheitert das Re-Weben nicht mehr an einem Injektor, der nichts mehr zu tun hat.
+     *
+     * ⚠️ Was das kostet, wenn der Injektor beim ERSTEN Weben scheitert: der Schnellweg
+     * bleibt aus und `list.indexOf(...)` laeuft wie vorher -- langsamer, aber richtig.
+     * Ein stiller Fehlschlag ist das nicht: expect = 1 laesst Mixin weiter warnen. */
     @WrapOperation(
         method = "getCurrentReplayIndex",
         at = @At(value = "INVOKE", target = "Ljava/util/List;indexOf(Ljava/lang/Object;)I"),
+        require = 0,
+        expect = 1,
         remap = false)
     private int bbstools$fastCurrentIndex(List list, Object replay, Operation<Integer> original)
     {
