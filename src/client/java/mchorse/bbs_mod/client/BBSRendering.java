@@ -677,8 +677,18 @@ public class BBSRendering
          * meisten Arbeit verloren geht.
          *
          * ⚠️ Der Test gehoert HIERHER und nicht in leseFboFuer: dort waere er
-         * Symptombehandlung, die einen halb aufgebauten Blit trotzdem weiterlaufen liesse. */
-        if (framebuffer == null)
+         * Symptombehandlung, die einen halb aufgebauten Blit trotzdem weiterlaufen liesse.
+         *
+         * ⛔ ZWEITE NULL, 2026-08-04 nachgezogen. Der Test oben deckte nur ein null-ZIEL ab.
+         * Der Absturzbericht nennt aber eine ANDERE Null: die Meldung lautet
+         * `NPE: RenderTarget.getColorTexture()`, also war das Ziel da und seine Farbtextur
+         * nicht. leseFboFuer dereferenziert sie in der ersten Zeile
+         * (`((GlTexture) ziel.getColorTexture()).glId()`), und genau dort riss der
+         * Video-Export ab (docs/ABSTURZ-HISTORIE.md, G8, 31.07. 15:03).
+         *
+         * Ein halb angelegtes Ziel ist derselbe Fall wie gar keins: ohne Farbtextur gibt es
+         * nichts zu lesen, also wird der Durchgang uebersprungen statt geraten. */
+        if (framebuffer == null || framebuffer.getColorTexture() == null)
         {
             return;
         }
