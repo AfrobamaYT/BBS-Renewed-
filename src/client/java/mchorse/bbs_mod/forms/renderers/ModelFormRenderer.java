@@ -85,6 +85,14 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     private MatrixCache bones = new MatrixCache();
 
+    /**
+     * Der Grundindex DIESER Form im Auswahlpuffer, gemerkt beim Fuellen.
+     *
+     * <p>Ohne Initialisierer (0 = noch nicht gefuellt) — dann ueberlebt ein Hotswap dieser
+     * Klasse, ohne dass ein {@code <clinit>} nachlaufen muesste.</p>
+     */
+    private int stencilBasis;
+
     private ActionsConfig lastConfigs;
     private IAnimator animator;
     private ModelInstance lastModel;
@@ -400,6 +408,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
          * so they fall back to the model base texture. */
         final boolean ignoreMaterials = model.materials.size() <= 1;
         final Link materialFallback = ignoreMaterials ? resolvedDefault : model.getTexture();
+
+        /* Die in updateStencilMap gemerkte Basis DIESER Form unmittelbar vor dem Zeichnen
+         * wiederherstellen -- ModelInstance liest sie hier by value in den Modell-Block. */
+        if (stencilMap != null)
+        {
+            stencilMap.aktuelleBasis = this.stencilBasis;
+        }
 
         model.render(newStack, program, finalColor, light, overlay, stencilMap, this.form.shapeKeys.get(), (material) ->
         {
@@ -875,6 +890,22 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         {
             return;
         }
+
+        /* ⛔ DIE BASIS DIESER FORM MERKEN (2026-08-04 gemessen).
+         *
+         * StencilMap.aktuelleBasis ist EIN Feld auf einer GETEILTEN Karte, und Fuellen und
+         * Zeichnen sind zwei getrennte Phasen: updateStencilMap laeuft fuer ALLE Formen,
+         * erst danach wird gezeichnet. Der Zeichenaufruf las damit die Basis der ZULETZT
+         * gefuellten Form. Am laufenden Spiel mitgeschnitten (Logpoints, Alt gehalten):
+         *
+         *   FILL basis:=25  karte=65197534     (gewaehltes Replay, Knochen)
+         *   FILL basis:=21  karte=65197534
+         *   FILL basis:=20  karte=65197534
+         *   RENDER kennung=21 karte=65197534   <- dieselbe Karte, fremde Basis
+         *
+         * Dieselbe Fehlerklasse wie beim Modell-Block (dort per Ringpuffer geloest,
+         * 38ecb7079) -- geteilter Zustand zwischen Einreichen und Ausfuehren. */
+        this.stencilBasis = context.stencilMap.objectIndex;
 
         model.fillStencilMap(context.stencilMap, this.form);
 
