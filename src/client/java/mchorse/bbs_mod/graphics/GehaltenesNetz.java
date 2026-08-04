@@ -132,8 +132,14 @@ public class GehaltenesNetz implements AutoCloseable
             .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
 
         /* Der Ausschnitt gehoert in 26.2 zum Durchgang, nicht mehr in einen globalen
-         * viewport-Aufruf. null heisst ganzes Ziel; siehe Zeichenbereich. */
-        RenderPass.RenderArea bereich = Zeichenbereich.aktiv();
+         * viewport-Aufruf. null heisst ganzes Ziel; siehe Zeichenbereich.
+         *
+         * Zurechtgeschnitten, weil ein zu grosser Ausschnitt hier abbricht statt zu
+         * beschneiden ("RenderArea out of bounds for texture of 854x480", Bugliste #9).
+         * Der Ausschnitt wird gegen die Fenstergroesse gerechnet, das Ziel ist aber nicht
+         * immer das Fenster -- Begruendung in Zeichenbereich#begrenztAuf. */
+        RenderPass.RenderArea bereich = Zeichenbereich.begrenztAuf(
+            Zeichenbereich.aktiv(), farbZiel.getWidth(0), farbZiel.getHeight(0));
 
         try (RenderPass durchgang = tiefenZiel == null
             ? RenderSystem.getDevice().createCommandEncoder().createRenderPass(
