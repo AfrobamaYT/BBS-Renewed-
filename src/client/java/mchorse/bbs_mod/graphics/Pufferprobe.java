@@ -252,6 +252,39 @@ public class Pufferprobe
             String lage = maxX < 0 ? " | inhalt: KEINER"
                 : " | inhalt liegt in (" + minX + "," + minY + ")-(" + maxX + "," + maxY + ")";
 
+            /* Spaltenprofil: WO hoert der Inhalt auf? Eine globale Zahl ("71 % Alpha") kann
+             * eine senkrechte Kante nicht von Streuung unterscheiden -- genau die Frage bei
+             * Bugliste #1/#3. */
+            int letzteSpalte = -1;
+            int ersteLeereSpalte = -1;
+
+            for (int x = 0; x < breite; x++)
+            {
+                boolean voll = false;
+
+                for (int y = 0; y < hoehe; y += 4)
+                {
+                    if ((puffer.get((y * breite + x) * 4 + 3) & 255) != 0)
+                    {
+                        voll = true;
+                        break;
+                    }
+                }
+
+                if (voll)
+                {
+                    letzteSpalte = x;
+                }
+                else if (ersteLeereSpalte < 0 && x > 0)
+                {
+                    ersteLeereSpalte = x;
+                }
+            }
+
+            lage += " | letzte gefuellte spalte " + letzteSpalte + " von " + breite
+                + " (" + String.format("%.3f", letzteSpalte / (double) breite) + ")"
+                + " | erste leere spalte " + ersteLeereSpalte;
+
             System.setProperty(ERGEBNIS_FARBE, stelle + " " + breite + "x" + hoehe
                 + " (texturId " + texturId + ")" + lage
                 + " | gesuchte farbe " + r + "," + g + "," + b + " (+-" + toleranz + ") = " + treffer
