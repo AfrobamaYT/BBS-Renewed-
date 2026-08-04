@@ -120,12 +120,29 @@ public final class Blockvorschau
             return false;
         }
 
-        /* ⛔ NICHT ebene.pipeline() (2026-08-04 gemessen): die Block-Pipelines sind fuer den
-         * Weltdurchgang gebaut. In der Bild-im-Bild-Phase kam damit fast nichts an -- 794
-         * sichtbare Bildpunkte gegen 19138 beim Symbol. ENTITY_TRANSLUCENT ist die Pipeline,
-         * die BillboardFormRenderer an derselben Stelle erfolgreich benutzt. */
-        SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
-            netz, modelView, farbe, blockAtlas());
+        /* ⛔ IN DAS GESETZTE ZIEL ZEICHNEN, NICHT INS HAUPTBILD (2026-08-04, der Fund).
+         *
+         * Die fuenfstellige Variante von SofortZeichner reicht `ziel = null` durch -- das
+         * heisst HAUPTBILD. In der Bild-im-Bild-Phase laeuft aber ein eigenes Ziel
+         * ({@link Zeichenziel}, von MiniaturSammelRenderer gesetzt), und was ins Hauptbild
+         * geht, uebermalt die GUI unmittelbar danach. Genau darum kamen bei allen Versuchen
+         * 794 statt 19138 Bildpunkte an: gezeichnet wurde, nur woanders.
+         *
+         * Die siebenstellige Variante nimmt die Zieltexturen direkt -- der Weg, den auch der
+         * Auswahl-Durchgang geht. */
+        var zielFarbe = Zeichenziel.farbe();
+        var zielTiefe = Zeichenziel.tiefe();
+
+        if (zielFarbe != null)
+        {
+            SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
+                netz, modelView, farbe, blockAtlas(), zielFarbe, zielTiefe);
+        }
+        else
+        {
+            SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
+                netz, modelView, farbe, blockAtlas());
+        }
 
         return true;
     }

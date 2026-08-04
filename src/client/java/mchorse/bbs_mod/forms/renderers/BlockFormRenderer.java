@@ -56,9 +56,37 @@ public class BlockFormRenderer extends FormRenderer<BlockForm>
     {
         BlockState state = this.form.blockState.get();
 
-        if (state != null)
+        if (state == null)
         {
-            UISymbol.mittig(context, new ItemStack(state.getBlock()), x1, y1, x2, y2, this.form.uiScale.get());
+            return;
+        }
+
+        PoseStack stapel = context.batcher.pose();
+
+        stapel.pushPose();
+
+        mchorse.bbs_mod.utils.MatrixStackUtils.multiply(stapel,
+            ModelFormRenderer.getUIMatrix(context, x1, y1, x2, y2));
+
+        float skalierung = this.form.uiScale.get();
+
+        stapel.scale(skalierung, skalierung, skalierung);
+        stapel.translate(-0.5F, -0.5F, -0.5F);
+
+        Color farbe = Color.white();
+
+        farbe.mul(this.form.color.get());
+
+        boolean gezeichnet = mchorse.bbs_mod.graphics.Blockvorschau.zeichnen(state, stapel,
+            new Matrix4f(), new org.joml.Vector4f(farbe.r, farbe.g, farbe.b, farbe.a),
+            net.minecraft.util.LightCoordsUtil.FULL_BRIGHT,
+            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+
+        stapel.popPose();
+
+        if (!gezeichnet)
+        {
+            UISymbol.mittig(context, new ItemStack(state.getBlock()), x1, y1, x2, y2, skalierung);
         }
     }
 
