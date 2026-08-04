@@ -773,15 +773,28 @@ public class BBSRendering
          * Ebenfalls verworfen: BBS' Puffer vor dem Weltdurchgang mit Alpha 1 vorzuloeschen --
          * gemessen wirkungslos, der Weltdurchgang ueberschreibt Farbe UND Alpha (mit Rot als
          * Loeschfarbe gegengeprueft). */
-        GL30.glBlitFramebuffer(
-            0, 0, framebuffer.width, framebuffer.height,
-            0, 0, targetWidth, targetHeight,
-            GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
-        );
-
-        /* Scissor aus: glClear beachtet den Scissor-test, und ein von der Oberflaeche
-         * stehengelassenes Rechteck wuerde den Alphakanal nur teilweise setzen -- ein
-         * halb sichtbarer Himmel waere schwerer zu deuten als gar keiner. */
+        /* ⛔ DER SCISSOR MUSS SCHON FUER DEN BLIT AUS SEIN, NICHT ERST FUER DAS CLEAR.
+         *
+         * Laut GL-Spezifikation wirken auf einen Blit genau drei Dinge: Pixel-Ownership,
+         * SCISSOR und die sRGB-Wandlung (der Fragmentteil wird uebersprungen -- deshalb
+         * greifen Schreibmasken hier auch nicht, siehe unten). Der Scissor stand hier
+         * jahrelang nur um das glClear herum; der Blit lief also unter dem Rechteck, das
+         * die Oberflaeche zuletzt gesetzt hatte.
+         *
+         * AM LAUFENDEN SPIEL GEMESSEN (2026-08-04, unmittelbar vor dem Blit):
+         *
+         *     an=true  kasten=0,0 512x256   ziel=1280x720
+         *
+         * Der Blit beschrieb also einen Ausschnitt der Vorschautextur, und der Rest behielt
+         * das VORIGE Bild. Sichtbar wurde das als eingefrorener Streifen im Sichtfenster:
+         * waehrend eines Schwenks aenderten sich 53-56 % der Flaeche, ein scharf begrenzter
+         * Block ab 0,799 der Breite aber 0,0 % -- in fuenf aufeinanderfolgenden Bildpaaren
+         * derselbe Rand (Bugliste #1/#3, vom Nutzer bei "exakt 0,8" gemeldet).
+         *
+         * WARUM ES NUR BEI WENIG BILDERN AUFFAELLT: der Streifen zeigt immer das vorige Bild.
+         * Bei 90 fps liegen 11 ms dazwischen -- kein sichtbarer Unterschied. Bei 10 fps sind
+         * es 100 ms Kamerafahrt, und der Streifen steht sichtbar in einer anderen
+         * Perspektive. Der Fehler war also immer da, nur unsichtbar schnell. */
         boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
 
         if (scissor)
@@ -789,6 +802,15 @@ public class BBSRendering
             GL11.glDisable(GL11.GL_SCISSOR_TEST);
         }
 
+        GL30.glBlitFramebuffer(
+            0, 0, framebuffer.width, framebuffer.height,
+            0, 0, targetWidth, targetHeight,
+            GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
+        );
+
+        /* Dasselbe gilt fuers Clear: ein stehengelassenes Rechteck wuerde den Alphakanal nur
+         * teilweise setzen -- ein halb sichtbarer Himmel waere schwerer zu deuten als gar
+         * keiner. Der Scissor ist oben schon aus und bleibt es bis zum Ende. */
         GL11.glColorMask(false, false, false, true);
         GL11.glClearColor(0F, 0F, 0F, 1F);
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
