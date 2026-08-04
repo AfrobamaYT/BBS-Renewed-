@@ -28,9 +28,29 @@ public final class Miniaturschlange
     public static void einreihen(FormRenderer<?> zeichner, UIContext kontext,
         int x1, int y1, int x2, int y2)
     {
-        ScreenRectangle flaeche = new ScreenRectangle(x1, y1, x2 - x1, y2 - y1);
+        /* ⛔ GUI-EINHEITEN REIN, BILDPUNKTE RAUS (2026-08-04 gemessen).
+         *
+         * Die Aufrufer geben Element-Koordinaten, also GUI-Einheiten. Gezeichnet wird aber in
+         * eine bildschirmgrosse Textur, die in BILDPUNKTEN entsteht — und getUIMatrix nimmt
+         * die Zahlen unveraendert als Verschiebung und als Massstab ((y2-y1)/2.5). Ohne die
+         * Umrechnung landet jede Miniatur bei ihren GUI-Zahlen als Bildpunkten: halbe
+         * Position, halbe Groesse.
+         *
+         * Gemessen bei GUI-Skalierung 2, drei Kacheln, immer dasselbe Verhaeltnis:
+         *   eingereiht GUI (365,29)-(405,69)  ->  erschien bei Bildpunkt (365,29)-(405,69)
+         *   eingereiht GUI (85,120)-(125,160) ->  erschien bei Bildpunkt (85,120)-(125,160)
+         * Das ist die Miniatur, die der Nutzer oben links im Viewport sah: das Abzeichen
+         * neben dem Replay-Namen, um Faktor 2 nach oben links gerutscht. */
+        float s = mchorse.bbs_mod.BBSModClient.getGUIScale();
 
-        WARTEND.add(new MiniaturZustand(zeichner, kontext, x1, y1, x2, y2, flaeche, flaeche));
+        int px1 = Math.round(x1 * s);
+        int py1 = Math.round(y1 * s);
+        int px2 = Math.round(x2 * s);
+        int py2 = Math.round(y2 * s);
+
+        ScreenRectangle flaeche = new ScreenRectangle(px1, py1, px2 - px1, py2 - py1);
+
+        WARTEND.add(new MiniaturZustand(zeichner, kontext, px1, py1, px2, py2, flaeche, flaeche));
     }
 
     /**
