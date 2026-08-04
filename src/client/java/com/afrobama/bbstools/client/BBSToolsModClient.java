@@ -134,7 +134,7 @@ public final class BBSToolsModClient implements ClientModInitializer
                  * waehrend die Instanz mit 85–140 fps lief. Ein eingefrorener Wert, der wie
                  * ein Messwert aussieht, ist teurer als gar keiner: er beendet die Suche.
                  * Hier laeuft es je Weltdurchgang, also auch hinter dem Editor. */
-                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrame();
+                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrameWelt();
                 try
                 {
                     com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
@@ -153,7 +153,7 @@ public final class BBSToolsModClient implements ClientModInitializer
             net.minecraft.resources.Identifier.fromNamespaceAndPath(com.afrobama.bbstools.BBSToolsMod.MOD_ID, "herzschlag"),
             (drawContext, tickDelta) ->
             {
-                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrame();
+                com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.onFrameHud();
                 try
                 {
                     com.afrobama.bbstools.client.debug.master.crashsafe.BBSHeartbeat.setFps(
