@@ -97,8 +97,20 @@ public class UIContext implements IViewportStack
 
     public void setMouse(int mouseX, int mouseY)
     {
-        this.mouseX = mouseX;
-        this.mouseY = mouseY;
+        /* ⛔ DER EINE TRICHTER FUER DEN VIRTUELLEN ZEIGER (2026-08-04 verdrahtet).
+         *
+         * VirtuelleMaus existierte seit Langem, und ihr eigenes Klassen-Javadoc nennt genau
+         * diese Durchreichung als Bedingung -- verdrahtet war sie nie. Folge: ein gesetzter
+         * Zeiger wirkte nur auf den einen Wert, den die Route selbst schrieb, und war im
+         * naechsten Bild wieder weg. Gemessen am Auswahlpuffer: der Pick rechnete in JEDEM
+         * Bild mit (320,180), der Bildschirmmitte, egal wohin der Zeiger gesetzt wurde --
+         * also war jede Hover- und Pick-Messung ohne echte Maus wertlos.
+         *
+         * Hier statt an den Aufrufstellen, weil setMouse der einzige Eingang ist: alle
+         * Bewegungs-, Klick- und Radereignisse laufen hindurch. Nicht scharf (Normalfall,
+         * auch beim Nutzer) heisst: echter Wert unveraendert, Kosten ein volatile-Read. */
+        this.mouseX = com.afrobama.bbstools.client.autotest.VirtuelleMaus.x(mouseX);
+        this.mouseY = com.afrobama.bbstools.client.autotest.VirtuelleMaus.y(mouseY);
         this.viewportStack.reset();
     }
 
