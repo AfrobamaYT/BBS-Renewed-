@@ -76,6 +76,29 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
         stapel.mulPose(zustand.ansicht());
 
         Projektion.setzen(zustand.projektion(), com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+
+        /* ⛔ TIEFE LEEREN, SONST STEHT DIE DES VORIGEN BILDES DRIN (2026-08-05, Bugliste #16).
+         *
+         * Vom Nutzer gemeldet, nachdem das Modell im Editor endlich sichtbar war: "von oben
+         * sieht der kopf durchsichtig aus und der becken auch und von unten fehlt einfach die
+         * brust und die obere haelfte der beine, das selbe gilt fuer links und rechts".
+         *
+         * Aus einem Blickwinkel richtig, aus anderen fehlen Flaechen -- das ist kein Fehler an
+         * der Form, sondern eine Tiefe, die nicht zum aktuellen Bild gehoert. Der Zug, den
+         * ModelVAORenderer oeffnet, haengt die Tiefentextur mit OptionalDouble.empty() an,
+         * loescht sie also NICHT; bei einer festen Miniatur faellt das nicht auf, bei einer
+         * drehbaren Vorschau schon.
+         *
+         * Ein leerer Durchgang mit Loeschwert 1.0 stellt sie zurueck. Farbe bleibt
+         * unangetastet (Optional.empty()) -- die kommt von Vanillas Bild-im-Bild-Durchgang. */
+        try (com.mojang.blaze3d.systems.RenderPass leeren = com.mojang.blaze3d.systems.RenderSystem
+            .getDevice().createCommandEncoder().createRenderPass(
+                () -> "bbs-vorschau-tiefe-leeren", farbe, java.util.Optional.empty(),
+                tiefe, java.util.OptionalDouble.of(1.0)))
+        {
+            /* Nichts zeichnen: das Anlegen des Durchgangs fuehrt den Loeschwert aus. */
+        }
+
         Zeichenziel.setzen(farbe, tiefe);
 
         try
