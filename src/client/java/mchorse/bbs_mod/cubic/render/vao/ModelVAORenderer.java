@@ -58,7 +58,29 @@ public class ModelVAORenderer
      */
     private static final int BLOCK_GROESSE = 5 * 16;
 
-    private static GpuBuffer block;
+    /**
+     * ⛔ RINGPUFFER STATT EINEM BLOCK (2026-08-04 gemessen).
+     *
+     * <p>Hier stand EIN Puffer, der je Zeichenaufruf neu beschrieben wurde — mit dem
+     * ausdruecklichen Hinweis darunter, dass das nur traegt, solange zwischen Schreiben und
+     * Zeichnen kein zweiter Aufruf liegt, und dass "mehrere Modelle in EINEM Durchgang"
+     * einen Ringpuffer brauchen. Genau dieser Fall ist im Editor eingetreten: haelt man Alt,
+     * zeichnet der Auswahl-Durchgang ALLE Replays nacheinander in denselben Durchgang.</p>
+     *
+     * <p>Folge, am laufenden Spiel gemessen: jedes Modell trug die Kennung des ZULETZT
+     * geschriebenen Blocks. Bei den Entity-Schluesseln 0,1,3,4 ueberall 24, nach dem
+     * Entfernen der 4 ueberall 25. Sichtbar als der vom Nutzer gemeldete Sprung — mit Alt
+     * waren beide Modelle orange umrandet statt nur das gewaehlte.</p>
+     *
+     * <p>{@link #RING} Bloecke reichen weit ueber die Zahl der Modelle je Durchgang; der
+     * Zeiger laeuft um und ueberschreibt erst wieder, wenn der Abstand groesser ist als
+     * alles, was gleichzeitig in der Warteschlange steht. Kosten: RING × BLOCK_GROESSE
+     * Bytes, hier unter 30 KB.</p>
+     */
+    private static final int RING = 256;
+
+    private static GpuBuffer[] bloecke;
+    private static int blockZeiger;
 
     /**
      * The full model-view a draw issued right now would use. Deferred translucent commands
@@ -222,7 +244,9 @@ public class ModelVAORenderer
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, new Vector4f(r, g, b, a));
 
-        blockFuer(normalMat, light, overlay, passMode, kennung);
+        /* Den ZURUECKGEGEBENEN Block binden, nicht ein globales Feld: seit dem Ringpuffer
+         * ist es je Zeichenaufruf ein anderer. */
+        GpuBuffer block = blockFuer(normalMat, light, overlay, passMode, kennung);
 
         /* Messfuehler 2026-08-02: der Auswahlpuffer traegt Alpha (100928 Punkte gemessen),
          * aber RGB = 0 — die Kennung kommt also nicht an, obwohl der Durchgang laeuft.
@@ -297,6 +321,15 @@ public class ModelVAORenderer
      */
     public static GpuBuffer blockFuer(Matrix3f normalMat, int light, int overlay, int passMode, int kennung)
     {
+        if (bloecke == null)
+        {
+            bloecke = new GpuBuffer[RING];
+        }
+
+        blockZeiger = (blockZeiger + 1) % RING;
+
+        GpuBuffer block = bloecke[blockZeiger];
+
         if (block == null)
         {
             /* ⚠️ USAGE_COPY_DST ist PFLICHT: der Block wird pro Zeichenaufruf neu beschrieben.
@@ -306,6 +339,8 @@ public class ModelVAORenderer
              * angelegt wird nur mit einer Groesse. */
             block = RenderSystem.getDevice().createBuffer(() -> "bbs-modell-block",
                 GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, BLOCK_GROESSE);
+
+            bloecke[blockZeiger] = block;
         }
 
         ByteBuffer roh = MemoryUtil.memAlloc(BLOCK_GROESSE).order(ByteOrder.nativeOrder());
