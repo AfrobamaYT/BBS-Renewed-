@@ -503,6 +503,12 @@ public class BBSMod implements ModInitializer
             .register(Link.bbs("damage"), DamageActionClip.class, new ClipFactoryData(Icons.SKULL, Colors.CURSOR))
             .register(Link.bbs("swipe"), SwipeActionClip.class, new ClipFactoryData(Icons.LIMB, Colors.ORANGE));
 
+        /* ⛔ IM PORT NACHGEZOGEN (2026-08-04, Bugliste #10). Ohne diese Zeile kann keine
+         * Erweiterung einen Action-Clip anmelden — WorldSnapshotClip fehlte deshalb im
+         * Editor, still und ohne Fehlerbild. Feuerstelle wie in unserer 1.21.1: direkt
+         * nachdem die Fabrik steht und bevor irgendjemand sie liest. */
+        events.post(new mchorse.bbs_mod.events.register.RegisterActionClipsEvent(factoryActionClips));
+
         setupConfig(Icons.SETTINGS, "bbs", new File(settingsFolder, "bbs.json"), BBSSettings::register);
 
         events.post(new RegisterSettingsEvent());
