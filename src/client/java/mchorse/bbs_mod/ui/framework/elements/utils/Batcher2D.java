@@ -126,7 +126,25 @@ public class Batcher2D
         if (this.stapel.isEmpty())
         {
             this.stapel.setIdentity();
-            this.stapel.last().pose().mul(this.context.pose());
+
+            /* ⛔ OHNE EXTRAKTOR KEINE OBERFLAECHEN-TRANSFORMATION (2026-08-04, live
+             * abgestuerzt). Der Extraktor lebt nur waehrend des Sammel-Durchlaufs; wer diese
+             * Methode ausserhalb ruft -- etwa am Ende des Weltdurchgangs -- traf bisher auf
+             * `this.context == null` und riss das Bild mit:
+             *
+             *   NullPointerException: Cannot invoke "GuiGraphicsExtractor.pose()"
+             *       at Batcher2D.pose(Batcher2D.java:129)
+             *       at BBSRendering.onWorldRenderEnd(BBSRendering.java:637)
+             *   crash-2026-08-04_13.01.54-client.txt
+             *
+             * Die Einheitsmatrix ist hier die ehrliche Antwort: es GIBT gerade keine
+             * Elementverschiebung, weil kein Element zeichnet. Der Aufrufer ist trotzdem
+             * repariert (BBSRendering prueft jetzt selbst) -- diese Wache ist die zweite
+             * Linie, damit derselbe Fehler nicht ueber einen anderen Aufrufer wiederkommt. */
+            if (this.context != null)
+            {
+                this.stapel.last().pose().mul(this.context.pose());
+            }
         }
 
         return this.stapel;

@@ -632,7 +632,23 @@ public class BBSRendering
 
         if (currentMenu instanceof UIDashboard dashboard)
         {
-            if (dashboard.getPanels().panel instanceof UIFilmPanel panel)
+            /* ⛔ NUR MIT OBERFLAECHEN-KONTEXT (2026-08-04, live abgestuerzt).
+             *
+             * Diese Stelle laeuft am ENDE des Weltdurchgangs, `Batcher2D.pose()` braucht aber
+             * den Extraktor der Oberflaeche -- und den gibt es nur waehrend des
+             * Sammel-Durchlaufs. Steht hier keiner, ist es kein Sonderfall, sondern ein
+             * Absturz mitten im Bild:
+             *
+             *   NullPointerException: Cannot invoke "GuiGraphicsExtractor.pose()"
+             *     because "this.context" is null
+             *       at Batcher2D.pose(Batcher2D.java:129)
+             *       at BBSRendering.onWorldRenderEnd(BBSRendering.java:637)
+             *   crash-2026-08-04_13.01.54-client.txt, ausgeloest beim Beenden eines Films
+             *
+             * Ohne Extraktor gaebe es ohnehin niemanden, der die Untertitel entgegennimmt --
+             * ueberspringen ist hier also nicht "weniger", sondern das Richtige. */
+            if (dashboard.getPanels().panel instanceof UIFilmPanel panel
+                && currentMenu.context.batcher.getContext() != null)
             {
                 UISubtitleRenderer.renderSubtitles(currentMenu.context.batcher.pose(), currentMenu.context.batcher, SubtitleClip.getSubtitles(panel.getRunner().getContext()));
             }
