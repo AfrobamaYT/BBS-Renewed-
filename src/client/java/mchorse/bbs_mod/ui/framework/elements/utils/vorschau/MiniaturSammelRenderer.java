@@ -59,6 +59,15 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                     continue;
                 }
 
+                /* ⭐ EIGENE GRUPPE JE KACHEL IM FRAME-DEBUGGER (2026-08-04, Bugliste #4).
+                 * Ohne sie steht jede Vorschau als namenloser Zeichenaufruf in einer flachen
+                 * Liste -- beim Umriss-Versatz waren das 1776 Stueck, und den richtigen zu
+                 * finden kostete zwei Tage. Ein GL-Aufruf je Kachel, kein Schalter davor
+                 * (siehe ApiTraceBridge#pushGroup: genau daran hing es vorher). */
+                com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
+                    "bbs-miniatur " + e.zeichner().getClass().getSimpleName()
+                        + " @" + e.x0() + "," + e.y0());
+
                 /* ⛔ JEDE VORSCHAU EINZELN ABGESICHERT. Ohne das reisst EINE kaputte Form
                  * alle uebrigen mit -- und weil hier kein Aufrufer mehr wartet, der die
                  * Ausnahme auffaengt, danach das ganze Spiel. Eine unsichtbare Miniatur ist
@@ -112,6 +121,10 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                      * Oberflaeche selbst, und die rechnet dort. */
                     kontext.mouseX = mausX;
                     kontext.mouseY = mausY;
+
+                    /* Paarig zum pushGroup oben: ein Push ohne Pop verschachtelt den Event
+                     * Browser falsch, und das ist schlimmer als gar kein Marker. */
+                    com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
                 }
             }
         }
