@@ -161,7 +161,29 @@ public class Pufferprobe
     public static void vielleichtFarbeZaehlen(int texturId, int breite, int hoehe,
         int r, int g, int b, int toleranz, String stelle)
     {
-        if (System.getProperty(ANFORDERUNG_FARBE) == null)
+        String anforderung = System.getProperty(ANFORDERUNG_FARBE);
+
+        if (anforderung == null)
+        {
+            return;
+        }
+
+        /* ⛔ DER SCHLUESSEL ALLEIN REICHT NICHT MEHR -- ER MUSS DIE STELLE NENNEN KOENNEN
+         * (2026-08-05, bei #13 ertappt).
+         *
+         * Der Kommentar oben trennt schon nach MESSART. Innerhalb der Farbsonde teilen sich
+         * aber MEHRERE Aufrufstellen denselben Schluessel (Stencil, Sammeltextur, ...), und
+         * es gilt dasselbe Rennen: wer zuerst im Bild drankommt, verbraucht die Anforderung.
+         * Beim Versuch, die Sammeltextur zu messen, kam verlaesslich die Antwort des Stencils
+         * zurueck -- eine plausible Zahl von der falschen Stelle, also genau die Sorte
+         * Messfehler, die als Produktbefund gebucht wird.
+         *
+         * Der Wert der Eigenschaft ist jetzt ein FILTER auf `stelle`:
+         *   "1" oder "*"   jede Stelle (altes Verhalten)
+         *   "sammeltextur" nur Stellen, deren Name das enthaelt
+         */
+        if (!anforderung.equals("1") && !anforderung.equals("*")
+            && !stelle.toLowerCase().contains(anforderung.toLowerCase()))
         {
             return;
         }
