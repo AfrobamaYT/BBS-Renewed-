@@ -219,6 +219,31 @@ public class UIFormPalette extends UIElement implements IUIFormList
     @Override
     public void render(UIContext context)
     {
+        /* ⛔ WAS UNTER UNS LIEGT, MUSS VOR UNS GEZEICHNET WERDEN (2026-08-05, Bugliste #17d).
+         *
+         * Die Palette deckt den ganzen Schirm ab, das Filmpanel darunter zeichnet aber weiter
+         * -- und seine Formvorschauen reihen sich in die Miniaturschlange ein, die erst am
+         * ENDE des Durchlaufs abgegeben wird. Ergebnis: die Replay-Miniaturen des VERDECKTEN
+         * Panels landen als Letztes im Bild und liegen damit OBEN AUF der Palette.
+         *
+         * Gemessen: im offenen Form-Editor standen drei winzige Modelle am linken Buehnenrand,
+         * bei exakt denselben GUI-Koordinaten (~162, 170-230) wie die Replay-Miniaturen des
+         * Filmpanels darunter. Der Nutzer meldete es als "es werden immernoch Miniaturen im
+         * Edit-Form gerendert, die hier nichts zu suchen haben".
+         *
+         * In unserer 1.21.1 gab es das nicht, weil dort SOFORT gezeichnet wurde: was vor der
+         * Palette dran war, wurde von ihr ueberdeckt. Diese Zeile stellt genau diese
+         * Reihenfolge wieder her -- alles Wartende geht raus, BEVOR die Palette zeichnet.
+         *
+         * Es ist bewusst hier und nicht in Miniaturschlange: nur ein Element, das andere
+         * VERDECKT, weiss, dass es eine Grenze in der Zeichenreihenfolge ist. */
+        /* ⚠️ GEGENGEPRUEFT, DASS ES DIE PALETTE NICHT IHRE EIGENEN MINIATUREN KOSTET: A/B im
+         * selben Build ueber einen Laufzeitschalter, Palettenliste beide Male 5730 bunte
+         * Proben. (Die fehlenden Modell-Miniaturen IN der Liste sind ein eigener, aelterer
+         * Befund -- sie fehlen mit und ohne diese Zeile.) */
+        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+            context, context.menu.width, context.menu.height);
+
         if (this.background)
         {
             if (!this.immersive || this.list.isVisible())
