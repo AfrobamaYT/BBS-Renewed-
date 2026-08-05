@@ -50,7 +50,41 @@ public final class Miniaturschlange
 
         ScreenRectangle flaeche = new ScreenRectangle(px1, py1, px2 - px1, py2 - py1);
 
-        WARTEND.add(new MiniaturZustand(zeichner, kontext, px1, py1, px2, py2, flaeche, flaeche));
+        /* ⛔ DEN SCHNITT DES AUFRUFERS MITNEHMEN (2026-08-05, im A/B gegen 1.21.1 gefunden).
+         *
+         * `batcher.clip(...)` wirkt nur auf SOFORT gezeichnete Zuege. Hier wird eingereiht und
+         * spaeter gezeichnet -- da ist der Schnitt weg. `UIReplayList#renderElementPart` malt
+         * eine 40x40-Vorschau und klemmt sie mit clip(formX, y, 40, 20) auf halbe Hoehe: in
+         * 1.21.1 sitzt das Bild kompakt am Zeilenrand, im Port lief es ueberlang aus der Zeile.
+         *
+         * Der Schnitt ist in BILDPUNKTEN gefuehrt wie die Kachel, also direkt schneidbar. */
+        ScreenRectangle schnitt = kontext.batcher.aktuellerSchnitt();
+        ScreenRectangle sichtbar = flaeche;
+
+        if (schnitt != null)
+        {
+            /* ⛔ DER SCHNITT KOMMT IN GUI-EINHEITEN, DIE KACHEL IST IN BILDPUNKTEN.
+             *
+             * Gemessen am laufenden Spiel: schnitt=[x=85, y=170, 30x20] bei einer Kachel um
+             * x=170. Der erste Anlauf hat beide roh geschnitten -- Ergebnis leer, und damit
+             * verschwanden ALLE Listen-Miniaturen. Dieselbe Falle, vor der `einreihen` oben
+             * schon warnt; ich bin trotzdem hineingelaufen. */
+            int sx = Math.max(flaeche.left(), Math.round(schnitt.left() * s));
+            int sy = Math.max(flaeche.top(), Math.round(schnitt.top() * s));
+            int sr = Math.min(flaeche.right(), Math.round(schnitt.right() * s));
+            int sb = Math.min(flaeche.bottom(), Math.round(schnitt.bottom() * s));
+
+            /* Leerer Schnitt heisst "nichts sichtbar" -- dann gar nicht erst einreihen, sonst
+             * zeichnet die Kachel voll und der Schnitt hat wieder nichts bewirkt. */
+            if (sr <= sx || sb <= sy)
+            {
+                return;
+            }
+
+            sichtbar = new ScreenRectangle(sx, sy, sr - sx, sb - sy);
+        }
+
+        WARTEND.add(new MiniaturZustand(zeichner, kontext, px1, py1, px2, py2, sichtbar, flaeche));
     }
 
     /**

@@ -887,6 +887,24 @@ public class Batcher2D
      * ({@code PictureInPictureRendererRegistry}, siehe BBSModClient). Fehlt er, wird der
      * Zustand STILL verworfen -- kein Fehler, kein Log, nur ein leeres Feld.
      */
+    /**
+     * Der gerade gueltige Schnitt, oder {@code null} wenn nichts geschnitten wird.
+     *
+     * <p>⛔ WOFUER (2026-08-05, im A/B gegen 1.21.1 gefunden): {@code clip(...)} wirkt nur auf
+     * Zuege, die SOFORT gezeichnet werden. Formvorschauen werden im Port aber EINGEREIHT
+     * ({@link mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange}) und
+     * spaeter gezeichnet -- da ist der Schnitt laengst wieder weg.</p>
+     *
+     * <p>Sichtbar in der Replay-Liste: {@code UIReplayList#renderElementPart} zeichnet eine
+     * 40x40-Vorschau und klemmt sie mit {@code clip(formX, y, 40, 20, context)} auf halbe
+     * Hoehe. In 1.21.1 schneidet das (kompaktes Bild am Zeilenrand), im Port nicht -- dort
+     * laeuft die Miniatur ueberlang aus der Zeile heraus.</p>
+     */
+    public ScreenRectangle aktuellerSchnitt()
+    {
+        return this.scissors.peek();
+    }
+
     public void bildImBild(net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState zustand)
     {
         /* Messfuehler Aufgabe 96: eingereiht ja/nein -- die Gegenprobe zum Zaehler im

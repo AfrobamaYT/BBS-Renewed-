@@ -181,10 +181,22 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 int zielB = farbe.getWidth(0);
                 int zielH = farbe.getHeight(0);
 
-                int sx = Math.max(0, e.x0());
-                int sy = Math.max(0, zielH - e.y1());
-                int sb = Math.min(e.x1(), zielB) - sx;
-                int sh = Math.min(zielH - e.y0(), zielH) - sy;
+                /* ⛔ DEN SCHNITT DES ZUSTANDS NEHMEN, NICHT DIE ZELLE (2026-08-05, im A/B
+                 * gegen 1.21.1 gefunden).
+                 *
+                 * Hier stand die ZELLE (`e.x0()..e.y1()`). Damit wurde jede Miniatur auf ihre
+                 * volle Kachel beschnitten -- also gar nicht. `UIReplayList#renderElementPart`
+                 * klemmt seine 40x40-Vorschau aber mit `clip(formX, y, 40, 20)` auf halbe
+                 * Hoehe; in 1.21.1 wirkt das (kompaktes Bild am Zeilenrand), im Port lief die
+                 * Miniatur ueberlang aus der Zeile. `Miniaturschlange#einreihen` legt den
+                 * gueltigen Schnitt seit demselben Tag in `scissorArea` ab -- er muss hier
+                 * auch benutzt werden, sonst ist er nur Zierde. */
+                net.minecraft.client.gui.navigation.ScreenRectangle sicht = e.scissorArea() != null ? e.scissorArea() : e.bounds();
+
+                int sx = Math.max(0, sicht.left());
+                int sy = Math.max(0, zielH - sicht.bottom());
+                int sb = Math.min(sicht.right(), zielB) - sx;
+                int sh = Math.min(zielH - sicht.top(), zielH) - sy;
 
                 if (sb <= 0 || sh <= 0)
                 {
