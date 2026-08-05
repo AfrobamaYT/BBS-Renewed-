@@ -124,9 +124,40 @@ public class GehaltenesNetz implements AutoCloseable
         messen("kommt-an", pipeline);
         bindungPruefen(pipeline);
 
-        GpuBuffer indizes = this.eigeneIndizes != null
-            ? this.eigeneIndizes
-            : RenderSystem.getSequentialBuffer(this.zustand.primitiveTopology()).getBuffer(this.zustand.indexCount());
+        /* ⛔ DER INDEXTYP GEHOERT ZU DEM PUFFER, DER WIRKLICH GEBUNDEN WIRD (2026-08-05,
+         * Bugliste #17b).
+         *
+         * Hier stand die Breite aus dem NETZ (zustand.indexType()), waehrend der Puffer aus
+         * Mojangs Folgespeicher kam. Der waehlt seine Breite nach der angeforderten Anzahl:
+         * bis 65535 Indizes SHORT, darueber INT. Am laufenden Spiel gemessen (13824 Ecken):
+         * `typ-dreieck=INT typ-netz=SHORT`.
+         *
+         * Die Folge ist kein Absturz und keine Logzeile: die GPU liest 32-Bit-Indizes als
+         * 16-Bit, jeder Index zerfaellt in zwei, und die oberen Haelften sind bei kleinen
+         * Zahlen 0. Es entsteht ein Faecher ab Ecke 0 -- die Rotationsringe des Gizmos
+         * wurden zu GEFUELLTEN Scheiben mit Saegezahnrand, sichtbar in jedem Editor.
+         *
+         * Kleine Netze (Balken, Wuerfel, Ebenen) blieben zufaellig richtig, weil der
+         * Folgespeicher fuer sie ebenfalls SHORT liefert -- darum fiel es nur an den
+         * Ringen auf. Wer den Typ aus dem Netz nimmt, hat zwei Quellen fuer eine Sache. */
+        GpuBuffer indizes;
+        com.mojang.blaze3d.IndexType indexTyp;
+
+        if (this.eigeneIndizes != null)
+        {
+            indizes = this.eigeneIndizes;
+            indexTyp = this.zustand.indexType();
+        }
+        else
+        {
+            RenderSystem.AutoStorageIndexBuffer folge =
+                RenderSystem.getSequentialBuffer(this.zustand.primitiveTopology());
+
+            /* ⚠️ ERST holen, DANN fragen: die Breite steht erst fest, nachdem der Puffer
+             * fuer diese Anzahl gewachsen ist. */
+            indizes = folge.getBuffer(this.zustand.indexCount());
+            indexTyp = folge.type();
+        }
 
         GpuBufferSlice transformationen = RenderSystem.getDynamicUniforms()
             .writeTransform(modelView, farbe == null ? new Vector4f(1F, 1F, 1F, 1F) : farbe);
@@ -168,7 +199,7 @@ public class GehaltenesNetz implements AutoCloseable
             }
 
             durchgang.setVertexBuffer(0, this.ecken.slice());
-            durchgang.setIndexBuffer(indizes, this.zustand.indexType());
+            durchgang.setIndexBuffer(indizes, indexTyp);
             durchgang.drawIndexed(this.zustand.indexCount(), 1, 0, 0, 0);
 
             messen("gezeichnet", pipeline);
