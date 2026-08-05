@@ -181,11 +181,6 @@ public class ModelVAORenderer
          * ihre Textur ausdruecklich durch, statt sich hierauf zu verlassen. */
         boolean durchgereicht = textur != null;
 
-        /* ⚗️ Kurzfassung einer Abbildung fuer die Messprobe weiter unten: m33 trennt FLACH (1)
-         * von PERSPEKTIVISCH (0), m00/m11 sind der Massstab. Mehr braucht die Frage nicht,
-         * und eine ganze Matrix in einer Probe liest niemand. */
-        java.util.function.Function<org.joml.Matrix4f, String> kurz = (m) -> m == null ? "null"
-            : String.format("m00=%.4f m11=%.4f m33=%.1f", m.m00(), m.m11(), m.m33());
 
         if (textur == null)
         {
@@ -261,10 +256,21 @@ public class ModelVAORenderer
             "ausschnitt=" + mchorse.bbs_mod.graphics.Zeichenbereich.aktiv()
                 + " zielgroesse=" + (farbZiel == null ? "null"
                     : farbZiel.getWidth(0) + "x" + farbZiel.getHeight(0))
-                /* Und die ABBILDUNG. Praezedenz im Baum (Bildfilter): eine Perspektive auf
-                 * flacher Geometrie ergibt w=0 an allen Ecken -- kein Fragment, kein Fehler,
-                 * volle Zaehler. Das ist genau das Bild, das #13 abgibt. */
-                + " proj[" + kurz.apply(mchorse.bbs_mod.graphics.Projektion.lesen()) + "]"
+                /* ⛔ HIER STAND DIE PROJEKTION -- UND SIE WAR EINE LUEGE (2026-08-05).
+                 *
+                 * `Projektion.lesen()` liefert NICHT die gebundene Abbildung, sondern den
+                 * eingefrorenen Kamerazustand des WELTdurchgangs; sein eigener Kommentar sagt
+                 * "nur waehrend eines Weltdurchgangs sinnvoll, ausserhalb steht dort der Wert
+                 * des letzten Bildes". Dieser Zug hier laeuft in der GUI-Phase. Gemeldet
+                 * wurde also auf JEDEM Pfad derselbe Weltwert (m33=0, Perspektive) -- was wie
+                 * ein Befund aussah ("Perspektive auf Pixelgeometrie") und keiner war.
+                 *
+                 * Eine lesbare Fassung der gebundenen Projektion gibt es nicht: sie liegt als
+                 * GPU-Puffer vor. Wer sie braucht, muss sie an der Setzstelle mitschreiben.
+                 * Bis dahin steht hier NICHTS statt einer Zahl, der man glaubt.
+                 *
+                 * Die Modellansicht darunter ist dagegen echt -- sie ist genau das Argument,
+                 * das writeTransform bekommt. */
                 + " mv[m30=" + String.format("%.3f", modelView.m30())
                 + " m31=" + String.format("%.3f", modelView.m31())
                 + " m32=" + String.format("%.3f", modelView.m32()) + "]");
