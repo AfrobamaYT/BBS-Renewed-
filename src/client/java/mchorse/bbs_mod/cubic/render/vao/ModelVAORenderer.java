@@ -242,6 +242,13 @@ public class ModelVAORenderer
             tiefenZiel = ziel.getDepthTextureView();
         }
 
+        /* ⚗️ WELCHER ZWEIG GEWINNT? (2026-08-05, #13.) Die drei Ziele stehen hier in fester
+         * Rangfolge, und welches greift, ist von aussen nicht zu sehen -- der Zug laeuft
+         * durch, egal wohin er schreibt. Getrennte Schluessel, damit ZAHLEN antworten. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.ziel."
+            + (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null ? "pick"
+                : mchorse.bbs_mod.graphics.Zeichenziel.eigenes() ? "zeichenziel" : "hauptbild"));
+
         /* Modellansicht und Farbe gehen in Vanillas DynamicTransforms-Block. BBS setzt eine
          * EIGENE Modellansicht (die eingefangene, siehe captureModelView) — writeTransform
          * fuellt genau diesen Block fuer einen Zeichenaufruf und gibt den Ausschnitt
