@@ -60,9 +60,16 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
         GpuTextureView farbe = feld(true);
         GpuTextureView tiefe = feld(false);
 
-        Messpunkt.zaehle("pip.modell", zustand.form() == null
+        /* Die Rechteckwerte gehoeren mit in die Probe: "laeuft mit ziel=true" beweist nur,
+         * DASS gezeichnet wird, nicht WOHIN. Bei #17a war genau das die Frage -- und die
+         * Antwort (0,0 bis 960,485, wie beim Gitter) hat den Verdacht auf die Flaeche
+         * ausgeschlossen und den Blick auf die Tiefe gelenkt. */
+        Messpunkt.zaehle("pip.modell", (zustand.form() == null
             ? "form=null"
-            : zustand.form().getClass().getSimpleName() + " ziel=" + (farbe != null));
+            : zustand.form().getClass().getSimpleName() + " ziel=" + (farbe != null))
+            + " rechteck=" + zustand.x0() + "," + zustand.y0()
+            + " bis " + zustand.x1() + "," + zustand.y1()
+            + " massstab=" + zustand.scale());
 
         if (zustand.form() == null || farbe == null)
         {
@@ -89,12 +96,26 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
          * loescht sie also NICHT; bei einer festen Miniatur faellt das nicht auf, bei einer
          * drehbaren Vorschau schon.
          *
-         * Ein leerer Durchgang mit Loeschwert 1.0 stellt sie zurueck. Farbe bleibt
-         * unangetastet (Optional.empty()) -- die kommt von Vanillas Bild-im-Bild-Durchgang. */
+         * ⛔ DER LOESCHWERT IST 0.0, NICHT 1.0 -- 26.2 RECHNET REVERSED-Z (2026-08-05).
+         *
+         * Hier stand 1.0, aus Gewohnheit von OpenGL-Vorgabe. In 26.2 liegt die FERNE bei 0.0;
+         * ein Loeschwert von 1.0 setzt den ganzen Puffer auf die NAHEBENE, und danach faellt
+         * jedes Fragment durch den Tiefentest. Wirkung am laufenden Spiel: im Form-Editor war
+         * das Modell VOLLSTAENDIG unsichtbar -- und weil der Zug lief und sein Rechteck
+         * korrekt meldete (0,0 bis 960,485, wie beim Gitter), sah es nach einem Flaechen-
+         * oder Zielproblem aus. Ohne Loeschen war es nur TEILWEISE falsch: Flaechen fielen
+         * je nach Blickwinkel aus, weil die Tiefe des vorigen Bildes stehenblieb. Genau so
+         * hatte es der Nutzer gemeldet ("von oben ist der Kopf durchsichtig").
+         *
+         * Belegt: bunte Proben auf der Buehne von ~130 auf 10686, und aus vier gedrehten
+         * Blickwinkeln bleibt das Modell massiv (Achsenlinien korrekt verdeckt).
+         *
+         * Farbe bleibt unangetastet (Optional.empty()) -- die kommt von Vanillas
+         * Bild-im-Bild-Durchgang. */
         try (com.mojang.blaze3d.systems.RenderPass leeren = com.mojang.blaze3d.systems.RenderSystem
             .getDevice().createCommandEncoder().createRenderPass(
                 () -> "bbs-vorschau-tiefe-leeren", farbe, java.util.Optional.empty(),
-                tiefe, java.util.OptionalDouble.of(1.0)))
+                tiefe, java.util.OptionalDouble.of(0.0)))
         {
             /* Nichts zeichnen: das Anlegen des Durchgangs fuehrt den Loeschwert aus. */
         }
