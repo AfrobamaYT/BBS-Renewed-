@@ -320,6 +320,26 @@ public abstract class UIBaseMenu
 
             this.context.popViewport();
             this.context.postRender();
+
+            /* ⛔ ZWEITES ABGEBEN, WEIL postRender NOCH EINREIHT (2026-08-05, Bugliste #15).
+             *
+             * postRender zeichnet, was ueber allem liegt -- unter anderem die Vorschau am
+             * Keyframe (UIKeyframeDopeSheet#postRender). Deren FormRenderer#renderUI reiht in
+             * dieselbe Schlange ein, aber ERST NACH dem Abgeben oben. Ohne diese Zeile bleibt
+             * die Miniatur bis zum naechsten Bild liegen und wird dort an einer Stelle
+             * eingefuegt, die VOR dem Panelhintergrund liegt -- sie ist also gezeichnet und
+             * sofort wieder uebermalt.
+             *
+             * Gemessen: beim Hovern hatte der Vorschaukasten GENAU EINE Farbe ueber 6400
+             * Proben, obwohl miniatur.ModelFormRenderer lief (294172 -> 294302) und seine
+             * Flaeche korrekt mit 80x80 @359,303 meldete. Und beim WEGhovern blitzte das
+             * Modell fuer ein Bild auf -- das war die Miniatur des vorigen Bildes, die keinen
+             * Panelhintergrund mehr ueber sich hatte. Genau so hat es der Nutzer gemeldet.
+             *
+             * abgeben() ist bei leerer Schlange ein no-op, der zweite Aufruf kostet also
+             * nichts, wenn in postRender keine Vorschau lag. */
+            mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.abgeben(
+                this.context, this.viewport.w, this.viewport.h);
         }
 
         if (this.main.isVisible())
