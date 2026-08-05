@@ -134,8 +134,29 @@ public final class StencilAnzeige
                 : stencil.zwischenbild().width + "x" + stencil.zwischenbild().height)
             + " flaeche=" + area.w + "x" + area.h);
 
-        mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
-            abIndex, farbe, breite, 1F / area.w, 1F / area.h);
+        /* ⭐ EIGENER MARKER IM FRAME-DEBUGGER -- ohne ihn ist dieser Zug im Capture ein
+         * namenloser unter tausenden. Die Miniaturen haben seit 2026-08-04 je einen, und
+         * genau das machte #13 in EINEM Capture loesbar (Ziel, Viewport und Scissor je
+         * Kachel ablesbar statt erraten). Der Umriss hatte keinen: im Schwenk-Capture vom
+         * 2026-08-05 standen nur "BBS Auswahlpuffer (Stencil)" und die Miniaturen -- der
+         * Zug, um den es bei #2 geht, war nicht auffindbar.
+         *
+         * Die Flaeche reist mit, weil bei #2 genau sie in Frage steht: liegt der Umriss an
+         * derselben Stelle wie das Modell, oder blittet er ein Bild von woanders. */
+        com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.pushGroup(
+            "bbs-umriss " + area.w + "x" + area.h + " ab=" + abIndex);
+
+        try
+        {
+            mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
+                abIndex, farbe, breite, 1F / area.w, 1F / area.h);
+        }
+        finally
+        {
+            /* Paarig -- ein Push ohne Pop verschachtelt den Event Browser falsch, und das ist
+             * schlimmer als gar kein Marker. */
+            com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+        }
 
         /* ⚗️ Auf Anforderung nachsehen, ob der Umriss ueberhaupt IM Zwischenbild steht.
          * Punktproben taugen bei einer Ein-Pixel-Kante nichts, darum wird die ganze Textur
