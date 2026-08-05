@@ -259,6 +259,14 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
             this.stencil.clearPicking();
         }
 
+        /* Das sichtbare Gizmo -- eingereiht statt sofort gezeichnet (siehe renderAxes). Reihenfolge
+         * wie bei den anderen beiden Wirten: NACH dem Auswahl-Durchgang, VOR update(), damit der
+         * Bildschirmradius der Kugel fuer die Zeigerpruefung aktuell ist. */
+        if (UIBaseMenu.shouldRenderAxes())
+        {
+            this.gizmo.renderGizmo(context);
+        }
+
         this.gizmo.update(context);
     }
 
@@ -283,14 +291,28 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
          * form is drawn inside, or it points off the scene the user sees. */
         Gizmo.INSTANCE.reorientForSpace(stack, this.formEditor.getGizmoSpace(), this.camera.view, this.getSceneAxes());
 
-        /* Draw axes */
+        /* ⛔ HIER WIRD NICHT MEHR GEZEICHNET, SONDERN NUR DIE LAGE EINGEFANGEN (26.2).
+         *
+         * Bis 1.21.1 stand hier {@code Gizmo.INSTANCE.render(stack)} -- ein Sofortzug. In 26.2
+         * sammelt der UI-Durchlauf nur ein, {@code GuiRenderer.render()} zeichnet danach; ein
+         * Sofortzug landet also im HAUPTBILD und wird von der GUI uebermalt. Gemessen am
+         * laufenden Spiel, im offenen Paletten-Editor:
+         *
+         *     129 Zuege in 2,5 s durch GizmoZug.zeichnen -- JEDER mit ziel = null (Hauptbild)
+         *     Gizmo.renderInterface: 0 Aufrufe          -- der Bild-im-Bild-Weg lag brach
+         *
+         * Die beiden anderen Gizmo-Wirte machen es laengst richtig und sind die Vorlage:
+         * {@code UIFilmController:1296} und {@code UIModelBlockPanel:668} fangen im 3D-Zug ein
+         * und zeichnen im UI-Durchlauf ueber {@code GizmoInteraction#renderGizmo}. Nur dieser
+         * dritte Wirt hing noch am Sofortzug -- das war die ganze Regression.
+         *
+         * Der Stapel traegt an dieser Stelle bereits Ursprungsmatrix und Raumdrehung (oben in
+         * dieser Methode), und genau die braucht der eingereihte Zug. Darum wird hier
+         * eingefangen und nicht spaeter: {@link Gizmo#renderInterface} baut seinen Zustand aus
+         * {@code lastRenderMatrix}. */
         if (UIBaseMenu.shouldRenderAxes())
         {
-            /* 26.2: disableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: Tiefentest aus. */
-            Gizmo.INSTANCE.render(stack);
-            /* 26.2: enableDepthTest ist entfallen -- der Zustand steckt in der Pipeline
-             * des Zuges. Absicht war: Tiefentest an. */
+            Gizmo.INSTANCE.captureVisual(stack);
         }
 
         stack.popPose();
