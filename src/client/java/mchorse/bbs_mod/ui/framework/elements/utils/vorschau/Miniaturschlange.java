@@ -71,6 +71,29 @@ public final class Miniaturschlange
         {
             ScreenRectangle voll = new ScreenRectangle(0, 0, breite, hoehe);
 
+            /* ⛔ EIGENE EBENE, SONST HAENGT DIE SICHTBARKEIT AN DER FENSTERGROESSE
+             * (2026-08-05, im Frame gemessen).
+             *
+             * 26.2 sortiert GUI-Elemente nicht nach Aufrufreihenfolge, sondern ueber ihre
+             * BOUNDS (`GuiRenderState#findAppropriateNode`): schliesst das ZULETZT eingefuegte
+             * Element die neuen Bounds ein, geht der Zustand eine Ebene hoch -- sonst SINKT er,
+             * bis er etwas schneidet, und wird darueber gesetzt. Was zuletzt eingefuegt wurde,
+             * haengt am Layout, und das haengt an der Fenstergroesse.
+             *
+             * Zuege, die in DASSELBE Ziel schreiben, gleiche Buehne (Morph-Tab):
+             *     854x480    Einkopieren nach 126 Zuegen,  0 danach  -> sichtbar
+             *    1280x720    Einkopieren nach  12 Zuegen, 79 danach  -> uebermalt
+             * Sichtbare Modellpunkte: 1.21.1 bei 1280x720 = 2706, der Port = 0.
+             *
+             * `nextStratum()` ist Vanillas eigener Weg fuer "ab hier ueber allem".
+             *
+             * ⚠️ NICHT ueber eine neue Methode auf Batcher2D: die Klasse ist gewoben, und eine
+             * ZUSAETZLICHE Methode laesst sich dort nicht einwechseln ("attempted to add a
+             * method") -- der Fix waere nur mit Boot pruefbar. Der Accessor ist derselbe, den
+             * Batcher2D benutzt. */
+            ((mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor) (Object) kontext.batcher.getContext())
+                .bbs$getGuiRenderState().nextStratum();
+
             kontext.batcher.bildImBild(new MiniaturSammelZustand(
                 new ArrayList<>(WARTEND), 0, 0, breite, hoehe, voll, voll));
         }
