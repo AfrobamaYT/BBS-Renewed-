@@ -37,7 +37,8 @@ public class StencilFormFramebuffer
     private int zwischenbildIndex;
     private long letztesBild = Long.MIN_VALUE;
 
-    private Texture hervorhebung;
+    /** Eigenes Puffer-Paar der Kennungs-Hervorhebung -- siehe hervorhebungsbild(). */
+    private Texture[] hervorhebungsbilder;
 
     private int index;
     private Map<Integer, Pair<Form, String>> indexMap = new HashMap<>();
@@ -105,14 +106,56 @@ public class StencilFormFramebuffer
             this.zwischenbildIndex ^= 1;
         }
 
-        Texture ziel = this.zwischenbilder[this.zwischenbildIndex];
+        return ausPaar(this.zwischenbilder, quelle);
+    }
+
+    /**
+     * Das Zwischenbild der KENNUNGS-HERVORHEBUNG -- ein anderes als das des Umrisses.
+     *
+     * <p>⛔ WARUM GETRENNT (2026-08-05, Bugliste #21, im Frame belegt). Beide Effekte
+     * rechneten in {@link #zwischenbild()} und blitteten es danach. In 1.21.1 zeichnet der
+     * erste Blit SOFORT und zeigt den Umriss; 26.2 SAMMELT beide Blits und zeichnet sie
+     * spaeter -- dann sampeln beide den Endinhalt des geteilten Puffers, und das ist die
+     * Hervorhebung. Der Umriss war gezeichnet und unsichtbar.</p>
+     *
+     * <p>Gemessen im Wiedergabe-Capture: das Zwischenbild bekam nach dem Umriss-Zug genau
+     * EINEN weiteren Zug (eventId 2842) -- strukturell identisch, ohne Marker, aus
+     * {@code Bildfilter.kennungHervorheben}. Im Stillstand keinen, dort war der Umriss
+     * sichtbar. Sichtbare Umrisspunkte: Wiedergabe 0, Stillstand 845, die Vorlage 1013.</p>
+     *
+     * <p>Der Kommentar an {@link #zwischenbild()} sagte schon "EIGENE Textur je
+     * Auswahl-Puffer, keine geteilte" -- das galt fuer mehrere Aufrufstellen DESSELBEN
+     * Effekts. Zwei VERSCHIEDENE Effekte brauchen zwei Puffer.</p>
+     */
+    public Texture hervorhebungsbild()
+    {
+        Texture quelle = this.framebuffer.getMainTexture();
+
+        if (this.hervorhebungsbilder == null)
+        {
+            this.hervorhebungsbilder = new Texture[2];
+        }
+
+        return ausPaar(this.hervorhebungsbilder, quelle);
+    }
+
+    /**
+     * Die im aktuellen Bild gueltige Textur aus einem Paar holen und auf Quellgroesse bringen.
+     *
+     * <p>Der Wechsel je Bild ({@link #zwischenbildIndex}) ist bewusst GEMEINSAM: alle
+     * Aufrufstellen desselben Bildes muessen dieselbe Haelfte sehen, sonst zeichnet die
+     * zweite in eine leere.</p>
+     */
+    private Texture ausPaar(Texture[] paar, Texture quelle)
+    {
+        Texture ziel = paar[this.zwischenbildIndex];
 
         if (ziel == null)
         {
             ziel = new Texture();
             ziel.setFilter(GL11.GL_NEAREST);
             ziel.setWrap(GL13.GL_CLAMP_TO_EDGE);
-            this.zwischenbilder[this.zwischenbildIndex] = ziel;
+            paar[this.zwischenbildIndex] = ziel;
         }
 
         if (ziel.width != quelle.width || ziel.height != quelle.height)

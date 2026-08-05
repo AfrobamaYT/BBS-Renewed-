@@ -1421,14 +1421,23 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
          * in die Oberflaeche -- ein GUI-Element kann die fuenf Werte nicht binden.
          * Entscheidung und verworfene Auswege stehen in Bildfilter. */
+        /* ⛔ EIGENES ZWISCHENBILD, NICHT DAS DES UMRISSES (2026-08-05, Bugliste #21).
+         *
+         * Hier stand `this.stencil.zwischenbild()` -- derselbe Puffer, in den kurz zuvor
+         * StencilAnzeige.umriss den Umriss gerechnet hat. In 1.21.1 faellt das nicht auf,
+         * weil der erste Blit SOFORT zeichnet; 26.2 sammelt beide Blits und zeichnet sie
+         * spaeter, dann sampeln beide den Endinhalt -- die Hervorhebung -- und der Umriss
+         * ist weg. Im Capture belegt: genau EIN zusaetzlicher Zug in dasselbe Ziel nach dem
+         * Umriss, nur waehrend der Wiedergabe (da steht die Maus ueber dem Actor, also ist
+         * hasPicked() wahr und dieser Zweig laeuft ueberhaupt erst). */
         mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
-            this.stencil.zwischenbild(), index,
+            this.stencil.hervorhebungsbild(), index,
             BBSSettings.stencilHighlightColor.get());
 
         /* Das Mischen kommt aus der Pipeline der Kachel: der Batcher zeichnet sie ueber
          * BBSPipelines (von RenderPipelines.GUI_TEXTURED geerbt), und deren ColorTargetState
          * traegt BlendFunction.TRANSLUCENT. Ein enableBlend davor gibt es in 26.2 nicht mehr. */
-        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.zwischenbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
+        context.batcher.texturedBox(() -> net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, this.stencil.hervorhebungsbild(), Colors.WHITE, area.x, area.y, area.w, area.h, 0, h, w, 0, w, h);
 
         this.hoveredReplayIndex = StencilAnzeige.beschriftung(context, this.panel, altPressed,
             index, REPLAY_STENCIL_OFFSET, this.getCurrentReplayIndex(), pair);
