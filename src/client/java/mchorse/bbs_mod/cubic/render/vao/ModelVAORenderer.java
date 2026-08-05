@@ -305,9 +305,37 @@ public class ModelVAORenderer
          * sagt dieser Zaehler. Standardmaessig aus, siehe Messpunkt. */
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.vao-durchgang");
 
-        try (RenderPass durchgang = schreiber.createRenderPass(
-            () -> "bbs-modell", farbZiel, Optional.empty(),
-            tiefenZiel, OptionalDouble.empty()))
+        /* ⛔ DER AUSSCHNITT MUSS AN DEN DURCHGANG, NICHT NUR IN DEN ZAEHLER (2026-08-05).
+         *
+         * Diese Stelle MELDETE {@code Zeichenbereich.aktiv()} oben im Messpunkt und UEBERGAB
+         * ihn dann nicht -- der Zug lief immer ueber das ganze Ziel. Im Frame nachgemessen,
+         * nachdem die Miniaturen ihre Zelle korrekt setzten:
+         *
+         *     ~modell.ziel.zeichenziel = ausschnitt=RenderArea[x=600...]   <- gesetzt
+         *     RenderDoc, alle 17 Kacheln:  scissor = 0,0 854x480           <- nicht benutzt
+         *
+         * Genau der Fall aus Regel 1j: eine Sonde las einen Wert, den der Zeichenaufruf gar
+         * nicht verwendet. {@code GehaltenesNetz} macht es seit jeher richtig; der VAO-Weg
+         * (Model, Block, Extruded, Trail) war der, der es nicht tat.
+         *
+         * {@code null} heisst ganzes Ziel und ist der Normalfall -- im Weltdurchgang steht
+         * dort nichts, der bleibt also unberuehrt. Zurechtgeschnitten aus demselben Grund wie
+         * dort: ein zu grosser Ausschnitt bricht in 26.2 ab, statt zu beschneiden. */
+        RenderPass.RenderArea bereich = mchorse.bbs_mod.graphics.Zeichenbereich.begrenztAuf(
+            mchorse.bbs_mod.graphics.Zeichenbereich.aktiv(),
+            farbZiel.getWidth(0), farbZiel.getHeight(0));
+
+        /* ⛔ EIN Lambda, nicht zwei. Zwei Zweige mit je einem {@code () -> "bbs-modell"} sind
+         * zwei synthetische Methoden -- und eine geaenderte Lambda-MENGE bricht den Hotswap
+         * ("class redefinition failed: attempted to add a method"), womit diese Aenderung nur
+         * noch mit Boot pruefbar waere. Einmal hier passiert, darum steht es dabei. */
+        java.util.function.Supplier<String> name = () -> "bbs-modell";
+
+        try (RenderPass durchgang = bereich == null
+            ? schreiber.createRenderPass(
+                name, farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty())
+            : schreiber.createRenderPass(
+                name, farbZiel, Optional.empty(), tiefenZiel, OptionalDouble.empty(), bereich))
         {
             durchgang.setPipeline(pipeline);
 

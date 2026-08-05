@@ -141,6 +141,31 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 kontext.mouseX = Math.round(mausX * skalierung);
                 kontext.mouseY = Math.round(mausY * skalierung);
 
+                /* ⛔ BESCHNITT AUF DIE ZELLE -- er war im Port ersatzlos weg (2026-08-05).
+                 *
+                 * Im Frame gemessen (RenderDoc-Capture, jede Kachel traegt ihren eigenen
+                 * Marker, siehe pushGroup oben):
+                 *
+                 *     17 von 17 Kacheln:  viewport = 0,0 854x480   scissor = 0,0 854x480
+                 *
+                 * Also KEINE einzige auf ihre Zelle begrenzt. Darum ragen zu grosse Vorschauen
+                 * (Gegenstand, Billboard, Label) in die Nachbarzelle, ueber die Kategorie-
+                 * Ueberschrift und ueber die Suchleiste.
+                 *
+                 * Unsere 1.21.1 klammert JEDE Zelle in {@code context.batcher.clip(cx, cy,
+                 * CELL_W, CELL_H)} / {@code unclip} -- sechs solche Paare in UIFormList. Beim
+                 * Port sind die Kacheln in diese SPAETE Sammeltextur gewandert und damit aus
+                 * allen Clips der Oberflaeche gefallen; der Beschnitt gehoert deshalb hierher.
+                 *
+                 * ⚠️ y GESPIEGELT. Die Kachelgrenzen liegen in Bildpunkten mit Ursprung OBEN
+                 * (so legt Miniaturschlange sie ab), {@link RenderPass.RenderArea} rechnet von
+                 * UNTEN. Dieselbe Umrechnung wie {@code UIUtils#viewportArea}. Wer sie
+                 * vergisst, beschneidet die gespiegelte Zeile -- die Kachel bliebe leer und
+                 * saehe aus wie der Fehler, den das hier behebt. */
+                mchorse.bbs_mod.graphics.Zeichenbereich.setzen(
+                    e.x0(), farbe.getHeight(0) - e.y1(),
+                    e.x1() - e.x0(), e.y1() - e.y0());
+
                 try
                 {
                     mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
@@ -154,6 +179,11 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 }
                 finally
                 {
+                    /* Wer setzen ruft, gibt selbst frei -- Pflicht des Aufrufers, nicht
+                     * Eigenschaft der Klasse (Zeichenbereich, Absatz dazu). Ein stehen
+                     * gebliebener Ausschnitt beschneidet JEDEN folgenden Netz-Zug. */
+                    mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
+
                     /* Zurueck in GUI-Einheiten -- der naechste Leser ist wieder die
                      * Oberflaeche selbst, und die rechnet dort. */
                     kontext.mouseX = mausX;
