@@ -162,9 +162,46 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                  * UNTEN. Dieselbe Umrechnung wie {@code UIUtils#viewportArea}. Wer sie
                  * vergisst, beschneidet die gespiegelte Zeile -- die Kachel bliebe leer und
                  * saehe aus wie der Fehler, den das hier behebt. */
-                mchorse.bbs_mod.graphics.Zeichenbereich.setzen(
-                    e.x0(), farbe.getHeight(0) - e.y1(),
-                    e.x1() - e.x0(), e.y1() - e.y0());
+                /* ⛔ SELBST ZURECHTSCHNEIDEN, NICHT begrenztAuf DIE ARBEIT GEBEN (2026-08-05,
+                 * am toten Spiel gelernt). Die erste Fassung reichte den rohen Zellrahmen
+                 * durch. Kacheln UNTERHALB des sichtbaren Bereichs haben y1 > Zielhoehe, also
+                 * ein negatives y -- und `begrenztAuf` schneidet die zwar zurecht, MELDET das
+                 * aber bei jeder neuen Groessen-Kombination. Je Kachel, jedes Bild:
+                 *
+                 *     [bbs] Zeichenbereich passt nicht zum Ziel: 0,-120,120,160 -> 854x480
+                 *
+                 * Ergebnis nach knapp drei Stunden: bbstools-console.log 61,2 MB, Heap
+                 * 2201 MB, 10 fps, Instanz tot. Die Meldung ist RICHTIG und soll bleiben --
+                 * sie faengt die echte Fehlpaarung (Fenstergroesse gegen Videogroesse,
+                 * Bugliste #9). Falsch war, ihr hier absehbaren Muell zu schicken.
+                 *
+                 * Eine Kachel ganz ausserhalb des Ziels kann nichts Sichtbares zeichnen; sie
+                 * wird uebersprungen statt ungeschnitten gezeichnet (ungeschnitten wuerde sie
+                 * in den sichtbaren Bereich malen -- genau das, was der Beschnitt verhindert). */
+                int zielB = farbe.getWidth(0);
+                int zielH = farbe.getHeight(0);
+
+                int sx = Math.max(0, e.x0());
+                int sy = Math.max(0, zielH - e.y1());
+                int sb = Math.min(e.x1(), zielB) - sx;
+                int sh = Math.min(zielH - e.y0(), zielH) - sy;
+
+                if (sb <= 0 || sh <= 0)
+                {
+                    /* ⛔ DIE MAUS STEHT HIER SCHON IN BILDPUNKTEN (oben umgerechnet), und das
+                     * finally, das sie zuruecksetzt, kommt erst im try darunter. Ein nacktes
+                     * `continue` liesse die Oberflaeche mit Punkt-Koordinaten weiterarbeiten --
+                     * bei Skalierung 2 zeigt der Zeiger dann auf die doppelte Stelle. Beim
+                     * Schreiben dieses Zweigs genau einmal passiert, darum steht es dabei. */
+                    kontext.mouseX = mausX;
+                    kontext.mouseY = mausY;
+
+                    com.afrobama.bbstools.client.debug.master.external.ApiTraceBridge.popGroup();
+
+                    continue;
+                }
+
+                mchorse.bbs_mod.graphics.Zeichenbereich.setzen(sx, sy, sb, sh);
 
                 try
                 {
