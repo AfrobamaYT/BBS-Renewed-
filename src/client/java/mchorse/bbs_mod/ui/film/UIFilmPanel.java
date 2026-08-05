@@ -3126,6 +3126,43 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * levelState. Derselbe Wert steht als viewRotationMatrix im eingefrorenen
              * Kamerazustand, also direkt neben der Projektion eine Zeile darueber. */
             this.lastView.set(context.levelState().cameraRenderState.viewRotationMatrix);
+
+            /* ⚗️ HINKT DER EINGEFRORENE ZUSTAND WIRKLICH? (2026-08-05, #2.)
+             *
+             * Der Eintrag leitet aus den Matrixquellen ab, die Blickdrehung sei ein Bild alt --
+             * abgeleitet, nicht gemessen. Hier stehen beide Werte nebeneinander: die
+             * eingefrorene Drehung und die LEBENDE Kamera desselben Bildes. Beim Schwenken
+             * muessen sie auseinanderlaufen, im Stillstand zusammenfallen. Faellt das aus,
+             * ist die ganze Ursachenkette von #2 falsch. */
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                net.minecraft.client.Camera lebend =
+                    net.minecraft.client.Minecraft.getInstance().gameRenderer.mainCamera();
+                /* ⛔ BEIDE IN DENSELBEN RAUM, SONST MISST MAN DIE HAENDIGKEIT (2026-08-05).
+                 *
+                 * Erster Anlauf verglich `viewRotation.transformDirection(0,0,-1)` mit dem
+                 * gedrehten Blickvektor der lebenden Kamera. Die eine Matrix bildet WELT->SICHT
+                 * ab, die Drehung SICHT->WELT -- die Ergebnisse waren systematisch
+                 * Spiegelbilder (X-Vorzeichen gedreht) und der "Winkel" wuchs brav mit dem
+                 * Schwenk. Das sah aus wie ein Versatz und war meine eigene Rechnung.
+                 *
+                 * Richtig ist die Probe gegen die IDENTITAET: der lebende Blickvektor, durch
+                 * die eingefrorene Sichtmatrix geschickt, MUSS (0,0,-1) ergeben, wenn beide
+                 * zum selben Bild gehoeren. Die Abweichung davon IST der Versatz -- in Grad,
+                 * ohne Bezugsrahmen-Frage. */
+                org.joml.Matrix4f eingefroren =
+                    new org.joml.Matrix4f(context.levelState().cameraRenderState.viewRotationMatrix);
+                org.joml.Vector3f hinLebend = new org.joml.Vector3f(0F, 0F, -1F)
+                    .rotate(lebend.rotation());
+                org.joml.Vector3f inSicht = eingefroren.transformDirection(
+                    new org.joml.Vector3f(hinLebend));
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("sicht.versatz",
+                    String.format("lebend-in-sicht=%.4f/%.4f/%.4f (soll 0/0/-1) versatz=%.3f°",
+                        inSicht.x, inSicht.y, inSicht.z,
+                        Math.toDegrees(Math.acos(Math.max(-1F, Math.min(1F,
+                            inSicht.normalize().dot(0F, 0F, -1F)))))));
+            }
         }
 
         this.controller.renderFrame(context);
