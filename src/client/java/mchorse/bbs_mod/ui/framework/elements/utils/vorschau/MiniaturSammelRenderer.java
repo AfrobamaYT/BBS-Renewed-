@@ -41,12 +41,23 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
         GpuTextureView tiefe = feld(false);
 
         Messpunkt.zaehle("pip.miniaturen",
-            zustand.eintraege().size() + " stueck ziel=" + (farbe != null));
+            zustand.eintraege().size() + " stueck ziel=" + (farbe != null)
+                + " tiefe=" + (tiefe != null)
+                + " arten=" + zustand.eintraege().stream()
+                    .map(e -> e.zeichner() == null ? "null"
+                        : e.zeichner().getClass().getSimpleName().replace("FormRenderer", ""))
+                    .distinct().sorted().toList());
 
         if (farbe == null || zustand.eintraege().isEmpty())
         {
             return;
         }
+
+        /* ⚗️ WIDERLEGT 2026-08-05, damit es niemand nochmal bezahlt: hier stand ein leerer
+         * Durchgang, der die Tiefe auf 0.0 loescht -- dieselbe Massnahme, die #17a geloest
+         * hat. Sie AENDERT HIER NICHTS. Gemessen: `tiefe=true` (das Ziel existiert, die
+         * Loeschung lief also wirklich) und die Modell-Miniaturen blieben unsichtbar.
+         * Die Ursache von #13 liegt woanders. */
 
         Zeichenziel.setzen(farbe, tiefe);
 

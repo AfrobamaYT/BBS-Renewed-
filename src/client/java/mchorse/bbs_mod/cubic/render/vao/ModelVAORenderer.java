@@ -189,11 +189,16 @@ public class ModelVAORenderer
         /* Messfuehler Aufgabe 99 (Figur erscheint magenta = Fehltextur): kommt eine Textur
          * hier an, und ueber welchen Weg -- als Parameter oder ueber den globalen Rueckfall,
          * vor dem der Kommentar oben warnt? */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.textur",
-            (durchgereicht ? "parameter" : "rueckfall") + " "
-            + (textur == null
+        /* ⛔ GETRENNTE SCHLUESSEL, NICHT EINE ~-PROBE (2026-08-05). Vorher stand beides unter
+         * EINEM Schluessel, und die ~-Probe zeigt nur den LETZTEN Aufruf. In der Formpalette
+         * laufen 22 Kacheln verschiedener Typen je Bild -- der letzte Wert gehoerte dort
+         * einer fremden Kachel, und "rueckfall" sah nach einem Modell-Befund aus. Getrennt
+         * gezaehlt sagen die ZAHLEN, welcher Weg wie oft geht. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+            "modell.textur." + (durchgereicht ? "parameter" : "rueckfall"),
+            textur == null
                 ? "NULL"
-                : "id=" + textur.id + " " + textur.width + "x" + textur.height));
+                : "id=" + textur.id + " " + textur.width + "x" + textur.height);
 
 
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
