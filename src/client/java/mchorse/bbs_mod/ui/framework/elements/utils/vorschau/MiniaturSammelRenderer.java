@@ -59,6 +59,32 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
          * Loeschung lief also wirklich) und die Modell-Miniaturen blieben unsichtbar.
          * Die Ursache von #13 liegt woanders. */
 
+        /* ⛔ DIE ABBILDUNG GEHOERT DIESEM DURCHGANG (2026-08-05, Bugliste #13).
+         *
+         * Gemessen am Modellzug in dieser Schleife:
+         *
+         *     proj[m00=0.7505 m11=1.4281 m33=0.0]   <- m33=0 heisst PERSPEKTIVE (die der Welt)
+         *     mv[m30=420.0 m31=396.9 m32=64.5]      <- Modellansicht in BILDPUNKTEN
+         *
+         * Eine Weltperspektive auf pixelraum-Geometrie: die Kachel liegt bei z=+64, also
+         * hinter der Kamera, und es entsteht KEIN Fragment. Kein Fehler, keine Logzeile, alle
+         * Zaehler voll -- 170 Zuege je Bild, und die Sammeltextur trug 3562 von 1939200
+         * Punkten. Genau die Falle, die in Bildfilter beschrieben steht ("1008-mal gezeichnet
+         * und nie zu sehen").
+         *
+         * Es traf nur die Formen, die ueber ModelVAORenderer gehen -- Model, Block, Extruded,
+         * Trail. Anker, Label, Gegenstand, Partikel und Billboard zeichnen flach und ohne
+         * diese Abbildung, die waren immer da.
+         *
+         * ⚗️ EINE FLACHE PROJEKTION HIER AENDERT NICHTS -- GEMESSEN UND WIDERLEGT.
+         * Naheliegend war, es wie VorschauGitterRenderer zu machen und
+         * `Projektion.sichern() / setzenFlach(ortho ueber die Texturgroesse) / zurueck()`
+         * um die Schleife zu legen. Ergebnis: bunte Proben in den Modellreihen 186 vorher,
+         * 186 nachher. Vermutung fuer den naechsten Anlauf, NICHT gemessen: `Projektion`
+         * setzt BBS' gespeicherte Abbildung, der Zug bindet seine Uniforms aber selbst
+         * (`RenderSystem.getDynamicUniforms().writeTransform(...)`) -- dann liest auch die
+         * Sonde oben nicht den Wert, den der Zeichenaufruf wirklich benutzt (Regel 1j).
+         * Der naechste Schritt gehoert also an writeTransform, nicht hierher. */
         Zeichenziel.setzen(farbe, tiefe);
 
         try

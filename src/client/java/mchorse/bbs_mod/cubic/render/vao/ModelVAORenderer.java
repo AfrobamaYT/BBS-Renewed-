@@ -181,6 +181,12 @@ public class ModelVAORenderer
          * ihre Textur ausdruecklich durch, statt sich hierauf zu verlassen. */
         boolean durchgereicht = textur != null;
 
+        /* ⚗️ Kurzfassung einer Abbildung fuer die Messprobe weiter unten: m33 trennt FLACH (1)
+         * von PERSPEKTIVISCH (0), m00/m11 sind der Massstab. Mehr braucht die Frage nicht,
+         * und eine ganze Matrix in einer Probe liest niemand. */
+        java.util.function.Function<org.joml.Matrix4f, String> kurz = (m) -> m == null ? "null"
+            : String.format("m00=%.4f m11=%.4f m33=%.1f", m.m00(), m.m11(), m.m33());
+
         if (textur == null)
         {
             textur = mchorse.bbs_mod.BBSModClient.getTextures().getLastBound();
@@ -203,6 +209,7 @@ public class ModelVAORenderer
 
         RenderTarget ziel = Minecraft.getInstance().gameRenderer.mainRenderTarget();
         CommandEncoder schreiber = RenderSystem.getDevice().createCommandEncoder();
+
 
         /* ⭐ WOHIN gezeichnet wird, entscheidet nicht mehr diese Zeile allein (Aufgabe 96).
          * In der Welt bleibt es das Hauptbild; in einer Oberflaechen-Vorschau muss dasselbe
@@ -247,7 +254,20 @@ public class ModelVAORenderer
          * durch, egal wohin er schreibt. Getrennte Schluessel, damit ZAHLEN antworten. */
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("modell.ziel."
             + (mchorse.bbs_mod.graphics.PickZiel.aktiv() != null ? "pick"
-                : mchorse.bbs_mod.graphics.Zeichenziel.eigenes() ? "zeichenziel" : "hauptbild"));
+                : mchorse.bbs_mod.graphics.Zeichenziel.eigenes() ? "zeichenziel" : "hauptbild"),
+            /* Der AUSSCHNITT dazu: ein Zug ins richtige Ziel hinterlaesst trotzdem nichts,
+             * wenn der Ausschnitt ihn wegschneidet. Die Sammeltextur ist in Bildpunkten,
+             * ihr Zustand nennt aber GUI-Einheiten -- genau hier wuerde sich das zeigen. */
+            "ausschnitt=" + mchorse.bbs_mod.graphics.Zeichenbereich.aktiv()
+                + " zielgroesse=" + (farbZiel == null ? "null"
+                    : farbZiel.getWidth(0) + "x" + farbZiel.getHeight(0))
+                /* Und die ABBILDUNG. Praezedenz im Baum (Bildfilter): eine Perspektive auf
+                 * flacher Geometrie ergibt w=0 an allen Ecken -- kein Fragment, kein Fehler,
+                 * volle Zaehler. Das ist genau das Bild, das #13 abgibt. */
+                + " proj[" + kurz.apply(mchorse.bbs_mod.graphics.Projektion.lesen()) + "]"
+                + " mv[m30=" + String.format("%.3f", modelView.m30())
+                + " m31=" + String.format("%.3f", modelView.m31())
+                + " m32=" + String.format("%.3f", modelView.m32()) + "]");
 
         /* Modellansicht und Farbe gehen in Vanillas DynamicTransforms-Block. BBS setzt eine
          * EIGENE Modellansicht (die eingefangene, siehe captureModelView) — writeTransform
