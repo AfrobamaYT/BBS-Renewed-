@@ -477,7 +477,15 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	 * noch auf der alten JBR -- eine haelfte umgestellt, die andere vergessen. Die 21er bleibt
 	 * ueber -Pbbs.jbr erreichbar, fuer den fall dass jemand die zwei vergleichen will. */
 	def jbrOrdner = project.findProperty("bbs.jbr") ?: "jbr25-dcevm-home"
-	def jbr = file("${rootDir}/../${jbrOrdner}/bin/java.exe")
+
+	/* ⛔ DER BINAERNAME IST PLATTFORMABHAENGIG (2026-08-07, umzug auf linux).
+	 * Hier stand fest `bin/java.exe`. Unter linux heisst die datei `bin/java`, also war
+	 * jbr.exists() IMMER falsch — der client waere still auf der system-JVM gestartet und
+	 * der else-zweig unten haette "nur body-hotswap moeglich" gemeldet, obwohl die JBR
+	 * vollstaendig danebenlag. Ein fehlender exe-suffix, der wie ein fehlendes feature
+	 * aussieht: genau die sorte fehldiagnose, die hier schon monate gekostet hat. */
+	def jbrBin = System.getProperty("os.name").toLowerCase().contains("windows") ? "java.exe" : "java"
+	def jbr = file("${rootDir}/../${jbrOrdner}/bin/${jbrBin}")
 
 	/* ⛔ HEAP-DECKEL, WEIL ES OHNE IHN KEINEN GIBT (2026-08-02, user-order nach RAM-defekt).
 	 *
@@ -546,7 +554,10 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	}
 	else
 	{
-		it.doFirst { logger.lifecycle("[hotswap] ../jbr-dcevm-home fehlt — nur body-hotswap moeglich") }
+		/* Den GESUCHTEN pfad nennen, nicht einen fest getippten. Vorher stand hier immer
+		 * "../jbr-dcevm-home", auch wenn nach jbr25-dcevm-home gesucht wurde — die meldung
+		 * schickte damit auf die falsche faehrte. */
+		it.doFirst { logger.lifecycle("[hotswap] ${jbr} fehlt — nur body-hotswap moeglich") }
 	}
 
 	it.environment "JDK_JAVA_OPTIONS", jvmOptionen.join(" ")
