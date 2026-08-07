@@ -15,6 +15,21 @@
 /out/
 /classes/
 
+# ⛔ FREMD-JARS GEHOEREN NICHT IN DIE HISTORIE (2026-08-07). physics-mod-pro ist 133,5 MB
+# und lag als einziger blob ueber GitHubs harter 100-MB-grenze — damit war das repo
+# ueberhaupt nicht push-bar, also gab es KEINE kopie ausserhalb dieses rechners. Gemessen
+# war er eine unveraenderte fremdabhaengigkeit: fuenf byte-gleiche kopien (md5 b47515bd…,
+# eine davon ein CurseForge-download), im jar nur net/diebuddies, physx/*, de/fabmax und
+# null eigene pakete, seit dem einzigen commit 5bea1f97e nie geaendert.
+# Mit git-filter-repo aus der historie geworfen: 364 -> 225 MB. Die datei liegt weiter
+# unter libs/, der build findet sie.
+#
+# ⛔ NUR DIESE EINE DATEI, kein `/libs/*.jar`. Die drei anderen jars dort (accelerated-
+# rendering 576K, veil 3,2M, worldedit 6,0M) SIND versioniert und sollen es bleiben. Ein
+# muster, das etwas anderes behauptet als der baum tut, driftet und wird dann falsch
+# gelesen. Kommt ein neues jar ueber ~50 MB dazu: hier namentlich eintragen.
+/libs/physics-mod-pro-v172j-fabric-1.21.1.jar
+
 # eclipse
 
 *.launch
