@@ -1,9 +1,19 @@
 # gradle
+#
+# ⛔ FUEHRENDER SCHRAEGSTRICH IST PFLICHT (2026-08-07 teuer gelernt). Ohne ihn greift ein
+# muster in JEDER tiefe. `build/` hat darum das paket
+#     src/client/java/com/afrobama/bbstools/client/crowd/build/
+# verschluckt — 5 dateien, ~58 KB, 1.400 zeilen echter quelltext vom 30./31. juli. Sie
+# standen nie in `git status`, waren nie committet, und der umzug auf linux hat sie
+# darum uebersehen: der build brach mit "Package ... ist nicht vorhanden" ab, obwohl
+# BBSToolsModClient.java sie committet aufruft.
+# Diese vier namen sind ganz normale paketnamen. Anker gemessen: kein anderes
+# verzeichnis im baum ist betroffen, `build/classes` bleibt ueber `/build/` erfasst.
 
-.gradle/
-build/
-out/
-classes/
+/.gradle/
+/build/
+/out/
+/classes/
 
 # eclipse
 
