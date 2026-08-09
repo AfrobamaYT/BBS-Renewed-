@@ -90,3 +90,11 @@ boot.log
 swap.log
 welle.log
 .claude/worktrees/
+
+# Ergebnisdateien von tools/profil.py — Messwerte, kein Quelltext.
+/profil-*.txt
+/profil-*.html
+
+# Wegwerf-Mixins, die pruefe-mixin-ziele.py / alle-pruefsaetze.py zur Laufzeit anlegen.
+# Sie landeten in 86f473d8f versehentlich im Baum, weil ein Pruefsatzlauf parallel lief.
+ZZPruefsatz*.java
