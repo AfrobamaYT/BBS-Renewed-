@@ -1,15 +1,37 @@
 package mchorse.bbs_mod.utils.iris;
 
+import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.resources.Link;
 import mchorse.bbs_mod.utils.CollectionUtils;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.server.packs.resources.ResourceManager;
 import org.lwjgl.opengl.GL11;
 
-import java.io.IOException;
-
+/**
+ * Reicht eine BBS-Textur als Vanilla-{@link AbstractTexture} an Iris durch, damit Shader
+ * BBS-Texturen (auch animierte) benutzen koennen.
+ *
+ * <p>⛔ AUF 26.2 PORTIERT (2026-08-10). Bis 1.21.1 hing hier ein {@code getId()}, das eine
+ * GL-Nummer zurueckgab. In 26.2 gibt es das nicht mehr: {@code AbstractTexture} fuehrt nur
+ * noch {@code getTexture()}, {@code getSampler()} und {@code getTextureView()}, alle auf
+ * {@code Gpu*}-Typen. Gemessen im Iris-1.11.2-Bytecode ruft Iris davon {@code getTexture()}
+ * und {@code getSampler()} — {@code getTextureView()} im PBR-Pfad gar nicht. Ueberschrieben
+ * werden trotzdem alle drei, damit kein anderer Aufrufer auf das leere Feld der Oberklasse
+ * faellt.</p>
+ *
+ * <p>⛔ DER WITZ IST, DASS ES PRO AUFRUF NEU AUFLOEST. Diese Klasse laedt nie etwas und
+ * fuellt die geerbten Felder {@code texture}/{@code sampler}/{@code textureView} NICHT — sie
+ * schlaegt bei jedem Zugriff in BBS' Texturverwaltung nach. Nur so folgt der Shader einer
+ * animierten Textur; wer hier einmalig zwischenspeichert, friert das erste Bild ein.</p>
+ *
+ * <p>⚠️ {@code null} heisst "keine Textur". Vorher war das {@code -1}, eine ungueltige
+ * GL-Nummer — dieselbe Aussage, andere Form. Ein Aufrufer, der nicht damit rechnet, sah
+ * vorher einen GL-Fehler und sieht jetzt eine NPE; beides ist ein Fehler beim Aufrufer,
+ * nicht hier.</p>
+ */
 public class IrisTextureWrapper extends AbstractTexture
 {
     public final Link texture;
@@ -29,30 +51,71 @@ public class IrisTextureWrapper extends AbstractTexture
     }
 
     @Override
-    public void load(ResourceManager manager) throws IOException
-    {}
-
-    @Override
-    public int getId()
+    public GpuTexture getTexture()
     {
-        Texture texture = BBSModClient.getTextures().getTexture(this.texture, GL11.GL_NEAREST, true);
+        Texture gefunden = this.aufloesen();
 
-        if (texture == null || texture == BBSModClient.getTextures().getError())
+        if (gefunden != null)
         {
-            return this.fallback == null ? -1 : this.fallback.getId();
+            return gefunden.gpu();
         }
 
-        if (this.index >= 0 && texture.getParent() != null)
-        {
-            Texture frame = CollectionUtils.getSafe(texture.getParent().textures, this.index);
+        return this.fallback == null ? null : this.fallback.getTexture();
+    }
 
-            if (frame != null)
+    @Override
+    public GpuTextureView getTextureView()
+    {
+        Texture gefunden = this.aufloesen();
+
+        if (gefunden != null)
+        {
+            return gefunden.view();
+        }
+
+        return this.fallback == null ? null : this.fallback.getTextureView();
+    }
+
+    @Override
+    public GpuSampler getSampler()
+    {
+        Texture gefunden = this.aufloesen();
+
+        if (gefunden != null)
+        {
+            return gefunden.sampler();
+        }
+
+        return this.fallback == null ? null : this.fallback.getSampler();
+    }
+
+    /**
+     * Die BBS-Textur hinter diesem Wrapper — oder {@code null}, wenn es keine gibt.
+     *
+     * <p>⚠️ {@code getError()} ist KEIN Fehlerfall zum Melden, sondern BBS' Platzhalter fuer
+     * "nicht gefunden". Ihn durchzureichen wuerde dem Shader die magentafarbene Ersatztextur
+     * unterschieben, statt auf den Fallback zu gehen.</p>
+     */
+    private Texture aufloesen()
+    {
+        Texture gefunden = BBSModClient.getTextures().getTexture(this.texture, GL11.GL_NEAREST, true);
+
+        if (gefunden == null || gefunden == BBSModClient.getTextures().getError())
+        {
+            return null;
+        }
+
+        if (this.index >= 0 && gefunden.getParent() != null)
+        {
+            Texture bild = CollectionUtils.getSafe(gefunden.getParent().textures, this.index);
+
+            if (bild != null)
             {
-                return frame.id;
+                return bild;
             }
         }
 
-        return texture.id;
+        return gefunden;
     }
 
     @Override

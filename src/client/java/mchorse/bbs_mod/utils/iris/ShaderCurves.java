@@ -4,6 +4,8 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.utils.Pair;
 
+import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -307,16 +309,24 @@ public class ShaderCurves
         return source.substring(0, nextNewLine + 1) + sb + source.substring(nextNewLine + 1);
     }
 
-    /* ⛔ P3-26.2-AUS: hier stand addUniforms(List<CachedUniform>), die einzige stelle, an
-     * der diese klasse Iris ueberhaupt beruehrte -- ein einzeiliger durchreicher an
-     * BBSRendering, aufgerufen NUR vom Iris-mixin CustomUniformsBuilderMixin. Der mixin ist
-     * ausgeschlossen, solange Iris keinen 26.2-bau hat; der durchreicher haette nur den
-     * Iris-typ zurueck in den uebersetzungspfad geholt.
+    /**
+     * Meldet die Kurven-Variablen als Iris-Uniforms an — ein Durchreicher an
+     * {@link BBSRendering#addUniforms}.
      *
-     * DER REST DIESER KLASSE IST KEIN IRIS-ANHANG, sondern das datenmodell des
-     * shader-kurven-clips (variablen, werte, quelltext-verarbeitung). UICurveClip,
-     * CurveClientClip und BBSRendering haengen daran. Darum bleibt sie im bau -- der
-     * paket-name ist irrefuehrend, nicht der inhalt. */
+     * <p>⚠️ GERUFEN WIRD SIE VON IRIS, nicht von uns: einziger Aufrufer ist das Iris-Mixin
+     * {@code CustomUniformsBuilderMixin}. Sie war in 10bfb41cd entfernt worden, weil sie den
+     * Iris-Typ {@link CachedUniform} in den Uebersetzungspfad holt; am 2026-08-10 mit Iris
+     * zurueck.</p>
+     *
+     * <p>DER REST DIESER KLASSE IST KEIN IRIS-ANHANG, sondern das Datenmodell des
+     * Shader-Kurven-Clips (Variablen, Werte, Quelltext-Verarbeitung). UICurveClip,
+     * CurveClientClip und BBSRendering haengen daran — der Paketname ist irrefuehrend,
+     * nicht der Inhalt.</p>
+     */
+    public static void addUniforms(List<CachedUniform> list)
+    {
+        BBSRendering.addUniforms(list, variableMap);
+    }
 
     public static class ShaderVariable
     {

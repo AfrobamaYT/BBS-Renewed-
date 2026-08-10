@@ -374,15 +374,11 @@ sourceSets {
 			 * Das feature selbst wird portiert, nicht stillgelegt.
 			 *
 			 * Geprueft mit: python tools/fremdmod-schluss.py */
-			exclude "mchorse/bbs_mod/mixin/client/iris/**"
 			// 2026-08-10 raus: sodium ist wieder im build (0.9.2-alpha.4, mc 26.2).
 			/* NICHT das ganze paket: ShaderCurves und QueueMap darin sind das DATENMODELL
 			 * des shader-kurven-clips, an dem UICurveClip, CurveClientClip und BBSRendering
 			 * haengen -- BBS-code, kein Iris-anhang. Nur die drei klassen, die wirklich
 			 * gegen Iris uebersetzen, fliegen raus. */
-			exclude "mchorse/bbs_mod/utils/iris/IrisUtils.java"
-			exclude "mchorse/bbs_mod/utils/iris/IrisTextureWrapper.java"
-			exclude "mchorse/bbs_mod/utils/iris/IrisTextureWrapperLoader.java"
 			exclude "mchorse/bbs_mod/utils/sodium/**"
 			exclude "mchorse/bbs_mod/forms/renderers/utils/RecolorVertexSodiumConsumer.java"
 			/* Zweite welle, gleiche ursache: fremd-mods ohne 26.2-bau. */
@@ -458,7 +454,15 @@ dependencies {
 	// P3-26.2-AUS: implementation "maven.modrinth:watermedia:2.1.37"
 	/* 2026-08-10 WIEDER AN: 0.9.2-alpha.4 fuer mc 26.2 (Modrinth, 07.08.).
 	 * ⚠️ ALPHA-KANAL — es gibt fuer 26.2 nichts Stabileres. */
-	implementation "maven.modrinth:sodium:mc26.2-0.9.2-alpha.4-fabric"
+	/* ⛔ 0.9.1 (RELEASE), NICHT 0.9.2-alpha.4 — sonst startet Fabric gar nicht erst.
+	 * Gemessen 2026-08-10: Sodium 0.9.2-alpha.4 traegt `breaks iris @ [<=1.11.2]`, und
+	 * 1.11.2 ist die NEUESTE Iris fuer 26.2 (Modrinth: 1.11.0/1.11.1/1.11.2, mehr gibt es
+	 * nicht). Der Bruch kommt also von Sodiums Seite; Iris selbst verlangt nur `sodium 0.9.x`.
+	 * 0.9.1 ist ein Release vom selben Tag wie Iris 1.11.2 — das zusammengehoerige Paar.
+	 *
+	 * Wer Sodium wieder hochzieht, verliert Iris. Fabric sagt das beim Start deutlich
+	 * ("Incompatible mods found"), es ist also kein stiller Ausfall. */
+	implementation "maven.modrinth:sodium:mc26.2-0.9.1-fabric"
 	/* P3-26.2-AUS: 2026-08-10 versucht, 1.11.2 fuer mc 26.2 anzuschalten -> ROT.
 	 * Nicht die Fassung ist schuld, das ist Portierarbeit statt Update.
 	 *
@@ -482,7 +486,7 @@ dependencies {
 	 *
 	 * Punkt 2 ist die eigentliche Arbeit. Wer sie anfaengt: erst nachsehen, was Iris
 	 * 1.11.2 fuer 26.2 als textur-uebergabe verlangt, dann bauen — nicht umgekehrt. */
-	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.11.2+26.2-fabric"
+	implementation "maven.modrinth:iris:1.11.2+26.2-fabric"
 
 	/* ⭐ spark — ETABLIERTER PROFILER STATT EIGENER ZAEHLER (2026-08-03).
 	 *

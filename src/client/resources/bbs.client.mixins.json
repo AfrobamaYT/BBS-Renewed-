@@ -38,14 +38,6 @@
     "WindowMixin",
     "WorldMixin",
     "WorldRendererMixin",
-    "sodium.ColorAttributeMixin"
-  ],
-  "_P3-26.2-AUS": [
-    "Abhaengigkeit anschalten. Einzeln, je mit eigenem Beweis.",
-    "Diese Mixins zielen auf Iris und Sodium. Deren Abhaengigkeiten sind in P3 stillgelegt,",
-    "Klasse im Jar ist ein STARTABBRUCH ohne Compilerfehler -- darum muessen beide zusammen.",
-    "Zum Wiedereinschalten: Eintraege zurueck nach client[], Ausschluss in build.gradle raus,",
-    "die Quelldateien darum aus dem Build genommen (build.gradle). Ein Eintrag hier ohne",
     "iris.CustomUniformsAccessor",
     "iris.CustomUniformsBuilderMixin",
     "iris.EntityVertexMixin",
@@ -55,7 +47,8 @@
     "iris.ShaderPackMixin",
     "iris.SliderElementWidgetMixin",
     "iris.StringElementWidgetInvoker",
-    "iris.SystemTimeUniformsTimerMixin"
+    "iris.SystemTimeUniformsTimerMixin",
+    "sodium.ColorAttributeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -20,6 +20,9 @@ import mchorse.bbs_mod.camera.controller.PlayCameraController;
 import mchorse.bbs_mod.events.ModelBlockEntityUpdateCallback;
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.utils.iris.IrisUtils;
+import mchorse.bbs_mod.utils.iris.ShaderCurves;
+import net.irisshaders.iris.uniforms.custom.cached.CachedUniform;
 import mchorse.bbs_mod.graphics.texture.TextureFormat;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
@@ -294,13 +297,10 @@ public class BBSRendering
 
     public static void setup()
     {
-        /* ⛔ P3-26.2-AUS: weder Iris noch Sodium haben einen 26.2-bau, und ohne die
-         * abhaengigkeit gibt es die typen nicht, gegen die BBS hier uebersetzt. Beide
-         * schalter stehen darum fest auf false; die abfragen darunter bleiben unangetastet,
-         * damit das zurueckholen eine reine abhaengigkeits-frage bleibt und keine suche.
-         * Betroffen: shaderpack-erkennung, schattendurchgang, tangenten, PBR-texturen,
-         * die shader-kurven-uniforms und Sodiums punkt-kamera-culling. */
-        iris = false;
+        /* Iris ist am 2026-08-10 zurueckgeholt (1.11.2+26.2). SODIUM BLEIBT AUS: dessen
+         * abhaengigkeit ist zwar im build, aber mchorse/bbs_mod/utils/sodium/** ist weiter
+         * ausgeschlossen -- ein true hier faende SodiumUtils nicht. */
+        iris = FabricLoader.getInstance().isModLoaded("iris");
         sodium = false;
         optifine = FabricLoader.getInstance().isModLoaded("optifabric");
 
@@ -312,9 +312,10 @@ public class BBSRendering
             }
         });
 
-        /* P3-26.2-AUS: Iris hat keinen 26.2-bau. iris ist darum dauerhaft false und
-         * dieser koerper leer -- die abfrage bleibt stehen, damit die stelle beim
-         * zurueckholen sofort wiederfindbar ist. */
+        if (iris)
+        {
+            IrisUtils.setup();
+        }
     }
 
     /* Framebuffers */
@@ -1083,7 +1084,7 @@ public class BBSRendering
             return false;
         }
 
-        return false;
+        return IrisUtils.isShaderPackEnabled();
     }
 
     public static boolean isIrisShadowPass()
@@ -1093,7 +1094,7 @@ public class BBSRendering
             return false;
         }
 
-        return false;
+        return IrisUtils.isShadowPass();
     }
 
     /**
@@ -1109,7 +1110,7 @@ public class BBSRendering
             return;
         }
 
-        /* P3-26.2-AUS */
+        IrisUtils.setMainBound(bound);
     }
 
     public static void trackTexture(Texture texture)
@@ -1119,7 +1120,7 @@ public class BBSRendering
             return;
         }
 
-        /* P3-26.2-AUS */
+        IrisUtils.trackTexture(texture);
     }
 
     public static float[] calculateTangents(float[] t, float[] v, float[] n, float[] u)
@@ -1129,7 +1130,7 @@ public class BBSRendering
             return t;
         }
 
-        return t;
+        return IrisUtils.calculateTangents(t, v, n, u);
     }
 
     public static float[] calculateTangents(float[] v, float[] n, float[] u)
@@ -1139,9 +1140,26 @@ public class BBSRendering
             return v;
         }
 
-        return v;
+        return IrisUtils.calculateTangents(v, n, u);
     }
 
+
+    /**
+     * Reicht BBS' Shader-Kurven als eigene Uniforms an Iris durch.
+     *
+     * <p>⚠️ Der Aufruf kommt aus {@code CustomUniformsBuilderMixin}, also von IRIS her —
+     * nicht von uns. Faellt diese Methode weg, kompiliert das Mixin nicht mehr; genau daran
+     * ist die Stilllegung am 2026-08-10 aufgefallen.</p>
+     */
+    public static void addUniforms(List<CachedUniform> list, Map<String, ShaderCurves.ShaderVariable> variableMap)
+    {
+        if (!iris)
+        {
+            return;
+        }
+
+        IrisUtils.addUniforms(list, variableMap);
+    }
 
     public static List<String> getShadersSliderOptions()
     {
@@ -1150,7 +1168,7 @@ public class BBSRendering
             return Collections.emptyList();
         }
 
-        return Collections.emptyList();
+        return IrisUtils.getSliderProperties();
     }
 
     public static Map<String, String> getShadersLanguageMap(String language)
@@ -1160,7 +1178,7 @@ public class BBSRendering
             return Collections.emptyMap();
         }
 
-        return Collections.emptyMap();
+        return IrisUtils.getShadersLanguageMap(language);
     }
 
     /* Curves */
