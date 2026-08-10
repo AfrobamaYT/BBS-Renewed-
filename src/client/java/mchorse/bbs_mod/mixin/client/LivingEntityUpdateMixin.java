@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.selectors.ISelectorOwnerProvider;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,6 +15,6 @@ public class LivingEntityUpdateMixin
     @Inject(method = "baseTick", at = @At("TAIL"))
     public void onBaseTick(CallbackInfo info)
     {
-        ((ISelectorOwnerProvider) this).getOwner().update();
+        MixinBruecke.rufe("AuswahlBesitzerLogik", "besitzerAktualisieren", this);
     }
 }
