@@ -1,8 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.mojang.blaze3d.platform.Window;
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.client.BBSRendering;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -64,71 +63,74 @@ public class WindowMixin
     @ModifyVariable(method = "setGuiScale", at = @At("HEAD"), argsOnly = true)
     private int bbs$overrideScaleFactor(int scaleFactor)
     {
-        float custom = BBSModClient.getCustomGUIScale();
-
-        if (custom > 0F)
-        {
-            /* Same lower bound vanilla's calculateScaleFactor() enforces: keep at
-             * least ~320x240 GUI units on screen, so UI stays usable on small windows */
-            int max = Math.max(1, Math.min(this.framebufferWidth / 320, this.framebufferHeight / 240));
-
-            return Math.min(Math.max(Math.round(custom), 1), max);
-        }
-
-        return scaleFactor;
+        /* framebufferWidth/Height sind @Shadow — sie gehen als wert rueber, nicht als feld. */
+        return (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierung",
+            scaleFactor, this.framebufferWidth, this.framebufferHeight);
     }
 
     @Inject(method = "getScreenWidth", at = @At("HEAD"), cancellable = true)
     public void onGetWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "bildschirmBreite");
+
+        if (wert != null)
         {
-            info.setReturnValue(BBSRendering.getVideoWidth());
+            info.setReturnValue(wert);
         }
     }
 
     @Inject(method = "getScreenHeight", at = @At("HEAD"), cancellable = true)
     public void onGetHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "bildschirmHoehe");
+
+        if (wert != null)
         {
-            info.setReturnValue(BBSRendering.getVideoHeight());
+            info.setReturnValue(wert);
         }
     }
 
     @Inject(method = "getWidth", at = @At("HEAD"), cancellable = true)
     public void onGetFramebufferWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "pufferBreite");
+
+        if (wert != null)
         {
-            info.setReturnValue((int) (BBSRendering.getVideoWidth() * BBSModClient.getOriginalFramebufferScale()));
+            info.setReturnValue(wert);
         }
     }
 
     @Inject(method = "getHeight", at = @At("HEAD"), cancellable = true)
     public void onGetFramebufferHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "pufferHoehe");
+
+        if (wert != null)
         {
-            info.setReturnValue((int) (BBSRendering.getVideoHeight() * BBSModClient.getOriginalFramebufferScale()));
+            info.setReturnValue(wert);
         }
     }
 
     @Inject(method = "getGuiScaledWidth", at = @At("HEAD"), cancellable = true)
     public void onGetScaledWidth(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierteBreite", this.guiScale);
+
+        if (wert != null)
         {
-            info.setReturnValue((int) (BBSRendering.getVideoWidth() / this.guiScale * BBSModClient.getOriginalFramebufferScale()));
+            info.setReturnValue(wert);
         }
     }
 
     @Inject(method = "getGuiScaledHeight", at = @At("HEAD"), cancellable = true)
     public void onGetScaledHeight(CallbackInfoReturnable<Integer> info)
     {
-        if (BBSRendering.canReplaceFramebuffer())
+        Integer wert = (Integer) MixinBruecke.rufe("FensterGroesseLogik", "skalierteHoehe", this.guiScale);
+
+        if (wert != null)
         {
-            info.setReturnValue((int) (BBSRendering.getVideoHeight() / this.guiScale * BBSModClient.getOriginalFramebufferScale()));
+            info.setReturnValue(wert);
         }
     }
 }

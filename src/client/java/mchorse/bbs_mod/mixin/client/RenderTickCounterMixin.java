@@ -1,9 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.utils.VideoRecorder;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+import com.afrobama.blendertransform.AufnahmeBildtaktLogik;
 import net.minecraft.client.DeltaTracker;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -39,68 +37,29 @@ public class RenderTickCounterMixin
     @Inject(method = "advanceGameTime", at = @At("HEAD"), cancellable = true)
     public void onBeginRenderTick(long timeMillis, CallbackInfoReturnable<Integer> info)
     {
-        VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
+        /* Fuenf felder, ein aufruf: drei @Shadow, zwei vom mixin angebaute. Sie gehen als
+         * WERTE rein und raus — feldLesen/feldSchreiben waeren zehn reflexionsaufrufe je bild.
+         * Die indizes stehen als konstanten in der logik. */
+        double[] neu = (double[]) MixinBruecke.rufe("AufnahmeBildtaktLogik", "takt",
+            timeMillis, this.deltaTickResidual, this.deltaTicks, this.lastMs,
+            this.heldFrames, this.lastFrameTime);
 
-        if (videoRecorder.isRecording())
+        if (neu == null)
         {
-            if (videoRecorder.getCounter() == 0)
-            {
-                this.deltaTickResidual = 0;
-            }
-
-            if (this.heldFrames == 0)
-            {
-                /* When frame rate limiting is enabled, throttle the recording to the video
-                 * frame rate in real time, so a powerful machine doesn't render the recording
-                 * faster than wall-clock time. We hold the frame (without advancing the world)
-                 * until enough real time has passed to produce the next frame. */
-                if (BBSSettings.videoLimitFrameRate.get())
-                {
-                    long frameInterval = (long) (1000F / BBSRendering.getVideoFrameRate());
-
-                    if (timeMillis - this.lastFrameTime < frameInterval)
-                    {
-                        BBSRendering.canRender = false;
-
-                        info.setReturnValue(0);
-
-                        return;
-                    }
-
-                    this.lastFrameTime = timeMillis;
-                }
-
-                this.deltaTicks = 20F / (float) BBSRendering.getVideoFrameRate();
-                this.lastMs = timeMillis;
-                this.deltaTickResidual += this.deltaTicks;
-
-                int i = (int) this.deltaTickResidual;
-
-                this.deltaTickResidual -= (float) i;
-
-                videoRecorder.serverTicks += i;
-                BBSRendering.canRender = true;
-
-                info.setReturnValue(i);
-            }
-            else
-            {
-                BBSRendering.canRender = false;
-
-                info.setReturnValue(0);
-            }
-
-            this.heldFrames += 1;
-
-            if (this.heldFrames >= BBSSettings.videoHeldFrames.get())
-            {
-                this.heldFrames = 0;
-            }
+            return;
         }
-        else
+
+        this.deltaTickResidual = (float) neu[AufnahmeBildtaktLogik.REST];
+        this.deltaTicks = (float) neu[AufnahmeBildtaktLogik.TAKTE];
+        this.lastMs = (long) neu[AufnahmeBildtaktLogik.LETZTE_MS];
+        this.heldFrames = (int) neu[AufnahmeBildtaktLogik.GEHALTENE];
+        this.lastFrameTime = (long) neu[AufnahmeBildtaktLogik.LETZTE_BILDZEIT];
+
+        int rueckgabe = (int) neu[AufnahmeBildtaktLogik.RUECKGABE];
+
+        if (rueckgabe != AufnahmeBildtaktLogik.KEINE_RUECKGABE)
         {
-            this.heldFrames = 0;
-            this.lastFrameTime = 0;
+            info.setReturnValue(rueckgabe);
         }
     }
 }
