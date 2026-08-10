@@ -225,6 +225,15 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 {
                     Messpunkt.stoerung("miniatur.zeichnen",
                         e.zeichner().getClass().getSimpleName() + ": " + t);
+
+                    /* ⛔ LAUT, NICHT NUR IM MESSPUNKT. Ein Zeichner, der nach seinem
+                     * pushPose wirft, laesst den Stapel stehen -- und das Bild stirbt
+                     * spaeter an "Pose stack not empty" in LevelRenderer.checkPoseStack,
+                     * mit einem Stapelabzug ohne eine einzige BBS-Zeile. Solange dieser
+                     * Fang stumm war, war die Ursache unsichtbar. */
+                    System.err.println("[miniatur-wurf] "
+                        + e.zeichner().getClass().getSimpleName() + ": " + t);
+                    t.printStackTrace();
                 }
                 finally
                 {
