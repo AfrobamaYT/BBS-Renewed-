@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.mixin.client.iris;
 
-import mchorse.bbs_mod.utils.iris.ShaderCurves;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.irisshaders.iris.uniforms.custom.CustomUniforms;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +15,8 @@ public class CustomUniformsBuilderMixin
     {
         if (info.getReturnValue() instanceof CustomUniformsAccessor accessor)
         {
-            ShaderCurves.addUniforms(accessor.bbs$uniformOrder());
+            /* Der Accessor ist eine Mixin-schnittstelle und bleibt hier; hinueber geht die Liste. */
+            MixinBruecke.rufe("ShaderPaketLogik", "uniformsAnmelden", accessor.bbs$uniformOrder());
         }
     }
 }

@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.mixin.client.iris;
 
-import mchorse.bbs_mod.utils.iris.IrisUtils;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.irisshaders.iris.shaderpack.ShaderPack;
 import net.irisshaders.iris.shaderpack.properties.ShaderProperties;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,6 +22,6 @@ public class ShaderPackMixin
     )
     private void afterActiveFeaturesInit(CallbackInfo ci)
     {
-        IrisUtils.setShaderProperties(shaderProperties);
+        MixinBruecke.rufe("ShaderPaketLogik", "eigenschaften", this.shaderProperties);
     }
 }

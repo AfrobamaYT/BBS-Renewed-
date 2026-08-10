@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.mixin.client.iris;
 
-import mchorse.bbs_mod.utils.iris.QueueMap;
-import mchorse.bbs_mod.utils.iris.ShaderCurves;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.irisshaders.iris.Iris;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,26 +16,25 @@ public class IrisMixin
     @Inject(method = "getShaderPackOptionQueue", at = @At("RETURN"), cancellable = true, remap = false)
     private static void onGetShaderPackOptionQueue(CallbackInfoReturnable<Map<String, String>> info)
     {
-        Map<String, String> returnValue = info.getReturnValue() == null ? null : new QueueMap<>(info.getReturnValue());
-
-        info.setReturnValue(returnValue);
+        info.setReturnValue((Map<String, String>) MixinBruecke.rufe(
+            "ShaderPaketLogik", "optionsreihenfolge", info.getReturnValue()));
     }
 
     @Inject(method = "loadExternalShaderpack", at = @At("HEAD"), remap = false)
     private static void onLoadExternalShaderpack(String name, CallbackInfoReturnable<Boolean> info)
     {
-        ShaderCurves.reset();
+        MixinBruecke.rufe("ShaderPaketLogik", "paketZuruecksetzen");
     }
 
     @Inject(method = "setShadersDisabled", at = @At("HEAD"), remap = false)
     private static void onLoadExternalShaderpack(CallbackInfo info)
     {
-        ShaderCurves.reset();
+        MixinBruecke.rufe("ShaderPaketLogik", "paketZuruecksetzen");
     }
 
     @Inject(method = "loadExternalShaderpack", at = @At(value = "RETURN", ordinal = 9), remap = false)
     private static void onTrueReturnLoadExternalShaderPack(CallbackInfoReturnable<Boolean> info)
     {
-        ShaderCurves.finishLoading();
+        MixinBruecke.rufe("ShaderPaketLogik", "paketFertig");
     }
 }
