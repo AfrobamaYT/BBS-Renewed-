@@ -13,6 +13,8 @@
  */
 package com.afrobama.bbstools.client.mixin.bbs;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.ui.ReplayCrowdModeToggle;
 import com.afrobama.bbstools.client.util.CrowdModeRegistry;
 import mchorse.bbs_mod.film.replays.Replay;
@@ -29,12 +31,7 @@ public abstract class UIReplaysOverlayPanelCrowdSyncMixin
     @Inject(method = "setReplay", at = @At("TAIL"), remap = false)
     private void bbstools$syncCrowdModeToggle(Replay replay, CallbackInfo ci)
     {
-        UIToggle widget = ReplayCrowdModeToggle.widget;
-
-        if (widget != null && replay != null && !replay.isGroup.get())
-        {
-            widget.setValue(CrowdModeRegistry.isCrowdMode(replay));
-        }
+        MixinBruecke.rufe("CrowdModeSyncLogik", "schalterAbgleichen", replay);
     }
 
 }
