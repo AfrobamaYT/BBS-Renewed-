@@ -329,7 +329,7 @@ public class UIFormList extends UIElement
          * ein Objekt am GameRenderer, das den Lichtblock auf der Grafikkarte beschreibt --
          * setupForEntityInInventory() heisst jetzt setupFor(Entry.ENTITY_IN_UI),
          * setupForFlatItems() heisst setupFor(Entry.ITEMS_FLAT). Gleiche Wirkung, anderer Ort. */
-        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
+        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting().setupFor(Lighting.Entry.ITEMS_3D);
 
         super.render(context);
 
