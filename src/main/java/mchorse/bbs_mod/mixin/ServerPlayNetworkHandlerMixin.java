@@ -1,9 +1,7 @@
 package mchorse.bbs_mod.mixin;
 
+import com.afrobama.bbstools.kernel.KernelBruecke;
 import com.mojang.brigadier.ParseResults;
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
-import mchorse.bbs_mod.actions.types.chat.CommandActionClip;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerPlayerGameMode;
@@ -29,29 +27,17 @@ public class ServerPlayNetworkHandlerMixin
     @Inject(method = "parseCommand", at = @At("HEAD"))
     public void onParse(String command, CallbackInfoReturnable<ParseResults<CommandSourceStack>> info)
     {
-        BBSMod.getActions().addAction(this.player, () ->
-        {
-            CommandActionClip clip = new CommandActionClip();
-
-            clip.command.set(command);
-
-            return clip;
-        });
+        /* this.player ist @Shadow und bleibt hier — der Kernel sieht das Feld nicht, er bekommt es. */
+        KernelBruecke.rufe("SpielerAktionenLogik", "befehlGetippt", this.player, command);
     }
 
     @Redirect(method = "handleUseItemOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayerGameMode;useItemOn(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/phys/BlockHitResult;)Lnet/minecraft/world/InteractionResult;"))
     private InteractionResult redirectOnBlockInteract(ServerPlayerGameMode manager, ServerPlayer player, Level world, ItemStack stack, InteractionHand hand, BlockHitResult hitResult)
     {
-        BBSMod.getActions().addAction(this.player, () ->
-        {
-            InteractBlockActionClip clip = new InteractBlockActionClip();
+        KernelBruecke.rufe("SpielerAktionenLogik", "blockBenutzt", this.player, hitResult, hand);
 
-            clip.hit.setHitResult(hitResult);
-            clip.hand.set(hand == InteractionHand.MAIN_HAND);
-
-            return clip;
-        });
-
+        /* ⚠️ @Redirect ERSETZT den Aufruf. Diese Zeile IST das Original — faellt sie weg,
+         * passiert der Rechtsklick auf den Block nicht mehr. Sie bleibt deshalb im Mixin. */
         return manager.useItemOn(player, world, stack, hand, hitResult);
     }
 }

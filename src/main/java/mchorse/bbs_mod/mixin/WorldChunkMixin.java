@@ -1,19 +1,16 @@
 package mchorse.bbs_mod.mixin;
 
+import com.afrobama.bbstools.kernel.KernelBruecke;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import mchorse.bbs_mod.BBSMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import mchorse.bbs_mod.utils.NbtSnapshotUtils;
 
 @Mixin(LevelChunk.class)
 public class WorldChunkMixin
@@ -33,28 +30,13 @@ public class WorldChunkMixin
     @Inject(method = SET_BLOCK_STATE, at = @At("HEAD"))
     private void captureReplacedBlockEntity(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> info, @Share("replaced") LocalRef<CompoundTag> replaced)
     {
-        LevelChunk chunk = (LevelChunk) (Object) this;
-
-        if (chunk.getLevel() instanceof ServerLevel world)
-        {
-            BlockEntity blockEntity = chunk.getBlockEntity(pos);
-
-            if (blockEntity != null)
-            {
-                replaced.set(NbtSnapshotUtils.ofBlockEntity(blockEntity, world.registryAccess()));
-            }
-        }
+        /* Die Weitergabe zwischen HEAD und RETURN bleibt hier: der Kernel kennt MixinExtras nicht. */
+        replaced.set((CompoundTag) KernelBruecke.rufe("BlockAufzeichnungLogik", "ersetztesBlockObjekt", this, pos));
     }
 
     @Inject(method = SET_BLOCK_STATE, at = @At("RETURN"))
     private void recordChangedBlock(BlockPos pos, BlockState state, int flags, CallbackInfoReturnable<BlockState> info, @Share("replaced") LocalRef<CompoundTag> replaced)
     {
-        BlockState previous = info.getReturnValue();
-        LevelChunk chunk = (LevelChunk) (Object) this;
-
-        if (previous != null && chunk.getLevel() instanceof ServerLevel)
-        {
-            BBSMod.getActions().changedBlock(pos, previous, replaced.get());
-        }
+        KernelBruecke.rufe("BlockAufzeichnungLogik", "blockGeaendert", this, pos, info.getReturnValue(), replaced.get());
     }
 }
