@@ -355,6 +355,12 @@ sourceSets {
 			exclude "com/afrobama/bbstools/client/veil/**"
 			// 2026-08-10 raus: physicsmod ist wieder im build (v186, mc 26.2).
 			exclude "com/afrobama/bbstools/client/web/MCEFWeb*"
+			/* ⛔ BLEIBT AUS, auch mit Iris im Build (2026-08-10 gemessen). Diese drei
+			 * Dateien sind UNSER code vom 27.07. fuer 1.21.1 und nie nach 26.2 portiert
+			 * worden — der Ausschluss hatte das verdeckt. Sie scheitern nicht an Iris,
+			 * sondern an 26.2: WorldRenderContext (Fabric-API umbenannt), RenderStateShard
+			 * (entfallen), getTimer() -> getDeltaTracker(), getPosition() -> position().
+			 * Das ist Portierarbeit, kein Update. */
 			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdIris*"
 			/* ⛔ HIER STAND EIN AUSSCHLUSS DES GANZEN fracture-PAKETS -- ER WAR FALSCH.
 			 * Grundlage war eine suche nach dem WORT "PhysicsMod", und das steht dort in
@@ -369,7 +375,7 @@ sourceSets {
 			 *
 			 * Geprueft mit: python tools/fremdmod-schluss.py */
 			exclude "mchorse/bbs_mod/mixin/client/iris/**"
-			exclude "mchorse/bbs_mod/mixin/client/sodium/**"
+			// 2026-08-10 raus: sodium ist wieder im build (0.9.2-alpha.4, mc 26.2).
 			/* NICHT das ganze paket: ShaderCurves und QueueMap darin sind das DATENMODELL
 			 * des shader-kurven-clips, an dem UICurveClip, CurveClientClip und BBSRendering
 			 * haengen -- BBS-code, kein Iris-anhang. Nur die drei klassen, die wirklich
@@ -450,8 +456,14 @@ dependencies {
 	/* MERGE 2026-07-27: aus dem CML-upstream — video-wiedergabe (VideoClip, VideoRenderer,
 	 * VideoWaveformCache). Ohne die lib faellt der komplette video-clip-block weg. */
 	// P3-26.2-AUS: implementation "maven.modrinth:watermedia:2.1.37"
-	// P3-26.2-AUS: implementation "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
-	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.8.8+1.21.1-fabric"
+	/* 2026-08-10 WIEDER AN: 0.9.2-alpha.4 fuer mc 26.2 (Modrinth, 07.08.).
+	 * ⚠️ ALPHA-KANAL — es gibt fuer 26.2 nichts Stabileres. */
+	implementation "maven.modrinth:sodium:mc26.2-0.9.2-alpha.4-fabric"
+	/* P3-26.2-AUS: 2026-08-10 versucht, 1.11.2 fuer mc 26.2 anzuschalten -> ROT.
+	 * Nicht die Fassung ist schuld: IrisUtils, IrisTextureWrapper und
+	 * CustomUniformsBuilderMixin sind noch auf 1.8.x-/1.21.1-Stand. Das ist
+	 * Portierarbeit, kein Update. */
+	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.11.2+26.2-fabric"
 
 	/* ⭐ spark — ETABLIERTER PROFILER STATT EIGENER ZAEHLER (2026-08-03).
 	 *

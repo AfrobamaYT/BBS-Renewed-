@@ -10,6 +10,7 @@
     "ChunkSectionsToRenderMixin",
     "ClientPlayerEntityAccessor",
     "ClientWorldPropertiesMixin",
+    "Diese Mixins zielen auf Iris und Sodium. Deren Abhaengigkeiten sind in P3 stillgelegt,",
     "EntityRenderDispatcherMixin",
     "EntityRendererMixin",
     "GameRendererMixin",
@@ -37,25 +38,24 @@
     "SpecialModelRenderersAccessor",
     "WindowMixin",
     "WorldMixin",
-    "WorldRendererMixin"
+    "WorldRendererMixin",
+    "sodium.ColorAttributeMixin"
   ],
   "_P3-26.2-AUS": [
-    "Diese Mixins zielen auf Iris und Sodium. Deren Abhaengigkeiten sind in P3 stillgelegt,",
-    "die Quelldateien darum aus dem Build genommen (build.gradle). Ein Eintrag hier ohne",
+    "Abhaengigkeit anschalten. Einzeln, je mit eigenem Beweis.",
     "Klasse im Jar ist ein STARTABBRUCH ohne Compilerfehler -- darum muessen beide zusammen.",
     "Zum Wiedereinschalten: Eintraege zurueck nach client[], Ausschluss in build.gradle raus,",
-    "Abhaengigkeit anschalten. Einzeln, je mit eigenem Beweis.",
-    "iris.SystemTimeUniformsTimerMixin",
-    "sodium.ColorAttributeMixin",
-    "iris.EntityVertexMixin",
-    "iris.IrisRenderingPipelineAccessor",
-    "iris.CustomUniformsBuilderMixin",
+    "die Quelldateien darum aus dem Build genommen (build.gradle). Ein Eintrag hier ohne",
     "iris.CustomUniformsAccessor",
+    "iris.CustomUniformsBuilderMixin",
+    "iris.EntityVertexMixin",
+    "iris.IrisMixin",
+    "iris.IrisRenderingPipelineAccessor",
     "iris.JcppProcessorMixin",
     "iris.ShaderPackMixin",
-    "iris.IrisMixin",
     "iris.SliderElementWidgetMixin",
-    "iris.StringElementWidgetInvoker"
+    "iris.StringElementWidgetInvoker",
+    "iris.SystemTimeUniformsTimerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
