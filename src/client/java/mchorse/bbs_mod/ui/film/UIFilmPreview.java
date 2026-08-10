@@ -598,27 +598,8 @@ public class UIFilmPreview extends UIElement
     private void renderCursor(UIContext context)
     {
         net.minecraft.client.Camera mcCamera = Minecraft.getInstance().gameRenderer.mainCamera();
-        Matrix4fStack stack = RenderSystem.getModelViewStack();
 
-        stack.pushMatrix();
-
-        stack.mul(context.batcher.pose().last().pose());
-        stack.translate(area.x + 16, area.ey() - 12, 0F);
-        stack.rotate(Axis.XN.rotationDegrees(mcCamera.xRot()));
-        stack.rotate(Axis.YP.rotationDegrees(mcCamera.yRot()));
-        stack.scale(-1F, -1F, -1F);
-        /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
-
-        /* ⚠️ FUNKTION VERLOREN: RenderSystem.renderCrosshair(int) gibt es in 26.2 nicht mehr.
-         * Der Aufruf zeichnete das kleine Achsenkreuz (X/Y/Z als drei farbige Linien) im
-         * Sofortmodus — und genau den gibt es nicht mehr. Vanillas Nachfolger fuer solche
-         * Hilfslinien ist net.minecraft.gizmos.Gizmos, das aber WELT-Linien beim Bildgraphen
-         * einreicht und nichts vom Modelview-Stapel einer Oberflaeche weiss; es taugt hier
-         * also nicht als Eins-zu-eins-Ersatz. Die Umrechnung oben bleibt absichtlich stehen,
-         * damit klar ist, wo das Kreuz sass, wenn es jemand neu zeichnet.
-         * FOLGE FUER DEN NUTZER: die Achsen-Anzeige unten links in der Filmvorschau fehlt. */
-
-        stack.popMatrix();
-        /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
+        AchsenKreuz.zeichne(context.batcher, area.x + 16, area.ey() - 12,
+            mcCamera.xRot(), mcCamera.yRot(), 10F);
     }
 }
