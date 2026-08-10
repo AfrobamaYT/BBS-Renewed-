@@ -40,6 +40,39 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
     }
 
     @Override
+    /**
+     * ⛔ OFFENER FEHLER: DIESE VORSCHAU LANDET IM PORT AN DER FALSCHEN STELLE.
+     *
+     * <p>Gemessen 2026-08-10 im A/B gegen bbs-1211-ref, Trail-Form in den ersten Replay
+     * gesetzt, Film-Panel, Eigenrauschen beider Seiten 0,00 %:
+     *
+     * <pre>
+     *   1.21.1   Symbol klein in der Listenzelle   (x 113..148, y 196..232)
+     *   26.2     Symbol riesig unten links        (x 180..330, y 360..460), Zelle leer
+     *   A/B      3,32 % -- groesster Einzelposten des ganzen Sweeps
+     * </pre>
+     *
+     * <p>Was BELEGT ist, damit der naechste Anlauf nicht dieselben Wege geht:
+     * <ul>
+     *   <li>Die Quelle ist diese Aufrufstelle: mit {@code BBSSettings.listModelPreview=false}
+     *       verschwindet das Symbol vollstaendig (8950 gezaehlte Bildpunkte -> 0).</li>
+     *   <li>Der Aufrufer uebergibt das RICHTIGE Rechteck: {@code Messpunkt} meldet
+     *       {@code ~miniatur.TrailFormRenderer = 40x40 @43,87} -- dieselbe Groesse wie
+     *       {@code ModelFormRenderer}, das korrekt zeichnet.</li>
+     *   <li>Diese Methode und {@code Batcher2D.fullTexturedBox} sind zwischen beiden Baeumen
+     *       BYTE-GLEICH; auch {@code UIReplayList#renderElementPart} samt {@code clip(...)}.</li>
+     *   <li>Die Textur ist auf beiden Seiten dieselbe: {@code assets:textures/default_trail.png},
+     *       1000x1000 -- die Formel oben liefert damit beidseits 36x36.</li>
+     *   <li>Das Verhaeltnis 140/35 ist genau 4 -- der Verdacht auf eine fehlende
+     *       GUI-Skalierung ist damit naheliegend, aber NICHT gemessen.</li>
+     * </ul>
+     *
+     * <p>⛔ NICHT GEPRUEFT und der naechste Schritt: warum ausgerechnet Trail. Label,
+     * Gegenstand, Partikel und Billboard zeichnen ebenfalls flach ueber den Batcher und
+     * gehen durch dieselbe {@code Miniaturschlange} (die filtert nicht nach Typ) -- sie
+     * liegen bei 0,20 bis 0,76 %. Der Unterschied muss also in dem liegen, was Trail
+     * ZUSAETZLICH tut, nicht im Vorschauweg als solchem.
+     */
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         Texture texture = context.render.getTextures().getTexture(this.form.texture.get());
