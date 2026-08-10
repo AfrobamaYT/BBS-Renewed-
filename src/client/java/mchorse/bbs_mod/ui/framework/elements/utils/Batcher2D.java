@@ -786,12 +786,11 @@ public class Batcher2D
     /** Enqueue one textured quad. Vanilla's own {@link BlitRenderState} already carries a tint. */
     private void blit(RenderPipeline pipeline, TextureSetup setup, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        Matrix3x2f pose = new Matrix3x2f(this.context.pose());
+        Matrix3x2f pose = ZugMatrix.fuerZug(this.context.pose(), this.stapel);
         int x0 = (int) x;
         int y0 = (int) y;
         int x1 = (int) (x + w);
         int y1 = (int) (y + h);
-
         this.submit(new BlitRenderState(pipeline, setup, pose,
             x0, y0, x1, y1,
             u1 / (float) textureW, u2 / (float) textureW,
