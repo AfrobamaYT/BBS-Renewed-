@@ -1,9 +1,8 @@
 package mchorse.bbs_mod.mixin;
 
+import com.afrobama.bbstools.kernel.KernelBruecke;
 import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.morphing.IMorphProvider;
 import mchorse.bbs_mod.morphing.Morph;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.EntityDimensions;
@@ -34,29 +33,13 @@ public class PlayerEntityMixin
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     public void onWriteCustomDataToNbt(ValueOutput ausgabe, CallbackInfo info)
     {
-        if (this instanceof IMorphProvider provider)
-        {
-            /* ⚠️ toNbt() ist als Tag deklariert, liefert aber einen CompoundTag (fromNbt
-             * nimmt genau den wieder entgegen). Der Codec braucht den konkreten Typ, also
-             * einmal pruefen statt blind casten -- ein anderer Tag-Typ waere ein echter
-             * Fehler im Morph und soll nicht still als leeres Feld enden. */
-            if (provider.getMorph().toNbt() instanceof CompoundTag daten)
-            {
-                ausgabe.store("BBSMorph", CompoundTag.CODEC, daten);
-            }
-        }
+        KernelBruecke.rufe("SpielerFormSpeichernLogik", "schreiben", this, ausgabe);
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     public void onReadCustomDataFromNbt(ValueInput eingabe, CallbackInfo info)
     {
-        if (this instanceof IMorphProvider provider)
-        {
-            /* read gibt ein Optional -- die alte contains-Pruefung faellt damit weg, und der
-             * Fall "Feld da, aber kaputt" wird still uebersprungen statt zu werfen. */
-            eingabe.read("BBSMorph", CompoundTag.CODEC)
-                .ifPresent(tag -> provider.getMorph().fromNbt(tag));
-        }
+        KernelBruecke.rufe("SpielerFormSpeichernLogik", "lesen", this, eingabe);
     }
 
     /* ⛔ UMGEZOGEN 2026-07-31 nach LivingEntityMixin.

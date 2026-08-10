@@ -1,6 +1,7 @@
 package com.afrobama.bbstools.kernel.logik;
 
 import mchorse.bbs_mod.BBSMod;
+import mchorse.bbs_mod.actions.types.AttackActionClip;
 import mchorse.bbs_mod.actions.types.blocks.BreakBlockActionClip;
 import mchorse.bbs_mod.actions.types.blocks.InteractBlockActionClip;
 import mchorse.bbs_mod.actions.types.blocks.PlaceBlockActionClip;
@@ -11,6 +12,7 @@ import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -189,6 +191,36 @@ public final class SpielerAktionenLogik
 
             clip.itemStack.set(benutzer.getItemInHand(hand).copy());
             clip.hand.set(hand == InteractionHand.MAIN_HAND);
+
+            return clip;
+        });
+    }
+
+    /**
+     * {@code LivingEntity.actuallyHurt} @HEAD — ein Spieler hat zugeschlagen.
+     *
+     * <p>⚠️ {@code getClass() == ServerPlayer.class}, NICHT {@code instanceof}. Die exakte
+     * Klasse schliesst Unterklassen aus, die andere Mods als Spieler-Stellvertreter einsetzen
+     * (Fake-Player fuer Maschinen). Ein {@code instanceof} wuerde deren Schlaege dem Spieler
+     * zuschreiben und Angriffe in die Aufzeichnung legen, die er nie gefuehrt hat.</p>
+     *
+     * <p>⚠️ {@code source.isDirect()} haelt Fernwirkung draussen — Explosionen, Gift, Feuer,
+     * das der Spieler gelegt hat. Aufgezeichnet wird der Schlag, nicht die Schuld.</p>
+     */
+    public static void schadenZugefuegt(DamageSource quelle, float schaden)
+    {
+        Entity angreifer = quelle.getEntity();
+
+        if (!quelle.isDirect() || angreifer == null || angreifer.getClass() != ServerPlayer.class)
+        {
+            return;
+        }
+
+        BBSMod.getActions().addAction((ServerPlayer) angreifer, () ->
+        {
+            AttackActionClip clip = new AttackActionClip();
+
+            clip.damage.set(schaden);
 
             return clip;
         });

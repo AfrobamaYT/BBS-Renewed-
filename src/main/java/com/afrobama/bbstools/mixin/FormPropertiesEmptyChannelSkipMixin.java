@@ -24,7 +24,7 @@
 // reference the BBS class + method by their (non-yarn) original names.
 package com.afrobama.bbstools.mixin;
 
-import com.afrobama.bbstools.perf.BBSPerfConfig;
+import com.afrobama.bbstools.kernel.KernelBruecke;
 
 import mchorse.bbs_mod.film.replays.FormProperties;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -50,8 +50,7 @@ public abstract class FormPropertiesEmptyChannelSkipMixin
         float blend,
         CallbackInfo ci)
     {
-        if (!BBSPerfConfig.ENABLE_EMPTY_CHANNEL_SKIP) return;
-        if (value != null && value.isEmpty())
+        if (KernelBruecke.rufeUndAbbrechen("LeerkanalUeberspringenLogik", "ueberspringen", value))
         {
             ci.cancel();
         }
