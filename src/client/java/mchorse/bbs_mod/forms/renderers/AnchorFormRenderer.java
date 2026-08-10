@@ -26,6 +26,25 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
     }
 
     @Override
+    /**
+     * ⛔ OFFENER FEHLER, GLEICHE URSACHE WIE BEI {@code TrailFormRenderer} (2026-08-10).
+     *
+     * <p>Gemessen im A/B gegen bbs-1211-ref, Anker-Form in den ersten Replay gesetzt,
+     * Eigenrauschen beider Seiten 0,00 %:
+     *
+     * <pre>
+     *   1.21.1   Dreibein klein in der Listenzelle
+     *   26.2     Dreibein riesig unten ueber der Werkzeugleiste, Zelle leer
+     *   A/B      1,14 bis 1,54 %
+     * </pre>
+     *
+     * <p>Dieselbe Signatur wie Trail: die Vorschau verlaesst ihre Zelle, rund vierfach zu
+     * gross und versetzt. Ausgeschlossen ist damit der Form-Renderer selbst --
+     * {@code renderInUI} ist zwischen beiden Baeumen byte-gleich, und die Textur
+     * {@code assets:textures/anchor.png} ist auf beiden Seiten 40x40. Der Defekt sitzt im
+     * gemeinsamen Miniaturenweg, nicht hier. Der volle Messstand steht bei
+     * {@code TrailFormRenderer#renderInUI}.
+     */
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         if (this.form.parts.getAll().isEmpty())
