@@ -1,9 +1,6 @@
 package mchorse.bbs_mod.mixin;
 
-import mchorse.bbs_mod.BBSMod;
-import mchorse.bbs_mod.actions.types.item.UseBlockItemActionClip;
-import mchorse.bbs_mod.actions.types.item.UseItemActionClip;
-import net.minecraft.server.level.ServerPlayer;
+import com.afrobama.bbstools.kernel.KernelBruecke;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -24,35 +21,12 @@ public class ItemStackMixin
      * sonst wirft Mixin beim laden, nicht beim uebersetzen. */
     public void onUse(Level world, Player user, InteractionHand hand, CallbackInfoReturnable<InteractionResult> info)
     {
-        if (user instanceof ServerPlayer player)
-        {
-            BBSMod.getActions().addAction(player, () ->
-            {
-                UseItemActionClip clip = new UseItemActionClip();
-
-                clip.itemStack.set(user.getItemInHand(hand).copy());
-                clip.hand.set(hand == InteractionHand.MAIN_HAND);
-
-                return clip;
-            });
-        }
+        KernelBruecke.rufe("SpielerAktionenLogik", "gegenstandBenutzt", world, user, hand);
     }
 
     @Inject(method = "useOn", at = @At("HEAD"))
     public void onUseOnBlock(UseOnContext context, CallbackInfoReturnable<InteractionResult> info)
     {
-        if (context.getPlayer() instanceof ServerPlayer player)
-        {
-            BBSMod.getActions().addAction(player, () ->
-            {
-                UseBlockItemActionClip clip = new UseBlockItemActionClip();
-
-                clip.hit.setHitResult(context);
-                clip.itemStack.set(context.getItemInHand().copy());
-                clip.hand.set(context.getHand() == InteractionHand.MAIN_HAND);
-
-                return clip;
-            });
-        }
+        KernelBruecke.rufe("SpielerAktionenLogik", "gegenstandAufBlock", context);
     }
 }
