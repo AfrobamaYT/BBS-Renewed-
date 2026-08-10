@@ -1,20 +1,15 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+import net.minecraft.world.entity.Entity;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
-import mchorse.bbs_mod.client.renderer.MorphRenderer;
-import net.fabricmc.fabric.api.client.rendering.v1.FabricRenderState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,12 +49,7 @@ public class EntityRenderDispatcherMixin
     @Inject(method = "extractEntity", at = @At("RETURN"))
     private void bbs$merkeEntity(Entity entity, float teilTick, CallbackInfoReturnable<EntityRenderState> cir)
     {
-        EntityRenderState zustand = cir.getReturnValue();
-
-        if (zustand != null)
-        {
-            ((FabricRenderState) zustand).setData(MorphRenderer.ENTITY_AM_ZUSTAND, entity);
-        }
+        MixinBruecke.rufe("EntitaetVersandLogik", "merken", cir.getReturnValue(), entity);
     }
 
     @WrapOperation(
@@ -71,36 +61,10 @@ public class EntityRenderDispatcherMixin
     )
     private void bbs$umschliesseSubmit(EntityRenderer<?, ?> renderer, EntityRenderState zustand, PoseStack matrices, SubmitNodeCollector sammler, CameraRenderState kamera, Operation<Void> original)
     {
-        Entity entity = MorphRenderer.entityVon(zustand);
-
-        if (entity instanceof LivingEntity lebendig)
+        /* Operation bleibt hier — MixinExtras kennt der Kernel nicht. */
+        if (!MixinBruecke.rufeUndAbbrechen("EntitaetVersandLogik", "gezeichnet", zustand, matrices, sammler))
         {
-            /* ⚠️ Der Teil-Tick ist kein Parameter mehr — submit kennt ihn nicht. Der
-             * DeltaTracker traegt aber denselben Wert wie beim Einsammeln: beides passiert
-             * im selben Bild, dazwischen wird er nicht weitergedreht. */
-            float teilTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-
-            /* ⚠️ VERLUST, BEWUSST UND GEMELDET: hier stand der Weiss-Anteil der
-             * Ueberlagerung aus getWhiteOverlayProgress (Ladungsblitz des Creepers,
-             * Trefferblitz). Der Invoker dafuer heisst LivingEntityRendererInvoker und traegt
-             * noch die 1.21.1-Signatur (LivingEntity, float); in 26.2 nimmt die Methode den
-             * Render-Zustand. Ein @Invoker auf eine nicht existierende Signatur laesst das
-             * Weben scheitern — also wird er hier NICHT mehr benutzt. Bis er nachgezogen ist,
-             * ist der Weiss-Anteil 0; der rote Anteil (Schaden/Tod) stimmt. */
-            int overlay = OverlayTexture.pack(0F, lebendig.hurtTime > 0 || lebendig.deathTime > 0);
-
-            if (lebendig instanceof AbstractClientPlayer spieler
-                && MorphRenderer.renderPlayer(spieler, 0F, teilTick, matrices, sammler, zustand.lightCoords))
-            {
-                return;
-            }
-
-            if (MorphRenderer.renderLivingEntity(lebendig, 0F, teilTick, matrices, sammler, zustand.lightCoords, overlay))
-            {
-                return;
-            }
+            original.call(renderer, zustand, matrices, sammler, kamera);
         }
-
-        original.call(renderer, zustand, matrices, sammler, kamera);
     }
 }

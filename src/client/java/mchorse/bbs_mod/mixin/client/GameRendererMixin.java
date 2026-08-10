@@ -1,17 +1,10 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import com.mojang.math.Axis;
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
-import mchorse.bbs_mod.camera.controller.CameraController;
-import mchorse.bbs_mod.camera.controller.ICameraController;
-import mchorse.bbs_mod.camera.controller.CameraWorkCameraController;
-import mchorse.bbs_mod.camera.controller.PlayCameraController;
-import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -62,9 +55,11 @@ public class GameRendererMixin
     @Inject(method = "mainRenderTarget", at = @At("HEAD"), cancellable = true)
     private void bbs$umlenkenAufFilmpuffer(CallbackInfoReturnable<RenderTarget> info)
     {
-        if (BBSRendering.canReplaceFramebuffer() && BBSRendering.getFramebuffer() != null)
+        RenderTarget puffer = (RenderTarget) MixinBruecke.rufe("SpielRendererLogik", "filmpuffer");
+
+        if (puffer != null)
         {
-            info.setReturnValue(BBSRendering.getFramebuffer());
+            info.setReturnValue(puffer);
         }
     }
 
@@ -77,15 +72,8 @@ public class GameRendererMixin
     @Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
     public void onBob(CameraRenderState kamera, PoseStack matrices, CallbackInfo ci)
     {
-        float tickDelta = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-
-        if (BBSModClient.getCameraController().getCurrent() != null)
+        if (MixinBruecke.rufeUndAbbrechen("SpielRendererLogik", "kopfwackeln", matrices))
         {
-            if (TrackerClientClip.shouldRenderHand())
-            {
-                TrackerClientClip.applyBob(matrices, tickDelta);
-            }
-
             ci.cancel();
         }
     }
@@ -115,12 +103,8 @@ public class GameRendererMixin
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
     public void onTiltViewWhenHurt(CameraRenderState kamera, PoseStack matrices, CallbackInfo info)
     {
-        CameraController controller = BBSModClient.getCameraController();
-
-        if (controller.getCurrent() != null && !BBSRendering.isIrisShadowPass())
+        if (MixinBruecke.rufeUndAbbrechen("SpielRendererLogik", "trefferneigung", matrices))
         {
-            matrices.mulPose(Axis.ZP.rotationDegrees(controller.getRoll()));
-
             info.cancel();
         }
     }
@@ -128,19 +112,8 @@ public class GameRendererMixin
     @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
     public void onRenderHand(CallbackInfo info)
     {
-        ICameraController current = BBSModClient.getCameraController().getCurrent();
-
-        /* CameraWorkCameraController statt PlayCameraController: der editor-viewport
-         * laeuft ueber RunnerCameraController, beide erben von der basisklasse. */
-        if (current instanceof CameraWorkCameraController)
+        if (MixinBruecke.rufeUndAbbrechen("SpielRendererLogik", "handAnfang"))
         {
-            if (TrackerClientClip.shouldRenderHand())
-            {
-                TrackerClientClip.beginHandRendering();
-
-                return;
-            }
-
             info.cancel();
         }
     }
@@ -148,27 +121,13 @@ public class GameRendererMixin
     @Inject(method = "renderItemInHand", at = @At("RETURN"))
     public void onRenderHandEnd(CallbackInfo info)
     {
-        if (TrackerClientClip.shouldRenderHand()
-            && BBSModClient.getCameraController().getCurrent() != null)
-        {
-            TrackerClientClip.endHandRendering();
-        }
+        MixinBruecke.rufe("SpielRendererLogik", "handEnde");
     }
 
     @Inject(at = @At("HEAD"), method = "renderLevel")
     private void onWorldRenderBegin(CallbackInfo callbackInfo)
     {
-        if (BBSModClient.getCameraController().getCurrent() != null)
-        {
-            TrackerClientClip.beginLevelRendering();
-        }
-
-        BBSRendering.onWorldRenderBegin();
-
-        /* Brotkrume fuer den naechsten "Pose stack not empty": vanillas checkPoseStack
-         * nennt keinen BBS-Rahmen, weil es den Ungleichstand nur als letztes bemerkt.
-         * So steht im Bericht wenigstens, WAS zuletzt lief. */
-        mchorse.bbs_mod.graphics.Stapelwache.abschnitt("level:begin");
+        MixinBruecke.rufe("SpielRendererLogik", "weltAnfang");
     }
 
     /**
@@ -209,10 +168,7 @@ public class GameRendererMixin
     @Inject(at = @At("RETURN"), method = "renderLevel")
     private void onWorldRenderEnd(CallbackInfo callbackInfo)
     {
-        TrackerClientClip.endLevelRendering();
-        BBSRendering.onWorldRenderEnd();
-
-        mchorse.bbs_mod.graphics.Stapelwache.abschnitt("level:ende");
+        MixinBruecke.rufe("SpielRendererLogik", "weltEnde");
     }
 
     /**
@@ -238,11 +194,6 @@ public class GameRendererMixin
     @Inject(method = "render", at = @At("HEAD"), require = 1)
     private void onBeforeHudRendering(DeltaTracker tickCounter, boolean tick, CallbackInfo info)
     {
-        ICameraController current = BBSModClient.getCameraController().getCurrent();
-
-        if (mchorse.bbs_mod.client.HudSichtbarkeit.istVersteckt() && current == null)
-        {
-            BBSRendering.onRenderBeforeScreen();
-        }
+        MixinBruecke.rufe("SpielRendererLogik", "vorDemBildschirm");
     }
 }
