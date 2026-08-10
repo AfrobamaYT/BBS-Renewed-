@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import mchorse.bbs_mod.client.renderer.MobFormPose;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -45,7 +47,7 @@ public abstract class LivingEntityRendererMixin
     @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V", at = @At("HEAD"))
     public void bbs$poseAnDenZustand(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
     {
-        MobFormPose.stempeln(zustand);
+        MixinBruecke.rufe("LivingEntityPoseLogik", "stempeln", zustand);
     }
 
     @Inject(
@@ -59,12 +61,12 @@ public abstract class LivingEntityRendererMixin
     )
     public void onSetAngles(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
     {
-        MobFormPose.auflegen(zustand);
+        MixinBruecke.rufe("LivingEntityPoseLogik", "auflegen", zustand);
     }
 
     @Inject(method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V", at = @At("TAIL"))
     public void onRenderEnd(LivingEntityRenderState zustand, PoseStack matrixStack, SubmitNodeCollector sammler, CameraRenderState kamera, CallbackInfo info)
     {
-        MobFormPose.zuruecksetzen();
+        MixinBruecke.rufe("LivingEntityPoseLogik", "zuruecksetzen");
     }
 }
