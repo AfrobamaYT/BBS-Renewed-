@@ -7,6 +7,8 @@
 // targets and crashed the mixin transform. uiAfter is a public field, so we just set it.
 package com.afrobama.bbstools.client.mixin.bbs;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.bbs.fastpath.UndoSnapshotMemo;
 
 import mchorse.bbs_mod.data.types.MapType;
@@ -24,10 +26,7 @@ public class ValueChangeUndoMemoMixin
     @Inject(method = "cacheAfter", at = @At("HEAD"), cancellable = true)
     private void bbstools$memoizeCacheAfter(UIElement editor, CallbackInfo ci)
     {
-        ValueChangeUndo self = (ValueChangeUndo) (Object) this;
-        self.uiAfter = (editor.getRoot() == null)
-            ? new MapType()
-            : UndoSnapshotMemo.collect(editor.getRoot());
+        MixinBruecke.rufe("UndoMemoLogik", "aufnehmen", this, editor);
         ci.cancel();
     }
 

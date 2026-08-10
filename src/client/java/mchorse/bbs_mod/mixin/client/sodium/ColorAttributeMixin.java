@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client.sodium;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.forms.renderers.utils.RecolorVertexConsumer;
 import mchorse.bbs_mod.utils.colors.Colors;
 import net.caffeinemc.mods.sodium.api.vertex.attributes.common.ColorAttribute;
@@ -13,14 +15,8 @@ public class ColorAttributeMixin
     @ModifyVariable(method = "set", at = @At("HEAD"), ordinal = 0, remap = false)
     private static int onSet(int color)
     {
-        if (RecolorVertexConsumer.newColor != null)
-        {
-            Colors.COLOR.set(color);
-            Colors.COLOR.mul(RecolorVertexConsumer.newColor);
+        Object neu = MixinBruecke.rufe("FarbFilterLogik", "vertexFarbe", color);
 
-            return Colors.COLOR.getARGBColor();
-        }
-
-        return color;
+        return neu instanceof Integer i ? i : color;
     }
 }

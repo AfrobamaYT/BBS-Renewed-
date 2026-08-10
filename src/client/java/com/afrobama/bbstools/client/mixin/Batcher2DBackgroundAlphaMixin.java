@@ -1,6 +1,8 @@
 // Coded by Afrobama/Claude — UI Overhaul Phase 1: background-only alpha tint
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.ui.theme.BBSToolsTheme;
 import com.afrobama.bbstools.client.ui.theme.BBSToolsTransparency;
 
@@ -34,9 +36,8 @@ public abstract class Batcher2DBackgroundAlphaMixin
     )
     private int bbstools$tintBoxBackground(int color)
     {
-        if (BBSToolsTransparency.PANEL_BG_ALPHA >= 0.999F) return color;
-        if (!BBSToolsTheme.looksLikeBackground(color)) return color;
-        return BBSToolsTheme.withAlpha(color, BBSToolsTransparency.PANEL_BG_ALPHA);
+        Object neu = MixinBruecke.rufe("FarbFilterLogik", "hintergrundAlpha", color);
+        return neu instanceof Integer i ? i : color;
     }
 
 }
