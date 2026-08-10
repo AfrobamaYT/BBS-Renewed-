@@ -212,7 +212,18 @@ public final class KernelBruecke
 
         if (loader == null)
         {
-            return null;
+            /* ⛔ HIER STAND `return null` — DER FRUEHE AUSSTIEG, DER ALLES ERKLAERT.
+             * Ohne Agent gibt es die KernelLoader-Klasse nicht, und damit war an dieser
+             * Zeile Schluss: der Fallback weiter unten wurde NIE erreicht. Genau davor
+             * warnt der Zwilling in MixinBruecke ("Der loader == null-zweig oben greift
+             * nur, wenn die KernelLoader-KLASSE fehlt") — dort gibt es beide Wege, hier
+             * fehlten beide.
+             *
+             * ⚠️ ICH HABE ZUERST DIE FALSCHE STELLE GEFIXT (2026-08-10): den Fallback ans
+             *    Ende der Schleife gehaengt, geswappt, gemessen — immer noch null. Erst
+             *    das Nachlesen der ganzen Methode zeigte den Ausstieg zwei Zeilen vorher.
+             *    Ein Fix, dessen Wirkung man nicht misst, sieht genauso aus wie keiner. */
+            return ohneKernelLaden(einfacherName);
         }
 
         for (String paket : PAKETE)
@@ -226,6 +237,53 @@ public final class KernelBruecke
             catch (Throwable weiter)
             {
                 /* Nächstes paket probieren — eine klasse liegt nur in einem davon. */
+            }
+        }
+
+        /* ⛔ HIER STAND EIN NACKTES `return null` — UND DAMIT TAT JEDER HANDLER NACH DEM
+         * BRUECKEN-MUSTER IN src/main GAR NICHTS (2026-08-10 gemessen).
+         *
+         * Ohne laufenden Hotpatch-Agent gibt es keinen aktiven Kernel; `laden(...)` wirft
+         * dann fuer jedes Paket, die Schleife laeuft durch, und hier war Schluss. `rufe`
+         * lieferte null, `rufeUndAbbrechen` false — ohne Fehlerzaehler, ohne Logzeile.
+         * Gemessen an AudioReaderLogik:
+         *
+         *     ueber die Bruecke: null      direkt aufgeloest: klasse+methode DA
+         *
+         * Die Folge war kein Hotswap-Verlust, sondern ein FUNKTIONSVERLUST: MP3 und FLAC
+         * blieben stumm, weil der Handler nie etwas zurueckgab. Genau deshalb liess sich
+         * bisher kein src/main-Mixin auf diese Bruecke legen — es haette die Funktion
+         * abgeschaltet statt sie hotswapbar zu machen.
+         *
+         * MixinBruecke (client) hat diesen Fallback seit dem 2026-07-26, mit derselben
+         * Begruendung und derselben Messung (root-kinder 7 -> 7 ueber die Bruecke, 7 -> 8
+         * direkt). Er fehlte hier schlicht.
+         *
+         * OHNE Agent laedt der normale Classloader — dann ist der Handler zwar nicht
+         * hotswapbar, aber er ARBEITET. MIT Agent greift der Weg darueber weiterhin zuerst,
+         * also bleibt der Swap erhalten. */
+        return ohneKernelLaden(einfacherName);
+    }
+
+    /**
+     * Die Logik-Klasse ueber den normalen Classloader holen — der Weg ohne Hotpatch-Agent.
+     *
+     * <p>Was hier zurueckkommt, ist NICHT hotswapbar (es ist die Kopie dieses Loaders). Das
+     * ist der bewusste Tausch: lieber ein Handler, der arbeitet und einen Boot braucht, als
+     * einer, der still nichts tut.</p>
+     */
+    private static Class<?> ohneKernelLaden(String einfacherName)
+    {
+        for (String paket : PAKETE)
+        {
+            try
+            {
+                return Class.forName(paket + "." + einfacherName, false,
+                    KernelBruecke.class.getClassLoader());
+            }
+            catch (Throwable naechstesPaket)
+            {
+                /* in einem der anderen pakete weitersuchen */
             }
         }
 
