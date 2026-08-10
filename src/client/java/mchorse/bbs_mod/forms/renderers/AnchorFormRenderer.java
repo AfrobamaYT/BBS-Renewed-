@@ -45,9 +45,17 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
      * {@code TrailFormRenderer#renderInUI}.
      */
     @Override
+    /**
+     * ⛔ NUR OHNE TEILE. Mit Teilen zeichnet renderInUI raeumlich und schiebt dabei auf
+     * context.batcher.pose() -- inline gelaufen bleibt der Weltstapel unausgeglichen und das
+     * Bild stirbt an "Pose stack not empty" (LevelRenderer.checkPoseStack), gemeldet vom
+     * Nutzer 2026-08-11 beim Klicken und Scrollen im Morph-Panel,
+     * crash-2026-08-11_00.30.26-client.txt. Der raeumliche Zweig gehoert weiter in die
+     * Miniaturkachel.
+     */
     protected boolean flacheVorschau()
     {
-        return true;
+        return this.form.parts.getAll().isEmpty();
     }
 
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
