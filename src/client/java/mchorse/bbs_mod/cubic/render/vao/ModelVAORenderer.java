@@ -346,6 +346,15 @@ public class ModelVAORenderer
             durchgang.setUniform("DynamicTransforms", transformationen);
             durchgang.setUniform(ModelVAOPipeline.MODELL_BLOCK, block);
 
+            /* ⛔ AM DURCHGANG, NICHT GLOBAL. Zwei Anlaeufe ueber RenderSystem.setShaderLights
+             * blieben wirkungslos (gemessen 2026-08-10, Helligkeit 0,415 unveraendert): der
+             * globale Stand ist bis hierher wieder ueberschrieben. Nur die Bindung am
+             * Durchgang selbst haelt. Siehe UiLicht. */
+            if (!mchorse.bbs_mod.client.BBSRendering.isRenderingWorld())
+            {
+                durchgang.setUniform("Lighting", mchorse.bbs_mod.graphics.UiLicht.scheibe());
+            }
+
             /* ⛔ OHNE DIESE BINDUNG ZEICHNET DAS MODELL WEISS. Die Pipeline deklariert
              * Sampler0/1/2; in 26.2 gehoert die Textur zum Zug, nicht in einen globalen
              * Aufruf davor. */

@@ -64,43 +64,10 @@ public abstract class FormRenderer <T extends Form>
 
     public final void renderUI(UIContext context, int x1, int y1, int x2, int y2)
     {
-        /* ⚠️ VERHALTENSAENDERUNG 26.2: die beiden Lichtrichtungen fuer die Formvorschau in
-         * der Oberflaeche sind weg. Hier standen (0, 1, -0.2) und (-0.85, 0.85, 1);
-         * RenderSystem.setupLevelDiffuseLighting nahm sie entgegen und legte sie global ab.
-         *
-         * In 26.2 stehen die Lichtrichtungen in einem Uniform-Block auf der Grafikkarte, und
-         * Vanilla gibt sie nur als FESTE Voreinstellungen heraus (Lighting.Entry). Ein eigenes
-         * Richtungspaar braeuchte einen eigenen Lighting-Block -- ein Entwurf, keine
-         * Uebersetzung. ENTITY_IN_UI ist Vanillas Voreinstellung fuer genau diesen Fall.
-         * Folge: die Formvorschauen sind etwas anders ausgeleuchtet als vorher. */
-        /* ⛔⛔ DIESER AUFRUF WIRKT HIER NICHT — GEMESSEN 2026-08-10, DREI VOREINSTELLUNGEN.
-         *
-         * A/B gegen den 1.21.1-Zweig: die Formvorschauen rendern mit gleichmaessig ~40 %
-         * der Helligkeit (rosa 197,31,143 gegen 81,13,58; gelb 179,159,47 gegen 72,64,19 --
-         * derselbe Faktor ueber alle Kanaele, also Intensitaet, nicht Richtung).
-         *
-         * Probiert und JE GEMESSEN: ENTITY_IN_UI, LEVEL, ITEMS_3D. Alle drei liefern
-         * BYTE-IDENTISCHE Bilder. Die Klassenbytes der laufenden Instanz trugen dabei
-         * nachweislich den neuen Wert -- der Aufruf kommt also an und bewirkt nichts.
-         *
-         * WARUM: Lighting haelt einen GpuBuffer (Instanzfeld `buffer`, paddedSize 256).
-         * setupFor() schreibt die Lichtrichtungen dort hinein. Wirksam wird das nur, wenn die
-         * PIPELINE des Zeichenaufrufs diesen Uniform-Block bindet. BBS' Formzeichner tut das
-         * offenbar nicht -- geschrieben wird in einen Puffer, den niemand liest.
-         *
-         * ⛔ DREI AUFRUFORTE GEMESSEN, KEINER WIRKT: hier, und in UIFormList BEIDE Aufrufe
-         * (vor und nach super.render). Auch die Vermutung, der zweite ueberschreibe den
-         * ersten, weil der SubmitNodeCollector die Modelle nur EINREICHT und spaeter zeichnet,
-         * ist gemessen und falsch -- ITEMS_FLAT gegen ITEMS_3D an der zweiten Stelle aendert
-         * ebenfalls kein Pixel.
-         *
-         * ⛔ NAECHSTER ANLAUF IST KEIN WEITERER setupFor-AUFRUF. Zu messen ist, welche
-         * RenderPipeline der Zeichenaufruf am Ende benutzt und ob sie den Lighting-Block
-         * ueberhaupt deklariert. 26.2 zeichnet ueber FormSammler/SubmitNodeCollector; 1.21.1
-         * ueber CustomVertexConsumerProvider mit 16 eigens zugewiesenen RenderLayern
-         * (FormUtilsClient.getProvider). Dort laufen die Wege auseinander. */
-        net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting()
-            .setupFor(com.mojang.blaze3d.platform.Lighting.Entry.LEVEL);
+        /* ⛔ HIER STAND DAS LICHT UND GEHOERT NICHT HIERHIN. 1.21.1 setzte an dieser Stelle
+         * setupLevelDiffuseLighting((0,1,-0.2), (-0.85,0.85,1)) und zeichnete sofort. 26.2
+         * sammelt erst ein; bis zum Zeichnen ist der Block wieder ueberschrieben. Gesetzt
+         * wird jetzt in FormSammler.zeichnenLassen, gemessen. Siehe UiLicht. */
 
         /* Messfuehler: zeichnen die Miniaturen (Form-palette, 64x64-vorschau im
          * Modell-editor) ueberhaupt, oder werden sie nur uebermalt? Genau diese Frage
