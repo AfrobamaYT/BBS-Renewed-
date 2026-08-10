@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.KeyboardHandler;
@@ -22,12 +24,12 @@ public class KeyboardMixin
     @Inject(method = "keyPress", at = @At("HEAD"))
     public void onOnKey(long window, int action, KeyEvent ereignis, CallbackInfo info)
     {
-        BBSRendering.lastAction = action;
+        MixinBruecke.rufe("EingabeDurchreichenLogik", "tasteBeginn", action);
     }
 
     @Inject(method = "keyPress", at = @At("TAIL"))
     public void onOnEndKey(long window, int action, KeyEvent ereignis, CallbackInfo info)
     {
-        BBSModClient.onEndKey(window, ereignis.key(), ereignis.scancode(), action, ereignis.modifiers(), info);
+        MixinBruecke.rufe("EingabeDurchreichenLogik", "tasteEnde", window, ereignis, action, info);
     }
 }
