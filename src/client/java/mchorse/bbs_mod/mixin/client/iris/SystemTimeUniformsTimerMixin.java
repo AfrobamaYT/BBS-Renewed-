@@ -1,9 +1,6 @@
 package mchorse.bbs_mod.mixin.client.iris;
 
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.utils.VideoRecorder;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,30 +22,23 @@ public class SystemTimeUniformsTimerMixin
     @Inject(method = "beginFrame", at = @At("HEAD"), cancellable = true, remap = false)
     public void onBeginFrame(CallbackInfo info)
     {
-        VideoRecorder videoRecorder = BBSModClient.getVideoRecorder();
+        /* Drei felder je bild — wie beim RenderTickCounter gehen sie als WERTE rein und
+         * als array zurueck, statt ueber reflexion. */
+        double[] neu = (double[]) MixinBruecke.rufe("AufnahmeBildtaktLogik", "shaderTakt",
+            this.frameTimeCounter, this.lastFrameTime, this.heldFrames);
 
-        if (videoRecorder.isRecording())
+        if (neu == null)
         {
-            float videoFrameRate = BBSRendering.getVideoFrameRate();
-
-            if (this.heldFrames == 0)
-            {
-                this.lastFrameTime = 20F / videoFrameRate;
-                this.frameTimeCounter += 1F / videoFrameRate;
-            }
-
-            this.heldFrames += 1;
-
-            if (this.heldFrames >= BBSSettings.videoHeldFrames.get())
-            {
-                this.heldFrames = 0;
-            }
-
-            info.cancel();
+            return;
         }
-        else
+
+        this.frameTimeCounter = (float) neu[0];
+        this.lastFrameTime = (float) neu[1];
+        this.heldFrames = (int) neu[2];
+
+        if (neu[3] != 0)
         {
-            this.heldFrames = 0;
+            info.cancel();
         }
     }
 }

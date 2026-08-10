@@ -102,6 +102,40 @@ public final class AufnahmeBildtaktLogik
         return new double[] {rest, takte, jetztMs, weiterZaehlen(gehaltene), letzteBildzeit, ganze};
     }
 
+    /**
+     * {@code SystemTimeUniforms.Timer.beginFrame} @HEAD — dieselbe Rechnung fuer IRIS' Uhr.
+     *
+     * <p>⛔ SHADER HABEN EINE EIGENE ZEIT. Iris fuehrt {@code frameTimeCounter} und
+     * {@code lastFrameTime} getrennt vom Spiel; laeuft die Aufnahme, muss diese Uhr im
+     * Videotakt weitergehen statt in Echtzeit — sonst ruckeln zeitabhaengige Shader
+     * (Wasser, Wind, Wolken) im fertigen Video, waehrend die Welt sauber laeuft.</p>
+     *
+     * <p>⚠️ Anders als {@link #takt} zaehlt diese Uhr NICHT in Takten, sondern in Sekunden:
+     * {@code lastFrameTime} bekommt 20/Bildrate, der Zaehler 1/Bildrate.</p>
+     *
+     * @return {@code {zaehler, letzteBildzeit, gehaltene, abbrechen}} — {@code abbrechen}
+     *         ungleich 0 heisst, Iris' eigener Rumpf wird uebersprungen
+     */
+    public static double[] shaderTakt(float zaehler, float letzteBildzeit, int gehaltene)
+    {
+        VideoRecorder rekorder = BBSModClient.getVideoRecorder();
+
+        if (rekorder == null || !rekorder.isRecording())
+        {
+            return new double[] {zaehler, letzteBildzeit, 0, 0};
+        }
+
+        float bildrate = BBSRendering.getVideoFrameRate();
+
+        if (gehaltene == 0)
+        {
+            letzteBildzeit = 20F / bildrate;
+            zaehler += 1F / bildrate;
+        }
+
+        return new double[] {zaehler, letzteBildzeit, weiterZaehlen(gehaltene), 1};
+    }
+
     private static int weiterZaehlen(int gehaltene)
     {
         int naechste = gehaltene + 1;
