@@ -1,6 +1,8 @@
 // Coded by Afrobama/Claude — Phase 15 v6: force full-bright during alt-cam pre-pass
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.util.PreviewPassState;
 import net.minecraft.util.LightCoordsUtil;
 import org.slf4j.Logger;
@@ -31,14 +33,11 @@ public abstract class PreviewLightOverrideMixin
     private static void bbstools$forceBrightInPreview(int blockLight, int skyLight,
                                                        CallbackInfoReturnable<Integer> cir)
     {
-        if (PreviewPassState.PREVIEW_PASS_ACTIVE)
+        Object hell = MixinBruecke.rufe("VorschauLichtLogik", "volleHelligkeit");
+
+        if (hell != null)
         {
-            cir.setReturnValue(net.minecraft.util.LightCoordsUtil.FULL_BRIGHT);
-            if (!loggedFirstOverride)
-            {
-                loggedFirstOverride = true;
-                LOG.info("Light override ENGAGED — preview pass returning MAX_LIGHT_COORDINATE");
-            }
+            cir.setReturnValue((Integer) hell);
         }
     }
 

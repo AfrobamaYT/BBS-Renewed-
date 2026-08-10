@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -40,21 +42,6 @@ public class BackgroundRendererMixin
     @Inject(method = "setupFog", at = @At("RETURN"))
     private void onApplyFog(Camera camera, int renderDistanceChunks, DeltaTracker deltaTracker, float darkenWorldAmount, ClientLevel level, CallbackInfoReturnable<FogData> info)
     {
-        if (BBSRendering.isOrthoActive())
-        {
-            FogData data = info.getReturnValue();
-
-            if (data == null)
-            {
-                return;
-            }
-
-            data.environmentalStart = 1_000_000F;
-            data.environmentalEnd = 1_001_000F;
-            data.renderDistanceStart = 1_000_000F;
-            data.renderDistanceEnd = 1_001_000F;
-            data.skyEnd = 1_001_000F;
-            data.cloudEnd = 1_001_000F;
-        }
+        MixinBruecke.rufe("OrthoNebelLogik", "nebelWegschieben", info.getReturnValue());
     }
 }

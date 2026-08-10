@@ -1,6 +1,8 @@
 // Coded by Afrobama/Claude — Phase 17: skip mob renders during editor mode
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.editormode.EditorMode;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -45,8 +47,7 @@ public abstract class EditorModeMobRenderSkipMixin
                                                      double x, double y, double z,
                                                      CallbackInfoReturnable<Boolean> cir)
     {
-        if (!(entity instanceof Mob mob)) return;
-        if (EditorMode.shouldBypass(mob))
+        if (MixinBruecke.rufeUndAbbrechen("EditorModeMobRenderSkipLogik", "ueberspringen", entity))
         {
             cir.setReturnValue(false);
         }
