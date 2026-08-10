@@ -188,7 +188,56 @@ loom {
 					}
 				}
 
-				def mixinJar = gefunden.sort { -it.lastModified() }.find { true }
+				/* ⛔ "NEUESTE DATEI" IST NICHT "NEUESTE FASSUNG" (2026-08-10, eine Stunde).
+				 * Hier stand nur `sort { -it.lastModified() }`. Gradle lud irgendwann
+				 * sponge-mixin-0.15.5+mixin.0.8.7-SOURCES.jar nach — ein Quelltext-Archiv
+				 * ohne Premain-Class. Es hiess sponge-mixin-*.jar, es war die neueste
+				 * Datei, also wurde es der Agent. Ergebnis:
+				 *
+				 *     Error occurred during initialization of VM
+				 *     agent library failed Agent_OnLoad: instrument
+				 *
+				 * Die JVM startete gar nicht mehr — und das Boot-Log meldete davor
+				 * freundlich "[mixin-hotswap] agent: ...-sources.jar". Die AUSWAHL log,
+				 * nicht der Start: sie meldete Erfolg fuer eine Datei, die die verlangte
+				 * Faehigkeit nicht hat. Zwei taugliche Agent-JARs lagen daneben.
+				 *
+				 * Ein Namensfilter auf "-sources" waere die Symptomkur; morgen heisst es
+				 * -javadoc oder -slim. Gefiltert wird deshalb auf die EIGENSCHAFT, die
+				 * gebraucht wird: steht Premain-Class/Agent-Class im Manifest? */
+				def istAgent = { datei ->
+					try
+					{
+						return new java.util.zip.ZipFile(datei).withCloseable { zip ->
+							def eintrag = zip.getEntry("META-INF/MANIFEST.MF")
+
+							if (eintrag == null)
+							{
+								return false
+							}
+
+							def text = zip.getInputStream(eintrag).getText("UTF-8")
+
+							return text.contains("Premain-Class:") || text.contains("Agent-Class:")
+						}
+					}
+					catch (Exception fehler)
+					{
+						return false        // unlesbar/kaputt = kein Agent
+					}
+				}
+
+				def tauglich = gefunden.findAll(istAgent)
+
+				if (tauglich.isEmpty() && !gefunden.isEmpty())
+				{
+					throw new GradleException(
+						"-PmixinHotswap: " + gefunden.size() + " sponge-mixin-*.jar gefunden, "
+						+ "aber KEINES hat Premain-Class im Manifest (nur Quelltext-/Doku-Archive?): "
+						+ gefunden.collect { it.name }.join(", "))
+				}
+
+				def mixinJar = tauglich.sort { -it.lastModified() }.find { true }
 
 				if (mixinJar == null)
 				{
