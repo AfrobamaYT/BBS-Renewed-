@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.cubic.render.vanilla.ArmorRenderer;
 import mchorse.bbs_mod.entity.ActorEntity;
+import mchorse.bbs_mod.forms.FormSammler;
 import mchorse.bbs_mod.forms.FormUtilsClient;
 import mchorse.bbs_mod.forms.entities.IEntity;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -131,20 +132,42 @@ public class ActorEntityRenderer extends EntityRenderer<ActorEntity, ActorEntity
     {
         matrices.pushPose();
 
-        this.setupTransforms(zustand, matrices);
+        try
+        {
+            this.setupTransforms(zustand, matrices);
 
-        /* 26.2: das Paar enableBlend()/enableDepthTest() und seine Gegenstuecke hinter dem
-         * Draw sind ersatzlos entfallen. Sie richteten nur den globalen Vorgabezustand fuer
-         * das ein, was FormUtilsClient.render() zeichnet - und das bringt seinen Zustand
-         * selbst mit: Item-, Block- und Mob-Formen ueber die Pipeline ihres RenderType
-         * (RenderType#pipeline()), BBS' eigene Modelle ueber ModelVAOPipeline (dort Blend,
-         * Tiefe und Cull fest verbaut, siehe ModelVAORenderer#render). Einen globalen
-         * Schalter, den man setzen oder zuruecksetzen koennte, gibt es nicht mehr. */
-        FormUtilsClient.render(zustand.form, new FormRenderingContext()
-            .set(FormRenderType.ENTITY, zustand.bbsEntity, matrices, zustand.lightCoords, zustand.ueberlagerung, zustand.teilTick)
-            .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+            /* 26.2: das Paar enableBlend()/enableDepthTest() und seine Gegenstuecke hinter dem
+             * Draw sind ersatzlos entfallen. Sie richteten nur den globalen Vorgabezustand fuer
+             * das ein, was FormUtilsClient.render() zeichnet - und das bringt seinen Zustand
+             * selbst mit: Item-, Block- und Mob-Formen ueber die Pipeline ihres RenderType
+             * (RenderType#pipeline()), BBS' eigene Modelle ueber ModelVAOPipeline (dort Blend,
+             * Tiefe und Cull fest verbaut, siehe ModelVAORenderer#render). Einen globalen
+             * Schalter, den man setzen oder zuruecksetzen koennte, gibt es nicht mehr. */
 
-        matrices.popPose();
+            /* ⛔ OHNE DAS mitSammler() STIRBT DAS SPIEL (2026-08-10, gemessen, halbe nacht).
+             * Diese Methode laeuft in VANILLAS entity-weg (LevelRenderer.submitEntities), nicht
+             * im film-weg von BBS. Der FormSammler wird aber nur in den LevelRenderEvents
+             * angemeldet (BBSModClient) — hier war also keiner aktiv. ModelFormRenderer.
+             * renderArmor greift per FormSammler.pflicht() danach und warf
+             *
+             *     IllegalStateException: Kein Sammler angemeldet.
+             *
+             * Der uebergebene `sammler` ist genau der richtige; er war nur nie angemeldet.
+             * Betroffen waren ausschliesslich Actor-Replays, weil nur die Ruestung zeichnen. */
+            FormSammler.mitSammler(sammler, () ->
+                FormUtilsClient.render(zustand.form, new FormRenderingContext()
+                    .set(FormRenderType.ENTITY, zustand.bbsEntity, matrices, zustand.lightCoords, zustand.ueberlagerung, zustand.teilTick)
+                    .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
+        }
+        finally
+        {
+            /* ⛔ DAS finally IST DER ZWEITE HALBE FEHLER. Vorher stand popPose() nackt hier
+             * unten: wirft irgendetwas dazwischen, wird es uebersprungen, der push aus Z132
+             * bleibt offen — und vanilla stirbt ein BILD SPAETER an checkPoseStack, mit einem
+             * stapelabzug, in dem weder bbs noch bbstools vorkommt. Genau so gemessen:
+             * lastIndex=1, und die matrix darin zeigte exakt auf die position des actors. */
+            matrices.popPose();
+        }
 
         /* Zeichnet den Namensschild-Auftrag; hiess bis 1.21.1 super.render(...). */
         super.submit(zustand, matrices, sammler, kamera);

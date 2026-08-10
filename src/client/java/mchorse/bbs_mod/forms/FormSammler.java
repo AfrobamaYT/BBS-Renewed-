@@ -98,6 +98,49 @@ public final class FormSammler
     }
 
     /**
+     * Zeichnet mit einem BEREITS VORHANDENEN Sammler und stellt den vorherigen wieder her.
+     *
+     * <p>Unterschied zu {@link #mitEigenemSammler(Runnable)}: dort wird ein frischer Sammler
+     * angelegt und am Ende selbst ausgefuehrt. Hier ist der richtige Sammler schon da — er
+     * kommt als Parameter aus Vanillas Zeichenweg — und wird nur fuer die Dauer des Abschnitts
+     * angemeldet. Ausgefuehrt wird er von dem, dem er gehoert.
+     *
+     * <p>⛔ WOFUER DAS GEBRAUCHT WIRD (2026-08-10, halbe nacht gekostet). Der FormSammler wurde
+     * nur in den beiden {@code LevelRenderEvents} angemeldet (BBSModClient) — also im Film-Weg
+     * von BBS. Ein ACTOR-Replay laeuft aber nicht darueber: es ist eine echte {@code
+     * ActorEntity}, die VANILLA rendert, ueber {@code LevelRenderer.submitEntities}. Dort war
+     * kein Sammler angemeldet, und {@code ModelFormRenderer.renderArmor} griff per {@link
+     * #pflicht()} danach:
+     *
+     *     IllegalStateException: Kein Sammler angemeldet.
+     *
+     * Diese Exception verschwand in einem leeren {@code catch} in FormUtilsClient.render, der
+     * dazugehoerige {@code popPose()} wurde nie erreicht, und ein Bild spaeter starb das Spiel
+     * an {@code LevelRenderer.checkPoseStack} — "Pose stack not empty", mit einem Stapelabzug
+     * ohne eine einzige BBS-Zeile darin. Betroffen waren NUR Actors, weil nur sie Ruestung
+     * zeichnen.
+     *
+     * <p>⚠️ Verschachtelungssicher wie oben: der vorherige Sammler wird gemerkt, nicht
+     * ueberschrieben. {@code abmelden()} waere hier falsch — es setzt hart auf {@code null} und
+     * risse einem umschliessenden Weltdurchgang seinen Sammler weg.
+     */
+    public static void mitSammler(SubmitNodeCollector sammler, Runnable zeichnen)
+    {
+        SubmitNodeCollector vorheriger = aktiv;
+
+        aktiv = sammler;
+
+        try
+        {
+            zeichnen.run();
+        }
+        finally
+        {
+            aktiv = vorheriger;
+        }
+    }
+
+    /**
      * Laesst den eingereichten Stapel zeichnen.
      *
      * <p>⚠️ Hier werden die Ziel-Umleitungen NICHT angefasst, und das ist Absicht. Ein

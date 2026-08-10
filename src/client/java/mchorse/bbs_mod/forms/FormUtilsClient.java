@@ -35,6 +35,9 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.resources.model.ModelBakery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +50,38 @@ public class FormUtilsClient
     private static Map<Class, IFormRendererFactory> map = new HashMap<>();
     private static CustomVertexConsumerProvider customVertexConsumerProvider;
     private static Stack<Form> currentForm = new Stack<>();
+
+    /* Meldeweg fuer render()-fehler. Siehe den kommentar im catch von render(): die stelle lief
+     * jahrelang als leerer block, und genau deshalb suchte man den fehler danach an einer
+     * stelle, die ihn nur ENTDECKT hat. */
+    private static final Logger BBS_RENDER_LOG = LoggerFactory.getLogger("bbs/form-render");
+
+    /** Zuletzt gemeldeter fehler je form-klasse — gegen 60 identische zeilen je sekunde. */
+    private static final Map<String, String> bbsGemeldet = new HashMap<>();
+
+    /**
+     * Meldet einen render-fehler EINMAL je (form, fehler)-paar.
+     *
+     * <p>Gedrosselt, nicht verschluckt: wiederholungen werden unterdrueckt, ein NEUER fehler
+     * kommt immer durch. Ein zaehler steht dabei, damit aus „einmal gemeldet" nicht „einmal
+     * passiert" gelesen wird — genau diese verwechslung hat den urspruenglichen fehler
+     * so teuer gemacht.
+     */
+    private static void bbsMeldeRenderFehler(Form form, Throwable fehler)
+    {
+        String art = form == null ? "null" : form.getClass().getSimpleName();
+        String kennung = art + ":" + fehler.getClass().getName() + ":" + fehler.getMessage();
+        String vorher = bbsGemeldet.put(art, kennung);
+
+        if (kennung.equals(vorher))
+        {
+            return;
+        }
+
+        BBS_RENDER_LOG.error("render({}) hat geworfen — der pose-stack kann jetzt unbalanciert "
+            + "sein. Diese meldung erscheint je form-klasse nur beim ERSTEN mal und bei jedem "
+            + "WECHSEL des fehlers, nicht je bild.", art, fehler);
+    }
 
     static
     {
@@ -158,10 +193,35 @@ public class FormUtilsClient
             {
                 renderer.render(context);
             }
-            catch (Exception e)
-            {}
-
-            currentForm.pop();
+            catch (Exception fehler)
+            {
+                /* ⛔ HIER STAND `catch (Exception e) {}` — EIN LEERER BLOCK (2026-08-10, halbe
+                 * nacht). Was er verschluckte, kam eine bildaufnahme spaeter als etwas ganz
+                 * anderes zurueck:
+                 *
+                 *     java.lang.IllegalStateException: Pose stack not empty
+                 *         at LevelRenderer.checkPoseStack(LevelRenderer.java:631)
+                 *
+                 * Der weg dahin: renderer.render() wirft NACH seinem pushPose(). Die exception
+                 * verschwand hier spurlos, der zugehoerige popPose() wurde nie erreicht, und
+                 * vanilla fand einen bildschritt spaeter einen nicht leeren stapel — mit einem
+                 * stapelabzug, in dem WEDER bbs NOCH bbstools vorkommt. Gemessen am haltepunkt:
+                 * lastIndex=1 (genau ein push offen), und die matrix darin zeigte exakt auf die
+                 * position des actor-replays (abstand 0.00, gegenprobe 47.13 zum naechsten).
+                 *
+                 * `crash-safe-exceptions` protokollierte nichts: dieses catch fing frueher.
+                 * Deshalb wird hier NICHT repariert, sondern GEMELDET — wer die ursache sehen
+                 * will, muss sie lesen koennen. Gedrosselt, weil der renderpfad je bild laeuft
+                 * und eine ungebremste ausgabe das log unbrauchbar macht (gemessen: 50 treffer
+                 * in wenigen sekunden). */
+                bbsMeldeRenderFehler(form, fehler);
+            }
+            finally
+            {
+                /* Auch das lief vorher nur, WEIL das catch alles schluckte. Ohne finally haette
+                 * die erste durchgereichte exception den formen-stapel dauerhaft verschoben. */
+                currentForm.pop();
+            }
         }
     }
 
