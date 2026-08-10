@@ -47,6 +47,11 @@ public class VanillaParticleFormRenderer extends FormRenderer<VanillaParticleFor
     }
 
     @Override
+    protected boolean flacheVorschau()
+    {
+        return true;
+    }
+
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         Texture texture = context.render.getTextures().getTexture(PARTICLE_PREVIEW);
