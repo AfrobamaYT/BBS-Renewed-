@@ -1,6 +1,8 @@
 // Coded by Afrobama/Claude — body-parts visibility fix for form-edit panel
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.perf.BBSPerfConfig;
 import mchorse.bbs_mod.ui.forms.editors.utils.UIPickableFormRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -35,22 +37,15 @@ public abstract class UIPickableFormRendererLodBypassMixin
     @Inject(method = "renderUserModel", at = @At("HEAD"), remap = false, require = 0)
     private void bbstools$disableLodForEditor(UIContext context, CallbackInfo ci)
     {
-        try
-        {
-            this.bbstools$savedLodFlag = BBSPerfConfig.ENABLE_LOD;
-            BBSPerfConfig.ENABLE_LOD = false;
-        }
-        catch (Throwable ignored) {}
+        Object vorher = MixinBruecke.rufe("EditorVorschauLogik", "lodAus");
+
+        this.bbstools$savedLodFlag = vorher != null && (Boolean) vorher;
     }
 
     @Inject(method = "renderUserModel", at = @At("RETURN"), remap = false, require = 0)
     private void bbstools$restoreLodForEditor(UIContext context, CallbackInfo ci)
     {
-        try
-        {
-            BBSPerfConfig.ENABLE_LOD = this.bbstools$savedLodFlag;
-        }
-        catch (Throwable ignored) {}
+        MixinBruecke.rufe("EditorVorschauLogik", "lodZurueck", this.bbstools$savedLodFlag);
     }
 
 }

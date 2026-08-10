@@ -1,5 +1,7 @@
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.keybinds.KeybindOverrides;
 
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -26,15 +28,11 @@ public abstract class KeyComboMixin
             require = 1)
     private void bbstools$mirrorRegister(String id, IKey label, int[] keys, CallbackInfo ci)
     {
-        try
-        {
-            KeybindOverrides.register((KeyCombo)(Object) this);
-        }
-        catch (Throwable ignored)
-        {
-            /* Never let a registration failure abort the BBS class
-             *  init that constructed the combo. */
-        }
+        /* Der try/catch von frueher entfaellt: MixinBruecke.rufe schluckt Throwable bereits
+         * selbst und meldet es EINMAL — genau die Zusicherung, die hier gebraucht wurde
+         * ("nie die BBS-Klasseninitialisierung abbrechen, die das Kuerzel gebaut hat"),
+         * nur ohne den stillen Verlust des Grundes. */
+        MixinBruecke.rufe("EditorVorschauLogik", "kuerzelSpiegeln", this);
     }
 
 }

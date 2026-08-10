@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
@@ -14,16 +16,11 @@ public class SimpleOptionMixin
     @Inject(method = "get", at = @At("HEAD"), cancellable = true)
     public void onGetValue(CallbackInfoReturnable info)
     {
-        OptionInstance option = (OptionInstance) (Object) this;
+        Object wert = MixinBruecke.rufe("EditorVorschauLogik", "helligkeit", this);
 
-        if (Minecraft.getInstance().options != null && option == Minecraft.getInstance().options.gamma())
+        if (wert != null)
         {
-            Double value = BBSRendering.getBrightness();
-
-            if (value != null)
-            {
-                info.setReturnValue(value);
-            }
+            info.setReturnValue(wert);
         }
     }
 }
