@@ -265,6 +265,36 @@ public class AudioRenderer
         }
     }
 
+    /** Mischt alle Clips in {@code ziel} und liefert die groesste aufgetretene Summe. */
+    private static float mischen(ByteBuffer buffer, Wave ziel, List<AudioClip> clips,
+        Map<AudioClip, Wave> map, float faktor)
+    {
+        float spitze = 0F;
+
+        for (AudioClip clip : clips)
+        {
+            try
+            {
+                Wave wave = map.get(clip);
+
+                if (wave != null)
+                {
+                    spitze = Math.max(spitze, ziel.add(buffer, wave,
+                        TimeUtils.toSeconds(clip.tick.get()),
+                        TimeUtils.toSeconds(clip.offset.get()),
+                        TimeUtils.toSeconds(clip.duration.get()),
+                        clip.volume.get() * faktor));
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return spitze;
+    }
+
     public static boolean renderAudio(File file, List<AudioClip> clips, int totalDuration, int sampleRate, float from, float to)
     {
         float total = totalDuration / 20F;
@@ -302,26 +332,17 @@ public class AudioRenderer
         Wave finalWave = new Wave(1, 1, sampleRate, 16, bytes);
         ByteBuffer buffer = MemoryUtil.memAlloc(2);
 
-        for (AudioClip clip : clips)
-        {
-            try
-            {
-                Wave wave = map.get(clip);
+        float spitze = mischen(buffer, finalWave, clips, map, 1F);
 
-                if (wave != null)
-                {
-                    finalWave.add(buffer, wave,
-                        TimeUtils.toSeconds(clip.tick.get()),
-                        TimeUtils.toSeconds(clip.offset.get()),
-                        TimeUtils.toSeconds(clip.duration.get()),
-                        clip.volume.get()
-                    );
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+        /* ⛔ EINMAL GLOBAL LEISER STATT JE ABTASTWERT VERBIEGEN (Aufgabe 4.71). Wave.add
+         * begrenzt nur noch; ueberschreitet die Summe die Vollaussteuerung, wird der GANZE
+         * Mix mit demselben Faktor neu gemischt. Das haelt die Balance der Clips und die
+         * Wellenform — nur eben leiser. Ein zweiter Durchgang kostet nichts: die Quellen
+         * liegen bereits entpackt in `map`. */
+        if (spitze > 1F)
+        {
+            java.util.Arrays.fill(bytes, (byte) 0);
+            mischen(buffer, finalWave, clips, map, 1F / spitze);
         }
 
         MemoryUtil.memFree(buffer);

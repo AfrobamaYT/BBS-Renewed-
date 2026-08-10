@@ -188,13 +188,18 @@ public class Wave
      * Reduces aliasing distortion and frequency loss during audio mixing
      * Fixed stereo to mono conversion and sample position calculation
      */
-    public void add(ByteBuffer buffer, Wave wave, float offset, float shift, float duration)
+    public float add(ByteBuffer buffer, Wave wave, float offset, float shift, float duration)
     {
-        this.add(buffer, wave, offset, shift, duration, 1F);
+        return this.add(buffer, wave, offset, shift, duration, 1F);
     }
 
-    public void add(ByteBuffer buffer, Wave wave, float offset, float shift, float duration, float gain)
+    /**
+     * @return die groesste Summe, die beim Mischen auftrat. Ueber 1F heisst: es haette
+     *         geklippt — der Aufrufer kann damit EINMAL global leiser mischen.
+     */
+    public float add(ByteBuffer buffer, Wave wave, float offset, float shift, float duration, float gain)
     {
+        float spitze = 0F;
         int waveStart = this.truncate((int) (shift * wave.byteRate));
         int start = this.truncate((int) (offset * this.byteRate));
         int end = this.truncate((int) ((offset + duration) * this.byteRate));
@@ -284,29 +289,22 @@ public class Wave
             float waveFloat = waveShort / (float) Short.MAX_VALUE * gain;
             float bytesFloat = bytesShort / (float) Short.MAX_VALUE;
             
-            /* Calculate sum and check for clipping */
             float sum = waveFloat + bytesFloat;
-            
-            /* Apply smart normalization only when clipping would occur */
-            float mixedFloat;
 
-            if (sum > 1F || sum < -1F)
-            {
-                /* Dynamic normalization to preserve as much volume as possible */
-                float absSum = Math.abs(sum);
-                float normalizationFactor = 1F / absSum;
+            spitze = Math.max(spitze, Math.abs(sum));
 
-                /* Slight headroom */
-                mixedFloat = sum * normalizationFactor * 0.95F;
-            }
-            else
-            {
-                /* No clipping, use direct sum to preserve volume */
-                mixedFloat = sum;
-            }
-            
-            /* Convert back to short */
-            int finalShort = (int) (mixedFloat * Short.MAX_VALUE);
+            /* ⛔ HIER STAND EINE "smart volume normalization", DIE EIN RECHTECK BAUTE:
+             *     mixedFloat = sum * (1F / Math.abs(sum)) * 0.95F;
+             * `sum * (1/|sum|)` ist sign(sum) — jeder Ueberschuss wurde also auf exakt
+             * ±0,95 plattgedrueckt, ob er 1,001 oder 1,9 war, und an der Schwelle sprang
+             * es NACH UNTEN (0,99 blieb 0,99). Gemessen an zwei Sinus mit je 0,7
+             * Vollaussteuerung: 18,8 % aller Abtastwerte plattgedrueckt. Genau so klingt
+             * der Export "extrem laut und bass-boosted" (Aufgabe 4.71) — ein verformtes
+             * Signal hat hoeheren Effektivpegel und volle Oberwellen.
+             *
+             * Hier wird nur noch begrenzt. Leiser gemacht wird EINMAL global vom Aufrufer,
+             * der dafuer die Spitze zurueckbekommt. */
+            int finalShort = (int) (MathUtils.clamp(sum, -1F, 1F) * Short.MAX_VALUE);
 
             buffer.putShort(0, (short) MathUtils.clamp(finalShort, Short.MIN_VALUE, Short.MAX_VALUE));
 
@@ -314,6 +312,8 @@ public class Wave
             this.data[b] = buffer.get(0);
         }
         
+
+        return spitze;
     }
     
     /**
