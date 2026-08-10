@@ -1,5 +1,7 @@
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import com.afrobama.bbstools.client.fracture.FractureRenderContext;
 
 import mchorse.bbs_mod.forms.renderers.FormRenderingContext;
@@ -30,13 +32,13 @@ public abstract class ModelFormRendererFractureCaptureMixin
     @Inject(method = "render3D", at = @At("HEAD"), require = 0)
     private void bbstools$pushFractureContext(FormRenderingContext context, CallbackInfo ci)
     {
-        if (context != null) FractureRenderContext.push(context.entity);
+        MixinBruecke.rufe("FrakturKontextLogik", "merken", context);
     }
 
     @Inject(method = "render3D", at = @At("RETURN"), require = 0)
     private void bbstools$popFractureContext(FormRenderingContext context, CallbackInfo ci)
     {
-        FractureRenderContext.pop();
+        MixinBruecke.rufe("FrakturKontextLogik", "ablegen");
     }
 
 }

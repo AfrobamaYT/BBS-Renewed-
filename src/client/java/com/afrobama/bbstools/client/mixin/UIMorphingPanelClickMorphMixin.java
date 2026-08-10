@@ -1,5 +1,7 @@
 package com.afrobama.bbstools.client.mixin;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.morphing.UIMorphingPanel;
 
@@ -38,9 +40,6 @@ public abstract class UIMorphingPanelClickMorphMixin
     @Inject(method = "<init>", at = @At("TAIL"), remap = false, require = 1)
     private void bbstools$restoreClickToMorph(UIDashboard dashboard, CallbackInfo ci)
     {
-        UIMorphingPanel self = (UIMorphingPanel) (Object) this;
-
-        self.palette.callback = (form) ->
-            ((UIMorphingPanelSetFormInvoker) self).bbstools$invokeSetForm(form);
+        MixinBruecke.rufe("UIMorphingPanelLogik", "klickZumMorphen", this);
     }
 }
