@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.BBSModClient;
 import net.minecraft.client.ResourceLoadStateTracker;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,6 +15,6 @@ public class ResourceReloadLoggerMixin
     @Inject(method = "finishReload", at = @At("TAIL"))
     public void onOnFinishedLoading(CallbackInfo info)
     {
-        BBSModClient.getSounds().deleteSounds();
+        MixinBruecke.rufe("NeuladenLogik", "klaengeVerwerfen");
     }
 }

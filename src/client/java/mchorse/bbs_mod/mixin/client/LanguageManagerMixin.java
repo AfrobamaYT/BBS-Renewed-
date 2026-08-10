@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.BBSModClient;
 import net.minecraft.client.resources.language.LanguageManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,6 +15,6 @@ public class LanguageManagerMixin
     @Inject(method = "onResourceManagerReload", at = @At("TAIL"))
     public void onReload(CallbackInfo info)
     {
-        BBSModClient.reloadLanguage(BBSModClient.getLanguageKey());
+        MixinBruecke.rufe("NeuladenLogik", "spracheNeuladen");
     }
 }
