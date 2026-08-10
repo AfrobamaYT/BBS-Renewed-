@@ -1,15 +1,8 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.camera.clips.misc.TrackerClientClip;
-import mchorse.bbs_mod.camera.controller.ICameraController;
-import mchorse.bbs_mod.camera.controller.PlayCameraController;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.client.GuiZeichner;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -40,81 +33,20 @@ public class InGameHudMixin
      * einem Stack, den beim Pop niemand mehr kennt ("already at the bottom of the stack").
      * Darum haelt GuiZeichner genau einen je Bild.
      */
-    private GuiGraphicsExtractor bbs$zeichnerFuerNeuesBild()
-    {
-        return GuiZeichner.neuFuerBild(Minecraft.getInstance());
-    }
-
-    private GuiGraphicsExtractor bbs$zeichner()
-    {
-        return GuiZeichner.aktuell(Minecraft.getInstance());
-    }
-
+    
+    
     @Inject(method = "extractRenderState", at = @At(value = "HEAD"), cancellable = true)
     public void render(DeltaTracker tickCounter, boolean bildschirmOffen, boolean hudVersteckt, CallbackInfo info)
     {
-        GuiGraphicsExtractor drawContext = this.bbs$zeichnerFuerNeuesBild();
-
-        ICameraController current = BBSModClient.getCameraController().getCurrent();
-
-        /* ⛔ FUELLEN GEHOERT HIERHER, ABHAENGEN AN DEN TAIL (2026-08-02, Aufgabe #19).
-         *
-         * In 26.2 sammelt extractRenderState erst ALLE UI-Elemente ein und zeichnet danach.
-         * Wurde die Vorschau-Textur erst am TAIL gefuellt, war der Blit des Vorschaufeldes
-         * laengst eingereiht — das Feld zeigte deshalb immer das Bild des VORIGEN Durchgangs
-         * (gemessen per Reihenfolge-Sonden: beim Blit stand die Fuellung auf 132, waehrend
-         * sie bei 133 war). Der aktuelle Replay-Umriss darueber sass bei Kamerabewegung
-         * daneben, und der Abstand skalierte mit der Bildzeit.
-         *
-         * Der Welt-Modus (PlayCameraController) macht wie bisher beides auf einmal — dort
-         * SOLL der Framebuffer hier schon abgehaengt werden. Im Editor laeuft
-         * RunnerCameraController: dort wird jetzt nur GEFUELLT, und das Abhaengen bleibt am
-         * TAIL, weil der Framebuffer bis dahin gebunden sein muss (sonst landet das HUD im
-         * haupt-framebuffer statt im viewport). Beide erben CameraWorkCameraController. */
-        if (current instanceof PlayCameraController)
+        if (MixinBruecke.rufeUndAbbrechen("HudZeichnenLogik", "anfang"))
         {
-            BBSRendering.onRenderBeforeScreen();
-
-            if (!TrackerClientClip.shouldRenderHud())
-            {
-                info.cancel();
-
-                return;
-            }
+            info.cancel();
         }
-
-        else
-        {
-            /* Editor und alles Uebrige: nur fuellen, nicht abhaengen. */
-            BBSRendering.fuellen();
-        }
-
-        if (!TrackerClientClip.shouldRenderHud())
-        {
-            return;
-        }
-
-        if (current == null)
-        {
-            return;
-        }
-
-        mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(false);
-        TrackerClientClip.beginHudRendering(drawContext);
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     public void onRenderEnd(DeltaTracker tickCounter, boolean bildschirmOffen, boolean hudVersteckt, CallbackInfo info)
     {
-        GuiGraphicsExtractor drawContext = this.bbs$zeichner();
-
-        /* Nur noch der Schluss — gefuellt wurde bereits am HEAD (siehe dort). */
-        BBSRendering.abschliessen();
-
-        if (TrackerClientClip.shouldRenderHud() && BBSModClient.getCameraController().getCurrent() != null)
-        {
-            TrackerClientClip.endHudRendering(drawContext);
-            mchorse.bbs_mod.client.HudSichtbarkeit.verstecken(true);
-        }
+        MixinBruecke.rufe("HudZeichnenLogik", "ende");
     }
 }

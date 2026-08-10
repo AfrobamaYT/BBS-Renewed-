@@ -1,12 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.BBSModClient;
-import mchorse.bbs_mod.BBSSettings;
-import mchorse.bbs_mod.camera.controller.CameraController;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.items.GunZoom;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.Camera;
-import org.joml.Vector3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -54,18 +49,13 @@ public abstract class CameraMixin
     @Inject(method = "alignWithEntity", at = @At(value = "RETURN"))
     public void onUpdate(float tickDelta, CallbackInfo ci)
     {
-        CameraController controller = BBSModClient.getCameraController();
+        double[] s = (double[]) MixinBruecke.rufe("KameraLogik", "stellung", tickDelta);
 
-        controller.setup(controller.camera, tickDelta);
-
-        if (controller.getCurrent() != null)
+        if (s != null)
         {
-            Vector3d position = controller.getPosition();
-            float yaw = controller.getYaw();
-            float pitch = controller.getPitch();
-
-            this.setPosition(position.x, position.y, position.z);
-            this.setRotation(yaw, pitch);
+            /* setPosition/setRotation sind @Shadow — sie bleiben hier. */
+            this.setPosition(s[0], s[1], s[2]);
+            this.setRotation((float) s[3], (float) s[4]);
         }
     }
 
@@ -78,7 +68,7 @@ public abstract class CameraMixin
     @Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true)
     private void onWeltFov(float tickDelta, CallbackInfoReturnable<Float> info)
     {
-        Float neu = this.bbsFov(true, info.getReturnValue());
+        Float neu = (Float) MixinBruecke.rufe("KameraLogik", "blickwinkel", true, info.getReturnValue());
 
         if (neu != null)
         {
@@ -102,7 +92,7 @@ public abstract class CameraMixin
     @Inject(method = "calculateHudFov", at = @At("RETURN"), cancellable = true)
     private void onHandFov(float tickDelta, CallbackInfoReturnable<Float> info)
     {
-        Float neu = this.bbsFov(false, info.getReturnValue());
+        Float neu = (Float) MixinBruecke.rufe("KameraLogik", "blickwinkel", false, info.getReturnValue());
 
         if (neu != null)
         {
@@ -129,41 +119,4 @@ public abstract class CameraMixin
      *
      * @return das neue sichtfeld, oder {@code null} wenn vanilla stehenbleiben soll
      */
-    private Float bbsFov(boolean changingFov, float original)
-    {
-        GunZoom gunZoom = BBSModClient.getGunZoom();
-
-        if (gunZoom != null)
-        {
-            return gunZoom.getFOV(original);
-        }
-
-        CameraController controller = BBSModClient.getCameraController();
-
-        if (controller.getCurrent() == null || BBSRendering.isIrisShadowPass())
-        {
-            return null;
-        }
-
-        double fov = controller.getFOV();
-
-        /* camera.fov traegt den sprint-boost, den PositionFovLogik auf angle.fov legt.
-         * Fuer die welt ist das gewollt, fuer die hand nicht — sonst streckt sie sich beim
-         * rennen mit. Nur den sprint-anteil herausrechnen; das clip-FOV bleibt stehen,
-         * damit die hand weiterhin dem shot folgt.
-         *
-         * Abschaltbar, weil es eine bewusste abweichung vom alten fork ist: wer das alte
-         * verhalten will, schaltet "Hand follows sprint FOV" in den editor-settings an. */
-        if (!changingFov && !BBSSettings.editorHandSprintFov.get())
-        {
-            float sprint = com.afrobama.blendertransform.PositionFovLogik.sprintFaktor();
-
-            if (sprint > 1.001F)
-            {
-                fov /= sprint;
-            }
-        }
-
-        return (float) fov;
-    }
 }
