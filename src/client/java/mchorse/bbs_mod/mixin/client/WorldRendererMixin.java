@@ -1,8 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.forms.FormTranslucentQueue;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -71,25 +70,7 @@ public class WorldRendererMixin
     @Inject(method = "addSkyPass", at = @At("HEAD"))
     private void bbs$himmelspassGemessen(CallbackInfo info)
     {
-        /* ⚗️ 2026-08-01, zweite Runde. Der erste Zaehler hat die Frage "laeuft der Pass"
-         * beantwortet: ja, 45x in 4 Sekunden. Und die Weltansicht OHNE BBS-Oberflaeche
-         * zeichnet #ADCBFF, also genau die Farbe, die 1.21.1 im Vorschaufeld zeigt. Der
-         * Himmel ist damit in Ordnung -- verloren geht er nur auf dem Vorschau-Weg, also
-         * dort, wo BBS das Renderziel auf seinen eigenen Puffer umlenkt.
-         *
-         * Diese Messung fragt genau das ab, was die Umlenkung entscheidet, und zwar im
-         * Augenblick des Himmelspasses: greift sie hier ueberhaupt? Wenn hier
-         * canReplace=false steht, waehrend die uebrige Welt in BBS' Puffer landet, dann
-         * zeichnet der Himmel ins Hauptziel von Vanilla und niemand sieht ihn. */
-        RenderTarget ziel = net.minecraft.client.Minecraft.getInstance()
-            .gameRenderer.mainRenderTarget();
-        RenderTarget bbs = BBSRendering.getFramebuffer();
-
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.pass",
-            "canReplace=" + BBSRendering.canReplaceFramebuffer()
-            + " | renderingWorld=" + BBSRendering.renderingWorld
-            + " | zielIstBBS=" + (ziel == bbs)
-            + " | ziel=" + (ziel == null ? "null" : ziel.width + "x" + ziel.height));
+        MixinBruecke.rufe("WeltRendererLogik", "himmelspass");
     }
 
     /* 26.2: das Feld heisst entityOutlineTarget -- es war immer schon das Umriss-Ziel, der
@@ -104,26 +85,13 @@ public class WorldRendererMixin
     @Inject(method = "render", at = @At("HEAD"))
     public void onRenderWorldStart(CallbackInfo info)
     {
-        FormTranslucentQueue.begin();
+        MixinBruecke.rufe("WeltRendererLogik", "renderAnfang");
     }
 
     @Inject(method = "render", at = @At("RETURN"))
     public void onRenderWorldEnd(CallbackInfo info)
     {
-        FormTranslucentQueue.flush();
-
-        /* ⚗️ Auf Anforderung EIN Bild aus BBS' Puffer lesen — hier, weil das der
-         * Render-Thread ist und die Welt gerade fertig gezeichnet wurde. Ohne Anforderung
-         * kostet der Aufruf nur eine Abfrage einer Systemeigenschaft. Siehe Pufferprobe. */
-        /* Das AKTIVE Hauptziel, nicht BBS' Puffer: bei offenem Editor sind beide dasselbe
-         * (zielIstBBS=true gemessen), bei geschlossenem Editor ist es Vanillas Ziel. Damit
-         * beantwortet DIESELBE Probe die Frage, ob Alpha 0 im Himmel eine Eigenheit von BBS'
-         * Puffer ist oder in 26.2 ueberall so aussieht. */
-        RenderTarget haupt = net.minecraft.client.Minecraft.getInstance()
-            .gameRenderer.mainRenderTarget();
-
-        mchorse.bbs_mod.graphics.Pufferprobe.vielleichtLesen(haupt,
-            "hauptziel" + (haupt == BBSRendering.getFramebuffer() ? "(BBS)" : "(vanilla)"));
+        MixinBruecke.rufe("WeltRendererLogik", "renderEnde");
     }
 
     /**
@@ -138,51 +106,14 @@ public class WorldRendererMixin
         org.joml.Matrix4fc projektion, com.mojang.blaze3d.buffers.GpuBufferSlice nebel,
         org.joml.Vector4f nebelFarbe, boolean himmel, CallbackInfo info)
     {
-        /* Messfuehler: 26.2 uebergibt an LevelRenderer.render ein Flag, OB der Himmel
-         * gezeichnet wird. Der Himmel fehlt im Port komplett (schwarz statt blau, bei
-         * Tageszeit 6000) -- also zuerst nachsehen, was hier ankommt, statt den
-         * Himmelspass zu suchen. */
-        /* ⛔ MIXIN-KLASSEN SIND NICHT HOTSWAPBAR -- jede Messung hier kostet einen Boot.
-         * Darum ALLE verdaechtigen Werte auf einmal, nicht einen pro Lauf. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("welt.himmel-" + himmel,
-            "nebelfarbe=" + (nebelFarbe == null
-                ? "null"
-                : nebelFarbe.x + "," + nebelFarbe.y + "," + nebelFarbe.z + "," + nebelFarbe.w)
-            + " | nebelpuffer=" + (nebel != null)
-            + " | bloecke=" + bloecke
-            + " | projektion=" + (projektion == null ? "null" : String.valueOf(projektion.m00())));
-
-        /* ⚗️ WELCHE PROJEKTION ZEICHNET DIE WELT — und welche bekommt der Auswahlpuffer?
-         *
-         * Gemessen ist: die beiden Puffer sind im Stillstand pixelgenau deckungsgleich und
-         * laufen bei Kamerabewegung ~50 px auseinander (beide aus EINEM Dump-Aufruf). Kamera-
-         * POSITION ist dabei identisch (kamera.gleich = 1935, kamera.weicht-ab = 0), Ortho ist
-         * aus. Uebrig bleibt die Projektion — und die beiden Kandidaten stehen genau hier
-         * nebeneinander: der Parameter, mit dem gezeichnet wird, gegen den eingefrorenen
-         * Kamerazustand, aus dem UIFilmPanel#lastProjection gesetzt wird und den der Stencil
-         * spaeter aktiviert. Der Verdacht: sie sind nicht dieselbe Matrix (lastProjection
-         * steht fest bei m00=0,7505 = Fenster-Seitenverhaeltnis, dieser Parameter schwankt). */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("projektion.paar",
-            "gezeichnet=" + (projektion == null ? "null"
-                : projektion.m00() + "/" + projektion.m11())
-            + " | kamerazustand=" + (kamera == null || kamera.projectionMatrix == null ? "null"
-                : kamera.projectionMatrix.m00() + "/" + kamera.projectionMatrix.m11())
-            + " | gleich=" + (projektion != null && kamera != null
-                && projektion.equals(kamera.projectionMatrix)));
-
-        BBSRendering.zeichenProjektionStempeln(projektion);
-
-        BBSRendering.camera.set(kamera.viewRotationMatrix);
+        MixinBruecke.rufe("WeltRendererLogik", "projektionStempeln",
+            zuteiler, takt, bloecke, kamera, projektion, nebel, nebelFarbe, himmel);
     }
 
     @Inject(at = @At("RETURN"), method = "resize")
     private void onResized(CallbackInfo info)
     {
-        if (this.entityOutlineTarget == null)
-        {
-            return;
-        }
-
-        BBSRendering.resizeExtraFramebuffers();
+        /* entityOutlineTarget ist @Shadow — der Kernel bekommt den Wert, nicht das Feld. */
+        MixinBruecke.rufe("WeltRendererLogik", "groesseGeaendert", this.entityOutlineTarget);
     }
 }
