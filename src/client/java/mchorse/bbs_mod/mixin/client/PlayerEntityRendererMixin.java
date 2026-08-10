@@ -1,19 +1,12 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import com.mojang.blaze3d.vertex.PoseStack;
-import mchorse.bbs_mod.client.renderer.MorphRenderer;
-import mchorse.bbs_mod.forms.FormUtilsClient;
-import mchorse.bbs_mod.forms.forms.Form;
-import mchorse.bbs_mod.forms.renderers.FormRenderer;
-import mchorse.bbs_mod.morphing.Morph;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -60,19 +53,7 @@ public class PlayerEntityRendererMixin
     )
     public void onPositionOffset(AvatarRenderState zustand, CallbackInfoReturnable<Vec3> info)
     {
-        /* ⚠️ Der Zustand traegt die Entity nicht selbst — sie liegt an der Zusatzablage, die
-         * EntityRenderDispatcherMixin beim Einsammeln fuellt. Ist sie nicht da (Zustand
-         * ausserhalb des Dispatchers gebaut), gilt Vanilla-Verhalten. */
-        Entity entity = MorphRenderer.entityVon(zustand);
-
-        if (!(entity instanceof AbstractClientPlayer spieler))
-        {
-            return;
-        }
-
-        Morph morph = Morph.getMorph(spieler);
-
-        if (morph != null && morph.getForm() != null)
+        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "versatzUnterdruecken", zustand))
         {
             info.setReturnValue(Vec3.ZERO);
         }
@@ -81,43 +62,19 @@ public class PlayerEntityRendererMixin
     @Inject(method = "renderRightHand", at = @At("HEAD"), cancellable = true)
     public void onRenderRightArmBegin(PoseStack matrices, SubmitNodeCollector sammler, int licht, Identifier textur, boolean schlank, CallbackInfo info)
     {
-        this.bbs$arm(matrices, licht, InteractionHand.MAIN_HAND, info);
+        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, licht, InteractionHand.MAIN_HAND))
+        {
+            info.cancel();
+        }
     }
 
     @Inject(method = "renderLeftHand", at = @At("HEAD"), cancellable = true)
     public void onRenderLeftArmBegin(PoseStack matrices, SubmitNodeCollector sammler, int licht, Identifier textur, boolean schlank, CallbackInfo info)
     {
-        this.bbs$arm(matrices, licht, InteractionHand.OFF_HAND, info);
-    }
-
-    private void bbs$arm(PoseStack matrices, int licht, InteractionHand hand, CallbackInfo info)
-    {
-        AbstractClientPlayer player = Minecraft.getInstance().player;
-
-        if (player == null)
-        {
-            return;
-        }
-
-        Morph morph = Morph.getMorph(player);
-
-        if (morph == null)
-        {
-            return;
-        }
-
-        Form form = morph.getForm();
-
-        if (form == null)
-        {
-            return;
-        }
-
-        FormRenderer renderer = FormUtilsClient.getRenderer(form);
-
-        if (renderer != null && renderer.renderArm(matrices, licht, player, hand))
+        if (MixinBruecke.rufeUndAbbrechen("SpielerFormRendererLogik", "arm", matrices, licht, InteractionHand.OFF_HAND))
         {
             info.cancel();
         }
     }
+
 }

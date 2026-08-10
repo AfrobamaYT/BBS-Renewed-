@@ -1,7 +1,7 @@
 package com.afrobama.bbstools.client.mixin.physicsmod;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.diebuddies.config.ConfigMobs;
-import net.diebuddies.physics.settings.mobs.MobPhysicsType;
 import net.diebuddies.physics.settings.mobs.MobSetting;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,19 +27,11 @@ public abstract class MixinConfigMobs
         at = @At("HEAD"), cancellable = true, remap = false)
     private static void bbstools$skipActorEntity(Entity entity, CallbackInfoReturnable<MobSetting> cir)
     {
-        if (entity == null) return;
+        MobSetting erzwungen = (MobSetting) MixinBruecke.rufe("PhysikModLogik", "einstellungFuer", entity);
 
-        try
+        if (erzwungen != null)
         {
-            Class<?> actorClass = Class.forName("mchorse.bbs_mod.entity.ActorEntity");
-
-            if (actorClass.isInstance(entity))
-            {
-                cir.setReturnValue(new MobSetting(MobPhysicsType.OFF, 0D, 0D, null));
-            }
-        }
-        catch (ClassNotFoundException ignored)
-        {
+            cir.setReturnValue(erzwungen);
         }
     }
 

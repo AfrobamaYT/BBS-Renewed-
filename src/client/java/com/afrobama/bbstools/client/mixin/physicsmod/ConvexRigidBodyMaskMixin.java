@@ -1,8 +1,8 @@
 // Coded by Afrobama/Claude
 package com.afrobama.bbstools.client.mixin.physicsmod;
 
-import com.afrobama.bbstools.client.fracture.PhysicsMaskOverride;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.diebuddies.physics.ConvexRigidBody;
 import net.diebuddies.physics.PhysicsEntity;
 
@@ -35,11 +35,7 @@ public abstract class ConvexRigidBodyMaskMixin
     private static void bbstools$applyMaskOverride(PhysicsEntity entity, boolean kinematic,
                                                     CallbackInfoReturnable<ConvexRigidBody> cir)
     {
-        Byte override = PhysicsMaskOverride.get();
-        if (override != null && entity != null)
-        {
-            entity.physicsMask = override;
-        }
+        MixinBruecke.rufe("PhysikModLogik", "maskeSetzen", entity);
     }
 
 }
