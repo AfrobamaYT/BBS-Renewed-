@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.client.renderer.MobFormPose;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -43,12 +44,12 @@ public class ModelFeatureRendererMixin
     )
     private void bbs$poseAuflegen(ModelFeatureRenderer.Submit<?> auftrag, CallbackInfo info)
     {
-        MobFormPose.auflegen(auftrag.state());
+        MixinBruecke.rufe("ModelFeatureRendererLogik", "auflegen", auftrag.state());
     }
 
     @Inject(method = "prepareModel", at = @At("RETURN"))
     private void bbs$poseHerunternehmen(ModelFeatureRenderer.Submit<?> auftrag, CallbackInfo info)
     {
-        MobFormPose.zuruecksetzen();
+        MixinBruecke.rufe("ModelFeatureRendererLogik", "zuruecksetzen");
     }
 }

@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.mixin.client;
 
-import mchorse.bbs_mod.client.BBSRendering;
-import mchorse.bbs_mod.forms.FormTranslucentQueue;
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,9 +41,6 @@ public class ChunkSectionsToRenderMixin
     @Inject(method = "renderGroup", at = @At("HEAD"))
     public void onRenderGroup(ChunkSectionLayerGroup gruppe, com.mojang.blaze3d.textures.GpuSampler abtaster, CallbackInfo info)
     {
-        if (gruppe == ChunkSectionLayerGroup.TRANSLUCENT && !BBSRendering.isIrisShadowPass())
-        {
-            FormTranslucentQueue.flush();
-        }
+        MixinBruecke.rufe("ChunkSectionsToRenderLogik", "renderGroup", gruppe);
     }
 }

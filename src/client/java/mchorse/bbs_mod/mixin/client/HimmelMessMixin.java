@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SkyRenderer;
@@ -51,9 +52,6 @@ public class HimmelMessMixin
     private void bbs$himmelGemessen(ClientLevel welt, float teilbild, Camera kamera,
         SkyRenderState zustand, CallbackInfo info)
     {
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("sky.extract",
-            "zustand=" + (zustand == null ? "null" : zustand.getClass().getSimpleName())
-            + " | teilbild=" + teilbild
-            + " | kamera=" + (kamera == null ? "null" : "da"));
+        MixinBruecke.rufe("HimmelMessLogik", "himmelGemessen", teilbild, kamera, zustand);
     }
 }
