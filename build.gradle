@@ -512,6 +512,15 @@ dependencies {
 	 * die betroffenen features (Veil-FX, PhysicsMod-fracture, accelerated crowd-rendering,
 	 * MCEF-webbridge) pruefen selbst per FabricLoader.isModLoaded() und schalten sich ab.
 	 * Die jars liegen in libs/. */
+	/* ⛔ VEIL HAT KEINEN 26.2-BAU — und das ist kein Warten, sondern ein Zustand.
+	 * Modrinth am 2026-08-10 abgefragt: neueste Fabric-Fassung ist 4.4.1 vom 2026-07-31,
+	 * und ALLE Fassungen listen nur 1.21.1. Das Jar in libs/ ist folgerichtig
+	 * veil-fabric-1.21.1-4.0.1.jar.
+	 *
+	 * Folge fuer die zwei MixinMethodTracer_Veil*: die stehen in KEINER mixins.json --
+	 * nicht einmal geparkt -- und koennen also gar nicht weben. Sie auf die Bruecke zu
+	 * heben waere Arbeit an totem Quelltext; ohne Wirtsmod gibt es nichts zu tauschen und
+	 * nichts zu messen. Sie bleiben als einzige Mixins im Baum ohne Bruecke. */
 	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
 	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
 	/* 2026-08-10 WIEDER AN: v186 fuer mc 26.2, geholt mit tools/patreon-holen.mjs.
