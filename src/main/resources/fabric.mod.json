@@ -23,7 +23,7 @@
     "Fanyel (Portuguese translations)",
     "El_Redstoniano (Spanish translations)",
     "Sam Su~ (Thai translations)",
-    "R\u00fcyaperest (Turkish translations)",
+    "Rüyaperest (Turkish translations)",
     "Kirkus (Ukrainian translations)",
     "Eleeter (Urdu translations)",
     "Diobede (Vietnamese translations)"
@@ -57,6 +57,10 @@
       "environment": "client"
     },
     {
+      "environment": "client"
+    },
+    {
+      "config": "bbstools.physicsmod.mixins.json",
       "environment": "client"
     }
   ],

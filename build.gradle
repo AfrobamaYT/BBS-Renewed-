@@ -353,7 +353,7 @@ sourceSets {
 		java {
 			exclude "com/afrobama/bbstools/client/bbs/veil/**"
 			exclude "com/afrobama/bbstools/client/veil/**"
-			exclude "com/afrobama/bbstools/client/mixin/physicsmod/**"
+			// 2026-08-10 raus: physicsmod ist wieder im build (v186, mc 26.2).
 			exclude "com/afrobama/bbstools/client/web/MCEFWeb*"
 			exclude "com/afrobama/bbstools/client/crowd/mass/CrowdIris*"
 			/* ⛔ HIER STAND EIN AUSSCHLUSS DES GANZEN fracture-PAKETS -- ER WAR FALSCH.
@@ -479,7 +479,11 @@ dependencies {
 	 * Die jars liegen in libs/. */
 	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["veil-fabric*.jar"])
 	// P3-26.2-AUS: compileOnly fileTree(dir: "libs", include: ["acceleratedrendering*.jar"])
-	// P3-26.2-AUS: compileOnly files("libs/physics-mod-pro-v172j-fabric-1.21.1.jar")
+	/* 2026-08-10 WIEDER AN: v186 fuer mc 26.2, geholt mit tools/patreon-holen.mjs.
+	 * compileOnly — nur die drei Mixins unter mixin/physicsmod/ brauchen die Typen.
+	 * Die uebrigen acht Dateien, die PhysicsMod ansprechen, arbeiten per Reflection
+	 * (FracturePhysicsBridge allein 17x) und kompilieren auch ohne. */
+	compileOnly files("libs/physics-mod-pro-v186-fabric-mc-26.2.jar")
 	// P3-26.2-AUS: compileOnly files("libs/worldedit-mod-7.3.8.jar")
 	// P3-26.2-AUS: compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
 
