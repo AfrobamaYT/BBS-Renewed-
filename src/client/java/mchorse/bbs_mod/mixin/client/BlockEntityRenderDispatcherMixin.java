@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.BBSSettings;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -40,7 +42,7 @@ public class BlockEntityRenderDispatcherMixin
     @Inject(method = "tryExtractRenderState", at = @At("HEAD"), cancellable = true)
     private void onRenderMain(CallbackInfoReturnable<BlockEntityRenderState> info)
     {
-        if (BBSSettings.chromaSkyEnabled.get() && !BBSSettings.chromaSkyTerrain.get())
+        if (MixinBruecke.rufeUndAbbrechen("WeltUeberschreibungLogik", "blockentitiesUnterdruecken"))
         {
             info.setReturnValue(null);
         }

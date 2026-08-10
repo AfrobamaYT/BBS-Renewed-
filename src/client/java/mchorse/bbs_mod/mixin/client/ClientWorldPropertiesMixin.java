@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.mixin.client;
 
+import com.afrobama.bbstools.client.blender.MixinBruecke;
+
 import mchorse.bbs_mod.client.BBSRendering;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,11 +38,11 @@ public class ClientWorldPropertiesMixin
     @Inject(method = "getDefaultClockTime", at = @At("HEAD"), cancellable = true)
     public void onGetTimeOfDay(CallbackInfoReturnable<Long> info)
     {
-        Long timeOfDay = BBSRendering.getTimeOfDay();
+        Object zeit = MixinBruecke.rufe("WeltUeberschreibungLogik", "tageszeit");
 
-        if (timeOfDay != null)
+        if (zeit != null)
         {
-            info.setReturnValue(timeOfDay);
+            info.setReturnValue((Long) zeit);
         }
     }
 }
