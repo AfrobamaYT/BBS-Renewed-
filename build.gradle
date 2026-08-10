@@ -460,9 +460,28 @@ dependencies {
 	 * ⚠️ ALPHA-KANAL — es gibt fuer 26.2 nichts Stabileres. */
 	implementation "maven.modrinth:sodium:mc26.2-0.9.2-alpha.4-fabric"
 	/* P3-26.2-AUS: 2026-08-10 versucht, 1.11.2 fuer mc 26.2 anzuschalten -> ROT.
-	 * Nicht die Fassung ist schuld: IrisUtils, IrisTextureWrapper und
-	 * CustomUniformsBuilderMixin sind noch auf 1.8.x-/1.21.1-Stand. Das ist
-	 * Portierarbeit, kein Update. */
+	 * Nicht die Fassung ist schuld, das ist Portierarbeit statt Update.
+	 *
+	 * NACHGEMESSEN am selben Tag (abhaengigkeit an, die vier iris-ausschluesse raus,
+	 * compileClientJava): es sind GENAU 4 FEHLER IN 2 DATEIEN, nicht drei Klassen.
+	 * IrisUtils und IrisTextureWrapperLoader uebersetzen inzwischen sauber, und 6 der
+	 * 7 mixins unter mixin/client/iris ebenfalls. Offen sind nur:
+	 *
+	 *   1. ShaderCurves.addUniforms(List) fehlt -> CustomUniformsBuilderMixin:18.
+	 *      Kein Drift: die methode wurde in 10bfb41cd bei GENAU DIESER stilllegung
+	 *      entfernt, weil sie Iris-typen fuehrt. Zurueckholen = jenen hunk zurueck.
+	 *
+	 *   2. IrisTextureWrapper haengt an AbstractTexture.getId() und
+	 *      load(ResourceManager). BEIDE GIBT ES IN 26.2 NICHT MEHR — gemessen in der
+	 *      laufenden JVM, AbstractTexture hat nur noch:
+	 *          GpuTexture getTexture() · GpuSampler getSampler()
+	 *          GpuTextureView getTextureView() · void releaseTextures()
+	 *      Die klasse reicht Iris eine GL-textur-NUMMER durch. Das ist damit kein
+	 *      umbenennen, sondern ein umbau der uebergabe auf GpuTexture — und er muss
+	 *      zu dem passen, was Iris 1.11.2 auf SEINER seite erwartet.
+	 *
+	 * Punkt 2 ist die eigentliche Arbeit. Wer sie anfaengt: erst nachsehen, was Iris
+	 * 1.11.2 fuer 26.2 als textur-uebergabe verlangt, dann bauen — nicht umgekehrt. */
 	// P3-26.2-AUS: implementation "maven.modrinth:iris:1.11.2+26.2-fabric"
 
 	/* ⭐ spark — ETABLIERTER PROFILER STATT EIGENER ZAEHLER (2026-08-03).
