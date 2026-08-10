@@ -29,6 +29,10 @@
 # muster, das etwas anderes behauptet als der baum tut, driftet und wird dann falsch
 # gelesen. Kommt ein neues jar ueber ~50 MB dazu: hier namentlich eintragen.
 /libs/physics-mod-pro-v172j-fabric-1.21.1.jar
+# 2026-08-10 dazu: v186 fuer mc 26.2, geholt mit tools/patreon-holen.mjs. Gleiche
+# Groessenordnung (~130 MB) und damit ueber GitHubs 100-MB-Grenze — sie wuerde den Push
+# nicht nur aufblaehen, sondern ABLEHNEN. Namentlich, nach der Regel vier Zeilen weiter oben.
+/libs/physics-mod-pro-v186-fabric-mc-26.2.jar
 
 # eclipse
 
