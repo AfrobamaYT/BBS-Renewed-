@@ -269,6 +269,12 @@ loom {
 			 */
 			runDir project.findProperty("laufordner") ?: "run"
 
+			/* ⛔ A/B-VERGLEICH BRAUCHT DENSELBEN NUTZERNAMEN (2026-08-10). Der Dev-Launcher
+			 * wuerfelt sonst je Start einen "PlayerNNN" — und Minecraft waehlt die Standardhaut
+			 * (Steve/Alex) aus dem UUID-Hash des Namens. Gemessen: 1.21.1 zeigte Player306 mit
+			 * rotbraunem Arm, 26.2 Player963 mit blassem. 45 % Bildabweichung, komplett
+			 * hausgemacht. Mit -Pnutzer=AB sind beide Seiten gleich. */
+			programArgs "--username", (project.findProperty("nutzer") ?: "Player")
 			programArgs "--quickPlaySingleplayer", (project.findProperty("welt") ?: "New World")
 
 			/* GL-FEHLER LAUT MACHEN:  ./gradlew runQuick -PglDebug
