@@ -39,7 +39,6 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
         super(form);
     }
 
-    @Override
     /**
      * ⛔ OFFENER FEHLER: DIESE VORSCHAU LANDET IM PORT AN DER FALSCHEN STELLE.
      *
@@ -73,6 +72,12 @@ public class TrailFormRenderer extends FormRenderer<TrailForm> implements ITicka
      * liegen bei 0,20 bis 0,76 %. Der Unterschied muss also in dem liegen, was Trail
      * ZUSAETZLICH tut, nicht im Vorschauweg als solchem.
      */
+    @Override
+    protected boolean flacheVorschau()
+    {
+        return true;
+    }
+
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         Texture texture = context.render.getTextures().getTexture(this.form.texture.get());

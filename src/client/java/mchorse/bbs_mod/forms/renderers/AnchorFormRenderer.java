@@ -25,7 +25,6 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
         super(form);
     }
 
-    @Override
     /**
      * ⛔ OFFENER FEHLER, GLEICHE URSACHE WIE BEI {@code TrailFormRenderer} (2026-08-10).
      *
@@ -45,6 +44,12 @@ public class AnchorFormRenderer extends FormRenderer<AnchorForm>
      * gemeinsamen Miniaturenweg, nicht hier. Der volle Messstand steht bei
      * {@code TrailFormRenderer#renderInUI}.
      */
+    @Override
+    protected boolean flacheVorschau()
+    {
+        return true;
+    }
+
     protected void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {
         if (this.form.parts.getAll().isEmpty())

@@ -120,8 +120,19 @@ public abstract class FormRenderer <T extends Form>
          *
          * Abgegeben wird gesammelt am Ende des Oberflaechen-Durchlaufs, in EINE
          * bildschirmgrosse Textur -- siehe MiniaturSammelZustand fuer den Grund. */
-        mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.einreihen(
-            this, context, x1, y1, x2, y2);
+        /* ⛔ FLACHE VORSCHAUEN NICHT EINREIHEN (Probe 2026-08-10). Die Kachel wird in ein
+         * EIGENES Ziel gezeichnet; ein flacher Batcher-Zug darin landet trotzdem im
+         * GUI-Zug des Hauptbildes -- gemessen an Trail und Anker, deren Vorschau vierfach
+         * zu gross aus der Zelle lief. Wer nur eine Textur setzt, zeichnet direkt. */
+        if (this.flacheVorschau())
+        {
+            this.renderInUI(context, x1, y1, x2, y2);
+        }
+        else
+        {
+            mchorse.bbs_mod.ui.framework.elements.utils.vorschau.Miniaturschlange.einreihen(
+                this, context, x1, y1, x2, y2);
+        }
 
         FontRenderer font = context.batcher.getFont();
         String name = this.form.name.get();
@@ -146,6 +157,13 @@ public abstract class FormRenderer <T extends Form>
 
             context.batcher.textCard(name, (x2 + x1 - w) / 2, y2 - 6 - font.getHeight(), Colors.WHITE, Colors.A50);
         }
+    }
+
+    /** Zeichnet die Vorschau nur flach (Textur/Kasten)? Dann gehoert sie nicht in die
+     *  Miniaturkachel — siehe renderUI. */
+    protected boolean flacheVorschau()
+    {
+        return false;
     }
 
     protected abstract void renderInUI(UIContext context, int x1, int y1, int x2, int y2);
