@@ -198,6 +198,17 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                 int sb = Math.min(sicht.right(), zielB) - sx;
                 int sh = Math.min(zielH - sicht.top(), zielH) - sy;
 
+                /* Messpunkt Beschnitt: WELCHE Kachel bekommt welchen Schnitt, und wird sie
+                 * uebersprungen? Ohne das ist "Icon verschwindet beim Scrollen" nicht von
+                 * "Icon laeuft ueber den Bildschirm" zu unterscheiden. */
+                Messpunkt.zaehle("beschnitt." + e.zeichner().getClass().getSimpleName(),
+                    "zelle " + e.x0() + "," + e.y0() + "-" + e.x1() + "," + e.y1()
+                    + "  schnittquelle=" + (e.scissorArea() != null ? "scissorArea" : "bounds")
+                    + " " + sicht.left() + "," + sicht.top() + "-" + sicht.right() + "," + sicht.bottom()
+                    + "  ziel " + zielB + "x" + zielH
+                    + "  -> gl " + sx + "," + sy + " " + sb + "x" + sh
+                    + (sb <= 0 || sh <= 0 ? "  UEBERSPRUNGEN" : ""));
+
                 if (sb <= 0 || sh <= 0)
                 {
                     /* ⛔ DIE MAUS STEHT HIER SCHON IN BILDPUNKTEN (oben umgerechnet), und das
