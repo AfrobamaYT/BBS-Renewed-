@@ -314,7 +314,7 @@ public abstract class UIModelRenderer extends UIElement
          * Kamera -- beim Umlaufen wandert der Glanz nicht mehr mit. */
         Minecraft mc = Minecraft.getInstance();
 
-        mc.gameRenderer.lighting().setupFor(Lighting.Entry.ENTITY_IN_UI);
+        mc.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
 
         /* ⭐ DER SAMMLER MUSS HIER HERUM (2026-07-31, an einem funktionierenden Fall
          * abgelesen).

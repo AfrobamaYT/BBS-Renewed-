@@ -74,7 +74,7 @@ public abstract class FormRenderer <T extends Form>
          * Uebersetzung. ENTITY_IN_UI ist Vanillas Voreinstellung fuer genau diesen Fall.
          * Folge: die Formvorschauen sind etwas anders ausgeleuchtet als vorher. */
         net.minecraft.client.Minecraft.getInstance().gameRenderer.lighting()
-            .setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ENTITY_IN_UI);
+            .setupFor(com.mojang.blaze3d.platform.Lighting.Entry.LEVEL);
 
         /* Messfuehler: zeichnen die Miniaturen (Form-palette, 64x64-vorschau im
          * Modell-editor) ueberhaupt, oder werden sie nur uebermalt? Genau diese Frage
