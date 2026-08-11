@@ -324,17 +324,35 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             var zielFarbe = mchorse.bbs_mod.graphics.Zeichenziel.farbe();
             var zielTiefe = mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
 
+            /* ⛔ ALLE DREI SAMPLER BINDEN, KEINEN ERBEN (2026-08-11, Restfall Akte 01/1):
+             * entityTextur (singleTextureWithLightmap) laesst Sampler1 (Overlay) leer, und
+             * GehaltenesNetz bindet nur, was da ist — der Slot behaelt die Textur des
+             * VORHERIGEN Zugs. In run_6 lag dort zufaellig ein Texel mit Alpha 1 (neutral),
+             * in run_2 mit anderen gewachsenen Daten eines mit Alpha 0: der Shader rechnet
+             * mix(fremdTexel.rgb, farbe.rgb, 0) = fremdes RGB — die Kachel wurde SCHWARZ,
+             * bei identischen renderQuad-Eingaengen (Messfuehler bb.zweig, kalter Boot).
+             * Gebunden wird das echte Overlay (NO_OVERLAY-Texel dort ist belegt neutral,
+             * die Modell-Kacheln zeichnen damit) — dieselbe Haertung wie Blockvorschau. */
+            var mc = Minecraft.getInstance();
+            var abtaster = RenderSystem.getSamplerCache()
+                .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
+            var bindung = new net.minecraft.client.gui.render.TextureSetup(
+                texture.view(),
+                mc.gameRenderer.overlayTexture().getTextureView(),
+                mc.gameRenderer.lightmap(),
+                texture.sampler(), abtaster, abtaster);
+
             if (zielFarbe != null)
             {
                 SofortZeichner.zeichnen(finalShader, builder.build(),
                     new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
-                    SofortZeichner.entityTextur(texture), zielFarbe, zielTiefe);
+                    bindung, zielFarbe, zielTiefe);
             }
             else
             {
                 SofortZeichner.zeichnen(finalShader, builder.build(),
                     new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
-                    SofortZeichner.entityTextur(texture));
+                    bindung);
             }
         }
 
