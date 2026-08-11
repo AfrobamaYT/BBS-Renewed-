@@ -224,6 +224,13 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                     continue;
                 }
 
+                /* ⛔ JEDER WEG SETZT SEIN EIGENES LICHT (2026-08-11 gemessen). Die Zuege
+                 * laufen AUFGESCHOBEN -- ein Abmelden am Ende des Editor-Renderns kommt zu
+                 * frueh, `UiLicht.scheibe()` sah dort immer `null`. Also meldet nicht der
+                 * Editor ab, sondern jeder Zeichner meldet an, was er braucht: eine Kachel
+                 * hat keine Umlaufkamera, sie nimmt die festen Richtungen. */
+                mchorse.bbs_mod.graphics.UiLicht.ansichtLoeschen();
+
                 mchorse.bbs_mod.graphics.Zeichenbereich.setzen(sx, sy, sb, sh);
 
                 /* ⛔ ZEICHENBEREICH ERREICHT NUR BBS-EIGENE DURCHGAENGE (2026-08-11 gemessen).

@@ -292,6 +292,10 @@ public abstract class UIModelRenderer extends UIElement
         mchorse.bbs_mod.graphics.Projektion.setzen(this.camera.projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         InverseView.set(new Matrix3f(this.camera.view).invert());
 
+        /* Das Licht dreht mit der Umlaufkamera — wie in 1.21.1. Warum und mit welchen Zahlen
+         * belegt, steht an UiLicht#ansicht. */
+        mchorse.bbs_mod.graphics.UiLicht.ansicht(new Matrix3f(this.camera.view));
+
         /* Rendering begins... */
         stack.pushPose();
         MatrixStackUtils.multiply(stack, this.camera.view);
@@ -364,6 +368,7 @@ public abstract class UIModelRenderer extends UIElement
          * stehen. Der normale Weg ist damit dicht, der Ausnahmeweg nicht -- bewusst so, weil
          * ein try/finally hier den ganzen Rumpf einruecken wuerde. */
         mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
+
 
         MatrixStackUtils.restoreMatrices();
 
