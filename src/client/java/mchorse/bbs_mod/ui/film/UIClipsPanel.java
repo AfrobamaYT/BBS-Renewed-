@@ -10,6 +10,7 @@ import mchorse.bbs_mod.film.Film;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.ui.film.clips.UIClip;
+import mchorse.bbs_mod.ui.film.mehrfach.MehrfachSchreiber;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.DataPath;
@@ -348,20 +349,60 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         this.filmPanel.getUndoHandler().getUndoManager().markLastUndoNoMerging();
     }
 
+    /**
+     * Alle clips, auf die eine aenderung im eigenschaften-panel wirkt.
+     *
+     * <p>⚠ Die zeitleisten-auswahl KANN leer sein, waehrend ein panel offen ist:
+     * {@link #pickActiveClip()} oeffnet im flug ein panel, ohne die auswahl anzufassen.
+     * Ohne den anker-zusatz unten fiel in diesem zustand jede panel-aenderung lautlos auf
+     * den boden — die alte schleife lief dann ueber eine leere liste.</p>
+     */
+    @Override
+    public List<Clip> getMehrfachZiele()
+    {
+        List<Clip> ziele = this.clips.getClipsFromSelection();
+        Clip anker = this.getClip();
+
+        if (anker != null && !enthaelt(ziele, anker))
+        {
+            ziele.add(anker);
+        }
+
+        return ziele;
+    }
+
+    /**
+     * ⚠ Referenz-vergleich mit absicht: {@code Clip} erbt {@code ValueGroup.equals}, das
+     * den INHALT vergleicht. {@code List.contains} wuerde zwei inhaltsgleiche clips
+     * verwechseln.
+     */
+    private static boolean enthaelt(List<Clip> clips, Clip gesucht)
+    {
+        for (Clip clip : clips)
+        {
+            if (clip == gesucht)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Traegt eine panel-aenderung auf alle gewaehlten clips. Ob das als delta oder
+     * absolut geschieht, entscheidet {@link mchorse.bbs_mod.ui.film.mehrfach.MehrfachWert}
+     * — an EINER stelle, nicht hier und nicht in den panels.
+     *
+     * <p>Die alte fassung rief {@code clip.getRecursively(path)} auf. Das WIRFT bei
+     * unbekanntem pfad ({@code IllegalStateException}), statt null zu liefern — bei
+     * gemischter auswahl (z.B. audio- und untertitel-clip) und geschachtelten pfaden war
+     * das ein absturz. Der neue weg benutzt {@code findRecursively}.</p>
+     */
     @Override
     public <T extends BaseValue> void editMultiple(T property, Consumer<T> consumer)
     {
-        DataPath path = property.getRelativePath(this.getClip());
-
-        for (Clip clip : this.clips.getClipsFromSelection())
-        {
-            BaseValue value = clip.getRecursively(path);
-
-            if (value != null && value.getClass() == property.getClass())
-            {
-                consumer.accept((T) value);
-            }
-        }
+        MehrfachSchreiber.schreibe(this.getClip(), this.getMehrfachZiele(), property, consumer);
     }
 
     @Override

@@ -39,6 +39,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.mehrfach.UIMehrfachHinweis;
 import mchorse.bbs_mod.ui.film.clips.actions.UIAttackActionClip;
 import mchorse.bbs_mod.ui.film.clips.actions.UIBreakBlockActionClip;
 import mchorse.bbs_mod.ui.film.clips.actions.UIChatActionClip;
@@ -81,6 +82,9 @@ public abstract class UIClip <T extends Clip> extends UIElement
     public UITrackpad duration;
 
     public UIEnvelope envelope;
+
+    /** Sagt, dass eine aenderung hier gerade mehrere clips trifft. Siehe UIMehrfachHinweis. */
+    public UIMehrfachHinweis mehrfachHinweis;
 
     public UIScrollView panels;
 
@@ -178,6 +182,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
         this.duration.limit(1, Integer.MAX_VALUE, true).tooltip(UIKeys.CAMERA_PANELS_DURATION);
         this.envelope = new UIEnvelope(this);
         this.envelope.channel.setUndoId("envelope_keyframes");
+        this.mehrfachHinweis = new UIMehrfachHinweis(editor);
 
         boolean horizontal = BBSSettings.isHorizontalClipEditorEffective();
 
@@ -204,6 +209,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
 
     protected void registerPanels()
     {
+        this.panels.add(this.mehrfachHinweis);
         this.panels.add(UI.row(this.title, this.enabled.label(IKey.EMPTY).w(26)));
         this.panels.add(UI.row(this.layer, this.tick, this.duration));
 
@@ -267,6 +273,7 @@ public abstract class UIClip <T extends Clip> extends UIElement
         this.tick.setValue(TimeUtils.toTime(this.clip.tick.get()));
         this.duration.setValue(TimeUtils.toTime(this.clip.duration.get()));
         this.envelope.fillData();
+        this.mehrfachHinweis.aktualisiere();
     }
 
     @Override

@@ -7,6 +7,7 @@ import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.utils.clips.Clip;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface IUIClipsDelegate extends ICursor
@@ -45,4 +46,14 @@ public interface IUIClipsDelegate extends ICursor
     public void editMultiple(ValueInt property, int value);
 
     public <T extends BaseValue> void editMultiple(T property, Consumer<T> consumer);
+
+    /**
+     * Alle clips, auf die eine aenderung im eigenschaften-panel wirkt — der anker-clip
+     * (der, dessen panel offen ist) eingeschlossen, und zwar auch dann, wenn die
+     * zeitleisten-auswahl leer ist.
+     *
+     * <p>ABSICHTLICH ohne default-rumpf: eine leere liste waere ein stiller ausfall des
+     * ganzen features. Wer das interface implementiert, muss die frage beantworten.</p>
+     */
+    public List<Clip> getMehrfachZiele();
 }

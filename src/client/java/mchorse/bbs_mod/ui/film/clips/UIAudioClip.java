@@ -63,7 +63,7 @@ public class UIAudioClip extends UIClip<AudioClip>
 
         this.pickAudio = new UIButton(UIKeys.CAMERA_PANELS_AUDIO_PICK_AUDIO, (b) ->
         {
-            UISoundOverlayPanel panel = new UISoundOverlayPanel((l) -> this.clip.audio.set(l), this.getContext());
+            UISoundOverlayPanel panel = new UISoundOverlayPanel((l) -> this.editor.editMultiple(this.clip.audio, (value) -> value.set(l)), this.getContext());
 
             UIOverlay.addOverlay(this.getContext(), panel.set(this.clip.audio.get()));
         });
@@ -103,10 +103,13 @@ public class UIAudioClip extends UIClip<AudioClip>
         });
         this.extendDuration.tooltip(UIKeys.CAMERA_PANELS_AUDIO_EXTEND_DURATION);
 
-        this.offset = new UITrackpad((v) -> this.clip.offset.set(v.intValue()));
+        this.offset = new UITrackpad((v) -> this.editor.editMultiple(this.clip.offset, (value) -> value.set(v.intValue())));
         this.offset.integer();
 
-        this.volume = new UISliderTrackpad((v) -> this.clip.volume.set(v.floatValue()));
+        /* ⚠ limit(this.clip.volume) unten ist PFLICHT und kein schmuck: klemmt das feld
+         * frueher als der wert, kommt bei mehrfachauswahl keine neue zahl mehr an, das
+         * delta ist 0 und die ganze gruppe steht still — ohne fehlermeldung. */
+        this.volume = new UISliderTrackpad((v) -> this.editor.editMultiple(this.clip.volume, (value) -> value.set(v.floatValue())));
         this.volume.limit(this.clip.volume).values(0.05F, 0.01F, 0.2F).increment(0.1F).tooltip(UIKeys.CAMERA_PANELS_AUDIO_VOLUME);
 
         this.registerSpatialUI();
@@ -119,7 +122,7 @@ public class UIAudioClip extends UIClip<AudioClip>
      */
     private void registerSpatialUI()
     {
-        this.spatialMode = new UICirculate((b) -> this.clip.spatial.set(b.getValue()));
+        this.spatialMode = new UICirculate((b) -> this.editor.editMultiple(this.clip.spatial, (value) -> value.set(b.getValue())));
         this.spatialMode.addLabel(SPATIAL_MODE_OFF);
         this.spatialMode.addLabel(SPATIAL_MODE_WORLD);
         this.spatialMode.addLabel(SPATIAL_MODE_ACTOR);

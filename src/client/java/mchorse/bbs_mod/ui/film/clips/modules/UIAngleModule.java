@@ -4,6 +4,7 @@ import mchorse.bbs_mod.camera.values.ValueAngle;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.mehrfach.MehrfachKomponente;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.UISection;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
@@ -25,16 +26,16 @@ public class UIAngleModule extends UISection
 
         this.editor = editor;
 
-        this.yaw = new UITrackpad((v) -> BaseValue.edit(this.angle, (value) -> value.get().yaw = v.floatValue()));
+        this.yaw = new UITrackpad((v) -> MehrfachKomponente.schreibe(this.editor, this.angle, (a) -> a.yaw, (a, w) -> a.yaw = (float) w, v));
         this.yaw.tooltip(UIKeys.CAMERA_PANELS_YAW);
 
-        this.pitch = new UITrackpad((v) -> BaseValue.edit(this.angle, (value) -> value.get().pitch = v.floatValue()));
+        this.pitch = new UITrackpad((v) -> MehrfachKomponente.schreibe(this.editor, this.angle, (a) -> a.pitch, (a, w) -> a.pitch = (float) w, v));
         this.pitch.tooltip(UIKeys.CAMERA_PANELS_PITCH);
 
-        this.roll = new UITrackpad((v) -> BaseValue.edit(this.angle, (value) -> value.get().roll = v.floatValue()));
+        this.roll = new UITrackpad((v) -> MehrfachKomponente.schreibe(this.editor, this.angle, (a) -> a.roll, (a, w) -> a.roll = (float) w, v));
         this.roll.tooltip(UIKeys.CAMERA_PANELS_ROLL);
 
-        this.fov = new UITrackpad((v) -> BaseValue.edit(this.angle, (value) -> value.get().fov = v.floatValue()));
+        this.fov = new UITrackpad((v) -> MehrfachKomponente.schreibe(this.editor, this.angle, (a) -> a.fov, (a, w) -> a.fov = (float) w, v));
         this.fov.tooltip(UIKeys.CAMERA_PANELS_FOV);
 
         this.fields.add(this.yaw, this.pitch, this.roll, this.fov);

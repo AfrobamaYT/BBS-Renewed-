@@ -5,6 +5,7 @@ import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.IUIClipsDelegate;
+import mchorse.bbs_mod.ui.film.mehrfach.MehrfachKomponente;
 import mchorse.bbs_mod.ui.film.utils.UICameraUtils;
 import mchorse.bbs_mod.ui.framework.elements.UISection;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
@@ -30,13 +31,15 @@ public class UIPointModule extends UISection
 
         this.editor = editor;
 
-        this.x = new UITrackpad((value) -> BaseValue.edit(this.point, (point) -> point.get().x = value));
+        /* MehrfachKomponente schreibt den anker genauso wie BaseValue.edit vorher (pre- und
+         * post-notify inklusive) und legt nur die uebrigen gewaehlten clips dazu. */
+        this.x = new UITrackpad((value) -> MehrfachKomponente.schreibe(this.editor, this.point, (p) -> p.x, (p, v) -> p.x = v, value));
         this.x.tooltip(UIKeys.GENERAL_X);
 
-        this.y = new UITrackpad((value) -> BaseValue.edit(this.point, (point) -> point.get().y = value));
+        this.y = new UITrackpad((value) -> MehrfachKomponente.schreibe(this.editor, this.point, (p) -> p.y, (p, v) -> p.y = v, value));
         this.y.tooltip(UIKeys.GENERAL_Y);
 
-        this.z = new UITrackpad((value) -> BaseValue.edit(this.point, (point) -> point.get().z = value));
+        this.z = new UITrackpad((value) -> MehrfachKomponente.schreibe(this.editor, this.point, (p) -> p.z, (p, v) -> p.z = v, value));
         this.z.tooltip(UIKeys.GENERAL_Z);
 
         this.x.values(0.1F);

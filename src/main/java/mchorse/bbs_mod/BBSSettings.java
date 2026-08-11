@@ -159,6 +159,11 @@ public class BBSSettings {
 	/* Flug schreibt in den fuehrenden clip, auch wenn keiner ausgewaehlt ist.
 	 * Gelesen von mchorse.bbs_mod.ui.film.UIClipsPanel.pickActiveClip. */
 	public static ValueBoolean editorFlightEditsActiveClip;
+	/* Bei mehreren gewaehlten clips: ein ZUG an einem zahlenfeld verschiebt alle um
+	 * denselben betrag (abstaende bleiben), eine GETIPPTE zahl setzt alle gleich.
+	 * Aus = wie vorher, alle bekommen denselben wert.
+	 * Gelesen von mchorse.bbs_mod.ui.film.mehrfach.MehrfachWert. */
+	public static ValueBoolean editorMultiClipDelta;
 	/* Waehrend der wiedergabe wird die live-kamera fortlaufend in den fuehrenden clip
 	 * geschrieben. Gelesen von mchorse.bbs_mod.ui.film.FlightClipRecorder. */
 	public static ValueBoolean editorRecordCameraDuringPlayback;
@@ -676,6 +681,7 @@ public class BBSSettings {
 		editorKeybindSpecificWins = builder.getBoolean("keybind_specific_wins", true);
 		editorKeybindSecondBinding = builder.getBoolean("keybind_second_binding", true);
 		editorFlightEditsActiveClip = builder.getBoolean("flight_edits_active_clip", true);
+		editorMultiClipDelta = builder.getBoolean("multi_clip_delta", true);
 		editorRecordCameraDuringPlayback = builder.getBoolean("record_camera_during_playback", false);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);
 		editorOrbitMovementRequiresFlight = builder.getBoolean("orbit_movement_requires_flight", true);

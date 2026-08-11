@@ -327,11 +327,73 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
         return this.integer ? (int) value : value;
     }
 
+    /**
+     * Woher der wert des GERADE LAUFENDEN callbacks kommt.
+     *
+     * <p>Nur waehrend {@link #accept(double, double)} laeuft steht hier etwas anderes als
+     * {@link #KEINE}. Wer ausserhalb fragt, bekommt KEINE — und das ist die sichere
+     * antwort: dann wird absolut geschrieben, nie geraten.</p>
+     */
+    public static enum Eingabeart
+    {
+        /** Kein zahlenfeld beteiligt — schalter, liste, knopf, farbwaehler. */
+        KEINE,
+        /** Zug am feld, klick auf +/-, pfeiltasten: eine RELATIVE bewegung. */
+        ZUG,
+        /** Eine zahl wurde ins textfeld getippt: ein ABSOLUTER wert. */
+        TEXT
+    }
+
+    /* Ein statischer wert, weil die UI einen einzigen thread hat und immer genau ein feld
+     * gleichzeitig meldet. Er wird in accept() gesetzt und im finally wieder zurueckgesetzt,
+     * es gibt also kein zeitfenster, in dem hier ein alter wert stehen bleibt. */
+    private static Eingabeart eingabeart = Eingabeart.KEINE;
+
+    /** Siehe {@link Eingabeart}. */
+    public static Eingabeart getEingabeart()
+    {
+        return eingabeart;
+    }
+
+    /** Ob der wert dieses feldes gerade aus dem TEXTFELD kommt statt aus einer geste. */
+    private boolean ausText;
+
+    /**
+     * Fuehrt eine eingabe aus, die aus dem textfeld stammt. Verschachtelung ist erlaubt:
+     * {@code evaluate()} laeuft innerhalb von {@code unfocus()}.
+     */
+    protected void alsText(Runnable eingabe)
+    {
+        boolean vorher = this.ausText;
+
+        this.ausText = true;
+
+        try
+        {
+            eingabe.run();
+        }
+        finally
+        {
+            this.ausText = vorher;
+        }
+    }
+
     protected void accept(double value, double oldValue)
     {
         if (this.callback != null)
         {
-            this.callback.accept(this.relative ? value - oldValue : this.value);
+            Eingabeart vorher = eingabeart;
+
+            eingabeart = this.ausText ? Eingabeart.TEXT : Eingabeart.ZUG;
+
+            try
+            {
+                this.callback.accept(this.relative ? value - oldValue : this.value);
+            }
+            finally
+            {
+                eingabeart = vorher;
+            }
         }
     }
 
@@ -392,7 +454,10 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
         /* Reset the value in case it's out of range */
         if (this.delayedInput)
         {
-            this.setValueAndNotify(this.value);
+            /* ⚠ delayedInput meldet ERST HIER, lange nach dem tippen. Ohne alsText waere
+             * das als zug gezaehlt worden und haette bei mehrfachauswahl ein delta
+             * ausgeloest, obwohl der nutzer eine zahl eingegeben hat. */
+            this.alsText(() -> this.setValueAndNotify(this.value));
         }
         else
         {
@@ -428,8 +493,9 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
         try
         {
             MathBuilder builder = new MathBuilder();
+            double getippt = builder.parse(text).get().doubleValue();
 
-            this.setValueAndNotify(builder.parse(text).get().doubleValue());
+            this.alsText(() -> this.setValueAndNotify(getippt));
             this.textbox.moveCursorToEnd();
         }
         catch (Exception e)
@@ -455,7 +521,7 @@ public abstract class UINumericInput <T extends UINumericInput<T>> extends UIBas
 
                 if (!this.delayedInput)
                 {
-                    this.accept(this.value, oldValue);
+                    this.alsText(() -> this.accept(this.value, oldValue));
                 }
             }
             catch (Exception e)
