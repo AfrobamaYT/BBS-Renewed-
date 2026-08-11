@@ -50,6 +50,14 @@ public class LabelFormRenderer extends FormRenderer<LabelForm>
         super(form);
     }
 
+    /** Die Vorschau ist reine Textausgabe ueber den Batcher — sie gehoert nicht in die
+     *  eingereihte Kachel, siehe {@link FormRenderer#renderUI}. */
+    @Override
+    protected boolean flacheVorschau()
+    {
+        return true;
+    }
+
     @Override
     public void renderInUI(UIContext context, int x1, int y1, int x2, int y2)
     {

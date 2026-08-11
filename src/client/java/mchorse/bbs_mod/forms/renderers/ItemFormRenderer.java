@@ -23,6 +23,14 @@ public class ItemFormRenderer extends FormRenderer<ItemForm>
         super(form);
     }
 
+    /** Das Inventarsymbol geht ueber den Flaechenstapel des Zeichners, nicht ueber einen
+     *  eigenen Durchgang — also nicht einreihen, siehe {@link FormRenderer#renderUI}. */
+    @Override
+    protected boolean flacheVorschau()
+    {
+        return true;
+    }
+
     /**
      * ⚠️ 26.2: die Vorschau ist das Inventarsymbol, nicht mehr die frei gedrehte 3D-Ansicht --
      * Grund und Rueckweg stehen in {@link UISymbol}.
