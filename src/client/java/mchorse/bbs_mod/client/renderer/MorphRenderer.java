@@ -109,6 +109,15 @@ public class MorphRenderer
                         .set(FormRenderType.ENTITY, morph.entity, matrixStack, i, overlay, g)
                         .camera(Minecraft.getInstance().gameRenderer.mainCamera())));
 
+                /* ⛔ ZWEITRENDER ZUR ZEICHEN-ZEIT — ohne ihn sind MODELL-Morphs in der Welt
+                 * unsichtbar. Der Aufruf darueber laeuft in der SAMMELphase: sein
+                 * VAO-Sofortzug wird vom Hauptpass uebermalt (RenderDoc-belegt), nur seine
+                 * Collector-Anteile (Ruestung, Item-/Block-Teile) stimmen. MorphAufschub
+                 * zeichnet dieselbe Gestalt in AFTER_SOLID_FEATURES noch einmal — dann
+                 * sitzt der Sofortzug UEBER Himmel und Terrain, und die Collector-Anteile
+                 * des Zweitrenders fallen in einen Wegwerf-Speicher (sonst doppelt). */
+                MorphAufschub.einreichen(morph.getForm(), morph.entity, matrixStack, i, overlay, g);
+
                 matrixStack.popPose();
             }
 
@@ -162,6 +171,10 @@ public class MorphRenderer
             FormUtilsClient.render(form, new FormRenderingContext()
                 .set(FormRenderType.ENTITY, owner.entity, matrixStack, i, o, g)
                 .camera(Minecraft.getInstance().gameRenderer.mainCamera()));
+
+            /* Zweitrender wie in renderPlayer: der Aufruf darueber liegt in der
+             * Sammelphase, sein Modell-Sofortzug wird uebermalt. */
+            MorphAufschub.einreichen(form, owner.entity, matrixStack, i, o, g);
 
             matrixStack.popPose();
 
