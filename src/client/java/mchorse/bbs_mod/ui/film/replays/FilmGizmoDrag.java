@@ -146,6 +146,30 @@ public class FilmGizmoDrag
             );
         });
 
+        /* Reference frame for the middle-click axis pick (UIPropTransform#axisPickDrag).
+         *
+         * ⛔ Deliberately NOT routed through the guard above, and deliberately NOT
+         * buildFilmGizmoDrag:
+         *   - the guard withholds the drag exactly where the pick is most wanted (camera on the
+         *     edited bone), and the pick survives an unprojectable origin by design;
+         *   - the numeric Jacobian and rotate axes cost four keyframe applications per call and
+         *     the pick reads neither — only camera, view, viewport and the frame axes. */
+        transform.axisPickDrag(() ->
+        {
+            GizmoDrag pick = GizmoDrag.fromRenderedGizmo(panel.getCamera(), panel.preview.getViewport());
+
+            if (pick != null)
+            {
+                float pickTransition = panel.replayEditor.getContext() == null ? 0F : panel.replayEditor.getContext().getTransition();
+
+                /* Same GLOBAL frame the edit itself gets, or GLOBAL would mean two different
+                 * things in the same gesture (see buildFilmGizmoDrag). */
+                pick.setGlobalAxes(BaseFilmController.getReplayWorldAxes(panel.getController().getCurrentEntity(), pickTransition));
+            }
+
+            return pick;
+        });
+
         /* World-space copy/paste only makes sense for an actor's bone in the scene, so the world
          * matrix provider is wired solely for the pose editor's transform (other tracks leave it off
          * and the world context actions stay hidden there). */

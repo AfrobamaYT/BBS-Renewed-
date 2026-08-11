@@ -20,6 +20,7 @@ import mchorse.bbs_mod.ui.framework.elements.input.drag.DragContext;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragCursor;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragStrategy;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.DragStrategyFactory;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.MittelklickAchse;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformNumericInput;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp;
 import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformSpace;
@@ -110,13 +111,16 @@ public class UIPropTransform extends UITransform
     private boolean hotkeyMode;
     private Supplier<GizmoDrag> hotkeyDragSupplier;
 
+    /** Drag snapshot the middle-click axis pick measures against — see {@link #axisPickDrag}. */
+    private Supplier<GizmoDrag> axisPickDragSupplier;
+
     /** Whether the edited bone's rotation is owned by an enabled IK chain
      *  (wired by hosts that have an IK concept; see {@link #rotationConstrained}). */
     private Supplier<Boolean> rotationConstrainedSupplier;
 
     /** The live gesture; non-null exactly while {@link #editing}. */
     private DragStrategy strategy;
-    private final DragContext bridge = new Bridge();
+    private final Bridge bridge = new Bridge();
 
     private final TransformNumericInput numeric = new TransformNumericInput();
 
@@ -126,6 +130,11 @@ public class UIPropTransform extends UITransform
      * lag is the accumulated offset between the two. */
     /** The cursor the running gesture reads (Shift damping, cursorless start) — see DragCursor. */
     private final DragCursor cursor = new DragCursor();
+
+    /** Blender's middle-click axis pick; live only while an edit runs — see MittelklickAchse.
+     *  Declared after {@link #bridge}, which supplies its host hooks; package-private for
+     *  {@link UITransformHandler}, which feeds it the button events. */
+    final MittelklickAchse middleAxis = new MittelklickAchse(this.bridge);
 
     private UITransformHandler handler;
 
@@ -260,6 +269,20 @@ public class UIPropTransform extends UITransform
     public UIPropTransform hotkeyDrag(Supplier<GizmoDrag> supplier)
     {
         this.hotkeyDragSupplier = supplier;
+
+        return this;
+    }
+
+    /**
+     * Snapshot the middle-click axis pick measures screen directions against, for hosts whose
+     * {@link #hotkeyDrag} supplier deliberately withholds one (the film's does, with the
+     * camera sitting on the edited bone — the PICK survives an unprojectable origin, see
+     * {@code AchsenNaehe}). Hosts that never withhold their drag can leave this unset; the
+     * pick then reads the live one.
+     */
+    public UIPropTransform axisPickDrag(Supplier<GizmoDrag> supplier)
+    {
+        this.axisPickDragSupplier = supplier;
 
         return this;
     }
@@ -1101,6 +1124,7 @@ public class UIPropTransform extends UITransform
          * pins it to -1/-1 and only hands it over once one is running, so the anchor above
          * comes from a position the pointer was never at (see DragCursor#armReanchor). */
         this.cursor.armReanchor(context.mouseX, context.mouseY);
+        this.middleAxis.bearbeitungBegonnen(context.mouseX, context.mouseY);
 
         if (!this.handler.hasParent())
         {
@@ -1120,7 +1144,18 @@ public class UIPropTransform extends UITransform
      */
     private void setEditingAxis(Axis axis)
     {
-        if (Window.isShiftPressed())
+        this.setEditingAxis(axis, Window.isShiftPressed());
+    }
+
+    /**
+     * The same, with the plane variant handed in rather than read off the live keyboard.
+     * {@link MittelklickAchse} latches Shift the moment its button goes down and keeps
+     * re-picking while it is held — reading the key again on a later frame would let releasing
+     * Shift change the meaning of a gesture that is already running.
+     */
+    private void setEditingAxis(Axis axis, boolean plane)
+    {
+        if (plane)
         {
             switch (axis)
             {
@@ -1194,6 +1229,7 @@ public class UIPropTransform extends UITransform
         this.strategy = null;
         this.drag = null;
         this.cursor.forget();
+        this.middleAxis.bearbeitungBeendet();
         this.numeric.clear();
         Gizmo.INSTANCE.clearTrackedTransform(this);
 
@@ -1544,6 +1580,8 @@ public class UIPropTransform extends UITransform
                 this.strategy.begin(context.mouseX, context.mouseY);
             }
 
+            this.middleAxis.ursprungVersetzen(context.mouseX, context.mouseY);
+
             return;
         }
 
@@ -1575,8 +1613,15 @@ public class UIPropTransform extends UITransform
                 this.strategy.begin(wrapX, context.mouseY);
             }
 
+            this.middleAxis.ursprungVersetzen(wrapX, context.mouseY);
+
             return;
         }
+
+        /* Mittelklick gehalten: die Achse folgt dem Zeiger. Ruft nur bei echter Aenderung
+         * setEditingAxis, sonst wuerde die Bearbeitung jedes Bild auf ihre Startwerte
+         * zurueckgespult. */
+        this.middleAxis.bildAktualisieren(context.mouseX, context.mouseY);
 
         if (this.strategy != null)
         {
@@ -1708,53 +1753,12 @@ public class UIPropTransform extends UITransform
     }
 
     /**
-     * A step of a transform hotkey's walk. Tokens match the entries of the
-     * translate/scale/rotate hotkey order settings.
-     */
-    public enum HotkeyTarget
-    {
-        VIEW("view", null, true),
-        SPHERE("sphere", null, true),
-        SCREEN("screen", null, true),
-        /** Scale's non-axis step: one lever drives all three axes (Blender's plain S). */
-        ALL("all", null, false),
-        X("x", Axis.X, false),
-        Y("y", Axis.Y, false),
-        Z("z", Axis.Z, false);
-
-        public final String token;
-        public final Axis axis;
-        /** Whether the step is driven by the 3D ray and so needs a rendered gizmo. */
-        public final boolean needsRay;
-
-        HotkeyTarget(String token, Axis axis, boolean needsRay)
-        {
-            this.token = token;
-            this.axis = axis;
-            this.needsRay = needsRay;
-        }
-
-        public static HotkeyTarget byToken(String token)
-        {
-            for (HotkeyTarget target : values())
-            {
-                if (target.token.equals(token))
-                {
-                    return target;
-                }
-            }
-
-            return null;
-        }
-    }
-
-    /**
      * Bridge the active {@link DragStrategy} works through: it exposes the
      * edit session's state and funnels every write back through the editor's
      * virtual {@code setT/setS/setR/setR2}, so the delta editors keep fanning
      * edits onto their selections.
      */
-    private class Bridge implements DragContext
+    private class Bridge implements DragContext, MittelklickAchse.Wirt
     {
         @Override
         public Transform transform()
@@ -1869,6 +1873,43 @@ public class UIPropTransform extends UITransform
         {
             UIPropTransform.this.setRQuat(quat);
         }
+
+        /* ── MittelklickAchse.Wirt ─────────────────────────────────────────────
+         * Blender's middle-click axis pick. Reads only; the one write goes through
+         * setEditingAxis, the very entry point the X/Y/Z keybinds use. */
+
+        @Override
+        public boolean istBearbeitung()
+        {
+            return UIPropTransform.this.editing;
+        }
+
+        @Override
+        public GizmoDrag achsenwahlZug()
+        {
+            Supplier<GizmoDrag> supplier = UIPropTransform.this.axisPickDragSupplier;
+            GizmoDrag pick = supplier == null ? null : supplier.get();
+
+            /* Hosts without their own pick supplier (form editor, model blocks) never withhold
+             * their drag, so the live one is exactly right there. */
+            return pick != null ? pick : UIPropTransform.this.drag;
+        }
+
+        @Override
+        public TransformSpace raum()
+        {
+            /* Blender's initSelectConstraint falls back to the SCENE's orientation — the BBS
+             * twin is this picker's frame, a persisted editor-wide setting. Deliberately NOT
+             * overridden by the gesture: the frame decides where the gizmo sits, and moving it
+             * mid-drag would invalidate the running ray gesture's start snapshot. */
+            return UIPropTransform.this.space;
+        }
+
+        @Override
+        public void aufAchseZwingen(Axis achse, boolean ebene)
+        {
+            UIPropTransform.this.setEditingAxis(achse, ebene);
+        }
     }
 
     /**
@@ -1898,51 +1939,4 @@ public class UIPropTransform extends UITransform
         }
     }
 
-    public static class UITransformHandler extends UIElement
-    {
-        private UIPropTransform transform;
-
-        public UITransformHandler(UIPropTransform transform)
-        {
-            this.transform = transform;
-        }
-
-        @Override
-        protected boolean subMouseClicked(UIContext context)
-        {
-            if (this.transform.editing)
-            {
-                if (context.mouseButton == 0)
-                {
-                    this.transform.acceptChanges();
-
-                    return true;
-                }
-                else if (context.mouseButton == 1)
-                {
-                    this.transform.rejectChanges();
-
-                    return true;
-                }
-            }
-
-            return super.subMouseClicked(context);
-        }
-
-        @Override
-        protected boolean subMouseScrolled(UIContext context)
-        {
-            /* While sphere-dragging the wheel rolls about the view axis; during a
-             * screen-space grab it drives depth; otherwise it keeps adjusting
-             * the drag sensitivity amplifier as before. */
-            if (this.transform.scrollDrag(context))
-            {
-                return true;
-            }
-
-            UITrackpad.updateAmplifier(context);
-
-            return true;
-        }
-    }
 }
