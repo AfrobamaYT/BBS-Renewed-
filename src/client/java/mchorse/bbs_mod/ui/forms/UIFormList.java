@@ -18,13 +18,12 @@ import mchorse.bbs_mod.ui.framework.elements.UIScrollView;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer;
+import mchorse.bbs_mod.ui.framework.elements.utils.vorschau.MiniaturGrenze;
 import mchorse.bbs_mod.ui.utils.UI;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.Direction;
 import mchorse.bbs_mod.utils.colors.Colors;
 import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +69,8 @@ public class UIFormList extends UIElement
         this.categoryFilter.w(20);
         this.bar.add(this.categoryFilter, this.search, this.edit, this.close);
 
-        this.add(this.forms, this.bar);
+        /* Die Leiste verdeckt die Vorschauen, also gehoert eine Grenze davor: MiniaturGrenze. */
+        this.add(this.forms, new MiniaturGrenze(), this.bar);
 
         this.search.keys().register(Keys.FORMS_FOCUS, this::focusSearchInput);
 
