@@ -157,7 +157,14 @@ public final class Readback
 					allZero = false;
 				}
 
-				int argb = (a << 24) | (r << 16) | (g << 8) | b;
+				/* ⛔ ALPHA UNDURCHSICHTIG SCHREIBEN (2026-08-11, hat einen Befund erfunden).
+				 *
+				 * Hier stand `a << 24`, also landete das Rest-Alpha des Bildpuffers im PNG. RGB
+				 * ist da laengst zusammengerechnet -- das Alpha ist Rauschen. Unser Puffer fuehrt
+				 * zufaellig 255, der von 1.21.1 nicht; im A/B las sich das als 17,8 % Bildunter-
+				 * schied und als "aktive Werkzeugtaste rot statt blau". Ohne Alpha: Werkzeugleiste
+				 * 0 von 34160 Punkten verschieden. Beide Baeume schreiben jetzt opak wie Vanilla. */
+				int argb = 0xFF000000 | (r << 16) | (g << 8) | b;
 
 				/* Y-FLIP: GL row 0 is the BOTTOM of the image; BufferedImage row 0 is the TOP. */
 				image.setRGB(x, (height - 1) - y, argb);
