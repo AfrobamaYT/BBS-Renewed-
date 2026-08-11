@@ -67,11 +67,32 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
 
         VertexFormat format = DefaultVertexFormat.ENTITY;
 
-        this.renderModel(format, () -> RenderPipelines.ENTITY_TRANSLUCENT,
-            stack,
-            OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
-            context.getTransition(), false
-        );
+        /* ⛔ UI-LICHT SETZEN, NICHT ERBEN (2026-08-11, RenderDoc-Capture frame 28877).
+         * Dieser Zug band die Lighting-Scheibe des GUI-Durchgangs (Light0 = (-0.933, -0.263,
+         * -0.244) — beide Richtungen zeigen von der Kachel weg, es bleibt der Ambient-Boden
+         * 0.4 aus light.glsl): Schachbrett-Mittel (47.8, 44.9, 52.8) statt 1.21.1s
+         * (91.2, 88.7, 134.8). Dasselbe Muster wie FormSammler.zeichnenLassen (d2919ba01);
+         * sichern und zuruecksetzen, weil der GUI-Durchgang danach weiterzeichnet. */
+        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
+
+        mchorse.bbs_mod.graphics.UiLicht.ansichtLoeschen();
+        mchorse.bbs_mod.graphics.UiLicht.setzen();
+
+        try
+        {
+            /* beideSeiten=false: die Kachel zeigt genau eine Seite. Beide koplanaren Seiten
+             * zu zeichnen hiesse, dem Tiefenvergleich zu ueberlassen, WELCHE Normale das
+             * Licht sieht — gemessen gewann die abgewandte (Faktor 0.4 statt 0.825). */
+            this.renderModel(format, () -> RenderPipelines.ENTITY_TRANSLUCENT,
+                stack,
+                OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, Colors.WHITE,
+                context.getTransition(), false, false
+            );
+        }
+        finally
+        {
+            RenderSystem.setShaderLights(gesichertesLicht);
+        }
 
         stack.popPose();
     }
@@ -106,10 +127,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             shading ? BBSShaders::getPickerBillboardProgram : BBSShaders::getPickerBillboardNoShadingProgram
         );
 
-        this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking());
+        this.renderModel(format, shader, context.stack, context.overlay, context.light, context.color, context.getTransition(), !context.isPicking(), true);
     }
 
-    private void renderModel(VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderModel(VertexFormat format, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten)
     {
         Link t = this.form.texture.get();
 
@@ -182,10 +203,10 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
             uvQuad.transform(matrix);
         }
 
-        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer);
+        this.renderQuad(format, texture, shader, matrices, overlay, light, overlayColor, transition, defer, beideSeiten);
     }
 
-    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer)
+    private void renderQuad(VertexFormat format, Texture texture, Supplier<RenderPipeline> shader, PoseStack matrices, int overlay, int light, int overlayColor, float transition, boolean defer, boolean beideSeiten)
     {
         Color color = new Color().set(overlayColor, true);
         Matrix4f matrix = matrices.last().pose();
@@ -216,16 +237,25 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
         ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
         BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, PrimitiveTopology.TRIANGLES, format);
 
-        /* Front */
-        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
-        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, entry, 1F);
-        this.fill(format, builder, matrix, quad.p1.x, quad.p1.y, color, uvQuad.p1.x, uvQuad.p1.y, overlay, light, entry, 1F);
+        /* Front — in der UI-Kachel weggelassen: ihre Normale zeigt nach der (spiegelnden)
+         * UI-Matrix von der Kamera WEG (gemessen (-0.38,-0.35,-0.86), RenderDoc frame 69493).
+         * Zwei koplanare Seiten liessen den Tiefenvergleich entscheiden, welche Normale das
+         * Licht sieht — und der wählte die dunkle (0.4 statt 0.825). */
+        if (beideSeiten)
+        {
+            this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
+            this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, entry, 1F);
+            this.fill(format, builder, matrix, quad.p1.x, quad.p1.y, color, uvQuad.p1.x, uvQuad.p1.y, overlay, light, entry, 1F);
 
-        this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
-        this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, entry, 1F);
-        this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, entry, 1F);
+            this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, 1F);
+            this.fill(format, builder, matrix, quad.p4.x, quad.p4.y, color, uvQuad.p4.x, uvQuad.p4.y, overlay, light, entry, 1F);
+            this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, entry, 1F);
+        }
 
-        /* Back */
+        /* Back — die eine Seite, die die UI-Kachel zeichnet. Ihre Normale wird von der
+         * (spiegelnden) UI-Matrix auf (+0.38,+0.35,+0.85) gedreht (RenderDoc frame 69493),
+         * das Winding ist CCW=frontfacing: PER_FACE_LIGHTING nimmt mix(+licht) = 0.82 —
+         * derselbe Wert, den 1.21.1s Kachel zeigt. */
         this.fill(format, builder, matrix, quad.p1.x, quad.p1.y, color, uvQuad.p1.x, uvQuad.p1.y, overlay, light, entry, -1F);
         this.fill(format, builder, matrix, quad.p2.x, quad.p2.y, color, uvQuad.p2.x, uvQuad.p2.y, overlay, light, entry, -1F);
         this.fill(format, builder, matrix, quad.p3.x, quad.p3.y, color, uvQuad.p3.x, uvQuad.p3.y, overlay, light, entry, -1F);
@@ -284,9 +314,28 @@ public class BillboardFormRenderer extends FormRenderer<BillboardForm>
              * die Pipeline (Shader + Blend + Tiefe + Cull), die Modellansicht und die
              * Texturbindung. build() gibt null, wenn nichts geschrieben wurde --
              * SofortZeichner zeichnet dann nichts. */
-            SofortZeichner.zeichnen(finalShader, builder.build(),
-                new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
-                SofortZeichner.entityTextur(texture));
+
+            /* ⛔ IN DAS GESETZTE ZIEL, NICHT INS HAUPTBILD (2026-08-11, PixelHistory frame
+             * 84718): mit ziel=null landete die UI-Kachel im Hauptbild UND VOR dem dunklen
+             * Panel-Hintergrund (ev 6305, schwarz mit alpha 0.482) — sie wurde von ihm
+             * ueberblendet, waehrend die PiP-Miniaturen NACH ihm komponiert werden. Genau
+             * der Fund aus Blockvorschau (2026-08-04). Ausserhalb der PiP-Phase ist das
+             * Ziel null und es bleibt beim Hauptbild. */
+            var zielFarbe = mchorse.bbs_mod.graphics.Zeichenziel.farbe();
+            var zielTiefe = mchorse.bbs_mod.graphics.Zeichenziel.tiefe();
+
+            if (zielFarbe != null)
+            {
+                SofortZeichner.zeichnen(finalShader, builder.build(),
+                    new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
+                    SofortZeichner.entityTextur(texture), zielFarbe, zielTiefe);
+            }
+            else
+            {
+                SofortZeichner.zeichnen(finalShader, builder.build(),
+                    new Matrix4f(RenderSystem.getModelViewMatrixCopy()), null,
+                    SofortZeichner.entityTextur(texture));
+            }
         }
 
         texture.setFilterMipmap(false, false);
