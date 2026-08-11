@@ -123,7 +123,8 @@ public final class AltCameraGridRenderer
             mvStack.translate(-camX, -camY, -camZ);
             /* 26.2: applyModelViewMatrix ist ersatzlos entfallen -- es lud den Modelview-Stapel nach GL hoch. Jetzt liest jeder Zeichenweg den Stapel selbst. */
 
-            mchorse.bbs_mod.graphics.Projektion.setzen(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+            /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
+            mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(projection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
             /* 26.2: Cull und Blend sind kein Schalter mehr, sondern Teil der
              *  Pipeline — ersatzlos entfallen. Fuer diese Zeichnung traegt den

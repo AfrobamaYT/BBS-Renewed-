@@ -152,7 +152,8 @@ public final class GameRendererPreviewPrePassLogik
                     float far = 1024F;
                     Matrix4f clipProjection = new Matrix4f().perspective(
                         (float) Math.toRadians(fov), aspect, near, far);
-                    mchorse.bbs_mod.graphics.Projektion.setzen(clipProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+                    /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
+                    mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(clipProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
                     /* Grid reference plane at player Y. */
                     AltCameraGridRenderer.render(mc, camera, clipProjection);

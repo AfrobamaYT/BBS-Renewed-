@@ -996,7 +996,7 @@ public class TrackerClientClip extends TrackerClip
 
             mchorse.bbs_mod.graphics.Projektion.sichern();
             Matrix4f ortho = new Matrix4f().setOrtho(0F, (float) sw, (float) sh, 0F, 1000F, 21000F);
-            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+            mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
             scaleChanged = true;
 
             /* 4K-HUD-FIX: acceleratedrendering tauscht MCs BufferSource gegen ihren beschleunigten

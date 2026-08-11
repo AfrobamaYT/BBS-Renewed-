@@ -162,7 +162,7 @@ public class VorschauGitterRenderer extends PictureInPictureRenderer<VorschauGit
             stapel.last().pose().identity();
             stapel.mulPose(zustand.ansicht());
 
-            mchorse.bbs_mod.graphics.Projektion.setzen(zustand.projektion(),
+            mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(zustand.projektion(),
                 com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
         }
 

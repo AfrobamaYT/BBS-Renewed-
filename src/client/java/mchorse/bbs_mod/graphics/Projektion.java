@@ -103,12 +103,24 @@ public final class Projektion
      */
     public static void setzenUndUmkehren(Matrix4f matrix, ProjectionType art)
     {
+        setzen(umgekehrt(matrix), art);
+    }
+
+    /**
+     * Dieselbe Umrechnung wie {@link #setzenUndUmkehren}, aber als Matrix — fuer Stellen, die
+     * eine BBS-Matrix WEITERREICHEN statt sie selbst zu setzen (etwa
+     * {@code GizmoViewport#getGizmoProjection}).
+     *
+     * <p>⚠️ x, y und w bleiben unberuehrt; nur die z-Zeile dreht sich. Bildschirmrechnungen
+     * ueber {@code x/w} und {@code y/w} — Auswahlkreis, Griffmitte — liefern danach exakt
+     * dieselben Werte.
+     */
+    public static Matrix4f umgekehrt(Matrix4f matrix)
+    {
         /* Identitaet, in der z' = (w - z) / 2 wird. Absichtlich hier gebaut und nicht als
          * statische Konstante: ein neu hinzugekommenes statisches Feld ist nach einem
          * Hotswap null, weil der statische Initialisierer nicht noch einmal laeuft. */
-        Matrix4f umkehr = new Matrix4f().m22(-0.5F).m32(0.5F);
-
-        setzen(umkehr.mul(matrix), art);
+        return new Matrix4f().m22(-0.5F).m32(0.5F).mul(matrix);
     }
 
     /** Wie {@link #setzen}, fuer die haeufigste BBS-Variante: flache Projektion. */

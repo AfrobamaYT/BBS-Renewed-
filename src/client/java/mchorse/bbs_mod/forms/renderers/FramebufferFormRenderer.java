@@ -145,7 +145,8 @@ public class FramebufferFormRenderer extends FormRenderer<FramebufferForm>
          * ihren Puffer, ohne Schattierung von der Weltbeleuchtung. Vanilla hat genau dafuer
          * eine Voreinstellung; die beiden Richtungsvektoren von Hand gibt es nicht mehr. */
         Minecraft.getInstance().gameRenderer.lighting().setupFor(com.mojang.blaze3d.platform.Lighting.Entry.ITEMS_FLAT);
-        mchorse.bbs_mod.graphics.Projektion.setzen(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+        /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
+        mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(new Matrix4f().setOrtho(-1F, 1F, 1F, -1F, -500F, 500F), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         RenderSystem.getModelViewStack().pushMatrix();
         RenderSystem.getModelViewStack().identity();
 

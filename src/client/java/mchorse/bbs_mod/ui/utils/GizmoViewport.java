@@ -16,7 +16,13 @@ public interface GizmoViewport
     StencilFormFramebuffer getGizmoStencil();
 
     /** Projection paired with the matrix captured in {@link Gizmo#render}
-     *  this frame, so origin/radius project into this viewport's pixels. */
+     *  this frame, so origin/radius project into this viewport's pixels.
+     *
+     *  <p>⛔ MUSS in 26.2s Konvention stehen (nah 1, fern 0). Wer hier eine selbst gebaute
+     *  JOML-Matrix zurueckgibt, schickt die alte OpenGL-Form in einen
+     *  {@code GREATER_THAN_OR_EQUAL}-Test — dann gewinnt im Gizmo die entferntere Flaeche.
+     *  Mojangs Weltmatrix passt schon; eine BBS-Kameramatrix laeuft durch
+     *  {@link mchorse.bbs_mod.graphics.Projektion#umgekehrt}. */
     Matrix4f getGizmoProjection();
 
     Area getGizmoArea();

@@ -128,10 +128,18 @@ public class UIPickableFormRenderer extends UIFormRenderer implements GizmoViewp
         return this.stencil;
     }
 
+    /**
+     * ⛔ UMGERECHNET, weil {@code camera.projection} als einzige der drei Gizmo-Ansichten
+     * BBS-eigen ist: die alte OpenGL-Form (nah -1, fern +1). UIFilmController und
+     * UIModelBlockPanel reichen Mojangs Weltmatrix durch, die schon umgekehrt ist. Ohne die
+     * Umrechnung gewinnt hier die entferntere Flaeche — gemessen: 1.21.1 zeichnet in dieser
+     * Draufsicht eine durchgehend rote Senkrechte (255,64,89), 26.2 zeigte ohne sie ein
+     * Gemisch aus Gruen, Weiss und Blau. Begruendung an {@link Projektion#setzenUndUmkehren}.
+     */
     @Override
     public Matrix4f getGizmoProjection()
     {
-        return this.camera.projection;
+        return mchorse.bbs_mod.graphics.Projektion.umgekehrt(this.camera.projection);
     }
 
     @Override

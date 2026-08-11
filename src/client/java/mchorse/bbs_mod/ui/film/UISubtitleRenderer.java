@@ -147,7 +147,8 @@ public class UISubtitleRenderer
             int fw = (int) ((contentW + 10) * scale);
             int fh = (int) ((contentH + 10) * scale);
 
-            mchorse.bbs_mod.graphics.Projektion.setzen(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+            /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
+            mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(new Matrix4f().ortho(0, contentW + 10, 0, contentH + 10, -100, 100), com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
             framebuffer.resize(fw, fh);
             framebuffer.applyClear();
@@ -192,7 +193,8 @@ public class UISubtitleRenderer
              * gebunden, sondern beim Anlegen eines RenderPass benannt -- wer woandershin
              * zeichnen will, gibt das Ziel dort an. */
 
-            mchorse.bbs_mod.graphics.Projektion.setzen(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+            /* Umkehren: BBS-eigene Matrix in 26.2s GREATER_EQUAL-Test, Beleg an Projektion#setzenUndUmkehren. In BILDPUNKTEN an dieser Stelle ungemessen. */
+            mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(ortho, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
 
             Transform transform = new Transform();
 
