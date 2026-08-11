@@ -454,7 +454,7 @@ public class Gizmo
         /* Die Kugelmaske geht in BBS' eigenen Puffer, nicht ins Bild. Tiefentest aus,
          * Farbe als Kennung -- beides steckt jetzt im Zeichenaufruf statt in vier Zeilen
          * globalen Zustands drumherum. */
-        this.ringe.kugelMaskeZeichnen(this.lastSphereMatrix, STENCIL_TRACKBALL / 255F, 0F, 0F, 1F,
+        this.ringe.kugelMaskeZeichnen(this.lastSphereMatrix, projection, STENCIL_TRACKBALL / 255F, 0F, 0F, 1F,
             this.sphereHighlight.getFramebuffer().getMainTexture().view());
 
         this.sphereHighlight.unbind();

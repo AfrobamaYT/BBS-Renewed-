@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.utils;
 
 import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -11,6 +12,7 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.graphics.GehaltenesNetz;
 import mchorse.bbs_mod.graphics.PickZiel;
+import mchorse.bbs_mod.graphics.Projektion;
 import mchorse.bbs_mod.graphics.SofortZeichner;
 import mchorse.bbs_mod.graphics.Draw;
 import mchorse.bbs_mod.utils.Axis;
@@ -202,16 +204,43 @@ public class GizmoRinge
      * Silhouette der Kugel treffen, auch wo Geometrie davorsteht. Der alte Weg erreichte
      * dasselbe mit disableDepthTest davor und enableDepthTest danach.
      */
-    public void kugelMaskeZeichnen(Matrix4f modellAnsicht, float r, float g, float b, float a, GpuTextureView farbZiel)
+    public void kugelMaskeZeichnen(Matrix4f modellAnsicht, Matrix4f projektion,
+        float r, float g, float b, float a, GpuTextureView farbZiel)
     {
         if (this.kugel == null)
         {
             return;
         }
 
-        this.kugel.zeichnen(
-            FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false),
-            modellAnsicht, new org.joml.Vector4f(r, g, b, a), null, farbZiel, null, null);
+        /* ⛔ DIE PROJEKTION MUSS MIT (2026-08-11, am leeren Puffer gemessen).
+         *
+         * {@code GehaltenesNetz#zeichnen} hat keinen Projektionsparameter -- es nimmt die
+         * gerade in RenderSystem gebundene. Dieser Zug laeuft im GUI-Durchgang, dort steht
+         * also die Oberflaechen-Projektion, waehrend {@code modellAnsicht} eine 3D-Ansicht
+         * ist. Die Kugel landete damit ausserhalb des Sichtvolumens: der Zug wurde abgesetzt
+         * (im RenderDoc-Mitschnitt sichtbar, richtiges Ziel, Culling aus, Vollbild-Scissor)
+         * und rasterisierte trotzdem nichts.
+         *
+         * Gemessen ueber /shot/puffer im selben Bild, direkt nach diesem Aufruf:
+         *     Kugelmaske summeRGB = 0     Pick-Stencil zur Gegenprobe = 170229
+         *
+         * In 1.21.1 ging die Projektion noch mit:
+         *     rotateSphereVbo.draw(lastSphereMatrix, projection, ...)
+         * Beim Portieren fiel sie weg, weil der neue Zeichenweg sie nicht mehr als Argument
+         * fuehrt. ORTHOGRAPHIC wie in UIModelRenderer, das dieselbe camera.projection setzt. */
+        Projektion.sichern();
+        Projektion.setzen(projektion, ProjectionType.ORTHOGRAPHIC);
+
+        try
+        {
+            this.kugel.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false),
+                modellAnsicht, new org.joml.Vector4f(r, g, b, a), null, farbZiel, null, null);
+        }
+        finally
+        {
+            Projektion.zurueck();
+        }
     }
 
     /**
