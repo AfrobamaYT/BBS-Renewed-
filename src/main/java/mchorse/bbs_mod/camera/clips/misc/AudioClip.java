@@ -7,6 +7,7 @@ import mchorse.bbs_mod.camera.values.ValuePoint;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
 import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.settings.values.core.ValueLink;
+import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.utils.clips.Clip;
 import mchorse.bbs_mod.utils.clips.ClipContext;
 
@@ -37,6 +38,17 @@ public class AudioClip extends CameraClip
     /** Index in die actor-liste des films (CameraClipContext.entities); -1 = keiner gewaehlt. */
     public ValueInt spatialSelector = new ValueInt("spatial_selector", -1);
 
+    /**
+     * Herkunft, wenn dieser clip von Auto Audio angelegt wurde: {@code replay-uuid|form-pfad}.
+     * Leer = von hand gesetzt.
+     *
+     * <p>⛔ Das ist die BESITZ-marke, nicht nur eine notiz: ein erneuter Auto-Audio-lauf
+     * loescht genau die clips mit SEINER markierung und legt sie neu an. Ein clip ohne
+     * markierung wird nie angefasst. Wer das feld von hand leert, macht den clip damit
+     * dauerhaft — der naechste lauf laesst ihn stehen (und legt daneben einen neuen an).</p>
+     */
+    public ValueString autoAudio = new ValueString("auto_audio", "");
+
     public AudioClip()
     {
         super();
@@ -47,6 +59,7 @@ public class AudioClip extends CameraClip
         this.add(this.spatial);
         this.add(this.spatialPoint);
         this.add(this.spatialSelector);
+        this.add(this.autoAudio);
     }
 
     @Override
