@@ -28,7 +28,7 @@ public class UIMathClip extends UIClip<MathClip>
         });
         this.expression.link("https://github.com/mchorse/aperture/wiki/Math-Expressions").tooltip(UIKeys.CAMERA_PANELS_MATH);
 
-        this.active = new UIBitToggle((value) -> this.clip.active.set(value)).all();
+        this.active = new UIBitToggle((value) -> this.editor.editMultiple(this.clip.active, (v) -> v.set(value))).all();
     }
 
     @Override

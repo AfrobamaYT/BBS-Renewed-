@@ -20,7 +20,7 @@ public class UITranslateClip extends UIClip<TranslateClip>
         super.registerUI();
 
         this.point = new UIPointModule(this.editor);
-        this.active = new UIBitToggle((value) -> this.clip.active.set(value)).point();
+        this.active = new UIBitToggle((value) -> this.editor.editMultiple(this.clip.active, (v) -> v.set(value))).point();
     }
 
     @Override
