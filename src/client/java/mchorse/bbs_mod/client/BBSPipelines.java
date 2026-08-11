@@ -1,7 +1,6 @@
 package mchorse.bbs_mod.client;
 
 import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.platform.CompareOp;
@@ -163,7 +162,21 @@ public final class BBSPipelines
             .withBindGroupLayout(gruppe)
             .withCull(false)
             .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
-            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            /* ⛔ HIER DARF NICHT GEMISCHT WERDEN (2026-08-11, am Zwischenpuffer gemessen).
+             *
+             * Der Durchgang schreibt in eine auf (0,0,0,0) geloeschte Textur und setzt jeden
+             * Bildpunkt hoechstens einmal -- alle drei Filter verwerfen, was sie nicht
+             * treffen, und schreiben sonst ihre Endfarbe. Mit TRANSLUCENT landete dort
+             * Farbe*Alpha statt Farbe: die Hervorhebungsfarbe 0x2EFFFFFF stand als
+             * (46,46,46) im Puffer, nicht als (255,255,255). Die Oberflaeche mischt beim
+             * Blit ein ZWEITES Mal mit demselben Alpha, also kam nur 0,18*0,18 statt 0,18
+             * der Farbe an -- die Trackball-Hervorhebung wurde damit DUNKLER als ihr
+             * Untergrund. Gemessen im 136er Quadrat um die Kugel: 1.21.1 +22,8, 26.2 -2,5.
+             *
+             * In 1.21.1 gab es den Zwischenpuffer nicht; der Shader zeichnete direkt in die
+             * Oberflaeche, also genau EINE Mischung. DEFAULT ist die Blaze3D-Vorgabe ohne
+             * Mischfunktion und stellt das wieder her. */
+            .withColorTargetState(ColorTargetState.DEFAULT)
             .build();
     }
 
