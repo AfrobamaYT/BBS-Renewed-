@@ -18,7 +18,7 @@ public class UIDollyZoomClip extends UIClip<DollyZoomClip>
     {
         super.registerUI();
 
-        this.focus = new UITrackpad((value) -> this.clip.focus.set(value.floatValue()));
+        this.focus = new UITrackpad((value) -> this.editor.editMultiple(this.clip.focus, (v) -> v.set(value.floatValue())));
         this.focus.tooltip(UIKeys.CAMERA_PANELS_FOCUS_DISTANCE);
     }
 

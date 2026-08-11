@@ -36,7 +36,7 @@ public class UIKeyframeClip extends UIClip<KeyframeClip>
 
         this.additive = new UIToggle(UIKeys.CAMERA_PANELS_ADDITIVE, (b) ->
         {
-            this.clip.additive.set(b.getValue());
+            this.editor.editMultiple(this.clip.additive, (v) -> v.set(b.getValue()));
         });
 
         this.panels.add(this.additive);

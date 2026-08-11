@@ -44,9 +44,9 @@ public class UISubtitleClip extends UIClip<SubtitleClip>
     {
         super.registerUI();
 
-        this.x = new UITrackpad((v) -> this.clip.x.set(v.intValue()));
+        this.x = new UITrackpad((v) -> this.editor.editMultiple(this.clip.x, (value) -> value.set(v.intValue())));
         this.x.integer();
-        this.y = new UITrackpad((v) -> this.clip.y.set(v.intValue()));
+        this.y = new UITrackpad((v) -> this.editor.editMultiple(this.clip.y, (value) -> value.set(v.intValue())));
         this.y.integer();
 
         this.size = new UITrackpad((v) -> this.editor.editMultiple(this.clip.size, (value) ->

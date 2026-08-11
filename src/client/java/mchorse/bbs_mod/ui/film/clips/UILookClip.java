@@ -60,12 +60,12 @@ public class UILookClip extends UIClip<LookClip>
         });
         this.offset = new UIPointModule(editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
 
-        this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, false, (b) -> this.clip.relative.set(b.getValue()));
+        this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, false, (b) -> this.editor.editMultiple(this.clip.relative, (v) -> v.set(b.getValue())));
         this.relative.tooltip(UIKeys.CAMERA_PANELS_RELATIVE_TOOLTIP);
 
-        this.atBlock = new UIToggle(UIKeys.CAMERA_PANELS_AT_BLOCK, false, (b) -> this.clip.atBlock.set(b.getValue()));
+        this.atBlock = new UIToggle(UIKeys.CAMERA_PANELS_AT_BLOCK, false, (b) -> this.editor.editMultiple(this.clip.atBlock, (v) -> v.set(b.getValue())));
 
-        this.forward = new UIToggle(UIKeys.CAMERA_PANELS_FORWARD, false, (b) -> this.clip.forward.set(b.getValue()));
+        this.forward = new UIToggle(UIKeys.CAMERA_PANELS_FORWARD, false, (b) -> this.editor.editMultiple(this.clip.forward, (v) -> v.set(b.getValue())));
         this.forward.tooltip(UIKeys.CAMERA_PANELS_FORWARD_TOOLTIP);
     }
 

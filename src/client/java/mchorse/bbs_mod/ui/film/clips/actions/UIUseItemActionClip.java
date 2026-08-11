@@ -20,7 +20,7 @@ public class UIUseItemActionClip extends UIActionClip<UseItemActionClip>
     {
         super.registerUI();
 
-        this.hand = new UIToggle(UIKeys.ACTIONS_ITEM_MAIN_HAND, (b) -> this.clip.hand.set(b.getValue()));
+        this.hand = new UIToggle(UIKeys.ACTIONS_ITEM_MAIN_HAND, (b) -> this.editor.editMultiple(this.clip.hand, (v) -> v.set(b.getValue())));
         this.itemStack = new UIItemStack((stack) -> this.clip.itemStack.set(stack));
     }
 

@@ -39,13 +39,13 @@ public class UIDollyClip extends UIClip<DollyClip>
 
         this.point = new UIPointModule(editor);
         this.angle = new UIAngleModule(editor);
-        this.distance = new UITrackpad((value) -> this.clip.distance.set(value.floatValue()));
+        this.distance = new UITrackpad((value) -> this.editor.editMultiple(this.clip.distance, (v) -> v.set(value.floatValue())));
         this.distance.tooltip(UIKeys.CAMERA_PANELS_DOLLY_DISTANCE);
         this.reverse = new UIIcon(Icons.REVERSE, (b) -> this.reverse());
         this.reverse.tooltip(UIKeys.CAMERA_PANELS_DOLLY_REVERSE);
-        this.yaw = new UITrackpad((value) -> this.clip.yaw.set(value.floatValue()));
+        this.yaw = new UITrackpad((value) -> this.editor.editMultiple(this.clip.yaw, (v) -> v.set(value.floatValue())));
         this.yaw.tooltip(UIKeys.CAMERA_PANELS_DOLLY_YAW);
-        this.pitch = new UITrackpad((value) -> this.clip.pitch.set(value.floatValue()));
+        this.pitch = new UITrackpad((value) -> this.editor.editMultiple(this.clip.pitch, (v) -> v.set(value.floatValue())));
         this.pitch.tooltip(UIKeys.CAMERA_PANELS_DOLLY_PITCH);
 
         this.interp = new UIButton(UIKeys.CAMERA_PANELS_INTERPOLATION, (b) ->

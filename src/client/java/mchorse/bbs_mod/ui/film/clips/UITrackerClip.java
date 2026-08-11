@@ -79,14 +79,14 @@ public class UITrackerClip extends UIClip<TrackerClip>
 
         this.point = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
         this.angle = new UIPointModule(this.editor, UIKeys.CAMERA_PANELS_ANGLE).contextMenu();
-        this.fov = new UITrackpad((v) -> this.clip.fov.set(v.floatValue()));
+        this.fov = new UITrackpad((v) -> this.editor.editMultiple(this.clip.fov, (value) -> value.set(v.floatValue())));
         this.fov.tooltip(UIKeys.CAMERA_PANELS_FOV);
-        this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, b -> this.clip.lookAt.set(b.getValue()));
-        this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, b -> this.clip.relative.set(b.getValue()));
-        this.active = new UIBitToggle((value) -> this.clip.active.set(value)).all();
+        this.lookAt = new UIToggle(UIKeys.CAMERA_PANELS_LOOK_AT, b -> this.editor.editMultiple(this.clip.lookAt, (v) -> v.set(b.getValue())));
+        this.relative = new UIToggle(UIKeys.CAMERA_PANELS_RELATIVE, b -> this.editor.editMultiple(this.clip.relative, (v) -> v.set(b.getValue())));
+        this.active = new UIBitToggle((value) -> this.editor.editMultiple(this.clip.active, (v) -> v.set(value))).all();
 
-        this.showHand = new UIToggle(IKey.constant("Show hand"), b -> this.clip.showHand.set(b.getValue()));
-        this.showHud = new UIToggle(IKey.constant("Show HUD"), b -> this.clip.showHud.set(b.getValue()));
+        this.showHand = new UIToggle(IKey.constant("Show hand"), b -> this.editor.editMultiple(this.clip.showHand, (v) -> v.set(b.getValue())));
+        this.showHud = new UIToggle(IKey.constant("Show HUD"), b -> this.editor.editMultiple(this.clip.showHud, (v) -> v.set(b.getValue())));
     }
 
     @Override

@@ -26,20 +26,22 @@ public class UIDragClip extends UIClip<DragClip>
 
         this.deterministic = new UIToggle(UIKeys.CAMERA_PANELS_DETERMINISTIC, (b) ->
         {
-            this.clip.deterministic.set(b.getValue());
+            this.editor.editMultiple(this.clip.deterministic, (v) -> v.set(b.getValue()));
             this.clip.resetCache();
         });
         this.deterministic.tooltip(UIKeys.CAMERA_PANELS_DETERMINISTIC_TOOLTIP);
 
-        this.factor = new UISliderTrackpad((value) -> this.clip.factor.set(value.floatValue()));
+        this.factor = new UISliderTrackpad((value) -> this.editor.editMultiple(this.clip.factor, (v) -> v.set(value.floatValue())));
         this.factor.limit(this.clip.factor).values(0.05F, 0.01F, 0.2F).increment(0.1F).tooltip(UIKeys.CAMERA_PANELS_FACTOR_TOOLTIP);
 
-        this.rate = new UITrackpad((value) -> this.clip.rate.set(value.intValue()));
+        this.rate = new UITrackpad((value) -> this.editor.editMultiple(this.clip.rate, (v) -> v.set(value.intValue())));
         this.rate.limit(this.clip.rate).tooltip(UIKeys.CAMERA_PANELS_RATE_TOOLTIP);
 
+        /* Bitmaske, kein messwert: UIBitToggle ist kein zahlenfeld, meldet also
+         * Eingabeart.KEINE — es wird auf alle gesetzt, nie addiert. */
         this.active = new UIBitToggle((value) ->
         {
-            this.clip.active.set(value);
+            this.editor.editMultiple(this.clip.active, (v) -> v.set(value));
             this.clip.resetCache();
         }).all();
     }

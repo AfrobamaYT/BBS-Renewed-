@@ -36,23 +36,23 @@ public class UIOrbitClip extends UIClip<OrbitClip>
 
             if (panel != null)
             {
-                UIAnchorKeyframeFactory.displayActors(this.getContext(), panel.getController().getEntities(), this.clip.selector.get(), (i) -> this.clip.selector.set(i));
+                UIAnchorKeyframeFactory.displayActors(this.getContext(), panel.getController().getEntities(), this.clip.selector.get(), (i) -> this.editor.editMultiple(this.clip.selector, (v) -> v.set(i)));
             }
         });
         this.selector.tooltip(UIKeys.CAMERA_PANELS_TARGET_TOOLTIP);
 
-        this.absolute = new UIToggle(UIKeys.CAMERA_PANELS_ABSOLUTE, false, (b) -> this.clip.absolute.set(b.getValue()));
-        this.copy = new UIToggle(UIKeys.CAMERA_PANELS_COPY_ENTITY, false, (b) -> this.clip.copy.set(b.getValue()));
+        this.absolute = new UIToggle(UIKeys.CAMERA_PANELS_ABSOLUTE, false, (b) -> this.editor.editMultiple(this.clip.absolute, (v) -> v.set(b.getValue())));
+        this.copy = new UIToggle(UIKeys.CAMERA_PANELS_COPY_ENTITY, false, (b) -> this.editor.editMultiple(this.clip.copy, (v) -> v.set(b.getValue())));
         this.copy.tooltip(UIKeys.CAMERA_PANELS_COPY_ENTITY_TOOLTIP);
 
-        this.yaw = new UITrackpad((value) -> this.clip.yaw.set(value.floatValue()));
+        this.yaw = new UITrackpad((value) -> this.editor.editMultiple(this.clip.yaw, (v) -> v.set(value.floatValue())));
         this.yaw.tooltip(UIKeys.CAMERA_PANELS_YAW);
 
-        this.pitch = new UITrackpad((value) -> this.clip.pitch.set(value.floatValue()));
+        this.pitch = new UITrackpad((value) -> this.editor.editMultiple(this.clip.pitch, (v) -> v.set(value.floatValue())));
         this.pitch.tooltip(UIKeys.CAMERA_PANELS_PITCH);
 
         this.offset = new UIPointModule(editor, UIKeys.CAMERA_PANELS_OFFSET).contextMenu();
-        this.distance = new UITrackpad((value) -> this.clip.distance.set(value.floatValue()));
+        this.distance = new UITrackpad((value) -> this.editor.editMultiple(this.clip.distance, (v) -> v.set(value.floatValue())));
     }
 
     @Override
