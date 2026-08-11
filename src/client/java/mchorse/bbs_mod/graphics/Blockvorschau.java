@@ -133,31 +133,92 @@ public final class Blockvorschau
         var zielFarbe = Zeichenziel.farbe();
         var zielTiefe = Zeichenziel.tiefe();
 
-        if (zielFarbe != null)
+        /* ⛔ DIE PIPELINE DER EBENE, NICHT ENTITY_TRANSLUCENT (2026-08-11, RenderDoc-Capture
+         * frame 28877, Zug ev 5852). Hier stand die Billboard-Pipeline fest verdrahtet; fuer
+         * item_cutout heisst das Mischen AN statt Alphatest -- der Grasblock wurde ein
+         * durchscheinender Geisterwuerfel. Die Ebene kennt ihre Pipeline selbst, und das Netz
+         * traegt bereits ihr Format (ebene.format() oben) -- Format und Pipeline stammen damit
+         * aus EINER Quelle. */
+        var pipeline = ebene.pipeline();
+
+        /* ⛔ UI-LICHT SETZEN, NICHT ERBEN — Muster wie FormSammler.zeichnenLassen (d2919ba01):
+         * der Zug band vorher die GUI-Lighting-Scheibe (Light0 = (-0.933, -0.263, -0.244),
+         * beide Richtungen von der Kachel weg), uebrig blieb der Ambient-Boden 0.4.
+         *
+         * ⭐ MIT DER ANSICHT DER KACHEL, NICHT MIT DEN FESTEN RICHTUNGEN (RenderDoc frame
+         * 84718): die UI-Matrix SPIEGELT seit dem Tiefen-Flip des Ports, ihre Normalenmatrix
+         * dreht jede Modellnormale um (Grasoberseite zeigte nach UNTEN, (0,-0.92,0.38)) —
+         * die festen Richtungen treffen dann keine sichtbare Flaeche mehr. Wird die
+         * (orthonormalisierte) Normalenmatrix der Pose als Ansicht angemeldet, drehen die
+         * Editor-Richtungen mit in denselben gespiegelten Raum: dot(M*d, M*n) = dot(d, n),
+         * das Licht rechnet wieder im Lokalraum des Blocks — Oberseite 1.0, Front 0.86,
+         * Seite 0.4, wie 1.21.1s Kachel. */
+        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht = RenderSystem.getShaderLights();
+
+        org.joml.Matrix3f ansicht = new org.joml.Matrix3f(stapel.last().normal());
+        org.joml.Vector3f spalte = new org.joml.Vector3f();
+
+        for (int i = 0; i < 3; i++)
         {
-            SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
-                netz, modelView, farbe, blockAtlas(), zielFarbe, zielTiefe);
+            /* Spalten normalisieren: die Normalenmatrix traegt 1/skala der Kachelmatrix,
+             * und UiLicht normalisiert die gedrehten Richtungen nicht selbst. */
+            ansicht.getColumn(i, spalte);
+
+            if (spalte.lengthSquared() > 1.0E-12F)
+            {
+                ansicht.setColumn(i, spalte.normalize());
+            }
         }
-        else
+
+        UiLicht.ansicht(ansicht);
+        UiLicht.setzen();
+
+        try
         {
-            SofortZeichner.zeichnen(net.minecraft.client.renderer.RenderPipelines.ENTITY_TRANSLUCENT,
-                netz, modelView, farbe, blockAtlas());
+            if (zielFarbe != null)
+            {
+                SofortZeichner.zeichnen(pipeline, netz, modelView, farbe, blockAtlas(), zielFarbe, zielTiefe);
+            }
+            else
+            {
+                SofortZeichner.zeichnen(pipeline, netz, modelView, farbe, blockAtlas());
+            }
+        }
+        finally
+        {
+            RenderSystem.setShaderLights(gesichertesLicht);
+            UiLicht.ansichtLoeschen();
         }
 
         return true;
     }
 
     /**
-     * Die Blockatlas-Textur als Bindung.
+     * Die Blockatlas-Textur als Bindung — MIT Overlay und Lichtkarte.
+     *
+     * <p>⛔ ALLE DREI SAMPLER BINDEN (2026-08-11, RenderDoc-Capture frame 28877): mit
+     * {@code singleTexture} blieben Sampler1 (Overlay) und Sampler2 (Lichtkarte) auf dem
+     * Zustand des VORHERIGEN Zugs — der Block las den Blockatlas als Overlay und die
+     * Overlay-Textur als Lichtkarte, je nachdem, was gerade lag. Gebunden wird, was der
+     * funktionierende Modellweg auch bindet: das echte Overlay ({@code NO_OVERLAY}-Texel ist
+     * dort neutral) und {@code gameRenderer.lightmap()} — die volle Helligkeit der GUI, die
+     * auch {@code TextureSetup.singleTextureWithLightmap} einsetzt.</p>
      *
      * <p>Kein Zwischenspeichern: der Atlas wird beim Neuladen von Ressourcen ausgetauscht, und
      * eine gehaltene Ansicht zeigte danach auf eine tote Textur.</p>
      */
     private static TextureSetup blockAtlas()
     {
-        var textur = Minecraft.getInstance().getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
+        var mc = Minecraft.getInstance();
+        var textur = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
+        var abtaster = com.mojang.blaze3d.systems.RenderSystem.getSamplerCache()
+            .getClampToEdge(com.mojang.blaze3d.textures.FilterMode.NEAREST);
 
-        return TextureSetup.singleTexture(textur.getTextureView(), textur.getSampler());
+        return new TextureSetup(
+            textur.getTextureView(),
+            mc.gameRenderer.overlayTexture().getTextureView(),
+            mc.gameRenderer.lightmap(),
+            textur.getSampler(), abtaster, abtaster);
     }
 
     private Blockvorschau()
