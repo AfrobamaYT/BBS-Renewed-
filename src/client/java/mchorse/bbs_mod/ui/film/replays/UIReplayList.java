@@ -224,6 +224,11 @@ public class UIReplayList extends UIList<ReplayListEntry>
                         UIOverlay.addOverlay(this.getContext(), numberPanel);
                     }
                 });
+                if (BBSSettings.autoAudio.get() && film != null)
+                {
+                    menu.action(Icons.SOUND, AutoAudioAktion.AUTO_AUDIO, () -> AutoAudioAktion.ausfuehren(this.panel, new ArrayList<>(this.getSelectedReplays()), this.getContext()));
+                }
+
                 menu.action(Icons.REMOVE, UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE, this::removeReplay);
             }
         });
@@ -1103,34 +1108,6 @@ public class UIReplayList extends UIList<ReplayListEntry>
         UIOverlay.addOverlay(this.getContext(), panel, 320, 320);
     }
 
-    private static List<String> collectProcessChannelIds(Replay replay)
-    {
-        ArrayList<String> out = new ArrayList<>();
-        HashSet<String> added = new HashSet<>();
-
-        for (String id : ReplayKeyframes.CURATED_CHANNELS)
-        {
-            BaseValue baseValue = replay.keyframes.get(id);
-
-            if (baseValue instanceof KeyframeChannel<?> channel && KeyframeFactories.isNumeric(channel.getFactory()))
-            {
-                out.add(id);
-                added.add(id);
-            }
-        }
-
-        for (KeyframeChannel<?> channel : replay.keyframes.getChannels())
-        {
-            if (!KeyframeFactories.isNumeric(channel.getFactory()) || added.contains(channel.getId()))
-            {
-                continue;
-            }
-
-            out.add(channel.getId());
-        }
-
-        return out;
-    }
 
     private class UIProcessReplaysPanel extends UIConfirmOverlayPanel
     {
@@ -1162,7 +1139,7 @@ public class UIReplayList extends UIList<ReplayListEntry>
 
             this.properties.scroll.scrollItemSize = 16;
 
-            for (String id : collectProcessChannelIds(first))
+            for (String id : ProzessKanaele.sammeln(first))
             {
                 this.properties.add(id);
             }

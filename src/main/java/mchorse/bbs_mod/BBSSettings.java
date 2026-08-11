@@ -238,6 +238,14 @@ public class BBSSettings {
 	 * Gelesen von mchorse.bbs_mod.ui.film.UIFilmPreview / AudioStemExporter. */
 	public static ValueBoolean audioExportSeparateFiles;
 
+	/* AUTO AUDIO (#68): ein vanilla-partikel-effekt bringt seinen Minecraft-ton mit.
+	 * Standard AUS — das feature schreibt echte audio-clips in den film, und die landen
+	 * im export. Ein vorzug, den man einschaltet, kein arbeitsmodus, der von selbst laeuft.
+	 * Gelesen von mchorse.bbs_mod.film.autoaudio.AutoAudio / UIReplayList. */
+	public static ValueBoolean autoAudio;
+	public static ValueFloat autoAudioVolume;
+	public static ValueBoolean autoAudioSpatial;
+
 	/* AUTONOMIE 2026-07-27: schalter fuer den crowd/bake-schnellpfad in com/afrobama
 	 * (bbstools/client/bbs/fastpath). Eigene kategorie "bbstools" statt sie wie im CML-fork
 	 * in eine fremde einzuhaengen — dort landeten sie unter "cdn" und bekamen deshalb
@@ -754,6 +762,9 @@ public class BBSSettings {
 		audioWaveformTime = builder.getBoolean("waveform_time", false);
 		audioWaveformPreviewCombined = builder.getBoolean("waveform_preview_combined", false);
 		audioExportSeparateFiles = builder.getBoolean("export_separate_files", false);
+		autoAudio = builder.getBoolean("auto_audio", false);
+		autoAudioVolume = builder.getFloat("auto_audio_volume", 1F, 0F, 1F).slider();
+		autoAudioSpatial = builder.getBoolean("auto_audio_spatial", true);
 
 		builder.category("bbstools", Icons.GEAR);
 		bakeFastPath = builder.getBoolean("bake_fast_path", true);
