@@ -226,6 +226,23 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
 
                 mchorse.bbs_mod.graphics.Zeichenbereich.setzen(sx, sy, sb, sh);
 
+                /* ⛔ ZEICHENBEREICH ERREICHT NUR BBS-EIGENE DURCHGAENGE (2026-08-11 gemessen).
+                 *
+                 * Verbraucher von {@code Zeichenbereich.aktiv()} sind ModelVAORenderer und
+                 * GehaltenesNetz -- beides BBS. Mobs, Bloecke und Gegenstaende zeichnet aber
+                 * Mojangs {@code FeatureRenderDispatcher.renderAllFeatures} in Durchgaengen, die
+                 * er selbst oeffnet. Die liefen ungeschnitten: die Mob-Vorschau im Morph-Panel
+                 * ragte 57 Bildpunkte unter ihre Zelle und malte die Kategorie-Beschriftung zu.
+                 *
+                 * Bis 1.21.1 erledigte das der globale {@code RenderSystem.viewport}. Dessen
+                 * Nachfolger in 26.2 ist genau dieser Aufruf: {@code RenderType} nimmt den
+                 * Zustand ueber {@code getScissorStateForRenderTypeDraws} in jeden vorbereiteten
+                 * Zug auf. Mojang benutzt ihn selbst fuer dieselbe Aufgabe -- {@code GuiItemAtlas}
+                 * klemmt damit seine Gegenstaende in ihr Feld.
+                 *
+                 * Gleiche vier Zahlen wie der Zeichenbereich: beide rechnen von UNTEN. */
+                com.mojang.blaze3d.systems.RenderSystem.enableScissorForRenderTypeDraws(sx, sy, sb, sh);
+
                 try
                 {
                     mchorse.bbs_mod.forms.FormSammler.mitEigenemSammler(() ->
@@ -252,6 +269,11 @@ public class MiniaturSammelRenderer extends PictureInPictureRenderer<MiniaturSam
                      * Eigenschaft der Klasse (Zeichenbereich, Absatz dazu). Ein stehen
                      * gebliebener Ausschnitt beschneidet JEDEN folgenden Netz-Zug. */
                     mchorse.bbs_mod.graphics.Zeichenbereich.freigeben();
+
+                    /* Derselbe Grund, groessere Reichweite: dieser Zustand ist global und
+                     * haengt an JEDEM folgenden RenderType-Zug. Stehen gelassen klemmt er die
+                     * ganze Welt in eine Zelle. */
+                    com.mojang.blaze3d.systems.RenderSystem.disableScissorForRenderTypeDraws();
 
                     /* Zurueck in GUI-Einheiten -- der naechste Leser ist wieder die
                      * Oberflaeche selbst, und die rechnet dort. */
