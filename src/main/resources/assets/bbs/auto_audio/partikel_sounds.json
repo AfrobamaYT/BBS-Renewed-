@@ -1,0 +1,42 @@
+{
+	"_hinweis": "Auto Audio: partikel-typ -> Minecraft-SoundEvent. JEDE zeile ist eine stelle, an der VANILLA SELBST beides zusammen ausloest -- die vanilla-klasse dazu steht hinter der zeile in _belege. Nachgemessen im 26.2-bytecode, nicht aus dem gedaechtnis. Nicht belegte paare stehen bewusst NICHT hier drin (siehe PartikelSoundKatalog-klassendoc).",
+	"_erweitern": "config/bbs/auto_audio.json, gleicher aufbau, ueberschreibt und ergaenzt diese datei. Leerer wert = 'hier ausdruecklich kein ton'. Schluessel mit _ vorne sind kommentare.",
+
+	"minecraft:explosion": "minecraft:entity.generic.explode",
+	"minecraft:explosion_emitter": "minecraft:entity.generic.explode",
+
+	"minecraft:firework": "minecraft:entity.firework_rocket.blast",
+	"minecraft:flash": "minecraft:entity.firework_rocket.blast",
+
+	"minecraft:totem_of_undying": "minecraft:item.totem.use",
+	"minecraft:elder_guardian": "minecraft:entity.elder_guardian.curse",
+
+	"minecraft:portal": "minecraft:block.portal.ambient",
+
+	"minecraft:campfire_cosy_smoke": "minecraft:block.campfire.crackle",
+	"minecraft:campfire_signal_smoke": "minecraft:block.campfire.crackle",
+
+	"minecraft:lava": "minecraft:block.lava.pop",
+	"minecraft:splash": "minecraft:entity.generic.splash",
+
+	"minecraft:sweep_attack": "minecraft:entity.player.attack.sweep",
+	"minecraft:item_slime": "minecraft:entity.slime.squish",
+	"minecraft:soul": "minecraft:particle.soul_escape",
+
+	"_belege": {
+		"minecraft:explosion": "net.minecraft.world.level.Level",
+		"minecraft:explosion_emitter": "net.minecraft.world.level.Level",
+		"minecraft:firework": "net.minecraft.client.particle.FireworkParticles$Starter",
+		"minecraft:flash": "net.minecraft.client.particle.FireworkParticles$Starter",
+		"minecraft:totem_of_undying": "net.minecraft.client.multiplayer.ClientPacketListener",
+		"minecraft:elder_guardian": "net.minecraft.client.multiplayer.ClientPacketListener",
+		"minecraft:portal": "net.minecraft.world.level.block.NetherPortalBlock",
+		"minecraft:campfire_cosy_smoke": "net.minecraft.world.level.block.CampfireBlock",
+		"minecraft:campfire_signal_smoke": "net.minecraft.world.level.block.CampfireBlock",
+		"minecraft:lava": "net.minecraft.world.level.material.LavaFluid",
+		"minecraft:splash": "net.minecraft.world.entity.Entity",
+		"minecraft:sweep_attack": "net.minecraft.world.entity.player.Player",
+		"minecraft:item_slime": "net.minecraft.world.entity.monster.cubemob.Slime",
+		"minecraft:soul": "net.minecraft.world.item.enchantment.Enchantments"
+	}
+}
