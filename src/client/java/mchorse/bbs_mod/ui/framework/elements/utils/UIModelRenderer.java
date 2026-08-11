@@ -498,17 +498,6 @@ public abstract class UIModelRenderer extends UIElement
          *
          * DASS HIER NICHTS GEZEICHNET WIRD, IST KEIN RUECKSCHRITT: der alte Sofortzug war
          * ebenfalls unsichtbar. Es fehlt genau so viel wie vorher, nur ohne Absturz. */
-        /* ⛔ SOFORTZUG STATT BILD IM BILD (2026-08-11, im A/B gemessen). Der Bild-im-Bild-Weg
-         * hat einen EIGENEN Tiefenpuffer, also kann das Modell ihn nicht verdecken — die
-         * Achsen liefen quer durch die Beine. Begruendung und der Grund, warum der Sofortzug
-         * jetzt traegt, stehen an VorschauBoden. */
-        if (true)
-        {
-            mchorse.bbs_mod.graphics.VorschauBoden.zeichnen(context.batcher.pose());
-
-            return;
-        }
-
         if (GITTER_UEBER_BILD_IM_BILD)
         {
             context.batcher.bildImBild(new VorschauGitterZustand(
