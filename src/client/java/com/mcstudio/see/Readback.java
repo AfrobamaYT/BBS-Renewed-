@@ -68,7 +68,115 @@ public final class Readback
 			StudioServer.respond(exchange, json);
 		});
 
-		System.out.println("[mcstudio] Readback registered /shot");
+		StudioServer.route("/shot/puffer", exchange ->
+		{
+			String was = StudioServer.query(exchange, "was");
+			final String ziel = was == null || was.isEmpty() ? "kugel" : was;
+
+			StudioServer.respond(exchange, RenderThread.submit(() -> pufferSchreiben(ziel)));
+		});
+
+		System.out.println("[mcstudio] Readback registered /shot, /shot/puffer");
+	}
+
+	/**
+	 * Schreibt einen BBS-eigenen Zwischenpuffer als PNG.
+	 *
+	 * <p>⛔ WOFUER (2026-08-11). Die Trackball-Hervorhebung erscheint in 26.2 nicht. Die
+	 * Java-Seite laeuft nachweislich durch (Waechter offen, Maskenzug abgesetzt, Einkopie mit
+	 * richtigem Rechteck), und ein RenderDoc-Mitschnitt zeigt die Kette auch im GL-Strom
+	 * vollstaendig. Offen blieb allein, ob in den Puffern ueberhaupt etwas STEHT — und das
+	 * beantwortet kein Zustandsabzug, nur ein Bild.
+	 *
+	 * <p>Die Summe aller RGB-Werte steht mit im Ergebnis: ein leerer Puffer ist damit eine
+	 * Zahl, nicht ein Eindruck.
+	 */
+	private static String pufferSchreiben(String was)
+	{
+		try
+		{
+			java.lang.reflect.Field f = mchorse.bbs_mod.ui.utils.Gizmo.class.getDeclaredField("sphereHighlight");
+
+			f.setAccessible(true);
+
+			mchorse.bbs_mod.ui.utils.StencilFormFramebuffer puffer =
+				(mchorse.bbs_mod.ui.utils.StencilFormFramebuffer) f.get(mchorse.bbs_mod.ui.utils.Gizmo.INSTANCE);
+
+			if (puffer == null || puffer.getFramebuffer() == null)
+			{
+				return "{\"error\":\"sphereHighlight ist noch nicht eingerichtet — erst mit Hover rendern lassen\"}";
+			}
+
+			mchorse.bbs_mod.graphics.texture.Texture textur = "zwischenbild".equals(was)
+				? puffer.zwischenbild()
+				: puffer.getFramebuffer().getMainTexture();
+
+			return texturSchreiben(textur, new File(shotsDir(), "puffer-" + was + ".png").getAbsolutePath());
+		}
+		catch (Throwable t)
+		{
+			return "{\"error\":\"" + escape(String.valueOf(t)) + "\"}";
+		}
+	}
+
+	/** Eine BBS-Textur als PNG, plus die RGB-Summe als Leer-Probe. Nur auf dem Render-Thread. */
+	public static String texturSchreiben(mchorse.bbs_mod.graphics.texture.Texture textur, String pfad)
+	{
+		RenderSystem.assertOnRenderThread();
+
+		if (textur == null || !textur.isValid())
+		{
+			return "{\"error\":\"textur fehlt oder ist ungueltig\"}";
+		}
+
+		mchorse.bbs_mod.utils.resources.Pixels pixels =
+			mchorse.bbs_mod.graphics.texture.Texture.pixelsFromTexture(textur);
+
+		if (pixels == null)
+		{
+			return "{\"error\":\"pixelsFromTexture lieferte null\"}";
+		}
+
+		int width = textur.width;
+		int height = textur.height;
+		long summe = 0L;
+
+		try
+		{
+			ByteBuffer buffer = pixels.getBuffer();
+			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+			for (int y = 0; y < height; ++y)
+			{
+				for (int x = 0; x < width; ++x)
+				{
+					int i = (y * width + x) * 4;
+					int r = buffer.get(i) & 0xFF;
+					int g = buffer.get(i + 1) & 0xFF;
+					int b = buffer.get(i + 2) & 0xFF;
+
+					summe += r + g + b;
+
+					/* Undurchsichtig aus demselben Grund wie beim Bildabzug: das Alpha ist hier
+					 * eine Kennung, kein Deckungswert -- als PNG-Alpha macht es das Bild
+					 * unlesbar. Es steht stattdessen im blauen Kanal des Berichts. */
+					image.setRGB(x, y, 0xFF000000 | (r << 16) | (g << 8) | b);
+				}
+			}
+
+			ImageIO.write(image, "png", new File(pfad));
+		}
+		catch (Exception e)
+		{
+			return "{\"error\":\"" + escape(String.valueOf(e)) + "\"}";
+		}
+		finally
+		{
+			pixels.delete();
+		}
+
+		return "{\"w\":" + width + ",\"h\":" + height + ",\"summeRGB\":" + summe
+			+ ",\"path\":\"" + escape(pfad) + "\"}";
 	}
 
 	/**
