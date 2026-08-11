@@ -154,7 +154,33 @@ public final class FormSammler
     {
         zielMelden();
 
-        Minecraft.getInstance().gameRenderer.featureRenderDispatcher().renderAllFeatures(eigener);
+        /* ⛔ HIER GEHOERT DAS LICHT HIN — UND ES FEHLTE (2026-08-11, vom Nutzer gemeldet).
+         * FormRenderer#renderUI traegt seit dem Port den Hinweis, das Licht werde "jetzt in
+         * FormSammler.zeichnenLassen" gesetzt. Es wurde nie gesetzt: die Miniaturen zeichneten
+         * mit dem Licht, das der GUI-Durchgang gerade gebunden hatte. Gemessen an der
+         * Formen-Palette gegen 1.21.1 (gleiche Ansicht): Lorenwagen Helligkeit 164 statt 188,
+         * die flache Platte daneben fast schwarz. Keine Ausnahme, kein Log — nur zu dunkel.
+         *
+         * ansichtLoeschen() zuerst: ohne das erbt die Palette die Umlaufkamera der zuletzt
+         * gezeichneten Modellvorschau. Ohne Kamera liefert UiLicht die festen Richtungen
+         * (0,1,-0.2) und (-0.85,0.85,1) — woertlich die aus 1.21.1s FormRenderer:58.
+         *
+         * ⚠️ Sichern und zuruecksetzen ist Pflicht: nach diesem Aufruf zeichnet der
+         * GUI-Durchgang weiter, und ein haengengebliebener Lichtblock faerbt alles Folgende. */
+        com.mojang.blaze3d.buffers.GpuBufferSlice gesichertesLicht =
+            com.mojang.blaze3d.systems.RenderSystem.getShaderLights();
+
+        mchorse.bbs_mod.graphics.UiLicht.ansichtLoeschen();
+        mchorse.bbs_mod.graphics.UiLicht.setzen();
+
+        try
+        {
+            Minecraft.getInstance().gameRenderer.featureRenderDispatcher().renderAllFeatures(eigener);
+        }
+        finally
+        {
+            com.mojang.blaze3d.systems.RenderSystem.setShaderLights(gesichertesLicht);
+        }
     }
 
     /**
