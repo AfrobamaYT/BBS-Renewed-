@@ -224,7 +224,15 @@ public abstract class UIBaseMenu
             result = element != null;
         }
 
-        Gizmo.INSTANCE.stop();
+        /* Ein Gizmo-Zug beginnt nur mit der LINKEN Taste (GizmoInteraction weist alle anderen
+         * ab), also darf auch nur ihr Loslassen ihn beenden. Ohne die Bedingung beendete das
+         * Loslassen der MITTLEREN Taste ein laufendes Hotkey-Edit als stilles acceptChanges —
+         * startEdit haengt sich per trackTransform an genau dieses stop(). Gemessen an der
+         * MMB-Achsenwahl: Achse gerastet, Taste losgelassen, editing war weg. */
+        if (mouseButton == 0)
+        {
+            Gizmo.INSTANCE.stop();
+        }
 
         return result;
     }
