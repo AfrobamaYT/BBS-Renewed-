@@ -26,30 +26,12 @@ public class UIUndoList <T> extends UIList<IUndo<T>>
     @Override
     protected String elementToString(UIContext context, int i, IUndo<T> element)
     {
-        if (element instanceof ValueChangeUndo undo)
+        /* Menschenlesbar statt Rohpfad (Akte 05) — der Uebersetzer faellt bei unbekannten
+         * Mustern auf die letzten Pfadglieder zurueck. Die Liste traegt IUndo<T>, gefuellt
+         * wird sie in beiden Huellen ausschliesslich mit IUndo<ValueGroup>. */
+        if (element instanceof ValueChangeUndo || element instanceof CompoundUndo)
         {
-            return undo.name.toString();
-        }
-        else if (element instanceof CompoundUndo<T> compoundUndo)
-        {
-            List<String> keys = new ArrayList<>();
-
-            for (IUndo<T> undo : compoundUndo.getUndos())
-            {
-                if (undo instanceof ValueChangeUndo valueUndo)
-                {
-                    keys.add(valueUndo.name.toString());
-                }
-            }
-
-            String prefix = StringUtils.findCommonPrefix(keys);
-
-            if (prefix.endsWith("."))
-            {
-                prefix = prefix.substring(0, prefix.length() - 1);
-            }
-
-            return prefix + " (" + compoundUndo.getUndos().size() + ")";
+            return UndoBeschriftung.beschrifte((IUndo) element);
         }
 
         return super.elementToString(context, i, element);
