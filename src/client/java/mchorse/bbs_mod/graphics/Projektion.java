@@ -68,10 +68,47 @@ public final class Projektion
         return puffer.getBuffer(matrix);
     }
 
-    /** Setzt die Projektion aus einer Matrix — der Ersatz fuer das alte setProjectionMatrix. */
+    /**
+     * Setzt die Projektion aus einer Matrix — der Ersatz fuer das alte setProjectionMatrix.
+     *
+     * <p>⛔ NUR fuer Matrizen, die schon in 26.2s Konvention stehen — praktisch heisst das:
+     * aus {@link #lesen()}. Alles, was BBS selbst mit JOML baut
+     * ({@code perspective}, {@code setOrtho}), gehoert in {@link #setzenUndUmkehren}.
+     */
     public static void setzen(Matrix4f matrix, ProjectionType art)
     {
         RenderSystem.setProjectionMatrix(hochladen(matrix), art);
+    }
+
+    /**
+     * Setzt eine von BBS gebaute Matrix und dreht sie dabei auf 26.2s umgekehrte Tiefe.
+     *
+     * <p>⛔ WOFUER (2026-08-11, aus einem RenderDoc-Mitschnitt der Modellvorschau). JOMLs
+     * {@code perspective}/{@code setOrtho} bauen die alte OpenGL-Form: nah &rarr; -1,
+     * fern &rarr; +1, im Fenster also nah 0, fern 1. 26.2 prueft aber mit
+     * {@code GREATER_THAN_OR_EQUAL} — gemessen im Pipeline-Zustand von Zug 1117. Groesser
+     * heisst dort „weiter weg", und behalten wird der groessere: <b>die entferntere Flaeche
+     * ueberschreibt die naehere.</b> Das ist das winkelabhaengige Durchscheinen am Modell.
+     *
+     * <p>Die Pixel-Historie an einem Rumpfpunkt zeigt es unmittelbar — sechs Flaechen aus
+     * demselben Zug setzen sich nacheinander mit <i>steigender</i> Tiefe durch
+     * (0,9947874 &rarr; 0,9947893), waehrend die naeheren Zuege danach
+     * (0,9944611 / 0,9944738) am Tiefentest scheitern.
+     *
+     * <p>Gegenprobe, warum es die Matrix und nicht die Pipeline ist: Mojangs eigene
+     * Weltprojektion trug live {@code Zeile2 = (0, 0, 2,441E-5, 5,000E-2)} — nah 1, fern 0.
+     * BBS' Kamera trug {@code (0, 0, -1,0000667, -0,0200007)} — nah -1, fern +1. Mit BBS'
+     * {@code near=0,01 / far=300} liegt ein Modell bei z=1,9 rechnerisch auf 0,9948, und
+     * genau das stand im Puffer.
+     */
+    public static void setzenUndUmkehren(Matrix4f matrix, ProjectionType art)
+    {
+        /* Identitaet, in der z' = (w - z) / 2 wird. Absichtlich hier gebaut und nicht als
+         * statische Konstante: ein neu hinzugekommenes statisches Feld ist nach einem
+         * Hotswap null, weil der statische Initialisierer nicht noch einmal laeuft. */
+        Matrix4f umkehr = new Matrix4f().m22(-0.5F).m32(0.5F);
+
+        setzen(umkehr.mul(matrix), art);
     }
 
     /** Wie {@link #setzen}, fuer die haeufigste BBS-Variante: flache Projektion. */

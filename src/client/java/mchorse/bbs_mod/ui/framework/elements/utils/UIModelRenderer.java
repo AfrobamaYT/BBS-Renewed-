@@ -289,7 +289,16 @@ public abstract class UIModelRenderer extends UIElement
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        mchorse.bbs_mod.graphics.Projektion.setzen(this.camera.projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
+        /* Umkehren, weil die Pipeline oben GREATER_THAN_OR_EQUAL prueft, camera.projection aber
+         * die alte OpenGL-Form traegt. Ohne das gewinnt die entferntere Flaeche — Beleg an
+         * Projektion#setzenUndUmkehren.
+         *
+         * ⚠️ HIER IN PIXELN UNBELEGT (2026-08-11). Der Mechanismus ist gemessen, diese Stelle
+         * hat aber heute keine tiefengepruefte 3D-Kundschaft: Modell und Bodengitter laufen
+         * ueber Bild-im-Bild (dort steht der belegte Fix), und UIParticleSchemeRenderer
+         * zeichnet mit tiefePruefen=false. A/B im Form-Editor: 233 Bildpunkte, also nichts.
+         * Wer hier einen Sofortzug mit Tiefentest ergaenzt, hat den Fix schon. */
+        mchorse.bbs_mod.graphics.Projektion.setzenUndUmkehren(this.camera.projection, com.mojang.blaze3d.ProjectionType.ORTHOGRAPHIC);
         InverseView.set(new Matrix3f(this.camera.view).invert());
 
         /* Das Licht dreht mit der Umlaufkamera — wie in 1.21.1. Warum und mit welchen Zahlen

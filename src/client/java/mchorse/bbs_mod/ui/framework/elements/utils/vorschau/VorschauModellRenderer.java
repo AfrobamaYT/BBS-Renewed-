@@ -82,7 +82,11 @@ public class VorschauModellRenderer extends PictureInPictureRenderer<VorschauMod
         stapel.last().pose().identity();
         stapel.mulPose(zustand.ansicht());
 
-        Projektion.setzen(zustand.projektion(), com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
+        /* Umkehren: zustand.projektion() ist BBS' camera.projection, also die alte
+         * OpenGL-Form, waehrend die Pipeline GREATER_THAN_OR_EQUAL prueft. Ohne das gewinnt
+         * die ENTFERNTERE Flaeche — Messung an Projektion#setzenUndUmkehren. Das ist der
+         * Rest des Fehlers, den der Loeschwert unten nur halb erwischt hat. */
+        Projektion.setzenUndUmkehren(zustand.projektion(), com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
         /* ⛔ TIEFE LEEREN, SONST STEHT DIE DES VORIGEN BILDES DRIN (2026-08-05, Bugliste #16).
          *
