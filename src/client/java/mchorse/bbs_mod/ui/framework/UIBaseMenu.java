@@ -9,6 +9,7 @@ import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.utils.IViewportStack;
 import mchorse.bbs_mod.ui.utils.Area;
 import mchorse.bbs_mod.ui.utils.Gizmo;
+import mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen;
 import mchorse.bbs_mod.ui.utils.renderers.InputRenderer;
 import mchorse.bbs_mod.utils.MathUtils;
 import mchorse.bbs_mod.utils.colors.Colors;
@@ -44,7 +45,11 @@ public abstract class UIBaseMenu
      *  {@link #renderAxes} flag, so the hold removes them without altering F8's behaviour. */
     public static boolean isHideGizmoHeld()
     {
-        return Keys.TRANSFORMATIONS_HIDE_GIZMO.isHeld();
+        /* Ueber Zweitbelegungen statt direkt ueber isHeld(): Halte-Gesten laufen nicht durch
+         * Keybind.check, sie fragen die combo selbst. Die zweite Belegung wuerde hier sonst
+         * als einzige Stelle im Baum nichts tun — ein halbes Feature, das erst auffaellt,
+         * wenn genau diese Aktion probiert wird. */
+        return Zweitbelegungen.gehalten(Keys.TRANSFORMATIONS_HIDE_GIZMO);
     }
 
     private UIRootElement root;

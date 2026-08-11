@@ -150,6 +150,11 @@ public class BBSSettings {
 	/* Bei gleicher haupttaste gewinnt die bindung mit den meisten modifiern.
 	 * Gelesen von mchorse.bbs_mod.ui.utils.keys.Keybind. */
 	public static ValueBoolean editorKeybindSpecificWins;
+	/* Jede aktion darf eine ZWEITE, alternative belegung haben (z.b. eine fuer die linke hand,
+	 * eine fuer die maus). Gelesen von mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen.
+	 * ⛔ AUS loescht NICHTS: die zweiten belegungen bleiben auf der platte und in den presets,
+	 * sie werden nur nicht ausgeloest und nicht angezeigt. */
+	public static ValueBoolean editorKeybindSecondBinding;
 	/* Flug schreibt in den fuehrenden clip, auch wenn keiner ausgewaehlt ist.
 	 * Gelesen von mchorse.bbs_mod.ui.film.UIClipsPanel.pickActiveClip. */
 	public static ValueBoolean editorFlightEditsActiveClip;
@@ -696,6 +701,7 @@ public class BBSSettings {
 		 * ein hoeherer Wert waere ein Versprechen, das die Sitzung nicht halten kann. */
 		editorPersistentUndoLimit = builder.getInt("persistent_undo_limit", 100, 1, 100);
 		editorKeybindSpecificWins = builder.getBoolean("keybind_specific_wins", true);
+		editorKeybindSecondBinding = builder.getBoolean("keybind_second_binding", true);
 		editorFlightEditsActiveClip = builder.getBoolean("flight_edits_active_clip", true);
 		editorRecordCameraDuringPlayback = builder.getBoolean("record_camera_during_playback", false);
 		editorHorizontalFlight = builder.getBoolean("horizontal_flight", false);

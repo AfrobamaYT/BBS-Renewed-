@@ -18,6 +18,15 @@ public class Keybind
     private IKey category;
 
     private KeyCombo combo;
+
+    /** Die combo, die beim letzten {@link #check}/{@link #checkMouse} GETROFFEN hat — Erst- oder
+     *  Zweitbelegung. Nur fuer {@link #getScore()} da.
+     *  ⛔ FALLE: nur unmittelbar nach einem true gueltig. Genau so wird es benutzt
+     *  ({@code KeybindManager.checkKeybinds} fragt den Rang direkt nach dem Treffer), und beide
+     *  Pruefwege setzen das Feld zu Beginn auf null, damit ein alter Wert nie in eine spaetere
+     *  Rangfolge leckt. */
+    private KeyCombo getroffen;
+
     public Runnable callback;
     public boolean inside;
     public boolean strict;
@@ -81,7 +90,12 @@ public class Keybind
 
     public int getScore()
     {
-        return this.combo.keys.size();
+        /* Der Rang ist die Tastenzahl der combo, die WIRKLICH getroffen hat. Sonst traete eine
+         * Zweitbelegung Shift+E mit dem Rang der Erstbelegung E an und verloere im
+         * KeybindManager gegen eine echte 1-Tasten-Bindung. */
+        KeyCombo getroffen = this.getroffen == null ? this.combo : this.getroffen;
+
+        return getroffen.keys.size();
     }
 
     public IKey getLabel()
@@ -96,7 +110,14 @@ public class Keybind
 
     public String getKeyCombo()
     {
-        return this.combo.getKeyCombo();
+        KeyCombo zweit = Zweitbelegungen.zweit(this.combo);
+
+        /* Die Kurzhilfe (UIKeybinds) muss beide Wege zeigen, sonst behauptet sie etwas
+         * Unvollstaendiges: der Nutzer legt eine Zweitbelegung an, sieht sie nirgends und haelt
+         * sie fuer wirkungslos. */
+        return zweit == null || zweit.keys.isEmpty()
+            ? this.combo.getKeyCombo()
+            : this.combo.getKeyCombo() + " / " + zweit.getKeyCombo();
     }
 
     /**
@@ -130,32 +151,73 @@ public class Keybind
         return true;
     }
 
+    /**
+     * Passt die Taste auf die Erst- ODER die Zweitbelegung dieser Aktion?
+     *
+     * <p><b>Warum die Zweitbelegung hier haengt und nicht als zweiter Keybind daneben steht.</b>
+     * Ein zweiter Keybind bekaeme die nachtraeglich angehaengten Flags nicht mit — der Aufrufer
+     * schreibt {@code keys().register(...).active(...).inside().strict()} NACH dem Registrieren.
+     * Die Kopie wuerde also in Zusammenhaengen feuern, in denen die Erstbelegung schweigt. So
+     * durchlaufen beide Belegungen garantiert dieselben Tore.</p>
+     */
     public boolean check(int keyCode, KeyAction keyAction, boolean inside)
     {
-        if (keyAction == KeyAction.REPEAT && !this.combo.repeatable)
+        this.getroffen = null;
+
+        if (this.passt(this.combo, keyCode, keyAction, inside))
+        {
+            this.getroffen = this.combo;
+
+            return true;
+        }
+
+        KeyCombo zweit = Zweitbelegungen.zweit(this.combo);
+
+        if (zweit != null && this.passt(zweit, keyCode, keyAction, inside))
+        {
+            this.getroffen = zweit;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean passt(KeyCombo combo, int keyCode, KeyAction keyAction, boolean inside)
+    {
+        if (combo.keys.isEmpty())
+        {
+            /* Eine combo ohne Tasten bindet nichts. Ohne diese Sperre traefe ihr getMainKey()
+             * von -1 den GLFW-Code GLFW_KEY_UNKNOWN — dieselbe Falle, die checkMouse unten
+             * schon fuer den Rechtsklick schliesst. Mit den Zweitbelegungen gibt es leere
+             * combos jetzt auch im Normalbetrieb (frisch angelegt, noch nicht aufgenommen). */
+            return false;
+        }
+
+        if (keyAction == KeyAction.REPEAT && !combo.repeatable)
         {
             return false;
         }
 
-        if (keyCode != this.combo.getMainKey())
+        if (keyCode != combo.getMainKey())
         {
             return false;
         }
 
-        for (int i = 1; i < this.combo.keys.size(); i++)
+        for (int i = 1; i < combo.keys.size(); i++)
         {
-            if (!this.isKeyDown(this.combo.keys.get(i)))
+            if (!this.isKeyDown(combo.keys.get(i)))
             {
                 return false;
             }
         }
 
-        if (this.strict && this.hasExtraModifier())
+        if (this.strict && this.hasExtraModifier(combo))
         {
             return false;
         }
 
-        if (this.beschattetVonLaengeremCombo())
+        if (this.beschattet(combo))
         {
             return false;
         }
@@ -177,10 +239,25 @@ public class Keybind
      * <p>Only asked when a modifier is held that this combo doesn't list, so a bind
      * without any competitor is never slowed down or changed.</p>
      */
-    private boolean beschattetVonLaengeremCombo()
+    private boolean beschattet(KeyCombo combo)
     {
-        return BBSSettings.editorKeybindSpecificWins.get()
-            && istBeschattet(this.combo, KeyCombo.getRegistrierte(), KeyCombo::isKeyDown);
+        if (!BBSSettings.editorKeybindSpecificWins.get())
+        {
+            return false;
+        }
+
+        if (istBeschattet(combo, KeyCombo.getRegistrierte(), KeyCombo::isKeyDown))
+        {
+            return true;
+        }
+
+        /* ⛔ Zweitbelegungen stehen NICHT in KeyCombo.getRegistrierte() — sie entstehen ueber den
+         * namenlosen Konstruktor, damit sie nicht als Geisterzeile im Keybind-Editor auftauchen.
+         * Beschatten muessen sie trotzdem: liegt eine Zweitbelegung auf Shift+E und eine fremde
+         * Erstbelegung auf blankem E, feuerte sonst BEIDES bei Shift+E.
+         * Zweitbelegungen.alle() ist bei ausgeschaltetem Feature leer — Ausloesen und Beschatten
+         * haengen damit am SELBEN Tor und koennen nicht auseinanderlaufen. */
+        return istBeschattet(combo, Zweitbelegungen.alle(), KeyCombo::isKeyDown);
     }
 
     /**
@@ -218,27 +295,50 @@ public class Keybind
      * Whether a modifier (shift/ctrl/alt) is currently held that the combo does
      * not list — used by {@link #strict} binds to step aside for longer combos.
      */
-    private boolean hasExtraModifier()
+    private boolean hasExtraModifier(KeyCombo combo)
     {
-        if (Window.isShiftPressed() && !this.comboHas(GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT))
+        if (Window.isShiftPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT))
         {
             return true;
         }
 
-        if (Window.isCtrlPressed() && !this.comboHas(GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL))
+        if (Window.isCtrlPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL))
         {
             return true;
         }
 
-        return Window.isAltPressed() && !this.comboHas(GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT);
+        return Window.isAltPressed() && !comboHas(combo, GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT);
     }
 
-    private boolean comboHas(int left, int right)
+    private static boolean comboHas(KeyCombo combo, int left, int right)
     {
-        return this.combo.keys.contains(left) || this.combo.keys.contains(right);
+        return combo.keys.contains(left) || combo.keys.contains(right);
     }
 
     public boolean checkMouse(int mouseButton, boolean inside)
+    {
+        this.getroffen = null;
+
+        if (this.passtMaus(this.combo, mouseButton, inside))
+        {
+            this.getroffen = this.combo;
+
+            return true;
+        }
+
+        KeyCombo zweit = Zweitbelegungen.zweit(this.combo);
+
+        if (zweit != null && this.passtMaus(zweit, mouseButton, inside))
+        {
+            this.getroffen = zweit;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean passtMaus(KeyCombo combo, int mouseButton, boolean inside)
     {
         /* ⛔ MAUSTASTEN SIND NEGATIV KODIERT (Mouse2 = -1, Mouse4 = -3 …), und genau daran
          * hing der teuerste UI-fehler dieser woche: die LINKE maustaste ist GLFW-button 0,
@@ -250,26 +350,27 @@ public class Keybind
          *
          * Dasselbe eine stelle weiter: getMainKey() liefert -1, wenn eine combo GAR KEINE
          * taste hat — und -1 ist der rechtsklick. Jede nie belegte combo haette also auf
-         * jeden rechtsklick gefeuert.
+         * jeden rechtsklick gefeuert. Seit den Zweitbelegungen ist das kein Randfall mehr:
+         * ein frisch angelegtes zweites Feld ist genau so eine leere combo.
          *
          * Beide faelle sterben hier: nur eine NEGATIVE haupttaste ist eine maus-belegung,
          * und eine leere combo bindet nichts. Die pruefung heilt auch bereits verdorbene
          * konfigurationen, ohne dass jemand eine json anfassen muss. */
-        if (this.combo.keys.isEmpty())
+        if (combo.keys.isEmpty())
         {
             return false;
         }
 
-        int haupt = this.combo.getMainKey();
+        int haupt = combo.getMainKey();
 
         if (haupt >= 0 || haupt != -mouseButton)
         {
             return false;
         }
 
-        for (int i = 1; i < this.combo.keys.size(); i++)
+        for (int i = 1; i < combo.keys.size(); i++)
         {
-            if (!this.isKeyDown(this.combo.keys.get(i)))
+            if (!this.isKeyDown(combo.keys.get(i)))
             {
                 return false;
             }
@@ -277,7 +378,7 @@ public class Keybind
 
         /* Gilt genauso fuer maustasten: das preset "Left-Hand + Mouse" legt
          * Mouse4 und Shift+Mouse4 auf verschiedene aktionen. */
-        if (this.beschattetVonLaengeremCombo())
+        if (this.beschattet(combo))
         {
             return false;
         }

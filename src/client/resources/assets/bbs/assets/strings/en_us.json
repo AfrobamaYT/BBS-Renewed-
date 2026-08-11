@@ -265,6 +265,8 @@
 	"bbs.config.editor.persistent_undo_limit-comment": "How many undo steps are written to disk. When the history is longer, the oldest steps are dropped first. Lower it if the undo files get too large",
 	"bbs.config.editor.keybind_specific_wins": "Specific keybind wins",
 	"bbs.config.editor.keybind_specific_wins-comment": "When two actions share a key, the one with more modifiers wins. With camera mode on 3 and the pose tab on Shift + 3, pressing Shift + 3 switches the tab instead of opening the camera mode. Turn off to let whichever binding is asked first win",
+	"bbs.config.editor.keybind_second_binding": "Second keybind per action",
+	"bbs.config.editor.keybind_second_binding-comment": "Every action can have a second, alternative binding — for example one for your left hand and one for a mouse button. Either one triggers the action. The keybind editor then shows a second recording field per row; press ESC while recording it to remove it again. Turning this off does not delete anything: the second bindings stay in your presets and come back when you turn it on",
 	"bbs.config.editor.flight_edits_active_clip": "Flight edits the leading clip",
 	"bbs.config.editor.flight_edits_active_clip-comment": "Flying writes the camera into the clip that is driving it right now, even when no clip was selected — that clip gets selected so you can see what changes. Turn off to keep flying without a selection from changing anything",
 	"bbs.config.editor.resizable_panels": "Resizable panels",
