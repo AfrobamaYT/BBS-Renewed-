@@ -664,6 +664,28 @@ tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach
 	}
 
 	it.environment "JDK_JAVA_OPTIONS", jvmOptionen.join(" ")
+
+	/* ⛔ RENDERDOC BRAUCHT LD_PRELOAD, dlopen aus Java reicht NICHT (2026-08-11 gemessen).
+	 * Der Fabric-Preloader (-Dbbstools.renderdoc.preload=true) laedt librenderdoc.so per
+	 * dlopen und meldet sauber "ATTACHED — API v1.7.0". TriggerCapture feuert danach auch,
+	 * das Instanz-Log sagt "next frame will be captured" — und es entsteht NICHTS:
+	 * getNumCaptures bleibt 0, kein .rdc, und RenderDocs eigenes Log endet nach
+	 * "Registering OpenGL hooks" ohne eine einzige Mitschnitt-Zeile. Die Hooks kommen zu
+	 * spaet an den schon erzeugten GL-Kontext. Genau davor warnt der Kopf des Preloaders.
+	 * Mit LD_PRELOAD sitzen sie vor dem ersten GL-Aufruf.
+	 *
+	 *     ./gradlew runQuick -Pbbs.ldpreload=/usr/lib/librenderdoc.so
+	 *
+	 * Nur setzen, wenn gefragt — dauerhaft eingehaengt kostet es Leistung und faengt
+	 * jeden Lauf ab. */
+	def vorladen = project.findProperty("bbs.ldpreload")
+
+	if (vorladen)
+	{
+		it.environment "LD_PRELOAD", vorladen.toString()
+		it.doFirst { logger.lifecycle("[renderdoc] LD_PRELOAD=${vorladen}") }
+	}
+
 	it.doFirst { logger.lifecycle("[speicher] heap-deckel ${heap} (umstellen mit -Pbbs.heap=<wert>)") }
 }
 
