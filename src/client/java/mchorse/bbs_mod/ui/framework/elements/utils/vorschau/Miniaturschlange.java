@@ -51,10 +51,30 @@ public final class Miniaturschlange
          *     roh y=820  global y=70  ->  Kachel 1640..1800 px, Schnitt 140..300 px, verworfen
          * Bei Scroll 0 fallen beide Raeume zusammen: die erste Reihe stand, alles darunter war
          * weg (vom Nutzer als "beim Runterscrollen verschwinden die meisten Icons" gemeldet). */
-        int px1 = Math.round(kontext.globalX(x1) * s);
-        int py1 = Math.round(kontext.globalY(y1) * s);
-        int px2 = Math.round(kontext.globalX(x2) * s);
-        int py2 = Math.round(kontext.globalY(y2) * s);
+        /* ⛔ DIE FLAECHENMATRIX GEHOERT DAZU (2026-08-11, an der Aufblend-Animation gemessen).
+         *
+         * `UIOverlayPanel` laesst ein Panel aufgehen, indem es um dessen Mitte auf den
+         * Flaechenstapel skaliert (`getContext().pose()`). `Batcher2D#quad` und `#blit`
+         * kopieren diese Matrix in jeden Zug -- eine eingereihte Miniatur bekam sie nie und
+         * blieb waehrend der ganzen Animation an ihrer ENDposition stehen, also neben ihrem
+         * mitwachsenden Kaestchen und ueber dem Panelrand.
+         *
+         * Vom Nutzer am Quick-Replay-Waehler gemeldet und im Bild belegt: waehrend der
+         * Animation sassen die beiden Vorschauen am linken Panelrand statt in ihren Zeilen,
+         * im Endbild wieder richtig. Ohne Animation ist die Matrix die Einheitsmatrix, der
+         * Weg also unveraendert. */
+        org.joml.Matrix3x2fc flaechenmatrix = kontext.batcher.getContext().pose();
+        org.joml.Vector2f ecke = new org.joml.Vector2f();
+
+        flaechenmatrix.transformPosition(kontext.globalX(x1), kontext.globalY(y1), ecke);
+
+        int px1 = Math.round(ecke.x * s);
+        int py1 = Math.round(ecke.y * s);
+
+        flaechenmatrix.transformPosition(kontext.globalX(x2), kontext.globalY(y2), ecke);
+
+        int px2 = Math.round(ecke.x * s);
+        int py2 = Math.round(ecke.y * s);
 
         ScreenRectangle flaeche = new ScreenRectangle(px1, py1, px2 - px1, py2 - py1);
 
