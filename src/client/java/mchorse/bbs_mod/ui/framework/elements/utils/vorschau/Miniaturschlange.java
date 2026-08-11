@@ -51,27 +51,31 @@ public final class Miniaturschlange
          *     roh y=820  global y=70  ->  Kachel 1640..1800 px, Schnitt 140..300 px, verworfen
          * Bei Scroll 0 fallen beide Raeume zusammen: die erste Reihe stand, alles darunter war
          * weg (vom Nutzer als "beim Runterscrollen verschwinden die meisten Icons" gemeldet). */
-        /* ⛔ DIE FLAECHENMATRIX GEHOERT DAZU (2026-08-11, an der Aufblend-Animation gemessen).
+        /* ⛔ DIE FLAECHENMATRIX GEHOERT DAZU — UND NUR SIE (2026-08-11, zweimal gemessen).
          *
          * `UIOverlayPanel` laesst ein Panel aufgehen, indem es um dessen Mitte auf den
          * Flaechenstapel skaliert (`getContext().pose()`). `Batcher2D#quad` und `#blit`
          * kopieren diese Matrix in jeden Zug -- eine eingereihte Miniatur bekam sie nie und
-         * blieb waehrend der ganzen Animation an ihrer ENDposition stehen, also neben ihrem
-         * mitwachsenden Kaestchen und ueber dem Panelrand.
+         * blieb waehrend der ganzen Aufblend-Animation an ihrer ENDposition stehen (vom
+         * Nutzer am Quick-Replay-Waehler gemeldet, am Miniatur-Schwerpunkt je Bild belegt).
          *
-         * Vom Nutzer am Quick-Replay-Waehler gemeldet und im Bild belegt: waehrend der
-         * Animation sassen die beiden Vorschauen am linken Panelrand statt in ihren Zeilen,
-         * im Endbild wieder richtig. Ohne Animation ist die Matrix die Einheitsmatrix, der
-         * Weg also unveraendert. */
+         * ⛔ NICHT mit globalX/globalY KOMBINIEREN. `UIContext#shiftY` traegt den Scroll in
+         * BEIDE: in die Pose (`pose().translate(0,-y)`) UND in den Viewport-Stapel, aus dem
+         * `globalY` liest. Der erste Fix rechnete `pose * global(...)` -- der Scroll wirkte
+         * doppelt, und ab Scroll > 0 lagen alle eingereihten Kacheln oberhalb des Bildes
+         * (tools/kachel.py fand die Billboard-Kachel bei Scroll 200 nicht mehr; die flachen
+         * Kacheln daneben sassen richtig). Die Pose ist bereits die VOLLE Element-nach-
+         * Bildschirm-Abbildung -- exakt die, mit der die flachen Zuege derselben Zellen
+         * zeichnen. Also: rohe Elementkoordinaten, nur durch die Pose. */
         org.joml.Matrix3x2fc flaechenmatrix = kontext.batcher.getContext().pose();
         org.joml.Vector2f ecke = new org.joml.Vector2f();
 
-        flaechenmatrix.transformPosition(kontext.globalX(x1), kontext.globalY(y1), ecke);
+        flaechenmatrix.transformPosition(x1, y1, ecke);
 
         int px1 = Math.round(ecke.x * s);
         int py1 = Math.round(ecke.y * s);
 
-        flaechenmatrix.transformPosition(kontext.globalX(x2), kontext.globalY(y2), ecke);
+        flaechenmatrix.transformPosition(x2, y2, ecke);
 
         int px2 = Math.round(ecke.x * s);
         int py2 = Math.round(ecke.y * s);
@@ -96,11 +100,29 @@ public final class Miniaturschlange
              * Gemessen am laufenden Spiel: schnitt=[x=85, y=170, 30x20] bei einer Kachel um
              * x=170. Der erste Anlauf hat beide roh geschnitten -- Ergebnis leer, und damit
              * verschwanden ALLE Listen-Miniaturen. Dieselbe Falle, vor der `einreihen` oben
-             * schon warnt; ich bin trotzdem hineingelaufen. */
-            int sx = Math.max(flaeche.left(), Math.round(schnitt.left() * s));
-            int sy = Math.max(flaeche.top(), Math.round(schnitt.top() * s));
-            int sr = Math.min(flaeche.right(), Math.round(schnitt.right() * s));
-            int sb = Math.min(flaeche.bottom(), Math.round(schnitt.bottom() * s));
+             * schon warnt; ich bin trotzdem hineingelaufen.
+             *
+             * ⛔ UND ER MUSS IN DENSELBEN RAUM WIE DIE FLAECHE (Messfuehler 2026-08-11):
+             * waehrend der Aufblend-Animation kam raw=208,156 px=623,356..626,359 bei
+             * schnitt=[208,156 20x20] -- Flaeche pose-transformiert, Schnitt nicht, die
+             * Ueberschneidung LEER, alle Kacheln der Animation verworfen. Der Spiegel
+             * fuehrt den Schnitt GLOBAL (clip zieht den Scroll schon ab), die Pose enthaelt
+             * Scroll UND Zoom. Also: den Scroll-Anteil aus den eigenen Koordinaten
+             * zurueckrechnen (raw - global) und den Schnitt durch dieselbe Pose schicken. */
+            float dx = x1 - kontext.globalX(x1);
+            float dy = y1 - kontext.globalY(y1);
+
+            flaechenmatrix.transformPosition(schnitt.left() + dx, schnitt.top() + dy, ecke);
+
+            int sl = Math.round(ecke.x * s);
+            int so = Math.round(ecke.y * s);
+
+            flaechenmatrix.transformPosition(schnitt.right() + dx, schnitt.bottom() + dy, ecke);
+
+            int sx = Math.max(flaeche.left(), sl);
+            int sy = Math.max(flaeche.top(), so);
+            int sr = Math.min(flaeche.right(), Math.round(ecke.x * s));
+            int sb = Math.min(flaeche.bottom(), Math.round(ecke.y * s));
 
             /* Leerer Schnitt heisst "nichts sichtbar" -- dann gar nicht erst einreihen, sonst
              * zeichnet die Kachel voll und der Schnitt hat wieder nichts bewirkt. */
