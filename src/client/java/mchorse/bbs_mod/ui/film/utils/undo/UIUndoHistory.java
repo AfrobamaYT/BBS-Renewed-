@@ -51,7 +51,13 @@ public class UIUndoHistory extends UIElement
     {
         this.undoManager = undoManager;
 
-        this.list = new UIUndoList<ValueGroup>((l) ->
+        /* Callback NACH der Zuweisung setzen: er liest this.list.getIndex(), und ein Lambda
+         * im Konstruktor darf ein noch nicht zugewiesenes final-Feld nicht anfassen —
+         * "Variable list wurde moeglicherweise nicht initialisiert". Auf dem 1.21.1-Stand
+         * des Werkbank-Zweigs war das von den Classpath-Luecken der javac-Gegenprobe
+         * verdeckt; der volle Bau hier findet es. */
+        this.list = new UIUndoList<ValueGroup>(null);
+        this.list.callback = (l) ->
         {
             UndoManager<ValueGroup> manager = this.getUndoManager();
 
@@ -80,7 +86,7 @@ public class UIUndoHistory extends UIElement
             }
 
             UIUtils.playClick();
-        });
+        };
 
         this.list.full(this);
 
