@@ -68,6 +68,7 @@ public class BBSSettings {
 	public static ValueInt transformSpace;
 	public static ValueBoolean transformHotkeys3dRay;
 	public static ValueBoolean transformHotkeysWhileControlling;
+	public static ValueBoolean transformMiddleClickAxis;
 	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
@@ -482,42 +483,6 @@ public class BBSSettings {
 		return interp == null ? Interpolations.LINEAR : interp;
 	}
 
-	public static boolean migrateLegacySettings(MapType root)
-	{
-		MapType appearance = root.getMap("appearance");
-		MapType personalization = root.getMap("personalization");
-		boolean migrated = false;
-
-		migrated |= migrateLegacyValue(appearance, personalization, "primary_color");
-		migrated |= migrateLegacyValue(appearance, personalization, "tooltip_style", "theme");
-		migrated |= migrateLegacyValue(appearance, personalization, "track_width");
-		migrated |= migrateLegacyValue(appearance, personalization, "keyframe_default_shape");
-
-		if (migrated)
-		{
-			root.put("personalization", personalization);
-		}
-
-		return migrated;
-	}
-
-	private static boolean migrateLegacyValue(MapType oldCategory, MapType newCategory, String key)
-	{
-		return migrateLegacyValue(oldCategory, newCategory, key, key);
-	}
-
-	private static boolean migrateLegacyValue(MapType oldCategory, MapType newCategory, String oldKey, String newKey)
-	{
-		if (newCategory.has(newKey) || !oldCategory.has(oldKey))
-		{
-			return false;
-		}
-
-		newCategory.put(newKey, oldCategory.get(oldKey).copy());
-
-		return true;
-	}
-
 	public static void register(SettingsBuilder builder)
 	{
 		HashSet<String> defaultFilters = new HashSet<>();
@@ -610,6 +575,7 @@ public class BBSSettings {
 		transformSpace.invisible();
 		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
 		transformHotkeysWhileControlling = builder.getBoolean("hotkeys_while_controlling", true);
+		transformMiddleClickAxis = builder.getBoolean("middle_click_axis", true);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();
