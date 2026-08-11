@@ -202,30 +202,7 @@ public class UIModelEditorPanel extends UIDataDashboardPanel<ModelConfig>
 
         this.layoutPanes();
 
-        this.miniPreview = new UIElement()
-        {
-            @Override
-            public void render(UIContext context)
-            {
-                int x1 = this.area.x;
-                int y1 = this.area.y;
-                int x2 = this.area.ex();
-                int y2 = this.area.ey();
-
-                context.batcher.box(x1, y1, x2, y2, BBSSettings.deepSurface());
-                FormUtilsClient.renderUI(UIModelEditorPanel.this.form, context, x1, y1, x2, y2);
-                context.batcher.outline(x1, y1, x2, y2, Colors.setA(Colors.WHITE, 0.2F));
-
-                super.render(context);
-            }
-
-            /* It's a thumbnail — swallow clicks so they don't orbit the main viewport underneath. */
-            @Override
-            public boolean subMouseClicked(UIContext context)
-            {
-                return this.area.isInside(context);
-            }
-        };
+        this.miniPreview = new UIModellMiniatur(() -> this.form);
         this.miniPreview.relative(this.renderer).x(1F, -6).y(6).wh(64, 64).anchor(1F, 0F);
         this.renderer.add(this.miniPreview);
 
