@@ -129,6 +129,19 @@ public class UIOverlayPanel extends UIElement
         this.flex.y.offset = this.initialOffsetY;
     }
 
+    /** Das Fenster so verschieben, dass die TITELMITTE bei (x, y) liegt — fuer "abgedockt
+     *  an der Mausposition weiterschweben". Gegenstueck zu resetOffsetToInitial. */
+    public void titelZuPosition(int x, int y)
+    {
+        this.flex.x.offset += x - this.area.mx();
+        this.flex.y.offset += y - (this.area.y + 8);
+
+        if (this.getParent() != null)
+        {
+            this.getParent().resize();
+        }
+    }
+
     public void onClose(Consumer<UIOverlayCloseEvent> callback)
     {
         this.events.register(UIOverlayCloseEvent.class, callback);
@@ -190,6 +203,13 @@ public class UIOverlayPanel extends UIElement
         }
 
         return super.subMouseClicked(context);
+    }
+
+    /** Zieht der Nutzer gerade am TITEL (nicht Resize, nicht Inhalt)? Fuer Subklassen,
+     *  die an den Zug eine Geste haengen (Undo-History: andocken). */
+    protected boolean istAmTitelZiehen()
+    {
+        return this.moving;
     }
 
     @Override

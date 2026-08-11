@@ -47,7 +47,9 @@ import mchorse.bbs_mod.ui.film.replays.UIReplaysEditor;
 import mchorse.bbs_mod.ui.film.utils.UIFilmUndoHandler;
 import mchorse.bbs_mod.ui.film.dock.DockStackGeometry;
 import mchorse.bbs_mod.ui.film.dock.DockStackInfo;
+import mchorse.bbs_mod.ui.film.dock.DropZonen;
 import mchorse.bbs_mod.ui.film.utils.undo.FilmUndoHistoryDock;
+import mchorse.bbs_mod.ui.film.utils.undo.UndoOverlayAndocken;
 import mchorse.bbs_mod.ui.film.utils.undo.UIUndoHistoryOverlay;
 import mchorse.bbs_mod.ui.film.utils.undo.UndoPersistence;
 import mchorse.bbs_mod.ui.framework.UIContext;
@@ -171,8 +173,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private static final int SPLITTER_HANDLE_PX = 14;
     private static final int SPLITTER_HANDLE_LINE_PX = 1;
     private static final int SPLITTER_LINK_HITBOX_PADDING_PX = 8;
-    private static final int DROP_ZONE_CENTER = -1;
-    private static final float DROP_EDGE_MARGIN = 0.2F;
     private static final int EDITOR_MIN_SIZE_FOR_PX_HANDLES = 10;
     private static final int DOCK_STACK_TABS_HEIGHT_PX = 20;
     private static final String PANEL_MAIN_ID = "main";
@@ -198,7 +198,14 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private String draggingPanelId;
     private String dropTargetPanelId;
-    private int dropTargetZone = DROP_ZONE_CENTER;
+    private int dropTargetZone = DropZonen.CENTER;
+
+    /* Overlay-Andocken: der Wunsch wird im Maus-Release nur VORGEMERKT und am Anfang des
+     * naechsten render() abgearbeitet — nie mitten im Render-/Event-Baumlauf umbauen
+     * (die vierfach belegte ConcurrentModification-Klasse dieser Codebasis). */
+    private DropZonen.Ziel undoAndockWunsch;
+    private int letzteZugMausX;
+    private int letzteZugMausY;
     private final List<Integer> draggedSplitterIndices = new ArrayList<>();
 
     private static class UIDockStackTabs extends UIElement
@@ -1427,13 +1434,13 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         this.draggingPanelId = null;
         this.dropTargetPanelId = null;
-        this.dropTargetZone = DROP_ZONE_CENTER;
+        this.dropTargetZone = DropZonen.CENTER;
     }
 
     private void applyPanelDropResult(String dragId, String targetId, int zone)
     {
         EditorLayoutNode root = this.getCurrentFilmLayoutRoot();
-        EditorLayoutNode newRoot = zone == DROP_ZONE_CENTER
+        EditorLayoutNode newRoot = zone == DropZonen.CENTER
             ? EditorLayoutNode.copyWithInsertStackAt(root, targetId, dragId)
             : EditorLayoutNode.copyWithInsertSplitAt(root, targetId, dragId, zone);
 
@@ -1453,7 +1460,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 this.draggingPanelId = panelId;
             }
             this.dropTargetPanelId = null;
-            this.dropTargetZone = DROP_ZONE_CENTER;
+            this.dropTargetZone = DropZonen.CENTER;
 
             for (UIDockStackTabs tabs : this.dockStackTabs)
             {
@@ -1464,7 +1471,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                     if (targetPanelId != null)
                     {
                         this.dropTargetPanelId = targetPanelId;
-                        this.dropTargetZone = DROP_ZONE_CENTER;
+                        this.dropTargetZone = DropZonen.CENTER;
 
                         return;
                     }
@@ -1473,26 +1480,35 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
                 }
             }
 
-            for (Map.Entry<String, UIElement> e : this.panelById.entrySet())
-            {
-                if (!e.getValue().isVisible())
-                {
-                    continue;
-                }
+            DropZonen.Ziel ziel = DropZonen.zielUnterPanels(this.panelById, context.mouseX, context.mouseY);
 
-                if (e.getValue().area.isInside(context.mouseX, context.mouseY))
-                {
-                    this.dropTargetPanelId = e.getKey();
-                    this.dropTargetZone = this.computeDropZone(e.getValue().area, context.mouseX, context.mouseY);
-                    break;
-                }
+            if (ziel != null)
+            {
+                this.dropTargetPanelId = ziel.panelId;
+                this.dropTargetZone = ziel.zone;
             }
+
+            this.letzteZugMausX = context.mouseX;
+            this.letzteZugMausY = context.mouseY;
         });
         handle.dragEnd(() ->
         {
             if (this.draggingPanelId == null || this.dropTargetPanelId == null || this.draggingPanelId.equals(this.dropTargetPanelId))
             {
+                /* Undo-Panel ins Leere gezogen (ausserhalb jeder Panel-Flaeche, praktisch
+                 * Icon-Leiste/Tab-Bar) = abdocken: zurueck zum schwebenden Fenster an der
+                 * Maus. ADS-Muster; Kanten-Drops bleiben Splits. */
+                boolean abdocken = PANEL_UNDO_HISTORY_ID.equals(this.draggingPanelId)
+                    && this.dropTargetPanelId == null;
+
                 this.clearPanelDragState();
+
+                if (abdocken)
+                {
+                    this.undoHistoryDock.toggleDocked();
+                    this.undoOverlayOeffnen(this.letzteZugMausX, this.letzteZugMausY);
+                }
+
                 return;
             }
             this.applyPanelDropResult(this.draggingPanelId, this.dropTargetPanelId, this.dropTargetZone);
@@ -1511,33 +1527,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         context.batcher.icon(Icons.ALL_DIRECTIONS, color, cx, cy, 0.5F, 0.5F);
     }
 
-    private int computeDropZone(Area area, int mouseX, int mouseY)
-    {
-        int ax = area.x;
-        int ay = area.y;
-        int aw = area.w;
-        int ah = area.h;
-        float nx = aw <= 0 ? 0.5F : (mouseX - ax) / (float) aw;
-        float ny = ah <= 0 ? 0.5F : (mouseY - ay) / (float) ah;
-        if (nx < DROP_EDGE_MARGIN)
-        {
-            return EditorLayoutNode.EDGE_LEFT;
-        }
-        if (nx > 1F - DROP_EDGE_MARGIN)
-        {
-            return EditorLayoutNode.EDGE_RIGHT;
-        }
-        if (ny < DROP_EDGE_MARGIN)
-        {
-            return EditorLayoutNode.EDGE_TOP;
-        }
-        if (ny > 1F - DROP_EDGE_MARGIN)
-        {
-            return EditorLayoutNode.EDGE_BOTTOM;
-        }
-        return DROP_ZONE_CENTER;
-    }
-
     private void renderDropZoneHighlight(UIContext context)
     {
         if (this.layoutLocked || this.draggingPanelId == null || this.dropTargetPanelId == null)
@@ -1549,48 +1538,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             return;
         }
-        Area a = target.area;
-        int border = BBSSettings.primaryColor(Colors.A50);
-        int fill = BBSSettings.primaryColor(Colors.A25);
-        if (this.dropTargetZone == DROP_ZONE_CENTER)
-        {
-            this.renderDropZoneRect(context, a, border, fill);
-            return;
-        }
-        float m = DROP_EDGE_MARGIN;
-        int strip = 2;
-        switch (this.dropTargetZone)
-        {
-            case EditorLayoutNode.EDGE_LEFT:
-                context.batcher.box(a.x, a.y, a.x + (int) (a.w * m), a.ey(), fill);
-                context.batcher.box(a.x + (int) (a.w * m) - strip, a.y, a.x + (int) (a.w * m) + strip, a.ey(), border);
-                break;
-            case EditorLayoutNode.EDGE_RIGHT:
-                context.batcher.box(a.ex() - (int) (a.w * m), a.y, a.ex(), a.ey(), fill);
-                context.batcher.box(a.ex() - (int) (a.w * m) - strip, a.y, a.ex() - (int) (a.w * m) + strip, a.ey(), border);
-                break;
-            case EditorLayoutNode.EDGE_TOP:
-                context.batcher.box(a.x, a.y, a.ex(), a.y + (int) (a.h * m), fill);
-                context.batcher.box(a.x, a.y + (int) (a.h * m) - strip, a.ex(), a.y + (int) (a.h * m) + strip, border);
-                break;
-            case EditorLayoutNode.EDGE_BOTTOM:
-                context.batcher.box(a.x, a.ey() - (int) (a.h * m), a.ex(), a.ey(), fill);
-                context.batcher.box(a.x, a.ey() - (int) (a.h * m) - strip, a.ex(), a.ey() - (int) (a.h * m) + strip, border);
-                break;
-            default:
-                this.renderDropZoneRect(context, a, border, fill);
-                break;
-        }
-    }
-
-    private void renderDropZoneRect(UIContext context, Area a, int border, int fill)
-    {
-        context.batcher.box(a.x, a.y, a.ex(), a.ey(), fill);
-        int t = 2;
-        context.batcher.box(a.x, a.y, a.ex(), a.y + t, border);
-        context.batcher.box(a.x, a.ey() - t, a.ex(), a.ey(), border);
-        context.batcher.box(a.x, a.y, a.x + t, a.ey(), border);
-        context.batcher.box(a.ex() - t, a.y, a.ex(), a.ey(), border);
+        DropZonen.zeichnen(context, target.area, this.dropTargetZone);
     }
 
     private void renderSplitter(UIContext context, int index)
@@ -1687,7 +1635,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         menu.action(Icons.LIST, UIKeys.FILM_OPEN_HISTORY, () ->
         {
-            UIOverlay.addOverlay(this.getContext(), new UIUndoHistoryOverlay(UIKeys.FILM_HISTORY_TITLE, this.getUndoHandler().getUndoManager(), this::getData, null), 200, 0.6F);
+            this.undoOverlayOeffnen(Integer.MIN_VALUE, Integer.MIN_VALUE);
         });
 
         menu.action(Icons.ARROW_RIGHT, UIKeys.FILM_MOVE_TITLE, () ->
@@ -2790,12 +2738,44 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         context.batcher.box(x, area.y + 3, x + 1, area.ey() - 3, BBSSettings.dividerColor());
     }
 
+    /** Das Undo-Fenster oeffnen; (x,y) = Zielposition des Titels, MIN_VALUE = zentriert. */
+    private void undoOverlayOeffnen(int x, int y)
+    {
+        UndoOverlayAndocken.oeffnen(this.getContext(), this.getUndoHandler().getUndoManager(),
+            this::getData, this::overlayDockZiel,
+            (panelId) -> this.panelById.get(panelId).area,
+            (ziel) -> this.undoAndockWunsch = ziel, x, y);
+    }
+
+    /** Dock-Ziel fuer die Overlay-Geste — null bei gesperrtem Layout (Standard) oder daneben. */
+    private DropZonen.Ziel overlayDockZiel(int mouseX, int mouseY)
+    {
+        if (this.layoutLocked)
+        {
+            return null;
+        }
+
+        return DropZonen.zielUnterPanels(this.panelById, mouseX, mouseY);
+    }
+
     /**
      * Draw everything on the screen
      */
     @Override
     public void render(UIContext context)
     {
+        /* Ganz am Anfang, vor jeder Kinder-Iteration dieses Frames — derselbe sichere
+         * Zeitpunkt wie UIOverlay.abschlussFaellig. Setting ZUERST, sonst wirft reconcile
+         * (im setupEditorFlex des Drops) das frisch eingefuegte Panel wieder raus. */
+        if (this.undoAndockWunsch != null)
+        {
+            DropZonen.Ziel wunsch = this.undoAndockWunsch;
+
+            this.undoAndockWunsch = null;
+            BBSSettings.editorUndoHistoryDocked.set(true);
+            this.applyPanelDropResult(PANEL_UNDO_HISTORY_ID, wunsch.panelId, wunsch.zone);
+        }
+
         if (this.lastTime == 0)
         {
             this.lastTime = System.currentTimeMillis();

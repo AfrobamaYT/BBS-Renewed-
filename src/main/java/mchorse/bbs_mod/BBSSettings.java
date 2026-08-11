@@ -728,8 +728,12 @@ public class BBSSettings {
 		editorMinutesBackup = builder.getBoolean("minutes_backup", true);
 		editorResizablePanels = builder.getBoolean("resizable_panels", true);
 		/* Off by default: the history was a floating window before, so an existing layout must not
-		 * suddenly grow a sixth panel. Where it sits once enabled lives in the layout tree. */
+		 * suddenly grow a sixth panel. Where it sits once enabled lives in the layout tree.
+		 *
+		 * invisible: der Nutzer dockt per GESTE (Overlay ziehen), nicht per Schalter — der
+		 * Wert bleibt nur als Persistenz des OB-Zustands, wie editorLayoutSettings darueber. */
 		editorUndoHistoryDocked = builder.getBoolean("undo_history_docked", false);
+		editorUndoHistoryDocked.invisible();
 		editorPreviewSizeMode = builder.getInt("preview_size_mode", 0, 0, 2);
 		editorPreviewCustomWidth = builder.getInt("preview_custom_width", 1280, 2, 16384);
 		editorPreviewCustomHeight = builder.getInt("preview_custom_height", 720, 2, 16384);
