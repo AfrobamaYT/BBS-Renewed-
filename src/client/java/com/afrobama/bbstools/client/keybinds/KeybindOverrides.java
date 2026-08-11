@@ -3,6 +3,7 @@ package com.afrobama.bbstools.client.keybinds;
 import net.fabricmc.loader.api.FabricLoader;
 
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
+import mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen;
 
 import org.slf4j.Logger;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
@@ -89,6 +90,13 @@ public final class KeybindOverrides
         {
             int[] override = activeOverride(combo.id);
             if (override != null) applyKeys(combo, override);
+
+            /* Die zweite Belegung liegt unter derselben id mit Anhang "#2" und muss beim
+             * NACHtraeglichen Registrieren genauso nachgezogen werden wie die erste — sonst
+             * verliert jede combo, die erst nach loadFromDisk entsteht, still ihre
+             * Zweitbelegung, und der Nutzer sucht spaeter, warum eine Taste nichts tut. */
+            int[] zweit = activeOverride(Zweitbelegungen.zweitId(combo.id));
+            if (zweit != null) Zweitbelegungen.setzen(combo, zweit);
         }
     }
 
@@ -167,7 +175,26 @@ public final class KeybindOverrides
 
         java.util.Set<Integer> mine = new java.util.HashSet<>(combo.keys);
 
-        for (KeyCombo other : registry.values())
+        sammleKonflikte(combo, mine, registry.values(), conflicts);
+
+        /* ⛔ Zweitbelegungen MUESSEN mitgeprueft werden. Sonst meldet der Editor eine Zeile als
+         * frei, obwohl die Taste bereits die zweite Belegung einer anderen Aktion ist — die
+         * Kollision faende der Nutzer erst im Betrieb. UNGESPERRT gelesen: die Pruefung soll
+         * auch dann ehrlich sein, wenn das Feature gerade ausgeschaltet ist, denn eingeschaltet
+         * wird es wieder. */
+        sammleKonflikte(combo, mine, Zweitbelegungen.alleHinterlegten(), conflicts);
+
+        return conflicts;
+    }
+
+    /** Der Vergleich selbst, damit Erst- und Zweitbelegungen nach GENAU denselben Regeln
+     *  geprueft werden — zwei Kopien dieser Bedingungskette waeren nach dem ersten Nachbessern
+     *  auseinander. Gleiche id wird uebersprungen: die zwei Belegungen EINER Aktion sollen sich
+     *  nie gegenseitig als Konflikt melden. */
+    private static void sammleKonflikte(KeyCombo combo, java.util.Set<Integer> mine,
+        java.util.Collection<KeyCombo> kandidaten, List<KeyCombo> conflicts)
+    {
+        for (KeyCombo other : kandidaten)
         {
             if (other == combo) continue;
             if (other.id != null && other.id.equals(combo.id)) continue;
@@ -181,8 +208,6 @@ public final class KeybindOverrides
                 conflicts.add(other);
             }
         }
-
-        return conflicts;
     }
 
     public static synchronized void resetToDefault(KeyCombo combo)
@@ -193,6 +218,11 @@ public final class KeybindOverrides
 
         Map<String, int[]> active = ensurePresetMap(activePreset);
         active.remove(combo.id);
+
+        /* Werkseinstellung heisst: EINE Belegung. Bliebe die zweite stehen, waere „zuruecksetzen"
+         * gelogen und die Taste taete danach immer noch etwas. */
+        Zweitbelegungen.entfernen(combo);
+        active.remove(Zweitbelegungen.zweitId(combo.id));
 
         save();
     }
@@ -206,6 +236,7 @@ public final class KeybindOverrides
         }
         Map<String, int[]> active = ensurePresetMap(activePreset);
         active.clear();
+        Zweitbelegungen.alleEntfernen();
         save();
     }
 
@@ -248,13 +279,18 @@ public final class KeybindOverrides
             int[] defaults = defaultKeys.get(combo.id);
             if (defaults != null) applyKeys(combo, defaults);
         }
+
+        /* ⛔ PFLICHT vor dem Auflegen: sonst bleiben die Zweitbelegungen des VORIGEN Presets
+         * stehen. Der Nutzer haette dann eine Belegung, die in keinem Preset steht — und beim
+         * naechsten Speichern kaeme sie ploetzlich doch wieder auf die Platte. */
+        Zweitbelegungen.alleEntfernen();
+
         Map<String, int[]> active = presets.get(name);
         if (active != null)
         {
             for (Map.Entry<String, int[]> e : active.entrySet())
             {
-                KeyCombo c = registry.get(e.getKey());
-                if (c != null) applyKeys(c, e.getValue());
+                anwenden(e.getKey(), e.getValue());
             }
         }
 
@@ -298,6 +334,12 @@ public final class KeybindOverrides
                 for (int i = 0; i < combo.keys.size(); i++) arr[i] = combo.keys.get(i);
                 map.put(combo.id, arr);
             }
+
+            /* Die Zweitbelegung ist FUER SICH schon die Abweichung — isCustom() prueft nur die
+             * erste. Ohne diese Zeile verlaere „aktuellen Stand als Preset sichern" genau das,
+             * was der Nutzer gerade eingestellt hat. */
+            int[] zweit = zweitAlsFeld(combo);
+            if (zweit != null) map.put(Zweitbelegungen.zweitId(combo.id), zweit);
         }
         presets.put(name, map);
         activePreset = name;
@@ -335,6 +377,78 @@ public final class KeybindOverrides
         }
 
         save();
+    }
+
+    /**
+     * Vom Keybind-Editor gerufen, wenn die ZWEITE Belegung einer Aktion geaendert wurde.
+     * Schreibt sie unter {@code "<id>#2"} ins aktive Preset — oder loescht den Eintrag, wenn
+     * die Zweitbelegung leer ist.
+     *
+     * <p>Bewusst getrennt von {@link #onComboEdited(KeyCombo)}: dessen Schutz gegen den
+     * Datenverlust von 2026-05-08 haengt an {@code defaultKeys}, und fuer eine Zweitbelegung
+     * gibt es keine Werkseinstellung — ihr blosses Dasein IST die Abweichung.</p>
+     */
+    public static synchronized void onZweitbelegungEdited(KeyCombo combo)
+    {
+        if (combo == null || combo.id == null || combo.id.isEmpty()) return;
+
+        Map<String, int[]> active = ensurePresetMap(activePreset);
+        int[] zweit = zweitAlsFeld(combo);
+
+        if (zweit == null)
+        {
+            active.remove(Zweitbelegungen.zweitId(combo.id));
+        }
+        else
+        {
+            active.put(Zweitbelegungen.zweitId(combo.id), zweit);
+        }
+
+        save();
+    }
+
+    /**
+     * Traegt einen Preset-Eintrag ins laufende System ein. Eintraege mit dem Anhang {@code "#2"}
+     * gehen an {@link Zweitbelegungen}, alle anderen an die combo selbst.
+     *
+     * <p>⛔ Unbekannte ids werden STILL uebergangen — genau das laesst eine Datei aus einem
+     * neueren Build in einem aelteren laden, ohne dass jemand etwas verliert. Das war schon
+     * vorher so und bleibt die Abwaertskompatibilitaets-Garantie dieses Formats.</p>
+     */
+    private static boolean anwenden(String id, int[] keys)
+    {
+        if (Zweitbelegungen.istZweitId(id))
+        {
+            KeyCombo primaer = registry.get(Zweitbelegungen.primaerId(id));
+
+            if (primaer == null) return false;
+
+            Zweitbelegungen.setzen(primaer, keys);
+
+            return true;
+        }
+
+        KeyCombo combo = registry.get(id);
+
+        if (combo == null) return false;
+
+        applyKeys(combo, keys);
+
+        return true;
+    }
+
+    /** Die hinterlegte Zweitbelegung als Feld, oder {@code null} wenn es keine gibt.
+     *  UNGESPERRT gelesen — der Schalter darf keine Daten kosten. */
+    private static int[] zweitAlsFeld(KeyCombo combo)
+    {
+        KeyCombo zweit = Zweitbelegungen.hinterlegt(combo);
+
+        if (zweit == null || zweit.keys.isEmpty()) return null;
+
+        int[] arr = new int[zweit.keys.size()];
+        for (int i = 0; i < arr.length; i++) arr[i] = zweit.keys.get(i);
+
+        return arr;
     }
 
     private static Map<String, int[]> ensurePresetMap(String name)
@@ -378,8 +492,8 @@ public final class KeybindOverrides
         /* Always seed PRESET_DEFAULT (empty) and PRESET_LEFT_HAND (the
          *  optimised layout) so they're always available. */
         presets.computeIfAbsent(PRESET_DEFAULT, (k) -> new LinkedHashMap<>());
-        presets.computeIfAbsent(PRESET_LEFT_HAND, (k) -> buildLeftHandLayout());
-        presets.computeIfAbsent(PRESET_LEFT_HAND_MOUSE, (k) -> buildLeftHandMouseLayout());
+        presets.computeIfAbsent(PRESET_LEFT_HAND, (k) -> LinkeHandVorgaben.buildLeftHandLayout());
+        presets.computeIfAbsent(PRESET_LEFT_HAND_MOUSE, (k) -> LinkeHandVorgaben.buildLeftHandMouseLayout());
 
         if (file.exists())
         {
@@ -430,12 +544,7 @@ public final class KeybindOverrides
             int applied = 0;
             for (Map.Entry<String, int[]> e : active.entrySet())
             {
-                KeyCombo c = registry.get(e.getKey());
-                if (c != null)
-                {
-                    applyKeys(c, e.getValue());
-                    applied++;
-                }
+                if (anwenden(e.getKey(), e.getValue())) applied++;
             }
             LOG.info("Applied {} active overrides from preset '{}'", applied, activePreset);
         }
@@ -628,105 +737,5 @@ public final class KeybindOverrides
     {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
-
-    /**
-     * Hardcoded "Left-Hand" preset — the curated optimisation we ship.
-     * Codes are GLFW key constants (lowercase letter codes, F-keys,
-     * 340/341/342 = LSHIFT/LCTRL/LALT, 32 = SPACE).
-     */
-    private static Map<String, int[]> buildLeftHandLayout()
-    {
-        Map<String, int[]> m = new LinkedHashMap<>();
-        m.put("next", new int[]{69});                          /* E */
-        m.put("prev", new int[]{81});                          /* Q */
-        m.put("jump_forward", new int[]{84});                  /* T */
-        m.put("jump_backward", new int[]{82});                 /* R */
-        m.put("next_clip", new int[]{69, 340});                /* Shift+E */
-        m.put("prev_clip", new int[]{81, 340});                /* Shift+Q */
-        m.put("clip_select_after", new int[]{84, 340});        /* Shift+T */
-        m.put("clip_select_before", new int[]{82, 340});       /* Shift+R */
-        m.put("clip_duration", new int[]{71});                 /* G */
-        m.put("clip_enable", new int[]{66});                   /* B */
-        m.put("looping", new int[]{70, 340});                  /* Shift+F */
-        m.put("looping_set_max", new int[]{50});               /* 2 */
-        m.put("looping_set_min", new int[]{49});               /* 1 */
-        m.put("fade_in", new int[]{67, 340});                  /* Shift+C */
-        m.put("fade_out", new int[]{86, 340});                 /* Shift+V */
-        m.put("redo", new int[]{82, 341});                     /* Ctrl+R */
-        m.put("delete", new int[]{88, 342});                   /* Alt+X */
-        m.put("confirm", new int[]{32, 341});                  /* Ctrl+Space */
-        m.put("keybinds", new int[]{298});                     /* F9 — Tab interferes with focus, F9 is rarely used */
-        m.put("keybind_editor", new int[]{298, 340});          /* Shift+F9 */
-        return m;
-    }
-
-    /**
-     * Linke Hand auf der Tastatur, rechte Hand auf der Maus — ohne dass die rechte Hand die
-     * Tastatur anfassen muss.
-     *
-     * <p><b>Warum es dieses zweite Layout gibt.</b> Von den 169 registrierten Keybinds sind
-     * 51 mit der linken Hand in WASD-Ruhelage nicht erreichbar (gemessen 2026-07-28), darunter
-     * die haeufigsten Handgriffe ueberhaupt: {@code insert_frame} lag auf I, und alle vier
-     * Flug-Schwenks lagen auf den Pfeiltasten. Umsortieren allein loest das NICHT — im
-     * erreichbaren Kernbereich haben nur zwei Tasten ueberhaupt keine Solo-Belegung. Deshalb
-     * arbeitet dieses Layout mit drei Hebeln statt mit Umsortieren:</p>
-     *
-     * <ol>
-     *   <li><b>Die Maus war voellig ungenutzt.</b> Kein einziger der 169 Keybinds lag auf einer
-     *       Maustaste. Mouse4/Mouse5 mit Shift und Strg sind sechs Plaetze, die KEINE
-     *       Handbewegung kosten — die wertvollste Flaeche in diesem Setup. Nutzbar erst, seit
-     *       der Keybind-Editor Maustasten annimmt.</li>
-     *   <li><b>Alt + WASD im Flug.</b> Beim Fliegen liegt die Hand ohnehin auf WASD und der
-     *       Daumen auf Alt. Die Pfeiltasten dafuer zu verlassen kostet damit gar nichts.</li>
-     *   <li><b>Kontext traegt mehr als Tastenzahl.</b> BBS ist modal — dieselbe Taste bedeutet
-     *       im Kamera-, Keyframe- und Transform-Editor Verschiedenes. Das ist auch Blenders
-     *       Prinzip und der Grund, warum ein kleiner erreichbarer Tastensatz reicht.</li>
-     * </ol>
-     *
-     * <p>Jede Belegung hier wurde vor dem Eintragen live gegen
-     * {@link #findConflicts(KeyCombo)} geprueft. Seit 2026-07-29 beruecksichtigt diese Pruefung
-     * den Kontext selbst: sie meldet nur noch Ueberschneidungen, die gleichzeitig gelten koennen
-     * (gleiche Kategorie, oder eine der beiden ist {@code all}). Frueher verglich sie quer ueber
-     * alle Kategorien und markierte auch Belegungen rot, die problemlos nebeneinander laufen.</p>
-     */
-    private static Map<String, int[]> buildLeftHandMouseLayout()
-    {
-        /* Auf dem bestehenden Left-Hand-Layout aufsetzen: dessen 22 Belegungen sind unveraendert
-         * gut, sie decken nur zu wenig ab. */
-        Map<String, int[]> m = buildLeftHandLayout();
-
-        /* --- Maus: null Handbewegung, vorher komplett ungenutzt --- */
-        m.put("insert_frame", new int[]{MOUSE_4});              /* Mouse4 — haeufigste Aktion beim Animieren, lag auf I */
-        m.put("toggle_control", new int[]{MOUSE_5});            /* Mouse5 — lag auf H */
-        m.put("toggle_onion_skin", new int[]{MOUSE_4, 340});    /* Shift+Mouse4 — lag auf O */
-        m.put("toggle_motion_path", new int[]{MOUSE_5, 340});   /* Shift+Mouse5 — lag auf M */
-        m.put("prev_replay", new int[]{MOUSE_4, 341});          /* Ctrl+Mouse4 — lag auf Bild-auf */
-        m.put("next_replay", new int[]{MOUSE_5, 341});          /* Ctrl+Mouse5 — lag auf Bild-ab */
-
-        /* --- Flug: lag komplett auf den Pfeiltasten --- */
-        m.put("flight_pan_left", new int[]{65, 342});           /* Alt+A */
-        m.put("flight_pan_right", new int[]{68, 342});          /* Alt+D */
-        m.put("flight_tilt_up", new int[]{87, 342});            /* Alt+W */
-        m.put("flight_tilt_down", new int[]{83, 342});          /* Alt+S */
-
-        /* Weicht fuer flight_pan_left auf Alt+A. Die WASD-Symmetrie im Flug ist mehr wert als
-         * die kurze Belegung eines einzelnen Kamera-Befehls. */
-        m.put("add_at_tick", new int[]{65, 342, 340, 341});     /* Alt+Shift+Strg+A */
-
-        /* --- Keyframe-Arbeit: lag auf [ ] und Pos1 --- */
-        m.put("select_prev", new int[]{90, 342});               /* Alt+Z */
-        m.put("select_next", new int[]{84, 342});               /* Alt+T */
-        m.put("maximize", new int[]{71, 342});                  /* Alt+G */
-
-        /* --- Clip-Ebene: lag auf Alt+Pfeil --- */
-        m.put("clip_layer_up", new int[]{86, 342});             /* Alt+V */
-        m.put("clip_layer_down", new int[]{70, 342});           /* Alt+F */
-
-        return m;
-    }
-
-    /** Maustasten liegen als NEGATIVE Ids in einer {@link KeyCombo}; Mouse4 ist GLFW-Knopf 3. */
-    private static final int MOUSE_4 = -3;
-    private static final int MOUSE_5 = -4;
 
 }

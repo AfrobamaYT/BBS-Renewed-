@@ -265,7 +265,14 @@ public class UIKeybindEditor extends UIOverlayPanel
         reset.w(20).h(20);
         reset.tooltip(IKey.constant("Reset this keybind to default"));
 
-        UIElement row = UI.row(4, label, editor, reset);
+        /* Das zweite Aufnahmefeld. null = Feature ausgeschaltet; dann sieht die Zeile exakt so
+         * aus wie vorher, ohne leeren Platzhalter. */
+        UIKeybind zweit = UIZweitbelegungFeld.bauen(combo, this::rebuild);
+
+        UIElement row = zweit == null
+            ? UI.row(4, label, editor, reset)
+            : UI.row(4, label, editor, zweit, reset);
+
         row.h(20);
         return row;
     }
