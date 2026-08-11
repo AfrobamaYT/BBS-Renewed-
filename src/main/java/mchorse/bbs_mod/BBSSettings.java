@@ -244,6 +244,13 @@ public class BBSSettings {
 	public static ValueBoolean bakeDistanceCulling;
 	public static ValueBoolean bakeArmyBake;
 
+	/** Solid-Vorschau: Modelle in der 3D-Ansicht einfarbig + normalenbeleuchtet zeichnen
+	 *  statt texturiert (Blenders Solid-Modus). Vorgabe AUS, weil es das Aussehen JEDES
+	 *  Modells in der Ansicht aendert. Gelesen von
+	 *  com.afrobama.bbstools.client.solid.SolidVorschau — das prueft zusaetzlich, ob
+	 *  Optimize laeuft und ob gerade exportiert wird. */
+	public static ValueBoolean solidPreview;
+
 	/** Beim replay-posieren nur die markierten knochen aufzeichnen statt des ganzen skeletts. */
 	public static ValueBoolean replayMarkedBonesOnly;
 
@@ -749,6 +756,7 @@ public class BBSSettings {
 		bakeLod = builder.getBoolean("bake_lod", true);
 		bakeDistanceCulling = builder.getBoolean("bake_distance_culling", true);
 		bakeArmyBake = builder.getBoolean("bake_army_bake", false);
+		solidPreview = builder.getBoolean("solid_preview", false);
 		replayMarkedBonesOnly = builder.getBoolean("replay_marked_bones_only", false);
 		jfrAutoRecord = builder.getBoolean("jfr_auto_record", false);
 		debuggerStartAllesAn = builder.getBoolean("debugger_start_alles_an", false);

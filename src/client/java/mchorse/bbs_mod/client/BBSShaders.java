@@ -50,6 +50,19 @@ public class BBSShaders
 
     public static RenderPipeline getModel()
     {
+        /* SOLID-VORSCHAU. Es reicht NICHT, das nur in ModelVAOPipeline.waehlen zu tun:
+         * CubicVAORenderer zeichnet mit GENAU der Pipeline, die diese Methode liefert
+         * (ModelVAORenderer.render(this.pipeline, …)), und FormTranslucentQueue.needsSplit
+         * befragt dieselbe. Saehen die beiden verschiedene Objekte, entschiede die
+         * Warteschlange fuer den einen Shader und gezeichnet wuerde der andere.
+         *
+         * DURCHSICHTIG ist die Variante MIT Culling und MIT Tiefenschreiben — die
+         * Solid-Wahl hier muss dieselben zwei Schalter tragen. */
+        if (com.afrobama.bbstools.client.solid.SolidVorschau.aktiv())
+        {
+            return com.afrobama.bbstools.client.solid.SolidVorschauPipeline.holen(false, true, true);
+        }
+
         return ModelVAOPipeline.DURCHSICHTIG;
     }
 

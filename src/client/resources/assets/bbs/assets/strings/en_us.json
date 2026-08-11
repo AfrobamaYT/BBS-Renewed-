@@ -247,6 +247,8 @@
 	"bbs.config.bbstools.bake_distance_culling-comment": "Skips crowd actors that are too far away to matter for the shot. Lowers the cost of big crowds, at the risk of dropping actors you did want to see",
 	"bbs.config.bbstools.bake_army_bake": "Crowd bake: army bake",
 	"bbs.config.bbstools.bake_army_bake-comment": "Bakes very large formations in one pass instead of actor by actor. Meant for army-sized scenes",
+	"bbs.config.bbstools.solid_preview": "Solid preview (Blender style)",
+	"bbs.config.bbstools.solid_preview-comment": "Draws models in the 3D view as plain shaded clay: one colour lit from the surface normals, no textures at all. Cheaper than the full path, and it switches itself off while a video is exporting, so the finished file is unaffected. Needs the fast path to be on. Note that parts whose outline comes from texture transparency (hair, hat layer, capes) show as full rectangles here, exactly as they would in Blender's solid mode",
 	"bbs.config.bbstools.replay_marked_bones_only": "Record marked bones only",
 	"bbs.config.bbstools.replay_marked_bones_only-comment": "Records keyframes only for bones you marked, instead of the whole skeleton. Keeps recordings small and easier to edit afterwards",
 	"bbs.config.bbstools.jfr_auto_record": "Record a JVM profile from startup",

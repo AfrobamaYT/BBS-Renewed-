@@ -227,6 +227,17 @@ public final class ModelVAOPipeline
      */
     public static RenderPipeline waehlenVerschraenkt(boolean culling, boolean tiefeSchreiben)
     {
+        /* SOLID-VORSCHAU, verschraenkte Familie. ⛔ Diese Stelle DARF NICHT vergessen werden,
+         * wenn waehlen() sie bekommt: ModelInstance.drawImmediate benutzt die Pipeline aus
+         * BBSShaders.getModel NUR fuer die Warteschlangen-Frage und zeichnet dann mit dem
+         * Ergebnis DIESER Methode. Bliebe sie unveraendert, zeichneten Modelle mit Shape-Keys,
+         * Welds oder ohne VAO weiter texturiert, waehrend alle anderen solid werden — ein
+         * halbes Feature, das wie ein Fehler aussaehe. */
+        if (com.afrobama.bbstools.client.solid.SolidVorschau.aktiv())
+        {
+            return com.afrobama.bbstools.client.solid.SolidVorschauPipeline.holen(true, culling, tiefeSchreiben);
+        }
+
         if (tiefeSchreiben)
         {
             return culling ? VERSCHRAENKT_DURCHSICHTIG : VERSCHRAENKT_DURCHSICHTIG_BEIDSEITIG;
@@ -249,6 +260,15 @@ public final class ModelVAOPipeline
      */
     public static RenderPipeline waehlen(boolean culling, boolean tiefeSchreiben)
     {
+        /* SOLID-VORSCHAU: der Darstellungsmodus haengt an der ANSICHT, nicht am Objekt —
+         * darum steht die Entscheidung in der zentralen WAHL und nicht an den Aufrufstellen.
+         * Blender baut es genauso (View3D.shading, das der Renderpfad gar nicht erst liest);
+         * dadurch gibt es hier nichts, was ein Video-Export uebernehmen koennte. */
+        if (com.afrobama.bbstools.client.solid.SolidVorschau.aktiv())
+        {
+            return com.afrobama.bbstools.client.solid.SolidVorschauPipeline.holen(false, culling, tiefeSchreiben);
+        }
+
         if (tiefeSchreiben)
         {
             return culling ? DURCHSICHTIG : DURCHSICHTIG_BEIDSEITIG;
