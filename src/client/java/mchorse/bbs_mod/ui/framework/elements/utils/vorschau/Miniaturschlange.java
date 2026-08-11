@@ -43,10 +43,18 @@ public final class Miniaturschlange
          * neben dem Replay-Namen, um Faktor 2 nach oben links gerutscht. */
         float s = mchorse.bbs_mod.BBSModClient.getGUIScale();
 
-        int px1 = Math.round(x1 * s);
-        int py1 = Math.round(y1 * s);
-        int px2 = Math.round(x2 * s);
-        int py2 = Math.round(y2 * s);
+        /* ⛔ ELEMENTRAUM REIN, GLOBALER RAUM RAUS (2026-08-11 an der laufenden Instanz gemessen).
+         *
+         * Ein Scroll verschiebt den Zeichenraum, nicht die Element-Koordinaten. `Batcher2D#clip`
+         * rechnet deshalb mit `globalX/globalY` um -- `einreihen` bekam die Zelle roh und schnitt
+         * sie gegen genau diesen globalen Schnitt. Sichtbare Mob-Kachel im Morph-Panel:
+         *     roh y=820  global y=70  ->  Kachel 1640..1800 px, Schnitt 140..300 px, verworfen
+         * Bei Scroll 0 fallen beide Raeume zusammen: die erste Reihe stand, alles darunter war
+         * weg (vom Nutzer als "beim Runterscrollen verschwinden die meisten Icons" gemeldet). */
+        int px1 = Math.round(kontext.globalX(x1) * s);
+        int py1 = Math.round(kontext.globalY(y1) * s);
+        int px2 = Math.round(kontext.globalX(x2) * s);
+        int py2 = Math.round(kontext.globalY(y2) * s);
 
         ScreenRectangle flaeche = new ScreenRectangle(px1, py1, px2 - px1, py2 - py1);
 
