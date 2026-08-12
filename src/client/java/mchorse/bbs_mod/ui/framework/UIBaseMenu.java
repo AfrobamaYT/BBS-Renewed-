@@ -248,6 +248,13 @@ public abstract class UIBaseMenu
 
         IUIElement element = this.root.keyPressed(this.context);
 
+        /* bbs.mess: WER hat die taste angenommen — "angenommen=true ohne wirkung" ist sonst
+         * nicht zuzuordnen (Akte 06, G ohne Edit). */
+        if (element != null && mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("key.annahme", "key=" + key + " von=" + element.getClass().getName());
+        }
+
         if (this.root.isEnabled() && element != null)
         {
             return true;
