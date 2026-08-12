@@ -45,6 +45,25 @@ public final class Messpunkt
     }
 
     /**
+     * Welche Pipeline je Modell WIRKLICH ankommt ({@code mi.<id>.welt} / {@code .ui}) —
+     * gerufen aus {@code ModelInstance.render}. Welt und UI getrennt, weil die Einzelheit
+     * den LETZTEN Durchlauf zeigt und die UI-Miniaturen sonst den Weltwert ueberschreiben:
+     * genau diese Verwechslung hat die Solid-Vorschau-Analyse zwei Runden gekostet
+     * (die PIP-Miniatur sah aus wie ein texturiert gebliebenes Szenen-Modell).
+     */
+    public static void modellPipeline(String modellId, Object pipeline)
+    {
+        if (System.getProperty(SCHALTER) == null)
+        {
+            return;
+        }
+
+        String wo = mchorse.bbs_mod.client.BBSRendering.isRenderingWorld() ? ".welt" : ".ui";
+
+        zaehle("mi." + modellId + wo, String.valueOf(pipeline));
+    }
+
+    /**
      * Wie oben, dazu eine Einzelheit, die den LETZTEN Durchlauf beschreibt.
      *
      * <p>Die Einzelheit wird ueberschrieben, nicht gesammelt: bei 60 Bildern je Sekunde

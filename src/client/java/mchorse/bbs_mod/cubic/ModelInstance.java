@@ -645,7 +645,6 @@ public class ModelInstance implements IModelInstance
                         FormTranslucentQueue.PASS_OPAQUE, 0)));
         }
 
-
         Vector3f origin = modelView.transformPosition(stack.last().pose().getTranslation(new Vector3f()));
 
         if (split)
@@ -683,6 +682,7 @@ public class ModelInstance implements IModelInstance
     public void render(PoseStack stack, Supplier<RenderPipeline> program, Color color, int light, int overlay, StencilMap stencilMap, ShapeKeys keys, Function<String, Link> textureResolver)
     {
         RenderPipeline shader = program.get();
+        mchorse.bbs_mod.graphics.Messpunkt.modellPipeline(this.id, shader); /* bbs.mess: kommt-an-pipeline */
 
         if (this.model instanceof Model model)
         {

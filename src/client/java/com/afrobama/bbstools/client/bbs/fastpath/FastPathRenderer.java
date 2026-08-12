@@ -180,8 +180,19 @@ public final class FastPathRenderer
 
         /* Shader. Iris-compat by construction: vanilla MC entity
          * translucent cull program goes through Iris's gbuffers_entities
-         * pipeline. */
-        Supplier<RenderPipeline> shader = () -> RenderPipelines.ENTITY_TRANSLUCENT_CULL;
+         * pipeline.
+         *
+         * SOLID-VORSCHAU (#63): der Schnellpfad waehlt seine Pipeline HIER selbst und lief
+         * damit an der zentralen Wahl (BBSShaders.getModel) vorbei — gemessen blieb die
+         * Menge texturiert, waehrend der volle Weg Clay zeichnete. Die Abfrage steht IM
+         * Supplier (je Zeichenbefehl, wie ueberall sonst), die Wahl ist dieselbe wie in
+         * getModel: Culling an, Tiefe schreiben, DREI-Puffer-Familie — der CubicVAORenderer
+         * darunter bindet die ModelVAO-Puffer 0/1/2. Die gemergten Pfade (Tier2b/2e) zeichnen
+         * derzeit nicht (HALB OFFEN 26.2) und gehoeren beim Wiederbeleben an
+         * SolidVorschauPipeline.holen(true, ...), die ENTITY-Familie. */
+        Supplier<RenderPipeline> shader = () -> com.afrobama.bbstools.client.solid.SolidVorschau.aktiv()
+            ? com.afrobama.bbstools.client.solid.SolidVorschauPipeline.holen(false, true, true)
+            : RenderPipelines.ENTITY_TRANSLUCENT_CULL;
 
         /* Build matrix stack from snapshot. Re-apply the 180° Y rotation
          * that vanilla does inside render3D line 625. */
