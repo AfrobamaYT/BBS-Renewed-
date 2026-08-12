@@ -1849,5 +1849,7 @@
 	"studio.ui.utility.resize": "Resize window",
 	"studio.ui.utility.title": "Utility panel",
 	"bbs.ui.command_palette.title": "Commands",
-	"bbs.ui.keys.command_palette": "Command palette"
+	"bbs.ui.keys.command_palette": "Command palette",
+	"bbs.ui.script_console.title": "Script console",
+	"bbs.ui.keys.script_console": "Script console"
 }

@@ -16,6 +16,7 @@ public class Keys
     public static final KeyCombo NEXT = new KeyCombo("next", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_NEXT, GLFW.GLFW_KEY_RIGHT).repeatable();
     public static final KeyCombo PLAUSE = new KeyCombo("plause", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, GLFW.GLFW_KEY_SPACE);
     public static final KeyCombo BEFEHLS_PALETTE = new KeyCombo("command_palette", L10n.lang("bbs.ui.keys.command_palette"), GLFW.GLFW_KEY_P, GLFW.GLFW_KEY_LEFT_CONTROL);
+    public static final KeyCombo SKRIPT_KONSOLE = new KeyCombo("script_console", L10n.lang("bbs.ui.keys.script_console"), GLFW.GLFW_KEY_J, GLFW.GLFW_KEY_LEFT_CONTROL);
     public static final KeyCombo PREV = new KeyCombo("prev", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PREV, GLFW.GLFW_KEY_LEFT).repeatable();
     public static final KeyCombo REDO = new KeyCombo("redo", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_REDO, GLFW.GLFW_KEY_Y, GLFW.GLFW_KEY_LEFT_CONTROL);
     public static final KeyCombo UNDO = new KeyCombo("undo", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_UNDO, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_LEFT_CONTROL);

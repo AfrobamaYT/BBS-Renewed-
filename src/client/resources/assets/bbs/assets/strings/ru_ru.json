@@ -1690,5 +1690,7 @@
 	"studio.ui.utility.resize": "Изменить размер окна",
 	"studio.ui.utility.title": "Панель утилит",
 	"bbs.ui.command_palette.title": "Команды",
-	"bbs.ui.keys.command_palette": "Палитра команд"
+	"bbs.ui.keys.command_palette": "Палитра команд",
+	"bbs.ui.script_console.title": "Консоль скриптов",
+	"bbs.ui.keys.script_console": "Консоль скриптов"
 }
