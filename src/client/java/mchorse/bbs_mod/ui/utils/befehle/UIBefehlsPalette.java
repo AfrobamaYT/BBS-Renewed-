@@ -1,6 +1,5 @@
 package mchorse.bbs_mod.ui.utils.befehle;
 
-import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.IUIElement;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -8,27 +7,44 @@ import mchorse.bbs_mod.ui.framework.elements.input.list.UIStringList;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
+import mchorse.bbs_mod.ui.utils.context.ContextAction;
+import mchorse.bbs_mod.ui.utils.context.ContextMenuManager;
 import mchorse.bbs_mod.ui.utils.keys.Keybind;
 
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
- * Befehls-Palette (P8a): erntet beim Oeffnen alle AKTIVEN Keybinds des laufenden
- * UI-Baums — der Baum selbst ist die Registry, es gibt keine tote Kopie daneben.
- * Kontextsensitiv wie Blenders Menue-Suche: was gerade nicht gilt, erscheint nicht.
+ * Befehls-Palette (P8a): erntet beim Oeffnen alle AKTIVEN Keybinds und alle
+ * Kontextmenue-Actions des laufenden UI-Baums — der Baum selbst ist die
+ * Registry, es gibt keine tote Kopie daneben. Kontextsensitiv wie Blenders
+ * Menue-Suche: was gerade nicht gilt, erscheint nicht.
  *
- * <p>v1-Bedienung: Tippen + Enter filtert; Enter bei unveraendertem Text (oder
- * Doppel-Enter) fuehrt den ersten Treffer aus, Klick in der Liste den gewaehlten.</p>
+ * <p>Kontext-Ernte: je sichtbarem Element werden seine context()-Consumer
+ * gegen einen frischen {@link ContextMenuManager} gefahren und die Actions
+ * eingesammelt, ohne ein Menue zu zeigen. Elemente, die stattdessen
+ * createContextMenu() ueberschreiben oder einen Supplier setzen, sieht die
+ * Ernte nicht (v1).</p>
+ *
+ * <p>v1-Bedienung: Tippen + Enter filtert; Enter bei unveraendertem Text
+ * (oder Doppel-Enter) fuehrt den ersten Treffer aus, Klick den gewaehlten.</p>
  */
 public class UIBefehlsPalette extends UIOverlayPanel
 {
+    /* ⚠ FALLE — UIElement.contextOptions ist privat; der Monolith (1089 Z.)
+     * bekommt fuer die Ernte keinen Getter. Schlaegt die Reflection fehl
+     * (Umbenennung!), wird das als Zeile IN der Palette sichtbar — nie still. */
+    private static Field CONTEXT_OPTIONS;
+    private static String REFLECTION_FEHLER;
+
     private final UITextbox suche;
     private final UIStringList liste;
-    private final List<Keybind> alle = new ArrayList<>();
-    private final List<Keybind> gefiltert = new ArrayList<>();
+    private final List<PalettenBefehl> alle = new ArrayList<>();
+    private final List<PalettenBefehl> gefiltert = new ArrayList<>();
     private String letzteSuche = "";
 
     public static void oeffnen(UIContext context)
@@ -52,7 +68,7 @@ public class UIBefehlsPalette extends UIOverlayPanel
         this.filter("");
     }
 
-    /** Der UI-Baum ist die Quelle: alle aktiven Keybinds unterhalb der Wurzel. */
+    /** Der UI-Baum ist die Quelle: aktive Keybinds + Kontext-Actions unterhalb der Wurzel. */
     private void sammle(UIElement wurzel)
     {
         Deque<UIElement> stapel = new ArrayDeque<>();
@@ -67,8 +83,13 @@ public class UIBefehlsPalette extends UIOverlayPanel
             {
                 if (keybind.isActive())
                 {
-                    this.alle.add(keybind);
+                    this.alle.add(new PalettenBefehl(zeileKeybind(keybind), keybind.callback));
                 }
+            }
+
+            if (element.isVisible())
+            {
+                this.sammleKontext(element);
             }
 
             for (IUIElement kind : element.getChildren())
@@ -79,9 +100,86 @@ public class UIBefehlsPalette extends UIOverlayPanel
                 }
             }
         }
+
+        if (REFLECTION_FEHLER != null)
+        {
+            this.alle.add(new PalettenBefehl("⚠ " + REFLECTION_FEHLER, null));
+        }
     }
 
-    private String zeile(Keybind keybind)
+    /** Faehrt die context()-Consumer des Elements gegen einen frischen Manager und erntet die Actions. */
+    private void sammleKontext(UIElement element)
+    {
+        List<Consumer<ContextMenuManager>> optionen = contextOptionen(element);
+
+        if (optionen == null)
+        {
+            return;
+        }
+
+        ContextMenuManager manager = new ContextMenuManager();
+
+        try
+        {
+            for (Consumer<ContextMenuManager> consumer : optionen)
+            {
+                consumer.accept(manager);
+            }
+        }
+        catch (Throwable t)
+        {
+            /* Builder duerfen vom Maus-/Auswahlzustand abhaengen — ohne echten
+             * Rechtsklick darf so einer scheitern; geerntet wird, was er bis
+             * dahin eingetragen hat. */
+        }
+
+        String quelle = kurzname(element);
+
+        for (ContextAction action : manager.actions)
+        {
+            if (action.runnable != null && action.label != null)
+            {
+                /* " · " wie bei den Keybind-Zeilen — "▸" hat im Bitmap-Font kein Glyph. */
+                this.alle.add(new PalettenBefehl(quelle + " · " + action.label.get(), action.runnable));
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Consumer<ContextMenuManager>> contextOptionen(UIElement element)
+    {
+        try
+        {
+            if (CONTEXT_OPTIONS == null)
+            {
+                CONTEXT_OPTIONS = UIElement.class.getDeclaredField("contextOptions");
+                CONTEXT_OPTIONS.setAccessible(true);
+            }
+
+            return (List<Consumer<ContextMenuManager>>) CONTEXT_OPTIONS.get(element);
+        }
+        catch (Throwable t)
+        {
+            REFLECTION_FEHLER = "context harvest broken: " + t;
+
+            return null;
+        }
+    }
+
+    /** Anonyme Klassen haben keinen SimpleName — dann traegt die naechste benannte Oberklasse. */
+    private static String kurzname(UIElement element)
+    {
+        Class<?> klasse = element.getClass();
+
+        while (klasse.getSimpleName().isEmpty() && klasse.getSuperclass() != null)
+        {
+            klasse = klasse.getSuperclass();
+        }
+
+        return klasse.getSimpleName().replaceFirst("^UI", "");
+    }
+
+    private static String zeileKeybind(Keybind keybind)
     {
         String kategorie = keybind.getCombo().category.get();
         String label = keybind.getCombo().label.get();
@@ -98,12 +196,12 @@ public class UIBefehlsPalette extends UIOverlayPanel
         this.gefiltert.clear();
         this.liste.clear();
 
-        for (Keybind keybind : this.alle)
+        for (PalettenBefehl befehl : this.alle)
         {
-            if (klein.isEmpty() || this.zeile(keybind).toLowerCase().contains(klein))
+            if (klein.isEmpty() || befehl.zeile.toLowerCase().contains(klein))
             {
-                this.gefiltert.add(keybind);
-                this.liste.add(this.zeile(keybind));
+                this.gefiltert.add(befehl);
+                this.liste.add(befehl.zeile);
             }
         }
 
@@ -136,9 +234,14 @@ public class UIBefehlsPalette extends UIOverlayPanel
             return;
         }
 
-        Keybind keybind = this.gefiltert.get(index);
+        PalettenBefehl befehl = this.gefiltert.get(index);
+
+        if (befehl.lauf == null)
+        {
+            return;
+        }
 
         this.close();
-        keybind.callback.run();
+        befehl.lauf.run();
     }
 }
