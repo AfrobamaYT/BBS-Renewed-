@@ -2,6 +2,8 @@ package mchorse.bbs_mod.ui.framework.elements.input;
 
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformStraehne;
+import mchorse.bbs_mod.ui.framework.elements.input.drag.TransformZeiger;
 
 /**
  * Klick- und Rad-Weiche waehrend einer laufenden Transform-Bearbeitung. Haengt in
@@ -86,5 +88,52 @@ public class UITransformHandler extends UIElement
         UITrackpad.updateAmplifier(context);
 
         return true;
+    }
+
+    /** Der Handler haengt ohne Layout im Overlay (area 0x0) — das Viewport-Culling in
+     *  UIElement wuerde sein render sonst NIE rufen (gemessen: handler.render-Fuehler 0,
+     *  waehrend Maus/Tasten ankamen; Events laufen ohne dieses Culling). */
+    @Override
+    public boolean canBeRendered(mchorse.bbs_mod.ui.utils.Area viewport)
+    {
+        return true;
+    }
+
+    /** disable() haengt den Handler hierueber aus — Cursor und Voransicht MUESSEN dabei
+     *  zurueck, sonst ueberlebt ein Hardware-Cursor die Bearbeitung. */
+    @Override
+    public void removeFromParent()
+    {
+        super.removeFromParent();
+
+        TransformZeiger.zuruecksetzen();
+        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(false);
+    }
+
+    @Override
+    public void render(UIContext context)
+    {
+        super.render(context);
+
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("handler.render");
+
+        /* Blenders Transform-Rueckmeldung (Akte 07). Der Handler ist NUR waehrend einer
+         * Bearbeitung im Baum — Cursor und Voransicht werden je Bild auf den Ist-Zustand
+         * gesetzt und in disable()/removeFromParent ueber den Transform zurueckgenommen. */
+        boolean an = mchorse.bbs_mod.BBSSettings.transformBlenderFeedback.get();
+        boolean editing = this.transform.isEditing();
+
+        TransformZeiger.setzen(an && editing ? this.transform.getOp() : null);
+        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(editing && this.transform.middleAxis.istWaehlend());
+
+        if (an && editing)
+        {
+            /* Derselbe Schnappschuss wie bei der Achsenwahl: ungefiltert, ueberlebt einen
+             * unprojizierbaren Ursprung (dann bleibt die Straehne einfach weg). */
+            java.util.function.Supplier<mchorse.bbs_mod.ui.utils.GizmoDrag> pick = this.transform.axisPickDragSupplier;
+            mchorse.bbs_mod.ui.utils.GizmoDrag zug = pick != null ? pick.get() : this.transform.drag;
+
+            TransformStraehne.zeichnen(context, this.transform, zug != null ? zug : this.transform.drag);
+        }
     }
 }

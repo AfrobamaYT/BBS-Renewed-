@@ -69,6 +69,9 @@ public class BBSSettings {
 	public static ValueBoolean transformHotkeys3dRay;
 	public static ValueBoolean transformHotkeysWhileControlling;
 	public static ValueBoolean transformMiddleClickAxis;
+	/* Blenders Transform-Rueckmeldung (Akte 07): Cursor je Modus, gestrichelte Straehne
+	 * zum Ursprung, dicke Achsenlinien + Drei-Achsen-Voransicht beim Mittelklick. */
+	public static ValueBoolean transformBlenderFeedback;
 	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
@@ -596,6 +599,7 @@ public class BBSSettings {
 		transformHotkeys3dRay = builder.getBoolean("hotkeys_3d_ray", true);
 		transformHotkeysWhileControlling = builder.getBoolean("hotkeys_while_controlling", true);
 		transformMiddleClickAxis = builder.getBoolean("middle_click_axis", true);
+		transformBlenderFeedback = builder.getBoolean("blender_feedback", true);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();

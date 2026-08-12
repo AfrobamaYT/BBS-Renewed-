@@ -107,12 +107,12 @@ public class UIPropTransform extends UITransform
     private boolean quatFields;
 
     /** Drag snapshot the active gesture works against (kept for the gizmo's pie preview). */
-    private GizmoDrag drag;
+    GizmoDrag drag;
     private boolean hotkeyMode;
     private Supplier<GizmoDrag> hotkeyDragSupplier;
 
     /** Drag snapshot the middle-click axis pick measures against — see {@link #axisPickDrag}. */
-    private Supplier<GizmoDrag> axisPickDragSupplier;
+    Supplier<GizmoDrag> axisPickDragSupplier;
 
     /** Whether the edited bone's rotation is owned by an enabled IK chain
      *  (wired by hosts that have an IK concept; see {@link #rotationConstrained}). */

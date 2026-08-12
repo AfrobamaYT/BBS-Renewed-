@@ -929,45 +929,12 @@ public class Gizmo
             debugIndex = this.currentTransform.getDebugLineStencilIndex();
         }
 
-        if (debugIndex < STENCIL_X || debugIndex > STENCIL_ZY)
-        {
-            return;
-        }
-
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
-        {
-            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-            float size = 10000F;
-            float t = 0.005F;
-
-            if (debugIndex == STENCIL_X || debugIndex == STENCIL_XZ || debugIndex == STENCIL_XY)
-            {
-                Draw.fillBox(builder, stack, -size, -t, -t, size, t, t, Colors.RED);
-            }
-
-            if (debugIndex == STENCIL_Y || debugIndex == STENCIL_XY || debugIndex == STENCIL_ZY)
-            {
-                Draw.fillBox(builder, stack, -t, -size, -t, t, size, t, Colors.GREEN);
-            }
-
-            if (debugIndex == STENCIL_Z || debugIndex == STENCIL_XZ || debugIndex == STENCIL_ZY)
-            {
-                Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, Colors.BLUE);
-            }
-
-            /* depthFunc(GL_ALWAYS) und die Wiederherstellung auf GL_LEQUAL entfallen:
-             * "keine Tiefenpruefung" steht jetzt in der Pipeline (und heisst dort auch
-             * kein Tiefenschreiben — die Linie darf keine Wand vor das Folgende legen).
-             * Der globale Vergleich bleibt damit auf dem Wert, den drawOccludedGizmo
-             * hinterlaesst, also demselben wie vorher nach dieser Methode. */
-            mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3");
-            GizmoZug.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, true),
-                builder.build(),
-                RenderSystem.getModelViewMatrixCopy(),
-                null);
-        }
+        /* Rumpf nach GizmoAchsenLinien herausgeloest (diese Datei darf nur schrumpfen);
+         * dort sitzt auch Akte 07: blender-dicke Linien + MMB-Voransicht aller drei Achsen.
+         * Der fruehe return fuer "kein Index" ist mitgewandert — die Voransicht muss auch
+         * ohne gesperrte Achse zeichnen. */
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3");
+        GizmoAchsenLinien.zeichnen(stack, debugIndex, this.getAxesDistanceScale(stack));
     }
 
     void updateVbos()
