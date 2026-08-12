@@ -73,9 +73,10 @@ public class BBSSettings {
 	public static ValueBoolean transformBlenderFeedback;
 	/** #65: IK-Ketten aus der Modelldatei (arm_ik) fuellen leere form.ik-Configs. */
 	public static ValueBoolean modelEmbeddedIk;
-	/** P1 Vektorschrift (FreeType) · P2 weiche Flaechen (Rundeck + AA-Saum). */
+	/** P1 Vektorschrift · P2 weiche Flaechen · P3 Vektor-Icon-Atlanten. */
 	public static ValueBoolean fontVector;
 	public static ValueBoolean vectorUi;
+	public static ValueBoolean vectorIcons;
 	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
@@ -149,12 +150,10 @@ public class BBSSettings {
 	public static ValueBoolean editorSeconds;
 	public static ValueBoolean editorTimelineGrid;
 	public static ValueInt editorPeriodicSave;
-	/* Persistentes Undo: Historie ueberlebt Neustart und Absturz. Gelesen von
-	 * com.afrobama.bbstools.client.ui.undo.UndoPersistence. */
+	/* Persistentes Undo (ueberlebt Neustart/Absturz) — gelesen von bbstools UndoPersistence. */
 	public static ValueBoolean editorPersistentUndo;
 	public static ValueInt editorPersistentUndoLimit;
-	/* Bei gleicher haupttaste gewinnt die bindung mit den meisten modifiern.
-	 * Gelesen von mchorse.bbs_mod.ui.utils.keys.Keybind. */
+	/* Bei gleicher haupttaste gewinnt die bindung mit den meisten modifiern (Keybind). */
 	public static ValueBoolean editorKeybindSpecificWins;
 	/* Jede aktion darf eine ZWEITE, alternative belegung haben (z.b. eine fuer die linke hand,
 	 * eine fuer die maus). Gelesen von mchorse.bbs_mod.ui.utils.keys.Zweitbelegungen.
@@ -605,6 +604,7 @@ public class BBSSettings {
 		modelEmbeddedIk = builder.getBoolean("model_embedded_ik", true);
 		fontVector = builder.getBoolean("vector_font", false);
 		vectorUi = builder.getBoolean("vector_ui", false);
+		vectorIcons = builder.getBoolean("vector_icons", false);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();

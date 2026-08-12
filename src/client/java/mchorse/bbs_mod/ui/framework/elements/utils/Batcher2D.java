@@ -46,11 +46,8 @@ public class Batcher2D
     private GuiGraphicsExtractor context;
     private FontRenderer font;
 
-    /**
-     * Mirror of the extractor's private scissor stack — every {@link GuiElementRenderState}
-     * must name its clip rect, and {@link #clip}/{@link #unclip} are BBS' only entry points,
-     * so the same push/pop is tracked here. {@code null} = no clipping.
-     */
+    /** Mirror of the extractor's private scissor stack ({@link #clip}/{@link #unclip} sind
+     *  BBS' einzige Eintritte); {@code null} = kein Clipping. */
     private final Deque<ScreenRectangle> scissors = new ArrayDeque<>();
 
     /**
@@ -482,6 +479,10 @@ public class Batcher2D
             return;
         }
 
+        /* P3: neugezeichnete Icons kommen aus dem skalenreinen Vektor-Atlas. */
+        icon = mchorse.bbs_mod.ui.utils.icons.VektorIcons.ersetze(icon,
+            Math.round((float) Minecraft.getInstance().getWindow().getGuiScale()));
+
         if (BBSSettings.isLightTheme())
         {
             color = darkenWhite(color);
@@ -696,9 +697,7 @@ public class Batcher2D
         this.textCard(text, x, y, Colors.WHITE, Colors.A50);
     }
 
-    /**
-     * In this context, text card is a text with some background behind it
-     */
+    /** Text mit Hintergrund-Karte. */
     public void textCard(String text, float x, float y, int color, int background)
     {
         this.textCard(text, x, y, color, background, 3);
