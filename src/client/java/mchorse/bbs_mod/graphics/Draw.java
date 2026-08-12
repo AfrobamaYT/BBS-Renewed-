@@ -244,9 +244,15 @@ public class Draw
              * RenderSystem.disableDepthTest(), damit die Achsen durch das Modell zu sehen
              * sind (ModelBlockEntityRenderer verlaesst sich darauf: "der bringt seinen
              * Tiefenzustand ebenfalls selbst mit"). Kein Mischen, die Achsenfarben sind
-             * undurchsichtig. Cull JA wie im Weltzustand. */
+             * undurchsichtig.
+             *
+             * ⛔ CULL NEIN, und das ist GEMESSEN (2026-08-12): mit Cull verwirft 26.2
+             * SAEMTLICHE fillBox-Flaechen dieses Helfers als Rueckseiten — Orbit-Marker und
+             * Entity-Achsen waren komplett unsichtbar, waehrend der wortgleiche Zug mit
+             * Cull aus zeichnet (Gegenprobe MotionPath, gleiche Pipeline-Familie, cull=false,
+             * sichtbar). Die Boxen sind geschlossen; von aussen aendert Cull nichts am Bild. */
             SofortZeichner.zeichnen(
-                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, true),
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, false, false),
                 builder.build(),
                 RenderSystem.getModelViewMatrixCopy(),
                 null,
