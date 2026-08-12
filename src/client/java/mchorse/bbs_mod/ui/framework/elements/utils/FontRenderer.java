@@ -86,6 +86,13 @@ public class FontRenderer
 
     public int getWidth(String string)
     {
+        /* P1 Vektor-Text: Mass und Bild MUESSEN aus derselben Quelle kommen, sonst
+         * reissen Layouts (Kritikwelle, Szenario 1). */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
+        {
+            return mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().breite(string);
+        }
+
         return this.renderer.width(string);
     }
 
@@ -118,12 +125,12 @@ public class FontRenderer
             return str;
         }
 
-        int sw = this.renderer.width(suffix);
+        int sw = this.getWidth(suffix);
         int i = str.length() - 1;
 
         while (w + sw >= width && i > 0)
         {
-            w -= this.renderer.width(String.valueOf(str.charAt(i)));
+            w -= this.getWidth(String.valueOf(str.charAt(i)));
             i -= 1;
         }
 

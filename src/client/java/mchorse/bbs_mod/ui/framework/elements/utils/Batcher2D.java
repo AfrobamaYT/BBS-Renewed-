@@ -32,17 +32,12 @@ import java.util.function.Supplier;
 import mchorse.bbs_mod.mixin.client.GuiGraphicsExtractorAccessor;
 
 /**
- * BBS' own 2D drawing.
+ * BBS' own 2D drawing. MC 26.2 draws the GUI in TWO phases: {@link GuiGraphicsExtractor}
+ * only appends {@link GuiElementRenderState}s to a {@link GuiRenderState}, batched later by
+ * {@code GuiRenderer.render()} — no immediate mode, no {@code flush()}.
  *
- * <p>MC 26.2 draws the GUI in TWO phases: {@link GuiGraphicsExtractor} draws nothing, it
- * appends elements to a {@link GuiRenderState}, and {@code GuiRenderer.render()} walks that
- * list afterwards and batches it. So every draw call here builds a
- * {@link GuiElementRenderState} and enqueues it — there is no immediate mode and no
- * {@code flush()} any more.
- *
- * <p>Trap this class exists to avoid: swapping {@code GuiGraphicsExtractor} for
- * {@code GuiGraphicsExtractor} name-for-name compiles cleanly and draws NOTHING, because the
- * old Tesselator/BufferUploader path writes into a GL state that nobody submits.
+ * <p>Trap this class exists to avoid: a name-for-name swap to the old Tesselator/
+ * BufferUploader path compiles cleanly and draws NOTHING (GL state nobody submits).</p>
  */
 public class Batcher2D
 {
@@ -61,17 +56,10 @@ public class Batcher2D
     private final Deque<ScreenRectangle> scissors = new ArrayDeque<>();
 
     /**
-     * BBS' dreidimensionaler Stapel innerhalb der Oberflaeche.
-     *
-     * <p>Bis 1.21.1 gab {@code GuiGraphics.pose()} einen {@link PoseStack} zurueck, und BBS
-     * hat ihn fuer alles benutzt, was in der Oberflaeche RAEUMLICH zeichnet: Modell-Vorschau,
-     * Form-Editoren, Item- und Blockvorschauen, Partikel-Vorschau. In 26.2 ist daraus ein
-     * {@link org.joml.Matrix3x2fStack} geworden — reine Flaeche, keine Tiefe, keine Normalen.
-     *
-     * <p>Der Ersatz steht darum hier: ein eigener {@link PoseStack}, dessen unterste Ebene
-     * die AKTUELLE 2D-Transformation der Oberflaeche als 4×4-Matrix traegt. Damit landet ein
-     * Modell weiterhin dort, wo das Element gerade steht — Elementversatz, Verschiebung durch
-     * Bildlauf und Skalierung wandern unveraendert mit.
+     * BBS' raeumlicher Stapel in der Oberflaeche. 26.2 machte aus {@code GuiGraphics.pose()}
+     * einen {@link org.joml.Matrix3x2fStack} (Flaeche ohne Tiefe/Normalen) — dieser eigene
+     * {@link PoseStack} traegt die AKTUELLE 2D-Transformation als 4×4-Basis, damit
+     * Modell-/Form-/Item-Vorschauen weiter am Elementversatz (+Scroll/Skalierung) haengen.
      */
     private final PoseStack stapel = new PoseStack();
 
@@ -663,6 +651,14 @@ public class Batcher2D
         if (Colors.getA(color) <= 0F)
         {
             color = Colors.opaque(color);
+        }
+
+        /* P1 Vektor-Text: DER Trichter — alle 128 text()-Aufrufstellen laufen hier durch. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(label))
+        {
+            mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().zeichne(this, label, x, y, color, shadow);
+
+            return;
         }
 
         /* 26.2: GuiGraphicsExtractor.drawString -> GuiGraphicsExtractor.text; the trailing
