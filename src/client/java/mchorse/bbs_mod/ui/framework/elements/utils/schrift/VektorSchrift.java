@@ -78,7 +78,9 @@ public final class VektorSchrift
     {
         byte[] bytes;
 
-        try (InputStream stream = BBSMod.getProvider().getAsset(Link.assets("fonts/vazirmatn-regular.ttf")))
+        /* Hausschrift: Inter (OFL, Lizenz liegt daneben) — Variable-Font, dessen
+         * Default-Instanz Regular ist; weitere Schnitte kommen spaeter ueber die Achsen. */
+        try (InputStream stream = BBSMod.getProvider().getAsset(Link.assets("fonts/inter-variable.ttf")))
         {
             bytes = stream.readAllBytes();
         }
