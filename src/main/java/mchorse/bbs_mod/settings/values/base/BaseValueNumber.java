@@ -9,6 +9,11 @@ public abstract class BaseValueNumber <T extends Number> extends BaseKeyframeFac
 
     protected boolean slider;
 
+    /* Drag-Metadaten fuer generierte Widgets (P8c): gehoeren zur DEFINITION der
+     * Property wie min/max, nicht in jedes Panel. null = Widget-Default. */
+    protected float[] dragWerte;
+    protected Double dragIncrement;
+
     public BaseValueNumber(String id, IKeyframeFactory<T> factory, T defaultValue, T min, T max)
     {
         super(id, factory, defaultValue);
@@ -43,6 +48,36 @@ public abstract class BaseValueNumber <T extends Number> extends BaseKeyframeFac
         this.slider = true;
 
         return this;
+    }
+
+    /** Drag-Skalen des Feldes: normal, fein (Shift), grob (Ctrl). */
+    public BaseValueNumber<T> dragWerte(float normal, float fein, float grob)
+    {
+        this.dragWerte = new float[] {normal, fein, grob};
+
+        return this;
+    }
+
+    public BaseValueNumber<T> dragWerte(float normal)
+    {
+        return this.dragWerte(normal, normal / 5F, normal * 5F);
+    }
+
+    public BaseValueNumber<T> dragIncrement(double increment)
+    {
+        this.dragIncrement = increment;
+
+        return this;
+    }
+
+    public float[] getDragWerte()
+    {
+        return this.dragWerte;
+    }
+
+    public Double getDragIncrement()
+    {
+        return this.dragIncrement;
     }
 
     @Override

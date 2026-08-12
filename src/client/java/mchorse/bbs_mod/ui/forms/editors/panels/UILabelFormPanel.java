@@ -2,6 +2,7 @@ package mchorse.bbs_mod.ui.forms.editors.panels;
 
 import mchorse.bbs_mod.forms.forms.LabelForm;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.forms.editors.UIFormPropFactory;
 import mchorse.bbs_mod.ui.forms.editors.forms.UIForm;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
@@ -9,10 +10,16 @@ import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.input.text.UITextbox;
 import mchorse.bbs_mod.ui.utils.UIConstants;
 import mchorse.bbs_mod.ui.utils.UI;
-import mchorse.bbs_mod.utils.colors.Color;
 
+/**
+ * P8c-Pilot: die Widgets kommen aus {@link UIFormPropFactory} — Verdrahtung,
+ * Range, Drag-Feinheit und startEdit-Sync stecken in der Value-Definition
+ * ({@link LabelForm}) bzw. der Factory; hier steht nur noch Layout.
+ */
 public class UILabelFormPanel extends UIFormPanel<LabelForm>
 {
+    private final UIFormPropFactory props = new UIFormPropFactory();
+
     public UITextbox text;
     public UIToggle billboard;
     public UIColor color;
@@ -32,25 +39,20 @@ public class UILabelFormPanel extends UIFormPanel<LabelForm>
     {
         super(editor);
 
-        this.text = new UITextbox(10000, (t) -> this.form.text.set(t));
-        this.billboard = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_TITLE, (b) -> this.form.billboard.set(b.getValue()));
-        this.color = new UIColor((c) -> this.form.color.set(Color.rgba(c))).withAlpha();
-        this.max = new UITrackpad((value) -> this.form.max.set(value.intValue()));
-        this.max.limit(-1, Integer.MAX_VALUE, true).increment(10);
-        this.anchorX = new UITrackpad((value) -> this.form.anchorX.set(value.floatValue()));
-        this.anchorX.values(0.01F);
-        this.anchorY = new UITrackpad((value) -> this.form.anchorY.set(value.floatValue()));
-        this.anchorY.values(0.01F);
-        this.anchorLines = new UIToggle(UIKeys.FORMS_EDITORS_LABEL_ANCHOR_LINES, (value) -> this.form.anchorLines.set(value.getValue()));
+        this.text = this.props.text(() -> this.form.text);
+        this.billboard = this.props.toggle(UIKeys.FORMS_EDITORS_BILLBOARD_TITLE, () -> this.form.billboard);
+        this.color = this.props.color(() -> this.form.color);
+        this.max = this.props.zahl(() -> this.form.max);
+        this.anchorX = this.props.zahl(() -> this.form.anchorX);
+        this.anchorY = this.props.zahl(() -> this.form.anchorY);
+        this.anchorLines = this.props.toggle(UIKeys.FORMS_EDITORS_LABEL_ANCHOR_LINES, () -> this.form.anchorLines);
 
-        this.shadowX = new UITrackpad((value) -> this.form.shadowX.set(value.floatValue()));
-        this.shadowX.limit(-100, 100).values(0.1F, 0.01F, 0.5F).increment(0.1F);
-        this.shadowY = new UITrackpad((value) -> this.form.shadowY.set(value.floatValue()));
-        this.shadowY.limit(-100, 100).values(0.1F, 0.01F, 0.5F).increment(0.1F);
-        this.shadowColor = new UIColor((value) -> this.form.shadowColor.set(Color.rgba(value))).withAlpha();
+        this.shadowX = this.props.zahl(() -> this.form.shadowX);
+        this.shadowY = this.props.zahl(() -> this.form.shadowY);
+        this.shadowColor = this.props.color(() -> this.form.shadowColor);
 
-        this.background = new UIColor((value) -> this.form.background.set(Color.rgba(value))).withAlpha();
-        this.offset = new UITrackpad((value) -> this.form.offset.set(value.floatValue()));
+        this.background = this.props.color(() -> this.form.background);
+        this.offset = this.props.zahl(() -> this.form.offset);
 
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_LABEL_LABEL), this.text, this.billboard, this.color, this.max);
 
@@ -65,20 +67,7 @@ public class UILabelFormPanel extends UIFormPanel<LabelForm>
     {
         super.startEdit(form);
 
-        this.text.setText(form.text.get());
-        this.billboard.setValue(form.billboard.get());
-        this.color.setColor(form.color.get().getARGBColor());
-        this.max.setValue(form.max.get());
-        this.anchorX.setValue(form.anchorX.get());
-        this.anchorY.setValue(form.anchorY.get());
-        this.anchorLines.setValue(form.anchorLines.get());
-
-        this.shadowX.setValue(form.shadowX.get());
-        this.shadowY.setValue(form.shadowY.get());
-        this.shadowColor.setColor(form.shadowColor.get().getARGBColor());
-
-        this.background.setColor(form.background.get().getARGBColor());
-        this.offset.setValue(form.offset.get());
+        this.props.sync();
     }
 
     @Override

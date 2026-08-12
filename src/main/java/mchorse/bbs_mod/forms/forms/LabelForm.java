@@ -14,14 +14,14 @@ public class LabelForm extends Form
     public final ValueBoolean nametag = new ValueBoolean("nametag", false);
     public final ValueColor color = new ValueColor("color", Color.white());
 
-    public final ValueInt max = new ValueInt("max", -1);
+    public final ValueInt max = new ValueInt("max", -1, -1, Integer.MAX_VALUE);
     public final ValueFloat anchorX = new ValueFloat("anchorX", 0.5F);
     public final ValueFloat anchorY = new ValueFloat("anchorY", 0.5F);
     public final ValueBoolean anchorLines = new ValueBoolean("anchorLines", false);
 
     /* Shadow properties */
-    public final ValueFloat shadowX = new ValueFloat("shadowX", 1F);
-    public final ValueFloat shadowY = new ValueFloat("shadowY", 1F);
+    public final ValueFloat shadowX = new ValueFloat("shadowX", 1F, -100F, 100F);
+    public final ValueFloat shadowY = new ValueFloat("shadowY", 1F, -100F, 100F);
     public final ValueColor shadowColor = new ValueColor("shadowColor", new Color(0, 0, 0, 0));
 
     /* Background */
@@ -56,6 +56,14 @@ public class LabelForm extends Form
     public LabelForm()
     {
         super();
+
+        /* Drag-Feinheit gehoert zur Property-Definition (P8c) — Panels lesen sie,
+         * statt sie je Widget zu wiederholen. */
+        this.max.dragIncrement(10);
+        this.anchorX.dragWerte(0.01F);
+        this.anchorY.dragWerte(0.01F);
+        this.shadowX.dragWerte(0.1F, 0.01F, 0.5F).dragIncrement(0.1);
+        this.shadowY.dragWerte(0.1F, 0.01F, 0.5F).dragIncrement(0.1);
 
         this.add(this.text);
         this.add(this.billboard);
