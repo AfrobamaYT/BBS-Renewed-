@@ -934,7 +934,7 @@ public class Gizmo
          * Der fruehe return fuer "kein Index" ist mitgewandert — die Voransicht muss auch
          * ohne gesperrte Achse zeichnen. */
         mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3", "idx=" + debugIndex + " selbst=" + this.index);
-        GizmoAchsenLinien.zeichnen(stack, debugIndex, this.getAxesDistanceScale(stack));
+        GizmoAchsenLinien.zeichnen(stack, debugIndex, this.getAxesDistanceScale(stack), this.currentTransform != null ? this.currentTransform.getDrag() : null);
     }
 
     void updateVbos()

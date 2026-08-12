@@ -56,8 +56,10 @@ public final class GizmoAchsenLinien
      *                      ausserhalb — dann zeichnet nur die Voransicht (alle drei).
      * @param abstandsSkala {@code Gizmo.getAxesDistanceScale}-Wert am Pivot, fuer die
      *                      bildschirm-konstante Dicke.
+     * @param griff         Zug-Schnappschuss vom Bearbeitungsbeginn, oder {@code null} —
+     *                      dann zeichnen die Linien wie frueher am Live-Gizmo.
      */
-    public static void zeichnen(PoseStack stack, int debugIndex, float abstandsSkala)
+    public static void zeichnen(PoseStack stack, int debugIndex, float abstandsSkala, GizmoDrag griff)
     {
         boolean alleDrei = istVoransicht();
         boolean gesperrt = debugIndex >= Gizmo.STENCIL_X && debugIndex <= Gizmo.STENCIL_ZY;
@@ -69,6 +71,22 @@ public final class GizmoAchsenLinien
 
         float size = 10000F;
         float t = BBSSettings.transformBlenderFeedback.get() ? DICKE_BLENDER * Math.max(abstandsSkala, 0.2F) : DICKE_ALT;
+
+        stack.pushPose();
+
+        /* Blender ankert die Sperrlinien am STARTPUNKT der Transformation
+         * (transform_constraints.cc: drawLine am fixen t->center_global) — das Objekt
+         * gleitet auf der benutzten Linie entlang, die Linien wandern nicht mit
+         * (Akte 12, Nutzerbilder). Der Stack ist kameralativ: Translation wird durch
+         * start − kamera aus dem Griff-Schnappschuss ersetzt (beide vom Griff — die
+         * Kamera steht waehrend eines Modal-Zugs), die Space-Rotation bleibt. */
+        if (griff != null && BBSSettings.transformBlenderFeedback.get())
+        {
+            stack.last().pose().setTranslation(
+                (float) (griff.gizmoOrigin.x - griff.cameraOrigin.x),
+                (float) (griff.gizmoOrigin.y - griff.cameraOrigin.y),
+                (float) (griff.gizmoOrigin.z - griff.cameraOrigin.z));
+        }
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
@@ -98,5 +116,7 @@ public final class GizmoAchsenLinien
                 RenderSystem.getModelViewMatrixCopy(),
                 null);
         }
+
+        stack.popPose();
     }
 }
