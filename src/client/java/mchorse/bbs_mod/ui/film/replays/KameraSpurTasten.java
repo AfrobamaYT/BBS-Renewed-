@@ -126,10 +126,20 @@ public final class KameraSpurTasten
         return false;
     }
 
-    /** Nur mit gewähltem Kamera-Clip mischt sich die Kamera in die Tastatur ein. */
+    /**
+     * Nur mit gewähltem Kamera-Clip mischt sich die Kamera in die Tastatur ein.
+     *
+     * <p>⛔ „Gewählt" heißt die AUSWAHL der Zeitleiste, NICHT der bloß angezeigte Clip —
+     * genau wie der Kommentar an {@link #weiterreichen} es verlangt. Die alte Fassung
+     * prüfte {@code getClip() != null}, und ein Panel zeigt fast immer einen Clip:
+     * damit fraß {@code clip_duration} (Left-Hand: G) den Grab des POSE-Editors, obwohl
+     * der Nutzer nie einen Kamera-Clip angefasst hatte (Akte 06, Symptom 3 — „G
+     * funktioniert nicht"). Mit leerer Auswahl gehört die Tastatur wieder dem Editor.</p>
+     */
     private static boolean bereit(UIFilmPanel panel)
     {
-        return an() && panel != null && panel.cameraEditor != null && panel.cameraEditor.getClip() != null;
+        return an() && panel != null && panel.cameraEditor != null
+            && !panel.cameraEditor.clips.getSelection().isEmpty();
     }
 
 }
