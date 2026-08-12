@@ -103,6 +103,12 @@ public class FontRenderer
 
     public List<String> wrap(String string, int width)
     {
+        /* P1: Umbruch muss mit den Breiten messen, mit denen auch gemalt wird. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.zeichnet(string))
+        {
+            return mchorse.bbs_mod.ui.framework.elements.utils.schrift.VektorSchrift.holen().umbruch(string, width);
+        }
+
         return wrap(this.renderer, string, width);
     }
 

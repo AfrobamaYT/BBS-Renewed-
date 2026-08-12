@@ -43,12 +43,11 @@ public final class VektorSchrift
     private ByteBuffer schriftBytes;
     private Map<Integer, VektorGlyphAtlas> atlanten = new HashMap<>();
 
-    /** Zeichnet dieser Text vektorisiert? §-Styles bleiben v1 beim alten Pfad. */
+    /** Zeichnet dieser Text vektorisiert? Farbcodes (§) versteht der Pfad selbst. */
     public static boolean zeichnet(String text)
     {
         return BBSSettings.fontVector != null && BBSSettings.fontVector.get()
-            && text != null && text.indexOf('§') < 0
-            && holen() != null;
+            && text != null && holen() != null;
     }
 
     public static VektorSchrift holen()
@@ -173,6 +172,14 @@ public final class VektorSchrift
         for (int i = 0; i < text.length(); )
         {
             int cp = text.codePointAt(i);
+
+            if (cp == '§' && i + 1 < text.length())
+            {
+                i += 2;
+
+                continue;
+            }
+
             VektorGlyphAtlas.Glyph glyph = atlas.holen(cp);
 
             summe += glyph != null ? glyph.advance() : atlas.pixelGroesse / 3F;
@@ -182,28 +189,44 @@ public final class VektorSchrift
         return Math.round(summe / this.skala());
     }
 
+    /** Zeilenumbruch mit den echten Vektor-Breiten (Stil-Vortrag siehe VektorStil). */
+    public java.util.List<String> umbruch(String text, int breite)
+    {
+        return VektorStil.umbruch(text, breite, this::breite);
+    }
+
     public void zeichne(Batcher2D batcher, String text, float x, float y, int color, boolean schatten)
     {
         if (schatten)
         {
-            int dunkel = (color & Colors.A100) | ((color >> 2) & 0x3F3F3F);
-
-            this.durchgang(batcher, text, x + 1F, y + 1F, dunkel);
+            this.durchgang(batcher, text, x + 1F, y + 1F, color, true);
         }
 
-        this.durchgang(batcher, text, x, y, color);
+        this.durchgang(batcher, text, x, y, color, false);
     }
 
-    private void durchgang(Batcher2D batcher, String text, float x, float y, int color)
+    private void durchgang(Batcher2D batcher, String text, float x, float y, int basis, boolean dunkeln)
     {
         VektorGlyphAtlas atlas = this.atlas();
         float skala = this.skala();
         float stift = x;
         float grundlinie = y + GRUNDLINIE;
+        int farbe = basis;
 
         for (int i = 0; i < text.length(); )
         {
             int cp = text.codePointAt(i);
+
+            if (cp == '§' && i + 1 < text.length())
+            {
+                int neu = VektorStil.farbe(text.charAt(i + 1), basis, farbe);
+
+                farbe = neu == VektorStil.BEHALTEN ? farbe : neu;
+                i += 2;
+
+                continue;
+            }
+
             VektorGlyphAtlas.Glyph glyph = atlas.holen(cp);
 
             if (glyph == null)
@@ -219,7 +242,7 @@ public final class VektorSchrift
                 float gx = stift + glyph.bearingX() / skala;
                 float gy = grundlinie - glyph.bearingY() / skala;
 
-                batcher.texturedBox(atlas.textur(), color, gx, gy, glyph.w() / skala, glyph.h() / skala,
+                batcher.texturedBox(atlas.textur(), dunkeln ? VektorStil.dunkeln(farbe) : farbe, gx, gy, glyph.w() / skala, glyph.h() / skala,
                     glyph.u(), glyph.v(), glyph.u() + glyph.w(), glyph.v() + glyph.h(), atlas.seite, atlas.seite);
             }
 
