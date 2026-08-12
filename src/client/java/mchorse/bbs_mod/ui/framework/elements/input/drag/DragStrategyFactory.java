@@ -32,6 +32,36 @@ public final class DragStrategyFactory
     private DragStrategyFactory()
     {}
 
+    /**
+     * Blenders Constraint-Wechsel im laufenden Zug (Akte 13, transform.cc:
+     * setUserConstraint aendert nur die Constraint-Wahl, die Werte rechnen
+     * weiter aus der Gesamtbewegung ab Griff): die neue Achsen-Geste ankert
+     * am GRIFF-Punkt (imval, wrap-mitgefuehrt) und wendet die gesamte
+     * Mausbewegung sofort durch den neuen Constraint an — statt an der
+     * aktuellen Maus neu zu beginnen (das spulte sichtbar auf die
+     * Startwerte zurueck). Ohne Anker ({@code griffX/Y < 0}: Bearbeitung
+     * ohne Zeiger begonnen) ankert sie wie bisher an der aktuellen Maus.
+     */
+    public static DragStrategy wechselnMitGriff(DragContext ctx, TransformOp op, Axis axis, Axis axis2, boolean hotkeyMode,
+        int griffX, int griffY, int mausX, int mausY, DragCursor cursor)
+    {
+        DragStrategy strategy = create(ctx, op, axis, axis2, Variant.AXIS, hotkeyMode);
+
+        if (griffX >= 0 && griffY >= 0)
+        {
+            boolean fein = strategy.usesFineCursor();
+
+            strategy.begin(griffX, griffY);
+            strategy.update(fein ? cursor.x(mausX) : mausX, fein ? cursor.y(mausY) : mausY);
+        }
+        else
+        {
+            strategy.begin(mausX, mausY);
+        }
+
+        return strategy;
+    }
+
     public static DragStrategy create(DragContext ctx, TransformOp op, Axis axis, Axis axis2, Variant variant, boolean hotkeyMode)
     {
         boolean rayAllowed = (!hotkeyMode || BBSSettings.transformHotkeys3dRay.get()) && ctx.drag() != null;

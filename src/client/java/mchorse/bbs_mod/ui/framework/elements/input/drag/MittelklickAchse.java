@@ -116,6 +116,30 @@ public class MittelklickAchse
         return this.waehlend;
     }
 
+    /** Der Zeiger beim Beginn der Bearbeitung (Blenders {@code imval}), wrap-mitgefuehrt.
+     *  {@code -1}, solange die Bearbeitung noch keinen Anker hat. */
+    public int ursprungX()
+    {
+        return this.hatUrsprung ? this.ursprungX : -1;
+    }
+
+    public int ursprungY()
+    {
+        return this.hatUrsprung ? this.ursprungY : -1;
+    }
+
+    /** Shift-Bedeutung der Achsentasten und des Mittelklicks: die getroffene Achse sperren
+     *  heisst die EBENE der beiden anderen freigeben. */
+    public static Axis[] ebenenPaar(Axis achse)
+    {
+        switch (achse)
+        {
+            case X: return new Axis[] {Axis.Y, Axis.Z};
+            case Y: return new Axis[] {Axis.Z, Axis.X};
+            default: return new Axis[] {Axis.X, Axis.Y};
+        }
+    }
+
     /** Beginn einer Bearbeitung: Ursprung setzen, alles andere zuruecksetzen. */
     public void bearbeitungBegonnen(int mausX, int mausY)
     {

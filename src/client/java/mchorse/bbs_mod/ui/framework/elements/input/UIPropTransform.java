@@ -1132,21 +1132,10 @@ public class UIPropTransform extends UITransform
     {
         if (plane)
         {
-            switch (axis)
-            {
-                case X:
-                    this.axis = Axis.Y;
-                    this.axis2 = Axis.Z;
-                    break;
-                case Y:
-                    this.axis = Axis.Z;
-                    this.axis2 = Axis.X;
-                    break;
-                case Z:
-                    this.axis = Axis.X;
-                    this.axis2 = Axis.Y;
-                    break;
-            }
+            Axis[] paar = MittelklickAchse.ebenenPaar(axis);
+
+            this.axis = paar[0];
+            this.axis2 = paar[1];
         }
         else
         {
@@ -1167,8 +1156,10 @@ public class UIPropTransform extends UITransform
 
         if (context != null && op != null)
         {
-            this.strategy = DragStrategyFactory.create(this.bridge, op, this.axis, this.axis2, DragStrategyFactory.Variant.AXIS, this.hotkeyMode);
-            this.strategy.begin(context.mouseX, context.mouseY);
+            /* Blenders Umprojizieren beim Constraint-Wechsel — Anker und Sofort-
+             * Anwendung stehen in {@link DragStrategyFactory#wechselnMitGriff}. */
+            this.strategy = DragStrategyFactory.wechselnMitGriff(this.bridge, op, this.axis, this.axis2, this.hotkeyMode,
+                this.middleAxis.ursprungX(), this.middleAxis.ursprungY(), context.mouseX, context.mouseY, this.cursor);
         }
 
         /* Re-route an in-progress typed amount onto the freshly picked axis. */
