@@ -852,7 +852,7 @@
 	"bbs.ui.forms.editors.model.ik.softness": "Мягкость",
 	"bbs.ui.forms.editors.model.ik.weight": "Влияние",
 	"bbs.ui.forms.editors.model.ik.tip_rotation": "Кончик следует за целью",
-    "bbs.ui.forms.editors.model.ik.stretch": "Растягиваться до цели",
+	"bbs.ui.forms.editors.model.ik.stretch": "Растягиваться до цели",
 	"bbs.ui.forms.editors.model.ik.cycle": " (ЦИКЛ!)",
 	"bbs.ui.forms.editors.model.ik.pole_cycle": " (на цепи → авто-полюс)",
 	"bbs.ui.forms.editors.model.ik.joint": "Сустав (выбранная кость)",
@@ -1688,5 +1688,7 @@
 	"studio.ui.utility.reload_terrain": "Ландшафт",
 	"studio.ui.utility.reload_textures": "Текстуры",
 	"studio.ui.utility.resize": "Изменить размер окна",
-	"studio.ui.utility.title": "Панель утилит"
+	"studio.ui.utility.title": "Панель утилит",
+	"bbs.ui.command_palette.title": "Команды",
+	"bbs.ui.keys.command_palette": "Палитра команд"
 }

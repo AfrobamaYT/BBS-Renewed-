@@ -1,6 +1,6 @@
 package mchorse.bbs_mod.ui;
 
-import mchorse.bbs_mod.l10n.keys.IKey;
+import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.ui.utils.keys.KeyCombo;
 import org.lwjgl.glfw.GLFW;
 
@@ -15,6 +15,7 @@ public class Keys
     public static final KeyCombo KEYBINDS = new KeyCombo("keybinds", UIKeys.KEYS_LIST, GLFW.GLFW_KEY_F9);
     public static final KeyCombo NEXT = new KeyCombo("next", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_NEXT, GLFW.GLFW_KEY_RIGHT).repeatable();
     public static final KeyCombo PLAUSE = new KeyCombo("plause", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PLAUSE, GLFW.GLFW_KEY_SPACE);
+    public static final KeyCombo BEFEHLS_PALETTE = new KeyCombo("command_palette", L10n.lang("bbs.ui.keys.command_palette"), GLFW.GLFW_KEY_P, GLFW.GLFW_KEY_LEFT_CONTROL);
     public static final KeyCombo PREV = new KeyCombo("prev", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_PREV, GLFW.GLFW_KEY_LEFT).repeatable();
     public static final KeyCombo REDO = new KeyCombo("redo", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_REDO, GLFW.GLFW_KEY_Y, GLFW.GLFW_KEY_LEFT_CONTROL);
     public static final KeyCombo UNDO = new KeyCombo("undo", UIKeys.CAMERA_EDITOR_KEYS_EDITOR_UNDO, GLFW.GLFW_KEY_Z, GLFW.GLFW_KEY_LEFT_CONTROL);

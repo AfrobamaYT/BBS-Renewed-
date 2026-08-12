@@ -809,7 +809,6 @@
 	"bbs.ui.film.markers.tick": "Tick the marker sits on",
 	"bbs.ui.film.markers.remove": "Remove marker",
 	"bbs.ui.film.markers.keys.add": "Add a marker at the playhead",
-
 	"bbs.ui.film.replay.animation_to_pose.title": "Animation to poses",
 	"bbs.ui.film.replay.axes_preview": "Axes preview",
 	"bbs.ui.film.replay.context.add": "Add a replay here",
@@ -1848,5 +1847,7 @@
 	"studio.ui.utility.reload_terrain": "Terrain",
 	"studio.ui.utility.reload_textures": "Textures",
 	"studio.ui.utility.resize": "Resize window",
-	"studio.ui.utility.title": "Utility panel"
+	"studio.ui.utility.title": "Utility panel",
+	"bbs.ui.command_palette.title": "Commands",
+	"bbs.ui.keys.command_palette": "Command palette"
 }
