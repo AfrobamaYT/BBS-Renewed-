@@ -105,7 +105,11 @@ public class FlightClipRecorder
         Position current = new Position(this.panel.getCamera());
         boolean check = this.editTime.check();
 
-        if (this.writesCamera() && this.panel.getController().getPovMode() != UIFilmController.CAMERA_MODE_FREE)
+        /* ⛔ NUR im Camera-Mode schreibt der Flug in den Clip (Nutzer-Meldung 2026-08-12,
+         * Akte 06 Symptom 1): "das soll nur dann passieren wenn der camera mode an ist
+         * nicht bei free flight first person oder so". Die alte Grenze != FREE schrieb den
+         * Flug auch aus Orbit, First- und Third-Person in den fuehrenden Kamera-Clip. */
+        if (this.writesCamera() && this.panel.getController().getPovMode() == UIFilmController.CAMERA_MODE_CAMERA)
         {
             if (!this.lastPosition.equals(current) && check)
             {
