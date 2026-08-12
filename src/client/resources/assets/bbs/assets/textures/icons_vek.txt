@@ -7,8 +7,10 @@ download
 dupe
 edit
 file
+film
 folder
 gear
+graph
 invisible
 more
 paste
@@ -21,4 +23,5 @@ search
 stop
 trash
 upload
+video_camera
 visible
