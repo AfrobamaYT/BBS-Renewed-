@@ -384,7 +384,16 @@ public class UIOverlayPanel extends UIElement
     protected void renderBackground(UIContext context)
     {
         context.batcher.dropShadow(this.area.x, this.area.y, this.area.ex(), this.area.ey(), 10, BBSSettings.panelShadowOpaqueColor(), BBSSettings.panelShadowTransparentColor());
-        this.area.render(context.batcher, BBSSettings.raisedSurface());
+        /* P2: weiche Panel-Karte; die Icon-Leiste bleibt eckig, sie liegt buendig im Panel. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
+        {
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h, 6F, BBSSettings.raisedSurface());
+        }
+        else
+        {
+            this.area.render(context.batcher, BBSSettings.raisedSurface());
+        }
+
         this.icons.area.render(context.batcher, BBSSettings.chromeSurface());
 
         if (this.close.area.isInside(context))

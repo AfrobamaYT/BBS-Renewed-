@@ -293,44 +293,44 @@ public class Batcher2D
 
     public void dropShadow(int left, int top, int right, int bottom, int offset, int opaque, int shadow)
     {
+        /* P2: weicher Schein statt Trapez-Ring — derselbe Trichter fuer alle Karten. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
+        {
+            mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.schein(this, left, top, right - left, bottom - top, offset, opaque, shadow);
+
+            return;
+        }
+
         left -= offset;
         top -= offset;
         right += offset;
         bottom += offset;
 
-        /* Draw opaque part */
+        /* Mitte deckend, dann vier Schatten-Trapeze (oben/unten/links/rechts). */
         this.quad(
             left + offset, top + offset, opaque,
             left + offset, bottom - offset, opaque,
             right - offset, bottom - offset, opaque,
             right - offset, top + offset, opaque
         );
-
-        /* Draw top shadow */
         this.quad(
             left, top, shadow,
             left + offset, top + offset, opaque,
             right - offset, top + offset, opaque,
             right, top, shadow
         );
-
-        /* Draw bottom shadow */
         this.quad(
             left + offset, bottom - offset, opaque,
             left, bottom, shadow,
             right, bottom, shadow,
             right - offset, bottom - offset, opaque
         );
-
-        /* Draw left shadow */
         this.quad(
             left, top, shadow,
             left, bottom, shadow,
             left + offset, bottom - offset, opaque,
             left + offset, top + offset, opaque
         );
-
-        /* Draw right shadow */
         this.quad(
             right - offset, top + offset, opaque,
             right - offset, bottom - offset, opaque,
@@ -740,12 +740,7 @@ public class Batcher2D
     /** P2: Rundeck-Quad mit weichem Rand — CPU-Tessellation durch die GUI-Farb-Pipeline. */
     public void rundeck(float x, float y, float w, float h, float radius, int color)
     {
-        Matrix3x2f pose = new Matrix3x2f(this.context.pose());
-        float saum = 1F / (float) Minecraft.getInstance().getWindow().getGuiScale();
-
-        this.netz(mchorse.bbs_mod.client.FormPipelines.holen(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, true, false, false),
-            (ecken) -> mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorFlaeche.rundeck(ecken, pose, x, y, w, h, radius, color, saum),
-            new ScreenRectangle((int) x - 1, (int) y - 1, (int) w + 3, (int) h + 3));
+        mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.rundeck(this, x, y, w, h, radius, color);
     }
 
     /** No-op since MC 26.2 (nothing left to flush — see class header); kept for the many call sites. */

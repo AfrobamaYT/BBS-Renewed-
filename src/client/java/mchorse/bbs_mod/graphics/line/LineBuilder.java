@@ -101,6 +101,34 @@ public class LineBuilder <T>
      */
     public void render(Batcher2D batcher2D, ILineRenderer<T> renderer)
     {
+        /* P2: geglaettete Polylinie fuer die Einfarb-Zeichnung (Kurven des Editors);
+         * Renderer mit eigener Punktlogik behalten den alten Weg. Farbe SOFORT
+         * einfrieren — der Renderer ist ein je Aufruf umgefaerbter Singleton. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an() && renderer instanceof SolidColorLineRenderer solid)
+        {
+            int farbe = solid.argb();
+
+            for (Line<T> line : this.lines)
+            {
+                if (line.points.size() < 2)
+                {
+                    continue;
+                }
+
+                float[] xy = new float[line.points.size() * 2];
+
+                for (int i = 0; i < line.points.size(); i++)
+                {
+                    xy[i * 2] = line.points.get(i).x;
+                    xy[i * 2 + 1] = line.points.get(i).y;
+                }
+
+                mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.linie(batcher2D, xy, this.thickness, farbe, this.bereichVon(line.points));
+            }
+
+            return;
+        }
+
         Matrix4f matrix = new Matrix4f().mul(batcher2D.getContext().pose());
         List<List<LinePoint<T>>> build = this.build();
 

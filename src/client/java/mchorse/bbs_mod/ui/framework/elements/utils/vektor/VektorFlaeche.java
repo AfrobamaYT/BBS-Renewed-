@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.framework.elements.utils.vektor;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Matrix3x2f;
 
 /**
@@ -15,10 +16,12 @@ public final class VektorFlaeche
     {}
 
     /**
-     * Rundeck-Quad. {@code radius} wird auf die halbe kurze Kante begrenzt,
-     * {@code saum} ist die Saumbreite in GUI-Einheiten (~1 physisches Pixel).
+     * Umriss eines Rundecks: je Punkt Position und exakte Aussennormale.
+     * Arc-Normalen kommen aus den Eckzentren; auf den geraden Kanten dazwischen
+     * teilen sich die Endpunkte die achsparallele Normale — Saeume bleiben stetig.
+     * Rueckgabe: {px[], py[], nx[], ny[]}.
      */
-    public static void rundeck(VertexConsumer ecken, Matrix3x2f pose, float x, float y, float w, float h, float radius, int color, float saum)
+    static float[][] umriss(float x, float y, float w, float h, float radius)
     {
         float r = Math.min(radius, Math.min(w, h) / 2F);
         int segmente = Math.max(3, Math.round(r));
@@ -28,10 +31,8 @@ public final class VektorFlaeche
         float[] nx = new float[n];
         float[] ny = new float[n];
 
-        /* Vier Viertelboegen um die Eckzentren; Bildschirm-Y waechst nach unten,
-         * die Winkel laufen darum oben-rechts (-90°..0°) im Uhrzeigersinn weiter.
-         * Arc-Normalen sind exakt (p - zentrum)/r — auf den geraden Kanten dazwischen
-         * teilen sich die Endpunkte die achsparallele Normale, der Saum bleibt stetig. */
+        /* Bildschirm-Y waechst nach unten; die Boegen laufen ab oben-rechts (-90°..0°)
+         * im Uhrzeigersinn um die vier Eckzentren weiter. */
         float[][] zentren = {
             {x + w - r, y + r},
             {x + w - r, y + h - r},
@@ -56,6 +57,18 @@ public final class VektorFlaeche
             }
         }
 
+        return new float[][] {px, py, nx, ny};
+    }
+
+    /**
+     * Rundeck-Quad. {@code radius} wird auf die halbe kurze Kante begrenzt,
+     * {@code saum} ist die Saumbreite in GUI-Einheiten (~1 physisches Pixel).
+     */
+    public static void rundeck(VertexConsumer ecken, Matrix3x2f pose, float x, float y, float w, float h, float radius, int color, float saum)
+    {
+        float[][] u = umriss(x, y, w, h, radius);
+        float[] px = u[0], py = u[1], nx = u[2], ny = u[3];
+        int n = px.length;
         float cx = x + w / 2F;
         float cy = y + h / 2F;
         int durchsichtig = color & 0x00FFFFFF;
@@ -69,20 +82,58 @@ public final class VektorFlaeche
             ecken.addVertexWith2DPose(pose, px[a], py[a]).setColor(color);
             ecken.addVertexWith2DPose(pose, px[b], py[b]).setColor(color);
 
-            /* Aussen: Saum-Quad, Aussenkante gleiche Farbe mit Alpha 0 —
-             * gleiches RGB, sonst zieht das Mischen einen dunklen Rand. */
-            float ax = px[a] + nx[a] * saum;
-            float ay = py[a] + ny[a] * saum;
-            float bx = px[b] + nx[b] * saum;
-            float by = py[b] + ny[b] * saum;
-
-            ecken.addVertexWith2DPose(pose, px[a], py[a]).setColor(color);
-            ecken.addVertexWith2DPose(pose, ax, ay).setColor(durchsichtig);
-            ecken.addVertexWith2DPose(pose, bx, by).setColor(durchsichtig);
-
-            ecken.addVertexWith2DPose(pose, px[a], py[a]).setColor(color);
-            ecken.addVertexWith2DPose(pose, bx, by).setColor(durchsichtig);
-            ecken.addVertexWith2DPose(pose, px[b], py[b]).setColor(color);
+            /* Aussen: Saum-Quad — gleiche Farbe mit Alpha 0, sonst dunkler Rand. */
+            saumQuad(ecken, pose, px[a], py[a], px[b], py[b],
+                px[a] + nx[a] * saum, py[a] + ny[a] * saum,
+                px[b] + nx[b] * saum, py[b] + ny[b] * saum,
+                color, durchsichtig, durchsichtig);
         }
+    }
+
+    /**
+     * Weicher Schein um ein Rundeck — Ersatz fuer die dropShadow-Trapeze: das Innere
+     * fuellt {@code innen}, nach aussen laufen Ringe ueber {@code ausdehnung} auf
+     * {@code aussen} zu (quadratisches Abklingen ≈ Gauss-Optik).
+     */
+    public static void schein(VertexConsumer ecken, Matrix3x2f pose, float x, float y, float w, float h, float radius, float ausdehnung, int innen, int aussen, float saum)
+    {
+        rundeck(ecken, pose, x, y, w, h, radius, innen, saum);
+
+        float[][] u = umriss(x, y, w, h, radius);
+        float[] px = u[0], py = u[1], nx = u[2], ny = u[3];
+        int n = px.length;
+        int ringe = 4;
+
+        for (int ring = 0; ring < ringe; ring++)
+        {
+            float t0 = ring / (float) ringe;
+            float t1 = (ring + 1) / (float) ringe;
+            int f0 = Colors.lerp(innen, aussen, 1F - (1F - t0) * (1F - t0));
+            int f1 = Colors.lerp(innen, aussen, 1F - (1F - t1) * (1F - t1));
+
+            for (int a = 0; a < n; a++)
+            {
+                int b = (a + 1) % n;
+
+                saumQuad(ecken, pose,
+                    px[a] + nx[a] * ausdehnung * t0, py[a] + ny[a] * ausdehnung * t0,
+                    px[b] + nx[b] * ausdehnung * t0, py[b] + ny[b] * ausdehnung * t0,
+                    px[a] + nx[a] * ausdehnung * t1, py[a] + ny[a] * ausdehnung * t1,
+                    px[b] + nx[b] * ausdehnung * t1, py[b] + ny[b] * ausdehnung * t1,
+                    f0, f1, f1);
+            }
+        }
+    }
+
+    /** Zwei Dreiecke zwischen Innenkante (ia..ib, Farbe fi) und Aussenkante (aa..ab, Farben fa/fb). */
+    private static void saumQuad(VertexConsumer ecken, Matrix3x2f pose, float iax, float iay, float ibx, float iby, float aax, float aay, float abx, float aby, int fi, int fa, int fb)
+    {
+        ecken.addVertexWith2DPose(pose, iax, iay).setColor(fi);
+        ecken.addVertexWith2DPose(pose, aax, aay).setColor(fa);
+        ecken.addVertexWith2DPose(pose, abx, aby).setColor(fb);
+
+        ecken.addVertexWith2DPose(pose, iax, iay).setColor(fi);
+        ecken.addVertexWith2DPose(pose, abx, aby).setColor(fb);
+        ecken.addVertexWith2DPose(pose, ibx, iby).setColor(fi);
     }
 }

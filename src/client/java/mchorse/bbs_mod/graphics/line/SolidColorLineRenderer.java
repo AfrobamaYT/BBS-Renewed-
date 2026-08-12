@@ -34,6 +34,14 @@ public class SolidColorLineRenderer implements ILineRenderer
         return this;
     }
 
+    /** Farbe als ARGB-Schnappschuss — der Singleton wird je Aufruf umgefaerbt,
+     *  ein spaeter laufendes Lambda darf ihn deshalb nie selbst lesen. */
+    public int argb()
+    {
+        return ((int) (this.color.a * 255F) << 24) | ((int) (this.color.r * 255F) << 16)
+            | ((int) (this.color.g * 255F) << 8) | (int) (this.color.b * 255F);
+    }
+
     @Override
     public void render(VertexConsumer builder, Matrix4f matrix, LinePoint point)
     {
