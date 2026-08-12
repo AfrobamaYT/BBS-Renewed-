@@ -146,11 +146,23 @@ public class UIUndoHistory extends UIElement
 
         if (size != this.lastSize)
         {
+            /* #66: die Liste klebt am neuesten Eintrag (Log-Verhalten) — ausser der Nutzer
+             * hat bewusst hochgescrollt, dann wird nicht gerissen. "Unten" wird VOR dem
+             * update gemessen, danach ist scrollSize schon der neue. Erstes Sync (-1)
+             * springt immer ans Ende: wer die Historie oeffnet, will das Neueste sehen. */
+            boolean warUnten = this.lastSize < 0
+                || this.list.scroll.getScroll() >= this.list.scroll.scrollSize - this.list.scroll.area.h - this.list.scroll.scrollItemSize;
+
             this.lastSize = size;
 
             /* Resyncs the scroll bar to the new row count — the list itself shares the manager's
              * List instance, so the rows are already there. */
             this.list.update();
+
+            if (warUnten)
+            {
+                this.list.scroll.setScroll(this.list.scroll.scrollSize);
+            }
         }
 
         if (index != this.lastIndex)
