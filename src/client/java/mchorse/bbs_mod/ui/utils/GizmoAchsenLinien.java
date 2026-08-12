@@ -38,18 +38,19 @@ public final class GizmoAchsenLinien
     /** MMB-Achsenwahl laeuft: alle drei Achsen zeigen. Je Bild vom UITransformHandler gesetzt. */
     private static boolean voransicht;
 
-    /** Kameraposition DIESES Bildes, je Frame vom UITransformHandler aus dem frischen
-     *  Achsenwahl-Schnappschuss gesetzt; {@code null} (auch nach einem Hotswap) faellt auf
-     *  die Griff-Kamera zurueck. Ohne sie driftet der Startpunkt-Anker um die
-     *  Kamerabewegung seit dem Griff (Akte 14: kameralativer Stack braucht start - JETZT). */
-    private static org.joml.Vector3d kameraJetzt;
+    /** Frischer Achsenwahl-Schnappschuss DIESES Bildes (aktuelle Kamera UND Ansichtsdrehung),
+     *  je Frame vom UITransformHandler gesetzt; {@code null} (auch nach einem Hotswap) faellt
+     *  auf den Griff-Schnappschuss zurueck. Ohne aktuelle Kamera driftet der Anker um die
+     *  Kamerabewegung seit dem Griff (Akte 14), ohne Ansichtsdrehung sitzt er
+     *  blickrichtungsabhaengig daneben (Akte 15). */
+    private static GizmoDrag frisch;
 
     private GizmoAchsenLinien()
     {}
 
-    public static void setKameraJetzt(org.joml.Vector3d position)
+    public static void setFrisch(GizmoDrag zug)
     {
-        kameraJetzt = position;
+        frisch = zug;
     }
 
     public static void setVoransicht(boolean an)
@@ -93,9 +94,20 @@ public final class GizmoAchsenLinien
          * Kamera steht waehrend eines Modal-Zugs), die Space-Rotation bleibt. */
         if (griff != null && BBSSettings.transformBlenderFeedback.get())
         {
-            /* start - kamera_JETZT: die frische Kamera vom Handler, sonst die vom
-             * Griff (steht die Kamera, sind beide identisch — gemessen deckungsgleich). */
-            org.joml.Vector3d kamera = kameraJetzt != null ? kameraJetzt : griff.cameraOrigin;
+            /* start - kamera_JETZT, durch die ANSICHTSDREHUNG des Bildes gedreht: der
+             * Zeichen-Stack ist view-rotiert (Gizmo.computeWorldOrigin: "stack = view *
+             * translate(-cam) * chain") — ein unrotiertes Welt-Delta sass blickrichtungs-
+             * und abstandsabhaengig daneben (Akte 15, Nutzerbild mit rotem Pfeil). Kamera
+             * und Drehung kommen aus DEMSELBEN Schnappschuss: dem frischen vom Handler,
+             * sonst dem Griff (steht die Kamera, sind beide identisch). */
+            GizmoDrag quelle = frisch != null ? frisch : griff;
+
+            org.joml.Vector3f rel = new org.joml.Vector3f(
+                (float) (griff.gizmoOrigin.x - quelle.cameraOrigin.x),
+                (float) (griff.gizmoOrigin.y - quelle.cameraOrigin.y),
+                (float) (griff.gizmoOrigin.z - quelle.cameraOrigin.z));
+
+            quelle.view.transformDirection(rel);
 
             if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
             {
@@ -103,17 +115,10 @@ public final class GizmoAchsenLinien
 
                 mchorse.bbs_mod.graphics.Messpunkt.zaehle("achsenlinien.anker", String.format(
                     "stack=%.3f,%.3f,%.3f gesetzt=%.3f,%.3f,%.3f frisch=%s",
-                    st.x, st.y, st.z,
-                    griff.gizmoOrigin.x - kamera.x,
-                    griff.gizmoOrigin.y - kamera.y,
-                    griff.gizmoOrigin.z - kamera.z,
-                    kameraJetzt != null));
+                    st.x, st.y, st.z, rel.x, rel.y, rel.z, frisch != null));
             }
 
-            stack.last().pose().setTranslation(
-                (float) (griff.gizmoOrigin.x - kamera.x),
-                (float) (griff.gizmoOrigin.y - kamera.y),
-                (float) (griff.gizmoOrigin.z - kamera.z));
+            stack.last().pose().setTranslation(rel.x, rel.y, rel.z);
         }
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))

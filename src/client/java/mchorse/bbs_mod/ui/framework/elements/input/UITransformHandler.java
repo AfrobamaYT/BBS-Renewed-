@@ -108,7 +108,7 @@ public class UITransformHandler extends UIElement
 
         TransformZeiger.zuruecksetzen();
         mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(false);
-        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setKameraJetzt(null);
+        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setFrisch(null);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class UITransformHandler extends UIElement
             java.util.function.Supplier<mchorse.bbs_mod.ui.utils.GizmoDrag> pick = this.transform.axisPickDragSupplier;
             mchorse.bbs_mod.ui.utils.GizmoDrag zug = pick != null ? pick.get() : this.transform.drag;
 
-            mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setKameraJetzt(zug != null ? zug.cameraOrigin : null);
+            mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setFrisch(zug);
 
             if (helpline || mmbWahl)
             {
