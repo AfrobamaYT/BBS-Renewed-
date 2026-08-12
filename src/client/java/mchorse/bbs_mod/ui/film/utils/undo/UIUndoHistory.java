@@ -26,9 +26,9 @@ import java.util.function.Supplier;
  *
  * <p>⚠ FALLE — {@link mchorse.bbs_mod.ui.framework.elements.input.list.UIList#setList} keeps a LIVE
  * reference to the manager's list, so new entries appear on their own, but the scroll size and the
- * highlighted row do not. A permanently visible panel therefore has to re-sync per frame; polling in
- * {@link #render} is used because {@link UndoManager} has room for exactly ONE listener and
- * {@code UIFormUndoHandler} already owns it.</p>
+ * highlighted row do not. Re-sync passiert im render-Pfad, angestossen vom "Stack geaendert"-Abo
+ * des Managers (P8d) — nur der Manager-WECHSEL (neuer Film) wird weiter je Frame per Referenz
+ * verglichen, den meldet niemand.</p>
  */
 public class UIUndoHistory extends UIElement
 {
@@ -39,6 +39,13 @@ public class UIUndoHistory extends UIElement
     private UndoManager<ValueGroup> boundManager;
     private int lastSize = -1;
     private int lastIndex = Integer.MIN_VALUE;
+
+    /* P8d: statt je Frame size/index zu vergleichen, abonniert die Historie das
+     * "Stack geaendert"-Ereignis des Managers. Der Listener setzt NUR das Flag —
+     * UI-Arbeit bleibt im render-Pfad. Der Identitaets-Check je Frame bleibt:
+     * einen Manager-WECHSEL (neuer Film) meldet niemand. */
+    private boolean dirty = true;
+    private final Runnable stackAbo = () -> this.dirty = true;
 
     /**
      * @param undoManager where the stack comes from; may return null while no data is loaded.
@@ -118,6 +125,7 @@ public class UIUndoHistory extends UIElement
         {
             if (this.boundManager != null)
             {
+                this.boundManager.removeStackListener(this.stackAbo);
                 this.boundManager = null;
                 this.lastSize = -1;
                 this.lastIndex = Integer.MIN_VALUE;
@@ -134,12 +142,27 @@ public class UIUndoHistory extends UIElement
 
         if (manager != this.boundManager)
         {
+            if (this.boundManager != null)
+            {
+                this.boundManager.removeStackListener(this.stackAbo);
+            }
+
+            manager.addStackListener(this.stackAbo);
+
             this.boundManager = manager;
             this.lastSize = -1;
             this.lastIndex = Integer.MIN_VALUE;
+            this.dirty = true;
 
             this.list.setList(manager.getUndos());
         }
+
+        if (!this.dirty)
+        {
+            return;
+        }
+
+        this.dirty = false;
 
         int size = manager.getTotalUndos();
         int index = manager.getCurrentUndoIndex();

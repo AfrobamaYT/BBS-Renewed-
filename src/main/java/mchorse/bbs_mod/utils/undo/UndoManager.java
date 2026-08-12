@@ -18,6 +18,12 @@ public class UndoManager<T>
     private IUndoListener<T> callback;
     private boolean simpleMerge;
 
+    /* P8d: "Stack geaendert" (push/merge/trim/undo/redo) ist ein EIGENES Ereignis —
+     * der callback-Slot bedeutet "undo/redo ANGEWENDET", feuert bei pushUndo nicht
+     * und traegt genau EINEN Besitzer (UIFormUndoHandler). Ohne dieses Abo bleibt
+     * jeder weiteren Anzeige nur das Frame-Polling. Lazy: ueberlebt Hotswap als null. */
+    private List<Runnable> stackListeners;
+
     public UndoManager()
     {}
 
@@ -52,6 +58,38 @@ public class UndoManager<T>
     public void setCallback(IUndoListener<T> callback)
     {
         this.callback = callback;
+    }
+
+    public void addStackListener(Runnable listener)
+    {
+        if (this.stackListeners == null)
+        {
+            this.stackListeners = new LinkedList<>();
+        }
+
+        this.stackListeners.add(listener);
+    }
+
+    public void removeStackListener(Runnable listener)
+    {
+        if (this.stackListeners != null)
+        {
+            this.stackListeners.remove(listener);
+        }
+    }
+
+    /** Kopie, damit ein Listener sich im Feuer selbst abhaengen darf. */
+    private void feuerStack()
+    {
+        if (this.stackListeners == null)
+        {
+            return;
+        }
+
+        for (Runnable listener : this.stackListeners.toArray(new Runnable[0]))
+        {
+            listener.run();
+        }
     }
 
     /* Getters */
@@ -133,6 +171,8 @@ public class UndoManager<T>
             this.undos.add(undo);
         }
 
+        this.feuerStack();
+
         return present;
     }
 
@@ -175,6 +215,8 @@ public class UndoManager<T>
             this.callback.handleUndo(undo, false);
         }
 
+        this.feuerStack();
+
         return true;
     }
 
@@ -197,6 +239,8 @@ public class UndoManager<T>
         {
             this.callback.handleUndo(undo, true);
         }
+
+        this.feuerStack();
 
         return true;
     }
