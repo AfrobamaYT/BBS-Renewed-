@@ -10,7 +10,16 @@ public class LightTooltipStyle extends TooltipStyle
     public void renderBackground(UIContext context, Area area)
     {
         context.batcher.dropShadow(area.x, area.y, area.ex(), area.ey(), 4, Colors.A50, 0);
-        area.render(context.batcher, Colors.WHITE);
+
+        /* P2: weiche Karte statt hartem Kasten. */
+        if (mchorse.bbs_mod.BBSSettings.vectorUi != null && mchorse.bbs_mod.BBSSettings.vectorUi.get())
+        {
+            context.batcher.rundeck(area.x, area.y, area.w, area.h, 4F, Colors.WHITE);
+        }
+        else
+        {
+            area.render(context.batcher, Colors.WHITE);
+        }
     }
 
     @Override

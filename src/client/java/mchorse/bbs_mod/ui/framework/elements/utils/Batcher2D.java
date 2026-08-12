@@ -47,11 +47,9 @@ public class Batcher2D
     private FontRenderer font;
 
     /**
-     * Mirror of the extractor's own scissor stack.
-     *
-     * <p>Every {@link GuiElementRenderState} has to name the scissor rect it is clipped to;
-     * the extractor keeps its stack private, but {@link #clip}/{@link #unclip} are BBS' only
-     * entry points, so the same push/pop is tracked here. {@code null} = no clipping.
+     * Mirror of the extractor's private scissor stack — every {@link GuiElementRenderState}
+     * must name its clip rect, and {@link #clip}/{@link #unclip} are BBS' only entry points,
+     * so the same push/pop is tracked here. {@code null} = no clipping.
      */
     private final Deque<ScreenRectangle> scissors = new ArrayDeque<>();
 
@@ -247,18 +245,10 @@ public class Batcher2D
     }
 
     /**
-     * ⛔ NIMMT {@link VertexConsumer}, NICHT {@code BufferBuilder}.
-     *
-     * <p>{@code BufferBuilder} ist der SOFORT-Puffer. Wer diesen Helfer damit tippt, zwingt
-     * jeden Aufrufer in den Sofortzug — und der landet in 26.2 unter dem gesamten GUI, weil
-     * die Oberflaeche in zwei Phasen gezeichnet wird. Genau daran hingen die unsichtbaren
-     * Keyframe-Symbole.</p>
-     *
-     * <p>{@code BufferBuilder} implementiert {@code VertexConsumer}, der alte Aufrufweg
-     * bleibt also gueltig. Die Verbreiterung nimmt niemandem etwas und erlaubt beiden Wegen,
-     * denselben Helfer zu benutzen — ohne sie muss jeder eingereihte Aufrufer seine vier
-     * Ecken selbst schreiben, und genau solche Abschriften standen nach der Umstellung an
-     * zwei Stellen im Baum.</p>
+     * ⛔ NIMMT {@link VertexConsumer}, NICHT {@code BufferBuilder}: der Sofort-Puffer landet
+     * in 26.2 UNTER dem gesamten GUI (zwei Phasen — daran hingen die unsichtbaren
+     * Keyframe-Symbole). {@code BufferBuilder} implementiert {@code VertexConsumer}, alte
+     * Aufrufer bleiben gueltig; eingereihte Wege teilen sich so denselben Helfer.
      */
     public void fillRect(VertexConsumer builder, Matrix4f matrix4f, float x, float y, float w, float h, int color1, int color2, int color3, int color4)
     {
@@ -730,19 +720,35 @@ public class Batcher2D
                 background = (background & 0xFF000000) | 0xFFFFFF;
             }
 
-            this.box(x - offset, y - offset, x + this.font.getWidth(text) + offset - 1, y + this.font.getHeight() + offset, background);
+            float w = this.font.getWidth(text) + offset * 2 - 1;
+            float h = this.font.getHeight() + offset * 2;
+
+            /* P2: Karten sind der erste Rundeck-Abnehmer. */
+            if (BBSSettings.vectorUi != null && BBSSettings.vectorUi.get())
+            {
+                this.rundeck(x - offset, y - offset, w, h, offset + 1F, background);
+            }
+            else
+            {
+                this.box(x - offset, y - offset, x - offset + w, y - offset + h, background);
+            }
         }
 
         this.text(text, x, y, color, shadow);
     }
 
-    /**
-     * No-op since MC 26.2.
-     *
-     * <p>There is nothing left to flush: draw calls no longer touch GL, they are appended to
-     * the {@link GuiRenderState} and {@code GuiRenderer} batches and submits the whole list at
-     * the end of the frame. Kept so the many call sites do not all have to change at once.
-     */
+    /** P2: Rundeck-Quad mit weichem Rand — CPU-Tessellation durch die GUI-Farb-Pipeline. */
+    public void rundeck(float x, float y, float w, float h, float radius, int color)
+    {
+        Matrix3x2f pose = new Matrix3x2f(this.context.pose());
+        float saum = 1F / (float) Minecraft.getInstance().getWindow().getGuiScale();
+
+        this.netz(mchorse.bbs_mod.client.FormPipelines.holen(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, true, false, false),
+            (ecken) -> mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorFlaeche.rundeck(ecken, pose, x, y, w, h, radius, color, saum),
+            new ScreenRectangle((int) x - 1, (int) y - 1, (int) w + 3, (int) h + 3));
+    }
+
+    /** No-op since MC 26.2 (nothing left to flush — see class header); kept for the many call sites. */
     public void flush()
     {}
 
@@ -796,23 +802,17 @@ public class Batcher2D
     }
 
     /**
-     * Reiht eigene Geometrie in die Oberflaeche ein — der richtige Weg fuer alles, was
-     * frueher ueber {@code Tesselator} + {@code BufferUploader} gezeichnet wurde.
+     * Reiht eigene Geometrie in die Oberflaeche ein — der Weg fuer alles, was frueher ueber
+     * {@code Tesselator} + {@code BufferUploader} lief.
      *
-     * <p>⛔ NICHT {@code SofortZeichner} in der Oberflaeche benutzen. 26.2 zeichnet die GUI
-     * in zwei Phasen: dieser Durchlauf SAMMELT nur, {@code GuiRenderer.render()} zeichnet
-     * danach. Ein sofort geoeffneter Durchgang landet deshalb UNTER dem gesamten GUI —
-     * Keyframe-Punkte verschwinden hinter ihrem eigenen Hintergrund. Kein Compiler warnt
-     * davor; man sieht es erst am Bild, und dann sieht es nach fehlenden Elementen aus.
+     * <p>⛔ KEIN {@code SofortZeichner} in der Oberflaeche: 26.2 SAMMELT hier nur und
+     * zeichnet spaeter — ein Sofort-Durchgang landet UNTER dem gesamten GUI (unsichtbare
+     * Keyframe-Punkte; kein Compiler warnt). Der Eckenaufbau laeuft im Lambda erst beim
+     * Renderer — Bezugspunkte (Pose, Farben) unveraenderlich halten oder dort lesen.
      *
-     * <p>Der Eckenaufbau wandert in das Lambda, weil er spaeter laeuft — dann, wenn der
-     * Renderer an der Reihe ist. Bezugspunkte (Pose, Farben) muessen also entweder
-     * unveraenderlich sein oder im Lambda selbst gelesen werden.
-     *
-     * @param pipeline bestimmt Shader, Blend, Tiefe und Cull — aus {@code FormPipelines}
-     * @param ecken    schreibt die Ecken; das Format muss zur Pipeline passen
-     * @param bereich  die Bildschirmflaeche, die das Netz belegt (fuer Culling und
-     *                 Sortierung innerhalb einer Ebene)
+     * @param pipeline Shader/Blend/Tiefe/Cull — aus {@code FormPipelines}
+     * @param ecken    schreibt die Ecken; Format muss zur Pipeline passen
+     * @param bereich  belegte Bildschirmflaeche (Culling + Sortierung in der Ebene)
      */
     public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, ScreenRectangle bereich)
     {
@@ -820,13 +820,9 @@ public class Batcher2D
     }
 
     /**
-     * Wie oben, aber mit Texturbindung.
-     *
-     * <p>⚠️ In 26.2 ist eine Textur KEIN globaler Zustand mehr: sie gehoert zum Zeichenzug.
-     * Wer texturierte Geometrie ohne {@code textur} einreiht, bekommt kein Fehlerbild,
-     * sondern ungebundene Sampler -- je nach Shader schwarz oder Muell. {@code TextureSetup}
-     * baut man z. B. mit {@code SofortZeichner.entityTextur(...)}, das Modelltextur, Overlay
-     * und Lichtkarte zusammenlegt.
+     * Wie oben, mit Texturbindung. ⚠️ In 26.2 ist eine Textur KEIN globaler Zustand — sie
+     * gehoert zum Zug; ohne {@code textur} bleiben Sampler ungebunden (schwarz oder Muell,
+     * kein Fehler). {@code TextureSetup} z. B. via {@code SofortZeichner.entityTextur(...)}.
      */
     public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, TextureSetup textur, ScreenRectangle bereich)
     {

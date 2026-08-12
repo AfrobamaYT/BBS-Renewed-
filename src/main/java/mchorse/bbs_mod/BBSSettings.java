@@ -73,8 +73,9 @@ public class BBSSettings {
 	public static ValueBoolean transformBlenderFeedback;
 	/** #65: IK-Ketten aus der Modelldatei (arm_ik) fuellen leere form.ik-Configs. */
 	public static ValueBoolean modelEmbeddedIk;
-	/** P1: UI-Text ueber FreeType-Vektorschrift statt Minecrafts Bitmap-Font. */
+	/** P1 Vektorschrift (FreeType) · P2 weiche Flaechen (Rundeck + AA-Saum). */
 	public static ValueBoolean fontVector;
+	public static ValueBoolean vectorUi;
 	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
@@ -130,9 +131,7 @@ public class BBSSettings {
 	public static ValueFloat editorCameraSpeed;
 	public static ValueFloat editorCameraAngleSpeed;
 	public static ValueInt duration;
-	/* MERGE 2026-07-27: aus dem CML-upstream. Steuert die weichen UI-uebergaenge
-	 * (panels/overlays wachsen auf statt sofort da zu sein) — user wollte das feature,
-	 * aber abschaltbar. Gelesen von UIFormList, UIToggle, UIOverlay. */
+	/* MERGE 2026-07-27 (CML): weiche UI-uebergaenge, abschaltbar — UIFormList/UIToggle/UIOverlay. */
 	public static ValueBoolean editorSimplifyAnimations;
 	/* MERGE 2026-07-27: felder aus dem CML-upstream, gebraucht von behaltenen CML-dateien. */
 	public static ValueBoolean editorFisheyeWidenFov;
@@ -605,6 +604,7 @@ public class BBSSettings {
 		transformBlenderFeedback = builder.getBoolean("blender_feedback", true);
 		modelEmbeddedIk = builder.getBoolean("model_embedded_ik", true);
 		fontVector = builder.getBoolean("vector_font", false);
+		vectorUi = builder.getBoolean("vector_ui", false);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();
