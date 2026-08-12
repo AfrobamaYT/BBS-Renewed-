@@ -108,6 +108,7 @@ public class UITransformHandler extends UIElement
 
         TransformZeiger.zuruecksetzen();
         mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(false);
+        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setKameraJetzt(null);
     }
 
     @Override
@@ -133,14 +134,22 @@ public class UITransformHandler extends UIElement
          * Linie (transform_constraints.cc), auch beim Grab. */
         boolean helpline = this.transform.getOp() != mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp.TRANSLATE;
 
-        if (an && editing && (helpline || mmbWahl))
+        if (an && editing)
         {
             /* Derselbe Schnappschuss wie bei der Achsenwahl: ungefiltert, ueberlebt einen
-             * unprojizierbaren Ursprung (dann bleibt die Straehne einfach weg). */
+             * unprojizierbaren Ursprung (dann bleibt die Straehne einfach weg). Je Bild
+             * frisch, denn er traegt die AKTUELLE Kamera — die Sperrlinien brauchen sie,
+             * sonst driftet ihr Startpunkt-Anker um die Kamerabewegung seit dem Griff
+             * (Akte 14). */
             java.util.function.Supplier<mchorse.bbs_mod.ui.utils.GizmoDrag> pick = this.transform.axisPickDragSupplier;
             mchorse.bbs_mod.ui.utils.GizmoDrag zug = pick != null ? pick.get() : this.transform.drag;
 
-            TransformStraehne.zeichnen(context, zug != null ? zug : this.transform.drag, !helpline);
+            mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setKameraJetzt(zug != null ? zug.cameraOrigin : null);
+
+            if (helpline || mmbWahl)
+            {
+                TransformStraehne.zeichnen(context, zug != null ? zug : this.transform.drag, !helpline);
+            }
         }
     }
 }

@@ -38,8 +38,19 @@ public final class GizmoAchsenLinien
     /** MMB-Achsenwahl laeuft: alle drei Achsen zeigen. Je Bild vom UITransformHandler gesetzt. */
     private static boolean voransicht;
 
+    /** Kameraposition DIESES Bildes, je Frame vom UITransformHandler aus dem frischen
+     *  Achsenwahl-Schnappschuss gesetzt; {@code null} (auch nach einem Hotswap) faellt auf
+     *  die Griff-Kamera zurueck. Ohne sie driftet der Startpunkt-Anker um die
+     *  Kamerabewegung seit dem Griff (Akte 14: kameralativer Stack braucht start - JETZT). */
+    private static org.joml.Vector3d kameraJetzt;
+
     private GizmoAchsenLinien()
     {}
+
+    public static void setKameraJetzt(org.joml.Vector3d position)
+    {
+        kameraJetzt = position;
+    }
 
     public static void setVoransicht(boolean an)
     {
@@ -82,10 +93,27 @@ public final class GizmoAchsenLinien
          * Kamera steht waehrend eines Modal-Zugs), die Space-Rotation bleibt. */
         if (griff != null && BBSSettings.transformBlenderFeedback.get())
         {
+            /* start - kamera_JETZT: die frische Kamera vom Handler, sonst die vom
+             * Griff (steht die Kamera, sind beide identisch — gemessen deckungsgleich). */
+            org.joml.Vector3d kamera = kameraJetzt != null ? kameraJetzt : griff.cameraOrigin;
+
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                org.joml.Vector3f st = stack.last().pose().getTranslation(new org.joml.Vector3f());
+
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("achsenlinien.anker", String.format(
+                    "stack=%.3f,%.3f,%.3f gesetzt=%.3f,%.3f,%.3f frisch=%s",
+                    st.x, st.y, st.z,
+                    griff.gizmoOrigin.x - kamera.x,
+                    griff.gizmoOrigin.y - kamera.y,
+                    griff.gizmoOrigin.z - kamera.z,
+                    kameraJetzt != null));
+            }
+
             stack.last().pose().setTranslation(
-                (float) (griff.gizmoOrigin.x - griff.cameraOrigin.x),
-                (float) (griff.gizmoOrigin.y - griff.cameraOrigin.y),
-                (float) (griff.gizmoOrigin.z - griff.cameraOrigin.z));
+                (float) (griff.gizmoOrigin.x - kamera.x),
+                (float) (griff.gizmoOrigin.y - kamera.y),
+                (float) (griff.gizmoOrigin.z - kamera.z));
         }
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
