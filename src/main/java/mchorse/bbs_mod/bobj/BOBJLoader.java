@@ -141,6 +141,10 @@ public class BOBJLoader
                 bone = new BOBJBone(i++, tokens[1], tokens[2], boneMat);
                 armature.addBone(bone);
             }
+            else if (first.equals("arm_ik"))
+            {
+                armature.ikChains.add(BOBJIKChain.parse(tokens));
+            }
             else if (first.equals("an"))
             {
                 /* Animation stuff */

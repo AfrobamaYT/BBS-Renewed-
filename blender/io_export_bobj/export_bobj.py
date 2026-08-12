@@ -46,6 +46,7 @@
 #      with a different rotation mode.
 # ------------------------------------------------------------------ #
 
+import math
 import os
 
 import bmesh
@@ -139,6 +140,45 @@ def write_armature(fw, armature, global_matrix):
         string += m + '\n'
 
         fw(string)
+
+    write_ik_chains(fw, armature)
+
+
+def write_ik_chains(fw, armature):
+    """BBS-Fork: IK-Constraints als ``arm_ik``-Zeilen mitschreiben.
+
+    Nur Ketten, deren Ziel (und Pol-Ziel) ein Knochen DERSELBEN Armature ist,
+    reisen mit — nur solche Knochen existieren im BOBJ. Winkel in Grad, wie
+    BBS' ModelIKConfig sie erwartet. Format:
+    ``arm_ik <tip> <target> <chainLen> <poleTarget|-> <poleAngleDeg> <weight> <tipRot> <stretch>``
+    """
+    for pbone in armature.pose.bones:
+        for con in pbone.constraints:
+            if con.type != 'IK' or getattr(con, 'mute', False) or con.influence <= 0.0:
+                continue
+
+            if con.target is None or con.target != armature or not con.subtarget:
+                print("[BOBJ] arm_ik uebersprungen: '%s' zielt nicht auf einen Knochen "
+                      "dieser Armature (Ziel reist im BOBJ nicht mit)." % pbone.name)
+                continue
+
+            pole = ''
+            pole_angle = 0.0
+
+            if (con.pole_target is not None and con.pole_target == armature
+                    and con.pole_subtarget):
+                pole = con.pole_subtarget
+                pole_angle = math.degrees(con.pole_angle)
+
+            fw('arm_ik %s %s %d %s %f %f %d %d\n' % (
+                name_compat(pbone.name),
+                name_compat(con.subtarget),
+                con.chain_count,
+                name_compat(pole) if pole else '-',
+                pole_angle,
+                con.influence,
+                1 if getattr(con, 'use_rotation', False) else 0,
+                1 if getattr(con, 'use_stretch', False) else 0))
 
 
 # ------------------------------------------------------------------

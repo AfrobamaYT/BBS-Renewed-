@@ -76,6 +76,8 @@ public class BOBJModelLoader implements IModelLoader
 
                 ModelInstance instance = new ModelInstance(id, bobjModel, this.convertAnimations(bobjData, new Animations(models.parser)), modelTexture);
 
+                mchorse.bbs_mod.cubic.ik.ModelIKEmbedded.register(instance, armature.ikChains);
+
                 /* Each BOBJ mesh is its own material (keyed by mesh name): load its default texture
                  * from a folder named after the mesh; without one it falls back to the model texture. */
                 for (BOBJLoader.CompiledData mesh : compiledMeshes)

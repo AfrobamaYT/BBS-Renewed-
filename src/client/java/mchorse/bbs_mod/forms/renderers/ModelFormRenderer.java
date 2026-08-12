@@ -156,7 +156,13 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
     public static ModelInstance getModel(ModelForm form)
     {
-        return BBSModClient.getModels().getModel(form.model.get());
+        ModelInstance model = BBSModClient.getModels().getModel(form.model.get());
+
+        /* Importierte IK-Ketten (arm_ik) landen beim Bind als Vorgabe in form.ik —
+         * ein Form ohne eigene IK-Config bekommt das Rig aus der Modelldatei. */
+        mchorse.bbs_mod.cubic.ik.ModelIKEmbedded.uebernehmen(form, model);
+
+        return model;
     }
 
     public ModelFormRenderer(ModelForm form)
@@ -447,30 +453,8 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelIKDebug.render(newStack, model.model, ikMap, "");
         }
 
-        /* ⛔ P3-26.2-AUS — die physik-ueberlagerung im modell-editor zeichnet nicht mehr.
-         * Hier stand, im gleichen if wie die IK-ueberlagerung darueber:
-         *   if (stencilMap == null && !this.renderingArm && this.form != null
-         *       && this.form.physics.get() instanceof MapType physicsMap)
-         *   {
-         *       ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
-         *   }
-         * Weg sind damit: kettendraehte, gelenk-marker, wurzel/spitze-einfaerbung, die
-         * gestrichelte linie zum attach-knochen und die wind-pfeile. Die PHYSIK SELBST
-         * laeuft weiter (ModelPhysicsRuntime, oben) — nur ihr bild fehlt.
-         *
-         * ⚠ ANDERE URSACHE ALS DIE UEBRIGEN P3-AUSSCHLUESSE, nicht verwechseln:
-         * ModelPhysicsDebug importiert KEINE fremd-mod (kein net.diebuddies, kein
-         * foundry.veil, kein net.irisshaders — die klasse hat nur mchorse/blaze3d/
-         * minecraft/joml-importe). Sie hat mit PhysicsMod nichts zu tun, das ist BBS-eigene
-         * knochenphysik. Sie steht im ausschluss, weil ihr zeichenweg halb umgestellt ist:
-         * sie beginnt schon ueber SofortZeichner, beendet aber noch mit
-         * BufferUploader.drawWithShader(builder.build()) aus dem gestrichenen sofortmodus.
-         *
-         * ⭐ SIE KOMMT ALSO DURCH PORTIEREN ZURUECK, nicht mit einer abhaengigkeit — und die
-         * vorlage liegt daneben: ModelIKDebug ist dieselbe zeichensprache und fertig
-         * portiert (try-with-resources um den ByteBufferBuilder, SofortZeichner.beginnen
-         * + SofortZeichner.zeichnen). Danach: ausschluss-zeile in build.gradle streichen,
-         * import und diese beiden bloecke zurueck. */
+        /* ⛔ P3-26.2-AUS: die physik-ueberlagerung (ModelPhysicsDebug) zeichnet nicht mehr —
+         * wiederherstellungs-rezept in docs/BUGLISTE-26.2.md, abschnitt "Portnotiz". */
 
 
         /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur

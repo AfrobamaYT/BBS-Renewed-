@@ -72,6 +72,9 @@ public class BBSSettings {
 	/* Blenders Transform-Rueckmeldung (Akte 07): Cursor je Modus, gestrichelte Straehne
 	 * zum Ursprung, dicke Achsenlinien + Drei-Achsen-Voransicht beim Mittelklick. */
 	public static ValueBoolean transformBlenderFeedback;
+
+	/** Aufgabe #65: IK-Ketten aus der Modelldatei (arm_ik) fuellen leere form.ik-Configs. */
+	public static ValueBoolean modelEmbeddedIk;
 	public static ValueInt texturePickerItemSize;
 	public static ValueBoolean poseMirrorEdit;
 	public static ValueBoolean poseAlternateInvert;
@@ -600,6 +603,7 @@ public class BBSSettings {
 		transformHotkeysWhileControlling = builder.getBoolean("hotkeys_while_controlling", true);
 		transformMiddleClickAxis = builder.getBoolean("middle_click_axis", true);
 		transformBlenderFeedback = builder.getBoolean("blender_feedback", true);
+		modelEmbeddedIk = builder.getBoolean("model_embedded_ik", true);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();

@@ -116,9 +116,12 @@ def menu_func_import(self, context):
 #  Register / unregister
 # ------------------------------------------------------------------ #
 
+from . import mixamo_ik
+
 classes = (
     ExportBOBJ,
     ImportBOBJ,
+    mixamo_ik.BBS_OT_mixamo_ik,
 )
 
 

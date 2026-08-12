@@ -27,10 +27,13 @@ public class BOBJArmature
     public List<BOBJBone> orderedBones = new ArrayList<BOBJBone>();
 
     /**
-     * Array of matrices which are going to be used for transforming 
+     * Array of matrices which are going to be used for transforming
      * vertices.
      */
     public Matrix4f[] matrices;
+
+    /** IK-Ketten aus arm_ik-Zeilen (eigener Exporter-Fork); leer bei Fremd-Exporten. */
+    public List<BOBJIKChain> ikChains = new ArrayList<>();
 
     /**
      * Whether this armature was initialized already 
