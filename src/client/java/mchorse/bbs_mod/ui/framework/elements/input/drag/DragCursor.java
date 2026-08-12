@@ -41,8 +41,10 @@ public class DragCursor
         this.hasLast = true;
     }
 
-    /** Carry the virtual cursor into this frame, damping it while Shift is held. */
-    public void advance(int mouseX, int mouseY)
+    /** Carry the virtual cursor into this frame, damping it while Shift is held.
+     *  {@code fineFactor} is the gesture's precision speed (Blender: 1/10, but
+     *  1/30 for angle/trackball gestures). */
+    public void advance(int mouseX, int mouseY, float fineFactor)
     {
         if (!this.hasLast)
         {
@@ -53,7 +55,7 @@ public class DragCursor
 
         if (Window.isShiftPressed())
         {
-            float keep = 1F - DragStrategy.FINE_DRAG_FACTOR;
+            float keep = 1F - fineFactor;
 
             this.offsetX += (mouseX - this.lastX) * keep;
             this.offsetY += (mouseY - this.lastY) * keep;

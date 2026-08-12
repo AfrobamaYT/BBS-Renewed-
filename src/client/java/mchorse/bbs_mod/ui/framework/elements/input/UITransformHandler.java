@@ -122,18 +122,25 @@ public class UITransformHandler extends UIElement
          * gesetzt und in disable()/removeFromParent ueber den Transform zurueckgenommen. */
         boolean an = mchorse.bbs_mod.BBSSettings.transformBlenderFeedback.get();
         boolean editing = this.transform.isEditing();
+        boolean mmbWahl = editing && this.transform.middleAxis.istWaehlend();
 
         TransformZeiger.setzen(an && editing ? this.transform.getOp() : null);
-        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(editing && this.transform.middleAxis.istWaehlend());
+        mchorse.bbs_mod.ui.utils.GizmoAchsenLinien.setVoransicht(mmbWahl);
 
-        if (an && editing)
+        /* Blenders Helpline-Regeln (transform_input.cc): Scale und Rotate ziehen die
+         * gestrichelte Straehne (HLP_SPRING/HLP_ANGLE), das reine Grab hat KEINE
+         * (HLP_NONE) — nur die MMB-Achsenwahl zeigt ihre eigene, feiner gemusterte
+         * Linie (transform_constraints.cc), auch beim Grab. */
+        boolean helpline = this.transform.getOp() != mchorse.bbs_mod.ui.framework.elements.input.drag.TransformOp.TRANSLATE;
+
+        if (an && editing && (helpline || mmbWahl))
         {
             /* Derselbe Schnappschuss wie bei der Achsenwahl: ungefiltert, ueberlebt einen
              * unprojizierbaren Ursprung (dann bleibt die Straehne einfach weg). */
             java.util.function.Supplier<mchorse.bbs_mod.ui.utils.GizmoDrag> pick = this.transform.axisPickDragSupplier;
             mchorse.bbs_mod.ui.utils.GizmoDrag zug = pick != null ? pick.get() : this.transform.drag;
 
-            TransformStraehne.zeichnen(context, this.transform, zug != null ? zug : this.transform.drag);
+            TransformStraehne.zeichnen(context, zug != null ? zug : this.transform.drag, !helpline);
         }
     }
 }

@@ -113,6 +113,16 @@ public abstract class DragStrategy
         return true;
     }
 
+    /**
+     * Shift-Praezisionsfaktor der virtuellen Maus. Blender faehrt Winkel- und
+     * Trackball-Gesten mit 1/30 statt 1/10 (transform_input.cc,
+     * initMouseInputMode) — die Rotationsstrategien ueberschreiben das.
+     */
+    public float fineFactor()
+    {
+        return FINE_DRAG_FACTOR;
+    }
+
     /** Consume a mouse-wheel event (depth move, sphere roll). */
     public boolean scroll(UIContext context)
     {

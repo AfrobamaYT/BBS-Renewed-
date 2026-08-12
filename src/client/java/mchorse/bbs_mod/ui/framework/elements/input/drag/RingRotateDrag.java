@@ -73,6 +73,13 @@ public class RingRotateDrag extends DragStrategy
         super(ctx, TransformOp.ROTATE, axis, null);
     }
 
+    /** Blenders Winkelgesten-Praezision (transform_input.cc: 1/30 statt 1/10). */
+    @Override
+    public float fineFactor()
+    {
+        return 1F / 30F;
+    }
+
     @Override
     public Vector3f initialRingVec()
     {

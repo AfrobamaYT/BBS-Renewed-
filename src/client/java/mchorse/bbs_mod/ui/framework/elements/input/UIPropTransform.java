@@ -1585,7 +1585,7 @@ public class UIPropTransform extends UITransform
             return;
         }
 
-        this.cursor.advance(context.mouseX, context.mouseY);
+        this.cursor.advance(context.mouseX, context.mouseY, this.strategy != null ? this.strategy.fineFactor() : DragStrategy.FINE_DRAG_FACTOR);
 
         if (rawX <= border || rawX >= w - border)
         {

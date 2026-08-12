@@ -36,9 +36,25 @@ public final class DragStrategyFactory
     {
         boolean rayAllowed = (!hotkeyMode || BBSSettings.transformHotkeys3dRay.get()) && ctx.drag() != null;
 
+        /* Blenders Skalier-Mathe (2D-Distanz-Verhaeltnis zum Pivot) fuer die
+         * HOTKEY-Geste — der Gizmo-Griff behaelt seinen Achs-Hebel (dort zieht
+         * man am Handle selbst). Kein Strahl, braucht nur den projizierbaren
+         * Ursprung; Schalter aus -> altes Verhalten (additiv/Achs-Hebel). */
+        boolean spring = hotkeyMode && BBSSettings.transformBlenderFeedback.get() && ctx.drag() != null;
+
+        if (spring && op == TransformOp.SCALE && variant != Variant.UNIFORM_SCALE)
+        {
+            return new SpringScaleDrag(ctx, axis, axis2, false);
+        }
+
         switch (variant)
         {
             case UNIFORM_SCALE:
+                if (spring)
+                {
+                    return new SpringScaleDrag(ctx, axis, axis2, true);
+                }
+
                 /* The ray's lever runs along a single axis, which reads wildly
                  * for a centre grab and makes the scale explode. */
                 return new AdditiveDrag(ctx, TransformOp.SCALE, axis, axis2, true);

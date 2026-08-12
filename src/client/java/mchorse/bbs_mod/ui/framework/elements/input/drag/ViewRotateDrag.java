@@ -56,6 +56,13 @@ public class ViewRotateDrag extends DragStrategy
         return true;
     }
 
+    /** Blenders Winkelgesten-Praezision (transform_input.cc: 1/30 statt 1/10). */
+    @Override
+    public float fineFactor()
+    {
+        return 1F / 30F;
+    }
+
     @Override
     public String editingTargetLabel()
     {
