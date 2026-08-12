@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.drag;
 import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.graphics.window.Window;
 import mchorse.bbs_mod.ui.framework.UIContext;
+import mchorse.bbs_mod.ui.utils.Gizmo;
 import mchorse.bbs_mod.ui.utils.GizmoDrag;
 import mchorse.bbs_mod.utils.Axis;
 import mchorse.bbs_mod.utils.MathUtils;
@@ -159,6 +160,33 @@ public abstract class DragStrategy
     public String editingTargetLabel()
     {
         return null;
+    }
+
+    /**
+     * Stencil-Index der Achsen-Sperrlinie dieser Geste, oder {@code -1} fuer keine.
+     * Bildschirm-Grab und uniformes Scale haben keine Achsbindung — der S-Hotkey
+     * laeuft intern mit Axis.X, dessen rote Linie faelschlich zeichnete (Akte 11);
+     * Blender zeigt bei S ohne Constraint nur die Helpline.
+     */
+    public int stencilIndex()
+    {
+        if (this.isScreenTranslate() || this.isScaleAll())
+        {
+            return -1;
+        }
+
+        if (this.axis2 != null)
+        {
+            if ((this.axis == Axis.X && this.axis2 == Axis.Z) || (this.axis == Axis.Z && this.axis2 == Axis.X)) return Gizmo.STENCIL_XZ;
+            if ((this.axis == Axis.X && this.axis2 == Axis.Y) || (this.axis == Axis.Y && this.axis2 == Axis.X)) return Gizmo.STENCIL_XY;
+            if ((this.axis == Axis.Z && this.axis2 == Axis.Y) || (this.axis == Axis.Y && this.axis2 == Axis.Z)) return Gizmo.STENCIL_ZY;
+        }
+
+        if (this.axis == Axis.X) return Gizmo.STENCIL_X;
+        if (this.axis == Axis.Y) return Gizmo.STENCIL_Y;
+        if (this.axis == Axis.Z) return Gizmo.STENCIL_Z;
+
+        return -1;
     }
 
     /** Whether typed numeric input may drive this gesture. */

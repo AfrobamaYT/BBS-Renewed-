@@ -933,7 +933,7 @@ public class Gizmo
          * dort sitzt auch Akte 07: blender-dicke Linien + MMB-Voransicht aller drei Achsen.
          * Der fruehe return fuer "kein Index" ist mitgewandert — die Voransicht muss auch
          * ohne gesperrte Achse zeichnen. */
-        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3");
+        mchorse.bbs_mod.graphics.Messpunkt.zaehle("gizmo3d.stelle3", "idx=" + debugIndex + " selbst=" + this.index);
         GizmoAchsenLinien.zeichnen(stack, debugIndex, this.getAxesDistanceScale(stack));
     }
 

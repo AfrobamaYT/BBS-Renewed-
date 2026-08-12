@@ -611,36 +611,11 @@ public class UIPropTransform extends UITransform
         return this.drag;
     }
 
+    /** Stencil-Mapping ausgelagert: die Geste kennt ihre Achsbindung selbst
+     *  ({@link DragStrategy#stencilIndex()}, inkl. Akte 11: uniformes S ohne Linie). */
     public int getDebugLineStencilIndex()
     {
-        if (!this.editing || this.isScreenTranslate())
-        {
-            return -1;
-        }
-
-        if (this.axis2 != null)
-        {
-            if ((this.axis == Axis.X && this.axis2 == Axis.Z) || (this.axis == Axis.Z && this.axis2 == Axis.X))
-            {
-                return Gizmo.STENCIL_XZ;
-            }
-
-            if ((this.axis == Axis.X && this.axis2 == Axis.Y) || (this.axis == Axis.Y && this.axis2 == Axis.X))
-            {
-                return Gizmo.STENCIL_XY;
-            }
-
-            if ((this.axis == Axis.Z && this.axis2 == Axis.Y) || (this.axis == Axis.Y && this.axis2 == Axis.Z))
-            {
-                return Gizmo.STENCIL_ZY;
-            }
-        }
-
-        if (this.axis == Axis.X) return Gizmo.STENCIL_X;
-        if (this.axis == Axis.Y) return Gizmo.STENCIL_Y;
-        if (this.axis == Axis.Z) return Gizmo.STENCIL_Z;
-
-        return -1;
+        return this.editing && this.strategy != null ? this.strategy.stencilIndex() : -1;
     }
 
     public void refillTransform()

@@ -14,11 +14,14 @@ import org.joml.Vector2f;
  * MMB-Achsenwahl hat ihre eigene, feiner gemusterte Linie
  * (transform_constraints.cc: dash_width 2 statt 8).
  *
- * <p>Muster in PIXELN ab dem Ursprung verankert (Blenders Dash-Shader misst die
- * Distanz ab dem ersten Vertex): waechst die Linie, stehen die Striche am Objekt
- * fest und neue erscheinen an der Maus-Seite. Vor dem hellen Strich liegt ein um
- * 1px versetzter dunkler (Blenders bg/fg-Doppelpass), damit die 1px-Linie auf
- * hellem Grund lesbar bleibt. Unprojizierbarer Ursprung -> keine Straehne.</p>
+ * <p>Muster in PIXELN an der MAUS verankert und rueckwaerts zum Ursprung gelaufen:
+ * die Striche stehen unterm Zeiger still und "entstehen" beim Wegziehen am
+ * Objektpunkt (Nutzer-Abnahme gegen echtes Blender — wirkt smoother als die
+ * Objekt-Verankerung, weil der Blick an der Maus haengt). Am Ursprung sitzt
+ * Blenders oranger Origin-Punkt, von dem die Straehne ausgeht. Vor dem hellen
+ * Strich liegt ein um 1px versetzter dunkler (Blenders bg/fg-Doppelpass), damit
+ * die 1px-Linie auf hellem Grund lesbar bleibt. Unprojizierbarer Ursprung ->
+ * keine Straehne.</p>
  */
 public final class TransformStraehne
 {
@@ -32,6 +35,10 @@ public final class TransformStraehne
 
     private static final int FARBE = 0xE8FFFFFF;
     private static final int SCHATTEN = 0x80000000;
+
+    /** Blenders Origin-Dot des aktiven Objekts (Theme "active": orange). */
+    private static final int PUNKT_ORANGE = 0xFFFFA028;
+    private static final int PUNKT_RAND = 0xB0000000;
 
     private TransformStraehne()
     {}
@@ -78,16 +85,17 @@ public final class TransformStraehne
         float schritt = Math.min(1F, segment);
 
         /* Punktfolge statt gedrehter Rechtecke: der Batcher kennt nur achsenparallele
-         * Kaesten; 1px-Punkte im Pixel-Raster ab Ursprung lesen sich als Blenders
-         * gestrichelte 1px-Linie. */
+         * Kaesten; 1px-Punkte im Pixel-Raster lesen sich als Blenders gestrichelte
+         * 1px-Linie. t laeuft VON DER MAUS rueckwaerts zum Ursprung (Anker an der
+         * Maus, s.o.). */
         for (float t = 0F; t < laenge; t += segment + luecke)
         {
             float ende = Math.min(t + segment, laenge);
 
             for (float s = t; s < ende; s += schritt)
             {
-                float x = ursprung.x + rx * s;
-                float y = ursprung.y + ry * s;
+                float x = context.mouseX - rx * s;
+                float y = context.mouseY - ry * s;
 
                 if (!fein)
                 {
@@ -97,5 +105,10 @@ public final class TransformStraehne
                 context.batcher.box(x - 0.5F, y - 0.5F, x + 0.5F, y + 0.5F, FARBE);
             }
         }
+
+        /* Blenders Origin-Punkt: der orange Dot, aus dem die Straehne zieht. Nach
+         * der Linie gezeichnet, damit er den Strich-Rest am Ursprung ueberdeckt. */
+        context.batcher.box(ursprung.x - 2.5F, ursprung.y - 2.5F, ursprung.x + 2.5F, ursprung.y + 2.5F, PUNKT_RAND);
+        context.batcher.box(ursprung.x - 1.5F, ursprung.y - 1.5F, ursprung.x + 1.5F, ursprung.y + 1.5F, PUNKT_ORANGE);
     }
 }
