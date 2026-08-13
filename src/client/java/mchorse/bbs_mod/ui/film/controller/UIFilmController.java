@@ -636,17 +636,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         boolean gizmoShown = this.canShowGizmo();
 
-        /* Gizmo handles beat everything (rendered on top). The trackball
-         * sphere is deferred to the very end so its flat screen disc doesn't
-         * override actor markers and the viewport's other picks. Both are gated
-         * on the gizmo actually being shown — otherwise the sphere grabs clicks
-         * even with no bone selected (nothing rendered). */
+        /* Gizmo-Handles schlagen alles (oben gezeichnet); die Trackball-Kugel kommt
+         * zuletzt, sonst schluckt ihre Scheibe fremde Picks. Beides nur bei sichtbarem
+         * Gizmo — sonst faengt die Kugel Klicks ohne selektierten Bone. */
         if (gizmoShown && this.gizmo.mouseClickedHandle(context))
         {
             return true;
         }
 
-        /* Alt pick the replay */
         if (context.mouseButton == 0 && this.hoveredReplayIndex >= 0)
         {
             this.pickReplay(this.hoveredReplayIndex);
@@ -1458,11 +1455,14 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         /* 26.2: kein enableDepthTest mehr noetig — jede Pipeline bringt ihren Tiefentest mit. */
 
-        /* Blenders Active-Highlight: der gepickte Bone faerbt sein IK-Widget (wirkt ab dem
-         * naechsten Frame — die Formen dieses Frames sind schon gezeichnet). */
         Pair<String, Boolean> picked = this.getBone();
 
         ModelIKDebug.setSelection(picked == null ? null : picked.a);
+
+        if (!this.isRecording())
+        {
+            ModelIKDebug.renderEditor(this, context);
+        }
 
         if (this.editorController != null)
         {

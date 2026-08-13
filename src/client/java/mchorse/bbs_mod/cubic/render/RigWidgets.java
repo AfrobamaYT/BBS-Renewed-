@@ -135,6 +135,27 @@ public final class RigWidgets
     }
 
     /**
+     * Wie {@link #emit}, aber mit einer FERTIG kombinierten Matrix (Kamera-Raum x
+     * Bone-Welt) — der Weg des Editor-Passes, der die Welt-Matrix je Ziel-Bone ueber
+     * {@code getBoneCompositeMatrix} bezieht statt ueber model-lokale PivotFrames.
+     */
+    public static void emit(BufferBuilder builder, Matrix4f kombi, int shape, float size, float[] col, float a)
+    {
+        float[] segments = shape == ValueDebugElement.SHAPE_WIRE_SPHERE ? SPHERE
+            : shape == ValueDebugElement.SHAPE_WIRE_CIRCLE ? CIRCLE : CUBE;
+
+        for (int i = 0; i < segments.length; i += 6)
+        {
+            P1.set(segments[i] * size, segments[i + 1] * size, segments[i + 2] * size);
+            kombi.transformPosition(P1);
+            P2.set(segments[i + 3] * size, segments[i + 4] * size, segments[i + 5] * size);
+            kombi.transformPosition(P2);
+
+            band(builder, P1, P2, col, a);
+        }
+    }
+
+    /**
      * Ein Segment als kameragerichtetes Band aus drei Streifen: opaker Kern, links und
      * rechts je ein Streifen, dessen Aussenkante auf Alpha 0 läuft — der Rasterizer
      * interpoliert dazwischen, die Kante wird weich (Blenders smoothstep, linear genähert).

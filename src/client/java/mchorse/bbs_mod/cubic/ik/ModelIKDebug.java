@@ -67,6 +67,137 @@ public final class ModelIKDebug
         selectedBone = bone == null || bone.isEmpty() ? null : bone;
     }
 
+    /**
+     * Editor-Pass: die sichtbaren Rig-Widgets des selektierten Replays, gezeichnet im
+     * Film-Weltpass (neben MotionPath) — NICHT im Form-Renderer: der laeuft je Rufer in
+     * Miniatur-Ziele, und sein Welt-Zweig feuerte nicht verlaesslich (Messrest 2026-08-13).
+     * Welt-Matrix je Ziel-Bone ueber {@code getBoneCompositeMatrix}, kamera-relativ, ein
+     * TRIANGLES-Blend-Zug ins Weltbild.
+     */
+    public static void renderEditor(mchorse.bbs_mod.ui.film.controller.UIFilmController controller, net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context)
+    {
+        ValueIKDebug config = BBSSettings.ikDebug;
+        boolean targets = config.target.visible.get();
+        boolean poles = config.pole.visible.get();
+
+        if (!config.enabled.get() || (!targets && !poles))
+        {
+            return;
+        }
+
+        mchorse.bbs_mod.forms.entities.IEntity entity = controller.getCurrentEntity();
+        mchorse.bbs_mod.film.replays.Replay replay = controller.panel.replayEditor.getReplay();
+
+        if (entity == null || replay == null
+            || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
+            || !(form.ik.get() instanceof MapType map)
+            || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
+        {
+            return;
+        }
+
+        mchorse.bbs_mod.cubic.ModelInstance instance = renderer.getModel();
+
+        if (instance == null || instance.model == null)
+        {
+            return;
+        }
+
+        ModelIKCache.Compiled compiled = ModelIKCache.getFromData(instance.model, map);
+
+        if (compiled == null || compiled.chains() == null || compiled.chains().isEmpty())
+        {
+            return;
+        }
+
+        net.minecraft.world.phys.Vec3 kamera = context.levelState().cameraRenderState.pos;
+        Matrix4f sicht = modellansicht();
+        float a = config.opacity.get();
+        boolean tiefe = !config.xray.get();
+        var entities = controller.getEntities();
+
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(65536))
+        {
+            BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            for (ModelIKCache.CompiledChain chain : compiled.chains())
+            {
+                List<String> glieder = chain.chainRootToEffector();
+
+                if (glieder == null || glieder.size() < 2)
+                {
+                    continue;
+                }
+
+                /* Widget-Grundmass: die Welt-Segmentlaenge der Kette. */
+                Matrix4f wurzel = welt(entities, entity, replay, glieder.get(0));
+                Matrix4f spitze = welt(entities, entity, replay, glieder.get(glieder.size() - 1));
+
+                if (wurzel == null || spitze == null)
+                {
+                    continue;
+                }
+
+                float unit = wurzel.getTranslation(new Vector3f())
+                    .distance(spitze.getTranslation(new Vector3f())) / (glieder.size() - 1);
+
+                if (targets)
+                {
+                    zeichneWidget(wire, sicht, kamera, welt(entities, entity, replay, chain.target()),
+                        rollenShape(chain.target(), config.target.shape.get()),
+                        unit * config.target.size.get(), config.target.color.get(),
+                        chain.target().equals(selectedBone), a);
+                }
+
+                if (poles && chain.poleTarget() != null && !chain.poleTarget().isEmpty())
+                {
+                    zeichneWidget(wire, sicht, kamera, welt(entities, entity, replay, chain.poleTarget()),
+                        config.pole.shape.get(),
+                        unit * config.pole.size.get() * 1.3F, config.pole.color.get(),
+                        chain.poleTarget().equals(selectedBone), a);
+                }
+            }
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
+                wire.build(),
+                new Matrix4f(),
+                null,
+                null);
+        }
+    }
+
+    private static Matrix4f welt(io.netty.util.collection.IntObjectMap<mchorse.bbs_mod.forms.entities.IEntity> entities,
+        mchorse.bbs_mod.forms.entities.IEntity entity, mchorse.bbs_mod.film.replays.Replay replay, String bone)
+    {
+        return mchorse.bbs_mod.film.BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F, bone, false);
+    }
+
+    private static void zeichneWidget(BufferBuilder wire, Matrix4f sicht, net.minecraft.world.phys.Vec3 kamera,
+        Matrix4f welt, int shape, float size, int farbe, boolean selektiert, float a)
+    {
+        if (welt == null)
+        {
+            return;
+        }
+
+        if (shape == mchorse.bbs_mod.settings.values.ui.ValueDebugElement.SHAPE_WIRE_CIRCLE)
+        {
+            size *= 2.5F;
+        }
+        else if (shape == mchorse.bbs_mod.settings.values.ui.ValueDebugElement.SHAPE_WIRE_CUBE)
+        {
+            size *= 1.6F;
+        }
+
+        Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(welt).setTranslation(
+            (float) (welt.m30() - kamera.x),
+            (float) (welt.m31() - kamera.y),
+            (float) (welt.m32() - kamera.z)));
+
+        RigWidgets.emit(wire, kombi, shape, size, RigWidgets.wireColor(farbe, selektiert), a);
+    }
+
     public static void render(PoseStack stack, IModel model, MapType ikData, String selectedTip)
     {
         ValueIKDebug config = BBSSettings.ikDebug;
