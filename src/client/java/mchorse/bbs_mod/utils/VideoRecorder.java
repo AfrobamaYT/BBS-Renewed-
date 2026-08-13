@@ -103,6 +103,15 @@ public class VideoRecorder
             StringBuilder filters = new StringBuilder("vflip");
             float frameRate = (float) BBSRendering.getVideoFrameRate();
 
+            /* P7a: Frames kommen supersampled herein — VOR dem zeitlichen tblend auf die
+             * Zielgroesse (Lanczos), sonst mittelt der Blur auf N-facher Flaeche umsonst. */
+            int supersampling = BBSSettings.videoSupersampling.get();
+
+            if (supersampling > 1)
+            {
+                filters.append(",scale=").append(width / supersampling).append(":").append(height / supersampling).append(":flags=lanczos");
+            }
+
             int motionBlur = BBSRendering.getMotionBlur();
 
             for (int i = 0; i < motionBlur; i++)

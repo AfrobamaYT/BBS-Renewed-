@@ -1692,5 +1692,7 @@
 	"bbs.ui.command_palette.title": "Команды",
 	"bbs.ui.keys.command_palette": "Палитра команд",
 	"bbs.ui.script_console.title": "Консоль скриптов",
-	"bbs.ui.keys.script_console": "Консоль скриптов"
+	"bbs.ui.keys.script_console": "Консоль скриптов",
+	"bbs.config.video.supersampling": "Суперсэмплинг",
+	"bbs.config.video.supersampling-comment": "Рендерить экспорт в N× разрешении и уменьшать обратно (Lanczos) — более гладкие края ценой времени рендера"
 }

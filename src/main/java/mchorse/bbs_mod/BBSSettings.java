@@ -114,6 +114,8 @@ public class BBSSettings {
 	public static ValueInt videoWidth;
 	public static ValueInt videoHeight;
 	public static ValueInt videoFrameRate;
+	/** P7a: Export rendert mit Faktor N und ffmpeg skaliert per Lanczos zurueck. */
+	public static ValueInt videoSupersampling;
 	public static ValueBoolean videoLimitFrameRate;
 	public static ValueString videoExportPath;
 	public static ValueString videoExportFilenameFormat;
@@ -470,11 +472,7 @@ public class BBSSettings {
 		return editorHorizontalClipEditor.get();
 	}
 
-	/**
-	 * Returns the user-configured default shape for newly created keyframes. Falls back to
-	 * {@link KeyframeShape#SQUARE} before settings are registered or if the stored ordinal
-	 * is out of range (e.g. after the enum shrinks in a future version).
-	 */
+	/** Default-Form neuer Keyframes; Fallback SQUARE vor Registrierung oder bei Ordinal ausserhalb. */
 	public static KeyframeShape getDefaultKeyframeShape()
 	{
 		if (keyframeDefaultShape == null)
@@ -488,13 +486,9 @@ public class BBSSettings {
 		return index >= 0 && index < values.length ? values[index] : KeyframeShape.SQUARE;
 	}
 
-	/**
-	 * The interpolation given to a hand-created keyframe when it has no neighbour to inherit
-	 * from (see {@code IUIKeyframeGraph#addKeyframeManually}) - i.e. the replacement for the
-	 * hardcoded linear that used to apply in that "empty spot" case. Keyframes that do inherit
-	 * from a neighbour keep the neighbour's interpolation, and recorded/baked keyframes never
-	 * consult this. Falls back to linear before settings are registered or on an unknown key.
-	 */
+	/** Interpolation fuer hand-erzeugte Keyframes OHNE Nachbarn (IUIKeyframeGraph#addKeyframeManually);
+	 *  mit Nachbar erbt der Keyframe, recorded/baked fragen nie. Fallback linear (vor Registrierung
+	 *  oder bei unbekanntem Key). */
 	public static IInterp getDefaultKeyframeInterpolation()
 	{
 		if (keyframeDefaultInterpolation == null)
@@ -660,6 +654,7 @@ public class BBSSettings {
 		videoExportMinecraftSounds = builder.getBoolean("minecraft_sounds", false);
 		videoMuteAudioWhileRender = builder.getBoolean("mute_audio_while_render", false);
 		videoMotionBlur = builder.getInt("motion_blur", 0, 0, 6);
+		videoSupersampling = builder.getInt("supersampling", 1, 1, 4).slider();
 		videoHeldFrames = builder.getInt("held_frames", 1, 1, 1000);
 		videoDelay = builder.getFloat("delay", 0.5F, 0F, 30F);
 		videoOpenFolderAfterExport = builder.getBoolean("open_folder_after_export", false);

@@ -1851,5 +1851,7 @@
 	"bbs.ui.command_palette.title": "Commands",
 	"bbs.ui.keys.command_palette": "Command palette",
 	"bbs.ui.script_console.title": "Script console",
-	"bbs.ui.keys.script_console": "Script console"
+	"bbs.ui.keys.script_console": "Script console",
+	"bbs.config.video.supersampling": "Supersampling",
+	"bbs.config.video.supersampling-comment": "Render the export at N× resolution and scale it back down (Lanczos) — smoother edges at the cost of render time"
 }
