@@ -184,8 +184,6 @@ public class BBSSettings {
 	public static ValueFloat editorOrbitFrameMargin;
 	public static ValueFloat editorCameraSmoothness;
 	public static ValueInt editorCameraMode;
-	/** P5: Bewegungspfad des gewaehlten Replays im Viewport (Blender motion paths). */
-	public static ValueBoolean editorMotionPaths;
 	public static ValueBoolean editorPlayerFollowsCamera;
 	public static ValueEditorLayout editorLayoutSettings;
 	public static ValueOnionSkin editorOnionSkin;
@@ -712,7 +710,6 @@ public class BBSSettings {
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
-		editorMotionPaths = builder.getBoolean("motion_paths", false);
 		/* Das dock-layout wird durch das verschieben der panels geschrieben, nicht in den
 		 * settings eingestellt — dort stand nur der rohe schluessel. */
 		builder.register((editorLayoutSettings = new ValueEditorLayout("layout")).invisible());

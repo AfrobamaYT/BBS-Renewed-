@@ -2965,7 +2965,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
 
             /* P5/V1: Bewegungspfad — laeuft hier in BEIDEN Welt-Paessen. */
-            mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.ausPanel(context, this.replayEditor.getReplay(), this.getCursor());
+            /* Motion Paths zeichnet MotionPath.render (fs-Port im UIFilmController). */
 
             /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
              * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
