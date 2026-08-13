@@ -507,27 +507,12 @@ public class BBSRendering
     /**
      * Setzt die beiden Textursicht-Umleitungen.
      *
-     * <p>⛔ DAS IST NICHT DIE STELLE, AN DER BBS DEN FILM UMLENKT. Hier stand genau das --
-     * "das Herzstueck davon, dass BBS den Film in seinen eigenen Rahmenpuffer rendert" -- und
-     * es war falsch. Der Satz hat Aufgabe 91 verursacht: das Vorschaufeld blieb schwarz, weil
-     * die Welt nie in BBS' Puffer kam, und niemand suchte hier, weil hier ja angeblich die
-     * Umlenkung sass.
-     *
-     * <p><b>Warum es nicht reicht</b> (im Bytecode nachgesehen, nicht geschlossen):
-     * {@code LevelRenderer.render} holt sein Ziel ueber {@code GameRenderer.mainRenderTarget()}
-     * und meldet es per {@code FrameGraphBuilder.importExternal("main", ...)} an -- DA faellt
-     * die Entscheidung. Dieselbe Methode setzt {@code outputColorTextureOverride} anschliessend
-     * SELBST und raeumt es danach wieder ab. Es ist ein kurzlebiger Schalter innerhalb eines
-     * Durchgangs; ein vorher gesetzter Wert ist weg, sobald Vanilla ihn ueberschreibt.
-     *
-     * <p><b>Wo die Umlenkung wirklich sitzt:</b> {@code GameRendererMixin#bbs$umlenkenAufFilmpuffer}
-     * gibt bei {@link #canReplaceFramebuffer()} BBS' Puffer aus {@code mainRenderTarget()} heraus.
-     * Das ist die 26.2-Entsprechung des frueher ueberschriebenen Feldes.
-     *
-     * <p>⚠️ Diese Methode bleibt trotzdem stehen: {@code null} ist der Normalzustand, nicht
-     * "der Bildschirm", und eine stehengelassene Umleitung zoege alles Folgende ins fremde
-     * Ziel. OFFEN und ungemessen ist, ob die Setzerei hier ueberhaupt noch etwas bewirkt --
-     * siehe Aufgabe 92, dort gehoert sie geprueft statt geraten.
+     * <p>⛔ NICHT die Stelle, an der BBS den Film umlenkt (dieser Irrglaube verursachte
+     * Aufgabe 91): {@code LevelRenderer.render} setzt {@code outputColorTextureOverride}
+     * selbst und raeumt es ab — ein vorher gesetzter Wert ist weg. Die echte Umlenkung ist
+     * {@code GameRendererMixin#bbs$umlenkenAufFilmpuffer} via {@link #canReplaceFramebuffer()}.
+     * Bleibt stehen, weil {@code null} der Normalzustand ist; ob die Setzerei noch etwas
+     * bewirkt, ist OFFEN (Aufgabe 92 — messen, nicht raten).
      */
     private static void reassignFramebuffer(RenderTarget framebuffer)
     {
@@ -708,19 +693,27 @@ public class BBSRendering
         int targetWidth = getVideoWidth();
         int targetHeight = getVideoHeight();
 
-        if (texture.width != targetWidth || texture.height != targetHeight)
-        {
-            texture.bind();
-            texture.setSize(targetWidth, targetHeight);
-            texture.unbind();
-        }
-
         if (exportFramebuffer == null)
         {
             exportFramebuffer = new mchorse.bbs_mod.graphics.Framebuffer();
             exportFramebuffer.attach(texture, GL30.GL_COLOR_ATTACHMENT0);
             exportFramebuffer.unbind();
         }
+
+        if (texture.width != targetWidth || texture.height != targetHeight)
+        {
+            /* ⛔ NIE texture.setSize() direkt: in 26.2 wechselt setSize die GL-Nummer
+             * (Texture.allocate legt ein neues GPU-Objekt an), und das FBO behielte die
+             * alte im GL-Anhang — der Blit fuellte fortan eine freigegebene Textur,
+             * waehrend das Vorschaufeld die neue, ewig leere sampelt (RenderDoc-Beweis
+             * 2026-08-13: Welt+Overlays landeten in der toten 1280x720, das GUI las die
+             * schwarze 640x360; V1-Wurzelursache). resize() zieht den Anhang nach. */
+            exportFramebuffer.resize(targetWidth, targetHeight);
+        }
+
+        /* Jedes Bild, nicht nur bei Groessenwechsel: setSize kann auch WOANDERS gelaufen
+         * sein (gleiche Groesse, neue GL-Nummer) — dieselbe Entscheidung wie leseFboFuer. */
+        exportFramebuffer.anhangNachziehen();
 
         /* The export framebuffer is rendered at the display's native resolution, which on
          * HiDPI screens (such as Retina) is larger than the requested video size. Downscale
@@ -769,27 +762,11 @@ public class BBSRendering
          * gemessen wirkungslos, der Weltdurchgang ueberschreibt Farbe UND Alpha (mit Rot als
          * Loeschfarbe gegengeprueft). */
         /* ⛔ DER SCISSOR MUSS SCHON FUER DEN BLIT AUS SEIN, NICHT ERST FUER DAS CLEAR.
-         *
-         * Laut GL-Spezifikation wirken auf einen Blit genau drei Dinge: Pixel-Ownership,
-         * SCISSOR und die sRGB-Wandlung (der Fragmentteil wird uebersprungen -- deshalb
-         * greifen Schreibmasken hier auch nicht, siehe unten). Der Scissor stand hier
-         * jahrelang nur um das glClear herum; der Blit lief also unter dem Rechteck, das
-         * die Oberflaeche zuletzt gesetzt hatte.
-         *
-         * AM LAUFENDEN SPIEL GEMESSEN (2026-08-04, unmittelbar vor dem Blit):
-         *
-         *     an=true  kasten=0,0 512x256   ziel=1280x720
-         *
-         * Der Blit beschrieb also einen Ausschnitt der Vorschautextur, und der Rest behielt
-         * das VORIGE Bild. Sichtbar wurde das als eingefrorener Streifen im Sichtfenster:
-         * waehrend eines Schwenks aenderten sich 53-56 % der Flaeche, ein scharf begrenzter
-         * Block ab 0,799 der Breite aber 0,0 % -- in fuenf aufeinanderfolgenden Bildpaaren
-         * derselbe Rand (Bugliste #1/#3, vom Nutzer bei "exakt 0,8" gemeldet).
-         *
-         * WARUM ES NUR BEI WENIG BILDERN AUFFAELLT: der Streifen zeigt immer das vorige Bild.
-         * Bei 90 fps liegen 11 ms dazwischen -- kein sichtbarer Unterschied. Bei 10 fps sind
-         * es 100 ms Kamerafahrt, und der Streifen steht sichtbar in einer anderen
-         * Perspektive. Der Fehler war also immer da, nur unsichtbar schnell. */
+         * Laut GL-Spez wirken auf einen Blit Pixel-Ownership, SCISSOR und sRGB — Schreib-
+         * masken nicht (Fragmentteil uebersprungen). Gemessen 2026-08-04: ein stehen-
+         * gelassenes GUI-Rechteck (512x256 auf 1280x720) liess den Blit nur einen Ausschnitt
+         * beschreiben — sichtbar als eingefrorener Streifen ab 0,8 der Breite (Bugliste
+         * #1/#3), bei hohen FPS unsichtbar schnell, bei 10 fps deutlich. */
         boolean scissor = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
 
         if (scissor)
@@ -802,6 +779,17 @@ public class BBSRendering
             0, 0, targetWidth, targetHeight,
             GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR
         );
+
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            /* ⚠️ GL-Nummern-Gleichheit beweist hier KEINE Objektidentitaet: GL recycelt
+             * freigegebene Nummern sofort (V1-Jagd 2026-08-13 — vonTex/nachTex sahen
+             * korrekt aus, waehrend das GUI ein totes Objekt gleicher Nummer las). */
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("fuellen.blit",
+                "vonTex=" + ((com.mojang.blaze3d.opengl.GlTexture) framebuffer.getColorTexture()).glId()
+                    + " von=" + framebuffer.width + "x" + framebuffer.height
+                    + " nachTex=" + getTexture().id + " nach=" + targetWidth + "x" + targetHeight);
+        }
 
         /* Dasselbe gilt fuers Clear: ein stehengelassenes Rechteck wuerde den Alphakanal nur
          * teilweise setzen -- ein halb sichtbarer Himmel waere schwerer zu deuten als gar

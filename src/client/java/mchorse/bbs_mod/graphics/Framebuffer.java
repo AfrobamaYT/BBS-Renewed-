@@ -95,6 +95,32 @@ public class Framebuffer
     }
 
     /**
+     * Haengt alle gemerkten Texturen mit ihrer AKTUELLEN GL-Nummer neu an — fuer Aufrufer,
+     * deren Textur ausserhalb von {@link #resize} die Nummer gewechselt hat (setSize direkt,
+     * siehe {@link #anhaenge}). Ein glFramebufferTexture2D je Bild kostet nichts Messbares.
+     */
+    public void anhangNachziehen()
+    {
+        this.bind();
+
+        for (Texture texture : this.textures)
+        {
+            Integer anhang = this.anhaenge.get(texture);
+
+            if (anhang == null)
+            {
+                continue;
+            }
+
+            texture.bind();
+
+            GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, anhang, texture.target, texture.id, 0);
+        }
+
+        this.unbind();
+    }
+
+    /**
      * Attach a renderbuffer as one of the attachment buffers
      */
     public void attach(Renderbuffer renderbuffer)
