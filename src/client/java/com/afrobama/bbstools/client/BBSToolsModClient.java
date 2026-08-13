@@ -977,7 +977,6 @@ public final class BBSToolsModClient implements ClientModInitializer
         com.afrobama.bbstools.client.campreview.ActiveCameraClipRegistry.register();
         com.afrobama.bbstools.client.campreview.ClipViewportFramebuffers.register();
         com.afrobama.bbstools.client.campreview.CameraFrustumMeshRenderer.register();
-        mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.register();
         com.afrobama.bbstools.client.campreview.CameraMeshToggleHandler.register();
 
         /* Per-tick polling for the rewind detector + collision/velocity

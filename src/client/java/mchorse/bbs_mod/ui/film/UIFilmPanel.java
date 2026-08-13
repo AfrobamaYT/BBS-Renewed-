@@ -2964,6 +2964,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
 
+            /* P5/V1: Bewegungspfad — laeuft hier in BEIDEN Welt-Paessen. */
+            mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.ausPanel(context, this.replayEditor.getReplay(), this.getCursor());
+
             /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
              * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
             mchorse.bbs_mod.graphics.Zeichenlage.melden(
@@ -3110,13 +3113,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         return !this.isFlying();
     }
 
-    /**
-     * Whether a visible clips timeline has a clip selected — i.e. the clip
-     * keybinds (like {@code M} for duration) would claim the key. Preview
-     * shortcuts that share a key with a clip keybind (the motion path toggle)
-     * step aside when this is true, since the clips editor sits before the
-     * controller in the key dispatch and would otherwise never see the press.
-     */
+    /** Sichtbare Clip-Timeline mit Auswahl: Clip-Keybinds (M=duration) beanspruchen die
+     *  Taste — geteilte Preview-Shortcuts treten zurueck (Clips-Editor sitzt im Dispatch davor). */
     public boolean hasSelectedClip()
     {
         return (this.cameraEditor != null && this.cameraEditor.isVisible() && this.cameraEditor.getClip() != null)
