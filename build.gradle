@@ -558,6 +558,20 @@ dependencies {
  * (dann eben nur body-hotswap statt vollem).
  */
 tasks.matching { it.name == "runQuick" || it.name == "runClient" }.configureEach {
+	/* V1-Messung: ./gradlew runQuick -Prenderdoc laedt librenderdoc in die CLIENT-JVM
+	 * (LD_PRELOAD ueber die gradle-kette wird gestrippt — hier ist der einzige ort). */
+	if (project.hasProperty("renderdoc")) {
+		it.environment("LD_PRELOAD", "/usr/lib/librenderdoc.so")
+		it.doFirst { logger.lifecycle("[renderdoc] librenderdoc.so in die client-jvm geladen (F12 = capture)") }
+	}
+	/* V1: ./gradlew runQuick -Papitrace zeichnet ALLE GL-Calls der Client-JVM auf
+	 * (apitrace dump zum Lesen); TRACE_FILE steuert den Ablageort. */
+	if (project.hasProperty("apitrace")) {
+		it.environment("LD_PRELOAD", "/usr/lib/apitrace/wrappers/glxtrace.so")
+		it.environment("TRACE_FILE", project.findProperty("apitrace") ?: "/tmp/bbs-v1.trace")
+		it.doFirst { logger.lifecycle("[apitrace] glxtrace.so aktiv -> ${project.findProperty("apitrace") ?: "/tmp/bbs-v1.trace"}") }
+	}
+
 	/* WELCHE JBR — umschaltbar, weil der 26.2-port zwei braucht (2026-07-30).
 	 *
 	 * Der pfad stand hier fest verdrahtet. Fuer P1 des ports (beweisen, dass DCEVM auch auf
