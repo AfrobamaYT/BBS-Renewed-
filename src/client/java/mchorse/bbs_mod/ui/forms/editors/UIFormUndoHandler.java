@@ -111,6 +111,11 @@ public class UIFormUndoHandler
 
     public void handlePreValues(BaseValue baseValue, int flag)
     {
+        if ((flag & IValueListener.FLAG_SILENT) != 0)
+        {
+            return;
+        }
+
         if (this.uiData == null && this.uiElement.getRoot() != null)
         {
             this.uiData = this.uiElement.getRoot().collectAllUndoData();

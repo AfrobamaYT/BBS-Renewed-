@@ -2801,7 +2801,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             {
                 long ticks = (long) (this.timeSpentActiveAccumulator / 50);
 
-                this.getData().timeSpentActive.set(this.getData().timeSpentActive.get() + ticks);
+                this.getData().timeSpentActive.set(this.getData().timeSpentActive.get() + ticks, mchorse.bbs_mod.settings.values.IValueListener.FLAG_SILENT);
                 this.timeSpentActiveAccumulator -= ticks * 50;
             }
         }

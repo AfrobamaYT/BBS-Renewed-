@@ -92,6 +92,8 @@ public final class ModelIKEmbedded
             return;
         }
 
-        form.ik.set(embedded.copy());
+        /* SILENT: Renderer-Befuellung ist kein User-Edit — kein Undo-Eintrag, kein
+         * collectAllUndoData je Bind (Crash-Kette 2026-08-13 08:20). */
+        form.ik.set(embedded.copy(), mchorse.bbs_mod.settings.values.IValueListener.FLAG_SILENT);
     }
 }
