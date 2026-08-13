@@ -1,5 +1,6 @@
 package mchorse.bbs_mod.ui.forms.editors.forms;
 
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.cubic.ModelInstance;
 import mchorse.bbs_mod.cubic.ik.ModelIKRuntime;
 import mchorse.bbs_mod.data.DataStorageUtils;
@@ -41,7 +42,14 @@ public class UIModelForm extends UIForm<ModelForm>
         this.defaultPanel = this.modelPanel;
 
         this.registerPanel(this.defaultPanel, UIKeys.FORMS_EDITORS_MODEL_POSE, Icons.POSE);
-        this.registerPanel(new UIModelIKFormPanel(this), UIKeys.FORMS_EDITORS_MODEL_IK, Icons.LIMB);
+
+        /* P6-Rückbau: mit eingebetteter IK (#65, arm_ik aus Blender) ist die Ketten-QUELLE
+         * das Modell — das 810-Zeilen-Handbau-Panel erscheint nur noch im Alt-Modus
+         * (Setting aus). form.ik-Handstände gewinnen weiterhin, Panel leeren = Re-Import. */
+        if (!BBSSettings.modelEmbeddedIk.get())
+        {
+            this.registerPanel(new UIModelIKFormPanel(this), UIKeys.FORMS_EDITORS_MODEL_IK, Icons.LIMB);
+        }
         this.registerPanel(new UIModelPhysicsFormPanel(this), UIKeys.FORMS_EDITORS_MODEL_PHYSICS_TITLE, Icons.DROP);
         this.registerPanel(new UIModelConstraintsFormPanel(this), UIKeys.FORMS_EDITORS_MODEL_CONSTRAINTS_TITLE, Icons.LOCKED);
         this.registerPanel(new UIActionsFormPanel(this), UIKeys.FORMS_EDITORS_ACTIONS_TITLE, Icons.MORE);
