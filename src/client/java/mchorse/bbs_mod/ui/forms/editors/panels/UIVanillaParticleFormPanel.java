@@ -12,6 +12,8 @@ import mchorse.bbs_mod.ui.utils.UI;
 
 public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
 {
+    private final mchorse.bbs_mod.ui.forms.editors.UIFormPropFactory props = new mchorse.bbs_mod.ui.forms.editors.UIFormPropFactory();
+
     public UIParticleSettings settings;
     public UIToggle paused;
     public UIToggle local;
@@ -32,22 +34,22 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         this.settings = new UIParticleSettings();
         this.colorPresets = new UIParticleColorPresets((args) -> this.settings.setArgumentsText(args));
         this.settings.callback((s) -> this.colorPresets.update(s));
-        this.paused = new UIToggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_PAUSED, (b) -> this.form.paused.set(b.getValue()));
-        this.local = new UIToggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_LOCAL, (b) -> this.form.local.set(b.getValue()));
-        this.velocity = new UITrackpad((v) -> this.form.velocity.set(v.floatValue()));
-        this.count = new UITrackpad((v) -> this.form.count.set(v.intValue())).integer();
+        this.paused = this.props.toggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_PAUSED, () -> this.form.paused);
+        this.local = this.props.toggle(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_LOCAL, () -> this.form.local);
+        this.velocity = this.props.zahl(() -> this.form.velocity);
+        this.count = this.props.zahl(() -> this.form.count);
         this.count.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_COUNT);
-        this.frequency = new UITrackpad((v) -> this.form.frequency.set(v.intValue())).integer();
+        this.frequency = this.props.zahl(() -> this.form.frequency);
         this.frequency.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_FREQUENCY);
-        this.scatteringYaw = new UITrackpad((v) -> this.form.scatteringYaw.set(v.floatValue()));
+        this.scatteringYaw = this.props.zahl(() -> this.form.scatteringYaw);
         this.scatteringYaw.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_HORIZONTAL);
-        this.scatteringPitch = new UITrackpad((v) -> this.form.scatteringPitch.set(v.floatValue()));
+        this.scatteringPitch = this.props.zahl(() -> this.form.scatteringPitch);
         this.scatteringPitch.tooltip(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_VERTICAL);
-        this.offsetX = new UITrackpad((v) -> this.form.offsetX.set(v.floatValue()));
+        this.offsetX = this.props.zahl(() -> this.form.offsetX);
         this.offsetX.tooltip(UIKeys.GENERAL_X);
-        this.offsetY = new UITrackpad((v) -> this.form.offsetY.set(v.floatValue()));
+        this.offsetY = this.props.zahl(() -> this.form.offsetY);
         this.offsetY.tooltip(UIKeys.GENERAL_Y);
-        this.offsetZ = new UITrackpad((v) -> this.form.offsetZ.set(v.floatValue()));
+        this.offsetZ = this.props.zahl(() -> this.form.offsetZ);
         this.offsetZ.tooltip(UIKeys.GENERAL_Z);
 
         this.options.add(this.settings, this.paused.marginTop(UIConstants.SECTION_GAP), this.local, UI.labelRow(UIKeys.FORMS_EDITORS_VANILLA_PARTICLE_VELOCITY, this.velocity).marginTop(UIConstants.SECTION_GAP));
@@ -67,16 +69,7 @@ public class UIVanillaParticleFormPanel extends UIFormPanel<VanillaParticleForm>
         super.startEdit(form);
 
         this.settings.setSettings(form.settings.get());
-        this.paused.setValue(form.paused.get());
-        this.local.setValue(form.local.get());
-        this.velocity.setValue(form.velocity.get());
-        this.count.setValue(form.count.get());
-        this.frequency.setValue(form.frequency.get());
-        this.scatteringYaw.setValue(form.scatteringYaw.get());
-        this.scatteringPitch.setValue(form.scatteringPitch.get());
-        this.offsetX.setValue(form.offsetX.get());
-        this.offsetY.setValue(form.offsetY.get());
-        this.offsetZ.setValue(form.offsetZ.get());
+        this.props.sync();
         this.colorPresets.update(form.settings.get());
     }
 }
