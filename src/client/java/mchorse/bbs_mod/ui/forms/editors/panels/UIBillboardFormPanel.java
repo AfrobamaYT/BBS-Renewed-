@@ -17,6 +17,8 @@ import mchorse.bbs_mod.utils.colors.Color;
 
 public class UIBillboardFormPanel extends UIFormPanel<BillboardForm>
 {
+    private final mchorse.bbs_mod.ui.forms.editors.UIFormPropFactory props = new mchorse.bbs_mod.ui.forms.editors.UIFormPropFactory();
+
     public UIButton pick;
     public UIToggle billboard;
     public UIToggle linear;
@@ -40,24 +42,24 @@ public class UIBillboardFormPanel extends UIFormPanel<BillboardForm>
         {
             UITexturePicker.open(this.getContext(), this.form.texture.get(), (l) -> this.form.texture.set(l));
         });
-        this.billboard = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_TITLE, false, (b) -> this.form.billboard.set(b.getValue()));
-        this.linear = new UIToggle(UIKeys.TEXTURES_LINEAR, false, (b) -> this.form.linear.set(b.getValue()));
-        this.mipmap = new UIToggle(UIKeys.TEXTURES_MIPMAP, false, (b) -> this.form.mipmap.set(b.getValue()));
+        this.billboard = this.props.toggle(UIKeys.FORMS_EDITORS_BILLBOARD_TITLE, () -> this.form.billboard);
+        this.linear = this.props.toggle(UIKeys.TEXTURES_LINEAR, () -> this.form.linear);
+        this.mipmap = this.props.toggle(UIKeys.TEXTURES_MIPMAP, () -> this.form.mipmap);
         this.openCrop = new UIButton(UIKeys.FORMS_EDITORS_BILLBOARD_EDIT_CROP, (b) ->
         {
             UIOverlay.addOverlay(this.getContext(), new UICropOverlayPanel(this.form.texture.get(), this.form.crop.get()), 0.5F, 0.5F);
         });
-        this.resizeCrop = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_RESIZE_CROP, false, (b) -> this.form.resizeCrop.set(b.getValue()));
-        this.color = new UIColor((value) -> this.form.color.set(Color.rgba(value))).direction(Direction.LEFT).withAlpha();
+        this.resizeCrop = this.props.toggle(UIKeys.FORMS_EDITORS_BILLBOARD_RESIZE_CROP, () -> this.form.resizeCrop);
+        this.color = this.props.color(() -> this.form.color).direction(Direction.LEFT);
 
-        this.offsetX = new UITrackpad((value) -> this.form.offsetX.set(value.floatValue()));
+        this.offsetX = this.props.zahl(() -> this.form.offsetX);
         this.offsetX.tooltip(UIKeys.FORMS_EDITORS_BILLBOARD_OFFSET_X);
-        this.offsetY = new UITrackpad((value) -> this.form.offsetY.set(value.floatValue()));
+        this.offsetY = this.props.zahl(() -> this.form.offsetY);
         this.offsetY.tooltip(UIKeys.FORMS_EDITORS_BILLBOARD_OFFSET_Y);
-        this.rotation = new UITrackpad((value) -> this.form.rotation.set(value.floatValue()));
+        this.rotation = this.props.zahl(() -> this.form.rotation);
         this.rotation.tooltip(UIKeys.FORMS_EDITORS_BILLBOARD_ROTATION);
 
-        this.shading = new UIToggle(UIKeys.FORMS_EDITORS_BILLBOARD_SHADING, false, (b) -> this.form.shading.set(b.getValue()));
+        this.shading = this.props.toggle(UIKeys.FORMS_EDITORS_BILLBOARD_SHADING, () -> this.form.shading);
 
         this.options.add(this.pick, this.color, this.billboard, this.linear, this.mipmap);
         this.options.add(UI.label(UIKeys.FORMS_EDITORS_BILLBOARD_CROP).marginTop(UIConstants.SECTION_GAP), this.openCrop, this.resizeCrop);
@@ -69,17 +71,6 @@ public class UIBillboardFormPanel extends UIFormPanel<BillboardForm>
     {
         super.startEdit(form);
 
-        this.billboard.setValue(form.billboard.get());
-        this.linear.setValue(form.linear.get());
-        this.mipmap.setValue(form.mipmap.get());
-
-        this.resizeCrop.setValue(form.resizeCrop.get());
-        this.color.setColor(form.color.get().getARGBColor());
-
-        this.offsetX.setValue(form.offsetX.get());
-        this.offsetY.setValue(form.offsetY.get());
-        this.rotation.setValue(form.rotation.get());
-
-        this.shading.setValue(form.shading.get());
+        this.props.sync();
     }
 }
