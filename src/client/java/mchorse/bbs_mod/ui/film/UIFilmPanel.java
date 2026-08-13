@@ -2964,12 +2964,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
 
-            /* P5: Bewegungspfad des gewaehlten Replays (Setting editorMotionPaths). */
-            net.minecraft.world.phys.Vec3 kamPos = context.levelState().cameraRenderState.pos;
-
-            mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.zeichnen(
-                context.poseStack(), context.submitNodeCollector(), this.replayEditor.getReplay(),
-                this.getCursor(), new org.joml.Vector3d(kamPos.x, kamPos.y, kamPos.z));
             /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
              * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
             mchorse.bbs_mod.graphics.Zeichenlage.melden(

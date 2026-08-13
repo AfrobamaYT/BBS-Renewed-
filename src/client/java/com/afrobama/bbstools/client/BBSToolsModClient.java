@@ -972,13 +972,12 @@ public final class BBSToolsModClient implements ClientModInitializer
             BBSToolsMod.LOG.error("Failed to register Add Camera clip type", t);
         }
 
-        /* Phase 11: tracks which Add-Camera clips are active in the
-         *  playing film's camera timeline. Phase 12's pre-pass mixin
-         *  reads this list per frame and renders one viewport per
-         *  active clip. */
+        /* Phase 11: aktive Add-Camera-Clips der laufenden Film-Timeline; Phase 12s
+         *  Pre-Pass-Mixin liest die Liste je Frame (ein Viewport je aktivem Clip). */
         com.afrobama.bbstools.client.campreview.ActiveCameraClipRegistry.register();
         com.afrobama.bbstools.client.campreview.ClipViewportFramebuffers.register();
         com.afrobama.bbstools.client.campreview.CameraFrustumMeshRenderer.register();
+        mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.register();
         com.afrobama.bbstools.client.campreview.CameraMeshToggleHandler.register();
 
         /* Per-tick polling for the rewind detector + collision/velocity
