@@ -40,7 +40,7 @@ public abstract class Form extends ValueGroup
     public final ValueString name = new ValueString("name", "");
     public final ValueTransform transform = new ValueTransform("transform", new Transform());
     public final ValueTransform transformOverlay = new ValueTransform("transform_overlay", new Transform());
-    public final ValueFloat uiScale = new ValueFloat("uiScale", 1F);
+    public final ValueFloat uiScale = new ValueFloat("uiScale", 1F, 0.01F, 100F);
     public final ValueAnchor anchor = new ValueAnchor("anchor", new Anchor());
     public final ValueBoolean shaderShadow = new ValueBoolean("shaderShadow", true);
     public final ValueBoolean additiveColor = new ValueBoolean("additive_color", false);
@@ -49,15 +49,15 @@ public abstract class Form extends ValueGroup
 
     /* Hitbox properties */
     public final ValueBoolean hitbox = new ValueBoolean("hitbox", false);
-    public final ValueFloat hitboxWidth = new ValueFloat("hitboxWidth", 0.5F);
-    public final ValueFloat hitboxHeight = new ValueFloat("hitboxHeight", 1.8F);
-    public final ValueFloat hitboxSneakMultiplier = new ValueFloat("hitboxSneakMultiplier", 0.9F);
-    public final ValueFloat hitboxEyeHeight = new ValueFloat("hitboxEyeHeight", 0.9F);
+    public final ValueFloat hitboxWidth = new ValueFloat("hitboxWidth", 0.5F, 0F, Float.MAX_VALUE);
+    public final ValueFloat hitboxHeight = new ValueFloat("hitboxHeight", 1.8F, 0F, Float.MAX_VALUE);
+    public final ValueFloat hitboxSneakMultiplier = new ValueFloat("hitboxSneakMultiplier", 0.9F, 0F, 1F);
+    public final ValueFloat hitboxEyeHeight = new ValueFloat("hitboxEyeHeight", 0.9F, 0F, 1F);
 
     /* Morphing properties */
-    public final ValueFloat hp = new ValueFloat("hp", 20F);
-    public final ValueFloat speed = new ValueFloat("movement_speed", 0.1F);
-    public final ValueFloat stepHeight = new ValueFloat("step_height", 0.5F);
+    public final ValueFloat hp = new ValueFloat("hp", 20F, 1F, Float.MAX_VALUE);
+    public final ValueFloat speed = new ValueFloat("movement_speed", 0.1F, 0F, Float.MAX_VALUE);
+    public final ValueFloat stepHeight = new ValueFloat("step_height", 0.5F, 0F, Float.MAX_VALUE);
 
     public final ValueInt hotkey = new ValueInt("keybind", 0);
 
@@ -76,6 +76,10 @@ public abstract class Form extends ValueGroup
         this.disabledTracks.invisible();
         this.trackName.invisible();
         this.name.invisible();
+        /* P8c: Slider-Wuerde steht an der DEFINITION — die Factory baut daraus UISliderTrackpad. */
+        this.hitboxSneakMultiplier.slider();
+        this.hitboxEyeHeight.slider();
+
         this.uiScale.invisible();
         this.shaderShadow.invisible();
         this.additiveColor.invisible();

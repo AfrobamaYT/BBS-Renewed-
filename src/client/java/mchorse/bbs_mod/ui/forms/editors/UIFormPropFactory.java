@@ -89,6 +89,23 @@ public class UIFormPropFactory
         return trackpad;
     }
 
+    /** Schieberegler fuer Values, deren Definition slider() traegt (Range Pflicht). */
+    public mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad schieber(Supplier<? extends BaseValueNumber<? extends Number>> quelle)
+    {
+        mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad regler =
+            new mchorse.bbs_mod.ui.framework.elements.input.UISliderTrackpad((v) -> setzeZahl(quelle.get(), v));
+
+        this.syncs.add(() ->
+        {
+            BaseValueNumber<? extends Number> wert = quelle.get();
+
+            metaAnwenden(regler, wert);
+            regler.setValue(wert.get().doubleValue());
+        });
+
+        return regler;
+    }
+
     private static void setzeZahl(BaseValueNumber<? extends Number> wert, double v)
     {
         if (wert instanceof ValueInt vi) vi.set((int) v);
@@ -98,7 +115,7 @@ public class UIFormPropFactory
     }
 
     /** Idempotent — laeuft bei jedem sync, weil das Widget vor der ersten Form gebaut wird. */
-    private static void metaAnwenden(UITrackpad trackpad, BaseValueNumber<? extends Number> wert)
+    private static void metaAnwenden(mchorse.bbs_mod.ui.framework.elements.input.UINumericInput<?> trackpad, BaseValueNumber<? extends Number> wert)
     {
         if (wert.getMin() != null && wert.getMax() != null)
         {
