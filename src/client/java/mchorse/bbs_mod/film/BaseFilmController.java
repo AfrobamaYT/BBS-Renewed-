@@ -595,23 +595,11 @@ public abstract class BaseFilmController
         return matrix;
     }
 
-    /**
-     * Bone transform as composed for the film viewport: the same {@code target}
-     * that {@link #renderEntity} multiplies onto the stack before the bone
-     * matrix from {@link FormUtilsClient#getRenderer(Form)#collectMatrices},
-     * i.e. {@code target.mul(bone)}. This includes replay position, whole-entity
-     * {@code bodyYaw} from {@link #getMatrixForRenderWithRotation}, anchor
-     * chains, etc. — everything that is <em>outside</em> the form's internal
-     * {@code collectMatrices} tree but affects where the gizmo is drawn.
-     *
-     * @param cameraX camera position X (same convention as {@link #renderEntity})
-     * @param cameraY camera position Y
-     * @param cameraZ camera position Z
-     * @param bonePath path key matching {@link #renderAxes} (see pose.bones. stripping)
-     * @param useBoneMatrix if {@code true}, use the rotation-bearing bone matrix;
-     *                      if {@code false}, use the origin-only matrix (matches
-     *                      GLOBAL gizmo mode in {@link #renderAxes})
-     */
+    /** Bone-Transform wie im Film-Viewport komponiert: dasselbe target, das renderEntity
+     *  vor die collectMatrices-Bone-Matrix multipliziert (Replay-Position, bodyYaw,
+     *  Anker-Ketten — alles AUSSERHALB des Form-Baums, das die Gizmo-Lage bestimmt).
+     *  Kamera-Konvention wie renderEntity; bonePath wie renderAxes (pose.bones.-Strip);
+     *  useBoneMatrix=false nimmt die origin-only-Matrix (GLOBAL-Gizmo-Modus). */
     public static Matrix4f getGizmoBoneCompositeMatrix(
         IntObjectMap<IEntity> entities,
         IEntity entity,
@@ -1489,6 +1477,14 @@ public abstract class BaseFilmController
         {
             int i = entry.getKey();
             IEntity entity = entry.getValue();
+
+            /* Cache kann dem Replay-Stand hinterherhinken (Replay entfernt bei offenem
+             * Editor — Crash 2026-08-13 10:03, Index 2/Laenge 2): verwaiste ueberspringen. */
+            if (i >= this.film.replays.getList().size())
+            {
+                continue;
+            }
+
             Replay replay = this.film.replays.getList().get(i);
 
             if (!this.canUpdate(i, replay, entity, UpdateMode.RENDER))

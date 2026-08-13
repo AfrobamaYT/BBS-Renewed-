@@ -2968,7 +2968,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             net.minecraft.world.phys.Vec3 kamPos = context.levelState().cameraRenderState.pos;
 
             mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.zeichnen(
-                new com.mojang.blaze3d.vertex.PoseStack(), this.replayEditor.getReplay(),
+                context.poseStack(), context.submitNodeCollector(), this.replayEditor.getReplay(),
                 this.getCursor(), new org.joml.Vector3d(kamPos.x, kamPos.y, kamPos.z));
             /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
              * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
