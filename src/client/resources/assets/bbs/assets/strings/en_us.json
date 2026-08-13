@@ -1853,5 +1853,7 @@
 	"bbs.ui.script_console.title": "Script console",
 	"bbs.ui.keys.script_console": "Script console",
 	"bbs.config.video.supersampling": "Supersampling",
-	"bbs.config.video.supersampling-comment": "Render the export at N× resolution and scale it back down (Lanczos) — smoother edges at the cost of render time"
+	"bbs.config.video.supersampling-comment": "Render the export at N× resolution and scale it back down (Lanczos) — smoother edges at the cost of render time",
+	"bbs.config.editor.motion_paths": "Motion paths",
+	"bbs.config.editor.motion_paths-comment": "Draw the selected replay's position path over time in the viewport"
 }

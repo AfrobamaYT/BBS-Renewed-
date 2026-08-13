@@ -2963,20 +2963,20 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * ⚠ Das ist NICHT die Zeichenmatrix (Sonde projektion.paar: gleich=false) — daher
              * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
-            /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (gemessen: lage.weltbild 400 gegen
-             * lage.stencil 200, alle uebrigen Werte identisch). Zwei Durchgaenge in denselben
-             * Puffer erklaeren ein Wandern der Bodentextur bei starker Bewegung — aber nur,
-             * wenn sie WIRKLICH dasselbe Ziel haben. Darum getrennt zaehlen. */
+
+            /* P5: Bewegungspfad des gewaehlten Replays (Setting editorMotionPaths). */
+            net.minecraft.world.phys.Vec3 kamPos = context.levelState().cameraRenderState.pos;
+
+            mchorse.bbs_mod.ui.film.utils.MotionPathZeichner.zeichnen(
+                new com.mojang.blaze3d.vertex.PoseStack(), this.replayEditor.getReplay(),
+                this.getCursor(), new org.joml.Vector3d(kamPos.x, kamPos.y, kamPos.z));
+            /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
+             * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
             mchorse.bbs_mod.graphics.Zeichenlage.melden(
                 mchorse.bbs_mod.client.BBSRendering.renderingWorld ? "weltbild-bbs" : "weltbild-vanilla");
 
-            /* ⚗️ WER ruft das hier zusaetzlich? renderInWorld feuert oefter als es Bilder
-             * gibt (1764 gegen 1552, waehrend ALLE anderen Renderzaehler exakt 1552 stehen).
-             *
-             * ⛔ UNGEFILTERT: Messpunkt#rufer siebt auf mchorse./com.afrobama., ein gewobener
-             * Mixin-Handler steht aber unter dem VANILLA-Namen im Stapel — gefiltert kam bei
-             * genau so einer Frage schon einmal eine leere Zeile heraus, ungefiltert die exakte
-             * Fundstelle. */
+            /* ⚗️ Rufer-Zaehler (feuert 1764x je 1552 Bilder — wer ruft zusaetzlich?).
+             * ⛔ UNGEFILTERT sammeln: gewobene Handler stehen unter VANILLA-Namen im Stapel. */
             if (System.getProperty("bbs.mess") != null)
             {
                 StackTraceElement[] stapel = Thread.currentThread().getStackTrace();
