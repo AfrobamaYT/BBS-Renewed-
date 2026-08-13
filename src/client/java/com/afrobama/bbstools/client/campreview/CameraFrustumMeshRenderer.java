@@ -149,8 +149,8 @@ public final class CameraFrustumMeshRenderer
 
         if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
         {
-            /* V1-Differenzmessung: Gegenstueck zu motionpath.ein.* (MotionPathZeichner) —
-             * gleiche Felder, gleiche Pass-Kennung, zum Nebeneinanderlegen der Eingaenge. */
+            /* V1-Messpunkt: Submit-Eingaenge (Collector, Pose, Pass, Rufer) — zum
+             * Nebeneinanderlegen mit anderen Zeichnern bei Sichtbarkeits-Jagden. */
             org.joml.Matrix4f pose = stack.last().pose();
             String pass = (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang ? "sammel" : "direkt")
                 + (mchorse.bbs_mod.forms.FormSammler.aktiv() != null ? "+fs" : "");

@@ -2964,9 +2964,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
              * der versetzte Auswahl-Umriss; Belege in BBSRendering#zeichenProjektion. */
             this.lastProjection.set(context.levelState().cameraRenderState.projectionMatrix);
 
-            /* P5/V1: Bewegungspfad — laeuft hier in BEIDEN Welt-Paessen. */
-            /* Motion Paths zeichnet MotionPath.render (fs-Port im UIFilmController). */
-
             /* ⚗️ renderInWorld laeuft ZWEIMAL je Bild (lage.weltbild 400 vs stencil 200) —
              * getrennt zaehlen, sonst sieht Doppel-Zeichnen wie Textur-Wandern aus. */
             mchorse.bbs_mod.graphics.Zeichenlage.melden(
