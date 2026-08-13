@@ -127,17 +127,17 @@ public final class GizmoAchsenLinien
 
             if (alleDrei || debugIndex == Gizmo.STENCIL_X || debugIndex == Gizmo.STENCIL_XZ || debugIndex == Gizmo.STENCIL_XY)
             {
-                Draw.fillBox(builder, stack, -size, -t, -t, size, t, t, Colors.RED);
+                achse(builder, stack, 0, size, t, Colors.RED);
             }
 
             if (alleDrei || debugIndex == Gizmo.STENCIL_Y || debugIndex == Gizmo.STENCIL_XY || debugIndex == Gizmo.STENCIL_ZY)
             {
-                Draw.fillBox(builder, stack, -t, -size, -t, t, size, t, Colors.GREEN);
+                achse(builder, stack, 1, size, t, Colors.GREEN);
             }
 
             if (alleDrei || debugIndex == Gizmo.STENCIL_Z || debugIndex == Gizmo.STENCIL_XZ || debugIndex == Gizmo.STENCIL_ZY)
             {
-                Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, Colors.BLUE);
+                achse(builder, stack, 2, size, t, Colors.BLUE);
             }
 
             /* Pipeline wie im alten Gizmo-Rumpf: mischen an, KEINE Tiefenpruefung (die Linie
@@ -151,5 +151,39 @@ public final class GizmoAchsenLinien
         }
 
         stack.popPose();
+    }
+
+    /**
+     * Eine Achsenlinie — im Blender-Modus (P5) mit weicher Kante: deckender Kern plus zwei
+     * Alpha-Huellen (Faux-AA ohne eigenen Shader, blickwinkelfest, Blend ist im Zug an).
+     * Alt-Modus zeichnet die eine harte Box wie immer.
+     */
+    private static void achse(BufferBuilder builder, PoseStack stack, int richtung, float size, float t, int rgb)
+    {
+        if (!BBSSettings.transformBlenderFeedback.get())
+        {
+            box(builder, stack, richtung, size, t, rgb);
+
+            return;
+        }
+
+        box(builder, stack, richtung, size, t * 2.2F, mitAlpha(rgb, 0.14F));
+        box(builder, stack, richtung, size, t * 1.5F, mitAlpha(rgb, 0.4F));
+        box(builder, stack, richtung, size, t, mitAlpha(rgb, 1F));
+    }
+
+    private static void box(BufferBuilder builder, PoseStack stack, int richtung, float size, float t, int farbe)
+    {
+        switch (richtung)
+        {
+            case 0 -> Draw.fillBox(builder, stack, -size, -t, -t, size, t, t, farbe);
+            case 1 -> Draw.fillBox(builder, stack, -t, -size, -t, t, size, t, farbe);
+            default -> Draw.fillBox(builder, stack, -t, -t, -size, t, t, size, farbe);
+        }
+    }
+
+    private static int mitAlpha(int rgb, float a)
+    {
+        return ((int) (a * 255F) << 24) | (rgb & 0xFFFFFF);
     }
 }
