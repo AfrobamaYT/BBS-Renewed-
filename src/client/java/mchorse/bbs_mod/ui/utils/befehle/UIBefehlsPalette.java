@@ -45,7 +45,6 @@ public class UIBefehlsPalette extends UIOverlayPanel
     private final UIStringList liste;
     private final List<PalettenBefehl> alle = new ArrayList<>();
     private final List<PalettenBefehl> gefiltert = new ArrayList<>();
-    private String letzteSuche = "";
 
     public static void oeffnen(UIContext context)
     {
@@ -58,7 +57,7 @@ public class UIBefehlsPalette extends UIOverlayPanel
 
         this.sammle(context.menu.main);
 
-        this.suche = new UITextbox(500, (text) -> this.enter(text));
+        this.suche = new SuchEingabe(500, (text) -> this.filter(text));
         this.liste = new UIStringList((auswahl) -> this.ausfuehrenGewaehlt());
 
         this.suche.relative(this.content).x(6).y(6).w(1F, -12).h(20);
@@ -208,20 +207,6 @@ public class UIBefehlsPalette extends UIOverlayPanel
         this.liste.update();
     }
 
-    /** Enter: erst filtern; unveraenderter Text = ersten Treffer ausfuehren. */
-    private void enter(String text)
-    {
-        if (text.equals(this.letzteSuche) && !this.gefiltert.isEmpty())
-        {
-            this.ausfuehren(0);
-
-            return;
-        }
-
-        this.letzteSuche = text;
-        this.filter(text);
-    }
-
     private void ausfuehrenGewaehlt()
     {
         this.ausfuehren(this.liste.getIndex());
@@ -243,5 +228,43 @@ public class UIBefehlsPalette extends UIOverlayPanel
 
         this.close();
         befehl.lauf.run();
+    }
+
+    /** Blender-Menue-Suche-Bedienung: Tippen filtert live (Callback je Zeichen),
+     *  Pfeile waehlen in der Liste, Enter fuehrt Auswahl (sonst ersten Treffer) aus. */
+    private class SuchEingabe extends UITextbox
+    {
+        public SuchEingabe(int length, java.util.function.Consumer<String> callback)
+        {
+            super(length, callback);
+        }
+
+        @Override
+        public boolean subKeyPressed(mchorse.bbs_mod.ui.framework.UIContext context)
+        {
+            if (this.isFocused())
+            {
+                UIBefehlsPalette palette = UIBefehlsPalette.this;
+
+                if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER))
+                {
+                    palette.ausfuehren(Math.max(0, palette.liste.getIndex()));
+
+                    return true;
+                }
+
+                if (context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_UP) || context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN))
+                {
+                    int schritt = context.isPressed(org.lwjgl.glfw.GLFW.GLFW_KEY_UP) ? -1 : 1;
+                    int max = palette.gefiltert.size() - 1;
+
+                    palette.liste.setIndex(Math.max(0, Math.min(palette.liste.getIndex() + schritt, max)));
+
+                    return true;
+                }
+            }
+
+            return super.subKeyPressed(context);
+        }
     }
 }
