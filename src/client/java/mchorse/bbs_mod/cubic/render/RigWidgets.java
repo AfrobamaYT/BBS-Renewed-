@@ -40,9 +40,11 @@ public final class RigWidgets
     private static final float[] CIRCLE = buildCircle();
 
     /* Linienquerschnitt in Welt bei 5 Bloecken/FOV50 (getAxesDistanceScale-Referenz):
-     * ~1.8px opaker Kern + ~1.2px Alpha-Auslauf je Seite — Blenders Wire-AA-Look. */
-    private static final float HALB_KERN = 0.006F;
-    private static final float HALB_AUSSEN = 0.010F;
+     * ~2.7px opaker Kern + ~1.8px Alpha-Auslauf je Seite — Blender faehrt 2px, hier
+     * bewusst kraeftiger: die Editor-Fenster sind oft klein (854er-Boot) und die
+     * Widgets muessen auf dunklen Skins ohne Outline bestehen. */
+    private static final float HALB_KERN = 0.009F;
+    private static final float HALB_AUSSEN = 0.015F;
 
     private static final Vector3f P1 = new Vector3f();
     private static final Vector3f P2 = new Vector3f();
