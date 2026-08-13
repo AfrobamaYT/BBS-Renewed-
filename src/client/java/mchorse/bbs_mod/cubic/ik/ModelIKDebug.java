@@ -151,6 +151,15 @@ public final class ModelIKDebug
         boolean targets = config.target.visible.get();
         boolean poles = config.pole.visible.get();
 
+        /* Messfuehler: laeuft der Marker-Pick-Pass ueberhaupt, und woran scheitert er? */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.stencil",
+                "enabled=" + config.enabled.get() + " targets=" + targets + " poles=" + poles
+                    + " model=" + (model != null) + " ik=" + (ikData != null) + " map=" + (stencilMap != null)
+                    + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(4));
+        }
+
         if (!config.enabled.get() || (!targets && !poles) || model == null || ikData == null || stencilMap == null)
         {
             return;
@@ -206,12 +215,18 @@ public final class ModelIKDebug
                 }
             }
 
+            /* ⛔ INS PICKZIEL, NICHT INS HAUPTBILD (2026-08-13 gemessen): die 5-Arg-Variante
+             * zeichnet ins Hauptbild — die Kennungen der Marker kamen dort unsichtbar-dunkel
+             * an und der Auswahlpuffer blieb ohne sie; ein Klick auf die Box fand NIE etwas.
+             * pflicht() wirft laut, wenn kein Auswahl-Durchgang angemeldet ist. */
             SofortZeichner.zeichnen(
                 FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, !config.xray.get(), false),
                 builder.build(),
                 modellansicht(),
                 null,
-                null);
+                null,
+                mchorse.bbs_mod.graphics.PickZiel.pflicht(),
+                mchorse.bbs_mod.graphics.PickZiel.tiefe());
         }
 
         stack.popPose();
