@@ -147,6 +147,21 @@ public final class CameraFrustumMeshRenderer
         PoseStack stack = ctx.poseStack();
         SubmitNodeCollector collector = ctx.submitNodeCollector();
 
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            /* V1-Differenzmessung: Gegenstueck zu motionpath.ein.* (MotionPathZeichner) —
+             * gleiche Felder, gleiche Pass-Kennung, zum Nebeneinanderlegen der Eingaenge. */
+            org.joml.Matrix4f pose = stack.last().pose();
+            String pass = (mchorse.bbs_mod.film.FilmControllerContext.sammelDurchgang ? "sammel" : "direkt")
+                + (mchorse.bbs_mod.forms.FormSammler.aktiv() != null ? "+fs" : "");
+
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("frustum.ein." + pass,
+                "col=" + System.identityHashCode(collector)
+                    + " pose=" + pose.m30() + "/" + pose.m31() + "/" + pose.m32()
+                    + " kam=" + camPos.x + "/" + camPos.y + "/" + camPos.z
+                    + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(3));
+        }
+
         for (ActiveCameraClipRegistry.Active a : active)
         {
             if (!a.poseValid) continue;

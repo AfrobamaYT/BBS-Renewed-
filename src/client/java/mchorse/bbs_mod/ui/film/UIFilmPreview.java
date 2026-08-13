@@ -389,6 +389,12 @@ public class UIFilmPreview extends UIElement
 
         if (texture != null)
         {
+            if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("preview.tex",
+                    "id=" + texture.id + " " + texture.width + "x" + texture.height);
+            }
+
             context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
         }
 

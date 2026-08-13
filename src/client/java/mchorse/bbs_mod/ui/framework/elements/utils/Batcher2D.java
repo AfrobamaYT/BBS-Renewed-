@@ -554,20 +554,15 @@ public class Batcher2D
     }
 
     /**
-     * MC 26.2: a custom GUI shader is no longer a {@code RenderPipeline} supplied to
-     * {@code RenderSystem.setShader}, it is a whole {@link RenderPipeline} named by the
-     * render state. The supplier therefore yields a pipeline now; callers that passed
-     * {@code BBSShaders::getPickerPreviewProgram} need that method to return a pipeline.
-     *
-     * <p>⛔ 26.2: die Ueberladung mit roher GL-nummer ist WEG. Die GUI benennt ihre
-     * textur ueber {@code TextureSetup(GpuTextureView, GpuSampler)}, und beides kann
-     * nur das {@link Texture}-objekt liefern — aus einer nackten nummer laesst sich
-     * kein view mehr herstellen. Aufrufer reichen darum das objekt durch, nicht
-     * {@code texture.id}.
+     * 26.2: der Supplier liefert eine ganze {@link RenderPipeline} (kein setShader mehr).
+     * ⛔ Die Ueberladung mit roher GL-nummer ist WEG — die GUI benennt ihre Textur ueber
+     * {@code TextureSetup(GpuTextureView, GpuSampler)}, und einen View liefert nur das
+     * {@link Texture}-objekt. Aufrufer reichen das Objekt durch, nie {@code texture.id}.
      */
     public void texturedBox(Supplier<RenderPipeline> pipeline, Texture texture, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
-        this.blit(pipeline.get(), texture.guiSetup(), color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
+        /* Ueber die Setup-Ueberladung, damit deren batcher.setup-Messpunkt BEIDE Wege sieht. */
+        this.texturedBox(pipeline, texture.guiSetup(), color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
     /**
@@ -578,6 +573,18 @@ public class Batcher2D
      */
     public void texturedBox(Supplier<RenderPipeline> pipeline, TextureSetup setup, int color, float x, float y, float w, float h, float u1, float v1, float u2, float v2, int textureW, int textureH)
     {
+        if (textureW >= 512 && mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            /* Record-Accessor (texure0 — Mojang-Tippfehler); isClosed() entlarvt tote Views. */
+            var view = setup.texure0();
+            String tex = view == null ? "?" : ((com.mojang.blaze3d.opengl.GlTexture) view.texture()).glId()
+                + (view.texture().isClosed() ? "-TOT" : "");
+
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("batcher.setup." + tex,
+                textureW + "x" + textureH + " @" + (int) x + "," + (int) y + " " + (int) w + "x" + (int) h
+                    + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(4));
+        }
+
         this.blit(pipeline.get(), setup, color, x, y, w, h, u1, v1, u2, v2, textureW, textureH);
     }
 
@@ -796,17 +803,10 @@ public class Batcher2D
     }
 
     /**
-     * Reiht eigene Geometrie in die Oberflaeche ein — der Weg fuer alles, was frueher ueber
-     * {@code Tesselator} + {@code BufferUploader} lief.
-     *
-     * <p>⛔ KEIN {@code SofortZeichner} in der Oberflaeche: 26.2 SAMMELT hier nur und
-     * zeichnet spaeter — ein Sofort-Durchgang landet UNTER dem gesamten GUI (unsichtbare
-     * Keyframe-Punkte; kein Compiler warnt). Der Eckenaufbau laeuft im Lambda erst beim
-     * Renderer — Bezugspunkte (Pose, Farben) unveraenderlich halten oder dort lesen.
-     *
-     * @param pipeline Shader/Blend/Tiefe/Cull — aus {@code FormPipelines}
-     * @param ecken    schreibt die Ecken; Format muss zur Pipeline passen
-     * @param bereich  belegte Bildschirmflaeche (Culling + Sortierung in der Ebene)
+     * Eigene Geometrie in die Oberflaeche einreihen (frueher Tesselator+BufferUploader).
+     * ⛔ KEIN {@code SofortZeichner} in der Oberflaeche: 26.2 sammelt nur und zeichnet
+     * spaeter — ein Sofort-Durchgang landet UNTER dem GUI (still unsichtbar). Der
+     * Eckenaufbau laeuft im Lambda erst beim Renderer — Bezugspunkte dort lesen.
      */
     public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, ScreenRectangle bereich)
     {
@@ -814,9 +814,8 @@ public class Batcher2D
     }
 
     /**
-     * Wie oben, mit Texturbindung. ⚠️ In 26.2 ist eine Textur KEIN globaler Zustand — sie
-     * gehoert zum Zug; ohne {@code textur} bleiben Sampler ungebunden (schwarz oder Muell,
-     * kein Fehler). {@code TextureSetup} z. B. via {@code SofortZeichner.entityTextur(...)}.
+     * Wie oben, mit Texturbindung. ⚠️ 26.2: die Textur gehoert zum ZUG, nicht zum Zustand —
+     * ohne {@code textur} bleiben Sampler ungebunden (schwarz/Muell, kein Fehler).
      */
     public void netz(RenderPipeline pipeline, Consumer<VertexConsumer> ecken, TextureSetup textur, ScreenRectangle bereich)
     {
