@@ -408,7 +408,6 @@ sourceSets {
 			 * Messkanal) und live-log. Die zwei Huellen stehen jetzt allein in LegacyCrowdDebuggers,
 			 * und nur die bleibt draussen. */
 			exclude "com/afrobama/bbstools/client/debug/LegacyCrowdDebuggers.java"
-			exclude "mchorse/bbs_mod/cubic/physics/ModelPhysicsDebug.java"
 			/* Nachlauf: reine Debug-Tracer FUER die oben ausgeschlossenen Klassen.
 			 * Sie tauchten erst im zweiten Bau auf -- ein Ausschluss erzeugt eine kleine
 			 * Welle, weil andere Dateien die entfernten Pakete importieren. */

@@ -1,16 +1,15 @@
 package mchorse.bbs_mod.cubic.physics;
 
 import mchorse.bbs_mod.graphics.SofortZeichner;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import mchorse.bbs_mod.BBSSettings;
+import mchorse.bbs_mod.client.FormPipelines;
 import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
@@ -22,7 +21,6 @@ import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
 import mchorse.bbs_mod.settings.values.ui.ValuePhysicsDebug;
 import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
 import mchorse.bbs_mod.utils.MathUtils;
-import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -194,31 +192,33 @@ public final class ModelPhysicsDebug
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
-        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
-         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-        BufferBuilder builder = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
+        /* Pick-Pass wie in ModelIKDebug: kein Blend (eine gemischte ID waere eine falsche
+         * ID), ohne Cull, Tiefe wie der sichtbare Pass — sonst ist Sichtbares nicht klickbar. */
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            if (chain.targetBone() == null || chain.targetBone().isEmpty())
+            BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            for (ModelPhysicsCache.CompiledChain chain : compiled.chains())
             {
-                continue;
+                if (chain.targetBone() == null || chain.targetBone().isEmpty())
+                {
+                    continue;
+                }
+
+                Vector3f target = position(frames, chain.targetBone());
+
+                if (target != null)
+                {
+                    pickMarker(builder, stack, stencilMap, form, config.attach, target, segmentUnit(chain.restLengths()), chain.targetBone());
+                }
             }
 
-            Vector3f target = position(frames, chain.targetBone());
-
-            if (target != null)
-            {
-                pickMarker(builder, stack, stencilMap, form, config.attach, target, segmentUnit(chain.restLengths()), chain.targetBone());
-            }
-        }
-
-        MeshData built = builder.build();
-
-        if (built != null)
-        {
-            BufferUploader.drawWithShader(built);
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, false, !config.xray.get(), false),
+                builder.build(),
+                modellansicht(),
+                null,
+                null);
         }
 
         stack.popPose();
@@ -324,17 +324,25 @@ public final class ModelPhysicsDebug
         Matrix4f matrix = stack.last().pose();
         float dash = unit * 0.12F;
 
+        /* Zustand je Zug (wie ModelIKDebug): Blend an, ohne Cull, Tiefe nur ohne Roentgen. */
+        boolean tiefe = !config.xray.get();
+
         /* Lines: hairline GL lines by default, boxes once a thickness is set. */
         if (anyLine && !boxes)
         {
-            /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
-             * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-            ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-            BufferBuilder lines = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(1024))
+            {
+                BufferBuilder lines = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-            emitLines(lines, matrix, 0F, dash, pts, target, a, config);
+                emitLines(lines, matrix, 0F, dash, pts, target, a, config);
 
-            { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = lines.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
+                    lines.build(),
+                    modellansicht(),
+                    null,
+                    null);
+            }
         }
 
         if (!anyDot && !boxes)
@@ -343,44 +351,49 @@ public final class ModelPhysicsDebug
         }
 
         /* Solid geometry: the pinned root, joints, the simulated tip and the attach bone, plus the thick lines. */
-        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
-         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-        BufferBuilder dots = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        if (boxes)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            emitLines(dots, matrix, thickness, dash, pts, target, a, config);
-        }
+            BufferBuilder dots = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
-        if (rootDot)
-        {
-            DebugOverlay.marker(dots, stack, config.root.shape.get(), pts.get(0), unit * config.root.size.get(), DebugOverlay.rgb(config.root.color.get()), a);
-        }
-
-        if (joints)
-        {
-            float[] color = DebugOverlay.rgb(config.joints.color.get());
-            float radius = unit * config.joints.size.get();
-            int shape = config.joints.shape.get();
-
-            for (int i = 1; i < pts.size() - 1; i++)
+            if (boxes)
             {
-                DebugOverlay.marker(dots, stack, shape, pts.get(i), radius, color, a);
+                emitLines(dots, matrix, thickness, dash, pts, target, a, config);
             }
-        }
 
-        if (tipDot)
-        {
-            DebugOverlay.marker(dots, stack, config.tip.shape.get(), tip, unit * config.tip.size.get(), DebugOverlay.rgb(config.tip.color.get()), a);
-        }
+            if (rootDot)
+            {
+                DebugOverlay.marker(dots, stack, config.root.shape.get(), pts.get(0), unit * config.root.size.get(), DebugOverlay.rgb(config.root.color.get()), a);
+            }
 
-        if (attachDot)
-        {
-            DebugOverlay.marker(dots, stack, config.attach.shape.get(), target, unit * config.attach.size.get(), DebugOverlay.rgb(config.attach.color.get()), a);
-        }
+            if (joints)
+            {
+                float[] color = DebugOverlay.rgb(config.joints.color.get());
+                float radius = unit * config.joints.size.get();
+                int shape = config.joints.shape.get();
 
-        { com.mojang.blaze3d.vertex.MeshData __bbsBuilt = dots.build(); if (__bbsBuilt != null) BufferUploader.drawWithShader(__bbsBuilt); }
+                for (int i = 1; i < pts.size() - 1; i++)
+                {
+                    DebugOverlay.marker(dots, stack, shape, pts.get(i), radius, color, a);
+                }
+            }
+
+            if (tipDot)
+            {
+                DebugOverlay.marker(dots, stack, config.tip.shape.get(), tip, unit * config.tip.size.get(), DebugOverlay.rgb(config.tip.color.get()), a);
+            }
+
+            if (attachDot)
+            {
+                DebugOverlay.marker(dots, stack, config.attach.shape.get(), target, unit * config.attach.size.get(), DebugOverlay.rgb(config.attach.color.get()), a);
+            }
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
+                dots.build(),
+                modellansicht(),
+                null,
+                null);
+        }
     }
 
     /** The chain's wires plus the bridge to the attach bone — the bridge is always a dashed relationship line. */
@@ -427,58 +440,70 @@ public final class ModelPhysicsDebug
         Vector3f force = new Vector3f();
         List<Vector3f> tips = new ArrayList<>(pts.size());
 
-        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
-         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-        BufferBuilder lines = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        boolean tiefe = !config.xray.get();
 
-        for (int i = 1; i < pts.size(); i++)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            Vector3f p = pts.get(i);
+            BufferBuilder lines = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-            /* Sample in the solver's world space (carry the local point out through the draw matrix), then
-             * carry the world-space force back into local space so the arrow points the right way on screen.
-             * When the wind is local to the model, its direction is already expressed in the model's own
-             * frame — which is this drawing space — so it is drawn directly without the world round-trip. */
-            matrix.transformPosition(world.set(p));
-            PhysicsForces.windForceAt(windDir, windMagnitude, wind, age, world, force);
-
-            if (!wind.local())
+            for (int i = 1; i < pts.size(); i++)
             {
-                inverse.transformDirection(force);
+                Vector3f p = pts.get(i);
+
+                /* Sample in the solver's world space (carry the local point out through the draw matrix), then
+                 * carry the world-space force back into local space so the arrow points the right way on screen.
+                 * When the wind is local to the model, its direction is already expressed in the model's own
+                 * frame — which is this drawing space — so it is drawn directly without the world round-trip. */
+                matrix.transformPosition(world.set(p));
+                PhysicsForces.windForceAt(windDir, windMagnitude, wind, age, world, force);
+
+                if (!wind.local())
+                {
+                    inverse.transformDirection(force);
+                }
+
+                force.mul(unit * config.wind.size.get());
+
+                Vector3f end = new Vector3f(p).add(force);
+
+                DebugOverlay.line(lines, matrix, p, end, color, 0.85F * a);
+                tips.add(end);
             }
 
-            force.mul(unit * config.wind.size.get());
-
-            Vector3f end = new Vector3f(p).add(force);
-
-            DebugOverlay.line(lines, matrix, p, end, color, 0.85F * a);
-            tips.add(end);
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
+                lines.build(),
+                modellansicht(),
+                null,
+                null);
         }
 
-        MeshData builtLines = lines.build();
-
-        if (builtLines != null)
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
-            BufferUploader.drawWithShader(builtLines);
+            BufferBuilder dots = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            for (Vector3f end : tips)
+            {
+                DebugOverlay.marker(dots, stack, ValueDebugElement.SHAPE_SPHERE, end, unit * 0.05F, color, a);
+            }
+
+            SofortZeichner.zeichnen(
+                FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
+                dots.build(),
+                modellansicht(),
+                null,
+                null);
         }
+    }
 
-        /* 26.2: Tesselator ist entfallen -- sein geteilter Eckenspeicher war ein
-         * globaler Zwischenspeicher. Jetzt gehoert der Speicher dem Aufruf. */
-        ByteBufferBuilder eckenSpeicher = new ByteBufferBuilder(4096);
-        BufferBuilder dots = SofortZeichner.beginnen(eckenSpeicher, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-
-        for (Vector3f end : tips)
-        {
-            DebugOverlay.marker(dots, stack, ValueDebugElement.SHAPE_SPHERE, end, unit * 0.05F, color, a);
-        }
-
-        MeshData builtDots = dots.build();
-
-        if (builtDots != null)
-        {
-            BufferUploader.drawWithShader(builtDots);
-        }
+    /**
+     * ⚠️ NICHT ModelVAORenderer.captureModelView(stack) — die Ecken sind hier schon durch
+     * die Pose gelaufen; es fehlt nur die globale Modellansicht der Kamera (frueher Teil
+     * von BufferUploader.drawWithShader). Pose nochmal dazu = doppelt transformiert.
+     */
+    private static Matrix4f modellansicht()
+    {
+        return new Matrix4f(RenderSystem.getModelViewMatrixCopy());
     }
 
     /**

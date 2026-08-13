@@ -22,6 +22,7 @@ import mchorse.bbs_mod.cubic.constraints.ModelConstraintsRuntime;
 /* ⛔ P3-26.2-AUS: import von mchorse.bbs_mod.cubic.physics.ModelPhysicsDebug entfernt —
  * die klasse ist im ausschluss-block von build.gradle stillgelegt. Ihre beiden aufrufe
  * stehen weiter unten (renderModel / updateStencilMap) je mit begruendung. */
+import mchorse.bbs_mod.cubic.physics.ModelPhysicsDebug;
 import mchorse.bbs_mod.cubic.physics.ModelPhysicsRuntime;
 import mchorse.bbs_mod.cubic.model.ArmorSlot;
 import mchorse.bbs_mod.cubic.model.ArmorType;
@@ -453,8 +454,10 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelIKDebug.render(newStack, model.model, ikMap, "");
         }
 
-        /* ⛔ P3-26.2-AUS: die physik-ueberlagerung (ModelPhysicsDebug) zeichnet nicht mehr —
-         * wiederherstellungs-rezept in docs/BUGLISTE-26.2.md, abschnitt "Portnotiz". */
+        if (stencilMap == null && !this.renderingArm && this.form != null && this.form.physics.get() instanceof MapType physicsMap)
+        {
+            ModelPhysicsDebug.render(newStack, model.model, physicsMap, target.getAge(), "");
+        }
 
 
         /* 26.2: das disableBlend()/enableCull()-Paar hier ist ersatzlos entfallen. Beide stellten nur
@@ -898,16 +901,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
             ModelIKDebug.renderStencil(context.stack, model.model, ikMap, context.stencilMap, this.form);
         }
 
-        /* ⛔ P3-26.2-AUS — zweite haelfte desselben features (begruendung oben in
-         * renderModel). Hier stand:
-         *   if (this.form != null && this.form.physics.get() instanceof MapType physicsMap)
-         *   {
-         *       ModelPhysicsDebug.renderStencil(context.stack, model.model, physicsMap, context.stencilMap, this.form);
-         *   }
-         * Das war der klick-durchgang: er spiegelte die attach-marker in die auswahl-maske,
-         * damit ein klick auf einen marker seinen (oft mesh-losen) knochen auswaehlt. Ohne
-         * ihn sind diese knochen im editor nur noch ueber die knochenliste erreichbar,
-         * nicht mehr durch anklicken im viewport. */
+        /* Klick-Durchgang der Physik: spiegelt die Attach-Marker in die Auswahl-Maske,
+         * damit ein Klick den (oft mesh-losen) Knochen auswaehlt. */
+        if (this.form != null && this.form.physics.get() instanceof MapType physicsMap)
+        {
+            ModelPhysicsDebug.renderStencil(context.stack, model.model, physicsMap, context.stencilMap, this.form);
+        }
     }
 
     private void captureMatrices(ModelInstance model)

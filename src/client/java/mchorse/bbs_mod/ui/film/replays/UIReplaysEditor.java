@@ -1190,24 +1190,15 @@ public class UIReplaysEditor extends UIElement
         this.pickFormBone(form, bone, false);
     }
 
-    /**
-     * Bone pick from the 3D viewport with the Shift / Ctrl offer gestures. The gizmo
-     * sphere's deferred pick goes through here so clicking a bone on the sphere behaves
-     * like a direct bone click — Shift opens the hierarchy menu, Ctrl multi-selects —
-     * instead of only doing a plain select.
-     */
+    /** Viewport-Bone-Pick mit den Shift-(Hierarchie)/Ctrl-(Multi)-Gesten; auch der
+     *  verzoegerte Gizmo-Kugel-Pick laeuft hierdurch, damit er sich gleich verhaelt. */
     public void pickFormWithOffers(UIContext context, Form form, String bone)
     {
         UIReplaysEditorUtils.pickFormWithOffers(context, new Pair<>(form, bone), this::pickFormBone);
     }
 
-    /**
-     * Picking a model bone in the viewport is a pose edit, but the pose/bone tracks
-     * only exist in the {@link ReplayCategory#POSE} category. So when another category
-     * is open, jump to Pose first (and out of actions mode) before delegating to the
-     * shared pick logic — otherwise the click finds no pose sheet in the current graph
-     * and silently does nothing, forcing a manual tab switch.
-     */
+    /** Bone-Pick ist ein Pose-Edit: erst in {@link ReplayCategory#POSE} springen (und raus
+     *  aus actions), sonst findet der Klick keine Pose-Spur und tut STILL nichts. */
     private void pickFormBone(Form form, String bone, boolean insert)
     {
         if (form instanceof ModelForm && bone != null && !bone.isEmpty())
@@ -1437,6 +1428,13 @@ public class UIReplaysEditor extends UIElement
     public void collectUndoData(MapType data)
     {
         super.collectUndoData(data);
+
+        /* collectAllUndoData trifft den dauerhaft im Dashboard haengenden Editor auch,
+         * wenn ein anderes Panel VOR dem ersten Film-Laden einen Undo ausloest (NPE 08-13). */
+        if (this.film == null)
+        {
+            return;
+        }
 
         int index = this.film.replays.getList().indexOf(this.getReplay());
 
