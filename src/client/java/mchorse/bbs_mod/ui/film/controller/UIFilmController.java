@@ -27,6 +27,7 @@ import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.Camera;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
+import mchorse.bbs_mod.cubic.ik.ModelIKDebug;
 import mchorse.bbs_mod.camera.controller.RunnerCameraController;
 import mchorse.bbs_mod.client.BBSRendering;
 import mchorse.bbs_mod.client.BBSShaders;
@@ -1455,11 +1456,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
     {
         this.worldRenderContext = context;
 
-        /* Der frueher noetige enableDepthTest-Aufruf faellt ersatzlos weg: er sicherte nur ab,
-         * dass ein vorheriger Zeichenweg den globalen Tiefentest nicht abgeschaltet gelassen
-         * hat. In 26.2 traegt jede Pipeline ihren DepthStencilState selbst — was hier folgt
-         * (Formen ueber ModelVAOPipeline bzw. RenderType, Draw-Helfer ueber ihre eigene
-         * Pipeline), bringt den Tiefentest jeweils mit. */
+        /* 26.2: kein enableDepthTest mehr noetig — jede Pipeline bringt ihren Tiefentest mit. */
+
+        /* Blenders Active-Highlight: der gepickte Bone faerbt sein IK-Widget (wirkt ab dem
+         * naechsten Frame — die Formen dieses Frames sind schon gezeichnet). */
+        Pair<String, Boolean> picked = this.getBone();
+
+        ModelIKDebug.setSelection(picked == null ? null : picked.a);
 
         if (this.editorController != null)
         {
@@ -1493,10 +1496,6 @@ public class UIFilmController extends UIElement implements GizmoViewport
         ControlMouse.steer(this, x, y, this.lastMouse.x, this.lastMouse.y);
 
         this.lastMouse.set(x, y);
-
-        /* Hier wurde der Tiefentest fuer alles Nachfolgende abgeschaltet zurueckgelassen.
-         * Diesen globalen Zustand gibt es in 26.2 nicht mehr — jeder folgende Zeichenweg
-         * waehlt seine Pipeline und damit seinen Tiefentest selbst. Nichts zu uebergeben. */
     }
 
     private void renderOrbitCenterMarker(LevelRenderContext context)

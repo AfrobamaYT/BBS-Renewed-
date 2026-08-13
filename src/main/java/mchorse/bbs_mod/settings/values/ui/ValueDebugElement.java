@@ -19,7 +19,12 @@ public class ValueDebugElement extends ValueGroup
     public static final int SHAPE_DIAMOND = 2;
     public static final int SHAPE_RING = 3;
     public static final int SHAPE_CROSS = 4;
-    public static final int SHAPES = 5;
+
+    /* Blender-Rig-Widgets (RigWidgets): Kurven-Griffe statt solider Marker. */
+    public static final int SHAPE_WIRE_CUBE = 5;
+    public static final int SHAPE_WIRE_SPHERE = 6;
+    public static final int SHAPE_WIRE_CIRCLE = 7;
+    public static final int SHAPES = 8;
 
     public final ValueBoolean visible;
     public final ValueInt color;

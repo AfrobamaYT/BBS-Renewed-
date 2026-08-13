@@ -13,6 +13,7 @@ import mchorse.bbs_mod.cubic.IModel;
 import mchorse.bbs_mod.cubic.model.bobj.BOBJModel;
 import mchorse.bbs_mod.cubic.render.CubicRenderer.PivotFrame;
 import mchorse.bbs_mod.cubic.render.DebugOverlay;
+import mchorse.bbs_mod.cubic.render.RigWidgets;
 import mchorse.bbs_mod.cubic.render.ModelPivotFrames;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.forms.Form;
@@ -50,8 +51,20 @@ import java.util.Set;
  */
 public final class ModelIKDebug
 {
+    /** Der im Editor gepickte Bone (nur der Name): dessen Widget traegt Blenders
+     *  Active-Farbe. Namensvergleich — gleichnamige Ziele in verschachtelten
+     *  Model-Forms desselben Frames highlighten doppelt (kosmetischer Rand). */
+    private static String selectedBone;
+
     private ModelIKDebug()
     {
+    }
+
+    /** Je Frame vom Film-Controller gesetzt. ⚠️ KEIN Pfad-Zerschneiden an '.': Bone-Namen
+     *  selbst tragen Punkte (mixamo/Blender-Rigs: "IK.hand.R") — nur exakter Vergleich. */
+    public static void setSelection(String bone)
+    {
+        selectedBone = bone == null || bone.isEmpty() ? null : bone;
     }
 
     public static void render(PoseStack stack, IModel model, MapType ikData, String selectedTip)
@@ -71,6 +84,11 @@ public final class ModelIKDebug
         }
 
         Map<String, PivotFrame> frames = collectFrames(model, compiled);
+
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.render", "chains=" + compiled.chains().size() + " frames=" + frames.size() + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(4));
+        }
 
         /* 26.2: der Zustandsblock, der hier stand, ist ersatzlos entfallen — Blend, Tiefe,
          *  Cull und Shader sind kein globaler Schalter mehr, sondern die Pipeline, die
@@ -208,7 +226,11 @@ public final class ModelIKDebug
         int id = stencilMap.objectIndex;
         float[] col = {(id & 0xFF) / 255F, (id >> 8 & 0xFF) / 255F, (id >> 16 & 0xFF) / 255F};
 
-        DebugOverlay.marker(builder, stack, element.shape.get(), p, unit * element.size.get(), col, 1F);
+        /* Wire-Widgets picken ueber ihr Innenvolumen in gleicher Groesse — Blenders
+         * Klick-Toleranz-Aequivalent; Haarlinien waeren im Stencil nur Luecken. */
+        int shape = element.shape.get();
+
+        DebugOverlay.marker(builder, stack, RigWidgets.isWire(shape) ? ValueDebugElement.SHAPE_CUBE : shape, p, unit * element.size.get(), col, 1F);
 
         stencilMap.addPicking(form, bone);
     }
@@ -293,10 +315,14 @@ public final class ModelIKDebug
         boolean targetDot = config.target.visible.get();
         boolean poleDot = pole != null && config.pole.visible.get();
 
+        /* Blender-Widgets zweigen aus dem Marker-Weg ab: Kurven statt Koerper. */
+        boolean targetWire = targetDot && RigWidgets.isWire(config.target.shape.get());
+        boolean poleWire = poleDot && RigWidgets.isWire(config.pole.shape.get());
+
         boolean anyLine = config.lines.visible.get() || targetDot || poleDot;
         float thickness = unit * config.lines.size.get();
         boolean boxes = anyLine && thickness > 0F;
-        boolean anyDot = joints || tipDot || targetDot || poleDot;
+        boolean anyDot = joints || tipDot || (targetDot && !targetWire) || (poleDot && !poleWire);
 
         Matrix4f matrix = stack.last().pose();
         float dash = unit * 0.12F;
@@ -318,6 +344,43 @@ public final class ModelIKDebug
                 SofortZeichner.zeichnen(
                     FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
                     lines.build(),
+                    modellansicht(),
+                    null,
+                    null);
+            }
+        }
+
+        /* Blenders Rig-Widgets: Haarlinien-Kurven in der gelösten Bone-Orientierung.
+         * Farbwahl ist die Wire-Regel aus overlay_armature.cc — selektiert traegt die
+         * Active-Farbe des Sets, unselektiert die Solid-Farbe um −50 geschattet. */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.chain", chain.tip() + " n=" + n + " tw=" + targetWire + " pw=" + poleWire + " a=" + a + " tFrame=" + (frames.get(chain.target()) != null));
+        }
+
+        if (targetWire || poleWire)
+        {
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(8192))
+            {
+                BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+
+                if (targetWire)
+                {
+                    float[] col = RigWidgets.wireColor(config.target.color.get(), chain.target().equals(selectedBone));
+
+                    RigWidgets.emit(wire, matrix, config.target.shape.get(), frames.get(chain.target()), unit * config.target.size.get(), col, a);
+                }
+
+                if (poleWire)
+                {
+                    float[] col = RigWidgets.wireColor(config.pole.color.get(), chain.poleTarget().equals(selectedBone));
+
+                    RigWidgets.emit(wire, matrix, config.pole.shape.get(), frames.get(chain.poleTarget()), unit * config.pole.size.get(), col, a);
+                }
+
+                SofortZeichner.zeichnen(
+                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
+                    wire.build(),
                     modellansicht(),
                     null,
                     null);
@@ -356,12 +419,12 @@ public final class ModelIKDebug
                 DebugOverlay.marker(dots, stack, config.tip.shape.get(), tip, unit * config.tip.size.get(), DebugOverlay.rgb(config.tip.color.get()), a);
             }
 
-            if (targetDot)
+            if (targetDot && !targetWire)
             {
                 DebugOverlay.marker(dots, stack, config.target.shape.get(), target, unit * config.target.size.get(), DebugOverlay.rgb(config.target.color.get()), a);
             }
 
-            if (poleDot)
+            if (poleDot && !poleWire)
             {
                 DebugOverlay.marker(dots, stack, config.pole.shape.get(), pole, unit * config.pole.size.get(), DebugOverlay.rgb(config.pole.color.get()), a);
             }

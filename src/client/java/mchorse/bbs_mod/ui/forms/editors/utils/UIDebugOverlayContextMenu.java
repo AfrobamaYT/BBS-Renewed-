@@ -110,6 +110,18 @@ public class UIDebugOverlayContextMenu extends UIContextMenu
         {
             return Icons.ADD;
         }
+        else if (shape == ValueDebugElement.SHAPE_WIRE_CUBE)
+        {
+            return Icons.OUTLINE;
+        }
+        else if (shape == ValueDebugElement.SHAPE_WIRE_SPHERE)
+        {
+            return Icons.OUTLINE_SPHERE;
+        }
+        else if (shape == ValueDebugElement.SHAPE_WIRE_CIRCLE)
+        {
+            return Icons.CURVES;
+        }
 
         return Icons.SPHERE;
     }
