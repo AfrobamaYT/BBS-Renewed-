@@ -141,11 +141,8 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    /* AUTONOMIE 2026-07-27: zwei kontextmenue-helfer aus dem CML-fork. Beide fuellen ein
-     * menue mit knochen-namen und rufen den consumer mit der wahl. Nutzer: die kamera-
-     * vorschau (com/afrobama/.../campreview), wo man einen clip an einen knochen heftet.
-     * "_item"-gruppen sind ausgeblendet — das sind die unsichtbaren halter fuer
-     * handgegenstaende, an die niemand eine kamera haengt. */
+    /* Kontextmenue-helfer (CML-fork): knochen-menue -> consumer; nutzer ist die kamera-
+     * vorschau (campreview). "_item"-halter sind ausgeblendet (unsichtbare hand-halter). */
     public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
     {
         offerGroups(context, form, bone, consumer, true);
@@ -506,10 +503,8 @@ public class UIReplaysEditor extends UIElement
 
     public void setReplay(Replay replay, boolean select, OrbitReaction orbit)
     {
-        /* Guard against re-entry: scrollToReplay() below picks the replay in the list,
-         * which fires the list's selection callback and calls setReplay() again. The
-         * outermost call owns the orbit reaction, so the nested call is redundant and
-         * must not override it (otherwise undo would teleport via the SWITCH callback). */
+        /* Re-entry-Guard: scrollToReplay() feuert den listen-callback -> setReplay() erneut;
+         * die orbit-reaktion gehoert dem aeussersten aufruf (sonst teleportiert undo). */
         if (this.settingReplay)
         {
             return;
@@ -1214,13 +1209,19 @@ public class UIReplaysEditor extends UIElement
         }
 
         UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, insert);
+
+        /* Blender-Paritaet: ohne offenen Pose-Keyframe existiert das Transform-Pad nicht —
+         * G/R/S und Gizmo-Drag liefen still ins Leere (factory=null, gemessen 2026-08-13).
+         * Ohne Factory nach dem Pick: insert-Pfad oeffnet/erzeugt den Keyframe an der Playhead. */
+        if (!insert && this.keyframeEditor != null && this.keyframeEditor.editor == null)
+        {
+            UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, true);
+        }
     }
 
     public boolean clickViewport(UIContext context, Area area)
     {
-        /* Maustaste 4 (GLFW 3): solange gehalten, auf das Replay zufahren. Steht VOR allen
-         * anderen Zweigen, weil sie sowohl im Flug als auch ueber einer Form gelten soll —
-         * man haelt sie mit dem Daumen, waehrend die andere Hand orbitet. */
+        /* Maustaste 4: auf das Replay zufahren — VOR allen Zweigen (gilt im Flug UND ueber Formen). */
         if (area.isInside(context) && context.mouseButton == 3 && this.filmPanel.getController().orbit.enabled)
         {
             this.filmPanel.getController().orbit.starteZoomZumReplay();
@@ -1258,9 +1259,7 @@ public class UIReplaysEditor extends UIElement
 
         StencilFormFramebuffer stencil = this.filmPanel.getController().getStencil();
 
-        /* In orbit mode left-drag rotates the camera anywhere, even over a form.
-         * The form selection is deferred to release, so a click still selects but a
-         * drag orbits instead of being swallowed by the form under the cursor. */
+        /* Orbit: Links-Drag rotiert auch ueber Formen — Auswahl erst beim Release (Klick waehlt, Drag orbitet). */
         if (area.isInside(context) && context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
         {
             this.pendingPick = stencil.hasPicked() ? stencil.getPicked() : null;
