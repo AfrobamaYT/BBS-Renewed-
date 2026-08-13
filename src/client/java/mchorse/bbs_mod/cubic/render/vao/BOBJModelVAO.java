@@ -48,6 +48,11 @@ public class BOBJModelVAO implements IModelVAO
     private GpuBuffer normale;
     private GpuBuffer texturUV;
 
+    /** Knochenteil der Pick-Kennung je Ecke (ivec2, y ungenutzt) — die vierte Bindung,
+     *  die der Feldkommentar oben lange als fehlend fuehrte. Befuellt nur im
+     *  Stencil-Durchgang; sonst bleibt der Puffer auf Nullen (Kennung = Basis). */
+    private GpuBuffer licht;
+
     private float[] tmpVertices;
     private float[] tmpNormals;
     private int[] tmpLight;
@@ -78,12 +83,13 @@ public class BOBJModelVAO implements IModelVAO
         this.count = this.data.normData.length / 3;
         this.tmpVertices = new float[this.data.posData.length];
         this.tmpNormals = new float[this.data.normData.length];
-        this.tmpLight = new int[this.data.posData.length];
+        this.tmpLight = new int[this.count * 2];
         this.tmpTangents = new float[this.count * 4];
 
         this.position = puffer("bobj-position", this.data.posData);
         this.normale = puffer("bobj-normale", this.data.normData);
         this.texturUV = puffer("bobj-uv", this.data.texData);
+        this.licht = pufferInt("bobj-licht", this.tmpLight);
     }
 
     /**
@@ -136,6 +142,39 @@ public class BOBJModelVAO implements IModelVAO
         }
     }
 
+    private static GpuBuffer pufferInt(String name, int[] werte)
+    {
+        ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Integer.BYTES).order(ByteOrder.nativeOrder());
+
+        try
+        {
+            roh.asIntBuffer().put(werte);
+
+            return RenderSystem.getDevice().createBuffer(() -> name,
+                GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, roh);
+        }
+        finally
+        {
+            MemoryUtil.memFree(roh);
+        }
+    }
+
+    private static void schreibenInt(GpuBuffer ziel, int[] werte)
+    {
+        ByteBuffer roh = MemoryUtil.memAlloc(werte.length * Integer.BYTES).order(ByteOrder.nativeOrder());
+
+        try
+        {
+            roh.asIntBuffer().put(werte);
+
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(ziel.slice(), roh);
+        }
+        finally
+        {
+            MemoryUtil.memFree(roh);
+        }
+    }
+
     /**
      * Clean up resources which were used by this  
      */
@@ -157,6 +196,12 @@ public class BOBJModelVAO implements IModelVAO
         {
             this.texturUV.close();
             this.texturUV = null;
+        }
+
+        if (this.licht != null)
+        {
+            this.licht.close();
+            this.licht = null;
         }
     }
 
@@ -270,11 +315,14 @@ public class BOBJModelVAO implements IModelVAO
         schreiben(this.position, newVertices);
         schreiben(this.normale, newNormals);
 
-        /* ⚠️ Tangenten (Iris) und das knochenabhaengige Licht (Stencil) werden nicht mehr
-         * hochgeladen: fuer beide fehlt die Vertex-Bindung, siehe Feldkommentar oben. Die
-         * Rechnung dafuer entfaellt gleich mit -- sie waere Arbeit fuer einen Puffer, den
-         * niemand liest. Wer die Bindungen ergaenzt, holt beide Bloecke aus der
-         * Versionsgeschichte dieses Commits zurueck. */
+        /* ⚠️ Tangenten (Iris) bleiben geparkt (keine Bindung, 26.2-Ausschluss). Das
+         * knochenabhaengige Licht ist seit 2026-08-13 zurueck: BINDUNG_LICHT traegt den
+         * Knochenteil der Pick-Kennung je Ecke — ohne ihn kannte der Auswahlpuffer nur
+         * die Replay-Basis, ein Klick fand nie einen Knochen. */
+        if (stencilMap != null)
+        {
+            schreibenInt(this.licht, this.tmpLight);
+        }
     }
 
     protected void processData(float[] newVertices, float[] newNormals, Matrix4f[] matrices)
@@ -298,6 +346,7 @@ public class BOBJModelVAO implements IModelVAO
 
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, this.position.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, this.normale.slice());
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
 
         /* Reihenfolge: (Eckenzahl, Instanzen, erste Ecke, erste Instanz) — belegt an

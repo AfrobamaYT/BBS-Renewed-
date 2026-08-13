@@ -49,6 +49,10 @@ public class ModelVAO implements IModelVAO
     private GpuBuffer normale;
     private GpuBuffer texturUV;
 
+    /** Nullen — statische Modelle differenzieren (noch) keine Knochen im Pick; die
+     *  Bindung muss trotzdem bedient werden, seit BINDUNG_LICHT in der Pipeline steht. */
+    private GpuBuffer licht;
+
     private int ecken;
 
     public ModelVAO(ModelVAOData data)
@@ -80,6 +84,12 @@ public class ModelVAO implements IModelVAO
             this.texturUV.close();
             this.texturUV = null;
         }
+
+        if (this.licht != null)
+        {
+            this.licht.close();
+            this.licht = null;
+        }
     }
 
     public void upload(ModelVAOData data)
@@ -91,6 +101,7 @@ public class ModelVAO implements IModelVAO
         this.position = puffer("bbs-modell-position", data.vertices());
         this.normale = puffer("bbs-modell-normale", data.normals());
         this.texturUV = puffer("bbs-modell-uv", data.texCoords());
+        this.licht = puffer("bbs-modell-licht", new float[data.vertices().length / 3 * 2]);
 
         this.ecken = data.vertices().length / 3;
     }
@@ -136,6 +147,7 @@ public class ModelVAO implements IModelVAO
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_POSITION, this.position.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_NORMALE, this.normale.slice());
         pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_UV0, this.texturUV.slice());
+        pass.setVertexBuffer(ModelVAOPipeline.BINDUNG_LICHT, this.licht.slice());
 
         /* Ohne Indexpuffer: die Ecken liegen in Zeichenreihenfolge, genau wie beim alten
          * glDrawArrays(GL_TRIANGLES, 0, count). Die Dreiecks-Topologie steht in der

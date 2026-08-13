@@ -22,6 +22,7 @@ layout(std140) uniform ModelInfo {
 uniform sampler2D Sampler0;
 
 in vec2 texCoord0;
+flat in ivec2 texCoord2;
 
 out vec4 fragColor;
 
@@ -39,8 +40,12 @@ void main()
 
     /* ⛔ KENNUNG, NICHT FARBE. Die drei Kanaele tragen eine 24-Bit-Zahl, die der
      * Auswahl-Durchgang zurueckliest. Sie darf darum weder gemischt noch gefiltert
-     * werden -- deshalb faehrt die Pipeline ohne Blending (ModelVAOPipeline.PICKER_*). */
-    int totalIndex = Modus.y + LichtOverlay.x;
+     * werden -- deshalb faehrt die Pipeline ohne Blending (ModelVAOPipeline.PICKER_*).
+     *
+     * texCoord2.x ist der KNOCHENTEIL je Ecke (1.21.1: Target + texCoord2.x). Der
+     * fruehere Port-Stand las stattdessen LichtOverlay.x — ein Uniform, EIN Wert pro
+     * Zug: damit trugen alle Pixel die Basis, und ein Klick fand nie einen Knochen. */
+    int totalIndex = Modus.y + texCoord2.x;
     float r = float(totalIndex & 0xff) / 255.0;
     float g = float((totalIndex >> 8) & 0xff) / 255.0;
     float b = float((totalIndex >> 16) & 0xff) / 255.0;

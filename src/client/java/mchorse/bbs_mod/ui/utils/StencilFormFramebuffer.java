@@ -532,8 +532,12 @@ public class StencilFormFramebuffer
          * VIRTUELLE maus an oder die echte? Trennt UIContext-Weg von Roh-Koordinaten. */
         if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
         {
+            mchorse.bbs_mod.ui.framework.UIContext menuCtx = mchorse.bbs_mod.BBSModClient.getDashboard().context;
+
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.pick.eingang." + System.identityHashCode(this),
-                "x=" + x + " y=" + y + " maus=" + com.afrobama.bbstools.client.autotest.VirtuelleMaus.zustand()
+                "x=" + x + " y=" + y
+                    + " ctxMaus=" + (menuCtx == null ? "?" : menuCtx.mouseX + "," + menuCtx.mouseY)
+                    + " xpos=" + (int) net.minecraft.client.Minecraft.getInstance().mouseHandler.xpos()
                     + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(5));
         }
 
@@ -604,7 +608,9 @@ public class StencilFormFramebuffer
         {
             int centerId = 0;
             int nearestHandle = 0;
+            int nearestAny = 0;
             long nearestDist = Long.MAX_VALUE;
+            long nearestAnyDist = Long.MAX_VALUE;
             long radiusSq = (long) radius * radius;
 
             for (int py = 0; py < h; py++)
@@ -629,22 +635,31 @@ public class StencilFormFramebuffer
                         centerId = id;
                     }
 
+                    long dx = fx - x;
+                    long dy = fy - y;
+                    long dist = dx * dx + dy * dy;
+
                     if (id >= 1 && id <= handleMax)
                     {
-                        long dx = fx - x;
-                        long dy = fy - y;
-                        long dist = dx * dx + dy * dy;
-
                         if (dist <= radiusSq && dist < nearestDist)
                         {
                             nearestDist = dist;
                             nearestHandle = id;
                         }
                     }
+                    else if (id != 0 && dist <= radiusSq && dist < nearestAnyDist)
+                    {
+                        nearestAnyDist = dist;
+                        nearestAny = id;
+                    }
                 }
             }
 
-            this.index = nearestHandle != 0 ? nearestHandle : centerId;
+            /* Blenders Klick-Toleranz (view3d_select: 14->9->5px-Kaskade um den Cursor):
+             * Gizmo-Handles gewinnen, dann der exakte Pixel, dann die NAECHSTE beliebige
+             * Kennung im Radius — sonst sind duenne Wire-Widgets und schmale Marker nur
+             * pixelgenau klickbar und fuehlen sich tot an. */
+            this.index = nearestHandle != 0 ? nearestHandle : (centerId != 0 ? centerId : nearestAny);
 
             /* Messfuehler 2026-08-02, zweiter Anlauf: das Leseziel stimmt inzwischen
              * (gebunden=29=eigener), der Index bleibt 0. Diese Zeile trennt die zwei

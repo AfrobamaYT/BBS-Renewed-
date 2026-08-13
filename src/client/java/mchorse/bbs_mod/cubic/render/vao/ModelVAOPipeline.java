@@ -75,6 +75,7 @@ public final class ModelVAOPipeline
     public static final int BINDUNG_POSITION = 0;
     public static final int BINDUNG_NORMALE = 1;
     public static final int BINDUNG_UV0 = 2;
+    public static final int BINDUNG_LICHT = 3;
 
     /** {@code in vec3 Position} — drei Fliesskommazahlen, dicht gepackt. */
     public static final VertexFormat FORMAT_POSITION = VertexFormat.builder(0)
@@ -89,6 +90,14 @@ public final class ModelVAOPipeline
     /** {@code in vec2 UV0} */
     public static final VertexFormat FORMAT_UV0 = VertexFormat.builder(0)
         .addAttribute("UV0", GpuFormat.RG32_FLOAT)
+        .build();
+
+    /** {@code flat in ivec2 UV2} — je Ecke der Knochenteil der Pick-Kennung (Stencil-
+     *  Durchgang; der Knochen mit dem groessten Gewicht). model.vsh liest das Attribut
+     *  nicht (Blaze3D bindet ueber Namen, Ungelesenes ist erlaubt) — nur picker_models
+     *  rechnet damit {@code Modus.y + UV2.x}, wie 1.21.1s {@code Target + texCoord2.x}. */
+    public static final VertexFormat FORMAT_LICHT = VertexFormat.builder(0)
+        .addAttribute("UV2", GpuFormat.RG32_SINT)
         .build();
 
     /**
@@ -318,7 +327,8 @@ public final class ModelVAOPipeline
         {
             bauer.withVertexBinding(BINDUNG_POSITION, FORMAT_POSITION)
                 .withVertexBinding(BINDUNG_NORMALE, FORMAT_NORMALE)
-                .withVertexBinding(BINDUNG_UV0, FORMAT_UV0);
+                .withVertexBinding(BINDUNG_UV0, FORMAT_UV0)
+                .withVertexBinding(BINDUNG_LICHT, FORMAT_LICHT);
         }
 
         /* ⛔ 26.2 rechnet die Tiefe UMGEKEHRT (reversed-Z): naeher heisst groesserer Wert,
