@@ -38,6 +38,14 @@ public final class RigWidgets
     private static final float[] CUBE = buildCube();
     private static final float[] SPHERE = buildSphere();
     private static final float[] CIRCLE = buildCircle();
+    /** Lazy statt final-Initializer: ein Hotswap laesst neue statics null — genau so
+     *  starb die Instanz am 2026-08-13 (NPE je Frame, crash-20.45.47). */
+    private static float[] OCTA;
+
+    /* Blenders Pose-Mode-Theme (userdef_default_theme.c): Skelett-Bones grau, Auswahl
+     * HELLBLAU, aktiv cyan — die Farben, die jeder aus dem Blender-Viewport kennt. */
+    public static final int POSE_UNSEL = 0xb2b2b2;
+    public static final int POSE_AKTIV = 0x8cffff;
 
     /* Linienquerschnitt in Welt bei 5 Bloecken/FOV50 (getAxesDistanceScale-Referenz):
      * ~2.7px opaker Kern + ~1.8px Alpha-Auslauf je Seite — Blender faehrt 2px, hier
@@ -223,6 +231,53 @@ public final class RigWidgets
     }
 
     /* Einheitsgeometrie — Ecken und Kanten exakt wie Rigify. */
+
+    /**
+     * Ein Bone als Blender-Octahedron: Einheitslaenge entlang +Y, Querschnitt skaliert
+     * mit — {@code size} ist die BONE-LAENGE. Kombi-Matrix wie bei {@link #emit}.
+     */
+    public static void emitOcta(BufferBuilder builder, Matrix4f kombi, float laenge, float[] col, float a)
+    {
+        if (OCTA == null)
+        {
+            OCTA = buildOcta();
+        }
+
+        for (int i = 0; i < OCTA.length; i += 6)
+        {
+            P1.set(OCTA[i] * laenge, OCTA[i + 1] * laenge, OCTA[i + 2] * laenge);
+            kombi.transformPosition(P1);
+            P2.set(OCTA[i + 3] * laenge, OCTA[i + 4] * laenge, OCTA[i + 5] * laenge);
+            kombi.transformPosition(P2);
+
+            band(builder, P1, P2, col, a);
+        }
+    }
+
+    /** Blenders bone_octahedral_verts (draw_cache.cc): Kopf (0,0,0), Ring bei y=0.1
+     *  mit ±0.1, Spitze (0,1,0) — 12 Wire-Kanten. */
+    private static float[] buildOcta()
+    {
+        float[][] v = {
+            {0, 0, 0}, {0.1F, 0.1F, 0.1F}, {0.1F, 0.1F, -0.1F},
+            {-0.1F, 0.1F, -0.1F}, {-0.1F, 0.1F, 0.1F}, {0, 1, 0},
+        };
+        int[][] e = {
+            {0, 1}, {0, 2}, {0, 3}, {0, 4},
+            {1, 2}, {2, 3}, {3, 4}, {4, 1},
+            {5, 1}, {5, 2}, {5, 3}, {5, 4},
+        };
+
+        float[] out = new float[e.length * 6];
+
+        for (int i = 0; i < e.length; i++)
+        {
+            System.arraycopy(v[e[i][0]], 0, out, i * 6, 3);
+            System.arraycopy(v[e[i][1]], 0, out, i * 6 + 3, 3);
+        }
+
+        return out;
+    }
 
     /** Rigify create_cube_widget: 8 Ecken (±1)³, 12 Kanten. */
     private static float[] buildCube()

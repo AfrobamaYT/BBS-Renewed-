@@ -124,9 +124,74 @@ public final class ModelIKDebug
         boolean tiefe = !config.xray.get();
         var entities = controller.getEntities();
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(65536))
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
         {
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+            /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,
+             * Auswahl cyan. Die IK-Ziel/Pol-Bones tragen stattdessen ihre Widgets. */
+            if (instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
+            {
+                Set<String> ikBones = new HashSet<>();
+
+                for (ModelIKCache.CompiledChain chain : compiled.chains())
+                {
+                    ikBones.add(chain.target());
+
+                    if (chain.poleTarget() != null)
+                    {
+                        ikBones.add(chain.poleTarget());
+                    }
+                }
+
+                Map<String, String> erstesKind = new HashMap<>();
+
+                for (mchorse.bbs_mod.bobj.BOBJBone bone : bobj.getArmature().orderedBones)
+                {
+                    if (bone.parent != null && !erstesKind.containsKey(bone.parent))
+                    {
+                        erstesKind.put(bone.parent, bone.name);
+                    }
+                }
+
+                for (mchorse.bbs_mod.bobj.BOBJBone bone : bobj.getArmature().orderedBones)
+                {
+                    if (ikBones.contains(bone.name))
+                    {
+                        continue;
+                    }
+
+                    Matrix4f kopf = welt(entities, entity, replay, bone.name);
+
+                    if (kopf == null)
+                    {
+                        continue;
+                    }
+
+                    Vector3f kopfPos = kopf.getTranslation(new Vector3f());
+                    String kind = erstesKind.get(bone.name);
+                    float laenge = 0.12F;
+
+                    if (kind != null && !ikBones.contains(kind))
+                    {
+                        Matrix4f kindWelt = welt(entities, entity, replay, kind);
+
+                        if (kindWelt != null)
+                        {
+                            laenge = Math.max(0.03F, kopfPos.distance(kindWelt.getTranslation(new Vector3f())));
+                        }
+                    }
+
+                    boolean sel = bone.name.equals(selectedBone);
+                    float[] col = DebugOverlay.rgb(sel ? RigWidgets.POSE_AKTIV : RigWidgets.POSE_UNSEL);
+                    Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(kopf).normalize3x3().setTranslation(
+                        (float) (kopf.m30() - kamera.x),
+                        (float) (kopf.m31() - kamera.y),
+                        (float) (kopf.m32() - kamera.z)));
+
+                    RigWidgets.emitOcta(wire, kombi, laenge, col, sel ? a : a * 0.55F);
+                }
+            }
 
             for (ModelIKCache.CompiledChain chain : compiled.chains())
             {
