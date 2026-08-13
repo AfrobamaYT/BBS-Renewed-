@@ -112,6 +112,14 @@ public final class ModelIKDebug
 
         net.minecraft.world.phys.Vec3 kamera = context.levelState().cameraRenderState.pos;
         Matrix4f sicht = modellansicht();
+
+        /* Anzeige-Breite der Baender: das Renderziel (Video) wird aufs Vorschaufeld
+         * verkleinert — ohne die Skala schrumpfen die Linien unter 1px (gemessen:
+         * 67 Fragment-Pixel am ganzen Rig). */
+        float feld = controller.panel.preview.getViewport().w * mchorse.bbs_mod.BBSModClient.getGUIScale();
+
+        RigWidgets.setBreitenSkala(feld <= 0F ? 1F
+            : mchorse.bbs_mod.client.BBSRendering.getVideoWidth() / feld);
         float a = config.opacity.get();
         boolean tiefe = !config.xray.get();
         var entities = controller.getEntities();
@@ -140,6 +148,14 @@ public final class ModelIKDebug
 
                 float unit = wurzel.getTranslation(new Vector3f())
                     .distance(spitze.getTranslation(new Vector3f())) / (glieder.size() - 1);
+
+                if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+                {
+                    mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.editor",
+                        chain.target() + " unit=" + unit
+                            + " tWelt=" + (welt(entities, entity, replay, chain.target()) != null)
+                            + " tPos=" + welt(entities, entity, replay, chain.target()).getTranslation(new Vector3f()));
+                }
 
                 if (targets)
                 {
@@ -190,7 +206,10 @@ public final class ModelIKDebug
             size *= 1.6F;
         }
 
-        Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(welt).setTranslation(
+        /* normalize3x3: die Welt-Matrix traegt die MODELL-Skalierung (Mixamo-Armaturen:
+         * 0.01, cm->m) — ungefiltert schrumpfen die Widgets auf Sprenkel (gemessen). Die
+         * Widget-Groesse kommt allein aus size; die Matrix liefert nur Lage+Richtung. */
+        Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(welt).normalize3x3().setTranslation(
             (float) (welt.m30() - kamera.x),
             (float) (welt.m31() - kamera.y),
             (float) (welt.m32() - kamera.z)));

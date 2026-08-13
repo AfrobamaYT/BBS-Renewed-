@@ -43,11 +43,22 @@ public final class RigWidgets
      * ~2.7px opaker Kern + ~1.8px Alpha-Auslauf je Seite — Blender faehrt 2px, hier
      * bewusst kraeftiger: die Editor-Fenster sind oft klein (854er-Boot) und die
      * Widgets muessen auf dunklen Skins ohne Outline bestehen. */
-    private static final float HALB_KERN = 0.009F;
-    private static final float HALB_AUSSEN = 0.015F;
+    private static final float HALB_KERN = 0.0060F;
+    private static final float HALB_AUSSEN = 0.0085F;
 
     private static final Vector3f P1 = new Vector3f();
     private static final Vector3f P2 = new Vector3f();
+
+    /** Video-zu-Anzeige-Verhaeltnis: die px-Konstanz der Baender gilt im RENDERZIEL
+     *  (Video, z.B. 3840), das aufs Vorschaufeld (z.B. 454px) verkleinert wird — ohne
+     *  diesen Faktor schrumpfen 2.7px auf unter 1px Anzeige. Setzt der Editor-Pass je
+     *  Frame; 0 (frisch gehotswappte Klasse) faellt auf 1 zurueck. */
+    private static float breitenSkala = 1F;
+
+    public static void setBreitenSkala(float skala)
+    {
+        breitenSkala = skala;
+    }
 
     private RigWidgets()
     {
@@ -179,7 +190,8 @@ public final class RigWidgets
             return;
         }
 
-        float scale = BBSSettings.getAxesDistanceScale(dist);
+        float skala = breitenSkala <= 0F ? 1F : breitenSkala;
+        float scale = BBSSettings.getAxesDistanceScale(dist) * skala;
         float kern = HALB_KERN * scale / len;
         float aussen = HALB_AUSSEN * scale / len;
 
