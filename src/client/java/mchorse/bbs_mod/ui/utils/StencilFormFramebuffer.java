@@ -528,6 +528,15 @@ public class StencilFormFramebuffer
      */
     public void pick(int x, int y, int radius, int handleMax)
     {
+        /* Messfuehler (hier, weil der Film-Controller gewoben ist): kommt beim Pick die
+         * VIRTUELLE maus an oder die echte? Trennt UIContext-Weg von Roh-Koordinaten. */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("stencil.pick.eingang." + System.identityHashCode(this),
+                "x=" + x + " y=" + y + " maus=" + com.afrobama.bbstools.client.autotest.VirtuelleMaus.zustand()
+                    + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(5));
+        }
+
         if (radius <= 0 || this.framebuffer == null)
         {
             this.pick(x, y);

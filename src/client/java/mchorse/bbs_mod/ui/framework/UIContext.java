@@ -112,6 +112,16 @@ public class UIContext implements IViewportStack
         this.mouseX = com.afrobama.bbstools.client.autotest.VirtuelleMaus.x(mouseX);
         this.mouseY = com.afrobama.bbstools.client.autotest.VirtuelleMaus.y(mouseY);
         this.viewportStack.reset();
+
+        /* Messfuehler: sieht der RENDER-thread die scharfe VirtuelleMaus? (Classloader-
+         * Kopien-Verdacht: HTTP-Route schaerft, Render liest evtl. eine andere Klasse.) */
+        if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
+        {
+            mchorse.bbs_mod.graphics.Messpunkt.zaehle("ui.setMouse",
+                "in=" + mouseX + "," + mouseY + " out=" + this.mouseX + "," + this.mouseY
+                    + " " + com.afrobama.bbstools.client.autotest.VirtuelleMaus.zustand()
+                    + " ctx=" + System.identityHashCode(this));
+        }
     }
 
     public void setMouse(int mouseX, int mouseY, int mouseButton)

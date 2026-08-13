@@ -350,9 +350,11 @@ public final class ModelIKDebug
             }
         }
 
-        /* Blenders Rig-Widgets: Haarlinien-Kurven in der gelösten Bone-Orientierung.
-         * Farbwahl ist die Wire-Regel aus overlay_armature.cc — selektiert traegt die
-         * Active-Farbe des Sets, unselektiert die Solid-Farbe um −50 geschattet. */
+        /* Blenders Rig-Widgets: weiche, bildschirm-konstante Kurven-Bänder in der gelösten
+         * Bone-Orientierung. Farbwahl ist die Wire-Regel aus overlay_armature.cc —
+         * selektiert traegt die Active-Farbe des Sets, unselektiert Solid −50. Die Ecken
+         * entstehen im KAMERA-Raum (Ansicht x PoseStack), gezeichnet mit Identitäts-
+         * Modellansicht — die Bänder richten sich dort am Blickstrahl aus. */
         if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
         {
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.chain", chain.tip() + " n=" + n + " tw=" + targetWire + " pw=" + poleWire + " a=" + a + " tFrame=" + (frames.get(chain.target()) != null));
@@ -360,28 +362,30 @@ public final class ModelIKDebug
 
         if (targetWire || poleWire)
         {
-            try (ByteBufferBuilder speicher = new ByteBufferBuilder(8192))
+            Matrix4f kameraRaum = modellansicht().mul(matrix);
+
+            try (ByteBufferBuilder speicher = new ByteBufferBuilder(65536))
             {
-                BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+                BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
                 if (targetWire)
                 {
                     float[] col = RigWidgets.wireColor(config.target.color.get(), chain.target().equals(selectedBone));
 
-                    RigWidgets.emit(wire, matrix, config.target.shape.get(), frames.get(chain.target()), unit * config.target.size.get(), col, a);
+                    RigWidgets.emit(wire, kameraRaum, config.target.shape.get(), frames.get(chain.target()), unit * config.target.size.get(), col, a);
                 }
 
                 if (poleWire)
                 {
                     float[] col = RigWidgets.wireColor(config.pole.color.get(), chain.poleTarget().equals(selectedBone));
 
-                    RigWidgets.emit(wire, matrix, config.pole.shape.get(), frames.get(chain.poleTarget()), unit * config.pole.size.get(), col, a);
+                    RigWidgets.emit(wire, kameraRaum, config.pole.shape.get(), frames.get(chain.poleTarget()), unit * config.pole.size.get(), col, a);
                 }
 
                 SofortZeichner.zeichnen(
-                    FormPipelines.holen(PrimitiveTopology.DEBUG_LINES, true, tiefe, false),
+                    FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, tiefe, false),
                     wire.build(),
-                    modellansicht(),
+                    new Matrix4f(),
                     null,
                     null);
             }

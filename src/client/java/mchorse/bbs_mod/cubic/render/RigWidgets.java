@@ -1,8 +1,8 @@
 package mchorse.bbs_mod.cubic.render;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.settings.values.ui.ValueDebugElement;
-import mchorse.bbs_mod.utils.colors.Colors;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -38,6 +38,11 @@ public final class RigWidgets
     private static final float[] CUBE = buildCube();
     private static final float[] SPHERE = buildSphere();
     private static final float[] CIRCLE = buildCircle();
+
+    /* Linienquerschnitt in Welt bei 5 Bloecken/FOV50 (getAxesDistanceScale-Referenz):
+     * ~1.8px opaker Kern + ~1.2px Alpha-Auslauf je Seite — Blenders Wire-AA-Look. */
+    private static final float HALB_KERN = 0.006F;
+    private static final float HALB_AUSSEN = 0.010F;
 
     private static final Vector3f P1 = new Vector3f();
     private static final Vector3f P2 = new Vector3f();
@@ -90,8 +95,15 @@ public final class RigWidgets
      * Ein Widget am Bone: Einheitsgeometrie x Bone-Skalierung x {@code size}, gedreht mit
      * der gelösten Bone-Orientierung, an dessen Position — Blenders Custom-Shape-Matrix
      * ohne die (hier nicht konfigurierbaren) Translations-/Rotations-Offsets.
+     *
+     * <p>Gezeichnet als kameragerichtete Bänder mit Alpha-Auslauf an den Rändern
+     * (Blenders Wire-AA, CPU-seitig): {@code kameraRaum} = Ansicht x PoseStack bringt die
+     * Punkte in den Kamera-Raum, dort ist der Blickstrahl der Punkt selbst und die
+     * Bandbreite über {@link BBSSettings#getAxesDistanceScale} bildschirm-konstant.
+     * Der Zug dazu: TRIANGLES mit Blend, Modellansicht IDENTITÄT (alles steckt schon
+     * in den Ecken).
      */
-    public static void emit(BufferBuilder builder, Matrix4f matrix, int shape, CubicRenderer.PivotFrame frame, float size, float[] col, float a)
+    public static void emit(BufferBuilder builder, Matrix4f kameraRaum, int shape, CubicRenderer.PivotFrame frame, float size, float[] col, float a)
     {
         if (frame == null)
         {
@@ -107,18 +119,72 @@ public final class RigWidgets
 
         for (int i = 0; i < segments.length; i += 6)
         {
-            transform(segments, i, pos, rot, scale, size, P1);
-            transform(segments, i + 3, pos, rot, scale, size, P2);
+            transform(segments, i, pos, rot, scale, size, kameraRaum, P1);
+            transform(segments, i + 3, pos, rot, scale, size, kameraRaum, P2);
 
-            DebugOverlay.line(builder, matrix, P1, P2, col, a);
+            band(builder, P1, P2, col, a);
         }
     }
 
-    private static void transform(float[] segments, int i, Vector3f pos, Quaternionf rot, Vector3f scale, float size, Vector3f out)
+    private static void transform(float[] segments, int i, Vector3f pos, Quaternionf rot, Vector3f scale, float size, Matrix4f kameraRaum, Vector3f out)
     {
         out.set(segments[i] * scale.x, segments[i + 1] * scale.y, segments[i + 2] * scale.z).mul(size);
         rot.transform(out);
         out.add(pos);
+        kameraRaum.transformPosition(out);
+    }
+
+    /**
+     * Ein Segment als kameragerichtetes Band aus drei Streifen: opaker Kern, links und
+     * rechts je ein Streifen, dessen Aussenkante auf Alpha 0 läuft — der Rasterizer
+     * interpoliert dazwischen, die Kante wird weich (Blenders smoothstep, linear genähert).
+     */
+    private static void band(BufferBuilder builder, Vector3f p1, Vector3f p2, float[] col, float a)
+    {
+        /* Lokale Scratches (hotswap-sicher: neue statics waeren nach einem Swap null). */
+        Vector3f mitte = new Vector3f(p1).add(p2).mul(0.5F);
+
+        float dist = mitte.length();
+
+        /* seite = segment x blickstrahl — im Kamera-Raum ist der Strahl die Mitte selbst. */
+        Vector3f seite = new Vector3f(p2).sub(p1).cross(mitte);
+
+        float len = seite.length();
+
+        if (len < 1.0E-6F)
+        {
+            return;
+        }
+
+        float scale = BBSSettings.getAxesDistanceScale(dist);
+        float kern = HALB_KERN * scale / len;
+        float aussen = HALB_AUSSEN * scale / len;
+
+        float kx = seite.x * kern, ky = seite.y * kern, kz = seite.z * kern;
+        float ax = seite.x * aussen, ay = seite.y * aussen, az = seite.z * aussen;
+
+        /* Drei Quads quer über das Band: aussenL(0) kernL(a) kernR(a) aussenR(0). */
+        streifen(builder, p1, p2, ax, ay, az, kx, ky, kz, col, 0F, a);
+        streifen(builder, p1, p2, kx, ky, kz, -kx, -ky, -kz, col, a, a);
+        streifen(builder, p1, p2, -kx, -ky, -kz, -ax, -ay, -az, col, a, 0F);
+    }
+
+    /** Ein Quad zwischen den Querversätzen {@code l} und {@code r}, Alpha je Kante. */
+    private static void streifen(BufferBuilder builder, Vector3f p1, Vector3f p2,
+        float lx, float ly, float lz, float rx, float ry, float rz, float[] col, float aL, float aR)
+    {
+        float x1l = p1.x + lx, y1l = p1.y + ly, z1l = p1.z + lz;
+        float x1r = p1.x + rx, y1r = p1.y + ry, z1r = p1.z + rz;
+        float x2l = p2.x + lx, y2l = p2.y + ly, z2l = p2.z + lz;
+        float x2r = p2.x + rx, y2r = p2.y + ry, z2r = p2.z + rz;
+
+        builder.addVertex(x1l, y1l, z1l).setColor(col[0], col[1], col[2], aL);
+        builder.addVertex(x1r, y1r, z1r).setColor(col[0], col[1], col[2], aR);
+        builder.addVertex(x2r, y2r, z2r).setColor(col[0], col[1], col[2], aR);
+
+        builder.addVertex(x1l, y1l, z1l).setColor(col[0], col[1], col[2], aL);
+        builder.addVertex(x2r, y2r, z2r).setColor(col[0], col[1], col[2], aR);
+        builder.addVertex(x2l, y2l, z2l).setColor(col[0], col[1], col[2], aL);
     }
 
     /* Einheitsgeometrie — Ecken und Kanten exakt wie Rigify. */
