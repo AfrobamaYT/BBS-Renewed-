@@ -386,15 +386,21 @@ public final class ModelIKDebug
                 if (targetWire)
                 {
                     float[] col = RigWidgets.wireColor(config.target.color.get(), chain.target().equals(selectedBone));
+                    int shape = rollenShape(chain.target(), config.target.shape.get());
 
-                    RigWidgets.emit(wire, kameraRaum, config.target.shape.get(), frames.get(chain.target()), unit * config.target.size.get(), col, a);
+                    /* DCC-Groessen: der Fussring UMSCHLIESST den Fuss, der Handwuerfel ist
+                     * greifbar — unit allein macht Widgets an kurzgliedrigen Rigs (Mixamo)
+                     * unsichtbar klein. */
+                    float faktor = shape == mchorse.bbs_mod.settings.values.ui.ValueDebugElement.SHAPE_WIRE_CIRCLE ? 2.5F : 1.6F;
+
+                    RigWidgets.emit(wire, kameraRaum, shape, frames.get(chain.target()), unit * config.target.size.get() * faktor, col, a);
                 }
 
                 if (poleWire)
                 {
                     float[] col = RigWidgets.wireColor(config.pole.color.get(), chain.poleTarget().equals(selectedBone));
 
-                    RigWidgets.emit(wire, kameraRaum, config.pole.shape.get(), frames.get(chain.poleTarget()), unit * config.pole.size.get(), col, a);
+                    RigWidgets.emit(wire, kameraRaum, config.pole.shape.get(), frames.get(chain.poleTarget()), unit * config.pole.size.get() * 1.3F, col, a);
                 }
 
                 SofortZeichner.zeichnen(
@@ -505,5 +511,23 @@ public final class ModelIKDebug
         PivotFrame frame = frames.get(bone);
 
         return frame == null ? null : new Vector3f(frame.position());
+    }
+
+    /** Rigify-Konvention automatisch: Fuss-Ziele als flacher Ring (der Bodenkreis der
+     *  DCC-Rigs), Haende behalten den Wuerfel. Greift nur auf dem Wire-Wuerfel-Standard —
+     *  eine ausdrueckliche Formwahl im Menue bleibt unangetastet. */
+    private static int rollenShape(String bone, int standard)
+    {
+        if (standard == mchorse.bbs_mod.settings.values.ui.ValueDebugElement.SHAPE_WIRE_CUBE && bone != null)
+        {
+            String name = bone.toLowerCase(java.util.Locale.ROOT);
+
+            if (name.contains("foot") || name.contains("fuss") || name.contains("fuß"))
+            {
+                return mchorse.bbs_mod.settings.values.ui.ValueDebugElement.SHAPE_WIRE_CIRCLE;
+            }
+        }
+
+        return standard;
     }
 }
