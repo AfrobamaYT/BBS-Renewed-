@@ -184,6 +184,7 @@ public class ModelManager implements IWatchDogListener
     {
         /* Modell-eigene Control-Rigs (rig.json) haengen an denselben Dateien. */
         mchorse.bbs_mod.cubic.ik.RigCtrl.leeren();
+        mchorse.bbs_mod.cubic.ik.RigMechanik.leeren();
 
         for (ModelInstance model : this.models.values())
         {

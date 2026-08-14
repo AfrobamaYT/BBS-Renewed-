@@ -87,8 +87,25 @@ public class BOBJArmature
     /**
      * Setup matrices  
      */
+    /**
+     * Der importierte Constraint-Graph des Blender-Rigs (Client setzt ihn beim Binden).
+     * Er uebernimmt den GANZEN Durchlauf, weil er eine andere Reihenfolge braucht:
+     * Blenders Abhaengigkeiten (Ziel vor Besitzer), nicht nur Eltern vor Kind.
+     */
+    public interface Zwang
+    {
+        boolean auswerten(BOBJArmature armature);
+    }
+
+    public Zwang zwang;
+
     public void setupMatrices()
     {
+        if (this.zwang != null && this.zwang.auswerten(this))
+        {
+            return;
+        }
+
         for (BOBJBone bone : this.orderedBones)
         {
             this.matrices[bone.index] = bone.compute();

@@ -163,6 +163,12 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
          * ein Form ohne eigene IK-Config bekommt das Rig aus der Modelldatei. */
         mchorse.bbs_mod.cubic.ik.ModelIKEmbedded.uebernehmen(form, model);
 
+        /* Der importierte Constraint-Graph (rig.json) — ohne ihn sind die Controls Zierrat. */
+        if (model != null && model.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
+        {
+            mchorse.bbs_mod.cubic.ik.RigMechanik.installieren(bobj, form.model.get());
+        }
+
         return model;
     }
 
@@ -359,16 +365,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
         FormColorBlend.BlendMode blendMode = additive ? FormColorBlend.BlendMode.BRIGHTEN : FormColorBlend.BlendMode.MULTIPLY;
         FormColorBlend.blend(finalColor, formColor, blendMode);
 
-        /* 26.2: die drei Zustandszeilen, die hier standen (disableCull fuer Modelle ohne Culling,
-         * enableBlend + defaultBlendFunc vor dem Modell-Draw), sind ersatzlos entfallen. Blend und
-         * Cull sind keine Schalter mehr - sie stehen in der Pipeline und werden dort GEWAEHLT:
-         *   - Modelle mit isCulling() == false zeichnen mit ModelVAOPipeline.DURCHSICHTIG_BEIDSEITIG
-         *     (withCull(false)), alle anderen mit ModelVAOPipeline.DURCHSICHTIG;
-         *   - defaultBlendFunc ist BlendFunction.TRANSLUCENT, das beide tragen. Ohne VAO und unter
-         *     Iris bringt es die Pipeline des Entity-RenderTypes mit.
-         * Die Wahl gehoert an die Zeichenstelle (ModelInstance#render bzw. CubicVAORenderer); das
-         * Culling-Kennzeichen des Modells liegt dort schon vor - es reist bereits mit den Befehlen
-         * der sortierten Warteschlange mit. */
+        /* 26.2: disableCull/enableBlend/defaultBlendFunc sind ersatzlos entfallen — Blend und
+         * Cull stehen in der Pipeline und werden an der Zeichenstelle GEWAEHLT (Modelle ohne
+         * Culling: DURCHSICHTIG_BEIDSEITIG, sonst DURCHSICHTIG; beide TRANSLUCENT). */
         GameRenderer gameRenderer = Minecraft.getInstance().gameRenderer;
 
         // 26.2: turnOn/OffLightLayer entfaellt -- die Lichtkarte ist kein globaler Zustand mehr, sondern Sampler2 des Zeichenaufrufs (siehe SofortZeichner.entityTextur). Wer hier zeichnet, muss sie binden; ein globaler Schalter erreicht die Pipeline nicht.

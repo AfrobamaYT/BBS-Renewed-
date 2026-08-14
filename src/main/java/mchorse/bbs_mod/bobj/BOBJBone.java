@@ -92,6 +92,20 @@ public class BOBJBone
         return mat;
     }
 
+    /** Die Hautmatrix aus dem AKTUELLEN {@link #mat} — noetig, wenn ein Constraint
+     *  die Weltmatrix nach {@link #compute()} noch veraendert hat. */
+    public Matrix4f hautMatrix()
+    {
+        Matrix4f haut = new Matrix4f(this.mat).mul(this.invBoneMat);
+
+        if (this.offset != null)
+        {
+            haut.translateLocal(this.offset);
+        }
+
+        return haut;
+    }
+
     public Matrix4f computeMatrix(Matrix4f m)
     {
         this.mat.set(this.relBoneMat);
