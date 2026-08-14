@@ -145,7 +145,10 @@ public final class RigMechanik implements BOBJArmature.Zwang
             boolean welt = armaturRaum(c.getString("raum_o", "WORLD"))
                 && armaturRaum(c.getString("raum_z", "WORLD"));
 
-            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ);
+            /* Die COPY_-Typen kann BBS laengst — bisher scheiterten sie nur am RAUM.
+             * Blenders LOCAL heisst: die Abweichung von der Ruhelage, im Elternraum. */
+            boolean kopie = typ != null && typ.startsWith("COPY_");
+            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ) || kopie;
             /* Limit Rotation ist der einzige Typ hier OHNE Ziel — es klemmt nur sich selbst. */
             boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ);
 
@@ -157,7 +160,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
             }
 
             proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<>())
-                .add(new Zwang(typ, ziel, einfluss, true,
+                .add(new Zwang(typ, ziel, einfluss, welt,
                     c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
                     c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c));
         }
@@ -250,6 +253,23 @@ public final class RigMechanik implements BOBJArmature.Zwang
         Matrix4f eigen = eigenBone.mat;
         Matrix4f ziel = zielBone.mat;
 
+        /* ⛔ LOKALER RAUM: Blender kopiert dann nicht die Weltlage, sondern die
+         * ABWEICHUNG VON DER RUHELAGE. Wer das im Weltraum rechnet, zieht den
+         * Knochen an die Stelle des Ziels statt ihn gleich weit auszulenken —
+         * sichtbar erst an Fingern und Zehen, die ineinanderfallen. */
+        if (!z.welt() && z.typ() != null && z.typ().startsWith("COPY_"))
+        {
+            Matrix4f eigenBasis = RigZwaenge.ruheBasis(eigenBone);
+            Matrix4f lokalEigen = new Matrix4f(eigenBasis).invert().mul(eigen);
+            Matrix4f lokalZiel = new Matrix4f(RigZwaenge.ruheBasis(zielBone))
+                .invert().mul(ziel);
+
+            kopieren(lokalEigen, lokalZiel, z);
+            eigen.set(eigenBasis.mul(lokalEigen));
+
+            return;
+        }
+
         /* Die Fuss-Roll-Mechanik rechnet LOKAL (relativ zur Ruhelage): der Ort des
          * Roll-Cursors wird auf die Drehung der Fersen-/Zehenknochen abgebildet und
          * anschliessend je Achse geklemmt. */
@@ -295,6 +315,12 @@ public final class RigMechanik implements BOBJArmature.Zwang
             return;
         }
 
+        kopieren(eigen, ziel, z);
+    }
+
+    /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
+    private static void kopieren(Matrix4f eigen, Matrix4f ziel, Zwang z)
+    {
         Vector3f t = eigen.getTranslation(new Vector3f());
         Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
         Vector3f s = eigen.getScale(new Vector3f());
