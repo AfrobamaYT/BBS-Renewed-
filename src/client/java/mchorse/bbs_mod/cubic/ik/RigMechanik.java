@@ -471,6 +471,33 @@ public final class RigMechanik implements BOBJArmature.Zwang
         eigen.set(raum.mul(lokal));
     }
 
+    /**
+     * Copy Rotation: Achsen, Invertierung, Mischmodus und Euler-Ordnung aus den Daten
+     * heraus an {@link RigZwaenge#copyRotation}.
+     *
+     * ⛔ {@code euler_ordnung} AUTO heisst: die Ordnung des BESITZERS gilt. Der
+     * Extraktor legt sie als {@code eigner_ordnung} daneben, weil ein Quaternion-
+     * Knochen in Blender auf XYZ zurueckfaellt und BBS das sonst raten muesste.
+     */
+    private static void drehZwang(Matrix4f eigen, Matrix4f ziel, Zwang z)
+    {
+        MapType d = z.daten();
+        String ord = d == null ? "AUTO" : d.getString("euler_ordnung", "AUTO");
+
+        if (ord == null || ord.isEmpty() || "AUTO".equals(ord))
+        {
+            ord = d == null ? "XYZ" : d.getString("eigner_ordnung", "XYZ");
+        }
+
+        RigZwaenge.copyRotation(eigen, ziel, ord,
+            new boolean[] {z.nutzX(), z.nutzY(), z.nutzZ()},
+            new boolean[] {d != null && d.getBool("inv_x", false),
+                           d != null && d.getBool("inv_y", false),
+                           d != null && d.getBool("inv_z", false)},
+            d == null ? "REPLACE" : d.getString("mischung", "REPLACE"),
+            Math.min(1F, z.einfluss()));
+    }
+
     /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
     private static void kopieren(Matrix4f eigen, Matrix4f ziel, Zwang z)
     {
@@ -505,7 +532,15 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 s.lerp(zs, w);
             }
             case "COPY_LOCATION" -> achsen(t, zt, w, z);
-            case "COPY_ROTATION" -> q.slerp(zq, w);
+            case "COPY_ROTATION" ->
+            {
+                /* ⛔ Kein Slerp: Blender rechnet in Euler-Winkeln, je Achse einzeln,
+                 * mit vier Mischmodi. Die nutz_*- und inv_*-Flags lagen bis
+                 * 2026-08-14 ungelesen im Zwang-Record. */
+                drehZwang(eigen, ziel, z);
+
+                return;
+            }
             case "COPY_SCALE" -> achsen(s, zs, w, z);
             default ->
             {
