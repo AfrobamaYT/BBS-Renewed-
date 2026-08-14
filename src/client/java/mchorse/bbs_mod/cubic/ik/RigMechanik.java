@@ -35,7 +35,7 @@ import java.util.Map;
 public final class RigMechanik implements BOBJArmature.Zwang
 {
     private record Zwang(String typ, String ziel, float einfluss, boolean welt,
-        boolean nutzX, boolean nutzY, boolean nutzZ) {}
+        boolean nutzX, boolean nutzY, boolean nutzZ, String spur, String sperre) {}
 
     /** modellId -> Mechanik; leerer Eintrag = Modell hat keine. Lazy (hotswap-sicher). */
     private static Map<String, RigMechanik> proModell;
@@ -138,8 +138,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 continue;
             }
 
-            boolean welt = "WORLD".equals(c.getString("raum_o", "WORLD"))
-                && "WORLD".equals(c.getString("raum_z", "WORLD"));
+            boolean welt = armaturRaum(c.getString("raum_o", "WORLD"))
+                && armaturRaum(c.getString("raum_z", "WORLD"));
 
             if (ziel == null || ziel.isEmpty() || !welt || !kann(typ))
             {
@@ -149,17 +149,26 @@ public final class RigMechanik implements BOBJArmature.Zwang
             }
 
             proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<>())
-                .add(new Zwang(typ, ziel, einfluss,
-                    true, c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true)));
+                .add(new Zwang(typ, ziel, einfluss, true,
+                    c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
+                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y")));
         }
 
         return gebaut;
     }
 
+    /** BBS' bone.mat ist Armature-Raum — Blenders POSE. WORLD faellt hier zusammen,
+     *  weil der Exporter Objekt- und Achsenmatrix in die Ruhelagen gebacken hat. */
+    private static boolean armaturRaum(String raum)
+    {
+        return "WORLD".equals(raum) || "POSE".equals(raum);
+    }
+
     private static boolean kann(String typ)
     {
         return "COPY_TRANSFORMS".equals(typ) || "COPY_LOCATION".equals(typ)
-            || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ);
+            || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
+            || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ);
     }
 
     @Override
@@ -189,7 +198,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
                 if (ziel != null && z.einfluss() > 0F)
                 {
-                    anwenden(bone.mat, ziel.mat, z);
+                    anwenden(bone.mat, ziel, z);
                 }
             }
 
@@ -199,9 +208,28 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return true;
     }
 
-    /** Blenders Kopier-Constraints im Weltraum, auf die Weltmatrix des Besitzers. */
-    private static void anwenden(Matrix4f eigen, Matrix4f ziel, Zwang z)
+    /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
+    private static void anwenden(Matrix4f eigen, BOBJBone zielBone, Zwang z)
     {
+        Matrix4f ziel = zielBone.mat;
+
+        /* Child Of: der Besitzer erbt die ABWEICHUNG des Ziels von dessen Ruhelage —
+         * Blenders inverse_matrix wird bei generierten Rigs in der Ruhepose gesetzt,
+         * und genau das ist ziel.mat x inv(ruhe). So haengen die IK-Griffe am Master. */
+        if ("CHILD_OF".equals(z.typ()))
+        {
+            eigen.mulLocal(new Matrix4f(ziel).mul(zielBone.invBoneMat));
+
+            return;
+        }
+
+        if ("TRACK_TO".equals(z.typ()) || "LOCKED_TRACK".equals(z.typ()))
+        {
+            zielen(eigen, ziel, z);
+
+            return;
+        }
+
         Vector3f t = eigen.getTranslation(new Vector3f());
         Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
         Vector3f s = eigen.getScale(new Vector3f());
@@ -228,6 +256,64 @@ public final class RigMechanik implements BOBJArmature.Zwang
         }
 
         eigen.translationRotateScale(t, q, s);
+    }
+
+    /**
+     * Track To / Locked Track: die Spur-Achse des Besitzers zeigt aufs Ziel. Bei
+     * LOCKED_TRACK bleibt die Sperr-Achse stehen, es wird nur um sie gedreht.
+     * Achsennamen sind BONE-LOKAL; nach der Achsenwandlung ist unser Oben +Y.
+     */
+    private static void zielen(Matrix4f eigen, Matrix4f ziel, Zwang z)
+    {
+        Vector3f pos = eigen.getTranslation(new Vector3f());
+        Vector3f skala = eigen.getScale(new Vector3f());
+        Vector3f richtung = ziel.getTranslation(new Vector3f()).sub(pos);
+
+        if (richtung.lengthSquared() < 1.0E-10F)
+        {
+            return;
+        }
+
+        richtung.normalize();
+
+        Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
+        Vector3f spur = achse(q, z.spur());
+
+        if ("LOCKED_TRACK".equals(z.typ()))
+        {
+            /* Nur um die Sperr-Achse: beide Richtungen in deren Ebene projizieren. */
+            Vector3f sperre = achse(q, z.sperre().replace("LOCK_", "TRACK_"));
+
+            richtung.sub(new Vector3f(sperre).mul(richtung.dot(sperre)));
+            spur.sub(new Vector3f(sperre).mul(spur.dot(sperre)));
+
+            if (richtung.lengthSquared() < 1.0E-10F || spur.lengthSquared() < 1.0E-10F)
+            {
+                return;
+            }
+
+            richtung.normalize();
+            spur.normalize();
+        }
+
+        q.premul(new Quaternionf().rotationTo(spur, richtung));
+        eigen.translationRotateScale(pos, q, skala);
+    }
+
+    /** Die genannte BONE-LOKALE Achse als Richtung im Armature-Raum. */
+    private static Vector3f achse(Quaternionf rot, String name)
+    {
+        Vector3f a = switch (name == null ? "TRACK_Y" : name)
+        {
+            case "TRACK_X" -> new Vector3f(1F, 0F, 0F);
+            case "TRACK_Z" -> new Vector3f(0F, 0F, 1F);
+            case "TRACK_NEGATIVE_X" -> new Vector3f(-1F, 0F, 0F);
+            case "TRACK_NEGATIVE_Y" -> new Vector3f(0F, -1F, 0F);
+            case "TRACK_NEGATIVE_Z" -> new Vector3f(0F, 0F, -1F);
+            default -> new Vector3f(0F, 1F, 0F);
+        };
+
+        return rot.transform(a).normalize();
     }
 
     private static void achsen(Vector3f eigen, Vector3f ziel, float w, Zwang z)
