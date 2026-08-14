@@ -149,12 +149,25 @@ public final class RigMechanik implements BOBJArmature.Zwang
              * Blenders LOCAL heisst: die Abweichung von der Ruhelage, im Elternraum. */
             boolean kopie = typ != null && typ.startsWith("COPY_");
             boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ) || kopie;
-            /* Limit Rotation ist der einzige Typ hier OHNE Ziel — es klemmt nur sich selbst. */
-            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ);
+            /* CUSTOM-Raum: ein benannter Knochen IST der Raum. Rigify rechnet
+             * Limit Distance dort, und dort muss es auch gerechnet werden — eine
+             * Strecke in einem skalierten Raum ist eine andere Strecke. */
+            boolean eigenraum = !c.getString("raum_bone", "").isEmpty();
+            /* Limit Rotation klemmt nur sich selbst, Armature traegt seine Ziele
+             * in einer Liste — beide haben kein einzelnes ziel-Feld. */
+            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ) && !"ARMATURE".equals(typ);
+            /* Blenders Quaternion-/Huellen-Modus des Armature-Constraints ist
+             * eine ANDERE Mathematik (Dual-Quaternionen, Huellgewichte) und nicht
+             * portiert. Laut zaehlen statt still linear rechnen. */
+            boolean andereMathe = "ARMATURE".equals(typ)
+                && (c.getBool("quaternion", false) || c.getBool("huellen", false));
 
-            if ((brauchtZiel && (ziel == null || ziel.isEmpty())) || (!welt && !lokal) || !kann(typ))
+            String warum = !kann(typ) ? "" : andereMathe ? "/mathe"
+                : !(welt || lokal || eigenraum) ? "/raum" : null;
+
+            if (warum != null || (brauchtZiel && (ziel == null || ziel.isEmpty())))
             {
-                gebaut.unbekannt.merge(typ + (welt ? "" : "/raum"), 1, Integer::sum);
+                gebaut.unbekannt.merge(typ + (warum == null ? "" : warum), 1, Integer::sum);
 
                 continue;
             }
@@ -183,7 +196,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
             || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
             || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ)
             || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
-            || "DAMPED_TRACK".equals(typ) || "STRETCH_TO".equals(typ);
+            || "DAMPED_TRACK".equals(typ) || "STRETCH_TO".equals(typ)
+            || "ARMATURE".equals(typ) || "LIMIT_DISTANCE".equals(typ);
     }
 
     @Override
@@ -217,7 +231,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
                     if (z.einfluss() > 0F)
                     {
-                        anwenden(bone, ziel, z);
+                        anwenden(armature, bone, ziel, z);
                     }
                 }
 
@@ -248,10 +262,27 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
-    private static void anwenden(BOBJBone eigenBone, BOBJBone zielBone, Zwang z)
+    private static void anwenden(BOBJArmature armature, BOBJBone eigenBone,
+        BOBJBone zielBone, Zwang z)
     {
         Matrix4f eigen = eigenBone.mat;
         Matrix4f ziel = zielBone.mat;
+
+        /* Armature traegt seine Ziele als gewichtete LISTE — nicht ueber z.ziel()
+         * erreichbar, deshalb vor allem anderen. */
+        if ("ARMATURE".equals(z.typ()))
+        {
+            armaturZwang(armature, eigen, z);
+
+            return;
+        }
+
+        if ("LIMIT_DISTANCE".equals(z.typ()))
+        {
+            abstandsZwang(armature, eigen, ziel, z);
+
+            return;
+        }
 
         /* ⛔ LOKALER RAUM: Blender kopiert dann nicht die Weltlage, sondern die
          * ABWEICHUNG VON DER RUHELAGE. Wer das im Weltraum rechnet, zieht den
@@ -316,6 +347,78 @@ public final class RigMechanik implements BOBJArmature.Zwang
         }
 
         kopieren(eigen, ziel, z);
+    }
+
+    /**
+     * Armature-Constraint: gewichteter Blend der DEFORM-Matrizen der Ziele.
+     * {@code hautMatrix()} IST Blenders {@code chan_mat} — dieselbe Matrix, mit
+     * der die Haut gerechnet wird. Der Constraint tut nichts anderes als der
+     * Armature-MODIFIER, nur an einem Knochen statt an einem Vertex.
+     */
+    private static void armaturZwang(BOBJArmature armature, Matrix4f eigen, Zwang z)
+    {
+        ListType ziele = z.daten() == null ? null : z.daten().getList("ziele");
+
+        if (ziele == null)
+        {
+            return;
+        }
+
+        List<Matrix4f> deform = new ArrayList<>(ziele.size());
+        float[] gewichte = new float[ziele.size()];
+        int n = 0;
+
+        for (int i = 0; i < ziele.size(); i++)
+        {
+            MapType t = (MapType) ziele.get(i);
+            float w = t.getFloat("gewicht", 0F);
+
+            /* Gewicht 0 ueberspringt Blender GANZ — sein Ziel muss nicht einmal
+             * existieren. Genau so haengen Rigifys abgewaehlte Eltern da. */
+            if (w <= 0F)
+            {
+                continue;
+            }
+
+            BOBJBone b = armature.bones.get(t.getString("bone"));
+
+            /* Fehlt ein GEWICHTETES Ziel, laesst Blender den ganzen Constraint
+             * aus — nicht bloss dieses eine Ziel. */
+            if (b == null)
+            {
+                return;
+            }
+
+            deform.add(b.hautMatrix());
+            gewichte[n++] = w;
+        }
+
+        RigZwaenge.armature(eigen, deform, gewichte);
+    }
+
+    /** Limit Distance — bei Rigify im CUSTOM-Raum eines Knochens, siehe parse(). */
+    private static void abstandsZwang(BOBJArmature armature, Matrix4f eigen,
+        Matrix4f ziel, Zwang z)
+    {
+        String raumName = z.daten().getString("raum_bone", "");
+        BOBJBone raumBone = raumName.isEmpty() ? null : armature.bones.get(raumName);
+
+        /* Lieber gar nicht klemmen als im falschen Raum: eine Strecke ohne ihren
+         * Raum ist eine andere Strecke. */
+        if (!raumName.isEmpty() && raumBone == null)
+        {
+            return;
+        }
+
+        Matrix4f raum = raumBone == null ? new Matrix4f() : new Matrix4f(raumBone.mat);
+        Matrix4f rein = new Matrix4f(raum).invert();
+        Matrix4f lokal = new Matrix4f(rein).mul(eigen);
+
+        RigZwaenge.limitDistance(lokal, rein.transformPosition(zielPunkt(ziel, z)),
+            z.daten().getString("modus", "LIMITDIST_INSIDE"),
+            z.daten().getFloat("distanz", 0F), Math.min(1F, z.einfluss()));
+
+        eigen.set(raum.mul(lokal));
     }
 
     /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
