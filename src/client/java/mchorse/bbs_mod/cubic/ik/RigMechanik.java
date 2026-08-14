@@ -179,7 +179,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return "COPY_TRANSFORMS".equals(typ) || "COPY_LOCATION".equals(typ)
             || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
             || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ)
-            || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ);
+            || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
+            || "DAMPED_TRACK".equals(typ) || "STRETCH_TO".equals(typ);
     }
 
     @Override
@@ -272,6 +273,24 @@ public final class RigMechanik implements BOBJArmature.Zwang
         if ("TRACK_TO".equals(z.typ()) || "LOCKED_TRACK".equals(z.typ()))
         {
             zielen(eigen, ziel, z);
+
+            return;
+        }
+
+        if ("DAMPED_TRACK".equals(z.typ()))
+        {
+            RigZwaenge.dampedTrack(eigen, ziel, z.spur(), Math.min(1F, z.einfluss()));
+
+            return;
+        }
+
+        if ("STRETCH_TO".equals(z.typ()))
+        {
+            /* Volumen 1.0 = Blenders Vorgabe VOLUME_XZX; die Ruhelaenge kommt
+             * aus dem BOBJ-Tail, ohne sie gaebe es kein Dehnverhaeltnis. */
+            RigZwaenge.stretchTo(eigen, ziel, z.spur(), eigenBone.restLength,
+                z.daten() == null ? 1F : z.daten().getFloat("volumen", 1F),
+                Math.min(1F, z.einfluss()));
 
             return;
         }
