@@ -170,10 +170,22 @@ def write_ik_chains(fw, armature):
                 pole = con.pole_subtarget
                 pole_angle = math.degrees(con.pole_angle)
 
+            # Blender-IK zielt mit dem TAIL des Constraint-Halters (chain_count zaehlt
+            # ab ihm); BBS' Solver zielt mit dem PIVOT des tip und nimmt dessen eigene
+            # Winkel aus der Loesung. 1:1 uebersetzt loeste nur die Schulter und zielte
+            # auf den Ellbogen (gemessen 2026-08-14: 2 Grad statt Beugung). Darum: tip
+            # eine Stufe zum EINDEUTIGEN Kind (Hand/Fuss), Kette um 1 laenger.
+            tip = pbone
+            kette = con.chain_count
+
+            if len(pbone.children) == 1:
+                tip = pbone.children[0]
+                kette += 1
+
             fw('arm_ik %s %s %d %s %f %f %d %d\n' % (
-                name_compat(pbone.name),
+                name_compat(tip.name),
                 name_compat(con.subtarget),
-                con.chain_count,
+                kette,
                 name_compat(pole) if pole else '-',
                 pole_angle,
                 con.influence,
