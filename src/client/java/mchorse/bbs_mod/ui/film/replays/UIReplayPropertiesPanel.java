@@ -4,6 +4,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.settings.values.base.BaseValue;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
 import mchorse.bbs_mod.ui.forms.UINestedEdit;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -21,6 +22,9 @@ import java.util.function.Consumer;
 public class UIReplayPropertiesPanel extends UIElement
 {
     private final UIFilmPanel filmPanel;
+    /** Rigifys N-Panel: die Regler des Control-Rigs, wenn das Modell eines hat. */
+    public final UIRigRegler rigRegler = new UIRigRegler();
+    private final UISection rigSection = new UISection(IKey.raw("Control-Rig"));
 
     public UIElement properties;
     public UINestedEdit pickEdit;
@@ -143,11 +147,14 @@ public class UIReplayPropertiesPanel extends UIElement
             this.axesPreview, this.pickAxesPreviewBone
         );
 
+        this.rigSection.fields.add(this.rigRegler);
+
         shadowSection.setExpanded(false);
         other.setExpanded(false);
 
         this.properties = UI.scrollView(UIConstants.MARGIN, UIConstants.SCROLL_PADDING,
             this.pickEdit, this.enabled, this.label, this.nameTag,
+            this.rigSection,
             shadowSection,
             other
         );
@@ -209,6 +216,11 @@ public class UIReplayPropertiesPanel extends UIElement
             this.relativeOffsetY.setValue(replay.relativeOffset.get().y);
             this.relativeOffsetZ.setValue(replay.relativeOffset.get().z);
             this.axesPreview.setValue(replay.axesPreview.get());
+
+            /* Das Rig haengt am MODELL der Replay, nicht an der Replay selbst —
+             * darum ueber die Entity, die der Controller gerade fuehrt. */
+            this.rigRegler.aktualisiere(this.filmPanel.getController().getCurrentEntity());
+            this.rigSection.setVisible(this.rigRegler.getChildren().size() > 0);
         }
     }
 }
