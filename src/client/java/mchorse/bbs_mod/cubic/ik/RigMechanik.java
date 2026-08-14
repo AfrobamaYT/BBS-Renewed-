@@ -46,6 +46,9 @@ public final class RigMechanik implements BOBJArmature.Zwang
     /** Typen, die dieses Rig braucht und Stufe 1 noch nicht kann — mit Anzahl. */
     public final Map<String, Integer> unbekannt = new HashMap<>();
 
+    /** Blenders eigener Solver, portiert — ersetzt BBS' IKTreeSolver. */
+    private RigIKKetten ketten;
+
     private RigMechanik(List<String> reihenfolge, Map<String, List<Zwang>> proBone)
     {
         this.reihenfolge = reihenfolge;
@@ -133,7 +136,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
             String ziel = c.getString("ziel");
             float einfluss = c.getFloat("einfluss", 1F);
 
-            /* IK laeuft ueber den vorhandenen Solver (arm_ik) — hier waere es doppelt. */
+            /* IK loest der portierte Blender-Solver, unten als eigene Kette. */
             if ("IK".equals(typ))
             {
                 continue;
@@ -158,6 +161,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
                     c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
                     c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c));
         }
+
+        gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"));
 
         return gebaut;
     }
@@ -220,6 +225,16 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 .mul(bone.originMat));
 
             armature.matrices[bone.index] = bone.hautMatrix();
+
+            /* IK schreibt die GANZE Kette neu, also auch Knochen, die in dieser
+             * Reihenfolge schon dran waren — genau wie Blenders IK-Durchgang. */
+            if (this.ketten != null && this.ketten.hat(name))
+            {
+                for (BOBJBone kettenBone : this.ketten.loese(armature, name))
+                {
+                    armature.matrices[kettenBone.index] = kettenBone.hautMatrix();
+                }
+            }
         }
 
         return true;

@@ -41,6 +41,17 @@ public class BOBJBone
     public Matrix4f relBoneMat = new Matrix4f();
 
     /**
+     * Rest tail in armature space, straight from the {@code arm_bone} line. Parsed
+     * since forever and dropped on the floor until the Blender IK port needed it:
+     * Blender sizes every IK segment as {@code bone->length * |pose_mat Y|}, and
+     * without the tail there is no bone length to size it with.
+     */
+    public Vector3f tail = new Vector3f();
+
+    /** Rest length, i.e. head-to-tail distance — Blender's {@code bone->length}. */
+    public float restLength;
+
+    /**
      * Transient full local orientation for this bone, applied raw in place of the channel rotation —
      * the evaluated rotation of the pipeline {@code rest → channels → constraint stack → render}. Same
      * two-phase lifecycle as {@link mchorse.bbs_mod.cubic.data.model.ModelGroup#orient}: layer composers

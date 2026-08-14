@@ -1,0 +1,121 @@
+/* Bruecke zwischen BBS' JOML-Matrizen und dem Port von Blenders intern/iksolver.
+ * SPDX-License-Identifier: GPL-2.0-or-later */
+package mchorse.bbs_mod.cubic.ik.blender;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
+/**
+ * ⛔ Die einzige Stelle, an der zwei Matrix-Konventionen aufeinandertreffen.
+ * JOML adressiert {@code get(spalte, zeile)}, dieser Port {@code get(zeile, spalte)}.
+ * Deshalb steht die Vertauschung hier EINMAL, sichtbar, statt verstreut in der
+ * Bruecke — dort waere sie ein stiller Transpositionsfehler, der ein Bein
+ * plausibel in die falsche Ebene knickt.
+ */
+public final class IKUmrechnung
+{
+    private IKUmrechnung()
+    {}
+
+    /** Drehteil einer JOML-Matrix als zeilenmajore 3x3. */
+    public static IKMat3 zuMat3(Matrix4f m)
+    {
+        IKMat3 r = new IKMat3();
+
+        for (int zeile = 0; zeile < 3; zeile++)
+        {
+            for (int spalte = 0; spalte < 3; spalte++)
+            {
+                r.set(zeile, spalte, m.get(spalte, zeile));
+            }
+        }
+
+        return r;
+    }
+
+    public static IKVec3 zuVec3(Vector3f v)
+    {
+        return new IKVec3(v.x, v.y, v.z);
+    }
+
+    public static Vector3f zuJoml(IKVec3 v)
+    {
+        return new Vector3f((float) v.x, (float) v.y, (float) v.z);
+    }
+
+    /** 3x3 als JOML-Matrix4f (Drehteil gesetzt, Verschiebung 0). */
+    public static Matrix4f zuJoml(IKMat3 m)
+    {
+        Matrix4f r = new Matrix4f();
+
+        for (int zeile = 0; zeile < 3; zeile++)
+        {
+            for (int spalte = 0; spalte < 3; spalte++)
+            {
+                r.set(spalte, zeile, (float) m.get(zeile, spalte));
+            }
+        }
+
+        return r;
+    }
+
+    /** Spalten auf Laenge 1 bringen — Blenders {@code normalize_m3}. */
+    public static IKMat3 normalisiert(IKMat3 m)
+    {
+        IKMat3 r = new IKMat3(m);
+
+        for (int spalte = 0; spalte < 3; spalte++)
+        {
+            double laenge = Math.sqrt(
+                r.get(0, spalte) * r.get(0, spalte)
+                + r.get(1, spalte) * r.get(1, spalte)
+                + r.get(2, spalte) * r.get(2, spalte));
+
+            if (laenge == 0D)
+            {
+                continue;
+            }
+
+            for (int zeile = 0; zeile < 3; zeile++)
+            {
+                r.set(zeile, spalte, r.get(zeile, spalte) / laenge);
+            }
+        }
+
+        return r;
+    }
+
+    /** Laenge der Y-Spalte — Blenders {@code len_v3(R_bonemat[1])}, der Skalenanteil. */
+    public static double ySpaltenLaenge(IKMat3 m)
+    {
+        return Math.sqrt(m.get(0, 1) * m.get(0, 1)
+            + m.get(1, 1) * m.get(1, 1)
+            + m.get(2, 1) * m.get(2, 1));
+    }
+
+    /**
+     * Segmenttyp aus den gesperrten Achsen, wie {@code IK_CreateSegment}:
+     * 1 freier Grad = Scharnier, 3 freie = Kugel. Zwei freie Grade (Swing/Elbow)
+     * sind noch nicht portiert und scheitern LAUT statt still als Kugel
+     * durchzurutschen — eine falsch geratene Biegeebene sieht man erst am Bild.
+     */
+    public static IKQSegment segment(boolean sperrX, boolean sperrY, boolean sperrZ)
+    {
+        int frei = (sperrX ? 0 : 1) + (sperrY ? 0 : 1) + (sperrZ ? 0 : 1);
+
+        if (frei == 3)
+        {
+            return new IKQSphericalSegment();
+        }
+
+        if (frei == 1)
+        {
+            return new IKQRevoluteSegment(!sperrX ? 0 : !sperrY ? 1 : 2);
+        }
+
+        throw new UnsupportedOperationException(
+            "IK-Gelenk mit " + frei + " freien Achsen (sperr=" + sperrX + "," + sperrY + ","
+            + sperrZ + "): Swing-, Elbow-, Translate- und Null-Segment sind noch nicht "
+            + "aus Blender portiert.");
+    }
+}

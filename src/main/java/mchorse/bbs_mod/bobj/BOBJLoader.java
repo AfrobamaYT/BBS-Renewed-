@@ -139,6 +139,8 @@ public class BOBJLoader
                 boneMat.set(mat);
                 boneMat.transpose();
                 bone = new BOBJBone(i++, tokens[1], tokens[2], boneMat);
+                bone.tail.set(tail);
+                bone.restLength = tail.distance(boneMat.getTranslation(new Vector3f()));
                 armature.addBone(bone);
             }
             else if (first.equals("arm_ik"))
