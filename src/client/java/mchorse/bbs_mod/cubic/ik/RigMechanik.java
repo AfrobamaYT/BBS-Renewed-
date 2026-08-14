@@ -532,6 +532,19 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 s.lerp(zs, w);
             }
             case "COPY_LOCATION" -> achsen(t, zt, w, z);
+            case "COPY_SCALE" ->
+            {
+                MapType d = z.daten();
+
+                RigZwaenge.copyScale(eigen, ziel,
+                    new boolean[] {z.nutzX(), z.nutzY(), z.nutzZ()},
+                    d != null && d.getBool("uniform", false),
+                    d != null && d.getBool("versatz", false),
+                    d == null || d.getBool("multiplizieren", true),
+                    d == null ? 1F : d.getFloat("potenz", 1F), w);
+
+                return;
+            }
             case "COPY_ROTATION" ->
             {
                 /* ⛔ Kein Slerp: Blender rechnet in Euler-Winkeln, je Achse einzeln,
@@ -541,7 +554,6 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
                 return;
             }
-            case "COPY_SCALE" -> achsen(s, zs, w, z);
             default ->
             {
                 return;
