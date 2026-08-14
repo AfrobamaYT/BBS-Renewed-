@@ -1321,30 +1321,10 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Cache the global stuff */
         MatrixStackUtils.cacheMatrices();
 
-        /* ⛔ PERSPECTIVE, NICHT ORTHOGRAPHIC — DIE ART DER PROJEKTION, NICHT DIE MATRIX
-         * (gemessen 2026-08-02, drei Laeufe).
-         *
-         * lastProjection ist die PERSPEKTIVISCHE Kameramatrix des Vorschaubildes (gesetzt in
-         * UIFilmPanel aus cameraRenderState, benutzt auch von UIFilmPreview). Hier war sie
-         * als ORTHOGRAPHIC angemeldet, und der Auswahlpuffer bekam die Figur daraufhin rund
-         * 5x zu breit und 2,6x zu hoch hinein -- x genau doppelt so stark gedehnt wie y.
-         *
-         * Wie es aufgefallen ist, und warum der naheliegende Schluss falsch war:
-         * Der orange Umriss lag als grosse getreppte Wolke neben der Figur. Ein Abzug des
-         * Auswahlpuffers zeigte, dass der Umriss KORREKT rechnet -- er zeichnet den Rand
-         * dessen, was im Puffer steht, und im Puffer stand die verzerrte Figur. Eine Sonde
-         * in StencilFormFramebuffer.apply() schloss den Viewport aus (viewport=0,0 2560x1440
-         * bei ziel=2560x1440, deckungsgleich), womit nur die Projektion uebrigblieb.
-         *
-         * 26.1 setzt hier GAR NICHTS und erbt die Projektion des Weltdurchgangs. Das
-         * nachzumachen war der erste Versuch und war FALSCH: der Puffer blieb danach voellig
-         * leer. Beim SAMMELN ist in 26.2 keine brauchbare Projektion aktiv -- dieselbe Falle
-         * steht schon in Bildfilter.lauf beschrieben (w = 0 an allen vier Ecken, entartete
-         * Flaeche, kein Fragment, keine Fehlermeldung).
-         *
-         * ⚠️ Also: die Zeile MUSS hier stehen, und zwar mit der Art, die zur Matrix passt.
-         * Jede andere Stelle im Baum macht das fuer Kameramatrizen ebenso
-         * (AltCameraGridRenderer, TrackerClientClip, GameRendererPreviewPrePassLogik). */
+        /* ⛔ PERSPECTIVE, NICHT ORTHOGRAPHIC — die ART muss zur (perspektivischen)
+         * lastProjection passen, sonst landet die Figur ~5x zu breit im Auswahlpuffer
+         * (gemessen 2026-08-02). Und die Zeile MUSS stehen: beim Sammeln ist in 26.2
+         * keine brauchbare Projektion aktiv (w=0-Falle, siehe Bildfilter.lauf). */
         mchorse.bbs_mod.graphics.Projektion.setzen(this.panel.lastProjection, com.mojang.blaze3d.ProjectionType.PERSPECTIVE);
 
         /* ⛔ DIE ANSICHT AUS DEM CONTEXT, NICHT AUS BBSRendering.camera. Beide tragen
@@ -1393,6 +1373,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         this.hoveredReplayIndex = -1;
 
+        /* Der Control-Griff lebt gerade dann, wenn KEIN Gizmo gezeigt wird. */
+        this.panel.replayEditor.foerdereCtrlDrag(context);
+
         if (this.canShowGizmo())
         {
             this.gizmo.update(context);
@@ -1401,7 +1384,12 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
 
         /* Der Umriss haengt NICHT am Ueberfahren — er steht, solange ein Replay gewaehlt ist. */
-        StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET, this.stencilMap.widgetBasis);
+        /* Bei aktivem Control-Rig keine Objekt-Silhouette — sie uebermalt die Controls
+         * (User-Abnahme 2026-08-14); Blender zeigt sie im Pose-Mode auch nicht. */
+        if (!mchorse.bbs_mod.cubic.ik.RigCtrl.aktivFuer(this.getCurrentEntity()))
+        {
+            StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET, this.stencilMap.widgetBasis);
+        }
 
         if (!this.stencil.hasPicked())
         {
@@ -1416,18 +1404,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         RenderPipeline previewProgram = BBSShaders.getPickerPreviewProgram();
         Supplier<RenderPipeline> getPickerPreviewProgram = BBSShaders::getPickerPreviewProgram;
-        /* Die Hervorhebung wird VORHER in ein eigenes Bild gerechnet, nicht beim Zeichnen
-         * in die Oberflaeche -- ein GUI-Element kann die fuenf Werte nicht binden.
-         * Entscheidung und verworfene Auswege stehen in Bildfilter. */
-        /* ⛔ EIGENES ZWISCHENBILD, NICHT DAS DES UMRISSES (2026-08-05, Bugliste #21).
-         *
-         * Hier stand `this.stencil.zwischenbild()` -- derselbe Puffer, in den kurz zuvor
-         * StencilAnzeige.umriss den Umriss gerechnet hat. In 1.21.1 faellt das nicht auf,
-         * weil der erste Blit SOFORT zeichnet; 26.2 sammelt beide Blits und zeichnet sie
-         * spaeter, dann sampeln beide den Endinhalt -- die Hervorhebung -- und der Umriss
-         * ist weg. Im Capture belegt: genau EIN zusaetzlicher Zug in dasselbe Ziel nach dem
-         * Umriss, nur waehrend der Wiedergabe (da steht die Maus ueber dem Actor, also ist
-         * hasPicked() wahr und dieser Zweig laeuft ueberhaupt erst). */
+        /* ⛔ EIGENES ZWISCHENBILD, NICHT das des Umrisses (2026-08-05, #21): 26.2 sammelt
+         * Blits und zeichnet spaeter — teilen sich beide den Puffer, sampeln beide den
+         * Endinhalt und der Umriss verschwindet. Vorrechnen statt GUI-Binden: Bildfilter. */
         mchorse.bbs_mod.graphics.Bildfilter.kennungHervorheben(texture,
             this.stencil.hervorhebungsbild(), index,
             BBSSettings.stencilHighlightColor.get());
@@ -1583,7 +1562,31 @@ public class UIFilmController extends UIElement implements GizmoViewport
      */
     private boolean canShowGizmo()
     {
+        /* Control-Rig: das Rig IST der Griff — Blender zeigt im Pose-Mode kein Gizmo. */
+        if (this.getBone() != null && mchorse.bbs_mod.cubic.ik.RigCtrl.aktivFuer(this.getCurrentEntity()))
+        {
+            return false;
+        }
+
         return UIBaseMenu.shouldRenderAxes() && !this.isRecording() && (this.getBone() != null || this.isAnchorGizmo());
+    }
+
+    /** Liegt die Maus auf einem Control-WIDGET (Kennung ab widgetBasis), nicht auf dem Koerper? */
+    public boolean istCtrlGriff()
+    {
+        return this.stencil.hasPicked() && this.stencilMap.widgetBasis > 0
+            && this.stencil.getIndex() >= this.stencilMap.widgetBasis
+            && mchorse.bbs_mod.cubic.ik.RigCtrl.aktivFuer(this.getCurrentEntity());
+    }
+
+    /**
+     * Der Bone, an dem das GIZMO haengt — bei aktivem Control-Rig null: sonst stuende
+     * sein UNSICHTBARES Pick-Stencil ueber dem Control und fraesse jeden Klick
+     * (gemessen: pick="screen" auf der Fussbox).
+     */
+    private Pair<String, Boolean> gizmoBone()
+    {
+        return mchorse.bbs_mod.cubic.ik.RigCtrl.aktivFuer(this.getCurrentEntity()) ? null : this.getBone();
     }
 
     private void renderStencil(LevelRenderContext renderContext, UIContext context, boolean altPressed)
@@ -1631,7 +1634,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         {
             List<Replay> replays = this.panel.getData().replays.getList();
             int selectedReplayIndex = this.getCurrentReplayIndex();
-            Pair<String, Boolean> bone = this.getBone();
+            Pair<String, Boolean> bone = this.gizmoBone();
 
             for (Map.Entry<Integer, IEntity> entry : this.getEntities().entrySet())
             {
@@ -1644,10 +1647,8 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
                 FilmControllerContext filmContext = FilmControllerContext.instance
                     .setup(this.getEntities(), entry.getValue(), replay, renderContext)
-                    /* 26.2: der Weltzeichen-Kontext traegt keinen tickCounter mehr (Fabrics
-                     * LevelRenderContext hat nur noch submitNodeCollector, poseStack,
-                     * gameRenderer, levelRenderer, levelState). Der DeltaTracker haengt jetzt
-                     * am Client -- derselbe Zaehler, nur anderer Halter. */
+                    /* 26.2: tickCounter() ist am Weltkontext entfallen — der DeltaTracker
+                     * haengt am Client, derselbe Zaehler. */
                     .transition(isPlaying ? Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0)
                     .stencil(this.stencilMap)
                     .relative(replay.relative.get());
@@ -1674,14 +1675,12 @@ public class UIFilmController extends UIElement implements GizmoViewport
         else
         {
             Replay replay = this.panel.replayEditor.getReplay();
-            Pair<String, Boolean> bone = this.getBone();
+            Pair<String, Boolean> bone = this.gizmoBone();
 
             this.stencilMap.setIncrement(true);
 
             this.editorController.renderStencilEntity(FilmControllerContext.instance
                 .setup(this.getEntities(), entity, replay, renderContext)
-                /* 26.2: siehe oben -- tickCounter() ist am Weltkontext entfallen, der
-                 * DeltaTracker haengt am Client. */
                 .transition(isPlaying ? Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false) : 0)
                 .stencil(this.stencilMap)
                 .relative(replay.relative.get())

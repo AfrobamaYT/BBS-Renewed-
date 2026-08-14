@@ -111,11 +111,12 @@ public class UIReplaysEditor extends UIElement
     private boolean allMode;
 
     /* Clips */
-    private UIFilmPanel filmPanel;
+    UIFilmPanel filmPanel;
     private Film film;
     private Replay replay;
     private boolean settingReplay;
-    private Pair<Form, String> pendingPick;
+    Pair<Form, String> pendingPick;
+    private final CtrlGriff ctrlGriff = new CtrlGriff();
     private boolean timelineVisible = true;
     private boolean propertiesVisible = true;
     private Set<String> keys = new LinkedHashSet<>();
@@ -141,8 +142,7 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    /* Kontextmenue-helfer (CML-fork): knochen-menue -> consumer; nutzer ist die kamera-
-     * vorschau (campreview). "_item"-halter sind ausgeblendet (unsichtbare hand-halter). */
+    /* Kontextmenue-helfer (CML-fork); "_item"-halter (unsichtbare hand) ausgeblendet. */
     public static void offerAdjacent(UIContext context, Form form, String bone, Consumer<String> consumer)
     {
         offerGroups(context, form, bone, consumer, true);
@@ -429,11 +429,8 @@ public class UIReplaysEditor extends UIElement
         this.updateChannelsList();
     }
 
-    /**
-     * Select the category sitting at the given visual position in the tab bar. The IK and physics tabs are only
-     * present when the record has IK / physics, so a fixed key-to-category mapping would point past the gap; the
-     * number keys instead follow the tabs as the user sees them, top to bottom.
-     */
+    /** Kategorie nach SICHTBARER Tab-Position (IK/Physics-Tabs sind optional — feste
+     *  Ziffer-zu-Kategorie-Zuordnung zeigte an deren Luecke vorbei). */
     private void setCategoryByPosition(int index)
     {
         List<ReplayCategory> present = new ArrayList<>();
@@ -654,8 +651,7 @@ public class UIReplaysEditor extends UIElement
                 this.keyframeEditor.view.copyViewport(lastEditor);
             }
 
-            /* Kamera-Clips als Balken unter den Spuren — sehen und bedienen, ohne in den
-             * Kamera-Tab zu wechseln (4.54). Der Hintergrund-Haken zeichnet vor Gitter und
+            /* Kamera-Clips als Balken unter den Spuren (4.54); der Haken zeichnet vor Gitter/
              * Keyframes, spuren nimmt nur Klicks, die kein Keyframe verbraucht hat. */
             this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor).dock(this.keyframeEditor, this);
 
@@ -1062,10 +1058,7 @@ public class UIReplaysEditor extends UIElement
         this.expandedPoseTabsByReplay.put(replay.getId(), this.keyframeEditor.view.getDopeSheet().getExpandedPoseTabIds());
     }
 
-    /**
-     * Re-applies keyframe parameters panel position (e.g. after layout lock
-     * toggle).
-     */
+    /** Position des Parameter-Panels wiederherstellen (z.B. nach Layout-Lock). */
     public void refreshEditPanelOffset()
     {
         if (this.keyframeEditor != null)
@@ -1127,10 +1120,7 @@ public class UIReplaysEditor extends UIElement
         this.updateTimelineModeVisibility();
     }
 
-    /**
-     * Show either the keyframe timeline or the action-clips timeline in the same area;
-     * their parameters share editArea, so only the active mode's panel is shown.
-     */
+    /** Keyframe- ODER Action-Timeline im selben editArea — nur der aktive Modus ist sichtbar. */
     private void updateTimelineModeVisibility()
     {
         boolean keyframes = !this.actionsMode;
@@ -1170,10 +1160,7 @@ public class UIReplaysEditor extends UIElement
         this.add(this.iconBar, this.allToggle, this.actionsToggle);
     }
 
-    /**
-     * Pin the actions toggle to the right edge of the track-names column. The iconBar
-     * shrink-wraps to its category icons, so anchor to the editor by label width instead.
-     */
+    /** Toggles an die Spurnamen-Spalte pinnen (iconBar schrumpft auf ihre Icons — Anker per Labelbreite). */
     private void layoutBottomToggles()
     {
         this.allToggle.relative(this).x(0).y(1F, -40).wh(CATEGORY_BAR_WIDTH, 20);
@@ -1192,8 +1179,7 @@ public class UIReplaysEditor extends UIElement
         UIReplaysEditorUtils.pickFormWithOffers(context, new Pair<>(form, bone), this::pickFormBone);
     }
 
-    /** Bone-Pick ist ein Pose-Edit: erst in {@link ReplayCategory#POSE} springen (und raus
-     *  aus actions), sonst findet der Klick keine Pose-Spur und tut STILL nichts. */
+    /** Bone-Pick = Pose-Edit: erst in POSE springen, sonst tut der Klick STILL nichts. */
     private void pickFormBone(Form form, String bone, boolean insert)
     {
         if (form instanceof ModelForm && bone != null && !bone.isEmpty())
@@ -1210,10 +1196,10 @@ public class UIReplaysEditor extends UIElement
 
         UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, insert);
 
-        /* Blender-Paritaet: ohne offenen Pose-Keyframe existiert das Transform-Pad nicht —
-         * G/R/S und Gizmo-Drag liefen still ins Leere (factory=null, gemessen 2026-08-13).
-         * Ohne Factory nach dem Pick: insert-Pfad oeffnet/erzeugt den Keyframe an der Playhead. */
-        if (!insert && this.keyframeEditor != null && this.keyframeEditor.editor == null)
+        /* Bone-Pick MUSS in einer Pose-Factory enden: ohne sie liefen G/R/S ins Leere,
+         * mit FREMDER (transform) editierte der Griff die FORM. Insert = Keyframe@Playhead. */
+        if (!insert && this.keyframeEditor != null && bone != null && !bone.isEmpty()
+            && !(this.keyframeEditor.editor instanceof mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory))
         {
             UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, true);
         }
@@ -1263,7 +1249,16 @@ public class UIReplaysEditor extends UIElement
         if (area.isInside(context) && context.mouseButton == 0 && this.filmPanel.getController().orbit.enabled)
         {
             this.pendingPick = stencil.hasPicked() ? stencil.getPicked() : null;
-            this.filmPanel.getController().orbit.start(context);
+
+            /* Blender-Kanon: Drag AUF einem Control greift es (CtrlGriff), sonst Kamera. */
+            if (this.filmPanel.getController().istCtrlGriff())
+            {
+                this.ctrlGriff.merken(context);
+            }
+            else
+            {
+                this.filmPanel.getController().orbit.start(context);
+            }
 
             return true;
         }
@@ -1327,11 +1322,18 @@ public class UIReplaysEditor extends UIElement
         return false;
     }
 
+    /** Je Bild vom Controller gerufen — siehe {@link CtrlGriff}. */
+    public void foerdereCtrlDrag(UIContext context)
+    {
+        this.ctrlGriff.foerdere(this, context);
+    }
+
     public void releaseViewport(UIContext context, boolean dragged)
     {
         Pair<Form, String> pending = this.pendingPick;
 
         this.pendingPick = null;
+        this.ctrlGriff.loslassen();
 
         if (pending == null || dragged || context.mouseButton != 0)
         {
@@ -1441,9 +1443,7 @@ public class UIReplaysEditor extends UIElement
         data.put("selection", DataStorageUtils.intListToData(this.replaysList.replays.getCurrentIndices()));
     }
 
-    /**
-     * How the orbit camera should react when the selected replay is set.
-     */
+    /** Orbit-Reaktion, wenn das gewaehlte Replay gesetzt wird. */
     public enum OrbitReaction
     {
         /** Reset the orbit camera to its default position. */

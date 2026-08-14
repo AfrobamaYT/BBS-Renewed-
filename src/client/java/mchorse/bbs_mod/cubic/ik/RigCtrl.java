@@ -25,7 +25,7 @@ public class RigCtrl
     private static List<Eintrag> liste;
 
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
-        float breite, String schalter, boolean ik, float[][] linien) {}
+        float breite, String schalter, boolean ik, boolean dragRot, float[][] linien) {}
 
     /** Das Rig, wenn die Armature ein Mixamo-Skelett mit unseren IK-Bones ist, sonst null. */
     public static List<Eintrag> fuer(BOBJArmature armature)
@@ -38,6 +38,40 @@ public class RigCtrl
         }
 
         return alle();
+    }
+
+    /** Hat das aktuelle Modell der Entity ein Control-Rig? (Gizmo/Umriss-Gate, je Frame billig.) */
+    public static boolean aktivFuer(mchorse.bbs_mod.forms.entities.IEntity entity)
+    {
+        if (entity == null
+            || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
+            || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
+        {
+            return false;
+        }
+
+        mchorse.bbs_mod.cubic.ModelInstance instance = renderer.getModel();
+
+        return instance != null
+            && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj
+            && fuer(bobj.getArmature()) != null;
+    }
+
+    /**
+     * Blender-Kanon fuer LMB-Drag auf dem Control dieses PICK-Bones: translate (G) —
+     * ausser das Control ist location-gelockt (die FK-Ringe), dann dreht der Drag (R).
+     */
+    public static boolean dragRotiert(String pickBone)
+    {
+        for (Eintrag e : alle())
+        {
+            if (e.pick.equals(pickBone))
+            {
+                return e.dragRot;
+            }
+        }
+
+        return false;
     }
 
     public static boolean sichtbar(Eintrag e)
@@ -83,7 +117,7 @@ public class RigCtrl
                     Integer.parseInt(farbe.getString("normal"), 16),
                     Integer.parseInt(farbe.getString("aktiv"), 16),
                     c.getFloat("breite", 1F), c.getString("schalter"),
-                    c.getBool("ik", false), zuege));
+                    c.getBool("ik", false), c.getBool("dragRot", false), zuege));
             }
         }
         catch (Exception e)
