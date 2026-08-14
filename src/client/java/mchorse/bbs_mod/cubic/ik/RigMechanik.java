@@ -35,7 +35,8 @@ import java.util.Map;
 public final class RigMechanik implements BOBJArmature.Zwang
 {
     private record Zwang(String typ, String ziel, float einfluss, boolean welt,
-        boolean nutzX, boolean nutzY, boolean nutzZ, String spur, String sperre) {}
+        boolean nutzX, boolean nutzY, boolean nutzZ, String spur, String sperre,
+        MapType daten) {}
 
     /** modellId -> Mechanik; leerer Eintrag = Modell hat keine. Lazy (hotswap-sicher). */
     private static Map<String, RigMechanik> proModell;
@@ -141,7 +142,11 @@ public final class RigMechanik implements BOBJArmature.Zwang
             boolean welt = armaturRaum(c.getString("raum_o", "WORLD"))
                 && armaturRaum(c.getString("raum_z", "WORLD"));
 
-            if (ziel == null || ziel.isEmpty() || !welt || !kann(typ))
+            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ);
+            /* Limit Rotation ist der einzige Typ hier OHNE Ziel — es klemmt nur sich selbst. */
+            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ);
+
+            if ((brauchtZiel && (ziel == null || ziel.isEmpty())) || (!welt && !lokal) || !kann(typ))
             {
                 gebaut.unbekannt.merge(typ + (welt ? "" : "/raum"), 1, Integer::sum);
 
@@ -151,7 +156,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
             proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<>())
                 .add(new Zwang(typ, ziel, einfluss, true,
                     c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
-                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y")));
+                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c));
         }
 
         return gebaut;
@@ -168,7 +173,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
     {
         return "COPY_TRANSFORMS".equals(typ) || "COPY_LOCATION".equals(typ)
             || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
-            || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ);
+            || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ)
+            || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ);
     }
 
     @Override
@@ -194,11 +200,11 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
             for (Zwang z : liste)
             {
-                BOBJBone ziel = armature.bones.get(z.ziel());
+                BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
 
-                if (ziel != null && z.einfluss() > 0F)
+                if (z.einfluss() > 0F)
                 {
-                    anwenden(bone.mat, ziel, z);
+                    anwenden(bone, ziel, z);
                 }
             }
 
@@ -209,9 +215,20 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
-    private static void anwenden(Matrix4f eigen, BOBJBone zielBone, Zwang z)
+    private static void anwenden(BOBJBone eigenBone, BOBJBone zielBone, Zwang z)
     {
+        Matrix4f eigen = eigenBone.mat;
         Matrix4f ziel = zielBone.mat;
+
+        /* Die Fuss-Roll-Mechanik rechnet LOKAL (relativ zur Ruhelage): der Ort des
+         * Roll-Cursors wird auf die Drehung der Fersen-/Zehenknochen abgebildet und
+         * anschliessend je Achse geklemmt. */
+        if ("TRANSFORM".equals(z.typ()) || "LIMIT_ROTATION".equals(z.typ()))
+        {
+            lokalerZwang(eigenBone, zielBone, z);
+
+            return;
+        }
 
         /* Child Of: der Besitzer erbt die ABWEICHUNG des Ziels von dessen Ruhelage —
          * Blenders inverse_matrix wird bei generierten Rigs in der Ruhepose gesetzt,
@@ -298,6 +315,72 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         q.premul(new Quaternionf().rotationTo(spur, richtung));
         eigen.translationRotateScale(pos, q, skala);
+    }
+
+    /** Ruhe-Basis des Knochens im Armature-Raum: Eltern-Weltmatrix x Ruhelage-relativ. */
+    private static Matrix4f basis(BOBJBone bone)
+    {
+        return bone.parentBone != null
+            ? new Matrix4f(bone.parentBone.mat).mul(bone.relBoneMat)
+            : new Matrix4f(bone.relBoneMat);
+    }
+
+    private static void lokalerZwang(BOBJBone eigenBone, BOBJBone zielBone, Zwang z)
+    {
+        Matrix4f basis = basis(eigenBone);
+        Matrix4f lokal = new Matrix4f(basis).invert().mul(eigenBone.mat);
+
+        if ("TRANSFORM".equals(z.typ()))
+        {
+            /* Quelle ist die LOKALE Verschiebung des Ziels — beim Roll-Cursor genau das,
+             * was der Nutzer zieht. Je Zielachse speist eine benannte Quellachse einen
+             * Bereich in einen anderen (Blender klemmt ohne Extrapolation). */
+            Vector3f q = zielBone.transform.translate;
+            float[] quelle = {q.x, q.y, q.z};
+            float[] winkel = new float[3];
+
+            for (int a = 0; a < 3; a++)
+            {
+                String achse = "xyz".substring(a, a + 1);
+                int s = index(z.daten().getString("quelle_" + achse, achse.toUpperCase()));
+                float vonMin = z.daten().getFloat("from_min_" + "xyz".charAt(s), 0F);
+                float vonMax = z.daten().getFloat("from_max_" + "xyz".charAt(s), 0F);
+                float nachMin = z.daten().getFloat("to_min_" + achse, 0F);
+                float nachMax = z.daten().getFloat("to_max_" + achse, 0F);
+                float spanne = vonMax - vonMin;
+                float anteil = spanne == 0F ? 0F
+                    : Math.max(0F, Math.min(1F, (quelle[s] - vonMin) / spanne));
+
+                winkel[a] = nachMin + anteil * (nachMax - nachMin);
+            }
+
+            lokal.rotateXYZ(winkel[0], winkel[1], winkel[2]);
+        }
+        else
+        {
+            Vector3f pos = lokal.getTranslation(new Vector3f());
+            Vector3f skala = lokal.getScale(new Vector3f());
+            Vector3f e = lokal.getEulerAnglesXYZ(new Vector3f());
+
+            e.x = klemme(e.x, z.daten(), "x");
+            e.y = klemme(e.y, z.daten(), "y");
+            e.z = klemme(e.z, z.daten(), "z");
+            lokal.translationRotateScale(pos, new Quaternionf().rotationXYZ(e.x, e.y, e.z), skala);
+        }
+
+        eigenBone.mat.set(basis).mul(lokal);
+    }
+
+    private static float klemme(float wert, MapType d, String achse)
+    {
+        return d.getBool("grenz_" + achse, false)
+            ? Math.max(d.getFloat("min_" + achse, 0F), Math.min(d.getFloat("max_" + achse, 0F), wert))
+            : wert;
+    }
+
+    private static int index(String achse)
+    {
+        return "Y".equals(achse) ? 1 : "Z".equals(achse) ? 2 : 0;
     }
 
     /** Die genannte BONE-LOKALE Achse als Richtung im Armature-Raum. */
