@@ -117,10 +117,31 @@ def menu_func_import(self, context):
 # ------------------------------------------------------------------ #
 
 from . import mixamo_ik
+from . import export_bbs_rig
+
+
+class BBSAddonPrefs(bpy.types.AddonPreferences):
+    """Wo der BBS-Baum liegt. Der Rig-Export ruft die dort VERSIONIERTEN Skripte auf,
+    statt sie ins Addon zu kopieren — zwei Fassungen derselben Mathematik laufen
+    sonst auseinander."""
+
+    bl_idname = __package__
+
+    bbs_werkzeuge: StringProperty(
+        name="BBS-Werkzeuge",
+        description="tools-Ordner des BBS-Repos (enthaelt rig-extrakt-blender.py)",
+        subtype="DIR_PATH",
+        default="")
+
+    def draw(self, context):
+        self.layout.prop(self, "bbs_werkzeuge")
+
 
 classes = (
+    BBSAddonPrefs,
     ExportBOBJ,
     ImportBOBJ,
+    export_bbs_rig.ExportBBSRig,
     mixamo_ik.BBS_OT_mixamo_ik,
 )
 
@@ -130,6 +151,7 @@ def register():
     for cls in classes:
         register_class(cls)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(export_bbs_rig.menu_func_export)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
 
@@ -137,5 +159,6 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
+    bpy.types.TOPBAR_MT_file_export.remove(export_bbs_rig.menu_func_export)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
