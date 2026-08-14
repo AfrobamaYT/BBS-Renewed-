@@ -319,6 +319,26 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
+    /** Rohe Constraint-Daten eines Knochens, in Auswertungsreihenfolge — fuer {@link RigSnap}. */
+    public List<MapType> constraintsVon(String bone)
+    {
+        List<Zwang> l = this.proBone.get(bone);
+        List<MapType> raus = new ArrayList<>();
+
+        for (Zwang z : l == null ? List.<Zwang>of() : l)
+        {
+            raus.add(z.daten());
+        }
+
+        return raus;
+    }
+
+    /** Die topologische Auswertungsreihenfolge — Ziel vor Besitzer. */
+    public List<String> reihenfolge()
+    {
+        return this.reihenfolge;
+    }
+
     /**
      * Getriebenes An/Aus. ⛔ {@code mute} und {@code enabled} sind gegenlaeufig —
      * ohne das Feld schaltet Rigifys {@code pole_vector} den Constraint genau
