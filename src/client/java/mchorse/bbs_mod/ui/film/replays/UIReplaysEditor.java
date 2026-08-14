@@ -429,8 +429,7 @@ public class UIReplaysEditor extends UIElement
         this.updateChannelsList();
     }
 
-    /** Kategorie nach SICHTBARER Tab-Position (IK/Physics-Tabs sind optional — feste
-     *  Ziffer-zu-Kategorie-Zuordnung zeigte an deren Luecke vorbei). */
+    /** Kategorie nach SICHTBARER Tab-Position (IK/Physics-Tabs sind optional). */
     private void setCategoryByPosition(int index)
     {
         List<ReplayCategory> present = new ArrayList<>();
@@ -500,8 +499,7 @@ public class UIReplaysEditor extends UIElement
 
     public void setReplay(Replay replay, boolean select, OrbitReaction orbit)
     {
-        /* Re-entry-Guard: scrollToReplay() feuert den listen-callback -> setReplay() erneut;
-         * die orbit-reaktion gehoert dem aeussersten aufruf (sonst teleportiert undo). */
+        /* Re-entry-Guard: scrollToReplay feuert setReplay erneut; orbit gehoert dem aeussersten (sonst teleportiert undo). */
         if (this.settingReplay)
         {
             return;
@@ -651,8 +649,7 @@ public class UIReplaysEditor extends UIElement
                 this.keyframeEditor.view.copyViewport(lastEditor);
             }
 
-            /* Kamera-Clips als Balken unter den Spuren (4.54); der Haken zeichnet vor Gitter/
-             * Keyframes, spuren nimmt nur Klicks, die kein Keyframe verbraucht hat. */
+            /* Kamera-Clips als Balken unter den Spuren (4.54); Klicks nur, wenn kein Keyframe sie nahm. */
             this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor).dock(this.keyframeEditor, this);
 
             this.keyframeEditor.view.rulerRenderer((context) -> renderRuler(context, this.keyframeEditor.view, this.filmPanel.cameraEditor, this.film.camera, 0));
@@ -1172,8 +1169,7 @@ public class UIReplaysEditor extends UIElement
         this.pickFormBone(form, bone, false);
     }
 
-    /** Viewport-Bone-Pick mit den Shift-(Hierarchie)/Ctrl-(Multi)-Gesten; auch der
-     *  verzoegerte Gizmo-Kugel-Pick laeuft hierdurch, damit er sich gleich verhaelt. */
+    /** Viewport-Bone-Pick mit Shift/Ctrl-Gesten; auch der Gizmo-Kugel-Pick laeuft hierdurch. */
     public void pickFormWithOffers(UIContext context, Form form, String bone)
     {
         UIReplaysEditorUtils.pickFormWithOffers(context, new Pair<>(form, bone), this::pickFormBone);
@@ -1196,8 +1192,7 @@ public class UIReplaysEditor extends UIElement
 
         UIReplaysEditorUtils.pickForm(this.keyframeEditor, this.filmPanel, form, bone, insert);
 
-        /* Bone-Pick MUSS in einer Pose-Factory enden: ohne sie liefen G/R/S ins Leere,
-         * mit FREMDER (transform) editierte der Griff die FORM. Insert = Keyframe@Playhead. */
+        /* Bone-Pick MUSS in einer Pose-Factory enden (fremde transform-Factory editierte die FORM). */
         if (!insert && this.keyframeEditor != null && bone != null && !bone.isEmpty()
             && !(this.keyframeEditor.editor instanceof mchorse.bbs_mod.ui.framework.elements.input.keyframes.factories.UIPoseKeyframeFactory))
         {
@@ -1333,7 +1328,11 @@ public class UIReplaysEditor extends UIElement
         Pair<Form, String> pending = this.pendingPick;
 
         this.pendingPick = null;
-        this.ctrlGriff.loslassen();
+
+        if (this.ctrlGriff.release(this, context, pending))
+        {
+            return;
+        }
 
         if (pending == null || dragged || context.mouseButton != 0)
         {
@@ -1430,8 +1429,7 @@ public class UIReplaysEditor extends UIElement
     {
         super.collectUndoData(data);
 
-        /* collectAllUndoData trifft den dauerhaft im Dashboard haengenden Editor auch,
-         * wenn ein anderes Panel VOR dem ersten Film-Laden einen Undo ausloest (NPE 08-13). */
+        /* collectAllUndoData trifft den Editor auch VOR dem ersten Film-Laden (NPE 08-13). */
         if (this.film == null)
         {
             return;

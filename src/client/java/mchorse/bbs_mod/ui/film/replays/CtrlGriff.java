@@ -30,6 +30,40 @@ public class CtrlGriff
         this.bereit = false;
     }
 
+    /**
+     * Release-Haelfte: ein noch bereiter Griff (Down auf Control, Schwelle nie gerissen)
+     * ist ein KLICK — orbit.wasDragged klebt hier vom LETZTEN Kamera-Drag und darf nicht
+     * mitreden. Leerer Pick = Ctrl_Master -> Form-Spur (Master bewegt ALLES).
+     * true = vollstaendig behandelt.
+     */
+    public boolean release(UIReplaysEditor editor, UIContext context, Pair<Form, String> pending)
+    {
+        boolean widgetKlick = this.bereit;
+
+        this.bereit = false;
+
+        if (!widgetKlick || pending == null || context.mouseButton != 0)
+        {
+            return false;
+        }
+
+        if (!editor.isVisible())
+        {
+            editor.filmPanel.showPanel(editor);
+        }
+
+        if (pending.b == null || pending.b.isEmpty())
+        {
+            UIReplaysEditorUtils.pickProperty(editor.keyframeEditor, editor.filmPanel, "", "transform", true);
+
+            return true;
+        }
+
+        editor.pickForm(pending.a, pending.b);
+
+        return true;
+    }
+
     /** Je Bild rufen; startet den modalen Grab, sobald die gehaltene Maus die Schwelle reisst. */
     public void foerdere(UIReplaysEditor editor, UIContext context)
     {
@@ -58,7 +92,15 @@ public class CtrlGriff
             editor.filmPanel.showPanel(editor);
         }
 
-        editor.pickForm(pick.a, pick.b);
+        /* Leerer Pick = Ctrl_Master: greift die Form-Spur (Master bewegt ALLES). */
+        if (pick.b == null || pick.b.isEmpty())
+        {
+            UIReplaysEditorUtils.pickProperty(editor.keyframeEditor, editor.filmPanel, "", "transform", true);
+        }
+        else
+        {
+            editor.pickForm(pick.a, pick.b);
+        }
 
         UIPropTransform transform = UIReplaysEditorUtils.getEditableTransform(editor.keyframeEditor);
 

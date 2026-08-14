@@ -555,8 +555,7 @@ public class UIReplaysEditorUtils
             return;
         }
 
-        /* A model with at most one material ignores the material system entirely (its single texture is
-         * driven by form.texture), so it exposes no per-material texture tracks - see the renderer. */
+        /* Max. ein Material = kein Materialsystem (Textur kommt aus form.texture), keine Spuren. */
         if (model.materials.size() <= 1)
         {
             return;
@@ -865,7 +864,8 @@ public class UIReplaysEditorUtils
         return getPoseSheet(graph, formPath);
     }
 
-    private static void pickProperty(UIKeyframeEditor keyframeEditor, ICursor cursor, String bone, String key, boolean insert)
+    /** Auch der Ctrl_Master-Griff: key "transform" = Form-Spur. */
+    public static void pickProperty(UIKeyframeEditor keyframeEditor, ICursor cursor, String bone, String key, boolean insert)
     {
         UIKeyframeSheet sheet = keyframeEditor.view.getGraph().getSheet(key);
 

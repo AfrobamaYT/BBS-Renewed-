@@ -178,11 +178,23 @@ public final class RigWidgets
     }
 
     /**
-     * Eine Polylinie (x,y,z-Folge) durch {@code kombi} als HARTER Linienzug — der Weg der
-     * RigCtrl-Shapes. Kein Alpha-Falloff wie beim weichen band(): an den 48er-Ringen ragte
-     * dessen Alpha-Rampe an JEDEM Knick als radialer Keil raus (Strahlenkranz, gemessen).
-     * Blenders Control-Wires sind crispe 2D-Linien; hier: Kern-Quad je Segment, um die
-     * halbe Breite verlaengert, damit die Knicke gefuellt sind (opak — Ueberlappung unsichtbar).
+     * Blenders Screen-Konstanz fuer die Rig-Controls — IMMER, unabhaengig vom
+     * axesKeepScreenSize-Setting (ohne das schrumpften die Linien mit der Distanz
+     * bis zur Unsichtbarkeit; Blender haelt Wire-Pixelbreite). 5m = Faktor 1.
+     */
+    public static float screenSkala(float dist)
+    {
+        float tanFov = (float) Math.tan(BBSSettings.getFov() / 2.0);
+
+        return Math.max(dist / 5F * (tanFov / 0.4663F), 1.0E-4F);
+    }
+
+    /**
+     * Eine Polylinie (x,y,z-Folge) durch {@code kombi} — der Weg der RigCtrl-Shapes:
+     * opaker Kern plus weiche Aussenkante (Blenders Wire-AA, linear genaehert). Kern
+     * UND Rampen sind laengs um die halbe Breite gedehnt, damit die Knicke der
+     * 48er-Ringe gefuellt sind — die alte ungedehnte Rampe ragte an jedem Knick als
+     * radialer Keil raus (Strahlenkranz, gemessen).
      */
     public static void kette(BufferBuilder builder, Matrix4f kombi, float[] xyz, float[] col, float a, float breite)
     {
@@ -205,21 +217,21 @@ public final class RigWidgets
                 continue;
             }
 
-            float halb = HALB_AUSSEN * BBSSettings.getAxesDistanceScale(dist)
-                * (breitenSkala <= 0F ? 1F : breitenSkala) * breite / len;
-            float dehn = halb * len / Math.max(d.length(), 1.0E-6F);
+            float skala = screenSkala(dist) * (breitenSkala <= 0F ? 1F : breitenSkala) * breite;
+            float kern = HALB_KERN * skala / len;
+            float aussen = HALB_AUSSEN * skala / len;
+            float dehn = aussen * len / Math.max(d.length(), 1.0E-6F);
 
-            float sx = seite.x * halb, sy = seite.y * halb, sz = seite.z * halb;
             float dx = d.x * dehn, dy = d.y * dehn, dz = d.z * dehn;
-            float x1 = P1.x - dx, y1 = P1.y - dy, z1 = P1.z - dz;
-            float x2 = P2.x + dx, y2 = P2.y + dy, z2 = P2.z + dz;
+            P1.sub(dx, dy, dz);
+            P2.add(dx, dy, dz);
 
-            builder.addVertex(x1 - sx, y1 - sy, z1 - sz).setColor(col[0], col[1], col[2], a);
-            builder.addVertex(x2 - sx, y2 - sy, z2 - sz).setColor(col[0], col[1], col[2], a);
-            builder.addVertex(x2 + sx, y2 + sy, z2 + sz).setColor(col[0], col[1], col[2], a);
-            builder.addVertex(x1 - sx, y1 - sy, z1 - sz).setColor(col[0], col[1], col[2], a);
-            builder.addVertex(x2 + sx, y2 + sy, z2 + sz).setColor(col[0], col[1], col[2], a);
-            builder.addVertex(x1 + sx, y1 + sy, z1 + sz).setColor(col[0], col[1], col[2], a);
+            float kx = seite.x * kern, ky = seite.y * kern, kz = seite.z * kern;
+            float ax = seite.x * aussen, ay = seite.y * aussen, az = seite.z * aussen;
+
+            streifen(builder, P1, P2, ax, ay, az, kx, ky, kz, col, 0F, a);
+            streifen(builder, P1, P2, kx, ky, kz, -kx, -ky, -kz, col, a, a);
+            streifen(builder, P1, P2, -kx, -ky, -kz, -ax, -ay, -az, col, a, 0F);
         }
     }
 
