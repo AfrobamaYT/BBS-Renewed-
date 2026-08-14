@@ -368,18 +368,30 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         if ("DAMPED_TRACK".equals(z.typ()))
         {
-            RigZwaenge.dampedTrack(eigen, ziel, z.spur(), Math.min(1F, z.einfluss()));
+            RigZwaenge.dampedTrack(eigen, spurZiel(ziel, z), z.spur(),
+                Math.min(1F, z.einfluss()));
 
             return;
         }
 
         if ("STRETCH_TO".equals(z.typ()))
         {
-            /* Volumen 1.0 = Blenders Vorgabe VOLUME_XZX; die Ruhelaenge kommt
-             * aus dem BOBJ-Tail, ohne sie gaebe es kein Dehnverhaeltnis. */
-            RigZwaenge.stretchTo(eigen, ziel, z.spur(), eigenBone.restLength,
-                z.daten() == null ? 1F : z.daten().getFloat("volumen", 1F),
-                Math.min(1F, z.einfluss()));
+            MapType d = z.daten();
+
+            /* ⛔ Blender misst gegen {@code data->orglength}, die EIGENE Ruhelaenge
+             * des Constraints — nicht gegen die Knochenlaenge. Rigifys VIS_*-Zeiger
+             * sind 0,045 lange Knochen, die eine halbe Beinlaenge ueberspannen; mit
+             * der Knochenlaenge gerechnet ist der Faktor um ein Vielfaches daneben. */
+            float ruhe = d == null ? 0F : d.getFloat("ruhe_laenge", 0F);
+
+            /* ⛔ volumen ist Blenders ENUM-STRING, kein Float. Als Float gelesen kam
+             * still 0 heraus — also fuer JEDE der 144 Stretch-To der Querschnitt
+             * eines NO_VOLUME, auch fuer die 110 volumenerhaltenden. */
+            String volumen = d == null ? "VOLUME_XZX" : d.getString("volumen", "VOLUME_XZX");
+
+            RigZwaenge.stretchTo(eigen, spurZiel(ziel, z), z.spur(),
+                ruhe > 0F ? ruhe : eigenBone.restLength,
+                "NO_VOLUME".equals(volumen) ? 0F : 1F, Math.min(1F, z.einfluss()));
 
             return;
         }
@@ -552,6 +564,20 @@ public final class RigMechanik implements BOBJArmature.Zwang
      * statt an den Knoechel — die Unterschenkel fielen zusammen (2026-08-14).
      * Das Werkzeug liefert den Offset bereits BONE-LOKAL.
      */
+    /**
+     * Die Zielmatrix mit dem Kopf-Schwanz-Punkt als Ort — Blenders {@code head_tail}.
+     *
+     * ⛔ Die Spur-Constraints bekamen bisher die ROHE Zielmatrix, zielten also immer
+     * auf den KOPF. Rigifys tweak-Knochen sitzen per Copy Location genau auf diesem
+     * Kopf: sie zielten damit auf sich selbst, und die Spurachse blieb stehen, wo sie
+     * gerade war (gemessen 2026-08-14: MCH-upper_arm_tweak.L 14,08 Grad daneben,
+     * Blender 0,0000). Betrifft 4 Damped Track und 16 Stretch To.
+     */
+    private static Matrix4f spurZiel(Matrix4f ziel, Zwang z)
+    {
+        return new Matrix4f(ziel).setTranslation(zielPunkt(ziel, z));
+    }
+
     private static Vector3f zielPunkt(Matrix4f ziel, Zwang z)
     {
         ListType o = z.daten() == null ? null : z.daten().getList("ziel_offset");
