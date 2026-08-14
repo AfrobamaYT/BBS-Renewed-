@@ -127,7 +127,7 @@ public final class ModelIKDebug
         /* Mixamo-Skelett mit unseren IK-Bones -> das 1:1 extrahierte Blender-Control-Rig
          * ersetzt Octas UND Klotz-Widgets (Blender zeigt DEF/MCH auch nicht). */
         java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
-            ? RigCtrl.fuer(bm.getArmature()) : null;
+            ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
 
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
         {
@@ -342,7 +342,7 @@ public final class ModelIKDebug
 
         /* Control-Rig-Modelle: Blender zeigt in Vorschauen KEIN Rig — und dieser
          * Legacy-Pfad laeuft je Miniatur (3x/Frame gemessen) und malt ins Rufer-Ziel. */
-        if (model instanceof BOBJModel bm && RigCtrl.fuer(bm.getArmature()) != null)
+        if (model instanceof BOBJModel bm && RigCtrl.fuer(bm.getArmature(), null) != null)
         {
             return;
         }
@@ -439,7 +439,8 @@ public final class ModelIKDebug
         }
 
         /* Control-Rig vorhanden -> die Original-Shapes sind die Klickziele, nicht die Kloetze. */
-        java.util.List<RigCtrl.Eintrag> rig = model instanceof BOBJModel bm ? RigCtrl.fuer(bm.getArmature()) : null;
+        java.util.List<RigCtrl.Eintrag> rig = model instanceof BOBJModel bm && form instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
+            ? RigCtrl.fuer(bm.getArmature(), mf.model.get()) : null;
 
         /* Ab hier Widget-Kennungen — der Umriss-Shader endet an dieser Grenze. */
         stencilMap.widgetBeginn();

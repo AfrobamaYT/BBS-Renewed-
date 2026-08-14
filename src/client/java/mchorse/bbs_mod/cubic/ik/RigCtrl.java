@@ -23,12 +23,14 @@ public class RigCtrl
     private static boolean fkModus;
 
     private static List<Eintrag> liste;
+    /* Lazy (Hotswap: neue statics sind null). Leere Liste = Modell hat kein eigenes rig.json. */
+    private static java.util.Map<String, List<Eintrag>> proModell;
 
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
         float breite, String schalter, boolean ik, boolean dragRot, float[][] linien) {}
 
     /** Das Rig, wenn die Armature ein Mixamo-Skelett mit unseren IK-Bones ist, sonst null. */
-    public static List<Eintrag> fuer(BOBJArmature armature)
+    public static List<Eintrag> fuer(BOBJArmature armature, String modellId)
     {
         if (armature == null || armature.bones == null
             || !armature.bones.containsKey("mixamorig:Hips")
@@ -37,7 +39,46 @@ public class RigCtrl
             return null;
         }
 
+        /* Modell-eigenes rig.json zuerst — die Shapes sind in RUHEPOSEN-Koordinaten
+         * gebacken, ein fremdes Modell (andere Proportionen) truege sie falsch. */
+        if (modellId != null && !modellId.isEmpty())
+        {
+            List<Eintrag> eigen = eigenes(modellId);
+
+            if (!eigen.isEmpty())
+            {
+                return eigen;
+            }
+        }
+
         return alle();
+    }
+
+    /** Beim Models-Reload rufen: die modell-eigenen rig.json werden neu gelesen. */
+    public static void leeren()
+    {
+        proModell = null;
+    }
+
+    private static List<Eintrag> eigenes(String modellId)
+    {
+        if (proModell == null)
+        {
+            proModell = new java.util.HashMap<>();
+        }
+
+        return proModell.computeIfAbsent(modellId, id ->
+        {
+            try (InputStream rein = mchorse.bbs_mod.BBSMod.getProvider()
+                .getAsset(mchorse.bbs_mod.resources.Link.assets("models/" + id + "/rig.json")))
+            {
+                return parse(new String(rein.readAllBytes(), StandardCharsets.UTF_8));
+            }
+            catch (Exception e)
+            {
+                return Collections.emptyList();
+            }
+        });
     }
 
     /** Hat das aktuelle Modell der Entity ein Control-Rig? (Gizmo/Umriss-Gate, je Frame billig.) */
@@ -54,7 +95,7 @@ public class RigCtrl
 
         return instance != null
             && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj
-            && fuer(bobj.getArmature()) != null;
+            && fuer(bobj.getArmature(), form.model.get()) != null;
     }
 
     /**
@@ -88,11 +129,25 @@ public class RigCtrl
             return liste;
         }
 
-        List<Eintrag> neu = new ArrayList<>();
-
         try (InputStream rein = RigCtrl.class.getResourceAsStream("/assets/bbs/rig/mixamo_ctrl.json"))
         {
-            MapType wurzel = (MapType) DataToString.fromString(new String(rein.readAllBytes(), StandardCharsets.UTF_8));
+            liste = parse(new String(rein.readAllBytes(), StandardCharsets.UTF_8));
+        }
+        catch (Exception e)
+        {
+            System.err.println("[RigCtrl] mixamo_ctrl.json unlesbar: " + e);
+            liste = Collections.emptyList();
+        }
+
+        return liste;
+    }
+
+    private static List<Eintrag> parse(String json)
+    {
+        List<Eintrag> neu = new ArrayList<>();
+
+        {
+            MapType wurzel = (MapType) DataToString.fromString(json);
             ListType ctrls = wurzel.getList("ctrls");
 
             for (int i = 0; i < ctrls.size(); i++)
@@ -120,15 +175,7 @@ public class RigCtrl
                     c.getBool("ik", false), c.getBool("dragRot", false), zuege));
             }
         }
-        catch (Exception e)
-        {
-            /* Laut scheitern statt still leeres Rig — sonst raetselt man am Bild. */
-            System.err.println("[RigCtrl] mixamo_ctrl.json unlesbar: " + e);
-            e.printStackTrace();
-        }
 
-        liste = Collections.unmodifiableList(neu);
-
-        return liste;
+        return Collections.unmodifiableList(neu);
     }
 }

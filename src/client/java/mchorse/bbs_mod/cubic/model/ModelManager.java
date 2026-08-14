@@ -182,6 +182,9 @@ public class ModelManager implements IWatchDogListener
 
     public void reload()
     {
+        /* Modell-eigene Control-Rigs (rig.json) haengen an denselben Dateien. */
+        mchorse.bbs_mod.cubic.ik.RigCtrl.leeren();
+
         for (ModelInstance model : this.models.values())
         {
             if (model != null)
