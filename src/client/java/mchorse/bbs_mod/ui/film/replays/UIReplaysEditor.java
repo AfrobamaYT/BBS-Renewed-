@@ -127,7 +127,6 @@ public class UIReplaysEditor extends UIElement
         PLAYER(Icons.PLAYER, L10n.lang("bbs.ui.film.replays.category.player"), L10n.lang("bbs.ui.film.replays.category.player.tooltip")),
         MODEL(Icons.BLOCK, L10n.lang("bbs.ui.film.replays.category.model"), L10n.lang("bbs.ui.film.replays.category.model.tooltip")),
         POSE(Icons.POSE, L10n.lang("bbs.ui.film.replays.category.pose"), L10n.lang("bbs.ui.film.replays.category.pose.tooltip")),
-        IK(Icons.LIMB, L10n.lang("bbs.ui.film.replays.category.ik"), L10n.lang("bbs.ui.film.replays.category.ik.tooltip")),
         PHYSICS(Icons.DROP, L10n.lang("bbs.ui.film.replays.category.physics"), L10n.lang("bbs.ui.film.replays.category.physics.tooltip"));
 
         public final Icon icon;
@@ -223,11 +222,6 @@ public class UIReplaysEditor extends UIElement
     public static ReplayCategory categoryOf(UIKeyframeSheet sheet)
     {
         String id = sheet.id;
-
-        if (FormControlKeys.isIKControlChannel(id) || PerLimbService.isIKTargetChannel(id) || PerLimbService.isPoleTargetChannel(id))
-        {
-            return ReplayCategory.IK;
-        }
 
         if (FormControlKeys.isPhysicsControlChannel(id) || PerLimbService.isPhysicsTargetChannel(id) || FormControlKeys.isWindControlChannel(id))
         {
@@ -564,7 +558,6 @@ public class UIReplaysEditor extends UIElement
             return;
         }
 
-        this.updateIKTab();
         this.updatePhysicsTab();
 
         List<UIKeyframeSheet> sheets = new ArrayList<>();
@@ -573,7 +566,6 @@ public class UIReplaysEditor extends UIElement
 
         this.collectCuratedSheets(sheets);
         this.collectFormPropertySheets(sheets, poseTabs, poseTabDepths);
-        this.collectIKSheets(sheets);
         this.collectPhysicsSheets(sheets);
 
         this.keys.clear();
@@ -814,31 +806,7 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    /** IK tracks live in their own category; they are not form properties, so collect them by walking the form tree. */
-    private void collectIKSheets(List<UIKeyframeSheet> sheets)
-    {
-        this.collectIKSheets(sheets, this.replay.form.get());
-    }
 
-    private void collectIKSheets(List<UIKeyframeSheet> sheets, Form form)
-    {
-        if (form == null)
-        {
-            return;
-        }
-
-        if (form instanceof ModelForm modelForm)
-        {
-            UIReplaysEditorUtils.addIKControlSheet(modelForm, this.replay.properties, sheets);
-            UIReplaysEditorUtils.addIKTargetSheets(modelForm, this.replay.properties, sheets);
-            UIReplaysEditorUtils.addPoleTargetSheets(modelForm, this.replay.properties, sheets);
-        }
-
-        for (BodyPart part : form.parts.getAllTyped())
-        {
-            this.collectIKSheets(sheets, part.getForm());
-        }
-    }
 
     /** Physics tracks live in their own category; like IK they are not form properties, so collect them by walking the form tree. */
     private void collectPhysicsSheets(List<UIKeyframeSheet> sheets)
@@ -866,68 +834,7 @@ public class UIReplaysEditor extends UIElement
         }
     }
 
-    /** Show the IK tab only when the record actually has IK; bounce an active IK category back to Model when it does not. */
-    private void updateIKTab()
-    {
-        UIIcon button = this.tabButtons.get(ReplayCategory.IK);
 
-        if (button == null)
-        {
-            return;
-        }
-
-        boolean hasIK = this.formHasIK(this.replay.form.get());
-        boolean present = button.getParent() != null;
-
-        if (hasIK && !present)
-        {
-            this.iconBar.add(button);
-            this.iconBar.resize();
-        }
-        else if (!hasIK && present)
-        {
-            button.removeFromParent();
-            this.iconBar.resize();
-        }
-
-        if (!hasIK && this.category == ReplayCategory.IK)
-        {
-            this.category = ReplayCategory.MODEL;
-        }
-    }
-
-    private boolean formHasIK(Form form)
-    {
-        if (form == null)
-        {
-            return false;
-        }
-
-        if (form instanceof ModelForm modelForm)
-        {
-            ModelInstance model = ModelFormRenderer.getModel(modelForm);
-
-            if (model != null)
-            {
-                model.form = modelForm;
-
-                if (!ModelIKRuntime.getControllers(model).isEmpty())
-                {
-                    return true;
-                }
-            }
-        }
-
-        for (BodyPart part : form.parts.getAllTyped())
-        {
-            if (this.formHasIK(part.getForm()))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     /** Show the Physics tab only when the record actually has physics chains; bounce an active Physics category back to Model when it does not. */
     private void updatePhysicsTab()

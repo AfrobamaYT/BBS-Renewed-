@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 /**
  * Editor for the {@code physics} keyframe track: pick a chain (by root bone) and
  * keyframe its scalars (weight, gravity, damping, stiffness, enabled), layered over
- * the form's physics config at playback. Mirrors {@link UIIKKeyframeFactory} but
+ * the form's physics config at playback. Mirrors the physics-side editor but
  * lists physics chains instead of IK ones; the owning form is read from the sheet
  * (the physics track is not a form property).
  */
