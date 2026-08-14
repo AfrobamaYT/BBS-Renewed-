@@ -29,54 +29,11 @@ public final class ModelIKRuntime
         clearCache();
     }
 
-    public static void apply(ModelInstance instance, Map<String, Vector3f> controllerTargets, Map<String, Vector3f> poleTargets)
-    {
-        if (instance == null || instance.model == null)
-        {
-            return;
-        }
+    /* ⛔ apply() ist ENTFERNT. BBS loest keine eigenen IK-Ketten mehr: die IK des
+     * importierten Rigs laeuft ueber RigMechanik/RigIKKetten mit dem portierten
+     * Blender-Solver, in Blenders Auswertungsreihenfolge. Was hier bleibt, sind
+     * reine ABFRAGEN fuer die Oberflaeche. */
 
-        IModel model = instance.model;
-
-        ModelIKCache.Compiled compiled = null;
-        if (instance.form instanceof ModelForm form && form.ik.get() instanceof MapType map)
-        {
-            compiled = ModelIKCache.getFromData(model, map);
-        }
-
-        if (compiled == null)
-        {
-            return;
-        }
-
-        List<ModelIKCache.CompiledChain> chains = compiled.chains();
-
-        if (chains == null || chains.isEmpty())
-        {
-            return;
-        }
-
-        Map<String, IKControl> controlOverrides = null;
-        Map<String, Float> targetWeights = null;
-        Map<String, Float> poleWeights = null;
-
-        if (instance.form instanceof ModelForm form)
-        {
-            controlOverrides = form.ikControlOverrides;
-            targetWeights = form.ikTargetWeights;
-            poleWeights = form.poleTargetWeights;
-        }
-
-        ModelIKApplier.apply(model, chains, compiled.bones(), controllerTargets, poleTargets, targetWeights, poleWeights, controlOverrides);
-    }
-
-    /**
-     * Whether pointing the chain that ends at {@code tip} (spanning {@code
-     * chainLength} bones up) at {@code target} is cyclic — the target is one of
-     * the chain's own bones, so the solve's variables would move the very point
-     * it chases. Such a chain does not compile; the panel uses this to mark the
-     * pick loudly.
-     */
     public static boolean isCyclicTarget(IModel model, String tip, int chainLength, String target)
     {
         if (model == null || tip == null || tip.isEmpty() || target == null || target.isEmpty())
@@ -95,7 +52,6 @@ public final class ModelIKRuntime
      */
     public static void logGesture(boolean active)
     {
-        ModelIKApplier.setLogging(active);
     }
 
     /**

@@ -499,7 +499,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (!hasOverrides)
         {
-            ModelIKRuntime.apply(model, null, null);
             return;
         }
 
@@ -509,11 +508,9 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (local.isEmpty() && poleLocal.isEmpty())
         {
-            ModelIKRuntime.apply(model, null, null);
             return;
         }
 
-        ModelIKRuntime.apply(model, local.isEmpty() ? null : local, poleLocal.isEmpty() ? null : poleLocal);
     }
 
     /** World-space target overrides into the model's local space (the space the solver and pivot frames use). */
@@ -997,8 +994,6 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
              * local pass doesn't carry, so the config/`ik`-track solve runs (controllers
              * keyed into the pose are already baked in and reached). */
             model.form = this.form;
-            ModelIKRuntime.apply(model, null, null);
-
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
             this.captureMatrices(model);
         }
