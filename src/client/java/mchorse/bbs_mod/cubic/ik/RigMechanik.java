@@ -198,33 +198,36 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
             List<Zwang> liste = this.proBone.get(name);
 
-            if (liste == null)
+            /* ⛔ KEIN vorzeitiges continue mehr, wenn die Liste leer ist. Genau daran
+             * lief die IK ins Leere: die vier Knochen, die eine IK tragen, haben
+             * SONST keinen Constraint — ihre Liste ist also null, und der
+             * IK-Block darunter wurde nie erreicht (gemessen 2026-08-14:
+             * Ziel wanderte, Kette stand still). */
+            if (liste != null)
             {
-                continue;
-            }
+                Matrix4f vorher = new Matrix4f(bone.mat);
 
-            Matrix4f vorher = new Matrix4f(bone.mat);
-
-            for (Zwang z : liste)
-            {
-                BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
-
-                if (z.einfluss() > 0F)
+                for (Zwang z : liste)
                 {
-                    anwenden(bone, ziel, z);
+                    BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
+
+                    if (z.einfluss() > 0F)
+                    {
+                        anwenden(bone, ziel, z);
+                    }
                 }
+
+                /* ⛔ originMat MUSS mitwandern. Das Mesh liest mat, die CONTROL-WIDGETS
+                 * lesen originMat (ModelInstance.captureMatrices -> MatrixCache.origin);
+                 * ohne das blieben genau die Child-Of-Controls stehen, waehrend die Figur
+                 * mit dem Master wegging (gemessen 2026-08-14). Derselbe Welt-Effekt auf
+                 * beide: das Delta, das die Constraints erzeugt haben. */
+                bone.originMat.set(new Matrix4f(bone.mat)
+                    .mul(vorher.invert())
+                    .mul(bone.originMat));
+
+                armature.matrices[bone.index] = bone.hautMatrix();
             }
-
-            /* ⛔ originMat MUSS mitwandern. Das Mesh liest mat, die CONTROL-WIDGETS
-             * lesen originMat (ModelInstance.captureMatrices -> MatrixCache.origin);
-             * ohne das blieben genau die Child-Of-Controls stehen, waehrend die Figur
-             * mit dem Master wegging (gemessen 2026-08-14). Derselbe Welt-Effekt auf
-             * beide: das Delta, das die Constraints erzeugt haben. */
-            bone.originMat.set(new Matrix4f(bone.mat)
-                .mul(vorher.invert())
-                .mul(bone.originMat));
-
-            armature.matrices[bone.index] = bone.hautMatrix();
 
             /* IK schreibt die GANZE Kette neu, also auch Knochen, die in dieser
              * Reihenfolge schon dran waren — genau wie Blenders IK-Durchgang. */
