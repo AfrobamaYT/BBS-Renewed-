@@ -198,6 +198,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 continue;
             }
 
+            Matrix4f vorher = new Matrix4f(bone.mat);
+
             for (Zwang z : liste)
             {
                 BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
@@ -207,6 +209,15 @@ public final class RigMechanik implements BOBJArmature.Zwang
                     anwenden(bone, ziel, z);
                 }
             }
+
+            /* ⛔ originMat MUSS mitwandern. Das Mesh liest mat, die CONTROL-WIDGETS
+             * lesen originMat (ModelInstance.captureMatrices -> MatrixCache.origin);
+             * ohne das blieben genau die Child-Of-Controls stehen, waehrend die Figur
+             * mit dem Master wegging (gemessen 2026-08-14). Derselbe Welt-Effekt auf
+             * beide: das Delta, das die Constraints erzeugt haben. */
+            bone.originMat.set(new Matrix4f(bone.mat)
+                .mul(vorher.invert())
+                .mul(bone.originMat));
 
             armature.matrices[bone.index] = bone.hautMatrix();
         }
@@ -250,7 +261,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
         Vector3f t = eigen.getTranslation(new Vector3f());
         Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
         Vector3f s = eigen.getScale(new Vector3f());
-        Vector3f zt = ziel.getTranslation(new Vector3f());
+        Vector3f zt = zielPunkt(ziel, z);
         Quaternionf zq = ziel.getUnnormalizedRotation(new Quaternionf());
         Vector3f zs = ziel.getScale(new Vector3f());
         float w = Math.min(1F, z.einfluss());
@@ -284,7 +295,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
     {
         Vector3f pos = eigen.getTranslation(new Vector3f());
         Vector3f skala = eigen.getScale(new Vector3f());
-        Vector3f richtung = ziel.getTranslation(new Vector3f()).sub(pos);
+        Vector3f richtung = zielPunkt(ziel, z).sub(pos);
 
         if (richtung.lengthSquared() < 1.0E-10F)
         {
@@ -315,6 +326,24 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         q.premul(new Quaternionf().rotationTo(spur, richtung));
         eigen.translationRotateScale(pos, q, skala);
+    }
+
+    /**
+     * Der Punkt, auf den ein Constraint zielt: Blenders head_tail waehlt zwischen
+     * Kopf und ENDE des Zielknochens. Ohne ihn zog Copy Location den Fuss ans Knie
+     * statt an den Knoechel — die Unterschenkel fielen zusammen (2026-08-14).
+     * Das Werkzeug liefert den Offset bereits BONE-LOKAL.
+     */
+    private static Vector3f zielPunkt(Matrix4f ziel, Zwang z)
+    {
+        ListType o = z.daten() == null ? null : z.daten().getList("ziel_offset");
+
+        if (o == null || o.size() < 3)
+        {
+            return ziel.getTranslation(new Vector3f());
+        }
+
+        return ziel.transformPosition(new Vector3f(o.getFloat(0), o.getFloat(1), o.getFloat(2)));
     }
 
     /** Ruhe-Basis des Knochens im Armature-Raum: Eltern-Weltmatrix x Ruhelage-relativ. */
