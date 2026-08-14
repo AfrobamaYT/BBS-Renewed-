@@ -41,6 +41,7 @@ public final class RigWidgets
     /** Lazy statt final-Initializer: ein Hotswap laesst neue statics null — genau so
      *  starb die Instanz am 2026-08-13 (NPE je Frame, crash-20.45.47). */
     private static float[] OCTA;
+    private static float[] OCTA_SOLID;
 
     /* Blenders Pose-Mode-Theme (userdef_default_theme.c): Skelett-Bones grau, Auswahl
      * HELLBLAU, aktiv cyan — die Farben, die jeder aus dem Blender-Viewport kennt. */
@@ -183,6 +184,11 @@ public final class RigWidgets
      */
     private static void band(BufferBuilder builder, Vector3f p1, Vector3f p2, float[] col, float a)
     {
+        band(builder, p1, p2, col, a, 1F);
+    }
+
+    private static void band(BufferBuilder builder, Vector3f p1, Vector3f p2, float[] col, float a, float breite)
+    {
         /* Lokale Scratches (hotswap-sicher: neue statics waeren nach einem Swap null). */
         Vector3f mitte = new Vector3f(p1).add(p2).mul(0.5F);
 
@@ -199,7 +205,7 @@ public final class RigWidgets
         }
 
         float skala = breitenSkala <= 0F ? 1F : breitenSkala;
-        float scale = BBSSettings.getAxesDistanceScale(dist) * skala;
+        float scale = BBSSettings.getAxesDistanceScale(dist) * skala * breite;
         float kern = HALB_KERN * scale / len;
         float aussen = HALB_AUSSEN * scale / len;
 
@@ -250,7 +256,67 @@ public final class RigWidgets
             P2.set(OCTA[i + 3] * laenge, OCTA[i + 4] * laenge, OCTA[i + 5] * laenge);
             kombi.transformPosition(P2);
 
-            band(builder, P1, P2, col, a);
+            /* Haarfeiner Umriss (Blenders 1px-Bone-Wire): halbe Breite der IK-Kurven,
+             * sonst frisst die Outline die duennen Knochenkoerper schwarz. */
+            band(builder, P1, P2, col, a, 0.5F);
+        }
+    }
+
+    /**
+     * Der SOLIDE Blender-Knochen: die 8 Dreiecke aus {@code bone_octahedral_solid_tris},
+     * flat geshadet gegen die Kamera (Blenders bone_solid-Eindruck), volle Deckkraft.
+     * Der Wire-Umriss ({@link #emitOcta}) kommt in der Outline-Farbe darueber — zusammen
+     * ist das Blenders zweistufiges Bone-Rendering.
+     */
+    public static void emitOctaSolid(BufferBuilder builder, Matrix4f kombi, float laenge, float grundGrau, float a)
+    {
+        if (OCTA_SOLID == null)
+        {
+            float[][] v = {
+                {0, 0, 0}, {0.1F, 0.1F, 0.1F}, {0.1F, 0.1F, -0.1F},
+                {-0.1F, 0.1F, -0.1F}, {-0.1F, 0.1F, 0.1F}, {0, 1, 0},
+            };
+            int[][] t = {
+                {2, 1, 0}, {3, 2, 0}, {4, 3, 0}, {1, 4, 0},
+                {5, 1, 2}, {5, 2, 3}, {5, 3, 4}, {5, 4, 1},
+            };
+
+            OCTA_SOLID = new float[t.length * 9];
+
+            for (int i = 0; i < t.length; i++)
+            {
+                for (int e = 0; e < 3; e++)
+                {
+                    System.arraycopy(v[t[i][e]], 0, OCTA_SOLID, i * 9 + e * 3, 3);
+                }
+            }
+        }
+
+        Vector3f a1 = new Vector3f();
+        Vector3f b1 = new Vector3f();
+        Vector3f c1 = new Vector3f();
+
+        for (int i = 0; i < OCTA_SOLID.length; i += 9)
+        {
+            a1.set(OCTA_SOLID[i] * laenge, OCTA_SOLID[i + 1] * laenge, OCTA_SOLID[i + 2] * laenge);
+            kombi.transformPosition(a1);
+            b1.set(OCTA_SOLID[i + 3] * laenge, OCTA_SOLID[i + 4] * laenge, OCTA_SOLID[i + 5] * laenge);
+            kombi.transformPosition(b1);
+            c1.set(OCTA_SOLID[i + 6] * laenge, OCTA_SOLID[i + 7] * laenge, OCTA_SOLID[i + 8] * laenge);
+            kombi.transformPosition(c1);
+
+            /* Flat-Licht aus Kamerarichtung (im Kamera-Raum ist das die z-Komponente der
+             * Flaechennormale) — genug fuer Blenders matten Knochen-Eindruck. */
+            float nx = (b1.y - a1.y) * (c1.z - a1.z) - (b1.z - a1.z) * (c1.y - a1.y);
+            float ny = (b1.z - a1.z) * (c1.x - a1.x) - (b1.x - a1.x) * (c1.z - a1.z);
+            float nz = (b1.x - a1.x) * (c1.y - a1.y) - (b1.y - a1.y) * (c1.x - a1.x);
+            float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            float licht = l < 1.0E-9F ? 0.6F : 0.45F + 0.55F * Math.abs(nz / l);
+            float g = grundGrau * licht;
+
+            builder.addVertex(a1.x, a1.y, a1.z).setColor(g, g, g, a);
+            builder.addVertex(b1.x, b1.y, b1.z).setColor(g, g, g, a);
+            builder.addVertex(c1.x, c1.y, c1.z).setColor(g, g, g, a);
         }
     }
 

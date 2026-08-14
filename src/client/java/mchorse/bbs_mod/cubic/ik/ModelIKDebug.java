@@ -171,6 +171,7 @@ public final class ModelIKDebug
                     Vector3f kopfPos = kopf.getTranslation(new Vector3f());
                     String kind = erstesKind.get(bone.name);
                     float laenge = 0.12F;
+                    Vector3f richtung = null;
 
                     if (kind != null && !ikBones.contains(kind))
                     {
@@ -178,18 +179,44 @@ public final class ModelIKDebug
 
                         if (kindWelt != null)
                         {
-                            laenge = Math.max(0.03F, kopfPos.distance(kindWelt.getTranslation(new Vector3f())));
+                            richtung = kindWelt.getTranslation(new Vector3f()).sub(kopfPos);
+                            laenge = Math.max(0.03F, richtung.length());
                         }
                     }
 
                     boolean sel = bone.name.equals(selectedBone);
-                    float[] col = DebugOverlay.rgb(sel ? RigWidgets.POSE_AKTIV : RigWidgets.POSE_UNSEL);
-                    Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(kopf).normalize3x3().setTranslation(
-                        (float) (kopf.m30() - kamera.x),
-                        (float) (kopf.m31() - kamera.y),
-                        (float) (kopf.m32() - kamera.z)));
 
-                    RigWidgets.emitOcta(wire, kombi, laenge, col, sel ? a : a * 0.55F);
+                    /* Octa-Y muss zum KIND zeigen (Blenders head->tail). Die BBS/Mixamo-
+                     * Bone-Matrizen tragen ihr Y NICHT entlang des Knochens — mit ihnen
+                     * ragten alle Octas als Stacheln nach Welt-oben (gemessen am T-Pose-
+                     * Arm). Also die Rotation explizit aus der Kopf->Kind-Richtung. */
+                    Matrix4f ausgerichtet;
+
+                    if (richtung != null && richtung.lengthSquared() > 1.0E-8F)
+                    {
+                        ausgerichtet = new Matrix4f().rotation(new org.joml.Quaternionf()
+                            .rotationTo(0F, 1F, 0F, richtung.x, richtung.y, richtung.z));
+                    }
+                    else
+                    {
+                        ausgerichtet = new Matrix4f(kopf).normalize3x3().setTranslation(0F, 0F, 0F);
+                    }
+
+                    Matrix4f kombi = new Matrix4f(sicht)
+                        .translate((float) (kopf.m30() - kamera.x),
+                            (float) (kopf.m31() - kamera.y),
+                            (float) (kopf.m32() - kamera.z))
+                        .mul(ausgerichtet);
+
+                    /* Blender-Eindruck: matter grauer Knochenkoerper; die 12-Kanten-Outline
+                     * nur am GEWAEHLTEN Bone (cyan) — an duennen Bones uebermalen dicke
+                     * Kantenbaender sonst den ganzen Koerper schwarz (gemessen). */
+                    RigWidgets.emitOctaSolid(wire, kombi, laenge, sel ? 0.95F : 0.72F, a);
+
+                    if (sel)
+                    {
+                        RigWidgets.emitOcta(wire, kombi, laenge, DebugOverlay.rgb(RigWidgets.POSE_AKTIV), a);
+                    }
                 }
             }
 
