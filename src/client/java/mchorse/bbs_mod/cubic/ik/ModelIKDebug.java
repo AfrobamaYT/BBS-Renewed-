@@ -324,7 +324,7 @@ public final class ModelIKDebug
         RigWidgets.emit(wire, kombi, shape, size, RigWidgets.wireColor(farbe, selektiert), a);
     }
 
-    public static void render(PoseStack stack, IModel model, MapType ikData, String selectedTip)
+    public static void render(PoseStack stack, IModel model, MapType ikData, String selectedTip, String modellId)
     {
         ValueIKDebug config = BBSSettings.ikDebug;
 
@@ -342,7 +342,7 @@ public final class ModelIKDebug
 
         /* Control-Rig-Modelle: Blender zeigt in Vorschauen KEIN Rig — und dieser
          * Legacy-Pfad laeuft je Miniatur (3x/Frame gemessen) und malt ins Rufer-Ziel. */
-        if (model instanceof BOBJModel bm && RigCtrl.fuer(bm.getArmature(), null) != null)
+        if (model instanceof BOBJModel bm && RigCtrl.fuer(bm.getArmature(), modellId) != null)
         {
             return;
         }

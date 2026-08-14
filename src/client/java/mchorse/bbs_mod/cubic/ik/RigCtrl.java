@@ -22,36 +22,24 @@ public class RigCtrl
     /** Blender-Zustand der vier ik_fk_switch-Properties: 0 = IK (Addon-Default). */
     private static boolean fkModus;
 
-    private static List<Eintrag> liste;
     /* Lazy (Hotswap: neue statics sind null). Leere Liste = Modell hat kein eigenes rig.json. */
     private static java.util.Map<String, List<Eintrag>> proModell;
 
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
         float breite, String schalter, boolean ik, boolean dragRot, float[][] linien) {}
 
-    /** Das Rig, wenn die Armature ein Mixamo-Skelett mit unseren IK-Bones ist, sonst null. */
+    /** Das importierte Control-Rig dieses Modells, sonst null. Einziges Kriterium:
+     *  das Modell bringt ein rig.json mit — BBS erzeugt selbst keine Rigs mehr. */
     public static List<Eintrag> fuer(BOBJArmature armature, String modellId)
     {
-        if (armature == null || armature.bones == null
-            || !armature.bones.containsKey("mixamorig:Hips")
-            || !armature.bones.containsKey("IK.hand.L"))
+        if (armature == null || modellId == null || modellId.isEmpty())
         {
             return null;
         }
 
-        /* Modell-eigenes rig.json zuerst — die Shapes sind in RUHEPOSEN-Koordinaten
-         * gebacken, ein fremdes Modell (andere Proportionen) truege sie falsch. */
-        if (modellId != null && !modellId.isEmpty())
-        {
-            List<Eintrag> eigen = eigenes(modellId);
+        List<Eintrag> eigen = eigenes(modellId);
 
-            if (!eigen.isEmpty())
-            {
-                return eigen;
-            }
-        }
-
-        return alle();
+        return eigen.isEmpty() ? null : eigen;
     }
 
     /** Beim Models-Reload rufen: die modell-eigenen rig.json werden neu gelesen. */
@@ -81,30 +69,35 @@ public class RigCtrl
         });
     }
 
-    /** Hat das aktuelle Modell der Entity ein Control-Rig? (Gizmo/Umriss-Gate, je Frame billig.) */
-    public static boolean aktivFuer(mchorse.bbs_mod.forms.entities.IEntity entity)
+    /** Der Weg ueber die Entity — fuer Aufrufer, die nur sie haben. */
+    public static List<Eintrag> fuerEntity(mchorse.bbs_mod.forms.entities.IEntity entity)
     {
         if (entity == null
             || !(entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm form)
             || !(mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(form) instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer renderer))
         {
-            return false;
+            return null;
         }
 
         mchorse.bbs_mod.cubic.ModelInstance instance = renderer.getModel();
 
-        return instance != null
-            && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj
-            && fuer(bobj.getArmature(), form.model.get()) != null;
+        return instance != null && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj
+            ? fuer(bobj.getArmature(), form.model.get()) : null;
+    }
+
+    /** Gate fuer Gizmo/Umriss — je Frame billig (die Liste ist gecacht). */
+    public static boolean aktivFuer(mchorse.bbs_mod.forms.entities.IEntity entity)
+    {
+        return fuerEntity(entity) != null;
     }
 
     /**
      * Blender-Kanon fuer LMB-Drag auf dem Control dieses PICK-Bones: translate (G) —
      * ausser das Control ist location-gelockt (die FK-Ringe), dann dreht der Drag (R).
      */
-    public static boolean dragRotiert(String pickBone)
+    public static boolean dragRotiert(List<Eintrag> rig, String pickBone)
     {
-        for (Eintrag e : alle())
+        for (Eintrag e : rig == null ? Collections.<Eintrag>emptyList() : rig)
         {
             if (e.pick.equals(pickBone))
             {
@@ -118,28 +111,6 @@ public class RigCtrl
     public static boolean sichtbar(Eintrag e)
     {
         return e.schalter.isEmpty() || e.ik != fkModus;
-    }
-
-    /* Lazy — auch damit die Liste einen Hotswap dieser Klasse ueberlebt (neue
-     * statics sind nach einem Swap null, der naechste Zugriff laedt neu). */
-    private static List<Eintrag> alle()
-    {
-        if (liste != null)
-        {
-            return liste;
-        }
-
-        try (InputStream rein = RigCtrl.class.getResourceAsStream("/assets/bbs/rig/mixamo_ctrl.json"))
-        {
-            liste = parse(new String(rein.readAllBytes(), StandardCharsets.UTF_8));
-        }
-        catch (Exception e)
-        {
-            System.err.println("[RigCtrl] mixamo_ctrl.json unlesbar: " + e);
-            liste = Collections.emptyList();
-        }
-
-        return liste;
     }
 
     private static List<Eintrag> parse(String json)

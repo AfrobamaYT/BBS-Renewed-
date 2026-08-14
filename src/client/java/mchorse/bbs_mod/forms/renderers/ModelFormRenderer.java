@@ -451,7 +451,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (stencilMap == null && !this.renderingArm && this.form != null && this.form.ik.get() instanceof MapType ikMap)
         {
-            ModelIKDebug.render(newStack, model.model, ikMap, "");
+            ModelIKDebug.render(newStack, model.model, ikMap, "", this.form.model.get());
         }
 
         if (stencilMap == null && !this.renderingArm && this.form != null && this.form.physics.get() instanceof MapType physicsMap)

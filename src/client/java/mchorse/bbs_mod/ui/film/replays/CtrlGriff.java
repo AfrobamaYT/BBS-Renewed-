@@ -111,7 +111,7 @@ public class CtrlGriff
 
         /* Der Hotkey-Achsen-Walk faellt ohne Gizmo auf Achse X (gemessen: die Fussbox
          * wanderte nur seitlich) — deshalb direkt Blenders Startmodi. */
-        if (RigCtrl.dragRotiert(pick.b))
+        if (RigCtrl.dragRotiert(RigCtrl.fuerEntity(editor.filmPanel.getController().getCurrentEntity()), pick.b))
         {
             transform.enableViewRotate(null, true);
         }
