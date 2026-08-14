@@ -14,6 +14,11 @@ import org.joml.Vector3f;
  */
 public final class IKUmrechnung
 {
+    /** IK_STRETCH_STIFF_EPS/_MIN/_MAX aus Blenders IK_Solver.h. */
+    private static final double DEHN_EPS = 0.01D;
+    public static final double DEHN_MIN = 0.001D;
+    public static final double DEHN_MAX = 1e10D;
+
     private IKUmrechnung()
     {}
 
@@ -115,7 +120,76 @@ public final class IKUmrechnung
 
         throw new UnsupportedOperationException(
             "IK-Gelenk mit " + frei + " freien Achsen (sperr=" + sperrX + "," + sperrY + ","
-            + sperrZ + "): Swing-, Elbow-, Translate- und Null-Segment sind noch nicht "
+            + sperrZ + "): Swing-, Elbow- und Null-Segment sind noch nicht "
             + "aus Blender portiert.");
+    }
+
+    /**
+     * Dasselbe mit Dehnung: Blenders {@code IK_CreateSegment} haengt dem
+     * Drehsegment ein Verschiebe-Segment als KIND an und meldet beide nach
+     * aussen als ein Glied.
+     *
+     * ⛔ Folge fuer den Kettenbau: der naechste Knochen muss an das COMPOSITE
+     * gehaengt werden, nicht ans Drehsegment — sonst erbt er die Dehnung nicht
+     * und die Kette reisst genau dort, wo sie laenger werden soll.
+     */
+    public static IKQSegment segment(boolean sperrX, boolean sperrY, boolean sperrZ,
+                                     boolean dehnbar)
+    {
+        IKQSegment dreh = segment(sperrX, sperrY, sperrZ);
+
+        if (!dehnbar)
+        {
+            return dreh;
+        }
+
+        IKQSegment schub = new IKQTranslateSegment(1);
+
+        dreh.setComposite(schub);
+        schub.setzeElter(dreh);
+
+        return dreh;
+    }
+
+    /**
+     * Blenders {@code IK_SetStiffness}: Steifigkeit wird zum Gewicht, gedeckelt
+     * knapp unter 1 — ein Gewicht von exakt 0 nimmt dem Jacobi den Grad ganz.
+     */
+    public static void steifigkeit(IKQSegment seg, int achse, double steifigkeit)
+    {
+        if (steifigkeit < 0D)
+        {
+            return;
+        }
+
+        IKQSegment ziel = fuerAchse(seg, achse);
+
+        if (ziel != null)
+        {
+            ziel.setzeGewicht(achse % 3, 1D - Math.min(steifigkeit, 1D - DEHN_EPS));
+        }
+    }
+
+    /** Blenders {@code IK_SetLimit}, mit derselben Achsen-Weiche. */
+    public static void grenze(IKQSegment seg, int achse, double lmin, double lmax)
+    {
+        IKQSegment ziel = fuerAchse(seg, achse);
+
+        if (ziel != null)
+        {
+            ziel.setzeGrenze(achse % 3, lmin, lmax);
+        }
+    }
+
+    /** Achse 0..2 dreht, 3..5 verschiebt — letztere gehoeren ans Composite. */
+    private static IKQSegment fuerAchse(IKQSegment seg, int achse)
+    {
+        if (achse < 3 || seg.translational())
+        {
+            return seg;
+        }
+
+        return seg.composite() != null && seg.composite().translational()
+            ? seg.composite() : null;
     }
 }
