@@ -72,6 +72,20 @@ public class BOBJBone
      */
     public Vector3f offset;
 
+    /**
+     * Blenders {@code BONE_NO_LOCAL_LOCATION}: die Verschiebung wirkt im ELTERNRAUM
+     * statt in der eigenen gedrehten Ruhebasis. Rigify setzt das auf seine IK-Griffe,
+     * damit sie sich in geraden Achsen ziehen lassen. Kommt aus {@code rig.json}.
+     *
+     * ⛔ Polaritaet ist Blenders, nicht die lesbarere Umkehrung: ein per Hotswap neu
+     * dazugekommenes Feld ist auf bestehenden Instanzen {@code false} und NICHT sein
+     * Initialisierer. Nur so ist der Vorgabewert auch nach einem Swap der alte Weg.
+     */
+    public boolean elternraumVerschiebung;
+
+    /** Blenders {@code inherit_scale_mode}; {@code null} ist FULL, der Normalfall. */
+    public String skalenErbe;
+
     public BOBJBone(int index, String name, String parent, Matrix4f boneMat)
     {
         this.index = index;
@@ -119,6 +133,14 @@ public class BOBJBone
 
     public Matrix4f computeMatrix(Matrix4f m)
     {
+        /* Weicht die Elternuebergabe von der Norm ab, rechnet Blenders eigener Weg —
+         * fuer 654 von 706 Rigify-Knochen und fuer jedes Modell ohne Rig-Mechanik
+         * bleibt es Zeile fuer Zeile der alte, allokationsfreie Pfad darunter. */
+        if (this.elternraumVerschiebung || this.skalenErbe != null)
+        {
+            return BOBJElternTransform.rechne(this, m);
+        }
+
         this.mat.set(this.relBoneMat);
         this.originMat.set(this.relBoneMat);
         this.applyTransformations();
@@ -139,15 +161,25 @@ public class BOBJBone
     {
         this.mat.translate(this.transform.translate);
         this.originMat.translate(this.transform.translate);
+        this.kanalDrehung(this.mat);
+    }
 
+    /**
+     * Dreh- und Skalenanteil der Kanaele auf {@code ziel} draufmultipliziert — Blenders
+     * {@code chan_mat} ohne die Ortsspalte. DIE eine Stelle, an der entschieden wird,
+     * welche Drehquelle gilt; beide Wege durch {@link #computeMatrix} teilen sie sich,
+     * damit sie nicht auseinanderlaufen koennen.
+     */
+    public Matrix4f kanalDrehung(Matrix4f ziel)
+    {
         if (this.orient != null)
         {
             /* orient is the full local rotation, so the euler channel is skipped. */
-            this.mat.rotate(this.orient);
+            ziel.rotate(this.orient);
         }
         else if (this.transform.rotationMode == Transform.RotationMode.QUATERNION)
         {
-            this.mat.rotate(this.transform.quat);
+            ziel.rotate(this.transform.quat);
         }
         else
         {
@@ -156,11 +188,11 @@ public class BOBJBone
             /* Rest bones (all angles zero) skip the trig entirely; BOBJ channels are radians. */
             if (rotate.x != 0F || rotate.y != 0F || rotate.z != 0F)
             {
-                this.mat.rotate(Matrices.toLocalRotationZYXRadians(rotate));
+                ziel.rotate(Matrices.toLocalRotationZYXRadians(rotate));
             }
         }
 
-        this.mat.scale(this.transform.scale);
+        return ziel.scale(this.transform.scale);
     }
 
     /**

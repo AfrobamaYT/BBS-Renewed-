@@ -49,6 +49,13 @@ public final class RigMechanik implements BOBJArmature.Zwang
     /** Blenders eigener Solver, portiert — ersetzt BBS' IKTreeSolver. */
     private RigIKKetten ketten;
 
+    /**
+     * Ruhedaten-Flags je Knochen, die von Blenders Vorgabe abweichen — nur die, die
+     * abweichen, darum meist eine Handvoll. Sie gehoeren nicht in den Constraint-Stapel,
+     * sondern an den Knochen selbst: sie aendern, wie die ELTERNLAGE weitergereicht wird.
+     */
+    private final Map<String, MapType> knochenFlags = new HashMap<>();
+
     private RigMechanik(List<String> reihenfolge, Map<String, List<Zwang>> proBone)
     {
         this.reihenfolge = reihenfolge;
@@ -76,6 +83,31 @@ public final class RigMechanik implements BOBJArmature.Zwang
         if (mechanik != null)
         {
             armature.zwang = mechanik;
+            mechanik.flaggen(armature);
+        }
+    }
+
+    /**
+     * Setzt die Ruhedaten-Flags auf die Knochen DIESER Armature. Muss je Armature laufen,
+     * nicht je Modell-Id: die Mechanik ist geteilt, die Knochen sind es nicht.
+     */
+    private void flaggen(BOBJArmature armature)
+    {
+        for (Map.Entry<String, MapType> e : this.knochenFlags.entrySet())
+        {
+            BOBJBone bone = armature.bones.get(e.getKey());
+
+            if (bone == null)
+            {
+                continue;
+            }
+
+            bone.elternraumVerschiebung = !e.getValue().getBool("lokal_loc", true);
+
+            String skala = e.getValue().getString("skala");
+
+            bone.skalenErbe = skala == null || skala.isEmpty() || "FULL".equals(skala)
+                ? null : skala;
         }
     }
 
@@ -128,6 +160,12 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         Map<String, List<Zwang>> proBone = new HashMap<>();
         RigMechanik gebaut = new RigMechanik(reihenfolge, proBone);
+        MapType flags = wurzel.getMap("knochen");
+
+        for (String name : flags == null ? List.<String>of() : flags.keys())
+        {
+            gebaut.knochenFlags.put(name, flags.getMap(name));
+        }
 
         for (int i = 0; i < mechanik.size(); i++)
         {
@@ -436,6 +474,20 @@ public final class RigMechanik implements BOBJArmature.Zwang
         {
             case "COPY_TRANSFORMS" ->
             {
+                /* ⛔ Blender KOPIERT die Matrix (translike_evaluate: copy_m4_m4), es
+                 * zerlegt sie nicht. Ueber Translation/Drehung/Skalierung zerlegt geht
+                 * die SCHERUNG verloren — translationRotateScale kann sie gar nicht
+                 * bilden. Gemessen an ORG-upper_arm.L: Blender traegt dort Scherung
+                 * 0.46, BBS bekam 0.00 heraus, und das floss ueber DAMPED_TRACK in die
+                 * ganze tweak-Kette. Erst unter Einfluss < 1 zerlegt auch Blender
+                 * (blend_m4_m4m4) — genau der Zweig darunter. */
+                if (w >= 1F)
+                {
+                    eigen.set(ziel).setTranslation(zt);
+
+                    return;
+                }
+
                 t.lerp(zt, w);
                 q.slerp(zq, w);
                 s.lerp(zs, w);
