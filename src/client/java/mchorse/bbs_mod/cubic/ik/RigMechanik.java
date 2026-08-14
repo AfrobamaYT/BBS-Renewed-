@@ -36,7 +36,15 @@ public final class RigMechanik implements BOBJArmature.Zwang
 {
     private record Zwang(String typ, String ziel, float einfluss, boolean welt,
         boolean nutzX, boolean nutzY, boolean nutzZ, String spur, String sperre,
-        MapType daten) {}
+        MapType daten, float[] jetzt)
+    {
+        /** Die Staerke DIESES Bildes — getrieben, wenn ein Treiber dranhaengt.
+         * {@link #einfluss} ist nur der feste Wert aus der Datei. */
+        float staerke()
+        {
+            return this.jetzt[0];
+        }
+    }
 
     /** modellId -> Mechanik; leerer Eintrag = Modell hat keine. Lazy (hotswap-sicher). */
     private static Map<String, RigMechanik> proModell;
@@ -45,6 +53,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
     private final Map<String, List<Zwang>> proBone;
     /** Typen, die dieses Rig braucht und Stufe 1 noch nicht kann — mit Anzahl. */
     public final Map<String, Integer> unbekannt = new HashMap<>();
+    /** Blenders Treiber: IK/FK, Space-Switching, Stretch. Der Schaltmechanismus. */
+    public final RigTreiber treiber = new RigTreiber();
 
     /** Blenders eigener Solver, portiert — ersetzt BBS' IKTreeSolver. */
     private RigIKKetten ketten;
@@ -213,10 +223,12 @@ public final class RigMechanik implements BOBJArmature.Zwang
             proBone.computeIfAbsent(c.getString("bone"), k -> new ArrayList<>())
                 .add(new Zwang(typ, ziel, einfluss, welt,
                     c.getBool("nutz_x", true), c.getBool("nutz_y", true), c.getBool("nutz_z", true),
-                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c));
+                    c.getString("spur_achse", "TRACK_Y"), c.getString("sperr_achse", "LOCK_Y"), c,
+                    new float[] {einfluss}));
         }
 
         gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"));
+        gebaut.treiber.lade(wurzel.getMap("regler"));
 
         return gebaut;
     }
@@ -267,7 +279,14 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 {
                     BOBJBone ziel = z.ziel() == null ? bone : armature.bones.getOrDefault(z.ziel(), bone);
 
-                    if (z.einfluss() > 0F)
+                    /* ⛔ Treiber ZUERST. Der IK/FK-Wechsel ist kein Constraint, sondern
+                     * ein Treiber auf DIESER Influence: die ORG-Kette kopiert von der
+                     * FK- UND der IK-Kette, und der zweite laeuft auf 1-IK_FK. Steht er
+                     * fest auf 1, gewinnt IK immer und die FK-Controls sind tot. */
+                    z.jetzt()[0] = Math.min(1F,
+                        this.treiber.wert(z.daten().getMap("treiber"), z.einfluss()));
+
+                    if (z.jetzt()[0] > 0F && !this.abgeschaltet(z))
                     {
                         anwenden(armature, bone, ziel, z);
                     }
@@ -300,6 +319,25 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /** Blenders Constraints im Armature-Raum, auf die Matrix des Besitzers. */
+    /**
+     * Getriebenes An/Aus. ⛔ {@code mute} und {@code enabled} sind gegenlaeufig —
+     * ohne das Feld schaltet Rigifys {@code pole_vector} den Constraint genau
+     * falsch herum. Fehlt der Treiber, gilt der feste Zustand aus der Datei.
+     */
+    private boolean abgeschaltet(Zwang z)
+    {
+        MapType t = z.daten().getMap("treiber_aus");
+
+        if (t == null)
+        {
+            return false;
+        }
+
+        float v = this.treiber.wert(t, 0F);
+
+        return "enabled".equals(t.getString("feld")) ? v < 0.5F : v >= 0.5F;
+    }
+
     private static void anwenden(BOBJArmature armature, BOBJBone eigenBone,
         BOBJBone zielBone, Zwang z)
     {
@@ -369,7 +407,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
         if ("DAMPED_TRACK".equals(z.typ()))
         {
             RigZwaenge.dampedTrack(eigen, spurZiel(ziel, z), z.spur(),
-                Math.min(1F, z.einfluss()));
+                Math.min(1F, z.staerke()));
 
             return;
         }
@@ -391,7 +429,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
             RigZwaenge.stretchTo(eigen, spurZiel(ziel, z), z.spur(),
                 ruhe > 0F ? ruhe : eigenBone.restLength,
-                "NO_VOLUME".equals(volumen) ? 0F : 1F, Math.min(1F, z.einfluss()));
+                "NO_VOLUME".equals(volumen) ? 0F : 1F, Math.min(1F, z.staerke()));
 
             return;
         }
@@ -466,7 +504,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         RigZwaenge.limitDistance(lokal, rein.transformPosition(zielPunkt(ziel, z)),
             z.daten().getString("modus", "LIMITDIST_INSIDE"),
-            z.daten().getFloat("distanz", 0F), Math.min(1F, z.einfluss()));
+            z.daten().getFloat("distanz", 0F), Math.min(1F, z.staerke()));
 
         eigen.set(raum.mul(lokal));
     }
@@ -495,7 +533,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
                            d != null && d.getBool("inv_y", false),
                            d != null && d.getBool("inv_z", false)},
             d == null ? "REPLACE" : d.getString("mischung", "REPLACE"),
-            Math.min(1F, z.einfluss()));
+            Math.min(1F, z.staerke()));
     }
 
     /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
@@ -507,7 +545,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
         Vector3f zt = zielPunkt(ziel, z);
         Quaternionf zq = ziel.getUnnormalizedRotation(new Quaternionf());
         Vector3f zs = ziel.getScale(new Vector3f());
-        float w = Math.min(1F, z.einfluss());
+        float w = Math.min(1F, z.staerke());
 
         switch (z.typ())
         {
