@@ -1401,7 +1401,7 @@ public class UIFilmController extends UIElement implements GizmoViewport
         }
 
         /* Der Umriss haengt NICHT am Ueberfahren — er steht, solange ein Replay gewaehlt ist. */
-        StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET);
+        StencilAnzeige.umriss(context, area, this.panel, this.stencil, altPressed, REPLAY_STENCIL_OFFSET, this.stencilMap.widgetBasis);
 
         if (!this.stencil.hasPicked())
         {

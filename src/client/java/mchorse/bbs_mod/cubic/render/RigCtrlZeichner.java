@@ -1,0 +1,155 @@
+package mchorse.bbs_mod.cubic.render;
+
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import mchorse.bbs_mod.bobj.BOBJArmature;
+import mchorse.bbs_mod.bobj.BOBJBone;
+import mchorse.bbs_mod.cubic.ik.RigCtrl;
+import mchorse.bbs_mod.film.BaseFilmController;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.forms.entities.IEntity;
+import mchorse.bbs_mod.forms.forms.Form;
+import mchorse.bbs_mod.ui.framework.elements.utils.StencilMap;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
+import io.netty.util.collection.IntObjectMap;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * Zeichnet das {@link RigCtrl}-Control-Rig wie Blender: die Original-Polylinien
+ * als weiche Baender im Editor-Weltpass, und dieselben Linien als schmale
+ * Kreuz-Quads in den Auswahlpuffer — geklickt wird am Strich, nicht in der
+ * Ringflaeche, mit der Toleranz des Pick-Radius.
+ */
+public class RigCtrlZeichner
+{
+    /** Klickziel-Halbbreite im Modellraum (Meter) — der Pick-Radius addiert Toleranz. */
+    private static final float PICK_HALB = 0.008F;
+
+    public static void weltPass(BufferBuilder wire, Matrix4f sicht, Vec3 kamera,
+        IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
+        Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a)
+    {
+        for (RigCtrl.Eintrag e : rig)
+        {
+            if (!RigCtrl.sichtbar(e))
+            {
+                continue;
+            }
+
+            Matrix4f welt = e.anker().isEmpty()
+                ? BaseFilmController.getGizmoAnchorCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F)
+                : BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F, e.anker(), false);
+
+            if (welt == null)
+            {
+                continue;
+            }
+
+            Matrix4f kombi = new Matrix4f(sicht).mul(new Matrix4f(welt).setTranslation(
+                (float) (welt.m30() - kamera.x),
+                (float) (welt.m31() - kamera.y),
+                (float) (welt.m32() - kamera.z)));
+
+            if (e.name().equals("Ctrl_Head") && mchorse.bbs_mod.graphics.Messpunkt.istAn())
+            {
+                /* Rufer im SCHLUESSEL: zwei Aufrufpfade je Frame trennen sich in zwei Zaehler. */
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle(
+                    "rigctrl.von." + mchorse.bbs_mod.graphics.Messpunkt.rufer(3),
+                    "welt=" + welt.m30() + "/" + welt.m31() + "/" + welt.m32() + " kamera=" + kamera);
+            }
+            float[] col = rgb(e.pick().equals(selectedBone) ? e.farbeA() : e.farbeN());
+
+            /* Blenders wire_width ist eine crispe 2D-Pixelbreite; unser Band bringt Kern+
+             * Alpha-Rampe schon mit. Faktor 0.5 traf im Bild die 3px-Anmutung — voll
+             * uebernommen wurden die Baender BREITER als die Segmente der 48er-Ringe und
+             * jede Knick-Ecke ragte als radialer Stachel raus ("Fell", gemessen). */
+            for (float[] linie : e.linien())
+            {
+                RigWidgets.kette(wire, kombi, linie, col, a, e.breite() * 0.11F);
+            }
+        }
+    }
+
+    /** Modellraum-Pass in den Auswahlpuffer; vergibt je Control eine eigene Kennung. */
+    public static void stencilPass(BufferBuilder builder, PoseStack stack, StencilMap stencilMap,
+        Form form, BOBJArmature armature, Iterable<RigCtrl.Eintrag> rig)
+    {
+        Matrix4f pose = stack.last().pose();
+        Vector3f p1 = new Vector3f();
+        Vector3f p2 = new Vector3f();
+
+        for (RigCtrl.Eintrag e : rig)
+        {
+            if (!RigCtrl.sichtbar(e))
+            {
+                continue;
+            }
+
+            Matrix4f mat = pose;
+
+            if (!e.anker().isEmpty())
+            {
+                BOBJBone bone = armature.bones.get(e.anker());
+
+                if (bone == null)
+                {
+                    continue;
+                }
+
+                mat = new Matrix4f(pose).mul(bone.mat);
+            }
+
+            int id = stencilMap.objectIndex;
+            float[] col = {(id & 0xFF) / 255F, (id >> 8 & 0xFF) / 255F, (id >> 16 & 0xFF) / 255F};
+
+            for (float[] linie : e.linien())
+            {
+                for (int i = 0; i + 5 < linie.length; i += 3)
+                {
+                    mat.transformPosition(linie[i], linie[i + 1], linie[i + 2], p1);
+                    mat.transformPosition(linie[i + 3], linie[i + 4], linie[i + 5], p2);
+                    kreuzQuad(builder, p1, p2, col);
+                }
+            }
+
+            stencilMap.addPicking(form, e.pick());
+        }
+    }
+
+    /** Zwei senkrecht gekreuzte Quads laengs p1->p2 — aus jeder Blickrichtung Flaeche. */
+    private static void kreuzQuad(BufferBuilder builder, Vector3f p1, Vector3f p2, float[] col)
+    {
+        Vector3f d = new Vector3f(p2).sub(p1);
+
+        if (d.lengthSquared() < 1.0E-10F)
+        {
+            return;
+        }
+
+        Vector3f hilf = Math.abs(d.y) < 0.9F * d.length() ? new Vector3f(0F, 1F, 0F) : new Vector3f(1F, 0F, 0F);
+        Vector3f s1 = new Vector3f(d).cross(hilf).normalize().mul(PICK_HALB);
+        Vector3f s2 = new Vector3f(d).cross(s1).normalize().mul(PICK_HALB);
+
+        quad(builder, p1, p2, s1, col);
+        quad(builder, p1, p2, s2, col);
+    }
+
+    private static void quad(BufferBuilder builder, Vector3f p1, Vector3f p2, Vector3f s, float[] col)
+    {
+        builder.addVertex(p1.x - s.x, p1.y - s.y, p1.z - s.z).setColor(col[0], col[1], col[2], 1F);
+        builder.addVertex(p2.x - s.x, p2.y - s.y, p2.z - s.z).setColor(col[0], col[1], col[2], 1F);
+        builder.addVertex(p2.x + s.x, p2.y + s.y, p2.z + s.z).setColor(col[0], col[1], col[2], 1F);
+        builder.addVertex(p1.x - s.x, p1.y - s.y, p1.z - s.z).setColor(col[0], col[1], col[2], 1F);
+        builder.addVertex(p2.x + s.x, p2.y + s.y, p2.z + s.z).setColor(col[0], col[1], col[2], 1F);
+        builder.addVertex(p1.x + s.x, p1.y + s.y, p1.z + s.z).setColor(col[0], col[1], col[2], 1F);
+    }
+
+    private static float[] rgb(int farbe)
+    {
+        return new float[] {(farbe >> 16 & 0xFF) / 255F, (farbe >> 8 & 0xFF) / 255F, (farbe & 0xFF) / 255F};
+    }
+}

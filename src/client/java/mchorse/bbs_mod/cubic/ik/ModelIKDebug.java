@@ -124,13 +124,23 @@ public final class ModelIKDebug
         boolean tiefe = !config.xray.get();
         var entities = controller.getEntities();
 
+        /* Mixamo-Skelett mit unseren IK-Bones -> das 1:1 extrahierte Blender-Control-Rig
+         * ersetzt Octas UND Klotz-Widgets (Blender zeigt DEF/MCH auch nicht). */
+        java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
+            ? RigCtrl.fuer(bm.getArmature()) : null;
+
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
         {
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
+            if (rig != null)
+            {
+                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera, entities, entity, replay, rig, selectedBone, a);
+            }
+
             /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,
              * Auswahl cyan. Die IK-Ziel/Pol-Bones tragen stattdessen ihre Widgets. */
-            if (instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
+            if (rig == null && instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bobj)
             {
                 Set<String> ikBones = new HashSet<>();
 
@@ -222,6 +232,11 @@ public final class ModelIKDebug
 
             for (ModelIKCache.CompiledChain chain : compiled.chains())
             {
+                if (rig != null)
+                {
+                    break;
+                }
+
                 List<String> glieder = chain.chainRootToEffector();
 
                 if (glieder == null || glieder.size() < 2)
@@ -325,6 +340,13 @@ public final class ModelIKDebug
             return;
         }
 
+        /* Control-Rig-Modelle: Blender zeigt in Vorschauen KEIN Rig — und dieser
+         * Legacy-Pfad laeuft je Miniatur (3x/Frame gemessen) und malt ins Rufer-Ziel. */
+        if (model instanceof BOBJModel bm && RigCtrl.fuer(bm.getArmature()) != null)
+        {
+            return;
+        }
+
         Map<String, PivotFrame> frames = collectFrames(model, compiled);
 
         if (mchorse.bbs_mod.graphics.Messpunkt.istAn())
@@ -332,13 +354,9 @@ public final class ModelIKDebug
             mchorse.bbs_mod.graphics.Messpunkt.zaehle("ikdbg.render", "chains=" + compiled.chains().size() + " frames=" + frames.size() + " von=" + mchorse.bbs_mod.graphics.Messpunkt.rufer(4));
         }
 
-        /* 26.2: der Zustandsblock, der hier stand, ist ersatzlos entfallen — Blend, Tiefe,
-         *  Cull und Shader sind kein globaler Schalter mehr, sondern die Pipeline, die
-         *  jeder einzelne Zug in drawChain selbst waehlt (FormPipelines.holen). Die drei
-         *  Entscheidungen wandern unveraendert mit:
-         *  - ohne Cull, sonst verschluckt die Karte Marker-Flaechen,
-         *  - mit Blend, sonst ist config.opacity (samt der 0.4/0.9-Faktoren) wirkungslos,
-         *  - Tiefe nur ohne Roentgen: xray heisst "durch das Modell hindurch". */
+        /* 26.2: Blend/Tiefe/Cull sind keine globalen Schalter mehr — jeder Zug in
+         * drawChain waehlt seine Pipeline selbst (ohne Cull, mit Blend, Tiefe nur
+         * ohne Roentgen); deshalb hier auch kein Zustands-Aufraeumen mehr. */
         stack.pushPose();
 
         if (model instanceof BOBJModel)
@@ -352,11 +370,6 @@ public final class ModelIKDebug
         }
 
         stack.popPose();
-
-        /* 26.2: ersatzlos entfallen. Die beiden Aufrufe haben nur den globalen
-         *  Zustand aufgeraeumt — den gibt es nicht mehr. Cull und Tiefe haengen
-         *  an der Pipeline, die jede folgende Zeichnung selbst mitbringt; auch
-         *  die Roentgen-Option oben braucht daher kein Zuruecksetzen. */
     }
 
     private static Map<String, PivotFrame> collectFrames(IModel model, ModelIKCache.Compiled compiled)
@@ -416,11 +429,8 @@ public final class ModelIKDebug
 
         Map<String, PivotFrame> frames = collectFrames(model, compiled);
 
-        /* 26.2: der Zustandsblock ist in die Pipeline des Zuges gewandert (unten). Der
-         *  Pick-Pass zeichnet ID-Farben: kein Blend (eine gemischte ID waere eine falsche
-         *  ID), ohne Cull — eine fehlende Marker-Flaeche ist ein Loch im Klickziel —, und
-         *  dieselbe Tiefe wie der sichtbare Pass in render(), sonst ist ein sichtbarer
-         *  Marker nicht anklickbar. */
+        /* Pick-Pass = ID-Farben: kein Blend (gemischte ID = falsche ID), ohne Cull
+         * (fehlende Flaeche = Loch im Klickziel), Tiefe wie der Sichtpass. */
         stack.pushPose();
 
         if (model instanceof BOBJModel)
@@ -428,12 +438,28 @@ public final class ModelIKDebug
             stack.mulPose(Axis.YP.rotation(MathUtils.PI));
         }
 
+        /* Control-Rig vorhanden -> die Original-Shapes sind die Klickziele, nicht die Kloetze. */
+        java.util.List<RigCtrl.Eintrag> rig = model instanceof BOBJModel bm ? RigCtrl.fuer(bm.getArmature()) : null;
+
+        /* Ab hier Widget-Kennungen — der Umriss-Shader endet an dieser Grenze. */
+        stencilMap.widgetBeginn();
+
         try (ByteBufferBuilder speicher = new ByteBufferBuilder(4096))
         {
             BufferBuilder builder = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
+            if (rig != null)
+            {
+                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.stencilPass(builder, stack, stencilMap, form, ((BOBJModel) model).getArmature(), rig);
+            }
+
             for (ModelIKCache.CompiledChain chain : compiled.chains())
             {
+                if (rig != null)
+                {
+                    break;
+                }
+
                 float unit = chainUnit(frames, chain.chainRootToEffector());
 
                 if (targets)
@@ -472,9 +498,6 @@ public final class ModelIKDebug
         }
 
         stack.popPose();
-
-        /* 26.2: ersatzlos entfallen — kein globaler Zustand mehr, nichts
-         *  zurueckzusetzen (siehe render()). */
     }
 
     /** Draws one pickable marker — the element's own shape and size — encoding the next stencil id, and claims it for {@code bone}. */

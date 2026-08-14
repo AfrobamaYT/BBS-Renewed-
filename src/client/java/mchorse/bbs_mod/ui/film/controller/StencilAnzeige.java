@@ -52,7 +52,7 @@ public final class StencilAnzeige
      * </ul>
      */
     public static void umriss(UIContext context, Area area, UIFilmPanel panel,
-        StencilFormFramebuffer stencil, boolean altGedrueckt, int offset)
+        StencilFormFramebuffer stencil, boolean altGedrueckt, int offset, int bisIndex)
     {
         Framebuffer puffer = stencil.getFramebuffer();
 
@@ -149,7 +149,7 @@ public final class StencilAnzeige
         try
         {
             mchorse.bbs_mod.graphics.Bildfilter.umrissZeichnen(texture, stencil.zwischenbild(),
-                abIndex, farbe, breite, 1F / area.w, 1F / area.h);
+                abIndex, bisIndex, farbe, breite, 1F / area.w, 1F / area.h);
         }
         finally
         {

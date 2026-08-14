@@ -36,12 +36,15 @@ int indexVon(vec4 c)
 }
 
 /* Alles AB Ganz.x gehoert zum bearbeiteten Replay: dessen Index zaehlt beim Zeichnen
- * pro Knochen hoch, damit man Knochen anklicken kann. */
+ * pro Knochen hoch, damit man Knochen anklicken kann. Ganz.z (sonst Radiergummi-Feld)
+ * ist hier die AUSSCHLIESSENDE Obergrenze: ab dort beginnen die Widget-Kennungen
+ * (Rig-Controls, Marker), und Blender umrandet Controls nie. 0 = kein Limit. */
 bool gehoertDazu(vec2 uv)
 {
     vec4 c = texture(Sampler0, uv);
+    int index = indexVon(c);
 
-    return c.a >= 1.0 && indexVon(c) >= Ganz.x;
+    return c.a >= 1.0 && index >= Ganz.x && (Ganz.z <= 0 || index < Ganz.z);
 }
 
 void main()

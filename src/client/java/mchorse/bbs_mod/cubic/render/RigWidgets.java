@@ -178,6 +178,52 @@ public final class RigWidgets
     }
 
     /**
+     * Eine Polylinie (x,y,z-Folge) durch {@code kombi} als HARTER Linienzug — der Weg der
+     * RigCtrl-Shapes. Kein Alpha-Falloff wie beim weichen band(): an den 48er-Ringen ragte
+     * dessen Alpha-Rampe an JEDEM Knick als radialer Keil raus (Strahlenkranz, gemessen).
+     * Blenders Control-Wires sind crispe 2D-Linien; hier: Kern-Quad je Segment, um die
+     * halbe Breite verlaengert, damit die Knicke gefuellt sind (opak — Ueberlappung unsichtbar).
+     */
+    public static void kette(BufferBuilder builder, Matrix4f kombi, float[] xyz, float[] col, float a, float breite)
+    {
+        for (int i = 0; i + 5 < xyz.length; i += 3)
+        {
+            P1.set(xyz[i], xyz[i + 1], xyz[i + 2]);
+            kombi.transformPosition(P1);
+            P2.set(xyz[i + 3], xyz[i + 4], xyz[i + 5]);
+            kombi.transformPosition(P2);
+
+            Vector3f mitte = new Vector3f(P1).add(P2).mul(0.5F);
+            Vector3f d = new Vector3f(P2).sub(P1);
+            Vector3f seite = new Vector3f(d).cross(mitte);
+            float len = seite.length();
+            float dist = mitte.length();
+
+            /* Edge-on: projiziert punktfoermig, seite/len waere Rundungs-Rauschen. */
+            if (len < 1.0E-3F * d.length() * dist || len < 1.0E-9F)
+            {
+                continue;
+            }
+
+            float halb = HALB_AUSSEN * BBSSettings.getAxesDistanceScale(dist)
+                * (breitenSkala <= 0F ? 1F : breitenSkala) * breite / len;
+            float dehn = halb * len / Math.max(d.length(), 1.0E-6F);
+
+            float sx = seite.x * halb, sy = seite.y * halb, sz = seite.z * halb;
+            float dx = d.x * dehn, dy = d.y * dehn, dz = d.z * dehn;
+            float x1 = P1.x - dx, y1 = P1.y - dy, z1 = P1.z - dz;
+            float x2 = P2.x + dx, y2 = P2.y + dy, z2 = P2.z + dz;
+
+            builder.addVertex(x1 - sx, y1 - sy, z1 - sz).setColor(col[0], col[1], col[2], a);
+            builder.addVertex(x2 - sx, y2 - sy, z2 - sz).setColor(col[0], col[1], col[2], a);
+            builder.addVertex(x2 + sx, y2 + sy, z2 + sz).setColor(col[0], col[1], col[2], a);
+            builder.addVertex(x1 - sx, y1 - sy, z1 - sz).setColor(col[0], col[1], col[2], a);
+            builder.addVertex(x2 + sx, y2 + sy, z2 + sz).setColor(col[0], col[1], col[2], a);
+            builder.addVertex(x1 + sx, y1 + sy, z1 + sz).setColor(col[0], col[1], col[2], a);
+        }
+    }
+
+    /**
      * Ein Segment als kameragerichtetes Band aus drei Streifen: opaker Kern, links und
      * rechts je ein Streifen, dessen Aussenkante auf Alpha 0 läuft — der Rasterizer
      * interpoliert dazwischen, die Kante wird weich (Blenders smoothstep, linear genähert).
@@ -195,11 +241,14 @@ public final class RigWidgets
         float dist = mitte.length();
 
         /* seite = segment x blickstrahl — im Kamera-Raum ist der Strahl die Mitte selbst. */
-        Vector3f seite = new Vector3f(p2).sub(p1).cross(mitte);
+        Vector3f d = new Vector3f(p2).sub(p1);
+        Vector3f seite = new Vector3f(d).cross(mitte);
 
         float len = seite.length();
 
-        if (len < 1.0E-6F)
+        /* Fast-parallel zum Blickstrahl: seite/len waere Rundungs-Rauschen in zufaelliger
+         * Richtung — das Segment projiziert ohnehin auf einen Punkt. */
+        if (len < 1.0E-3F * d.length() * dist || len < 1.0E-6F)
         {
             return;
         }

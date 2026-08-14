@@ -31,6 +31,7 @@ public class StencilMap
          * included), which would otherwise hijack the click. STENCIL_MAX is the
          * highest handle id, so forms begin one past it. */
         this.objectIndex = Gizmo.STENCIL_MAX + 1;
+        this.widgetBasis = 0;
 
         /* Reset map and seed a pair per gizmo handle (move/scale/rotate axes,
          * planes, the trackball sphere and the shared view-plane ring). */
@@ -59,6 +60,18 @@ public class StencilMap
      * vergebenen Wert — wer ihn erst beim Zeichnen abgreift, bekommt die falsche Zahl.
      */
     public int aktuelleBasis;
+
+    /** Erste Widget-Kennung (Rig-Controls, Marker) — der Umriss endet davor. 0 = keine Widgets. */
+    public int widgetBasis;
+
+    /** Beim ERSTEN Widget-Eintrag rufen — merkt sich die Grenze Knochen/Widgets. */
+    public void widgetBeginn()
+    {
+        if (this.widgetBasis == 0)
+        {
+            this.widgetBasis = this.objectIndex;
+        }
+    }
 
     public void addPicking(Form form)
     {

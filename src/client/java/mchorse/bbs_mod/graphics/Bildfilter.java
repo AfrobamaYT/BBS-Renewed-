@@ -106,9 +106,11 @@ public final class Bildfilter
      *                 als ein Pixel auf dem Schirm. Mit Texeln lag der Nachbar im selben
      *                 Bildschirmpixel und die Linie war gestrichelt statt durchgezogen.
      */
-    public static void umrissZeichnen(Texture quelle, Texture ziel, int abIndex, int farbe, int breite, float schrittX, float schrittY)
+    public static void umrissZeichnen(Texture quelle, Texture ziel, int abIndex, int bisIndex, int farbe, int breite, float schrittX, float schrittY)
     {
-        schreibeBlock(abIndex, breite, 0, farbe, schrittX, schrittY);
+        /* bisIndex (ausschliessend) = erste Widget-Kennung: Rig-Controls/Marker liegen im
+         * Auswahlbild HINTER den Knochen der Form und bekommen keinen Umriss. 0 = kein Limit. */
+        schreibeBlock(abIndex, breite, bisIndex, farbe, schrittX, schrittY);
         loeschen(ziel);
 
         lauf(BBSPipelines.getReplayOutline(), quelle, null, ziel.view());
