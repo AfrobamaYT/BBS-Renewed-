@@ -298,7 +298,15 @@ public final class IKBOBJBruecke
                 ? new Matrix4f(deltas.get(a))
                 : new Matrix4f(b.parentBone.mat).mul(deltas.get(a));
 
+            /* ⛔ originMat MUSS denselben Weltversatz mitgehen. Das Mesh liest
+             * mat, aber die Control-Gizmos (ModelPivotFrames) und das Picking
+             * (ModelInstance.captureMatrices) lesen originMat — ohne das sitzt
+             * der Griff neben dem Knochen, den er bewegt. Gemessen 2026-08-14:
+             * die vier IK-Spitzen standen bis zu 0,3465 daneben. */
+            Matrix4f vorher = new Matrix4f(b.mat);
+
             b.mat.set(neu.mul(ikMat));
+            b.originMat.set(new Matrix4f(b.mat).mul(vorher.invert()).mul(b.originMat));
         }
     }
 }
