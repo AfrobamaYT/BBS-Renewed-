@@ -131,9 +131,19 @@ public class UIRigRegler extends UIElement
          * unterscheiden — also wird nur dort "FK/IK" draufgeschrieben, wo der Regler auch so
          * heisst (Rigifys Konvention, rein fuer die BESCHRIFTUNG; die Mechanik bleibt aus
          * dem Graphen abgeleitet). Sonst steht dran, was wirklich passiert. */
+        /* ⛔ Beschriftung aus Blender, wenn sie da ist: Rigify schreibt auf diese Knoepfe
+         * "IK->FK (foot.L)" und "FK->IK (foot.L)" — mit dem Glied, an dem sie haengen.
+         * "-> FK" / "-> IK" war Eigenerfindung und liess nicht erkennen, ob der Knopf
+         * zum Arm oder zum Bein gehoert. */
+        MapType schema = mechanik.treiber.regler.reglerVon(bone).get(prop);
+        String vonBlenderFk = schema == null ? null : schema.getString("snap_zu_fk");
+        String vonBlenderIk = schema == null ? null : schema.getString("snap_zu_ik");
+
         boolean ikfk = prop.toUpperCase().contains("IK");
-        String linksText = ikfk ? "-> FK" : prop + " = " + trim(fkWert);
-        String rechtsText = ikfk ? "-> IK" : prop + " = " + trim(ikWert);
+        String linksText = vonBlenderFk != null && !vonBlenderFk.isEmpty() ? vonBlenderFk
+            : ikfk ? "-> FK" : prop + " = " + trim(fkWert);
+        String rechtsText = vonBlenderIk != null && !vonBlenderIk.isEmpty() ? vonBlenderIk
+            : ikfk ? "-> IK" : prop + " = " + trim(ikWert);
 
         UIButton nachFk = new UIButton(IKey.raw(linksText), (b) -> this.snap(mechanik, bone, prop, true, fkWert));
         UIButton nachIk = new UIButton(IKey.raw(rechtsText), (b) -> this.snap(mechanik, bone, prop, false, ikWert));
@@ -179,6 +189,34 @@ public class UIRigRegler extends UIElement
     }
 
     /** Die Armature hinter dieser Entity — dieselbe Kette wie {@link #mechanikVon}. */
+    /**
+     * Blenders Vorgabe-Beschriftung fuer eine Property ohne eigenen {@code text}:
+     * Unterstriche zu Leerzeichen, Wortanfaenge gross. {@code pole_vector} wird zu
+     * "Pole Vector". Betrifft die sechs Regler, die Rigify ohne Beschriftung zeichnet
+     * (pole_vector je Glied, eyes_follow, mouth_lock) — dort steht in Blender genau das.
+     */
+    private static String huebsch(String prop)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (String wort : prop.split("_"))
+        {
+            if (wort.isEmpty())
+            {
+                continue;
+            }
+
+            if (sb.length() > 0)
+            {
+                sb.append(' ');
+            }
+
+            sb.append(Character.toUpperCase(wort.charAt(0))).append(wort.substring(1));
+        }
+
+        return sb.length() == 0 ? prop : sb.toString();
+    }
+
     public static mchorse.bbs_mod.bobj.BOBJArmature armaturVon(IEntity entity)
     {
         if (entity == null
@@ -226,10 +264,24 @@ public class UIRigRegler extends UIElement
 
         pad.tooltip(IKey.raw(text == null || text.isEmpty() ? prop : text));
 
-        UIElement zeile = UI.label(IKey.raw(prop)).marginTop(4).h(12);
+        /* ⛔ Beschriftung ist Blenders `titel`, nicht der Rohname der Property. Rigify
+         * legt sie in seinem generierten `rig_ui.py` je (Knochen, Property) fest:
+         * `IK_FK` heisst am Arm "IK-FK (hand.L)" und am Bein "IK-FK (foot.L)". Vorher
+         * stand hier `prop` — im Panel las man "IK_FK", "FK_limb_follow", "head_follow",
+         * und Arm und Bein waren nicht auseinanderzuhalten. */
+        String titel = d.getString("titel");
 
-        zeile.add(pad.w(1F));
+        /* ⛔ Eine echte REIHE, kein Kind im Label. Vorher stand hier
+         * `UI.label(...).add(pad.w(1F))` — ein UILabel hat keinen Layout-Manager, das
+         * relative w(1F) wurde nie eingemessen, und der Schieber lag mit w=0 unter der
+         * Schrift: man las "IK-FK (foot.L)" und konnte nichts einstellen (gemessen am
+         * laufenden Panel: UITrackpad x=0 y=0 w=0 in JEDER Zeile). Blender setzt die
+         * Beschriftung links und den Schieber rechts daneben. */
+        UIElement zeile = UI.row(4);
 
-        return zeile;
+        zeile.add(UI.label(IKey.raw(titel == null || titel.isEmpty() ? huebsch(prop) : titel)).h(16));
+        zeile.add(pad);
+
+        return zeile.marginTop(4).h(16);
     }
 }
