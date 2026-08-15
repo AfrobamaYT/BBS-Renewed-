@@ -153,11 +153,12 @@ public class UIRigRegler extends UIElement
      * steht stattdessen, warum es leer ist. Ein leeres Feld sieht sonst aus wie ein
      * kaputtes Feld, und genau danach sucht man dann an der falschen Stelle.
      *
-     * <p>⛔ Ohne Umlaute: im ganzen Baum gibt es keinen einzigen UI-Text mit einem, also
-     * ist nicht belegt, dass die Schrift sie hat. Ein Kaestchen im Hinweis waere
-     * schlimmer als eine schlichtere Formulierung.
+     * <p>Umlaute sind hier erlaubt — gemessen 2026-08-15, weil im ganzen Baum kein
+     * einziger UI-Text einen hat und damit nicht belegt war, dass die Schrift sie
+     * traegt: eine Probe "PROBE aeoeue AEOEUE ss Groesse" in genau diesem Feld kam im
+     * Bild vollstaendig heraus, Klein, Gross und Eszett.
      *
-     * <p>⛔ Und KURZ: ob {@link UIText} bei 194 px Panelbreite sauber umbricht, konnte
+     * <p>⛔ KURZ bleibt es trotzdem: ob {@link UIText} bei 194 px Panelbreite sauber umbricht, konnte
      * ich nicht messen — der Render-Thread-Waechter blockt {@code resize()} aus dem
      * Messkanal, und der Zustand "gar keine Auswahl" ist im Film-Editor kaum erreichbar.
      * Beide Fassungen bleiben deshalb in der Laenge, die im Bild belegt ist (22 Zeichen,
@@ -166,7 +167,7 @@ public class UIRigRegler extends UIElement
     private UIElement hinweis(String gewaehlt)
     {
         String text = gewaehlt.isEmpty()
-            ? "Klick ein Rig-Control an."
+            ? "W\u00e4hle ein Rig-Control aus."
             : gewaehlt + " hat keine Regler.";
 
         return new mchorse.bbs_mod.ui.framework.elements.utils.UIText(IKey.raw(text))
