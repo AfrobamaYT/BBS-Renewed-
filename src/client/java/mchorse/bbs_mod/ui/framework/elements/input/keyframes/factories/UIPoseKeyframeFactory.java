@@ -128,7 +128,14 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             {
                 for (String bone : boneNames)
                 {
-                    consumer.accept(pose.get(bone));
+                    /* ⛔ Blender sperrt den KNOCHEN, nicht die Taste: wer ein gesperrtes
+                     * Control zusammen mit freien auswaehlt und R drueckt, dreht die
+                     * freien — das gesperrte bleibt einfach stehen. Der Filter gehoert
+                     * deshalb hierher und nicht an enableHotkeys. */
+                    if (!mchorse.bbs_mod.cubic.ik.RigCtrl.gesperrtIrgendwo(bone))
+                    {
+                        consumer.accept(pose.get(bone));
+                    }
                 }
             });
         }
@@ -149,7 +156,10 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
             {
                 for (String bone : boneNames)
                 {
-                    consumer.accept(bone, pose.get(bone));
+                    if (!mchorse.bbs_mod.cubic.ik.RigCtrl.gesperrtIrgendwo(bone))
+                    {
+                        consumer.accept(bone, pose.get(bone));
+                    }
                 }
             });
         }
@@ -178,25 +188,13 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         @Override
         protected UIPropTransform createTransformEditor()
         {
-            /* ⛔ Blenders Sperren gelten auch fuer die TASTEN. Ein voll gesperrtes Control
-             * (die Zahnrad-Widgets eines Glieds) laesst sich in Blender weder ziehen noch
-             * per G bewegen — nur auswaehlen, damit man seine Regler sieht. Der Klick-Griff
-             * allein reichte nicht: die Taste greift an der Pose-Transform vorbei. */
-            return new UIPoseTransforms().enableHotkeys(this::poseFrei);
-        }
-
-        /** Falsch, sobald ein ausgewaehlter Knochen ein gesperrtes Rig-Control ist. */
-        private boolean poseFrei()
-        {
-            for (String gruppe : this.groups.list.getCurrent())
-            {
-                if (mchorse.bbs_mod.cubic.ik.RigCtrl.gesperrtIrgendwo(gruppe))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            /* ⛔ Die Tasten bleiben IMMER an. Blender sperrt den Knochen, nicht die
+             * Taste: ein gesperrtes Control laesst sich anwaehlen und bewegt sich nur
+             * nicht. Vorher hing das an `poseFrei()`, und das war ALLES ODER NICHTS —
+             * ein gesperrtes Control in der Auswahl legte R/G/S fuer die ganze Auswahl
+             * lahm, auch fuer die freien Knochen daneben. Der Filter sitzt jetzt je
+             * Knochen in apply()/applyBones(). */
+            return new UIPoseTransforms().enableHotkeys();
         }
 
         @Override
