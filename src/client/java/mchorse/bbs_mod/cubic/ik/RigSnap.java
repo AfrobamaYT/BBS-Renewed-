@@ -3,6 +3,8 @@ package mchorse.bbs_mod.cubic.ik;
 import mchorse.bbs_mod.bobj.BOBJArmature;
 import mchorse.bbs_mod.bobj.BOBJBone;
 import mchorse.bbs_mod.data.types.MapType;
+import mchorse.bbs_mod.utils.pose.Pose;
+import mchorse.bbs_mod.utils.pose.PoseTransform;
 import mchorse.bbs_mod.utils.pose.Transform;
 
 import org.joml.Matrix4f;
@@ -33,15 +35,17 @@ public final class RigSnap
      *
      * @return wie viele Controls geschnappt wurden
      */
-    public static int fkAnIk(BOBJArmature armature, RigMechanik mechanik, String schalter, String prop)
+    public static int fkAnIk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
+        String schalter, String prop)
     {
-        return schnappe(armature, mechanik, schalter, prop, true);
+        return schnappe(armature, mechanik, pose, schalter, prop, true);
     }
 
     /** IK-Kette auf die aktuelle FK-Lage setzen — die Gegenrichtung. */
-    public static int ikAnFk(BOBJArmature armature, RigMechanik mechanik, String schalter, String prop)
+    public static int ikAnFk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
+        String schalter, String prop)
     {
-        return schnappe(armature, mechanik, schalter, prop, false);
+        return schnappe(armature, mechanik, pose, schalter, prop, false);
     }
 
     /**
@@ -111,7 +115,7 @@ public final class RigSnap
         return false;
     }
 
-    private static int schnappe(BOBJArmature armature, RigMechanik mechanik,
+    private static int schnappe(BOBJArmature armature, RigMechanik mechanik, Pose pose,
         String schalter, String prop, boolean fkFolgtIk)
     {
         List<String[]> paare = paare(mechanik, schalter, prop);
@@ -133,7 +137,8 @@ public final class RigSnap
         {
             BOBJBone ziel = armature.bones.get(paare.get(i)[fkFolgtIk ? 0 : 1]);
 
-            if (ziel != null && ziele[i] != null && setzeWeltlage(ziel, ziele[i]))
+            if (ziel != null && ziele[i] != null
+                && setzeWeltlage(ziel, paare.get(i)[fkFolgtIk ? 0 : 1], ziele[i], pose))
             {
                 gezaehlt++;
             }
@@ -147,19 +152,26 @@ public final class RigSnap
     }
 
     /**
-     * Setzt die Kanaele eines Knochens so, dass seine Weltmatrix {@code zielWelt} wird.
+     * Schreibt die Pose so, dass die Weltmatrix des Knochens {@code zielWelt} wird.
      *
-     * <p>{@link BOBJBone#applyTransformations} multipliziert die Kanaele NACHTRAEGLICH
-     * auf die schon fertige Elternlage: {@code welt = basis * T * R * S}. Die Basis ist
-     * also aus der aktuellen Weltlage und den aktuellen Kanaelen rueckrechenbar — man
-     * braucht keinen zweiten Auswertungsdurchgang mit genullten Kanaelen.
+     * <p>⛔ Geschrieben wird die POSE, nicht {@code bone.transform}. Zwei gemessene Gruende
+     * (2026-08-14, Instanz 2): {@code ModelFormRenderer} ruft JEDE Frame
+     * {@code BOBJModel.applyPose} und ueberschreibt damit jeden Kanal-Schreibvorgang; und
+     * sobald eine Pose lebt, ist {@code bone.orient} gesetzt — {@code orient} uebersteuert
+     * den Drehkanal komplett, ein Schreiben dorthin waere ein stiller Nulleffekt.
+     *
+     * <p>Die Pose ADDIERT zwar auf die Kanaele, die Basis ist aber je Frame die Ruhelage:
+     * gemessen kam ein Pose-{@code translate} von (0, 0.5, 0) unveraendert im Kanal an.
+     * Darum darf die Ziel-Lokalmatrix direkt hinein, ohne Differenzrechnung.
+     *
+     * <p>{@link BOBJBone#applyTransformations} multipliziert die Kanaele NACHTRAEGLICH auf
+     * die fertige Elternlage ({@code welt = basis * T * R * S}); die Basis ist deshalb aus
+     * der aktuellen Weltlage und der aktuell WIRKENDEN lokalen Drehung rueckrechenbar —
+     * {@link BOBJBone#kanalDrehung} liefert die inklusive {@code orient}.
      */
-    private static boolean setzeWeltlage(BOBJBone bone, Matrix4f zielWelt)
+    private static boolean setzeWeltlage(BOBJBone bone, String name, Matrix4f zielWelt, Pose pose)
     {
-        /* ⛔ orient ueberschreibt den Drehkanal komplett (siehe kanalDrehung): ein
-         * Schreiben auf transform.quat waere dort ein stiller Nulleffekt. Lieber laut
-         * nichts tun als leise das Falsche. */
-        if (bone.orient != null)
+        if (pose == null)
         {
             return false;
         }
@@ -171,15 +183,14 @@ public final class RigSnap
         Matrix4f basis = new Matrix4f(bone.mat).mul(lokalAlt.invert());
         Matrix4f lokalNeu = basis.invert().mul(zielWelt);
 
-        Vector3f ort = lokalNeu.getTranslation(new Vector3f());
-        Quaternionf dreh = lokalNeu.getNormalizedRotation(new Quaternionf());
+        PoseTransform pt = pose.get(name);
 
-        bone.transform.translate.set(ort);
+        pt.translate.set(lokalNeu.getTranslation(new Vector3f()));
         /* Quaternion statt Euler: die Ruecktransformation der ZYX-Kanaele haette eine
          * Ordnungs-Annahme gebraucht, und Rigifys FK-Controls stehen in Blender ohnehin
-         * auf Quaternion. */
-        bone.transform.rotationMode = Transform.RotationMode.QUATERNION;
-        bone.transform.quat.set(dreh);
+         * auf Quaternion. applyPose setzt daraus selbst das passende orient. */
+        pt.rotationMode = Transform.RotationMode.QUATERNION;
+        pt.quat.set(lokalNeu.getNormalizedRotation(new Quaternionf()));
 
         return true;
     }
