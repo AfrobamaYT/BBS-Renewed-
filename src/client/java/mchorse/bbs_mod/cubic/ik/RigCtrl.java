@@ -19,15 +19,17 @@ import java.util.List;
  */
 public class RigCtrl
 {
-    /** Blender-Zustand der vier ik_fk_switch-Properties: 0 = IK (Addon-Default). */
-    private static boolean fkModus;
+    /** Rig-Layer -> sichtbar. Blenders Bone-Collections, wie in seiner Seitenleiste.
+     * ⛔ OHNE Initialisierer und lazy geholt: ein neues statisches Feld MIT Zuweisung
+     * waere nach einem Hotswap null, weil `<clinit>` nicht erneut laeuft. */
+    private static java.util.Map<String, Boolean> lagen;
 
     /* Lazy (Hotswap: neue statics sind null). Leere Liste = Modell hat kein eigenes rig.json. */
     private static java.util.Map<String, List<Eintrag>> proModell;
 
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
         float breite, String schalter, boolean ik, boolean dragRot, boolean fest,
-        float[][] linien) {}
+        List<String> lagen, float[][] linien) {}
 
     /** Das importierte Control-Rig dieses Modells, sonst null. Einziges Kriterium:
      *  das Modell bringt ein rig.json mit — BBS erzeugt selbst keine Rigs mehr. */
@@ -154,9 +156,56 @@ public class RigCtrl
         return false;
     }
 
+    /**
+     * Zeigt BBS dieses Control gerade? Ein Control liegt in einer oder mehreren
+     * Rig-Layers (Blenders Bone-Collections); sichtbar ist es, sobald EINE davon an ist —
+     * genau wie in Blender. Ohne Layer-Angabe immer sichtbar.
+     */
     public static boolean sichtbar(Eintrag e)
     {
-        return e.schalter.isEmpty() || e.ik != fkModus;
+        if (e.lagen == null || e.lagen.isEmpty())
+        {
+            return true;
+        }
+
+        for (String lage : e.lagen)
+        {
+            if (lagen().getOrDefault(lage, true))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Die Layer in Blenders Reihenfolge, mit ihrem Zustand — fuer die Knopfleiste. */
+    public static java.util.Map<String, Boolean> lagen()
+    {
+        if (lagen == null)
+        {
+            lagen = new java.util.LinkedHashMap<>();
+        }
+
+        return lagen;
+    }
+
+    public static void schalteLage(String name, boolean an)
+    {
+        lagen().put(name, an);
+    }
+
+    /** ListType -> List<String>; null wird zur leeren Liste. */
+    private static List<String> strings(ListType liste)
+    {
+        List<String> raus = new ArrayList<>();
+
+        for (int i = 0; liste != null && i < liste.size(); i++)
+        {
+            raus.add(liste.getString(i));
+        }
+
+        return raus;
     }
 
     private static List<Eintrag> parse(String json)
@@ -166,6 +215,16 @@ public class RigCtrl
         {
             MapType wurzel = (MapType) DataToString.fromString(json);
             ListType ctrls = wurzel.getList("ctrls");
+            ListType layer = wurzel.getList("lagen");
+
+            /* Blenders Reihenfolge UND sein Sichtbar-Zustand als Vorgabe. Ein Rig, das
+             * schon in Blender Layer ausgeblendet hatte, kommt hier genauso an. */
+            for (int i = 0; layer != null && i < layer.size(); i++)
+            {
+                MapType l = layer.getMap(i);
+
+                lagen().putIfAbsent(l.getString("name"), l.getBool("an", true));
+            }
 
             for (int i = 0; i < ctrls.size(); i++)
             {
@@ -190,7 +249,7 @@ public class RigCtrl
                     Integer.parseInt(farbe.getString("aktiv"), 16),
                     c.getFloat("breite", 1F), c.getString("schalter"),
                     c.getBool("ik", false), c.getBool("dragRot", false),
-                    c.getBool("fest", false), zuege));
+                    c.getBool("fest", false), strings(c.getList("lagen")), zuege));
             }
         }
 

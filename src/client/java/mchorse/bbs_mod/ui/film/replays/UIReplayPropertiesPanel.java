@@ -24,6 +24,8 @@ public class UIReplayPropertiesPanel extends UIElement
     private final UIFilmPanel filmPanel;
     /** Rigifys N-Panel: die Regler des Control-Rigs, wenn das Modell eines hat. */
     public final UIRigRegler rigRegler = new UIRigRegler();
+    /** Blenders Rig Layers — Gruppen ein-/ausblenden statt 220 Controls auf einmal. */
+    public final UIRigLagen rigLagen = new UIRigLagen();
     private final UISection rigSection = new UISection(IKey.raw("Control-Rig"));
 
     public UIElement properties;
@@ -147,7 +149,7 @@ public class UIReplayPropertiesPanel extends UIElement
             this.axesPreview, this.pickAxesPreviewBone
         );
 
-        this.rigSection.fields.add(this.rigRegler);
+        this.rigSection.fields.add(this.rigLagen, this.rigRegler);
 
         shadowSection.setExpanded(false);
         other.setExpanded(false);
@@ -219,6 +221,7 @@ public class UIReplayPropertiesPanel extends UIElement
 
             /* Das Rig haengt am MODELL der Replay, nicht an der Replay selbst —
              * darum ueber die Entity, die der Controller gerade fuehrt. */
+            this.rigLagen.aktualisiere();
             this.rigRegler.aktualisiere(this.filmPanel.getController().getCurrentEntity(),
                 replay.form.get() instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
                     ? mf.pose.get() : null);
