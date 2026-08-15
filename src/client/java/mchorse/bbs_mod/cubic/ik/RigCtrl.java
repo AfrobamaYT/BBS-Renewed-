@@ -115,6 +115,32 @@ public class RigCtrl
         return false;
     }
 
+    /**
+     * Ist dieser Knochen in IRGENDEINEM geladenen Rig ein gesperrtes Control?
+     *
+     * <p>Fuer Aufrufer tief im UI-Baum, die kein Modell zur Hand haben (die Pose-Tasten
+     * etwa). ⚠️ Gleiche Knochennamen in zwei verschiedenen Rigs teilen sich damit das
+     * Urteil — bei Rigify/mixamo_rig sind die Namen rig-typisch, in der Praxis also
+     * eindeutig. Wer es exakt braucht, nimmt {@link #gesperrt} mit der Rig-Liste.
+     */
+    public static boolean gesperrtIrgendwo(String bone)
+    {
+        if (bone == null || bone.isEmpty() || proModell == null)
+        {
+            return false;
+        }
+
+        for (List<Eintrag> rig : proModell.values())
+        {
+            if (rig != null && gesperrt(rig, bone))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static boolean dragRotiert(List<Eintrag> rig, String pickBone)
     {
         for (Eintrag e : rig == null ? Collections.<Eintrag>emptyList() : rig)

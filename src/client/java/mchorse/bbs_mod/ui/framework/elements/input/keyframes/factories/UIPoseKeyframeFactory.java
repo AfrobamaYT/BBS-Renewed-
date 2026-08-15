@@ -178,7 +178,25 @@ public class UIPoseKeyframeFactory extends UIKeyframeFactory<Pose>
         @Override
         protected UIPropTransform createTransformEditor()
         {
-            return new UIPoseTransforms().enableHotkeys();
+            /* ⛔ Blenders Sperren gelten auch fuer die TASTEN. Ein voll gesperrtes Control
+             * (die Zahnrad-Widgets eines Glieds) laesst sich in Blender weder ziehen noch
+             * per G bewegen — nur auswaehlen, damit man seine Regler sieht. Der Klick-Griff
+             * allein reichte nicht: die Taste greift an der Pose-Transform vorbei. */
+            return new UIPoseTransforms().enableHotkeys(this::poseFrei);
+        }
+
+        /** Falsch, sobald ein ausgewaehlter Knochen ein gesperrtes Rig-Control ist. */
+        private boolean poseFrei()
+        {
+            for (String gruppe : this.groups.list.getCurrent())
+            {
+                if (mchorse.bbs_mod.cubic.ik.RigCtrl.gesperrtIrgendwo(gruppe))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         @Override
