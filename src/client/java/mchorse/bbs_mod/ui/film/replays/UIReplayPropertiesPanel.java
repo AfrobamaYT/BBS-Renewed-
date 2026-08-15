@@ -219,7 +219,9 @@ public class UIReplayPropertiesPanel extends UIElement
 
             /* Das Rig haengt am MODELL der Replay, nicht an der Replay selbst —
              * darum ueber die Entity, die der Controller gerade fuehrt. */
-            this.rigRegler.aktualisiere(this.filmPanel.getController().getCurrentEntity());
+            this.rigRegler.aktualisiere(this.filmPanel.getController().getCurrentEntity(),
+                replay.form.get() instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
+                    ? mf.pose.get() : null);
             this.rigSection.setVisible(this.rigRegler.getChildren().size() > 0);
         }
     }

@@ -95,6 +95,42 @@ public final class RigSnap
         return paare;
     }
 
+    /**
+     * Der Reglerwert, bei dem die IK-Quelle ABGESCHALTET ist — also FK gilt.
+     *
+     * <p>⛔ Nicht Rigifys {@code IK_FK=1} annehmen: die Richtung steckt im
+     * GENERATOR-Polynom der F-Kurve, und ein Rig kann sie umgekehrt ablegen. Hier wird
+     * sie gemessen — Regler kurz auf {@code max} stellen, Treiber auswerten, Regler
+     * zurueck. {@code Float.NaN} heisst: an diesem Regler haengt keine FK/IK-Umschaltung.
+     */
+    public static float fkWert(RigMechanik mechanik, String schalter, String prop,
+        float min, float max)
+    {
+        for (String bone : mechanik.reihenfolge())
+        {
+            for (MapType c : mechanik.constraintsVon(bone))
+            {
+                if (!"COPY_TRANSFORMS".equals(c.getString("typ"))
+                    || !treibtVon(c.getMap("treiber"), schalter, prop))
+                {
+                    continue;
+                }
+
+                float alt = mechanik.treiber.regler.wertVon(schalter, prop, min);
+
+                mechanik.treiber.regler.setze(schalter, prop, max);
+
+                float beiMax = mechanik.treiber.wert(c.getMap("treiber"), 1F);
+
+                mechanik.treiber.regler.setze(schalter, prop, alt);
+
+                return beiMax < 0.5F ? max : min;
+            }
+        }
+
+        return Float.NaN;
+    }
+
     private static boolean treibtVon(MapType treiber, String bone, String prop)
     {
         if (treiber == null)
