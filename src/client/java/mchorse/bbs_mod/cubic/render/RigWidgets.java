@@ -218,46 +218,125 @@ public final class RigWidgets
      */
     public static void kette(BufferBuilder builder, Matrix4f kombi, float[] xyz, float[] col, float a, float breite)
     {
-        for (int i = 0; i + 5 < xyz.length; i += 3)
+        int n = xyz.length / 3;
+
+        if (n < 2)
         {
-            P1.set(xyz[i], xyz[i + 1], xyz[i + 2]);
-            kombi.transformPosition(P1);
-            P2.set(xyz[i + 3], xyz[i + 4], xyz[i + 5]);
-            kombi.transformPosition(P2);
+            return;
+        }
 
-            Vector3f mitte = new Vector3f(P1).add(P2).mul(0.5F);
-            Vector3f d = new Vector3f(P2).sub(P1);
+        Vector3f[] pkt = new Vector3f[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            pkt[i] = new Vector3f(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]);
+            kombi.transformPosition(pkt[i]);
+        }
+
+        boolean zyklus = pkt[0].distanceSquared(pkt[n - 1]) < 1.0E-10F && n > 2;
+        Vector3f[] norm = new Vector3f[n - 1];
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            Vector3f d = new Vector3f(pkt[i + 1]).sub(pkt[i]);
+            Vector3f mitte = new Vector3f(pkt[i]).add(pkt[i + 1]).mul(0.5F);
             Vector3f seite = new Vector3f(d).cross(mitte);
-            float len = seite.length();
-            float dist = mitte.length();
+            float l = seite.length();
 
-            /* Edge-on: projiziert punktfoermig, seite/len waere Rundungs-Rauschen. */
-            if (len < 1.0E-3F * d.length() * dist || len < 1.0E-9F)
+            /* Edge-on: projiziert punktfoermig, seite/l waere Rundungs-Rauschen. */
+            norm[i] = l < 1.0E-3F * d.length() * mitte.length() || l < 1.0E-9F
+                ? null : seite.mul(1F / l);
+        }
+
+        float ui = (float) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+        float dick = breite * Math.max(ui, 1F);
+        Vector3f[] richtung = new Vector3f[n];
+        float[] streckung = new float[n];
+
+        for (int i = 0; i < n; i++)
+        {
+            Vector3f vor = i > 0 ? norm[i - 1] : (zyklus ? norm[n - 2] : null);
+            Vector3f nach = i < n - 1 ? norm[i] : (zyklus ? norm[0] : null);
+            Vector3f basis = nach != null ? nach : vor;
+
+            if (basis == null)
             {
                 continue;
             }
 
-            /* Blenders Regel: der Kern ist `wire_width` Pixel breit, darum je Seite ein
-             * halbes Pixel Rampe. `breitenSkala` bleibt der Nutzerknopf darueber. */
-            float px = weltProPixel(dist) * (breitenSkala <= 0F ? 1F : breitenSkala);
-            float kern = breite * 0.5F * px / len;
-            /* 0.5 px Rampe je Seite = Blenders ein Pixel Kantenglaettung. Bewusst als
-             * Literal: ein NEUES statisches Feld waere nach einem Hotswap 0 und die
-             * Linien damit unsichtbar (<clinit> laeuft nicht erneut). */
-            float aussen = kern + 0.5F * px / len;
-            float dehn = aussen * len / Math.max(d.length(), 1.0E-6F);
+            if (vor != null && nach != null)
+            {
+                /* Gehrung: die gemittelte Normale, verlaengert um 1/cos(halber Winkel).
+                 * Damit stossen die Baender an der Ecke exakt aneinander — ohne Luecke
+                 * UND ohne Ueberlappung. Gedeckelt, damit spitze Winkel keine Stacheln
+                 * werfen (Blenders Polyline-Geometrie macht dasselbe). */
+                Vector3f m = new Vector3f(vor).add(nach);
+                float ml = m.length();
 
-            float dx = d.x * dehn, dy = d.y * dehn, dz = d.z * dehn;
-            P1.sub(dx, dy, dz);
-            P2.add(dx, dy, dz);
+                if (ml > 1.0E-6F)
+                {
+                    m.mul(1F / ml);
+                    float cos = m.dot(nach);
+                    richtung[i] = m;
+                    streckung[i] = cos > 0.2F ? 1F / cos : 5F;
+                    continue;
+                }
+            }
 
-            float kx = seite.x * kern, ky = seite.y * kern, kz = seite.z * kern;
-            float ax = seite.x * aussen, ay = seite.y * aussen, az = seite.z * aussen;
-
-            streifen(builder, P1, P2, ax, ay, az, kx, ky, kz, col, 0F, a);
-            streifen(builder, P1, P2, kx, ky, kz, -kx, -ky, -kz, col, a, a);
-            streifen(builder, P1, P2, -kx, -ky, -kz, -ax, -ay, -az, col, a, 0F);
+            richtung[i] = new Vector3f(basis);
+            streckung[i] = 1F;
         }
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            if (richtung[i] == null || richtung[i + 1] == null)
+            {
+                continue;
+            }
+
+            float k1 = Math.max(dick - 1F, 0F) * 0.5F * halb(pkt[i]) * streckung[i];
+            float a1 = (dick + 1F) * 0.5F * halb(pkt[i]) * streckung[i];
+            float k2 = Math.max(dick - 1F, 0F) * 0.5F * halb(pkt[i + 1]) * streckung[i + 1];
+            float a2 = (dick + 1F) * 0.5F * halb(pkt[i + 1]) * streckung[i + 1];
+
+            Vector3f r1 = richtung[i];
+            Vector3f r2 = richtung[i + 1];
+
+            quer(builder, pkt[i], pkt[i + 1], r1, a1, r2, a2, r1, k1, r2, k2, col, 0F, a);
+            quer(builder, pkt[i], pkt[i + 1], r1, k1, r2, k2, r1, -k1, r2, -k2, col, a, a);
+            quer(builder, pkt[i], pkt[i + 1], r1, -k1, r2, -k2, r1, -a1, r2, -a2, col, a, 0F);
+        }
+    }
+
+    /** Weltbreite eines halben Pixels am Ort dieses Punktes. */
+    private static float halb(Vector3f p)
+    {
+        return weltProPixel(p.length()) * (breitenSkala <= 0F ? 1F : breitenSkala);
+    }
+
+    /**
+     * Ein Quad zwischen zwei Punkten mit EIGENEM Versatz je Endpunkt — die Voraussetzung
+     * fuer Gehrungen. Der alte {@code streifen} nahm denselben Versatz fuer beide Enden,
+     * darum musste jedes Segment ueber die Ecke hinaus verlaengert werden: die Baender
+     * ueberlappten sich an jedem Knick und ihr Alpha addierte sich zu voller Deckung.
+     * Gemessen war das der Unterschied zu Blender (94 % Teildeckung dort, 10-16 % hier).
+     */
+    private static void quer(BufferBuilder builder, Vector3f p1, Vector3f p2,
+        Vector3f dA1, float sA1, Vector3f dA2, float sA2,
+        Vector3f dB1, float sB1, Vector3f dB2, float sB2, float[] col, float aA, float aB)
+    {
+        float ax1 = p1.x + dA1.x * sA1, ay1 = p1.y + dA1.y * sA1, az1 = p1.z + dA1.z * sA1;
+        float ax2 = p2.x + dA2.x * sA2, ay2 = p2.y + dA2.y * sA2, az2 = p2.z + dA2.z * sA2;
+        float bx1 = p1.x + dB1.x * sB1, by1 = p1.y + dB1.y * sB1, bz1 = p1.z + dB1.z * sB1;
+        float bx2 = p2.x + dB2.x * sB2, by2 = p2.y + dB2.y * sB2, bz2 = p2.z + dB2.z * sB2;
+
+        builder.addVertex(ax1, ay1, az1).setColor(col[0], col[1], col[2], aA);
+        builder.addVertex(bx1, by1, bz1).setColor(col[0], col[1], col[2], aB);
+        builder.addVertex(bx2, by2, bz2).setColor(col[0], col[1], col[2], aB);
+
+        builder.addVertex(ax1, ay1, az1).setColor(col[0], col[1], col[2], aA);
+        builder.addVertex(bx2, by2, bz2).setColor(col[0], col[1], col[2], aB);
+        builder.addVertex(ax2, ay2, az2).setColor(col[0], col[1], col[2], aA);
     }
 
     /**
