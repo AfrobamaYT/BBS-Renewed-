@@ -317,13 +317,31 @@ public class UIRigRegler extends UIElement
             return;
         }
 
+        /* ⛔ Mit Neuauswertung — siehe RigSnap#schnappe. Ohne sie schrieb der Knopf
+         * Werte, die das naechste Control gar nicht sah. */
+        mchorse.bbs_mod.forms.renderers.ModelFormRenderer ren =
+            this.entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm mf2
+                && mchorse.bbs_mod.forms.FormUtilsClient.getRenderer(mf2)
+                    instanceof mchorse.bbs_mod.forms.renderers.ModelFormRenderer r ? r : null;
+        Runnable neu = ren == null ? null : () ->
+        {
+            mchorse.bbs_mod.cubic.ModelInstance mi = ren.getModel();
+
+            if (mi != null)
+            {
+                mi.model.resetPose();
+                mi.model.applyPose(ren.getPose());
+                arm.setupMatrices();
+            }
+        };
+
         if (nachFk)
         {
-            RigSnap.fkAnIk(arm, m, this.pose, bone, prop);
+            RigSnap.fkAnIk(arm, m, this.pose, bone, prop, neu);
         }
         else
         {
-            RigSnap.ikAnFk(arm, m, this.pose, bone, prop);
+            RigSnap.ikAnFk(arm, m, this.pose, bone, prop, neu);
         }
 
         m.treiber.regler.setze(bone, prop, ziel);

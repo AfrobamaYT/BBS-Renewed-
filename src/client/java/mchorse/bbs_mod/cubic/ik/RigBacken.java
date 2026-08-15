@@ -117,13 +117,28 @@ public final class RigBacken
                  * Kette danach um 1.237 statt um 0 — schlechter als ohne Bake. */
                 mchorse.bbs_mod.utils.pose.Pose lebend = mf.pose.get();
 
+                /* ⛔ MIT Neuauswertung: der Snap muss nach jedem Control den Weg des
+                 * Renderers gehen, sonst rechnet das naechste gegen einen veralteten
+                 * Stand (gemessen: Hand 0.279 daneben statt 0.000). */
+                Runnable neu = () ->
+                {
+                    mchorse.bbs_mod.cubic.ModelInstance m2 = renderer.getModel();
+
+                    if (m2 != null)
+                    {
+                        m2.model.resetPose();
+                        m2.model.applyPose(renderer.getPose());
+                        armature.setupMatrices();
+                    }
+                };
+
                 if (nachFk)
                 {
-                    RigSnap.fkAnIk(armature, mechanik, lebend, schalter, prop);
+                    RigSnap.fkAnIk(armature, mechanik, lebend, schalter, prop, neu);
                 }
                 else
                 {
-                    RigSnap.ikAnFk(armature, mechanik, lebend, schalter, prop);
+                    RigSnap.ikAnFk(armature, mechanik, lebend, schalter, prop, neu);
                 }
 
                 /* ... und das Ergebnis in den Keyframe uebernehmen, sonst ist es beim
@@ -131,7 +146,12 @@ public final class RigBacken
                  * andere gehoert dem Animator. */
                 for (String[] paar : RigSnap.paare(mechanik, schalter, prop))
                 {
-                    String name = paar[nachFk ? 0 : 1];
+                    /* ⛔ Denselben Namen nehmen, auf den der Snap WIRKLICH geschrieben
+                     * hat: er leitet auf den schreibbaren Control um (RigSnap#schreibbar).
+                     * Wer die rohe Paar-Liste zurueckkopiert, holt den Knochen, der die
+                     * Werte gar nicht bekommen hat — und der Bake sieht wirkungslos aus,
+                     * obwohl der Snap richtig gerechnet hat. Erst passiert. */
+                    String name = RigSnap.schreibbar(mechanik, paar[nachFk ? 0 : 1]);
 
                     pose.get(name).copy(lebend.get(name));
                 }

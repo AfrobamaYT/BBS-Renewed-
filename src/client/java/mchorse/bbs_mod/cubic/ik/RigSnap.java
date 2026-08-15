@@ -38,14 +38,28 @@ public final class RigSnap
     public static int fkAnIk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
         String schalter, String prop)
     {
-        return schnappe(armature, mechanik, pose, schalter, prop, true);
+        return fkAnIk(armature, mechanik, pose, schalter, prop, null);
+    }
+
+    /** Mit {@code neuAuswerten} — siehe {@link #schnappe}. */
+    public static int fkAnIk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
+        String schalter, String prop, Runnable neuAuswerten)
+    {
+        return schnappe(armature, mechanik, pose, schalter, prop, true, neuAuswerten);
     }
 
     /** IK-Kette auf die aktuelle FK-Lage setzen — die Gegenrichtung. */
     public static int ikAnFk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
         String schalter, String prop)
     {
-        return schnappe(armature, mechanik, pose, schalter, prop, false);
+        return ikAnFk(armature, mechanik, pose, schalter, prop, null);
+    }
+
+    /** Mit {@code neuAuswerten} — siehe {@link #schnappe}. */
+    public static int ikAnFk(BOBJArmature armature, RigMechanik mechanik, Pose pose,
+        String schalter, String prop, Runnable neuAuswerten)
+    {
+        return schnappe(armature, mechanik, pose, schalter, prop, false, neuAuswerten);
     }
 
     /**
@@ -151,8 +165,22 @@ public final class RigSnap
         return false;
     }
 
+    /**
+     * ⛔ {@code neuAuswerten} ist NICHT optional, sondern der Unterschied zwischen
+     * "sieht gerechnet aus" und "stimmt".
+     *
+     * <p>Die Schleife setzte frueher nach jedem Paar {@code armature.zwang.auswerten(...)}
+     * ab, mit dem Kommentar, der naechste Knochen brauche die eben gesetzte Elternlage.
+     * Das rechnet aber nur die CONSTRAINTS auf den vorhandenen Matrizen neu — die
+     * geschriebene POSE wirkt erst, wenn {@code applyPose} wieder laeuft. Control 2 und 3
+     * rechneten also gegen einen veralteten Stand. Gemessen am Arm: die IK-Kette landete
+     * 0.163 bzw. 0.279 neben der FK-Kette, obwohl "3 Controls geschnappt" gemeldet wurde.
+     *
+     * <p>Der Aufrufer reicht deshalb den Weg des Renderers herein (Ruhepose, Form-Pose,
+     * {@code setupMatrices}). Ohne ihn bleibt es beim alten, schwaecheren Verhalten.
+     */
     private static int schnappe(BOBJArmature armature, RigMechanik mechanik, Pose pose,
-        String schalter, String prop, boolean fkFolgtIk)
+        String schalter, String prop, boolean fkFolgtIk, Runnable neuAuswerten)
     {
         List<String[]> paare = paare(mechanik, schalter, prop);
         int gezaehlt = 0;
@@ -171,17 +199,26 @@ public final class RigSnap
 
         for (int i = 0; i < paare.size(); i++)
         {
-            BOBJBone ziel = armature.bones.get(paare.get(i)[fkFolgtIk ? 0 : 1]);
+            /* ⛔ Auf den SCHREIBBAREN Control umleiten — siehe {@link #schreibbar}. */
+            String name = schreibbar(mechanik, paare.get(i)[fkFolgtIk ? 0 : 1]);
+            BOBJBone ziel = armature.bones.get(name);
 
             if (ziel != null && ziele[i] != null
-                && setzeWeltlage(ziel, paare.get(i)[fkFolgtIk ? 0 : 1], ziele[i], pose))
+                && setzeWeltlage(ziel, name, ziele[i], pose))
             {
                 gezaehlt++;
             }
 
             /* Nach jedem Schritt neu auswerten: der naechste Knochen der Kette haengt
              * an der eben gesetzten Elternlage. */
-            armature.zwang.auswerten(armature);
+            if (neuAuswerten != null)
+            {
+                neuAuswerten.run();
+            }
+            else
+            {
+                armature.zwang.auswerten(armature);
+            }
         }
 
         return gezaehlt;
@@ -205,6 +242,51 @@ public final class RigSnap
      * der aktuellen Weltlage und der aktuell WIRKENDEN lokalen Drehung rueckrechenbar —
      * {@link BOBJBone#kanalDrehung} liefert die inklusive {@code orient}.
      */
+    /**
+     * Der Knochen, auf den man WIRKLICH schreiben kann.
+     *
+     * <p>⛔ Gemessen 2026-08-15: der Snap schrieb auf {@code MCH-upper_arm_ik_target.R},
+     * und der traegt ein COPY_LOCATION von {@code hand_ik.R} mit Staerke 1 — der Wert war
+     * im naechsten Bild weg. Ergebnis: die IK-Kette landete 0.189 neben der FK-Kette,
+     * obwohl der Snap "3 Controls geschnappt" meldete. Ein Schreibvorgang, den ein
+     * Constraint sofort ueberschreibt, ist derselbe stille Fehlschlag wie ein Schieber,
+     * der nichts bewegt.
+     *
+     * <p>Aufgeloest wird ueber den Constraint-Graphen, nicht ueber Namen: traegt der
+     * Knochen ein COPY_LOCATION oder COPY_TRANSFORMS mit voller Staerke, ist dessen QUELLE
+     * der schreibbare Control. Mehrfach, falls die Kette laenger ist.
+     */
+    public static String schreibbar(RigMechanik mechanik, String bone)
+    {
+        String aktuell = bone;
+
+        for (int hop = 0; hop < 4; hop++)
+        {
+            String quelle = null;
+
+            for (MapType c : mechanik.constraintsVon(aktuell))
+            {
+                String typ = c.getString("typ");
+
+                if (("COPY_LOCATION".equals(typ) || "COPY_TRANSFORMS".equals(typ))
+                    && c.getFloat("einfluss", 1F) > 0.999F
+                    && c.getString("ziel") != null && !c.getString("ziel").isEmpty())
+                {
+                    quelle = c.getString("ziel");
+                }
+            }
+
+            if (quelle == null || quelle.equals(aktuell))
+            {
+                return aktuell;
+            }
+
+            aktuell = quelle;
+        }
+
+        return aktuell;
+    }
+
     private static boolean setzeWeltlage(BOBJBone bone, String name, Matrix4f zielWelt, Pose pose)
     {
         if (pose == null)
@@ -212,21 +294,82 @@ public final class RigSnap
             return false;
         }
 
-        Matrix4f lokalAlt = new Matrix4f().translate(bone.transform.translate);
+        /* ⛔ Die Vorwaertsabbildung wird GEMESSEN, nicht ein zweites Mal hingeschrieben.
+         *
+         * BBS hat zwei Wege vom Kanal zur Weltmatrix. Der Normalfall ist
+         * {@code welt = elter.mat * relBoneMat * T(translate) * R} — den kann man von Hand
+         * umkehren, und genau das tat diese Methode. 52 der 706 Rigify-Knochen laufen aber
+         * ueber {@code BOBJElternTransform}, weil ihre Elternuebergabe abweicht
+         * (Blenders use_local_location / inherit_scale): dort kommt die ORTSSPALTE aus
+         * einer eigenen Basis und die Drehung aus einer anderen. Die Handumkehrung ist
+         * dort falsch — gemessen an `hand_ik.R` (elternraumVerschiebung=true): der Snap
+         * schrieb den richtigen BETRAG (0.1886 = Abstand zum FK-Ziel) auf die falsche
+         * Achse, der Knochen wanderte 0.19 in Welt-Y statt zum Ziel. `upper_arm_ik.R`
+         * ohne diese Flags landete im selben Lauf exakt (0.00000).
+         *
+         * Darum: die Basis am Knochen ABFRAGEN. Kanaele auf neutral, Weltmatrix lesen —
+         * das ist die Basis; je Achse eine Einheit Verschiebung, die Differenz ist die
+         * Ortsspalte. Das kehrt um, was der Knochen WIRKLICH rechnet, auf beiden Wegen
+         * und auch nach kuenftigen Aenderungen. */
+        Vector3f altT = new Vector3f(bone.transform.translate);
+        Transform.RotationMode altM = bone.transform.rotationMode;
+        Quaternionf altQ = new Quaternionf(bone.transform.quat);
+        Vector3f altR = new Vector3f(bone.transform.rotate);
+        Matrix4f altMat = new Matrix4f(bone.mat);
+        Matrix4f altOrigin = new Matrix4f(bone.originMat);
 
-        bone.kanalDrehung(lokalAlt);
+        Matrix4f basis;
+        org.joml.Matrix3f ortSpalten = new org.joml.Matrix3f();
 
-        Matrix4f basis = new Matrix4f(bone.mat).mul(lokalAlt.invert());
-        Matrix4f lokalNeu = basis.invert().mul(zielWelt);
+        try
+        {
+            bone.transform.translate.set(0F, 0F, 0F);
+            bone.transform.rotationMode = Transform.RotationMode.QUATERNION;
+            bone.transform.quat.identity();
 
-        PoseTransform pt = pose.get(name);
+            basis = bone.computeMatrix(new Matrix4f());
 
-        pt.translate.set(lokalNeu.getTranslation(new Vector3f()));
-        /* Quaternion statt Euler: die Ruecktransformation der ZYX-Kanaele haette eine
-         * Ordnungs-Annahme gebraucht, und Rigifys FK-Controls stehen in Blender ohnehin
-         * auf Quaternion. applyPose setzt daraus selbst das passende orient. */
-        pt.rotationMode = Transform.RotationMode.QUATERNION;
-        pt.quat.set(lokalNeu.getNormalizedRotation(new Quaternionf()));
+            Vector3f null0 = basis.getTranslation(new Vector3f());
+
+            for (int achse = 0; achse < 3; achse++)
+            {
+                bone.transform.translate.set(achse == 0 ? 1F : 0F, achse == 1 ? 1F : 0F,
+                    achse == 2 ? 1F : 0F);
+
+                Vector3f t = bone.computeMatrix(new Matrix4f()).getTranslation(new Vector3f());
+
+                ortSpalten.setColumn(achse, t.sub(null0));
+            }
+
+            if (Math.abs(ortSpalten.determinant()) < 1.0E-9F)
+            {
+                return false;
+            }
+
+            Vector3f loc = new org.joml.Matrix3f(ortSpalten).invert()
+                .transform(zielWelt.getTranslation(new Vector3f()).sub(null0));
+            Quaternionf dreh = new org.joml.Matrix3f(basis.get3x3(new org.joml.Matrix3f()))
+                .invert().mul(zielWelt.get3x3(new org.joml.Matrix3f()))
+                .getNormalizedRotation(new Quaternionf());
+
+            PoseTransform pt = pose.get(name);
+
+            pt.translate.set(loc);
+            /* Quaternion statt Euler: die Ruecktransformation der ZYX-Kanaele haette eine
+             * Ordnungs-Annahme gebraucht, und Rigifys Controls stehen in Blender ohnehin
+             * auf Quaternion. applyPose setzt daraus selbst das passende orient. */
+            pt.rotationMode = Transform.RotationMode.QUATERNION;
+            pt.quat.set(dreh);
+        }
+        finally
+        {
+            bone.transform.translate.set(altT);
+            bone.transform.rotationMode = altM;
+            bone.transform.quat.set(altQ);
+            bone.transform.rotate.set(altR);
+            bone.mat.set(altMat);
+            bone.originMat.set(altOrigin);
+        }
 
         return true;
     }
