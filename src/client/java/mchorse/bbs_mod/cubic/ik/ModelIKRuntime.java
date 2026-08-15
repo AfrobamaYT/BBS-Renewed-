@@ -59,10 +59,21 @@ public final class ModelIKRuntime
      * follows the solved orientation there, so an FK rotation gesture has no
      * honest response to offer — the gizmo refuses those and dims its rings.
      * The FK channels stay editable through the pads (they remain the blend
-     * base and the pose IK falls back to when it's off). The chain tip counts
-     * only when the chain also solves tip rotation; a chain whose weight is
-     * zeroed (config, or the film's per-tick override on the form) doesn't
+     * base and the pose IK falls back to when it's off). A chain whose weight
+     * is zeroed (config, or the film's per-tick override on the form) doesn't
      * constrain anything.
+     *
+     * <p>⛔ Nur die SPITZE mit gelöster Spitzendrehung zählt — nicht die
+     * übrigen Kettenglieder. Die trugen den Zwang bis 2026-08-15, und das war
+     * falsch: der Löser bekommt jedes Segment mit der aktuellen Pose als
+     * Startbasis ({@code IKBOBJBruecke}: {@code basis} aus {@code b.mat}),
+     * die Drehung eines Kettenglieds wirkt also — sie schwenkt die Kette im
+     * Nullraum, genau wie in Blender. Gemessen an
+     * {@code getBoneCompositeMatrix}: {@code upper_arm_ik.R} um 0,9 rad
+     * gedreht bewegt sich selbst um 0,836 und zieht {@code MCH-forearm_ik.R}
+     * (0,835) und {@code DEF-upper_arm.R} (0,127) mit, während Elter und
+     * IK-Ziel stehenbleiben. Der Nutzer meldete genau das als Abweichung:
+     * {@code upper_arm_ik.L/R} ließen sich nicht mit R drehen.
      */
     public static boolean isRotationConstrained(IModel model, ModelForm form, String bone)
     {
@@ -107,7 +118,7 @@ public final class ModelIKRuntime
                 continue;
             }
 
-            if (!bone.equals(chain.tip()) || chain.tipRotation())
+            if (bone.equals(chain.tip()) && chain.tipRotation())
             {
                 return true;
             }

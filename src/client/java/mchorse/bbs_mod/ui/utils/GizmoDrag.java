@@ -565,6 +565,26 @@ public class GizmoDrag
                 axes.setColumn(i, col);
             }
 
+            /* ⛔ Die gemessenen Spalten koennen KOLLABIEREN: an einem IK-Kettenglied
+             * frisst der Loeser zwei der drei Freiheitsgrade weg (er zielt die Kette
+             * neu aufs Ziel), uebrig bleibt der Schwenk im Nullraum — alle drei
+             * Kanaele antworten dann fast in dieselbe Richtung. Gemessen an
+             * `upper_arm_ik.R`: Spalten 2 und 3 (0.857 -0.514 0.042) und
+             * (0.854 -0.519 0.043), det = -0.000001.
+             *
+             * Eine singulaere Matrix laesst sich nicht invertieren, `parentInverse`
+             * lieferte null und JEDE Drehgeste starb still — genau die Abweichung,
+             * die der Nutzer gemeldet hat ("upper arm ik l und r lassen sich nicht
+             * mit R drehen, in Blender schon"). Blender misst hier gar nichts: es
+             * legt die Drehung in den Kanal und laesst den Loeser schlucken, was er
+             * schluckt. Der Rueckfall auf die Einheit tut dasselbe — und ist in
+             * dieser Funktion schon der Weg fuer "Messung unbrauchbar" (siehe die
+             * singulaere Grundmatrix weiter oben). */
+            if (Math.abs(axes.determinant()) < 1.0E-4F)
+            {
+                return new Matrix3f();
+            }
+
             return axes;
         }
         finally
