@@ -358,7 +358,41 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return "enabled".equals(t.getString("feld")) ? v < 0.5F : v >= 0.5F;
     }
 
+    /**
+     * ⛔ EINFLUSS WIRD ZENTRAL GEMISCHT, NICHT JE ZWANG.
+     *
+     * <p>Blender wertet jeden Zwang mit VOLLER Staerke aus und mischt danach das
+     * Ergebnis im Weltraum mit dem Zustand davor ({@code blend_m4_m4m4} am Ende von
+     * {@code BKE_constraints_solve}). Vorher tat das hier jeder Zwang selbst, jeder
+     * anders — COPY_SCALE etwa mischte die GROESSEN und skalierte die vorhandenen
+     * Spalten. Gemessen ueber 7 Rigs und 3 Posen: bei Einfluss 1 stimmten 560 von 566
+     * COPY_SCALE-Faellen, bei Einfluss 0.75 nur 8 von 24. Die Mischung war der Fehler,
+     * nicht der Zwang.
+     */
     private static void anwenden(BOBJArmature armature, BOBJBone eigenBone,
+        BOBJBone zielBone, Zwang z)
+    {
+        float w = Math.min(1F, z.staerke());
+
+        if (w <= 0F)
+        {
+            return;
+        }
+
+        if (w < 1F)
+        {
+            Matrix4f vorher = new Matrix4f(eigenBone.mat);
+
+            vollAnwenden(armature, eigenBone, zielBone, z);
+            RigZwaenge.mische(eigenBone.mat, vorher, w);
+
+            return;
+        }
+
+        vollAnwenden(armature, eigenBone, zielBone, z);
+    }
+
+    private static void vollAnwenden(BOBJArmature armature, BOBJBone eigenBone,
         BOBJBone zielBone, Zwang z)
     {
         Matrix4f eigen = eigenBone.mat;
@@ -426,8 +460,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         if ("DAMPED_TRACK".equals(z.typ()))
         {
-            RigZwaenge.dampedTrack(eigen, spurZiel(ziel, z), z.spur(),
-                Math.min(1F, z.staerke()));
+            RigZwaenge.dampedTrack(eigen, spurZiel(ziel, z), z.spur(), 1F);
 
             return;
         }
@@ -449,7 +482,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
             RigZwaenge.stretchTo(eigen, spurZiel(ziel, z), z.spur(),
                 ruhe > 0F ? ruhe : eigenBone.restLength,
-                "NO_VOLUME".equals(volumen) ? 0F : 1F, Math.min(1F, z.staerke()));
+                "NO_VOLUME".equals(volumen) ? 0F : 1F, 1F);
 
             return;
         }
@@ -524,7 +557,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
         RigZwaenge.limitDistance(lokal, rein.transformPosition(zielPunkt(ziel, z)),
             z.daten().getString("modus", "LIMITDIST_INSIDE"),
-            z.daten().getFloat("distanz", 0F), Math.min(1F, z.staerke()));
+            z.daten().getFloat("distanz", 0F), 1F);
 
         eigen.set(raum.mul(lokal));
     }
@@ -552,20 +585,16 @@ public final class RigMechanik implements BOBJArmature.Zwang
             new boolean[] {d != null && d.getBool("inv_x", false),
                            d != null && d.getBool("inv_y", false),
                            d != null && d.getBool("inv_z", false)},
-            d == null ? "REPLACE" : d.getString("mischung", "REPLACE"),
-            Math.min(1F, z.staerke()));
+            d == null ? "REPLACE" : d.getString("mischung", "REPLACE"), 1F);
     }
 
     /** Der Kopier-Kern — im Welt- wie im Lokalraum derselbe, nur mit anderen Matrizen. */
     private static void kopieren(Matrix4f eigen, Matrix4f ziel, Zwang z)
     {
+        /* Volle Staerke — der Einfluss wird zentral in anwenden() gemischt. */
         Vector3f t = eigen.getTranslation(new Vector3f());
-        Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
-        Vector3f s = eigen.getScale(new Vector3f());
         Vector3f zt = zielPunkt(ziel, z);
-        Quaternionf zq = ziel.getUnnormalizedRotation(new Quaternionf());
-        Vector3f zs = ziel.getScale(new Vector3f());
-        float w = Math.min(1F, z.staerke());
+        float w = 1F;
 
         switch (z.typ())
         {
@@ -576,20 +605,22 @@ public final class RigMechanik implements BOBJArmature.Zwang
                  * die SCHERUNG verloren — translationRotateScale kann sie gar nicht
                  * bilden. Gemessen an ORG-upper_arm.L: Blender traegt dort Scherung
                  * 0.46, BBS bekam 0.00 heraus, und das floss ueber DAMPED_TRACK in die
-                 * ganze tweak-Kette. Erst unter Einfluss < 1 zerlegt auch Blender
-                 * (blend_m4_m4m4) — genau der Zweig darunter. */
-                if (w >= 1F)
-                {
-                    eigen.set(ziel).setTranslation(zt);
+                 * ganze tweak-Kette. Erst unter Einfluss < 1 zerlegt auch Blender —
+                 * das passiert jetzt zentral in anwenden(). */
+                eigen.set(ziel).setTranslation(zt);
 
-                    return;
-                }
-
-                t.lerp(zt, w);
-                q.slerp(zq, w);
-                s.lerp(zs, w);
+                return;
             }
-            case "COPY_LOCATION" -> achsen(t, zt, w, z);
+            case "COPY_LOCATION" ->
+            {
+                /* ⛔ Blender setzt NUR die Ortsspalte (`copy_v3_v3(cob->matrix[3], ...)`).
+                 * Der Weg ueber translationRotateScale baute die Matrix neu zusammen und
+                 * warf dabei jede Scherung weg, die ein STRETCH_TO davor erzeugt hatte. */
+                achsen(t, zt, w, z);
+                eigen.setTranslation(t);
+
+                return;
+            }
             case "COPY_SCALE" ->
             {
                 MapType d = z.daten();
@@ -614,53 +645,15 @@ public final class RigMechanik implements BOBJArmature.Zwang
             }
             default ->
             {
-                return;
             }
         }
-
-        eigen.translationRotateScale(t, q, s);
     }
 
-    /**
-     * Track To / Locked Track: die Spur-Achse des Besitzers zeigt aufs Ziel. Bei
-     * LOCKED_TRACK bleibt die Sperr-Achse stehen, es wird nur um sie gedreht.
-     * Achsennamen sind BONE-LOKAL; nach der Achsenwandlung ist unser Oben +Y.
-     */
+    /** Track To / Locked Track — die Rechnung liegt in {@link RigZwaenge#trackTo}. */
     private static void zielen(Matrix4f eigen, Matrix4f ziel, Zwang z)
     {
-        Vector3f pos = eigen.getTranslation(new Vector3f());
-        Vector3f skala = eigen.getScale(new Vector3f());
-        Vector3f richtung = zielPunkt(ziel, z).sub(pos);
-
-        if (richtung.lengthSquared() < 1.0E-10F)
-        {
-            return;
-        }
-
-        richtung.normalize();
-
-        Quaternionf q = eigen.getUnnormalizedRotation(new Quaternionf());
-        Vector3f spur = achse(q, z.spur());
-
-        if ("LOCKED_TRACK".equals(z.typ()))
-        {
-            /* Nur um die Sperr-Achse: beide Richtungen in deren Ebene projizieren. */
-            Vector3f sperre = achse(q, z.sperre().replace("LOCK_", "TRACK_"));
-
-            richtung.sub(new Vector3f(sperre).mul(richtung.dot(sperre)));
-            spur.sub(new Vector3f(sperre).mul(spur.dot(sperre)));
-
-            if (richtung.lengthSquared() < 1.0E-10F || spur.lengthSquared() < 1.0E-10F)
-            {
-                return;
-            }
-
-            richtung.normalize();
-            spur.normalize();
-        }
-
-        q.premul(new Quaternionf().rotationTo(spur, richtung));
-        eigen.translationRotateScale(pos, q, skala);
+        RigZwaenge.trackTo(eigen, zielPunkt(ziel, z), z.spur(),
+            "LOCKED_TRACK".equals(z.typ()) ? z.sperre().replace("LOCK_", "TRACK_") : null);
     }
 
     /**
@@ -759,22 +752,6 @@ public final class RigMechanik implements BOBJArmature.Zwang
     private static int index(String achse)
     {
         return "Y".equals(achse) ? 1 : "Z".equals(achse) ? 2 : 0;
-    }
-
-    /** Die genannte BONE-LOKALE Achse als Richtung im Armature-Raum. */
-    private static Vector3f achse(Quaternionf rot, String name)
-    {
-        Vector3f a = switch (name == null ? "TRACK_Y" : name)
-        {
-            case "TRACK_X" -> new Vector3f(1F, 0F, 0F);
-            case "TRACK_Z" -> new Vector3f(0F, 0F, 1F);
-            case "TRACK_NEGATIVE_X" -> new Vector3f(-1F, 0F, 0F);
-            case "TRACK_NEGATIVE_Y" -> new Vector3f(0F, -1F, 0F);
-            case "TRACK_NEGATIVE_Z" -> new Vector3f(0F, 0F, -1F);
-            default -> new Vector3f(0F, 1F, 0F);
-        };
-
-        return rot.transform(a).normalize();
     }
 
     private static void achsen(Vector3f eigen, Vector3f ziel, float w, Zwang z)
