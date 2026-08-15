@@ -160,7 +160,7 @@ public class UISeitenleiste extends UIElement
             });
 
             reiterKnopf.aktiv = name.equals(this.aktiv) && this.offen;
-            reiterKnopf.h(Math.max(28, name.length() * 9 + 12));
+            reiterKnopf.h(Math.max(28, name.length() * 6 + 16));
             this.streifen.add(reiterKnopf);
         }
 

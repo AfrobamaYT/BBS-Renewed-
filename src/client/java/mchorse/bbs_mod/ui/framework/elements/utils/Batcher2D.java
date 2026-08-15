@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.state.gui.BlitRenderState;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
 import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fStack;
 import org.joml.Matrix3x2fc;
 import org.joml.Matrix4f;
 
@@ -632,6 +633,35 @@ public class Batcher2D
         this.text(label, x, y, color, true);
     }
 
+    /**
+     * Text um {@code winkel} GRAD gedreht; Drehpunkt ist der Ankerpunkt (x, y), positiv
+     * dreht im Uhrzeigersinn (Bildschirmachsen, y zeigt nach unten).
+     *
+     * <p>⛔ Die Drehung gehoert auf {@code context.pose()}, NICHT auf {@link #pose()}:
+     * eingereiht wird mit {@code new Matrix3x2f(this.context.pose())}, der PoseStack aus
+     * {@code pose()} wird nur EINMAL aus dem Kontext befuellt und nie zurueckgeschrieben.
+     * Wer dort dreht, dreht ins Leere.
+     */
+    public void text(String label, float x, float y, int color, boolean shadow, float winkel)
+    {
+        if (winkel == 0F)
+        {
+            this.text(label, x, y, color, shadow);
+
+            return;
+        }
+
+        Matrix3x2fStack pose = this.context.pose();
+
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.rotate((float) Math.toRadians(winkel));
+        /* Gezeichnet wird im Ursprung — der Versatz steckt in der Matrix. Damit bleibt die
+         * ganzzahlige Rundung in drawTextDirect ohne Wirkung auf die Lage. */
+        this.text(label, 0F, 0F, color, shadow);
+        pose.popMatrix();
+    }
+
     public void text(String label, float x, float y, int color, boolean shadow)
     {
         if (BBSSettings.isLightTheme())
@@ -684,24 +714,12 @@ public class Batcher2D
 
     public int wallText(String text, int x, int y, int color, int width, int lineHeight, float ax, float ay, boolean shadow)
     {
-        List<String> list = this.font.wrap(text, width);
-        int h = (lineHeight * (list.size() - 1)) + this.font.getHeight();
-
-        y -= h * ay;
-
-        for (String string : list)
-        {
-            this.text(string.toString(), (int) (x + (width - this.font.getWidth(string)) * ax), y, color, shadow);
-
-            y += lineHeight;
-        }
-
-        return h;
+        return TextHelfer.wallText(this, text, x, y, color, width, lineHeight, ax, ay, shadow);
     }
 
     public void textCard(String text, float x, float y)
     {
-        this.textCard(text, x, y, Colors.WHITE, Colors.A50);
+        TextHelfer.textCard(this, text, x, y);
     }
 
     /** Text mit Hintergrund-Karte. */
@@ -717,30 +735,7 @@ public class Batcher2D
 
     public void textCard(String text, float x, float y, int color, int background, float offset, boolean shadow)
     {
-        int a = background >> 24 & 0xff;
-
-        if (a != 0)
-        {
-            if (BBSSettings.isLightTheme() && (background & 0xFFFFFF) == 0)
-            {
-                background = (background & 0xFF000000) | 0xFFFFFF;
-            }
-
-            float w = this.font.getWidth(text) + offset * 2 - 1;
-            float h = this.font.getHeight() + offset * 2;
-
-            /* P2: Karten sind der erste Rundeck-Abnehmer. */
-            if (BBSSettings.vectorUi != null && BBSSettings.vectorUi.get())
-            {
-                this.rundeck(x - offset, y - offset, w, h, offset + 1F, background);
-            }
-            else
-            {
-                this.box(x - offset, y - offset, x - offset + w, y - offset + h, background);
-            }
-        }
-
-        this.text(text, x, y, color, shadow);
+        TextHelfer.textCard(this, text, x, y, color, background, offset, shadow);
     }
 
     /** P2: Rundeck-Quad mit weichem Rand — CPU-Tessellation durch die GUI-Farb-Pipeline. */

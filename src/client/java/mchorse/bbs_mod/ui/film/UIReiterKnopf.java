@@ -7,13 +7,11 @@ import mchorse.bbs_mod.utils.colors.Colors;
 import java.util.function.Consumer;
 
 /**
- * Ein Reiter am Aussenrand der Seitenleiste — Beschriftung senkrecht, wie in Blender.
+ * Ein Reiter am Aussenrand der Seitenleiste — Beschriftung um 90° gedreht, wie in Blender.
  *
- * <p>⛔ Blender DREHT den Text um 90°. BBS' Batcher hat keinen Rotationsparameter
- * ({@code batcher.text(text, x, y, farbe)}), und einen einzubauen waere Renderer-Arbeit
- * fuer reine Kosmetik. Hier stehen die Buchstaben deshalb GESTAPELT untereinander. Das
- * ist sichtbar nicht dasselbe, aber es liest sich senkrecht und kostet keine neue
- * Zeichenroutine — und es steht hier, damit niemand es fuer Blenders Loesung haelt.
+ * <p>Die Drehung kommt aus {@code batcher.text(..., winkel)}. Vorher stapelte dieser Knopf
+ * die Buchstaben untereinander, weil der Batcher keinen Drehwinkel kannte — die Schwaeche
+ * lag im Zeichner, nicht im Reiter, und ist dort behoben worden.
  */
 public class UIReiterKnopf extends UIElement
 {
@@ -54,18 +52,15 @@ public class UIReiterKnopf extends UIElement
         context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(),
             this.aktiv ? 0xFF4772B3 : (drueber ? 0xFF4a4a4a : 0xFF333333));
 
-        /* Ein Buchstabe je Zeile, mittig. Zeilenhoehe 9 wie die Schrift selbst. */
         mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer schrift = context.batcher.getFont();
-        int hoehe = this.beschriftung.length() * 9;
-        int y = this.area.my() - hoehe / 2;
+        int breite = schrift.getWidth(this.beschriftung);
+        int hoehe = schrift.getHeight();
 
-        for (int i = 0; i < this.beschriftung.length(); i++)
-        {
-            String z = String.valueOf(this.beschriftung.charAt(i));
-
-            context.batcher.text(z, this.area.mx(schrift.getWidth(z)), y + i * 9,
-                this.aktiv ? Colors.WHITE : 0xFFbbbbbb);
-        }
+        /* -90° laesst den Text von unten nach oben laufen. Nach der Drehung belegt er vom
+         * Ankerpunkt aus x .. x+Schrifthoehe und y-Textbreite .. y — daher der Versatz,
+         * damit er mittig im Knopf sitzt. */
+        context.batcher.text(this.beschriftung, this.area.mx() - hoehe / 2F,
+            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFFbbbbbb, true, -90F);
 
         super.render(context);
     }
