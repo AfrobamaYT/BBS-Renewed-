@@ -37,8 +37,17 @@ public final class UIButtonSkinLogik
         int border;
         if (self.custom && self.background)
         {
-            bg = hover ? brighten(self.customColor, 0.18F) : self.customColor;
-            border = self.customColor;
+            /* ⛔ `UIButton.color(int)` maskiert das alpha WEG (`customColor = color & RGB`).
+             * BBS' eigener renderSkin gleicht das mit `| A100` aus — dieser painter tat es
+             * nicht, also zeichnete jeder so gefaerbte knopf eine voellig DURCHSICHTIGE
+             * flaeche: die rig-layer-knoepfe standen auf 0x4772b3 und lieferten 0 blaue
+             * pixel im bild (gemessen, magenta-sonde ebenfalls unsichtbar). Nur alpha==0
+             * wird aufgefuellt — wer ueber color(int,int) bewusst durchsichtig faerbt,
+             * behaelt seinen wert. */
+            int voll = (self.customColor >>> 24) == 0 ? (self.customColor | 0xFF000000) : self.customColor;
+
+            bg = hover ? brighten(voll, 0.18F) : voll;
+            border = voll;
         }
         else if (self.background)
         {
@@ -62,6 +71,12 @@ public final class UIButtonSkinLogik
         try
         {
             String label = self.label == null ? "" : self.label.get();
+
+            /* ⛔ BBS' eigener renderSkin kuerzt mit limitToWidth; dieser painter tat es
+             * nicht — lange beschriftungen liefen ueber den knopfrand hinaus und ueber
+             * die nachbarn ("Face (Secondary)" ragte beidseitig aus einem 67px-knopf). */
+            label = context.batcher.getFont().limitToWidth(label, self.area.w - 4);
+
             if (!label.isEmpty())
             {
                 int tw = context.batcher.getFont().getWidth(label);

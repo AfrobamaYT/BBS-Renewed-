@@ -37,8 +37,9 @@ public class UISeitenleiste extends UIElement
         void auffrischen();
     }
 
-    /** Breite des Reiter-Streifens am Aussenrand. */
-    private static final int STREIFEN = 58;
+    /** Breite des Reiter-Streifens am Aussenrand — Blenders Streifen ist schmal,
+     * die Beschriftung steht senkrecht darin. */
+    private static final int STREIFEN = 22;
 
     private static Map<String, Supplier<UIElement>> reiter;
 
@@ -72,15 +73,7 @@ public class UISeitenleiste extends UIElement
 
     public UISeitenleiste()
     {
-        /* ⛔ Hausmuster: relative(..) + x/y/w/h, wie ueberall im Editor. Mein erster
-         * Versuch steckte Streifen und Inhalt in einen row-Resizer, der die Hoehe selbst
-         * bestimmt — der Inhalt bekam 190x34 und die 14 Layer-Zeilen wurden
-         * abgeschnitten (gemessen). Der Reiter-Streifen sitzt AUSSEN rechts wie in
-         * Blender, der Inhalt links davon. */
-        this.streifen.relative(this).x(1F, -STREIFEN).y(0).w(STREIFEN).h(1F);
         this.streifen.column(2).stretch().padding(3);
-
-        this.inhalt.relative(this).x(0).y(0).w(1F, -STREIFEN).h(1F);
         this.streifen.setVisible(true);
 
         /* Hintergrund, damit es ein Panel ist und keine schwebenden Knoepfe. */
@@ -119,6 +112,14 @@ public class UISeitenleiste extends UIElement
             return;
         }
 
+        /* ⛔ Geometrie hier, NICHT im Konstruktor: der laeuft nach einem Hotswap nicht
+         * erneut, und eine Layoutaenderung waere am laufenden Editor unsichtbar (dreimal
+         * in diesem Feature bezahlt). Hausmuster ist relative(..) + x/y/w/h; ein
+         * row-Resizer darueber gab dem Inhalt 190x34 und schnitt 14 Zeilen ab (gemessen).
+         * Der Streifen sitzt AUSSEN rechts wie in Blender, der Inhalt links davon. */
+        this.streifen.relative(this).x(1F, -STREIFEN).y(0).w(STREIFEN).h(1F);
+        this.inhalt.relative(this).x(0).y(0).w(1F, -STREIFEN).h(1F);
+
         this.gebautFuer = kennung;
         this.streifen.removeAll();
         this.inhalt.removeAll();
@@ -149,27 +150,36 @@ public class UISeitenleiste extends UIElement
 
         for (String name : namen)
         {
-            String kurz = name.length() > 9 ? name.substring(0, 9) : name;
-
-            this.streifen.add(new UIButton(
-                IKey.raw(name.equals(this.aktiv) && this.offen ? "[" + kurz + "]" : kurz), (b) ->
+            UIReiterKnopf reiterKnopf = new UIReiterKnopf(name, (b) ->
             {
+                /* Auf den AKTIVEN Reiter klicken klappt zu — wie Blenders N-Taste. */
+                this.offen = !(this.offen && name.equals(this.aktiv));
                 this.aktiv = name;
-                this.offen = true;
                 this.gebautFuer = "";
                 this.aktualisiere();
-            }));
+            });
+
+            reiterKnopf.aktiv = name.equals(this.aktiv) && this.offen;
+            reiterKnopf.h(Math.max(28, name.length() * 9 + 12));
+            this.streifen.add(reiterKnopf);
         }
 
         this.inhalt.setVisible(this.offen);
 
         /* Zu: nur der Streifen belegt Platz. Offen: Streifen plus ein brauchbarer
-         * Inhaltsbereich, aber nie mehr als die halbe Vorschau. */
+         * Inhaltsbereich, aber nie mehr als die halbe Vorschau.
+         *
+         * ⛔ Breite UND x gehoeren zusammen. Mit fester Anfangs-x (0.66 der Vorschau)
+         * und frei gerechneter Breite ragte die Leiste 35 px ueber den rechten Rand
+         * der Vorschau hinaus — und dort schneidet die Vorschau ab: der komplette
+         * Reiter-Streifen war unsichtbar, obwohl er gebaut war (gemessen: Leiste
+         * 113 breit @202, Vorschau endet bei 280, Streifen 293..315). */
         if (this.getParent() != null)
         {
             int haelfte = Math.max(this.getParent().area.w / 2, STREIFEN + 60);
+            int breite = this.offen ? Math.min(STREIFEN + 210, haelfte) : STREIFEN;
 
-            this.w(this.offen ? Math.min(STREIFEN + 210, haelfte) : STREIFEN);
+            this.x(1F, -breite).w(breite);
         }
 
         if (this.offen)

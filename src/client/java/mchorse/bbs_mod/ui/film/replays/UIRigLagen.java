@@ -28,14 +28,30 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
 {
     private String gebautFuer = "";
 
-    /** Bauer fuer die Seitenleiste — sie ruft ihn erst, wenn der Reiter gezeigt wird. */
+    /**
+     * Bauer fuer die Seitenleiste — sie ruft ihn erst, wenn der Reiter gezeigt wird.
+     *
+     * <p>Verpackt in einen aufklappbaren Abschnitt mit Kopfzeile, so wie Blenders
+     * {@code ∨ Rig Layers}. BBS bringt das als {@link UISection} mit; eine eigene
+     * Kopfzeile zu zeichnen waere Doppelarbeit gewesen.
+     */
     public static UIElement neu()
     {
         UIRigLagen l = new UIRigLagen();
 
         l.aktualisiere();
 
-        return l;
+        mchorse.bbs_mod.ui.framework.elements.UISection abschnitt =
+            new mchorse.bbs_mod.ui.framework.elements.UISection(IKey.raw("Rig Layers"));
+
+        abschnitt.fields.add(l);
+
+        UIElement spalte = new UIElement();
+
+        spalte.column(4).vertical().stretch();
+        spalte.add(abschnitt);
+
+        return spalte;
     }
 
     public UIRigLagen()
@@ -99,16 +115,17 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
     private UIButton knopf(String name)
     {
         boolean an = RigCtrl.lagen().getOrDefault(name, true);
-        /* Blender faerbt eingeschaltete Layer blau. BBS' Knopf kennt keine zwei Farben,
-         * also traegt der ausgeblendete Zustand ein Minus im Text — sichtbar, ohne eine
-         * eigene Zeichenroutine zu erfinden. */
-        UIButton b = new UIButton(IKey.raw(an ? name : "— " + name), (x) ->
+        UIButton b = new UIButton(IKey.raw(name), (x) ->
         {
             RigCtrl.schalteLage(name, !RigCtrl.lagen().getOrDefault(name, true));
             this.gebautFuer = "";
             this.aktualisiere();
         });
 
+        /* Blender faerbt eingeschaltete Layer BLAU und laesst ausgeschaltete grau —
+         * UIButton kann genau das ueber color(). Vorher stand ein Minus im Text, was den
+         * Namen verschob und schlechter zu lesen war. */
+        b.color(an ? 0x4772b3 : 0x3a3a3a);
         b.tooltip(IKey.raw(an ? name + " — sichtbar, klicken zum Ausblenden"
             : name + " — ausgeblendet, klicken zum Einblenden"));
 
