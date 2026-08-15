@@ -37,6 +37,9 @@ public class UISeitenleiste extends UIElement
         void auffrischen();
     }
 
+    /** Breite des Reiter-Streifens am Aussenrand. */
+    private static final int STREIFEN = 58;
+
     private static Map<String, Supplier<UIElement>> reiter;
 
     private String aktiv = "";
@@ -67,18 +70,23 @@ public class UISeitenleiste extends UIElement
 
     public UISeitenleiste()
     {
-        /* column(..) liefert den Resizer, nicht das Element — Breite deshalb getrennt
-         * setzen, sonst laeuft die Kette ins Leere. */
-        /* ⛔ Breite UND Hoehe setzen. Ohne die Hoehe sass der Inhalt auf 190x34 und die
-         * 14 Layer-Zeilen wurden abgeschnitten — das Panel war gebaut, nur unsichtbar
-         * (gemessen: gezeigt=UIRigLagen kinder=14, inhalt.area=190x34). */
-        this.streifen.column(2).vertical().stretch();
-        this.streifen.w(74).h(1F);
-        this.inhalt.column(4).vertical().stretch();
-        this.inhalt.w(190).h(1F);
+        /* ⛔ Hausmuster: relative(..) + x/y/w/h, wie ueberall im Editor. Mein erster
+         * Versuch steckte Streifen und Inhalt in einen row-Resizer, der die Hoehe selbst
+         * bestimmt — der Inhalt bekam 190x34 und die 14 Layer-Zeilen wurden
+         * abgeschnitten (gemessen). Der Reiter-Streifen sitzt AUSSEN rechts wie in
+         * Blender, der Inhalt links davon. */
+        this.streifen.relative(this).x(1F, -STREIFEN).y(0).w(STREIFEN).h(1F);
+        this.streifen.column(2).stretch().padding(3);
 
+        this.inhalt.relative(this).x(0).y(0).w(1F, -STREIFEN).h(1F);
+        this.inhalt.column(4).stretch().padding(4);
+
+        /* Hintergrund, damit es ein Panel ist und keine schwebenden Knoepfe. */
+        this.add(new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((context) ->
+            context.batcher.box(this.inhalt.area.x, this.inhalt.area.y,
+                this.inhalt.area.ex(), this.inhalt.area.ey(),
+                mchorse.bbs_mod.utils.colors.Colors.A75 | mchorse.bbs_mod.BBSSettings.primaryColor(0))));
         this.add(this.inhalt, this.streifen);
-        this.row(0);
     }
 
     /**

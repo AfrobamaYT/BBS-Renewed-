@@ -86,7 +86,12 @@ public class UIFilmPreview extends UIElement
 
         UISeitenleiste leiste = new UISeitenleiste();
 
-        leiste.relative(this).x(1F, -272).y(4).w(268).h(1F, -8);
+        /* ⛔ Anteilig, nicht fest: mit fester Breite 268 verschluckte die Leiste in einem
+         * 854x480-Fenster fast die ganze Vorschau. Blenders N-Panel nimmt auch einen
+         * Anteil, keine feste Pixelzahl. Gedeckelt, damit sie auf grossen Schirmen nicht
+         * ausufert. */
+        leiste.relative(this).x(1F, -1).y(4).w(0.34F).h(1F, -8);
+        leiste.anchor(1F, 0F);
         this.add(leiste);
 
         this.icons = UI.row(0, 0);
