@@ -221,6 +221,19 @@ public final class RigSnap
             }
         }
 
+        /* ⛔ Der SCHWENK zum Schluss — Blenders `compute_base_rotation` steht in
+         * `apply_frame_state` ebenfalls NACH dem Setzen von Spitze und Basis.
+         * Wurzel und Spitze sitzen danach exakt, die Ebene der Kette noch nicht:
+         * gemessen blieben Ellbogen 0.03618 und Knie 0.06667 stehen. Nur in dieser
+         * Richtung — beim Weg FK <- IK stellt die FK-Kette ihre Gelenke selbst. */
+        if (!fkFolgtIk && paare.size() >= 2 && neuAuswerten != null
+            && ziele[0] != null && ziele[1] != null)
+        {
+            RigSchwenk.schwenke(armature, mechanik, pose,
+                schreibbar(mechanik, paare.get(0)[1]), paare.get(0)[1], paare.get(1)[1],
+                ziele[0], ziele[1], neuAuswerten);
+        }
+
         return gezaehlt;
     }
 
@@ -289,6 +302,28 @@ public final class RigSnap
 
     private static boolean setzeWeltlage(BOBJBone bone, String name, Matrix4f zielWelt, Pose pose)
     {
+        return setze(bone, name, zielWelt, zielWelt.getTranslation(new Vector3f()), pose);
+    }
+
+    /**
+     * Nur den ORT setzen, die Drehung unangetastet lassen — Blenders
+     * {@code set_pose_translation}, wie {@link RigSchwenk} den Pol-Control setzt. Rigify
+     * keyt ihn ausdruecklich mit {@code no_rot}: der Pol bestimmt die Ebene ueber seine
+     * LAGE, seine Eigendrehung gehoert dem Animator.
+     */
+    static boolean setzeWeltOrt(BOBJBone bone, String name, Vector3f zielOrt, Pose pose)
+    {
+        return setze(bone, name, null, zielOrt, pose);
+    }
+
+    /**
+     * @param zielWelt {@code null} = nur den Ort setzen; die Drehung bleibt dann auch
+     *                 waehrend der MESSUNG stehen, damit die gemessene Abbildung die ist,
+     *                 die gerade wirklich gilt
+     */
+    private static boolean setze(BOBJBone bone, String name, Matrix4f zielWelt,
+        Vector3f zielOrt, Pose pose)
+    {
         if (pose == null)
         {
             return false;
@@ -324,8 +359,15 @@ public final class RigSnap
         try
         {
             bone.transform.translate.set(0F, 0F, 0F);
-            bone.transform.rotationMode = Transform.RotationMode.QUATERNION;
-            bone.transform.quat.identity();
+
+            /* ⛔ Die Drehung nur neutralisieren, wenn sie auch GESETZT wird. Beim reinen
+             * Ortssetzen muss die Abbildung mit der Drehung gemessen werden, die gerade
+             * gilt — sonst misst man einen Zustand, in dem der Knochen nie steht. */
+            if (zielWelt != null)
+            {
+                bone.transform.rotationMode = Transform.RotationMode.QUATERNION;
+                bone.transform.quat.identity();
+            }
 
             basis = bone.computeMatrix(new Matrix4f());
 
@@ -347,19 +389,24 @@ public final class RigSnap
             }
 
             Vector3f loc = new org.joml.Matrix3f(ortSpalten).invert()
-                .transform(zielWelt.getTranslation(new Vector3f()).sub(null0));
-            Quaternionf dreh = new org.joml.Matrix3f(basis.get3x3(new org.joml.Matrix3f()))
-                .invert().mul(zielWelt.get3x3(new org.joml.Matrix3f()))
-                .getNormalizedRotation(new Quaternionf());
+                .transform(new Vector3f(zielOrt).sub(null0));
 
             PoseTransform pt = pose.get(name);
 
             pt.translate.set(loc);
-            /* Quaternion statt Euler: die Ruecktransformation der ZYX-Kanaele haette eine
-             * Ordnungs-Annahme gebraucht, und Rigifys Controls stehen in Blender ohnehin
-             * auf Quaternion. applyPose setzt daraus selbst das passende orient. */
-            pt.rotationMode = Transform.RotationMode.QUATERNION;
-            pt.quat.set(dreh);
+
+            if (zielWelt != null)
+            {
+                Quaternionf dreh = new org.joml.Matrix3f(basis.get3x3(new org.joml.Matrix3f()))
+                    .invert().mul(zielWelt.get3x3(new org.joml.Matrix3f()))
+                    .getNormalizedRotation(new Quaternionf());
+
+                /* Quaternion statt Euler: die Ruecktransformation der ZYX-Kanaele haette eine
+                 * Ordnungs-Annahme gebraucht, und Rigifys Controls stehen in Blender ohnehin
+                 * auf Quaternion. applyPose setzt daraus selbst das passende orient. */
+                pt.rotationMode = Transform.RotationMode.QUATERNION;
+                pt.quat.set(dreh);
+            }
         }
         finally
         {

@@ -308,7 +308,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
              * Reihenfolge schon dran waren — genau wie Blenders IK-Durchgang. */
             if (this.ketten != null && this.ketten.hat(name))
             {
-                for (BOBJBone kettenBone : this.ketten.loese(armature, name))
+                for (BOBJBone kettenBone : this.ketten.loese(armature, name, this.treiber))
                 {
                     armature.matrices[kettenBone.index] = kettenBone.hautMatrix();
                 }
@@ -337,6 +337,16 @@ public final class RigMechanik implements BOBJArmature.Zwang
     public List<String> reihenfolge()
     {
         return this.reihenfolge;
+    }
+
+    /**
+     * Der Pol-Control, der an {@code bone} GERADE wirkt — oder {@code null}. Der Snap
+     * schwenkt danach anders: mit Pol ueber dessen Ort, ohne Pol ueber die Drehung des
+     * Basis-Controls (Rigifys zwei Zweige in {@code compute_base_rotation}).
+     */
+    public String polVon(String bone)
+    {
+        return this.ketten == null ? null : this.ketten.polVon(bone, this.treiber);
     }
 
     /**
