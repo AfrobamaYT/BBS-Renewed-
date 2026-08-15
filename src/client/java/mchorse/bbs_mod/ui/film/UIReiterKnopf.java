@@ -57,23 +57,35 @@ public class UIReiterKnopf extends UIElement
          * Blender. Nicht die Akzentfarbe: die machte aus dem Reiter einen blauen Knopf. */
         int flaeche = mchorse.bbs_mod.BBSSettings.deepSurface();
 
-        context.batcher.box(this.area.x - (this.aktiv ? 3 : 0), this.area.y,
-            this.area.ex(), this.area.ey(),
-            this.aktiv ? flaeche : (drueber ? 0xFF3a3a3a : 0xFF2b2b2b));
+        int farbe = this.aktiv ? flaeche : (drueber ? 0xFF3a3a3a : 0xFF2b2b2b);
+        float x = this.area.x - (this.aktiv ? 3 : 0);
+        float breiteK = this.area.ex() - x;
+
+        /* Rund wie in Blender. Ohne Vektor-Oberflaeche gibt es kein Rundeck — dann der
+         * eckige Kasten, statt gar nichts zu zeichnen. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
+        {
+            context.batcher.rundeck(x, this.area.y, breiteK, this.area.h, 4F, farbe);
+        }
+        else
+        {
+            context.batcher.box(x, this.area.y, this.area.ex(), this.area.ey(), farbe);
+        }
 
         mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer schrift = context.batcher.getFont();
         int breite = schrift.getWidth(this.beschriftung);
         int hoehe = schrift.getHeight();
 
-        /* -90° laesst den Text von unten nach oben laufen. Nach der Drehung belegt er vom
-         * Ankerpunkt aus x .. x+Schrifthoehe und y-Textbreite .. y — daher der Versatz,
-         * damit er mittig im Knopf sitzt.
+        /* +90°: der Text laeuft von oben nach unten, Buchstabenoberseiten nach rechts —
+         * Blenders Richtung (vorher lief er andersherum, das ist die Drehung um 180°).
+         * Nach der Drehung belegt er vom Ankerpunkt aus x-Schrifthoehe .. x und
+         * y .. y+Textbreite, daher der Versatz.
          *
          * ⛔ OHNE Schatten, wie Blender: der Schatten ist ein zweiter Durchgang um (+1,+1)
          * im TEXTraum, und der wird mitgedreht — bei 90° faellt er diagonal neben die
          * Buchstaben und macht die 7 px hohe Schrift matschig statt lesbarer. */
-        context.batcher.text(this.beschriftung, this.area.mx() - hoehe / 2F,
-            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFF9a9a9a, false, -90F);
+        context.batcher.text(this.beschriftung, this.area.mx() + hoehe / 2F,
+            this.area.my() - breite / 2F, this.aktiv ? Colors.WHITE : 0xFF9a9a9a, false, 90F);
 
         super.render(context);
     }

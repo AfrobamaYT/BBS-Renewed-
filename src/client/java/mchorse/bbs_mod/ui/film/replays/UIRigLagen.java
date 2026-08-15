@@ -182,7 +182,7 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
     private UIButton knopf(String name, String titel)
     {
         boolean an = RigCtrl.lagen().getOrDefault(name, true);
-        UIButton b = new UIButton(IKey.raw(titel), (x) ->
+        UIButton b = new UIRundKnopf(IKey.raw(titel), (x) ->
         {
             RigCtrl.schalteLage(name, !RigCtrl.lagen().getOrDefault(name, true));
             this.gebautFuer = "";
