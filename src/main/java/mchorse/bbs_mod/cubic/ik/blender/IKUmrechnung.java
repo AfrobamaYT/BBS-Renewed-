@@ -15,7 +15,11 @@ import org.joml.Vector3f;
 public final class IKUmrechnung
 {
     /** IK_STRETCH_STIFF_EPS/_MIN/_MAX aus Blenders IK_Solver.h. */
-    private static final double DEHN_EPS = 0.01D;
+    /* ⛔ Blenders IK_STRETCH_STIFF_EPS ist 0.001, nicht 0.01 (iksolver_plugin.cc).
+     * Mit 0.01 war das Dehngewicht nach unten auf 0.01 gedeckelt: ein Knochen mit
+     * ik_stretch 0.05 bekam 0.01 statt 0.0025 und dehnte sich VIERMAL so leicht.
+     * Gemessen an der Umrechnung selbst: 0.05 -> 0.01000 statt 0.00250. */
+    private static final double DEHN_EPS = 0.001D;
     public static final double DEHN_MIN = 0.001D;
     public static final double DEHN_MAX = 1e10D;
 
