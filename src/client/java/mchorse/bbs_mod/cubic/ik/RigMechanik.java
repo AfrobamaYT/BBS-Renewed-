@@ -196,14 +196,16 @@ public final class RigMechanik implements BOBJArmature.Zwang
             /* Die COPY_-Typen kann BBS laengst — bisher scheiterten sie nur am RAUM.
              * Blenders LOCAL heisst: die Abweichung von der Ruhelage, im Elternraum. */
             boolean kopie = typ != null && typ.startsWith("COPY_");
-            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ) || kopie;
+            boolean lokal = "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
+                || "LIMIT_LOCATION".equals(typ) || kopie;
             /* CUSTOM-Raum: ein benannter Knochen IST der Raum. Rigify rechnet
              * Limit Distance dort, und dort muss es auch gerechnet werden — eine
              * Strecke in einem skalierten Raum ist eine andere Strecke. */
             boolean eigenraum = !c.getString("raum_bone", "").isEmpty();
             /* Limit Rotation klemmt nur sich selbst, Armature traegt seine Ziele
              * in einer Liste — beide haben kein einzelnes ziel-Feld. */
-            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ) && !"ARMATURE".equals(typ);
+            boolean brauchtZiel = !"LIMIT_ROTATION".equals(typ) && !"LIMIT_LOCATION".equals(typ)
+                && !"ARMATURE".equals(typ);
             /* Blenders Quaternion-/Huellen-Modus des Armature-Constraints ist
              * eine ANDERE Mathematik (Dual-Quaternionen, Huellgewichte) und nicht
              * portiert. Laut zaehlen statt still linear rechnen. */
@@ -246,6 +248,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
             || "COPY_ROTATION".equals(typ) || "COPY_SCALE".equals(typ)
             || "CHILD_OF".equals(typ) || "TRACK_TO".equals(typ) || "LOCKED_TRACK".equals(typ)
             || "TRANSFORM".equals(typ) || "LIMIT_ROTATION".equals(typ)
+            || "LIMIT_LOCATION".equals(typ)
             || "DAMPED_TRACK".equals(typ) || "STRETCH_TO".equals(typ)
             || "ARMATURE".equals(typ) || "LIMIT_DISTANCE".equals(typ);
     }
@@ -444,7 +447,8 @@ public final class RigMechanik implements BOBJArmature.Zwang
         /* Die Fuss-Roll-Mechanik rechnet LOKAL (relativ zur Ruhelage): der Ort des
          * Roll-Cursors wird auf die Drehung der Fersen-/Zehenknochen abgebildet und
          * anschliessend je Achse geklemmt. */
-        if ("TRANSFORM".equals(z.typ()) || "LIMIT_ROTATION".equals(z.typ()))
+        if ("TRANSFORM".equals(z.typ()) || "LIMIT_ROTATION".equals(z.typ())
+            || "LIMIT_LOCATION".equals(z.typ()))
         {
             lokalerZwang(eigenBone, zielBone, z);
 
@@ -736,6 +740,10 @@ public final class RigMechanik implements BOBJArmature.Zwang
             }
 
             lokal.rotateXYZ(winkel[0], winkel[1], winkel[2]);
+        }
+        else if ("LIMIT_LOCATION".equals(z.typ()))
+        {
+            RigZwaenge.limitLocation(lokal, z.daten());
         }
         else
         {
