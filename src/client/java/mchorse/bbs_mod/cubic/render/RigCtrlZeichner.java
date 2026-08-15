@@ -48,9 +48,19 @@ public class RigCtrlZeichner
                 continue;
             }
 
+            /* ⛔ Die VOLLE Knochenmatrix (useBoneMatrix=true), nicht die origin-Fassung.
+             * origin() laesst genau die EIGENE Drehung des Knochens weg (die des Elters
+             * traegt es mit) — das Widget blieb deshalb stehen, sobald man seinen Knochen
+             * drehte, und wanderte nur mit, wenn ein Elter sich bewegte. Genau so hat der
+             * Nutzer es gemeldet ("torso, alle thumb master und noch andere drehen sich
+             * nicht mit dem bone"). Gemessen: torso um 0.9 rad -> matrix() aendert sich um
+             * 0.783, origin() um 0.000; in RUHE sind beide bit-gleich, das Umstellen
+             * verschiebt also kein Widget. Der Auswahlpuffer unten rechnet ohnehin schon
+             * mit `bone.mat`, also der vollen Matrix — Strich und Trefferflaeche liefen
+             * bis dahin bei jedem gedrehten Knochen auseinander. */
             Matrix4f welt = e.anker().isEmpty()
                 ? BaseFilmController.getGizmoAnchorCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F)
-                : BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F, e.anker(), false);
+                : BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F, e.anker(), true);
 
             if (welt == null)
             {
