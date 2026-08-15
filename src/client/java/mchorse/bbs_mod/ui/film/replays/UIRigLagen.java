@@ -35,32 +35,6 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
 {
     private String gebautFuer = "";
 
-    /**
-     * Bauer fuer die Seitenleiste — sie ruft ihn erst, wenn der Reiter gezeigt wird.
-     *
-     * <p>Verpackt in einen aufklappbaren Abschnitt mit Kopfzeile, so wie Blenders
-     * {@code ∨ Rig Layers}. BBS bringt das als {@link UISection} mit; eine eigene
-     * Kopfzeile zu zeichnen waere Doppelarbeit gewesen.
-     */
-    public static UIElement neu()
-    {
-        UIRigLagen l = new UIRigLagen();
-
-        l.aktualisiere();
-
-        mchorse.bbs_mod.ui.framework.elements.UISection abschnitt =
-            new mchorse.bbs_mod.ui.framework.elements.UISection(IKey.raw("Rig Layers"));
-
-        abschnitt.fields.add(l);
-
-        UIElement spalte = new UIElement();
-
-        spalte.column(4).vertical().stretch();
-        spalte.add(abschnitt);
-
-        return spalte;
-    }
-
     public UIRigLagen()
     {
         this.column().vertical().stretch();
