@@ -53,10 +53,9 @@ public class UIReiterKnopf extends UIElement
          * ueber seinen Streifen hinaus — damit verschmilzt er mit dem Inhalt, wie in
          * Blender. Als eigenstaendig blauer Kasten sah er aus wie ein Knopf neben dem
          * Panel, nicht wie sein Reiter. */
-        /* Dieselbe Formel wie der Panel-Hintergrund in UISeitenleiste — nicht A100:
-         * das Panel ist halbdurchsichtig, ein deckender Reiter daneben leuchtet. */
-        int flaeche = mchorse.bbs_mod.utils.colors.Colors.A100
-            | mchorse.bbs_mod.BBSSettings.primaryColor(0);
+        /* Dieselbe Flaeche wie das Panel — so verschmilzt der aktive Reiter damit, wie in
+         * Blender. Nicht die Akzentfarbe: die machte aus dem Reiter einen blauen Knopf. */
+        int flaeche = mchorse.bbs_mod.BBSSettings.deepSurface();
 
         context.batcher.box(this.area.x - (this.aktiv ? 3 : 0), this.area.y,
             this.area.ex(), this.area.ey(),

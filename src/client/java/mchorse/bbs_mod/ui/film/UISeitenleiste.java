@@ -80,11 +80,15 @@ public class UISeitenleiste extends UIElement
          * ⛔ DECKEND, nicht halbdurchsichtig: Blenders Seitenleiste laesst die Ansicht
          * NICHT durchscheinen. Mit A75 stand das Drahtgitter des Modells hinter den
          * Layer-Knoepfen, und der aktive Reiter leuchtete heller als das Panel, weil
-         * hinter ihm der Himmel lag statt der Figur. */
+         * hinter ihm der Himmel lag statt der Figur.
+         * ⛔ Und NICHT die Akzentfarbe: `primaryColor` ist #4D9CFF, also Blau. Deckend
+         * gemacht war das Panel blau statt grau — Blenders Seitenleiste ist eine neutrale
+         * Flaeche. `deepSurface` ist der Grund, auf dem BBS seine Panels malt; die
+         * Abschnitte setzen ihr `raisedSurface` (#1D2127) darauf. */
         this.add(new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((context) ->
             context.batcher.box(this.inhalt.area.x, this.inhalt.area.y,
                 this.inhalt.area.ex(), this.inhalt.area.ey(),
-                mchorse.bbs_mod.utils.colors.Colors.A100 | mchorse.bbs_mod.BBSSettings.primaryColor(0))));
+                mchorse.bbs_mod.BBSSettings.deepSurface())));
         this.add(this.inhalt, this.streifen);
     }
 
