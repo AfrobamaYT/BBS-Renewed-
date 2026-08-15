@@ -79,7 +79,38 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
             this.add(reihe);
         }
 
-        this.resize();
+        neuEinmessen(this);
+    }
+
+    /**
+     * ⛔ Nach einem Neubau den ROLLBEREICH neu einmessen, nicht nur dieses Element.
+     *
+     * <p>Gemessen 2026-08-15: {@code this.resize()} allein liess das Panel bei JEDEM
+     * Neubau um seine eigene Hoehe nach unten wandern — y=754, nach einem Klick 1067,
+     * nach dem naechsten 1380, immer +313 bei 310 px Panelhoehe. Die Knoepfe behielten
+     * ihre Groesse und standen nur ausserhalb des sichtbaren Bereichs; fuer den Nutzer
+     * sah es aus, als loesche ein Klick alle anderen Knoepfe.
+     *
+     * <p>Dieselbe Ursache wie in {@link UIRigRegler} — dort schon einmal bezahlt.
+     */
+    static void neuEinmessen(UIElement panel)
+    {
+        UIElement oben = panel;
+
+        for (UIElement p = panel.getParent(); p != null; p = p.getParent())
+        {
+            oben = p;
+
+            if (p instanceof mchorse.bbs_mod.ui.framework.elements.UIScrollView roll)
+            {
+                roll.resize();
+                roll.scroll.clamp();
+
+                return;
+            }
+        }
+
+        oben.resize();
     }
 
     /**
@@ -169,8 +200,8 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
         b.color(an ? 0x4772b3 : 0x3a3a3a);
         /* Der Tooltip nennt den VOLLEN Collection-Namen — auf dem Knopf steht nur
          * Rigifys Kurztitel ("(Primary)"), der allein nicht sagt, wozu er gehoert. */
-        b.tooltip(IKey.raw(an ? name + " — sichtbar, klicken zum Ausblenden"
-            : name + " — ausgeblendet, klicken zum Einblenden"));
+        b.tooltip(IKey.raw(an ? name + " \u2014 visible, click to hide"
+            : name + " \u2014 hidden, click to show"));
 
         return b;
     }
