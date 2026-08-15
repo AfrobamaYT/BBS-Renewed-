@@ -80,6 +80,15 @@ public class UIFilmPreview extends UIElement
     {
         this.panel = filmPanel;
 
+        /* Blenders N-Panel am rechten Rand. Meldet seinen ersten Reiter selbst an;
+         * weitere kommen ueber UISeitenleiste.anmelden(name, bauer) dazu. */
+        UISeitenleiste.anmelden("Rig", mchorse.bbs_mod.ui.film.replays.UIRigLagen::neu);
+
+        UISeitenleiste leiste = new UISeitenleiste();
+
+        leiste.relative(this).x(1F, -272).y(4).w(268).h(1F, -8);
+        this.add(leiste);
+
         this.icons = UI.row(0, 0);
         this.icons.row().resize();
         this.icons.relative(this).x(0.5F).y(1F).anchor(0.5F, 1F);

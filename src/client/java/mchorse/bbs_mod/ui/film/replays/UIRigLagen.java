@@ -24,13 +24,29 @@ import java.util.Map;
  * Layout auch fuer Rigs, deren Layer anders heissen — ein fest verdrahtetes Rigify-Layout
  * waere genau die Eigenerfindung, die beim naechsten Rig danebenliegt.
  */
-public class UIRigLagen extends UIElement
+public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UISeitenleiste.Auffrischbar
 {
     private String gebautFuer = "";
+
+    /** Bauer fuer die Seitenleiste — sie ruft ihn erst, wenn der Reiter gezeigt wird. */
+    public static UIElement neu()
+    {
+        UIRigLagen l = new UIRigLagen();
+
+        l.aktualisiere();
+
+        return l;
+    }
 
     public UIRigLagen()
     {
         this.column().vertical().stretch();
+    }
+
+    @Override
+    public void auffrischen()
+    {
+        this.aktualisiere();
     }
 
     /** Baut die Leiste neu, wenn sich der Layer-Satz geaendert hat. Je Frame billig. */
