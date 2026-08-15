@@ -49,8 +49,18 @@ public class UIReiterKnopf extends UIElement
     {
         boolean drueber = this.area.isInside(context);
 
-        context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(),
-            this.aktiv ? 0xFF4772B3 : (drueber ? 0xFF4a4a4a : 0xFF333333));
+        /* ⛔ Der AKTIVE Reiter traegt die PANEL-Farbe und reicht drei Punkte nach links
+         * ueber seinen Streifen hinaus — damit verschmilzt er mit dem Inhalt, wie in
+         * Blender. Als eigenstaendig blauer Kasten sah er aus wie ein Knopf neben dem
+         * Panel, nicht wie sein Reiter. */
+        /* Dieselbe Formel wie der Panel-Hintergrund in UISeitenleiste — nicht A100:
+         * das Panel ist halbdurchsichtig, ein deckender Reiter daneben leuchtet. */
+        int flaeche = mchorse.bbs_mod.utils.colors.Colors.A100
+            | mchorse.bbs_mod.BBSSettings.primaryColor(0);
+
+        context.batcher.box(this.area.x - (this.aktiv ? 3 : 0), this.area.y,
+            this.area.ex(), this.area.ey(),
+            this.aktiv ? flaeche : (drueber ? 0xFF3a3a3a : 0xFF2b2b2b));
 
         mchorse.bbs_mod.ui.framework.elements.utils.FontRenderer schrift = context.batcher.getFont();
         int breite = schrift.getWidth(this.beschriftung);
@@ -64,7 +74,7 @@ public class UIReiterKnopf extends UIElement
          * im TEXTraum, und der wird mitgedreht — bei 90° faellt er diagonal neben die
          * Buchstaben und macht die 7 px hohe Schrift matschig statt lesbarer. */
         context.batcher.text(this.beschriftung, this.area.mx() - hoehe / 2F,
-            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFFbbbbbb, false, -90F);
+            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFF9a9a9a, false, -90F);
 
         super.render(context);
     }

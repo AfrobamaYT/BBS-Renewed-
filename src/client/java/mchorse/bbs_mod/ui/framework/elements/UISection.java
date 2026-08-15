@@ -136,15 +136,24 @@ public class UISection extends UIElement
     /**
      * Draw {@link Icons#ARROW_SMALL} centred at {@code cx}/{@code cy}, rotated for the open state.
      */
+    /**
+     * ⛔ Die Drehung gehoert auf {@code context.pose()}, NICHT auf {@link Batcher2D#pose()}.
+     * Eingereiht wird mit {@code new Matrix3x2f(context.pose())}; der PoseStack aus
+     * {@code pose()} wird nur EINMAL daraus befuellt und nie zurueckgeschrieben. Folge des
+     * alten Wegs: die Verschiebung fiel weg, das Icon landete bei (-8,-8) — ausserhalb des
+     * Bildes. JEDER Abschnitt der Oberflaeche war seither ohne Aufklapp-Pfeil (gemessen
+     * 2026-08-15 am Rig-Layers-Kopf; Icon vorhanden, Textur gueltig, trotzdem nichts zu
+     * sehen und auch kein verirrtes Icon am Ursprung).
+     */
     private void renderArrow(UIContext context, float cx, float cy)
     {
-        PoseStack matrices = context.batcher.pose();
+        org.joml.Matrix3x2fStack pose = context.batcher.getContext().pose();
 
-        matrices.pushPose();
-        matrices.translate(cx, cy, 0F);
-        matrices.rotateAround(Axis.ZP.rotationDegrees(this.expanded ? 90F : 0F), 0F, 0F, 0F);
+        pose.pushMatrix();
+        pose.translate(cx, cy);
+        pose.rotate((float) Math.toRadians(this.expanded ? 90F : 0F));
         context.batcher.icon(Icons.ARROW_SMALL, Colors.WHITE, 0, 0, 0.5F, 0.5F);
-        matrices.popPose();
+        pose.popMatrix();
     }
 
     @Override

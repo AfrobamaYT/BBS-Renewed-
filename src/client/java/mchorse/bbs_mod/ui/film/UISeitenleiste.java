@@ -76,11 +76,15 @@ public class UISeitenleiste extends UIElement
         this.streifen.column(2).stretch().padding(3);
         this.streifen.setVisible(true);
 
-        /* Hintergrund, damit es ein Panel ist und keine schwebenden Knoepfe. */
+        /* Hintergrund, damit es ein Panel ist und keine schwebenden Knoepfe.
+         * ⛔ DECKEND, nicht halbdurchsichtig: Blenders Seitenleiste laesst die Ansicht
+         * NICHT durchscheinen. Mit A75 stand das Drahtgitter des Modells hinter den
+         * Layer-Knoepfen, und der aktive Reiter leuchtete heller als das Panel, weil
+         * hinter ihm der Himmel lag statt der Figur. */
         this.add(new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((context) ->
             context.batcher.box(this.inhalt.area.x, this.inhalt.area.y,
                 this.inhalt.area.ex(), this.inhalt.area.ey(),
-                mchorse.bbs_mod.utils.colors.Colors.A75 | mchorse.bbs_mod.BBSSettings.primaryColor(0))));
+                mchorse.bbs_mod.utils.colors.Colors.A100 | mchorse.bbs_mod.BBSSettings.primaryColor(0))));
         this.add(this.inhalt, this.streifen);
     }
 
