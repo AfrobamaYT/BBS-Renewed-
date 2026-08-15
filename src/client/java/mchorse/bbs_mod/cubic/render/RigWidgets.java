@@ -278,7 +278,14 @@ public final class RigWidgets
                     m.mul(1F / ml);
                     float cos = m.dot(nach);
                     richtung[i] = m;
-                    streckung[i] = cos > 0.2F ? 1F / cos : 5F;
+                    /* ⛔ Gehrungsgrenze 2, nicht 5. Bei spitzen Ecken waechst 1/cos
+                     * unbegrenzt; mit 5 wird die Linie an solchen Stellen fuenffach so
+                     * breit. Genau dort faellt es auf, wo ein Glied gestreckt wird (die
+                     * VIS_*_ik_pole-Anzeiger tragen STRETCH_TO) — gemeldet als "Linien
+                     * werden groesser, je weiter das Glied weg ist". 2 ist der uebliche
+                     * Wert; darueber faellt der Punkt auf die reine Segmentnormale
+                     * zurueck, was eine Fase statt eines Stachels gibt. */
+                    streckung[i] = cos > 0.5F ? 1F / cos : 1F;
                     continue;
                 }
             }

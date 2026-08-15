@@ -605,11 +605,16 @@ public class BBSSettings {
 		poseAlternateInvert = builder.getBoolean("pose_alternate_invert", false);
 		poseAlternateInvert.invisible();
 		poseShowDisabledBones = builder.getBoolean("pose_show_disabled_bones", false);
-		translateHotkeyOrder = new ValueOrder("translate_hotkey_order", "screen", "x", "y", "z");
+		/* ⛔ Blenders Zyklus, nicht unserer. Dort schaltet wiederholtes R nur zwischen
+		 * Ansichtsdrehung und Trackball hin und her; G und S zykeln GAR NICHT. Die
+		 * Achsen holt man in Blender ueber X/Y/Z — die Tasten gibt es hier auch
+		 * (TRANSFORMATIONS_X/Y/Z), es geht also keine Bedienung verloren. Wer den
+		 * alten Durchlauf will, haengt "x","y","z" in der Einstellung wieder an. */
+		translateHotkeyOrder = new ValueOrder("translate_hotkey_order", "screen");
 		builder.register(translateHotkeyOrder);
-		scaleHotkeyOrder = new ValueOrder("scale_hotkey_order", "all", "x", "y", "z");
+		scaleHotkeyOrder = new ValueOrder("scale_hotkey_order", "all");
 		builder.register(scaleHotkeyOrder);
-		rotateHotkeyOrder = new ValueOrder("rotate_hotkey_order", "view", "sphere", "x", "y", "z");
+		rotateHotkeyOrder = new ValueOrder("rotate_hotkey_order", "view", "sphere");
 		builder.register(rotateHotkeyOrder);
 		trackballSensitivity = builder.getFloat("trackball_sensitivity", 1F, 0.05F, 2F).slider();
 

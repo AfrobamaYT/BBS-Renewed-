@@ -1376,12 +1376,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
         /* Der Control-Griff lebt gerade dann, wenn KEIN Gizmo gezeigt wird. */
         this.panel.replayEditor.foerdereCtrlDrag(context);
 
-        if (this.canShowGizmo())
-        {
-            this.gizmo.update(context);
-            this.gizmo.renderSphereHighlight(context);
-            this.gizmo.renderReadout(context);
-        }
+        ZugHilfe.zeichne(this.gizmo, context, this.canShowGizmo(),
+            mchorse.bbs_mod.cubic.ik.RigCtrl.aktivFuer(this.getCurrentEntity()),
+            this.panel.replayEditor.keyframeEditor);
 
         /* Der Umriss haengt NICHT am Ueberfahren — er steht, solange ein Replay gewaehlt ist. */
         /* Bei aktivem Control-Rig keine Objekt-Silhouette — sie uebermalt die Controls
