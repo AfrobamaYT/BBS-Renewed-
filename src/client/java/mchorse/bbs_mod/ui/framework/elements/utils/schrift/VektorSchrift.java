@@ -212,6 +212,7 @@ public final class VektorSchrift
         float stift = x;
         float grundlinie = y + GRUNDLINIE;
         int farbe = basis;
+        GlyphNetz netz = new GlyphNetz();
 
         for (int i = 0; i < text.length(); )
         {
@@ -242,12 +243,15 @@ public final class VektorSchrift
                 float gx = stift + glyph.bearingX() / skala;
                 float gy = grundlinie - glyph.bearingY() / skala;
 
-                batcher.texturedBox(atlas.textur(), dunkeln ? VektorStil.dunkeln(farbe) : farbe, gx, gy, glyph.w() / skala, glyph.h() / skala,
-                    glyph.u(), glyph.v(), glyph.u() + glyph.w(), glyph.v() + glyph.h(), atlas.seite, atlas.seite);
+                netz.lege(gx, gy, glyph.w() / skala, glyph.h() / skala,
+                    glyph.u(), glyph.v(), glyph.w(), glyph.h(),
+                    dunkeln ? VektorStil.dunkeln(farbe) : farbe);
             }
 
             stift += glyph.advance() / skala;
             i += Character.charCount(cp);
         }
+
+        netz.einreichen(batcher, atlas.textur(), atlas.seite);
     }
 }

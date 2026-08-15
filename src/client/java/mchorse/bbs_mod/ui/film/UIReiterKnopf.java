@@ -58,9 +58,13 @@ public class UIReiterKnopf extends UIElement
 
         /* -90° laesst den Text von unten nach oben laufen. Nach der Drehung belegt er vom
          * Ankerpunkt aus x .. x+Schrifthoehe und y-Textbreite .. y — daher der Versatz,
-         * damit er mittig im Knopf sitzt. */
+         * damit er mittig im Knopf sitzt.
+         *
+         * ⛔ OHNE Schatten, wie Blender: der Schatten ist ein zweiter Durchgang um (+1,+1)
+         * im TEXTraum, und der wird mitgedreht — bei 90° faellt er diagonal neben die
+         * Buchstaben und macht die 7 px hohe Schrift matschig statt lesbarer. */
         context.batcher.text(this.beschriftung, this.area.mx() - hoehe / 2F,
-            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFFbbbbbb, true, -90F);
+            this.area.my() + breite / 2F, this.aktiv ? Colors.WHITE : 0xFFbbbbbb, false, -90F);
 
         super.render(context);
     }

@@ -140,13 +140,24 @@ public class UISeitenleiste extends UIElement
             this.aktiv = namen.get(0);
         }
 
-        /* Der Klapp-Knopf sitzt oben im Streifen, wie Blenders Pfeil am Rand. */
-        this.streifen.add(new UIButton(IKey.raw(this.offen ? ">" : "<"), (b) ->
+        /* ⛔ ENTWEDER Pfeil ODER Reiter, nie beides — so macht es Blender: bei zugeklappter
+         * Leiste steht nur ein kleiner Pfeil am Rand, sobald sie offen ist, uebernehmen die
+         * Reiter und der Pfeil verschwindet. Zugeklappt wird ueber den aktiven Reiter. */
+        if (!this.offen)
         {
-            this.offen = !this.offen;
-            this.gebautFuer = "";
-            this.aktualisiere();
-        }));
+            this.streifen.add(new UIButton(IKey.raw("<"), (b) ->
+            {
+                this.offen = true;
+                this.gebautFuer = "";
+                this.aktualisiere();
+            }));
+
+            this.inhalt.setVisible(false);
+            this.x(1F, -STREIFEN).w(STREIFEN);
+            this.resize();
+
+            return;
+        }
 
         for (String name : namen)
         {
@@ -159,12 +170,12 @@ public class UISeitenleiste extends UIElement
                 this.aktualisiere();
             });
 
-            reiterKnopf.aktiv = name.equals(this.aktiv) && this.offen;
+            reiterKnopf.aktiv = name.equals(this.aktiv);
             reiterKnopf.h(Math.max(28, name.length() * 6 + 16));
             this.streifen.add(reiterKnopf);
         }
 
-        this.inhalt.setVisible(this.offen);
+        this.inhalt.setVisible(true);
 
         /* Zu: nur der Streifen belegt Platz. Offen: Streifen plus ein brauchbarer
          * Inhaltsbereich, aber nie mehr als die halbe Vorschau.
@@ -177,27 +188,24 @@ public class UISeitenleiste extends UIElement
         if (this.getParent() != null)
         {
             int haelfte = Math.max(this.getParent().area.w / 2, STREIFEN + 60);
-            int breite = this.offen ? Math.min(STREIFEN + 210, haelfte) : STREIFEN;
+            int breite = Math.min(STREIFEN + 210, haelfte);
 
             this.x(1F, -breite).w(breite);
         }
 
-        if (this.offen)
+        UIElement panel = reiter().get(this.aktiv).get();
+
+        this.gezeigt = panel;
+
+        if (panel != null)
         {
-            UIElement panel = reiter().get(this.aktiv).get();
+            /* ⛔ Der Rollbereich braucht eine EIGENE Groesse. Unter dem column-Resizer des
+             * Inhalts kam er auf 202x0 — das Panel darin war fertig (194x263, 14 Zeilen)
+             * und trotzdem unsichtbar (gemessen). */
+            UIElement roll = UI.scrollView(4, 4, panel);
 
-            this.gezeigt = panel;
-
-            if (panel != null)
-            {
-                /* ⛔ Der Rollbereich braucht eine EIGENE Groesse. Unter dem
-                 * column-Resizer des Inhalts kam er auf 202x0 — das Panel darin war
-                 * fertig (194x263, 14 Zeilen) und trotzdem unsichtbar (gemessen). */
-                UIElement roll = UI.scrollView(4, 4, panel);
-
-                roll.relative(this.inhalt).x(0).y(0).w(1F).h(1F);
-                this.inhalt.add(roll);
-            }
+            roll.relative(this.inhalt).x(0).y(0).w(1F).h(1F);
+            this.inhalt.add(roll);
         }
 
         this.resize();
