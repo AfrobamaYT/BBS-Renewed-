@@ -182,8 +182,27 @@ public class RigCtrlZeichner
         builder.addVertex(p1.x + s.x, p1.y + s.y, p1.z + s.z).setColor(col[0], col[1], col[2], 1F);
     }
 
+    /**
+     * Die Control-Farbe so, wie Blender sie ZEICHNET — nicht wie sie gespeichert ist.
+     *
+     * <p>⛔ Gemessen an zwei Controls im Blender-Viewport: {@code hand_ik.L} ist als
+     * (204,0,0) hinterlegt und wird als **(152,0,0)** gezeichnet, {@code upper_arm_fk.L}
+     * als (96,199,53) hinterlegt und als **(46,147,0)** gezeichnet. Beide folgen der
+     * sRGB→linear-Umrechnung (Vorhersage 154 bzw. 146 im Hauptkanal). BBS malte bisher
+     * den GESPEICHERTEN Wert und war damit sichtbar greller als Blender.
+     *
+     * <p>Ausgeschlossen wurde vorher: das Farbmanagement (AgX gegen Standard liefert
+     * BITGLEICHE Bilder) und ein globaler Anzeige-Transform (der Viewport-Hintergrund
+     * kommt mit 63 an, das Theme sagt 61).
+     */
     private static float[] rgb(int farbe)
     {
-        return new float[] {(farbe >> 16 & 0xFF) / 255F, (farbe >> 8 & 0xFF) / 255F, (farbe & 0xFF) / 255F};
+        return new float[] {linear((farbe >> 16 & 0xFF) / 255F),
+            linear((farbe >> 8 & 0xFF) / 255F), linear((farbe & 0xFF) / 255F)};
+    }
+
+    private static float linear(float c)
+    {
+        return c <= 0.04045F ? c / 12.92F : (float) Math.pow((c + 0.055F) / 1.055F, 2.4);
     }
 }
