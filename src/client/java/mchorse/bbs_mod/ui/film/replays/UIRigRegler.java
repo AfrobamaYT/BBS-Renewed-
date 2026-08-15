@@ -71,7 +71,11 @@ public class UIRigRegler extends UIElement
     public void aktualisiere(IEntity entity, mchorse.bbs_mod.utils.pose.Pose pose)
     {
         RigMechanik mechanik = mechanikVon(entity);
-        String kennung = mechanik == null ? "" : String.valueOf(mechanik.hashCode());
+        /* ⛔ Der gewaehlte Knochen gehoert in die Kennung: das Panel zeigt seit heute nur
+         * noch die Regler SEINER Gliedmasse, und ohne ihn bliebe es bei der Auswahl
+         * stehen, die beim Aufklappen gerade galt. */
+        String kennung = mechanik == null ? ""
+            : mechanik.hashCode() + "#" + gewaehlterKnochen();
 
         if (kennung.equals(this.gebautFuer))
         {
@@ -90,13 +94,23 @@ public class UIRigRegler extends UIElement
             return;
         }
 
+        String gewaehlt = gewaehlterKnochen();
+
         for (String bone : mechanik.treiber.regler.knochen())
         {
-            this.add(UI.label(IKey.raw(bone))
-                .background(Colors.A50 | Colors.GRAY));
-
             for (Map.Entry<String, MapType> e : mechanik.treiber.regler.reglerVon(bone).entrySet())
             {
+                /* ⛔ Blender zeigt NICHT alle Gliedmassen untereinander: jede Zeile steht
+                 * in seinem `rig_ui.py` in `if is_selected({...})`, und die Bloecke
+                 * schachteln. Der IK/FK-Schieber des linken Arms erscheint nur, wenn ein
+                 * Control DIESES Arms gewaehlt ist, `FK_limb_follow` zusaetzlich nur bei
+                 * einem FK-Knochen. Vorher stand hier die ganze Liste mit Knochennamen als
+                 * Zwischenueberschrift — lesbar, aber nicht Blender. */
+                if (!sichtbar(e.getValue(), gewaehlt))
+                {
+                    continue;
+                }
+
                 this.add(this.schieber(mechanik, bone, e.getKey(), e.getValue()));
 
                 float fk = RigSnap.fkWert(mechanik, bone, e.getKey(),
@@ -107,14 +121,52 @@ public class UIRigRegler extends UIElement
                  * auf nr0, es gibt keine zweite Quelle) — ein Knopf dort haette nichts
                  * geschnappt. Ein Knopf, der nichts tut, ist derselbe Betrug wie ein
                  * Schieber, der nichts bewegt. */
-                if (!Float.isNaN(fk) && !RigSnap.paare(mechanik, bone, e.getKey()).isEmpty())
+                /* ⛔ Und nur dort, wo BLENDER auch Knoepfe hat: die Beschriftungen kommen
+                 * aus seinem `rig_ui.py`. Der Kiefer-Lock ist strukturell derselbe Bau wie
+                 * FK/IK (zwei COPY_TRANSFORMS, der zweite getrieben) — wir haben ihm daraus
+                 * zwei Knoepfe gebaut, die es in Blender nicht gibt ("mouth_lock = 0/1").
+                 * Erfundene Knoepfe sind genau das, was der Nutzer als falsch gemeldet hat. */
+                boolean blenderHatKnoepfe = !e.getValue().getString("snap_zu_fk").isEmpty()
+                    && !e.getValue().getString("snap_zu_ik").isEmpty();
+
+                if (blenderHatKnoepfe && !Float.isNaN(fk)
+                    && !RigSnap.paare(mechanik, bone, e.getKey()).isEmpty())
                 {
                     this.add(this.snapZeile(mechanik, bone, e.getKey(), fk));
                 }
             }
         }
 
-        this.resize();
+        this.neuEinmessen();
+    }
+
+    /**
+     * ⛔ Nach einem Neubau muss der ROLLBEREICH mit, nicht nur dieses Element.
+     *
+     * <p>Seit das Panel der Auswahl folgt, aendert sich seine Hoehe stark (41 Zeilen bei
+     * allen Gliedmassen, 6 bei einem Bein). Ein blosses {@code this.resize()} laesst den
+     * Abschnitt darueber auf der alten Hoehe stehen und den Rollstand im Leeren: gemessen
+     * standen die neuen Zeilen bei y=2298, waehrend der sichtbare Bereich bei ~300 endete —
+     * der Kopf "Rig Main Properties" war da, darunter nichts.
+     */
+    private void neuEinmessen()
+    {
+        UIElement oben = this;
+
+        for (UIElement p = this.getParent(); p != null; p = p.getParent())
+        {
+            oben = p;
+
+            if (p instanceof mchorse.bbs_mod.ui.framework.elements.UIScrollView roll)
+            {
+                roll.resize();
+                roll.scroll.clamp();
+
+                return;
+            }
+        }
+
+        oben.resize();
     }
 
     /**
@@ -189,6 +241,64 @@ public class UIRigRegler extends UIElement
     }
 
     /** Die Armature hinter dieser Entity — dieselbe Kette wie {@link #mechanikVon}. */
+    /** Der im Pose-Editor gewaehlte Knochen — Blenders {@code selected_pose_bones}. */
+    private static String gewaehlterKnochen()
+    {
+        if (!(mchorse.bbs_mod.BBSModClient.getDashboard().panels.panel
+            instanceof mchorse.bbs_mod.ui.film.UIFilmPanel panel))
+        {
+            return "";
+        }
+
+        var editor = panel.replayEditor.keyframeEditor;
+        var bone = editor == null ? null : editor.getBone();
+
+        return bone == null || bone.a == null ? "" : mchorse.bbs_mod.utils.StringUtils.fileName(bone.a);
+    }
+
+    /**
+     * Blenders {@code is_selected}, geschachtelt: die Zeile erscheint, wenn in JEDEM Tor
+     * mindestens einer der genannten Knochen gewaehlt ist. Ohne Tor-Angabe (aelterer
+     * Export) bleibt die Zeile sichtbar — lieber zu viel zeigen als still verschwinden.
+     */
+    private static boolean sichtbar(MapType d, String gewaehlt)
+    {
+        mchorse.bbs_mod.data.types.ListType tore = d.getList("sichtbar_wenn");
+
+        if (tore == null || tore.size() == 0)
+        {
+            return true;
+        }
+
+        if (gewaehlt.isEmpty())
+        {
+            return false;
+        }
+
+        for (int i = 0; i < tore.size(); i++)
+        {
+            mchorse.bbs_mod.data.types.ListType namen = tore.getList(i);
+            boolean drin = false;
+
+            for (int j = 0; namen != null && j < namen.size(); j++)
+            {
+                if (gewaehlt.equals(namen.getString(j)))
+                {
+                    drin = true;
+
+                    break;
+                }
+            }
+
+            if (!drin)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Blenders Vorgabe-Beschriftung fuer eine Property ohne eigenen {@code text}:
      * Unterstriche zu Leerzeichen, Wortanfaenge gross. {@code pole_vector} wird zu
