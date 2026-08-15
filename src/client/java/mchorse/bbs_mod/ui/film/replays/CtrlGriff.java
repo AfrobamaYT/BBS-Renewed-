@@ -109,6 +109,14 @@ public class CtrlGriff
             return;
         }
 
+        /* ⛔ In Blender gesperrte Controls bleiben ANKLICKBAR (man will ihre Regler
+         * sehen), lassen sich aber nicht ziehen. Die Auswahl oben ist also richtig —
+         * nur der Transform-Modus darf hier nicht starten. */
+        if (RigCtrl.gesperrt(RigCtrl.fuerEntity(editor.filmPanel.getController().getCurrentEntity()), pick.b))
+        {
+            return;
+        }
+
         /* Der Hotkey-Achsen-Walk faellt ohne Gizmo auf Achse X (gemessen: die Fussbox
          * wanderte nur seitlich) — deshalb direkt Blenders Startmodi. */
         if (RigCtrl.dragRotiert(RigCtrl.fuerEntity(editor.filmPanel.getController().getCurrentEntity()), pick.b))

@@ -71,13 +71,12 @@ public class RigCtrlZeichner
             }
             float[] col = rgb(e.pick().equals(selectedBone) ? e.farbeA() : e.farbeN());
 
-            /* Blenders wire_width ist eine crispe 2D-Pixelbreite; unser Band bringt Kern+
-             * Alpha-Rampe schon mit. Faktor 0.5 traf im Bild die 3px-Anmutung — voll
-             * uebernommen wurden die Baender BREITER als die Segmente der 48er-Ringe und
-             * jede Knick-Ecke ragte als radialer Stachel raus ("Fell", gemessen). */
+            /* `breite` IST Blenders `custom_shape_wire_width` — in Pixeln, so wie Blender
+             * es meint. Der frueher hier stehende Faktor 0.11 machte daraus 0.19 px
+             * (nachgerechnet), deshalb waren die Controls kaum zu sehen. */
             for (float[] linie : e.linien())
             {
-                RigWidgets.kette(wire, kombi, linie, col, a, e.breite() * 0.11F);
+                RigWidgets.kette(wire, kombi, linie, col, a, e.breite());
             }
         }
         }

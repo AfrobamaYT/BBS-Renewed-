@@ -52,6 +52,9 @@ public final class RigWidgets
      * ~2.7px opaker Kern + ~1.8px Alpha-Auslauf je Seite — Blender faehrt 2px, hier
      * bewusst kraeftiger: die Editor-Fenster sind oft klein (854er-Boot) und die
      * Widgets muessen auf dunklen Skins ohne Outline bestehen. */
+    /* ⛔ Nur noch fuer den GIZMO-Achsen-Pfad, der seine eigene Distanzregel hat
+     * (BBSSettings.getAxesDistanceScale). Die Rig-Controls rechnen seit 2026-08-14 in
+     * Pixeln wie Blender — siehe weltProPixel(). Nicht vermischen. */
     private static final float HALB_KERN = 0.0060F;
     private static final float HALB_AUSSEN = 0.0085F;
 
@@ -182,6 +185,23 @@ public final class RigWidgets
      * axesKeepScreenSize-Setting (ohne das schrumpften die Linien mit der Distanz
      * bis zur Unsichtbarkeit; Blender haelt Wire-Pixelbreite). 5m = Faktor 1.
      */
+    /**
+     * Weltbreite EINES Pixels in {@code dist} Metern — Blenders Massstab fuer Wire-Breiten.
+     *
+     * <p>⛔ Blender zeichnet Custom-Shapes mit {@code custom_shape_wire_width} in PIXELN
+     * (Vorgabe 1.0), konstant ueber die Distanz. Die alte Fassung rechnete stattdessen mit
+     * einem Faktor 0.11 nach Augenmass, dessen Kommentar "die 3px-Anmutung" behauptete —
+     * nachgerechnet waren es **0.19 px Kern und 0.27 px gesamt**, also gut ein Siebtel von
+     * Blender. Genau das war die gemeldete schlechte Sichtbarkeit.
+     */
+    public static float weltProPixel(float dist)
+    {
+        int hoehe = net.minecraft.client.Minecraft.getInstance().getWindow().getHeight();
+
+        return 2F * dist * (float) Math.tan(mchorse.bbs_mod.BBSSettings.getFov() / 2.0)
+            / Math.max(hoehe, 1);
+    }
+
     public static float screenSkala(float dist)
     {
         float tanFov = (float) Math.tan(BBSSettings.getFov() / 2.0);
@@ -217,9 +237,14 @@ public final class RigWidgets
                 continue;
             }
 
-            float skala = screenSkala(dist) * (breitenSkala <= 0F ? 1F : breitenSkala) * breite;
-            float kern = HALB_KERN * skala / len;
-            float aussen = HALB_AUSSEN * skala / len;
+            /* Blenders Regel: der Kern ist `wire_width` Pixel breit, darum je Seite ein
+             * halbes Pixel Rampe. `breitenSkala` bleibt der Nutzerknopf darueber. */
+            float px = weltProPixel(dist) * (breitenSkala <= 0F ? 1F : breitenSkala);
+            float kern = breite * 0.5F * px / len;
+            /* 0.5 px Rampe je Seite = Blenders ein Pixel Kantenglaettung. Bewusst als
+             * Literal: ein NEUES statisches Feld waere nach einem Hotswap 0 und die
+             * Linien damit unsichtbar (<clinit> laeuft nicht erneut). */
+            float aussen = kern + 0.5F * px / len;
             float dehn = aussen * len / Math.max(d.length(), 1.0E-6F);
 
             float dx = d.x * dehn, dy = d.y * dehn, dz = d.z * dehn;

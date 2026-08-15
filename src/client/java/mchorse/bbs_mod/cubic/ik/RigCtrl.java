@@ -26,7 +26,8 @@ public class RigCtrl
     private static java.util.Map<String, List<Eintrag>> proModell;
 
     public record Eintrag(String name, String anker, String pick, int farbeN, int farbeA,
-        float breite, String schalter, boolean ik, boolean dragRot, float[][] linien) {}
+        float breite, String schalter, boolean ik, boolean dragRot, boolean fest,
+        float[][] linien) {}
 
     /** Das importierte Control-Rig dieses Modells, sonst null. Einziges Kriterium:
      *  das Modell bringt ein rig.json mit — BBS erzeugt selbst keine Rigs mehr. */
@@ -95,6 +96,25 @@ public class RigCtrl
      * Blender-Kanon fuer LMB-Drag auf dem Control dieses PICK-Bones: translate (G) —
      * ausser das Control ist location-gelockt (die FK-Ringe), dann dreht der Drag (R).
      */
+    /**
+     * Haelt Blender dieses Control fest? Die Zahnrad-Widgets eines Glieds
+     * ({@code upper_arm_parent.R}) tragen alle neun Sperren: anklickbar, damit man ihre
+     * Regler sieht, aber unbeweglich. Ohne diese Pruefung liess BBS sie ziehen und das
+     * Rig verhielt sich anders als in Blender (gemeldet 2026-08-14).
+     */
+    public static boolean gesperrt(List<Eintrag> rig, String pickBone)
+    {
+        for (Eintrag e : rig == null ? Collections.<Eintrag>emptyList() : rig)
+        {
+            if (e.pick.equals(pickBone))
+            {
+                return e.fest;
+            }
+        }
+
+        return false;
+    }
+
     public static boolean dragRotiert(List<Eintrag> rig, String pickBone)
     {
         for (Eintrag e : rig == null ? Collections.<Eintrag>emptyList() : rig)
@@ -143,7 +163,8 @@ public class RigCtrl
                     Integer.parseInt(farbe.getString("normal"), 16),
                     Integer.parseInt(farbe.getString("aktiv"), 16),
                     c.getFloat("breite", 1F), c.getString("schalter"),
-                    c.getBool("ik", false), c.getBool("dragRot", false), zuege));
+                    c.getBool("ik", false), c.getBool("dragRot", false),
+                    c.getBool("fest", false), zuege));
             }
         }
 
