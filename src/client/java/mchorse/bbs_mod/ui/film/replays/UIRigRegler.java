@@ -154,10 +154,14 @@ public class UIRigRegler extends UIElement
      * steht stattdessen, warum es leer ist. Ein leeres Feld sieht sonst aus wie ein
      * kaputtes Feld, und genau danach sucht man dann an der falschen Stelle.
      *
-     * <p>Umlaute sind hier erlaubt — gemessen 2026-08-15, weil im ganzen Baum kein
-     * einziger UI-Text einen hat und damit nicht belegt war, dass die Schrift sie
-     * traegt: eine Probe "PROBE aeoeue AEOEUE ss Groesse" in genau diesem Feld kam im
-     * Bild vollstaendig heraus, Klein, Gross und Eszett.
+     * <p>⛔ ENGLISCH, wie jeder sichtbare Text dieses Panels: der Nutzer arbeitet mit
+     * jemandem zusammen, der kein Deutsch kann, und ein Hinweis, den der Leser nicht
+     * versteht, ist so nuetzlich wie ein leeres Feld. Die Kommentare bleiben deutsch —
+     * sie richten sich an den, der den Code aendert, nicht an den, der ihn bedient.
+     *
+     * <p>(Nebenbefund vom 2026-08-15, weiter gueltig: die Schrift TRAEGT Umlaute. Im
+     * ganzen Baum hat kein UI-Text einen, es war also unbelegt; eine Probe in genau
+     * diesem Feld kam vollstaendig heraus, Klein, Gross und Eszett.)
      *
      * <p>⛔ KURZ bleibt es trotzdem: ob {@link UIText} bei 194 px Panelbreite sauber umbricht, konnte
      * ich nicht messen — der Render-Thread-Waechter blockt {@code resize()} aus dem
@@ -168,8 +172,8 @@ public class UIRigRegler extends UIElement
     private UIElement hinweis(String gewaehlt)
     {
         String text = gewaehlt.isEmpty()
-            ? "W\u00e4hle ein Rig-Control aus."
-            : gewaehlt + " hat keine Regler.";
+            ? "Select a rig control."
+            : gewaehlt + " has no rig properties.";
 
         return new mchorse.bbs_mod.ui.framework.elements.utils.UIText(IKey.raw(text))
             .color(Colors.A75 | Colors.LIGHTER_GRAY, false)
@@ -236,8 +240,11 @@ public class UIRigRegler extends UIElement
         UIButton nachFk = new UIButton(IKey.raw(linksText), (b) -> this.snap(mechanik, bone, prop, true, fkWert));
         UIButton nachIk = new UIButton(IKey.raw(rechtsText), (b) -> this.snap(mechanik, bone, prop, false, ikWert));
 
-        nachFk.tooltip(IKey.raw("Erst schnappen, dann schalten — ohne den Snap springt das Glied um ein Bild"));
-        nachIk.tooltip(IKey.raw("Erst schnappen, dann schalten — ohne den Snap springt das Glied um ein Bild"));
+        IKey snapHilfe = IKey.raw("Snap first, then switch \u2014 without the snap the limb "
+            + "jumps for one frame");
+
+        nachFk.tooltip(snapHilfe);
+        nachIk.tooltip(snapHilfe);
 
         /* Blenders zweite Reihe: derselbe Snap ueber ALLE Keyframes statt nur im
          * aktuellen Bild. Dort heissen beide Knoepfe schlicht "Action"; die Richtung
@@ -247,10 +254,10 @@ public class UIRigRegler extends UIElement
         UIButton backeIk = new UIButton(IKey.raw("Action"),
             (b) -> this.backe(mechanik, bone, prop, false, ikWert));
 
-        backeFk.tooltip(IKey.raw(linksText + " an JEDEM Pose-Keyframe — den ganzen Schuss "
-            + "umrechnen statt an jeder Umschaltstelle von Hand schnappen"));
-        backeIk.tooltip(IKey.raw(rechtsText + " an JEDEM Pose-Keyframe — den ganzen Schuss "
-            + "umrechnen statt an jeder Umschaltstelle von Hand schnappen"));
+        backeFk.tooltip(IKey.raw(linksText + " on EVERY pose keyframe \u2014 convert the whole "
+            + "shot at once instead of snapping by hand at each switch"));
+        backeIk.tooltip(IKey.raw(rechtsText + " on EVERY pose keyframe \u2014 convert the whole "
+            + "shot at once instead of snapping by hand at each switch"));
 
         UIElement spalte = new UIElement();
 
