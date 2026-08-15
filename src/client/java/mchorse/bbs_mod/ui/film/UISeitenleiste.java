@@ -44,7 +44,9 @@ public class UISeitenleiste extends UIElement
 
     private String aktiv = "";
     private String gebautFuer = "";
-    private boolean offen = true;
+    /* ⛔ Zu bis jemand sie aufmacht — wie Blenders N-Panel. Offen als Vorgabe verschluckt
+     * kleine Vorschauen: bei 215 px Breite blieben vom Inhalt 15 px uebrig (gemessen). */
+    private boolean offen = false;
     private final UIElement streifen = new UIElement();
     private final UIElement inhalt = new UIElement();
     private UIElement gezeigt;
@@ -79,7 +81,7 @@ public class UISeitenleiste extends UIElement
         this.streifen.column(2).stretch().padding(3);
 
         this.inhalt.relative(this).x(0).y(0).w(1F, -STREIFEN).h(1F);
-        this.inhalt.column(4).stretch().padding(4);
+        this.streifen.setVisible(true);
 
         /* Hintergrund, damit es ein Panel ist und keine schwebenden Knoepfe. */
         this.add(new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((context) ->
@@ -161,6 +163,15 @@ public class UISeitenleiste extends UIElement
 
         this.inhalt.setVisible(this.offen);
 
+        /* Zu: nur der Streifen belegt Platz. Offen: Streifen plus ein brauchbarer
+         * Inhaltsbereich, aber nie mehr als die halbe Vorschau. */
+        if (this.getParent() != null)
+        {
+            int haelfte = Math.max(this.getParent().area.w / 2, STREIFEN + 60);
+
+            this.w(this.offen ? Math.min(STREIFEN + 210, haelfte) : STREIFEN);
+        }
+
         if (this.offen)
         {
             UIElement panel = reiter().get(this.aktiv).get();
@@ -169,7 +180,13 @@ public class UISeitenleiste extends UIElement
 
             if (panel != null)
             {
-                this.inhalt.add(UI.scrollView(4, 4, panel));
+                /* ⛔ Der Rollbereich braucht eine EIGENE Groesse. Unter dem
+                 * column-Resizer des Inhalts kam er auf 202x0 — das Panel darin war
+                 * fertig (194x263, 14 Zeilen) und trotzdem unsichtbar (gemessen). */
+                UIElement roll = UI.scrollView(4, 4, panel);
+
+                roll.relative(this.inhalt).x(0).y(0).w(1F).h(1F);
+                this.inhalt.add(roll);
             }
         }
 

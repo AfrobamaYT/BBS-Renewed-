@@ -90,8 +90,10 @@ public class UIFilmPreview extends UIElement
          * 854x480-Fenster fast die ganze Vorschau. Blenders N-Panel nimmt auch einen
          * Anteil, keine feste Pixelzahl. Gedeckelt, damit sie auf grossen Schirmen nicht
          * ausufert. */
-        leiste.relative(this).x(1F, -1).y(4).w(0.34F).h(1F, -8);
-        leiste.anchor(1F, 0F);
+        /* ⛔ Anteilig UND von links gerechnet: mit x(1F,-1)+anchor sass die Leiste bei
+         * x=8, also links (gemessen). x(0.66F)+w(0.34F) legt sie eindeutig ans rechte
+         * Drittel, unabhaengig von der Fenstergroesse. */
+        leiste.relative(this).x(0.66F).y(4).w(0.34F, -4).h(1F, -8);
         this.add(leiste);
 
         this.icons = UI.row(0, 0);
