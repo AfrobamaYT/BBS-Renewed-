@@ -33,6 +33,14 @@ public class RigCtrlZeichner
         IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
         Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a)
     {
+        /* ⛔ EIN Cache fuers ganze Bild, nicht einer je Control. Ohne ihn legt
+         * getBoneCompositeMatrix je Aufruf einen frischen an und baut die Armature-Matrizen
+         * komplett neu — bei 220 Controls also 220 volle Aufbauten pro Bild. Gemessen:
+         * 23 von 30 Render-Stapelabzuegen unter diesem Pfad, 3 FPS im Editor. */
+        mchorse.bbs_mod.forms.renderers.utils.BildFrameCache.anlegen();
+
+        try
+        {
         for (RigCtrl.Eintrag e : rig)
         {
             if (!RigCtrl.sichtbar(e))
@@ -71,6 +79,12 @@ public class RigCtrlZeichner
             {
                 RigWidgets.kette(wire, kombi, linie, col, a, e.breite() * 0.11F);
             }
+        }
+        }
+        finally
+        {
+            /* ⛔ Ein liegengebliebener Cache liefert im naechsten Bild veraltete Matrizen. */
+            mchorse.bbs_mod.forms.renderers.utils.BildFrameCache.frei();
         }
     }
 

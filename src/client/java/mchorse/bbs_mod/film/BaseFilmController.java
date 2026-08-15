@@ -681,7 +681,7 @@ public abstract class BaseFilmController
         /* Anchor resolution and the bone lookup below both evaluate a pose, and for a form anchored to
          * itself (or to a bone of its own tree) that is literally the same one. Nothing between the two
          * touches the pose, so they share a frame. */
-        FormFrameCache frame = new FormFrameCache();
+        FormFrameCache frame = mchorse.bbs_mod.forms.renderers.utils.BildFrameCache.aktuellOderNeu();
 
         if (!relative)
         {
