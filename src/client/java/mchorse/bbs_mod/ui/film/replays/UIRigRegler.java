@@ -95,6 +95,7 @@ public class UIRigRegler extends UIElement
         }
 
         String gewaehlt = gewaehlterKnochen();
+        int gezeigt = 0;
 
         for (String bone : mechanik.treiber.regler.knochen())
         {
@@ -112,6 +113,7 @@ public class UIRigRegler extends UIElement
                 }
 
                 this.add(this.schieber(mechanik, bone, e.getKey(), e.getValue()));
+                gezeigt++;
 
                 float fk = RigSnap.fkWert(mechanik, bone, e.getKey(),
                     e.getValue().getFloat("min", 0F), e.getValue().getFloat("max", 1F));
@@ -137,7 +139,39 @@ public class UIRigRegler extends UIElement
             }
         }
 
+        if (gezeigt == 0)
+        {
+            this.add(this.hinweis(gewaehlt));
+        }
+
         this.neuEinmessen();
+    }
+
+    /**
+     * Was dasteht, wenn nichts zu zeigen ist. Blender laesst das Panel in diesem Fall
+     * LEER (sein {@code draw} steigt ohne {@code selected_pose_bones} sofort aus) — hier
+     * steht stattdessen, warum es leer ist. Ein leeres Feld sieht sonst aus wie ein
+     * kaputtes Feld, und genau danach sucht man dann an der falschen Stelle.
+     *
+     * <p>⛔ Ohne Umlaute: im ganzen Baum gibt es keinen einzigen UI-Text mit einem, also
+     * ist nicht belegt, dass die Schrift sie hat. Ein Kaestchen im Hinweis waere
+     * schlimmer als eine schlichtere Formulierung.
+     *
+     * <p>⛔ Und KURZ: ob {@link UIText} bei 194 px Panelbreite sauber umbricht, konnte
+     * ich nicht messen — der Render-Thread-Waechter blockt {@code resize()} aus dem
+     * Messkanal, und der Zustand "gar keine Auswahl" ist im Film-Editor kaum erreichbar.
+     * Beide Fassungen bleiben deshalb in der Laenge, die im Bild belegt ist (22 Zeichen,
+     * eine Zeile).
+     */
+    private UIElement hinweis(String gewaehlt)
+    {
+        String text = gewaehlt.isEmpty()
+            ? "Klick ein Rig-Control an."
+            : gewaehlt + " hat keine Regler.";
+
+        return new mchorse.bbs_mod.ui.framework.elements.utils.UIText(IKey.raw(text))
+            .color(Colors.A75 | Colors.LIGHTER_GRAY, false)
+            .marginTop(6);
     }
 
     /**
