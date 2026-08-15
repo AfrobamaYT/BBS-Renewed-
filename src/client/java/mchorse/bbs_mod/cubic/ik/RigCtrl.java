@@ -23,6 +23,7 @@ public class RigCtrl
      * ⛔ OHNE Initialisierer und lazy geholt: ein neues statisches Feld MIT Zuweisung
      * waere nach einem Hotswap null, weil `<clinit>` nicht erneut laeuft. */
     private static java.util.Map<String, Boolean> lagen;
+    private static List<Lage> lagenReihen;
 
     /* Lazy (Hotswap: neue statics sind null). Leere Liste = Modell hat kein eigenes rig.json. */
     private static java.util.Map<String, List<Eintrag>> proModell;
@@ -179,6 +180,26 @@ public class RigCtrl
         return false;
     }
 
+    /**
+     * Ein Layer so, wie Rigify ihn im Panel anordnet.
+     *
+     * @param zeile Zeile im Rig-Layers-Panel; 0 heisst "kommt dort nicht vor" (ORG/MCH/DEF).
+     *              Luecken zwischen zwei Zeilennummern sind Absicht und werden zu Abstand.
+     * @param titel Beschriftung aus dem Rig ("(Primary)"), nicht der Collection-Name.
+     */
+    public record Lage(String name, int zeile, String titel) {}
+
+    /** Die Layer mit Rigifys Zeilen-Layout, in Blenders Reihenfolge. */
+    public static List<Lage> lagenReihen()
+    {
+        if (lagenReihen == null)
+        {
+            lagenReihen = new ArrayList<>();
+        }
+
+        return lagenReihen;
+    }
+
     /** Die Layer in Blenders Reihenfolge, mit ihrem Zustand — fuer die Knopfleiste. */
     public static java.util.Map<String, Boolean> lagen()
     {
@@ -217,13 +238,22 @@ public class RigCtrl
             ListType ctrls = wurzel.getList("ctrls");
             ListType layer = wurzel.getList("lagen");
 
+            lagenReihen().clear();
+
             /* Blenders Reihenfolge UND sein Sichtbar-Zustand als Vorgabe. Ein Rig, das
              * schon in Blender Layer ausgeblendet hatte, kommt hier genauso an. */
             for (int i = 0; layer != null && i < layer.size(); i++)
             {
                 MapType l = layer.getMap(i);
 
-                lagen().putIfAbsent(l.getString("name"), l.getBool("an", true));
+                String name = l.getString("name");
+
+                lagen().putIfAbsent(name, l.getBool("an", true));
+
+                /* ⚠️ `zeile` fehlt in aelteren Extrakten — dann bleibt sie 0 und die
+                 * Knopfleiste faellt auf ihre eigene Paarbildung zurueck. */
+                lagenReihen().add(new Lage(name, l.getInt("zeile", 0),
+                    l.has("titel") ? l.getString("titel") : name));
             }
 
             for (int i = 0; i < ctrls.size(); i++)

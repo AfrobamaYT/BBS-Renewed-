@@ -19,10 +19,17 @@ import java.util.Map;
  * nicht arbeitet. Die Layer sind Blenders Bone-Collections, ihre Reihenfolge und ihr
  * Anfangszustand kommen 1:1 aus dem Export.
  *
- * <p>Die Paarung links/rechts ist ABGELEITET, nicht abgetippt: zwei Layer bilden eine
- * Zeile, wenn sich ihre Namen nur in {@code .L}/{@code .R} unterscheiden. Damit stimmt das
- * Layout auch fuer Rigs, deren Layer anders heissen — ein fest verdrahtetes Rigify-Layout
- * waere genau die Eigenerfindung, die beim naechsten Rig danebenliegt.
+ * <p>⭐ Das Layout wird NICHT abgeleitet, es steht im Rig: Rigify legt an jeder
+ * Bone-Collection {@code rigify_ui_row} (die Zeile im Panel) und {@code rigify_ui_title}
+ * (die dort gezeigte Beschriftung) ab. Der Export bringt beides mit, hier wird nur noch
+ * danach angeordnet — deshalb steht "Face" breit und darunter "(Primary)"/"(Secondary)"
+ * nebeneinander, genau wie in Blender. Luecken zwischen zwei Zeilennummern sind Absicht
+ * und werden zu Abstand (Rigifys erzeugtes {@code rig_ui.py} legt fuer eine leere Zeile
+ * eine leere Reihe an).
+ *
+ * <p>⚠️ Aeltere Extrakte kennen die Felder nicht (alle Zeilen 0). Dann faellt die Leiste
+ * auf ihre eigene Paarbildung nach {@code .L}/{@code .R} zurueck, statt alles
+ * untereinander zu stapeln.
  */
 public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UISeitenleiste.Auffrischbar
 {
@@ -79,19 +86,79 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
         this.gebautFuer = kennung;
         this.removeAll();
 
-        for (List<String> zeile : paare(new ArrayList<>(lagen.keySet())))
+        for (List<RigCtrl.Lage> zeile : this.zeilen())
         {
             UIElement reihe = UI.row(2);
 
-            for (String name : zeile)
+            if (zeile.isEmpty())
             {
-                reihe.add(this.knopf(name));
+                /* Leere Rigify-Zeile = Gruppenabstand. Ohne Kind hat die Reihe keine
+                 * Hoehe, darum eine halbe Knopfhoehe fest. */
+                reihe.h(8);
+            }
+
+            for (RigCtrl.Lage lage : zeile)
+            {
+                reihe.add(this.knopf(lage.name(), lage.titel()));
             }
 
             this.add(reihe);
         }
 
         this.resize();
+    }
+
+    /**
+     * Die Zeilen des Panels. Erste Wahl ist Rigifys eigenes Layout; nur wenn kein Layer
+     * eine Zeile mitbringt, wird nach {@code .L}/{@code .R} gepaart.
+     */
+    private List<List<RigCtrl.Lage>> zeilen()
+    {
+        List<RigCtrl.Lage> info = RigCtrl.lagenReihen();
+        int hoechste = 0;
+
+        for (RigCtrl.Lage l : info)
+        {
+            hoechste = Math.max(hoechste, l.zeile());
+        }
+
+        if (hoechste == 0)
+        {
+            List<List<RigCtrl.Lage>> raus = new ArrayList<>();
+
+            for (List<String> zeile : paare(new ArrayList<>(RigCtrl.lagen().keySet())))
+            {
+                List<RigCtrl.Lage> reihe = new ArrayList<>();
+
+                for (String name : zeile)
+                {
+                    reihe.add(new RigCtrl.Lage(name, 0, name));
+                }
+
+                raus.add(reihe);
+            }
+
+            return raus;
+        }
+
+        List<List<RigCtrl.Lage>> raus = new ArrayList<>();
+
+        for (int z = 1; z <= hoechste; z++)
+        {
+            List<RigCtrl.Lage> reihe = new ArrayList<>();
+
+            for (RigCtrl.Lage l : info)
+            {
+                if (l.zeile() == z)
+                {
+                    reihe.add(l);
+                }
+            }
+
+            raus.add(reihe);
+        }
+
+        return raus;
     }
 
     /**
@@ -112,10 +179,10 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
         return new ArrayList<>(zeilen.values());
     }
 
-    private UIButton knopf(String name)
+    private UIButton knopf(String name, String titel)
     {
         boolean an = RigCtrl.lagen().getOrDefault(name, true);
-        UIButton b = new UIButton(IKey.raw(name), (x) ->
+        UIButton b = new UIButton(IKey.raw(titel), (x) ->
         {
             RigCtrl.schalteLage(name, !RigCtrl.lagen().getOrDefault(name, true));
             this.gebautFuer = "";
@@ -126,6 +193,8 @@ public class UIRigLagen extends UIElement implements mchorse.bbs_mod.ui.film.UIS
          * UIButton kann genau das ueber color(). Vorher stand ein Minus im Text, was den
          * Namen verschob und schlechter zu lesen war. */
         b.color(an ? 0x4772b3 : 0x3a3a3a);
+        /* Der Tooltip nennt den VOLLEN Collection-Namen — auf dem Knopf steht nur
+         * Rigifys Kurztitel ("(Primary)"), der allein nicht sagt, wozu er gehoert. */
         b.tooltip(IKey.raw(an ? name + " — sichtbar, klicken zum Ausblenden"
             : name + " — ausgeblendet, klicken zum Einblenden"));
 
