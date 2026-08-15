@@ -128,11 +128,116 @@ public final class IKBOBJBruecke
                 IKUmrechnung.zuVec3(pol), polWinkel, false);
         }
 
+        /* ⛔ Die Bruecke schreibt ihre EIGENEN Eingaben heraus — nicht ein zweites
+         * Skript, das sie nachrechnet. Genau daran sind meine Vergleichsapparaturen
+         * gescheitert (zwei Beschreibungen derselben Geometrie). Aus ist der Normalfall;
+         * das Feld setzt nur die Messung. */
+        if (mitschrift != null)
+        {
+            schreibeGeometrie(segmente, dehnungen, gelenke, kette, ziel, gewicht, iterationen);
+        }
+
         boolean geloest = solver.loesen(segmente.get(0), aufgaben, iterationen);
 
         schreibeZurueck(kette, deltas, segmente, laengen, dehnungen);
 
         return geloest;
+    }
+
+    /**
+     * Wohin die Eingaben geschrieben werden, wenn jemand messen will. {@code null} =
+     * aus. Kein Initialisierer, damit ein Hotswap nichts kaputtmacht.
+     */
+    public static String mitschrift;
+
+    /**
+     * Die Eingaben dieser Loesung im Format von {@code tools/ikref/ikref.cpp}, damit
+     * DIESELBE Datei durch Blenders eigene Loeser-Bibliothek und durch diesen Port
+     * laufen kann.
+     *
+     * <p>⛔ Matrizen gehen TRANSPONIERT hinaus: Blenders {@code IK_SetTransform} liest
+     * spaltenweise ({@code rest[0][0], rest[1][0], rest[2][0]} wird seine erste ZEILE),
+     * unser {@link IKMat3} ist zeilenweise.
+     */
+    private static void schreibeGeometrie(List<IKQSegment> segmente, double[] dehnungen,
+        Map<String, Gelenk> gelenke, List<BOBJBone> kette, Vector3f ziel, double gewicht,
+        int iterationen)
+    {
+        StringBuilder sb = new StringBuilder(segmente.size() + "\n");
+
+        for (int a = 0; a < segmente.size(); a++)
+        {
+            IKQSegment seg = segmente.get(a);
+            Gelenk g = gelenke == null ? null : gelenke.get(kette.get(a).name);
+            int flag = 0;
+
+            for (int achse = 0; achse < 3; achse++)
+            {
+                if (g == null || !g.sperre()[achse])
+                {
+                    flag |= 1 << achse;
+                }
+            }
+
+            sb.append(flag).append(' ').append(a - 1);
+            /* Felder statt Gettern: dieselbe Paketebene, und es ist genau der Zustand,
+             * den setzeTransform gerade hineingelegt hat. origBasis, weil `basis` beim
+             * Loesen fortgeschrieben wird. Die LAENGE steckt bei Dehnung im Composite. */
+            anhaengen(sb, seg.start);
+            anhaengenT(sb, seg.restBasis);
+            anhaengenT(sb, seg.origBasis);
+            sb.append(String.format(java.util.Locale.ROOT, " %.7f %.7f",
+                seg.composite() != null ? seg.composite().translation.y : seg.translation.y,
+                dehnungen[a] > 0D ? dehnungen[a] : -1D));
+            sb.append('\n');
+        }
+
+        sb.append(String.format(java.util.Locale.ROOT, "%.7f %.7f %.7f %.7f 0.0 %d\n",
+            ziel.x, ziel.y, ziel.z, gewicht, iterationen));
+
+        /* ⛔ EINE DATEI JE KETTE, benannt nach ihrer Spitze. Bei einem gemeinsamen
+         * Namen gewinnt die zuletzt geloeste Kette, und man misst eine beliebige, ohne
+         * es zu merken (einmal passiert: gemessen wurde das Vorderbein statt der
+         * gesuchten Kette). */
+        String datei = mitschrift + "-" + kette.get(kette.size() - 1).name.replace('/', '_');
+
+        try
+        {
+            java.nio.file.Files.writeString(java.nio.file.Path.of(datei + ".txt"), sb.toString());
+
+            /* ⛔ Daneben, WELCHE Kette das war. Ohne das misst man eine Kette und weiss
+             * nicht welche — der Loeser schreibt bei jedem Aufruf, es gewinnt der
+             * letzte. Nicht in die Geometriedatei: ikrefs fscanf kennt keine Kommentare. */
+            StringBuilder namen = new StringBuilder();
+
+            for (BOBJBone b : kette)
+            {
+                namen.append(b.name).append(' ').append(b.restLength).append('\n');
+            }
+
+            java.nio.file.Files.writeString(java.nio.file.Path.of(datei + ".ketten"),
+                namen.toString());
+        }
+        catch (java.io.IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void anhaengen(StringBuilder sb, IKVec3 v)
+    {
+        sb.append(String.format(java.util.Locale.ROOT, " %.7f %.7f %.7f", v.x, v.y, v.z));
+    }
+
+    private static void anhaengenT(StringBuilder sb, IKMat3 m)
+    {
+        for (int r = 0; r < 3; r++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                sb.append(String.format(java.util.Locale.ROOT, " %.7f", m.get(c, r)));
+            }
+        }
     }
 
     /** Kette von der Spitze aufwaerts, zurueckgegeben WURZEL zuerst wie bei Blender. */
