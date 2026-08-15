@@ -342,13 +342,32 @@ public class UIRigRegler extends UIElement
             }
         };
 
+        /* ⛔ In die LEBENDE Pose schnappen, dann zurueckkopieren — nicht direkt in die
+         * Replay-Pose. Der Snap wertet nach jedem Schritt neu aus, und diese Auswertung
+         * liest die Pose der ENTITY-Form; die Replay-Pose kommt dort erst im naechsten
+         * Bild an (`applyProperties`). Gemessen 2026-08-16: dieselbe FK-Pose bewegt ueber
+         * die Entity-Pose 0.19190, ueber die Replay-Pose im selben Aufruf 0.00000 — die
+         * Schwenk-Suche haette also eine konstante Zielgroesse gesehen und still gar
+         * nichts gedreht. Derselbe Grund wie im Bake (RigBacken). */
+        mchorse.bbs_mod.utils.pose.Pose lebend =
+            this.entity.getForm() instanceof mchorse.bbs_mod.forms.forms.ModelForm mf3
+                ? mf3.pose.get() : this.pose;
+
         if (nachFk)
         {
-            RigSnap.fkAnIk(arm, m, this.pose, bone, prop, neu);
+            RigSnap.fkAnIk(arm, m, lebend, bone, prop, neu);
         }
         else
         {
-            RigSnap.ikAnFk(arm, m, this.pose, bone, prop, neu);
+            RigSnap.ikAnFk(arm, m, lebend, bone, prop, neu);
+        }
+
+        if (lebend != this.pose)
+        {
+            for (String name : RigSnap.geschrieben(m, bone, prop, nachFk))
+            {
+                this.pose.get(name).copy(lebend.get(name));
+            }
         }
 
         m.treiber.regler.setze(bone, prop, ziel);

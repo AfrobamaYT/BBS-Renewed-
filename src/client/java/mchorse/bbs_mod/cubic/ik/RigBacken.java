@@ -144,15 +144,12 @@ public final class RigBacken
                 /* ... und das Ergebnis in den Keyframe uebernehmen, sonst ist es beim
                  * naechsten applyProperties weg. Nur die geschnappten Knochen: alles
                  * andere gehoert dem Animator. */
-                for (String[] paar : RigSnap.paare(mechanik, schalter, prop))
+                /* ⛔ Genau die Knochen zurueckkopieren, auf die der Snap geschrieben hat —
+                 * inklusive des Pol-Controls, der in keinem Paar vorkommt. Die rohe
+                 * Paar-Liste holt Knochen, die die Werte gar nicht bekommen haben, und der
+                 * Bake sieht wirkungslos aus, obwohl der Snap richtig gerechnet hat. */
+                for (String name : RigSnap.geschrieben(mechanik, schalter, prop, nachFk))
                 {
-                    /* ⛔ Denselben Namen nehmen, auf den der Snap WIRKLICH geschrieben
-                     * hat: er leitet auf den schreibbaren Control um (RigSnap#schreibbar).
-                     * Wer die rohe Paar-Liste zurueckkopiert, holt den Knochen, der die
-                     * Werte gar nicht bekommen hat — und der Bake sieht wirkungslos aus,
-                     * obwohl der Snap richtig gerechnet hat. Erst passiert. */
-                    String name = RigSnap.schreibbar(mechanik, paar[nachFk ? 0 : 1]);
-
                     pose.get(name).copy(lebend.get(name));
                 }
             }

@@ -110,6 +110,39 @@ public final class RigSnap
     }
 
     /**
+     * Die Knochen, auf die ein Snap dieser Richtung WIRKLICH schreibt.
+     *
+     * <p>⛔ Nicht die rohe Paar-Liste: der Snap leitet auf den schreibbaren Control um
+     * ({@link #schreibbar}), und in Richtung IK &lt;- FK kommt der Schwenk dazu — ohne
+     * Pol der Basis-Control (steht schon in der Liste), mit Pol dessen Pol-Control, der
+     * in keinem Paar vorkommt. Wer die Ergebnisse zurueckkopiert und diesen einen
+     * vergisst, verliert genau den Schwenk und merkt es nicht.
+     */
+    public static List<String> geschrieben(RigMechanik mechanik, String schalter, String prop,
+        boolean nachFk)
+    {
+        List<String[]> paare = paare(mechanik, schalter, prop);
+        List<String> raus = new ArrayList<>();
+
+        for (String[] p : paare)
+        {
+            raus.add(schreibbar(mechanik, p[nachFk ? 0 : 1]));
+        }
+
+        if (!nachFk && paare.size() >= 2)
+        {
+            String pol = mechanik.polVon(paare.get(1)[1]);
+
+            if (pol != null && !raus.contains(pol))
+            {
+                raus.add(pol);
+            }
+        }
+
+        return raus;
+    }
+
+    /**
      * Der Reglerwert, bei dem die IK-Quelle ABGESCHALTET ist — also FK gilt.
      *
      * <p>⛔ Nicht Rigifys {@code IK_FK=1} annehmen: die Richtung steckt im
