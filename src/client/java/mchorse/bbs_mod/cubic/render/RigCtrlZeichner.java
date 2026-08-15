@@ -31,7 +31,7 @@ public class RigCtrlZeichner
 
     public static void weltPass(BufferBuilder wire, Matrix4f sicht, Vec3 kamera,
         IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
-        Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a)
+        Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a, float transition)
     {
         /* ⛔ EIN Cache fuers ganze Bild, nicht einer je Control. Ohne ihn legt
          * getBoneCompositeMatrix je Aufruf einen frischen an und baut die Armature-Matrizen
@@ -48,7 +48,14 @@ public class RigCtrlZeichner
                 continue;
             }
 
-            /* ⛔ Die VOLLE Knochenmatrix (useBoneMatrix=true), nicht die origin-Fassung.
+            /* ⛔ Die ZWISCHENZEIT muss durchgereicht werden, nicht 0F. Das Modell wird
+             * interpoliert gezeichnet; wer die Widgets mit 0F rechnet, laesst sie beim
+             * ABSPIELEN hinterherhinken. Gemessen 2026-08-16 bei laufendem Film: 0,2
+             * Einheiten Bewegung je Tick, Zwischenzeit 0.239 -> Versatz 0.0479, also
+             * exakt das Produkt. Der Nutzer meldete es als "die controls kommen nicht
+             * wenn ich das modell bewege" (Akte 20).
+             *
+             * ⛔ Die VOLLE Knochenmatrix (useBoneMatrix=true), nicht die origin-Fassung.
              * origin() laesst genau die EIGENE Drehung des Knochens weg (die des Elters
              * traegt es mit) — das Widget blieb deshalb stehen, sobald man seinen Knochen
              * drehte, und wanderte nur mit, wenn ein Elter sich bewegte. Genau so hat der
@@ -59,8 +66,10 @@ public class RigCtrlZeichner
              * mit `bone.mat`, also der vollen Matrix — Strich und Trefferflaeche liefen
              * bis dahin bei jedem gedrehten Knochen auseinander. */
             Matrix4f welt = e.anker().isEmpty()
-                ? BaseFilmController.getGizmoAnchorCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F)
-                : BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D, 0F, e.anker(), true);
+                ? BaseFilmController.getGizmoAnchorCompositeMatrix(entities, entity, replay, 0D, 0D, 0D,
+                    transition)
+                : BaseFilmController.getBoneCompositeMatrix(entities, entity, replay, 0D, 0D, 0D,
+                    transition, e.anker(), true);
 
             if (welt == null)
             {

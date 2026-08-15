@@ -894,7 +894,7 @@ public class ModelFormRenderer extends FormRenderer<ModelForm> implements ITicka
 
         if (this.form != null && this.form.ik.get() instanceof MapType ikMap)
         {
-            ModelIKDebug.renderStencil(context.stack, model.model, ikMap, context.stencilMap, this.form);
+            mchorse.bbs_mod.cubic.ik.ModelIKStencil.renderStencil(context.stack, model.model, ikMap, context.stencilMap, this.form);
         }
 
         /* Klick-Durchgang der Physik: spiegelt die Attach-Marker in die Auswahl-Maske,
