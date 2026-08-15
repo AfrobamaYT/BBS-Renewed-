@@ -1,6 +1,7 @@
 package mchorse.bbs_mod.ui.film.replays;
 
 import mchorse.bbs_mod.cubic.ik.RigMechanik;
+import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.cubic.ik.RigSnap;
 import mchorse.bbs_mod.data.types.MapType;
 import mchorse.bbs_mod.forms.entities.IEntity;
@@ -238,12 +239,67 @@ public class UIRigRegler extends UIElement
         nachFk.tooltip(IKey.raw("Erst schnappen, dann schalten — ohne den Snap springt das Glied um ein Bild"));
         nachIk.tooltip(IKey.raw("Erst schnappen, dann schalten — ohne den Snap springt das Glied um ein Bild"));
 
-        return UI.row(nachFk, nachIk).marginTop(4);
+        /* Blenders zweite Reihe: derselbe Snap ueber ALLE Keyframes statt nur im
+         * aktuellen Bild. Dort heissen beide Knoepfe schlicht "Action"; die Richtung
+         * steht im Tooltip, weil sie schon ueber dem Knopf steht. */
+        UIButton backeFk = new UIButton(IKey.raw("Action"),
+            (b) -> this.backe(mechanik, bone, prop, true, fkWert));
+        UIButton backeIk = new UIButton(IKey.raw("Action"),
+            (b) -> this.backe(mechanik, bone, prop, false, ikWert));
+
+        backeFk.tooltip(IKey.raw(linksText + " an JEDEM Pose-Keyframe — den ganzen Schuss "
+            + "umrechnen statt an jeder Umschaltstelle von Hand schnappen"));
+        backeIk.tooltip(IKey.raw(rechtsText + " an JEDEM Pose-Keyframe — den ganzen Schuss "
+            + "umrechnen statt an jeder Umschaltstelle von Hand schnappen"));
+
+        UIElement spalte = new UIElement();
+
+        spalte.column(2).vertical().stretch();
+        spalte.add(UI.row(nachFk, nachIk), UI.row(backeFk, backeIk));
+
+        return spalte.marginTop(4);
     }
 
     private static String trim(float v)
     {
         return v == Math.rint(v) ? String.valueOf((int) v) : String.valueOf(v);
+    }
+
+    /**
+     * Blenders {@code Action}: der Snap ueber ALLE Pose-Keyframes, danach der Schalter.
+     *
+     * <p>Der Schalter wird EINMAL gesetzt, nicht je Keyframe — er ist ein Regler des
+     * Rigs, keine Spur. Ist die ganze Animation umgerechnet, gilt die neue Betriebsart
+     * fuer den ganzen Schuss, und genau das ist der Sinn.
+     */
+    private void backe(RigMechanik mechanik, String bone, String prop, boolean nachFk, float ziel)
+    {
+        if (!(mchorse.bbs_mod.BBSModClient.getDashboard().panels.panel
+            instanceof mchorse.bbs_mod.ui.film.UIFilmPanel panel))
+        {
+            return;
+        }
+
+        RigMechanik m = mechanikVon(this.entity);
+        mchorse.bbs_mod.bobj.BOBJArmature arm = armaturVon(this.entity);
+        Replay replay = panel.replayEditor.getReplay();
+
+        if (m == null || arm == null || replay == null)
+        {
+            return;
+        }
+
+        int getan = mchorse.bbs_mod.cubic.ik.RigBacken.backe(panel.getController().getEntities(),
+            this.entity, replay, arm, m, bone, prop, nachFk);
+
+        if (getan <= 0)
+        {
+            return;
+        }
+
+        m.treiber.regler.setze(bone, prop, ziel);
+        this.gebautFuer = "";
+        this.aktualisiere(this.entity, this.pose);
     }
 
     private void snap(RigMechanik mechanik, String bone, String prop, boolean nachFk, float ziel)
