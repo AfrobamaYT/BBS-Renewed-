@@ -47,7 +47,22 @@ public class UIBoneList extends UIElement
 
     public UIBoneList(Consumer<List<String>> callback)
     {
-        this.list = new UIPoseBoneStringList(callback);
+        /* ⛔ Nach der Wahl eines Knochens den Fokus aus dem SUCHFELD nehmen. Sonst
+         * schluckt das Textfeld die naechste Taste: wer den Knochen ertippt und dann R
+         * drueckt, tippt ein "R" in die Suche statt zu drehen — der Zug startet nicht
+         * (gemessen 2026-08-15: Fokus keiner -> isEditing=true, Fokus UITextbox ->
+         * isEditing=false; als Fehler gemeldet und am Bildschirmmitschnitt gefunden). */
+        this.list = new UIPoseBoneStringList((namen) ->
+        {
+            mchorse.bbs_mod.ui.framework.UIContext c = this.getContext();
+
+            if (c != null && c.activeElement instanceof UITextbox)
+            {
+                c.unfocus();
+            }
+
+            callback.accept(namen);
+        });
         this.list.background();
         this.list.scroll.cancelScrolling();
 
