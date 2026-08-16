@@ -160,6 +160,35 @@ public final class FormPipelines
     }
 
     /**
+     * NUR die VERDECKTEN Fragmente — der Dimm-Pass des Control-Rig-Overlays.
+     *
+     * <p>26.2 rechnet reversed-Z (Klassendoku oben): sichtbar ist {@code GREATER_THAN_OR_
+     * EQUAL}, also ist verdeckt {@code LESS_THAN} — bewusst OHNE equal, sonst kaempfen
+     * beide Paesse auf exakt der Silhouettenkante um dasselbe Fragment. Tiefe wird nie
+     * geschrieben (Overlay), Blend an, Cull aus wie bei den Baendern.
+     *
+     * <p>Zusammen mit dem normalen Tiefen-Pass ergibt das den Editor-Standard, den Unity
+     * (occluded gizmo color) und Unreals Control Rig fahren: sichtbare Teile voll,
+     * verdeckte gedimmt — auffindbar, ohne das Modell zu ueberdecken.
+     */
+    public static RenderPipeline hinterGeometrie(PrimitiveTopology topologie)
+    {
+        return ZWISCHENSPEICHER.computeIfAbsent("hinter|" + topologie, (s) -> RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath(BBSMod.MOD_ID,
+                "pipeline/position_color_" + topologie.name().toLowerCase() + "_hinter"))
+            .withVertexShader(Identifier.withDefaultNamespace("core/position_color"))
+            .withFragmentShader(Identifier.withDefaultNamespace("core/position_color"))
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(topologie)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withCull(false)
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN, false))
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .build());
+    }
+
+    /**
      * Die Tiefenwand: schreibt NUR Tiefe, keine Farbe, und besteht jeden Vergleich.
      *
      * <p>Gebraucht vom Gizmo: es stempelt zuerst seine Griff-Flaeche in den Tiefenpuffer,

@@ -16,6 +16,8 @@ public class ValueIKDebug extends ValueModelDebug
     {
         /* Linienstaerke 0 = Haarlinien — Blenders Beziehungslinien sind duenn, die
          * frueheren 0.05 wurden an grossen Rigs zu Klotz-Prismen. */
-        super(id, false, 0xe6ebf2, 0F, false, 0xe6ebf2, 0.07F);
+        /* xrayDefault=false: das Control-Rig faehrt den Zweipass (sichtbar voll,
+         * verdeckt gedimmt ueber hidden_opacity) statt alles voll durchzuzeichnen. */
+        super(id, false, 0xe6ebf2, 0F, false, 0xe6ebf2, 0.07F, false);
     }
 }

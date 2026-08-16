@@ -129,9 +129,12 @@ public final class ModelIKDebug
         java.util.List<RigCtrl.Eintrag> rig = instance.model instanceof mchorse.bbs_mod.cubic.model.bobj.BOBJModel bm
             ? RigCtrl.fuer(bm.getArmature(), form.model.get()) : null;
 
-        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144))
+        try (ByteBufferBuilder speicher = new ByteBufferBuilder(262144);
+             ByteBufferBuilder speicherVerdeckt = new ByteBufferBuilder(262144))
         {
             BufferBuilder wire = SofortZeichner.beginnen(speicher, PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+            BufferBuilder wireVerdeckt = null;
+            float hidden = config.hiddenOpacity.get();
 
             if (rig != null)
             {
@@ -141,8 +144,18 @@ public final class ModelIKDebug
                     && controller.panel.replayEditor.getContext() != null
                         ? controller.panel.replayEditor.getContext().getTransition() : 0F;
 
-                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, sicht, kamera, entities,
-                    entity, replay, rig, selectedBone, a, uebergang);
+                /* Der Editor-Standard (Unity occluded gizmos, Unreals Control Rig):
+                 * sichtbare Baender voll, verdeckte gedimmt — auffindbar hinter dem
+                 * Koerper, ohne ihn zu ueberdecken. xray=true bleibt der alte
+                 * Voll-Durchschein-Look, dann braucht es keinen zweiten Pass. */
+                if (tiefe && hidden > 0F)
+                {
+                    wireVerdeckt = SofortZeichner.beginnen(speicherVerdeckt,
+                        PrimitiveTopology.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+                }
+
+                mchorse.bbs_mod.cubic.render.RigCtrlZeichner.weltPass(wire, wireVerdeckt, sicht, kamera,
+                    entities, entity, replay, rig, selectedBone, a, a * hidden, uebergang);
             }
 
             /* FK-Skelett (Blenders Pose Mode): JEDER Bone als Octahedron — grau,
@@ -286,6 +299,27 @@ public final class ModelIKDebug
                         unit * config.pole.size.get() * 1.3F, config.pole.color.get(),
                         chain.poleTarget().equals(selectedBone), a);
                 }
+            }
+
+            /* Verdeckt ZUERST: die Fragmentmengen sind disjunkt (LESS gegen GEQUAL),
+             * aber so liegt der gedimmte Anteil sicher unter dem vollen, falls eine
+             * Kante doch beide trifft.
+             *
+             * ⛔ VORAUSSETZUNG IST DIE REIHENFOLGE IN BBSRendering.renderCoolStuff:
+             * Figuren vor den Overlays. Andersherum ist beim Widget-Zeichnen die
+             * Modell-Tiefe noch nicht im Puffer — der Sichtbar-Pass besteht auch
+             * "hinter" dem Koerper, dieser Pass findet dort nichts, und weil die
+             * Baender selbst Tiefe schreiben, malt die spaetere Figur nicht mehr
+             * drueber: de facto X-Ray, egal was eingestellt ist. Gemessen 2026-08-16:
+             * hidden_opacity 0.0/0.35/1.0 lieferten bit-gleiche Bilder. */
+            if (wireVerdeckt != null)
+            {
+                SofortZeichner.zeichnen(
+                    FormPipelines.hinterGeometrie(PrimitiveTopology.TRIANGLES),
+                    wireVerdeckt.build(),
+                    new Matrix4f(),
+                    null,
+                    null);
             }
 
             SofortZeichner.zeichnen(

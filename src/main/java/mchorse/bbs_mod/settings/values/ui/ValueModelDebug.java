@@ -19,9 +19,14 @@ import java.util.List;
 public class ValueModelDebug extends ValueGroup
 {
     public final ValueBoolean enabled = new ValueBoolean("enabled", false);
-    public final ValueBoolean xray = new ValueBoolean("xray", true);
+    public final ValueBoolean xray;
     public final ValueBoolean dashed = new ValueBoolean("dashed", false);
     public final ValueFloat opacity = new ValueFloat("opacity", 0.5F, 0.05F, 1F);
+    /** Deckkraft der VERDECKTEN Anteile relativ zu {@link #opacity} — der Editor-Standard
+     *  (Unity/Unreal): sichtbar voll, hinter Geometrie gedimmt statt weg oder voll durch.
+     *  0 = hart verdeckt, 1 = alter X-Ray-Look. Greift nur, wo der Zeichner den
+     *  Zweipass faehrt (Control-Rig); {@link #xray} an schlaegt ihn. */
+    public final ValueFloat hiddenOpacity = new ValueFloat("hidden_opacity", 0.35F, 0F, 1F);
 
     public final ValueDebugElement lines;
     public final ValueDebugElement joints;
@@ -30,12 +35,23 @@ public class ValueModelDebug extends ValueGroup
 
     protected ValueModelDebug(String id, boolean linesVisible, int linesColor, float linesSize, boolean jointsVisible, int jointsColor, float jointsSize)
     {
+        this(id, linesVisible, linesColor, linesSize, jointsVisible, jointsColor, jointsSize, true);
+    }
+
+    /** {@code xrayDefault} steuert nur den ANFANGSWERT — das IK-Debug startet seit dem
+     *  Zweipass-Look mit Tiefe an (verdeckt = gedimmt), das Physik-Debug bleibt beim
+     *  alten Durchzeichnen. Ein gespeicherter Nutzerwert schlaegt beide. */
+    protected ValueModelDebug(String id, boolean linesVisible, int linesColor, float linesSize, boolean jointsVisible, int jointsColor, float jointsSize, boolean xrayDefault)
+    {
         super(id);
+
+        this.xray = new ValueBoolean("xray", xrayDefault);
 
         this.add(this.enabled);
         this.add(this.xray);
         this.add(this.dashed);
         this.add(this.opacity);
+        this.add(this.hiddenOpacity);
 
         this.lines = this.line("lines", linesVisible, linesColor, linesSize, 0F, 0.2F);
         this.joints = this.element("joints", jointsVisible, jointsColor, jointsSize, ValueDebugElement.SHAPE_SPHERE);

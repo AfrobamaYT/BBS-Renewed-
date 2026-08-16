@@ -64,6 +64,14 @@ public class UIDebugOverlayContextMenu extends UIContextMenu
         rows.add(UI.label(UIKeys.MODEL_DEBUG_OPACITY));
         rows.add(this.opacity);
 
+        /* Deckkraft der verdeckten Anteile (Zweipass des Control-Rigs). Der Schluessel
+         * lebt lokal statt in UIKeys — die Halde dort darf nur noch schrumpfen. */
+        UISliderTrackpad hidden = new UISliderTrackpad((v) -> this.config.hiddenOpacity.set(v.floatValue()));
+
+        hidden.limit(this.config.hiddenOpacity).setValue(this.config.hiddenOpacity.get());
+        rows.add(UI.label(L10n.lang("bbs.ui.model_debug.hidden_opacity")));
+        rows.add(hidden);
+
         this.column = UI.column(4, 8, rows.toArray(new UIElement[0]));
         this.column.relative(this).w(210);
 

@@ -33,6 +33,18 @@ public class RigCtrlZeichner
         IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
         Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a, float transition)
     {
+        weltPass(wire, null, sicht, kamera, entities, entity, replay, rig, selectedBone, a, 0F, transition);
+    }
+
+    /**
+     * Wie oben, mit zweitem Buffer fuer den VERDECKT-Pass: dieselben Baender, nur mit
+     * {@code aVerdeckt}. Ein Durchlauf statt zwei, weil die Anker-Matrizen der teure
+     * Teil sind (siehe Cache-Kommentar unten) — die Farbe ist der billige.
+     */
+    public static void weltPass(BufferBuilder wire, BufferBuilder wireVerdeckt, Matrix4f sicht, Vec3 kamera,
+        IntObjectMap<IEntity> entities, IEntity entity, Replay replay,
+        Iterable<RigCtrl.Eintrag> rig, String selectedBone, float a, float aVerdeckt, float transition)
+    {
         /* ⛔ EIN Cache fuers ganze Bild, nicht einer je Control. Ohne ihn legt
          * getBoneCompositeMatrix je Aufruf einen frischen an und baut die Armature-Matrizen
          * komplett neu — bei 220 Controls also 220 volle Aufbauten pro Bild. Gemessen:
@@ -96,6 +108,11 @@ public class RigCtrlZeichner
             for (float[] linie : e.linien())
             {
                 RigWidgets.kette(wire, kombi, linie, col, a, e.breite());
+
+                if (wireVerdeckt != null)
+                {
+                    RigWidgets.kette(wireVerdeckt, kombi, linie, col, aVerdeckt, e.breite());
+                }
             }
         }
         }
