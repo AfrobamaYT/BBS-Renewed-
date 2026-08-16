@@ -679,7 +679,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
                 /* ⛔ Blender setzt NUR die Ortsspalte (`copy_v3_v3(cob->matrix[3], ...)`).
                  * Der Weg ueber translationRotateScale baute die Matrix neu zusammen und
                  * warf dabei jede Scherung weg, die ein STRETCH_TO davor erzeugt hatte. */
-                achsen(t, zt, w, z);
+                ortKopieren(t, zt, z.daten(), z);
                 eigen.setTranslation(t);
 
                 return;
@@ -753,10 +753,43 @@ public final class RigMechanik implements BOBJArmature.Zwang
 
     /** Ruhe-Basis des Knochens im Armature-Raum: Eltern-Weltmatrix x Ruhelage-relativ. */
 
-    private static void achsen(Vector3f eigen, Vector3f ziel, float w, Zwang z)
+    /**
+     * Blenders {@code loclike_evaluate}: je Achse kopieren, wahlweise NEGIEREN, wahlweise
+     * auf den eigenen Ort ADDIEREN. Einfluss mischt {@code anwenden} zentral.
+     *
+     * <p>⛔ Beide Schalter fehlten. `chin.002` kopiert von `lip.B` mit invert_x/y/z UND
+     * use_offset — gemessen Blender 0.18408/0.09320/0.02093 ueber den Einfluss, BBS
+     * 0.27673 bei 0.5, also gegenlaeufig. 12 Gesichts-Constraints haengen daran.
+     */
+    private static void ortKopieren(Vector3f eigen, Vector3f ziel, MapType d, Zwang z)
     {
-        if (z.nutzX()) eigen.x += (ziel.x - eigen.x) * w;
-        if (z.nutzY()) eigen.y += (ziel.y - eigen.y) * w;
-        if (z.nutzZ()) eigen.z += (ziel.z - eigen.z) * w;
+        boolean versatz = d != null && d.getBool("versatz", false);
+        float[] eigenAlt = {eigen.x, eigen.y, eigen.z};
+        float[] neu = {ziel.x, ziel.y, ziel.z};
+
+        for (int a = 0; a < 3; a++)
+        {
+            String achse = "xyz".substring(a, a + 1);
+
+            if (!(a == 0 ? z.nutzX() : a == 1 ? z.nutzY() : z.nutzZ()))
+            {
+                neu[a] = eigenAlt[a];
+
+                continue;
+            }
+
+            if (d != null && d.getBool("inv_" + achse, false))
+            {
+                neu[a] = -neu[a];
+            }
+
+            if (versatz)
+            {
+                neu[a] += eigenAlt[a];
+            }
+        }
+
+        eigen.set(neu[0], neu[1], neu[2]);
     }
+
 }
