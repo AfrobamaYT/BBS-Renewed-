@@ -522,6 +522,25 @@ public final class RigMechanik implements BOBJArmature.Zwang
     /** Track To / Locked Track — die Rechnung liegt in {@link RigZwaenge#trackTo}. */
     private static void zielen(Matrix4f eigen, Matrix4f ziel, Zwang z)
     {
+        MapType d = z.daten();
+        ListType hoch = d == null ? null : d.getList("hoch_vektor");
+
+        /* Track To legt den Roll ueber die Hoch-Achse fest; ohne den Vektor (alte
+         * Exportdatei) bleibt es beim bisherigen Weg. */
+        if ("TRACK_TO".equals(z.typ()) && hoch != null && hoch.size() >= 3)
+        {
+            /* "Target Z": die Hoch-Referenz ist die Z-Achse des ZIELS, nicht die
+             * Weltachse — beide Fremd-Rigs setzen das an ihren Zehen-Trackern. */
+            Vector3f auf = d.getBool("ziel_z", false)
+                ? new Vector3f(ziel.m20(), ziel.m21(), ziel.m22()).normalize()
+                : new Vector3f(hoch.getFloat(0), hoch.getFloat(1), hoch.getFloat(2));
+
+            RigZwaenge.trackToBasis(eigen, zielPunkt(ziel, z), z.spur(),
+                d.getString("hoch_achse", "UP_Z"), auf);
+
+            return;
+        }
+
         RigZwaenge.trackTo(eigen, zielPunkt(ziel, z), z.spur(),
             "LOCKED_TRACK".equals(z.typ()) ? z.sperre().replace("LOCK_", "TRACK_") : null);
     }
