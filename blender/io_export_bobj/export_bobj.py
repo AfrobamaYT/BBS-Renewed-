@@ -370,6 +370,36 @@ def _write(context, filepath,
         progress.leave_substeps()
 
 
+def write_shape_keys(fw, ob, totverts):
+    """Shape Keys als `sk`/`skv`-Bloecke — BBS mischt sie vor dem Skinning.
+
+    ⛔ Die Lagen kommen vom ORIGINAL-Mesh, nicht von der ausgewerteten Kopie: auf der
+    sind die Keys schon eingerechnet, dort stuende ueberall die Basis.
+
+    ⛔ Nur, was sich WIRKLICH bewegt. Ein Key fasst selten das ganze Netz an; alle
+    Vertices zu schreiben blaeht die Datei um ein Vielfaches. Der Index zaehlt ab 1 und
+    ist der GLOBALE (totverts + lokaler Index), genau wie in den `f`-Zeilen.
+    """
+    keys = getattr(ob.data, "shape_keys", None)
+
+    if keys is None or len(keys.key_blocks) < 2:
+        return
+
+    basis = keys.key_blocks[0].data
+
+    for block in keys.key_blocks[1:]:
+        if len(block.data) != len(basis):
+            continue
+
+        fw('sk %s\n' % name_compat(block.name))
+
+        for i, punkt in enumerate(block.data):
+            b = basis[i].co
+
+            if (punkt.co - b).length > 1e-6:
+                fw('skv %d %.6f %.6f %.6f\n' % (totverts + i, punkt.co[0], punkt.co[1], punkt.co[2]))
+
+
 def write_file(context, filepath, objects, depsgraph, scene,
                EXPORT_KEEP_VERT_ORDER=False,
                EXPORT_GLOBAL_MATRIX=None,
@@ -498,6 +528,8 @@ def write_file(context, filepath, objects, depsgraph, scene,
                                         name_compat(ob.vertex_groups[vgroup.group].name),
                                         vgroup.weight,
                                     ))
+
+                            write_shape_keys(fw, ob, totverts)
 
                             subprogress2.step()
 
