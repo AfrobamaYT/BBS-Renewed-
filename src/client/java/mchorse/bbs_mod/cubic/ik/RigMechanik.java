@@ -752,12 +752,6 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
     /** Ruhe-Basis des Knochens im Armature-Raum: Eltern-Weltmatrix x Ruhelage-relativ. */
-    private static Matrix4f basis(BOBJBone bone)
-    {
-        return bone.parentBone != null
-            ? new Matrix4f(bone.parentBone.mat).mul(bone.relBoneMat)
-            : new Matrix4f(bone.relBoneMat);
-    }
 
     private static void achsen(Vector3f eigen, Vector3f ziel, float w, Zwang z)
     {
