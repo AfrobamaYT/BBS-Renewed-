@@ -208,7 +208,9 @@ public class BBSRendering
         File movies = new File(BBSMod.getSettingsFolder().getParentFile(), "movies");
         File exportPath = new File(BBSSettings.videoExportPath.get());
 
-        if (exportPath.isDirectory())
+        /* ⛔ Leere Vorgabe abfangen: File("").isDirectory() ist auf Java 25 TRUE (gemessen
+         * 2026-08-17) — der Export lief dann "in directory \"\"" und ffmpeg starb an ENOENT. */
+        if (!BBSSettings.videoExportPath.get().isEmpty() && exportPath.isDirectory())
         {
             movies = exportPath;
         }
@@ -220,12 +222,10 @@ public class BBSRendering
 
     public static boolean canReplaceFramebuffer()
     {
-        /* The world always renders at the export size. The interface (HUD) is drawn after the
-         * world but still into our export framebuffer — toggleFramebuffer stays on until the blit —
-         * so it must use the export size too. Otherwise it renders at the real window size and, when
-         * the window can't physically reach the requested resolution, comes out stretched in the
-         * file. Excluded while a BBS editor is open so the film panel's own UI keeps rendering at the
-         * real window size. */
+        /* Welt UND HUD rendern in Export-Groesse (toggleFramebuffer haelt bis zum Blit) — sonst
+         * zeichnet das HUD in Fenstergroesse und wird in der Datei gestreckt, wenn das Fenster
+         * die Zielaufloesung nicht erreicht. Offener BBS-Editor ausgenommen (Panel-UI bleibt
+         * in echter Fenstergroesse). */
         return customSize && (renderingWorld || (toggleFramebuffer && UIScreen.getCurrentMenu() == null));
     }
 
