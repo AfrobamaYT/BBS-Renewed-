@@ -236,6 +236,18 @@ public class BOBJModelVAO implements IModelVAO
 
     public void updateMesh(StencilMap stencilMap, mchorse.bbs_mod.obj.shapes.ShapeKeys keys)
     {
+        /* ⛔ Getriebene Shape Keys ERST hier, nach setupMatrices: der Treiber liest Regler
+         * und Knochenlagen, und die stehen vorher noch auf dem letzten Bild. In eine KOPIE,
+         * damit die Werte des Animators an der Form unangetastet bleiben — das Rig
+         * ergaenzt, es uebernimmt nicht. */
+        if (this.armature != null
+            && this.armature.zwang instanceof mchorse.bbs_mod.cubic.ik.RigMechanik mechanik
+            && mechanik.treibtShapeKeys())
+        {
+            keys = keys == null ? new mchorse.bbs_mod.obj.shapes.ShapeKeys() : keys.copy();
+            mechanik.shapeKeys(this.armature, keys);
+        }
+
         this.shapeKeys = keys;
 
         this.updateMesh(stencilMap, this.armature.matrices);

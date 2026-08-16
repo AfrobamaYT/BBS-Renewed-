@@ -59,6 +59,9 @@ public final class RigMechanik implements BOBJArmature.Zwang
     /** Blenders eigener Solver, portiert — ersetzt BBS' IKTreeSolver. */
     private RigIKKetten ketten;
 
+    /** Shape-Key-Name -> Treiber. Das ist die Mechanik eines Gesichts-Boards. */
+    private final Map<String, MapType> shapeTreiber = new HashMap<>();
+
     /**
      * Ruhedaten-Flags je Knochen, die von Blenders Vorgabe abweichen — nur die, die
      * abweichen, darum meist eine Handvoll. Sie gehoeren nicht in den Constraint-Stapel,
@@ -229,6 +232,13 @@ public final class RigMechanik implements BOBJArmature.Zwang
                     new float[] {einfluss}));
         }
 
+        MapType shapes = wurzel.getMap("shape_treiber");
+
+        for (String name : shapes == null ? List.<String>of() : shapes.keys())
+        {
+            gebaut.shapeTreiber.put(name, shapes.getMap(name));
+        }
+
         gebaut.ketten = RigIKKetten.lesen(mechanik, wurzel.getMap("ik_gelenke"));
         gebaut.treiber.lade(wurzel.getMap("regler"));
 
@@ -256,6 +266,10 @@ public final class RigMechanik implements BOBJArmature.Zwang
     @Override
     public boolean auswerten(BOBJArmature armature)
     {
+        /* TRANSFORMS-Variablen lesen Knochenlagen — der Treiber braucht dafuer die
+         * Armature, an der er gerade rechnet. */
+        this.treiber.knochen = armature;
+
         for (String name : this.reihenfolge)
         {
             BOBJBone bone = armature.bones.get(name);
@@ -340,6 +354,41 @@ public final class RigMechanik implements BOBJArmature.Zwang
     public List<String> reihenfolge()
     {
         return this.reihenfolge;
+    }
+
+    /**
+     * Schreibt die getriebenen Shape-Key-Werte in {@code ziel} — Blenders Board-Regler.
+     *
+     * <p>⛔ NUR die getriebenen Namen. Was der Animator selbst gesetzt hat, bleibt
+     * stehen: ein Rig, das jede Frame alle Werte ueberschreibt, macht die Spur in der
+     * Zeitleiste unbedienbar.
+     *
+     * @return wie viele Werte gesetzt wurden
+     */
+    public int shapeKeys(BOBJArmature armature, mchorse.bbs_mod.obj.shapes.ShapeKeys ziel)
+    {
+        this.treiber.knochen = armature;
+
+        if (ziel == null || this.shapeTreiber.isEmpty())
+        {
+            return 0;
+        }
+
+        int gesetzt = 0;
+
+        for (Map.Entry<String, MapType> e : this.shapeTreiber.entrySet())
+        {
+            ziel.shapeKeys.put(e.getKey(), this.treiber.wert(e.getValue(), 0F));
+            gesetzt++;
+        }
+
+        return gesetzt;
+    }
+
+    /** Ob dieses Rig ueberhaupt Shape Keys treibt — spart je Bild eine Kopie. */
+    public boolean treibtShapeKeys()
+    {
+        return !this.shapeTreiber.isEmpty();
     }
 
     /**
@@ -450,7 +499,7 @@ public final class RigMechanik implements BOBJArmature.Zwang
         if ("TRANSFORM".equals(z.typ()) || "LIMIT_ROTATION".equals(z.typ())
             || "LIMIT_LOCATION".equals(z.typ()))
         {
-            lokalerZwang(eigenBone, zielBone, z);
+            RigLokal.anwenden(eigenBone, zielBone, z.typ(), z.daten());
 
             return;
         }
@@ -708,68 +757,6 @@ public final class RigMechanik implements BOBJArmature.Zwang
         return bone.parentBone != null
             ? new Matrix4f(bone.parentBone.mat).mul(bone.relBoneMat)
             : new Matrix4f(bone.relBoneMat);
-    }
-
-    private static void lokalerZwang(BOBJBone eigenBone, BOBJBone zielBone, Zwang z)
-    {
-        Matrix4f basis = basis(eigenBone);
-        Matrix4f lokal = new Matrix4f(basis).invert().mul(eigenBone.mat);
-
-        if ("TRANSFORM".equals(z.typ()))
-        {
-            /* Quelle ist die LOKALE Verschiebung des Ziels — beim Roll-Cursor genau das,
-             * was der Nutzer zieht. Je Zielachse speist eine benannte Quellachse einen
-             * Bereich in einen anderen (Blender klemmt ohne Extrapolation). */
-            Vector3f q = zielBone.transform.translate;
-            float[] quelle = {q.x, q.y, q.z};
-            float[] winkel = new float[3];
-
-            for (int a = 0; a < 3; a++)
-            {
-                String achse = "xyz".substring(a, a + 1);
-                int s = index(z.daten().getString("quelle_" + achse, achse.toUpperCase()));
-                float vonMin = z.daten().getFloat("from_min_" + "xyz".charAt(s), 0F);
-                float vonMax = z.daten().getFloat("from_max_" + "xyz".charAt(s), 0F);
-                float nachMin = z.daten().getFloat("to_min_" + achse, 0F);
-                float nachMax = z.daten().getFloat("to_max_" + achse, 0F);
-                float spanne = vonMax - vonMin;
-                float anteil = spanne == 0F ? 0F
-                    : Math.max(0F, Math.min(1F, (quelle[s] - vonMin) / spanne));
-
-                winkel[a] = nachMin + anteil * (nachMax - nachMin);
-            }
-
-            lokal.rotateXYZ(winkel[0], winkel[1], winkel[2]);
-        }
-        else if ("LIMIT_LOCATION".equals(z.typ()))
-        {
-            RigZwaenge.limitLocation(lokal, z.daten());
-        }
-        else
-        {
-            Vector3f pos = lokal.getTranslation(new Vector3f());
-            Vector3f skala = lokal.getScale(new Vector3f());
-            Vector3f e = lokal.getEulerAnglesXYZ(new Vector3f());
-
-            e.x = klemme(e.x, z.daten(), "x");
-            e.y = klemme(e.y, z.daten(), "y");
-            e.z = klemme(e.z, z.daten(), "z");
-            lokal.translationRotateScale(pos, new Quaternionf().rotationXYZ(e.x, e.y, e.z), skala);
-        }
-
-        eigenBone.mat.set(basis).mul(lokal);
-    }
-
-    private static float klemme(float wert, MapType d, String achse)
-    {
-        return d.getBool("grenz_" + achse, false)
-            ? Math.max(d.getFloat("min_" + achse, 0F), Math.min(d.getFloat("max_" + achse, 0F), wert))
-            : wert;
-    }
-
-    private static int index(String achse)
-    {
-        return "Y".equals(achse) ? 1 : "Z".equals(achse) ? 2 : 0;
     }
 
     private static void achsen(Vector3f eigen, Vector3f ziel, float w, Zwang z)
