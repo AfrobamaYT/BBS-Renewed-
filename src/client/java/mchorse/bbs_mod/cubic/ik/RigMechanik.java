@@ -69,6 +69,10 @@ public final class RigMechanik implements BOBJArmature.Zwang
      *  Constraint. Kommt aus {@code rig.json} (knochen.*.verbunden). */
     final java.util.Set<String> verbunden = new java.util.HashSet<>();
 
+    /** Treiber, die direkt in die POSE eines Knochens schreiben statt in einen Constraint —
+     *  Rigifys Fingerkruemmung, Auto-Rig Pros no-stretch-Griffe. */
+    final Map<String, List<MapType>> kanalTreiber = new HashMap<>();
+
     RigMechanik(List<String> reihenfolge, Map<String, List<Zwang>> proBone)
     {
         this.reihenfolge = reihenfolge;
@@ -81,23 +85,40 @@ public final class RigMechanik implements BOBJArmature.Zwang
         RigDatei.leeren();
     }
 
-    /** Haengt die Mechanik an die Armature, falls das Modell eine mitbringt. Je Frame billig. */
+    /**
+     * Haengt die Mechanik an die Armature, falls das Modell eine mitbringt. Je Frame billig
+     * (nach dem ersten Laden ist es ein Map-Zugriff).
+     *
+     * ⛔ Die ARMATURE haelt die Mechanik fest, nicht der Cache. Wer hier nur auf
+     * {@code zwang != null} prueft, laesst nach {@link #leeren()} — Hotswap, neu
+     * exportiertes rig.json — die ALTE Fassung haengen: heute dreimal darauf
+     * hereingefallen, einmal mit NullPointerException im Bild, weil ein neu
+     * dazugekommenes Feld auf dem alten Objekt fehlte. Verglichen wird darum gegen das,
+     * was der Loader JETZT liefert.
+     */
     public static void installieren(BOBJModel model, String modellId)
     {
         BOBJArmature armature = model == null ? null : model.getArmature();
 
-        if (armature == null || armature.zwang != null || modellId == null || modellId.isEmpty())
+        if (armature == null || modellId == null || modellId.isEmpty())
+        {
+            return;
+        }
+
+        if (armature.zwang != null && !(armature.zwang instanceof RigMechanik))
         {
             return;
         }
 
         RigMechanik mechanik = RigDatei.laden(modellId);
 
-        if (mechanik != null)
+        if (mechanik == null || armature.zwang == mechanik)
         {
-            armature.zwang = mechanik;
-            mechanik.flaggen(armature);
+            return;
         }
+
+        armature.zwang = mechanik;
+        mechanik.flaggen(armature);
     }
 
     /**
@@ -125,6 +146,33 @@ public final class RigMechanik implements BOBJArmature.Zwang
     }
 
 
+    /**
+     * Einen getriebenen Kanalwert in die Pose schreiben — Blenders Treiber ERSETZT den
+     * Kanal, er addiert nicht.
+     *
+     * ⛔ Ein {@code rotation_euler}-Treiber wirkt in Blender nicht, wenn der Knochen im
+     * Quaternion-Modus steht; darum bringt der Export den Modus mit.
+     */
+    private static void kanalSetzen(BOBJBone bone, MapType k, float wert)
+    {
+        int achse = Math.max(0, Math.min(2, k.getInt("achse", 0)));
+        String art = k.getString("art");
+
+        if ("kanal_skala".equals(art))
+        {
+            bone.transform.scale.setComponent(achse, wert);
+        }
+        else if ("kanal_ort".equals(art))
+        {
+            bone.transform.translate.setComponent(achse, wert);
+        }
+        else if (!"QUATERNION".equals(k.getString("modus", "XYZ")))
+        {
+            bone.transform.rotationMode = mchorse.bbs_mod.utils.pose.Transform.RotationMode.EULER;
+            bone.transform.rotate.setComponent(achse, wert);
+        }
+    }
+
     @Override
     public boolean auswerten(BOBJArmature armature)
     {
@@ -139,6 +187,18 @@ public final class RigMechanik implements BOBJArmature.Zwang
             if (bone == null)
             {
                 continue;
+            }
+
+            /* ⛔ VOR compute(): ein Kanal-Treiber schreibt die Pose des Knochens, und
+             * genau daraus rechnet compute() die Matrix. Danach waere es wirkungslos. */
+            List<MapType> kanaele = this.kanalTreiber == null ? null : this.kanalTreiber.get(name);
+
+            if (kanaele != null)
+            {
+                for (MapType k : kanaele)
+                {
+                    kanalSetzen(bone, k, this.treiber.wert(k.getMap("treiber"), 0F));
+                }
             }
 
             armature.matrices[bone.index] = bone.compute();

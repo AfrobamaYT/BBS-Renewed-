@@ -96,6 +96,15 @@ final class RigDatei
             }
         }
 
+        ListType kanalTreiber = wurzel.getList("kanal_treiber");
+
+        for (int i = 0; kanalTreiber != null && i < kanalTreiber.size(); i++)
+        {
+            MapType k = kanalTreiber.getMap(i);
+
+            gebaut.kanalTreiber.computeIfAbsent(k.getString("bone"), x -> new ArrayList<>()).add(k);
+        }
+
         MapType kanaele = wurzel.getMap("ruhekanal");
 
         for (String name : kanaele == null ? List.<String>of() : kanaele.keys())
