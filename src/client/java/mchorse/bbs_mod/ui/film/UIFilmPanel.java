@@ -1715,9 +1715,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     }
 
     /**
-     * Relative move that snaps the scene's first position keyframe onto the
-     * player's current position ({@code round} optionally snaps the player's
-     * position to whole coordinates) — offered through the move overlay's menu.
+     * Relative move: snaps the scene's first position keyframe onto the player's current
+     * position ({@code round}: whole coordinates) — offered through the move overlay's menu.
      */
     private Vector3d getMoveToPlayerOffset(boolean round)
     {
