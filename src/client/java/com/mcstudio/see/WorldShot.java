@@ -58,8 +58,122 @@ public final class WorldShot
 	/** Our dedicated offscreen world FBO, allocated lazily on the render thread, resized to the window. */
 	private static TextureTarget fbo;
 
+	/* v2-Zustand (2026-08-16): scharfgestellter Pfad + Ergebnis-Future. Nach einem Hotswap sind
+	 * neue statische Felder null/false — genau der korrekte Ruhezustand, kein Initialisierer noetig. */
+	private static volatile String armPfad;
+	private static volatile java.util.concurrent.CompletableFuture<String> armErgebnis;
+	private static volatile boolean lauscherDa;
+
 	private WorldShot()
 	{
+	}
+
+	/**
+	 * v2-Lauscher: faengt den Welt-Frame IM normalen Frame, am Ende des Level-Passes (END_MAIN),
+	 * bevor die GUI-Phase zeichnet — Welt ohne HUD/Dashboard, ohne jeden Off-Schedule-Render.
+	 *
+	 * ⛔ WARUM v1 STARB (crash-2026-08-16_20.46.52): renderLevel ausser der Reihe bricht auf 26.2
+	 * an den Frame-Graph-Invarianten ("Global terrain uniforms have not been updated") und laesst
+	 * den FeatureRenderDispatcher$PreparedFrame scharf zurueck — der NAECHSTE regulaere Frame
+	 * stirbt mit "PreparedFrame already in use". Der Frame-Graph ist zustandsbehaftet; einen
+	 * zweiten Welt-Render im selben Tick gibt es nicht mehr. Also: den einen echten Frame fangen.
+	 */
+	static final class EndMainLauscher implements net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.EndMain
+	{
+		@Override
+		public void endMain(net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context)
+		{
+			String pfad = armPfad;
+
+			if (pfad == null)
+			{
+				return;
+			}
+
+			armPfad = null;
+
+			java.util.concurrent.CompletableFuture<String> f = armErgebnis;
+			String json;
+
+			try
+			{
+				json = Readback.captureFramebuffer(Minecraft.getInstance().gameRenderer.mainRenderTarget(), pfad);
+			}
+			catch (Throwable t)
+			{
+				json = "{\"error\":\"capture failed: " + escape(String.valueOf(t)) + "\"}";
+			}
+
+			if (json.endsWith("}"))
+			{
+				json = json.substring(0, json.length() - 1) + ",\"world\":true,\"hud\":false}";
+			}
+
+			if (f != null)
+			{
+				f.complete(json);
+			}
+		}
+	}
+
+	/**
+	 * Auf dem Render-Thread scharfstellen (via RenderThread.submit aus der Route). Gibt bei
+	 * Vorbedingungsfehlern sofort das Fehler-JSON zurueck, sonst null ("scharf, warte auf Frame").
+	 */
+	private static String scharfstellen(String pfad)
+	{
+		Minecraft client = Minecraft.getInstance();
+
+		if (client == null || client.gameRenderer == null)
+		{
+			return "{\"error\":\"MinecraftClient not available\"}";
+		}
+
+		if (client.level == null)
+		{
+			return "{\"error\":\"no world loaded (in menu?) — /shot_world needs an in-game world\"}";
+		}
+
+		if (!lauscherDa)
+		{
+			/* Registrierung zur Laufzeit statt im Boot: wir stehen hier AUF dem Render-Thread,
+			 * der die Event-Liste iteriert — zwischen zwei Frames ist das add rennfrei. */
+			net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.END_MAIN.register(new EndMainLauscher());
+			lauscherDa = true;
+		}
+
+		armErgebnis = new java.util.concurrent.CompletableFuture<>();
+		armPfad = pfad;
+
+		return null;
+	}
+
+	/** HTTP-Thread: auf den naechsten Frame warten. Laut scheitern statt ewig haengen. */
+	private static String warten()
+	{
+		java.util.concurrent.CompletableFuture<String> f = armErgebnis;
+
+		if (f == null)
+		{
+			return "{\"error\":\"armed without future (bug)\"}";
+		}
+
+		try
+		{
+			return f.get(10, java.util.concurrent.TimeUnit.SECONDS);
+		}
+		catch (java.util.concurrent.TimeoutException t)
+		{
+			armPfad = null;
+
+			return "{\"error\":\"no frame within 10s — is the game rendering (window minimized? no level pass)?\"}";
+		}
+		catch (Exception e)
+		{
+			armPfad = null;
+
+			return "{\"error\":\"wait failed: " + escape(String.valueOf(e)) + "\"}";
+		}
 	}
 
 	/**
@@ -83,7 +197,14 @@ public final class WorldShot
 			File out = new File(Readback.shotsDir(), name + ".png");
 
 			final String path = out.getAbsolutePath();
-			String json = RenderThread.submit(() -> renderWorldToFbo(path));
+			/* v2: auf dem Render-Thread nur SCHARFSTELLEN (null = ok), dann hier — auf dem
+			 * HTTP-Thread — auf den naechsten echten Frame warten. Nie den Render-Thread blocken. */
+			String json = RenderThread.submit(() -> scharfstellen(path));
+
+			if (json == null)
+			{
+				json = warten();
+			}
 
 			StudioServer.respond(exchange, json);
 		});
@@ -92,9 +213,9 @@ public final class WorldShot
 	}
 
 	/**
-	 * Render the current world (no HUD, no dashboard) into our offscreen FBO and export it via Readback.
-	 * MUST run on the render thread (call via RenderThread.submit). Returns Readback's {w,h,ms,path} JSON on
-	 * success, or an explicit error JSON (FAIL-LOUD, never a silent success).
+	 * ⛔ v1, TOT seit 2026-08-16 — Off-Schedule-renderLevel toetet auf 26.2 den Folgeframe
+	 * (PreparedFrame-Absturz, siehe EndMainLauscher). Von keiner Route mehr gerufen; bleibt nur,
+	 * weil Methoden-ENTFERNUNG beim Hotswap unbelegt ist. Beim naechsten natuerlichen Boot loeschen.
 	 */
 	public static String renderWorldToFbo(String path)
 	{
