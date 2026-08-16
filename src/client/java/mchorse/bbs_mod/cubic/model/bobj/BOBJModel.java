@@ -171,7 +171,14 @@ public class BOBJModel implements IModel
     @Override
     public Set<String> getShapeKeys()
     {
-        return Set.of();
+        java.util.Set<String> namen = new java.util.LinkedHashSet<>();
+
+        for (BOBJLoader.CompiledData mesh : this.meshes)
+        {
+            namen.addAll(mesh.shapeData.keySet());
+        }
+
+        return namen;
     }
 
     @Override

@@ -62,6 +62,8 @@ public class BOBJLoader
         BOBJArmature armature = null;
         BOBJBone bone = null;
         Vertex vertex = null;
+        String shapeKey = null;
+        Map<String, Map<Integer, float[]>> shapeKeyDaten = new HashMap<>();
 
         int i = 0;
 
@@ -91,6 +93,32 @@ public class BOBJLoader
 
                 /* Vertices */
                 vertices.add(vertex = new Vertex(Float.parseFloat(tokens[1]), Float.parseFloat(tokens[2]), Float.parseFloat(tokens[3])));
+            }
+            else if (first.equals("sk"))
+            {
+                /* ⛔ Shape Key: Blender legt sie am MESH-Datenblock ab, nicht an der
+                 * Armature — im BOBJ stehen sie deshalb als eigener Block hinter den
+                 * Vertices. `sk <name>` eroeffnet ihn, `skv x y z` gibt je Vertex die
+                 * ABSOLUTE Lage in derselben Reihenfolge wie `v` (so wie Blenders
+                 * key_blocks[..].data, und so wie der Cubic-Renderer sie erwartet:
+                 * er mischt base -> target, nicht base + delta).
+                 *
+                 * ⛔ Der Vertex-Index steht MIT in der Zeile, statt aus der Reihenfolge
+                 * zu folgen: ein Shape Key fasst fast nie das ganze Netz an, und eine
+                 * Zeile je Vertex fuer 20000 Vertices blaeht die Datei um ein Vielfaches
+                 * auf. Sparsam geschrieben bleibt nur, was sich wirklich bewegt.
+                 * Der Index zaehlt ab 1, wie ueberall sonst im OBJ-Format (`f`). */
+                shapeKey = tokens[1];
+            }
+            else if (first.equals("skv"))
+            {
+                if (shapeKey != null)
+                {
+                    shapeKeyDaten.computeIfAbsent(shapeKey, (k) -> new HashMap<>())
+                        .put(Integer.parseInt(tokens[1]) - 1,
+                            new float[] {Float.parseFloat(tokens[2]),
+                                Float.parseFloat(tokens[3]), Float.parseFloat(tokens[4])});
+                }
             }
             else if (first.equals("vw"))
             {
@@ -172,7 +200,11 @@ public class BOBJLoader
             vertex.eliminateTinyWeights();
         }
 
-        return new BOBJData(vertices, textures, normals, objects, actions, armatures);
+        BOBJData gelesen = new BOBJData(vertices, textures, normals, objects, actions, armatures);
+
+        gelesen.shapeKeys.putAll(shapeKeyDaten);
+
+        return gelesen;
     }
 
     /**
@@ -219,8 +251,58 @@ public class BOBJLoader
 
         Integer[] integerArray = indices.toArray(new Integer[0]);
         int[] indicesArr = ArrayUtils.toPrimitive(integerArray);
+        CompiledData compiled = new CompiledData(posArr, textCoordArr, normArr, weightsArr, boneIndicesArr, indicesArr, mesh);
 
-        return new CompiledData(posArr, textCoordArr, normArr, weightsArr, boneIndicesArr, indicesArr, mesh);
+        fuelleShapeKeys(compiled, data, facesList);
+
+        return compiled;
+    }
+
+    /**
+     * Baut je Shape Key eine Bahn im Layout von {@code posData} auf.
+     *
+     * <p>⛔ posData ist nach FACE-ECKEN aufgefaltet, die Shape-Key-Daten stehen aber je
+     * VERTEX da — dieselbe Ecke taucht mehrfach auf. Wer die Bahn ungefaltet uebernimmt,
+     * verschiebt die falschen Ecken und das Netz zerreisst.
+     */
+    private static void fuelleShapeKeys(CompiledData compiled, BOBJData data, List<Face> faces)
+    {
+        if (data.shapeKeys.isEmpty())
+        {
+            return;
+        }
+
+        for (Map.Entry<String, Map<Integer, float[]>> eintrag : data.shapeKeys.entrySet())
+        {
+            float[] bahn = compiled.posData.clone();
+            int i = 0;
+            boolean beruehrt = false;
+
+            for (Face face : faces)
+            {
+                for (IndexGroup gruppe : face.idxGroups)
+                {
+                    float[] lage = gruppe.idxPos < 0 ? null : eintrag.getValue().get(gruppe.idxPos);
+
+                    if (lage != null)
+                    {
+                        bahn[i * 3] = lage[0];
+                        bahn[i * 3 + 1] = lage[1];
+                        bahn[i * 3 + 2] = lage[2];
+                        beruehrt = true;
+                    }
+
+                    i++;
+                }
+            }
+
+            /* Ein Key, der dieses Mesh gar nicht anfasst, gehoert nicht in seine Liste —
+             * sonst meldet das Modell Namen, die dort nichts bewegen. */
+            if (beruehrt)
+            {
+                compiled.shapeData.put(eintrag.getKey(), bahn);
+            }
+        }
     }
 
     /**
@@ -480,6 +562,8 @@ public class BOBJLoader
         public List<BOBJMesh> meshes;
         public Map<String, BOBJAction> actions;
         public Map<String, BOBJArmature> armatures;
+        /** Shape-Key-Name -> (Vertex-Index -> absolute Lage). Leer bei alten Dateien. */
+        public final Map<String, Map<Integer, float[]>> shapeKeys = new HashMap<>();
 
         public BOBJData(List<Vertex> vertices, List<Vector2d> textures, List<Vector3f> normals, List<BOBJMesh> meshes, Map<String, BOBJAction> actions, Map<String, BOBJArmature> armatures)
         {
@@ -533,6 +617,8 @@ public class BOBJLoader
         public int[] boneIndexData;
         public int[] indexData;
         public BOBJMesh mesh;
+        /** Je Shape Key eine Bahn IM LAYOUT VON posData — leer, wenn die Datei keine hat. */
+        public final Map<String, float[]> shapeData = new HashMap<>();
 
         public CompiledData(float[] posData, float[] texData, float[] normData, float[] weightData, int[] boneIndexData, int[] indexData, BOBJMesh mesh)
         {

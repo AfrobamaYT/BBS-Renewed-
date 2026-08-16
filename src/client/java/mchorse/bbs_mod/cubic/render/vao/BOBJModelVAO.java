@@ -234,6 +234,72 @@ public class BOBJModelVAO implements IModelVAO
         this.updateMesh(stencilMap, this.armature.matrices);
     }
 
+    public void updateMesh(StencilMap stencilMap, mchorse.bbs_mod.obj.shapes.ShapeKeys keys)
+    {
+        this.shapeKeys = keys;
+
+        this.updateMesh(stencilMap, this.armature.matrices);
+    }
+
+    /**
+     * Die Shape-Key-Werte DIESES Bildes. Sie kommen von der Form, nicht vom Modell —
+     * dasselbe Netz kann in zwei Formen verschieden weit verzogen sein.
+     */
+    private mchorse.bbs_mod.obj.shapes.ShapeKeys shapeKeys;
+    /** Ausgangslagen mit eingerechneten Shape Keys; nur belegt, wenn welche wirken. */
+    private float[] verzogen;
+
+    /**
+     * ⛔ Shape Keys wirken VOR dem Skinning. Blender verzieht das Ruhenetz und haeutet
+     * danach — umgekehrt wandert die Verformung durch die Knochenmatrizen und der Effekt
+     * haengt an der Pose. Deshalb steht das hier und nicht hinter der Schleife.
+     *
+     * @return die Ausgangslagen, entweder das Original oder die verzogene Kopie
+     */
+    private float[] ausgangslagen()
+    {
+        java.util.Map<String, float[]> bahnen = this.data.shapeData;
+
+        if (bahnen.isEmpty() || this.shapeKeys == null || this.shapeKeys.shapeKeys.isEmpty())
+        {
+            return this.data.posData;
+        }
+
+        float[] basis = this.data.posData;
+        boolean gerechnet = false;
+
+        for (java.util.Map.Entry<String, Float> e : this.shapeKeys.shapeKeys.entrySet())
+        {
+            float[] ziel = bahnen.get(e.getKey());
+            float wert = e.getValue() == null ? 0F : e.getValue();
+
+            if (ziel == null || wert == 0F)
+            {
+                continue;
+            }
+
+            if (!gerechnet)
+            {
+                if (this.verzogen == null || this.verzogen.length != basis.length)
+                {
+                    this.verzogen = new float[basis.length];
+                }
+
+                System.arraycopy(basis, 0, this.verzogen, 0, basis.length);
+                gerechnet = true;
+            }
+
+            /* Wie der Cubic-Renderer: base + wert * (ziel - base), aufaddiert ueber alle
+             * Keys, damit sich zwei Keys ueberlagern statt einander zu ersetzen. */
+            for (int i = 0; i < basis.length; i++)
+            {
+                this.verzogen[i] += wert * (ziel[i] - basis[i]);
+            }
+        }
+
+        return gerechnet ? this.verzogen : basis;
+    }
+
     public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices)
     {
         Vector4f sum = new Vector4f();
@@ -241,7 +307,7 @@ public class BOBJModelVAO implements IModelVAO
         Vector3f sumNormal = new Vector3f();
         Vector3f resultNormal = new Vector3f();
 
-        float[] oldVertices = this.data.posData;
+        float[] oldVertices = this.ausgangslagen();
         float[] newVertices = this.tmpVertices;
         float[] oldNormals = this.data.normData;
         float[] newNormals = this.tmpNormals;
