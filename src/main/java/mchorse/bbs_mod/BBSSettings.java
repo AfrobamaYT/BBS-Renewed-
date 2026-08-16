@@ -184,6 +184,7 @@ public class BBSSettings {
 	public static ValueFloat editorOrbitFrameMargin;
 	public static ValueFloat editorCameraSmoothness;
 	public static ValueInt editorCameraMode;
+	public static ValueInt renderEngine;
 	public static ValueBoolean editorPlayerFollowsCamera;
 	public static ValueEditorLayout editorLayoutSettings;
 	public static ValueOnionSkin editorOnionSkin;
@@ -536,11 +537,9 @@ public class BBSSettings {
 		morphingFocusSearch = builder.getBoolean("morphing_focus_search", false);
 		uniformScale = builder.getBoolean("uniform_scale", false);
 		clickSound = builder.getBoolean("click_sound", false);
-		/* invisible(): das sind gespeicherte ZUSTAENDE, keine einstellungen — favoritenlisten,
-		 * zuletzt benutzte farben, abgeschaltete filter. Die UI schreibt sie selbst, niemand
-		 * stellt sie in den settings ein. Sichtbar erzeugten sie nur rohe schluessel in der
-		 * liste (BBS bildet den anzeigenamen aus "bbs.config.<kategorie>.<name>", und dafuer
-		 * gibt es hier zu recht keinen sprach-eintrag). Vorbild: editorCameraMode.invisible(). */
+		/* invisible(): gespeicherte ZUSTAENDE, keine einstellungen — die UI schreibt sie
+		 * selbst, sichtbar erzeugten sie nur rohe schluessel in der settings-liste (kein
+		 * sprach-eintrag noetig; anzeigename kaeme aus "bbs.config.<kategorie>.<name>"). */
 		favoriteColors = new ValueColors("favorite_colors");
 		recentColors = new ValueColors("recent_colors").limit(33);
 		disabledSheets = new ValueStringKeys("disabled_sheets");
@@ -707,16 +706,16 @@ public class BBSSettings {
 		editorOrbitGizmoScale = builder.getFloat("orbit_gizmo_scale", 1F, 0.5F, 2F).slider();
 		editorOrbitAxisOrtho = builder.getBoolean("orbit_axis_ortho", true);
 		editorOrbitTeleportOnSwitch = builder.getBoolean("orbit_teleport_on_switch", true);
-		/* Blenders VIEW3D_MARGIN aus view3d_view.cc: der Rand um die Huellbox beim Rahmen.
-		 * 1.4 ist dessen Wert, hier einstellbar, damit man enger oder weiter rahmen kann,
-		 * ohne an der Formel zu drehen (siehe OrbitFilmCameraController.rahmenAbstand). */
+		/* Blenders VIEW3D_MARGIN (view3d_view.cc, wert 1.4): rand um die huellbox beim
+		 * rahmen — einstellbar statt formel-edit (OrbitFilmCameraController.rahmenAbstand). */
 		editorOrbitFrameMargin = builder.getFloat("orbit_frame_margin", 1.4F, 0.5F, 4F).slider();
 		editorCameraSmoothness = builder.getFloat("camera_smoothness", 0.1F, 0F, 0.95F).slider();
 		editorCameraMode = builder.getInt("camera_mode", 0, 0, 5);
 		editorCameraMode.invisible();
+		/* P7 Render-Reiter: 0=BBS, 1=Eevee, 2=Cycles — bedient im Seitenpanel, nicht hier. */
+		(renderEngine = builder.getInt("render_engine", 0, 0, 2)).invisible();
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
-		/* Das dock-layout wird durch das verschieben der panels geschrieben, nicht in den
-		 * settings eingestellt — dort stand nur der rohe schluessel. */
+		/* Dock-layout: durch panel-verschieben geschrieben, nicht in den settings eingestellt. */
 		builder.register((editorLayoutSettings = new ValueEditorLayout("layout")).invisible());
 		builder.register(editorOnionSkin = new ValueOnionSkin("onion_skin"));
 		builder.register(editorMotionPath = new ValueMotionPath("motion_path"));
