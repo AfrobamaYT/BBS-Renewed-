@@ -148,6 +148,18 @@ public final class WorldShot
 		return null;
 	}
 
+	/**
+	 * Einen Welt-Frame fangen, komplett: scharfstellen auf dem Render-Thread, dann hier (Aufrufer-
+	 * Thread, NIE der Render-Thread) auf den naechsten echten Frame warten. Fuer Sequenz-Treiber
+	 * (WeltbildFahrt), die pro Tick scrubben und fangen — ein Aufruf, ein Frame, ein JSON.
+	 */
+	public static String fangen(String pfad)
+	{
+		String sofort = RenderThread.submit(() -> scharfstellen(pfad));
+
+		return sofort == null ? warten() : sofort;
+	}
+
 	/** HTTP-Thread: auf den naechsten Frame warten. Laut scheitern statt ewig haengen. */
 	private static String warten()
 	{
