@@ -450,6 +450,13 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+	/* P1/P2-SPIKE 2026-08-17 (User: "beweis dass es wirkt"): NanoVG — antialiasierte
+	 * 2D-vektorgrafik AUF MCs GL-kontext, aus DERSELBEN LWJGL-familie/-version wie MC
+	 * (3.3.3, gemessen im classpath). Nur linux-natives: dev-spike; eine auslieferung
+	 * braeuchte windows/macos-natives dazu (drei weitere zeilen, bewusst noch nicht). */
+	implementation "org.lwjgl:lwjgl-nanovg:3.3.3"
+	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
+
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
