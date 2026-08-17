@@ -11,13 +11,13 @@ import static org.lwjgl.nanovg.NanoVG.*;
  * Jeder Helfer verwaltet seine NVG-Farbpuffer selbst (MemoryStack-scoped) — Aufrufer reichen
  * nur Zahlen. Farben als 0xRRGGBB; Varianten mit Alpha sagen es im Namen.
  */
-final class NanoStifte
+public final class NanoStifte
 {
 	private NanoStifte()
 	{
 	}
 
-	static void flaeche(long vg, float x, float y, float w, float h, float radius, int rgb)
+	public static void flaeche(long vg, float x, float y, float w, float h, float radius, int rgb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -28,7 +28,7 @@ final class NanoStifte
 		}
 	}
 
-	static void flaecheArgb(long vg, float x, float y, float w, float h, float radius, int argb)
+	public static void flaecheArgb(long vg, float x, float y, float w, float h, float radius, int argb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -39,7 +39,7 @@ final class NanoStifte
 		}
 	}
 
-	static void rahmen(long vg, float x, float y, float w, float h, float radius, int rgb)
+	public static void rahmen(long vg, float x, float y, float w, float h, float radius, int rgb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -51,7 +51,7 @@ final class NanoStifte
 		}
 	}
 
-	static void linie(long vg, float x1, float y1, float x2, float y2, float breite, int rgb)
+	public static void linie(long vg, float x1, float y1, float x2, float y2, float breite, int rgb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -64,7 +64,7 @@ final class NanoStifte
 		}
 	}
 
-	static void kreis(long vg, float cx, float cy, float r, int rgb)
+	public static void kreis(long vg, float cx, float cy, float r, int rgb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -75,7 +75,7 @@ final class NanoStifte
 		}
 	}
 
-	static void text(long vg, String schrift, float groesse, float x, float y, int rgb, String inhalt, Object unbenutzt)
+	public static void text(long vg, String schrift, float groesse, float x, float y, int rgb, String inhalt, Object unbenutzt)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -87,8 +87,21 @@ final class NanoStifte
 		}
 	}
 
+	/** Wie text, aber horizontal zentriert auf x (knopf-beschriftungen). */
+	public static void textMitte(long vg, String schrift, float groesse, float x, float y, int rgb, String inhalt)
+	{
+		try (MemoryStack s = MemoryStack.stackPush())
+		{
+			nvgFontFace(vg, schrift);
+			nvgFontSize(vg, groesse);
+			nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+			nvgFillColor(vg, farbe(rgb, 255, NVGColor.malloc(s)));
+			nvgText(vg, x, y, inhalt);
+		}
+	}
+
 	/** Rundeck mit linearem 2-Stop-Verlauf entlang (gx1,gy1)->(gx2,gy2). */
-	static void verlaufRundeck(long vg, float x, float y, float w, float h, float radius,
+	public static void verlaufRundeck(long vg, float x, float y, float w, float h, float radius,
 		float gx1, float gy1, float gx2, float gy2, int rgbA, int rgbB)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
@@ -104,7 +117,7 @@ final class NanoStifte
 	}
 
 	/** Kreis mit linearem 2-Stop-Verlauf (avatare). */
-	static void verlaufKreis(long vg, float cx, float cy, float r,
+	public static void verlaufKreis(long vg, float cx, float cy, float r,
 		float gx1, float gy1, float gx2, float gy2, int rgbA, int rgbB)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
@@ -120,7 +133,7 @@ final class NanoStifte
 	}
 
 	/** Weiche runde Lichtblase (radialer verlauf nach transparent) — thumbnail-glanz. */
-	static void lichtblase(long vg, float cx, float cy, float innenR, float aussenR, int rgb, int alphaInnen)
+	public static void lichtblase(long vg, float cx, float cy, float innenR, float aussenR, int rgb, int alphaInnen)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -135,7 +148,7 @@ final class NanoStifte
 	}
 
 	/** Gefuelltes dreieck (play-symbole). */
-	static void dreieck(long vg, float x1, float y1, float x2, float y2, float x3, float y3, int rgb)
+	public static void dreieck(long vg, float x1, float y1, float x2, float y2, float x3, float y3, int rgb)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())
 		{
@@ -149,7 +162,7 @@ final class NanoStifte
 		}
 	}
 
-	static NVGColor farbe(int rgb, int alpha, NVGColor ziel)
+	public static NVGColor farbe(int rgb, int alpha, NVGColor ziel)
 	{
 		return nvgRGBA((byte) (rgb >> 16), (byte) (rgb >> 8), (byte) rgb, (byte) alpha, ziel);
 	}
