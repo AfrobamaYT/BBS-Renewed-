@@ -89,7 +89,8 @@ public class UIFilmKeyframes extends UIKeyframes
         if (this.editor != null)
         {
             int cx = this.toGraphX(this.getOffset());
-            String label = TimeUtils.formatTime(this.getOffset()) + "/" + TimeUtils.formatTime(this.getDuration());
+            /* Nur die Zahl — die Gesamtdauer steht im Kopf der Zeitleiste, wie in UIClips. */
+            String label = TimeUtils.formatTime(this.getOffset());
 
             context.batcher.clip(this.graphArea, context);
             UIClips.renderCursor(context, label, this.area, cx - 1);

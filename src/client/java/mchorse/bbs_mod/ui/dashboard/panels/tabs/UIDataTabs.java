@@ -54,9 +54,20 @@ public class UIDataTabs extends UIElement
         this.scroll.relative(this).x(TABS_GAP).w(1F, -TABS_GAP * 2 - this.rightInsetPx).h(TABS_HEIGHT_PX);
     }
 
+    /** Leiste dauerhaft aufgeloest — gesetzt, wenn der Wirt die Reiterhoehe 0 meldet. */
+    private boolean aufgeloest;
+
+    public void aufloesen(boolean an)
+    {
+        this.aufgeloest = an;
+    }
+
     public void sync()
     {
-        if (!this.host.areTabsEnabled())
+        /* ⛔ aufgeloest() vor areTabsEnabled(): der Film-Editor traegt seinen Film als Chip in
+         * der Topbar und loest diese Leiste ganz auf. sync() lief bei jedem Datenwechsel und
+         * setzte sie wieder sichtbar — die alte Leiste war nach jedem Filmwechsel zurueck. */
+        if (this.aufgeloest || !this.host.areTabsEnabled())
         {
             this.setVisible(false);
             return;

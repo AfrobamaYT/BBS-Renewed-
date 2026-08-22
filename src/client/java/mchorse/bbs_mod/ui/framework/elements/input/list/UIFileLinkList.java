@@ -402,10 +402,24 @@ public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
             return;
         }
 
-        int farbe = selected ? Colors.A50 | BBSSettings.primaryColor.get() : (hover ? 0x33000000 : 0x22000000);
+        /* Design-System: Kachel als Karte auf --panel, Radius 6, Auswahl als blaue Kontur —
+         * dieselbe Anatomie wie im Auswahl-Bildschirm. Vorher lag hier ein flaches
+         * halbdurchsichtiges Rechteck ohne Kante, das auf dem Grund kaum zu sehen war. */
+        int rand = 2;
+        int kx = x + rand;
+        int ky = y + rand;
+        int kb = this.getGridTileWidth() - rand * 2;
+        int kh = this.getGridTileHeight() - rand * 2;
 
-        context.batcher.box(x, y, x + this.getGridTileWidth(), y + this.getGridTileHeight(), farbe);
+        context.batcher.rundeck(kx, ky, kb, kh, 6F,
+            Colors.A100 | (hover ? com.mcstudio.nano.NanoDesign.PANELKOPF : com.mcstudio.nano.NanoDesign.PANEL));
+
         this.renderElementPart(context, element, i, x, y, hover, selected);
+
+        if (selected)
+        {
+            context.batcher.outline(kx, ky, kx + kb, ky + kh, Colors.A100 | com.mcstudio.nano.NanoDesign.BLAU);
+        }
     }
 
     private int getGridTileWidth()
@@ -575,7 +589,8 @@ public class UIFileLinkList extends UIList<UIFileLinkList.FileLink>
 
         if (element.folder)
         {
-            context.batcher.icon(Icons.FOLDER, Colors.setA(Colors.WHITE, hover ? 0.95F : 0.82F),
+            /* Bernstein wie im Auswahl-Bildschirm: ein Ordner sieht ueberall gleich aus. */
+            context.batcher.icon(Icons.FOLDER, Colors.setA(com.mcstudio.nano.NanoDesign.BERNSTEIN, hover ? 1F : 0.85F),
                 bildX + this.itemSize / 2 - 8, bildY + this.itemSize / 2 - 8);
         }
         else

@@ -74,8 +74,8 @@ public class Scroll
     private BooleanSupplier smoothScrolling;
     private IntSupplier wheelScrollStep;
 
-    public static final int HANDLE_COLOR = 0xff4d525a;
-    public static final int HANDLE_ACTIVE_COLOR = 0xff6e747c;
+    public static final int HANDLE_COLOR = 0xff4A4A4A;
+    public static final int HANDLE_ACTIVE_COLOR = 0xff5A5A5A;
 
     public static void bar(Batcher2D batcher, int x1, int y1, int x2, int y2)
     {

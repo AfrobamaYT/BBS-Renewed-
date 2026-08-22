@@ -113,27 +113,28 @@ public abstract class EditorLayoutNode
         return defaultFilmLayout();
     }
 
-    /** Default: vertical 0.66 -> main | (horizontal 0.5 -> preview / editArea). */
+    /**
+     * Default nach dem Entwurf (screens/film-editor.html, 1280x720): links eine 300-px-Spalte mit
+     * Outliner oben und Properties darunter, rechts der Viewport mit dem Dope Sheet ueber die
+     * VOLLE Breite darunter. Die Bruchteile stammen aus den Pixelmassen des Entwurfs:
+     * 300/1280 = 0.2344 · Outliner 238/664 = 0.3584 · Viewport 468/664 = 0.7048.
+     * editArea bleibt registriert und andockbar, ist aber nicht mehr Teil des Standardbildes.
+     */
     public static EditorLayoutNode defaultFilmLayout()
     {
         return new SplitterNode(
             false,
-            0.1819149F,
+            0.2344F,
             new SplitterNode(
                 true,
-                0.28659794F,
-                new PanelNode("replayProps"),
-                new PanelNode("replaysList")
+                0.3584F,
+                new PanelNode("replaysList"),
+                new PanelNode("replayProps")
             ),
             new SplitterNode(
                 true,
-                0.6659794F,
-                new SplitterNode(
-                    false,
-                    0.793238F,
-                    new PanelNode("preview"),
-                    new PanelNode("editArea")
-                ),
+                0.7048F,
+                new PanelNode("preview"),
                 new PanelNode("main")
             )
         );

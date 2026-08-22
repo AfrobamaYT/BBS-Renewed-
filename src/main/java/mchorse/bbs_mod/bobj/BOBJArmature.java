@@ -101,6 +101,26 @@ public class BOBJArmature
 
     public void setupMatrices()
     {
+        /* ⛔ NUR RECHNEN, WENN SICH DIE EINGABEN GEAENDERT HABEN. Gemessen am 2026-08-21:
+         * bei stehendem Film lieferte diese Methode sechsmal hintereinander denselben
+         * Pose-Hash (-1646228619), rund alle 100 ms — und zog dabei die volle Rig-Mechanik
+         * samt IK-Solver mit. Das war der groesste Einzelposten der Allokationslast
+         * (async-profiler: ~700 MB/s, Old Gen 91,75 %, ~32 % CPU im G1-Concurrent-Mark).
+         *
+         * Der Fingerabdruck deckt alles ab, was `computeMatrix` liest: `transform` jedes
+         * Bones (translate/rotate/scale/pivot/quat). Aendert eine Rig-Mechanik ihre Ausgabe
+         * ohne diese Felder anzufassen, MUSS `posenMarkieren()` gerufen werden — sonst
+         * friert die Pose ein. Deshalb ist das Verwerfen oeffentlich und nicht versteckt. */
+        long signatur = this.eingabeSignatur();
+
+        if (signatur == this.letzteEingabe && this.matrizenGueltig)
+        {
+            return;
+        }
+
+        this.letzteEingabe = signatur;
+        this.matrizenGueltig = true;
+
         if (this.zwang != null && this.zwang.auswerten(this))
         {
             return;
@@ -111,6 +131,40 @@ public class BOBJArmature
             this.matrices[bone.index] = bone.compute();
         }
     }
+
+    /** Nach dem naechsten {@link #setupMatrices()} wird wieder voll gerechnet. */
+    public void posenMarkieren()
+    {
+        this.matrizenGueltig = false;
+    }
+
+    /**
+     * Fingerabdruck aller Eingaben von {@link BOBJBone#computeMatrix}.
+     *
+     * <p>Kein Initialisierer an den Feldern waere hier gefaehrlich: nach einem Hotswap sind
+     * sie 0 bzw. false — und {@code matrizenGueltig == false} bedeutet „voll rechnen", also
+     * ist der sichere Zustand auch der Standardwert.</p>
+     */
+    private long eingabeSignatur()
+    {
+        long h = 17L;
+
+        for (BOBJBone bone : this.orderedBones)
+        {
+            mchorse.bbs_mod.utils.pose.Transform t = bone.transform;
+
+            h = h * 31L + t.translate.hashCode();
+            h = h * 31L + t.rotate.hashCode();
+            h = h * 31L + t.scale.hashCode();
+            h = h * 31L + t.pivot.hashCode();
+            h = h * 31L + t.quat.hashCode();
+        }
+
+        return h;
+    }
+
+    private long letzteEingabe;
+    private boolean matrizenGueltig;
 
     public void copyOrder(BOBJArmature armature)
     {

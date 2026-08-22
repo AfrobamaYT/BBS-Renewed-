@@ -140,7 +140,7 @@ public class UIToggle extends UIClickable<UIToggle> implements ITextColoring
         }
 
         int finalActive = this.hover ? Colors.mulRGB(primary, 1.15F) : primary;
-        int finalInactive = this.hover ? 0xFF4A4A52 : 0xFF3B3B43;
+        int finalInactive = this.hover ? 0xFF4A4A4A : 0xFF3D3D3D;
         int trackColor = this.interpolateColor(finalInactive, finalActive, this.currentKnobX);
 
         batcher.box(x, y, x + w, y + h, trackColor);
@@ -154,7 +154,7 @@ public class UIToggle extends UIClickable<UIToggle> implements ITextColoring
 
         batcher.box(knobX, knobY + 1, knobX + knobSize, knobY + knobSize + 1, 0x66000000);
         batcher.box(knobX, knobY, knobX + knobSize, knobY + knobSize, 0xFFFFFFFF);
-        batcher.box(knobX, knobY + knobSize - 2, knobX + knobSize, knobY + knobSize, 0xFFD2D2D6);
+        batcher.box(knobX, knobY + knobSize - 2, knobX + knobSize, knobY + knobSize, 0xFFD2D2D2);
 
         if (!this.isEnabled())
         {

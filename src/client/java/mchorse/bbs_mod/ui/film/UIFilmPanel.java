@@ -117,6 +117,10 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     public UIElement main;
     public UIElement editArea;
+    /** Zeitleiste im neuen Designsystem — sichtbarer Inhalt der editArea-Flaeche. */
+    public UIElement zeitleisteNano;
+    /** Gemerktes Layout, solange eine Flaeche maximiert ist; null = normale Aufteilung. */
+    private EditorLayoutNode layoutVorMaximieren;
     private final List<UIDraggable> splitterHandles = new ArrayList<>();
     private final List<EditorLayoutNode.SplitterHandleInfo> splitterHandleInfos = new ArrayList<>();
     public UIFilmRecorder recorder;
@@ -359,9 +363,20 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         this.panelById.put(PANEL_PREVIEW_ID, this.preview);
         this.panelById.put(PANEL_EDIT_AREA_ID, this.editArea);
 
+        /* Zeitleiste im neuen Designsystem als eigene Flaeche (Blender: Dope Sheet ist ein Editor).
+         * Sie sitzt in der main-Flaeche — im Entwurf laeuft der Dope Sheet ueber die VOLLE Breite
+         * unter dem Viewport, nicht als schmale Spalte rechts. Sie wird nach dem alten Clip-Editor
+         * eingehaengt und deckt ihn damit ab; dessen Logik bleibt als Datenhalter erreichbar. */
+        this.zeitleisteNano = UIZeitleisteNano.neu();
+
         /* Editors */
         this.cameraEditor = new UIClipsPanel(this, BBSMod.getFactoryCameraClips()).target(this.editArea);
-        this.cameraEditor.full(this.main);
+        /* ⛔ 26 px unter der Kopfzeile beginnen, nicht bei full(). UIClipsPanel bekommt
+         * Klicks VOR der spaeter eingehaengten Zeitleiste (Element-Index 5 gegen 7) und
+         * schluckte damit jeden Klick auf den Editor-Typ-Waehler — die Zone war da, das
+         * Eingabefeld stimmte, der Klick kam nur nie an. Zwei Flaechen duerfen sich nicht
+         * ueberlappen, wenn beide Eingaben wollen. */
+        this.cameraEditor.relative(this.main).x(0).y(26).w(1F).h(1F, -26);
 
         this.cameraEditor.clips.context((menu) ->
         {
@@ -369,7 +384,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
 
         this.replayEditor = new UIReplaysEditor(this);
-        this.replayEditor.full(this.main).setVisible(false);
+        /* ⛔ WIE DER KAMERA-ZWEIG: unter der Kopfzeile beginnen. `full(main)` legte den
+         * Replay-Editor ueber die ganze Flaeche — also auch ueber `UIZeitleisteNano`, die
+         * dort den Kopf zeichnet. Beide standen sichtbar auf y=353..486, und der spaeter
+         * gezeichnete Replay-Editor uebermalte den Kopf restlos: wer ein Replay auswaehlte,
+         * bekam die Timeline OHNE Transport, Marker/Key und Editor-Waehler zu sehen. */
+        this.replayEditor.relative(this.main).x(0).y(26).w(1F).h(1F, -26).setVisible(false);
         this.actionEditor = new UIClipsPanel(this, BBSMod.getFactoryActionClips()).target(this.editArea);
         this.actionEditor.setVisible(false);
         this.replayEditor.attachActionTimeline(this.actionEditor);
@@ -417,7 +437,37 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.dragHandlesById.put(id, handle);
             this.editor.add(handle);
         }
-        this.main.add(this.editArea, this.cameraEditor, this.replayEditor, this.preview, this.replayEditor.replaysList, this.replayEditor.replayProperties, this.undoHistoryDock.getPanel());
+        /* ⛔ cameraEditor traegt WIEDER die Zeitleiste — mit dem neuen Aussehen.
+         *
+         * Der Umbau hatte UIClips durch UIZeitleisteNano ersetzt und damit 88 von 89 Methoden
+         * verloren: Auswahl, Kollisionen, Einrasten, Ebenen, Kopieren, Rahmenauswahl. Gemessen
+         * am 2026-08-20 ist UIClips zu rund 85 % LOGIK und zu 15 % Zeichnen — der Neubau warf
+         * die 85 % weg, um die 15 % zu ersetzen, und jede Nutzermeldung seither war ein Stueck
+         * davon.
+         *
+         * Jetzt umgekehrt: UIClips behaelt seine Logik, nur `renderCameraWork` zeichnet ueber
+         * NanoVG. Das Aussehen bleibt neu, die Bedienung ist wieder vollstaendig. */
+        /* ⛔ BEIDE, verschachtelt — nicht entweder-oder.
+         *
+         * Erst hatte UIZeitleisteNano UIClips ERSETZT: neues Aussehen, aber 88 von 89 Methoden
+         * weg (Auswahl, Kollisionen, Einrasten, Ebenen …). Dann UIClips zurueckgeholt und die
+         * Zeitleiste ausgehaengt: Logik vollstaendig, aber Kopfzeile und Kanalliste weg — der
+         * Nutzer sah eine nackte alte Zeitachse.
+         *
+         * Jetzt traegt UIZeitleisteNano die KOPFZEILE (Editor-Typ, Transport, Marker/Key,
+         * Loop-Ring) und UIClips die Flaeche darunter. Aussehen neu, Logik vollstaendig. */
+        /* ⛔ zeitleisteNano NACH cameraEditor: wer spaeter eingehaengt wird, zeichnet
+         * obendrauf. Davor lag die Kopfzeile auf Element-Index 5 und UIClips auf 8 — die
+         * Kopfzeile war da (y=162 h=26), wurde aber vom Clip-Panel ueberzeichnet und fehlte
+         * im Bild vollstaendig. */
+        this.main.add(this.editArea, this.cameraEditor, this.zeitleisteNano, this.replayEditor, this.preview, this.replayEditor.replaysList, this.replayEditor.replayProperties, this.undoHistoryDock.getPanel());
+        /* ⛔ Relativ zum cameraEditor, NICHT zu `main`. Bei `relative(main).y(0)` sass die
+         * Kopfzeile am oberen Rand des Panels — also unter der Topbar und weit weg von der
+         * Zeitleiste, wo sie hingehoert. Im Bild fehlte sie schlicht.
+         * 26 px ist NanoDesign.H_KOPF, dieselbe Hoehe, die die Flaeche selbst annimmt. */
+        /* Volle Hoehe: die Flaeche traegt die Kopfzeile OBEN und die Kanalspalte LINKS.
+         * Die Clip-Flaeche darunter/daneben gehoert UIClips. */
+        this.zeitleisteNano.relative(this.cameraEditor).x(0).y(-26).w(1F).h(1F, 26);
         this.add(this.controller);
         this.overlay.namesList.setFileIcon(Icons.FILM);
 
@@ -426,6 +476,19 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         IKey editor = UIKeys.CAMERA_EDITOR_KEYS_EDITOR_TITLE;
         IKey looping = UIKeys.CAMERA_EDITOR_KEYS_LOOPING_TITLE;
         Supplier<Boolean> active = () -> !this.isFlying();
+
+        /* Keyframe-Tasten wie in Blender: I setzt, Entf loescht, E fuehrt zu den Kamera-Clips.
+         * Am PANEL registriert — die Zeitleiste bekommt den Tastenfokus nur beim Klick in
+         * sie hinein, und dann waeren die Tasten je nach letztem Klick mal da, mal nicht. */
+        this.keys().register(new mchorse.bbs_mod.ui.utils.keys.KeyCombo("nano_key_insert",
+            mchorse.bbs_mod.l10n.keys.IKey.raw("Insert keyframe"), org.lwjgl.glfw.GLFW.GLFW_KEY_I),
+            () -> ((UIZeitleisteNano) this.zeitleisteNano).keyframeAmCursor(true)).active(active).category(editor);
+        this.keys().register(new mchorse.bbs_mod.ui.utils.keys.KeyCombo("nano_key_delete",
+            mchorse.bbs_mod.l10n.keys.IKey.raw("Delete keyframe"), org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE),
+            () -> ((UIZeitleisteNano) this.zeitleisteNano).keyframeAmCursor(false)).active(active).category(editor);
+        this.keys().register(new mchorse.bbs_mod.ui.utils.keys.KeyCombo("nano_key_camera",
+            mchorse.bbs_mod.l10n.keys.IKey.raw("Camera clips"), org.lwjgl.glfw.GLFW.GLFW_KEY_E),
+            () -> ((UIZeitleisteNano) this.zeitleisteNano).modusUmschalten(2)).active(active).category(editor);
 
         this.keys().register(Keys.PLAUSE, () -> this.preview.plause.clickItself()).active(active).category(editor);
         this.keys().register(Keys.NEXT_CLIP, () -> this.setCursor(this.data.camera.findNextTick(this.getCursor()))).active(active).category(editor);
@@ -723,7 +786,11 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     {
         DockStackInfo editAreaStack = this.dockStackByPanelId.get(PANEL_EDIT_AREA_ID);
 
-        return editAreaStack == null || PANEL_EDIT_AREA_ID.equals(editAreaStack.activePanelId);
+        /* ⛔ Kein Stack heisst NICHT „aktiv". Seit editArea aus dem Standardlayout gefallen ist,
+         * gibt es fuer sie keinen Stack — mit dem alten `== null || …` galten die Clip-Felder
+         * damit als sichtbar und wurden ohne Flaeche gezeichnet: sie landeten oben links im
+         * Bild, quer ueber Topbar und Vorschau. Genau die „alte Haut", die durchschien. */
+        return editAreaStack != null && PANEL_EDIT_AREA_ID.equals(editAreaStack.activePanelId);
     }
 
     private void updateMainEditorVisibility(boolean hasFilm)
@@ -959,6 +1026,8 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
     private void setupEditorFlex(boolean resize)
     {
+        this.layoutAufNeuesBildZiehen();
+
         EditorLayoutNode originalRoot = this.getCurrentFilmLayoutRoot();
         EditorLayoutNode root = this.ensureFilmLayoutPanels(originalRoot);
 
@@ -1212,6 +1281,15 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         });
 
         this.setupEditorFlex(true);
+
+        /* ⛔ Vorschaugroesse SCHON WAEHREND des Ziehens nachfuehren, nicht erst beim Loslassen.
+         * Vorher behielt die Vorschau ihre alte Aufloesung, bis der Nutzer den Splitter losliess
+         * — beim Ziehen sah man das Bild dehnen statt mitwachsen. Blender fuehrt live nach.
+         *
+         * Der Framebuffer-Resize ist nicht gratis, aber setCustomSize steigt bei gleicher
+         * Groesse selbst aus ("No-op when nothing actually changes"), und beim Ziehen aendert
+         * sie sich ohnehin nur schrittweise. */
+        this.applyPreviewSizeToBBS();
     }
 
     private void applySplitterRatioFromMouse(List<EditorLayoutNode.SplitterNode> splitters, int index, int mouseX, int mouseY)
@@ -1763,12 +1841,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         return new Vector3d();
     }
 
-    private void openFilmListOverlay()
+    public void openFilmListOverlay()
     {
         UIOverlay.addOverlay(this.getContext(), this.overlay, 200, 0.9F);
     }
 
-    private void openLayoutPresetsMenu()
+    public void openLayoutPresetsMenu()
     {
         UIContext context = this.getContext();
 
@@ -1915,23 +1993,44 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             float scale = BBSSettings.editorPreviewResolutionScale.get();
 
-            if (this.cameraEditor.isVisible())
-            {
-                int previewW = Math.max(2, this.preview.area.w);
-                int previewH = Math.max(2, this.preview.area.h);
-                int exportW = Math.max(2, BBSSettings.videoWidth.get());
-                int exportH = Math.max(2, BBSSettings.videoHeight.get());
-                Vector2i resized = Vectors.resize(exportW / (float) exportH, previewW, previewH);
+            /* ⛔ Blenders Unterscheidung, an BBS' eigene Modi gehaengt: in der KAMERA-Ansicht
+             * (CAMERA_MODE_CAMERA) gilt das Bildformat des Exports — das ist Blenders
+             * „Camera View" mit festem Rahmen. In jeder freien Ansicht (Frei, Orbit, POV)
+             * fuellt die Vorschau die Flaeche und das Sichtfeld passt sich an — Blenders
+             * „User Perspective". Vorher hing das an cameraEditor.isVisible(): ob ein EDITOR
+             * offen ist, hat mit der Ansichtsart nichts zu tun. */
+            int previewW = Math.max(2, this.preview.area.w);
+            int previewH = Math.max(2, this.preview.area.h);
+            float format;
 
-                w = Math.max(2, (int) (resized.x * scale));
-                h = Math.max(2, (int) (resized.y * scale));
+            /* ⛔ AUCH die Kamera-Ansicht fuellt die Flaeche. Vorher erzwang sie das
+             * Exportformat, wodurch das Bild als kleineres Rechteck mit Raendern in der
+             * Flaeche sass — in jeder anderen Ansicht randlos, hier nicht (Nutzerbefund
+             * 2026-08-20: „wenn ich den camera mode auf camera switche dann ist der viewport
+             * nicht mehr durch den ganzen screen skaliert").
+             *
+             * ⚠️ Damit fehlt der Hinweis, WELCHER Ausschnitt spaeter im Video landet. Blender
+             * loest das mit einem Kamerarahmen samt Passepartout ueber dem vollflaechigen
+             * Bild — das ist der naechste Schritt, nicht der Sonderfall hier. */
+            {
+                /* Freie Ansicht fuellt die Flaeche randlos — Blenders „User Perspective".
+                 * Damit das Bild dabei nicht breitgezogen wird, zieht die Weltprojektion mit:
+                 * ProjectionPreviewAspectMixin setzt Minecrafts Bildformat auf genau diese
+                 * Textur, statt es aus der Fenstergroesse zu nehmen. */
+                format = 0F;
+            }
+
+            if (format <= 0F)
+            {
+                w = Math.max(2, (int) (previewW * scale));
+                h = Math.max(2, (int) (previewH * scale));
             }
             else
             {
-                int previewW = this.preview.area.w;
-                int previewH = this.preview.area.h;
-                w = Math.max(2, (int) (previewW * scale));
-                h = Math.max(2, (int) (previewH * scale));
+                Vector2i resized = Vectors.resize(format, previewW, previewH);
+
+                w = Math.max(2, (int) (resized.x * scale));
+                h = Math.max(2, (int) (resized.y * scale));
             }
         }
 
@@ -1946,6 +2045,23 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         {
             BBSRendering.setCustomSize(true, w, h);
         }
+    }
+
+    /**
+     * Vorschaugroesse neu rechnen — der Kameramodus bestimmt, ob sie die Flaeche fuellt.
+     *
+     * <p>⛔ Null-fest: {@code setPov} laeuft schon waehrend des Aufbaus, wenn der Controller
+     * seinen gespeicherten Modus liest — da sind {@code recorder} und {@code preview} noch
+     * nicht gesetzt. Ohne diese Pruefung stirbt der Editor beim Oeffnen.</p>
+     */
+    public void vorschauGroesseNachziehen()
+    {
+        if (this.recorder == null || this.preview == null || this.cameraEditor == null)
+        {
+            return;
+        }
+
+        this.applyPreviewSizeToBBS();
     }
 
     public void pickClip(Clip clip, UIClipsPanel panel)
@@ -2419,7 +2535,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         camera.set(mc.player, MathUtils.toRad(mc.options.fov().get()));
 
-        clip.layer.set(8);
+        clip.layer.set(0); /* nicht 8 — die Spurenzahl folgt der hoechsten belegten Ebene. */
         clip.duration.set(BBSSettings.getDefaultDuration());
         clip.fromCamera(camera);
         data.camera.addClip(clip);
@@ -2903,7 +3019,9 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
      */
     private void renderPanelSurfaces(UIContext context)
     {
-        this.editor.area.render(context.batcher, BBSSettings.baseSurface());
+        /* Naht in der Designfarbe (--seam #0D0D0D): der Grund zwischen den Flaechen soll
+         * dunkler sein als die Flaechen selbst, nicht heller. */
+        this.editor.area.render(context.batcher, 0xFF0D0D0D);
 
         for (UIElement panel : this.panelById.values())
         {
@@ -3197,5 +3315,89 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     protected boolean canSave(UIContext context)
     {
         return !this.recorder.isRecording();
+    }
+    /** Reiterleiste aufloesen — der Film sitzt im neuen Bild als Chip in der Topbar. */
+    @Override
+    protected int getTabsHeightPx()
+    {
+        return 0;
+    }
+
+    /** Filmmenue oeffnen — Einstieg fuer den Film-Chip der Topbar. */
+    public void oeffneFilmMenue()
+    {
+        this.getContext().replaceContextMenu(this::fillFilmContextMenu);
+    }
+
+    /** Neuen Film anlegen — Einstieg fuer den Plus-Knopf der Topbar. */
+    public void neuerFilm()
+    {
+        this.addTab();
+    }
+
+    /**
+     * Oeffentlicher Einstieg auf das schon vorhandene {@link #resetFilmLayout()} — noetig, weil
+     * das Zuruecksetzen sonst nur ueber das Filmmenue erreichbar ist und nicht aus einer Messung.
+     */
+    public void layoutZuruecksetzen()
+    {
+        this.resetFilmLayout();
+    }
+
+    /**
+     * Eine Flaeche auf den ganzen Editor ziehen und wieder zurueck — Blenders Ctrl+Space.
+     * Das vorherige Layout wird gemerkt, damit das Zurueck nichts verliert.
+     */
+    public void flaecheMaximieren(String panelId)
+    {
+        if (this.layoutVorMaximieren != null)
+        {
+            this.setCurrentFilmLayoutRoot(this.layoutVorMaximieren);
+            this.layoutVorMaximieren = null;
+        }
+        else
+        {
+            this.layoutVorMaximieren = this.getCurrentFilmLayoutRoot();
+            this.setCurrentFilmLayoutRoot(new EditorLayoutNode.PanelNode(panelId));
+        }
+
+        this.refreshCurrentFilmLayout();
+    }
+
+    /** Ist gerade eine Flaeche maximiert? Der Knopf im Flaechenkopf faerbt sich danach. */
+    public boolean istMaximiert()
+    {
+        return this.layoutVorMaximieren != null;
+    }
+
+    /**
+     * Einmalige Umstellung auf das neue Standardbild. Ein vor dem Umbau gespeichertes Layout
+     * setzt den Dope Sheet als schmale Spalte neben die Vorschau; erkennbar daran, dass
+     * {@code editArea} darin vorkommt. Solche Layouts werden einmal auf den neuen Standard
+     * gezogen — ohne das sieht ein Bestandsnutzer nach dem Update weiter das alte Bild.
+     */
+    private void layoutAufNeuesBildZiehen()
+    {
+        /* Null-fest: nach einem Hotswap steht ein neu hinzugekommenes statisches Feld auf null,
+         * weil statische Initialisierer beim Redefine nicht laufen. Dann einfach nichts tun. */
+        if (BBSSettings.editorLayoutUmgestellt == null || BBSSettings.editorLayoutUmgestellt.get())
+        {
+            return;
+        }
+
+        BBSSettings.editorLayoutUmgestellt.set(true);
+
+        for (ValueEditorLayout.FilmEditor editor : ValueEditorLayout.FilmEditor.values())
+        {
+            EditorLayoutNode root = this.getFilmLayoutSettings().getFilmLayoutRoot(editor);
+            HashSet<String> ids = new HashSet<>();
+
+            this.collectPanelIds(root, ids);
+
+            if (ids.contains(PANEL_EDIT_AREA_ID))
+            {
+                this.getFilmLayoutSettings().setFilmLayoutRoot(editor, EditorLayoutNode.defaultFilmLayout());
+            }
+        }
     }
 }

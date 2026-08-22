@@ -55,6 +55,7 @@
     "EditorModeChunkSkipMixin",
     "EditorModeMobRenderSkipMixin",
     "GameRendererPreviewPrePassMixin",
+    "ProjectionPreviewAspectMixin",
     "GameRendererTrackerSprintFovMixin",
     "KeyComboMixin",
     "LivingEntityRendererTextureMixin",

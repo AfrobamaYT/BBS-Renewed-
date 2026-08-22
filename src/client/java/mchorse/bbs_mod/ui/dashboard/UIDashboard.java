@@ -97,10 +97,7 @@ public class UIDashboard extends UIBaseMenu
 
         this.settingsPanel = new UISettingsOverlayPanel();
 
-        this.settings = new UIIcon(Icons.SETTINGS, (b) ->
-        {
-            UIOverlay.addOverlay(this.context, this.settingsPanel, 430, 380);
-        });
+        this.settings = new UIIcon(Icons.SETTINGS, (b) -> this.oeffneEinstellungen());
         this.settings.tooltip(UIKeys.CONFIG_TITLE, Direction.TOP);
         this.selectors = new UIIcon(Icons.PROPERTIES, (b) ->
         {
@@ -358,5 +355,14 @@ public class UIDashboard extends UIBaseMenu
         {
             this.panels.panel.renderInWorld(context);
         }
+    }
+    /**
+     * Einstellungen oeffnen. Oeffentlich, weil der Zugang seit dem UI-Umbau in der Topbar sitzt:
+     * die alte angeheftete Icon-Leiste ist ausgeblendet, und ohne diesen Weg waeren die
+     * Einstellungen unerreichbar — ein stiller Funktionsverlust.
+     */
+    public void oeffneEinstellungen()
+    {
+        UIOverlay.addOverlay(this.context, this.settingsPanel, 430, 380);
     }
 }

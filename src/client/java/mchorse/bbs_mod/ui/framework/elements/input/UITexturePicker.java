@@ -1177,12 +1177,12 @@ public class UITexturePicker extends UIElement implements IImportPathProvider, I
         /* Draw the background (browser tab only; the painter draws its own) */
         if (this.currentTab == 0)
         {
-            context.batcher.gradientVBox(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.ex(), this.browseContent.area.ey(), Colors.A50, Colors.A100);
+            context.batcher.box(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.ex(), this.browseContent.area.ey(), BBSSettings.baseSurface());
 
             if (this.multiList.isVisible())
             {
-                context.batcher.box(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.x + 120, this.browseContent.area.ey(), 0xff181818);
-                context.batcher.box(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.x + 120, this.browseContent.area.y + 30, Colors.A25);
+                context.batcher.box(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.x + 120, this.browseContent.area.ey(), BBSSettings.isLightTheme() ? BBSSettings.raisedSurface() : (Colors.A100 | com.mcstudio.nano.NanoDesign.MENUE));
+                context.batcher.box(this.browseContent.area.x, this.browseContent.area.y, this.browseContent.area.x + 120, this.browseContent.area.y + 30, BBSSettings.raisedSurface());
                 context.batcher.gradientVBox(this.browseContent.area.x, this.browseContent.area.ey() - 20, this.buttons.area.ex(), this.browseContent.area.ey(), 0, Colors.A50);
             }
 

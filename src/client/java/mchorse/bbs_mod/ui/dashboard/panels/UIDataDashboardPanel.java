@@ -89,9 +89,11 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
             return;
         }
 
-        int tabsHeight = UIDataTabs.TABS_HEIGHT_PX;
+        int tabsHeight = this.getTabsHeightPx();
         int sidebarWidth = Math.max(0, this.getSidebarWidthPx());
 
+        this.tabBar.aufloesen(tabsHeight <= 0);
+        this.tabBar.setVisible(tabsHeight > 0);
         this.tabBar.setRightInsetPx(this.getTabsRightInsetPx());
         this.iconBar.relative(this).x(1F, -sidebarWidth).y(tabsHeight).w(sidebarWidth).h(1F, -tabsHeight).column(0).stretch();
         this.iconBar.setVisible(sidebarWidth > 0);
@@ -109,6 +111,15 @@ public abstract class UIDataDashboardPanel <T extends ValueGroup> extends UICRUD
     protected int getSidebarWidthPx()
     {
         return 20;
+    }
+
+    /**
+     * Hoehe der eigenen Reiterleiste. 0 loest sie auf — der Film-Editor traegt seinen Film
+     * stattdessen als Chip in der Topbar, so wie im Entwurf.
+     */
+    protected int getTabsHeightPx()
+    {
+        return UIDataTabs.TABS_HEIGHT_PX;
     }
 
     protected int getTabsRightInsetPx()

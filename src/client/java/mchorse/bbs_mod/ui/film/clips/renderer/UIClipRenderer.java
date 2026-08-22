@@ -40,7 +40,11 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
         int right = area.ex();
 
         ClipFactoryData data = clips.getFactory().getData(clip);
-        int color = Colors.A100 | data.color;
+        /* ⛔ Gedaempfte Typfarbe. Die Rohfarben sind grell (Idle = volles Gruen) und stachen
+         * in der neuen, neutralgrauen Oberflaeche heraus wie ein Fremdkoerper. Blender faerbt
+         * seine Streifen ebenfalls nach Typ, aber gedeckt: die Farbe soll den Typ ERKENNBAR
+         * machen, nicht das Auge fangen. */
+        int color = Colors.A100 | gedaempft(data.color);
 
         if (current)
         {
@@ -58,7 +62,10 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
             context.batcher.iconArea(Icons.DISABLED, color, left, y, (right - left), h);
         }
 
-        context.batcher.outline(left, y, right, y + h, selected ? Colors.WHITE : Colors.A50);
+        /* Umrandung nur fuer den gewaehlten Clip deutlich; sonst eine dunkle Kante, die den
+         * Streifen abgrenzt, ohne ein zweites Gitter zu zeichnen. */
+        context.batcher.outline(left, y, right, y + h,
+            selected ? Colors.WHITE : (Colors.A75 | 0x101010));
 
         if (right - left > 10 && clip.envelope.enabled.get())
         {
@@ -219,5 +226,27 @@ public class UIClipRenderer <T extends Clip> implements IUIClipRenderer<T>
     {
         Link type = clips.getFactory().getType(clip);
         return UIKeys.C_CLIP.get(type).get();
+    }
+
+    /**
+     * Typfarbe auf Blender-Mass: Saettigung herunter, Helligkeit auf mittlere Lage.
+     *
+     * <p>Ohne das leuchten die Clips in der neutralgrauen Oberflaeche wie Signalfarben. Der
+     * Farbton bleibt, damit man den Clip-Typ weiter am Streifen erkennt.</p>
+     */
+    private static int gedaempft(int farbe)
+    {
+        int r = (farbe >> 16) & 0xFF;
+        int g = (farbe >> 8) & 0xFF;
+        int b = farbe & 0xFF;
+        /* Grauwert nach Rec. 709 — ein naiver Mittelwert verschoebe Gruen nach hell. */
+        int grau = (int) (0.2126F * r + 0.7152F * g + 0.0722F * b);
+
+        /* 55 % zur Grauachse, dann auf ein mittleres Niveau gezogen. */
+        r = (int) ((r * 0.45F + grau * 0.55F) * 0.72F);
+        g = (int) ((g * 0.45F + grau * 0.55F) * 0.72F);
+        b = (int) ((b * 0.45F + grau * 0.55F) * 0.72F);
+
+        return (Math.min(255, r) << 16) | (Math.min(255, g) << 8) | Math.min(255, b);
     }
 }

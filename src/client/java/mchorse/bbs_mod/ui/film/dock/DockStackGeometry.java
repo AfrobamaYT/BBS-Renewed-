@@ -13,7 +13,12 @@ import java.util.List;
 public class DockStackGeometry
 {
     /** Gap between two panels, in pixels. */
-    public static final int PANEL_GAP_PX = 4;
+    /**
+     * Naht zwischen den Flaechen. Der Entwurf setzt {@code .main{gap:2px;padding:2px}} — mit 4
+     * standen ringsum breite graue Streifen, die wie unfertige Raender wirkten. Der GREIFbereich
+     * des Splitters bleibt davon unberuehrt, der ist eigenstaendig.
+     */
+    public static final int PANEL_GAP_PX = 2;
     /** Tolerance for "this edge touches that edge" on normalized (0..1) coordinates. */
     public static final float PANEL_EDGE_EPS = 0.001F;
 

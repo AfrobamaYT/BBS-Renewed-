@@ -53,6 +53,8 @@ public class ContextMenuManager
         return this;
     }
 
+    private boolean trennerFaellig;
+
     public ContextAction action(IKey label, Runnable runnable)
     {
         return this.action(Icons.NONE, label, runnable);
@@ -90,9 +92,36 @@ public class ContextMenuManager
 
     public ContextAction action(ContextAction action)
     {
+        if (this.trennerFaellig)
+        {
+            action.trenner();
+            this.trennerFaellig = false;
+        }
+
         this.actions.add(action);
 
         return action;
+    }
+
+    /** Gruppentitel wie im Entwurf („CLIP") — mit Trennfuge, wenn schon Eintraege stehen. */
+    public ContextAction gruppe(IKey label)
+    {
+        MenueGruppe g = new MenueGruppe(label);
+
+        if (!this.actions.isEmpty())
+        {
+            g.trenner();
+        }
+
+        return this.action(g);
+    }
+
+    /** Trennfuge vor dem NAECHSTEN Eintrag — eine 1-px-Linie, keine leere Zeile. */
+    public ContextMenuManager trenner()
+    {
+        this.trennerFaellig = true;
+
+        return this;
     }
 
     public UISimpleContextMenu create()

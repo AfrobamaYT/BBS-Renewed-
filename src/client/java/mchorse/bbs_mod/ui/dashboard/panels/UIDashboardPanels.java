@@ -20,12 +20,22 @@ import java.util.List;
 
 public class UIDashboardPanels extends UIElement
 {
+    /** Hoehe der Topbar in GUI-Pixeln. Entwurf sagt 34; der Nutzer will 70 % davon. */
+    private static final int TOPBAR_H = 24;
+    /** Hoehe der Statusleiste (Designsystem: --h-status 22). */
+    private static final int STATUS_H = 22;
     public List<UIDashboardPanel> panels = new ArrayList<>();
+    /** Klartext-Namen der Bereiche — dieselben IKeys, die die alte Icon-Leiste als Tooltip trug. */
+    public final List<String> panelNamen = new ArrayList<>();
     public UIDashboardPanel panel;
 
     public UIElement taskBar;
     public UIElement pinned;
     public UIScrollView panelButtons;
+    /** Benannte Reiter oben — ersetzt die namenlose Icon-Leiste unten. */
+    public UITopbarNano topbar;
+    /** Statusleiste unten — Kontext-Hinweise links, Datei-Kennzahlen rechts. */
+    public UIStatusleisteNano statusleiste;
 
     /**
      * @deprecated Kept for backward compatibility. Use {@link #renderHighlight(Batcher2D, Area, Direction)}
@@ -102,7 +112,18 @@ public class UIDashboardPanels extends UIElement
         });
 
         this.taskBar.add(new UIRenderable(this::renderBackground), this.pinned, this.panelButtons);
-        this.add(this.taskBar);
+
+        /* Die alte Icon-Leiste bleibt geladen (Tooltips, Pin-Knoepfe, Scrollen), wird aber
+         * nicht mehr gezeigt — sichtbar ist die benannte Topbar oben. */
+        this.taskBar.setVisible(false);
+
+        this.topbar = new UITopbarNano(this);
+        this.topbar.relative(this).x(0).y(0).w(1F).h(TOPBAR_H);
+
+        this.statusleiste = new UIStatusleisteNano();
+        this.statusleiste.relative(this).x(0).y(1F, -STATUS_H).w(1F).h(STATUS_H);
+
+        this.add(this.taskBar, this.topbar, this.statusleiste);
     }
 
     public <T> T getPanel(Class<T> clazz)
@@ -165,7 +186,7 @@ public class UIDashboardPanels extends UIElement
 
     private void setPanelPlacement(UIDashboardPanel panel)
     {
-        panel.resetFlex().relative(this).w(1F).h(1F, -20);
+        panel.resetFlex().relative(this).x(0).y(TOPBAR_H).w(1F).h(1F, -TOPBAR_H - STATUS_H);
     }
 
     public UIIcon registerPanel(UIDashboardPanel panel, IKey tooltip, Icon icon)
@@ -175,7 +196,13 @@ public class UIDashboardPanels extends UIElement
         button.tooltip(tooltip, Direction.TOP);
 
         this.panels.add(panel);
+        this.panelNamen.add(tooltip.get());
         this.panelButtons.add(button);
+
+        if (this.topbar != null)
+        {
+            this.topbar.namenLaden(this.panelNamen);
+        }
 
         return button;
     }

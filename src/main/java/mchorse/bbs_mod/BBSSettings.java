@@ -187,6 +187,8 @@ public class BBSSettings {
 	public static ValueInt renderEngine;
 	public static ValueBoolean editorPlayerFollowsCamera;
 	public static ValueEditorLayout editorLayoutSettings;
+	/** Merker der einmaligen Umstellung auf das neue Standardlayout des Film-Editors. */
+	public static ValueBoolean editorLayoutUmgestellt;
 	public static ValueOnionSkin editorOnionSkin;
 	public static ValueIKDebug ikDebug;
 	public static ValuePhysicsDebug physicsDebug;
@@ -303,15 +305,18 @@ public class BBSSettings {
 	private static final float BRIGHTNESS_EPSILON = 0.001F;
 	private static final int DEFAULT_PRIMARY_COLOR = 0xff3242;
 	private static final int LIGHT_CHROME_SURFACE = 0xffe6e9ef;
-	private static final int DARK_CHROME_SURFACE = 0xff111316;
+	/* Design-Palette statt Blaustich: chrome = editor #1D1D1D. Die alten Werte (0xff111316
+	 * u. a.) waren blaeulich; das Blender-Design ist neutralgrau. Ueber diese vier Konstanten
+	 * bekommt JEDE alte Flaeche den neuen Ton, ohne dass ihr Zeichencode angefasst wird. */
+	private static final int DARK_CHROME_SURFACE = 0xff1D1D1D;
 	private static final int LIGHT_BASE_SURFACE = 0xfff1f4f8;
-	private static final int DARK_BASE_SURFACE = 0xff171a1f;
+	private static final int DARK_BASE_SURFACE = 0xff242424;
 	private static final int LIGHT_RAISED_SURFACE = 0xfff8fafd;
-	private static final int DARK_RAISED_SURFACE = 0xff1d2127;
+	private static final int DARK_RAISED_SURFACE = 0xff2F2F2F;
 	private static final int LIGHT_DEEP_SURFACE = 0xffdee4ed;
-	private static final int DARK_DEEP_SURFACE = 0xff0f1217;
+	private static final int DARK_DEEP_SURFACE = 0xff161616;
 	private static final int LIGHT_DIVIDER_COLOR = 0xffc2cbd8;
-	private static final int DARK_DIVIDER_COLOR = 0xff30353d;
+	private static final int DARK_DIVIDER_COLOR = 0xff303030;
 
 	public static int primaryColor()
 	{
@@ -431,12 +436,12 @@ public class BBSSettings {
 
 	public static int panelShadowOpaqueColor()
 	{
-		return Colors.A25 | primaryColor.get();
+		return Colors.A50; /* schwarz, nicht akzentfarben: sonst blauer Hof um jedes Menue */
 	}
 
 	public static int panelShadowTransparentColor()
 	{
-		return Colors.setA(primaryColor.get(), 0F);
+		return Colors.setA(0, 0F);
 	}
 
 	public static int getDefaultDuration()
@@ -717,6 +722,7 @@ public class BBSSettings {
 		editorPlayerFollowsCamera = builder.getBoolean("player_follows_camera", false);
 		/* Dock-layout: durch panel-verschieben geschrieben, nicht in den settings eingestellt. */
 		builder.register((editorLayoutSettings = new ValueEditorLayout("layout")).invisible());
+		builder.register((editorLayoutUmgestellt = new ValueBoolean("layout_umgestellt", false)).invisible());
 		builder.register(editorOnionSkin = new ValueOnionSkin("onion_skin"));
 		builder.register(editorMotionPath = new ValueMotionPath("motion_path"));
 		builder.register(ikDebug = new ValueIKDebug("ik_debug"));
@@ -735,7 +741,11 @@ public class BBSSettings {
 		 * Wert bleibt nur als Persistenz des OB-Zustands, wie editorLayoutSettings darueber. */
 		editorUndoHistoryDocked = builder.getBoolean("undo_history_docked", false);
 		editorUndoHistoryDocked.invisible();
-		editorPreviewSizeMode = builder.getInt("preview_size_mode", 0, 0, 2);
+		/* Werkstandard AUTO (2): die Vorschau folgt der Flaeche, und der Kameramodus entscheidet,
+		 * ob sie fuellt (freie Ansicht) oder im Exportformat bleibt (Kamera-Ansicht) — Blenders
+		 * Verhalten. Mit 0 (Export) stand sie immer auf 1920x1080 und schrumpfte beim
+		 * Verkleinern der Flaeche, statt den Ausschnitt zu aendern. */
+		editorPreviewSizeMode = builder.getInt("preview_size_mode", 2, 0, 2);
 		editorPreviewCustomWidth = builder.getInt("preview_custom_width", 1280, 2, 16384);
 		editorPreviewCustomHeight = builder.getInt("preview_custom_height", 720, 2, 16384);
 		editorPreviewResolutionScale = builder.getFloat("preview_resolution_scale", 2F, 1F, 3F).slider();

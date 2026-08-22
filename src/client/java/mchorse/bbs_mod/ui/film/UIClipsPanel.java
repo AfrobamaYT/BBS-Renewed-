@@ -41,7 +41,13 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         this.filmPanel = panel;
         this.clips = new UIClips(this, factory);
 
-        this.add(this.clips.full(this));
+        /* ⛔ 26 px Luft oben fuer die NanoVG-Kopfzeile (UIZeitleisteNano), die darueber liegt.
+         * Ohne das verdeckt sie das Lineal von UIClips — beide beanspruchten dieselbe
+         * y-Position, und die spaeter gezeichnete gewann. */
+        /* ⛔ 26 px Luft oben (Kopfzeile) und 105 px links (Kanalspalte) — beides zeichnet
+         * UIZeitleisteNano darueber. Ohne die Einrueckung laegen Kanalnamen und Clips
+         * uebereinander. 105 ist die halbe Entwurfsbreite (.chan{210px}) in GUI-Pixeln. */
+        this.add(this.clips.relative(this).x(105).y(0).w(1F, -105).h(1F));
 
         /* Die Merkstellen-Spur ist ein KIND der Zeitleiste: so wird sie danach gezeichnet
          * (liegt also oben) und bekommt den Klick zuerst. Sie gibt jeden Klick weiter, der

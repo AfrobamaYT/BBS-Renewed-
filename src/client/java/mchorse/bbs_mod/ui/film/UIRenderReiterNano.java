@@ -1,5 +1,7 @@
 package mchorse.bbs_mod.ui.film;
 
+import com.mcstudio.nano.NanoBausteine;
+import com.mcstudio.nano.NanoDesign;
 import com.mcstudio.nano.NanoFlaeche;
 import com.mcstudio.nano.NanoStifte;
 
@@ -8,16 +10,19 @@ import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 
 /**
- * Der Render-Reiter in NanoVG-Optik — das REFERENZ-Panel des UI-Umbaus: dieselbe Logik wie
- * der alte Widget-Reiter (Engine-Wahl BBS/Eevee/Cycles + Render + Status, persistiert in
- * {@code BBSSettings.renderEngine}), gezeichnet als {@link NanoFlaeche} mit Karten-Look,
- * echter Schrift, Hover und Klick-Zonen. Jede weitere BBS-Flaeche zieht nach diesem Muster um.
+ * Render-Reiter des N-Panels, nach dem Entwurf: Engine als Segment, darunter die Ausgabewerte
+ * als Feldstapel, unten die beiden Startknöpfe.
+ *
+ * <p>Alle Werte sind echte BBS-Einstellungen ({@code videoWidth/Height/FrameRate/MotionBlur},
+ * {@code renderEngine}) und per Ziehen änderbar. „Samples" aus dem Entwurf fehlt bewusst — das
+ * ist ein Cycles-Begriff, den BBS nicht kennt; ein Feld ohne Wert dahinter wäre erfunden.</p>
  */
 public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auffrischbar
 {
 	private final NanoFlaeche flaeche;
-	private String letzterStatus = "";
-	private int letzteEngine = -1;
+	/** Ob der Zieh-Handler an der Flaeche haengt — siehe zeichnen(). */
+	private boolean ziehenVerdrahtet;
+	private String stand = "";
 
 	public static UIElement neu()
 	{
@@ -28,68 +33,197 @@ public class UIRenderReiterNano extends UIElement implements UISeitenleiste.Auff
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
+		this.flaeche.beimZiehen(this::ziehen);
 		this.add(this.flaeche);
-		this.h(232);
+		this.h(268);
 	}
 
 	@Override
 	public void auffrischen()
 	{
-		int engine = BBSSettings.renderEngine.get();
+		String jetzt = BBSSettings.renderEngine.get() + "|" + BBSSettings.videoWidth.get()
+			+ "x" + BBSSettings.videoHeight.get() + "|" + BBSSettings.videoFrameRate.get()
+			+ "|" + BBSSettings.videoMotionBlur.get() + "|"
 
-		if (!status.equals(this.letzterStatus) || engine != this.letzteEngine)
+		if (!jetzt.equals(this.stand))
 		{
-			this.letzterStatus = status;
-			this.letzteEngine = engine;
+			this.stand = jetzt;
 			this.flaeche.neuMalen();
 		}
 	}
 
-	private void zeichnen(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f)
+	@Override
+	public void render(mchorse.bbs_mod.ui.framework.UIContext context)
 	{
-		/* Alles skaliert mit der Flaechen-BREITE — GUI-scale-unabhaengig (referenz 200). */
-		float k = b / 200F;
-		float rand = 8 * k;
-		int engine = BBSSettings.renderEngine.get();
+		this.auffrischen();
 
-		NanoStifte.flaeche(vg, 0, 0, b, h, 10 * k, 0x1C1C1F);
-		NanoStifte.text(vg, "bold", 15 * k, rand + 2 * k, 16 * k, 0xF1F1F1, "Rendering", null);
-		NanoStifte.text(vg, "bold", 10 * k, rand + 2 * k, 34 * k, 0x8A8A8E, "ENGINE", null);
+		super.render(context);
+	}
 
-		String[] namen = {"BBS", "Eevee", "Cycles"};
+	/** Zahlenfelder per Ziehen ändern — dieselbe Geste wie in den Properties. */
+	private void ziehen(String zoneId, float d)
+	{
+		int schritt = Math.round(d);
 
-		for (int i = 0; i < 3; i++)
+		if (schritt == 0)
 		{
-			final int wahl = i;
-			float y = (44 + i * 30) * k;
-			float breite = b - 2 * rand;
-			boolean aktiv = engine == i;
-			boolean hover = f.istHover("engine" + i);
-			int grund = aktiv ? 0x3EA6FF : hover ? 0x38383C : 0x2A2A2D;
-
-			NanoStifte.flaeche(vg, rand, y, breite, 24 * k, 8 * k, grund);
-			NanoStifte.textMitte(vg, aktiv ? "bold" : "sans", 12 * k, b / 2F, y + 12.5F * k,
-				aktiv ? 0x0F0F0F : 0xF1F1F1, namen[i]);
-			f.zone("engine" + i, rand, y, breite, 24 * k, () -> BBSSettings.renderEngine.set(wahl));
+			return;
 		}
 
-		float renderY = 140 * k;
-		boolean hoverRender = f.istHover("render");
-		int rot = laeuft ? 0x7A1F1F : hoverRender ? 0xE53935 : 0xCC0000;
+		switch (zoneId)
+		{
+			case "feld:resx" -> BBSSettings.videoWidth.set(spanne(BBSSettings.videoWidth.get() + schritt * 2, 2, 8096));
+			case "feld:resy" -> BBSSettings.videoHeight.set(spanne(BBSSettings.videoHeight.get() + schritt * 2, 2, 8096));
+			case "feld:fps" -> BBSSettings.videoFrameRate.set(spanne(BBSSettings.videoFrameRate.get() + schritt, 10, 1000));
+			case "feld:blur" -> BBSSettings.videoMotionBlur.set(spanne(BBSSettings.videoMotionBlur.get() + schritt, 0, 6));
+			default -> { }
+		}
 
-		NanoStifte.flaeche(vg, rand, renderY, b - 2 * rand, 28 * k, 14 * k, rot);
-		NanoStifte.textMitte(vg, "bold", 13 * k, b / 2F, renderY + 14.5F * k, 0xFFFFFF,
-			laeuft ? "Rendering ..." : "Render film");
-		f.zone("render", rand, renderY, b - 2 * rand, 28 * k, this::starten);
+		this.stand = "";
+		this.flaeche.neuMalen();
+	}
 
-		/* Status: eine zeile, hart gekappt — die flaeche ist schmal. */
+	private static int spanne(int wert, int min, int max)
+	{
+		return Math.max(min, Math.min(max, wert));
+	}
+
+	private void zeichnen(long vg, int b, int h, float mausX, float mausY, NanoFlaeche f)
+	{
+		/* ⛔ Zieh-Handler HIER sichern, nicht nur im Konstruktor: der laeuft beim Hotswap
+		 * nicht neu, und die bestehende Flaeche stand danach ohne Handler da — die
+		 * Zahlenfelder liessen sich nicht mehr ziehen, obwohl der Code stimmte. Gemessen
+		 * 2026-08-20 an der Zeitleiste (zieheHandler == null bei laufender Instanz); es war
+		 * dieselbe Ursache wie beim „unerklaerlichen" Mausweg-Fehler der Ziehzonen. */
+		if (!this.ziehenVerdrahtet)
+		{
+			f.beimZiehen(this::ziehen);
+			this.ziehenVerdrahtet = true;
+		}
+
+		final float k = Math.max(1F, f.skala());
+		float rand = 6F * k;
+		float y = 4F * k;
+
+		NanoStifte.flaeche(vg, 0, 0, b, h, 0F, NanoDesign.REGION);
+
+		/* ── Engine als Segment ── */
+		y = this.gruppentitel(vg, rand, y, k, "Engine");
+		y = this.segment(vg, f, rand, y, b - rand * 2, k,
+			new String[] {"BBS", "Eevee", "Cycles"}, BBSSettings.renderEngine.get(),
+			(wahl) -> BBSSettings.renderEngine.set(wahl));
+
+		/* ── Ausgabe ── */
+		y = this.gruppentitel(vg, rand, y + 6F * k, k, "Output");
+
+		float fb = b - rand * 2;
+
+		/* Resolution X und Y bilden EINEN Block — der Entwurf stapelt sie (.stack). */
+		y = this.wertfeld(vg, f, rand, y, fb, k, "Resolution X",
+			String.valueOf(BBSSettings.videoWidth.get()), "feld:resx", -1F, 1);
+		y = this.wertfeld(vg, f, rand, y + 1F * k, fb, k, "Y",
+			String.valueOf(BBSSettings.videoHeight.get()), "feld:resy", -1F, 3);
+		y = this.wertfeld(vg, f, rand, y + 4F * k, fb, k, "FPS",
+			String.valueOf(BBSSettings.videoFrameRate.get()), "feld:fps", -1F, 0);
+
+		/* Motion Blur ist in BBS eine Stufe 0–6, kein Ja/Nein — deshalb Feld mit Balken. */
+		int blur = BBSSettings.videoMotionBlur.get();
+
+		y = this.wertfeld(vg, f, rand, y + 4F * k, fb, k, "Motion blur",
+			blur == 0 ? "aus" : String.valueOf(blur), "feld:blur", blur / 6F, 0);
+
+		/* ── Startknöpfe unten ── */
+		float kh = 24F * k;
+		float ky = h - kh - rand;
+
+		this.knopf(vg, f, rand, ky, fb, kh, k, "render",
+			laeuft ? "Rendering …" : "Render Animation", !laeuft, this::starten);
+
+		/* Status über den Knöpfen, einzeilig gekürzt. */
 
 		if (!status.isEmpty())
 		{
-			String zeile = status.length() > 34 ? status.substring(0, 34) + "…" : status;
-
-			NanoStifte.text(vg, "sans", 10 * k, rand + 2 * k, (h / k - 16) * k, 0xAAAAAA, zeile, null);
+			NanoStifte.text(vg, NanoDesign.SANS, 10F * k, rand, ky - 7F * k, NanoDesign.TXT_DIM,
+				NanoDesign.kuerzen(status, fb, 10F * k), null);
 		}
+	}
+
+	/** Wertfeld mit Ziehzone; gibt das y darunter zurueck. */
+	private float wertfeld(long vg, NanoFlaeche f, float x, float y, float b, float k,
+		String etikett, String wert, String zone, float fuellung, int gruppe)
+	{
+		/* 0 = kein Achspunkt. Der Parameter ist eine FARBE, kein Index — -1 malte Weiss. */
+		NanoBausteine.feld(vg, x, y, b, k, etikett, wert, 0, fuellung, gruppe);
+		f.zone(zone, x, y, b, NanoDesign.H_WIDGET * k, () -> { });
+
+		return y + NanoDesign.H_WIDGET * k;
+	}
+
+	private float gruppentitel(long vg, float x, float y, float k, String titel)
+	{
+		NanoStifte.text(vg, NanoDesign.SANS, 9.5F * k, x, y + 9F * k, NanoDesign.TXT_OFF,
+			titel.toUpperCase(), null);
+
+		return y + 14F * k;
+	}
+
+	/** Waagerechtes Segment wie im Entwurf: ein Rahmen, Trennfugen, aktiver Teil blau. */
+	private float segment(long vg, NanoFlaeche f, float x, float y, float b, float k,
+		String[] namen, int aktiv, java.util.function.IntConsumer wahl)
+	{
+		float hoehe = 19F * k;
+		float teil = b / namen.length;
+
+		NanoStifte.widget(vg, x, y, b, hoehe, 4F * k, NanoDesign.WIDGET, k);
+
+		for (int i = 0; i < namen.length; i++)
+		{
+			float tx = x + i * teil;
+			boolean an = i == aktiv;
+
+			if (an)
+			{
+				NanoStifte.widget(vg, tx, y, teil, hoehe, 4F * k, NanoDesign.BLAU, k);
+			}
+			else if (f.istHover("engine" + i))
+			{
+				NanoStifte.widget(vg, tx, y, teil, hoehe, 4F * k, NanoDesign.WIDGET_HI, k);
+			}
+
+			if (i > 0)
+			{
+				NanoStifte.linie(vg, tx, y + 3F * k, tx, y + hoehe - 3F * k, 1F * k, 0x1A1A1A);
+			}
+
+			NanoStifte.textMitte(vg, an ? NanoDesign.BOLD : NanoDesign.SANS, 10.5F * k,
+				tx + teil / 2F, y + hoehe / 2F + 3.5F * k, an ? 0xFFFFFF : NanoDesign.TXT,
+				namen[i]);
+
+			final int nummer = i;
+
+			f.zone("engine" + i, tx, y, teil, hoehe, () -> wahl.accept(nummer));
+		}
+
+		return y + hoehe + 4F * k;
+	}
+
+	private void knopf(long vg, NanoFlaeche f, float x, float y, float b, float hoehe, float k,
+		String id, String text, boolean primaer, Runnable tat)
+	{
+		boolean ueber = f.istHover(id);
+		int grund = primaer ? (ueber ? 0x5580C4 : NanoDesign.BLAU)
+			: (ueber ? NanoDesign.WIDGET_HI : NanoDesign.WIDGET);
+
+		NanoStifte.flaeche(vg, x, y, b, hoehe, 4F * k, grund);
+		NanoStifte.textMitte(vg, NanoDesign.BOLD, 11F * k, x + b / 2F, y + hoehe / 2F,
+			primaer ? 0xFFFFFF : NanoDesign.TXT, text);
+		f.zone(id, x, y, b, hoehe, tat);
+	}
+
+	/** Einstieg fuer das Render-Menue der Topbar — dieselbe Wahrheit wie der Knopf hier. */
+	public static void rendernStarten()
+	{
+		new UIRenderReiterNano().starten();
 	}
 
 	private void starten()

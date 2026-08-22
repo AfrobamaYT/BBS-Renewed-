@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mcstudio.nano.NanoDesign;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.camera.utils.TimeUtils;
 import mchorse.bbs_mod.client.FormPipelines;
@@ -1008,8 +1009,13 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Area area = this.keyframes.area;
         int w = this.keyframes.getLabelWidth();
 
-        /* Render background */
-        context.batcher.box(area.x + w - 1, area.y, area.x + w, area.ey(), BBSSettings.dividerColor());
+        /* ⛔ Die Kanalspalte hatte GAR KEINEN eigenen Grund — der Kommentar „Render
+         * background" zeichnete nur die Trennlinie, und die Namen standen auf dem
+         * Editor-Grund. Im Kamera-Zweig fuellt `UIZeitleisteNano.kanalspalte()` sie mit
+         * 0x191919; hier fehlte das, und genau daran sah man dem Replay-Zweig die alte
+         * Haut an. Derselbe Ton, damit beide Timelines eine Spalte zeigen. */
+        context.batcher.box(area.x, area.y, area.x + w, area.ey(), 0xFF191919);
+        context.batcher.box(area.x + w - 1, area.y, area.x + w, area.ey(), 0xFF0D0D0D);
 
         context.batcher.clip(area.x, area.y, area.x + w, area.ey(), context);
 
@@ -1067,7 +1073,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int textX = lx + LABEL_TEXT_LEFT + offset;
         String label = font.limitToWidth(group.title.get(), Math.max(0, arrowX - LABEL_TEXT_ICON_GAP - textX));
 
-        context.batcher.textShadow(label, textX, my - font.getHeight() / 2, textColor);
+        context.batcher.text(label, textX, my - font.getHeight() / 2, textColor);
         context.batcher.icon(group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, arrowX, my - 8);
     }
 
@@ -1098,12 +1104,15 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         int iconX = lx + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
         FontRenderer font = context.batcher.getFont();
-        int textColor = hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F);
+        /* ⛔ OHNE SCHATTEN. `textShadow` ist die alte BBS-Handschrift; der Entwurf setzt
+         * flache Schrift auf ruhigem Grund. Farben aus denselben Tokens wie die neue
+         * Zeitleiste: TXT fuer die aktive Zeile, TXT_DIM fuer den Rest. */
+        int textColor = hover ? NanoDesign.TXT : NanoDesign.TXT_DIM;
         int textX = lx + LABEL_TEXT_LEFT + offset + this.getSheetIndent(sheet);
         int textRight = hasIcon ? iconX - LABEL_TEXT_ICON_GAP : lx + w - LABEL_RIGHT_PAD;
         String title = font.limitToWidth(sheet.title.get(), Math.max(0, textRight - textX));
 
-        context.batcher.textShadow(title, textX, my - font.getHeight() / 2, textColor);
+        context.batcher.text(title, textX, my - font.getHeight() / 2, textColor);
 
         if (hasIcon)
         {

@@ -42,6 +42,15 @@ public class UIAudioEditorPanel extends UISidebarDashboardPanel
         this.iconBar.add(this.pickAudio, this.plause, this.saveColors);
         this.add(this.audioEditor);
 
+        /* Ohne geladene Datei war diese Seite vollstaendig leer — kein Text, kein Umriss,
+         * nichts. Das Screen-Inventar nennt genau das: „Ohne gewaehlte Datei leer — kein
+         * sichtbarer Einstieg." Der Weg hinein ist das Symbol in der rechten Leiste; der
+         * Hinweis zeigt darauf, statt den Nutzer suchen zu lassen. */
+        this.add(new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((ctx) ->
+            mchorse.bbs_mod.ui.dashboard.panels.UIAuswahlLeer.zeichnen(ctx, this.editor.area,
+                !this.audioEditor.isEditing(), Icons.SOUND,
+                "No audio loaded", "Pick a file with the icon on the right")));
+
         this.openAudio(null);
 
         this.keys().register(Keys.PLAUSE, this.audioEditor::togglePlayback);

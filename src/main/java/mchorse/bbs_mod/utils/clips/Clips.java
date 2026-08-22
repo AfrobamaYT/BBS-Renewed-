@@ -99,6 +99,39 @@ public class Clips extends ValueGroup
     }
 
     /**
+     * Alle Clips so weit nach unten schieben, dass die unterste belegte Ebene 0 ist.
+     * Liefert die hoechste belegte Ebene danach zurueck.
+     *
+     * Alte Filme legten ihre Kamera-Clips auf Ebene 8 ab — das war die Mitte des frueheren
+     * Stapels mit fester Ebenenzahl. Die Zeitleiste zeigt heute eine Spur je belegter Ebene,
+     * ein solcher Film brauchte also zwanzig Spuren fuer einen einzigen Clip. Der Absolutwert
+     * einer Ebene bedeutet nichts, nur die Reihenfolge untereinander — und die bleibt.
+     */
+    public int ebenenAufNullSchieben()
+    {
+        int tiefste = Integer.MAX_VALUE;
+        int hoechste = 0;
+
+        for (Clip clip : this.clips)
+        {
+            tiefste = Math.min(tiefste, clip.layer.get());
+            hoechste = Math.max(hoechste, clip.layer.get());
+        }
+
+        if (tiefste == Integer.MAX_VALUE || tiefste == 0)
+        {
+            return hoechste;
+        }
+
+        for (Clip clip : this.clips)
+        {
+            clip.layer.set(clip.layer.get() - tiefste);
+        }
+
+        return hoechste - tiefste;
+    }
+
+    /**
      * Calculate total duration of this camera work.
      */
     public int calculateDuration()

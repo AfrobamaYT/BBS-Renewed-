@@ -30,7 +30,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
 public class UIMarkerLane extends UIElement
 {
     /** Höhe des anklickbaren Kopfes am oberen Rand der Spur. */
-    private static final int KOPF_HOEHE = 9;
+    private static final int KOPF_HOEHE = 6;
 
     /** Halbe Breite des Kopfes. Schmal genug, dass er einen Clip nicht verdeckt. */
     private static final int KOPF_BREITE = 4;
@@ -79,41 +79,54 @@ public class UIMarkerLane extends UIElement
      * <p>Gezeichnet wird zeilenweise, weil die Oberfläche pixelig ist: eine echte Diagonale
      * würde neben den Blockgrafiken von Minecraft falsch aussehen.</p>
      */
+    /**
+     * Die Merkstellen-Fahne: ein glatter Pfeil, kein Treppenbild.
+     *
+     * <p>⛔ Vorher lief die Spitze als Schleife von 1-Pixel-Kaesten — auf jeder Skala eine
+     * sichtbare Treppe. Nutzer am 2026-08-21: „das war ein grauer pfeil der smooth war
+     * anstatt den alten blauen pixel optischen marker." Jetzt ein konvexes Polygon ueber
+     * {@code batcher.polygon} (P2, AA-Saum), also dieselbe Kantenglaettung wie Rundecke und
+     * Kurven.</p>
+     */
     private void fahne(UIContext context, int x, int oben, int farbe, boolean hervor)
     {
-        int koerper = hervor ? Colors.lerp(farbe, Colors.WHITE, 0.25F) : farbe;
-        int kante = Colors.A50;
+        /* ⛔ GRAU, nicht in der Merkstellen-Farbe. Nutzerwunsch 2026-08-21: der Kopf soll ein
+         * ruhiges Bedienelement sein, keine Farbmarke — die Farbe traegt weiterhin die Linie
+         * darunter, die zur Stelle fuehrt. */
+        int grau = 0x9A9A9A;
+        int koerper = hervor ? Colors.lerp(grau, Colors.WHITE, 0.3F) : grau;
         int licht = Colors.lerp(koerper, Colors.WHITE, 0.45F);
 
-        int voll = KOPF_HOEHE - SPITZE;
+        float b = KOPF_BREITE;
 
-        /* Erst die dunkle Kante als etwas größere Silhouette, dann den Körper darauf. */
-        for (int i = 0; i <= SPITZE; i++)
-        {
-            int b = KOPF_BREITE - i;
-            int y = oben + voll + i;
+        /* ⛔ DREIECK, nicht Fahne. Nutzerwunsch 2026-08-21: der Kopf soll als Zeiger lesbar
+         * sein — breit oben, spitz zur Stelle hin. Die frueheren Rechteck-plus-Spitze-Form
+         * trug oben zu viel Masse. */
+        /* ⛔ Die Spitze liegt auf der MITTE der Linie, nicht auf ihrer linken Kante. Die
+         * Linie laeuft `box(x, …, x + 1, …)`, ihr Zentrum ist also x + 0.5 — mit der Spitze
+         * bei x stand der Zeiger einen halben Pixel daneben, und genau das ist beim
+         * Hinsehen aufgefallen. */
+        float mitte = x + 0.5F;
+        float[] px = {mitte - b, mitte + b, mitte};
+        float[] py = {oben, oben, oben + KOPF_HOEHE};
 
-            context.batcher.box(x - b - 1, y, x + b + 1, y + 1, kante);
-        }
-
-        context.batcher.box(x - KOPF_BREITE - 1, oben - 1, x + KOPF_BREITE + 1, oben + voll, kante);
-        context.batcher.box(x - KOPF_BREITE, oben, x + KOPF_BREITE, oben + voll, koerper);
-
-        for (int i = 0; i < SPITZE; i++)
-        {
-            int b = KOPF_BREITE - i;
-            int y = oben + voll + i;
-
-            context.batcher.box(x - b, y, x + b, y + 1, koerper);
-        }
+        context.batcher.polygon(px, py, Colors.A100 | (koerper & 0xFFFFFF));
 
         /* Lichtkante oben — ohne sie wirkt der Kopf flach. */
-        context.batcher.box(x - KOPF_BREITE, oben, x + KOPF_BREITE, oben + 1, licht);
+        context.batcher.rundeck(mitte - b, oben, b * 2F, 1.2F, 0.5F, licht);
     }
 
+    /**
+     * Oberkante des Merkstellen-Kopfes.
+     *
+     * <p>⛔ IN DER LINEAL-ZEILE, nicht darunter. Vorher sass der Kopf unter dem Lineal und
+     * schob die Spuren nach unten; der Nutzer will ihn dort, wo die Skala steht — so macht
+     * es auch jedes Schnittprogramm. Der Kopf endet knapp ueber der Linealunterkante,
+     * damit die Zahlen lesbar bleiben.</p>
+     */
     private int oben()
     {
-        return TimelineRulerRenderer.getRulerBottom(this.area) + 1;
+        return TimelineRulerRenderer.getRulerBottom(this.area) - KOPF_HOEHE;
     }
 
     private Markers markers()
@@ -284,8 +297,12 @@ public class UIMarkerLane extends UIElement
             /* Die Linie läuft durch die ganze Spur, aber halbdurchsichtig: sie zeigt die
              * Stelle, ohne die Clips darunter unlesbar zu machen. Unter dem Zeiger wird sie
              * kräftiger — so sieht man, welche Linie zu welchem Kopf gehört. */
+            /* ⛔ GRAU wie der Kopf. Vorher lief die Linie in der Merkstellen-Farbe und stach
+             * neben dem grauen Zeiger als blauer Strich heraus — der Nutzer hat genau das
+             * angestrichen. Die Farbe bleibt als Eigenschaft erhalten, sie faerbt nur nicht
+             * mehr die Zeitleiste ein. */
             context.batcher.box(x, this.oben() + KOPF_HOEHE, x + 1, area.ey(),
-                Colors.setA(farbe, drunter ? 0.75F : 0.35F));
+                Colors.setA(0x9A9A9A, drunter ? 0.7F : 0.3F));
 
             String text = marker.label.get();
 

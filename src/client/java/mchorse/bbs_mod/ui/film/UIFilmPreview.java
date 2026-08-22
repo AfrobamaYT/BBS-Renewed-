@@ -65,6 +65,9 @@ public class UIFilmPreview extends UIElement
     private UIFilmPanel panel;
 
     public UIElement icons;
+    /** Werkzeugleiste oben im Viewport (Designsystem). */
+    public UIWerkzeugleisteNano werkzeuge;
+    public UIViewportHudNano hud;
 
     public UIIcon onionSkin;
     public UIIcon motionPath;
@@ -94,7 +97,7 @@ public class UIFilmPreview extends UIElement
         /* ⛔ Anteilig UND von links gerechnet: mit x(1F,-1)+anchor sass die Leiste bei
          * x=8, also links (gemessen). x(0.66F)+w(0.34F) legt sie eindeutig ans rechte
          * Drittel, unabhaengig von der Fenstergroesse. */
-        leiste.relative(this).x(0.66F).y(4).w(0.34F, -4).h(1F, -8);
+        leiste.relative(this).x(0.66F).y(30).w(0.34F, -4).h(1F, -34);
         this.add(leiste);
 
         this.icons = UI.row(0, 0);
@@ -232,6 +235,12 @@ public class UIFilmPreview extends UIElement
                     int w = BBSRendering.getVideoWidth();
                     int h = BBSRendering.getVideoHeight();
                     recorder.takeScreenshot(output, texture.id, w, h);
+
+                    /* Derselbe Zug legt auch das Standbild des Films an — genau der Ausschnitt,
+                     * den der Nutzer gerade gewaehlt hat, wird sein Kachelbild. Kein zweiter
+                     * Renderdurchgang, nur ein zweiter Schreibort. */
+                    this.standbildAblegen(texture, w, h);
+
                     this.panel.restorePreviewSize();
 
                     UIBaseMenu currentMenu = UIScreen.getCurrentMenu();
@@ -265,7 +274,33 @@ public class UIFilmPreview extends UIElement
         });
 
         this.icons.add(this.onionSkin, this.motionPath, this.plause, this.teleport, this.flight, this.control, this.perspective, this.recordReplay, this.recordVideo);
-        this.add(this.icons);
+
+        /* Die alte Reihe bleibt als OBJEKT geladen — die UIIcons tragen Kontextmenues,
+         * Tooltips und Zustaende, und die Werkzeugleiste loest sie per clickItself() aus.
+         *
+         * ⛔ setVisible(false) reichte NICHT: die Reihe zeichnete weiter einen dunklen Balken
+         * an den unteren Bildrand (gemessen 2026-08-19: area 499,257 180x20, Viewport endet
+         * bei 277 — genau der Streifen, den der Nutzer meldete). Deshalb wird sie unten gar
+         * nicht mehr als Kind eingehaengt; ohne Elternteil rendert sie nie. */
+        this.icons.setVisible(false);
+
+        /* ⛔ KEINE Kopfleiste mehr ueber dem Bild. Gemessen am 2026-08-19: von acht Elementen
+         * hatten sechs keine Klickzone — Editor-Typ, Modus-Waehler und die drei Menues zeichneten
+         * nur ein Hover-Rechteck. Was lebte (Perspektive, Replay-Aufnahme, Vollbild) sitzt jetzt
+         * in der schwebenden Leiste am Bild; „Raster" hatte gar kein Ziel und faellt ersatzlos.
+         * Gewinn: 26 px Bildhoehe und ein Bedienort statt zwei. */
+
+        /* Schwebende Werkzeugleiste links am Bild — Blenders Toolbar. Drei Gruppen:
+         * Werkzeuge · Ansicht · Aufnahme. */
+        this.werkzeuge = new UIWerkzeugleisteNano(this);
+        this.werkzeuge.relative(this).x(7).y(7)
+            .w(UIWerkzeugleisteNano.breite()).h(UIWerkzeugleisteNano.hoehe(6, 1));
+
+        /* Kontextzeile am Bild wie im Entwurf: Ansichtsart, Film, gewaehltes Replay. */
+        this.hud = new UIViewportHudNano(this);
+        this.hud.relative(this).x(46).y(7).w(1F, -86).h(28);
+
+        this.add(this.werkzeuge, this.hud);
     }
 
     public void openOnionSkin()
@@ -392,6 +427,41 @@ public class UIFilmPreview extends UIElement
         return super.subMouseScrolled(context);
     }
 
+    /** Radius der Panel-Ecken; muss zu NanoDesign.R_PANEL passen. */
+    private static int eckenRadius()
+    {
+        return 6;
+    }
+
+    /**
+     * Uebermalt die vier Ecken des Bildes mit der Nahtfarbe, damit der Viewport dieselbe
+     * Rundung bekommt wie die NanoVG-Flaechen daneben.
+     */
+    private static void eckenRunden(UIContext context, Area area)
+    {
+        int r = eckenRadius();
+        int naht = 0xFF0D0D0D;
+
+        for (int i = 0; i < r; i++)
+        {
+            /* Breite der Stufe: was ausserhalb des Viertelkreises liegt, wird zugemalt. */
+            int d = r - (int) Math.ceil(Math.sqrt(r * r - (r - i - 1) * (r - i - 1)));
+
+            if (d <= 0)
+            {
+                continue;
+            }
+
+            int oben = area.y + i;
+            int unten = area.ey() - i - 1;
+
+            context.batcher.box(area.x, oben, area.x + d, oben + 1, naht);
+            context.batcher.box(area.ex() - d, oben, area.ex(), oben + 1, naht);
+            context.batcher.box(area.x, unten, area.x + d, unten + 1, naht);
+            context.batcher.box(area.ex() - d, unten, area.ex(), unten + 1, naht);
+        }
+    }
+
     @Override
     public void render(UIContext context)
     {
@@ -413,6 +483,12 @@ public class UIFilmPreview extends UIElement
             }
 
             context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, 0, texture.height, texture.width, 0, texture.width, texture.height);
+
+            /* Runde Ecken wie an Zeitleiste und Panels. texturedBox kann nur ein hartes
+             * Rechteck, also werden die vier Ecken danach in der Nahtfarbe uebermalt —
+             * eine Treppe aus Pixelzeilen entlang der Kreisgleichung. Bei 6 px Radius sind
+             * das 24 winzige Rechtecke je Bild, gegenueber dem Weltrender nichts. */
+            eckenRunden(context, area);
         }
 
         /* The navigation ball replaces the axes crosshair in the corner */
@@ -463,9 +539,13 @@ public class UIFilmPreview extends UIElement
         String resLabel = resW + " × " + resH;
         int resLabelW = context.batcher.getFont().getWidth(resLabel);
         int resLabelH = context.batcher.getFont().getHeight();
-        int resX = area.ex() - 4;
-        int resY = area.ey() - resLabelH - 5;
-        context.batcher.textCard(resLabel, resX - resLabelW, resY, Colors.WHITE, Colors.A50);
+        int resX = area.ex() - 8;
+        int resY = area.ey() - resLabelH - 6;
+
+        /* Wie die Kontextzeile oben links: Schattenkante statt Karte. Der weisse Kasten war
+         * der letzte Rest alter Optik im Bild. */
+        context.batcher.text(resLabel, resX - resLabelW + 1, resY + 1, 0xFF0A0A0A);
+        context.batcher.text(resLabel, resX - resLabelW, resY, 0xFFE0E0E0);
 
         this.panel.getController().renderHUD(context, area);
 
@@ -504,12 +584,19 @@ public class UIFilmPreview extends UIElement
         int barShade = BBSSettings.isLightTheme() ? (Colors.A50 | 0xFFFFFF) : Colors.A50;
         context.batcher.gradientVBox(a.x, a.y, a.ex(), a.ey(), 0, barShade);
 
+        /* ⛔ Nur zeichnen, wenn die alte Icon-Reihe ueberhaupt sichtbar ist. Sie ist seit dem
+         * UI-Umbau ausgeblendet, ihre area bleibt aber gesetzt — die Hervorhebungen landeten
+         * weiter im Bild, ohne dass ein Knopf darunter lag. */
+        if (this.icons.isVisible())
+        {
         if (this.panel.isFlying()) UIDashboardPanels.renderHighlight(context.batcher, this.flight.area, Direction.BOTTOM);
         if (this.panel.getController().isControlling()) UIDashboardPanels.renderHighlight(context.batcher, this.control.area, Direction.BOTTOM);
         if (this.panel.getController().isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordReplay.area, Direction.BOTTOM);
         if (this.panel.recorder.isRecording()) UIDashboardPanels.renderHighlight(context.batcher, this.recordVideo.area, Direction.BOTTOM);
         if (this.panel.getController().getOnionSkin().enabled.get()) UIDashboardPanels.renderHighlight(context.batcher, this.onionSkin.area, Direction.BOTTOM);
         if (this.panel.getController().getMotionPath().enabled.get()) UIDashboardPanels.renderHighlight(context.batcher, this.motionPath.area, Direction.BOTTOM);
+        }
+
         if (this.panel.getController().isControlling())
         {
             String s = UIKeys.FILM_CONTROLLER_CONTROL_MODE_TOOLTIP.format(KeyCodes.getName(Keys.FILM_CONTROLLER_TOGGLE_CONTROL.getMainKey())).get();
@@ -625,4 +712,36 @@ public class UIFilmPreview extends UIElement
         AchsenKreuz.zeichne(context.batcher, area.x + 16, area.ey() - 12,
             mcCamera.xRot(), mcCamera.yRot(), 10F);
     }
+    /**
+     * Legt den eben aufgenommenen Ausschnitt als Standbild des offenen Films ab.
+     *
+     * <p>⛔ Unter der Assets-Wurzel, nicht neben der Filmdatei: der Textur-Weg kennt nur die
+     * Schemata {@code assets:} und {@code bbs:}, und Filme liegen im Welt-Ordner. Das
+     * Standbild ist ohnehin ein Zwischenspeicher — es laesst sich jederzeit neu aufnehmen.</p>
+     */
+    private void standbildAblegen(mchorse.bbs_mod.graphics.texture.Texture texture, int w, int h)
+    {
+        try
+        {
+            mchorse.bbs_mod.film.Film film = this.panel.getData();
+
+            if (film == null || film.getId() == null || film.getId().isEmpty())
+            {
+                return;
+            }
+
+            java.io.File ziel = new java.io.File(mchorse.bbs_mod.BBSMod.getAssetsFolder(),
+                mchorse.bbs_mod.ui.film.UIFilmSelectionPanel.standbildPfad(film.getId()));
+
+            ziel.getParentFile().mkdirs();
+            BBSModClient.getScreenshotRecorder().takeScreenshot(ziel, texture.id, w, h);
+        }
+        catch (Exception fehler)
+        {
+            /* ⛔ Nicht still: ein fehlendes Standbild faellt in der Kachelliste auf die
+             * Form-Vorschau zurueck, aber der Grund gehoert ins Log. */
+            org.apache.logging.log4j.LogManager.getLogger("bbs/standbild").warn("Standbild des Films konnte nicht abgelegt werden", fehler);
+        }
+    }
+
 }

@@ -51,6 +51,29 @@ public final class IKBOBJBruecke
             return false;
         }
 
+        /* ⛔ ERST FRAGEN, OB SICH UEBERHAUPT ETWAS GEAENDERT HAT. Gemessen am 2026-08-21
+         * mit async-profiler: der Solver alloziert ~700 MB/s (4,0 GB double[] und 3,1 GB
+         * Matrix4f in 20 s), 88,7 % aller Allokationen des Prozesses. Folge: Old Gen bei
+         * 91,75 %, ~32 % CPU im G1-Concurrent-Mark, und Routen liefen in 5-Sekunden-
+         * Timeouts, die wie ein Freeze aussahen.
+         *
+         * Der Grund war NICHT teure Mathematik, sondern dass sie lief, waehrend nichts
+         * passierte: bei stehendem Film (`getCursor() == 0`) alle ~350 ms ein voller
+         * Jacobian-Lauf je Kette, mit identischer Eingabe und identischem Ergebnis.
+         *
+         * Deshalb hier ein Ergebnis-Cache statt einer In-Place-Umstellung von IKMat3:
+         * gleiche Eingaben -> das gespeicherte Ergebnis zurueckschreiben, ohne Segmente,
+         * Solver und Iterationen. Das spart den ganzen Lauf, nicht nur seine Allokationen. */
+        long signatur = signatur(kette, zielMat, polMat, polWinkel, gewicht, dehnen, iterationen);
+        Ergebnis zwischen = cache().get(spitzeName);
+
+        if (zwischen != null && zwischen.signatur == signatur && zwischen.passt(kette))
+        {
+            zwischen.anwenden(kette);
+
+            return zwischen.geloest;
+        }
+
         /* make_dmats: das lokale Delta JEDES Knochens sichern, bevor der Solver
          * die Matrizen anfasst — das Rueckschreiben braucht den Vorher-Zustand.
          * Aus demselben Grund stehen Laengen und Dehnfaktoren HIER und nicht im
@@ -141,7 +164,108 @@ public final class IKBOBJBruecke
 
         schreibeZurueck(kette, deltas, segmente, laengen, dehnungen);
 
+        cache().put(spitzeName, new Ergebnis(signatur, kette, geloest));
+
         return geloest;
+    }
+
+    /* ================== Ergebnis-Cache ================== */
+
+    /**
+     * Letztes Solver-Ergebnis je Kettenspitze.
+     *
+     * <p>Kein Initialisierer am Feld waere hier falsch — die Klasse wird beim Start geladen,
+     * nicht per Hotswap eingefuegt. Bei einem spaeteren Swap ist die Map null und wird beim
+     * ersten Zugriff neu angelegt; deshalb die Pruefung in {@link #cache()}.</p>
+     */
+    private static Map<String, Ergebnis> CACHE = new java.util.HashMap<>();
+
+    private static Map<String, Ergebnis> cache()
+    {
+        if (CACHE == null)
+        {
+            CACHE = new java.util.HashMap<>();
+        }
+
+        return CACHE;
+    }
+
+    /**
+     * Fingerabdruck der Solver-Eingaben.
+     *
+     * <p>⛔ Die Ausgangs-Matrizen der Kette gehoeren DAZU. `setupMatrices` baut die Pose vor
+     * jedem IK-Lauf aus den Keyframes neu auf; ohne sie im Fingerabdruck wuerde der Cache
+     * eine alte Loesung auf eine neue Pose schreiben — ein falsch stehendes Bein, das
+     * niemand mehr dem Cache zuordnet.</p>
+     */
+    private static long signatur(List<BOBJBone> kette, Matrix4f zielMat, Matrix4f polMat,
+                                 double polWinkel, double gewicht, boolean dehnen, int iterationen)
+    {
+        long h = 17L;
+
+        h = h * 31L + zielMat.hashCode();
+        h = h * 31L + (polMat == null ? 0 : polMat.hashCode());
+        h = h * 31L + Double.hashCode(polWinkel);
+        h = h * 31L + Double.hashCode(gewicht);
+        h = h * 31L + (dehnen ? 1L : 0L);
+        h = h * 31L + iterationen;
+
+        for (BOBJBone b : kette)
+        {
+            h = h * 31L + b.mat.hashCode();
+        }
+
+        return h;
+    }
+
+    /** Ein gespeichertes Ergebnis: die Bone-Matrizen nach dem Loesen. */
+    private static final class Ergebnis
+    {
+        final long signatur;
+        final boolean geloest;
+        final String[] namen;
+        final Matrix4f[] matrizen;
+
+        Ergebnis(long signatur, List<BOBJBone> kette, boolean geloest)
+        {
+            this.signatur = signatur;
+            this.geloest = geloest;
+            this.namen = new String[kette.size()];
+            this.matrizen = new Matrix4f[kette.size()];
+
+            for (int i = 0; i < kette.size(); i++)
+            {
+                this.namen[i] = kette.get(i).name;
+                this.matrizen[i] = new Matrix4f(kette.get(i).mat);
+            }
+        }
+
+        /** Dieselbe Kette wie beim Speichern? Modellwechsel darf nicht durchrutschen. */
+        boolean passt(List<BOBJBone> kette)
+        {
+            if (kette.size() != this.namen.length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < this.namen.length; i++)
+            {
+                if (!this.namen[i].equals(kette.get(i).name))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        void anwenden(List<BOBJBone> kette)
+        {
+            for (int i = 0; i < this.matrizen.length; i++)
+            {
+                kette.get(i).mat.set(this.matrizen[i]);
+            }
+        }
     }
 
     /**

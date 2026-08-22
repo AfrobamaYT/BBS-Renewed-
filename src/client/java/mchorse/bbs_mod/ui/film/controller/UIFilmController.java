@@ -296,6 +296,11 @@ public class UIFilmController extends UIElement implements GizmoViewport
         this.orbit.enabled = this.getPovMode() > 1;
 
         BBSSettings.editorCameraMode.set(this.getPovMode());
+
+        /* Der Modus entscheidet, ob die Vorschau die Flaeche fuellt (freie Ansicht) oder im
+         * Exportformat bleibt (Kamera-Ansicht) — also muss die Groesse hier neu gerechnet
+         * werden, nicht erst beim naechsten Layout. */
+        this.panel.vorschauGroesseNachziehen();
     }
 
     private int getMouseMode()
@@ -1256,12 +1261,13 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
         Replay replay = this.panel.replayEditor.getReplay();
 
+        /* ⛔ Der Name steht NICHT mehr in der Ecke: die Kontextzeile links oben traegt ihn
+         * bereits („(142) rigtest · rigtest_human"), und der Entwurf haelt die rechte obere
+         * Ecke fuer das Achsen-Gizmo frei. Zwei Beschriftungen derselben Sache, die sich
+         * gegenseitig ueberlappen, waren das Ergebnis. Die Formvorschau bleibt. */
         if (replay != null)
         {
-            String label = replay.getName();
-            int w = font.getWidth(label);
-
-            context.batcher.textCard(label, x - w, y, Colors.WHITE, Colors.A50);
+            int w = 0;
 
             Form form = replay.form.get();
 

@@ -314,6 +314,26 @@ public class BOBJModelVAO implements IModelVAO
 
     public void updateMesh(StencilMap stencilMap, Matrix4f[] matrices)
     {
+        /* ⛔ NUR HAEUTEN UND HOCHLADEN, WENN SICH DIE MATRIZEN GEAENDERT HABEN. Gemessen am
+         * 2026-08-21 mit async-profiler: `schreiben` (der Weg in den GPU-Puffer) stand mit
+         * 15,0 % als groesster Einzelposten der CPU — bei 84 FPS rund 1,8 ms je Bild. Dabei
+         * ist die Pose seit dem Cache in `BOBJArmature.setupMatrices` haeufig unveraendert,
+         * und dann sind sowohl das Skinning ueber alle Ecken als auch der Upload umsonst:
+         * im Puffer steht bereits genau das Ergebnis.
+         *
+         * Der Fingerabdruck laeuft ueber die Bone-Matrizen. `stencilMap` gehoert dazu, weil
+         * der Auswahl-Durchgang zusaetzlich das knochenabhaengige Licht schreibt — ohne das
+         * im Abdruck faende ein Klick nach dem ersten uebersprungenen Bild keinen Knochen. */
+        long signatur = signatur(matrices, stencilMap);
+
+        if (signatur == this.letzteMeshSignatur && this.meshGueltig)
+        {
+            return;
+        }
+
+        this.letzteMeshSignatur = signatur;
+        this.meshGueltig = true;
+
         Vector4f sum = new Vector4f();
         Vector4f result = new Vector4f(0F, 0F, 0F, 0F);
         Vector3f sumNormal = new Vector3f();
@@ -437,5 +457,31 @@ public class BOBJModelVAO implements IModelVAO
     public int eckenZahl()
     {
         return this.count;
+    }
+
+    /* ================== Mesh-Cache ================== */
+
+    private long letzteMeshSignatur;
+    private boolean meshGueltig;
+
+    /** Nach dem naechsten {@link #updateMesh} wird wieder voll gehaeutet und hochgeladen. */
+    public void meshMarkieren()
+    {
+        this.meshGueltig = false;
+    }
+
+    private static long signatur(Matrix4f[] matrices, StencilMap stencilMap)
+    {
+        long h = stencilMap == null ? 17L : 19L;
+
+        if (matrices != null)
+        {
+            for (Matrix4f m : matrices)
+            {
+                h = h * 31L + (m == null ? 0 : m.hashCode());
+            }
+        }
+
+        return h;
     }
 }

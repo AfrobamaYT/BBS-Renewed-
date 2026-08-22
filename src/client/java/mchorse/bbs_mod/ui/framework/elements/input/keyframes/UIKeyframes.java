@@ -1414,7 +1414,23 @@ public class UIKeyframes extends UIElement
             {
                 int leftEx = Math.min(this.graphArea.ex(), leftBorder);
 
-                context.batcher.box(this.graphArea.x, this.graphArea.y, leftEx, this.graphArea.y + this.graphArea.h, BBSSettings.chromeSurface());
+                /* ⛔ AUSSERHALB DER ZEIT IST DUNKLER, nicht heller. Hier stand
+                 * `chromeSurface()` — nach dem Palette-Umbau 0x1D1D1D, also HELLER als der
+                 * Graph-Grund 0x161616. Der Vorlauf vor Tick 0 war damit ein toter heller
+                 * Streifen, den nichts erklaerte. Blender dunkelt den Bereich ausserhalb
+                 * der Frame-Range ab; das ist das Signal „hier gibt es keine Zeit". */
+                context.batcher.box(this.graphArea.x, this.graphArea.y, leftEx, this.graphArea.y + this.graphArea.h, 0xFF0D0D0D);
+            }
+
+            /* Dasselbe RECHTS vom Filmende — der Bereich blieb bisher ganz ohne Zeichnung
+             * und war vom bespielbaren Teil nicht zu unterscheiden. */
+            int rightBorder = this.toGraphX(duration);
+
+            if (rightBorder < this.graphArea.ex())
+            {
+                int rightX = Math.max(this.graphArea.x, rightBorder);
+
+                context.batcher.box(rightX, this.graphArea.y, this.graphArea.ex(), this.graphArea.y + this.graphArea.h, 0xFF0D0D0D);
             }
         }
 

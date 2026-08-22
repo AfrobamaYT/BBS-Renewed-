@@ -88,7 +88,14 @@ public class UIButton extends UIClickable<UIButton> implements ITextColoring
 
         if (this.background)
         {
-            context.batcher.bevelBox(this.area.x, this.area.y, this.area.ex(), this.area.ey(), color | Colors.A100, true, false);
+            /* ⛔ Rundeck statt bevelBox — P2, der breiteste Abnehmer im Baum. `bevelBox`
+             * malt einen 3D-Rand (heller oben, dunkler unten): die Handschrift, an der man
+             * die alte Oberflaeche sofort erkennt. Blender-Knoepfe sind flach und rund;
+             * der Zustand kommt allein ueber die Farbe (hover dunkelt bereits oben).
+             * Radius 4 wie `NanoDesign.R_WIDGET`, damit klassische Knoepfe und
+             * Nano-Flaechen dasselbe Mass tragen. */
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h,
+                4F, color | Colors.A100);
         }
 
         FontRenderer font = context.batcher.getFont();

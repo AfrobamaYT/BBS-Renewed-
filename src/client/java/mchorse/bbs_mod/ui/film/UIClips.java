@@ -97,7 +97,7 @@ public class UIClips extends UIElement
     private UIElement embedded;
 
     private Vector3i addPreview;
-    private int layers;
+    public int layers;
     /** Set when a film is opened so the clip layers get centred vertically on the
      *  next render — the scroll area only has a real size once laid out. */
     private boolean centerScrollOnRender;
@@ -117,23 +117,54 @@ public class UIClips extends UIElement
      * Render cursor that displays the full duration of the camera work,
      * and also current tick within the camera work.
      */
+    /**
+     * Der Abspielkopf: Linie + Kopf mit der Tick-Zahl.
+     *
+     * <p>⛔ Masse aus der Nutzeransage vom 2026-08-21: Fuellung voll deckend (vorher 78 %
+     * Alpha, dadurch wirkte der Kopf wie ein Platzhalter), Breite verdoppelt, Hoehe +20 %,
+     * darunter eine kleine Woelbung, die zum Strich hinunterlaeuft. Und der Kasten
+     * <b>waechst mit der Zahl</b> — bei dreistelligen Ticks soll die Zahl nicht den Kopf
+     * sprengen, sondern der Kopf die Zahl aufnehmen.</p>
+     */
     public static void renderCursor(UIContext context, String label, Area area, int x)
     {
-        /* Draw the marker */
         FontRenderer font = context.batcher.getFont();
-        int width = font.getWidth(label) + 3;
         int color = BBSSettings.primaryColor.get();
+        int voll = color | Colors.A100;
 
-        context.batcher.box(x, area.y, x + 1, area.ey(), color | Colors.A100);
+        context.batcher.box(x, area.y + 1, x + 1, area.ey(), voll); /* +1: sonst schaut eine Pixelzeile ueber dem Kopf heraus */
 
-        /* Move the tick line left, so it won't overflow the timeline */
-        if (x + 1 + width > area.ex())
+        /* ⛔ Kein Grundmass: die Verdopplung machte den Kopf schon bei EINER Ziffer doppelt breit. */
+        float textB = font.getWidth(label);
+        float b = textB + 12F;
+        float h = (font.getHeight() + 4F) * 1.2F;
+        float wulst = 3F;
+
+        float links = x - b / 2F;
+
+        if (links < area.x)
         {
-            x -= width + 1;
+            links = area.x;
+        }
+        else if (links + b > area.ex())
+        {
+            links = area.ex() - b;
         }
 
-        /* Draw the tick label */
-        context.batcher.textCard(label, x + 3, area.ey() - 2 - font.getHeight(), Colors.WHITE, Colors.setA(color, 0.78F), 2);
+        float oben = area.y + 1F;
+
+        context.batcher.rundeck(links, oben, b, h, 3F, voll);
+
+        /* Woelbung: ein flaches Dreieck von der Kopfunterkante zur Linie. Sitzt an der
+         * LINIE, nicht in der Kopfmitte — sonst zeigt der Kopf am Rand ins Leere. */
+        float spitze = Math.max(links + 2F, Math.min(x, links + b - 2F));
+        float[] px = {spitze - 4F, spitze + 4F, spitze};
+        float[] py = {oben + h - 0.5F, oben + h - 0.5F, oben + h + wulst};
+
+        context.batcher.polygon(px, py, voll);
+
+        context.batcher.text(label, (int) (links + (b - textB) / 2F),
+            (int) (oben + (h - font.getHeight()) / 2F), Colors.WHITE);
     }
 
     public UIClips(IUIClipsDelegate delegate, IFactory<Clip, ClipFactoryData> factory)
@@ -169,7 +200,7 @@ public class UIClips extends UIElement
                 return;
             }
 
-            menu.action(Icons.ADD, UIKeys.CAMERA_TIMELINE_CONTEXT_ADD, () -> this.showAdds(mouseX, mouseY));
+            menu.action(Icons.ADD, UIKeys.CAMERA_TIMELINE_CONTEXT_ADD, () -> this.showAdds(mouseX, mouseY)).taste(Keys.ADD_AT_CURSOR);
 
             if (hasSelected)
             {
@@ -177,11 +208,11 @@ public class UIClips extends UIElement
                 UIClipSelectionActions.add(menu, this.getClipsFromSelection(), this::cut, this::shiftToCursor, this::shiftDurationToCursor, this::toggleEnabled);
             }
 
-            menu.action(Icons.EXCHANGE, UIKeys.CAMERA_TIMELINE_CONTEXT_REORGANIZE, () -> this.clips.sortLayers());
+            menu.action(Icons.EXCHANGE, UIKeys.CAMERA_TIMELINE_CONTEXT_REORGANIZE, () -> this.clips.sortLayers()).trenner();
 
             if (hasSelected)
             {
-                menu.action(Icons.REMOVE, UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS, Colors.NEGATIVE, this::removeSelected);
+                menu.action(Icons.REMOVE, UIKeys.CAMERA_TIMELINE_CONTEXT_REMOVE_CLIPS, Colors.NEGATIVE, this::removeSelected).trenner().taste(Keys.DELETE);
             }
         });
 
@@ -400,7 +431,7 @@ public class UIClips extends UIElement
      */
     private void addClip(Clip clip, int tick, int layer, int duration)
     {
-        clip.layer.set(layer);
+        clip.layer.set(MathUtils.clamp(layer, 0, this.hoechsteFremdeEbene(clip) + 1));
         clip.tick.set(tick);
         clip.duration.set(duration);
 
@@ -1004,21 +1035,16 @@ public class UIClips extends UIElement
             return;
         }
 
-        int minLayer = Integer.MAX_VALUE;
-        int maxLayer = 0;
+        /* Einmal beim Oeffnen die leeren Ebenen unter dem untersten Clip wegnehmen —
+         * sonst zeigt ein alter Film zwanzig leere Spuren fuer einen einzigen Clip. */
+        int maxLayer = this.clips.ebenenAufNullSchieben();
 
-        for (Clip clip : list)
-        {
-            int layer = clip.layer.get();
-
-            minLayer = Math.min(minLayer, layer);
-            maxLayer = Math.max(maxLayer, layer);
-        }
+        this.updateScrollSize();
 
         /* The on-screen Y of layer L is (bottom - (L+1)*h + scrollSize - viewportH
-         * - scroll); putting the occupied band [minLayer, maxLayer] centre at the
+         * - scroll); putting the occupied band [0, maxLayer] centre at the
          * viewport centre resolves to this scroll value (setScroll clamps it). */
-        double scroll = this.vertical.scrollSize - (this.vertical.area.h + this.getLayerHeight() * (minLayer + maxLayer + 1)) / 2.0;
+        double scroll = this.vertical.scrollSize - (this.vertical.area.h + this.getLayerHeight() * (maxLayer + 1)) / 2.0;
 
         this.vertical.setScroll(scroll);
         this.vertical.updateTarget();
@@ -1086,18 +1112,28 @@ public class UIClips extends UIElement
         return this.vertical.scrollSize - this.vertical.area.h - (int) this.vertical.getScroll();
     }
 
-    private int getLayerHeight()
+    public int getLayerHeight()
     {
         return this.layerHeight;
     }
 
     public void updateLayers()
     {
-        this.layers = 20;
+        /* ⛔ SO VIELE SPUREN WIE GEBRAUCHT, plus eine leere zum Ablegen — nicht pauschal 20.
+         *
+         * Der feste Grundwert 20 hatte zwei Folgen: erstens landete ein abgelegter Clip auf
+         * Ebene 17, weil dort optisch die dritte Spur von oben lag; zweitens zeigte die
+         * Kanalspalte daneben siebzehn leere „Camera"-Zeilen, weil sie bis zur hoechsten
+         * belegten Ebene beschriftet. Nutzer: „wenn ich ein clip reinmache spawnen sehr
+         * viele blank kanaele anstatt einen channel."
+         *
+         * Blender zeigt im Dope Sheet ebenfalls nur vorhandene Kanaele. Die eine freie Spur
+         * obendrauf bleibt, damit man einen Clip auf eine neue Ebene ziehen kann. */
+        this.layers = 1;
 
         for (Clip clip : this.clips.get())
         {
-            this.layers = Math.max(this.layers, clip.layer.get() + 1);
+            this.layers = Math.max(this.layers, clip.layer.get() + 2);
         }
     }
 
@@ -1772,7 +1808,7 @@ public class UIClips extends UIElement
 
         int dir = 0;
 
-        while (this.collisionExists(others, data, dx, dy))
+        while ((dx != 0 || dy != 0) && this.collisionExists(others, data, dx, dy)) /* beide 0 = nichts mehr zu kuerzen, sonst dreht sie ewig */
         {
             if (dir % 2 == 0 && dx != 0) dx -= Integer.signum(dx);
             if (dir % 2 == 1 && dy != 0) dy -= Integer.signum(dy);
@@ -1824,7 +1860,34 @@ public class UIClips extends UIElement
 
         clip.tick.set(newTick);
         clip.duration.set(newDuration);
-        clip.layer.set(newLayer);
+
+        /* ⛔ KEINE LUECKEN NACH OBEN. Ohne Grenze durfte ein Clip auf jede beliebige Ebene
+         * springen — und weil die Spurenzahl aus der hoechsten belegten Ebene folgt, wuchs
+         * die Zeitleiste beim Hochschieben um eine Spur je Schritt und schrumpfte beim
+         * Runterschieben wieder. Gemessen: ein einziger Clip auf Ebene 5 ergab 7 Spuren.
+         * Nutzer: „wenn ich den clip nach oben schiebe kommen da immer mehr channels … und
+         * die timeline verliert/gewinnt ihren raster flaechen beim verschieben."
+         *
+         * Jetzt reicht die Zielebene hoechstens eine Spur ueber die hoechste, die ein
+         * ANDERER Clip belegt — genau wie in Schnittprogrammen: man legt auf eine
+         * vorhandene Spur oder auf die naechste neue, nie ins Leere darueber. */
+        clip.layer.set(MathUtils.clamp(newLayer, 0, this.hoechsteFremdeEbene(clip) + 1));
+    }
+
+    /** Hoechste Ebene, die ein anderer Clip als {@code ausser} belegt; -1 wenn keiner. */
+    public int hoechsteFremdeEbene(Clip ausser)
+    {
+        int hoch = -1;
+
+        for (Clip c : this.clips.get())
+        {
+            if (c != ausser)
+            {
+                hoch = Math.max(hoch, c.layer.get());
+            }
+        }
+
+        return hoch;
     }
 
     private void captureSelection(Area area)
@@ -1955,7 +2018,9 @@ public class UIClips extends UIElement
         batcher.unclip(context);
         batcher.clip(this.area, context);
 
-        String label = TimeUtils.formatTime(this.delegate.getCursor()) + "/" + TimeUtils.formatTime(this.clips.calculateDuration());
+        /* ⛔ NUR DIE ZAHL. Vorher „cursor/dauer" — die Gesamtdauer steht bereits im Kopf der
+         * Zeitleiste („20 / 26   1,0 s") und gehoert nicht ein zweites Mal an den Zeiger. */
+        String label = TimeUtils.formatTime(this.delegate.getCursor());
 
         renderCursor(context, label, area, this.toGraphX(this.delegate.getCursor()));
         this.renderSelection(context);

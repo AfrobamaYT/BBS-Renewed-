@@ -57,7 +57,7 @@ public class UIReiterKnopf extends UIElement
          * Blender. Nicht die Akzentfarbe: die machte aus dem Reiter einen blauen Knopf. */
         int flaeche = mchorse.bbs_mod.BBSSettings.deepSurface();
 
-        int farbe = this.aktiv ? flaeche : (drueber ? 0xFF3a3a3a : 0xFF2b2b2b);
+        int farbe = this.aktiv ? flaeche : (drueber ? 0xFF3D3D3D : 0xFF2b2b2b);
         float x = this.area.x - (this.aktiv ? 3 : 0);
         float breiteK = this.area.ex() - x;
 
@@ -85,7 +85,7 @@ public class UIReiterKnopf extends UIElement
          * im TEXTraum, und der wird mitgedreht — bei 90° faellt er diagonal neben die
          * Buchstaben und macht die 7 px hohe Schrift matschig statt lesbarer. */
         context.batcher.text(this.beschriftung, this.area.mx() + hoehe / 2F,
-            this.area.my() - breite / 2F, this.aktiv ? Colors.WHITE : 0xFF9a9a9a, false, 90F);
+            this.area.my() - breite / 2F, this.aktiv ? Colors.WHITE : 0xFF9C9C9C, false, 90F);
 
         super.render(context);
     }

@@ -91,6 +91,109 @@ public final class VektorFlaeche
     }
 
     /**
+     * Konvexes Polygon mit AA-Saum — dieselbe Technik wie {@link #rundeck}, nur mit frei
+     * gegebenen Ecken statt eines Rechteck-Umrisses.
+     *
+     * <p>⛔ WOFUER (2026-08-21). Die Merkstellen-Fahne auf der Zeitleiste zeichnete ihre
+     * Spitze als Schleife von 1-Pixel-Kaesten — eine sichtbare Treppe. Der Vektor-Zeichner
+     * konnte bis dahin nur Rundecke und Linien; fuer eine glatte Pfeilform fehlte das
+     * Polygon. Nutzer: „das war ein grauer pfeil der smooth war anstatt den alten blauen
+     * pixel optischen marker."</p>
+     *
+     * <p>Erwartet ein KONVEXES Polygon im Uhrzeigersinn oder dagegen — der Faecher laeuft
+     * vom Schwerpunkt, das traegt nur konvexe Formen. Die Aussennormale je Ecke wird aus
+     * den beiden anliegenden Kanten gemittelt.</p>
+     */
+    public static void polygon(VertexConsumer ecken, Matrix3x2f pose, float[] px, float[] py, int color, float saum)
+    {
+        int n = px.length;
+
+        if (n < 3)
+        {
+            return;
+        }
+
+        float cx = 0F;
+        float cy = 0F;
+
+        for (int a = 0; a < n; a++)
+        {
+            cx += px[a];
+            cy += py[a];
+        }
+
+        cx /= n;
+        cy /= n;
+
+        /* Aussennormale je Ecke: Mittel der beiden Kantennormalen, vom Schwerpunkt weg. */
+        float[] nx = new float[n];
+        float[] ny = new float[n];
+
+        for (int a = 0; a < n; a++)
+        {
+            int v = (a - 1 + n) % n;
+            int b = (a + 1) % n;
+            float sx = kantenNormalX(px[v], py[v], px[a], py[a]) + kantenNormalX(px[a], py[a], px[b], py[b]);
+            float sy = kantenNormalY(px[v], py[v], px[a], py[a]) + kantenNormalY(px[a], py[a], px[b], py[b]);
+            float len = (float) Math.sqrt(sx * sx + sy * sy);
+
+            if (len < 1e-5F)
+            {
+                sx = px[a] - cx;
+                sy = py[a] - cy;
+                len = Math.max(1e-5F, (float) Math.sqrt(sx * sx + sy * sy));
+            }
+
+            /* Richtung pruefen: die Normale muss vom Schwerpunkt WEG zeigen. */
+            float rx = sx / len;
+            float ry = sy / len;
+
+            if (rx * (px[a] - cx) + ry * (py[a] - cy) < 0F)
+            {
+                rx = -rx;
+                ry = -ry;
+            }
+
+            nx[a] = rx;
+            ny[a] = ry;
+        }
+
+        int durchsichtig = color & 0x00FFFFFF;
+
+        for (int a = 0; a < n; a++)
+        {
+            int b = (a + 1) % n;
+
+            ecken.addVertexWith2DPose(pose, cx, cy).setColor(color);
+            ecken.addVertexWith2DPose(pose, px[a], py[a]).setColor(color);
+            ecken.addVertexWith2DPose(pose, px[b], py[b]).setColor(color);
+
+            saumQuad(ecken, pose, px[a], py[a], px[b], py[b],
+                px[a] + nx[a] * saum, py[a] + ny[a] * saum,
+                px[b] + nx[b] * saum, py[b] + ny[b] * saum,
+                color, durchsichtig, durchsichtig);
+        }
+    }
+
+    private static float kantenNormalX(float ax, float ay, float bx, float by)
+    {
+        float dy = by - ay;
+        float dx = bx - ax;
+        float len = Math.max(1e-5F, (float) Math.sqrt(dx * dx + dy * dy));
+
+        return dy / len;
+    }
+
+    private static float kantenNormalY(float ax, float ay, float bx, float by)
+    {
+        float dy = by - ay;
+        float dx = bx - ax;
+        float len = Math.max(1e-5F, (float) Math.sqrt(dx * dx + dy * dy));
+
+        return -dx / len;
+    }
+
+    /**
      * Weicher Schein um ein Rundeck — Ersatz fuer die dropShadow-Trapeze: das Innere
      * fuellt {@code innen}, nach aussen laufen Ringe ueber {@code ausdehnung} auf
      * {@code aussen} zu (quadratisches Abklingen ≈ Gauss-Optik).

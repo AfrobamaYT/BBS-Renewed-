@@ -210,7 +210,7 @@ public class UIModelBlockPanel extends UIDashboardPanel implements IFlightSuppor
 
         this.keys().register(Keys.MODEL_BLOCKS_TELEPORT, this::teleport);
 
-        this.add(this.scrollView);
+        this.add(this.scrollView, new mchorse.bbs_mod.ui.framework.elements.utils.UIRenderable((ctx) -> mchorse.bbs_mod.ui.dashboard.panels.UIAuswahlLeer.zeichnen(ctx, this.area, this.modelBlock == null, mchorse.bbs_mod.ui.utils.icons.Icons.BLOCK, "No model block selected", "Pick one from the list on the left")));
     }
 
     private void teleport()

@@ -1,6 +1,10 @@
 package mchorse.bbs_mod.ui.film;
 
+import mchorse.bbs_mod.BBSMod;
 import mchorse.bbs_mod.film.Film;
+import mchorse.bbs_mod.resources.Link;
+import mchorse.bbs_mod.film.replays.Replay;
+import mchorse.bbs_mod.ui.dashboard.list.UIKachelListe;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.panels.UISelectionScreen;
@@ -11,6 +15,7 @@ import mchorse.bbs_mod.ui.utils.icons.Icon;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 import mchorse.bbs_mod.utils.DataPath;
 
+import java.io.File;
 import java.util.List;
 
 public class UIFilmSelectionPanel extends UISelectionScreen<Film>
@@ -20,6 +25,38 @@ public class UIFilmSelectionPanel extends UISelectionScreen<Film>
     public UIFilmSelectionPanel(UIFilmPanel panel)
     {
         super(panel);
+
+        /* Ein Film hat kein Bild auf der Platte — seine Kennung ist die Figur, die darin
+         * spielt. Also die Form des ersten Replays, und die steckt in der Filmdatei:
+         * asynchron nachladen, wie Unity es mit GetAssetPreview macht. */
+        if (this.namesList instanceof UIKachelListe kachel)
+        {
+            /* Ein Ausschnitt aus dem Film sagt mehr als die Figur darin. Liegt ein Standbild
+             * vor, gewinnt es; sonst greift die Form des ersten Replays darunter. */
+            kachel.bild((pfad) -> standbildLink(pfad.toString()));
+
+            kachel.nachlader((pfad, fertig) -> panel.getType().getRepository().load(pfad.toString(), (daten) ->
+            {
+                /* getType() ist roh, der Rueckgabetyp also ein Wildcard — pruefen statt casten. */
+                List<Replay> replays = daten instanceof Film film ? film.replays.getList() : null;
+
+                fertig.accept(replays == null || replays.isEmpty() ? null : replays.get(0).form.get());
+            }));
+        }
+    }
+
+    /** Wo ein Film-Standbild liegt — unter der Assets-Wurzel, damit der Link-Weg greift. */
+    public static String standbildPfad(String film)
+    {
+        return "film_thumbnails/" + film + ".png";
+    }
+
+    /** Link auf das Standbild, oder {@code null}, wenn es keines gibt. */
+    private static Link standbildLink(String film)
+    {
+        File datei = new File(BBSMod.getAssetsFolder(), standbildPfad(film));
+
+        return datei.isFile() ? Link.assets(standbildPfad(film)) : null;
     }
 
     @Override

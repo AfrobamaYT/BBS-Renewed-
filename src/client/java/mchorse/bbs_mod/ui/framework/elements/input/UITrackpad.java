@@ -251,7 +251,13 @@ public class UITrackpad extends UINumericInput<UITrackpad>
         }
         else
         {
-            this.area.render(context.batcher, BBSSettings.inputSurface());
+            /* ⛔ Rundeck statt hartem Rechteck — P2, weiterer Abnehmer. Trackpads sind das
+             * haeufigste Eingabefeld im Editor (Position, Drehung, Groesse, jede Zahl);
+             * solange sie eckig bleiben, sieht die Oberflaeche eckig aus, egal wie rund
+             * Menues und Karten schon sind. Radius 4 wie `NanoDesign.R_WIDGET`, damit
+             * Nano-Flaechen und klassische Elemente dasselbe Mass tragen. */
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h,
+                4F, BBSSettings.inputSurface());
 
             if (dragging)
             {

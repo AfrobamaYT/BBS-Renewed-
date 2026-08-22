@@ -90,6 +90,11 @@ public class UIRigRegler extends UIElement
 
         if (mechanik == null || mechanik.treiber.regler.leer())
         {
+            /* ⛔ Ohne Kinder rechnet der Spalten-Resizer die Hoehe aus lauter Abstaenden und
+             * landet bei -3. Ein Element mit NEGATIVER Hoehe zeichnet einen Streifen ueber
+             * dem Nachbarn — sichtbar als loses Fragment am oberen Rand der Seitenleiste.
+             * Deshalb hier ausdruecklich auf 0 klemmen. */
+            this.h(0);
             this.resize();
 
             return;

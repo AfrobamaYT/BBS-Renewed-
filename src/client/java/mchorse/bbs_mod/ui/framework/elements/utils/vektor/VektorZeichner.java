@@ -55,6 +55,42 @@ public final class VektorZeichner
             posiert(pose, (int) x - 1, (int) y - 1, (int) w + 3, (int) h + 3));
     }
 
+    /**
+     * Konvexes Polygon mit AA-Kante — fuer Formen, die weder Rechteck noch Linie sind
+     * (Pfeile, Fahnen, Dreiecke).
+     */
+    public static void polygon(Batcher2D batcher, float[] px, float[] py, int color)
+    {
+        if (px.length < 3 || px.length != py.length)
+        {
+            return;
+        }
+
+        Matrix3x2f pose = new Matrix3x2f(batcher.getContext().pose());
+        float saum = saum();
+        float minX = px[0];
+        float minY = py[0];
+        float maxX = px[0];
+        float maxY = py[0];
+
+        for (int a = 1; a < px.length; a++)
+        {
+            minX = Math.min(minX, px[a]);
+            minY = Math.min(minY, py[a]);
+            maxX = Math.max(maxX, px[a]);
+            maxY = Math.max(maxY, py[a]);
+        }
+
+        final float x0 = minX;
+        final float y0 = minY;
+        final float b = maxX - minX;
+        final float h = maxY - minY;
+
+        batcher.netz(FormPipelines.holen(PrimitiveTopology.TRIANGLES, true, false, false),
+            (ecken) -> VektorFlaeche.polygon(ecken, pose, px, py, color, saum),
+            posiert(pose, (int) x0 - 2, (int) y0 - 2, (int) b + 5, (int) h + 5));
+    }
+
     /** Weicher Schein + Fuellung — der Vektor-Ersatz fuer dropShadow. */
     public static void schein(Batcher2D batcher, float x, float y, float w, float h, float ausdehnung, int innen, int aussen)
     {

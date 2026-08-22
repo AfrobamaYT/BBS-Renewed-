@@ -242,14 +242,20 @@ public class OrbitViewGizmo
         return BALL_RADIUS * this.scale();
     }
 
+    /**
+     * Rechts OBEN, wie im Entwurf ({@code .gizmo{top:8px;right:200px}}) — links unten stand es
+     * mitten im Bild und lag ueber dem Motiv. Der Abstand rechts laesst den Reiterstreifen des
+     * N-Panels frei (22 px), damit das Gizmo ihn nicht ueberdeckt.
+     */
     private float centerX(Area area)
     {
-        return area.x + PADDING + this.radius();
+        return area.ex() - PADDING - this.radius() - 24F;
     }
 
     private float centerY(Area area)
     {
-        return area.ey() - PADDING - this.radius();
+        /* Unter dem Flaechenkopf (26 px), sonst sitzt es auf den Kopfknoepfen. */
+        return area.y + 26F + PADDING + this.radius();
     }
 
     private Ball[] getBalls(Area area)

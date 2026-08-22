@@ -22,7 +22,8 @@ public class UISimpleContextMenu extends UIContextMenu
             }
         });
 
-        this.actions.cancelScrollEdge().full(this);
+        /* 4 px Luft rundum wie im Entwurf (.menu{padding:4}). */
+        this.actions.cancelScrollEdge().relative(this).xy(4, 4).w(1F, -8).h(1F, -8);
         this.add(this.actions);
     }
 
@@ -39,10 +40,10 @@ public class UISimpleContextMenu extends UIContextMenu
 
         for (ContextAction action : this.actions.getList())
         {
-            w = Math.max(action.getWidth(context.batcher.getFont()), w);
+            w = Math.max(action.getWidth(context.batcher.getFont()) + 8, w);
         }
 
-        this.set(context.mouseX(), context.mouseY(), w, 0).h(this.actions.scroll.scrollSize).maxH(context.menu.height - 10).bounds(context.menu.overlay, 5);
+        this.set(context.mouseX(), context.mouseY(), w, 0).h(this.actions.scroll.scrollSize + 8).maxH(context.menu.height - 10).bounds(context.menu.overlay, 5);
     }
 
     @Override

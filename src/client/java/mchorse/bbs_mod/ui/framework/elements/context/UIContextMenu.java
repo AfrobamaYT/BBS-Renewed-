@@ -60,14 +60,22 @@ public abstract class UIContextMenu extends UIElement
     protected void renderBackground(UIContext context)
     {
         context.batcher.dropShadow(this.area.x, this.area.y, this.area.ex(), this.area.ey(), 10, BBSSettings.panelShadowOpaqueColor(), BBSSettings.panelShadowTransparentColor());
-        /* P2: weiche Menue-Karte. */
+        /* Design-System: Menues sitzen auf --menu #181818, Dialoge auf --region #242424 —
+         * die eine Stelle, an der sich beide unterscheiden. Der Token steht in NanoDesign,
+         * das helle Theme deckt das Design nicht ab und bleibt wie es war. */
+        int flaeche = BBSSettings.isLightTheme()
+            ? BBSSettings.raisedSurface()
+            : (Colors.A100 | com.mcstudio.nano.NanoDesign.MENUE);
+
         if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
         {
-            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h, 4F, BBSSettings.raisedSurface());
+            /* Kante als schwarzes Rundeck einen Punkt groesser: outline() ist eckig. */
+            context.batcher.rundeck(this.area.x - 1, this.area.y - 1, this.area.w + 2, this.area.h + 2, 7F, Colors.A100);
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h, 6F, flaeche);
         }
         else
         {
-            this.area.render(context.batcher, BBSSettings.raisedSurface());
+            this.area.render(context.batcher, flaeche);
         }
     }
 }

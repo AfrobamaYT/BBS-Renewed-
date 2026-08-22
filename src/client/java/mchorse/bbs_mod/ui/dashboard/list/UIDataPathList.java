@@ -31,7 +31,7 @@ public class UIDataPathList extends UIList<DataPath>
     /**
      * Icon that is used to render "files."
      */
-    private Icon fileIcon = Icons.FILE;
+    protected Icon fileIcon = Icons.FILE;
 
     private DataPath previousPath;
     private boolean openOnSingleClick = true;

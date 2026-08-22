@@ -739,6 +739,12 @@ public class Batcher2D
     }
 
     /** P2: Rundeck-Quad mit weichem Rand — CPU-Tessellation durch die GUI-Farb-Pipeline. */
+    /** Konvexes Polygon mit AA-Kante (P2) — fuer Pfeile, Fahnen, Dreiecke. */
+    public void polygon(float[] px, float[] py, int color)
+    {
+        mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.polygon(this, px, py, color);
+    }
+
     public void rundeck(float x, float y, float w, float h, float radius, int color)
     {
         mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.rundeck(this, x, y, w, h, radius, color);

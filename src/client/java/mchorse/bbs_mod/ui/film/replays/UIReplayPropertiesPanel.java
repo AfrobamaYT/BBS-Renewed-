@@ -19,6 +19,8 @@ import mchorse.bbs_mod.ui.utils.UIConstants;
 
 import java.util.function.Consumer;
 
+import mchorse.bbs_mod.ui.film.UIPropertiesNano;
+
 public class UIReplayPropertiesPanel extends UIElement
 {
     private final UIFilmPanel filmPanel;
@@ -29,6 +31,13 @@ public class UIReplayPropertiesPanel extends UIElement
     private final UISection rigSection = new UISection(IKey.raw("Control-Rig"));
 
     public UIElement properties;
+
+    /**
+     * Properties im neuen Designsystem. Ersetzt den alten Inhalt SICHTBAR in dieser Dock-Flaeche —
+     * bei Blender ist Properties ein eigener Editor mit eigener Flaeche, kein Seitenleisten-Reiter.
+     * Der alte Baum bleibt darunter geladen (Formulare, Pick/Edit, Rig-Regler).
+     */
+    public UIElement propsNano;
     public UINestedEdit pickEdit;
     public UIToggle enabled;
     public UITextbox label;
@@ -162,7 +171,12 @@ public class UIReplayPropertiesPanel extends UIElement
         );
         this.refreshEditPanelOffset();
 
-        this.add(this.properties);
+        this.propsNano = UIPropertiesNano.neu();
+        this.propsNano.relative(this).x(0).y(0).w(1F).h(1F);
+
+        this.properties.setVisible(false);
+
+        this.add(this.properties, this.propsNano);
         this.setReplay(null);
     }
 
@@ -196,7 +210,7 @@ public class UIReplayPropertiesPanel extends UIElement
 
     public void setReplay(Replay replay)
     {
-        this.properties.setVisible(replay != null);
+        /* Sichtbar ist der Nano-Aufbau; der alte Baum bleibt Datenhalter. */
 
         if (replay != null)
         {

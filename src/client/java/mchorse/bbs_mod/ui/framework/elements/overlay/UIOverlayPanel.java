@@ -19,6 +19,9 @@ import java.util.function.Consumer;
 
 public class UIOverlayPanel extends UIElement
 {
+    /** Design-System: Overlay-Kopf ist 30 px hoch, quer ueber die volle Breite. */
+    public static final int KOPF = 30;
+
     public UILabel title;
     public UIElement icons;
     public UIIcon close;
@@ -53,9 +56,13 @@ public class UIOverlayPanel extends UIElement
         this.content = new UIElement();
         this.icons = new UIElement();
 
-        this.title.labelAnchor(0, 0.5F).relative(this).xy(6, 0).w(0.6F).h(20);
-        this.icons.relative(this).x(1F, -20).y(0).w(20).h(1F).column(0).stretch();
-        this.content.relative(this).xy(0, 20).w(1F, -20).h(1F, -20);
+        /* Vorher stand die Icon-Spalte SENKRECHT am rechten Rand und nahm dem Inhalt 20 px
+         * Breite. Der Entwurf setzt sie waagerecht in den Kopf; reverse() haelt sie
+         * rechtsbuendig, damit Schliessen immer aussen sitzt, egal wie viele Icons ein
+         * Panel dazuhaengt (gemessen: hoechstens fuenf, UILanguageEditorOverlayPanel). */
+        this.title.labelAnchor(0, 0.5F).relative(this).xy(11, 0).w(0.5F, -8).h(KOPF);
+        this.icons.relative(this).x(0.5F).y(3).w(0.5F, -6).h(24).row(2).reverse().width(24);
+        this.content.relative(this).xy(0, KOPF).w(1F).h(1F, -KOPF);
 
         this.icons.add(this.close);
 
@@ -384,17 +391,30 @@ public class UIOverlayPanel extends UIElement
     protected void renderBackground(UIContext context)
     {
         context.batcher.dropShadow(this.area.x, this.area.y, this.area.ex(), this.area.ey(), 10, BBSSettings.panelShadowOpaqueColor(), BBSSettings.panelShadowTransparentColor());
-        /* P2: weiche Panel-Karte; die Icon-Leiste bleibt eckig, sie liegt buendig im Panel. */
+        /* Design-System, Overlay-Rahmen: Koerper --region (baseSurface), Radius 8, 1-px-Schwarzkante.
+         * Die Kante ist ein schwarzes Rundeck einen Punkt groesser mit dem Koerper darueber —
+         * Batcher2D.outline() ist eckig und liefe ueber die runden Ecken. */
         if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
         {
-            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h, 6F, BBSSettings.raisedSurface());
+            context.batcher.rundeck(this.area.x - 1, this.area.y - 1, this.area.w + 2, this.area.h + 2, 9F, Colors.A100);
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h, 8F, BBSSettings.baseSurface());
         }
         else
         {
-            this.area.render(context.batcher, BBSSettings.raisedSurface());
+            this.area.render(context.batcher, BBSSettings.baseSurface());
         }
 
-        this.icons.area.render(context.batcher, BBSSettings.chromeSurface());
+        /* Kopfstreifen quer, oben rund wie die Karte: ein rundeck ueber Kopfhoehe + Radius,
+         * dann den Ueberstand mit der Koerperfarbe zudecken — unten bleibt eine gerade Kante. */
+        if (mchorse.bbs_mod.ui.framework.elements.utils.vektor.VektorZeichner.an())
+        {
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, KOPF + 8F, 8F, BBSSettings.chromeSurface());
+            context.batcher.box(this.area.x, this.area.y + KOPF, this.area.ex(), this.area.y + KOPF + 8, BBSSettings.baseSurface());
+        }
+        else
+        {
+            context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.y + KOPF, BBSSettings.chromeSurface());
+        }
 
         if (this.close.area.isInside(context))
         {

@@ -36,6 +36,7 @@ public class UIRigReiter extends UIElement implements UISeitenleiste.Auffrischba
     {
         this.column(4).vertical().stretch();
 
+        /* Reihenfolge zaehlt: auffrischen() holt die erste Sektion als die des Reglers. */
         UISection oben = new UISection(IKey.raw("Rig Main Properties"));
         UISection unten = new UISection(IKey.raw("Rig Layers"));
 
@@ -67,5 +68,24 @@ public class UIRigReiter extends UIElement implements UISeitenleiste.Auffrischba
         this.regler.aktualisiere(panel.getController().getCurrentEntity(),
             replay != null && replay.form.get() instanceof mchorse.bbs_mod.forms.forms.ModelForm mf
                 ? mf.pose.get() : null);
+
+        /* ⛔ Ohne Regler rechnet der Spalten-Resizer die Hoehe aus lauter Abstaenden und landet
+         * bei -3; ein Element mit NEGATIVER Hoehe zeichnet einen Streifen ueber den Nachbarn —
+         * sichtbar als loses Fragment oben in der Seitenleiste. Eine leere Sektion braucht
+         * ohnehin niemand, also verschwindet sie ganz. */
+        /* An der HOEHE messen, nicht an der Kinderzahl: der Regler behaelt beim Leeren
+         * Platzhalter-Kinder, seine gerechnete Hoehe faellt aber auf -3. */
+        boolean leer = this.regler.getChildren().isEmpty() || this.regler.area.h <= 0;
+        /* ⛔ Die Sektion aus den KINDERN holen, nicht aus einem Feld: ein nachtraeglich
+         * hinzugefuegtes Instanzfeld ist nach einem Hotswap null, und die Bedingung
+         * uebersprang sich dann still (genau so lief der erste Anlauf ins Leere). */
+        UISection oben = this.getChildren().isEmpty() ? null
+            : this.getChildren().get(0) instanceof UISection sec ? sec : null;
+
+        if (oben != null && oben.isVisible() == leer)
+        {
+            oben.setVisible(!leer);
+            this.resize();
+        }
     }
 }

@@ -397,11 +397,32 @@ public class UISliderTrackpad extends UINumericInput<UISliderTrackpad>
             int fillColor = Colors.setA(primary, this.dragging ? DRAG_VALUE_ALPHA : VALUE_ALPHA);
             int handleColor = this.dragging ? Colors.WHITE : Colors.setA(Colors.WHITE, this.handleArea.isInside(context) ? HANDLE_HOVER_ALPHA : HANDLE_ALPHA);
 
-            this.area.render(context.batcher, BBSSettings.inputSurface());
+            /* ⛔ Rundeck statt hartem Rechteck — P2. Der Slider ist der letzte eckige
+             * Widget-Typ im Einstellungs-Overlay (GUI scale, FOV) und faellt neben den
+             * inzwischen runden Trackpads sofort auf. */
+            float r = 4F;
+
+            context.batcher.rundeck(this.area.x, this.area.y, this.area.w, this.area.h,
+                r, BBSSettings.inputSurface());
 
             if (this.hasSliderRange())
             {
-                context.batcher.box(this.area.x, this.area.y, fillX, this.area.ey(), fillColor);
+                /* ⛔ Die FUELLUNG muss die Rundung mitmachen, sonst steht sie an den Ecken
+                 * ueber den Hintergrund hinaus — ein heller Zipfel, der wie ein Zeichenfehler
+                 * aussieht. Erst ab doppeltem Radius ist ueberhaupt Platz fuer runde Ecken;
+                 * darunter bleibt der schmale Rest ein Rechteck, das die Rundung des
+                 * Hintergrunds nicht erreicht. */
+                float breite = fillX - this.area.x;
+
+                if (breite >= r * 2F)
+                {
+                    context.batcher.rundeck(this.area.x, this.area.y, breite, this.area.h, r, fillColor);
+                }
+                else if (breite > 0F)
+                {
+                    context.batcher.box(this.area.x, this.area.y, fillX, this.area.ey(), fillColor);
+                }
+
                 context.batcher.box(fillX - 1, this.area.y, fillX + 1, this.area.ey(), Colors.setA(primary, MARKER_ALPHA));
 
                 context.batcher.box(this.handleArea.x, this.handleArea.y, this.handleArea.ex(), this.handleArea.ey(), handleColor);

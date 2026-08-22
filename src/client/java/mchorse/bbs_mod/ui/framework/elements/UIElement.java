@@ -988,6 +988,15 @@ public class UIElement extends UIElementLayout implements IUIElement, IUndoEleme
     @Override
     public void render(UIContext context)
     {
+        /* ⛔ Negative Groesse ist immer ein Rechenfehler des Resizers, nie Absicht — und sie
+         * zeichnet einen Streifen ueber den NACHBARN, nicht bei sich selbst. So entstand das
+         * lose Fragment am oberen Rand der Seitenleiste (UIRigRegler ohne Regler: h = -3).
+         * Ein solcher Zweig wird uebersprungen statt Muell zu malen. */
+        if (this.area.w < 0 || this.area.h < 0)
+        {
+            return;
+        }
+
         if (this.keybinds != null && this.isEnabled())
         {
             this.keybinds.add(context, this.area.isInside(context));

@@ -12,6 +12,9 @@ public class UIActionList extends UIList<ContextAction>
     public UIActionList(Consumer<List<ContextAction>> callback)
     {
         super(callback);
+
+        /* Zeilenhoehe des Entwurfs (22) statt der Listen-Vorgabe 20. */
+        this.scroll.scrollItemSize = ContextAction.HOEHE;
     }
 
     @Override

@@ -404,7 +404,67 @@ public class UIReplaysEditor extends UIElement
             .category(UIKeys.FILM_REPLAY_TITLE);
 
         this.add(this.iconBar, this.allToggle, this.actionsToggle);
+
+        /* ⛔ Die vertikale Icon-Spalte bleibt GELADEN, wird aber nicht mehr gezeichnet: die
+         * Filter sitzen jetzt im Kopf der Zeitleiste (Blenders Ort dafuer). Nicht geloescht,
+         * weil an den Knoepfen die Tooltips und die Tastenkuerzel REPLAYS_TAB_1..4 haengen —
+         * und weil `setCategory`/`setAllTracks`/`toggleActionsMode` weiterhin ueber sie
+         * laufen. Sichtbar hat sie den Kanalnamen 20 px Breite weggenommen. */
+        this.iconBar.setVisible(false);
+        this.allToggle.setVisible(false);
+        this.actionsToggle.setVisible(false);
         this.markContainer();
+    }
+
+    /**
+     * Welcher Kanal-Filter ist aktiv? Kennung fuer die Kopfzeile der neuen Zeitleiste.
+     *
+     * <p>⛔ Die Filter sassen in einer vertikalen Icon-Spalte links — BBS-Handschrift.
+     * Blender setzt sie in den Kopf neben den Anzeigemodus. Verschoben wird nur die
+     * DARSTELLUNG: Auswahl, Tastenkuerzel und Spurenlogik bleiben, wo sie sind, und
+     * werden ueber diese beiden Methoden angesteuert statt nachgebaut.</p>
+     */
+    public String aktiverFilter()
+    {
+        if (this.actionsMode)
+        {
+            return "actions";
+        }
+
+        if (this.allMode)
+        {
+            return "all";
+        }
+
+        return this.category == null ? "player" : this.category.name().toLowerCase();
+    }
+
+    /** Filter aus der Kopfzeile setzen — ruft dieselben Wege wie die alten Knoepfe. */
+    public void filterWaehlen(String id)
+    {
+        if ("actions".equals(id))
+        {
+            this.toggleActionsMode();
+
+            return;
+        }
+
+        if ("all".equals(id))
+        {
+            this.setAllTracks();
+
+            return;
+        }
+
+        for (ReplayCategory c : ReplayCategory.values())
+        {
+            if (c.name().toLowerCase().equals(id))
+            {
+                this.setCategory(c);
+
+                return;
+            }
+        }
     }
 
     private void setCategory(ReplayCategory c)
@@ -419,7 +479,14 @@ public class UIReplaysEditor extends UIElement
     private void setAllTracks()
     {
         this.actionsMode = false;
-        this.allMode = true;
+
+        /* ⛔ TOGGLE, nicht Einbahnstrasse. Vorher stand hier `allMode = true` — ein zweiter
+         * Klick tat nichts (gemessen ueber einen Feld-Logpoint: `allMode true -> true`).
+         * In der alten Icon-Spalte fiel das kaum auf, weil man ueber eine Kategorie
+         * zurueckkehrte; als Knopf in der Kopfzeile ist ein Filter, der sich nicht
+         * ausschalten laesst, falsch — Blender-Filter sind Toggles. Beim Ausschalten
+         * greift wieder die zuletzt gewaehlte Kategorie. */
+        this.allMode = !this.allMode;
         this.updateChannelsList();
     }
 
@@ -1297,11 +1364,14 @@ public class UIReplaysEditor extends UIElement
     @Override
     public void render(UIContext context)
     {
-        /* Hide category bar + actions toggle while the "edit track" overlay is open */
-        boolean notEditing = this.keyframeEditor == null || !this.keyframeEditor.view.isEditing();
-
-        this.iconBar.setVisible(this.timelineVisible && notEditing);
-        this.actionsToggle.setVisible(this.timelineVisible && notEditing);
+        /* ⛔ Die Icon-Spalte bleibt UNSICHTBAR — die Filter sitzen im Kopf der Zeitleiste.
+         * Hier stand `setVisible(this.timelineVisible && notEditing)` und hat den
+         * Konstruktor-Aufruf bei JEDEM Bild wieder ueberschrieben: im Quelltext ausgeblendet,
+         * auf dem Schirm weiter da. Geladen bleibt sie, weil an ihren Knoepfen die Tooltips
+         * und die Tastenkuerzel REPLAYS_TAB_1..4 haengen. */
+        this.iconBar.setVisible(false);
+        this.actionsToggle.setVisible(false);
+        this.allToggle.setVisible(false);
 
         FilmGizmoDrag.configureFilmHotkeyDrag(this.filmPanel, context);
 

@@ -11,6 +11,7 @@ import mchorse.bbs_mod.settings.values.core.ValueGroup;
 import mchorse.bbs_mod.ui.Keys;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.dashboard.list.UIDataPathList;
+import mchorse.bbs_mod.ui.dashboard.list.UIKachelListe;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -39,21 +40,21 @@ import java.util.Set;
 
 public class UISelectionScreen<T extends ValueGroup> extends UIElement
 {
-    private static final int CARD_W = 420;
-    private static final int CARD_H = 420;
-    private static final int BANNER_H = 150;
+    /* Die Karte war fest 420x420 — auf der Gestaltungsflaeche von 427x240 (GUI-Scale 2 bei
+     * 854x480) also HOEHER als der ganze Bildschirm. Sie lief unten raus und liess links
+     * zwei Drittel leer. Inventar: „ringsum Leerflaeche ... kein Farb-, sondern ein
+     * Struktur-Problem". Jetzt fuellt sie die Flaeche; das Banner darf sie nicht mehr
+     * dominieren. */
+    private static final int CARD_RAND = 12;
     private static final int HEADER_H = 16;
     private static final int PADDING = 10;
     private static final int HEADER_MARGIN = 6;
     private static final int ICON_GAP = 4;
     private static final int ICON_SIZE = 20;
 
-    /** The banner every selection screen shows; a subclass can swap it for one of its own. */
-    private static final Link BANNER = Link.assets("textures/banners/bg.png");
 
     protected final UIDataDashboardPanel<T> panel;
     protected final UIElement card;
-    protected final UIElement banner;
     protected final UIElement header;
     protected final UIElement listWrap;
     protected final UILabel title;
@@ -69,22 +70,26 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
         this.panel = panel;
 
         this.card = new UIElement();
-        this.card.relative(this).xy(0.5F, 0.5F).wh(CARD_W, CARD_H).anchor(0.5F);
+        this.card.relative(this).xy(0.5F, 0.5F).w(1F, -CARD_RAND * 2).h(1F, -CARD_RAND * 2).anchor(0.5F);
 
-        this.banner = new UIElement();
-        this.banner.relative(this.card).xy(0, 0).w(1F).h(BANNER_H);
-
+        /* Banner als ANTEIL der Karte, nicht als feste Pixelzahl — bei 96 px fest nahm es auf
+         * der kleinen Gestaltungsflaeche 63 % der Karte ein und liess der Liste einen Streifen.
+         * Kopf und Liste haengen jetzt am Banner statt an einer Konstanten, damit die
+         * Aufteilung auf jeder Fenstergroesse gleich bleibt. */
         this.title = UI.label(this.getHeaderTitle());
         this.title.labelAnchor(0, 0.5F);
 
+        /* ⛔ Beide an der KARTE, nicht am Geschwister: relative(this.header).h(1F) heisst
+         * „so hoch wie der Kopf" — die Liste war damit 16 px hoch statt der halben Karte. */
         this.header = new UIElement();
-        this.header.relative(this.card).xy(PADDING, BANNER_H + HEADER_MARGIN).w(1F, -PADDING * 2).h(HEADER_H);
+        this.header.relative(this.card).x(PADDING).y(0, HEADER_MARGIN).w(1F, -PADDING * 2).h(HEADER_H);
 
         this.listWrap = new UIElement();
         this.listWrap.relative(this.card)
-            .xy(PADDING, BANNER_H + HEADER_H + HEADER_MARGIN * 2)
+            .x(PADDING)
+            .y(0, HEADER_H + HEADER_MARGIN * 2)
             .w(1F, -PADDING * 2)
-            .h(1F, -(BANNER_H + HEADER_H + HEADER_MARGIN * 2 + PADDING));
+            .h(1F, -(HEADER_H + HEADER_MARGIN * 2 + PADDING));
 
         this.add = new UIIcon(Icons.ADD, (b) -> this.addData());
         this.add.wh(20, 20);
@@ -103,7 +108,7 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
         iconRow.row(0).resize().height(20);
         iconRow.relative(this.header).x(1F).y(0.5F).anchor(1F, 0.5F);
 
-        this.names = new UISearchList<>(new UIDataPathList((list) -> this.panel.pickData(list.get(0).toString())));
+        this.names = new UISearchList<>(new UIKachelListe((list) -> this.panel.pickData(list.get(0).toString())).wurzel(() -> this.panel.getType().getRepository().getFolder()));
         this.names.full(this.listWrap);
         this.namesList = (UIDataPathList) this.names.list;
         this.namesList.multi();
@@ -155,8 +160,7 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
         this.header.add(this.title, iconRow);
         this.listWrap.add(new UIRenderable((ctx) -> this.renderListBackground(ctx, this.listWrap.area)), this.names);
 
-        this.banner.add(new UIRenderable((ctx) -> this.renderBanner(ctx, this.banner.area)));
-        this.card.add(new UIRenderable((ctx) -> this.renderCard(ctx, this.card.area)), this.banner, this.header, this.listWrap);
+        this.card.add(new UIRenderable((ctx) -> this.renderCard(ctx, this.card.area)), this.header, this.listWrap);
         this.add(new UIRenderable(this::renderBackdrop), this.card);
     }
 
@@ -225,11 +229,6 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
 
     protected void updateCustomActionButtons(List<DataPath> selected)
     {}
-
-    protected Link getBannerTexture()
-    {
-        return BANNER;
-    }
 
     protected void onDuplicateData(T data)
     {}
@@ -715,83 +714,31 @@ public class UISelectionScreen<T extends ValueGroup> extends UIElement
         this.updateActionButtons();
 
         int base = BBSSettings.baseSurface();
-        int deep = BBSSettings.deepSurface();
 
         context.batcher.box(this.area.x, this.area.y, this.area.ex(), this.area.ey(), base);
-        context.batcher.gradientVBox(this.area.x, this.area.ey() - this.area.h / 2, this.area.ex(), this.area.ey(), Colors.setA(deep, 0F), deep);
     }
 
     private void renderCard(UIContext context, Area area)
     {
         int bg = BBSSettings.raisedSurface();
         int border = BBSSettings.color(BBSSettings.dividerColor(), Colors.A12);
-        int accent = BBSSettings.primaryColor.get();
 
         context.batcher.dropShadow(area.x, area.y, area.ex(), area.ey(), 14, Colors.A50, 0);
         context.batcher.box(area.x, area.y, area.ex(), area.ey(), bg);
         context.batcher.outline(area.x, area.y, area.ex(), area.ey(), border);
 
-        int sepY = area.y + BANNER_H;
-        int mid = area.mx();
+        int sepY = this.header.area.ey() + HEADER_MARGIN;
 
-        /* Bold accent seam — brightest at the center, fading toward the card edges */
-        context.batcher.gradientHBox(area.x, sepY, mid, sepY + 2, Colors.setA(accent, 0F), Colors.A100 | accent);
-        context.batcher.gradientHBox(mid, sepY, area.ex(), sepY + 2, Colors.A100 | accent, Colors.setA(accent, 0F));
-        context.batcher.gradientVBox(area.x, sepY + 2, area.ex(), sepY + 48, Colors.A25 | accent, 0);
-        context.batcher.gradientVBox(area.x, sepY + 2, area.ex(), sepY + 18, Colors.A50 | accent, 0);
+        /* Formensprache: „Keine Verlaeufe auf Flaechen, Tiefe entsteht nur ueber die Leiter."
+         * Hier lagen vier Akzent-Verlaeufe als Leuchtnaht unter dem Banner — eine Farbleiste
+         * auf einer Flaeche, und das einzige, was den Bildschirm noch alt aussehen liess. */
+        context.batcher.box(area.x, sepY, area.ex(), sepY + 1, BBSSettings.dividerColor());
     }
 
     private void renderListBackground(UIContext context, Area area)
     {
-        int bg = BBSSettings.baseSurface();
-
-        context.batcher.box(area.x, area.y, area.ex(), area.ey(), bg);
+        context.batcher.box(area.x, area.y, area.ex(), area.ey(), BBSSettings.baseSurface());
+        UIAuswahlLeer.zeichnen(context, area, this.namesList.getList().isEmpty(), this.getFileIcon());
     }
 
-    private void renderBanner(UIContext context, Area area)
-    {
-        Link bannerLink = this.getBannerTexture();
-
-        if (bannerLink != null)
-        {
-            Texture texture = BBSModClient.getTextures().getTexture(bannerLink);
-
-            if (texture != null)
-            {
-                float texW = texture.width;
-                float texH = texture.height;
-                float areaW = area.w;
-                float areaH = area.h;
-
-                float texAspect = texW / texH;
-                float areaAspect = areaW / areaH;
-
-                float u1;
-                float u2;
-                float v1;
-                float v2;
-
-                if (areaAspect > texAspect)
-                {
-                    float cropH = texW / areaAspect;
-
-                    u1 = 0;
-                    u2 = texW;
-                    v1 = (texH - cropH) * 0.5F;
-                    v2 = v1 + cropH;
-                }
-                else
-                {
-                    float cropW = texH * areaAspect;
-
-                    u1 = (texW - cropW) * 0.5F;
-                    u2 = u1 + cropW;
-                    v1 = 0;
-                    v2 = texH;
-                }
-
-                context.batcher.texturedBox(texture, Colors.WHITE, area.x, area.y, area.w, area.h, u1, v1, u2, v2, texture.width, texture.height);
-            }
-        }
-    }
 }

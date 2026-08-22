@@ -5,6 +5,7 @@ import mchorse.bbs_mod.film.replays.Replay;
 import mchorse.bbs_mod.forms.forms.Form;
 import mchorse.bbs_mod.ui.UIKeys;
 import mchorse.bbs_mod.ui.film.UIFilmPanel;
+import mchorse.bbs_mod.ui.film.UIOutlinerNano;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIIcon;
@@ -35,6 +36,13 @@ public class UIReplaysListPanel extends UIElement
 
     public final UIReplayList replays;
 
+    /**
+     * Outliner im neuen Designsystem. Er ersetzt die Liste SICHTBAR in dieser Dock-Flaeche —
+     * damit ist er eine echte Flaeche (Blender-Muster: der Outliner ist ein Editor, kein Panel),
+     * nicht mehr ein Reiter in der Seitenleiste. {@link #replays} bleibt darunter als Auswahl-Logik.
+     */
+    public final UIElement outliner;
+
     private final Area rightClickAnchorArea = new Area();
 
     public UIReplaysListPanel(UIFilmPanel panel, Consumer<List<Replay>> callback, Consumer<Form> formConsumer)
@@ -63,7 +71,20 @@ public class UIReplaysListPanel extends UIElement
         this.bar.add(this.leftBar, this.presets);
 
         this.replays.relative(this.content).x(0).y(0, BAR_HEIGHT).w(1F).h(1F, -BAR_HEIGHT);
-        this.content.add(this.bar, this.replays);
+
+        /* ⛔ Die alte Knopfreihe bleibt geladen (Kontextmenues, Tastenkuerzel), wird aber
+         * NICHT mehr gezeichnet: Neu/Duplizieren/Loeschen sitzen im Kopf des Outliners.
+         * Sichtbar hat sie den Outliner um 20 px nach unten geschoben — genau die
+         * „alte Haut", die an mehreren Stellen durchschien. */
+        this.bar.setVisible(false);
+
+        this.outliner = UIOutlinerNano.neu();
+        this.outliner.relative(this.content).x(0).y(0).w(1F).h(1F);
+
+        /* Die alte Liste bleibt geladen (Auswahl, Kontextmenues, Drag) — nur unsichtbar. */
+        this.replays.setVisible(false);
+
+        this.content.add(this.bar, this.replays, this.outliner);
 
         this.refreshEditPanelOffset();
         this.add(this.content);

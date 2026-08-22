@@ -186,7 +186,9 @@ public class UISeitenleiste extends UIElement
         if (this.getParent() != null)
         {
             int haelfte = Math.max(this.getParent().area.w / 2, STREIFEN + 60);
-            int breite = Math.min(STREIFEN + 210, haelfte);
+            /* Entwurfsmass: .npanel 188 px Inhalt. Mit dem 22-px-Streifen sind das 202 gesamt —
+             * gemessen waren es 232, also 30 zu breit. */
+            int breite = Math.min(STREIFEN + 180, haelfte);
 
             this.x(1F, -breite).w(breite);
         }
