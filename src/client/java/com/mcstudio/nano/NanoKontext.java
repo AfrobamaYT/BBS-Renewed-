@@ -27,7 +27,8 @@ final class NanoKontext
 	}
 
 	/** Kontext holen (lazy). 0 = Anlage fehlgeschlagen — Grund steht dann im Log. */
-	static long holen()
+	/** Oeffentlich fuer Messrouten — der Handle selbst bleibt unveraendert. */
+	public static long holen()
 	{
 		if (vg != 0)
 		{

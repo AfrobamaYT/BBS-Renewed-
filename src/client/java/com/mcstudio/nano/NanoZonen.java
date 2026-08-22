@@ -10,7 +10,13 @@ import java.util.List;
  */
 final class NanoZonen
 {
-	record Zone(String id, float x, float y, float w, float h, Runnable aktion) {}
+	/**
+	 * Eine Klickflaeche. {@code hinweis} und {@code taste} speisen den Tooltip — Blenders
+	 * Muster: kurze Beschreibung plus das hinterlegte Kuerzel, damit man die Taste nebenbei
+	 * lernt statt sie zu suchen.
+	 */
+	record Zone(String id, float x, float y, float w, float h, Runnable aktion,
+		String hinweis, String taste) {}
 
 	private final List<Zone> aktiv = new ArrayList<>();
 	private final List<Zone> imBau = new ArrayList<>();
@@ -22,13 +28,25 @@ final class NanoZonen
 
 	void melden(String id, float x, float y, float w, float h, Runnable aktion)
 	{
-		this.imBau.add(new Zone(id, x, y, w, h, aktion));
+		this.imBau.add(new Zone(id, x, y, w, h, aktion, "", ""));
+	}
+
+	void melden(String id, float x, float y, float w, float h, Runnable aktion,
+		String hinweis, String taste)
+	{
+		this.imBau.add(new Zone(id, x, y, w, h, aktion, hinweis, taste));
 	}
 
 	void uebernehmen()
 	{
 		this.aktiv.clear();
 		this.aktiv.addAll(this.imBau);
+	}
+
+	/** Die aktiven Zonen, unveraenderlich — fuer die Messroute {@code /ui/zonen}. */
+	List<Zone> alle()
+	{
+		return java.util.Collections.unmodifiableList(this.aktiv);
 	}
 
 	/** Oberste Zone unter (mx,my) — zuletzt gemeldete liegt obenauf. null = keine. */
