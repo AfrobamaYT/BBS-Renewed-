@@ -244,8 +244,15 @@ loom {
 					/* Ein Werkzeug, das nicht kann was verlangt wird, muss LAUT scheitern —
 					 * ein stilles Weiterlaufen ohne Agent sähe aus wie „Mixin-Hotswap geht
 					 * nicht", und genau diese Fehldiagnose hat schon Monate gekostet. */
+					/* ⛔ DEN AUSWEG MITGEBEN (2026-08-23, Umzug auf Omarchy). Auf einer frischen
+					 * Maschine ist der Gradle-Cache leer, das JAR landet dort erst NACH der
+					 * Aufloesung — die diese Zeile in der KONFIGURATIONSPHASE verhindert.
+					 * Henne-Ei: der Bau scheiterte mit "kein sponge-mixin-*.jar", was wie
+					 * "Mixin-Hotswap kaputt" aussieht statt wie "Cache noch kalt". */
 					throw new GradleException(
-						"-PmixinHotswap: kein sponge-mixin-*.jar unter " + cache)
+						"-PmixinHotswap: kein sponge-mixin-*.jar unter " + cache
+						+ "\n  Cache noch kalt? Einmal './gradlew compileClientJava -PkeinMixinHotswap'"
+						+ " laufen lassen, danach liegt das JAR da und normale Bauläufe gehen wieder.")
 				}
 
 				property "mixin.hotSwap", "true"
