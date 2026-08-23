@@ -34,6 +34,16 @@
 # nicht nur aufblaehen, sondern ABLEHNEN. Namentlich, nach der Regel vier Zeilen weiter oben.
 /libs/physics-mod-pro-v186-fabric-mc-26.2.jar
 
+# ⛔ NVIDIA-DLL RAUS AUS DER VERSIONIERUNG (2026-08-24, Nutzerentscheid). Anderer Grund
+# als bei physics-mod-pro: nicht die Groesse (48 KB), sondern die WEITERGABE. Die
+# NVTX-*API* ist offen (Apache-2.0 im nvtx3-Header, BSD-artig bei v1) — diese Datei ist
+# aber die VORKOMPILIERTE Bibliothek aus dem CUDA Toolkit bzw. Nsight, und dafuer gelten
+# NVIDIAs Redistributionsbedingungen, nicht die Header-Lizenz. Bei der Lizenz-Aufnahme
+# war sie die einzige versionierte Binaerdatei, deren Weitergabe fraglich blieb.
+# Sie bleibt unter libs/ liegen: NvtxBridge probiert erst die Systemnamen und faellt,
+# wenn nichts laedt, still auf No-Op zurueck — es bricht also nichts, auch ohne sie.
+/libs/nvToolsExt64_1.dll
+
 # eclipse
 
 *.launch

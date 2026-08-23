@@ -78,14 +78,19 @@ unter unserer Lizenz stehen:
 | `libs/acceleratedrendering-…-fabric.3.jar` | Accelerated Rendering (Argon4W) | MIT |
 | `libs/veil-fabric-1.21.1-4.0.1.jar` | Veil (amo, Cappin, Ocelot) | LGPL-3.0 |
 | `libs/worldedit-mod-7.3.8.jar` | WorldEdit (EngineHub) | GPL-3.0 |
-| `libs/nvToolsExt64_1.dll` | NVIDIA Tools Extension | NVIDIA-Bedingungen |
 | `resources/audio/soft_oal.dll` | OpenAL Soft | LGPL |
 | `gradle/wrapper/gradle-wrapper.jar` | Gradle | Apache-2.0 |
 
-⛔ **Physics Mod Pro** (`libs/physics-mod-pro-*.jar`, „All rights reserved", Autor Haubna)
-ist als Build-Abhängigkeit nötig, liegt aber **absichtlich nicht in der Versionierung** —
-siehe die namentlichen Einträge in `.gitignore`. Diese Dateien dürfen **nicht**
-mitverteilt werden.
+⛔ **Nicht versioniert, absichtlich** — diese Dateien liegen unter `libs/`, sind aber
+namentlich in `.gitignore` eingetragen und dürfen **nicht** mitverteilt werden:
+
+| Datei | Projekt | Warum draußen |
+|---|---|---|
+| `libs/physics-mod-pro-*.jar` (2 Versionen) | Physics Mod Pro (Haubna) | „All rights reserved". Zusätzlich je ~130 MB und damit über GitHubs 100-MB-Grenze. |
+| `libs/nvToolsExt64_1.dll` | NVIDIA Tools Extension | Vorkompilierte Bibliothek aus CUDA Toolkit / Nsight. Die NVTX-**API** ist offen (Apache-2.0 im nvtx3-Header, BSD-artig bei v1), die **Binärdatei** unterliegt aber NVIDIAs Redistributionsbedingungen. Aus der Versionierung genommen am 2026-08-24. |
+
+Beide bleiben lokal unter `libs/` liegen, der Build findet sie. Fehlt die NVIDIA-DLL,
+fällt `NvtxBridge` still auf No-Op zurück — es bricht nichts.
 
 ## 6 · Stand
 
