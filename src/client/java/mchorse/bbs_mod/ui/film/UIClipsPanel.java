@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class UIClipsPanel extends UIElement implements IUIClipsDelegate
+public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcstudio.nano.ZonenQuelle
 {
     public UIClips clips;
     public UIFilmPanel filmPanel;
@@ -460,5 +460,42 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate
         data.putDouble("x_min", this.clips.scale.getMinValue());
         data.putDouble("x_max", this.clips.scale.getMaxValue());
         data.putDouble("scroll", this.clips.vertical.getScroll());
+    }
+
+    /** ⛔ Lazy: ein per Hotswap neu hinzugekommenes Feld ist auf bestehenden Instanzen null. */
+    private com.mcstudio.nano.ZonenMelder zonen;
+
+    private com.mcstudio.nano.ZonenMelder zonen()
+    {
+        if (this.zonen == null)
+        {
+            this.zonen = new com.mcstudio.nano.ZonenMelder();
+        }
+
+        return this.zonen;
+    }
+
+    @Override
+    public java.util.List<com.mcstudio.nano.ZonenMelder.Zone> gemeldeteZonen()
+    {
+        return this.zonen().alle();
+    }
+
+    @Override
+    public void render(mchorse.bbs_mod.ui.framework.UIContext context)
+    {
+        super.render(context);
+
+        /* NACH dem Zeichnen: erst dann steht die Lage, die gemeldet wird. */
+        com.mcstudio.nano.ZonenMelder melder = this.zonen();
+
+        melder.beginnen();
+
+        if (this.clips != null && this.clips.isVisible())
+        {
+            ClipZonen.melden(melder, this.clips);
+        }
+
+        melder.uebernehmen();
     }
 }
