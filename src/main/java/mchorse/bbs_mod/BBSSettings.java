@@ -600,9 +600,9 @@ public class BBSSettings {
 		transformMiddleClickAxis = builder.getBoolean("middle_click_axis", true);
 		transformBlenderFeedback = builder.getBoolean("blender_feedback", true);
 		modelEmbeddedIk = builder.getBoolean("model_embedded_ik", true);
-		fontVector = builder.getBoolean("vector_font", false);
-		vectorUi = builder.getBoolean("vector_ui", false);
-		vectorIcons = builder.getBoolean("vector_icons", false);
+		fontVector = builder.getBoolean("vector_font", true);
+		vectorUi = builder.getBoolean("vector_ui", true);
+		vectorIcons = builder.getBoolean("vector_icons", true);
 		texturePickerItemSize = builder.getInt("texture_picker_item_size", 16, 16, 220);
 		poseMirrorEdit = builder.getBoolean("pose_mirror_edit", false);
 		poseMirrorEdit.invisible();
