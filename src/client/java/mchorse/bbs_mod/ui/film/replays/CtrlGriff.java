@@ -47,10 +47,17 @@ public class CtrlGriff
             return false;
         }
 
-        if (!editor.isVisible())
-        {
-            editor.filmPanel.showPanel(editor);
-        }
+        /* ⛔ KEIN PANELWECHSEL BEIM REINEN KLICK (2026-08-23, vom Nutzer gemeldet: „an einem
+         * Control-Rig-Ring geklickt und das hat die alte Timeline geoeffnet").
+         *
+         * Hier stand `showPanel(editor)`. Fuer den KLICK ist das unnoetig: gemessen am
+         * laufenden Editor sind `UIReplaysListPanel` und `UIReplayPropertiesPanel`
+         * (UIPropertiesNano) im Kameramodus BEREITS sichtbar — die Auswahl hat also ihr
+         * Ziel, ohne dass die Zeitleiste unter dem Nutzer weggetauscht wird. Blender macht
+         * es genauso: eine Bone-Auswahl im Pose-Mode wechselt keinen Editor.
+         *
+         * Der Wechsel bleibt in {@link #foerdere} stehen, wo er einen belegten Grund hat:
+         * die modale UIPropTransform tickt NUR im render() eines sichtbaren Panels. */
 
         if (pending.b == null || pending.b.isEmpty())
         {

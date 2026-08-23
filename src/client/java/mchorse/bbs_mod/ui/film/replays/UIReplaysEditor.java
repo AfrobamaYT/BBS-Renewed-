@@ -1238,11 +1238,7 @@ public class UIReplaysEditor extends UIElement
 
             if (pair != null && (context.mouseButton < 2 || (context.mouseButton == 2 && Window.isCtrlPressed())))
             {
-                if (!this.isVisible())
-                {
-                    this.filmPanel.showPanel(this);
-                }
-
+                /* ⛔ Kein Panelwechsel bei einer Viewport-Auswahl — siehe CtrlGriff.release. */
                 if (UIReplaysEditorUtils.pickFormWithOffers(context, pair, this::pickFormBone))
                 {
                     return true;
@@ -1313,11 +1309,7 @@ public class UIReplaysEditor extends UIElement
             return;
         }
 
-        if (!this.isVisible())
-        {
-            this.filmPanel.showPanel(this);
-        }
-
+        /* ⛔ Kein Panelwechsel bei einer Viewport-Auswahl — siehe CtrlGriff.release. */
         UIReplaysEditorUtils.pickFormWithOffers(context, pending, this::pickFormBone);
     }
 
