@@ -67,8 +67,8 @@ public class UIViewportHeaderNano extends UIElement
 		float mw = NanoDesign.breite(modus, 11F * k) + 26F * k;
 
 		NanoStifte.widget(vg, x, (h - 22F * k) / 2F, mw, 22F * k, 4F * k, NanoDesign.WIDGET, k);
-		NanoStifte.text(vg, NanoDesign.SANS, 11F * k, x + 9F * k, h / 2F + 3.8F * k,
-			NanoDesign.TXT, modus, null);
+		NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, x + 9F * k, h / 2F,
+			NanoDesign.TXT, modus);
 		NanoSymbole.pfeilAb(vg, x + mw - 9F * k, h / 2F, NanoDesign.TXT_DIM, k * 0.8F);
 		x += mw + 8F * k;
 
@@ -86,8 +86,8 @@ public class UIViewportHeaderNano extends UIElement
 				NanoStifte.widget(vg, x, 3F * k, mb, h - 6F * k, 4F * k, NanoDesign.WIDGET, k);
 			}
 
-			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, x + 7F * k, h / 2F + 3.8F * k,
-				ueber ? NanoDesign.TXT : NanoDesign.TXT_DIM, menue, null);
+			NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, x + 7F * k, h / 2F,
+				ueber ? NanoDesign.TXT : NanoDesign.TXT_DIM, menue);
 			x += mb;
 		}
 

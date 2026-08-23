@@ -286,9 +286,9 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 
 		String krume = filmName + "  ›  " + (replay == null ? "nichts gewählt" : replay.getName())
 			+ (this.angeheftet != null ? "  (angeheftet)" : "");
-		NanoStifte.text(vg, NanoDesign.SANS, 11F * k, nachKopf,
-			NanoDesign.H_KOPF * k / 2F + 3.5F * k, NanoDesign.TXT_DIM,
-			NanoDesign.kuerzen(krume, b - nachKopf - 30F * k, 11F * k), null);
+		NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, nachKopf,
+			NanoDesign.H_KOPF * k / 2F, NanoDesign.TXT_DIM,
+			NanoDesign.kuerzen(krume, b - nachKopf - 30F * k, 11F * k));
 
 		float oben = NanoDesign.H_KOPF * k;
 

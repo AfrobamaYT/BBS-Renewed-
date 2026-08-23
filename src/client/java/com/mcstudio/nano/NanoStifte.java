@@ -228,6 +228,36 @@ public final class NanoStifte
 		return aus;
 	}
 
+	/**
+	 * Text LINKS, senkrecht wirklich mittig in einer Box — {@code mitteY} ist die Boxmitte.
+	 *
+	 * <p>⛔ WOFUER (2026-08-24 im Pixel gemessen). {@link #text} richtet auf
+	 * {@code NVG_ALIGN_MIDDLE} aus, zentriert damit aber die EM-BOX der Schrift. Die Tinte
+	 * von Ziffern und Versalien sitzt darueber, also wirkt der Text zu hoch — und weil das
+	 * auffiel, hatten die Aufrufer eigene Korrekturen dazuerfunden (+3.5F*k, +4F*k), die
+	 * ihn dann zu WEIT nach unten schoben. Gemessen in einer 40-px-Box bei Skala 2:
+	 * mit der alten Korrektur 5,0 px zu tief, ohne jede Korrektur 2,0 px zu hoch, mit
+	 * diesem Faktor 0,0 px.</p>
+	 *
+	 * <p>Der Faktor haengt an der SCHRIFTGROESSE, nicht an der GUI-Skala — deshalb hier
+	 * und nicht als konstanter Summand beim Aufrufer.</p>
+	 */
+	public static void textInBox(long vg, String schrift, float groesse, float x, float mitteY,
+		int rgb, String inhalt)
+	{
+		/* 0.09 = Abstand Tintenmitte zu EM-Mitte als Anteil der Schriftgroesse, gemessen.
+		 * Bewusst KEIN eigenes static-Feld: ein neu hinzugekommenes statisches Feld ist nach
+		 * einem Hotswap nicht gesetzt, und der Waechter lehnt den Tausch zu Recht ab. */
+		text(vg, schrift, groesse, x, mitteY + groesse * 0.09F, rgb, inhalt, null);
+	}
+
+	/** Wie {@link #textMitte}, aber {@code mitteY} ist die Boxmitte — siehe {@link #textInBox}. */
+	public static void textMitteInBox(long vg, String schrift, float groesse, float x, float mitteY,
+		int rgb, String inhalt)
+	{
+		textMitte(vg, schrift, groesse, x, mitteY + groesse * 0.09F, rgb, inhalt);
+	}
+
 	public static void textMitte(long vg, String schrift, float groesse, float x, float y, int rgb, String inhalt)
 	{
 		try (MemoryStack s = MemoryStack.stackPush())

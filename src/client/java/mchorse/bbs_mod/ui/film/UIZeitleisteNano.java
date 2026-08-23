@@ -337,15 +337,15 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			if (n > 0)
 			{
 				NanoSymbole.symbol(vg, "kamera", 12F * k, y + zeileH / 2F, NanoDesign.GRUEN, k * 0.7F);
-				NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F + 3.5F * k,
-					NanoDesign.GRUEN, belegteEbenen == 1 ? "Camera" : "Camera " + belegt, null);
-				NanoStifte.text(vg, NanoDesign.SANS, 9F * k, breite - 8F * k,
-					y + zeileH / 2F + 3.2F * k, NanoDesign.TXT_OFF, n + "", null);
+				NanoStifte.textInBox(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F,
+					NanoDesign.GRUEN, belegteEbenen == 1 ? "Camera" : "Camera " + belegt);
+				NanoStifte.textInBox(vg, NanoDesign.SANS, 9F * k, breite - 8F * k,
+					y + zeileH / 2F, NanoDesign.TXT_OFF, n + "");
 			}
 			else
 			{
-				NanoStifte.text(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F + 3.5F * k,
-					NanoDesign.TXT_OFF, "—", null);
+				NanoStifte.textInBox(vg, NanoDesign.SANS, 10F * k, 22F * k, y + zeileH / 2F,
+					NanoDesign.TXT_OFF, "—");
 			}
 		}
 	}
@@ -578,8 +578,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		float zb = NanoDesign.breite(zeit, 11F * k);
 		float zx = vollX - zb - 10F * k;
 
-		NanoStifte.text(vg, NanoDesign.SANS, 11F * k, zx,
-			NanoDesign.H_KOPF * k / 2F + 3.5F * k, NanoDesign.TXT, zeit, null);
+		NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, zx,
+			NanoDesign.H_KOPF * k / 2F, NanoDesign.TXT, zeit);
 
 		/* ⛔ TRANSPORT MITTIG. Vorher hing die Gruppe rechts an der Zeitanzeige und liess
 		 * zwischen „Marker" und den Knoepfen ein breites Loch — der Nutzer hat genau dieses
@@ -609,8 +609,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 			NanoStifte.widget(vg, kx, (NanoDesign.H_KOPF - 22F) * k / 2F, tw, 22F * k,
 				NanoDesign.R_WIDGET * k, NanoDesign.WIDGET, k);
-			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, kx + 9F * k,
-				NanoDesign.H_KOPF * k / 2F + 3.8F * k, NanoDesign.TXT, titel, null);
+			NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, kx + 9F * k,
+				NanoDesign.H_KOPF * k / 2F, NanoDesign.TXT, titel);
 			NanoSymbole.pfeilAb(vg, kx + tw - 9F * k, NanoDesign.H_KOPF * k / 2F,
 				NanoDesign.TXT_DIM, k * 0.8F);
 
@@ -644,9 +644,9 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 						4F * k, NanoDesign.WIDGET);
 				}
 
-				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, kx + 7F * k,
-					NanoDesign.H_KOPF * k / 2F + 3.8F * k,
-					ueber ? NanoDesign.TXT : NanoDesign.TXT_DIM, menue, null);
+				NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, kx + 7F * k,
+					NanoDesign.H_KOPF * k / 2F,
+					ueber ? NanoDesign.TXT : NanoDesign.TXT_DIM, menue);
 
 				final String name = menue;
 				final int cursorF = cursor;
@@ -835,16 +835,16 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			float zaehlerRechts = kanalB - (kopfzeile ? 24F * k : 7F * k);
 			float namePlatz = zaehlerRechts - zaehlerB - 8F * k - tx;
 
-			NanoStifte.text(vg, kopfzeile ? NanoDesign.BOLD : NanoDesign.SANS, 11F * k,
-				tx, y + zeileH / 2F + 3.5F * k,
+			NanoStifte.textInBox(vg, kopfzeile ? NanoDesign.BOLD : NanoDesign.SANS, 11F * k,
+				tx, y + zeileH / 2F,
 				sel ? NanoDesign.TXT_MAX : (kopfzeile ? NanoDesign.GRUEN : NanoDesign.TXT),
-				NanoDesign.kuerzen(s.name, namePlatz, 11F * k), null);
+				NanoDesign.kuerzen(s.name, namePlatz, 11F * k));
 
 			if (!s.zaehler.isEmpty())
 			{
-				NanoStifte.text(vg, NanoDesign.SANS, 9.5F * k, zaehlerRechts - zaehlerB,
-					y + zeileH / 2F + 3F * k,
-					sel ? 0xB9CCE9 : NanoDesign.TXT_OFF, s.zaehler, null);
+				NanoStifte.textInBox(vg, NanoDesign.SANS, 9.5F * k, zaehlerRechts - zaehlerB,
+					y + zeileH / 2F,
+					sel ? 0xB9CCE9 : NanoDesign.TXT_OFF, s.zaehler);
 			}
 
 			/* Kamera-Clips als Balken — Typ-Farbe, Titel, Auswahlkontur wie im Entwurf */
@@ -876,9 +876,9 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 					String titel = clip.title.get().isEmpty() ? art : clip.title.get();
 
-					NanoStifte.text(vg, NanoDesign.SANS, 9.5F * k, tx3,
-						y + zeileH / 2F + 3F * k, gewaehltC ? 0xFFFFFF : 0xDCE6F5,
-						NanoDesign.kuerzen(titel, cb - (tx3 - cx) - 4F * k, 9.5F * k), null);
+					NanoStifte.textInBox(vg, NanoDesign.SANS, 9.5F * k, tx3,
+						y + zeileH / 2F, gewaehltC ? 0xFFFFFF : 0xDCE6F5,
+						NanoDesign.kuerzen(titel, cb - (tx3 - cx) - 4F * k, 9.5F * k));
 
 					/* Trimm-Griffe in Bernstein an den Kanten des gewaehlten Clips. */
 					if (gewaehltC && cb > 10F * k)
@@ -1065,8 +1065,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		float mb = NanoDesign.breite(marke, 9.5F * k) + 10F * k;
 
 		NanoStifte.widget(vg, px - mb / 2F, oben + 2F * k, mb, 13F * k, 3F * k, NanoDesign.BLAU, k);
-		NanoStifte.text(vg, NanoDesign.BOLD, 9.5F * k, px - mb / 2F + 5F * k, oben + 11.5F * k,
-			0xFFFFFF, marke, null);
+		NanoStifte.textInBox(vg, NanoDesign.BOLD, 9.5F * k, px - mb / 2F, oben + 11.5F * k,
+			0xFFFFFF, marke);
 	
 		/* Tooltip ganz zuletzt — er liegt ueber allem, auch ueber aufgeklappten Listen. */
 		NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());

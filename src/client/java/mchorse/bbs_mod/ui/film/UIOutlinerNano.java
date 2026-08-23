@@ -285,9 +285,9 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 
 		String angezeigt = this.suche.isEmpty() && !sucheAktiv ? "Search…" : this.suche;
 
-		NanoStifte.text(vg, "sans", 11F * k, sx + 18F * k, kopfH / 2F + 3.5F * k,
+		NanoStifte.textInBox(vg, "sans", 11F * k, sx + 18F * k, kopfH / 2F,
 			this.suche.isEmpty() ? C_OFF : C_TXT,
-			NanoDesign.kuerzen(angezeigt, sw - 26F * k, 11F * k), null);
+			NanoDesign.kuerzen(angezeigt, sw - 26F * k, 11F * k));
 
 		if (sucheAktiv)
 		{
@@ -401,14 +401,14 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 
 			float platz = b - x - augeB - zw - 4F * k;
 
-			NanoStifte.text(vg, z.tiefe == 0 ? "bold" : "sans", 12F * k,
-				x, y + zeileH / 2F + 4F * k, farbeText,
-				NanoDesign.kuerzen(z.name, platz, 12F * k), null);
+			NanoStifte.textInBox(vg, z.tiefe == 0 ? "bold" : "sans", 12F * k,
+				x, y + zeileH / 2F, farbeText,
+				NanoDesign.kuerzen(z.name, platz, 12F * k));
 
 			if (zeigeZaehler)
 			{
-				NanoStifte.text(vg, "sans", 10F * k, b - augeB - zw + 4F * k,
-					y + zeileH / 2F + 3.5F * k, sel ? 0xB9CCE9 : C_OFF, z.zaehler, null);
+				NanoStifte.textInBox(vg, "sans", 10F * k, b - augeB - zw + 4F * k,
+					y + zeileH / 2F, sel ? 0xB9CCE9 : C_OFF, z.zaehler);
 			}
 
 			if (augeB > 0F)

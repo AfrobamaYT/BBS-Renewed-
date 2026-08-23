@@ -138,8 +138,8 @@ public class UIStatusleisteNano extends UIElement
 				float tb = NanoDesign.breite(taste, 9.5F * k) + 10F * k;
 
 				NanoStifte.widget(vg, x, h / 2F - 6.5F * k, tb, 13F * k, 3F * k, 0x2C2C2C, k);
-				NanoStifte.text(vg, NanoDesign.BOLD, 9.5F * k, x + 5F * k, h / 2F + 3F * k,
-					0xC6C6C6, taste, null);
+				NanoStifte.textInBox(vg, NanoDesign.BOLD, 9.5F * k, x + 5F * k, h / 2F,
+					0xC6C6C6, taste);
 				x += tb + 6F * k;
 			}
 			else

@@ -77,17 +77,35 @@ public final class NanoBausteine
 			wertB = breite(w, 11F * k);
 			beide = rechts - wertB - 8F * k - tx > 16F * k;
 
-			NanoStifte.text(vg, SANS, 11F * k,
-				beide ? rechts - wertB : tx,
-				y + H_WIDGET * k / 2F + 3.5F * k, TXT_MAX, w, null);
+			/* ⛔ KEINE GRUNDLINIEN-KORREKTUR. NanoStifte.text richtet auf
+			 * NVG_ALIGN_LEFT|NVG_ALIGN_MIDDLE aus — sein y IST die Mitte. Das frühere
+			 * "+ 3.5F * k" schob jede Beschriftung um genau diesen Wert nach unten;
+			 * gemessen 5,0 px Abweichung in einer 40-px-Box bei Skala 2. */
+			/* ⛔ OHNE ETIKETT GEHOERT DER WERT IN DIE MITTE (Nutzerbefund 2026-08-24: der
+			 * Replay-Name stand rechts). Rechtsbuendig ist nur sinnvoll, wenn LINKS ein
+			 * Etikett steht, gegen das er sich absetzt — steht da nichts, sieht es aus,
+			 * als waere der Text an den Rand gerutscht. */
+			boolean ohneEtikett = etikett == null || etikett.isEmpty();
+
+			if (ohneEtikett)
+			{
+				NanoStifte.textMitteInBox(vg, SANS, 11F * k, x + b / 2F,
+					y + H_WIDGET * k / 2F, TXT_MAX, w);
+			}
+			else
+			{
+				NanoStifte.textInBox(vg, SANS, 11F * k,
+					beide ? rechts - wertB : tx,
+					y + H_WIDGET * k / 2F, TXT_MAX, w);
+			}
 		}
 
 		if (beide)
 		{
 			float platzEtikett = rechts - wertB - 8F * k - tx;
 
-			NanoStifte.text(vg, SANS, 11F * k, tx, y + H_WIDGET * k / 2F + 3.5F * k, 0xC9C9C9,
-				kuerzen(etikett, platzEtikett, 11F * k), null);
+			NanoStifte.textInBox(vg, SANS, 11F * k, tx, y + H_WIDGET * k / 2F, 0xC9C9C9,
+				kuerzen(etikett, platzEtikett, 11F * k));
 		}
 	}
 
@@ -110,13 +128,13 @@ public final class NanoBausteine
 			NanoSymbole.pfeilRechts(vg, x + 12F * k, y + h / 2F, TXT_DIM, k);
 		}
 
-		NanoStifte.text(vg, BOLD, 11.5F * k, x + 22F * k, y + h / 2F + 4F * k, TXT, titel, null);
+		NanoStifte.textInBox(vg, BOLD, 11.5F * k, x + 22F * k, y + h / 2F, TXT, titel);
 
 		if (kennzahl != null && !kennzahl.isEmpty())
 		{
 			float kb = kennzahl.length() * 5.2F * k;
-			NanoStifte.text(vg, SANS, 10F * k, x + b - 9F * k - kb, y + h / 2F + 3.5F * k,
-				TXT_OFF, kennzahl, null);
+			NanoStifte.textInBox(vg, SANS, 10F * k, x + b - 9F * k - kb, y + h / 2F,
+				TXT_OFF, kennzahl);
 		}
 
 		return h;
@@ -198,8 +216,8 @@ public final class NanoBausteine
 
 			NanoSymbole.symbol(vg, eintraege[i][0], x + 16F * k, zy + zeile / 2F,
 				an ? 0xFFFFFF : TXT_DIM, k);
-			NanoStifte.text(vg, SANS, 11.5F * k, x + 28F * k, zy + zeile / 2F + 4F * k,
-				an ? 0xFFFFFF : TXT, eintraege[i][1], null);
+			NanoStifte.textInBox(vg, SANS, 11.5F * k, x + 28F * k, zy + zeile / 2F,
+				an ? 0xFFFFFF : TXT, eintraege[i][1]);
 
 			final int idx = i;
 
