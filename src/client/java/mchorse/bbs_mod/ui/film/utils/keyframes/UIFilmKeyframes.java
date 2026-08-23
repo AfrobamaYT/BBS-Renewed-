@@ -9,8 +9,32 @@ import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 import java.util.function.Consumer;
 
-public class UIFilmKeyframes extends UIKeyframes
+public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.ZonenQuelle
 {
+    /** Klickflaechen fuer die Abnahme — der alte Batcher-Zweig meldet sonst keine.
+     *
+     * ⛔ NICHT im Feldinitialisierer anlegen. Ein per Hotswap NEU hinzugekommenes Feld ist
+     * auf allen SCHON BESTEHENDEN Instanzen null — der Initialisierer laeuft dort nie mehr.
+     * Genau daran ist die Testinstanz am 2026-08-23 gestorben: NullPointerException in
+     * ZonenMelder.beginnen() mitten im Zeichnen, Absturzbericht „Rendering screen". */
+    private com.mcstudio.nano.ZonenMelder zonen;
+
+    private com.mcstudio.nano.ZonenMelder zonen()
+    {
+        if (this.zonen == null)
+        {
+            this.zonen = new com.mcstudio.nano.ZonenMelder();
+        }
+
+        return this.zonen;
+    }
+
+    @Override
+    public java.util.List<com.mcstudio.nano.ZonenMelder.Zone> gemeldeteZonen()
+    {
+        return this.zonen().alle();
+    }
+
     public IUIClipsDelegate editor;
     public boolean absolute;
 
@@ -98,5 +122,12 @@ public class UIFilmKeyframes extends UIKeyframes
         }
 
         super.renderOverlay(context);
+
+        /* Am ENDE des Zeichenlaufs: erst jetzt steht das Layout, das gemeldet wird. */
+        com.mcstudio.nano.ZonenMelder melder = this.zonen();
+
+        melder.beginnen();
+        KeyframeZonen.melden(melder, this);
+        melder.uebernehmen();
     }
 }
