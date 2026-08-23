@@ -5,6 +5,7 @@ import com.mcstudio.nano.ZonenMelder;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet;
 import mchorse.bbs_mod.ui.utils.Area;
+import mchorse.bbs_mod.ui.utils.Scroll;
 import mchorse.bbs_mod.utils.keyframes.Keyframe;
 
 /**
@@ -50,6 +51,29 @@ public final class KeyframeZonen
         int spurB = flaeche.ex() - spurX;
         java.util.Set<UIKeyframeSheet> gesehen = new java.util.HashSet<>();
 
+        /* Der Beschriftungs-Trenner IST ein Element (UIDraggable) und steht damit schon im
+         * Elementbaum. Gemeldet wird trotzdem — mit SEINER eigenen Flaeche, nicht
+         * nachgerechnet — damit die Abnahme EINE Liste hat statt zweier Quellen. */
+        for (mchorse.bbs_mod.ui.framework.elements.IUIElement kind : keyframes.getChildren())
+        {
+            if (kind instanceof mchorse.bbs_mod.ui.framework.elements.utils.UIDraggable zieher
+                && zieher.isVisible() && zieher.area.w > 0)
+            {
+                melder.melden("dope/trenner", zieher.area.x, zieher.area.y,
+                    zieher.area.w, zieher.area.h);
+            }
+        }
+        Scroll senkrecht = blatt.getYAxis();
+
+        /* Der Scrollbalken wird gezeichnet, ist kein Element — und seine Flaeche liefert
+         * der Scroll selbst, also dieselbe, die er auch trifft. */
+        if (senkrecht != null && senkrecht.hasScrollbar())
+        {
+            Area balken = senkrecht.getScrollbarArea();
+
+            zugeschnitten(melder, flaeche, "dope/scroll", balken.x, balken.y, balken.w, balken.h);
+        }
+
         /* ⛔ ZEILE FUER ZEILE ABFRAGEN, NICHT DIE SHEET-LISTE DURCHLAUFEN (2026-08-23
          * gemessen). getDopeSheetY(sheet) faellt bei einer NICHT angeordneten Zeile still
          * auf Versatz 0 zurueck — 19 eingeklappte Kanaele meldeten dadurch alle die
@@ -77,7 +101,10 @@ public final class KeyframeZonen
 
             String id = "dope/" + zeile.id;
 
-            zugeschnitten(melder, flaeche, id + "/label", flaeche.x, oben, beschriftungB, hoehe);
+            /* ⛔ DER NAME SAGT, WAS DER KLICK TUT. Ein Klick in die Beschriftungsspalte
+             * ruft addKeyframeManually — er VERAENDERT den Film. Ein Abnahmelauf, der
+             * blind jede Zone anklickt, wuerde also Keyframes setzen. Der Name warnt. */
+            zugeschnitten(melder, flaeche, id + "/label-setzt-key", flaeche.x, oben, beschriftungB, hoehe);
             zugeschnitten(melder, flaeche, id + "/spur", spurX, oben, spurB, hoehe);
 
             if (zeile.channel == null)

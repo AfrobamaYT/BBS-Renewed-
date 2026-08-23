@@ -50,6 +50,15 @@ public final class ClipZonen
             return;
         }
 
+        /* Der senkrechte Scrollbalken wird gezeichnet und ist kein Element; seine Flaeche
+         * liefert der Scroll selbst. */
+        if (ui.vertical != null && ui.vertical.hasScrollbar())
+        {
+            Area balken = ui.vertical.getScrollbarArea();
+
+            melder.melden("clip/scroll", balken.x, balken.y, balken.w, balken.h);
+        }
+
         for (Clip clip : clips.get())
         {
             int x1 = Math.max(ui.toGraphX(clip.tick.get()), flaeche.x);
