@@ -27,7 +27,7 @@ import mchorse.bbs_mod.utils.colors.Colors;
  * ihre Einstellungen, Rechtsklick löscht sie. Das folgt dem, was Schnittprogramme tun
  * (Premiere/Resolve setzen Marker per Taste am Abspielkopf und öffnen sie per Klick).</p>
  */
-public class UIMarkerLane extends UIElement
+public class UIMarkerLane extends UIElement implements com.mcstudio.nano.ZonenQuelle
 {
     /** Höhe des anklickbaren Kopfes am oberen Rand der Spur. */
     private static final int KOPF_HOEHE = 6;
@@ -166,22 +166,36 @@ public class UIMarkerLane extends UIElement
 
         for (Marker marker : markers.getList())
         {
-            int x = this.clips.toGraphX(marker.tick.get());
-            int breite = KOPF_BREITE * 2;
-            String text = marker.label.get();
+            float[] r = this.griffRechteck(marker, font);
 
-            if (!text.isEmpty())
-            {
-                breite += font.getWidth(text) + 5;
-            }
-
-            if (mouseX >= x - KOPF_BREITE && mouseX <= x - KOPF_BREITE + breite)
+            if (mouseX >= r[0] && mouseX <= r[0] + r[2])
             {
                 return marker;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Das Griff-Rechteck eines Markers: {x, y, breite, hoehe}.
+     *
+     * <p>⛔ EINE Rechnung fuer Treffertest UND Abnahme-Zone. Zwei Rechnungen waeren zwei
+     * Wahrheiten, und eine Zone, die neben dem Treffer liegt, meldet Fehler, die sie selbst
+     * erzeugt hat.</p>
+     */
+    private float[] griffRechteck(Marker marker, FontRenderer font)
+    {
+        int x = this.clips.toGraphX(marker.tick.get());
+        int breite = KOPF_BREITE * 2;
+        String text = marker.label.get();
+
+        if (!text.isEmpty())
+        {
+            breite += font.getWidth(text) + 5;
+        }
+
+        return new float[] {x - KOPF_BREITE, this.oben(), breite, KOPF_HOEHE};
     }
 
     @Override
@@ -235,16 +249,49 @@ public class UIMarkerLane extends UIElement
         return true;
     }
 
+    /** ⛔ Lazy: ein per Hotswap neu hinzugekommenes Feld ist auf bestehenden Instanzen null. */
+    private com.mcstudio.nano.ZonenMelder zonen;
+
+    private com.mcstudio.nano.ZonenMelder zonen()
+    {
+        if (this.zonen == null)
+        {
+            this.zonen = new com.mcstudio.nano.ZonenMelder();
+        }
+
+        return this.zonen;
+    }
+
+    @Override
+    public java.util.List<com.mcstudio.nano.ZonenMelder.Zone> gemeldeteZonen()
+    {
+        return this.zonen().alle();
+    }
+
     @Override
     public void render(UIContext context)
     {
         Markers markers = this.markers();
+        com.mcstudio.nano.ZonenMelder melder = this.zonen();
+
+        melder.beginnen();
 
         if (markers != null && !markers.getList().isEmpty())
         {
             this.ziehe(context);
             this.zeichne(context, markers);
+
+            FontRenderer font = context.batcher.getFont();
+
+            for (Marker marker : markers.getList())
+            {
+                float[] r = this.griffRechteck(marker, font);
+
+                melder.melden("marker/" + marker.tick.get(), r[0], r[1], r[2], r[3]);
+            }
         }
+
+        melder.uebernehmen();
 
         super.render(context);
     }
