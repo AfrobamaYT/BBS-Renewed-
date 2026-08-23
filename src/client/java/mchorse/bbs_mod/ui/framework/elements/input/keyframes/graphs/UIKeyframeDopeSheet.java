@@ -1074,7 +1074,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         String label = font.limitToWidth(group.title.get(), Math.max(0, arrowX - LABEL_TEXT_ICON_GAP - textX));
 
         context.batcher.text(label, textX, my - font.getHeight() / 2, textColor);
-        context.batcher.icon(group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, arrowX, my - 8);
+        context.batcher.icon(group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, Colors.A100 | (textColor & 0xFFFFFF), arrowX, my, 0F, 0.5F);
     }
 
     private void renderSheetLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
@@ -1116,7 +1116,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         if (hasIcon)
         {
-            context.batcher.icon(icon, iconX, my - icon.h / 2);
+            context.batcher.icon(icon, Colors.A100 | (textColor & 0xFFFFFF), iconX, my, 0F, 0.5F);
         }
     }
 
