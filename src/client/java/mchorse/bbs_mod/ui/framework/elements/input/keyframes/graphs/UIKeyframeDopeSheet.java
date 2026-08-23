@@ -210,7 +210,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return baseIndent + depth * depthStep;
     }
 
-    private boolean isPoseTabParent(UIKeyframeSheet sheet)
+    public boolean isPoseTabParent(UIKeyframeSheet sheet)
     {
         return this.poseTabParents.contains(sheet);
     }
@@ -453,9 +453,16 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     @Override
     public void selectByX(int mouseX)
     {
-        for (int i = 0; i < sheets.size(); i++)
+        /* ⛔ UNGEFILTERT, anders als selectInArea — so war es und so bleibt es. */
+        this.waehle(this.sheets, (x, y) -> isNear(x, y, mouseX, 0, true));
+    }
+
+    /** Beide Auswahlwege: dieselbe Schleife, nur ein anderes Kriterium. */
+    private void waehle(List<UIKeyframeSheet> blaetter,
+        java.util.function.BiPredicate<Integer, Integer> trifft)
+    {
+        for (UIKeyframeSheet sheet : blaetter)
         {
-            UIKeyframeSheet sheet = sheets.get(i);
             List keyframes = sheet.channel.getKeyframes();
 
             for (int j = 0; j < keyframes.size(); j++)
@@ -464,7 +471,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 int x = this.keyframes.toGraphX(keyframe.getTick());
                 int y = this.getDopeSheetY(sheet) + (int) this.trackHeight / 2;
 
-                if (this.isNear(x, y, mouseX, 0, true))
+                if (trifft.test(x, y))
                 {
                     sheet.selection.add(j);
                 }
@@ -474,30 +481,23 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         this.pickSelected();
     }
 
+    /**
+     * Griff-Rechteck des Pose-Tab-Pfeils: {x, y, Kante}.
+     *
+     * <p>⛔ Oeffentlich, weil die Abnahme dieselbe Rechnung braucht. Von aussen nachbauen
+     * hiesse die beiden privaten Konstanten zu verdoppeln — zwei Wahrheiten, und eine Zone,
+     * die neben dem Treffer liegt, meldet Fehler, die sie selbst erzeugt hat.</p>
+     */
+    public int[] poseTabPfeil(int y, int labelWidth)
+    {
+        return new int[] {this.keyframes.area.x + labelWidth - LABEL_RIGHT_PAD - LABEL_ICON_SIZE,
+            y + (int) this.trackHeight / 2 - 8, LABEL_ICON_SIZE};
+    }
+
     @Override
     public void selectInArea(Area area)
     {
-        List<UIKeyframeSheet> sheets = this.getInteractiveSheets();
-
-        for (int i = 0; i < sheets.size(); i++)
-        {
-            UIKeyframeSheet sheet = sheets.get(i);
-            List keyframes = sheet.channel.getKeyframes();
-
-            for (int j = 0; j < keyframes.size(); j++)
-            {
-                Keyframe keyframe = (Keyframe) keyframes.get(j);
-                int x = this.keyframes.toGraphX(keyframe.getTick());
-                int y = this.getDopeSheetY(sheet) + (int) this.trackHeight / 2;
-
-                if (area.isInside(x, y))
-                {
-                    sheet.selection.add(j);
-                }
-            }
-        }
-
-        this.pickSelected();
+        this.waehle(this.getInteractiveSheets(), area::isInside);
     }
 
     @Override
@@ -1448,10 +1448,10 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private boolean isPoseTabArrowHit(UIContext context, int y, int labelWidth)
     {
-        int x = this.keyframes.area.x + labelWidth - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
-        int minY = y + (int) this.trackHeight / 2 - 8;
+        int[] r = this.poseTabPfeil(y, labelWidth);
 
-        return context.mouseX >= x && context.mouseX < x + LABEL_ICON_SIZE && context.mouseY >= minY && context.mouseY < minY + LABEL_ICON_SIZE;
+        return context.mouseX >= r[0] && context.mouseX < r[0] + r[2]
+            && context.mouseY >= r[1] && context.mouseY < r[1] + r[2];
     }
 
     private void togglePoseTab(UIKeyframeSheet parent)

@@ -107,6 +107,21 @@ public final class KeyframeZonen
             zugeschnitten(melder, flaeche, id + "/label-setzt-key", flaeche.x, oben, beschriftungB, hoehe);
             zugeschnitten(melder, flaeche, id + "/spur", spurX, oben, spurB, hoehe);
 
+            /* Der Aufklapp-Pfeil ist ein EIGENES Klickziel: er toggelt die Gruppe, waehrend
+             * ein Klick auf die Zeile daneben einen Keyframe SETZT. Ohne eigene Zone waere
+             * das Auf- und Zuklappen fuer die Abnahme unerreichbar — und ein Versuch daneben
+             * haette den Film veraendert. Rechteck aus poseTabPfeil, derselben Methode, die
+             * der Treffertest benutzt. */
+            boolean pfeil = blatt.isPoseTabParent(zeile);
+
+            if ((pfeil || zeile.getIcon() != null) && hoehe >= 12)
+            {
+                int[] r = blatt.poseTabPfeil(oben, beschriftungB);
+
+                zugeschnitten(melder, flaeche, id + (pfeil ? "/pfeil" : "/symbol"),
+                    r[0], r[1], r[2], r[2]);
+            }
+
             if (zeile.channel == null)
             {
                 continue;
