@@ -96,13 +96,17 @@ Dieser Fork baut auf:
 - **bbs-fs** von [Wemppy4](https://github.com/Wemppy4)
 - **bbs-mod-cml-edition** von [ElGatoPro300](https://github.com/ElGatoPro300)
 
-Blenders IK-Löser und die Constraint-Semantik sind aus Blenders Quelle übersetzt
-(Blender ist GPL — siehe Hinweis unten).
+**Der Code steht unter GPL-2.0-or-later** ([`COPYING`](COPYING)). Das folgt aus der Quelle,
+nicht aus einer Vorliebe: der IK-Löser und die Constraint-Auswertung sind zeilenweise aus
+Blender übersetzt, und die betroffenen Blender-Dateien tragen selbst `GPL-2.0-or-later`.
 
-Der geerbte Code steht unter der MIT-Lizenz, siehe [`LICENSE.md`](LICENSE.md)
-(Copyright 2025 McHorse, Copyright 2026 Wemppy).
+Die von McHorse und Wemppy geerbten Teile behalten ihre **MIT**-Vermerke — MIT ist
+GPL-verträglich, es wird nichts ersetzt.
 
-> ⛔ **Vor einer Veröffentlichung zu klären:** Die aus Blender übersetzten Teile
-> (IK-Löser, Constraint-Auswertung) stammen aus einer GPL-lizenzierten Quelle. Solange
-> dieses Repository privat bleibt, stellt sich die Frage nicht — bei einer Weitergabe
-> schon. Das ist keine Rechtsberatung, sondern ein Hinweis auf einen offenen Punkt.
+> ⛔ **Assets sind ausdrücklich ausgenommen.** Texturen, Modelle, Klänge, Schriften und
+> Icons fallen **nicht** unter die GPL dieses Repositorys. Sie behalten die Rechte ihrer
+> jeweiligen Urheber; wer den Code unter der GPL weiterverwendet, erwirbt damit **keine**
+> Rechte an den Assets.
+
+Welcher Teil unter welcher Lizenz steht, welche Blender-Dateien übersetzt wurden und welche
+Fremdbestandteile mitliegen, steht vollständig in [`LICENSE.md`](LICENSE.md).
