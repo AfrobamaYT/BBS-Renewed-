@@ -448,8 +448,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		float nachKopf = NanoBausteine.kopfzeile(vg, b, k, "dopesheet");
 
-		f.zone("etyp", 8F * k, (NanoDesign.H_KOPF - 22F) * k / 2F,
-			37F * k, 22F * k, this::modusMenue);
+		f.zone("etyp", 8F * k, (NanoDesign.H_KOPF - 22F) * k / 2F, 37F * k, 22F * k, this::modusMenue, "Editor type", "");
 
 		UIFilmPanel panel = filmPanel();
 		Film film = panel == null ? null : panel.getData();
@@ -478,7 +477,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			final UIFilmPanel pf = panel;
 
-			f.zone("voll", vollX, vollY, vollB, 20F * k, () -> pf.flaecheMaximieren("main"));
+			f.zone("voll", vollX, vollY, vollB, 20F * k, () -> pf.flaecheMaximieren("main"), "Maximize this area", "");
 		}
 
 		/* Zeitanzeige hat Vorrang; der Titel erscheint nur, wenn er danach noch passt. */
@@ -523,7 +522,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 				NanoDesign.TXT_DIM, k * 0.8F);
 
 			f.zone("titelklappe", kx, (NanoDesign.H_KOPF - 22F) * k / 2F, tw, 22F * k,
-				this::modusMenue);
+				this::modusMenue, "Timeline mode: which editor fills the body", "");
 
 			kx += tw + 10F * k;
 
@@ -599,7 +598,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		 * mehr an. Die Kanalspalte bleibt bewusst DRAUSSEN: sie ist Beschriftung, und ein
 		 * Klick darauf soll die Spur darunter treffen. */
 		f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
-		NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
+		/* Hoehe = NUR Kopf: unterhalb uebermalt das Dope Sheet — der Rand-Kipp klappt den Tooltip so nach OBEN (gemessen). */
+		NanoBausteine.tooltip(vg, b, Math.round(NanoDesign.H_KOPF * k), k, f.tooltipFaellig());
 	}
 	/**
 	 * Abspielsteuerung im Flaechenkopf, von rechts nach links gesetzt: Anfang, Schritt zurueck,
@@ -771,7 +771,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 			this.stand = "";
 			this.flaeche.neuMalen();
-		});
+		}, "Loop region: 1st click sets start, 2nd sets end, 3rd clears", kuerzel("looping"));
 
 		return x - 8F * k;
 	}
@@ -821,7 +821,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 			this.stand = "";
 			this.flaeche.neuMalen();
-		});
+		}, "Add or remove a marker at the playhead", kuerzel("marker_add"));
 
 		return x - 8F * k;
 	}

@@ -347,7 +347,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 		{
 			this.klappeOffen = !this.klappeOffen;
 			this.flaeche.neuMalen();
-		});
+		}, "Editor type", "");
 
 		/* Suchfeld — echte Texteingabe mit Fokus; bei enger Flaeche weggelassen */
 		if (!NanoDesign.eng(b, k))
@@ -378,7 +378,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 			NanoStifte.widget(vg, cx2, kopfH / 2F - 6F * k, 1.5F * k, 12F * k, 0F, NanoDesign.BLAU, k);
 		}
 
-		f.zone("suche", sx, kopfH / 2F - 9F * k, sw, 18F * k, () -> f.setzeFokus("suche"));
+		f.zone("suche", sx, kopfH / 2F - 9F * k, sw, 18F * k, () -> f.setzeFokus("suche"), "Filter replays by name", "");
 		}
 
 		/* Neues Replay — rechts im Kopf, wie im Entwurf. Ruft dieselbe Aktion wie das
@@ -404,7 +404,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 
 			this.stand = "";
 			this.flaeche.neuMalen();
-		});
+		}, "Add a replay", "");
 
 		/* Koerper */
 		NanoStifte.flaeche(vg, 0, kopfH, b, h - kopfH, 0F, C_EDITOR);

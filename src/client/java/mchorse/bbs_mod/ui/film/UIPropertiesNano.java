@@ -350,7 +350,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			this.angeheftet = this.angeheftet == null ? gewaehltesReplay() : null;
 			this.stand = "";
 			this.flaeche.neuMalen();
-		});
+		}, "Pin: keep showing this replay regardless of selection", "");
 
 		final Replay replay = this.angeheftet != null ? this.angeheftet : gewaehlt;
 
@@ -367,6 +367,8 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		NanoStifte.flaeche(vg, 0, oben, schieneB, h - oben, 0F, 0x1F1F1F);
 
 		String[] symbole = {"replay", "knochen", "film", "props", "kamera"};
+		final String[] SCHIENEN_HINWEISE = {"Replay: transform and visibility", "Form: model and shape keys",
+			"Film settings", "Channel overview", "Camera clip properties"};
 
 		for (int i = 0; i < symbole.length; i++)
 		{
@@ -387,7 +389,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			{
 				this.schiene = idx;
 				this.flaeche.neuMalen();
-			});
+			}, SCHIENEN_HINWEISE[i], "");
 		}
 
 		/* Kamera-Kategorie: die Spalte gehoert dem alten Clip-Panel (clipHost-Kind),
@@ -442,6 +444,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
 				"No replay selected", null);
+			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 			return;
 		}
 
@@ -616,7 +619,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			this.offen[nr] = !this.auf(nr);
 			this.flaeche.neuMalen();
-		});
+		}, "Collapse or expand this section", "");
 
 		float yy = y + kopfH + 2F * k;
 
@@ -640,7 +643,8 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			/* Zahlenfelder sind schrubbbar: die Zone traegt den Kanalnamen. */
 			if (zeile.length > 3 && !zeile[3].isEmpty())
 			{
-				f.zone("feld:" + zeile[3], x + 6F * k, yy, b - 12F * k, NanoDesign.H_WIDGET * k, () -> {});
+				f.zone("feld:" + zeile[3], x + 6F * k, yy, b - 12F * k, NanoDesign.H_WIDGET * k, () -> {},
+					"Drag left/right to change; writes a keyframe at the playhead", "");
 			}
 
 			/* Innerhalb einer Gruppe 1 px Fuge, zwischen Gruppen 4. */
