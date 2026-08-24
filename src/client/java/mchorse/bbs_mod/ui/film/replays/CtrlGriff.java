@@ -66,6 +66,17 @@ public class CtrlGriff
             return true;
         }
 
+        /* ⛔ ERST SETZEN, DANN AUSWAEHLEN (Wunsch des Nutzers 2026-08-24: "wenn man den
+         * Ring klickt, dass dann ein Pose-Keyframe gesetzt wird, wenn da keiner ist").
+         *
+         * Die Reihenfolge ist der ganze Punkt: pickForm SPRINGT den Abspielkopf auf den
+         * naechsten vorhandenen Pose-Keyframe (UIReplaysEditorUtils, isPoseSheet-Zweig:
+         * cursor.setCursor(closest.getTick())). Wer danach einfuegt, landet immer auf einem
+         * bestehenden Keyframe und setzt nichts — gemessen: Cursor 377, nach dem Klick lag
+         * der Kopf auf 0 und der Pose-Kanal hatte unveraendert einen Keyframe bei 0. */
+        UIReplaysEditorUtils.pickForm(editor.keyframeEditor, editor.filmPanel,
+            pending.a, pending.b, true);
+
         editor.pickForm(pending.a, pending.b);
 
         return true;
