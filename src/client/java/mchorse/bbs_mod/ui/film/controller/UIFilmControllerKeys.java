@@ -119,7 +119,8 @@ public class UIFilmControllerKeys
         }).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_OPEN_REPLAYS, () ->
         {
-            c.panel.showPanel(c.panel.replayEditor);
+            /* Alte Timeline abgeschafft — der Editor-Blick traegt die Replays. */
+            c.panel.showPanel(c.panel.cameraEditor);
         }).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_PREV_REPLAY, () -> c.switchReplay(-1)).active(hasTwoOrMoreReplays).category(category);
         c.keys().register(Keys.FILM_CONTROLLER_NEXT_REPLAY, () -> c.switchReplay(1)).active(hasTwoOrMoreReplays).category(category);

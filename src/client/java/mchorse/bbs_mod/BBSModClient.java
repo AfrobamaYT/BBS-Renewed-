@@ -1068,14 +1068,10 @@ public class BBSModClient implements ClientModInitializer
 
         UIScreen.open(dashboard);
 
-        if (dashboard.getPanels().panel instanceof UIFilmPanel panel && panel.getData() != null)
-        {
-            panel.showPanel(panel.replayEditor);
-        }
-        else
-        {
-            dashboard.setPanel(dashboard.getPanel(UIFilmPanel.class));
-        }
+        /* ⛔ Nie mehr den alten Replay-Zweig aufschalten (Nutzer 2026-08-24: "die neue
+         * timeline soll das alte komplett ersetzen") — die Replays wohnen im Outliner
+         * des Film-Editors. */
+        dashboard.setPanel(dashboard.getPanel(UIFilmPanel.class));
     }
 
     private void keyTeleport()

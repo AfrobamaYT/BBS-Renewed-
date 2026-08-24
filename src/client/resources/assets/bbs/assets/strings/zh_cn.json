@@ -799,7 +799,6 @@
     "bbs.ui.film.open_camera_editor": "打开摄像机编辑器",
     "bbs.ui.film.open_history": "打开撤销/重做历史...",
     "bbs.ui.film.open_render_queue": "打开渲染队列...",
-    "bbs.ui.film.open_replay_editor": "打开回放编辑器",
     "bbs.ui.film.open_screen_editor": "打开屏幕编辑器",
     "bbs.ui.film.recording": "正在录制 %s",
     "bbs.ui.film.render_audio": "渲染音频（从音频剪辑）",

@@ -637,7 +637,6 @@
     "bbs.ui.film.open_action_editor": "Eylem düzenleyicisini aç",
     "bbs.ui.film.open_camera_editor": "Kamera düzenleyicisini aç",
     "bbs.ui.film.open_history": "Geri/ileri alma geçmişini aç...",
-    "bbs.ui.film.open_replay_editor": "Kayıt düzenleyicisini aç",
     "bbs.ui.film.recording": "Kayıt %s",
     "bbs.ui.film.render_audio": "Sesi işle (ses parçalarından)",
     "bbs.ui.film.render_audio.error": "Ses klipleri işlenemedi! Daha fazla bilgi için latest.log dosyasına bakın...",

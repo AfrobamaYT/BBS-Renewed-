@@ -573,7 +573,6 @@
     "bbs.ui.film.open_action_editor": "Hərəkət redaktorunu aç",
     "bbs.ui.film.open_camera_editor": "Kamera redaktorunu aç",
     "bbs.ui.film.open_history": "Geri/irəli alma tarixçəsini aç...",
-    "bbs.ui.film.open_replay_editor": "Qeyd redaktorunu aç",
     "bbs.ui.film.recording": "Qeyd %s",
     "bbs.ui.film.render_audio": "Səsi işlə (səs parçalarından)",
     "bbs.ui.film.render_audio.error": "Səs klipləri işlənə bilmədi! Daha çox məlumat üçün latest.log faylına baxın...",

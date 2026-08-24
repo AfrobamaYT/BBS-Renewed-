@@ -610,7 +610,6 @@
     "bbs.ui.film.open_action_editor": "Відкрити редактор дій",
     "bbs.ui.film.open_camera_editor": "Відкрити редактор камери",
     "bbs.ui.film.open_history": "Відкрити історію змін...",
-    "bbs.ui.film.open_replay_editor": "Відкрити редактор записів",
     "bbs.ui.film.recording": "Запис %s",
     "bbs.ui.film.render_audio": "Рендер аудіо (з аудіокліпів)",
     "bbs.ui.film.render_audio.error": "Не вдалося зарендерити аудіокліпи! Подивіться latest.log для отримання додаткової інформації...",

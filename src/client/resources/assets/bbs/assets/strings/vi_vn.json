@@ -627,7 +627,6 @@
     "bbs.ui.film.open_action_editor": "Mở trình chỉnh sửa hành động",
     "bbs.ui.film.open_camera_editor": "Mở trình chỉnh sửa Camera",
     "bbs.ui.film.open_history": "Mở lịch sử hoàn tác/làm lại...",
-    "bbs.ui.film.open_replay_editor": "Mở trình chỉnh sửa Replay",
     "bbs.ui.film.recording": "Đang ghi hình %s",
     "bbs.ui.film.render_audio": "Xuất âm thanh (từ các clip âm thanh)",
     "bbs.ui.film.render_audio.error": "Các clip âm thanh không thể được xuất! Xem latest.log để biết thêm thông tin...",

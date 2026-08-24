@@ -600,7 +600,6 @@
     "bbs.ui.film.open_action_editor": "Otwórz edytor akcji",
     "bbs.ui.film.open_camera_editor": "Otwórz edytor kamery",
     "bbs.ui.film.open_history": "Otwórz historię cofania/ponawiania...",
-    "bbs.ui.film.open_replay_editor": "Otwórz edytor powtórki",
     "bbs.ui.film.recording": "Nagranie %s",
     "bbs.ui.film.render_audio": "Renderuj dźwięk (z klipów dźwięku)",
     "bbs.ui.film.render_audio.error": "Nie można wyrenderować klipów dźwięku! Więcej informacji można znaleźć w pliku latest.log...",

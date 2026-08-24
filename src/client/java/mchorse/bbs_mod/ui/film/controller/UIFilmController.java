@@ -698,12 +698,9 @@ public class UIFilmController extends UIElement implements GizmoViewport
 
     private void pickReplay(int index)
     {
+        /* ⛔ Nur AUSWAEHLEN. Hier stand showPanel(replayEditor) — Alt+Klick auf ein
+         * Replay riss den Nutzer in die alte Timeline (Akte 34). */
         this.panel.replayEditor.setReplay(this.panel.getData().replays.getList().get(index));
-
-        if (!this.panel.replayEditor.isVisible())
-        {
-            this.panel.showPanel(this.panel.replayEditor);
-        }
     }
 
     public void stopGizmoInteraction()

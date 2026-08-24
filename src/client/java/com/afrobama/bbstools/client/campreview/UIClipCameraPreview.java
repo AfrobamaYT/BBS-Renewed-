@@ -513,7 +513,6 @@ public class UIClipCameraPreview extends UIElement
             panel.replayEditor.pickForm(form, bone);
             if (!panel.replayEditor.isVisible())
             {
-                panel.showPanel(panel.replayEditor);
             }
         }
 

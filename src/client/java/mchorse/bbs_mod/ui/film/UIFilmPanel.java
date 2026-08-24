@@ -136,7 +136,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     /* Icon bar buttons */
     public UIIcon openFilmMenu;
     public UIIcon openCameraEditor;
-    public UIIcon openReplayEditor;
 
     /** When true, docking is disabled; panel drag handles and their top offset are hidden. */
     private boolean layoutLocked = true;
@@ -411,7 +410,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
             this.getContext().replaceContextMenu(this::fillFilmContextMenu);
         });
         this.openCameraEditor = new UIIcon(Icons.FRUSTUM, (b) -> this.showPanel(this.cameraEditor));
-        this.openReplayEditor = new UIIcon(Icons.SCENE, (b) -> this.showPanel(this.replayEditor));
 
         this.layoutPresetsController = new UICopyPasteController(PresetManager.LAYOUTS, "_CopyFilmLayout")
             .supplier(this::getFilmLayoutPresetData)
@@ -419,13 +417,12 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.openFilmMenu.wh(FILM_TOP_BAR_BUTTON_SIZE, FILM_TOP_BAR_BUTTON_SIZE).tooltip(UIKeys.FILM_OPTIONS, Direction.BOTTOM);
         this.openCameraEditor.wh(FILM_TOP_BAR_BUTTON_SIZE, FILM_TOP_BAR_BUTTON_SIZE).tooltip(UIKeys.FILM_OPEN_CAMERA_EDITOR, Direction.BOTTOM);
-        this.openReplayEditor.wh(FILM_TOP_BAR_BUTTON_SIZE, FILM_TOP_BAR_BUTTON_SIZE).tooltip(UIKeys.FILM_OPEN_REPLAY_EDITOR, Direction.BOTTOM);
 
         this.topBarActions = new UIElement();
         this.topBarActions.relative(this.tabBar).x(1F, -FILM_TOP_BAR_ACTIONS_WIDTH).w(FILM_TOP_BAR_ACTIONS_WIDTH).h(UIDataTabs.TABS_HEIGHT_PX).row(0).resize();
         this.topBarSeparator = new UIElement();
         this.topBarSeparator.wh(FILM_TOP_BAR_SEPARATOR_WIDTH, UIDataTabs.TABS_HEIGHT_PX);
-        this.topBarActions.add(new UIRenderable(this::renderTopBarActions), this.openCameraEditor, this.openReplayEditor, this.topBarSeparator, this.openFilmMenu);
+        this.topBarActions.add(new UIRenderable(this::renderTopBarActions), this.openCameraEditor, this.topBarSeparator, this.openFilmMenu);
         this.tabBar.add(this.topBarActions);
 
         /* Setup elements */
@@ -514,7 +511,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }).category(editor);
         this.keys().register(Keys.FILM_CONTROLLER_TOGGLE_ACTIONS, () ->
         {
-            this.showPanel(this.replayEditor);
             this.replayEditor.setActionsMode(!this.replayEditor.isActionsMode());
             UIUtils.playClick();
         }).category(editor);
@@ -2594,7 +2590,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
 
         this.openFilmMenu.setEnabled(true);
         this.openCameraEditor.setEnabled(data != null);
-        this.openReplayEditor.setEnabled(data != null);
         this.duplicateFilm.setEnabled(data != null);
 
         this.actionEditor.setClips(null);
@@ -2815,7 +2810,6 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
         }
 
         this.renderTopBarButton(context, this.openCameraEditor, this.cameraEditor.isVisible());
-        this.renderTopBarButton(context, this.openReplayEditor, this.replayEditor.isVisible());
         this.renderTopBarSeparator(context);
         this.renderTopBarButton(context, this.openFilmMenu, false);
     }

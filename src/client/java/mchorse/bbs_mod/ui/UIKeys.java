@@ -312,7 +312,6 @@ public class UIKeys
     public static final IKey FILM_DOCK_HISTORY = L10n.lang("bbs.ui.film.dock_history");
     public static final IKey FILM_OPTIONS = L10n.lang("bbs.ui.film.options");
     public static final IKey FILM_TABS_NEW_TAB = L10n.lang("bbs.ui.film.tabs.new_tab");
-    public static final IKey FILM_OPEN_REPLAY_EDITOR = L10n.lang("bbs.ui.film.open_replay_editor");
     public static final IKey FILM_RECORDING = L10n.lang("bbs.ui.film.recording");
     public static final IKey FILM_RENDER_AUDIO = L10n.lang("bbs.ui.film.render_audio");
     public static final IKey FILM_RENDER_AUDIO_ERROR = L10n.lang("bbs.ui.film.render_audio.error");

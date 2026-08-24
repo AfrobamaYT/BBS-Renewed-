@@ -567,7 +567,6 @@
     "bbs.ui.film.open_action_editor": "액션 편집기 열기",
     "bbs.ui.film.open_camera_editor": "카메라 편집기 열기",
     "bbs.ui.film.open_history": "실행 취소/다시 실행 기록 열기...",
-    "bbs.ui.film.open_replay_editor": "리플레이 편집기 열기",
     "bbs.ui.film.open_voice_line_editor": "음성 대사 편집기 열기",
     "bbs.ui.film.recording": "녹화 중 %s",
     "bbs.ui.film.render_audio": "오디오 렌더링 (오디오 클립에서)",

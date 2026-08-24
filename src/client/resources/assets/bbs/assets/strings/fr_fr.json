@@ -580,7 +580,6 @@
     "bbs.ui.film.open_action_editor": "Ouvrir l'éditeur d'action",
     "bbs.ui.film.open_camera_editor": "Ouvrir l'éditeur de caméra",
     "bbs.ui.film.open_history": "Ouvrir l'historique des actions...",
-    "bbs.ui.film.open_replay_editor": "Ouvrir l'éditeur de replays",
     "bbs.ui.film.recording": "Enregistrement %s",
     "bbs.ui.film.render_audio": "Rendu l'audio (des clips audio)",
     "bbs.ui.film.render_audio.error": "Le clip audio n'a pas pu être rendu! Regardez le latest.log (.minecraft/logs) pour plus d'informations...",

@@ -636,7 +636,6 @@
     "bbs.ui.film.open_action_editor": "เปิดตัวแก้ไขการกระทำ",
     "bbs.ui.film.open_camera_editor": "เปิดตัวแก้ไขกล้อง",
     "bbs.ui.film.open_history": "เปิดประวัติการย้อนกลับ/ทำซ้ำ...",
-    "bbs.ui.film.open_replay_editor": "เปิดตัวแก้ไขการเล่นซ้ำ",
     "bbs.ui.film.recording": "บันทึก %s",
     "bbs.ui.film.render_audio": "เรนเดอร์เสียง (จากคลิปเสียง)",
     "bbs.ui.film.render_audio.error": "ไม่สามารถเรนเดอร์คลิปเสียงได้! ดูข้อมูลเพิ่มเติมได้ที่ latest.log...",

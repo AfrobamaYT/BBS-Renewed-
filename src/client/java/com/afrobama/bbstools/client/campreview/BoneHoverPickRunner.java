@@ -198,7 +198,6 @@ public final class BoneHoverPickRunner
             panel.replayEditor.setReplay(replay);
             if (!panel.replayEditor.isVisible())
             {
-                panel.showPanel(panel.replayEditor);
             }
 
             /* The key call — wires the bone into BBS's pose editor. */

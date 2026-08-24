@@ -493,7 +493,6 @@
     "bbs.ui.film.layout.vertical_right": "Vertikal (timeline kanan)",
     "bbs.ui.film.open_action_editor": "Buka editor aksi",
     "bbs.ui.film.open_camera_editor": "Buka editor kamera",
-    "bbs.ui.film.open_replay_editor": "Buka editor replay",
     "bbs.ui.film.recording": "Merekam %s",
     "bbs.ui.film.render_audio": "Render audio (dari klip audio)",
     "bbs.ui.film.render_audio.error": "Klip audio tidak dapat dirender! Lihat latest.log untuk informasi lebih lanjut...",

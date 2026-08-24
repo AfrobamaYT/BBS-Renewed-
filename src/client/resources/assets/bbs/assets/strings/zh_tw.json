@@ -648,7 +648,6 @@
     "bbs.ui.film.open_action_editor": "打開行為編輯器",
     "bbs.ui.film.open_camera_editor": "打開攝像機編輯器",
     "bbs.ui.film.open_history": "打開撤銷/重做歷史...",
-    "bbs.ui.film.open_replay_editor": "打開回放編輯器",
     "bbs.ui.film.recording": "正在錄製 %s",
     "bbs.ui.film.render_audio": "渲染音頻（從音頻剪輯）",
     "bbs.ui.film.render_audio.error": "音頻剪輯無法渲染！詳情請查看 latest.log...",

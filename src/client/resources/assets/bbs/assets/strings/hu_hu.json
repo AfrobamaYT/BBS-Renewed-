@@ -606,7 +606,6 @@
     "bbs.ui.film.open_action_editor": "Műveletszerkesztő megnyitása",
     "bbs.ui.film.open_camera_editor": "Kamera szerkesztő megnyitása",
     "bbs.ui.film.open_history": "A visszavonási/ismétlési előzmények megnyitása...  ",
-    "bbs.ui.film.open_replay_editor": "Visszajátszás szerkesztő megnyitása  ",
     "bbs.ui.film.recording": "Felvétel %s",
     "bbs.ui.film.render_audio": "Audió renderelése (audioklipekből)",
     "bbs.ui.film.render_audio.error": "A hangsávok nem renderelhetők! További információért nézd meg a latest.log fájlt...",

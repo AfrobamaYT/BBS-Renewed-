@@ -570,7 +570,6 @@
     "bbs.ui.film.open_action_editor": "فتح محرر الإجراءات",
     "bbs.ui.film.open_camera_editor": "فتح محرر الكاميرا",
     "bbs.ui.film.open_history": "فتح سجل التراجع/الإعادة...",
-    "bbs.ui.film.open_replay_editor": "فتح محرر إعادة التشغيل",
     "bbs.ui.film.recording": "جاري التسجيل %s",
     "bbs.ui.film.render_audio": "تحويل الصوت (من مقاطع الصوت)",
     "bbs.ui.film.render_audio.error": "تعذر تحويل مقاطع الصوت! راجع latest.log لمزيد من المعلومات...",
