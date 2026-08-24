@@ -88,9 +88,11 @@ final class DopeSheetSpalte
 		int summe = group.children.stream().filter(UIKeyframeSheet.class::isInstance)
 			.mapToInt((k) -> ((UIKeyframeSheet) k).channel.getKeyframes().size()).sum();
 
-		/* Blender-Farbcode der Ebenen: Koepfe (Replay/Kamera) dunkelblau, Gruppen gruen. */
+		/* Blender-Farbcode der Ebenen: Koepfe (Replay/Kamera) dunkelblau, Gruppen gruen,
+		 * die Summary-Zeile neutral hell (Entwurf .cr.sum). */
 		context.batcher.box(area.x, y, area.x + w, y + (int) this.dope.trackHeight,
-			group.kopf ? Colors.setA(0x4772B3, 0.14F) : Colors.setA(NanoDesign.GRUEN, 0.13F));
+			group.summary ? Colors.setA(Colors.WHITE, 0.05F)
+				: group.kopf ? Colors.setA(0x4772B3, 0.14F) : Colors.setA(NanoDesign.GRUEN, 0.13F));
 
 		this.label(context, area, y, w, summe > 0 ? String.valueOf(summe) : group.zaehler,
 			group.title.get(), group.children.isEmpty() ? null : !group.collapsed, group.auge, offset, true);

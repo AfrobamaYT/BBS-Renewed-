@@ -1077,10 +1077,26 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             this.keyframes.spuren.zeichneZeile(context, group.kameraEbene, by, bh);
         }
 
+        /* Toenung volle Breite, Range-Band, Aggregat-Rauten (Entwurf: keine Zeile ohne Inhalt). */
+        this.flaecheSchmuck().gruppenZeile(context, matrix, area, group, by, bh);
+
         if (hover)
         {
             context.batcher.box(area.x, by, area.ex(), by + bh, BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25));
         }
+    }
+
+    /** ⛔ Lazy: ein per Hotswap neu hinzugekommenes Feld ist auf bestehenden Instanzen null. */
+    private DopeSheetFlaeche flaecheSchmuck;
+
+    private DopeSheetFlaeche flaecheSchmuck()
+    {
+        if (this.flaecheSchmuck == null)
+        {
+            this.flaecheSchmuck = new DopeSheetFlaeche(this);
+        }
+
+        return this.flaecheSchmuck;
     }
 
     private void renderSheet(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y)
@@ -1130,6 +1146,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             this.keyframes.spuren.zeichneZeile(context, row, by, bh);
         }
 
+        /* Range-Band: erster bis letzter Schluessel (Entwurf). */
+        this.flaecheSchmuck().kanalBand(context, area, sheet, by, bh);
+
         /* ⛔ KEIN Sofortzug (2026-08-01): 26.2 sammelt hier nur, GuiRenderer.render()
          * zeichnet spaeter — sofort gezeichnet landet alles UNTER dem GUI und die
          * Keyframes sind unsichtbar. Schalter: mischen=true, tiefePruefen=false (GUI
@@ -1137,29 +1156,8 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
          * gecullt und sieht exakt aus wie „nicht umgestellt". */
         context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (ecken) ->
         {
-            /* Render bars indicating same values */
-            for (int j = 1; j < keyframes.size(); j++)
-            {
-                Keyframe previous = (Keyframe) keyframes.get(j - 1);
-                Keyframe frame = (Keyframe) keyframes.get(j);
-                int c = Colors.setA(Colors.WHITE, 0.10F);
-                int xx = this.keyframes.toGraphX(previous.getTick());
-                int xxx = this.keyframes.toGraphX(frame.getTick());
-
-                if (previous.getFactory().compare(previous.getValue(), frame.getValue()))
-                {
-                    int w = trackWidth + 2;
-
-                    context.batcher.fillRect(ecken, matrix, xx, my - w / 2, this.keyframes.toGraphX(frame.getTick()) - xx, w, c, c, c, c);
-                }
-
-                if (Math.abs(xxx - xx) < 5)
-                {
-                    c = Colors.setA(Colors.WHITE, 0.25F);
-
-                    context.batcher.fillRect(ecken, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
-                }
-            }
+            /* Held-Balken (Blender: gleiche Nachbarwerte) + Naeherungs-Unterstrich. */
+            this.flaecheSchmuck().heldBalken(context, ecken, matrix, keyframes, my, trackWidth);
 
             /* Draw keyframe handles (outer) */
             int forcedIndex = 0;
@@ -1196,20 +1194,32 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }, flaeche(area));
     }
 
-    /** Fuellung eines Markers: Auswahl bernstein, sonst hell — Custom-Farbe bleibt Info. */
-    private void fuelleMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, UIKeyframeSheet sheet, int j, int my)
+    /** Fuellung eines Markers: Auswahl bernstein mit Gluehen, sonst hell mit Lichtkante
+     *  (Entwurf: Raute traegt Tiefe) — Custom-Farbe bleibt Info. */
+    void fuelleMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, UIKeyframeSheet sheet, int j, int my)
     {
         Keyframe frame = (Keyframe) sheet.channel.getKeyframes().get(j);
         int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
         int mx = this.keyframes.toGraphX(frame.getTick());
-        int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
+        boolean gewaehlt = sheet.selection.has(j);
+        int mc = (gewaehlt ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
+
+        if (gewaehlt)
+        {
+            renderShape(frame, context, builder, matrix, mx, my, 5, Colors.setA(NanoDesign.BERNSTEIN, 0.30F));
+        }
 
         renderShape(frame, context, builder, matrix, mx, my, 2, mc)
             .renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
+
+        if (!gewaehlt)
+        {
+            renderShape(frame, context, builder, matrix, mx, my - 1, 1, Colors.setA(Colors.WHITE, 0.35F));
+        }
     }
 
     /** Rand eines Markers: dunkel, Hover hell, Entfernen-Geste rot — beide Renderpfade. */
-    private void randMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, Keyframe frame, int x1, int my)
+    void randMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, Keyframe frame, int x1, int my)
     {
         boolean isPointHover = this.isNear(x1, my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
         boolean toRemove = Window.isCtrlPressed() && isPointHover;
@@ -1231,31 +1241,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private void renderSheetKeyframeShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
     {
-        if (!this.isVisible(sheet))
-        {
-            return;
-        }
-
-        if (y + this.trackHeight < area.y || y > area.ey())
-        {
-            return;
-        }
-
-        List keyframes = sheet.channel.getKeyframes();
-        int my = y + (int) this.trackHeight / 2;
-
-        for (int j = 0; j < keyframes.size(); j++)
-        {
-            Keyframe frame = (Keyframe) keyframes.get(j);
-            int x1 = this.keyframes.toGraphX(frame.getTick());
-
-            this.randMarker(context, builder, matrix, frame, x1, my);
-        }
-
-        for (int j = 0; j < keyframes.size(); j++)
-        {
-            this.fuelleMarker(context, builder, matrix, sheet, j, my);
-        }
+        this.flaecheSchmuck().markerReihen(context, builder, matrix, area, sheet, y);
     }
 
     private int renderElementsTopmostKeyframes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int y)

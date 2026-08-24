@@ -19,6 +19,8 @@ public class UIKeyframeGroup extends UIKeyframeElement
 
     /** Kopfzeile der Struktur (Replay oder Kamera) — dunkelblaue Toenung statt Gruppen-Gruen. */
     public boolean kopf;
+    /** Summary-Zeile (Entwurf): aggregiert ALLE Kanaele des Graphen, ohne eigene Kinder. */
+    public boolean summary;
 
     /** Zaehlertext fuer Koepfe ohne geladene Kinder (z. B. „4 channels“ eines fremden Replays). */
     public String zaehler = "";

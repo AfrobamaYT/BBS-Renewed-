@@ -55,6 +55,14 @@ public class TimelineRulerRenderer
         return Math.min(area.ey(), area.y + RULER_BLOCK_HEIGHT);
     }
 
+    /** Playhead: 2-px-Kern mit leichtem Gluehen (Entwurf .ph) — geteilt von beiden Zweigen. */
+    public static void playheadLinie(UIContext context, int x, int y1, int y2, int voll)
+    {
+        context.batcher.box(x - 2, y1, x + 3, y2, Colors.setA(voll, 0.14F));
+        context.batcher.box(x - 1, y1, x + 2, y2, Colors.setA(voll, 0.22F));
+        context.batcher.box(x, y1, x + 1, y2, voll);
+    }
+
     public static void render(
         UIContext context,
         Area area,

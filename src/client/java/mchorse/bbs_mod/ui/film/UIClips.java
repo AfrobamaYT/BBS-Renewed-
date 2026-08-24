@@ -132,7 +132,7 @@ public class UIClips extends UIElement
         int color = BBSSettings.primaryColor.get();
         int voll = color | Colors.A100;
 
-        context.batcher.box(x, area.y + 1, x + 1, area.ey(), voll); /* +1: sonst schaut eine Pixelzeile ueber dem Kopf heraus */
+        TimelineRulerRenderer.playheadLinie(context, x, area.y + 1, area.ey(), voll); /* +1: sonst schaut eine Pixelzeile ueber dem Kopf heraus */
 
         /* ⛔ Kein Grundmass: die Verdopplung machte den Kopf schon bei EINER Ziffer doppelt breit. */
         float textB = font.getWidth(label);

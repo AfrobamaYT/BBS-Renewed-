@@ -165,6 +165,25 @@ public final class SpurGruppen
 			}
 		}
 
+		/* Summary-Zeile (Entwurf, Blenders show_summary): alle Schluessel des gewaehlten
+		 * Replays aggregiert, direkt unter den Kamera-Spuren. Die Rauten zeichnet
+		 * DopeSheetFlaeche aus view.getSheets() — Kinder braucht die Zeile keine. */
+		int schluessel = 0;
+
+		for (UIKeyframeSheet s : sheets)
+		{
+			schluessel += s.channel.getKeyframes().size();
+		}
+
+		if (schluessel > 0)
+		{
+			UIKeyframeGroup summary = new UIKeyframeGroup(IKey.constant("Summary"), 0);
+
+			summary.summary = true;
+			summary.zaehler = String.valueOf(schluessel);
+			view.addElement(summary);
+		}
+
 		Map<String, List<UIKeyframeSheet>> toepfe = new LinkedHashMap<>();
 
 		for (UIKeyframeSheet sheet : sheets)
