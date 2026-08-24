@@ -184,7 +184,11 @@ public abstract class UIClip <T extends Clip> extends UIElement
         this.envelope.channel.setUndoId("envelope_keyframes");
         this.mehrfachHinweis = new UIMehrfachHinweis(editor);
 
-        boolean horizontal = BBSSettings.isHorizontalClipEditorEffective();
+        /* Im schmalen Properties-Dock (Kamera-Kategorie, Akte 38) IMMER vertikal —
+         * das horizontale Spaltenlayout ist fuer das breite editArea gedacht und
+         * ragte im Dock ueber den Rand in den Viewport. */
+        boolean horizontal = BBSSettings.isHorizontalClipEditorEffective()
+            && !(editor instanceof mchorse.bbs_mod.ui.film.UIClipsPanel cp && cp.hatDockTarget());
 
         this.panels = new UIScrollView(horizontal ? ScrollDirection.HORIZONTAL : ScrollDirection.VERTICAL);
         this.panels.scroll.cancelScrolling();

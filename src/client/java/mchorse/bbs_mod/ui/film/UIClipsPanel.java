@@ -62,6 +62,13 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
         return this;
     }
 
+    /** Ob die Clip-Felder in einem Dock-Ziel wohnen (Kamera-Kategorie) — dort baut
+     *  UIClip vertikal statt im breiten Spaltenlayout (Akte 38). */
+    public boolean hatDockTarget()
+    {
+        return this.target != null;
+    }
+
     public void setClips(Clips clips)
     {
         this.hasClips = clips != null;
@@ -243,23 +250,35 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
 
             if (this.target == null)
             {
-                /* Ohne editArea-Dock wohnt das Panel als 160px-Spalte rechts in der
+                /* Ohne target wohnt das Panel als 160px-Spalte rechts in der
                  * Zeitleiste — die Clips muessen ihr den Platz lassen, sonst laufen sie
                  * voll durch und das Panel liegt unsichtbar dahinter (Akte 38). */
                 this.panel.relative(this).x(1F, -160).w(160).h(1F);
                 this.clips.w(1F, -160);
+                this.add(this.panel);
+                this.resize();
             }
             else
             {
-                int top = this.filmPanel.getEditPanelTopOffsetPx();
-                this.panel.relative(this.target).x(0).y(0, top).w(1F).h(1F, -top);
+                /* Mit target (Kamera-Kategorie im Properties-Dock) gehoert das Panel
+                 * dem DOCK-Baum: als Kind des cameraEditor wuerde die Seitenleiste es
+                 * uebermalen und der Replay-Zweig es mit verstecken (Akte 38,
+                 * Nutzerwunsch: „nicht in der Timeline wohnen"). */
+                this.panel.relative(this.target).x(0).y(0).w(1F).h(1F);
+                this.clips.w(1F, 0);
+                this.target.add(this.panel);
+                this.target.resize();
+                this.resize();
             }
-
-            this.add(this.panel);
-            this.resize();
             this.panel.fillData();
             this.panel.setVisible(this.propertiesVisible);
             this.panel.restoreScroll();
+
+            /* Kamera-Kategorie nach vorn, sonst bleibt der frische Clip unsichtbar. */
+            if (this.target != null && this.target.getParent() instanceof UIPropertiesNano props)
+            {
+                props.kameraKategorie();
+            }
 
             if (this.filmPanel.isFlying())
             {
@@ -284,9 +303,9 @@ public class UIClipsPanel extends UIElement implements IUIClipsDelegate, com.mcs
         {
             return;
         }
-        int top = this.filmPanel.getEditPanelTopOffsetPx();
-        this.panel.relative(this.target).x(0).y(0, top).w(1F).h(1F, -top);
-        this.resize();
+        /* Der Kopf-Versatz steckt im clipHost selbst (Kamera-Kategorie, Akte 38). */
+        this.panel.relative(this.target).x(0).y(0).w(1F).h(1F);
+        this.target.resize();
     }
 
     @Override

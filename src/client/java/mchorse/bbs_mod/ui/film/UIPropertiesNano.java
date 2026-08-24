@@ -62,6 +62,40 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		return new UIPropertiesNano();
 	}
 
+	/**
+	 * Wirt fuer das alte Kamera-Clip-Panel (Kategorie „Kamera" der Icon-Schiene).
+	 * Kamera-Editor-Muster: der Kopf ist Nano, der Koerper das alte {@code UIClip}-
+	 * Panel mit seiner kompletten Bedienlogik — {@code UIClipsPanel.pickClip} haengt
+	 * es hierhin (target), Nutzerwunsch Akte 38: „am besten leben die Links an diesem
+	 * doc wo Transform und so steht".
+	 *
+	 * <p>⛔ Lazy: ein per Hotswap neu hinzugekommenes Feld ist auf bestehenden
+	 * Instanzen null.</p>
+	 */
+	private UIElement clipHost;
+
+	/** Kamera-Kategorie nach vorn — pickClip ruft das, damit ein frisch gewaehlter
+	 *  Clip nicht hinter einer anderen Kategorie unsichtbar bleibt. */
+	public void kameraKategorie()
+	{
+		this.schiene = 4;
+		this.flaeche.neuMalen();
+	}
+
+	public UIElement clipHost()
+	{
+		if (this.clipHost == null)
+		{
+			this.clipHost = new UIElement();
+			/* 28 px Icon-Schiene links, 26 px Kopfzeile oben (H_KOPF). */
+			this.clipHost.relative(this).x(28).y(26).w(1F, -28).h(1F, -26);
+			this.clipHost.setVisible(false);
+			this.add(this.clipHost);
+		}
+
+		return this.clipHost;
+	}
+
 	public UIPropertiesNano()
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
@@ -332,7 +366,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		float schieneB = 28F * k;
 		NanoStifte.flaeche(vg, 0, oben, schieneB, h - oben, 0F, 0x1F1F1F);
 
-		String[] symbole = {"replay", "knochen", "film", "props"};
+		String[] symbole = {"replay", "knochen", "film", "props", "kamera"};
 
 		for (int i = 0; i < symbole.length; i++)
 		{
@@ -354,6 +388,25 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 				this.schiene = idx;
 				this.flaeche.neuMalen();
 			});
+		}
+
+		/* Kamera-Kategorie: die Spalte gehoert dem alten Clip-Panel (clipHost-Kind),
+		 * die Flaeche malt nur Grund und Schiene. Sichtbarkeit hier, damit sie mit
+		 * jedem Schienen-Wechsel nachzieht (zeichnen laeuft je neuMalen). */
+		this.clipHost().setVisible(this.schiene == 4);
+
+		if (this.schiene == 4)
+		{
+			UIFilmPanel fp = filmPanel();
+
+			if (fp == null || fp.cameraEditor.getClip() == null)
+			{
+				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, schieneB + 6F * k, oben + 23F * k,
+					NanoDesign.TXT_OFF, "No camera clip selected", null);
+			}
+
+			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
+			return;
 		}
 
 		/* Inhaltsspalte. Rollen in 6-px-Schritten: die Panels haben keine feste Zeilenhoehe,

@@ -55,18 +55,22 @@ public final class ZeitleisteZweig
 	 * Clip-Eigenschaften sichtbar schalten. Seit editArea aus dem Dock-Layout gefallen
 	 * ist (Migration setzt Layouts mit editArea auf den Default zurueck), waren die
 	 * Kamera-Clip-Felder NIRGENDS mehr zu sehen — „die camera properties fehlen
-	 * komplett" (Akte 38). Ohne editArea-Dock wohnen sie wieder als 160px-Spalte
-	 * rechts in der Kamera-Zeitleiste, wie in 1.21.1 (target=null-Zweig von pickClip).
+	 * komplett" (Akte 38). Sie wohnen jetzt in der Kamera-Kategorie des Properties-
+	 * Docks (clipHost der UIPropertiesNano) — Nutzerwunsch: „nicht in der Timeline,
+	 * am besten links an diesem doc wo Transform und so steht".
 	 */
 	public static void propertiesSchalten(UIFilmPanel panel, boolean mainActive,
 		boolean editAreaActive, boolean cameraVisible, boolean replayVisible)
 	{
-		if (!editAreaActive)
+		if (!editAreaActive && panel.replayEditor.replayProperties != null
+			&& panel.replayEditor.replayProperties.propsNano instanceof UIPropertiesNano props)
 		{
-			panel.cameraEditor.target(null);
+			panel.cameraEditor.target(props.clipHost());
 		}
 
-		panel.cameraEditor.setPropertiesVisible((editAreaActive || mainActive) && cameraVisible);
+		/* Das Dock lebt unabhaengig vom Zweig — die Kategorie-Schiene regelt, was zu
+		 * sehen ist; propertiesVisible haelt nur noch den Kein-Film-Fall dunkel. */
+		panel.cameraEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
 		panel.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
 	}
 
