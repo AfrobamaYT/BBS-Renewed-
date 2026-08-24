@@ -92,19 +92,12 @@ final class DopeSheetSpalte
 		context.batcher.box(area.x, y, area.x + w, y + (int) this.dope.trackHeight,
 			group.kopf ? Colors.setA(0x4772B3, 0.14F) : Colors.setA(NanoDesign.GRUEN, 0.13F));
 
-		Icon pfeil = group.children.isEmpty() ? null
-			: group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN;
-
 		this.label(context, area, y, w, summe > 0 ? String.valueOf(summe) : group.zaehler,
-			group.title.get(), pfeil, offset, true);
+			group.title.get(), group.children.isEmpty() ? null : !group.collapsed, group.auge, offset, true);
 	}
 
 	private void zeile(UIContext context, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
 	{
-		/* Nur Klapp-Pfeile — die alten X/Y/Z-Kanal-Icons sind Alt-Optik (Akte 36). */
-		Icon icon = !this.dope.isPoseTabParent(sheet) ? null
-			: this.dope.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
-
 		String kern = sheet.id.contains("/") ? sheet.id.substring(sheet.id.lastIndexOf('/') + 1) : sheet.id;
 		int achse = "x".equals(kern) || "vX".equals(kern) ? NanoDesign.ACHSE_X
 			: "y".equals(kern) || "vY".equals(kern) ? NanoDesign.ACHSE_Y
@@ -141,14 +134,39 @@ final class DopeSheetSpalte
 				.collect(java.util.stream.Collectors.joining(" "));
 		}
 
-		this.label(context, area, y, w, zaehler, titel,
-			this.dope.trackHeight >= 12D ? icon : null, offset + this.dope.getSheetIndent(sheet), false);
+		boolean poseKlapp = this.dope.isPoseTabParent(sheet) && this.dope.trackHeight >= 12D;
+
+		this.label(context, area, y, w - (poseKlapp ? 14 : 0), zaehler, titel, null, null,
+			offset + this.dope.getSheetIndent(sheet), false);
+
+		/* Pose-Knochen-Klapp bleibt RECHTS: die Klickzone (isPoseTabArrowHit) rechnet dort. */
+		if (poseKlapp)
+		{
+			this.chevron(context,
+				area.x + w - UIKeyframeDopeSheet.LABEL_RIGHT_PAD - UIKeyframeDopeSheet.LABEL_ICON_SIZE / 2 - 2,
+				y + (int) this.dope.trackHeight / 2, this.dope.expandedPoseTabs.contains(sheet));
+		}
 	}
 
-	/* Entwurf foundations/zeitleiste.html (.cr): neutrale Zeile, Name links, Zaehler
+	/** Duennes Vektor-Chevron (Entwurf) statt des dicken Atlas-Pfeils. */
+	private void chevron(UIContext context, int cx, int cy, boolean offen)
+	{
+		int c = NanoDesign.TXT_DIM | Colors.A100;
+
+		if (offen)
+		{
+			context.batcher.polygon(new float[] {cx - 4, cx + 4, cx}, new float[] {cy - 2, cy - 2, cy + 3}, c);
+		}
+		else
+		{
+			context.batcher.polygon(new float[] {cx - 2, cx - 2, cx + 3}, new float[] {cy - 4, cy + 4, cy}, c);
+		}
+	}
+
+	/* Entwurf foundations/zeitleiste.html (.cr): Chevron und Name links, Zaehler und Auge
 	 * rechts in Tabellenziffern — kein Farbbalken, kein Kanal-Icon (Akte 36). */
 	private void label(UIContext context, Area area, int y, int w, String zaehler,
-		String titel, Icon icon, int einzug, boolean gruppe)
+		String titel, Boolean klapp, java.util.function.BooleanSupplier auge, int einzug, boolean gruppe)
 	{
 		if (y + this.dope.trackHeight < area.y || y > area.ey())
 		{
@@ -166,16 +184,25 @@ final class DopeSheetSpalte
 		int textColor = gruppe
 			? (hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F))
 			: (hover ? NanoDesign.TXT : NanoDesign.TXT_DIM);
-		int iconX = area.x + w - UIKeyframeDopeSheet.LABEL_RIGHT_PAD - UIKeyframeDopeSheet.LABEL_ICON_SIZE;
 		int textX = area.x + UIKeyframeDopeSheet.LABEL_TEXT_LEFT + einzug;
 		FontRenderer font = context.batcher.getFont();
 		int my = y + h / 2;
 		int rechts = area.x + w - UIKeyframeDopeSheet.LABEL_RIGHT_PAD;
 
-		if (icon != null)
+		/* Klapp-Chevron LINKS vor dem Namen — wie im Entwurf (.cr .chev). */
+		if (klapp != null)
 		{
-			context.batcher.icon(icon, Colors.A100 | (NanoDesign.TXT_DIM & 0xFFFFFF), iconX, my, 0F, 0.5F);
-			rechts = iconX - UIKeyframeDopeSheet.LABEL_TEXT_ICON_GAP;
+			this.chevron(context, textX + 3, my, klapp);
+			textX += 11;
+		}
+
+		if (auge != null)
+		{
+			Icon symbol = auge.getAsBoolean() ? Icons.VISIBLE : Icons.INVISIBLE;
+
+			context.batcher.icon(symbol, Colors.A100 | (NanoDesign.TXT_OFF & 0xFFFFFF),
+				rechts - UIKeyframeDopeSheet.LABEL_ICON_SIZE / 2, my, 0.5F, 0.5F);
+			rechts -= UIKeyframeDopeSheet.LABEL_ICON_SIZE + UIKeyframeDopeSheet.LABEL_TEXT_ICON_GAP;
 		}
 
 		if (!zaehler.isEmpty() && !"0".equals(zaehler))

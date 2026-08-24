@@ -26,6 +26,9 @@ public class UIKeyframeGroup extends UIKeyframeElement
     /** >= 0: diese Kopfzeile ist die Kamera-Ebene N — die Lane zeichnet dort die Clips. */
     public int kameraEbene = -1;
 
+    /** Sichtbarkeits-Auge des Kopfes (live gelesen, z. B. replay.enabled) — null: keins. */
+    public java.util.function.BooleanSupplier auge;
+
     public UIKeyframeGroup(IKey title)
     {
         super(title, 0);

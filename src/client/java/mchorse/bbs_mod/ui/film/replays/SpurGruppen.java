@@ -208,6 +208,7 @@ public final class SpurGruppen
 		{
 			kopf.kopf = true;
 			kopf.collapsed = false;
+			kopf.auge = gewaehlt.enabled::get;
 			view.addElement(kopf);
 		}
 
@@ -260,6 +261,7 @@ public final class SpurGruppen
 				UIKeyframeGroup fremd = new UIKeyframeGroup(IKey.constant(replay.getName()), 0);
 
 				fremd.kopf = true;
+				fremd.auge = replay.enabled::get;
 				fremd.zaehler = kanaele + (kanaele == 1 ? " channel" : " channels");
 				fremd.onToggle = () -> panel.replayEditor.replaysList.replays.scrollToReplay(replay);
 
