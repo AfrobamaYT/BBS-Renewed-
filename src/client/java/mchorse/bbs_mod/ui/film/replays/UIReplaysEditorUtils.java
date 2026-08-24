@@ -703,11 +703,8 @@ public class UIReplaysEditorUtils
             return;
         }
 
-        /* Ctrl multi-select: toggle the bone in the live pose editor without changing the
-         * selected keyframe. Selecting a keyframe recreates the factory (see
-         * UIKeyframeEditor#pickKeyframe), which resets the pose editor — so it caps the
-         * multi-selection. When a pose factory is already up and owns this bone, just
-         * toggle it and stop, so the selection accumulates. */
+        /* Ctrl multi-select: nur den Bone im lebenden Pose-Editor togglen — ein Keyframe-
+         * Wechsel baut die Factory neu (pickKeyframe) und kappte sonst die Mehrfachauswahl. */
         if (!insert && Window.isCtrlPressed()
             && keyframeEditor.editor instanceof UIPoseKeyframeFactory poseFactory
             && poseFactory.poseEditor.hasBone(bone))
@@ -753,6 +750,8 @@ public class UIReplaysEditorUtils
 
             if (sheet == null)
             {
+                /* Stiller Abbruch zaehlt — sah dreimal wie "Klick tut nichts" aus. */
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("pf.kein-sheet", "boneKey=" + boneKey);
                 return;
             }
 
@@ -773,6 +772,7 @@ public class UIReplaysEditorUtils
 
             if (isPoseSheet(currentSheet, path))
             {
+                mchorse.bbs_mod.graphics.Messpunkt.zaehle("pf.pose-schon-gewaehlt");
                 return;
             }
 
