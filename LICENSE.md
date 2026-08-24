@@ -78,18 +78,23 @@ Der weit überwiegende Teil dieses Repositorys steht unter der **MIT-Lizenz** �
 Code ebenso wie das, was in diesem Fork dazugeschrieben wurde. MIT ist mit der GPL
 verträglich; die MIT-Teile bleiben zusätzlich unter MIT nutzbar.
 
-**Rechteinhaber**, gemessen an den Beiträgen im Baum:
+**Rechteinhaber**, gemessen an den Beiträgen auf `port-26.2` (hinzugefügte Zeilen, ohne
+Merges, alle Dateitypen):
 
-| | Anteil (Java-Zeilen, ohne Merges) |
-|---|---|
-| **McHorse** — der ursprüngliche BBS mod | 188.261 |
-| **Wemppy** — bbs-fs | 95.523 (`Wemppy4` + `wemppyy`) |
-| **ElGatoPro300** — bbs-mod-cml-edition | 290.763 |
-| **Afrobama** — dieser Fork | 81.210 |
+| | Zeilen gesamt | davon Massen-Commits* | Handgeschrieben |
+|---|---|---|---|
+| **McHorse** — der ursprüngliche BBS mod | 335.115 | 178.021 | **157.094** |
+| **Afrobama** — dieser Fork | 203.052 | 56.804 | **146.248** |
+| **ElGatoPro300** — bbs-mod-cml-edition | 528.586 | 392.808 | **135.778** |
+| **Wemppy** — bbs-fs (`Wemppy4` + `wemppyy`) | 102.289 | 0 | **102.289** |
 
-Weitere Beitragende der Upstreams — darunter **SIRSYP** mit 254.895 Zeilen sowie
-ElRedstoniano, Fanyel, Matias Neto und andere — sind in der Git-Historie namentlich
-verzeichnet. `git shortlog -sn` listet sie vollständig.
+\* Commits über 5.000 Zeilen — Mappings-Umstellungen, Massenumbenennungen, generierte
+Dateien. Sie zählen urheberrechtlich mit, sagen aber wenig über den Umfang der eigentlichen
+Arbeit. Deshalb steht die Handarbeit daneben.
+
+Weitere Beitragende der Upstreams — darunter **SIRSYP** (467.782 Zeilen, davon 88 % in
+Massen-Commits), ElRedstoniano, Fanyel, Matias Neto und andere — sind in der Git-Historie
+namentlich verzeichnet. `git shortlog -sn` listet sie vollständig.
 
 ⛔ **Die Copyright-Vermerke aller Genannten bleiben an ihren Dateien stehen und werden
 nicht ersetzt.** MIT verlangt das ausdrücklich: Wer den Vermerk entfernt, verliert damit
