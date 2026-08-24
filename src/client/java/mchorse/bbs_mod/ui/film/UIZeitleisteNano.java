@@ -54,7 +54,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	private mchorse.bbs_mod.utils.clips.Clip ablage;
 	private boolean klappeOffen;
 	/** 0 = Dope Sheet (Kanaele), 1 = nur bewegte Kanaele, 2 = Kamera-Clips. */
-	private int modus;
+	public int modus;   /* 0 Dope Sheet · 1 Animated only · 2 Camera clips — vom Animier-Bereich gelesen */
 
 	private final List<ZeitleisteSpuren.Zeile> spuren = new ArrayList<>();
 	/**

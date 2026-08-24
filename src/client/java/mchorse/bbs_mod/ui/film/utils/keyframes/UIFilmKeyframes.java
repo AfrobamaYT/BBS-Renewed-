@@ -124,6 +124,20 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
         super.renderOverlay(context);
 
         /* Am ENDE des Zeichenlaufs: erst jetzt steht das Layout, das gemeldet wird. */
+        /* ⛔ „Animated only" gilt AUCH hier. Der Modus lag nur in der Zeitleiste und wurde
+         * ausschliesslich an ZeitleisteSpuren gereicht; der Animier-Bereich baut seine
+         * Zeilen ueber updateChannelsList und bekam ihn nie zu sehen (Nutzerbefund
+         * 2026-08-24). Der Setter ist idempotent, das kostet je Bild nichts. */
+        mchorse.bbs_mod.ui.film.UIFilmPanel filmPanel =
+            mchorse.bbs_mod.BBSModClient.getDashboard() == null ? null
+                : mchorse.bbs_mod.BBSModClient.getDashboard().getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
+
+        if (filmPanel != null && filmPanel.zeitleisteNano instanceof mchorse.bbs_mod.ui.film.UIZeitleisteNano zl
+            && this.getDopeSheet() != null)
+        {
+            this.getDopeSheet().setNurBewegte(zl.modus == 1);
+        }
+
         com.mcstudio.nano.ZonenMelder melder = this.zonen();
 
         melder.beginnen();

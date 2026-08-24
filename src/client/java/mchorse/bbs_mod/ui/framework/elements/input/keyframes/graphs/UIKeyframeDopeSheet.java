@@ -187,8 +187,26 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return (int) this.trackHeight;
     }
 
+    /** „Animated only": Spuren ohne einen einzigen Keyframe ausblenden. */
+    private boolean nurBewegte;
+
+    public void setNurBewegte(boolean nurBewegte)
+    {
+        if (this.nurBewegte != nurBewegte)
+        {
+            this.nurBewegte = nurBewegte;
+            this.updateScrollSize();
+        }
+    }
+
     private boolean isVisible(UIKeyframeSheet sheet)
     {
+        /* Filter HIER: der einzige Punkt, an dem Layout und Bedienung zusammenlaufen. */
+        if (this.nurBewegte && sheet.channel != null && sheet.channel.getKeyframes().isEmpty())
+        {
+            return false;
+        }
+
         UIKeyframeSheet root = this.poseTabRoots.get(sheet);
 
         return root == null || this.expandedPoseTabs.contains(root);
@@ -1050,71 +1068,53 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private void renderGroupLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeGroup group, int offset, int y, int w)
     {
-        if (y + this.trackHeight < area.y || y > area.ey())
-        {
-            return;
-        }
-
-        /* Hover: whole row (label + track area) */
-        boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + this.trackHeight;
-        int my = y + (int) this.trackHeight / 2;
-        int lx = area.x;
-
-        if (hover)
-        {
-            context.batcher.gradientHBox(lx, y, lx + w, y + (int) this.trackHeight, Colors.setA(group.color, 0.2F), Colors.setA(group.color, 0.04F));
-        }
-
-        context.batcher.box(lx, y, lx + 3, y + (int) this.trackHeight, group.color | Colors.A100);
-
-        int arrowX = lx + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
-        FontRenderer font = context.batcher.getFont();
-        int textColor = hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F);
-        int textX = lx + LABEL_TEXT_LEFT + offset;
-        String label = font.limitToWidth(group.title.get(), Math.max(0, arrowX - LABEL_TEXT_ICON_GAP - textX));
-
-        context.batcher.text(label, textX, my - font.getHeight() / 2, textColor);
-        context.batcher.icon(group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, Colors.A100 | (textColor & 0xFFFFFF), arrowX, my, 0F, 0.5F);
+        this.renderLabel(context, area, y, w, group.color, 3, group.title.get(),
+            group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, offset, true);
     }
 
     private void renderSheetLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
+    {
+        Icon icon = this.isPoseTabParent(sheet)
+            ? (this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT)
+            : sheet.getIcon();
+
+        this.renderLabel(context, area, y, w, sheet.color, 2, sheet.title.get(),
+            this.trackHeight >= 12D ? icon : null, offset + this.getSheetIndent(sheet), false);
+    }
+
+    /** Eine Zeile der Beschriftungsspalte — EINE Methode fuer Gruppen UND Spuren. */
+    private void renderLabel(UIContext context, Area area, int y, int w, int farbe, int balken,
+        String titel, Icon icon, int einzug, boolean gruppe)
     {
         if (y + this.trackHeight < area.y || y > area.ey())
         {
             return;
         }
 
-        /* Hover: whole row (label + track area) */
-        boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + this.trackHeight;
-        int my = y + (int) this.trackHeight / 2;
-        int lx = area.x;
+        int h = (int) this.trackHeight;
+        boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + h;
 
         if (hover)
         {
-            context.batcher.gradientHBox(lx, y, lx + w, y + (int) this.trackHeight, Colors.setA(sheet.color, 0.2F), Colors.setA(sheet.color, 0.04F));
+            context.batcher.gradientHBox(area.x, y, area.x + w, y + h,
+                Colors.setA(farbe, 0.2F), Colors.setA(farbe, 0.04F));
         }
 
-        context.batcher.box(lx, y, lx + 2, y + (int) this.trackHeight, sheet.color | Colors.A100);
+        context.batcher.box(area.x, y, area.x + balken, y + h, farbe | Colors.A100);
 
-        boolean poseTab = this.isPoseTabParent(sheet);
-        Icon icon = poseTab
-            ? (this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT)
-            : sheet.getIcon();
-        boolean hasIcon = icon != null && this.trackHeight >= 12D;
-
-        int iconX = lx + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
+        int textColor = gruppe
+            ? (hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F))
+            : (hover ? NanoDesign.TXT : NanoDesign.TXT_DIM);
+        int iconX = area.x + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
+        int textX = area.x + LABEL_TEXT_LEFT + einzug;
+        int rechts = icon != null ? iconX - LABEL_TEXT_ICON_GAP : area.x + w - LABEL_RIGHT_PAD;
         FontRenderer font = context.batcher.getFont();
-        /* ⛔ OHNE SCHATTEN. `textShadow` ist die alte BBS-Handschrift; der Entwurf setzt
-         * flache Schrift auf ruhigem Grund. Farben aus denselben Tokens wie die neue
-         * Zeitleiste: TXT fuer die aktive Zeile, TXT_DIM fuer den Rest. */
-        int textColor = hover ? NanoDesign.TXT : NanoDesign.TXT_DIM;
-        int textX = lx + LABEL_TEXT_LEFT + offset + this.getSheetIndent(sheet);
-        int textRight = hasIcon ? iconX - LABEL_TEXT_ICON_GAP : lx + w - LABEL_RIGHT_PAD;
-        String title = font.limitToWidth(sheet.title.get(), Math.max(0, textRight - textX));
+        int my = y + h / 2;
 
-        context.batcher.text(title, textX, my - font.getHeight() / 2, textColor);
+        context.batcher.text(font.limitToWidth(titel, Math.max(0, rechts - textX)),
+            textX, my - font.getHeight() / 2, textColor);
 
-        if (hasIcon)
+        if (icon != null)
         {
             context.batcher.icon(icon, Colors.A100 | (textColor & 0xFFFFFF), iconX, my, 0F, 0.5F);
         }
