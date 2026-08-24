@@ -260,17 +260,16 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return this.getDopeSheetY() + (y == null ? 0 : y);
     }
 
-    /**
-     * Whether given mouse coordinates are near the given point?
-     */
+    /** Whether given mouse coordinates are near the given point? */
     public static boolean isNear(double x, double y, int mouseX, int mouseY, boolean checkOnlyX)
     {
+        /* 8 px Fang (vorher 5): pixelgenaues Treffen noetig, knapp daneben = Playhead-Scrub (Akte 38). */
         if (checkOnlyX)
         {
-            return Math.pow(mouseX - x, 2) < 25D;
+            return Math.pow(mouseX - x, 2) < 64D;
         }
 
-        return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < 25D;
+        return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < 64D;
     }
 
     /* Sheet management */
