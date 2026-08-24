@@ -74,6 +74,20 @@ public final class ZeitleisteZweig
 		panel.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
 	}
 
+	/** Magnet fuer das Key-Ziehen. INVERTIERT gespeichert: ein per Hotswap neues
+	 *  static-Feld startet mit false — so ist der Magnet nach einem Swap AN (Default). */
+	private static boolean magnetAus;
+
+	public static boolean istMagnet()
+	{
+		return !magnetAus;
+	}
+
+	public static void magnetToggle()
+	{
+		magnetAus = !magnetAus;
+	}
+
 	/** „Only selected bone" (Blenders Only Show Selected): filtert die Pose-Bone-Zeilen
 	 *  des Dope Sheets auf den im Keyframe-Editor aktiven Knochen. Zustand statisch —
 	 *  die Editoren werden je Replay-Wechsel neu gebaut, der Filter soll ueberleben. */

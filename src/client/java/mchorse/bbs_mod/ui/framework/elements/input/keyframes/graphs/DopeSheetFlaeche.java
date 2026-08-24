@@ -228,7 +228,8 @@ final class DopeSheetFlaeche
 	{
 		tick = Math.round(tick);
 
-		if (!(this.dope.keyframes instanceof mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes fk)
+		if (!mchorse.bbs_mod.ui.film.ZeitleisteZweig.istMagnet()
+			|| !(this.dope.keyframes instanceof mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes fk)
 			|| fk.editor == null || fk.editor.getFilm() == null)
 		{
 			return tick;
@@ -272,6 +273,18 @@ final class DopeSheetFlaeche
 				bestAbstand = abstand;
 				best = p;
 			}
+		}
+
+		/* Sichtbares Einrasten (Blender/NLE): amber Linie am Fangpunkt, solange gezogen
+		 * wird. magnet() laeuft in der Render-Phase (handleMouse aus render), der Batcher
+		 * ist gueltig — ohne dieses Feedback fuehlte sich der Magnet unsichtbar an. */
+		if (best != tick && context != null)
+		{
+			int sx = this.dope.keyframes.toGraphX(best);
+			int a = com.mcstudio.nano.NanoDesign.BERNSTEIN;
+
+			context.batcher.box(sx, this.dope.keyframes.graphArea.y, sx + 1,
+				this.dope.keyframes.graphArea.ey(), Colors.setA(a, 0.75F));
 		}
 
 		return best;

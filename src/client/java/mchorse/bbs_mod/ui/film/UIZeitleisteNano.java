@@ -501,10 +501,13 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		float nachTransport = this.transport(vg, f, transportRechts, k, panel, cursor, dauer);
 
 		nachTransport = this.schleife(vg, f, nachTransport, k, panel, cursor);
+		nachTransport -= 22F * k;
+		this.transportKnopf(vg, f, "tr-magnet", nachTransport, (NanoDesign.H_KOPF * k - 20F * k) / 2F, 22F * k, 20F * k, k, "raster",
+			NanoDesign.TXT, mchorse.bbs_mod.ui.film.ZeitleisteZweig.istMagnet(), mchorse.bbs_mod.ui.film.ZeitleisteZweig::magnetToggle,
+			"Snap dragged keys to playhead, markers and clip edges", "");
 		nachTransport = this.markerKnopf(vg, f, nachTransport, k, film, cursor);
 
-		/* Titel als Wähler, danach die Menuezeile — wie im Entwurf:
-		 * [etyp] [Dope Sheet ⌄] Marker  Key */
+		/* Titel als Waehler, dann die Menuezeile — Entwurf: [etyp] [Dope Sheet v] Marker Key */
 		float titelPlatz = nachTransport - nachKopf - 10F * k;
 		float kx = nachKopf;
 
@@ -592,11 +595,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		 * verloren; jede Nutzermeldung seither war ein Stueck dieser Logik. */
 		this.kanalspalte(vg, f, b, h, k);
 
-		/* ⛔ Eingaben NUR im Kopf annehmen. Diese Flaeche hat volle Hoehe (sie traegt auch
-		 * die Kanalspalte), liegt aber ueber dem Koerper-Editor — ohne diese Grenze schluckte
-		 * sie dessen komplette Bedienung: Rechtsklick, Mittelklick, Griffe, alles kam nicht
-		 * mehr an. Die Kanalspalte bleibt bewusst DRAUSSEN: sie ist Beschriftung, und ein
-		 * Klick darauf soll die Spur darunter treffen. */
+		/* ⛔ Eingaben NUR im Kopf: die volle Flaeche schluckte sonst die komplette Bedienung
+		 * des Koerper-Editors darunter; die Kanalspalte bleibt bewusst draussen (Beschriftung). */
 		f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
 		/* Hoehe = NUR Kopf: unterhalb uebermalt das Dope Sheet — der Rand-Kipp klappt den Tooltip so nach OBEN (gemessen). */
 		NanoBausteine.tooltip(vg, b, Math.round(NanoDesign.H_KOPF * k), k, f.tooltipFaellig());
