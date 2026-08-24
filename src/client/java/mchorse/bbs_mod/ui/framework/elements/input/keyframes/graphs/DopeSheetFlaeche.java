@@ -224,14 +224,26 @@ final class DopeSheetFlaeche
 	 * rundet auf ganze Ticks und rastet innerhalb von 10 px an Cursor, Film-Markern und
 	 * Clip-Kanten ein. Shift (frei ziehen) laeuft am Aufrufer vorbei an dieser Methode.
 	 */
+	/* Hysterese-Zustand (Resolve-Gefuehl): gerastet wird bei 15 px, GELOEST erst bei
+	 * 30 px — dazwischen klebt der Key am Punkt, obwohl die Maus weiterzieht. Der
+	 * Zustand verfaellt, wenn magnet() ~eine Viertelsekunde nicht lief (Zug-Ende).
+	 * Alles Add-Field-sichere Defaults (false/0). */
+	private boolean rastAktiv;
+	private float rastPunkt;
+	private long rastZuletzt;
+
 	float magnet(float tick, UIContext context)
 	{
+		float roh = tick;
+
 		tick = Math.round(tick);
 
 		if (!mchorse.bbs_mod.ui.film.ZeitleisteZweig.istMagnet()
 			|| !(this.dope.keyframes instanceof mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes fk)
 			|| fk.editor == null || fk.editor.getFilm() == null)
 		{
+			this.rastAktiv = false;
+
 			return tick;
 		}
 
@@ -242,6 +254,28 @@ final class DopeSheetFlaeche
 		if (proTick <= 0)
 		{
 			return tick;
+		}
+
+		long jetzt = System.currentTimeMillis();
+
+		if (jetzt - this.rastZuletzt > 250L)
+		{
+			this.rastAktiv = false;
+		}
+
+		this.rastZuletzt = jetzt;
+
+		/* KLEBEN: einmal gerastet, haelt der Punkt bis zum doppelten Fangabstand. */
+		if (this.rastAktiv)
+		{
+			if (Math.abs(roh - this.rastPunkt) < 30D / proTick)
+			{
+				this.rastLinie(context, this.rastPunkt);
+
+				return this.rastPunkt;
+			}
+
+			this.rastAktiv = false;
 		}
 
 		long versatz = fk.getClipOffset();
@@ -279,6 +313,7 @@ final class DopeSheetFlaeche
 
 		float best = tick;
 		double bestAbstand = 15D / proTick;
+		boolean gefunden = false;
 
 		for (float p : punkte)
 		{
@@ -288,22 +323,36 @@ final class DopeSheetFlaeche
 			{
 				bestAbstand = abstand;
 				best = p;
+				gefunden = true;
 			}
 		}
 
-		/* Sichtbares Einrasten (Blender/NLE): amber Linie am Fangpunkt, solange gezogen
-		 * wird. magnet() laeuft in der Render-Phase (handleMouse aus render), der Batcher
-		 * ist gueltig — ohne dieses Feedback fuehlte sich der Magnet unsichtbar an. */
-		if (best != tick && context != null)
+		if (gefunden)
 		{
-			int sx = this.dope.keyframes.toGraphX(best);
-			int a = com.mcstudio.nano.NanoDesign.BERNSTEIN;
-
-			context.batcher.box(sx, this.dope.keyframes.graphArea.y, sx + 1,
-				this.dope.keyframes.graphArea.ey(), Colors.setA(a, 0.75F));
+			this.rastAktiv = true;
+			this.rastPunkt = best;
+			this.rastLinie(context, best);
 		}
 
 		return best;
+	}
+
+	/** Sichtbares Einrasten: kraeftige Bernstein-Linie mit Schein am Fangpunkt — magnet()
+	 *  laeuft in der Render-Phase (handleMouse aus render), der Batcher ist gueltig. */
+	private void rastLinie(UIContext context, float punkt)
+	{
+		if (context == null)
+		{
+			return;
+		}
+
+		int sx = this.dope.keyframes.toGraphX(punkt);
+		int y1 = this.dope.keyframes.graphArea.y;
+		int y2 = this.dope.keyframes.graphArea.ey();
+		int a = com.mcstudio.nano.NanoDesign.BERNSTEIN;
+
+		context.batcher.box(sx - 2, y1, sx + 3, y2, Colors.setA(a, 0.20F));
+		context.batcher.box(sx - 1, y1, sx + 2, y2, Colors.setA(a, 0.85F));
 	}
 
 	/** Schluessel der Zeile: Summary nimmt ALLE Kanaele des Graphen, Gruppen ihre Kinder. */
