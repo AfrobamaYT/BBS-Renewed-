@@ -1079,11 +1079,11 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		/* Aufnahme ganz rechts — folgenreich, deshalb abgesetzt und rot */
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-rec", x, y, bw, bh, k, "rec", 0xE58F89, false,
-			() -> panel.preview.recordReplay.clickItself(), "Replay aufnehmen", kuerzel("record"));
+			() -> panel.preview.recordReplay.clickItself(), "Record replay", kuerzel("record"));
 
 		x -= 6F * k + bw;
 		this.transportKnopf(vg, f, "tr-ende", x, y, bw, bh, k, "ende", NanoDesign.TXT, false,
-			() -> panel.setCursor(dauer), "Zum Ende springen", "");
+			() -> panel.setCursor(dauer), "Jump to end", "");
 
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-vor", x, y, bw, bh, k, "schritt-vor", NanoDesign.TXT, false,
@@ -1092,7 +1092,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-play", x, y, bw, bh, k, laeuft ? "pause" : "play",
 			laeuft ? 0xFFFFFF : NanoDesign.TXT, laeuft, panel::togglePlayback,
-			laeuft ? "Wiedergabe anhalten" : "Wiedergabe starten", kuerzel("plause"));
+			laeuft ? "Pause playback" : "Play", kuerzel("plause"));
 
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-zurueck", x, y, bw, bh, k, "schritt-zurueck", NanoDesign.TXT, false,
@@ -1100,7 +1100,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		x -= bw;
 		this.transportKnopf(vg, f, "tr-anfang", x, y, bw, bh, k, "anfang", NanoDesign.TXT, false,
-			() -> panel.setCursor(0), "Zum Anfang springen", "");
+			() -> panel.setCursor(0), "Jump to start", "");
 
 		return x - 8F * k;
 	}

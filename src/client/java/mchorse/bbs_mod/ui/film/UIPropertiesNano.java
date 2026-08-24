@@ -284,7 +284,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 
 		final Replay replay = this.angeheftet != null ? this.angeheftet : gewaehlt;
 
-		String krume = filmName + "  ›  " + (replay == null ? "nichts gewählt" : replay.getName())
+		String krume = filmName + "  ›  " + (replay == null ? "nothing selected" : replay.getName())
 			+ (this.angeheftet != null ? "  (angeheftet)" : "");
 		NanoStifte.textInBox(vg, NanoDesign.SANS, 11F * k, nachKopf,
 			NanoDesign.H_KOPF * k / 2F, NanoDesign.TXT_DIM,
@@ -335,15 +335,15 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			if (film == null)
 			{
 				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
-					"Kein Film geladen", null);
+					"No film loaded", null);
 				return;
 			}
 
 			panel(vg, f, ix, y, ib, k, 5, "Film", () -> new String[][]{
 				{"Name", film.getId(), ""},
-				{"Dauer", film.camera.calculateDuration() + " Ticks", ""},
+				{"Duration", film.camera.calculateDuration() + " ticks", ""},
 				{"Replays", String.valueOf(film.replays.getList().size()), ""},
-				{"Kamera-Clips", String.valueOf(film.camera.get().size()), ""},
+				{"Camera clips", String.valueOf(film.camera.get().size()), ""},
 			});
 			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 			return;
@@ -352,7 +352,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		if (replay == null)
 		{
 			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
-				"Kein Replay gewählt", null);
+				"No replay selected", null);
 			return;
 		}
 
@@ -424,9 +424,9 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		/* --- Visibility --- */
 		if (this.schiene == 0)
 		y = panel(vg, f, ix, y, ib, k, 2, "Visibility", () -> new String[][]{
-			{"Sichtbar", replay.enabled.get() ? "ja" : "nein", ""},
-			{"Form sichtbar", form == null || form.visible.get() ? "ja" : "nein", ""},
-			{"Beleuchtung", form == null ? "—" : zahl(form.lighting.get()), ""},
+			{"Visible", replay.enabled.get() ? "Yes" : "No", ""},
+			{"Form visible", form == null || form.visible.get() ? "Yes" : "No", ""},
+			{"Lighting", form == null ? "—" : zahl(form.lighting.get()), ""},
 		});
 
 		/* --- Shape Keys mit Zaehler im Kopf --- */
@@ -439,9 +439,9 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 
 		/* --- Kanäle --- */
 		if (this.schiene == 3)
-		y = panel(vg, f, ix, y, ib, k, 4, "Kanäle", () -> new String[][]{
-			{"Gesamt", String.valueOf(replay.keyframes.getAll().size()), ""},
-			{"Aktionen", String.valueOf(replay.actions.get().size()), ""},
+		y = panel(vg, f, ix, y, ib, k, 4, "Channels", () -> new String[][]{
+			{"Total", String.valueOf(replay.keyframes.getAll().size()), ""},
+			{"Actions", String.valueOf(replay.actions.get().size()), ""},
 		});
 
 		/* Was unten uebersteht, wird rollbar — sonst sind zugeklappte Panels unerreichbar. */

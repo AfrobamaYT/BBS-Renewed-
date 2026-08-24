@@ -186,7 +186,7 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 
 		if (film == null)
 		{
-			this.zeilen.add(new Zeile(0, "film", "Kein Film geladen", "", true, null));
+			this.zeilen.add(new Zeile(0, "film", "No film loaded", "", true, null));
 			return "leer";
 		}
 
