@@ -349,7 +349,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			{"physics", "funken", "Physics channels"},
 			{"all", "outliner", "All tracks"},
 			{"actions", "play", "Action timeline"},
-			{"sel", "zeiger", "Only selected bone (Blender: Only Show Selected)"},
 		};
 
 		float b = 22F * k;
@@ -362,7 +361,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 				break;
 			}
 
-			boolean an = "sel".equals(e[0]) ? mchorse.bbs_mod.ui.film.ZeitleisteZweig.istBoneFilter() : e[0].equals(aktiv);
+			boolean an = e[0].equals(aktiv);
 			boolean ueber = f.istHover("kf" + e[0]);
 
 			if (an)
@@ -381,8 +380,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 			f.zone("kf" + id, kx, y, b, 20F * k, () ->
 			{
-				if ("sel".equals(id)) { mchorse.bbs_mod.ui.film.ZeitleisteZweig.boneFilterToggle(filmPanel()); }
-				else { editor.filterWaehlen(id); }
+				editor.filterWaehlen(id);
 				this.stand = "";
 				this.flaeche.neuMalen();
 			}, e[2], "");
@@ -502,6 +500,10 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 		nachTransport = this.schleife(vg, f, nachTransport, k, panel, cursor);
 		nachTransport -= 22F * k;
+		this.transportKnopf(vg, f, "tr-bone", nachTransport, (NanoDesign.H_KOPF * k - 20F * k) / 2F, 22F * k, 20F * k, k, "knochen",
+			NanoDesign.TXT, mchorse.bbs_mod.ui.film.ZeitleisteZweig.istBoneFilter(), mchorse.bbs_mod.ui.film.ZeitleisteZweig::boneFilterToggle,
+			"Only selected bone (Blender: Only Show Selected)", "");
+		nachTransport -= 22F * k;
 		this.transportKnopf(vg, f, "tr-magnet", nachTransport, (NanoDesign.H_KOPF * k - 20F * k) / 2F, 22F * k, 20F * k, k, "raster",
 			NanoDesign.TXT, mchorse.bbs_mod.ui.film.ZeitleisteZweig.istMagnet(), mchorse.bbs_mod.ui.film.ZeitleisteZweig::magnetToggle,
 			"Snap dragged keys to playhead, markers and clip edges", "");
@@ -589,10 +591,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			kx = this.kanalfilter(vg, f, kx + 8F * k, nachTransport, k);
 		}
 
-		/* ⛔ HIER ENDET diese Flaeche. Alles ab `oben` — Kanalspalte, Lineal, Spuren, Clips,
-		 * Keyframes — zeichnet ab jetzt UIClips darunter, mit seinen 89 Methoden fuer Auswahl,
-		 * Kollisionen, Einrasten und Ebenen. Der Neubau hatte das nachgebaut und 88 davon
-		 * verloren; jede Nutzermeldung seither war ein Stueck dieser Logik. */
+		/* ⛔ HIER ENDET diese Flaeche: alles darunter zeichnet UIClips mit seinen 89 Methoden —
+		 * der Neubau hatte das nachgebaut und 88 davon verloren (jede Nutzermeldung ein Stueck davon). */
 		this.kanalspalte(vg, f, b, h, k);
 
 		/* ⛔ Eingaben NUR im Kopf: die volle Flaeche schluckte sonst die komplette Bedienung

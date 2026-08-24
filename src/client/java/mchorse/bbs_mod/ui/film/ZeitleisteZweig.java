@@ -104,6 +104,13 @@ public final class ZeitleisteZweig
 		boneFilterAnwenden(panel);
 	}
 
+	/** Fuer den Kopf-Knopf: holt das Panel selbst — als capture-freie Methodenreferenz swap-fest. */
+	public static void boneFilterToggle()
+	{
+		boneFilterToggle(mchorse.bbs_mod.BBSModClient.getDashboard() == null ? null
+			: mchorse.bbs_mod.BBSModClient.getDashboard().getPanel(UIFilmPanel.class));
+	}
+
 	/** Auch nach jedem Editor-Neubau aufrufen — der Neubau verliert das Predicate. */
 	public static void boneFilterAnwenden(UIFilmPanel panel)
 	{
