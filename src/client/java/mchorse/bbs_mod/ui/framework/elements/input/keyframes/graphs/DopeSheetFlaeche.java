@@ -237,7 +237,8 @@ final class DopeSheetFlaeche
 		return this.magnet(tick, context, false);
 	}
 
-	/** ohneCursor: beim PLAYHEAD-Scrub ist der Cursor selbst das Gezogene — kein Fangpunkt. */
+	/** ohneCursor = Playhead-Scrub: der Cursor ist das Gezogene (kein Fangpunkt), und es
+	 *  fangen NUR Marker und Keys — Clip-Kanten nicht (Nutzerentscheid Akte 38). */
 	float magnet(float tick, UIContext context, boolean ohneCursor)
 	{
 		float roh = tick;
@@ -299,10 +300,13 @@ final class DopeSheetFlaeche
 			punkte.add((float) (m.tick.get() - versatz));
 		}
 
-		for (mchorse.bbs_mod.utils.clips.Clip c : film.camera.get())
+		if (!ohneCursor)
 		{
-			punkte.add((float) (c.tick.get() - versatz));
-			punkte.add((float) (c.tick.get() + c.duration.get() - versatz));
+			for (mchorse.bbs_mod.utils.clips.Clip c : film.camera.get())
+			{
+				punkte.add((float) (c.tick.get() - versatz));
+				punkte.add((float) (c.tick.get() + c.duration.get() - versatz));
+			}
 		}
 
 		/* Resolve-Gefuehl: auch die Keys der ANDEREN Spuren fangen — Posen aneinander
