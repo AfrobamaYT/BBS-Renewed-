@@ -43,7 +43,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 {
     private static final int POSE_TAB_BASE_INDENT = 4;
     private static final int POSE_TAB_DEPTH_STEP = 4;
-    private static final float TRACK_BAR_ALPHA = 0.3F;
 
     /** Track-name column layout: left text indent, right padding, right-side icon slot, text/icon gap. */
     private static final int LABEL_TEXT_LEFT = 5;
@@ -1025,6 +1024,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         context.batcher.box(area.x, area.y, area.x + w, area.ey(), 0xFF191919);
         context.batcher.box(area.x + w - 1, area.y, area.x + w, area.ey(), 0xFF0D0D0D);
 
+        /* Spaltenkopf im Linealband — „CHANNELS" wie im Entwurf und im Kamera-Zweig. */
+        int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
+
+        context.batcher.text("CHANNELS", area.x + 8,
+            area.y + (rulerBottom - area.y - context.batcher.getFont().getHeight()) / 2, 0xFF616161);
+
         context.batcher.clip(area.x, area.y, area.x + w, area.ey(), context);
 
         for (UIKeyframeElement element : elements)
@@ -1058,8 +1063,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private void renderGroupLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeGroup group, int offset, int y, int w)
     {
-        this.renderLabel(context, area, y, w, group.color, "", group.title.get(),
-            group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, offset, true);
+        int summe = group.children.stream().filter(UIKeyframeSheet.class::isInstance)
+            .mapToInt((k) -> ((UIKeyframeSheet) k).channel.getKeyframes().size()).sum();
+
+        this.renderLabel(context, area, y, w, group.color, summe > 0 ? String.valueOf(summe) : "",
+            group.title.get(), group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, offset, true);
     }
 
     private void renderSheetLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
@@ -1068,8 +1076,23 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Icon icon = !this.isPoseTabParent(sheet) ? null
             : this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
 
-        this.renderLabel(context, area, y, w, sheet.color,
-            String.valueOf(sheet.channel.getKeyframes().size()), sheet.title.get(),
+        /* Entwurfszeile .cr.sel: die zuletzt angefasste Spur traegt die blaue Toenung. */
+        if (sheet == this.lastSheet)
+        {
+            context.batcher.box(area.x, y, area.x + w, y + (int) this.trackHeight,
+                Colors.setA(0x4772B3, 0.32F));
+        }
+
+        List keys = sheet.channel.getKeyframes();
+        String zaehler = String.valueOf(keys.size());
+
+        if (!keys.isEmpty() && ((Keyframe) keys.get(0)).getValue() instanceof mchorse.bbs_mod.utils.pose.Pose pose
+            && !pose.transforms.isEmpty())
+        {
+            zaehler = pose.transforms.size() + " bones · " + zaehler;
+        }
+
+        this.renderLabel(context, area, y, w, sheet.color, zaehler, sheet.title.get(),
             this.trackHeight >= 12D ? icon : null, offset + this.getSheetIndent(sheet), false);
     }
 
@@ -1106,7 +1129,8 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             context.batcher.icon(icon, Colors.A100 | (NanoDesign.TXT_DIM & 0xFFFFFF), iconX, my, 0F, 0.5F);
             rechts = iconX - LABEL_TEXT_ICON_GAP;
         }
-        else if (!zaehler.isEmpty() && !"0".equals(zaehler))
+
+        if (!zaehler.isEmpty() && !"0".equals(zaehler))
         {
             int zb = font.getWidth(zaehler);
 
@@ -1215,6 +1239,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         context.batcher.box(area.x, by, area.ex(), by + bh, surface);
 
+        if (sheet == this.lastSheet)
+        {
+            context.batcher.box(area.x, by, area.ex(), by + bh, Colors.setA(0x4772B3, 0.12F));
+        }
+
         if (hover)
         {
             context.batcher.box(area.x, by, area.ex(), by + bh, BBSSettings.color(BBSSettings.raisedSurface(), Colors.A25));
@@ -1227,32 +1256,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             this.keyframes.spuren.zeichneZeile(context, row, by, bh);
         }
 
-        /* ⛔ HIER STAND EIN SOFORTZUG -- UND DAS WAR DER FEHLER (2026-08-01).
-         *
-         * 26.2 zeichnet die Oberflaeche in ZWEI Phasen: dieser Durchlauf SAMMELT nur,
-         * GuiRenderer.render() zeichnet danach. Ein sofort geoeffneter Durchgang landet
-         * deshalb UNTER dem gesamten GUI -- der Zeilenhintergrund, der zwanzig Zeilen
-         * weiter oben mit context.batcher.box eingereiht wird, uebermalt ihn. Genau das
-         * meldete der Nutzer: die Keyframe-Symbole waren unsichtbar. Kein Compiler warnt
-         * davor, und es sieht nicht nach einem Zeichenfehler aus, sondern nach fehlenden
-         * Elementen.
-         *
-         * Die vier Schalter der Pipeline bleiben, was sie waren:
-         *  - mischen = true       ← das enableBlend, das frueher unten stand
-         *  - tiefePruefen = false ← die Oberflaeche zeichnete mit depthFunc(GL_ALWAYS)
-         *                           (siehe UIBaseMenu.renderMenu), der Test darf also nie
-         *                           verwerfen. Damit faellt auch das Tiefenschreiben weg --
-         *                           sonst legt der Dope-Sheet eine unsichtbare Tiefenwand
-         *                           vor alles Nachfolgende.
-         *  - culling = false      ← es stand nie ein enableCull um diese Zeichnung.
-         *
-         * Der Eckenaufbau wandert unveraendert ins Lambda: er laeuft spaeter, wenn der
-         * Renderer an der Reihe ist. matrix ist bereits eine KOPIE der Pose (der Aufrufer
-         * baut sie mit new Matrix4f(...)), bleibt also gueltig; der eigene Puffer und sein
-         * try-with-resources entfallen mitsamt der Leckgefahr.
-         *
-         * ⛔ flaeche(area) statt null: null heisst gecullt und sieht exakt aus wie "nicht
-         * umgestellt". */
+        /* ⛔ KEIN Sofortzug (2026-08-01): 26.2 sammelt hier nur, GuiRenderer.render()
+         * zeichnet spaeter — sofort gezeichnet landet alles UNTER dem GUI und die
+         * Keyframes sind unsichtbar. Schalter: mischen=true, tiefePruefen=false (GUI
+         * malt mit GL_ALWAYS), culling=false. flaeche(area) statt null — null heisst
+         * gecullt und sieht exakt aus wie „nicht umgestellt". */
         context.batcher.netz(FormPipelines.holen(PrimitiveTopology.QUADS, true, false, false), (ecken) ->
         {
             /* Render bars indicating same values */
@@ -1326,16 +1334,22 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             /* Render keyframe handles (inner) */
             for (int j = 0; j < keyframes.size(); j++)
             {
-                Keyframe frame = (Keyframe) keyframes.get(j);
-                int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
-                int mx = this.keyframes.toGraphX(frame.getTick());
-                int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
-                IKeyframeShapeRenderer shapeResult = renderShape(frame, context, ecken, matrix, mx, my, 2, mc);
-
-                shapeResult.renderKeyframeBackground(context, ecken, matrix, mx, my, 2, mc);
+                this.fuelleMarker(context, ecken, matrix, sheet, j, my);
             }
 
         }, flaeche(area));
+    }
+
+    /** Fuellung eines Markers: Auswahl bernstein, sonst hell — Custom-Farbe bleibt Info. */
+    private void fuelleMarker(UIContext context, VertexConsumer builder, Matrix4f matrix, UIKeyframeSheet sheet, int j, int my)
+    {
+        Keyframe frame = (Keyframe) sheet.channel.getKeyframes().get(j);
+        int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
+        int mx = this.keyframes.toGraphX(frame.getTick());
+        int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
+
+        renderShape(frame, context, builder, matrix, mx, my, 2, mc)
+            .renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
     }
 
     private void renderSheetKeyframeShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
@@ -1352,19 +1366,11 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         List keyframes = sheet.channel.getKeyframes();
         int my = y + (int) this.trackHeight / 2;
-        int forcedIndex = 0;
 
         for (int j = 0; j < keyframes.size(); j++)
         {
             Keyframe frame = (Keyframe) keyframes.get(j);
-            float tick = frame.getTick();
-            int x1 = this.keyframes.toGraphX(tick);
-            int x2 = this.keyframes.toGraphX(tick + frame.getDuration());
-
-            if (x1 != x2)
-            {
-                forcedIndex += 1;
-            }
+            int x1 = this.keyframes.toGraphX(frame.getTick());
 
             boolean isPointHover = this.isNear(x1, my, context.mouseX, context.mouseY, Window.isAltPressed() && Window.isShiftPressed());
             boolean toRemove = Window.isCtrlPressed() && isPointHover;
@@ -1388,13 +1394,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         for (int j = 0; j < keyframes.size(); j++)
         {
-            Keyframe frame = (Keyframe) keyframes.get(j);
-            int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
-            int mx = this.keyframes.toGraphX(frame.getTick());
-            int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
-            IKeyframeShapeRenderer shapeResult = renderShape(frame, context, builder, matrix, mx, my, 2, mc);
-
-            shapeResult.renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);
+            this.fuelleMarker(context, builder, matrix, sheet, j, my);
         }
     }
 

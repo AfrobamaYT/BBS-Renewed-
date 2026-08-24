@@ -106,9 +106,9 @@ public class UIReplaysEditor extends UIElement
     private UIClipsPanel actionTimeline;
     private UIIcon actionsToggle;
     private boolean actionsMode;
-    /* «All tracks» view: shows every category's tracks at once, bypassing the category filter. */
+    /* «All tracks», default AN: der Entwurf zeigt alle Gruppen in einer Liste; Kategorien bleiben Filter. */
     private UIIcon allToggle;
-    private boolean allMode;
+    private boolean allMode = true;
 
     /* Clips */
     UIFilmPanel filmPanel;
