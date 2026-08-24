@@ -116,6 +116,18 @@ final class DopeSheetFlaeche
 				context.batcher.fillRect(ecken, matrix, xx, my - w / 2, xxx - xx, 1, licht, licht, licht, licht);
 			}
 
+			/* Blender: gruene Linie zwischen Keys mit Nicht-Standard-Interpolation
+			 * (Manual: „Green line between keys — custom interpolation"). */
+			mchorse.bbs_mod.utils.interps.IInterp interp = previous.getInterpolation().getInterp();
+
+			if (interp != mchorse.bbs_mod.utils.interps.Interpolations.LINEAR
+				&& interp != mchorse.bbs_mod.utils.interps.Interpolations.CONST && xxx > xx)
+			{
+				int g = Colors.setA(BAND_GRUEN, 0.85F);
+
+				context.batcher.fillRect(ecken, matrix, xx, my + 5, xxx - xx, 1, g, g, g, g);
+			}
+
 			if (Math.abs(xxx - xx) < 5)
 			{
 				int c = Colors.setA(Colors.WHITE, 0.25F);
