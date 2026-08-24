@@ -651,9 +651,9 @@ public class UIKeyframeGraph implements IUIKeyframeGraph
                 int y1 = y - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
                 int color = sheet.selection.has(i) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
 
-                UIKeyframeDopeSheet.rechteck(builder, matrix, x1, y1 - 2, 1, 5, color);
-                UIKeyframeDopeSheet.rechteck(builder, matrix, x2, y1 - 2, 1, 5, color);
-                UIKeyframeDopeSheet.rechteck(builder, matrix, x1 + 1, y1, x2 - x1, 1, color);
+                this.keyframes.getContext().batcher.fillRect(builder, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
+                this.keyframes.getContext().batcher.fillRect(builder, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
+                this.keyframes.getContext().batcher.fillRect(builder, matrix, x1 + 1, y1, x2 - x1, 1, color, color, color, color);
 
                 forcedIndex += 1;
             }

@@ -75,16 +75,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return shape;
     }
 
-    /** Gefuelltes Rechteck ins eingereihte Netz. ⛔ Nur noch fuer {@code UIKeyframeGraph} da
-     *  (drei Aufrufe); sind die auf {@code Batcher2D.fillRect} umgestellt, faellt sie weg. */
-    public static void rechteck(VertexConsumer ecken, Matrix4f matrix, float x, float y, float w, float h, int farbe)
-    {
-        ecken.addVertex(matrix, x, y, 0F).setColor(farbe);
-        ecken.addVertex(matrix, x, y + h, 0F).setColor(farbe);
-        ecken.addVertex(matrix, x + w, y + h, 0F).setColor(farbe);
-        ecken.addVertex(matrix, x + w, y, 0F).setColor(farbe);
-    }
-
     /**
      * Die Bildschirmflaeche, in der ein eingereihtes Netz liegt.
      *
@@ -189,10 +179,18 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
     }
 
+    /** Zusatzfilter (z.B. „Only selected bone", ZeitleisteZweig) — null = kein Filter. */
+    public java.util.function.Predicate<UIKeyframeSheet> zusatzFilter;
+
     boolean isVisible(UIKeyframeSheet sheet)
     {
         /* Filter HIER: der einzige Punkt, an dem Layout und Bedienung zusammenlaufen. */
         if (this.nurBewegte && sheet.channel != null && sheet.channel.getKeyframes().isEmpty())
+        {
+            return false;
+        }
+
+        if (this.zusatzFilter != null && !this.zusatzFilter.test(sheet))
         {
             return false;
         }
@@ -1239,10 +1237,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         renderShape(frame, context, builder, matrix, x1, my, toRemove ? 4 : 3, c);
     }
 
-    private void renderSheetKeyframeShapes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int y)
-    {
-        this.flaecheSchmuck().markerReihen(context, builder, matrix, area, sheet, y);
-    }
 
     private int renderElementsTopmostKeyframes(UIContext context, VertexConsumer builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int y)
     {
@@ -1250,7 +1244,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         {
             if (element instanceof UIKeyframeSheet sheet)
             {
-                this.renderSheetKeyframeShapes(context, builder, matrix, area, sheet, y);
+                this.flaecheSchmuck().markerReihen(context, builder, matrix, area, sheet, y);
             }
             else if (element instanceof UIKeyframeGroup group && !group.collapsed)
             {

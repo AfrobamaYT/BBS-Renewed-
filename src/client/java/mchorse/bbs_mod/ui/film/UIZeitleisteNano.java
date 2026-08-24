@@ -349,6 +349,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			{"physics", "funken", "Physics channels"},
 			{"all", "outliner", "All tracks"},
 			{"actions", "play", "Action timeline"},
+			{"sel", "zeiger", "Only selected bone (Blender: Only Show Selected)"},
 		};
 
 		float b = 22F * k;
@@ -361,7 +362,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 				break;
 			}
 
-			boolean an = e[0].equals(aktiv);
+			boolean an = "sel".equals(e[0]) ? mchorse.bbs_mod.ui.film.ZeitleisteZweig.istBoneFilter() : e[0].equals(aktiv);
 			boolean ueber = f.istHover("kf" + e[0]);
 
 			if (an)
@@ -380,7 +381,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 
 			f.zone("kf" + id, kx, y, b, 20F * k, () ->
 			{
-				editor.filterWaehlen(id);
+				if ("sel".equals(id)) { mchorse.bbs_mod.ui.film.ZeitleisteZweig.boneFilterToggle(filmPanel()); }
+				else { editor.filterWaehlen(id); }
 				this.stand = "";
 				this.flaeche.neuMalen();
 			}, e[2], "");
@@ -440,9 +442,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			this.spurenBauen();
 		}
 
-		/* ⛔ NUR Kopfzeile und Kanalspalte fuellen, nicht die ganze Flaeche. Diese Flaeche
-		 * liegt UEBER UIClips (sie wird spaeter eingehaengt); ein Vollflaechen-Grund uebermalte
-		 * Lineal und Clips vollstaendig — im Bild blieb rechts der CHANNELS-Spalte nichts. */
+		/* ⛔ NUR Kopfzeile fuellen: Vollflaechen-Grund uebermalte Lineal und Clips (Flaeche liegt UEBER UIClips). */
 		NanoStifte.flaeche(vg, 0, 0, b, NanoDesign.H_KOPF * k, NanoDesign.R_AREA * k,
 			NanoDesign.REGION);
 

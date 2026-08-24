@@ -74,6 +74,62 @@ public final class ZeitleisteZweig
 		panel.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
 	}
 
+	/** „Only selected bone" (Blenders Only Show Selected): filtert die Pose-Bone-Zeilen
+	 *  des Dope Sheets auf den im Keyframe-Editor aktiven Knochen. Zustand statisch —
+	 *  die Editoren werden je Replay-Wechsel neu gebaut, der Filter soll ueberleben. */
+	private static boolean nurBone;
+
+	public static boolean istBoneFilter()
+	{
+		return nurBone;
+	}
+
+	public static void boneFilterToggle(UIFilmPanel panel)
+	{
+		nurBone = !nurBone;
+		boneFilterAnwenden(panel);
+	}
+
+	/** Auch nach jedem Editor-Neubau aufrufen — der Neubau verliert das Predicate. */
+	public static void boneFilterAnwenden(UIFilmPanel panel)
+	{
+		if (panel == null || panel.replayEditor == null || panel.replayEditor.keyframeEditor == null)
+		{
+			return;
+		}
+
+		mchorse.bbs_mod.ui.framework.elements.input.keyframes.graphs.UIKeyframeDopeSheet dope =
+			panel.replayEditor.keyframeEditor.view.getDopeSheet();
+
+		if (dope == null || (dope.zusatzFilter != null) == nurBone)
+		{
+			return;
+		}
+
+		final mchorse.bbs_mod.ui.film.replays.UIReplaysEditor editor = panel.replayEditor;
+
+		dope.zusatzFilter = !nurBone ? null
+			: new java.util.function.Predicate<mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet>()
+		{
+			@Override
+			public boolean test(mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet sheet)
+			{
+				mchorse.bbs_mod.film.replays.PerLimbService.PoseBonePath pfad =
+					mchorse.bbs_mod.film.replays.PerLimbService.parsePoseBonePath(sheet.id);
+
+				if (pfad == null)
+				{
+					return true;
+				}
+
+				mchorse.bbs_mod.utils.Pair<String, Boolean> bone = editor.keyframeEditor == null
+					? null : editor.keyframeEditor.getBone();
+
+				return bone != null && pfad.bone().equals(bone.a);
+			}
+		};
+	}
+
 	/**
 	 * Ring-Grab im Viewport: Animier-Bereich zeigen und den Kopf-Modus mitziehen.
 	 * Der reine Ring-KLICK wechselt bewusst nicht (Nutzer 2026-08-23: Klick riss ihn

@@ -147,6 +147,8 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
             && this.getDopeSheet() != null)
         {
             this.getDopeSheet().setNurBewegte(zl.modus == 1);
+            /* Idempotent (Guard im Zweig) — der Editor-Neubau verliert das Predicate sonst. */
+            mchorse.bbs_mod.ui.film.ZeitleisteZweig.boneFilterAnwenden(filmPanel);
         }
 
         com.mcstudio.nano.ZonenMelder melder = this.zonen();
