@@ -760,7 +760,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         if (!Window.isShiftPressed())
         {
-            tick = Math.round(this.keyframes.fromGraphX(context.mouseX) - offset);
+            tick = this.flaecheSchmuck().magnet((float) this.keyframes.fromGraphX(context.mouseX) - offset, context);
         }
 
         this.setTick(tick, false);

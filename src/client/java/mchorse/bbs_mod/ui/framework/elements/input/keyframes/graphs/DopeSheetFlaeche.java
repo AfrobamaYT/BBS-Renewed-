@@ -218,6 +218,64 @@ final class DopeSheetFlaeche
 		}, UIKeyframeDopeSheet.flaeche(area));
 	}
 
+	/**
+	 * Magnet beim Key-Ziehen (Sequencer/NLE-Norm, UIClips macht es fuer Clips laengst):
+	 * rundet auf ganze Ticks und rastet innerhalb von 10 px an Cursor, Film-Markern und
+	 * Clip-Kanten ein. Shift (frei ziehen) laeuft am Aufrufer vorbei an dieser Methode.
+	 */
+	float magnet(float tick, UIContext context)
+	{
+		tick = Math.round(tick);
+
+		if (!(this.dope.keyframes instanceof mchorse.bbs_mod.ui.film.utils.keyframes.UIFilmKeyframes fk)
+			|| fk.editor == null || fk.editor.getFilm() == null)
+		{
+			return tick;
+		}
+
+		/* ⛔ Grosse Basis: toGraphX rundet auf int — mit Basis 1 war proTick bei weitem
+		 * Zoom 0 und der Magnet stieg frueh aus (gemessen: magnet(cursor-1.4) blieb ungerastet). */
+		double proTick = Math.abs(this.dope.keyframes.toGraphX(1000) - this.dope.keyframes.toGraphX(0)) / 1000D;
+
+		if (proTick <= 0)
+		{
+			return tick;
+		}
+
+		long versatz = fk.getClipOffset();
+		mchorse.bbs_mod.film.Film film = fk.editor.getFilm();
+		List<Float> punkte = new ArrayList<>();
+
+		punkte.add((float) (fk.editor.getCursor() - versatz));
+
+		for (mchorse.bbs_mod.film.markers.Marker m : film.markers.getList())
+		{
+			punkte.add((float) (m.tick.get() - versatz));
+		}
+
+		for (mchorse.bbs_mod.utils.clips.Clip c : film.camera.get())
+		{
+			punkte.add((float) (c.tick.get() - versatz));
+			punkte.add((float) (c.tick.get() + c.duration.get() - versatz));
+		}
+
+		float best = tick;
+		double bestAbstand = 10D / proTick;
+
+		for (float p : punkte)
+		{
+			double abstand = Math.abs(p - tick);
+
+			if (abstand < bestAbstand)
+			{
+				bestAbstand = abstand;
+				best = p;
+			}
+		}
+
+		return best;
+	}
+
 	/** Schluessel der Zeile: Summary nimmt ALLE Kanaele des Graphen, Gruppen ihre Kinder. */
 	private List<Keyframe> sammle(UIKeyframeGroup group)
 	{
