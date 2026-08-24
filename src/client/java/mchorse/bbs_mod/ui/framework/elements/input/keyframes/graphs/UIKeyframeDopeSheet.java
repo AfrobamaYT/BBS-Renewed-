@@ -1074,9 +1074,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private void renderSheetLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
     {
-        Icon icon = this.isPoseTabParent(sheet)
-            ? (this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT)
-            : sheet.getIcon();
+        /* Nur Klapp-Pfeile — die alten X/Y/Z-Kanal-Icons sind Alt-Optik (Akte 36). */
+        Icon icon = !this.isPoseTabParent(sheet) ? null
+            : this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
 
         this.renderLabel(context, area, y, w, sheet.color, 2, sheet.title.get(),
             this.trackHeight >= 12D ? icon : null, offset + this.getSheetIndent(sheet), false);
@@ -1100,7 +1100,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 Colors.setA(farbe, 0.2F), Colors.setA(farbe, 0.04F));
         }
 
-        context.batcher.box(area.x, y, area.x + balken, y + h, farbe | Colors.A100);
+        context.batcher.box(area.x, y, area.x + balken, y + h, Colors.setA(farbe, 0.55F));
 
         int textColor = gruppe
             ? (hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F))
@@ -1116,7 +1116,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         if (icon != null)
         {
-            context.batcher.icon(icon, Colors.A100 | (textColor & 0xFFFFFF), iconX, my, 0F, 0.5F);
+            context.batcher.icon(icon, Colors.A100 | (NanoDesign.TXT_DIM & 0xFFFFFF), iconX, my, 0F, 0.5F);
         }
     }
 

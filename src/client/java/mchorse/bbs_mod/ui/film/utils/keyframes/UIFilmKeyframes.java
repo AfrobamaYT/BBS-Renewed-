@@ -117,7 +117,7 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
             String label = TimeUtils.formatTime(this.getOffset());
 
             context.batcher.clip(this.graphArea, context);
-            UIClips.renderCursor(context, label, this.area, cx - 1);
+            UIClips.renderCursor(context, label, this.graphArea, cx - 1);
             context.batcher.unclip(context);
         }
 
