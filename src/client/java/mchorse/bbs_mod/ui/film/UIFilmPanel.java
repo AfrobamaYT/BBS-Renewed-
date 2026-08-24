@@ -173,7 +173,7 @@ public class UIFilmPanel extends UIDataDashboardPanel<Film> implements IFlightSu
     private final Map<String, UIDraggable> dragHandlesById = new LinkedHashMap<>();
     private static final float DRAG_HANDLE_HEIGHT_NORM = 0.02F;
     private static final float DRAG_HANDLE_TOP_OFFSET_NORM = 0.01F;
-    private static final int SPLITTER_HANDLE_PX = 14;
+    private static final int SPLITTER_HANDLE_PX = 8; /* ±4: 14 kaperte Kopf-Zuege (Akte 36) */
     private static final int SPLITTER_HANDLE_LINE_PX = 1;
     private static final int SPLITTER_LINK_HITBOX_PADDING_PX = 8;
     private static final int EDITOR_MIN_SIZE_FOR_PX_HANDLES = 10;
