@@ -694,7 +694,7 @@ public class UIReplaysEditor extends UIElement
         if (!sheets.isEmpty())
         {
             this.keyframeEditor = new UIKeyframeEditor((consumer) -> new UIFilmKeyframes(this.filmPanel.cameraEditor, consumer).absolute())
-                .target(this.filmPanel.editArea)
+                .target(mchorse.bbs_mod.ui.film.ZeitleisteZweig.keyframeHost(this.filmPanel))
                 .editPanelTopOffset(this.filmPanel::getEditPanelTopOffsetPx);
             this.keyframeEditor.relative(this).x(CATEGORY_BAR_WIDTH).y(0).w(1F, -CATEGORY_BAR_WIDTH).h(1F);
             this.keyframeEditor.setUndoId("replay_keyframe_editor");

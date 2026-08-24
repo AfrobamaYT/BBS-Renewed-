@@ -115,17 +115,25 @@ public class UIKeyframeEditor extends UIElement
 
             if (this.target != null)
             {
-                int top = this.getEditPanelTopOffsetPx();
-                this.editor.relative(this.target).x(0).y(0, top).w(1F).h(1F, -top);
-
+                /* Dock-Wirt (Keyframe-Kategorie): das Panel gehoert dem DOCK-Baum —
+                 * als eigenes Kind wuerde die Seitenleiste es uebermalen (Akte 38,
+                 * gleiches Muster wie das Kamera-Clip-Panel). Der Kopf-Versatz steckt
+                 * im Wirt selbst. */
+                this.editor.relative(this.target).x(0).y(0).w(1F).h(1F);
+                this.target.add(this.editor);
                 this.target.resize();
+
+                if (this.target.getParent() instanceof mchorse.bbs_mod.ui.film.UIPropertiesNano props)
+                {
+                    props.keyframeKategorie();
+                }
             }
             else
             {
                 this.editor.relative(this).x(1F, -140).w(140).h(1F);
+                this.add(this.editor);
             }
 
-            this.add(this.editor);
             this.editor.setVisible(this.propertiesVisible);
             this.resize();
         }
@@ -164,8 +172,8 @@ public class UIKeyframeEditor extends UIElement
     {
         if (this.editor != null && this.target != null)
         {
-            int top = this.getEditPanelTopOffsetPx();
-            this.editor.relative(this.target).x(0).y(0, top).w(1F).h(1F, -top);
+            /* Der Kopf-Versatz steckt im Dock-Wirt (Keyframe-Kategorie, Akte 38). */
+            this.editor.relative(this.target).x(0).y(0).w(1F).h(1F);
             this.target.resize();
             this.resize();
         }

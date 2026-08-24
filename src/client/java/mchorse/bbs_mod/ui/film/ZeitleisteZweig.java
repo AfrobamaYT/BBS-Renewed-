@@ -71,7 +71,21 @@ public final class ZeitleisteZweig
 		/* Das Dock lebt unabhaengig vom Zweig — die Kategorie-Schiene regelt, was zu
 		 * sehen ist; propertiesVisible haelt nur noch den Kein-Film-Fall dunkel. */
 		panel.cameraEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
-		panel.replayEditor.setPropertiesVisible(editAreaActive && replayVisible);
+		panel.replayEditor.setPropertiesVisible(cameraVisible || replayVisible || mainActive);
+	}
+
+	/** Wirt fuer den Keyframe-Werte-Editor: die Keyframe-Kategorie des Properties-Docks.
+	 *  Ersetzt das tote editArea-Ziel (Akte 38: „replay properties wie pose/transform
+	 *  fehlen — kann die keyframes im dock nicht bewegen"). */
+	public static mchorse.bbs_mod.ui.framework.elements.UIElement keyframeHost(UIFilmPanel panel)
+	{
+		if (panel != null && panel.replayEditor != null && panel.replayEditor.replayProperties != null
+			&& panel.replayEditor.replayProperties.propsNano instanceof UIPropertiesNano props)
+		{
+			return props.keyHost();
+		}
+
+		return panel == null ? null : panel.editArea;
 	}
 
 	/** Magnet fuer das Key-Ziehen. INVERTIERT gespeichert: ein per Hotswap neues

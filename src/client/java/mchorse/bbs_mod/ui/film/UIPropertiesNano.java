@@ -96,6 +96,30 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		return this.clipHost;
 	}
 
+	/** Wirt fuer den Keyframe-Werte-Editor (Pose/Transform/Zahlen) — Kategorie „Keyframe".
+	 *  Gleiches Muster wie clipHost; ⛔ lazy (Add-Field nach Hotswap = null). */
+	private UIElement keyHost;
+
+	/** Keyframe-Kategorie nach vorn — pickKeyframe ruft das beim Waehlen eines Keys. */
+	public void keyframeKategorie()
+	{
+		this.schiene = 5;
+		this.flaeche.neuMalen();
+	}
+
+	public UIElement keyHost()
+	{
+		if (this.keyHost == null)
+		{
+			this.keyHost = new UIElement();
+			this.keyHost.relative(this).x(28).y(26).w(1F, -28).h(1F, -26);
+			this.keyHost.setVisible(false);
+			this.add(this.keyHost);
+		}
+
+		return this.keyHost;
+	}
+
 	public UIPropertiesNano()
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
@@ -366,9 +390,9 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		float schieneB = 28F * k;
 		NanoStifte.flaeche(vg, 0, oben, schieneB, h - oben, 0F, 0x1F1F1F);
 
-		String[] symbole = {"replay", "knochen", "film", "props", "kamera"};
+		String[] symbole = {"replay", "knochen", "film", "props", "kamera", "kurve"};
 		final String[] SCHIENEN_HINWEISE = {"Replay: transform and visibility", "Form: model and shape keys",
-			"Film settings", "Channel overview", "Camera clip properties"};
+			"Film settings", "Channel overview", "Camera clip properties", "Selected keyframe: pose, transform, values"};
 
 		for (int i = 0; i < symbole.length; i++)
 		{
@@ -396,15 +420,20 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		 * die Flaeche malt nur Grund und Schiene. Sichtbarkeit hier, damit sie mit
 		 * jedem Schienen-Wechsel nachzieht (zeichnen laeuft je neuMalen). */
 		this.clipHost().setVisible(this.schiene == 4);
+		this.keyHost().setVisible(this.schiene == 5);
 
-		if (this.schiene == 4)
+		if (this.schiene == 4 || this.schiene == 5)
 		{
 			UIFilmPanel fp = filmPanel();
+			boolean leer = this.schiene == 4
+				? fp == null || fp.cameraEditor.getClip() == null
+				: fp == null || fp.replayEditor == null || fp.replayEditor.keyframeEditor == null
+					|| fp.replayEditor.keyframeEditor.editor == null;
 
-			if (fp == null || fp.cameraEditor.getClip() == null)
+			if (leer)
 			{
 				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, schieneB + 6F * k, oben + 23F * k,
-					NanoDesign.TXT_OFF, "No camera clip selected", null);
+					NanoDesign.TXT_OFF, this.schiene == 4 ? "No camera clip selected" : "No keyframe selected", null);
 			}
 
 			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
