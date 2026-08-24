@@ -460,7 +460,21 @@ dependencies {
 	/* P1/P2 (2026-08-17, spike -> vollausbau): NanoVG — antialiasierte 2D-vektorgrafik
 	 * AUF MCs GL-kontext, aus DERSELBEN LWJGL-familie/-version wie MC (3.3.3, gemessen
 	 * im classpath). Natives fuer alle plattformen, die MC selbst bedient. */
-	implementation "org.lwjgl:lwjgl-nanovg:3.3.3"
+	/* ⛔ include() IST PFLICHT, nicht Kosmetik. runtimeOnly und implementation legen
+	 * das modul nur in den DEV-classpath, den Gradle stellt — ins ausgelieferte jar
+	 * kommt es damit nicht. Beim endnutzer fehlt dann org.lwjgl.nanovg und der mod
+	 * stirbt im ladevorgang, weil der client-start NanoProbe.register() ruft.
+	 * Gemeldet 2026-08-24: "die kommen nicht rein". Minecraft bringt LWJGL 3.3.3
+	 * mit, aber NICHT das nanovg-modul. Gegenprobe am gebauten jar:
+	 * `unzip -l build/libs/*.jar | grep nanovg` muss 7 treffer zeigen, nicht 0.
+	 * Dieselbe regel wie weiter unten bei jflac/jlayer. */
+	implementation include("org.lwjgl:lwjgl-nanovg:3.3.3")
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux-arm64"
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows"
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows-arm64"
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos"
+	include "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos-arm64"
 	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
 	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux-arm64"
 	runtimeOnly "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows"
