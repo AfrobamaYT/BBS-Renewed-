@@ -184,11 +184,14 @@ abzuarbeiten, die Rechte Dritter berühren — sie stehen in
 
 1. Die alte Historie liegt noch auf GitHubs Servern. Der Schnitt vom 2026-08-24 ist lokal
    vollständig, aber ein force-push schreibt nur Referenzen um — die alten Objekte sind mit
-   bekanntem Hash weiter abrufbar. **Das kann nur GitHub per Garbage Collection beheben**,
-   also rechtzeitig anfragen.
+   bekanntem Hash weiter abrufbar. GitHub entfernt auf Anfrage nur *sensible* Daten; der
+   verlässliche Weg ist ein frisches Repository für die Veröffentlichung.
 2. Zwei Modelldateien nennen einen dritten Autor im Dateinamen; eine Weitergabeerlaubnis
    ist nicht belegt.
-3. 111 geerbte Assets des BBS mod würden mitverteilt.
+3. **Der IK-Löser ist noch nicht abgetrennt.** Angestrebt ist MIT für den Mod und GPL nur
+   für den aus Blender übersetzten Löser — solange beides in einem JAR steckt, gilt für das
+   Ganze GPL.
+4. 111 geerbte Assets des BBS mod würden mitverteilt.
 
 ### Bewusst nicht gebaut
 

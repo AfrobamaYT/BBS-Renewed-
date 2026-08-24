@@ -100,12 +100,20 @@ Dieser Fork baut auf:
 - **bbs-fs** von [Wemppy4](https://github.com/Wemppy4)
 - **bbs-mod-cml-edition** von [ElGatoPro300](https://github.com/ElGatoPro300)
 
-**Der Code steht unter GPL-2.0-or-later** ([`COPYING`](COPYING)). Das folgt aus der Quelle,
-nicht aus einer Vorliebe: der IK-Löser und die Constraint-Auswertung sind zeilenweise aus
-Blender übersetzt, und die betroffenen Blender-Dateien tragen selbst `GPL-2.0-or-later`.
+**Das Ziel ist MIT** — wie beim ursprünglichen BBS mod und bei den anderen BBS-Forks, damit
+die Community übernehmen kann, was sie gebrauchen kann.
 
-Die von McHorse und Wemppy geerbten Teile behalten ihre **MIT**-Vermerke — MIT ist
-GPL-verträglich, es wird nichts ersetzt.
+Eine Ausnahme steht dem entgegen: der IK-Löser unter `cubic/ik/blender/` (3.341 Zeilen) ist
+zeilenweise aus Blenders Quelle übersetzt, und die stammt aus `GPL-2.0-or-later`. Er soll
+deshalb als eigener, GPL-lizenzierter Teil ausgeliefert werden, während der Mod MIT bleibt.
+
+⛔ **Diese Trennung ist noch nicht gebaut.** Solange Löser und Mod in einem JAR stecken,
+gilt für das ausgelieferte Ganze GPL-2.0-or-later ([`COPYING`](COPYING)). Die MIT-Teile
+bleiben davon unberührt und einzeln weiter unter MIT nutzbar.
+
+Rechteinhaber sind McHorse, Wemppy, ElGatoPro300 und Afrobama; weitere Beitragende stehen
+in der Git-Historie (`git shortlog -sn`). Alle **MIT**-Vermerke bleiben stehen — wer sie
+entfernt, verliert damit die Lizenz.
 
 > ⛔ **Assets sind ausdrücklich ausgenommen.** Texturen, Modelle, Klänge, Schriften und
 > Icons fallen **nicht** unter die GPL dieses Repositorys. Sie behalten die Rechte ihrer

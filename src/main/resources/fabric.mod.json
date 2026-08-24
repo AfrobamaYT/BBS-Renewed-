@@ -5,10 +5,12 @@
   "name": "BBS FS mod",
   "description": "A new generation of video production mod",
   "authors": [
-    "McHorse",
-    "Wemppy"
+    "Afrobama"
   ],
   "contributors": [
+    "McHorse (BBS mod)",
+    "Wemppy (bbs-fs)",
+    "ElGatoPro300 (bbs-mod-cml-edition)",
     "Chryfi (tracker clip)",
     "FunkyFight (minor features and bug fixes)",
     "ElGatoPro300 (bug fixes)",
@@ -29,7 +31,8 @@
     "Diobede (Vietnamese translations)"
   ],
   "contact": {
-    "homepage": "https://www.patreon.com/McHorse"
+    "homepage": "https://github.com/AfrobamaYT/bbs-neu2",
+    "sources": "https://github.com/AfrobamaYT/bbs-neu2"
   },
   "license": "MIT",
   "icon": "assets/bbs/icon.png",

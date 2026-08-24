@@ -11,18 +11,46 @@ besonders den Abschnitt zu den Assets.
 
 ---
 
-## 1 · Der Code: GPL-2.0-or-later
+## 1 · Zwei Lizenzen, und warum
 
-**Der Quellcode dieses Forks steht unter der GNU General Public License, Version 2 oder
-später** (`SPDX-License-Identifier: GPL-2.0-or-later`). Der vollständige Lizenztext liegt
-in [`COPYING`](COPYING).
+**Das Ziel dieses Forks ist MIT** — wie beim ursprünglichen BBS mod und wie bei
+praktisch allen anderen BBS-Forks. Damit kann die Community übernehmen, was sie
+gebrauchen kann, und dieser Fork gibt zurück, statt nur zu nehmen.
 
-**Warum genau diese Lizenz:** Der IK-Löser und die Constraint-Auswertung sind zeilenweise
-aus Blenders Quelle übersetzt, und die betroffenen Blender-Dateien tragen selbst
-`GPL-2.0-or-later` (an der Quelle geprüft: `intern/iksolver/intern/IK_Math.h` und
-`source/blender/blenkernel/intern/constraint.cc`, beide „SPDX-FileCopyrightText: 2001-2002
-NaN Holding BV"). Ein daraus abgeleitetes Werk kann nicht schwächer lizenziert sein — die
-Wahl folgt also aus der Quelle und ist keine Präferenz.
+Dem steht ein Teil entgegen: Der IK-Löser unter `mchorse/bbs_mod/cubic/ik/blender/`
+(18 Dateien, 3.341 Zeilen) ist **zeilenweise aus Blenders Quelle übersetzt** — die
+Datei `IKMath.java` sagt es selbst: „Zeile für Zeile aus IK_Math.h". Die betroffenen
+Blender-Dateien tragen `GPL-2.0-or-later` (an der Quelle geprüft:
+`intern/iksolver/intern/IK_Math.h` und `source/blender/blenkernel/intern/constraint.cc`,
+beide „SPDX-FileCopyrightText: 2001-2002 NaN Holding BV"). Ein daraus abgeleitetes Werk
+kann nicht schwächer lizenziert sein.
+
+**Angestrebte Aufteilung:**
+
+| Teil | Lizenz |
+|---|---|
+| Der Mod — alles außer dem IK-Löser | **MIT** |
+| `cubic/ik/blender/` — der aus Blender übersetzte Löser | **GPL-2.0-or-later** ([`COPYING`](COPYING)) |
+
+Das Paket ist dafür günstig geschnitten: Es hat genau **eine** Anbindung an den Rest
+(`RigIKKetten.java`).
+
+⛔ **Ist-Zustand, ehrlich:** Diese Trennung ist **dokumentiert, aber noch nicht gebaut.**
+Solange Löser und Mod in einem JAR ausgeliefert werden, sind sie ein Werk — und für
+dieses Gesamtwerk gilt dann **GPL-2.0-or-later**, nicht MIT. Die MIT-Teile bleiben davon
+unberührt und einzeln weiter unter MIT nutzbar; betroffen ist nur das ausgelieferte
+Ganze. Was zu tun ist, steht in
+[`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md).
+
+Ob ein separat ausgeliefertes JAR juristisch als eigenständiges Werk gilt oder als
+abgeleitetes, ist bei Java umstritten. Diese Datei dokumentiert die Absicht und die
+Herkunft — sie entscheidet die Frage nicht.
+
+Nicht abgeleitet und daher **nicht** betroffen: die Rig-Laufzeit (`cubic/ik/Rig*.java`)
+und das Transform-Verhalten (`input/drag/`). Beide sind nach beobachtetem Verhalten
+nachgebaut und gegen Blender **gemessen**, nicht aus dessen Quelltext übersetzt — die
+Dateien belegen das selbst durchgehend mit Messwerten. Funktionalität als solche ist
+nicht urheberrechtlich geschützt, nur konkreter Code.
 
 ## 2 · ⛔ Assets sind ausdrücklich AUSGENOMMEN
 
@@ -44,16 +72,36 @@ Konkret im Baum:
 | `inter-variable.ttf` | Inter | SIL Open Font License, Text liegt bei: `assets/fonts/LICENSE-Inter-OFL.txt` |
 | `NotoSans-Regular.ttf`, `NotoSans-Bold.ttf` | Noto Sans | SIL Open Font License, Text liegt bei: `fonts/nano/LICENSE` |
 
-## 3 · Geerbter Code: MIT bleibt MIT
+## 3 · Der MIT-Teil und wem er gehört
 
-Die von **McHorse** (BBS mod) und **Wemppy** (bbs-fs) übernommenen Teile stehen unter der
-MIT-Lizenz. **Diese Vermerke bleiben an ihren Dateien stehen und werden nicht ersetzt.**
-MIT ist mit der GPL verträglich; die MIT-Teile bleiben zusätzlich unter MIT nutzbar.
+Der weit überwiegende Teil dieses Repositorys steht unter der **MIT-Lizenz** — der geerbte
+Code ebenso wie das, was in diesem Fork dazugeschrieben wurde. MIT ist mit der GPL
+verträglich; die MIT-Teile bleiben zusätzlich unter MIT nutzbar.
+
+**Rechteinhaber**, gemessen an den Beiträgen im Baum:
+
+| | Anteil (Java-Zeilen, ohne Merges) |
+|---|---|
+| **McHorse** — der ursprüngliche BBS mod | 188.261 |
+| **Wemppy** — bbs-fs | 95.523 (`Wemppy4` + `wemppyy`) |
+| **ElGatoPro300** — bbs-mod-cml-edition | 290.763 |
+| **Afrobama** — dieser Fork | 81.210 |
+
+Weitere Beitragende der Upstreams — darunter **SIRSYP** mit 254.895 Zeilen sowie
+ElRedstoniano, Fanyel, Matias Neto und andere — sind in der Git-Historie namentlich
+verzeichnet. `git shortlog -sn` listet sie vollständig.
+
+⛔ **Die Copyright-Vermerke aller Genannten bleiben an ihren Dateien stehen und werden
+nicht ersetzt.** MIT verlangt das ausdrücklich: Wer den Vermerk entfernt, verliert damit
+die Lizenz — seine Nutzung ist dann unerlaubt. Das gilt in beide Richtungen, für den
+geerbten Code wie für den dieses Forks.
 
 Der MIT-Text im Wortlaut:
 
 > Copyright 2025 McHorse
 > Copyright 2026 Wemppy
+> Copyright 2026 ElGatoPro300
+> Copyright 2026 Afrobama
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 >
