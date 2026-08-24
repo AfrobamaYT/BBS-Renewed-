@@ -35,12 +35,57 @@ public class UIStatusleisteNano extends UIElement
 			: BBSModClient.getDashboard().panels.panel instanceof UIFilmPanel p ? p : null;
 	}
 
+	/** Bereich unter der Maus — Blenders Statusleiste wechselt die Hints je Editor-Region. */
+	private String bereich = "";
+
+	/** ⛔ Reihenfolge: speziellste Flaeche zuerst — die Timeline liegt im main-Bereich UNTER dem Viewport. */
+	private String bereichBei(mchorse.bbs_mod.ui.framework.UIContext context, UIFilmPanel panel)
+	{
+		int mx = context.mouseX;
+		int my = context.mouseY;
+
+		if (panel == null)
+		{
+			return "";
+		}
+
+		if (panel.replayEditor != null && panel.replayEditor.isVisible()
+			&& panel.replayEditor.keyframeEditor != null
+			&& panel.replayEditor.keyframeEditor.view.area.isInside(mx, my))
+		{
+			return "dope";
+		}
+
+		if (panel.cameraEditor != null && panel.cameraEditor.isVisible()
+			&& panel.cameraEditor.clips.area.isInside(mx, my))
+		{
+			return "clips";
+		}
+
+		if (panel.replayEditor != null && panel.replayEditor.replaysList != null
+			&& panel.replayEditor.replaysList.outliner.area.isInside(mx, my))
+		{
+			return "outliner";
+		}
+
+		if (panel.replayEditor != null && panel.replayEditor.replayProperties != null
+			&& panel.replayEditor.replayProperties.propsNano.area.isInside(mx, my))
+		{
+			return "props";
+		}
+
+		return "";
+	}
+
 	@Override
 	public void render(mchorse.bbs_mod.ui.framework.UIContext context)
 	{
 		UIFilmPanel panel = filmPanel();
+
+		this.bereich = this.bereichBei(context, panel);
+
 		String jetzt = panel == null || panel.getData() == null ? "-"
-			: panel.getData().getId() + "|" + panel.getCursor() + "|" + lage()[0][1];
+			: panel.getData().getId() + "|" + panel.getCursor() + "|" + this.bereich + "|" + this.lage()[0][1];
 
 		if (!jetzt.equals(this.stand))
 		{
@@ -82,7 +127,7 @@ public class UIStatusleisteNano extends UIElement
 	 * Die Maustasten-Hinweise fuer die AKTUELLE Lage. Jede Zeile {Symbol, Text}; das letzte
 	 * Paar darf ein Tastenkuerzel statt eines Maussymbols tragen ({@code taste:NAME}).
 	 */
-	private static String[][] lage()
+	private String[][] lage()
 	{
 		UIFilmPanel panel = filmPanel();
 
@@ -111,6 +156,19 @@ public class UIStatusleisteNano extends UIElement
 			return new String[][] {
 				{"taste:Space", "Pause"}, {"maus-l", "Scrub"}, {"maus-m", "Orbit"},
 			};
+		}
+
+		/* Orts-Kontext (Blender: „the keymap of the active tool" wechselt je Region). */
+		switch (this.bereich)
+		{
+			case "dope": return new String[][] {
+				{"maus-l", "Select / add key"}, {"maus-r", "Menu"}, {"maus-m", "Pan view"}};
+			case "clips": return new String[][] {
+				{"maus-l", "Select / move clip"}, {"maus-r", "Menu"}, {"maus-m", "Pan view"}};
+			case "outliner": return new String[][] {
+				{"maus-l", "Select replay"}, {"maus-r", "Replay menu"}};
+			case "props": return new String[][] {
+				{"maus-l", "Toggle / edit"}, {"maus-l", "Drag fields to change values"}};
 		}
 
 		return new String[][] {{"maus-l", "Select"}, {"maus-r", "Menu"}, {"maus-m", "Orbit"}};
