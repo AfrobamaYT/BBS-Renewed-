@@ -326,6 +326,29 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		float ib = b - ix - 6F * k;
 		float y  = oben + 5F * k - f.rollVersatz() * 6F * k;
 
+		/* --- Film-Tab (Blenders Scene-Properties): Daten des FILMS, unabhaengig vom
+		 * gewaehlten Replay — deshalb VOR dem Kein-Replay-Ausstieg. --- */
+		if (this.schiene == 2)
+		{
+			mchorse.bbs_mod.film.Film film = panel == null ? null : panel.getData();
+
+			if (film == null)
+			{
+				NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
+					"Kein Film geladen", null);
+				return;
+			}
+
+			panel(vg, f, ix, y, ib, k, 5, "Film", () -> new String[][]{
+				{"Name", film.getId(), ""},
+				{"Dauer", film.camera.calculateDuration() + " Ticks", ""},
+				{"Replays", String.valueOf(film.replays.getList().size()), ""},
+				{"Kamera-Clips", String.valueOf(film.camera.get().size()), ""},
+			});
+			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
+			return;
+		}
+
 		if (replay == null)
 		{
 			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
@@ -339,6 +362,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		mchorse.bbs_mod.utils.pose.Transform tf = form == null ? null : form.transform.get();
 
 		/* --- Transform: Ort aus den Kanaelen, Drehung und Groesse aus der Form --- */
+		if (this.schiene == 0)
 		y = panel(vg, f, ix, y, ib, k, 0, "Transform", () ->
 		{
 			double px = replay.keyframes.x.interpolate(tick, 0D);
@@ -366,7 +390,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		});
 
 		/* Ankreuzfeld unter Transform — gleichmaessige Skalierung, wie im Entwurf. */
-		if (this.auf(0) && tf != null)
+		if (this.schiene == 0 && this.auf(0) && tf != null)
 		{
 			boolean gleich = Math.abs(tf.scale.x - tf.scale.y) < 0.001F
 				&& Math.abs(tf.scale.y - tf.scale.z) < 0.001F;
@@ -375,6 +399,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		}
 
 		/* --- Form: Dateizeilen mit Ordner-Knopf, wie im Entwurf --- */
+		if (this.schiene == 1)
 		y = panel(vg, f, ix, y, ib, k, 1, "Form", () ->
 		{
 			String modell = "—";
@@ -397,6 +422,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		});
 
 		/* --- Visibility --- */
+		if (this.schiene == 0)
 		y = panel(vg, f, ix, y, ib, k, 2, "Visibility", () -> new String[][]{
 			{"Sichtbar", replay.enabled.get() ? "ja" : "nein", ""},
 			{"Form sichtbar", form == null || form.visible.get() ? "ja" : "nein", ""},
@@ -407,10 +433,12 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		int shapes = form instanceof mchorse.bbs_mod.forms.forms.ModelForm mf2
 			? mf2.shapeKeys.get().shapeKeys.size() : 0;
 
+		if (this.schiene == 1)
 		y = panelMitZahl(vg, f, ix, y, ib, k, 3, "Shape Keys", shapes,
 			() -> new String[0][]);
 
 		/* --- Kanäle --- */
+		if (this.schiene == 3)
 		y = panel(vg, f, ix, y, ib, k, 4, "Kanäle", () -> new String[][]{
 			{"Gesamt", String.valueOf(replay.keyframes.getAll().size()), ""},
 			{"Aktionen", String.valueOf(replay.actions.get().size()), ""},
