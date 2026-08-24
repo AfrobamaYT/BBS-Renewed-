@@ -52,7 +52,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 	private final java.util.List<mchorse.bbs_mod.utils.clips.Clip> auswahl = new ArrayList<>();
 	/** Zwischenablage — ein kopierter Clip überlebt den Wechsel der Auswahl. */
 	private mchorse.bbs_mod.utils.clips.Clip ablage;
-	private boolean klappeOffen;
 	/** 0 = Dope Sheet (Kanaele), 1 = nur bewegte Kanaele, 2 = Kamera-Clips. */
 	public int modus;   /* 0 Dope Sheet · 1 Animated only · 2 Camera clips — vom Animier-Bereich gelesen */
 
@@ -350,35 +349,37 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		}
 	}
 
-	/** Aufgeklappte Editor-Liste. Gibt ihre Hoehe in GUI-Pixeln zurueck, 0 wenn zu.
+	/**
+	 * Editor-Wahl als KONTEXTMENUE statt als in die Textur gezeichnete Klappe.
 	 *
-	 * ⛔ Sie MUSS in beiden Zeichenwegen laufen. Im Rahmen-Modus stand sie hinter dem
-	 * Frueh-`return`, also schaltete der Klick zwar `klappeOffen` um, aber es erschien
-	 * nichts — der Nutzer sah einen toten Knopf. */
-	private float klappe(long vg, NanoFlaeche f, float k)
+	 * ⛔ Die Klappe lag im Replay-Zweig UNTER dem spaeter gerenderten Keyframe-Editor:
+	 * Text uebermalt, Klicks landeten im Editor darunter — ein toter Knopf mit offenen,
+	 * unerreichbaren Zonen (gemessen 2026-08-24: editorwahl-Zonen da, modus blieb 0).
+	 * Ein Kontextmenue liegt IMMER obenauf, in beiden Zweigen.
+	 */
+	private void modusMenue()
 	{
-		if (!this.klappeOffen)
+		this.getContext().replaceContextMenu((menu) ->
 		{
-			return 0F;
-		}
+			menu.gruppe(mchorse.bbs_mod.l10n.keys.IKey.raw("Editor"));
 
-		String[][] eintraege = {
-			{"dopesheet", "Dope Sheet"},
-			{"kurve", "Animated only"},
-			{"kamera", "Camera clips"},
-		};
+			String[][] eintraege = {{"Dope Sheet", "0"}, {"Animated only", "1"}, {"Camera clips", "2"}};
 
-		float hoehe = NanoBausteine.editorKlappe(vg, f, 6F * k, NanoDesign.H_KOPF * k + 2F * k, k,
-			eintraege, this.modus, (wahl) ->
-		{
-			this.modus = wahl;
-			this.klappeOffen = false;
-			this.stand = "";
-			this.auffrischen();
-			this.flaeche.neuMalen();
+			for (String[] e : eintraege)
+			{
+				int wahl = Integer.parseInt(e[1]);
+
+				menu.action(this.modus == wahl ? mchorse.bbs_mod.ui.utils.icons.Icons.CHECKMARK
+					: mchorse.bbs_mod.ui.utils.icons.Icons.GRAPH,
+					mchorse.bbs_mod.l10n.keys.IKey.raw(e[0]), () ->
+				{
+					this.modus = wahl;
+					this.stand = "";
+					this.auffrischen();
+					this.flaeche.neuMalen();
+				});
+			}
 		});
-
-		return hoehe / k + 4F;
 	}
 
 	/**
@@ -537,11 +538,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 		float nachKopf = NanoBausteine.kopfzeile(vg, b, k, "dopesheet");
 
 		f.zone("etyp", 8F * k, (NanoDesign.H_KOPF - 22F) * k / 2F,
-			37F * k, 22F * k, () ->
-		{
-			this.klappeOffen = !this.klappeOffen;
-			this.flaeche.neuMalen();
-		});
+			37F * k, 22F * k, this::modusMenue);
 
 		UIFilmPanel panel = filmPanel();
 		Film film = panel == null ? null : panel.getData();
@@ -614,11 +611,8 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			NanoSymbole.pfeilAb(vg, kx + tw - 9F * k, NanoDesign.H_KOPF * k / 2F,
 				NanoDesign.TXT_DIM, k * 0.8F);
 
-			f.zone("titelklappe", kx, (NanoDesign.H_KOPF - 22F) * k / 2F, tw, 22F * k, () ->
-			{
-				this.klappeOffen = !this.klappeOffen;
-				this.flaeche.neuMalen();
-			});
+			f.zone("titelklappe", kx, (NanoDesign.H_KOPF - 22F) * k / 2F, tw, 22F * k,
+				this::modusMenue);
 
 			kx += tw + 10F * k;
 
@@ -697,9 +691,7 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 			 * darauf soll die Spur darunter treffen. */
 			this.kanalspalte(vg, f, b, h, k);
 
-			/* Die Klappe ragt unter den Kopf — das Eingabefeld muss sie einschliessen,
-			 * sonst zeichnet sie sich und nimmt trotzdem keinen Klick an. */
-			f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF + this.klappe(vg, f, k));
+			f.eingabeFeld(0F, 0F, this.area.w, NanoDesign.H_KOPF);
 			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 
 			return;
@@ -1048,12 +1040,6 @@ public class UIZeitleisteNano extends UIElement implements UISeitenleiste.Auffri
 				this.stand = "";
 				this.flaeche.neuMalen();
 			});
-		}
-
-		/* Aufgeklappte Editor-Liste — ueber allem */
-		if (this.klappe(vg, f, k) > 0F)
-		{
-			return;
 		}
 
 		/* Abspielkopf */
