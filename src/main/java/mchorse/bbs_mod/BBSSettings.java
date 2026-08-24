@@ -478,18 +478,18 @@ public class BBSSettings {
 		return editorHorizontalClipEditor.get();
 	}
 
-	/** Default-Form neuer Keyframes; Fallback SQUARE vor Registrierung oder bei Ordinal ausserhalb. */
+	/** Default-Form neuer Keyframes: Raute wie im Entwurf; Fallback DIAMOND. */
 	public static KeyframeShape getDefaultKeyframeShape()
 	{
 		if (keyframeDefaultShape == null)
 		{
-			return KeyframeShape.SQUARE;
+			return KeyframeShape.DIAMOND;
 		}
 
 		int index = keyframeDefaultShape.get();
 		KeyframeShape[] values = KeyframeShape.values();
 
-		return index >= 0 && index < values.length ? values[index] : KeyframeShape.SQUARE;
+		return index >= 0 && index < values.length ? values[index] : KeyframeShape.DIAMOND;
 	}
 
 	/** Interpolation fuer hand-erzeugte Keyframes OHNE Nachbarn (IUIKeyframeGraph#addKeyframeManually);
@@ -576,7 +576,7 @@ public class BBSSettings {
 		stencilHighlightColor = builder.getInt("stencil_highlight_color", 0x2EFFFFFF).colorAlpha();
 		theme = builder.getInt("theme", DEFAULT_THEME);
 		editorTrackWidth = builder.getInt("track_width", 2, 1, 10).slider();
-		keyframeDefaultShape = builder.getInt("keyframe_default_shape", 0, 0, KeyframeShape.values().length - 1);
+		keyframeDefaultShape = builder.getInt("keyframe_default_shape", KeyframeShape.DIAMOND.ordinal(), 0, KeyframeShape.values().length - 1);
 
 		builder.category("transformation", Icons.SCALE);
 		gizmos = builder.getBoolean("gizmos", true);

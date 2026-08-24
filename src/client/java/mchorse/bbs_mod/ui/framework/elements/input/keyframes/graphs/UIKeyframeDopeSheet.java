@@ -75,18 +75,8 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return shape;
     }
 
-    /**
-     * Ein gefuelltes Rechteck in ein eingereihtes Netz.
-     *
-     * <p>⛔ NUR NOCH FUER {@code UIKeyframeGraph} DA -- diese Datei ruft sie nicht mehr.
-     * {@code Batcher2D.fillRect} nimmt seit 447bb3ef7 selbst einen {@link VertexConsumer},
-     * taugt also fuer den eingereihten Weg; alle Aufrufer hier rufen ihn direkt. Offen sind
-     * nur noch die drei Aufrufe in {@code UIKeyframeGraph} (ausserhalb dieses Auftrags) --
-     * sind die umgestellt, faellt diese Methode ersatzlos weg.
-     *
-     * <p>Vier Ecken, Zeile fuer Zeile dieselben wie in fillRect: (x,y), (x,y+h), (x+w,y+h),
-     * (x+w,y) -- gleiche Reihenfolge, gleiche Drehrichtung, eine Farbe fuer alle vier.
-     */
+    /** Gefuelltes Rechteck ins eingereihte Netz. ⛔ Nur noch fuer {@code UIKeyframeGraph} da
+     *  (drei Aufrufe); sind die auf {@code Batcher2D.fillRect} umgestellt, faellt sie weg. */
     public static void rechteck(VertexConsumer ecken, Matrix4f matrix, float x, float y, float w, float h, int farbe)
     {
         ecken.addVertex(matrix, x, y, 0F).setColor(farbe);
@@ -1068,7 +1058,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
     private void renderGroupLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeGroup group, int offset, int y, int w)
     {
-        this.renderLabel(context, area, y, w, group.color, 3, group.title.get(),
+        this.renderLabel(context, area, y, w, group.color, "", group.title.get(),
             group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, offset, true);
     }
 
@@ -1078,12 +1068,15 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         Icon icon = !this.isPoseTabParent(sheet) ? null
             : this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
 
-        this.renderLabel(context, area, y, w, sheet.color, 2, sheet.title.get(),
+        this.renderLabel(context, area, y, w, sheet.color,
+            String.valueOf(sheet.channel.getKeyframes().size()), sheet.title.get(),
             this.trackHeight >= 12D ? icon : null, offset + this.getSheetIndent(sheet), false);
     }
 
     /** Eine Zeile der Beschriftungsspalte — EINE Methode fuer Gruppen UND Spuren. */
-    private void renderLabel(UIContext context, Area area, int y, int w, int farbe, int balken,
+    /* Entwurf foundations/zeitleiste.html (.cr): neutrale Zeile, Name links, Zaehler
+     * rechts in Tabellenziffern — kein Farbbalken, kein Kanal-Icon (Akte 36). */
+    private void renderLabel(UIContext context, Area area, int y, int w, int farbe, String zaehler,
         String titel, Icon icon, int einzug, boolean gruppe)
     {
         if (y + this.trackHeight < area.y || y > area.ey())
@@ -1096,28 +1089,33 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
         if (hover)
         {
-            context.batcher.gradientHBox(area.x, y, area.x + w, y + h,
-                Colors.setA(farbe, 0.2F), Colors.setA(farbe, 0.04F));
+            context.batcher.box(area.x, y, area.x + w, y + h, Colors.setA(Colors.WHITE, 0.05F));
         }
-
-        context.batcher.box(area.x, y, area.x + balken, y + h, Colors.setA(farbe, 0.55F));
 
         int textColor = gruppe
             ? (hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F))
             : (hover ? NanoDesign.TXT : NanoDesign.TXT_DIM);
         int iconX = area.x + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
         int textX = area.x + LABEL_TEXT_LEFT + einzug;
-        int rechts = icon != null ? iconX - LABEL_TEXT_ICON_GAP : area.x + w - LABEL_RIGHT_PAD;
         FontRenderer font = context.batcher.getFont();
         int my = y + h / 2;
-
-        context.batcher.text(font.limitToWidth(titel, Math.max(0, rechts - textX)),
-            textX, my - font.getHeight() / 2, textColor);
+        int rechts = area.x + w - LABEL_RIGHT_PAD;
 
         if (icon != null)
         {
             context.batcher.icon(icon, Colors.A100 | (NanoDesign.TXT_DIM & 0xFFFFFF), iconX, my, 0F, 0.5F);
+            rechts = iconX - LABEL_TEXT_ICON_GAP;
         }
+        else if (!zaehler.isEmpty() && !"0".equals(zaehler))
+        {
+            int zb = font.getWidth(zaehler);
+
+            context.batcher.text(zaehler, rechts - zb, my - font.getHeight() / 2, NanoDesign.TXT_OFF);
+            rechts -= zb + LABEL_TEXT_ICON_GAP;
+        }
+
+        context.batcher.text(font.limitToWidth(titel, Math.max(0, rechts - textX)),
+            textX, my - font.getHeight() / 2, textColor);
     }
 
     private int renderElements(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int offset, int y)
@@ -1262,7 +1260,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             {
                 Keyframe previous = (Keyframe) keyframes.get(j - 1);
                 Keyframe frame = (Keyframe) keyframes.get(j);
-                int c = Colors.setA(sheet.color, TRACK_BAR_ALPHA);
+                int c = Colors.setA(Colors.WHITE, 0.10F);
                 int xx = this.keyframes.toGraphX(previous.getTick());
                 int xxx = this.keyframes.toGraphX(frame.getTick());
 
@@ -1275,7 +1273,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
 
                 if (Math.abs(xxx - xx) < 5)
                 {
-                    c = Colors.setA(sheet.color, 0.5F);
+                    c = Colors.setA(Colors.WHITE, 0.25F);
 
                     context.batcher.fillRect(ecken, matrix, xx - 2, my + trackWidth / 2 + 4, xxx - xx + 4, 2, c, c, c, c);
                 }
@@ -1295,7 +1293,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 if (x1 != x2)
                 {
                     int y1 = my - 8 + (forcedIndex % 2 == 1 ? -4 : 0);
-                    int color = sheet.selection.has(j) ? Colors.WHITE :  Colors.setA(Colors.mulRGB(sheet.color, 0.9F), 0.75F);
+                    int color = sheet.selection.has(j) ? NanoDesign.BERNSTEIN | Colors.A100 : Colors.setA(Colors.WHITE, 0.55F);
 
                     context.batcher.fillRect(ecken, matrix, x1, y1 - 2, 1, 5, color, color, color, color);
                     context.batcher.fillRect(ecken, matrix, x2, y1 - 2, 1, 5, color, color, color, color);
@@ -1312,8 +1310,8 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                     isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
                 }
 
-                int kc = frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color;
-                int c = (sheet.selection.has(j) || isPointHover ? Colors.WHITE : kc) | Colors.A100;
+                /* Entwurf: helle Raute mit dunklem Rand; Auswahl fuellt bernstein (innen). */
+                int c = (isPointHover ? 0xEAEAEA : 0x0F0F0F) | Colors.A100;
 
                 if (toRemove)
                 {
@@ -1329,9 +1327,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             for (int j = 0; j < keyframes.size(); j++)
             {
                 Keyframe frame = (Keyframe) keyframes.get(j);
-                int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
+                int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
                 int mx = this.keyframes.toGraphX(frame.getTick());
-                int mc = c | Colors.A100;
+                int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
                 IKeyframeShapeRenderer shapeResult = renderShape(frame, context, ecken, matrix, mx, my, 2, mc);
 
                 shapeResult.renderKeyframeBackground(context, ecken, matrix, mx, my, 2, mc);
@@ -1376,8 +1374,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
                 isPointHover = isPointHover || this.keyframes.getGrabbingArea(context).isInside(x1, my);
             }
 
-            int kc = frame.getColor() != null ? frame.getColor().getRGBColor() | Colors.A100 : sheet.color;
-            int c = (sheet.selection.has(j) || isPointHover ? Colors.WHITE : kc) | Colors.A100;
+            int c = (isPointHover ? 0xEAEAEA : 0x0F0F0F) | Colors.A100;
 
             if (toRemove)
             {
@@ -1392,9 +1389,9 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         for (int j = 0; j < keyframes.size(); j++)
         {
             Keyframe frame = (Keyframe) keyframes.get(j);
-            int c = sheet.selection.has(j) ? Colors.ACTIVE : 0;
+            int kc = frame.getColor() != null ? frame.getColor().getRGBColor() : 0xCFCFCF;
             int mx = this.keyframes.toGraphX(frame.getTick());
-            int mc = c | Colors.A100;
+            int mc = (sheet.selection.has(j) ? NanoDesign.BERNSTEIN : kc) | Colors.A100;
             IKeyframeShapeRenderer shapeResult = renderShape(frame, context, builder, matrix, mx, my, 2, mc);
 
             shapeResult.renderKeyframeBackground(context, builder, matrix, mx, my, 2, mc);

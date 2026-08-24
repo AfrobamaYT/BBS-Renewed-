@@ -396,7 +396,7 @@ public class Keyframe <T> extends BaseValue
 
         MapType map = data.asMap();
 
-        this.shape = KeyframeShape.SQUARE;
+        this.shape = BBSSettings.getDefaultKeyframeShape();
         this.color = null;
 
         if (map.has("tick")) this.tick = map.getFloat("tick");

@@ -16,6 +16,6 @@ public enum KeyframeShape
             }
         }
 
-        return SQUARE;
+        return DIAMOND;
     }
 }
