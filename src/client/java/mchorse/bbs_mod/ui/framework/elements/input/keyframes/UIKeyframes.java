@@ -169,27 +169,9 @@ public class UIKeyframes extends UIElement
             {
                 menu.action(Icons.EXCHANGE, UIKeys.KEYFRAMES_CONTEXT_FLIP, this::flipKeyframes);
                 menu.action(Icons.CONVERT, UIKeys.KEYFRAMES_CONTEXT_SPREAD, this::spreadKeyframes);
-                menu.action(Icons.OUTLINE_SPHERE, UIKeys.KEYFRAMES_CONTEXT_ROUND, () ->
-                {
-                    for (UIKeyframeSheet sheet : this.getGraph().getSheets())
-                    {
-                        List<Keyframe> selected = sheet.selection.getSelected();
-
-                        if (selected.isEmpty())
-                        {
-                            continue;
-                        }
-
-                        sheet.channel.preNotify();
-
-                        for (Keyframe kf : selected)
-                        {
-                            kf.setTick(Math.round(kf.getTick()), false);
-                        }
-
-                        sheet.channel.postNotify();
-                    }
-                });
+                menu.action(Icons.OUTLINE_SPHERE, UIKeys.KEYFRAMES_CONTEXT_ROUND, () -> KeyframeTypen.runden(this));
+                /* Blender: Key -> Keyframe Type — Typ-Palette (Breakdown/Extreme/...). */
+                KeyframeTypen.menue(menu, this);
                 menu.action(Icons.REMOVE, UIKeys.KEYFRAMES_CONTEXT_REMOVE, () -> this.currentGraph.removeSelected());
             }
         });
