@@ -83,6 +83,55 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 	{
 		this.flaeche = new NanoFlaeche(this::zeichnen);
 		this.flaeche.beimTippen(this::tippen);
+
+		/* Rechtsklick auf eine Replay-Zeile: das Kontextmenue der ALTEN Liste — die Logik
+		 * (Selektion, removeReplay mit Fokus-Nachruecken, Undo) lebt dort weiter, nur das
+		 * Zuhause ist neu (Nutzerbefund Akte 34: "kein rechtsklick, kein hotkey fuer delete"). */
+		this.flaeche.beimRechtsklick((zoneId, pos) ->
+		{
+			if (!zoneId.startsWith("zeile"))
+			{
+				return;
+			}
+
+			int idx = Integer.parseInt(zoneId.substring(5));
+			Replay ziel = idx < this.zeilen.size() ? this.zeilen.get(idx).replay : null;
+			UIFilmPanel panel = filmPanel();
+
+			if (ziel == null || panel == null)
+			{
+				return;
+			}
+
+			mchorse.bbs_mod.ui.film.replays.UIReplayList liste = panel.replayEditor.replaysList.replays;
+
+			liste.scrollToReplay(ziel);   /* pick(i) — selektiert wirklich, nicht nur scrollen */
+			this.gewaehlt = idx;
+			this.flaeche.neuMalen();
+
+			this.getContext().replaceContextMenu((menu) ->
+			{
+				menu.gruppe(mchorse.bbs_mod.l10n.keys.IKey.raw("Replay"));
+				menu.action(mchorse.bbs_mod.ui.utils.icons.Icons.REMOVE,
+					mchorse.bbs_mod.ui.UIKeys.SCENE_REPLAYS_CONTEXT_REMOVE,
+					mchorse.bbs_mod.utils.colors.Colors.NEGATIVE, liste::removeReplay)
+					.taste(mchorse.bbs_mod.ui.Keys.DELETE);
+			});
+		});
+
+		/* Entf loescht das im Outliner gewaehlte Replay — derselbe Weg wie das Menue. */
+		this.keys().register(mchorse.bbs_mod.ui.Keys.DELETE, () ->
+		{
+			Replay ziel = this.gewaehlt >= 0 && this.gewaehlt < this.zeilen.size()
+				? this.zeilen.get(this.gewaehlt).replay : null;
+			UIFilmPanel panel = filmPanel();
+
+			if (ziel != null && panel != null)
+			{
+				panel.replayEditor.replaysList.replays.scrollToReplay(ziel);
+				panel.replayEditor.replaysList.replays.removeReplay();
+			}
+		});
 		this.flaeche.relative(this).x(0).y(0).w(1F).h(1F);
 		this.add(this.flaeche);
 		this.h(300);
