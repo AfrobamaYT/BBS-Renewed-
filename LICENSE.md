@@ -4,6 +4,11 @@ Dieses Repository enthält Teile unter **verschiedenen** Lizenzen. Diese Datei s
 Teil unter welcher steht. Der Kurzschluss „alles im Repo ist GPL" wäre **falsch** — siehe
 besonders den Abschnitt zu den Assets.
 
+> ⛔ **Vor einer Veröffentlichung oder Weitergabe:**
+> [`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md) abarbeiten. Dort stehen
+> drei Sperrpunkte, die diese Datei nicht auflöst — einer davon lässt sich nur von GitHub
+> selbst erledigen und braucht deshalb Vorlauf.
+
 ---
 
 ## 1 · Der Code: GPL-2.0-or-later

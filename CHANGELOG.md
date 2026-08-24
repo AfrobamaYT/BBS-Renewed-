@@ -176,6 +176,20 @@ Offen ausgewiesen, nicht verschwiegen:
 - Ein stiller Rückfall in `getDopeSheetY` meldet bei eingeklappten Spuren die oberste Zeile.
   Alle vier Aufrufer wurden geprüft: sichtbar trifft es niemanden. Fix nach dem Release.
 
+### ⛔ Vor einer Veröffentlichung
+
+Dieses Repository ist privat. Vor einem Umschalten auf öffentlich sind drei Punkte
+abzuarbeiten, die Rechte Dritter berühren — sie stehen in
+[`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md):
+
+1. Die alte Historie liegt noch auf GitHubs Servern. Der Schnitt vom 2026-08-24 ist lokal
+   vollständig, aber ein force-push schreibt nur Referenzen um — die alten Objekte sind mit
+   bekanntem Hash weiter abrufbar. **Das kann nur GitHub per Garbage Collection beheben**,
+   also rechtzeitig anfragen.
+2. Zwei Modelldateien nennen einen dritten Autor im Dateinamen; eine Weitergabeerlaubnis
+   ist nicht belegt.
+3. 111 geerbte Assets des BBS mod würden mitverteilt.
+
 ### Bewusst nicht gebaut
 
 - **Kein eigenes Vulkan-Backend und kein eigener Raytracer.** Mojang liefert Vulkan selbst;

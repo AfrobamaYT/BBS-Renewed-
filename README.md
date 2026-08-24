@@ -6,6 +6,10 @@ Blender und klassische Sequencer können.
 
 > **Privates Repository.** Dieser Baum ist nicht veröffentlicht. Er ist die Arbeits- und
 > Sicherungsablage des Forks.
+>
+> ⛔ **Vor dem Umschalten auf öffentlich: [`docs/VOR-VEROEFFENTLICHUNG.md`](docs/VOR-VEROEFFENTLICHUNG.md) abarbeiten.**
+> Drei Punkte stehen offen und berühren Rechte Dritter — darunter einer, der **nur von
+> GitHub selbst** erledigt werden kann und deshalb Vorlauf braucht.
 
 ![Der Film-Editor mit dem Render-Reiter](design/bbs-design-system/briefing/ist-editor-mit-nano-panel.png)
 
