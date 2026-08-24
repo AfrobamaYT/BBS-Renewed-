@@ -710,7 +710,7 @@ public class UIReplaysEditor extends UIElement
             /* Kamera-Clips als Balken unter den Spuren (4.54); Klicks nur, wenn kein Keyframe sie nahm. */
             this.keyframeEditor.view.spuren = new KameraSpuren(this.keyframeEditor.view, this.filmPanel.cameraEditor).dock(this.keyframeEditor, this);
 
-            this.keyframeEditor.view.rulerRenderer((context) -> renderRuler(context, this.keyframeEditor.view, this.filmPanel.cameraEditor, this.film.camera, 0));
+            this.keyframeEditor.view.rulerRenderer((context) -> mchorse.bbs_mod.ui.film.ZeitleisteZweig.linealDekor(context, this.keyframeEditor.view, this.filmPanel.cameraEditor, this.film));
             this.keyframeEditor.view.duration(() -> this.film.camera.calculateDuration());
             this.keyframeEditor.view.context(menu ->
             {

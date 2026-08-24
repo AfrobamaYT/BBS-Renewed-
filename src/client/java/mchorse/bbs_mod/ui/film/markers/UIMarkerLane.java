@@ -88,7 +88,7 @@ public class UIMarkerLane extends UIElement implements com.mcstudio.nano.ZonenQu
      * {@code batcher.polygon} (P2, AA-Saum), also dieselbe Kantenglaettung wie Rundecke und
      * Kurven.</p>
      */
-    private void fahne(UIContext context, int x, int oben, int farbe, boolean hervor)
+    private static void fahne(UIContext context, int x, int oben, int farbe, boolean hervor)
     {
         /* ⛔ GRAU, nicht in der Merkstellen-Farbe. Nutzerwunsch 2026-08-21: der Kopf soll ein
          * ruhiges Bedienelement sein, keine Farbmarke — die Farbe traegt weiterhin die Linie
@@ -134,6 +134,43 @@ public class UIMarkerLane extends UIElement implements com.mcstudio.nano.ZonenQu
         Film film = this.delegate.getFilm();
 
         return film == null ? null : film.markers;
+    }
+
+    /**
+     * Nur-Anzeige der Merkstellen im Lineal des Replay-Editors (Entwurf screens/film-editor.html:
+     * die Dreiecke stehen in BEIDEN Zweigen im Linealband). Bedienung — setzen, ziehen,
+     * oeffnen, loeschen — bleibt in der Kamera-Zeitleiste, wo diese Lane als Element haengt.
+     */
+    public static void zeichneImLineal(UIContext context, Area area, Markers markers, java.util.function.IntUnaryOperator toGraphX)
+    {
+        if (markers == null || markers.getList().isEmpty())
+        {
+            return;
+        }
+
+        int oben = TimelineRulerRenderer.getRulerBottom(area) - KOPF_HOEHE;
+        FontRenderer font = context.batcher.getFont();
+
+        for (Marker marker : markers.getList())
+        {
+            int x = toGraphX.applyAsInt(marker.tick.get());
+
+            if (x < area.x - KOPF_BREITE || x > area.ex() + KOPF_BREITE)
+            {
+                continue;
+            }
+
+            fahne(context, x, oben, marker.color.get(), false);
+
+            String text = marker.label.get();
+
+            if (!text.isEmpty())
+            {
+                context.batcher.textCard(text, x + KOPF_BREITE + 3,
+                    oben + (KOPF_HOEHE - font.getHeight()) / 2 + 1,
+                    Colors.WHITE, Colors.A75, 2);
+            }
+        }
     }
 
     private void setzeAmCursor()

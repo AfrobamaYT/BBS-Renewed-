@@ -209,7 +209,6 @@ public final class SpurGruppen
 			kopf.kopf = true;
 			kopf.collapsed = false;
 			kopf.auge = gewaehlt.enabled::get;
-			view.addElement(kopf);
 		}
 
 		for (UIKeyframeSheet sheet : sheets)
@@ -235,6 +234,14 @@ public final class SpurGruppen
 			{
 				view.addElement(element);
 			}
+		}
+
+		/* ⛔ Den Kopf erst JETZT anmelden: addElement() flacht die Kinder in die
+		 * sheets-Liste — ein leerer Kopf liess getSheet(Keyframe) und alle Index-Pfade
+		 * ins Leere laufen (gemessen: sheet=null, Regressionslauf T8). */
+		if (kopf != null)
+		{
+			view.addElement(kopf);
 		}
 
 		/* Fremde Replays: zugeklappte Koepfe mit Kanalzahl — Aufklappen waehlt sie aus,

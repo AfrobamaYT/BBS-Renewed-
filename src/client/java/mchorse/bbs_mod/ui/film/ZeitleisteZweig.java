@@ -40,6 +40,19 @@ public final class ZeitleisteZweig
 	}
 
 	/**
+	 * Lineal-Dekor des Replay-Dope-Sheets: erst der alte Ruler-Weg (Audio-Wellenform,
+	 * Clip-Gradient), dann die Film-Merkstellen als Nur-Anzeige (Entwurf zeigt die
+	 * Dreiecke in BEIDEN Zweigen; bedient werden sie in der Kamera-Zeitleiste).
+	 */
+	public static void linealDekor(mchorse.bbs_mod.ui.framework.UIContext context,
+		mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes view,
+		UIClipsPanel cameraEditor, mchorse.bbs_mod.film.Film film)
+	{
+		mchorse.bbs_mod.ui.film.replays.UIReplaysEditor.renderRuler(context, view, cameraEditor, film.camera, 0);
+		mchorse.bbs_mod.ui.film.markers.UIMarkerLane.zeichneImLineal(context, view.graphArea, film.markers, view::toGraphX);
+	}
+
+	/**
 	 * Ring-Grab im Viewport: Animier-Bereich zeigen und den Kopf-Modus mitziehen.
 	 * Der reine Ring-KLICK wechselt bewusst nicht (Nutzer 2026-08-23: Klick riss ihn
 	 * in die alte Timeline; Blender wechselt bei Bone-Auswahl auch keinen Editor).
