@@ -91,6 +91,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			this.clipHost.relative(this).x(28).y(26).w(1F, -28).h(1F, -26);
 			this.clipHost.setVisible(false);
 			this.add(this.clipHost);
+			this.deckNachOben();
 		}
 
 		return this.clipHost;
@@ -115,10 +116,53 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 			this.keyHost.relative(this).x(28).y(26).w(1F, -28).h(1F, -26);
 			this.keyHost.setVisible(false);
 			this.add(this.keyHost);
+			this.deckNachOben();
 		}
 
 		return this.keyHost;
 	}
+
+	/**
+	 * Transparente Tooltip-Schicht als OBERSTES Kind: die Dock-Wirte (Clip-/Keyframe-
+	 * Panel) rendern nach der Hauptflaeche und uebermalten deren Tooltips (Nutzerbild
+	 * Akte 38). ⛔ Lazy (Add-Field nach Hotswap = null); nimmt keinerlei Eingaben.
+	 */
+	private NanoFlaeche tooltipDeck;
+	private boolean tooltipStand;
+
+	private void deckNachOben()
+	{
+		if (this.tooltipDeck != null && this.tooltipDeck.getParent() == this)
+		{
+			this.tooltipDeck.removeFromParent();
+			this.add(this.tooltipDeck);
+		}
+	}
+
+	private NanoFlaeche deck()
+	{
+		if (this.tooltipDeck == null)
+		{
+			this.tooltipDeck = new NanoFlaeche((vg, b, h, mx, my, f) ->
+			{
+				final float k = Math.max(1F, f.skala());
+
+				NanoBausteine.tooltip(vg, b, h, k, this.flaeche.tooltipFaellig());
+			});
+			this.tooltipDeck.eingabeFeld(0F, 0F, 0F, 0F);
+			this.tooltipDeck.relative(this).x(0).y(0).w(1F).h(1F);
+			this.add(this.tooltipDeck);
+			/* ⛔ Lazy im Render-Fluss angehaengt: ohne resize bleibt area 0x0 und
+			 * offscreenMalen erzeugt ein 1-px-FBO — unsichtbar (gemessen, Probebox). */
+			this.resize();
+		}
+
+		this.deckNachOben();
+
+		return this.tooltipDeck;
+	}
+
+
 
 	public UIPropertiesNano()
 	{
@@ -323,6 +367,19 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 	{
 		this.auffrischen();
 
+		boolean faellig = this.flaeche.tooltipFaellig() != null;
+
+		/* Solange faellig jeden Frame malen (Zonenwechsel verschiebt die Box) und beim
+		 * Verschwinden einmal leeren. */
+		if (faellig || faellig != this.tooltipStand)
+		{
+			this.tooltipStand = faellig;
+			/* Area direkt spiegeln: das lazy angehaengte Deck bekommt vom normalen
+			 * Layoutlauf keine Flaeche mehr ab (gemessen 0x0 trotz resize). */
+			this.deck().area.copy(this.area);
+			this.deck().neuMalen();
+		}
+
 		super.render(context);
 	}
 
@@ -392,7 +449,7 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 
 		String[] symbole = {"replay", "knochen", "film", "props", "kamera", "kurve"};
 		final String[] SCHIENEN_HINWEISE = {"Replay: transform and visibility", "Form: model and shape keys",
-			"Film settings", "Channel overview", "Camera clip properties", "Selected keyframe: pose, transform, values"};
+			"Film settings", "Channel overview", "Camera clip properties", "Selected keyframe properties"};
 
 		for (int i = 0; i < symbole.length; i++)
 		{
@@ -436,7 +493,6 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 					NanoDesign.TXT_OFF, this.schiene == 4 ? "No camera clip selected" : "No keyframe selected", null);
 			}
 
-			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 			return;
 		}
 
@@ -465,7 +521,6 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 				{"Replays", String.valueOf(film.replays.getList().size()), ""},
 				{"Camera clips", String.valueOf(film.camera.get().size()), ""},
 			});
-			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 			return;
 		}
 
@@ -473,7 +528,6 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		{
 			NanoStifte.text(vg, NanoDesign.SANS, 11F * k, ix, y + 18F * k, NanoDesign.TXT_OFF,
 				"No replay selected", null);
-			NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 			return;
 		}
 
@@ -572,7 +626,6 @@ public class UIPropertiesNano extends UIElement implements UISeitenleiste.Auffri
 		f.rollGrenze(Math.max(0F, ueberstand / (6F * k)));
 	
 		/* Tooltip ganz zuletzt — er liegt ueber allem, auch ueber aufgeklappten Listen. */
-		NanoBausteine.tooltip(vg, b, h, k, f.tooltipFaellig());
 	}
 
 	/**
