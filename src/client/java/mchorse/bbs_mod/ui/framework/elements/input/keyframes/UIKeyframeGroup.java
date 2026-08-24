@@ -17,6 +17,15 @@ public class UIKeyframeGroup extends UIKeyframeElement
      */
     public Runnable onToggle;
 
+    /** Kopfzeile der Struktur (Replay oder Kamera) — dunkelblaue Toenung statt Gruppen-Gruen. */
+    public boolean kopf;
+
+    /** Zaehlertext fuer Koepfe ohne geladene Kinder (z. B. „4 channels“ eines fremden Replays). */
+    public String zaehler = "";
+
+    /** >= 0: diese Kopfzeile ist die Kamera-Ebene N — die Lane zeichnet dort die Clips. */
+    public int kameraEbene = -1;
+
     public UIKeyframeGroup(IKey title)
     {
         super(title, 0);

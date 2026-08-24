@@ -45,24 +45,25 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
     private static final int POSE_TAB_DEPTH_STEP = 4;
 
     /** Track-name column layout: left text indent, right padding, right-side icon slot, text/icon gap. */
-    private static final int LABEL_TEXT_LEFT = 5;
-    private static final int LABEL_RIGHT_PAD = 2;
-    private static final int LABEL_ICON_SIZE = 16;
-    private static final int LABEL_TEXT_ICON_GAP = 3;
+    static final int LABEL_TEXT_LEFT = 5;
+    static final int LABEL_RIGHT_PAD = 2;
+    static final int LABEL_ICON_SIZE = 16;
+    static final int LABEL_TEXT_ICON_GAP = 3;
 
-    private UIKeyframes keyframes;
+    UIKeyframes keyframes;
 
     private List<UIKeyframeElement> elements = new ArrayList<>();
     private List<UIKeyframeSheet> sheets = new ArrayList<>();
     private Map<UIKeyframeSheet, Integer> sheetYCache = new HashMap<>();
-    private UIKeyframeSheet lastSheet;
+    UIKeyframeSheet lastSheet;
     private Map<UIKeyframeSheet, UIKeyframeSheet> poseTabRoots = new HashMap<>();
     private Map<UIKeyframeSheet, Integer> poseTabDepths = new HashMap<>();
     private Set<UIKeyframeSheet> poseTabParents = new HashSet<>();
-    private Set<UIKeyframeSheet> expandedPoseTabs = new HashSet<>();
+    Set<UIKeyframeSheet> expandedPoseTabs = new HashSet<>();
 
     private Scroll dopeSheet;
-    private double trackHeight;
+    double trackHeight;
+    private DopeSheetSpalte spalte;
 
     public static IKeyframeShapeRenderer renderShape(Keyframe frame, UIContext context, VertexConsumer builder, Matrix4f matrix, int x, int y, int offset, int c)
     {
@@ -151,7 +152,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return y;
     }
 
-    private int getElementHeight(UIKeyframeElement element)
+    int getElementHeight(UIKeyframeElement element)
     {
         if (element instanceof UIKeyframeSheet sheet && !this.isVisible(sheet))
         {
@@ -188,7 +189,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
     }
 
-    private boolean isVisible(UIKeyframeSheet sheet)
+    boolean isVisible(UIKeyframeSheet sheet)
     {
         /* Filter HIER: der einzige Punkt, an dem Layout und Bedienung zusammenlaufen. */
         if (this.nurBewegte && sheet.channel != null && sheet.channel.getKeyframes().isEmpty())
@@ -201,7 +202,7 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return root == null || this.expandedPoseTabs.contains(root);
     }
 
-    private int getSheetIndent(UIKeyframeSheet sheet)
+    int getSheetIndent(UIKeyframeSheet sheet)
     {
         if (!this.poseTabRoots.containsKey(sheet))
         {
@@ -1011,153 +1012,6 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
     }
 
-    private void renderLabels(UIContext context, BufferBuilder builder, Matrix4f matrix, List<UIKeyframeElement> elements, int offset, int y)
-    {
-        Area area = this.keyframes.area;
-        int w = this.keyframes.getLabelWidth();
-
-        /* ⛔ Die Kanalspalte hatte GAR KEINEN eigenen Grund — der Kommentar „Render
-         * background" zeichnete nur die Trennlinie, und die Namen standen auf dem
-         * Editor-Grund. Im Kamera-Zweig fuellt `UIZeitleisteNano.kanalspalte()` sie mit
-         * 0x191919; hier fehlte das, und genau daran sah man dem Replay-Zweig die alte
-         * Haut an. Derselbe Ton, damit beide Timelines eine Spalte zeigen. */
-        context.batcher.box(area.x, area.y, area.x + w, area.ey(), 0xFF191919);
-        context.batcher.box(area.x + w - 1, area.y, area.x + w, area.ey(), 0xFF0D0D0D);
-
-        /* Spaltenkopf im Linealband — „CHANNELS" wie im Entwurf und im Kamera-Zweig. */
-        int rulerBottom = TimelineRulerRenderer.getRulerBottom(area);
-
-        context.batcher.text("CHANNELS", area.x + 8,
-            area.y + (rulerBottom - area.y - context.batcher.getFont().getHeight()) / 2, 0xFF616161);
-
-        context.batcher.clip(area.x, area.y, area.x + w, area.ey(), context);
-
-        for (UIKeyframeElement element : elements)
-        {
-            if (element instanceof UIKeyframeSheet sheet)
-            {
-                if (this.isVisible(sheet))
-                {
-                    this.renderSheetLabel(context, builder, matrix, area, sheet, offset, y, w);
-                }
-            }
-            else if (element instanceof UIKeyframeGroup group)
-            {
-                this.renderGroupLabel(context, builder, matrix, area, group, offset, y, w);
-
-                /* Kinder beginnen direkt UNTER der Kopfzeile. Vorher lief y erst um die
-                 * Gesamthöhe der Gruppe weiter und die Kinder wurden darunter gezeichnet —
-                 * also außerhalb des Bereichs, den die Gruppe belegt: aufgeklappt blieb die
-                 * Liste leer. calculateLayout und clickElements rechnen seit jeher so. */
-                if (!group.collapsed)
-                {
-                    this.renderLabels(context, builder, matrix, group.children, offset + 10, y + (int) this.trackHeight);
-                }
-            }
-
-            y += this.getElementHeight(element);
-        }
-
-        context.batcher.unclip(context);
-    }
-
-    private void renderGroupLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeGroup group, int offset, int y, int w)
-    {
-        int summe = group.children.stream().filter(UIKeyframeSheet.class::isInstance)
-            .mapToInt((k) -> ((UIKeyframeSheet) k).channel.getKeyframes().size()).sum();
-
-        this.renderLabel(context, area, y, w, group.color, summe > 0 ? String.valueOf(summe) : "",
-            group.title.get(), group.collapsed ? Icons.ARROW_RIGHT : Icons.ARROW_DOWN, offset, true);
-    }
-
-    private void renderSheetLabel(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeSheet sheet, int offset, int y, int w)
-    {
-        /* Nur Klapp-Pfeile — die alten X/Y/Z-Kanal-Icons sind Alt-Optik (Akte 36). */
-        Icon icon = !this.isPoseTabParent(sheet) ? null
-            : this.expandedPoseTabs.contains(sheet) ? Icons.ARROW_DOWN : Icons.ARROW_RIGHT;
-
-        String kern = sheet.id.contains("/") ? sheet.id.substring(sheet.id.lastIndexOf('/') + 1) : sheet.id;
-        int achse = "x".equals(kern) || "vX".equals(kern) ? NanoDesign.ACHSE_X
-            : "y".equals(kern) || "vY".equals(kern) ? NanoDesign.ACHSE_Y
-            : "z".equals(kern) || "vZ".equals(kern) ? NanoDesign.ACHSE_Z : 0;
-
-        if (achse != 0)
-        {
-            context.batcher.box(area.x, y, area.x + 2, y + (int) this.trackHeight, achse | Colors.A100);
-        }
-
-        /* Entwurfszeile .cr.sel: die zuletzt angefasste Spur traegt die blaue Toenung. */
-        if (sheet == this.lastSheet)
-        {
-            context.batcher.box(area.x, y, area.x + w, y + (int) this.trackHeight,
-                Colors.setA(0x4772B3, 0.32F));
-        }
-
-        List keys = sheet.channel.getKeyframes();
-        String zaehler = String.valueOf(keys.size());
-
-        if (!keys.isEmpty() && ((Keyframe) keys.get(0)).getValue() instanceof mchorse.bbs_mod.utils.pose.Pose pose
-            && !pose.transforms.isEmpty())
-        {
-            zaehler = pose.transforms.size() + " bones · " + zaehler;
-        }
-
-        this.renderLabel(context, area, y, w, sheet.color, zaehler, sheet.title.get(),
-            this.trackHeight >= 12D ? icon : null, offset + this.getSheetIndent(sheet), false);
-    }
-
-    /** Eine Zeile der Beschriftungsspalte — EINE Methode fuer Gruppen UND Spuren. */
-    /* Entwurf foundations/zeitleiste.html (.cr): neutrale Zeile, Name links, Zaehler
-     * rechts in Tabellenziffern — kein Farbbalken, kein Kanal-Icon (Akte 36). */
-    private void renderLabel(UIContext context, Area area, int y, int w, int farbe, String zaehler,
-        String titel, Icon icon, int einzug, boolean gruppe)
-    {
-        if (y + this.trackHeight < area.y || y > area.ey())
-        {
-            return;
-        }
-
-        int h = (int) this.trackHeight;
-        boolean hover = area.isInside(context) && context.mouseY >= y && context.mouseY < y + h;
-
-        /* Blender-Farbcode der Ebenen: Gruppenzeilen gruen, Kanaele neutral. */
-        if (gruppe)
-        {
-            context.batcher.box(area.x, y, area.x + w, y + h, Colors.setA(NanoDesign.GRUEN, 0.13F));
-        }
-
-        if (hover)
-        {
-            context.batcher.box(area.x, y, area.x + w, y + h, Colors.setA(Colors.WHITE, 0.05F));
-        }
-
-        int textColor = gruppe
-            ? (hover ? Colors.WHITE : Colors.setA(Colors.WHITE, 0.75F))
-            : (hover ? NanoDesign.TXT : NanoDesign.TXT_DIM);
-        int iconX = area.x + w - LABEL_RIGHT_PAD - LABEL_ICON_SIZE;
-        int textX = area.x + LABEL_TEXT_LEFT + einzug;
-        FontRenderer font = context.batcher.getFont();
-        int my = y + h / 2;
-        int rechts = area.x + w - LABEL_RIGHT_PAD;
-
-        if (icon != null)
-        {
-            context.batcher.icon(icon, Colors.A100 | (NanoDesign.TXT_DIM & 0xFFFFFF), iconX, my, 0F, 0.5F);
-            rechts = iconX - LABEL_TEXT_ICON_GAP;
-        }
-
-        if (!zaehler.isEmpty() && !"0".equals(zaehler))
-        {
-            int zb = font.getWidth(zaehler);
-
-            context.batcher.text(zaehler, rechts - zb, my - font.getHeight() / 2, NanoDesign.TXT_OFF);
-            rechts -= zb + LABEL_TEXT_ICON_GAP;
-        }
-
-        context.batcher.text(font.limitToWidth(titel, Math.max(0, rechts - textX)),
-            textX, my - font.getHeight() / 2, textColor);
-    }
-
     private int renderElements(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, List<UIKeyframeElement> elements, int offset, int y)
     {
         for (UIKeyframeElement element : elements)
@@ -1216,6 +1070,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         int surface = row % 2 == 0 ? BBSSettings.deepSurface() : BBSSettings.baseSurface();
 
         context.batcher.box(area.x, by, area.ex(), by + bh, surface);
+
+        /* Kamera-Kopfzeile: die Clips dieser Ebene liegen HIER (Entwurf). */
+        if (group.kameraEbene >= 0 && this.keyframes.spuren != null)
+        {
+            this.keyframes.spuren.zeichneZeile(context, group.kameraEbene, by, bh);
+        }
 
         if (hover)
         {
@@ -1479,7 +1339,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
             Matrix4f matrix = new Matrix4f(context.batcher.pose().last().pose());
             BufferBuilder builder = null;
 
-            this.renderLabels(context, builder, matrix, this.elements, 0, this.getDopeSheetY());
+            if (this.spalte == null)
+            {
+                this.spalte = new DopeSheetSpalte(this);
+            }
+
+            this.spalte.render(context, builder, matrix, this.elements, 0, this.getDopeSheetY());
         }
 
         this.dopeSheet.renderScrollbar(context.batcher);

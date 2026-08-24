@@ -390,8 +390,7 @@ public class UIReplaysEditor extends UIElement
         this.actionsToggle.tooltip(UIKeys.FILM_REPLAY_ACTIONS_TIMELINE, Direction.RIGHT);
         this.layoutBottomToggles();
 
-        this.setCategory(ReplayCategory.PLAYER);
-
+        /* Kein setCategory() hier: das schaltete allMode (alle Gruppen, Entwurf) gleich wieder aus. */
         this.keys().register(Keys.REPLAYS_TAB_1, () -> this.setCategoryByPosition(0))
             .category(UIKeys.FILM_REPLAY_TITLE);
         this.keys().register(Keys.REPLAYS_TAB_2, () -> this.setCategoryByPosition(1))

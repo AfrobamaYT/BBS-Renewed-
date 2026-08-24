@@ -3,6 +3,7 @@ package mchorse.bbs_mod.ui.film.replays;
 import mchorse.bbs_mod.BBSSettings;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.UIKeys;
+import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeElement;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeGroup;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframeSheet;
 import mchorse.bbs_mod.ui.framework.elements.input.keyframes.UIKeyframes;
@@ -113,8 +114,9 @@ public final class SpurGruppen
 	}
 
 	/**
-	 * Hängt die Spuren in den Editor — gruppiert nach dem Entwurf, alle übrigen unverändert
-	 * einzeln in ihrer Reihenfolge.
+	 * Hängt die Spuren in den Editor — Entwurfsstruktur (screens/film-editor.html):
+	 * Kamera-Kopfzeilen, dann je Replay ein Kopf; das gewählte trägt seine Gruppen als
+	 * Kinder, fremde stehen zugeklappt und wählen sich beim Aufklappen aus.
 	 */
 	public static void einfuegen(UIKeyframes view, List<UIKeyframeSheet> sheets)
 	{
@@ -126,6 +128,41 @@ public final class SpurGruppen
 			}
 
 			return;
+		}
+
+		mchorse.bbs_mod.ui.film.UIFilmPanel panel =
+			mchorse.bbs_mod.BBSModClient.getDashboard() == null ? null
+				: mchorse.bbs_mod.BBSModClient.getDashboard().getPanel(mchorse.bbs_mod.ui.film.UIFilmPanel.class);
+		mchorse.bbs_mod.film.Film film = panel == null ? null : panel.getData();
+
+		/* Kamera-Kopfzeilen zuoberst — eine je belegter Ebene. KameraSpuren zeichnet die
+		 * Clips auf Zeile==Ebene; mit den Koepfen ganz oben treffen die Balken genau diese
+		 * Zeilen statt wie bisher als Geister ueber den ersten Kanaelen zu liegen. */
+		if (film != null)
+		{
+			int ebenen = 0;
+
+			for (mchorse.bbs_mod.utils.clips.Clip c : film.camera.get())
+			{
+				ebenen = Math.max(ebenen, c.layer.get() + 1);
+			}
+
+			for (int e = 0; e < ebenen; e++)
+			{
+				UIKeyframeGroup kamera = new UIKeyframeGroup(
+					IKey.constant(ebenen == 1 ? "Camera" : "Camera " + (e + 1)), 0);
+
+				kamera.kopf = true;
+				kamera.kameraEbene = e;
+				kamera.onToggle = () -> {
+					if (panel.zeitleisteNano instanceof mchorse.bbs_mod.ui.film.UIZeitleisteNano z)
+					{
+						z.modusUmschalten(2);
+					}
+				};
+
+				view.addElement(kamera);
+			}
 		}
 
 		Map<String, List<UIKeyframeSheet>> toepfe = new LinkedHashMap<>();
@@ -161,19 +198,72 @@ public final class SpurGruppen
 			gruppen.put(name, gruppe);
 		}
 
+		mchorse.bbs_mod.film.replays.Replay gewaehlt =
+			panel == null || panel.replayEditor == null ? null : panel.replayEditor.getReplay();
+		UIKeyframeGroup kopf = gewaehlt == null ? null
+			: new UIKeyframeGroup(IKey.constant(gewaehlt.getName()), 0);
 		Set<String> eingehaengt = new HashSet<>();
+
+		if (kopf != null)
+		{
+			kopf.kopf = true;
+			kopf.collapsed = false;
+			view.addElement(kopf);
+		}
 
 		for (UIKeyframeSheet sheet : sheets)
 		{
 			String name = topf(sheet);
+			UIKeyframeElement element = name == null || !gruppen.containsKey(name) ? sheet
+				: eingehaengt.add(name) ? gruppen.get(name) : null;
 
-			if (name == null || !gruppen.containsKey(name))
+			if (element == null)
 			{
-				view.addSheet(sheet);
+				continue;
 			}
-			else if (eingehaengt.add(name))
+
+			if (kopf != null)
 			{
-				view.addElement(gruppen.get(name));
+				kopf.add(element);
+			}
+			else if (element instanceof UIKeyframeSheet einzeln)
+			{
+				view.addSheet(einzeln);
+			}
+			else
+			{
+				view.addElement(element);
+			}
+		}
+
+		/* Fremde Replays: zugeklappte Koepfe mit Kanalzahl — Aufklappen waehlt sie aus,
+		 * der Neubau der Liste laedt dann ihre Kanaele (Blender: das aktive Objekt). */
+		if (film != null && panel.replayEditor != null)
+		{
+			for (mchorse.bbs_mod.film.replays.Replay replay : film.replays.getList())
+			{
+				if (replay == gewaehlt)
+				{
+					continue;
+				}
+
+				int kanaele = 0;
+
+				for (mchorse.bbs_mod.utils.keyframes.KeyframeChannel<?> k : replay.keyframes.getChannels())
+				{
+					if (!k.getKeyframes().isEmpty())
+					{
+						kanaele++;
+					}
+				}
+
+				UIKeyframeGroup fremd = new UIKeyframeGroup(IKey.constant(replay.getName()), 0);
+
+				fremd.kopf = true;
+				fremd.zaehler = kanaele + (kanaele == 1 ? " channel" : " channels");
+				fremd.onToggle = () -> panel.replayEditor.replaysList.replays.scrollToReplay(replay);
+
+				view.addElement(fremd);
 			}
 		}
 	}

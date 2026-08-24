@@ -40,8 +40,10 @@ public final class KameraSpurBalken
      * vielleicht die opacity runter weil das lenkt ab." Der gewählte Clip bleibt kräftiger —
      * er ist der, an dem gerade gearbeitet wird.
      */
-    private static final float SCHLEIER = 0.62F;
-    private static final float SCHLEIER_GEWAEHLT = 0.35F;
+    /* Seit die Clips eigene Camera-Kopfzeilen haben (Entwurf), sind sie dort die
+     * Hauptsache — der Schleier bleibt nur noch als leichte Zuruecknahme. */
+    private static final float SCHLEIER = 0.18F;
+    private static final float SCHLEIER_GEWAEHLT = 0.06F;
 
     public static void zeichne(UIContext context, UIClips clips, Clip clip, Area balken, boolean gewaehlt)
     {

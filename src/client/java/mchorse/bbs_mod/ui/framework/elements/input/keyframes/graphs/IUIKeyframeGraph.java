@@ -18,7 +18,9 @@ import java.util.List;
 
 public interface IUIKeyframeGraph
 {
-    public static final int TOP_MARGIN = 25;
+    /* Unter BEIDEN Lineal-Bloecken (TIMELINE_BLOCK 21 + RULER_BLOCK 21): mit 25 lag die
+     * erste Spurzeile konstruktiv im Linealband und wurde von dessen Malern verdeckt. */
+    public static final int TOP_MARGIN = 44;
 
     public void resetView();
 
