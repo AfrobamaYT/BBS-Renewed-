@@ -122,7 +122,9 @@ public class UIStatusleisteNano extends UIElement
 
 		NanoStifte.flaeche(vg, 0, 0, b, h, 0F, NanoDesign.STATUSBAR);
 
-		float y = h / 2F + 3.5F * k;
+		/* ⛔ text() ist MIDDLE-aligned — y IST die Mitte. Der alte Grundlinien-Aufschlag
+		 * (+3.5k) schob jede Beschriftung sichtbar unter die Leistenmitte (Akte 36). */
+		float y = h / 2F;
 		float x = 12F * k;
 
 		/* Links: was die Maus HIER GERADE tut. Blenders Statusleiste zeigt „the keymap of the
@@ -164,6 +166,9 @@ public class UIStatusleisteNano extends UIElement
 		NanoStifte.textMitte(vg, NanoDesign.BOLD, 9.5F * k, x + f3B / 2F, h / 2F, 0xC6C6C6, "F3");
 		x += f3B + 6F * k;
 		NanoStifte.text(vg, NanoDesign.SANS, 10.5F * k, x, y, NanoDesign.TXT_DIM, "Command search", null);
+		/* In x einrechnen — die Platzpruefung des rechten Texts mass sonst gegen das x VOR
+		 * dieser Beschriftung und liess beide uebereinanderlaufen (Akte 36). */
+		x += NanoDesign.breite("Command search", 10.5F * k);
 
 		/* Rechts: Speicherstand und Dateipfad — was der Entwurf dort zeigt. */
 		UIFilmPanel panel = filmPanel();
