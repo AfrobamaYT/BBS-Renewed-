@@ -92,6 +92,7 @@ final class DopeSheetSpalte
 		 * die Summary-Zeile neutral hell (Entwurf .cr.sum). */
 		context.batcher.box(area.x, y, area.x + w, y + (int) this.dope.trackHeight,
 			group.summary ? Colors.setA(Colors.WHITE, 0.05F)
+				: group.labelFarbe != 0 ? Colors.setA(group.labelFarbe, 0.20F)
 				: group.kopf ? Colors.setA(0x4772B3, 0.14F) : Colors.setA(NanoDesign.GRUEN, 0.13F));
 
 		this.label(context, area, y, w, summe > 0 ? String.valueOf(summe) : group.zaehler,

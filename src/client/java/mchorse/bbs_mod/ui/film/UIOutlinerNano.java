@@ -143,6 +143,33 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 							liste.openFormEditor(ziel.form, true, null);
 						}
 					}));
+				/* Farblabel-Palette (AE): setzt replay.labelColor; „None" loescht.
+				 * EINE anonyme Klasse in der Schleife — neue Lambdas im Konstruktor braechen den Hotswap. */
+				final int[][] farben = {{0, 0}, {1, 0xE06A60}, {2, 0xD8A03F}, {3, 0xE3C56B},
+					{4, 0x8FCE7A}, {5, 0x6FC1D8}, {6, 0x6B9BD8}, {7, 0xA987D6}, {8, 0xD687B8}};
+				final String[] namen = {"None", "Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Pink"};
+
+				for (int fi = 0; fi < farben.length; fi++)
+				{
+					final int rgb = farben[fi][1];
+					final String name = namen[fi];
+
+					simple.actions.getList().add(new mchorse.bbs_mod.ui.utils.context.ContextAction(
+						mchorse.bbs_mod.ui.utils.icons.Icons.MATERIAL,
+						mchorse.bbs_mod.l10n.keys.IKey.raw("Label: " + name),
+						new Runnable()
+						{
+							@Override
+							public void run()
+							{
+								if (ziel.labelColor != null) { ziel.labelColor.set(rgb); }
+								UIOutlinerNano.this.stand = "";
+								UIOutlinerNano.this.auffrischen();
+								UIOutlinerNano.this.flaeche.neuMalen();
+							}
+						}));
+				}
+
 				simple.actions.update();
 			}
 
@@ -252,7 +279,8 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 			int kanaele = replay.keyframes.getAll().size();
 
 			this.zeilen.add(new Zeile(1, "replay", name, kanaele + (kanaele == 1 ? " channel" : " channels"), aus, replay));
-			kennung.append('|').append(name).append(aus ? "-" : "+").append(kanaele);
+			kennung.append('|').append(name).append(aus ? "-" : "+").append(kanaele)
+				.append('c').append(replay.labelColor == null ? 0 : replay.labelColor.get());
 		}
 
 		return kennung.toString();
@@ -447,6 +475,15 @@ public class UIOutlinerNano extends UIElement implements UISeitenleiste.Auffrisc
 			else if (ueber)
 			{
 				NanoStifte.flaeche(vg, 0, y, b, zeileH, 0F, C_HOVER);
+			}
+
+			/* Farblabel (AE-Muster): dezente Zeilentoenung + 3-px-Streifen links. */
+			if (z.replay != null && z.replay.labelColor != null && z.replay.labelColor.get() != 0)
+			{
+				int lf = z.replay.labelColor.get();
+
+				NanoStifte.flaecheArgb(vg, 0, y, b, zeileH, 0F, 0x24000000 | (lf & 0xFFFFFF));
+				NanoStifte.flaecheArgb(vg, 0, y, 3F * k, zeileH, 0F, 0xFF000000 | (lf & 0xFFFFFF));
 			}
 
 			float x = 9F * k;

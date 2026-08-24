@@ -21,6 +21,8 @@ public class UIKeyframeGroup extends UIKeyframeElement
     public boolean kopf;
     /** Summary-Zeile (Entwurf): aggregiert ALLE Kanaele des Graphen, ohne eigene Kinder. */
     public boolean summary;
+    /** Farblabel des Replays (AE-Muster): 0 = keins, sonst RGB — toent die Kopfzeile. */
+    public int labelFarbe;
 
     /** Zaehlertext fuer Koepfe ohne geladene Kinder (z. B. „4 channels“ eines fremden Replays). */
     public String zaehler = "";

@@ -43,6 +43,7 @@ final class DopeSheetFlaeche
 		}
 
 		int ton = group.summary ? Colors.setA(Colors.WHITE, 0.035F)
+			: group.labelFarbe != 0 ? Colors.setA(group.labelFarbe, 0.12F)
 			: group.kopf ? Colors.setA(BAND_BLAU, 0.07F) : Colors.setA(BAND_GRUEN, 0.05F);
 
 		context.batcher.box(area.x, by, area.ex(), by + bh, ton);

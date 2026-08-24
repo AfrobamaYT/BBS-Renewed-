@@ -226,6 +226,7 @@ public final class SpurGruppen
 		if (kopf != null)
 		{
 			kopf.kopf = true;
+			kopf.labelFarbe = gewaehlt.labelColor == null ? 0 : gewaehlt.labelColor.get(); /* null nach Hotswap (Add-Field) */
 			kopf.collapsed = false;
 			kopf.auge = gewaehlt.enabled::get;
 		}
@@ -287,6 +288,7 @@ public final class SpurGruppen
 				UIKeyframeGroup fremd = new UIKeyframeGroup(IKey.constant(replay.getName()), 0);
 
 				fremd.kopf = true;
+				fremd.labelFarbe = replay.labelColor == null ? 0 : replay.labelColor.get();
 				fremd.auge = replay.enabled::get;
 				fremd.zaehler = kanaele + (kanaele == 1 ? " channel" : " channels");
 				fremd.onToggle = () -> panel.replayEditor.replaysList.replays.scrollToReplay(replay);
