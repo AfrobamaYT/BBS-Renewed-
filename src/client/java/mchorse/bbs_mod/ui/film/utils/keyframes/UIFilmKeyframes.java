@@ -102,8 +102,17 @@ public class UIFilmKeyframes extends UIKeyframes implements com.mcstudio.nano.Zo
         if (this.editor != null)
         {
             long offset = this.getClipOffset();
+            float tick = (float) this.fromGraphX(context.mouseX);
 
-            this.editor.setCursor(Math.max(0, (int) (Math.round(this.fromGraphX(context.mouseX)) + offset)));
+            /* Playhead-Magnet (Resolve): der Scrub rastet an Markern, Clip-Kanten und
+             * Keys — der Cursor selbst ist ausgenommen (er ist das Gezogene). Gemessen
+             * Akte 38: der Nutzer-Zug lief IMMER hier entlang, nie im Key-Drag. */
+            if (!mchorse.bbs_mod.graphics.window.Window.isShiftPressed())
+            {
+                tick = this.getDopeSheet().magnetTick(tick, context, true);
+            }
+
+            this.editor.setCursor(Math.max(0, (int) (Math.round(tick) + offset)));
         }
     }
 

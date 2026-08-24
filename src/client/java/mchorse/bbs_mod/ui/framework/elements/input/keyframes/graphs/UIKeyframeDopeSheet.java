@@ -750,6 +750,12 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         }
     }
 
+    /** Magnet fuer Aufrufer ausserhalb des Pakets (Playhead-Scrub in UIFilmKeyframes). */
+    public float magnetTick(float tick, UIContext context, boolean ohneCursor)
+    {
+        return this.flaecheSchmuck().magnet(tick, context, ohneCursor);
+    }
+
     @Override
     public void dragKeyframes(UIContext context, Pair<Keyframe, KeyframeType> type, int originalX, int originalY, float originalT, Object originalV)
     {
@@ -1037,21 +1043,15 @@ public class UIKeyframeDopeSheet implements IUIKeyframeGraph
         return y;
     }
 
-    private int getTrackGap()
-    {
-        return 0;
-    }
-
+    /* Spaltmass war immer 0 — die frueheren getTrackGap/-BodyY sind inline gefallen. */
     private int getTrackBodyY(int y)
     {
-        return y + this.getTrackGap();
+        return y;
     }
 
     private int getTrackBodyHeight()
     {
-        int gap = this.getTrackGap();
-
-        return Math.max(2, (int) this.trackHeight - gap * 2);
+        return Math.max(2, (int) this.trackHeight);
     }
 
     private void renderGroup(UIContext context, BufferBuilder builder, Matrix4f matrix, Area area, UIKeyframeGroup group, int offset, int y)

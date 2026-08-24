@@ -234,6 +234,12 @@ final class DopeSheetFlaeche
 
 	float magnet(float tick, UIContext context)
 	{
+		return this.magnet(tick, context, false);
+	}
+
+	/** ohneCursor: beim PLAYHEAD-Scrub ist der Cursor selbst das Gezogene — kein Fangpunkt. */
+	float magnet(float tick, UIContext context, boolean ohneCursor)
+	{
 		float roh = tick;
 
 		tick = Math.round(tick);
@@ -282,7 +288,10 @@ final class DopeSheetFlaeche
 		mchorse.bbs_mod.film.Film film = fk.editor.getFilm();
 		List<Float> punkte = new ArrayList<>();
 
-		punkte.add((float) (fk.editor.getCursor() - versatz));
+		if (!ohneCursor)
+		{
+			punkte.add((float) (fk.editor.getCursor() - versatz));
+		}
 
 		for (mchorse.bbs_mod.film.markers.Marker m : film.markers.getList())
 		{
