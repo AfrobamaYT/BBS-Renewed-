@@ -271,10 +271,11 @@ final class DopeSheetFlaeche
 
 		this.rastZuletzt = jetzt;
 
-		/* KLEBEN: einmal gerastet, haelt der Punkt bis zum doppelten Fangabstand. */
+		/* KLEBEN: einmal gerastet, haelt der Punkt bis zum 1,6-fachen Fangabstand.
+		 * (30 px Loeseweg war „zu stark" — Nutzer nach dem ersten spuerbaren Stand.) */
 		if (this.rastAktiv)
 		{
-			if (Math.abs(roh - this.rastPunkt) < 30D / proTick)
+			if (Math.abs(roh - this.rastPunkt) < 16D / proTick)
 			{
 				this.rastLinie(context, this.rastPunkt);
 
@@ -321,7 +322,7 @@ final class DopeSheetFlaeche
 		}
 
 		float best = tick;
-		double bestAbstand = 15D / proTick;
+		double bestAbstand = 10D / proTick;
 		boolean gefunden = false;
 
 		for (float p : punkte)
