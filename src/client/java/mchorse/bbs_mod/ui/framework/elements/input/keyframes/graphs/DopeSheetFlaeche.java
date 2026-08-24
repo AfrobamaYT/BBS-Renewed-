@@ -261,8 +261,24 @@ final class DopeSheetFlaeche
 			punkte.add((float) (c.tick.get() + c.duration.get() - versatz));
 		}
 
+		/* Resolve-Gefuehl: auch die Keys der ANDEREN Spuren fangen — Posen aneinander
+		 * ausrichten. Die AUSGEWAEHLTEN Keys bewegen sich mit dem Zug und sind darum
+		 * keine Fangpunkte (sonst rastete die Auswahl an sich selbst). */
+		for (UIKeyframeSheet sheet : this.dope.getSheets())
+		{
+			List<?> ks = sheet.channel.getKeyframes();
+
+			for (int j = 0; j < ks.size(); j++)
+			{
+				if (!sheet.selection.has(j))
+				{
+					punkte.add(((Keyframe<?>) ks.get(j)).getTick());
+				}
+			}
+		}
+
 		float best = tick;
-		double bestAbstand = 10D / proTick;
+		double bestAbstand = 15D / proTick;
 
 		for (float p : punkte)
 		{
